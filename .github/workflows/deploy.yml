@@ -3,7 +3,9 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
-  workflow_dispatch:
+  schedule:
+    - cron: '17 6 * * *'   # Daily at 6:17 AM UTC (off-minute to avoid fleet stampede)
+  workflow_dispatch:        # On-demand via Actions tab or gh workflow run
 
 permissions:
   contents: read
