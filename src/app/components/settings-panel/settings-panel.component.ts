@@ -39,7 +39,6 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
 
   // Data tab info
   attackVersion = '';
-  dataSourceMode = 'live';
   cacheStatus = 'Not cached';
   snapshotCount = 0;
   snapshotSizeKb = 0;
@@ -50,6 +49,8 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
   nvdApiKey = '';
   openCtiUrl = '';
   openCtiToken = '';
+  openCtiMode: 'direct' | 'proxy' = 'direct';
+  openCtiProxyUrl = '';
   openCtiTesting = false;
   openCtiConnected = false;
   openCtiError = '';
@@ -58,6 +59,8 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
   mispUrl = '';
   mispApiKey = '';
   mispOrgId = '';
+  mispMode: 'direct' | 'proxy' = 'direct';
+  mispProxyUrl = '';
   mispTesting = false;
   mispConnected = false;
   mispError = '';
@@ -82,7 +85,7 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
         this.visible = p === 'settings';
         if (this.visible) {
           this.reloadSettings();
-          this.loadDataInfo();
+          this.refreshDataInfo();
           this.loadIntegrationsState();
         }
         this.cdr.markForCheck();
@@ -104,18 +107,7 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       }),
     );
-  }
 
-  ngOnDestroy(): void {
-    this.subs.unsubscribe();
-  }
-
-  private reloadSettings(): void {
-    const s = this.settingsService.current;
-    this.settings = { ...s, scoringWeights: { ...s.scoringWeights } };
-  }
-
-  private loadDataInfo(): void {
     this.subs.add(
       this.dataService.domain$.subscribe(domain => {
         if (domain) {
@@ -127,18 +119,74 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
       }),
     );
 
-    // Check cache status via IndexedDB
+    this.subs.add(
+      this.openCtiService.connected$.subscribe(connected => {
+        this.openCtiConnected = connected;
+        this.cdr.markForCheck();
+      }),
+    );
+    this.subs.add(
+      this.openCtiService.error$.subscribe(err => {
+        this.openCtiError = err ?? '';
+        if (err) this.openCtiTesting = false;
+        this.cdr.markForCheck();
+      }),
+    );
+    this.subs.add(
+      this.openCtiService.loading$.subscribe(loading => {
+        if (!loading) this.openCtiTesting = false;
+        this.cdr.markForCheck();
+      }),
+    );
+
+    this.subs.add(
+      this.mispService.connected$.subscribe(connected => {
+        this.mispConnected = connected;
+        this.cdr.markForCheck();
+      }),
+    );
+    this.subs.add(
+      this.mispService.serverError$.subscribe(err => {
+        this.mispError = err ?? '';
+        if (err) this.mispTesting = false;
+        this.cdr.markForCheck();
+      }),
+    );
+    this.subs.add(
+      this.mispService.serverLoading$.subscribe(loading => {
+        if (!loading) this.mispTesting = false;
+        this.cdr.markForCheck();
+      }),
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subs.unsubscribe();
+  }
+
+  private reloadSettings(): void {
+    const s = this.settingsService.current;
+    this.settings = { ...s, scoringWeights: { ...s.scoringWeights } };
+  }
+
+  private refreshDataInfo(): void {
     this.checkCacheStatus();
   }
 
   private checkCacheStatus(): void {
+    const cacheKeyByDomain = {
+      enterprise: 'enterprise-attack-v2',
+      ics: 'ics-attack-v1',
+      mobile: 'mobile-attack-v1',
+    } as const;
+    const cacheKey = cacheKeyByDomain[this.dataService.getCurrentAttackDomain()];
     const req = indexedDB.open('mitre-navigator-cache', 1);
     req.onsuccess = () => {
       const db = req.result;
       try {
         const tx = db.transaction('stix-bundles', 'readonly');
         const store = tx.objectStore('stix-bundles');
-        const getReq = store.get('enterprise-attack-v2');
+        const getReq = store.get(cacheKey);
         getReq.onsuccess = () => {
           const entry = getReq.result as { bundle: any; ts: number } | undefined;
           if (entry?.ts) {
@@ -290,7 +338,7 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
   }
 
   clearAllSnapshots(): void {
-    const snapshots = this.timelineService['snapshotsSubject']?.value ?? [];
+    const snapshots = this.timelineService.getAll();
     for (const snap of [...snapshots]) {
       this.timelineService.deleteSnapshot(snap.id);
     }
@@ -298,8 +346,8 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
   }
 
   exportImplCsv(): void {
-    if (!this.dataService['domainSubject']?.value) return;
-    const domain = this.dataService['domainSubject'].value!;
+    const domain = this.dataService.getCurrentDomain();
+    if (!domain) return;
     const statusMap = this.implService.getStatusMap();
     const rows: string[] = ['Mitigation ID,Mitigation Name,Status,Covered Techniques'];
     for (const mit of domain.mitigations) {
@@ -336,6 +384,8 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
     const ctiConfig = this.openCtiService.getConfig();
     this.openCtiUrl = ctiConfig.url;
     this.openCtiToken = ctiConfig.token;
+    this.openCtiMode = ctiConfig.mode;
+    this.openCtiProxyUrl = ctiConfig.proxyUrl;
     this.openCtiConnected = ctiConfig.connected;
     this.openCtiError = '';
 
@@ -343,6 +393,8 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
     this.mispUrl = mispConfig.url;
     this.mispApiKey = mispConfig.apiKey;
     this.mispOrgId = mispConfig.orgId;
+    this.mispMode = mispConfig.mode;
+    this.mispProxyUrl = mispConfig.proxyUrl;
     this.mispConnected = mispConfig.connected;
     this.mispError = '';
     this.cdr.markForCheck();
@@ -358,41 +410,29 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
     this.openCtiError = '';
     this.openCtiConnected = false;
     this.cdr.markForCheck();
-    this.openCtiService.saveConfig(this.openCtiUrl, this.openCtiToken);
-    // Poll connection state (testConnection is async inside saveConfig)
-    this.subs.add(
-      this.openCtiService.connected$.subscribe(connected => {
-        this.openCtiConnected = connected;
-        this.cdr.markForCheck();
-      }),
-    );
-    this.subs.add(
-      this.openCtiService.error$.subscribe(err => {
-        if (err) {
-          this.openCtiError = err;
-          this.openCtiTesting = false;
-          this.cdr.markForCheck();
-        }
-      }),
-    );
-    this.subs.add(
-      this.openCtiService.loading$.subscribe(loading => {
-        if (!loading) {
-          this.openCtiTesting = false;
-          this.cdr.markForCheck();
-        }
-      }),
-    );
+    this.openCtiService.saveConfig({
+      url: this.openCtiUrl,
+      token: this.openCtiToken,
+      mode: this.openCtiMode,
+      proxyUrl: this.openCtiProxyUrl,
+    });
   }
 
   saveOpenCti(): void {
-    this.openCtiService.saveConfig(this.openCtiUrl, this.openCtiToken);
+    this.openCtiService.saveConfig({
+      url: this.openCtiUrl,
+      token: this.openCtiToken,
+      mode: this.openCtiMode,
+      proxyUrl: this.openCtiProxyUrl,
+    });
   }
 
   clearOpenCti(): void {
     this.openCtiService.clearConfig();
     this.openCtiUrl = '';
     this.openCtiToken = '';
+    this.openCtiMode = 'direct';
+    this.openCtiProxyUrl = '';
     this.openCtiConnected = false;
     this.openCtiError = '';
     this.cdr.markForCheck();
@@ -406,6 +446,8 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
       apiKey: this.mispApiKey,
       orgId: this.mispOrgId,
       connected: false,
+      mode: this.mispMode,
+      proxyUrl: this.mispProxyUrl,
     });
   }
 
@@ -421,31 +463,9 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
       apiKey: this.mispApiKey,
       orgId: this.mispOrgId,
       connected: false,
+      mode: this.mispMode,
+      proxyUrl: this.mispProxyUrl,
     });
-
-    this.subs.add(
-      this.mispService.connected$.subscribe(connected => {
-        this.mispConnected = connected;
-        this.cdr.markForCheck();
-      }),
-    );
-    this.subs.add(
-      this.mispService.serverError$.subscribe(err => {
-        if (err) {
-          this.mispError = err;
-          this.mispTesting = false;
-          this.cdr.markForCheck();
-        }
-      }),
-    );
-    this.subs.add(
-      this.mispService.serverLoading$.subscribe(loading => {
-        if (!loading) {
-          this.mispTesting = false;
-          this.cdr.markForCheck();
-        }
-      }),
-    );
   }
 
   disconnectMisp(): void {
@@ -453,6 +473,8 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
     this.mispUrl = '';
     this.mispApiKey = '';
     this.mispOrgId = '';
+    this.mispMode = 'direct';
+    this.mispProxyUrl = '';
     this.mispConnected = false;
     this.mispError = '';
     this.cdr.markForCheck();
