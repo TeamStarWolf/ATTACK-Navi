@@ -1,7 +1,7 @@
 .siem-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgb(0 0 0 / 50%);
   z-index: 999;
 }
 
@@ -17,7 +17,7 @@
   background: #0d1a26;
   border: 1px solid #1a3448;
   border-radius: 10px;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 8px 40px rgb(0 0 0 / 70%);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -100,8 +100,9 @@
     width: 6px;
   }
   &::-webkit-scrollbar-track { background: transparent; }
+
   &::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgb(255 255 255 / 10%);
     border-radius: 3px;
   }
 }
@@ -162,9 +163,9 @@
   }
 
   &.active {
-    background: rgba(26, 159, 255, 0.12);
+    background: rgb(26 159 255 / 12%);
     color: #58a6ff;
-    border-color: rgba(26, 159, 255, 0.35);
+    border-color: rgb(26 159 255 / 35%);
     font-weight: 600;
   }
 }
@@ -200,11 +201,11 @@
 }
 
 .mode-count-badge {
-  background: rgba(88, 166, 255, 0.12);
+  background: rgb(88 166 255 / 12%);
   color: #58a6ff;
-  border: 1px solid rgba(88, 166, 255, 0.25);
+  border: 1px solid rgb(88 166 255 / 25%);
   border-radius: 8px;
-  padding: 0px 6px;
+  padding: 0 6px;
   font-size: 10px;
   font-weight: 700;
 }
@@ -224,7 +225,7 @@
   cursor: pointer;
   outline: none;
 
-  &:focus { border-color: rgba(88, 166, 255, 0.4); }
+  &:focus { border-color: rgb(88 166 255 / 40%); }
 }
 
 // ── Filter input ──────────────────────────────────────────────────────────────
@@ -241,7 +242,7 @@
   box-sizing: border-box;
 
   &::placeholder { color: #2a4060; }
-  &:focus { border-color: rgba(88, 166, 255, 0.4); }
+  &:focus { border-color: rgb(88 166 255 / 40%); }
 }
 
 // ── Summary ───────────────────────────────────────────────────────────────────
@@ -269,14 +270,15 @@
   font-weight: 700;
 
   &.blue {
-    background: rgba(88, 166, 255, 0.12);
+    background: rgb(88 166 255 / 12%);
     color: #58a6ff;
-    border: 1px solid rgba(88, 166, 255, 0.25);
+    border: 1px solid rgb(88 166 255 / 25%);
   }
+
   &.green {
-    background: rgba(126, 231, 135, 0.1);
+    background: rgb(126 231 135 / 10%);
     color: #7ee787;
-    border: 1px solid rgba(126, 231, 135, 0.2);
+    border: 1px solid rgb(126 231 135 / 20%);
   }
 }
 
@@ -292,7 +294,7 @@
   &.file-ext {
     margin-left: auto;
     color: #3a5a74;
-    font-family: 'Consolas', 'Monaco', monospace;
+    font-family: Consolas, Monaco, monospace;
     font-size: 11px;
   }
 }
@@ -300,13 +302,13 @@
 // ── Code preview ──────────────────────────────────────────────────────────────
 
 .code-preview {
-  font-family: 'Consolas', 'Monaco', 'Fira Code', 'JetBrains Mono', monospace;
+  font-family: Consolas, Monaco, 'Fira Code', 'JetBrains Mono', monospace;
   font-size: 11px;
   background: #020b13;
   color: #a8d8a8;
   padding: 14px 16px;
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgb(255 255 255 / 6%);
   white-space: pre;
   overflow: auto;
   height: 340px;
@@ -322,8 +324,9 @@
     height: 6px;
   }
   &::-webkit-scrollbar-track { background: transparent; }
+
   &::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.12);
+    background: rgb(255 255 255 / 12%);
     border-radius: 3px;
   }
 }
@@ -357,8 +360,9 @@
 
   &::-webkit-scrollbar { width: 5px; }
   &::-webkit-scrollbar-track { background: transparent; }
+
   &::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgb(255 255 255 / 10%);
     border-radius: 2px;
   }
 }
@@ -382,7 +386,7 @@
   grid-template-columns: 140px 110px 1fr 54px;
   gap: 0;
   padding: 5px 10px;
-  border-bottom: 1px solid rgba(26, 52, 72, 0.5);
+  border-bottom: 1px solid rgb(26 52 72 / 50%);
   align-items: center;
   transition: background 0.1s;
 
@@ -395,13 +399,13 @@
 }
 
 .car-id {
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: Consolas, Monaco, monospace;
   font-size: 10px;
   color: #58a6ff;
 }
 
 .tech-ids {
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-family: Consolas, Monaco, monospace;
   font-size: 10px;
   color: #7ee787;
 }
@@ -455,28 +459,28 @@
 }
 
 .copy-btn {
-  background: rgba(88, 166, 255, 0.12);
+  background: rgb(88 166 255 / 12%);
   color: #58a6ff;
-  border-color: rgba(88, 166, 255, 0.3);
+  border-color: rgb(88 166 255 / 30%);
 
   &:hover:not(:disabled) {
-    background: rgba(88, 166, 255, 0.22);
+    background: rgb(88 166 255 / 22%);
   }
 
   &.success {
-    background: rgba(126, 231, 135, 0.12);
+    background: rgb(126 231 135 / 12%);
     color: #7ee787;
-    border-color: rgba(126, 231, 135, 0.3);
+    border-color: rgb(126 231 135 / 30%);
   }
 }
 
 .download-btn {
-  background: rgba(26, 159, 255, 0.12);
+  background: rgb(26 159 255 / 12%);
   color: #58a6ff;
-  border-color: rgba(26, 159, 255, 0.3);
+  border-color: rgb(26 159 255 / 30%);
 
   &:hover:not(:disabled) {
-    background: rgba(26, 159, 255, 0.22);
+    background: rgb(26 159 255 / 22%);
   }
 }
 

@@ -1,14 +1,14 @@
 @use './styles/upgrade-foundation';
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap';
 
 :root {
   --bg-base: #08111a;
   --bg-elevated: #0f1d29;
-  --bg-panel: rgba(14, 27, 39, 0.88);
+  --bg-panel: rgb(14 27 39 / 88%);
   --bg-panel-strong: #112332;
-  --bg-soft: rgba(255, 255, 255, 0.045);
-  --line-soft: rgba(151, 185, 211, 0.12);
-  --line-strong: rgba(151, 185, 211, 0.22);
+  --bg-soft: rgb(255 255 255 / 4.5%);
+  --line-soft: rgb(151 185 211 / 12%);
+  --line-strong: rgb(151 185 211 / 22%);
   --text-main: #e7eef5;
   --text-muted: #93a8bb;
   --text-faint: #5e778e;
@@ -17,10 +17,10 @@
   --accent-warm: #ffb454;
   --success: #63d297;
   --danger: #ff8f7a;
-  --shadow-lg: 0 18px 48px rgba(0, 0, 0, 0.34);
+  --shadow-lg: 0 18px 48px rgb(0 0 0 / 34%);
   --shell-gradient:
-    radial-gradient(circle at top left, rgba(255, 180, 84, 0.16), transparent 30%),
-    radial-gradient(circle at top right, rgba(111, 211, 255, 0.12), transparent 34%),
+    radial-gradient(circle at top left, rgb(255 180 84 / 16%), transparent 30%),
+    radial-gradient(circle at top right, rgb(111 211 255 / 12%), transparent 34%),
     linear-gradient(180deg, #0a141e 0%, #08111a 42%, #09131c 100%);
 }
 
@@ -84,18 +84,18 @@ html, body {
 body.light-mode {
   /* ── CSS variable overrides ── */
   --bg-base: #f8f9fa;
-  --bg-surface: #ffffff;
-  --bg-elevated: #ffffff;
-  --bg-hover: rgba(0, 0, 0, 0.04);
-  --bg-active: rgba(0, 0, 0, 0.08);
+  --bg-surface: #fff;
+  --bg-elevated: #fff;
+  --bg-hover: rgb(0 0 0 / 4%);
+  --bg-active: rgb(0 0 0 / 8%);
   --text-main: #1a1a2e;
   --text-secondary: #4a5568;
   --text-muted: #4a5568;
   --text-faint: #718096;
-  --border-subtle: rgba(0, 0, 0, 0.08);
-  --border-default: rgba(0, 0, 0, 0.12);
-  --line-soft: rgba(0, 0, 0, 0.08);
-  --line-strong: rgba(0, 0, 0, 0.14);
+  --border-subtle: rgb(0 0 0 / 8%);
+  --border-default: rgb(0 0 0 / 12%);
+  --line-soft: rgb(0 0 0 / 8%);
+  --line-strong: rgb(0 0 0 / 14%);
   --accent: #2563eb;
   --accent-strong: #1d4ed8;
   --accent-warm: #ea580c;
@@ -106,9 +106,9 @@ body.light-mode {
   --accent-purple: #7c3aed;
   --success: #16a34a;
   --danger: #dc2626;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-  --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
-  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 5%);
+  --shadow-md: 0 4px 6px rgb(0 0 0 / 7%);
+  --shadow-lg: 0 10px 15px rgb(0 0 0 / 10%);
   --shell-gradient: #f8f9fa;
 
   /* ── 1. Body / root ── */
@@ -126,17 +126,17 @@ body.light-mode {
 
   /* ── 2. Toolbar ── */
   .toolbar.top-bar {
-    background: #ffffff !important;
+    background: #fff !important;
     border-bottom: 1px solid #e2e8f0 !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 6%) !important;
     backdrop-filter: none !important;
 
     &::before { backdrop-filter: none !important; }
   }
 
   .brand-icon {
-    background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(124, 58, 237, 0.08)) !important;
-    border-color: rgba(0, 0, 0, 0.08) !important;
+    background: linear-gradient(135deg, rgb(37 99 235 / 10%), rgb(124 58 237 / 8%)) !important;
+    border-color: rgb(0 0 0 / 8%) !important;
   }
 
   .brand-name { color: #1a1a2e !important; }
@@ -144,8 +144,8 @@ body.light-mode {
 
   .attack-version {
     color: #16a34a !important;
-    background: rgba(22, 163, 74, 0.08) !important;
-    border-color: rgba(22, 163, 74, 0.2) !important;
+    background: rgb(22 163 74 / 8%) !important;
+    border-color: rgb(22 163 74 / 20%) !important;
   }
 
   .bar-divider, .bar-divider-sm { background: #e2e8f0 !important; }
@@ -156,18 +156,20 @@ body.light-mode {
 
     &:focus-within, &.active {
       border-color: #2563eb !important;
-      background: #ffffff !important;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+      background: #fff !important;
+      box-shadow: 0 0 0 3px rgb(37 99 235 / 10%) !important;
     }
 
     .search-icon { color: #94a3b8 !important; }
+
     .search-input {
       color: #1a1a2e !important;
       &::placeholder { color: #94a3b8 !important; }
     }
+
     .clear-btn {
       color: #94a3b8 !important;
-      &:hover { color: #475569 !important; background: rgba(0, 0, 0, 0.06) !important; }
+      &:hover { color: #475569 !important; background: rgb(0 0 0 / 6%) !important; }
     }
   }
 
@@ -176,9 +178,10 @@ body.light-mode {
     color: #475569 !important;
     border-color: #e2e8f0 !important;
 
-    option { background: #ffffff; color: #1a1a2e; }
+    option { background: #fff; color: #1a1a2e; }
 
     &:focus { border-color: #2563eb !important; }
+
     &:has(option:checked:not([value=""])) {
       color: #2563eb !important;
       border-color: #2563eb !important;
@@ -186,7 +189,7 @@ body.light-mode {
   }
 
   .icon-btn {
-    background: #ffffff !important;
+    background: #fff !important;
     border-color: #e2e8f0 !important;
     color: #475569 !important;
 
@@ -197,74 +200,76 @@ body.light-mode {
     }
 
     &.active {
-      background: rgba(37, 99, 235, 0.08) !important;
-      border-color: rgba(37, 99, 235, 0.3) !important;
+      background: rgb(37 99 235 / 8%) !important;
+      border-color: rgb(37 99 235 / 30%) !important;
       color: #2563eb !important;
     }
   }
 
   .heatmap-btn {
-    background: rgba(234, 88, 12, 0.06) !important;
-    border-color: rgba(234, 88, 12, 0.2) !important;
+    background: rgb(234 88 12 / 6%) !important;
+    border-color: rgb(234 88 12 / 20%) !important;
     color: #ea580c !important;
-    &:hover { background: rgba(234, 88, 12, 0.1) !important; }
-    &.active { background: rgba(234, 88, 12, 0.12) !important; border-color: rgba(234, 88, 12, 0.3) !important; }
+    &:hover { background: rgb(234 88 12 / 10%) !important; }
+    &.active { background: rgb(234 88 12 / 12%) !important; border-color: rgb(234 88 12 / 30%) !important; }
   }
 
   .export-btn {
-    background: rgba(22, 163, 74, 0.06) !important;
-    border-color: rgba(22, 163, 74, 0.2) !important;
+    background: rgb(22 163 74 / 6%) !important;
+    border-color: rgb(22 163 74 / 20%) !important;
     color: #16a34a !important;
-    &:hover { background: rgba(22, 163, 74, 0.1) !important; }
+    &:hover { background: rgb(22 163 74 / 10%) !important; }
   }
 
   .navigator-btn, .save-view-btn, .views-menu-btn, .export-hub-btn {
-    background: rgba(37, 99, 235, 0.06) !important;
-    border-color: rgba(37, 99, 235, 0.18) !important;
+    background: rgb(37 99 235 / 6%) !important;
+    border-color: rgb(37 99 235 / 18%) !important;
     color: #2563eb !important;
-    &:hover { background: rgba(37, 99, 235, 0.1) !important; }
+    &:hover { background: rgb(37 99 235 / 10%) !important; }
   }
 
   .import-btn {
-    background: rgba(124, 58, 237, 0.06) !important;
-    border-color: rgba(124, 58, 237, 0.18) !important;
+    background: rgb(124 58 237 / 6%) !important;
+    border-color: rgb(124 58 237 / 18%) !important;
     color: #7c3aed !important;
-    &:hover { background: rgba(124, 58, 237, 0.1) !important; }
+    &:hover { background: rgb(124 58 237 / 10%) !important; }
   }
 
   .gap-btn, .reset-btn {
-    background: rgba(220, 38, 38, 0.06) !important;
-    border-color: rgba(220, 38, 38, 0.18) !important;
+    background: rgb(220 38 38 / 6%) !important;
+    border-color: rgb(220 38 38 / 18%) !important;
     color: #dc2626 !important;
-    &:hover { background: rgba(220, 38, 38, 0.1) !important; }
+    &:hover { background: rgb(220 38 38 / 10%) !important; }
   }
 
   .scope-btn {
     color: #94a3b8 !important;
     &:hover { border-color: #2563eb !important; color: #2563eb !important; }
+
     &.active {
-      background: rgba(37, 99, 235, 0.08) !important;
-      border-color: rgba(37, 99, 235, 0.3) !important;
+      background: rgb(37 99 235 / 8%) !important;
+      border-color: rgb(37 99 235 / 30%) !important;
       color: #2563eb !important;
     }
   }
 
   .domain-btn {
-    background: #ffffff !important;
+    background: #fff !important;
     border-color: #e2e8f0 !important;
     color: #94a3b8 !important;
     &:hover { background: #f1f5f9 !important; color: #475569 !important; }
+
     &.active {
-      background: rgba(37, 99, 235, 0.08) !important;
-      border-color: rgba(37, 99, 235, 0.3) !important;
+      background: rgb(37 99 235 / 8%) !important;
+      border-color: rgb(37 99 235 / 30%) !important;
       color: #2563eb !important;
     }
   }
 
   .dropdown {
-    background: #ffffff !important;
+    background: #fff !important;
     border-color: #e2e8f0 !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 4px 12px rgb(0 0 0 / 10%) !important;
 
     .dropdown-item {
       color: #1a1a2e !important;
@@ -272,14 +277,14 @@ body.light-mode {
 
       .drop-id {
         color: #2563eb !important;
-        background: rgba(37, 99, 235, 0.08) !important;
+        background: rgb(37 99 235 / 8%) !important;
       }
       .drop-name { color: #475569 !important; }
 
       &.cve-hint-item {
-        background: rgba(220, 38, 38, 0.04) !important;
-        border-bottom-color: rgba(220, 38, 38, 0.1) !important;
-        .drop-id { background: rgba(220, 38, 38, 0.08) !important; color: #dc2626 !important; }
+        background: rgb(220 38 38 / 4%) !important;
+        border-bottom-color: rgb(220 38 38 / 10%) !important;
+        .drop-id { background: rgb(220 38 38 / 8%) !important; color: #dc2626 !important; }
         .drop-name { color: #1a1a2e !important; }
       }
     }
@@ -291,28 +296,31 @@ body.light-mode {
     backdrop-filter: none !important;
   }
   .filter-label { color: #94a3b8 !important; }
+
   .platform-pill {
-    background: #ffffff !important;
+    background: #fff !important;
     border-color: #e2e8f0 !important;
     color: #475569 !important;
     &:hover { background: #f1f5f9 !important; color: #1a1a2e !important; }
+
     &.active {
-      background: rgba(37, 99, 235, 0.08) !important;
-      border-color: rgba(37, 99, 235, 0.3) !important;
+      background: rgb(37 99 235 / 8%) !important;
+      border-color: rgb(37 99 235 / 30%) !important;
       color: #2563eb !important;
     }
   }
+
   .platform-clear {
-    background: rgba(220, 38, 38, 0.06) !important;
-    border-color: rgba(220, 38, 38, 0.18) !important;
+    background: rgb(220 38 38 / 6%) !important;
+    border-color: rgb(220 38 38 / 18%) !important;
     color: #dc2626 !important;
-    &:hover { background: rgba(220, 38, 38, 0.1) !important; }
+    &:hover { background: rgb(220 38 38 / 10%) !important; }
   }
 
   .views-menu, .save-dialog {
-    background: #ffffff !important;
+    background: #fff !important;
     border-color: #e2e8f0 !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 10%) !important;
     backdrop-filter: none !important;
   }
   .views-menu-header { color: #94a3b8 !important; }
@@ -321,22 +329,26 @@ body.light-mode {
   .view-meta { color: #94a3b8 !important; }
   .view-item:hover { background: #f1f5f9 !important; }
   .view-delete:hover { color: #dc2626 !important; }
+
   .heatmap-mode-btn {
     background: #f8f9fa !important;
     border-color: #e2e8f0 !important;
     color: #475569 !important;
     &:hover { background: #f1f5f9 !important; color: #1a1a2e !important; }
+
     &.active {
-      background: rgba(37, 99, 235, 0.08) !important;
-      border-color: rgba(37, 99, 235, 0.3) !important;
+      background: rgb(37 99 235 / 8%) !important;
+      border-color: rgb(37 99 235 / 30%) !important;
       color: #2563eb !important;
     }
   }
+
   .menu-action {
     color: #1a1a2e !important;
     &:hover { background: #f1f5f9 !important; }
-    &.active { background: rgba(37, 99, 235, 0.06) !important; color: #2563eb !important; }
+    &.active { background: rgb(37 99 235 / 6%) !important; color: #2563eb !important; }
   }
+
   .save-input {
     background: #f8f9fa !important;
     border-color: #e2e8f0 !important;
@@ -347,25 +359,29 @@ body.light-mode {
 
   /* ── Filter row (quick-filters / stats bar) ── */
   .filter-row {
-    background: #ffffff !important;
+    background: #fff !important;
     border-top: 1px solid #e2e8f0 !important;
 
     .search-field { background: #f1f5f9 !important; border-color: #e2e8f0 !important; color: #1a1a2e !important; }
+
     .search-input {
       color: #1a1a2e !important;
       background: transparent !important;
       &::placeholder { color: #94a3b8 !important; }
     }
     .filter-select { background: #f1f5f9 !important; color: #1a1a2e !important; border-color: #e2e8f0 !important; }
+
     .tool-btn {
       background: #f1f5f9 !important;
       color: #475569 !important;
       border-color: #e2e8f0 !important;
       &.active { background: #2563eb !important; color: #fff !important; }
     }
+
     .dropdown {
-      background: #ffffff !important;
+      background: #fff !important;
       border-color: #e2e8f0 !important;
+
       .dropdown-item {
         color: #1a1a2e !important;
         &:hover { background: #f1f5f9 !important; }
@@ -374,10 +390,10 @@ body.light-mode {
   }
 
   .stats-bar {
-    background: #ffffff !important;
+    background: #fff !important;
     border-color: #e2e8f0 !important;
     color: #1a1a2e !important;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 4%) !important;
   }
   .stat-number { color: #1a1a2e !important; }
   .stat-label { color: #64748b !important; }
@@ -391,7 +407,7 @@ body.light-mode {
 
   .matrix {
     thead {
-      background: #ffffff !important;
+      background: #fff !important;
       backdrop-filter: none !important;
     }
   }
@@ -405,21 +421,21 @@ body.light-mode {
   .tactic-name-text { color: #1a1a2e !important; }
   .count { color: #94a3b8 !important; }
   .tactic-pct { color: #64748b !important; }
-  .tactic-coverage-bar { background: rgba(0, 0, 0, 0.06) !important; }
+  .tactic-coverage-bar { background: rgb(0 0 0 / 6%) !important; }
 
   .tactic-col {
-    border-right-color: rgba(0, 0, 0, 0.04) !important;
+    border-right-color: rgb(0 0 0 / 4%) !important;
     background: transparent !important;
   }
 
   .cell {
-    background: #ffffff !important;
+    background: #fff !important;
     color: #1a1a2e !important;
     border-color: #e2e8f0 !important;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 4%) !important;
 
     &:hover {
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+      box-shadow: 0 2px 8px rgb(0 0 0 / 10%) !important;
       border-color: #cbd5e1 !important;
     }
 
@@ -436,18 +452,18 @@ body.light-mode {
     .mit-count { color: #64748b !important; }
 
     .badge {
-      background: rgba(0, 0, 0, 0.04) !important;
-      border-color: rgba(0, 0, 0, 0.08) !important;
+      background: rgb(0 0 0 / 4%) !important;
+      border-color: rgb(0 0 0 / 8%) !important;
       color: #475569 !important;
     }
 
     .exposure-badge {
-      background: rgba(234, 88, 12, 0.08) !important;
-      border-color: rgba(234, 88, 12, 0.18) !important;
+      background: rgb(234 88 12 / 8%) !important;
+      border-color: rgb(234 88 12 / 18%) !important;
       color: #ea580c !important;
     }
 
-    .impl-dot { border-color: rgba(0, 0, 0, 0.25) !important; }
+    .impl-dot { border-color: rgb(0 0 0 / 25%) !important; }
   }
 
   .subtechniques { border-left-color: #e2e8f0 !important; }
@@ -457,42 +473,46 @@ body.light-mode {
     border-color: #e2e8f0 !important;
     color: #94a3b8 !important;
     &:hover { background: #f1f5f9 !important; color: #475569 !important; }
+
     &.expanded {
-      background: rgba(37, 99, 235, 0.06) !important;
+      background: rgb(37 99 235 / 6%) !important;
       color: #2563eb !important;
-      border-color: rgba(37, 99, 235, 0.25) !important;
+      border-color: rgb(37 99 235 / 25%) !important;
     }
   }
 
   .hidden-tactics-bar {
-    background: rgba(234, 88, 12, 0.06) !important;
-    border-bottom-color: rgba(234, 88, 12, 0.14) !important;
+    background: rgb(234 88 12 / 6%) !important;
+    border-bottom-color: rgb(234 88 12 / 14%) !important;
     color: #ea580c !important;
-    .restore-btn { border-color: rgba(234, 88, 12, 0.25) !important; color: #ea580c !important; }
+    .restore-btn { border-color: rgb(234 88 12 / 25%) !important; color: #ea580c !important; }
   }
 
   /* Matrix search bar */
   .matrix-search-bar {
-    background: #ffffff !important;
+    background: #fff !important;
     border-bottom-color: #e2e8f0 !important;
     backdrop-filter: none !important;
   }
+
   .matrix-search-input {
     background: #f1f5f9 !important;
     border-color: #e2e8f0 !important;
     color: #1a1a2e !important;
-    &:focus { border-color: #2563eb !important; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important; }
+    &:focus { border-color: #2563eb !important; box-shadow: 0 0 0 3px rgb(37 99 235 / 10%) !important; }
     &::placeholder { color: #94a3b8 !important; }
   }
   .search-count { color: #2563eb !important; }
+
   .search-filter-btn {
-    background: #ffffff !important;
+    background: #fff !important;
     border-color: #e2e8f0 !important;
     color: #94a3b8 !important;
     &:hover { color: #475569 !important; }
+
     &.active {
-      background: rgba(37, 99, 235, 0.06) !important;
-      border-color: rgba(37, 99, 235, 0.3) !important;
+      background: rgb(37 99 235 / 6%) !important;
+      border-color: rgb(37 99 235 / 30%) !important;
       color: #2563eb !important;
     }
   }
@@ -500,9 +520,10 @@ body.light-mode {
 
   /* Zoom controls */
   .zoom-controls {
-    background: #ffffff !important;
+    background: #fff !important;
     border-color: #e2e8f0 !important;
   }
+
   .zoom-btn {
     background: #f8f9fa !important;
     border-color: #e2e8f0 !important;
@@ -513,16 +534,19 @@ body.light-mode {
 
   /* Column toggle menu */
   .column-menu {
-    background: #ffffff !important;
+    background: #fff !important;
     border-color: #e2e8f0 !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 4px 12px rgb(0 0 0 / 10%) !important;
   }
+
   .column-item {
     color: #1a1a2e !important;
     &:hover { background: #f1f5f9 !important; }
   }
+
   .column-menu-footer {
     border-top-color: #e2e8f0 !important;
+
     button {
       background: #f1f5f9 !important;
       color: #475569 !important;
@@ -532,44 +556,47 @@ body.light-mode {
 
   /* Minimap */
   .matrix-minimap {
-    background: #ffffff !important;
+    background: #fff !important;
     border-color: #e2e8f0 !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 12%) !important;
     backdrop-filter: none !important;
   }
   .minimap-title { color: #94a3b8 !important; }
 
   /* Bulk bar */
   .bulk-bar {
-    background: #ffffff !important;
+    background: #fff !important;
     border-top-color: #e2e8f0 !important;
     backdrop-filter: none !important;
-    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06) !important;
+    box-shadow: 0 -2px 8px rgb(0 0 0 / 6%) !important;
     .bulk-count { color: #1a1a2e !important; }
+
     .bulk-btn {
-      &.impl { background: rgba(22, 163, 74, 0.08) !important; color: #16a34a !important; border-color: rgba(22, 163, 74, 0.2) !important; }
-      &.prog { background: rgba(234, 88, 12, 0.08) !important; color: #ea580c !important; border-color: rgba(234, 88, 12, 0.2) !important; }
-      &.plan { background: rgba(37, 99, 235, 0.08) !important; color: #2563eb !important; border-color: rgba(37, 99, 235, 0.2) !important; }
-      &.none { background: rgba(220, 38, 38, 0.08) !important; color: #dc2626 !important; border-color: rgba(220, 38, 38, 0.2) !important; }
+      &.impl { background: rgb(22 163 74 / 8%) !important; color: #16a34a !important; border-color: rgb(22 163 74 / 20%) !important; }
+      &.prog { background: rgb(234 88 12 / 8%) !important; color: #ea580c !important; border-color: rgb(234 88 12 / 20%) !important; }
+      &.plan { background: rgb(37 99 235 / 8%) !important; color: #2563eb !important; border-color: rgb(37 99 235 / 20%) !important; }
+      &.none { background: rgb(220 38 38 / 8%) !important; color: #dc2626 !important; border-color: rgb(220 38 38 / 20%) !important; }
       &.clear-impl { background: #f1f5f9 !important; color: #64748b !important; border-color: #e2e8f0 !important; }
-      &.close-sel { background: rgba(220, 38, 38, 0.06) !important; color: #dc2626 !important; border-color: rgba(220, 38, 38, 0.18) !important; }
+      &.close-sel { background: rgb(220 38 38 / 6%) !important; color: #dc2626 !important; border-color: rgb(220 38 38 / 18%) !important; }
     }
   }
 
   /* ── 5. Sidebar ── */
   .sidebar {
-    background: #ffffff !important;
+    background: #fff !important;
     border-color: #e2e8f0 !important;
     color: #1a1a2e !important;
-    box-shadow: -4px 0 16px rgba(0, 0, 0, 0.08) !important;
+    box-shadow: -4px 0 16px rgb(0 0 0 / 8%) !important;
   }
+
   .sidebar-header {
     background: #f8f9fa !important;
     border-color: #e2e8f0 !important;
     .attack-id { color: #2563eb !important; }
     .technique-name { color: #1a1a2e !important; }
   }
-  .sidebar-body { background: #ffffff !important; }
+  .sidebar-body { background: #fff !important; }
+
   .close-btn {
     color: #94a3b8 !important;
     &:hover { background: #f1f5f9 !important; color: #475569 !important; }
@@ -579,17 +606,20 @@ body.light-mode {
   .meta-value { color: #1a1a2e !important; }
   .section-title { color: #1a1a2e !important; }
   .mitigation-item { border-color: #e2e8f0 !important; }
+
   .mit-header {
     .mit-id { color: #2563eb !important; }
     .mit-name { color: #1a1a2e !important; }
   }
   .rel-description, .mit-description { color: #475569 !important; }
+
   .notes-textarea {
     background: #f8f9fa !important;
     color: #1a1a2e !important;
     border-color: #e2e8f0 !important;
     &:focus { border-color: #2563eb !important; }
   }
+
   .group-chip, .sw-chip, .camp-chip {
     background: #f1f5f9 !important;
     color: #1a1a2e !important;
@@ -600,36 +630,39 @@ body.light-mode {
   .watchlist-btn {
     border-color: #e2e8f0 !important;
     color: #64748b !important;
-    &:hover { border-color: #f59e0b !important; color: #f59e0b !important; background: rgba(245, 158, 11, 0.06) !important; }
-    &.watched { background: rgba(245, 158, 11, 0.06) !important; border-color: #f59e0b !important; color: #f59e0b !important; }
+    &:hover { border-color: #f59e0b !important; color: #f59e0b !important; background: rgb(245 158 11 / 6%) !important; }
+    &.watched { background: rgb(245 158 11 / 6%) !important; border-color: #f59e0b !important; color: #f59e0b !important; }
   }
+
   .graph-btn {
     border-color: #e2e8f0 !important;
     color: #64748b !important;
-    &:hover { border-color: #2563eb !important; color: #2563eb !important; background: rgba(37, 99, 235, 0.06) !important; }
+    &:hover { border-color: #2563eb !important; color: #2563eb !important; background: rgb(37 99 235 / 6%) !important; }
   }
 
   /* ── 6. Panel overlays ── */
   .panel-overlay {
-    background: rgba(0, 0, 0, 0.2) !important;
+    background: rgb(0 0 0 / 20%) !important;
     backdrop-filter: blur(4px) !important;
   }
 
   .panel {
-    background: #ffffff !important;
+    background: #fff !important;
     color: #1a1a2e !important;
     border-color: #e2e8f0 !important;
-    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: -8px 0 24px rgb(0 0 0 / 10%) !important;
     backdrop-filter: none !important;
   }
+
   .panel-header, .tab-bar, .panel-footer {
     background: #f8f9fa !important;
     border-color: #e2e8f0 !important;
     color: #1a1a2e !important;
   }
   .panel-title { color: #1a1a2e !important; }
+
   .panel-body {
-    background: #ffffff !important;
+    background: #fff !important;
     color: #1a1a2e !important;
   }
   .panel-desc { color: #64748b !important; }
@@ -640,10 +673,11 @@ body.light-mode {
     &:hover:not(.active) { color: #1a1a2e !important; }
     &.active { color: #2563eb !important; border-bottom-color: #2563eb !important; }
   }
+
   .tab-badge {
-    background: rgba(37, 99, 235, 0.08) !important;
+    background: rgb(37 99 235 / 8%) !important;
     color: #2563eb !important;
-    border-color: rgba(37, 99, 235, 0.2) !important;
+    border-color: rgb(37 99 235 / 20%) !important;
   }
 
   .priority-row, .whatif-row {
@@ -656,7 +690,7 @@ body.light-mode {
   .group-row {
     border-bottom-color: #f1f5f9 !important;
     &:hover { background: #f8f9fa !important; }
-    &.selected { background: rgba(37, 99, 235, 0.06) !important; border-bottom-color: rgba(37, 99, 235, 0.12) !important; }
+    &.selected { background: rgb(37 99 235 / 6%) !important; border-bottom-color: rgb(37 99 235 / 12%) !important; }
   }
 
   .group-id, .campaign-id { color: #2563eb !important; }
@@ -671,17 +705,18 @@ body.light-mode {
 
   .apply-btn {
     background: #2563eb !important;
-    color: #ffffff !important;
+    color: #fff !important;
     border-color: #2563eb !important;
     &:hover { background: #1d4ed8 !important; }
   }
 
   /* ── 8. Cards / widgets ── */
   .filter-chips-bar {
-    background: #ffffff !important;
+    background: #fff !important;
     border-color: #e2e8f0 !important;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 4%) !important;
   }
+
   .chip {
     background: #f1f5f9 !important;
     color: #475569 !important;
@@ -692,38 +727,38 @@ body.light-mode {
   /* ── 9. Tables (alternating rows) ── */
   table {
     tr:nth-child(even) td { background: #f8f9fa; }
-    tr:nth-child(odd) td { background: #ffffff; }
+    tr:nth-child(odd) td { background: #fff; }
   }
 
   /* ── 10. Signal pills ── */
   .signal-pill, .epss-pill, .kev-pill, .cve-pill {
-    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    border: 1px solid rgb(0 0 0 / 12%) !important;
   }
   .signal-lbl { color: #64748b !important; }
 
   /* ── Tooltip card ── */
   .tooltip-card {
-    background: #ffffff !important;
+    background: #fff !important;
     border-color: #e2e8f0 !important;
     color: #1a1a2e !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 12%) !important;
     backdrop-filter: none !important;
 
     .tt-id { color: #2563eb !important; }
     .tt-name { color: #1a1a2e !important; }
     .tt-meta { color: #64748b !important; }
     .tt-tactics { color: #94a3b8 !important; }
-    .tt-badge { background: rgba(22, 163, 74, 0.08) !important; color: #16a34a !important; }
-    .tt-sub-badge { background: rgba(37, 99, 235, 0.08) !important; color: #2563eb !important; }
-    .tt-exposure { background: rgba(234, 88, 12, 0.08) !important; color: #ea580c !important; }
+    .tt-badge { background: rgb(22 163 74 / 8%) !important; color: #16a34a !important; }
+    .tt-sub-badge { background: rgb(37 99 235 / 8%) !important; color: #2563eb !important; }
+    .tt-exposure { background: rgb(234 88 12 / 8%) !important; color: #ea580c !important; }
   }
 
   /* ── Toast notification ── */
   .toast-notification {
-    background: #ffffff !important;
+    background: #fff !important;
     color: #1a1a2e !important;
     border-color: #e2e8f0 !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 4px 12px rgb(0 0 0 / 12%) !important;
     backdrop-filter: none !important;
   }
 
@@ -736,13 +771,13 @@ body.light-mode {
 
   /* ── Custom technique ── */
   .custom-technique {
-    border-color: rgba(37, 99, 235, 0.35) !important;
+    border-color: rgb(37 99 235 / 35%) !important;
     &::after { color: #2563eb !important; }
   }
 
   /* ── Spinner ── */
-  .spinner { border-color: rgba(0, 0, 0, 0.08) !important; border-top-color: #2563eb !important; }
-  .loader-spinner { border-color: rgba(0, 0, 0, 0.08) !important; border-top-color: #2563eb !important; }
+  .spinner { border-color: rgb(0 0 0 / 8%) !important; border-top-color: #2563eb !important; }
+  .loader-spinner { border-color: rgb(0 0 0 / 8%) !important; border-top-color: #2563eb !important; }
 
   .state-msg { color: #1a1a2e !important; }
   .state-hint { color: #64748b !important; }
@@ -763,6 +798,7 @@ body.light-mode {
 
   table { width: 100% !important; font-size: 7px !important; }
   .cell { min-width: 60px !important; max-width: 80px !important; font-size: 6px !important; }
+
   .tactic-th {
     background: #333 !important;
     color: #fff !important;
@@ -786,18 +822,18 @@ body.light-mode {
 }
 
 .panel-overlay {
-  background: rgba(3, 10, 16, 0.62) !important;
+  background: rgb(3 10 16 / 62%) !important;
   backdrop-filter: blur(6px);
 }
 
 .panel {
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.025), transparent 100px),
-    rgba(8, 18, 28, 0.95) !important;
+    linear-gradient(180deg, rgb(255 255 255 / 2.5%), transparent 100px),
+    rgb(8 18 28 / 95%) !important;
   border: 1px solid var(--line-soft) !important;
   border-right: none !important;
   border-radius: 24px 0 0 24px;
-  box-shadow: -24px 0 48px rgba(0, 0, 0, 0.42) !important;
+  box-shadow: -24px 0 48px rgb(0 0 0 / 42%) !important;
   backdrop-filter: blur(18px);
 }
 
@@ -805,8 +841,8 @@ body.light-mode {
 .tab-bar,
 .panel-footer {
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.02), transparent),
-    rgba(8, 18, 28, 0.9) !important;
+    linear-gradient(180deg, rgb(255 255 255 / 2%), transparent),
+    rgb(8 18 28 / 90%) !important;
   border-color: var(--line-soft) !important;
 }
 
@@ -823,8 +859,8 @@ body.light-mode {
 
 .panel-body {
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.015), transparent 140px),
-    rgba(7, 14, 22, 0.92) !important;
+    linear-gradient(180deg, rgb(255 255 255 / 1.5%), transparent 140px),
+    rgb(7 14 22 / 92%) !important;
   padding: 16px 18px !important;
 }
 
@@ -854,9 +890,9 @@ body.light-mode {
 }
 
 .tab-badge {
-  background: rgba(111, 211, 255, 0.14) !important;
+  background: rgb(111 211 255 / 14%) !important;
   color: var(--accent) !important;
-  border-color: rgba(111, 211, 255, 0.24) !important;
+  border-color: rgb(111 211 255 / 24%) !important;
 }
 
 .search-input,
@@ -872,7 +908,7 @@ body.light-mode {
 }
 
 .search-input {
-  background: rgba(255,255,255,0.04) !important;
+  background: rgb(255 255 255 / 4%) !important;
   border-color: var(--line-soft) !important;
   color: var(--text-main) !important;
 
@@ -881,7 +917,7 @@ body.light-mode {
   }
 
   &:focus {
-    border-color: rgba(111, 211, 255, 0.32) !important;
+    border-color: rgb(111 211 255 / 32%) !important;
   }
 }
 
@@ -892,15 +928,15 @@ body.light-mode {
 }
 
 .group-row {
-  border-bottom-color: rgba(255,255,255,0.04) !important;
+  border-bottom-color: rgb(255 255 255 / 4%) !important;
 
   &:hover {
-    background: rgba(255,255,255,0.04) !important;
+    background: rgb(255 255 255 / 4%) !important;
   }
 
   &.selected {
-    background: rgba(111, 211, 255, 0.08) !important;
-    border-bottom-color: rgba(111, 211, 255, 0.14) !important;
+    background: rgb(111 211 255 / 8%) !important;
+    border-bottom-color: rgb(111 211 255 / 14%) !important;
   }
 }
 
@@ -915,7 +951,7 @@ body.light-mode {
   border-radius: 999px !important;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .panel-overlay {
     padding: 0;
   }
