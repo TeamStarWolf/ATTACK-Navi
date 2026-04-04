@@ -167,7 +167,7 @@
   flex: 1;
   height: 10px;
   cursor: pointer;
-  accent-color: #58a6ff;
+  accent-color: #58a6ff; /* stylelint-disable-line property-no-unknown */
   appearance: none;
   background: #1a3448;
   border-radius: 5px;
@@ -252,7 +252,7 @@
     transform: translateY(-1px);
   }
 
-  &:disabled {
+  &:disabled { /* stylelint-disable-line no-descending-specificity */
     opacity: 0.5;
     cursor: not-allowed;
   }
@@ -449,9 +449,18 @@
     }
   }
 
-  .rank-col       { width: 80px; }
-  .new-techs-col  { width: 110px; text-align: center; }
-  .cumulative-col { width: 160px; }
+  .rank-col {
+    width: 80px;
+  }
+
+  .new-techs-col {
+    width: 110px;
+    text-align: center;
+  }
+
+  .cumulative-col {
+    width: 160px;
+  }
 }
 
 .plan-row {
