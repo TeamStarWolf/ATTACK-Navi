@@ -1,0 +1,65 @@
+@if (visible && data) {
+  <div class="tactic-popup" [style.top.px]="position.top" [style.left.px]="position.left" (click)="$event.stopPropagation()">
+    <div class="popup-header">
+      <div class="tactic-id">{{ data.tactic.attackId }}</div>
+      <div class="tactic-name">{{ data.tactic.name }}</div>
+      <button class="close-btn" (click)="hide()">&#x2715;</button>
+    </div>
+
+    <div class="popup-body">
+      <!-- Coverage bar -->
+      <div class="stat-row">
+        <span class="stat-label">Mitigation Coverage</span>
+        <span class="stat-value">{{ coverageStats.covered }} / {{ coverageStats.total }} ({{ coverageStats.pct }}%)</span>
+      </div>
+      <div class="coverage-bar">
+        <div class="coverage-fill" [style.width.%]="coverageStats.pct"></div>
+      </div>
+
+      <!-- Technique count -->
+      <div class="stat-row">
+        <span class="stat-label">Techniques</span>
+        <span class="stat-value">{{ data.parentTechniques.length }} (+{{ data.techniques.length - data.parentTechniques.length }} sub)</span>
+      </div>
+
+      <!-- Implementation status breakdown -->
+      @if (hasAnyImpl) {
+        <div class="impl-breakdown">
+          <div class="impl-label">Implementation Status</div>
+          <div class="impl-bars">
+            @if (implStats.implemented > 0) { <div class="impl-seg impl-green" [style.flex]="implStats.implemented" [title]="'Implemented: ' + implStats.implemented"></div> }
+            @if (implStats.inProgress > 0) { <div class="impl-seg impl-blue" [style.flex]="implStats.inProgress" [title]="'In Progress: ' + implStats.inProgress"></div> }
+            @if (implStats.planned > 0) { <div class="impl-seg impl-purple" [style.flex]="implStats.planned" [title]="'Planned: ' + implStats.planned"></div> }
+            @if (implStats.notStarted > 0) { <div class="impl-seg impl-grey" [style.flex]="implStats.notStarted" [title]="'Not Started: ' + implStats.notStarted"></div> }
+          </div>
+          <div class="impl-legend">
+            @if (implStats.implemented > 0) { <span class="leg green">{{ implStats.implemented }} done</span> }
+            @if (implStats.inProgress > 0) { <span class="leg blue">{{ implStats.inProgress }} in-progress</span> }
+            @if (implStats.planned > 0) { <span class="leg purple">{{ implStats.planned }} planned</span> }
+          </div>
+        </div>
+      }
+
+      <!-- Top 3 most covered techniques -->
+      @if (topCovered.length > 0) {
+        <div class="top-techniques">
+          <div class="section-label">Best Covered</div>
+          @for (t of topCovered; track t.id) {
+            <div class="tech-row">
+              <span class="tech-id">{{ t.attackId }}</span>
+              <span class="tech-name">{{ t.name }}</span>
+              <span class="mit-count">{{ t.mitigationCount }}M</span>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Uncovered count -->
+      @if (uncoveredCount > 0) {
+        <div class="uncovered-warning">
+          &#x26A0;&#xFE0F; {{ uncoveredCount }} technique{{ uncoveredCount !== 1 ? 's' : '' }} with no mitigations
+        </div>
+      }
+    </div>
+  </div>
+}

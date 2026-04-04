@@ -1,0 +1,81 @@
+@if (visible) {
+  <div class="panel-overlay" (click)="close()"></div>
+  <aside class="panel">
+    <header class="panel-header">
+      <span class="panel-title">🔮 What-If Coverage Simulator</span>
+      <button class="close-btn" (click)="close()">✕</button>
+    </header>
+
+    <div class="panel-body">
+      <!-- Coverage summary -->
+      <div class="coverage-summary">
+        <div class="cov-block current">
+          <div class="cov-pct">{{ currentCoveragePct }}%</div>
+          <div class="cov-label">Current Coverage</div>
+          <div class="cov-sub">{{ currentCovered }} / {{ totalParent }}</div>
+        </div>
+        <div class="cov-arrow">
+          @if (checkedCount > 0) { → }
+        </div>
+        @if (checkedCount > 0) {
+          <div class="cov-block simulated">
+            <div class="cov-pct">{{ whatIfCoveragePct }}%</div>
+            <div class="cov-label">With Selected</div>
+            <div class="cov-sub">+{{ gainedTechniques }} techniques</div>
+          </div>
+        }
+      </div>
+
+      <div class="controls-row">
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Search mitigations…"
+          [(ngModel)]="searchText"
+          (input)="onSearch()"
+        />
+        <select class="filter-select" [(ngModel)]="filterMode" (change)="onFilterModeChange()">
+          <option value="not-implemented">Exclude implemented</option>
+          <option value="all">Show all</option>
+        </select>
+        @if (checkedCount > 0) {
+          <button class="clear-btn" (click)="clearAll()">Clear {{ checkedCount }}</button>
+        }
+      </div>
+
+      <ul class="whatif-list">
+        @for (row of filteredRows; track row.mitigation.id) {
+          <li class="whatif-row" [class.checked]="whatIfIds.has(row.mitigation.id)" (click)="toggleMitigation(row)">
+            <div class="row-check">
+              <span class="checkbox" [class.checked]="whatIfIds.has(row.mitigation.id)">
+                {{ whatIfIds.has(row.mitigation.id) ? '✓' : '' }}
+              </span>
+            </div>
+            <div class="row-info">
+              <div class="mit-header">
+                <span class="mit-id">{{ row.mitigation.attackId }}</span>
+                <span class="mit-name">{{ row.mitigation.name }}</span>
+              </div>
+              @if (row.implStatus) {
+                <span class="impl-badge" [attr.data-status]="row.implStatus">
+                  {{ statusLabels[row.implStatus] }}
+                </span>
+              }
+            </div>
+            <div class="row-gain">
+              @if (row.newTechniques > 0) {
+                <span class="gain-badge">+{{ row.newTechniques }} new</span>
+              }
+              @if (row.exposureScore > 0) {
+                <span class="exposure-small" title="Threat groups using newly-covered techniques">
+                  👥{{ row.exposureScore }}
+                </span>
+              }
+              <span class="total-small">{{ row.totalTechniques }} total</span>
+            </div>
+          </li>
+        }
+      </ul>
+    </div>
+  </aside>
+}

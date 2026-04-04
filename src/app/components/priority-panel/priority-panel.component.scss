@@ -1,0 +1,369 @@
+// Overlay backdrop
+.panel-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+// Panel drawer
+.panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 500px;
+  height: 100vh;
+  background: #0d1a26;
+  border: 1px solid #1a3448;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+// Header
+.panel-header {
+  height: 52px;
+  background: #07101a;
+  border-bottom: 1px solid #1a3448;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.header-icon {
+  font-size: 18px;
+}
+
+.panel-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #c9d8e8;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.close-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: #4a6080;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  &:hover {
+    background: #1a3448;
+    color: #c9d8e8;
+  }
+}
+
+// Controls (sort tabs + search)
+.panel-controls {
+  flex-shrink: 0;
+  background: #07101a;
+  border-bottom: 1px solid #1a3448;
+  display: flex;
+  flex-direction: column;
+}
+
+.sort-tabs {
+  display: flex;
+  padding: 0 16px;
+  gap: 0;
+}
+
+.sort-tab {
+  padding: 9px 14px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #4a6080;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: color 0.15s, border-color 0.15s;
+
+  &:hover:not(.active) { color: #8aaac8; }
+
+  &.active {
+    color: #58a6ff;
+    border-bottom-color: #58a6ff;
+  }
+
+  &.kev-tab.active {
+    color: #ff6b6b;
+    border-bottom-color: #ff6b6b;
+  }
+
+  &.sigma-tab.active {
+    color: #26c6da;
+    border-bottom-color: #26c6da;
+  }
+
+  &.unified-tab.active {
+    color: #aed581;
+    border-bottom-color: #aed581;
+  }
+
+  &.nist-tab.active {
+    color: #42a5f5;
+    border-bottom-color: #42a5f5;
+  }
+}
+
+.panel-controls > .search-input {
+  margin: 0 12px 8px;
+  width: calc(100% - 24px);
+}
+
+.search-input {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 12px;
+  padding: 7px 12px;
+  background: #0a1828;
+  border: 1px solid #1a3448;
+  border-radius: 5px;
+  color: #c9d8e8;
+  outline: none;
+  font-family: inherit;
+
+  &::placeholder { color: #3a5a74; }
+  &:focus { border-color: #1a9fff; }
+}
+
+// Body
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 12px;
+  background: #070d14;
+}
+
+.empty-msg {
+  font-size: 12px;
+  color: #3a5a74;
+  text-align: center;
+  padding: 30px 0;
+  margin: 0;
+}
+
+// Mitigation list
+.priority-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.priority-row {
+  border: 1px solid #1a3448;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #0a1828;
+  transition: border-color 0.15s;
+
+  &:hover { border-color: #2a4a64; }
+}
+
+.row-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.mit-link {
+  flex: 1;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  min-width: 0;
+
+  &:hover .mit-name { text-decoration: underline; }
+}
+
+// ID badge
+.mit-id {
+  font-size: 11px;
+  font-weight: 600;
+  color: #58a6ff;
+  background: rgba(88, 166, 255, 0.1);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-family: monospace;
+  flex-shrink: 0;
+}
+
+.mit-name {
+  font-size: 13px;
+  color: #c9d8e8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.coverage-nums {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.unique-badge {
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(240, 160, 64, 0.15);
+  color: #f0a040;
+  padding: 1px 7px;
+  border-radius: 10px;
+}
+
+.total-num {
+  font-size: 12px;
+  color: #8aaac8;
+}
+
+.exposure-badge {
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  padding: 1px 7px;
+  border-radius: 10px;
+}
+
+.kev-badge {
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(239, 68, 68, 0.18);
+  color: #ff6b6b;
+  padding: 1px 7px;
+  border-radius: 10px;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  white-space: nowrap;
+}
+
+.atomic-badge {
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+  padding: 1px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.sigma-score-badge {
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(0, 188, 212, 0.15);
+  color: #26c6da;
+  padding: 1px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+  border: 1px solid rgba(0, 188, 212, 0.25);
+}
+
+.nist-score-badge {
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(66, 165, 245, 0.15);
+  color: #42a5f5;
+  padding: 1px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+  border: 1px solid rgba(66, 165, 245, 0.25);
+}
+
+.unified-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  padding: 1px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+  opacity: 0.9;
+}
+
+// Status chips
+.status-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.status-chip {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  font-weight: 500;
+
+  &:hover { opacity: 0.8; }
+
+  &.active { font-weight: 600; }
+
+  &[data-status="implemented"],
+  &.implemented {
+    background: rgba(0, 200, 83, 0.15);
+    color: #00c853;
+    border: 1px solid rgba(0, 200, 83, 0.3);
+  }
+
+  &[data-status="in-progress"],
+  &.in-progress {
+    background: rgba(26, 159, 255, 0.15);
+    color: #58a6ff;
+    border: 1px solid rgba(26, 159, 255, 0.3);
+  }
+
+  &[data-status="planned"],
+  &.planned {
+    background: rgba(255, 152, 0, 0.15);
+    color: #ffb74d;
+    border: 1px solid rgba(255, 152, 0, 0.3);
+  }
+
+  &[data-status="not-started"],
+  &.not-started {
+    background: rgba(239, 68, 68, 0.12);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+  }
+
+  // Unset/neutral state
+  &:not([data-status]):not(.implemented):not(.in-progress):not(.planned):not(.not-started) {
+    background: transparent;
+    color: #4a6080;
+    border: 1px solid #1a3448;
+
+    &:hover {
+      color: #c9d8e8;
+      border-color: #2a4a64;
+    }
+  }
+}

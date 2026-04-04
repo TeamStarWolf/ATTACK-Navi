@@ -1,0 +1,269 @@
+@if (visible) {
+  <div class="overlay" (click)="close()">
+    <div class="panel" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="panel-header">
+        <div class="header-left">
+          <span class="panel-title">Detection Coverage</span>
+          @if (detectionRows.length > 0) {
+            <span class="header-subtitle">
+              {{ totalWithDetection }} / {{ detectionRows.length }} techniques with detection
+            </span>
+          }
+        </div>
+        <button class="close-btn" (click)="close()" title="Close">✕</button>
+      </div>
+
+      @if (detectionRows.length === 0) {
+        <div class="loading-state">
+          <div class="loader-spinner"></div>
+          <p>Loading detection data…</p>
+        </div>
+      } @else {
+
+        <!-- Stats bar -->
+        <div class="stats-bar">
+          <div class="bracket-item">
+            <span class="dot dot-none"></span>
+            <span class="bracket-count">{{ scoreDistribution[0] }}</span>
+            <span class="bracket-label">No Detection</span>
+          </div>
+          <div class="bracket-sep"></div>
+          <div class="bracket-item">
+            <span class="dot dot-low"></span>
+            <span class="bracket-count">{{ scoreDistribution[1] }}</span>
+            <span class="bracket-label">Low (1–3)</span>
+          </div>
+          <div class="bracket-sep"></div>
+          <div class="bracket-item">
+            <span class="dot dot-medium"></span>
+            <span class="bracket-count">{{ scoreDistribution[2] }}</span>
+            <span class="bracket-label">Medium (4–6)</span>
+          </div>
+          <div class="bracket-sep"></div>
+          <div class="bracket-item">
+            <span class="dot dot-high"></span>
+            <span class="bracket-count">{{ scoreDistribution[3] }}</span>
+            <span class="bracket-label">High (7–9)</span>
+          </div>
+          <div class="bracket-sep"></div>
+          <div class="bracket-item">
+            <span class="dot dot-excellent"></span>
+            <span class="bracket-count">{{ scoreDistribution[4] }}</span>
+            <span class="bracket-label">Excellent (10+)</span>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tab-bar">
+          <button
+            class="tab-btn"
+            [class.active]="activeTab === 'overview'"
+            (click)="setTab('overview')"
+          >Overview</button>
+          <button
+            class="tab-btn"
+            [class.active]="activeTab === 'gaps'"
+            (click)="setTab('gaps')"
+          >
+            Gaps
+            @if (detectionRows.length > 0 && gapRows.length > 0) {
+              <span class="tab-badge">{{ gapRows.length }}</span>
+            }
+          </button>
+          <button
+            class="tab-btn"
+            [class.active]="activeTab === 'top'"
+            (click)="setTab('top')"
+          >Top Detected</button>
+          <button
+            class="tab-btn"
+            [class.active]="activeTab === 'tactic'"
+            (click)="setTab('tactic')"
+          >By Tactic</button>
+        </div>
+
+        <!-- Search (overview + gaps tabs) -->
+        @if (activeTab === 'overview' || activeTab === 'gaps') {
+          <div class="search-row">
+            <input
+              class="search-input"
+              type="text"
+              placeholder="Search techniques…"
+              [(ngModel)]="searchText"
+            />
+            @if (activeTab === 'overview') {
+              <div class="sort-controls">
+                <span class="sort-label">Sort:</span>
+                <button class="sort-btn" [class.active]="sortBy === 'score'" (click)="sortBy = 'score'">Score</button>
+                <button class="sort-btn" [class.active]="sortBy === 'name'" (click)="sortBy = 'name'">Name</button>
+                <button class="sort-btn" [class.active]="sortBy === 'tactic'" (click)="sortBy = 'tactic'">Tactic</button>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Tab content -->
+        <div class="tab-content">
+
+          <!-- Overview tab -->
+          @if (activeTab === 'overview') {
+            <div class="table-wrap">
+              <table class="det-table">
+                <thead>
+                  <tr>
+                    <th>Technique</th>
+                    <th class="id-col">ATT&amp;CK ID</th>
+                    <th class="tactic-col">Tactic</th>
+                    <th class="num-col" title="CAR Analytics">CAR</th>
+                    <th class="num-col" title="Atomic Red Team Tests">Atomic</th>
+                    <th class="num-col" title="D3FEND Countermeasures">D3FEND</th>
+                    <th class="num-col">Score</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of filteredRows; track row.id) {
+                    <tr class="det-row">
+                      <td class="tech-name">{{ row.name }}</td>
+                      <td class="tech-id">
+                        <a [href]="attackUrl(row.attackId)" target="_blank" rel="noopener">{{ row.attackId }}</a>
+                      </td>
+                      <td class="tech-tactic">{{ row.tactic }}</td>
+                      <td class="num-col">
+                        @if (row.carCount > 0) {
+                          <span class="count-badge count-car">{{ row.carCount }}</span>
+                        } @else {
+                          <span class="count-zero">—</span>
+                        }
+                      </td>
+                      <td class="num-col">
+                        @if (row.atomicCount > 0) {
+                          <span class="count-badge count-atomic">{{ row.atomicCount }}</span>
+                        } @else {
+                          <span class="count-zero">—</span>
+                        }
+                      </td>
+                      <td class="num-col">
+                        @if (row.d3fendCount > 0) {
+                          <span class="count-badge count-d3fend">{{ row.d3fendCount }}</span>
+                        } @else {
+                          <span class="count-zero">—</span>
+                        }
+                      </td>
+                      <td class="num-col">
+                        <span class="score-badge score-{{ scoreBracket(row.score) }}">{{ row.score }}</span>
+                      </td>
+                    </tr>
+                  }
+                  @if (filteredRows.length === 0) {
+                    <tr>
+                      <td colspan="7" class="empty-cell">No techniques match your search.</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
+          <!-- Gaps tab -->
+          @if (activeTab === 'gaps') {
+            @if (gapRows.length === 0) {
+              <div class="empty-state">
+                <p>All techniques have at least some detection coverage — great work!</p>
+              </div>
+            } @else {
+              <div class="gap-intro">
+                <span class="gap-count">{{ gapRows.length }}</span> techniques have no CAR analytics, Atomic tests, or D3FEND countermeasures.
+              </div>
+              <div class="gap-cards">
+                @for (row of gapRows; track row.id) {
+                  <div class="gap-card">
+                    <div class="gap-card-header">
+                      <span class="gap-badge">No Detection</span>
+                      <a [href]="attackUrl(row.attackId)" target="_blank" rel="noopener" class="gap-link">↗ ATT&amp;CK</a>
+                    </div>
+                    <div class="gap-tech-name">{{ row.name }}</div>
+                    <div class="gap-meta">
+                      <span class="gap-id">{{ row.attackId }}</span>
+                      @if (row.tactic) {
+                        <span class="gap-tactic">{{ row.tactic }}</span>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          }
+
+          <!-- Top Detected tab -->
+          @if (activeTab === 'top') {
+            <div class="top-intro">Top 20 techniques by detection score (CAR×3 + D3FEND×2 + Atomic×1)</div>
+            <div class="top-list">
+              @for (row of topRows; track row.id; let i = $index) {
+                <div class="top-item">
+                  <span class="top-rank">#{{ i + 1 }}</span>
+                  <div class="top-info">
+                    <div class="top-name">{{ row.name }}</div>
+                    <div class="top-meta">
+                      <span class="top-id">{{ row.attackId }}</span>
+                      @if (row.tactic) {
+                        <span class="top-tactic">{{ row.tactic }}</span>
+                      }
+                      <span class="top-sources">
+                        @if (row.carCount > 0) { <span class="src-pill src-car">CAR {{ row.carCount }}</span> }
+                        @if (row.atomicCount > 0) { <span class="src-pill src-atomic">Atomic {{ row.atomicCount }}</span> }
+                        @if (row.d3fendCount > 0) { <span class="src-pill src-d3fend">D3FEND {{ row.d3fendCount }}</span> }
+                      </span>
+                    </div>
+                  </div>
+                  <div class="top-score-wrap">
+                    <div class="top-score-bar">
+                      <div class="top-score-fill score-{{ scoreBracket(row.score) }}" [style.width.%]="scoreBarWidth(row.score)"></div>
+                    </div>
+                    <span class="top-score-val score-{{ scoreBracket(row.score) }}">{{ row.score }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- By Tactic tab -->
+          @if (activeTab === 'tactic') {
+            <div class="tactic-accordion">
+              @for (group of tacticGroups; track group.tactic) {
+                <div class="tactic-section" [class.expanded]="group.expanded">
+                  <button class="tactic-header-btn" (click)="toggleTacticGroup(group)">
+                    <span class="tactic-chevron">{{ group.expanded ? '▼' : '▶' }}</span>
+                    <span class="tactic-name">{{ group.tactic || 'Unknown' }}</span>
+                    <span class="tactic-stats">
+                      <span class="tactic-count">{{ group.rows.length }} techniques</span>
+                      <span class="tactic-avg score-{{ scoreBracket(group.avgScore) }}">avg {{ group.avgScore }}</span>
+                    </span>
+                  </button>
+                  @if (group.expanded) {
+                    <div class="tactic-rows">
+                      @for (row of group.rows; track row.id) {
+                        <div class="tactic-row-item">
+                          <span class="tr-name">{{ row.name }}</span>
+                          <span class="tr-id">{{ row.attackId }}</span>
+                          <span class="tr-sources">
+                            @if (row.carCount > 0) { <span class="src-pill src-car">CAR {{ row.carCount }}</span> }
+                            @if (row.atomicCount > 0) { <span class="src-pill src-atomic">At {{ row.atomicCount }}</span> }
+                            @if (row.d3fendCount > 0) { <span class="src-pill src-d3fend">D3F {{ row.d3fendCount }}</span> }
+                          </span>
+                          <span class="score-badge score-{{ scoreBracket(row.score) }}">{{ row.score }}</span>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+        </div>
+      }
+    </div>
+  </div>
+}

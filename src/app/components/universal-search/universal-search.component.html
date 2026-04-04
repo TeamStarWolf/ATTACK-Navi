@@ -1,0 +1,59 @@
+@if (open) {
+  <div class="us-overlay" (click)="close()"></div>
+  <div class="us-panel" role="dialog" aria-label="Universal Search">
+    <div class="us-search-bar upgrade-section-block">
+      <span class="us-icon">🔍</span>
+      <input
+        type="text"
+        class="us-input"
+        placeholder="Search techniques, mitigations, groups, D3FEND, CAR, Atomic, Engage…"
+        [(ngModel)]="query"
+        (input)="onInput()"
+        autofocus
+      />
+      @if (query) {
+        <button class="us-clear" (click)="query = ''; results = []">✕</button>
+      }
+      <button class="us-close" (click)="close()">Esc</button>
+    </div>
+
+    @if (results.length > 0) {
+      <div class="us-kind-filters upgrade-action-strip">
+        @for (kind of kindFilterOptions; track kind) {
+          @if (kindCounts[kind] > 0 || kind === 'all') {
+            <button
+              class="kind-chip"
+              [class.active]="activeKindFilter === kind"
+              (click)="activeKindFilter = kind"
+            >{{ kindLabels[kind] }} <span class="kind-count">{{ kindCounts[kind] }}</span></button>
+          }
+        }
+      </div>
+    }
+
+    <div class="us-results">
+      @if (query.length >= 2 && filteredResults.length === 0) {
+        <div class="us-empty">No results for "{{ query }}"</div>
+      }
+      @for (r of filteredResults; track r.kind + r.id) {
+        <div class="us-result upgrade-section-block" (click)="selectResult(r)">
+          <span class="result-kind-icon" [style.color]="kindColor(r.kind)">{{ kindIcon(r.kind) }}</span>
+          <div class="result-body">
+            <div class="result-top">
+              <span class="result-id" [style.color]="kindColor(r.kind)">{{ r.id }}</span>
+              <span class="result-name">{{ r.name }}</span>
+              <span class="result-kind-label">{{ kindLabels[r.kind] }}</span>
+            </div>
+            @if (r.description) {
+              <p class="result-desc">{{ r.description }}</p>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="us-footer">
+      <span>Ctrl+Shift+F to open · Esc to close · Enter to select</span>
+    </div>
+  </div>
+}

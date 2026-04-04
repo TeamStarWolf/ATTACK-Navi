@@ -1,0 +1,114 @@
+@if (visible) {
+  <div class="panel-overlay" (click)="close()"></div>
+  <aside class="panel">
+    <header class="panel-header">
+      <span class="panel-title">📊 Mitigation Priority Ranker</span>
+      <button class="close-btn" (click)="close()">✕</button>
+    </header>
+
+    <div class="panel-controls">
+      <div class="sort-tabs">
+        <button class="sort-tab" [class.active]="sortKey === 'unique'" (click)="setSortKey('unique')" title="Sort by techniques only this mitigation covers">
+          Unique
+        </button>
+        <button class="sort-tab" [class.active]="sortKey === 'total'" (click)="setSortKey('total')" title="Sort by total techniques covered">
+          Total
+        </button>
+        <button class="sort-tab" [class.active]="sortKey === 'exposure'" (click)="setSortKey('exposure')" title="Sort by distinct threat groups using covered techniques">
+          Groups
+        </button>
+        <button class="sort-tab kev-tab" [class.active]="sortKey === 'kev'" (click)="setSortKey('kev')" title="Sort by CISA KEV urgency — mitigations covering actively exploited vulnerabilities">
+          🔴 KEV
+        </button>
+        <button class="sort-tab" [class.active]="sortKey === 'atomic'" (click)="setSortKey('atomic')" title="Sort by available Atomic Red Team test coverage">
+          🧪 Tests
+        </button>
+        <button class="sort-tab sigma-tab" [class.active]="sortKey === 'sigma'" (click)="setSortKey('sigma')" title="Sort by total Sigma detection rules covering this mitigation's techniques">
+          Σ Sigma
+        </button>
+        <button class="sort-tab unified-tab" [class.active]="sortKey === 'unified'" (click)="setSortKey('unified')" title="Sort by average unified risk score across covered techniques">
+          🎯 Unified
+        </button>
+        <button class="sort-tab nist-tab" [class.active]="sortKey === 'nist'" (click)="setSortKey('nist')" title="Sort by total NIST 800-53 controls covering this mitigation's techniques">
+          🏛 NIST
+        </button>
+      </div>
+      <input
+        class="search-input"
+        type="text"
+        placeholder="Search mitigations…"
+        [(ngModel)]="searchText"
+        (ngModelChange)="onSearch()"
+      />
+    </div>
+
+    <div class="panel-body">
+      @if (rows.length === 0) {
+        <p class="empty-msg">No mitigations match your search.</p>
+      } @else {
+        <ul class="priority-list">
+          @for (row of rows; track row.mitigation.id) {
+            <li class="priority-row">
+              <div class="row-header">
+                <button class="mit-link" (click)="filterByMitigation(row)" title="Highlight in matrix">
+                  <span class="mit-id">{{ row.mitigation.attackId }}</span>
+                  <span class="mit-name">{{ row.mitigation.name }}</span>
+                </button>
+                <div class="coverage-nums">
+                  @if (row.uniqueTechniques > 0) {
+                    <span class="unique-badge" title="Techniques only this mitigation covers">{{ row.uniqueTechniques }} unique</span>
+                  }
+                  <span class="total-num" title="Total techniques covered">{{ row.totalTechniques }} techs</span>
+                  @if (row.exposureScore > 0) {
+                    <span class="exposure-badge" title="Distinct threat groups using covered techniques">
+                      {{ row.exposureScore }} groups
+                    </span>
+                  }
+                  @if (row.kevScore > 0) {
+                    <span class="kev-badge" title="CISA KEV CVEs mapped to covered techniques — active exploitation in the wild">
+                      🔴 {{ row.kevScore }} KEV
+                    </span>
+                  }
+                  @if (row.atomicScore > 0) {
+                    <span class="atomic-badge" title="Atomic Red Team tests available for covered techniques">
+                      🧪 {{ row.atomicScore }}
+                    </span>
+                  }
+                  @if (row.sigmaScore > 0) {
+                    <span class="sigma-score-badge" title="Sigma detection rules covering this mitigation's techniques">
+                      Σ {{ row.sigmaScore }}
+                    </span>
+                  }
+                  <span class="unified-badge" [style.background]="getUnifiedColor(row.unifiedScore)" title="Average unified risk score across covered techniques (0-65 scale)">
+                    🎯 {{ row.unifiedScore }}
+                  </span>
+                  @if (row.nistScore > 0) {
+                    <span class="nist-score-badge" title="NIST 800-53 controls covering this mitigation's techniques">
+                      🏛 {{ row.nistScore }}
+                    </span>
+                  }
+                </div>
+              </div>
+
+              <div class="status-row">
+                @for (s of statusOptions; track s) {
+                  <button
+                    class="status-chip"
+                    [class.active]="row.implStatus === s"
+                    [style.border-color]="row.implStatus === s ? statusColors[s] : ''"
+                    [style.background]="row.implStatus === s ? statusColors[s] : ''"
+                    [style.color]="row.implStatus === s ? '#fff' : ''"
+                    (click)="setStatus(row, s)"
+                    [title]="statusLabels[s]"
+                  >
+                    {{ statusLabels[s] }}
+                  </button>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  </aside>
+}

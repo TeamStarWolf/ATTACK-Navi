@@ -1,0 +1,161 @@
+@if (visible) {
+  <div class="overlay" (click)="close()">
+    <div class="panel" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="panel-header">
+        <div class="header-left">
+          <span class="panel-title">📡 ATT&amp;CK Data Sources</span>
+          <span class="header-subtitle">Detection visibility across your infrastructure</span>
+        </div>
+        <button class="close-btn" (click)="close()" title="Close">✕</button>
+      </div>
+
+      @if (rows.length === 0) {
+        <div class="loading-state">
+          <div class="loader-spinner"></div>
+          <p>Loading data sources…</p>
+        </div>
+      } @else {
+
+        <!-- Coverage summary bar -->
+        <div class="coverage-bar">
+          <span class="coverage-stat">
+            <span class="coverage-num">{{ coverageSummary.sourceCount }}</span>
+            <span class="coverage-lbl">data sources</span>
+          </span>
+          <span class="coverage-divider">·</span>
+          <span class="coverage-stat">
+            <span class="coverage-num">{{ coverageSummary.techniqueCount }}</span>
+            <span class="coverage-lbl">techniques covered</span>
+          </span>
+          <span class="coverage-divider">·</span>
+          <span class="coverage-stat">
+            <span class="coverage-num">{{ coverageSummary.componentCount }}</span>
+            <span class="coverage-lbl">data components</span>
+          </span>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tab-bar">
+          <button class="tab-btn" [class.active]="activeTab === 'sources'" (click)="setTab('sources')">
+            By Source
+            <span class="tab-count">{{ rows.length }}</span>
+          </button>
+          <button class="tab-btn" [class.active]="activeTab === 'components'" (click)="setTab('components')">
+            By Component
+            <span class="tab-count">{{ allComponents.length }}</span>
+          </button>
+        </div>
+
+        <!-- Search + sort toolbar -->
+        <div class="search-sort-bar">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input
+              class="search-input"
+              type="text"
+              placeholder="{{ activeTab === 'sources' ? 'Search sources or components…' : 'Search components…' }}"
+              [(ngModel)]="searchText"
+            />
+            @if (searchText) {
+              <button class="search-clear" (click)="searchText = ''">✕</button>
+            }
+          </div>
+          <div class="sort-group">
+            <span class="sort-label">Sort:</span>
+            <button class="sort-btn" [class.active]="sortBy === 'techniques'" (click)="sortBy = 'techniques'">Coverage</button>
+            <button class="sort-btn" [class.active]="sortBy === 'name'" (click)="sortBy = 'name'">Name</button>
+          </div>
+        </div>
+
+        <!-- Sources tab -->
+        @if (activeTab === 'sources') {
+          <div class="table-container">
+            <table class="sources-table">
+              <thead>
+                <tr>
+                  <th class="col-source">Data Source</th>
+                  <th class="col-num">Components</th>
+                  <th class="col-num">Techniques</th>
+                  <th class="col-action"></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of filteredRows; track row.sourceName) {
+                  <tr class="source-row" [class.expanded]="row.expanded">
+                    <td class="col-source">
+                      <button class="expand-btn" (click)="toggleRow(row)" [title]="row.expanded ? 'Collapse' : 'Expand components'">
+                        <span class="expand-icon">{{ row.expanded ? '▾' : '▸' }}</span>
+                        {{ row.sourceName }}
+                      </button>
+                    </td>
+                    <td class="col-num">
+                      <span class="num-badge comp-badge">{{ row.components.length }}</span>
+                    </td>
+                    <td class="col-num">
+                      <span class="num-badge tech-badge" [class.has-techs]="row.techniqueCount > 0">{{ row.techniqueCount }}</span>
+                    </td>
+                    <td class="col-action">
+                      @if (row.techniqueCount > 0) {
+                        <button class="filter-btn" (click)="filterBySource(row.sourceName)" [title]="'Filter matrix to ' + row.sourceName">
+                          Filter ↗
+                        </button>
+                      }
+                    </td>
+                  </tr>
+                  @if (row.expanded) {
+                    <tr class="component-detail-row">
+                      <td colspan="4">
+                        <div class="component-detail-list">
+                          @for (c of row.components; track c.id) {
+                            <div class="component-chip">
+                              <span class="component-name">{{ c.name }}</span>
+                            </div>
+                          }
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                }
+                @if (filteredRows.length === 0) {
+                  <tr>
+                    <td colspan="4" class="empty-row">No data sources match your search.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        <!-- Components tab -->
+        @if (activeTab === 'components') {
+          <div class="components-list-wrap">
+            <div class="components-flat-list">
+              @for (item of allComponents; track item.component.id) {
+                <div class="component-flat-row" (click)="filterBySource(item.sourceName)">
+                  <div class="comp-row-left">
+                    <span class="comp-name">{{ item.component.name }}</span>
+                    <span class="comp-source">{{ item.sourceName }}</span>
+                  </div>
+                  <div class="comp-row-right">
+                    @if (item.techniqueCount > 0) {
+                      <span class="comp-tech-count" [title]="item.techniqueCount + ' techniques'">
+                        {{ item.techniqueCount }} techs
+                      </span>
+                    }
+                    <span class="comp-filter-hint">Filter ↗</span>
+                  </div>
+                </div>
+              }
+              @if (allComponents.length === 0) {
+                <div class="empty-state">No components match your search.</div>
+              }
+            </div>
+          </div>
+        }
+
+      }
+    </div>
+  </div>
+}

@@ -1,0 +1,24 @@
+@if (visible && technique) {
+  <div class="tooltip-card" [style.left.px]="x" [style.top.px]="y">
+    <div class="tooltip-header">
+      <span class="t-id">{{ technique.attackId }}</span>
+      <span class="t-name">{{ technique.name }}</span>
+    </div>
+    <div class="tooltip-meta">
+      <span class="meta-item">🛡 {{ mitigationCount }} mitigations</span>
+      <span class="meta-item">👥 {{ threatGroupCount }} groups</span>
+    </div>
+    @if (technique.platforms.length > 0) {
+      <div class="tooltip-platforms">
+        @for (p of technique.platforms.slice(0, 4); track p) {
+          <span class="plat-badge">{{ p }}</span>
+        }
+        @if (technique.platforms.length > 4) {
+          <span class="plat-badge">+{{ technique.platforms.length - 4 }}</span>
+        }
+      </div>
+    }
+    <div class="tooltip-desc">{{ technique.description | slice:0:150 }}{{ technique.description.length > 150 ? '…' : '' }}</div>
+    <div class="tooltip-hint">Click to view details</div>
+  </div>
+}
