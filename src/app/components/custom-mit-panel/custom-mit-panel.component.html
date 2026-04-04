@@ -1,0 +1,215 @@
+@if (visible) {
+  <div class="panel-overlay" (click)="close()"></div>
+  <aside class="custom-mit-panel">
+    <!-- Header -->
+    <header class="panel-header">
+      <div class="header-left">
+        <span class="panel-icon">🏢</span>
+        <h2 class="panel-title">Custom Mitigations</h2>
+      </div>
+      <div class="header-actions">
+        @if (activeTab === 'list') {
+          <button class="btn btn-primary" (click)="startCreate()">+ Create New</button>
+        }
+        <button class="close-btn" (click)="close()" title="Close">✕</button>
+      </div>
+    </header>
+
+    <!-- List Tab -->
+    @if (activeTab === 'list') {
+      <div class="panel-body">
+        <!-- Filters -->
+        <div class="list-filters">
+          <input
+            type="text"
+            class="search-input"
+            placeholder="Search custom mitigations…"
+            [(ngModel)]="searchText"
+          />
+          <select class="category-filter" [(ngModel)]="filterCategory">
+            <option value="all">All Categories</option>
+            @for (cat of categories; track cat) {
+              <option [value]="cat">{{ cat }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Empty state -->
+        @if (mitigations.length === 0) {
+          <div class="empty-state">
+            <div class="empty-icon">🏢</div>
+            <p class="empty-title">No custom mitigations yet.</p>
+            <p class="empty-hint">Create your first one to track internal controls like EDR rules, SIEM detections, and network policies.</p>
+            <button class="btn btn-primary" (click)="startCreate()">+ Create First Custom Mitigation</button>
+          </div>
+        } @else {
+          <!-- Mitigation list -->
+          <div class="mit-list">
+            @for (cm of filteredMitigations; track cm.id) {
+              <div class="mit-card">
+                <div class="mit-card-header">
+                  <span class="mit-id">{{ cm.id }}</span>
+                  <span class="cat-badge cat-{{ categorySlug(cm.category) }}">{{ cm.category }}</span>
+                  <span class="mit-name">{{ cm.name }}</span>
+                  @if (cm.implStatus) {
+                    <span class="impl-badge impl-{{ cm.implStatus }}">{{ statusLabel(cm.implStatus) }}</span>
+                  }
+                </div>
+                <div class="mit-card-meta">
+                  <div class="mit-techniques">
+                    @if (cm.techniqueIds.length > 0) {
+                      <span class="meta-label">Techniques:</span>
+                      @for (tid of cm.techniqueIds.slice(0, 5); track tid) {
+                        <span class="tech-chip">{{ tid }}</span>
+                      }
+                      @if (cm.techniqueIds.length > 5) {
+                        <span class="more-chip">+{{ cm.techniqueIds.length - 5 }} more</span>
+                      }
+                    } @else {
+                      <span class="no-techniques">No techniques linked</span>
+                    }
+                  </div>
+                  <div class="mit-card-actions">
+                    <button class="btn btn-sm btn-ghost" (click)="startEdit(cm)">Edit</button>
+                    <button class="btn btn-sm btn-danger" (click)="deleteMitigation(cm.id)">Delete</button>
+                  </div>
+                </div>
+                @if (cm.description) {
+                  <p class="mit-desc">{{ cm.description }}</p>
+                }
+              </div>
+            }
+
+            @if (filteredMitigations.length === 0 && (searchText || filterCategory !== 'all')) {
+              <div class="no-results">No mitigations match your filters.</div>
+            }
+          </div>
+
+          <!-- Footer count -->
+          <div class="list-footer">
+            {{ mitigations.length }} custom mitigation{{ mitigations.length !== 1 ? 's' : '' }} covering {{ uniqueTechniqueCount }} technique{{ uniqueTechniqueCount !== 1 ? 's' : '' }}
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Create / Edit Tab -->
+    @if (activeTab === 'create' || activeTab === 'edit') {
+      <div class="panel-body">
+        <div class="form-section">
+          <h3 class="form-title">{{ activeTab === 'create' ? 'Create Custom Mitigation' : 'Edit Custom Mitigation' }}</h3>
+
+          <!-- ID (read-only) -->
+          @if (activeTab === 'edit' && form?.id) {
+            <div class="form-field">
+              <label class="form-label">ID</label>
+              <input type="text" class="form-input" [value]="form!.id" readonly />
+            </div>
+          } @else {
+            <div class="form-field">
+              <label class="form-label">ID</label>
+              <input type="text" class="form-input form-input-muted" value="Auto-generated" readonly />
+            </div>
+          }
+
+          <!-- Name -->
+          <div class="form-field">
+            <label class="form-label required">Name</label>
+            <input
+              type="text"
+              class="form-input"
+              placeholder="e.g. EDR – Suspicious PowerShell Block"
+              [(ngModel)]="form!.name"
+            />
+          </div>
+
+          <!-- Category -->
+          <div class="form-field">
+            <label class="form-label">Category</label>
+            <select class="form-select" [(ngModel)]="form!.category">
+              @for (cat of defaultCategories; track cat) {
+                <option [value]="cat">{{ cat }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- Description -->
+          <div class="form-field">
+            <label class="form-label">Description</label>
+            <textarea
+              class="form-textarea"
+              rows="3"
+              placeholder="What does this control do? How is it implemented?"
+              [(ngModel)]="form!.description"
+            ></textarea>
+          </div>
+
+          <!-- Implementation Status -->
+          <div class="form-field">
+            <label class="form-label">Implementation Status</label>
+            <select class="form-select" [(ngModel)]="form!.implStatus">
+              <option [ngValue]="null">— Not set —</option>
+              @for (s of statusOptions; track s) {
+                <option [value]="s">{{ statusLabels[s] }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- Technique Linker -->
+          <div class="form-field">
+            <label class="form-label">Linked Techniques</label>
+            <div class="technique-linker">
+              <div class="tech-search-wrap">
+                <input
+                  type="text"
+                  class="form-input"
+                  placeholder="Search by technique ID or name (e.g. T1059, PowerShell)…"
+                  [value]="techniqueSearch"
+                  (input)="searchTechniques($any($event.target).value)"
+                />
+              </div>
+
+              @if (techniqueSuggestions.length > 0) {
+                <div class="tech-suggestions">
+                  @for (t of techniqueSuggestions; track t.id) {
+                    <button class="tech-suggestion-item" (click)="addTechnique(t)">
+                      <span class="sugg-id">{{ t.attackId }}</span>
+                      <span class="sugg-name">{{ t.name }}</span>
+                    </button>
+                  }
+                </div>
+              }
+
+              @if (selectedTechniqueIds.length > 0) {
+                <div class="selected-techs">
+                  @for (id of selectedTechniqueIds; track id) {
+                    <span class="selected-tech-chip">
+                      {{ id }}
+                      <button class="remove-tech-btn" (click)="removeTechnique(id)" title="Remove">✕</button>
+                    </span>
+                  }
+                </div>
+              }
+
+              @if (selectedTechniqueIds.length === 0) {
+                <p class="no-techs-hint">No techniques linked yet. Search above to add ATT&amp;CK techniques.</p>
+              }
+            </div>
+          </div>
+
+          <!-- Form Actions -->
+          <div class="form-actions">
+            <button
+              class="btn btn-primary"
+              [disabled]="!form?.name?.trim()"
+              (click)="saveForm()"
+            >
+              💾 {{ activeTab === 'create' ? 'Create' : 'Save Changes' }}
+            </button>
+            <button class="btn btn-ghost" (click)="cancelForm()">Cancel</button>
+          </div>
+        </div>
+      </div>
+    }
+  </aside>
+}

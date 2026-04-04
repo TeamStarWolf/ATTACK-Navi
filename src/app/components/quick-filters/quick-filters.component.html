@@ -1,0 +1,20 @@
+<div class="quick-filters-bar">
+  <button class="toggle-btn" (click)="toggleExpanded()">
+    ⚡ Quick Filters {{ expanded ? '▲' : '▼' }}
+  </button>
+  @if (expanded) {
+    <div class="preset-pills">
+      @for (preset of presets; track preset.id) {
+        <button class="preset-pill"
+                [class.active]="activePreset === preset.id"
+                (click)="applyPreset(preset)"
+                [title]="preset.description">
+          {{ preset.icon }} {{ preset.label }}
+        </button>
+      }
+      @if (activePreset) {
+        <button class="clear-preset" (click)="clearPreset()">✕ Clear</button>
+      }
+    </div>
+  }
+</div>

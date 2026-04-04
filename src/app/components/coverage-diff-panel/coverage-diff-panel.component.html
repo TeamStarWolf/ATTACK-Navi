@@ -1,0 +1,170 @@
+@if (open) {
+<div class="cdp-overlay">
+  <div class="cdp-panel">
+
+    <!-- Header -->
+    <div class="cdp-header">
+      <div class="cdp-title-row">
+        <span class="cdp-icon">📊</span>
+        <h2 class="cdp-title">Coverage Diff</h2>
+        <p class="cdp-subtitle">Compare two coverage snapshots to measure improvement over time</p>
+        <button class="cdp-close" (click)="close()">✕</button>
+      </div>
+
+      <!-- Snapshot selectors -->
+      @if (snapshots.length >= 2) {
+        <div class="cdp-selectors">
+          <div class="selector-group">
+            <label class="sel-label">Baseline</label>
+            <select class="sel-input" [(ngModel)]="selectedBaseId" (ngModelChange)="onSelectionChange()">
+              @for (s of snapshots; track s.id) {
+                <option [value]="s.id">{{ s.label }} — {{ formatDate(s.createdAt) }}</option>
+              }
+            </select>
+          </div>
+          <button class="swap-btn" (click)="swapSnapshots()" title="Swap baseline and comparison">⇄</button>
+          <div class="selector-group">
+            <label class="sel-label">Compare</label>
+            <select class="sel-input" [(ngModel)]="selectedCompareId" (ngModelChange)="onSelectionChange()">
+              @for (s of snapshots; track s.id) {
+                <option [value]="s.id">{{ s.label }} — {{ formatDate(s.createdAt) }}</option>
+              }
+            </select>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Content -->
+    <div class="cdp-body">
+      @if (snapshots.length < 2) {
+        <div class="cdp-empty">
+          <div class="empty-icon">📊</div>
+          <p>You need at least 2 saved snapshots to use Coverage Diff.</p>
+          <p class="empty-hint">Go to <strong>Timeline</strong> in the nav rail and save coverage snapshots over time.</p>
+        </div>
+      } @else if (baseSnap && compareSnap) {
+
+        <!-- Hero metrics -->
+        <div class="hero-metrics">
+          <div class="hero-card" [class.positive]="isPositive" [class.negative]="!isPositive">
+            <div class="hero-label">Coverage Change</div>
+            <div class="hero-value">
+              {{ isPositive ? '+' : '' }}{{ coverageDelta | number:'1.1-1' }}%
+            </div>
+            <div class="hero-from">{{ baseSnap.coveragePct | number:'1.1-1' }}% → {{ compareSnap.coveragePct | number:'1.1-1' }}%</div>
+          </div>
+          <div class="hero-card" [class.positive]="techniqueDelta >= 0" [class.negative]="techniqueDelta < 0">
+            <div class="hero-label">Techniques Covered</div>
+            <div class="hero-value">{{ techniqueDelta >= 0 ? '+' : '' }}{{ techniqueDelta }}</div>
+            <div class="hero-from">{{ baseSnap.coveredTechniques }} → {{ compareSnap.coveredTechniques }}</div>
+          </div>
+          <div class="hero-card">
+            <div class="hero-label">Baseline</div>
+            <div class="hero-snap-name">{{ baseSnap.label }}</div>
+            <div class="hero-date">{{ formatDate(baseSnap.createdAt) }}</div>
+          </div>
+          <div class="hero-card">
+            <div class="hero-label">Comparison</div>
+            <div class="hero-snap-name">{{ compareSnap.label }}</div>
+            <div class="hero-date">{{ formatDate(compareSnap.createdAt) }}</div>
+          </div>
+        </div>
+
+        <!-- Implementation status diff -->
+        <div class="section">
+          <h3 class="section-title">Implementation Status Changes</h3>
+          <div class="impl-grid">
+            @for (d of implDiffs; track d.label) {
+              <div class="impl-card" [class.impl-up]="d.delta > 0" [class.impl-down]="d.delta < 0">
+                <div class="impl-label">{{ d.label }}</div>
+                <div class="impl-counts">
+                  <span class="impl-old">{{ d.oldCount }}</span>
+                  <span class="impl-arrow">→</span>
+                  <span class="impl-new">{{ d.newCount }}</span>
+                </div>
+                @if (d.delta !== 0) {
+                  <div class="impl-delta" [class.up]="d.delta > 0" [class.down]="d.delta < 0">
+                    {{ d.delta > 0 ? '+' : '' }}{{ d.delta }}
+                  </div>
+                } @else {
+                  <div class="impl-delta no-change">—</div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Tactic breakdown -->
+        <div class="section">
+          <h3 class="section-title">Tactic Coverage Changes</h3>
+          <div class="tactic-table">
+            <div class="tac-header">
+              <span class="tac-name">Tactic</span>
+              <span class="tac-base">Baseline</span>
+              <span class="tac-comp">Compare</span>
+              <span class="tac-delta">Δ Techniques</span>
+              <span class="tac-bar">Change Bar</span>
+            </div>
+            @for (tac of tacticDiffs; track trackByTactic($index, tac)) {
+              <div class="tac-row" [class.improved]="tac.delta > 0" [class.declined]="tac.delta < 0">
+                <span class="tac-name">{{ tac.tacticName }}</span>
+                <span class="tac-base">
+                  {{ tac.oldCovered }}/{{ tac.oldTotal }}
+                  <small>({{ tac.oldPct | number:'1.0-0' }}%)</small>
+                </span>
+                <span class="tac-comp">
+                  {{ tac.newCovered }}/{{ tac.newTotal }}
+                  <small>({{ tac.newPct | number:'1.0-0' }}%)</small>
+                </span>
+                <span class="tac-delta" [class.pos]="tac.delta > 0" [class.neg]="tac.delta < 0">
+                  {{ tac.delta > 0 ? '+' : '' }}{{ tac.delta }}
+                  @if (tac.deltaPct !== 0) {
+                    <small>({{ tac.deltaPct > 0 ? '+' : '' }}{{ tac.deltaPct | number:'1.0-0' }}%)</small>
+                  }
+                </span>
+                <span class="tac-bar">
+                  @if (tac.delta !== 0) {
+                    <div class="bar-track">
+                      <div
+                        class="bar-fill"
+                        [class.bar-pos]="tac.delta > 0"
+                        [class.bar-neg]="tac.delta < 0"
+                        [style.width.%]="deltaBarWidth(tac.delta)"
+                      ></div>
+                    </div>
+                  } @else {
+                    <span class="no-change-mark">no change</span>
+                  }
+                </span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Notes comparison -->
+        @if (baseSnap.notes || compareSnap.notes) {
+          <div class="section">
+            <h3 class="section-title">Notes</h3>
+            <div class="notes-grid">
+              @if (baseSnap.notes) {
+                <div class="notes-card">
+                  <div class="notes-label">Baseline: {{ baseSnap.label }}</div>
+                  <p class="notes-text">{{ baseSnap.notes }}</p>
+                </div>
+              }
+              @if (compareSnap.notes) {
+                <div class="notes-card">
+                  <div class="notes-label">Compare: {{ compareSnap.label }}</div>
+                  <p class="notes-text">{{ compareSnap.notes }}</p>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+      }
+    </div>
+  </div>
+</div>
+}

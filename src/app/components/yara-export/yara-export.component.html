@@ -1,0 +1,37 @@
+@if (open) {
+  <div class="yara-overlay" (click)="close()"></div>
+  <div class="yara-panel" role="dialog" aria-label="YARA Rule Export">
+    <div class="yara-header">
+      <span class="yara-icon">🔎</span>
+      <h2 class="yara-title">YARA Rule Export</h2>
+      <button class="yara-close" (click)="close()">✕</button>
+    </div>
+    <div class="yara-body">
+      <div class="yara-section">
+        <div class="yara-section-label">Export rules for:</div>
+        <div class="yara-modes">
+          <label class="yara-radio"><input type="radio" name="yaraMode" value="all" [checked]="selectedMode==='all'" (change)="setMode('all')"> All techniques</label>
+          <label class="yara-radio"><input type="radio" name="yaraMode" value="implemented" [checked]="selectedMode==='implemented'" (change)="setMode('implemented')"> Implemented mitigations</label>
+          <label class="yara-radio"><input type="radio" name="yaraMode" value="current" [checked]="selectedMode==='current'" (change)="setMode('current')"> Current filter view</label>
+        </div>
+      </div>
+      <div class="yara-stats">
+        <span class="yara-stat"><strong>{{ coveredCount }}</strong> rules with patterns</span>
+        <span class="yara-stat-sep">/</span>
+        <span class="yara-stat"><strong>{{ totalCount }}</strong> techniques selected</span>
+      </div>
+      @if (previewRules.length > 0) {
+        <div class="yara-section">
+          <div class="yara-section-label">Preview (first 2 rules):</div>
+          <pre class="yara-code-preview">{{ previewRules[0].yaml }}{{ previewRules.length > 1 ? '\n\n' + previewRules[1].yaml : '' }}</pre>
+        </div>
+      }
+      <div class="yara-actions">
+        <button class="yara-export-btn" (click)="export()" [disabled]="coveredCount === 0">
+          ⬇ Download .yar ({{ coveredCount }} rules)
+        </button>
+        <button class="yara-cancel-btn" (click)="close()">Cancel</button>
+      </div>
+    </div>
+  </div>
+}

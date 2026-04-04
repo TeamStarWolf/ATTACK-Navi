@@ -1,0 +1,387 @@
+@if (visible) {
+  <div class="overlay" (click)="close()">
+    <div class="panel" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="panel-header">
+        <div class="header-left">
+          <span class="panel-title">Threat Actor Comparison</span>
+          @if (actorA && actorB) {
+            <span class="header-subtitle">
+              {{ overlapIds.length }} shared techniques · {{ unionSize }} total
+            </span>
+          }
+        </div>
+        <button class="close-btn" (click)="close()" title="Close">✕</button>
+      </div>
+
+      <!-- Actor Selection Row -->
+      <div class="actor-selection-row">
+
+        <!-- Actor A Selector -->
+        <div class="actor-selector actor-a-selector">
+          <div class="selector-label actor-a-label">Actor A</div>
+          @if (actorA) {
+            <div class="selected-actor selected-actor-a">
+              <div class="actor-info">
+                <span class="actor-id">{{ actorA.attackId }}</span>
+                <span class="actor-name">{{ actorA.name }}</span>
+              </div>
+              <button class="clear-btn" (click)="clearActorA()" title="Clear">✕</button>
+            </div>
+          } @else {
+            <div class="search-container">
+              <input
+                class="actor-search-input"
+                type="text"
+                placeholder="Search actors…"
+                [(ngModel)]="searchA"
+                (focus)="onSearchAFocus()"
+                (blur)="onSearchABlur()"
+              />
+              @if (showDropdownA) {
+                <div class="actor-dropdown">
+                  @for (g of filteredGroupsA; track g.id) {
+                    <div class="actor-option" (mousedown)="selectActorA(g)">
+                      <span class="option-id">{{ g.attackId }}</span>
+                      <span class="option-name">{{ g.name }}</span>
+                    </div>
+                  }
+                  @if (filteredGroupsA.length === 0) {
+                    <div class="option-empty">No groups match</div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- VS badge -->
+        <div class="vs-badge">VS</div>
+
+        <!-- Actor B Selector -->
+        <div class="actor-selector actor-b-selector">
+          <div class="selector-label actor-b-label">Actor B</div>
+          @if (actorB) {
+            <div class="selected-actor selected-actor-b">
+              <div class="actor-info">
+                <span class="actor-id">{{ actorB.attackId }}</span>
+                <span class="actor-name">{{ actorB.name }}</span>
+              </div>
+              <button class="clear-btn" (click)="clearActorB()" title="Clear">✕</button>
+            </div>
+          } @else {
+            <div class="search-container">
+              <input
+                class="actor-search-input"
+                type="text"
+                placeholder="Search actors…"
+                [(ngModel)]="searchB"
+                (focus)="onSearchBFocus()"
+                (blur)="onSearchBBlur()"
+              />
+              @if (showDropdownB) {
+                <div class="actor-dropdown">
+                  @for (g of filteredGroupsB; track g.id) {
+                    <div class="actor-option" (mousedown)="selectActorB(g)">
+                      <span class="option-id">{{ g.attackId }}</span>
+                      <span class="option-name">{{ g.name }}</span>
+                    </div>
+                  }
+                  @if (filteredGroupsB.length === 0) {
+                    <div class="option-empty">No groups match</div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+      </div>
+
+      @if (groups.length === 0) {
+        <div class="loading-state">
+          <div class="loader-spinner"></div>
+          <p>Loading threat group data…</p>
+        </div>
+      } @else if (actorA && actorB) {
+
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+          <div class="stat-block actor-a-stat">
+            <div class="stat-actor-name">{{ actorA.name }}</div>
+            <div class="stat-count">{{ techCountA }}</div>
+            <div class="stat-label">techniques</div>
+          </div>
+
+          <!-- Venn Diagram -->
+          <div class="venn-wrap">
+            <div class="venn-diagram">
+              <div class="venn-circle venn-a" [style.opacity]="techCountA > 0 ? 1 : 0.3"></div>
+              <div class="venn-circle venn-b" [style.opacity]="techCountB > 0 ? 1 : 0.3"></div>
+              <div class="venn-overlap-label">
+                <span class="venn-overlap-count">{{ overlapIds.length }}</span>
+                <span class="venn-overlap-pct">{{ overlapPct }}%</span>
+              </div>
+            </div>
+            <div class="venn-caption">overlap of union</div>
+          </div>
+
+          <div class="stat-block actor-b-stat">
+            <div class="stat-actor-name">{{ actorB.name }}</div>
+            <div class="stat-count">{{ techCountB }}</div>
+            <div class="stat-label">techniques</div>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tab-bar">
+          <button
+            class="tab-btn"
+            [class.active]="activeTab === 'overlap'"
+            (click)="setTab('overlap')"
+          >
+            Overlap
+            <span class="tab-badge tab-badge-overlap">{{ overlapIds.length }}</span>
+          </button>
+          <button
+            class="tab-btn"
+            [class.active]="activeTab === 'unique-a'"
+            (click)="setTab('unique-a')"
+          >
+            Unique to {{ actorA.name }}
+            <span class="tab-badge tab-badge-a">{{ uniqueToAIds.length }}</span>
+          </button>
+          <button
+            class="tab-btn"
+            [class.active]="activeTab === 'unique-b'"
+            (click)="setTab('unique-b')"
+          >
+            Unique to {{ actorB.name }}
+            <span class="tab-badge tab-badge-b">{{ uniqueToBIds.length }}</span>
+          </button>
+          <button
+            class="tab-btn"
+            [class.active]="activeTab === 'matrix'"
+            (click)="setTab('matrix')"
+          >Matrix View</button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+
+          <!-- Overlap tab -->
+          @if (activeTab === 'overlap') {
+            @if (overlapRows.length === 0) {
+              <div class="empty-state">
+                <p>No shared techniques between these two actors.</p>
+              </div>
+            } @else {
+              <div class="overlap-intro">
+                These <strong>{{ overlapRows.length }}</strong> techniques are used by both
+                <span class="actor-a-text">{{ actorA.name }}</span> and
+                <span class="actor-b-text">{{ actorB.name }}</span>.
+                Sorted by mitigation coverage — prioritize these for defense.
+              </div>
+              <div class="table-wrap">
+                <table class="compare-table">
+                  <thead>
+                    <tr>
+                      <th class="id-col">ATT&amp;CK ID</th>
+                      <th>Technique Name</th>
+                      <th class="tactics-col">Tactics</th>
+                      <th class="num-col" title="Number of mitigations">Mitigations</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (row of overlapRows; track row.attackId) {
+                      <tr class="compare-row overlap-row">
+                        <td class="tech-id">
+                          <a [href]="attackUrl(row.attackId)" target="_blank" rel="noopener">{{ row.attackId }}</a>
+                        </td>
+                        <td class="tech-name">{{ row.name }}</td>
+                        <td class="tech-tactics">
+                          @for (t of row.tactics; track t) {
+                            <span class="tactic-pill">{{ t }}</span>
+                          }
+                        </td>
+                        <td class="num-col">
+                          @if (row.mitigationCount > 0) {
+                            <span class="mit-badge mit-high">{{ row.mitigationCount }}</span>
+                          } @else {
+                            <span class="mit-zero">—</span>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          }
+
+          <!-- Unique to A tab -->
+          @if (activeTab === 'unique-a') {
+            @if (uniqueToARows.length === 0) {
+              <div class="empty-state">
+                <p>{{ actorA.name }} shares all techniques with {{ actorB.name }}.</p>
+              </div>
+            } @else {
+              <div class="unique-intro actor-a-intro">
+                <span class="actor-a-dot"></span>
+                <strong>{{ uniqueToARows.length }}</strong> techniques used only by
+                <span class="actor-a-text">{{ actorA.name }}</span> (not by {{ actorB.name }}).
+              </div>
+              <div class="table-wrap">
+                <table class="compare-table">
+                  <thead>
+                    <tr>
+                      <th class="id-col">ATT&amp;CK ID</th>
+                      <th>Technique Name</th>
+                      <th class="tactics-col">Tactics</th>
+                      <th class="num-col">Mitigations</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (row of uniqueToARows; track row.attackId) {
+                      <tr class="compare-row unique-a-row">
+                        <td class="tech-id">
+                          <a [href]="attackUrl(row.attackId)" target="_blank" rel="noopener">{{ row.attackId }}</a>
+                        </td>
+                        <td class="tech-name">{{ row.name }}</td>
+                        <td class="tech-tactics">
+                          @for (t of row.tactics; track t) {
+                            <span class="tactic-pill">{{ t }}</span>
+                          }
+                        </td>
+                        <td class="num-col">
+                          @if (row.mitigationCount > 0) {
+                            <span class="mit-badge">{{ row.mitigationCount }}</span>
+                          } @else {
+                            <span class="mit-zero">—</span>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          }
+
+          <!-- Unique to B tab -->
+          @if (activeTab === 'unique-b') {
+            @if (uniqueToBRows.length === 0) {
+              <div class="empty-state">
+                <p>{{ actorB.name }} shares all techniques with {{ actorA.name }}.</p>
+              </div>
+            } @else {
+              <div class="unique-intro actor-b-intro">
+                <span class="actor-b-dot"></span>
+                <strong>{{ uniqueToBRows.length }}</strong> techniques used only by
+                <span class="actor-b-text">{{ actorB.name }}</span> (not by {{ actorA.name }}).
+              </div>
+              <div class="table-wrap">
+                <table class="compare-table">
+                  <thead>
+                    <tr>
+                      <th class="id-col">ATT&amp;CK ID</th>
+                      <th>Technique Name</th>
+                      <th class="tactics-col">Tactics</th>
+                      <th class="num-col">Mitigations</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (row of uniqueToBRows; track row.attackId) {
+                      <tr class="compare-row unique-b-row">
+                        <td class="tech-id">
+                          <a [href]="attackUrl(row.attackId)" target="_blank" rel="noopener">{{ row.attackId }}</a>
+                        </td>
+                        <td class="tech-name">{{ row.name }}</td>
+                        <td class="tech-tactics">
+                          @for (t of row.tactics; track t) {
+                            <span class="tactic-pill">{{ t }}</span>
+                          }
+                        </td>
+                        <td class="num-col">
+                          @if (row.mitigationCount > 0) {
+                            <span class="mit-badge">{{ row.mitigationCount }}</span>
+                          } @else {
+                            <span class="mit-zero">—</span>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          }
+
+          <!-- Matrix View tab -->
+          @if (activeTab === 'matrix') {
+            <div class="matrix-legend">
+              <span class="legend-item">
+                <span class="legend-dot legend-overlap"></span>
+                Overlap (both actors)
+              </span>
+              <span class="legend-item">
+                <span class="legend-dot legend-a"></span>
+                Unique to {{ actorA.name }}
+              </span>
+              <span class="legend-item">
+                <span class="legend-dot legend-b"></span>
+                Unique to {{ actorB.name }}
+              </span>
+            </div>
+            <div class="matrix-scroll">
+              <div class="mini-matrix">
+                @for (col of tacticColumns; track col.tactic) {
+                  <div class="matrix-col">
+                    <div class="matrix-tactic-header">{{ col.tactic }}</div>
+                    <div class="matrix-techniques">
+                      @for (id of col.overlap; track id) {
+                        <a [href]="attackUrl(id)" target="_blank" rel="noopener" class="matrix-card matrix-card-overlap" title="{{ id }}">
+                          {{ id }}
+                        </a>
+                      }
+                      @for (id of col.uniqueA; track id) {
+                        <a [href]="attackUrl(id)" target="_blank" rel="noopener" class="matrix-card matrix-card-a" title="{{ id }}">
+                          {{ id }}
+                        </a>
+                      }
+                      @for (id of col.uniqueB; track id) {
+                        <a [href]="attackUrl(id)" target="_blank" rel="noopener" class="matrix-card matrix-card-b" title="{{ id }}">
+                          {{ id }}
+                        </a>
+                      }
+                    </div>
+                  </div>
+                }
+                @if (tacticColumns.length === 0) {
+                  <div class="empty-matrix">No techniques to display.</div>
+                }
+              </div>
+            </div>
+          }
+
+        </div>
+
+      } @else {
+        <!-- Prompt when actors not selected -->
+        <div class="prompt-state">
+          <div class="prompt-icon">⚖️</div>
+          <p class="prompt-title">Select two threat actors to compare</p>
+          <p class="prompt-hint">
+            Choose Actor A and Actor B above to see their ATT&amp;CK technique overlap,
+            unique techniques, and a side-by-side matrix view.
+          </p>
+          @if (groups.length > 0) {
+            <p class="prompt-count">{{ groups.length }} threat groups available</p>
+          }
+        </div>
+      }
+
+    </div>
+  </div>
+}

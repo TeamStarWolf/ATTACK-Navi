@@ -1,0 +1,195 @@
+@if (visible) {
+  <div class="modal-overlay" (click)="close()"></div>
+  <div class="report-modal">
+    <div class="report-toolbar">
+      <span class="report-title">📋 Coverage Report</span>
+      <div class="report-actions">
+        <button class="export-btn" (click)="exportCsv()">⬇ Export CSV</button>
+        <button class="print-btn" (click)="print()">🖨 Print / Save PDF</button>
+        <button class="close-btn" (click)="close()">✕ Close</button>
+      </div>
+    </div>
+
+    <div class="report-content" id="report-content">
+      <div class="report-header">
+        <h1>MITRE ATT&amp;CK Mitigation Coverage Report</h1>
+        <p class="report-date">Generated: {{ reportDate }}</p>
+      </div>
+
+      <!-- Executive summary -->
+      <section class="section">
+        <h2>Executive Summary</h2>
+        <div class="summary-grid">
+          <div class="summary-card">
+            <div class="card-num">{{ coveragePct }}%</div>
+            <div class="card-label">Theoretical Coverage</div>
+            <div class="card-sub">{{ coveredTechniques }} / {{ totalTechniques }} techniques</div>
+          </div>
+          <div class="summary-card green">
+            <div class="card-num">{{ implementedCoveredPct }}%</div>
+            <div class="card-label">Implemented Coverage</div>
+            <div class="card-sub">{{ implementedCovered }} techniques actively mitigated</div>
+          </div>
+          <div class="summary-card">
+            <div class="card-num">{{ totalMitigations }}</div>
+            <div class="card-label">Total Mitigations</div>
+            <div class="card-sub">in MITRE ATT&amp;CK Enterprise</div>
+          </div>
+          <div class="summary-card">
+            <div class="card-num">{{ totalGroups }}</div>
+            <div class="card-label">Threat Groups</div>
+            <div class="card-sub">tracked in ATT&amp;CK</div>
+          </div>
+          <div class="summary-card">
+            <div class="card-num">{{ totalCampaigns }}</div>
+            <div class="card-label">Campaigns</div>
+            <div class="card-sub">tracked in ATT&amp;CK</div>
+          </div>
+        </div>
+
+        <!-- Implementation status breakdown -->
+        @if (implSummary['implemented'] + implSummary['in-progress'] + implSummary['planned'] + implSummary['not-started'] > 0) {
+          <div class="impl-breakdown">
+            <h3>Implementation Status Breakdown</h3>
+            <div class="impl-bars">
+              @for (s of implStatusKeys; track s) {
+                <div class="impl-bar-row">
+                  <span class="impl-label">{{ statusLabels[s] }}</span>
+                  <div class="impl-bar-bg">
+                    <div
+                      class="impl-bar-fill"
+                      [attr.data-status]="s"
+                      [style.width.%]="totalMitigations > 0 ? (implSummary[s] / totalMitigations * 100) : 0"
+                    ></div>
+                  </div>
+                  <span class="impl-count">{{ implSummary[s] || 0 }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </section>
+
+      <!-- Per-tactic coverage -->
+      <section class="section">
+        <h2>Coverage by Tactic</h2>
+        <table class="coverage-table">
+          <thead>
+            <tr>
+              <th>Tactic</th>
+              <th>Covered</th>
+              <th>Total</th>
+              <th>Coverage</th>
+              <th>Top Gaps</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (ts of tacticStats; track ts.name) {
+              <tr>
+                <td class="tactic-name-cell">{{ ts.name }}</td>
+                <td class="num-cell">{{ ts.covered }}</td>
+                <td class="num-cell">{{ ts.total }}</td>
+                <td class="pct-cell">
+                  <div class="mini-bar-wrap">
+                    <div class="mini-bar" [style.width.%]="ts.pct" [style.background]="pctColor(ts.pct)"></div>
+                  </div>
+                  <span [style.color]="pctColor(ts.pct)" style="font-weight:600">{{ ts.pct }}%</span>
+                </td>
+                <td class="gaps-cell">{{ ts.topGaps.join(', ') }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Top exposure gaps -->
+      <section class="section">
+        <h2>Highest Exposure Gaps</h2>
+        <p class="section-desc">Uncovered techniques sorted by threat actor usage count.</p>
+        <table class="coverage-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Technique</th>
+              <th>Tactics</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of topUncovered; track t.attackId) {
+              <tr>
+                <td class="id-cell">{{ t.attackId }}</td>
+                <td>{{ t.name }}</td>
+                <td class="tactics-cell">{{ t.tactics }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Documented mitigations -->
+      @if (documentedMits.length > 0) {
+        <section class="section">
+          <h2>Security Control Documentation</h2>
+          <p class="section-desc">Mitigations with documentation, mapped security controls, owners, or evidence links.</p>
+          <table class="coverage-table doc-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Mitigation</th>
+                <th>Status</th>
+                <th>Owner</th>
+                <th>Target Date</th>
+                <th>Security Controls</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (m of documentedMits; track m.attackId) {
+                <tr>
+                  <td class="id-cell">{{ m.attackId }}</td>
+                  <td>
+                    {{ m.name }}
+                    @if (m.evidenceUrl) {
+                      <a [href]="m.evidenceUrl" target="_blank" rel="noopener" class="evidence-link">↗</a>
+                    }
+                  </td>
+                  <td><span class="status-pill" [attr.data-status]="m.status">{{ m.status }}</span></td>
+                  <td class="owner-cell">{{ m.owner || '—' }}</td>
+                  <td class="date-cell">{{ m.dueDate || '—' }}</td>
+                  <td class="controls-cell">{{ m.controlRefs || '—' }}</td>
+                  <td class="notes-cell">{{ m.notes }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </section>
+      }
+
+      <!-- Recommended mitigations -->
+      <section class="section">
+        <h2>Recommended Next Mitigations</h2>
+        <p class="section-desc">Not yet implemented, ranked by unique and total coverage gain.</p>
+        <table class="coverage-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Mitigation</th>
+              <th>Unique Coverage</th>
+              <th>Total Coverage</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (m of recommendedMits; track m.attackId) {
+              <tr>
+                <td class="id-cell">{{ m.attackId }}</td>
+                <td>{{ m.name }}</td>
+                <td class="num-cell">{{ m.uniqueCoverage }}</td>
+                <td class="num-cell">{{ m.coverage }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </section>
+    </div>
+  </div>
+}

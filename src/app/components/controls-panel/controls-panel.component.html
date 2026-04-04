@@ -1,0 +1,243 @@
+@if (visible) {
+  <div class="panel-overlay" (click)="close()"></div>
+  <aside class="controls-panel">
+
+    <!-- Header -->
+    <div class="panel-header">
+      <div class="panel-title-row">
+        <span class="panel-title">🔒 Security Controls</span>
+        <button class="close-btn" (click)="close()">✕</button>
+      </div>
+      <div class="panel-summary">
+        <span class="summary-chip implemented">✅ {{ implementedCount }} implemented</span>
+        <span class="summary-chip planned">📋 {{ plannedCount }} planned</span>
+        @if (domain) {
+          <span class="summary-chip coverage">🎯 {{ techniqueCoverage }}% technique coverage</span>
+        }
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tab-bar">
+      <button class="tab-btn" [class.active]="activeTab === 'my-controls'" (click)="activeTab = 'my-controls'">
+        My Controls ({{ controls.length }})
+      </button>
+      <button class="tab-btn" [class.active]="activeTab === 'by-mitigation'" (click)="activeTab = 'by-mitigation'">
+        By Mitigation
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="panel-body">
+
+      @if (activeTab === 'my-controls') {
+        <!-- Framework import section -->
+        <div class="framework-section">
+          <div class="section-label">Import Framework Template</div>
+          <div class="template-grid">
+            @for (tmpl of frameworks; track tmpl.id) {
+              <div class="template-card">
+                <div class="tmpl-name">{{ tmpl.icon }} {{ tmpl.name }}</div>
+                <div class="tmpl-count">{{ tmpl.controls.length }} controls</div>
+                <div class="tmpl-actions">
+                  <button class="tmpl-btn impl" (click)="importTemplate(tmpl, 'implemented')" title="Import as Implemented">✅ Impl.</button>
+                  <button class="tmpl-btn plan" (click)="importTemplate(tmpl, 'planned')" title="Import as Planned">📋 Plan</button>
+                </div>
+              </div>
+            }
+          </div>
+          @if (importStatus) {
+            <div class="import-status">{{ importStatus }}</div>
+          }
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- Search + actions -->
+        <div class="toolbar-row">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" placeholder="Search controls…" [(ngModel)]="searchText" (input)="applySearch()" class="search-input" />
+            @if (searchText) {
+              <button class="clear-btn" (click)="searchText=''; applySearch()">✕</button>
+            }
+          </div>
+          <div class="action-btns">
+            <button class="action-btn add-btn" (click)="openAddForm()">+ Add</button>
+            @if (controls.length > 0) {
+              <button class="action-btn export-btn" (click)="exportControls()" title="Export as JSON">⬇</button>
+            }
+            <button class="action-btn import-btn" (click)="importControls()" title="Import JSON">⬆</button>
+          </div>
+        </div>
+
+        <!-- Add / Edit form -->
+        @if (showAddForm) {
+          <div class="add-form">
+            <div class="form-title">{{ formMode === 'add' ? 'Add Control' : 'Edit Control' }}</div>
+            <div class="form-row">
+              <label class="form-label">Name *</label>
+              <input type="text" class="form-input" [(ngModel)]="formName" placeholder="e.g. CrowdStrike EDR" />
+            </div>
+            <div class="form-row two-col">
+              <div>
+                <label class="form-label">Framework</label>
+                <select class="form-select" [(ngModel)]="formFramework">
+                  @for (f of frameworkOptions; track f) {
+                    <option [value]="f">{{ f }}</option>
+                  }
+                </select>
+              </div>
+              <div>
+                <label class="form-label">Control Ref</label>
+                <input type="text" class="form-input" [(ngModel)]="formRef" placeholder="e.g. AC-2 or CIS 5" />
+              </div>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Description (optional)</label>
+              <input type="text" class="form-input" [(ngModel)]="formDesc" placeholder="Brief description of this control" />
+            </div>
+            <div class="form-row">
+              <label class="form-label">Status</label>
+              <div class="status-toggle">
+                @for (s of statusOptions; track s) {
+                  <button class="status-opt" [class.active]="formStatus === s" (click)="formStatus = s">
+                    {{ s === 'implemented' ? '✅ Implemented' : '📋 Planned' }}
+                  </button>
+                }
+              </div>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Mapped Mitigations</label>
+              <div class="mit-multi">
+                @for (m of formMitigations; track m.id) {
+                  <span class="mit-chip">
+                    {{ m.attackId }}
+                    <button class="mit-chip-remove" (click)="removeMitigation(m)">✕</button>
+                  </span>
+                }
+                <div class="mit-search-wrap">
+                  <input
+                    type="text"
+                    class="form-input mit-search-input"
+                    [(ngModel)]="formMitSearch"
+                    (input)="onMitSearchInput()"
+                    placeholder="Type mitigation ID or name…"
+                  />
+                  @if (formMitSuggestions.length > 0) {
+                    <ul class="mit-suggestions">
+                      @for (m of formMitSuggestions; track m.id) {
+                        <li (mousedown)="addMitigation(m)">
+                          <span class="sugg-id">{{ m.attackId }}</span>
+                          <span class="sugg-name">{{ m.name }}</span>
+                        </li>
+                      }
+                    </ul>
+                  }
+                </div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="form-btn save" (click)="saveForm()" [disabled]="!formName.trim()">
+                {{ formMode === 'add' ? '+ Add Control' : 'Save Changes' }}
+              </button>
+              <button class="form-btn cancel" (click)="cancelForm()">Cancel</button>
+            </div>
+          </div>
+        }
+
+        <!-- Controls list -->
+        @if (filteredRows.length === 0 && !showAddForm) {
+          <div class="empty-state">
+            <div class="empty-icon">🔒</div>
+            @if (controls.length === 0) {
+              <p>No controls defined yet.</p>
+              <p class="empty-hint">Import a framework template above or add a custom control.</p>
+            } @else {
+              <p>No controls match "{{ searchText }}"</p>
+            }
+          </div>
+        }
+
+        <div class="controls-list">
+          @for (row of filteredRows; track row.control.id) {
+            <div class="control-card" [class.implemented]="row.control.status === 'implemented'" [class.planned]="row.control.status === 'planned'">
+              <div class="card-main" (click)="toggleExpand(row)">
+                <div class="card-left">
+                  <span class="status-dot" [class.impl-dot]="row.control.status === 'implemented'" [class.plan-dot]="row.control.status === 'planned'"></span>
+                  <div class="card-info">
+                    <div class="card-name">{{ row.control.name }}</div>
+                    <div class="card-meta">
+                      @if (row.control.controlRef) {
+                        <span class="meta-ref">{{ row.control.framework }} · {{ row.control.controlRef }}</span>
+                      } @else {
+                        <span class="meta-ref">{{ row.control.framework }}</span>
+                      }
+                      <span class="meta-sep">·</span>
+                      <span class="meta-count">{{ row.mitigationCount }} mitigations · {{ row.techniqueCount }} techniques</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-actions" (click)="$event.stopPropagation()">
+                  <button class="card-action-btn" (click)="toggleStatus(row.control)" [title]="'Toggle status'">
+                    {{ row.control.status === 'implemented' ? '✅' : '📋' }}
+                  </button>
+                  <button class="card-action-btn" (click)="highlightControl(row)" title="Highlight in matrix">🎯</button>
+                  <button class="card-action-btn" (click)="openEditForm(row)" title="Edit">✏️</button>
+                  <button class="card-action-btn delete-btn" (click)="deleteControl(row.control.id)" title="Delete">🗑️</button>
+                  <span class="chevron">{{ row.expanded ? '▲' : '▼' }}</span>
+                </div>
+              </div>
+
+              @if (row.expanded) {
+                <div class="card-detail">
+                  @if (row.control.description) {
+                    <p class="card-desc">{{ row.control.description }}</p>
+                  }
+                  @if (row.control.mitigationIds.length > 0) {
+                    <div class="detail-label">Mapped mitigations</div>
+                    <div class="mit-chips">
+                      @for (mitId of row.control.mitigationIds; track mitId) {
+                        <span class="mit-ref-chip">{{ getMitigationName(mitId) }}</span>
+                      }
+                    </div>
+                  } @else {
+                    <div class="no-mits">No mitigations mapped yet. Edit to add.</div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      @if (activeTab === 'by-mitigation') {
+        <div class="toolbar-row">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" placeholder="Search mitigations…" [(ngModel)]="searchText" (input)="applySearch()" class="search-input" />
+            @if (searchText) {
+              <button class="clear-btn" (click)="searchText=''; applySearch()">✕</button>
+            }
+          </div>
+        </div>
+        <div class="mit-list">
+          @for (row of filteredMitRows; track row.mitigation.id) {
+            <div class="mit-row" (click)="filterByMitigation(row)">
+              <div class="mit-row-left">
+                <span class="mit-id">{{ row.mitigation.attackId }}</span>
+                <span class="mit-name">{{ row.mitigation.name }}</span>
+              </div>
+              @if (row.controlCount > 0) {
+                <div class="mit-row-right">
+                  <span class="ctrl-badge">{{ row.controlCount }} ctrl{{ row.controlCount !== 1 ? 's' : '' }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+    </div>
+  </aside>
+}

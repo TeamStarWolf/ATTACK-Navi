@@ -1,0 +1,125 @@
+@if (visible) {
+  <div class="overlay" (click)="close()">
+    <div class="panel" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="panel-header">
+        <div class="header-left">
+          <span class="panel-title">Watchlist</span>
+          @if (entries.length > 0) {
+            <span class="entry-count-badge">{{ entries.length }}</span>
+          }
+        </div>
+        <button class="close-btn" (click)="close()" title="Close">✕</button>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="filter-bar">
+        <div class="priority-filters">
+          <button class="pf-btn" [class.active]="filterPriority === 'all'" (click)="filterPriority = 'all'">All</button>
+          <button class="pf-btn pf-high" [class.active]="filterPriority === 'high'" (click)="filterPriority = 'high'">🔴 High</button>
+          <button class="pf-btn pf-medium" [class.active]="filterPriority === 'medium'" (click)="filterPriority = 'medium'">🟡 Medium</button>
+          <button class="pf-btn pf-low" [class.active]="filterPriority === 'low'" (click)="filterPriority = 'low'">🟢 Low</button>
+        </div>
+        <div class="filter-right">
+          <input
+            class="search-input"
+            type="text"
+            placeholder="Search watchlist…"
+            [(ngModel)]="searchText"
+          />
+          <select class="sort-select" [(ngModel)]="sortBy">
+            <option value="priority">Sort: Priority</option>
+            <option value="added">Sort: Recently Added</option>
+            <option value="name">Sort: Name</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="panel-content">
+        @if (entries.length === 0) {
+          <div class="empty-state">
+            <div class="empty-icon">📌</div>
+            <p class="empty-text">No techniques watched.</p>
+            <p class="empty-hint">Click the bookmark icon on any technique to add it to your watchlist.</p>
+          </div>
+        } @else if (filteredEntries.length === 0) {
+          <div class="empty-state">
+            <div class="empty-icon">🔍</div>
+            <p class="empty-text">No techniques match your filters.</p>
+          </div>
+        } @else {
+          <div class="entry-list">
+            @for (entry of filteredEntries; track entry.techniqueId) {
+              <div class="entry-card">
+                <div class="entry-main">
+                  <span
+                    class="priority-dot"
+                    [style.background]="priorityColor(entry.priority)"
+                    [title]="entry.priority + ' priority'"
+                  ></span>
+                  <div class="entry-info">
+                    <div class="entry-header-row">
+                      <span class="entry-id">{{ entry.techniqueId }}</span>
+                      <span class="entry-name">{{ entry.name }}</span>
+                    </div>
+                    <div class="entry-meta-row">
+                      <span class="entry-added">Added: {{ formatDate(entry.addedAt) }}</span>
+                      <span class="priority-badge priority-{{ entry.priority }}">{{ entry.priority }}</span>
+                      <div class="priority-btns">
+                        @for (p of ['high', 'medium', 'low']; track p) {
+                          <button
+                            class="pri-btn pri-{{ p }}"
+                            [class.active]="entry.priority === p"
+                            (click)="setPriority(entry.techniqueId, $any(p))"
+                            [title]="'Set ' + p + ' priority'"
+                          >{{ p }}</button>
+                        }
+                      </div>
+                    </div>
+                    @if (entry.note && editingNoteId !== entry.techniqueId) {
+                      <div class="entry-note" (click)="startEditNote(entry)">
+                        📝 {{ entry.note }}
+                      </div>
+                    }
+                    @if (editingNoteId === entry.techniqueId) {
+                      <div class="note-edit-area">
+                        <textarea
+                          class="note-textarea"
+                          [(ngModel)]="editingNoteText"
+                          placeholder="Add a note…"
+                          rows="2"
+                        ></textarea>
+                        <div class="note-actions">
+                          <button class="note-save-btn" (click)="saveNote(entry.techniqueId)">Save</button>
+                          <button class="note-cancel-btn" (click)="cancelNote()">Cancel</button>
+                        </div>
+                      </div>
+                    }
+                    @if (!entry.note && editingNoteId !== entry.techniqueId) {
+                      <button class="add-note-btn" (click)="startEditNote(entry)">+ Add note…</button>
+                    }
+                  </div>
+                  <div class="entry-actions">
+                    <button class="open-btn" (click)="openTechnique(entry)" title="Open technique details">Open</button>
+                    <button class="remove-btn" (click)="removeEntry(entry.techniqueId)" title="Remove from watchlist">✕</button>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Footer -->
+      @if (entries.length > 0) {
+        <div class="panel-footer">
+          <button class="export-btn" (click)="exportCsv()">📥 Export watchlist to CSV</button>
+          <span class="footer-count">{{ filteredEntries.length }} of {{ entries.length }} shown</span>
+        </div>
+      }
+
+    </div>
+  </div>
+}

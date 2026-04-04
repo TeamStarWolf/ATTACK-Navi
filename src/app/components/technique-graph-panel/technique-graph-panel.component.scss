@@ -1,0 +1,231 @@
+.tgp-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 610;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(3px);
+}
+
+.tgp-panel {
+  background: #0d1117;
+  border: 1px solid #21262d;
+  border-radius: 12px;
+  width: min(96vw, 1000px);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+}
+
+/* Header */
+.tgp-header {
+  padding: 14px 18px 10px;
+  border-bottom: 1px solid #21262d;
+  background: #07101a;
+  flex-shrink: 0;
+}
+
+.tgp-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.tgp-icon { font-size: 1.2rem; }
+
+.tgp-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e6edf3;
+  margin: 0;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tgp-meta {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.meta-pill {
+  background: #161b22;
+  color: #8b949e;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  padding: 1px 8px;
+  font-size: 0.72rem;
+}
+
+.tgp-close {
+  background: none;
+  border: 1px solid #30363d;
+  color: #8b949e;
+  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  transition: all 0.15s;
+  &:hover { background: #21262d; color: #e6edf3; }
+}
+
+/* Toggles */
+.tgp-toggles {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tog-label {
+  font-size: 0.75rem;
+  color: #8b949e;
+  margin-right: 2px;
+}
+
+.tog-btn {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  color: #484f58;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  &.active {
+    border-color: #58a6ff;
+    color: #58a6ff;
+    background: rgba(88,166,255,0.08);
+  }
+  &:hover:not(.active) { border-color: #8b949e; color: #8b949e; }
+}
+
+/* Body */
+.tgp-body {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* SVG */
+.tgp-svg {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  cursor: default;
+  user-select: none;
+}
+
+/* Node styles */
+.tgp-node {
+  cursor: grab;
+  &:active { cursor: grabbing; }
+  &.clickable { cursor: pointer; }
+  &.node-center circle { filter: drop-shadow(0 0 8px rgba(88,166,255,0.4)); }
+}
+
+.node-label {
+  pointer-events: none;
+  font-family: 'Roboto Mono', monospace;
+}
+
+.node-sublabel {
+  pointer-events: none;
+}
+
+.edge-label {
+  pointer-events: none;
+  font-family: inherit;
+}
+
+/* Legend */
+.tgp-legend {
+  display: flex;
+  gap: 12px;
+  padding: 8px 16px;
+  border-top: 1px solid #21262d;
+  flex-wrap: wrap;
+  background: #07101a;
+  flex-shrink: 0;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-icon {
+  font-size: 0.7rem;
+}
+
+.legend-label {
+  font-size: 0.7rem;
+  color: #8b949e;
+  text-transform: capitalize;
+}
+
+/* Empty state */
+.tgp-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #484f58;
+  gap: 12px;
+  padding: 40px;
+  text-align: center;
+}
+
+.empty-icon { font-size: 3rem; opacity: 0.4; }
+
+.tgp-empty p {
+  font-size: 0.9rem;
+  max-width: 300px;
+  line-height: 1.5;
+}
+
+/* Hover tooltip */
+.node-tooltip {
+  position: absolute;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 8px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  z-index: 10;
+  white-space: nowrap;
+
+  span { font-size: 0.8rem; }
+  .tt-sub { color: #8b949e; font-size: 0.75rem; }
+  .tt-hint { color: #58a6ff; font-size: 0.7rem; }
+  .tt-drag { color: #484f58; font-size: 0.68rem; }
+}

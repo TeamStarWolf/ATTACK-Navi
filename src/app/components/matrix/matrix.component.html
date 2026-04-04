@@ -1,0 +1,371 @@
+<div class="matrix-search-bar">
+    <input
+      type="text"
+      class="matrix-search-input"
+      placeholder="Filter techniques…"
+      [value]="searchQuery"
+      (input)="onSearchInput($event)"
+      (keydown.escape)="clearSearch()"
+    >
+    @if (searchQuery) {
+      <span class="search-count">{{ matchingIds.size }} match{{ matchingIds.size !== 1 ? 'es' : '' }}</span>
+      <button class="search-filter-btn"
+              [class.active]="searchFilterMode"
+              (click)="toggleSearchFilterMode()"
+              [title]="searchFilterMode ? 'Filter mode: hiding non-matches. Click to switch to highlight mode' : 'Highlight mode. Click to hide non-matching cells'">
+        {{ searchFilterMode ? '⊘' : '⊙' }}
+      </button>
+      <button class="search-clear" (click)="clearSearch()">✕</button>
+    }
+    <div class="zoom-controls">
+      <button class="zoom-btn" (click)="zoomOut()" [disabled]="zoom <= ZOOM_MIN" title="Zoom out">−</button>
+      <span class="zoom-label">{{ zoom * 100 | number:'1.0-0' }}%</span>
+      <button class="zoom-btn" (click)="zoomIn()" [disabled]="zoom >= ZOOM_MAX" title="Zoom in">+</button>
+      @if (zoom !== 1.0) {
+        <button class="zoom-reset" (click)="resetZoom()" title="Reset zoom">↺</button>
+      }
+      <button class="zoom-btn name-toggle-btn"
+              (click)="showTechniqueNames = !showTechniqueNames"
+              [title]="showTechniqueNames ? 'Hide names (IDs only)' : 'Show names'"
+              [class.active]="!showTechniqueNames">
+        {{ showTechniqueNames ? 'Aa' : 'ID' }}
+      </button>
+      <button class="zoom-btn minimap-toggle-btn"
+              (click)="showMinimap = !showMinimap"
+              [class.active]="showMinimap"
+              title="Toggle minimap overview">
+        ⊞
+      </button>
+      <div class="column-toggle" [class.open]="showColumnMenu" (click)="$event.stopPropagation()">
+        <button class="zoom-btn column-toggle-btn" (click)="toggleColumnMenu($event)">
+          Columns ▾
+        </button>
+        @if (showColumnMenu) {
+          <div class="column-menu">
+            @for (col of domain.tacticColumns; track col.tactic.id) {
+              <label class="column-item">
+                <input type="checkbox"
+                       [checked]="!hiddenTacticIds.has(col.tactic.id)"
+                       (change)="toggleTacticFromMenu(col.tactic.id)">
+                {{ col.tactic.name }}
+              </label>
+            }
+            <div class="column-menu-footer">
+              <button (click)="showAllTactics()">Show All</button>
+              <button (click)="showColumnMenu = false">Done</button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+<div class="matrix-wrapper" tabindex="0">
+  @if (hiddenTacticCount > 0) {
+    <div class="hidden-tactics-bar">
+      <span>{{ hiddenTacticCount }} tactic{{ hiddenTacticCount !== 1 ? 's' : '' }} hidden</span>
+      <button class="restore-btn" (click)="restoreAllTactics()">Restore all</button>
+    </div>
+  }
+  <table class="matrix">
+    <thead>
+      <tr class="tactic-name-row">
+        @for (col of sortedColumns; track col.tactic.id) {
+          @if (!isColumnHidden(col)) {
+          <th class="tactic-header"
+              [style.background]="getTacticHeaderColor(col.tactic.shortname)"
+              (click)="onTacticHeaderClick(col, $event)">
+            <div class="tactic-name-wrap">
+              <span class="tactic-name-text">{{ col.tactic.name }}</span>
+              <span class="tactic-header-actions">
+                <a class="tactic-ext-link" [href]="col.tactic.url" target="_blank" rel="noopener" (click)="$event.stopPropagation()" title="Open on ATT&CK website">↗</a>
+                <button class="hide-tactic-btn" (click)="hideTactic(col.tactic.id, $event); $event.stopPropagation()" title="Hide this tactic column">✕</button>
+              </span>
+            </div>
+            <span class="count">{{ col.techniques.length }}</span>
+            <div class="tactic-coverage-bar" [title]="tacticCoverage(col) + '% mitigated'">
+              <div
+                class="tactic-coverage-fill"
+                [style.width.%]="tacticCoverage(col)"
+                [style.background]="tacticCoverage(col) >= 80 ? '#4caf50' : tacticCoverage(col) >= 50 ? '#ffd54f' : '#ff9800'"
+              ></div>
+            </div>
+            <span class="tactic-pct">{{ tacticCoverage(col) }}% mitigated</span>
+          </th>
+          }
+        }
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        @for (col of sortedColumns; track col.tactic.id) {
+          @if (!isColumnHidden(col)) {
+          <td class="tactic-col" valign="top">
+            @for (tech of col.techniques; track tech.id) {
+              @if (!isTechniqueHidden(tech)) {
+              <div class="technique-group">
+                @if (tech.subtechniques.length > 0) {
+                  <div class="parent-row">
+                    <button
+                      class="expand-btn"
+                      [class.expanded]="isParentExpanded(tech.id)"
+                      (click)="toggleParent(tech.id); $event.stopPropagation()"
+                      [title]="isParentExpanded(tech.id) ? 'Collapse sub-techniques' : 'Expand ' + tech.subtechniques.length + ' sub-techniques'"
+                    >
+                      <span class="chevron">{{ isParentExpanded(tech.id) ? '▾' : '▸' }}</span>
+                      <span class="sub-count">{{ tech.subtechniques.length }}</span>
+                    </button>
+                    <div class="cell-wrapper"
+                         [class.multi-selected]="selectedTechIds.has(tech.id)"
+                         [attr.data-tech-id]="tech.id"
+                         (mouseenter)="onCellMouseEnter(tech, $event)"
+                         (mouseleave)="onCellMouseLeave()">
+                      @if (multiSelectMode) {
+                        <span class="cell-checkbox" [class.checked]="selectedTechIds.has(tech.id)"
+                              (click)="toggleCellSelection(tech); $event.stopPropagation()">
+                          {{ selectedTechIds.has(tech.id) ? '☑' : '☐' }}
+                        </span>
+                      }
+                      <app-technique-cell
+                        [technique]="tech"
+                        [isHighlighted]="isHighlighted(tech)"
+                        [isDimmed]="isDimmed(tech)"
+                        [isSelected]="isSelected(tech)"
+                        [isFocused]="focusedCell?.id === tech.id"
+                        [exposureScore]="getExposureScore(tech)"
+                        [softwareScore]="getSoftwareScore(tech)"
+                        [campaignScore]="getCampaignScore(tech)"
+                        [heatmapMode]="heatmapMode"
+                        [implStatus]="getTechniqueImplStatus(tech)"
+                        [maxExposure]="maxExposure"
+                        [maxSoftware]="maxSoftware"
+                        [maxCampaign]="maxCampaign"
+                        [riskScore]="getRiskScore(tech)"
+                        [maxRisk]="maxRisk"
+                        [controlStatus]="getControlStatus(tech)"
+                        [hasNote]="techNotes.has(tech.id)"
+                        [kevScore]="getKevScore(tech)"
+                        [maxKev]="maxKev"
+                        [d3fendScore]="getD3fendScore(tech)"
+                        [maxD3fend]="maxD3fend"
+                        [atomicScore]="getAtomicScore(tech)"
+                        [maxAtomic]="maxAtomic"
+                        [engageScore]="getEngageScore(tech)"
+                        [carScore]="getCarScore(tech)"
+                        [cveScore]="getCveScore(tech)"
+                        [maxCveScore]="maxCveScore"
+                        [detectionScore]="getDetectionScore(tech)"
+                        [frequencyScore]="getFrequencyScore(tech)"
+                        [criScore]="getCriScore(tech)"
+                        [maxCriScore]="maxCriScore"
+                        [unifiedScore]="getUnifiedScore(tech)"
+                        [sigmaScore]="getSigmaScore(tech)"
+                        [nistScore]="getNistScore(tech)"
+                        [verisScore]="getVerisScore(tech)"
+                        [epssScore]="getEpssScore(tech)"
+                        [elasticScore]="getElasticScore(tech)"
+                        [splunkScore]="getSplunkScore(tech)"
+                        [intelScore]="getIntelScore(tech)"
+                        [maxIntelScore]="maxIntelScore"
+                        [showTechniqueId]="showTechniqueIds"
+                        [showMitigationCount]="showMitigationCount"
+                        [showTechniqueName]="showTechniqueNames"
+                        [annotation]="annotationMap.get(tech.attackId)"
+                        [isSearchMatch]="isMatrixSearchMatch(tech)"
+                        [hasActiveSearch]="!!searchQuery"
+                        [isWatched]="watchedIds.has(tech.attackId)"
+                        (selected)="onTechniqueClick($event)"
+                      />
+                    </div>
+                  </div>
+                  @if (isParentExpanded(tech.id)) {
+                    <div class="subtechniques">
+                      @for (sub of tech.subtechniques; track sub.id) {
+                        @if (!isSubHidden(sub)) {
+                        <div [attr.data-tech-id]="sub.id"
+                             [class.multi-selected]="selectedTechIds.has(sub.id)"
+                             style="position: relative;"
+                             (mouseenter)="onCellMouseEnter(sub, $event)"
+                             (mouseleave)="onCellMouseLeave()">
+                          @if (multiSelectMode) {
+                            <span class="cell-checkbox" [class.checked]="selectedTechIds.has(sub.id)"
+                                  (click)="toggleCellSelection(sub); $event.stopPropagation()">
+                              {{ selectedTechIds.has(sub.id) ? '☑' : '☐' }}
+                            </span>
+                          }
+                          <app-technique-cell
+                            [technique]="sub"
+                            [isHighlighted]="isHighlighted(sub)"
+                            [isDimmed]="isDimmed(sub)"
+                            [isSelected]="isSelected(sub)"
+                            [isFocused]="focusedCell?.id === sub.id"
+                            [exposureScore]="getExposureScore(sub)"
+                            [softwareScore]="getSoftwareScore(sub)"
+                            [campaignScore]="getCampaignScore(sub)"
+                            [heatmapMode]="heatmapMode"
+                            [implStatus]="getTechniqueImplStatus(sub)"
+                            [maxExposure]="maxExposure"
+                            [maxSoftware]="maxSoftware"
+                            [maxCampaign]="maxCampaign"
+                            [riskScore]="getRiskScore(sub)"
+                            [maxRisk]="maxRisk"
+                            [controlStatus]="getControlStatus(sub)"
+                            [hasNote]="techNotes.has(sub.id)"
+                            [kevScore]="getKevScore(sub)"
+                            [maxKev]="maxKev"
+                            [d3fendScore]="getD3fendScore(sub)"
+                            [maxD3fend]="maxD3fend"
+                            [atomicScore]="getAtomicScore(sub)"
+                            [maxAtomic]="maxAtomic"
+                            [engageScore]="getEngageScore(sub)"
+                            [carScore]="getCarScore(sub)"
+                            [cveScore]="getCveScore(sub)"
+                            [maxCveScore]="maxCveScore"
+                            [detectionScore]="getDetectionScore(sub)"
+                            [frequencyScore]="getFrequencyScore(sub)"
+                            [criScore]="getCriScore(sub)"
+                            [maxCriScore]="maxCriScore"
+                            [unifiedScore]="getUnifiedScore(sub)"
+                            [sigmaScore]="getSigmaScore(sub)"
+                            [nistScore]="getNistScore(sub)"
+                            [verisScore]="getVerisScore(sub)"
+                            [epssScore]="getEpssScore(sub)"
+                            [elasticScore]="getElasticScore(sub)"
+                            [splunkScore]="getSplunkScore(sub)"
+                            [intelScore]="getIntelScore(sub)"
+                            [maxIntelScore]="maxIntelScore"
+                            [showTechniqueId]="showTechniqueIds"
+                            [showMitigationCount]="showMitigationCount"
+                            [showTechniqueName]="showTechniqueNames"
+                            [annotation]="annotationMap.get(sub.attackId)"
+                            [isSearchMatch]="isMatrixSearchMatch(sub)"
+                            [hasActiveSearch]="!!searchQuery"
+                            [isWatched]="watchedIds.has(sub.attackId)"
+                            (selected)="onTechniqueClick($event)"
+                          />
+                        </div>
+                        }
+                      }
+                    </div>
+                  }
+                } @else {
+                  <div [attr.data-tech-id]="tech.id"
+                       [class.multi-selected]="selectedTechIds.has(tech.id)"
+                       style="position: relative;"
+                       (mouseenter)="onCellMouseEnter(tech, $event)"
+                       (mouseleave)="onCellMouseLeave()">
+                    @if (multiSelectMode) {
+                      <span class="cell-checkbox" [class.checked]="selectedTechIds.has(tech.id)"
+                            (click)="toggleCellSelection(tech); $event.stopPropagation()">
+                        {{ selectedTechIds.has(tech.id) ? '☑' : '☐' }}
+                      </span>
+                    }
+                    <app-technique-cell
+                      [technique]="tech"
+                      [isHighlighted]="isHighlighted(tech)"
+                      [isDimmed]="isDimmed(tech)"
+                      [isSelected]="isSelected(tech)"
+                      [isFocused]="focusedCell?.id === tech.id"
+                      [exposureScore]="getExposureScore(tech)"
+                      [softwareScore]="getSoftwareScore(tech)"
+                      [campaignScore]="getCampaignScore(tech)"
+                      [heatmapMode]="heatmapMode"
+                      [implStatus]="getTechniqueImplStatus(tech)"
+                      [maxExposure]="maxExposure"
+                      [maxSoftware]="maxSoftware"
+                      [maxCampaign]="maxCampaign"
+                      [riskScore]="getRiskScore(tech)"
+                      [maxRisk]="maxRisk"
+                      [controlStatus]="getControlStatus(tech)"
+                      [hasNote]="techNotes.has(tech.id)"
+                      [kevScore]="getKevScore(tech)"
+                      [maxKev]="maxKev"
+                      [d3fendScore]="getD3fendScore(tech)"
+                      [maxD3fend]="maxD3fend"
+                      [atomicScore]="getAtomicScore(tech)"
+                      [maxAtomic]="maxAtomic"
+                      [engageScore]="getEngageScore(tech)"
+                      [carScore]="getCarScore(tech)"
+                      [cveScore]="getCveScore(tech)"
+                      [maxCveScore]="maxCveScore"
+                      [detectionScore]="getDetectionScore(tech)"
+                      [frequencyScore]="getFrequencyScore(tech)"
+                      [criScore]="getCriScore(tech)"
+                      [maxCriScore]="maxCriScore"
+                      [unifiedScore]="getUnifiedScore(tech)"
+                      [sigmaScore]="getSigmaScore(tech)"
+                      [nistScore]="getNistScore(tech)"
+                      [verisScore]="getVerisScore(tech)"
+                      [epssScore]="getEpssScore(tech)"
+                        [elasticScore]="getElasticScore(tech)"
+                        [splunkScore]="getSplunkScore(tech)"
+                      [intelScore]="getIntelScore(tech)"
+                      [maxIntelScore]="maxIntelScore"
+                      [showTechniqueId]="showTechniqueIds"
+                      [showMitigationCount]="showMitigationCount"
+                      [showTechniqueName]="showTechniqueNames"
+                      [annotation]="annotationMap.get(tech.attackId)"
+                      [isSearchMatch]="isMatrixSearchMatch(tech)"
+                      [hasActiveSearch]="!!searchQuery"
+                      [isWatched]="watchedIds.has(tech.attackId)"
+                      (selected)="onTechniqueClick($event)"
+                    />
+                  </div>
+                }
+              </div>
+              }
+            }
+          </td>
+          }
+        }
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="keyboard-nav-hint" title="Press arrow keys to navigate, Enter to view details">
+    ↑↓←→ navigate &nbsp;·&nbsp; Enter to open &nbsp;·&nbsp; / to search
+  </div>
+
+  @if (noResults) {
+    <div class="no-results">
+      <span class="no-results-icon">🔍</span>
+      <span>No techniques match <strong>"{{ currentQuery }}"</strong></span>
+      <span class="no-results-hint">Try a technique ID (e.g. T1190) or a keyword</span>
+    </div>
+  }
+
+  @if (multiSelectMode && selectedTechIds.size > 0) {
+    <div class="bulk-bar">
+      <span class="bulk-count">{{ selectedTechIds.size }} selected</span>
+      <button class="bulk-btn impl" (click)="bulkSetStatus('implemented')">✓ Implemented</button>
+      <button class="bulk-btn prog" (click)="bulkSetStatus('in-progress')">⏳ In Progress</button>
+      <button class="bulk-btn plan" (click)="bulkSetStatus('planned')">📋 Planned</button>
+      <button class="bulk-btn none" (click)="bulkSetStatus('not-started')">○ Not Started</button>
+      <button class="bulk-btn clear-impl" (click)="bulkSetStatus(null)">⊘ Clear status</button>
+      <button class="bulk-btn close-sel" (click)="clearSelection()">✕ Cancel</button>
+    </div>
+  }
+</div>
+@if (domain && showMinimap) {
+  <div class="matrix-minimap">
+    <div class="minimap-title">Overview</div>
+    <div class="minimap-grid">
+      @for (col of domain.tacticColumns; track col.tactic.id) {
+        @if (!hiddenTacticIds.has(col.tactic.id)) {
+          <div class="minimap-col" [title]="col.tactic.name">
+            <div class="minimap-col-header" [style.background]="getTacticHeaderColor(col.tactic.shortname)"></div>
+            @for (tech of col.techniques.slice(0, 20); track tech.id) {
+              @if (!tech.isSubtechnique) {
+                <div class="minimap-cell"
+                     [style.background]="getCellColor(tech)"
+                     [title]="tech.attackId">
+                </div>
+              }
+            }
+          </div>
+        }
+      }
+    </div>
+    <button class="minimap-close" (click)="showMinimap = false">✕</button>
+  </div>
+}
+<app-technique-tooltip></app-technique-tooltip>
