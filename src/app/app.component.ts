@@ -55,6 +55,7 @@ import { CollectionPanelComponent } from './components/collection-panel/collecti
 import { DataHealthComponent } from './components/data-health/data-health.component';
 import { MatrixExportService } from './services/matrix-export.service';
 import { HtmlReportService } from './services/html-report.service';
+import { PdfReportService } from './services/pdf-report.service';
 import { UrlStateService } from './services/url-state.service';
 import { XlsxExportService } from './services/xlsx-export.service';
 import { CustomMitigationService } from './services/custom-mitigation.service';
@@ -93,6 +94,7 @@ export class AppComponent implements OnInit {
     private docService: DocumentationService,
     private matrixExport: MatrixExportService,
     private htmlReportService: HtmlReportService,
+    private pdfReportService: PdfReportService,
     private cdr: ChangeDetectorRef,
     private urlStateService: UrlStateService,
     private xlsxExport: XlsxExportService,
@@ -340,9 +342,9 @@ export class AppComponent implements OnInit {
     this.downloadCsv(rows.join('\n'), 'mitigation-implementation-plan.csv');
   }
 
-  exportXlsxWorkbook(): void {
+  async exportXlsxWorkbook(): Promise<void> {
     if (!this.domain) return;
-    this.xlsxExport.exportWorkbook(
+    await this.xlsxExport.exportWorkbook(
       this.domain,
       this.implService.getStatusMap(),
       this.customMitService.all,
@@ -353,6 +355,11 @@ export class AppComponent implements OnInit {
   exportHtmlCoverageReport(): void {
     if (!this.domain) return;
     this.htmlReportService.generateAndOpen(this.domain, this.implService.getStatusMap());
+  }
+
+  exportPdf(): void {
+    if (!this.domain) return;
+    this.pdfReportService.generateReport(this.domain, this.implService.getStatusMap());
   }
 
   exportMatrixPng(): void {
