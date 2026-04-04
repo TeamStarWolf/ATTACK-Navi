@@ -88,9 +88,17 @@
                 <button class="action-btn secondary" (click)="copyToClipboard()">
                   Copy to Clipboard
                 </button>
+                <button class="action-btn secondary" (click)="shareLink()">
+                  Share Link
+                </button>
               </div>
               @if (copyMessage) {
                 <div class="success-message">{{ copyMessage }}</div>
+              }
+              @if (shareUrl) {
+                <div class="share-url-display">
+                  <span class="share-url-text">{{ shareUrl }}</span>
+                </div>
               }
             </div>
           </div>
@@ -312,6 +320,28 @@
           </div>
         }
 
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Shared collection import dialog -->
+@if (showImportDialog && importDialogSummary) {
+  <div class="import-dialog-overlay" (click)="dismissUrlImport()">
+    <div class="import-dialog" (click)="$event.stopPropagation()">
+      <h3 class="import-dialog-title">Import Shared Collection?</h3>
+      <p class="import-dialog-desc">
+        A shared collection was found in the URL. Would you like to import it?
+      </p>
+      <div class="preview-counts">
+        <span class="preview-item">{{ importDialogSummary.techniques }} techniques</span>
+        <span class="preview-item">{{ importDialogSummary.groups }} groups</span>
+        <span class="preview-item">{{ importDialogSummary.mitigations }} mitigations</span>
+        <span class="preview-item">{{ importDialogSummary.notes }} notes</span>
+      </div>
+      <div class="button-row import-dialog-actions">
+        <button class="action-btn primary" (click)="confirmUrlImport()">Import</button>
+        <button class="action-btn secondary" (click)="dismissUrlImport()">Dismiss</button>
       </div>
     </div>
   </div>

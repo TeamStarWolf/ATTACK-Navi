@@ -40,21 +40,49 @@
           } @else {
             <div class="group-list">
               @for (group of filteredGroups; track group.id) {
-                <button
-                  class="group-item"
-                  [class.selected]="selectedGroup?.id === group.id"
-                  (click)="selectGroup(group)"
-                >
-                  <span class="group-attack-id">{{ group.attackId }}</span>
-                  <span class="group-name">{{ group.name }}</span>
-                  @if (group.aliases.length > 0) {
-                    <span class="group-alias">{{ group.aliases[0] }}</span>
-                  }
-                </button>
+                <div class="group-item-row">
+                  <input
+                    type="checkbox"
+                    class="group-checkbox"
+                    [checked]="isGroupSelected(group)"
+                    (click)="$event.stopPropagation(); toggleGroupSelection(group)"
+                    title="Select for multi-actor simulation"
+                  />
+                  <button
+                    class="group-item"
+                    [class.selected]="selectedGroup?.id === group.id"
+                    (click)="selectGroup(group)"
+                  >
+                    <span class="group-attack-id">{{ group.attackId }}</span>
+                    <span class="group-name">{{ group.name }}</span>
+                    @if (group.aliases.length > 0) {
+                      <span class="group-alias">{{ group.aliases[0] }}</span>
+                    }
+                  </button>
+                </div>
               }
               @if (filteredGroups.length === 0) {
                 <div class="no-groups">No groups match "{{ groupSearch }}"</div>
               }
+            </div>
+          }
+
+          <!-- Multi-select simulate button -->
+          @if (selectedGroupIds.size > 0) {
+            <div class="sim-action-bar">
+              <span class="sim-selected-count">{{ selectedGroupIds.size }} selected</span>
+              <button
+                class="sim-run-btn"
+                (click)="runThreatSimulation()"
+                [disabled]="isSimulating"
+              >
+                @if (isSimulating) {
+                  <span class="mini-spinner"></span> Simulating...
+                } @else {
+                  Simulate
+                }
+              </button>
+              <button class="sim-clear-btn" (click)="selectedGroupIds.clear()">Clear</button>
             </div>
           }
         </div>
@@ -428,6 +456,123 @@
           }
 
         </div>
+
+        <!-- Threat Simulation Results Overlay -->
+        @if (showThreatSim && threatSimResults.length > 0 && !isSimulating) {
+          <div class="threat-sim-overlay">
+            <div class="threat-sim-header">
+              <span class="threat-sim-title">Threat Simulation Results</span>
+              <div class="threat-sim-header-actions">
+                <button
+                  class="sim-export-btn"
+                  (click)="exportSimulationCsv()"
+                  [disabled]="!activeThreatSimResult || activeThreatSimResult.gaps.length === 0"
+                  title="Export gaps as CSV"
+                >Export CSV</button>
+                <button class="sim-close-btn" (click)="closeThreatSim()">Close</button>
+              </div>
+            </div>
+
+            <!-- Actor tabs (if multiple) -->
+            @if (threatSimResults.length > 1) {
+              <div class="sim-actor-tabs">
+                @for (r of threatSimResults; track r.actor.id) {
+                  <button
+                    class="sim-actor-tab"
+                    [class.active]="activeThreatSimResult?.actor?.id === r.actor.id"
+                    (click)="selectThreatSimResult(r)"
+                  >
+                    <span class="sim-actor-tab-name">{{ r.actor.name }}</span>
+                    <span class="sim-actor-tab-score" [style.color]="r.riskScore >= 70 ? '#f87171' : r.riskScore >= 40 ? '#fbbf24' : '#4ade80'">{{ r.riskScore }}</span>
+                  </button>
+                }
+              </div>
+            }
+
+            @if (activeThreatSimResult; as sim) {
+              <div class="sim-result-body">
+
+                <!-- Summary cards -->
+                <div class="sim-summary-row">
+                  <div class="sim-summary-card">
+                    <div class="sim-summary-value">{{ sim.coveragePercent }}%</div>
+                    <div class="sim-summary-label">Coverage</div>
+                  </div>
+                  <div class="sim-summary-card">
+                    <div class="sim-summary-value" [style.color]="sim.riskScore >= 70 ? '#f87171' : sim.riskScore >= 40 ? '#fbbf24' : '#4ade80'">{{ sim.riskScore }}</div>
+                    <div class="sim-summary-label">Risk Score</div>
+                  </div>
+                  <div class="sim-summary-card">
+                    <div class="sim-summary-value">{{ sim.techniquesCovered }}/{{ sim.techniquesTotal }}</div>
+                    <div class="sim-summary-label">Covered</div>
+                  </div>
+                  <div class="sim-summary-card">
+                    <div class="sim-summary-value" style="color: #f97316;">{{ sim.gaps.length }}</div>
+                    <div class="sim-summary-label">Gaps</div>
+                  </div>
+                </div>
+
+                <!-- Tactic breakdown bars -->
+                @if (threatSimTacticBars.length > 0) {
+                  <div class="sim-tactic-section">
+                    <div class="sim-section-title">Coverage by Tactic</div>
+                    <div class="sim-tactic-bars">
+                      @for (tb of threatSimTacticBars; track tb.tactic) {
+                        <div class="sim-tactic-row">
+                          <span class="sim-tactic-name">{{ tb.tactic }}</span>
+                          <div class="sim-tactic-bar-track">
+                            <div
+                              class="sim-tactic-bar-fill"
+                              [style.width.%]="tb.pct"
+                              [style.background]="tb.pct >= 75 ? '#4ade80' : tb.pct >= 40 ? '#fbbf24' : '#f87171'"
+                            ></div>
+                          </div>
+                          <span class="sim-tactic-pct">{{ tb.covered }}/{{ tb.total }}</span>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <!-- Prioritized gap list -->
+                @if (sim.gaps.length > 0) {
+                  <div class="sim-gaps-section">
+                    <div class="sim-section-title">Prioritized Gaps ({{ sim.gaps.length }})</div>
+                    <div class="sim-gap-list">
+                      @for (gap of sim.gaps; track gap.technique.id; let i = $index) {
+                        <div class="sim-gap-item" (click)="selectTechnique({ technique: gap.technique, outcome: 'vulnerable', mitigationCount: 0, implementedMitigations: 0, hasDetection: false, riskLevel: gap.priority, reasoning: '' })">
+                          <span class="sim-gap-rank">{{ i + 1 }}</span>
+                          <span class="sim-gap-priority" [style.color]="priorityColor(gap.priority)">{{ gap.priority | uppercase }}</span>
+                          <div class="sim-gap-info">
+                            <span class="sim-gap-name">{{ gap.technique.name }}</span>
+                            <span class="sim-gap-meta">{{ gap.technique.attackId }} &middot; {{ gap.tactic }}</span>
+                          </div>
+                          <div class="sim-gap-indicators">
+                            @if (gap.kevCount > 0) {
+                              <span class="sim-gap-badge sim-badge-kev" title="KEV CVEs">KEV:{{ gap.kevCount }}</span>
+                            }
+                            @if (gap.hasExploit) {
+                              <span class="sim-gap-badge sim-badge-exploit" title="Has exploit code">EXP</span>
+                            }
+                            @if (gap.epssAvg !== null) {
+                              <span class="sim-gap-badge sim-badge-epss" title="Avg EPSS score">{{ (gap.epssAvg * 100) | number:'1.1-1' }}%</span>
+                            }
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                } @else {
+                  <div class="sim-no-gaps">
+                    No coverage gaps found -- all techniques are mitigated.
+                  </div>
+                }
+
+              </div>
+            }
+          </div>
+        }
+
       </div>
 
     </div>

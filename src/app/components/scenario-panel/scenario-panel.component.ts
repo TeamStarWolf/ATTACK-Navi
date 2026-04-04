@@ -14,6 +14,7 @@ import { ImplementationService } from '../../services/implementation.service';
 import { CARService } from '../../services/car.service';
 import { AtomicService } from '../../services/atomic.service';
 import { D3fendService } from '../../services/d3fend.service';
+import { ThreatSimulationService, SimulationResult as ThreatSimResult, SimulationGap } from '../../services/threat-simulation.service';
 import { ThreatGroup } from '../../models/group';
 import { Technique } from '../../models/technique';
 
@@ -61,6 +62,12 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
   isSimulating = false;
   groupSearch = '';
 
+  // ─── Threat Simulation (enhanced) ────────────────��────────────────────
+  selectedGroupIds = new Set<string>();
+  threatSimResults: ThreatSimResult[] = [];
+  activeThreatSimResult: ThreatSimResult | null = null;
+  showThreatSim = false;
+
   private cachedDomain: any = null;
   private subs = new Subscription();
 
@@ -71,6 +78,7 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
     private carService: CARService,
     private atomicService: AtomicService,
     private d3fendService: D3fendService,
+    private threatSimService: ThreatSimulationService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -389,5 +397,106 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
 
   close(): void {
     this.filterService.setActivePanel(null);
+  }
+
+  // ─── Threat Simulation (enhanced) ───────────────────────���─────────────
+
+  toggleGroupSelection(group: ThreatGroup): void {
+    if (this.selectedGroupIds.has(group.id)) {
+      this.selectedGroupIds.delete(group.id);
+    } else {
+      this.selectedGroupIds.add(group.id);
+    }
+    this.cdr.markForCheck();
+  }
+
+  isGroupSelected(group: ThreatGroup): boolean {
+    return this.selectedGroupIds.has(group.id);
+  }
+
+  runThreatSimulation(): void {
+    const ids = [...this.selectedGroupIds];
+    if (ids.length === 0) return;
+    this.isSimulating = true;
+    this.showThreatSim = true;
+    this.threatSimResults = [];
+    this.activeThreatSimResult = null;
+    this.cdr.markForCheck();
+
+    const doSim = (domain: any) => {
+      setTimeout(() => {
+        this.threatSimResults = this.threatSimService.simulateMultipleActors(ids, domain);
+        if (this.threatSimResults.length > 0) {
+          this.activeThreatSimResult = this.threatSimResults[0];
+        }
+        this.isSimulating = false;
+        this.cdr.markForCheck();
+      }, 200);
+    };
+
+    if (this.cachedDomain) {
+      doSim(this.cachedDomain);
+    } else {
+      this.dataService.domain$.pipe(filter(Boolean), take(1)).subscribe(d => {
+        this.cachedDomain = d;
+        doSim(d);
+      });
+    }
+  }
+
+  selectThreatSimResult(result: ThreatSimResult): void {
+    this.activeThreatSimResult = result;
+    this.cdr.markForCheck();
+  }
+
+  get threatSimTacticBars(): { tactic: string; covered: number; total: number; pct: number }[] {
+    if (!this.activeThreatSimResult) return [];
+    return this.activeThreatSimResult.tacticBreakdown.map(t => ({
+      ...t,
+      pct: t.total > 0 ? Math.round((t.covered / t.total) * 100) : 0,
+    }));
+  }
+
+  closeThreatSim(): void {
+    this.showThreatSim = false;
+    this.threatSimResults = [];
+    this.activeThreatSimResult = null;
+    this.selectedGroupIds.clear();
+    this.cdr.markForCheck();
+  }
+
+  exportSimulationCsv(): void {
+    const result = this.activeThreatSimResult;
+    if (!result) return;
+    const rows: string[] = [
+      'Priority,ATT&CK ID,Technique Name,Tactic,KEV Count,Has Exploit,EPSS Avg',
+    ];
+    for (const gap of result.gaps) {
+      rows.push([
+        gap.priority.toUpperCase(),
+        gap.technique.attackId,
+        `"${gap.technique.name.replace(/"/g, '""')}"`,
+        gap.tactic,
+        gap.kevCount,
+        gap.hasExploit ? 'Yes' : 'No',
+        gap.epssAvg !== null ? gap.epssAvg.toFixed(4) : '',
+      ].join(','));
+    }
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `simulation-${result.actor.attackId}-gaps.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  priorityColor(priority: string): string {
+    switch (priority) {
+      case 'critical': return '#f87171';
+      case 'high':     return '#f97316';
+      case 'medium':   return '#fbbf24';
+      case 'low':      return '#4ade80';
+      default:         return '#4a6080';
+    }
   }
 }

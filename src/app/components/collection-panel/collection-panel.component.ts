@@ -46,6 +46,12 @@ export class CollectionPanelComponent implements OnInit, OnDestroy {
   customMitigationCount = 0;
   annotationCount = 0;
   copyMessage = '';
+  shareUrl = '';
+
+  // Share-import dialog
+  showImportDialog = false;
+  importDialogSummary: ImportSummary | null = null;
+  importDialogBundle: Record<string, any> | null = null;
 
   // Tab 2 — Import
   importUrl = '';
@@ -146,6 +152,48 @@ export class CollectionPanelComponent implements OnInit, OnDestroy {
       this.cdr.markForCheck();
       setTimeout(() => { this.copyMessage = ''; this.cdr.markForCheck(); }, 2500);
     });
+  }
+
+  shareLink(): void {
+    const name = this.exportName.trim() || 'My Collection';
+    const desc = this.exportDescription.trim() || 'Exported from MITRE Mitigation Navigator';
+    const url = this.stixCollectionService.shareAsUrl(name, desc);
+    navigator.clipboard.writeText(url).then(() => {
+      this.shareUrl = url;
+      this.copyMessage = 'Share link copied to clipboard!';
+      this.cdr.markForCheck();
+      setTimeout(() => { this.copyMessage = ''; this.shareUrl = ''; this.cdr.markForCheck(); }, 4000);
+    });
+  }
+
+  /** Called from AppComponent on init to check URL for shared collection import */
+  checkUrlImport(): void {
+    const result = this.stixCollectionService.parseImportFromHash();
+    if (!result) return;
+    this.importDialogSummary = result.summary;
+    this.importDialogBundle = result.bundle;
+    this.showImportDialog = true;
+    this.cdr.markForCheck();
+  }
+
+  confirmUrlImport(): void {
+    if (!this.importDialogBundle) return;
+    const summary = this.stixCollectionService.importCollection(this.importDialogBundle);
+    this.stixCollectionService.clearImportHash();
+    this.importMessage = `Imported: ${summary.techniques} techniques, ${summary.groups} groups, ${summary.mitigations} mitigations, ${summary.notes} notes. ${summary.skipped} skipped.`;
+    this.showImportDialog = false;
+    this.importDialogBundle = null;
+    this.importDialogSummary = null;
+    this.refreshCounts();
+    this.cdr.markForCheck();
+  }
+
+  dismissUrlImport(): void {
+    this.stixCollectionService.clearImportHash();
+    this.showImportDialog = false;
+    this.importDialogBundle = null;
+    this.importDialogSummary = null;
+    this.cdr.markForCheck();
   }
 
   // ─── Tab 2: Import ────────────────────────────────────────────────────────
