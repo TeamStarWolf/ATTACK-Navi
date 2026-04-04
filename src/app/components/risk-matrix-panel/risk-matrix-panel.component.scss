@@ -2,7 +2,7 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgb(0 0 0 / 60%);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -21,7 +21,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 24px 64px rgb(0 0 0 / 70%);
 }
 
 /* ── Header ── */
@@ -63,7 +63,7 @@
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgb(255 255 255 / 6%);
   border: none;
   color: #4a6080;
   font-size: 16px;
@@ -125,10 +125,10 @@
   border-radius: 8px;
 }
 
-.quad-critical  { background: rgba(248, 113, 113, 0.1);  border-left: 3px solid #f87171; }
-.quad-monitor   { background: rgba(251, 146, 60, 0.1);   border-left: 3px solid #fb923c; }
-.quad-low       { background: rgba(251, 191, 36, 0.1);   border-left: 3px solid #fbbf24; }
-.quad-protected { background: rgba(74, 222, 128, 0.1);   border-left: 3px solid #4ade80; }
+.quad-critical  { background: rgb(248 113 113 / 10%);  border-left: 3px solid #f87171; }
+.quad-monitor   { background: rgb(251 146 60 / 10%);   border-left: 3px solid #fb923c; }
+.quad-low       { background: rgb(251 191 36 / 10%);   border-left: 3px solid #fbbf24; }
+.quad-protected { background: rgb(74 222 128 / 10%);   border-left: 3px solid #4ade80; }
 
 .quad-count {
   font-size: 22px;
@@ -176,15 +176,15 @@
   &:hover { color: #8aaac8; border-color: #2a4a64; }
 
   &.active {
-    background: rgba(88, 166, 255, 0.12);
+    background: rgb(88 166 255 / 12%);
     border-color: #58a6ff;
     color: #58a6ff;
   }
 
-  &.filter-critical.active  { background: rgba(248, 113, 113, 0.12); border-color: #f87171; color: #f87171; }
-  &.filter-monitor.active   { background: rgba(251, 146, 60, 0.12);  border-color: #fb923c; color: #fb923c; }
-  &.filter-low.active       { background: rgba(251, 191, 36, 0.12);  border-color: #fbbf24; color: #fbbf24; }
-  &.filter-protected.active { background: rgba(74, 222, 128, 0.12);  border-color: #4ade80; color: #4ade80; }
+  &.filter-critical.active  { background: rgb(248 113 113 / 12%); border-color: #f87171; color: #f87171; }
+  &.filter-monitor.active   { background: rgb(251 146 60 / 12%);  border-color: #fb923c; color: #fb923c; }
+  &.filter-low.active       { background: rgb(251 191 36 / 12%);  border-color: #fbbf24; color: #fbbf24; }
+  &.filter-protected.active { background: rgb(74 222 128 / 12%);  border-color: #4ade80; color: #4ade80; }
 }
 
 /* ── Tabs ── */
@@ -257,7 +257,7 @@
   writing-mode: vertical-rl;
   transform: rotate(180deg);
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgb(255 255 255 / 30%);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   display: flex;
@@ -279,7 +279,7 @@
   background: #0d1f2d;
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgb(255 255 255 / 6%);
 }
 
 .quadrant {
@@ -297,16 +297,16 @@
   pointer-events: none;
 }
 
-.q-critical       { right: 0; top: 0;    background: rgba(248, 113, 113, 0.08); color: #f87171; }
-.q-monitor        { right: 0; bottom: 0; background: rgba(251, 146, 60, 0.08);  color: #fb923c; }
-.q-low-priority   { left: 0;  top: 0;    background: rgba(251, 191, 36, 0.08);  color: #fbbf24; }
-.q-well-protected { left: 0;  bottom: 0; background: rgba(74, 222, 128, 0.08);  color: #4ade80; }
+.q-critical       { right: 0; top: 0;    background: rgb(248 113 113 / 8%); color: #f87171; }
+.q-monitor        { right: 0; bottom: 0; background: rgb(251 146 60 / 8%);  color: #fb923c; }
+.q-low-priority   { left: 0;  top: 0;    background: rgb(251 191 36 / 8%);  color: #fbbf24; }
+.q-well-protected { left: 0;  bottom: 0; background: rgb(74 222 128 / 8%);  color: #4ade80; }
 
 .crosshair-h {
   position: absolute;
   left: 0; right: 0; top: 50%;
   height: 1px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgb(255 255 255 / 10%);
   pointer-events: none;
 }
 
@@ -314,7 +314,7 @@
   position: absolute;
   top: 0; bottom: 0; left: 50%;
   width: 1px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgb(255 255 255 / 10%);
   pointer-events: none;
 }
 
@@ -334,7 +334,7 @@
   }
 }
 
-.dot-critical      { background: #f87171; box-shadow: 0 0 4px rgba(248, 113, 113, 0.6); }
+.dot-critical      { background: #f87171; box-shadow: 0 0 4px rgb(248 113 113 / 60%); }
 .dot-monitor       { background: #fb923c; }
 .dot-low-priority  { background: #fbbf24; }
 .dot-well-protected { background: #4ade80; }
@@ -344,7 +344,7 @@
   bottom: 6px;
   right: 8px;
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgb(255 255 255 / 30%);
   pointer-events: none;
   letter-spacing: 0.05em;
 }
@@ -354,7 +354,7 @@
   top: 6px;
   left: 8px;
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgb(255 255 255 / 30%);
   pointer-events: none;
   letter-spacing: 0.05em;
 }
@@ -384,11 +384,11 @@
 }
 
 .risk-plot {
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 2.5%);
 }
 
 .table-wrap {
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-top: 1px solid rgb(255 255 255 / 4%);
 }
 
 .legend-item {
@@ -420,15 +420,15 @@
 .point-tooltip {
   position: fixed;
   background: #07101a;
-  border: 1px solid rgba(88, 166, 255, 0.3);
+  border: 1px solid rgb(88 166 255 / 30%);
   border-radius: 6px;
   padding: 8px 12px;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.85);
+  color: rgb(255 255 255 / 85%);
   pointer-events: none;
   z-index: 2000;
   max-width: 240px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 50%);
 }
 
 .tooltip-id {
@@ -520,7 +520,7 @@
   cursor: pointer;
   transition: background 0.1s;
 
-  &:nth-child(even) { background: rgba(10, 24, 40, 0.3); }
+  &:nth-child(even) { background: rgb(10 24 40 / 30%); }
   &:hover { background: #0a1828; }
 }
 
@@ -611,22 +611,22 @@
 }
 
 .badge-critical {
-  background: rgba(248, 113, 113, 0.15);
+  background: rgb(248 113 113 / 15%);
   color: #f87171;
 }
 
 .badge-monitor {
-  background: rgba(251, 146, 60, 0.15);
+  background: rgb(251 146 60 / 15%);
   color: #fb923c;
 }
 
 .badge-low-priority {
-  background: rgba(251, 191, 36, 0.15);
+  background: rgb(251 191 36 / 15%);
   color: #fbbf24;
 }
 
 .badge-well-protected {
-  background: rgba(74, 222, 128, 0.15);
+  background: rgb(74 222 128 / 15%);
   color: #4ade80;
 }
 
@@ -647,8 +647,8 @@
 
 .show-all-btn {
   padding: 7px 24px;
-  background: rgba(88, 166, 255, 0.08);
-  border: 1px solid rgba(88, 166, 255, 0.25);
+  background: rgb(88 166 255 / 8%);
+  border: 1px solid rgb(88 166 255 / 25%);
   border-radius: 6px;
   color: #58a6ff;
   font-size: 12px;
@@ -656,7 +656,7 @@
   transition: all 0.15s;
 
   &:hover {
-    background: rgba(88, 166, 255, 0.15);
+    background: rgb(88 166 255 / 15%);
     border-color: #58a6ff;
   }
 }

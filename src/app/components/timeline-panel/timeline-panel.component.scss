@@ -2,7 +2,7 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgb(0 0 0 / 60%);
   z-index: 1000;
   display: flex;
   align-items: stretch;
@@ -20,7 +20,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.6);
+  box-shadow: -8px 0 32px rgb(0 0 0 / 60%);
 }
 
 /* ── Header ── */
@@ -64,8 +64,8 @@
 
 .export-btn {
   padding: 5px 12px;
-  background: rgba(88, 166, 255, 0.08);
-  border: 1px solid rgba(88, 166, 255, 0.25);
+  background: rgb(88 166 255 / 8%);
+  border: 1px solid rgb(88 166 255 / 25%);
   border-radius: 6px;
   color: #58a6ff;
   font-size: 11px;
@@ -74,8 +74,8 @@
   transition: background 0.15s, border-color 0.15s;
 
   &:hover {
-    background: rgba(88, 166, 255, 0.14);
-    border-color: rgba(88, 166, 255, 0.45);
+    background: rgb(88 166 255 / 14%);
+    border-color: rgb(88 166 255 / 45%);
   }
 }
 
@@ -83,7 +83,7 @@
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgb(255 255 255 / 6%);
   border: none;
   color: #4a6080;
   font-size: 16px;
@@ -143,7 +143,7 @@
   height: 36px;
   padding: 0 18px;
   background: linear-gradient(135deg, #1a4a8a, #1a6b3a);
-  border: 1px solid rgba(74, 222, 128, 0.3);
+  border: 1px solid rgb(74 222 128 / 30%);
   border-radius: 6px;
   color: #4ade80;
   font-size: 13px;
@@ -155,8 +155,8 @@
 
   &:hover:not(:disabled) {
     background: linear-gradient(135deg, #1e5aa0, #1e7a42);
-    border-color: rgba(74, 222, 128, 0.5);
-    box-shadow: 0 0 12px rgba(74, 222, 128, 0.15);
+    border-color: rgb(74 222 128 / 50%);
+    box-shadow: 0 0 12px rgb(74 222 128 / 15%);
   }
 
   &:disabled {
@@ -166,7 +166,7 @@
 
   &.success {
     background: linear-gradient(135deg, #1a5a2a, #0e4a20);
-    border-color: rgba(74, 222, 128, 0.6);
+    border-color: rgb(74 222 128 / 60%);
     color: #4ade80;
   }
 }
@@ -260,7 +260,7 @@
   min-width: 18px;
   padding: 1px 5px;
   border-radius: 9px;
-  background: rgba(88, 166, 255, 0.15);
+  background: rgb(88 166 255 / 15%);
   color: #58a6ff;
   font-size: 10px;
   font-weight: 700;
@@ -370,7 +370,7 @@
 
   &:hover { background: #0f1f2e; }
 
-  &.danger:hover { background: rgba(248, 113, 113, 0.1); }
+  &.danger:hover { background: rgb(248 113 113 / 10%); }
 }
 
 /* ── Card Stats ── */
@@ -429,10 +429,10 @@
   border-radius: 10px;
   font-weight: 500;
 
-  &.impl-done { background: rgba(74, 222, 128, 0.1); color: #4ade80; }
-  &.impl-prog { background: rgba(251, 146, 60, 0.1); color: #fb923c; }
-  &.impl-plan { background: rgba(88, 166, 255, 0.1); color: #58a6ff; }
-  &.impl-none { background: rgba(248, 113, 113, 0.1); color: #f87171; }
+  &.impl-done { background: rgb(74 222 128 / 10%); color: #4ade80; }
+  &.impl-prog { background: rgb(251 146 60 / 10%); color: #fb923c; }
+  &.impl-plan { background: rgb(88 166 255 / 10%); color: #58a6ff; }
+  &.impl-none { background: rgb(248 113 113 / 10%); color: #f87171; }
 }
 
 .card-sub {
@@ -463,17 +463,17 @@
   flex-shrink: 0;
 
   &.delta-pos {
-    background: rgba(74, 222, 128, 0.12);
+    background: rgb(74 222 128 / 12%);
     color: #4ade80;
   }
 
   &.delta-neg {
-    background: rgba(248, 113, 113, 0.12);
+    background: rgb(248 113 113 / 12%);
     color: #f87171;
   }
 
   &.delta-zero {
-    background: rgba(74, 96, 128, 0.12);
+    background: rgb(74 96 128 / 12%);
     color: #4a6080;
   }
 }
@@ -571,8 +571,8 @@
 
 .save-edit-btn {
   padding: 5px 16px;
-  background: rgba(88, 166, 255, 0.12);
-  border: 1px solid rgba(88, 166, 255, 0.3);
+  background: rgb(88 166 255 / 12%);
+  border: 1px solid rgb(88 166 255 / 30%);
   border-radius: 6px;
   color: #58a6ff;
   font-size: 12px;
@@ -581,8 +581,8 @@
   transition: all 0.15s;
 
   &:hover:not(:disabled) {
-    background: rgba(88, 166, 255, 0.2);
-    border-color: rgba(88, 166, 255, 0.5);
+    background: rgb(88 166 255 / 20%);
+    border-color: rgb(88 166 255 / 50%);
   }
 
   &:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -754,8 +754,8 @@
 
   &:hover { background: #0a1828; }
 
-  &.improved { .tactic-name-cell { color: rgba(74, 222, 128, 0.8); } }
-  &.regressed { .tactic-name-cell { color: rgba(248, 113, 113, 0.8); } }
+  &.improved { .tactic-name-cell { color: rgb(74 222 128 / 80%); } }
+  &.regressed { .tactic-name-cell { color: rgb(248 113 113 / 80%); } }
 }
 
 .tactic-name-cell {
@@ -870,8 +870,8 @@
   padding: 1px 5px;
   border-radius: 8px;
 
-  &.delta-pos { background: rgba(74, 222, 128, 0.12); color: #4ade80; }
-  &.delta-neg { background: rgba(248, 113, 113, 0.12); color: #f87171; }
+  &.delta-pos { background: rgb(74 222 128 / 12%); color: #4ade80; }
+  &.delta-neg { background: rgb(248 113 113 / 12%); color: #f87171; }
   &.delta-zero { color: #3a5a74; }
 }
 
@@ -952,13 +952,13 @@
   display: inline-block;
   padding: 2px 8px;
   border-radius: 8px;
-  background: rgba(248, 113, 113, 0.1);
+  background: rgb(248 113 113 / 10%);
   color: #f87171;
   font-weight: 700;
   font-size: 12px;
 
-  &.mid-pct { background: rgba(251, 146, 60, 0.1); color: #fb923c; }
-  &.high-pct { background: rgba(74, 222, 128, 0.1); color: #4ade80; }
+  &.mid-pct { background: rgb(251 146 60 / 10%); color: #fb923c; }
+  &.high-pct { background: rgb(74 222 128 / 10%); color: #4ade80; }
 }
 
 .baseline-label {

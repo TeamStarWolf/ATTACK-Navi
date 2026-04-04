@@ -1,7 +1,7 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgb(0 0 0 / 50%);
   z-index: 400;
 }
 
@@ -15,7 +15,7 @@
   background: #1c2b30;
   border: 1px solid #37474f;
   border-radius: 10px;
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 12px 48px rgb(0 0 0 / 50%);
   z-index: 401;
   display: flex;
   flex-direction: column;
@@ -45,7 +45,7 @@
   cursor: pointer;
   padding: 4px 8px;
   border-radius: 4px;
-  &:hover { background: rgba(255,255,255,0.08); color: #eceff1; }
+  &:hover { background: rgb(255 255 255 / 8%); color: #eceff1; }
 }
 
 .help-body {
@@ -59,11 +59,11 @@
   grid-template-columns: repeat(2, 1fr);
   gap: 20px;
 
-  @media (max-width: 600px) { grid-template-columns: 1fr; }
+  @media (width <= 600px) { grid-template-columns: 1fr; }
 }
 
 .shortcut-group {
-  background: rgba(255,255,255,0.03);
+  background: rgb(255 255 255 / 3%);
   border: 1px solid #37474f;
   border-radius: 8px;
   padding: 12px 14px;

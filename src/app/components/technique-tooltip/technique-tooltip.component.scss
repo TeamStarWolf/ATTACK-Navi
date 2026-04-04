@@ -6,7 +6,7 @@
   border: 1px solid #1e3a5f;
   border-radius: 8px;
   padding: 12px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 60%);
   pointer-events: none;
   animation: fadeIn 0.12s ease;
 
@@ -23,6 +23,7 @@
 
   .tooltip-platforms {
     display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px;
+
     .plat-badge {
       background: #1a3448; color: #8b949e; border-radius: 3px;
       padding: 1px 5px; font-size: 10px;
