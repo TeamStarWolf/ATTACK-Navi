@@ -102,7 +102,7 @@
           <td class="tactic-col" valign="top">
             @for (tech of col.techniques; track tech.id) {
               @if (!isTechniqueHidden(tech)) {
-              <div class="technique-group">
+              <div class="technique-group" [class.custom-technique]="isCustomTechnique(tech)">
                 @if (tech.subtechniques.length > 0) {
                   <div class="parent-row">
                     <button

@@ -8,7 +8,12 @@
             <span class="difficulty-badge" [style.background]="difficultyLevel.color + '22'" [style.color]="difficultyLevel.color" [style.border-color]="difficultyLevel.color + '55'">{{ difficultyLevel.label }}</span>
             <a class="attck-link-btn" [href]="technique.url" target="_blank" rel="noopener" title="View on ATT&CK">ATT&amp;CK ↗</a>
           </div>
-          <h2 class="technique-name">{{ technique.name }}</h2>
+          <h2 class="technique-name">
+            {{ technique.name }}
+            @if (isCustomTechnique) {
+              <span class="custom-badge">CUSTOM</span>
+            }
+          </h2>
         </div>
         <div class="header-btns">
           <button
