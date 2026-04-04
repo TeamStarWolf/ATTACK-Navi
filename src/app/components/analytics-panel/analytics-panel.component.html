@@ -1,0 +1,237 @@
+@if (open) {
+  <div class="overlay" (click)="close()">
+    <div class="panel" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="panel-header">
+        <span class="panel-title">📈 Analytics Dashboard</span>
+        <button class="close-btn" (click)="close()" title="Close">✕</button>
+      </div>
+
+      @if (!domain) {
+        <div class="loading-state">
+          <div class="loader-spinner"></div>
+          <p>Loading ATT&amp;CK data…</p>
+        </div>
+      } @else {
+
+        <!-- Row 1: Key metrics -->
+        <div class="metrics-row">
+          <!-- Coverage Donut -->
+          <div class="stat-card donut-card upgrade-section-block">
+            <div class="donut" [style]="'--pct:' + coveragePct">
+              <span class="donut-value">{{ coveragePct }}%</span>
+            </div>
+            <div class="stat-label">Overall Coverage</div>
+          </div>
+
+          <!-- Technique counts -->
+          <div class="stat-card upgrade-section-block">
+            <div class="stat-big">{{ coveredTechs }} <span class="stat-denom">/ {{ totalTechs }}</span></div>
+            <div class="stat-label">Techniques Covered</div>
+            <div class="stat-sub">{{ totalTechs - coveredTechs }} unmitigated</div>
+          </div>
+
+          <!-- KEV Exposure -->
+          <div class="stat-card upgrade-section-block" [class.kev-alert]="kevExposureCount > 0">
+            <div class="stat-big kev-val">{{ kevExposureCount }}</div>
+            <div class="stat-label">KEV-Exposed Gaps</div>
+            <div class="stat-sub">Unmitigated techniques with KEV CVEs</div>
+          </div>
+
+          <!-- Sigma Rules -->
+          <div class="stat-card upgrade-section-block">
+            <div class="stat-big sigma-val">{{ sigmaTotal }}</div>
+            <div class="stat-label">Σ Sigma Rules</div>
+            <div class="stat-sub">{{ sigmaCoveredTechs }} techniques with detections</div>
+          </div>
+
+          <!-- NIST 800-53 -->
+          <div class="stat-card upgrade-section-block">
+            <div class="stat-big nist-val">{{ nistTotal }}</div>
+            <div class="stat-label">🏛 NIST Controls</div>
+            <div class="stat-sub">{{ nistCoveredTechs }} techniques mapped</div>
+          </div>
+        </div>
+
+        <!-- Row 2: Tactic Coverage -->
+        <div class="section upgrade-section-block">
+          <h3 class="section-title upgrade-section-title">Coverage by Tactic</h3>
+
+          <!-- Radar chart -->
+          @if (radarChart.spokes.length > 0) {
+            <div class="radar-wrap">
+              <svg class="radar-svg" viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg">
+                <!-- Grid circles -->
+                @for (pct of radarChart.gridCircles; track pct) {
+                  <circle cx="130" cy="130" [attr.r]="pct" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+                }
+                <!-- Grid % labels -->
+                <text x="130" y="88" text-anchor="middle" fill="rgba(255,255,255,0.25)" font-size="8">75%</text>
+                <text x="130" y="63" text-anchor="middle" fill="rgba(255,255,255,0.25)" font-size="8">100%</text>
+                <!-- Spokes -->
+                @for (s of radarChart.spokes; track s.label) {
+                  <line [attr.x1]="s.x1" [attr.y1]="s.y1" [attr.x2]="s.x2" [attr.y2]="s.y2" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+                }
+                <!-- Coverage polygon -->
+                <polygon [attr.points]="radarChart.polygon" fill="rgba(88,166,255,0.18)" stroke="#58a6ff" stroke-width="1.5" stroke-linejoin="round"/>
+                <!-- Spoke labels -->
+                @for (s of radarChart.spokes; track s.label) {
+                  <text [attr.x]="s.labelX" [attr.y]="s.labelY" [attr.text-anchor]="s.anchor" dominant-baseline="middle" fill="rgba(180,200,220,0.8)" font-size="7.5" font-family="IBM Plex Mono, monospace">{{ s.label }}</text>
+                }
+                <!-- Center dot -->
+                <circle cx="130" cy="130" r="2.5" fill="#58a6ff"/>
+              </svg>
+            </div>
+          }
+
+          <div class="tactic-grid">
+            @for (ts of tacticStats; track ts.shortname) {
+              <div class="tactic-row">
+                <span class="tactic-name" [title]="ts.name">{{ ts.shortname.toUpperCase() }}</span>
+                <div class="bar-track">
+                  <div
+                    class="bar-fill"
+                    [style.width.%]="ts.pct"
+                    [style.background]="barColor(ts.pct)"
+                  ></div>
+                </div>
+                <span class="tactic-pct" [style.color]="barColor(ts.pct)">{{ ts.pct }}%</span>
+                <span class="tactic-counts">{{ ts.covered }}/{{ ts.total }}</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Row 3: Two columns -->
+        <div class="two-col-row">
+
+          <!-- Implementation Status -->
+          <div class="section col-section upgrade-section-block">
+            <h3 class="section-title upgrade-section-title">Implementation Status</h3>
+            @if (!hasImplData) {
+              <p class="empty-hint">No implementation status tracked yet. Use the sidebar to set statuses on mitigations.</p>
+            } @else {
+              <div class="impl-bar-wrap">
+                <div class="impl-stacked-bar">
+                  <div class="impl-seg impl-implemented"  [style.width.%]="implBarWidth('implemented')"  title="Implemented"></div>
+                  <div class="impl-seg impl-in-progress"  [style.width.%]="implBarWidth('in-progress')"  title="In Progress"></div>
+                  <div class="impl-seg impl-planned"       [style.width.%]="implBarWidth('planned')"       title="Planned"></div>
+                  <div class="impl-seg impl-not-started"   [style.width.%]="implBarWidth('not-started')"   title="Not Started"></div>
+                </div>
+              </div>
+              <div class="impl-legend">
+                <div class="impl-legend-item">
+                  <span class="impl-dot impl-implemented"></span>
+                  <span>Implemented</span>
+                  <strong>{{ implSummary['implemented'] }}</strong>
+                </div>
+                <div class="impl-legend-item">
+                  <span class="impl-dot impl-in-progress"></span>
+                  <span>In Progress</span>
+                  <strong>{{ implSummary['in-progress'] }}</strong>
+                </div>
+                <div class="impl-legend-item">
+                  <span class="impl-dot impl-planned"></span>
+                  <span>Planned</span>
+                  <strong>{{ implSummary['planned'] }}</strong>
+                </div>
+                <div class="impl-legend-item">
+                  <span class="impl-dot impl-not-started"></span>
+                  <span>Not Started</span>
+                  <strong>{{ implSummary['not-started'] }}</strong>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Top Mitigations -->
+          <div class="section col-section upgrade-section-block">
+            <h3 class="section-title upgrade-section-title">High-Impact Mitigations</h3>
+            <p class="section-sub">Mitigations covering the most threat-active techniques</p>
+            @if (topMitigations.length === 0) {
+              <p class="empty-hint">No mitigation data available.</p>
+            } @else {
+              <div class="mit-list">
+                @for (m of topMitigations; track m.attackId) {
+                  <div class="mit-item">
+                    <div class="mit-header">
+                      <span class="mit-id">{{ m.attackId }}</span>
+                      <span class="mit-name">{{ m.name }}</span>
+                    </div>
+                    <div class="mit-stats">
+                      <span class="mit-stat">{{ m.techniqueCount }} techniques</span>
+                      <span class="mit-stat-sep">·</span>
+                      <span class="mit-stat">{{ m.groupsCovered }} max groups</span>
+                      <span class="mit-stat-sep">·</span>
+                      <span class="mit-score">score {{ m.impactScore }}</span>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+        </div>
+
+        <!-- Row 4: Top Risk Gaps -->
+        <div class="section upgrade-section-block">
+          <h3 class="section-title upgrade-section-title">Top 10 Unmitigated Techniques by Risk</h3>
+          @if (topGaps.length === 0) {
+            <p class="empty-hint">All techniques have at least one mitigation — great work!</p>
+          } @else {
+            <div class="gaps-table-wrap">
+              <table class="gaps-table">
+                <thead>
+                  <tr>
+                    <th>ATT&amp;CK ID</th>
+                    <th>Name</th>
+                    <th>Tactic</th>
+                    <th class="num-col">Groups</th>
+                    <th class="num-col">KEV CVEs</th>
+                    <th class="num-col">Risk Score</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (gap of topGaps; track gap.attackId) {
+                    <tr class="gap-row">
+                      <td class="gap-id">{{ gap.attackId }}</td>
+                      <td class="gap-name">{{ gap.name }}</td>
+                      <td class="gap-tactic">{{ gap.tacticName }}</td>
+                      <td class="num-col">
+                        @if (gap.groupCount > 0) {
+                          <span class="badge badge-groups">{{ gap.groupCount }}</span>
+                        } @else {
+                          <span class="badge badge-zero">0</span>
+                        }
+                      </td>
+                      <td class="num-col">
+                        @if (gap.kevCount > 0) {
+                          <span class="badge badge-kev">{{ gap.kevCount }}</span>
+                        } @else {
+                          <span class="badge badge-zero">0</span>
+                        }
+                      </td>
+                      <td class="num-col">
+                        <span class="risk-score" [class.risk-high]="gap.riskScore > 5">{{ gap.riskScore }}</span>
+                      </td>
+                      <td>
+                        <button
+                          class="view-btn"
+                          (click)="selectTechnique(gap.attackId)"
+                          title="Open in sidebar"
+                        >View</button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+
+      }
+    </div>
+  </div>
+}

@@ -1,0 +1,239 @@
+.stats-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 14px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent),
+    rgba(11, 23, 34, 0.82);
+  border-bottom: 1px solid var(--line-soft);
+  flex-shrink: 0;
+  backdrop-filter: blur(12px);
+}
+
+.divider {
+  width: 1px;
+  height: 26px;
+  background: var(--line-soft);
+  flex-shrink: 0;
+}
+
+.stat-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+
+  &.primary { gap: 10px; }
+}
+
+.big-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+
+  .big-num {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--accent);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .big-label {
+    font-size: 8px;
+    font-weight: 700;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-top: 2px;
+  }
+}
+
+.coverage-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
+  .coverage-bar {
+    width: 160px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 999px;
+    overflow: hidden;
+
+    .coverage-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ff8f7a 0%, #ffb454 50%, #63d297 100%);
+      border-radius: 999px;
+      transition: width 0.4s ease;
+    }
+  }
+
+  .coverage-sub {
+    font-size: 9px;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .impl-bar { background: rgba(255, 255, 255, 0.06); }
+  .impl-fill { background: var(--success) !important; }
+  .impl-sub { color: var(--success); }
+}
+
+.counters { gap: 16px; }
+.counters { gap: 12px; }
+
+.counter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+
+  &.clickable {
+    cursor: pointer;
+    border-radius: 12px;
+    padding: 4px 8px;
+    transition: background 0.15s, transform 0.15s;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.05);
+      transform: translateY(-1px);
+    }
+  }
+
+    .counter-num {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-main);
+    line-height: 1;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .counter-label {
+    font-size: 8px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+  }
+
+  &.warn .counter-num { color: var(--danger); }
+  &.camp .counter-num { color: #d8b4fe; }
+}
+
+.tactic-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 28px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.clickable-tactic {
+  cursor: pointer;
+  border-radius: 6px;
+  transition: opacity 0.15s, outline 0.15s;
+
+  &:hover {
+    opacity: 0.8;
+    outline: 1px solid var(--accent);
+  }
+}
+
+.trend-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  border-left: 1px solid var(--line-soft);
+  cursor: pointer;
+  flex-shrink: 0;
+
+  &:hover { opacity: 0.8; }
+}
+
+.trend-label {
+  font-size: 9px;
+  color: var(--text-faint);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.trend-delta {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.trend-delta.positive { color: var(--success); }
+.trend-delta.negative { color: var(--danger); }
+
+.sparkline { display: block; }
+
+.tactic-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  min-width: 18px;
+  height: 100%;
+  justify-content: flex-end;
+
+  .tactic-mini-bar {
+    width: 100%;
+    flex: 1;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 4px 4px 0 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    overflow: hidden;
+    border: 1px solid var(--line-soft);
+
+    .tactic-fill {
+      width: 100%;
+      border-radius: 4px 4px 0 0;
+      transition: height 0.4s ease;
+      min-height: 2px;
+    }
+  }
+
+  .tactic-pct {
+    font-size: 7px;
+    color: var(--text-faint);
+    white-space: nowrap;
+  }
+}
+
+.tactic-toggle-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text-faint);
+  font-size: 10px;
+  padding: 4px 8px;
+  margin-left: 4px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  line-height: 1;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--line-soft);
+    color: var(--text-muted);
+  }
+
+  .tactic-toggle-label {
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+}

@@ -1,0 +1,198 @@
+.tactic-popup {
+  position: fixed;
+  width: 280px;
+  background: #0d1f2d;
+  border: 1px solid rgba(88, 166, 255, 0.2);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  z-index: 2000;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.popup-header {
+  background: #07101a;
+  padding: 10px 12px;
+  border-radius: 8px 8px 0 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.tactic-id {
+  font-size: 10px;
+  color: #58a6ff;
+  font-weight: 600;
+}
+
+.tactic-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.close-btn {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+}
+
+.popup-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-label {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.stat-value {
+  font-weight: 600;
+}
+
+.coverage-bar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.coverage-fill {
+  height: 100%;
+  background: #4ade80;
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+
+.impl-breakdown {
+  // container for impl status section
+}
+
+.impl-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 4px;
+}
+
+.impl-bars {
+  display: flex;
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  gap: 1px;
+}
+
+.impl-seg {
+  min-width: 4px;
+  border-radius: 1px;
+}
+
+.impl-green {
+  background: #4ade80;
+}
+
+.impl-blue {
+  background: #60a5fa;
+}
+
+.impl-purple {
+  background: #a78bfa;
+}
+
+.impl-grey {
+  background: #6b7280;
+}
+
+.impl-legend {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.leg {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+
+  &.green {
+    color: #4ade80;
+  }
+
+  &.blue {
+    color: #60a5fa;
+  }
+
+  &.purple {
+    color: #a78bfa;
+  }
+}
+
+.top-techniques {
+  // container for top covered techniques
+}
+
+.section-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 4px;
+}
+
+.tech-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.tech-id {
+  font-size: 10px;
+  color: #58a6ff;
+  min-width: 50px;
+  flex-shrink: 0;
+}
+
+.tech-name {
+  flex: 1;
+  color: rgba(255, 255, 255, 0.7);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mit-count {
+  font-size: 10px;
+  color: #4ade80;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.uncovered-warning {
+  font-size: 11px;
+  color: #fb923c;
+  background: rgba(251, 146, 60, 0.08);
+  padding: 6px 8px;
+  border-radius: 4px;
+}

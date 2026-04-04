@@ -1,0 +1,148 @@
+@if (visible) {
+  <div class="killchain-overlay">
+
+    <!-- Header -->
+    <div class="killchain-header">
+      <div class="header-left">
+        <span class="panel-title">ATT&amp;CK Kill Chain Coverage</span>
+        @if (tacticStats.length > 0) {
+          <span class="header-subtitle">Coverage across MITRE ATT&amp;CK Enterprise tactics</span>
+        }
+      </div>
+      <button class="close-btn" (click)="close()" title="Close">✕</button>
+    </div>
+
+    @if (tacticStats.length === 0) {
+      <div class="loading-state">
+        <div class="loader-spinner"></div>
+        <p>Computing kill chain statistics…</p>
+      </div>
+    } @else {
+
+      <!-- Pipeline visualization -->
+      <div class="pipeline-section">
+        <div class="pipeline-container">
+          @for (stat of tacticStats; track stat.tactic.id; let last = $last) {
+            <div
+              class="tactic-card"
+              [class.selected]="selectedTacticId === stat.tactic.id"
+              [class.hovered]="hoveredTacticId === stat.tactic.id"
+              (click)="selectTactic(stat)"
+              (mouseenter)="hoveredTacticId = stat.tactic.id"
+              (mouseleave)="hoveredTacticId = null"
+              [title]="stat.tactic.name + ' — ' + stat.coveragePct + '% coverage'"
+            >
+              <div class="card-attack-id">{{ stat.attackId }}</div>
+              <div class="card-tactic-name">{{ stat.tactic.name }}</div>
+              <div class="coverage-bar">
+                <div
+                  class="coverage-fill {{ coverageClass(stat.coveragePct) }}"
+                  [style.width.%]="stat.coveragePct"
+                ></div>
+              </div>
+              <div class="card-tech-count">{{ stat.coveredTechs }}/{{ stat.totalTechs }} techniques</div>
+              <div class="card-group-count">{{ stat.threatGroupCount }} groups</div>
+              <div class="card-coverage-pct" [style.color]="coverageColor(stat.coveragePct)">
+                {{ stat.coveragePct }}%
+              </div>
+            </div>
+            @if (!last) {
+              <div class="pipeline-arrow">→</div>
+            }
+          }
+        </div>
+      </div>
+
+      <!-- Detail table -->
+      <div class="table-section">
+        <table class="kc-table">
+          <thead>
+            <tr>
+              <th class="col-num">#</th>
+              <th>Tactic</th>
+              <th class="col-id">ATT&amp;CK ID</th>
+              <th class="col-num">Techniques</th>
+              <th class="col-num">Subtechniques</th>
+              <th class="col-pct">Coverage %</th>
+              <th class="col-num">Avg Mitigations</th>
+              <th class="col-num">Threat Groups</th>
+              <th class="col-uncovered">Top Uncovered</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (stat of tacticStats; track stat.tactic.id; let i = $index) {
+              <tr
+                class="kc-row"
+                [class.row-selected]="selectedTacticId === stat.tactic.id"
+                (click)="selectTactic(stat)"
+              >
+                <td class="col-num row-idx">{{ i + 1 }}</td>
+                <td class="col-tactic-name">{{ stat.tactic.name }}</td>
+                <td class="col-id">
+                  <span class="attack-id-badge">{{ stat.attackId }}</span>
+                </td>
+                <td class="col-num">{{ stat.totalTechs }}</td>
+                <td class="col-num">{{ stat.subtechniqueCount }}</td>
+                <td class="col-pct">
+                  <div class="inline-bar-wrap">
+                    <div class="inline-bar">
+                      <div
+                        class="inline-bar-fill {{ coverageClass(stat.coveragePct) }}"
+                        [style.width.%]="stat.coveragePct"
+                      ></div>
+                    </div>
+                    <span class="pct-label" [style.color]="coverageColor(stat.coveragePct)">
+                      {{ stat.coveragePct }}%
+                    </span>
+                  </div>
+                </td>
+                <td class="col-num">{{ stat.avgMitigations }}</td>
+                <td class="col-num">{{ stat.threatGroupCount }}</td>
+                <td class="col-uncovered">
+                  @if (stat.topUncoveredTech) {
+                    <span class="uncovered-name" [title]="stat.topUncoveredTech">{{ stat.topUncoveredTech }}</span>
+                  } @else {
+                    <span class="fully-covered">All covered</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Summary stats bar -->
+      <div class="summary-bar">
+        @if (bestCovered) {
+          <div class="summary-item">
+            <span class="summary-label">Best covered</span>
+            <span class="summary-value summary-green">{{ bestCovered.tactic.name }} ({{ bestCovered.coveragePct }}%)</span>
+          </div>
+        }
+        <div class="summary-sep"></div>
+        @if (worstCovered) {
+          <div class="summary-item">
+            <span class="summary-label">Worst covered</span>
+            <span class="summary-value summary-red">{{ worstCovered.tactic.name }} ({{ worstCovered.coveragePct }}%)</span>
+          </div>
+        }
+        <div class="summary-sep"></div>
+        <div class="summary-item">
+          <span class="summary-label">Total techniques</span>
+          <span class="summary-value">{{ totalTechniques }}</span>
+        </div>
+        <div class="summary-sep"></div>
+        <div class="summary-item">
+          <span class="summary-label">Overall coverage</span>
+          <span class="summary-value" [style.color]="coverageColor(overallCoverage)">{{ overallCoverage }}%</span>
+        </div>
+        <div class="summary-sep"></div>
+        <div class="summary-item">
+          <span class="summary-label">Max threat groups (single tactic)</span>
+          <span class="summary-value">{{ totalThreatGroups }}</span>
+        </div>
+      </div>
+
+    }
+  </div>
+}

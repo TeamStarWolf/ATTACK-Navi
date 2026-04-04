@@ -1,0 +1,435 @@
+@if (visible) {
+  <div class="overlay" (click)="close()">
+    <div class="panel" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="panel-header">
+        <div class="header-left">
+          <span class="panel-icon">🎭</span>
+          <span class="panel-title">Threat Scenario Simulator</span>
+          <span class="header-subtitle">Simulate an attack and assess your readiness</span>
+        </div>
+        <button class="close-btn" (click)="close()" title="Close">✕</button>
+      </div>
+
+      <div class="panel-body">
+
+        <!-- Left: Group Selector -->
+        <div class="group-selector upgrade-section-block">
+          <div class="selector-header">
+            <span class="selector-title">Threat Actor</span>
+            @if (groups.length > 0) {
+              <span class="group-count">{{ groups.length }} groups</span>
+            }
+          </div>
+
+          <div class="search-wrap">
+            <input
+              class="group-search"
+              type="text"
+              placeholder="Search groups…"
+              [(ngModel)]="groupSearch"
+            />
+          </div>
+
+          @if (groups.length === 0) {
+            <div class="selector-loading">
+              <div class="mini-spinner"></div>
+              <span>Loading groups…</span>
+            </div>
+          } @else {
+            <div class="group-list">
+              @for (group of filteredGroups; track group.id) {
+                <button
+                  class="group-item"
+                  [class.selected]="selectedGroup?.id === group.id"
+                  (click)="selectGroup(group)"
+                >
+                  <span class="group-attack-id">{{ group.attackId }}</span>
+                  <span class="group-name">{{ group.name }}</span>
+                  @if (group.aliases.length > 0) {
+                    <span class="group-alias">{{ group.aliases[0] }}</span>
+                  }
+                </button>
+              }
+              @if (filteredGroups.length === 0) {
+                <div class="no-groups">No groups match "{{ groupSearch }}"</div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Right: Results -->
+        <div class="results-area">
+
+          @if (!selectedGroup && !isSimulating) {
+            <div class="empty-state">
+              <div class="empty-icon">🎭</div>
+              <div class="empty-title">Select a Threat Actor</div>
+              <div class="empty-desc">Choose a threat group from the left to simulate their attack against your current mitigation coverage.</div>
+            </div>
+          }
+
+          @if (isSimulating) {
+            <div class="simulating-state">
+              <div class="sim-spinner"></div>
+              <div class="sim-text">Simulating {{ selectedGroup?.name }} attack…</div>
+              <div class="sim-sub">Evaluating {{ selectedGroup?.attackId }} techniques against your mitigations</div>
+            </div>
+          }
+
+          @if (result && !isSimulating) {
+
+            <!-- Result header -->
+            <div class="result-header upgrade-section-block">
+              <div class="result-group-info">
+                <span class="result-attack-id">{{ result.group.attackId }}</span>
+                <span class="result-group-name">{{ result.group.name }}</span>
+                <span class="result-subtitle">{{ result.techniques.length }} techniques analyzed</span>
+              </div>
+              <div class="result-risk-badge risk-{{ result.overallRisk }}">
+                {{ result.overallRisk | uppercase }} RISK
+              </div>
+            </div>
+
+            <!-- Tab bar -->
+            <div class="tab-bar">
+              <button
+                class="tab-btn"
+                [class.active]="activeTab === 'summary'"
+                (click)="activeTab = 'summary'"
+              >Summary</button>
+              <button
+                class="tab-btn"
+                [class.active]="activeTab === 'techniques'"
+                (click)="activeTab = 'techniques'"
+              >
+                Techniques
+                <span class="tab-badge">{{ result.techniques.length }}</span>
+              </button>
+              <button
+                class="tab-btn"
+                [class.active]="activeTab === 'plan'"
+                (click)="activeTab = 'plan'"
+              >
+                Remediation Plan
+                @if (remediationPlan.length > 0) {
+                  <span class="tab-badge tab-badge-warn">{{ remediationPlan.length }}</span>
+                }
+              </button>
+            </div>
+
+            <div class="tab-content">
+
+              <!-- Summary Tab -->
+              @if (activeTab === 'summary') {
+                <div class="summary-tab">
+
+                  <!-- Outcome cards -->
+                  <div class="outcome-cards">
+                    <div class="outcome-card outcome-blocked upgrade-section-block">
+                      <div class="outcome-count">{{ result.blockedCount }}</div>
+                      <div class="outcome-label">Blocked</div>
+                      <div class="outcome-desc">Well mitigated</div>
+                    </div>
+                    <div class="outcome-card outcome-detected upgrade-section-block">
+                      <div class="outcome-count">{{ result.detectedCount }}</div>
+                      <div class="outcome-label">Detected</div>
+                      <div class="outcome-desc">Partially covered</div>
+                    </div>
+                    <div class="outcome-card outcome-vulnerable upgrade-section-block">
+                      <div class="outcome-count">{{ result.vulnerableCount }}</div>
+                      <div class="outcome-label">Vulnerable</div>
+                      <div class="outcome-desc">Quick wins available</div>
+                    </div>
+                    <div class="outcome-card outcome-unknown upgrade-section-block">
+                      <div class="outcome-count">{{ result.unknownCount }}</div>
+                      <div class="outcome-label">Unknown</div>
+                      <div class="outcome-desc">No coverage</div>
+                    </div>
+                  </div>
+
+                  <!-- Score + Donut -->
+                  <div class="score-section upgrade-section-block">
+                    <div class="donut-wrap">
+                      <div class="donut" [style.background]="donutGradient">
+                        <div class="donut-inner">
+                          <span class="donut-score">{{ result.overallScore }}</span>
+                          <span class="donut-grade">{{ scoreGrade }}</span>
+                        </div>
+                      </div>
+                      <div class="donut-legend">
+                        <div class="legend-item">
+                          <span class="legend-dot dot-blocked"></span>
+                          <span class="legend-text">Blocked ({{ result.blockedCount }})</span>
+                        </div>
+                        <div class="legend-item">
+                          <span class="legend-dot dot-detected"></span>
+                          <span class="legend-text">Detected ({{ result.detectedCount }})</span>
+                        </div>
+                        <div class="legend-item">
+                          <span class="legend-dot dot-vulnerable"></span>
+                          <span class="legend-text">Vulnerable ({{ result.vulnerableCount }})</span>
+                        </div>
+                        <div class="legend-item">
+                          <span class="legend-dot dot-unknown"></span>
+                          <span class="legend-text">Unknown ({{ result.unknownCount }})</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="score-details">
+                      <div class="score-title">Readiness Score</div>
+                      <div class="score-value score-grade-{{ scoreGrade }}">{{ result.overallScore }}<span class="score-max">/100</span></div>
+                      <div class="score-grade-label grade-{{ scoreGrade }}">Grade {{ scoreGrade }}</div>
+                      <div class="score-bar-wrap">
+                        <div class="score-bar">
+                          <div
+                            class="score-bar-fill grade-fill-{{ scoreGrade }}"
+                            [style.width.%]="result.overallScore"
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Key Finding -->
+                  <div class="key-finding upgrade-note-block">
+                    <div class="finding-icon">🔍</div>
+                    <div class="finding-text">
+                      @if (result.unknownCount > 0 || result.vulnerableCount > 0) {
+                        <strong>{{ result.unknownCount + result.vulnerableCount }} critical gap{{ (result.unknownCount + result.vulnerableCount) !== 1 ? 's' : '' }} found.</strong>
+                        {{ result.group.name }} would likely succeed with
+                        <strong>{{ result.vulnerableCount + result.unknownCount }} of {{ result.techniques.length }}</strong> techniques.
+                        @if (remediationPlan.length > 0) {
+                          Implementing {{ remediationPlan.length }} quick-win mitigation{{ remediationPlan.length !== 1 ? 's' : '' }} could improve your score by ~{{ remediationScoreImpact }} points.
+                        }
+                      } @else {
+                        <strong>Excellent posture.</strong> All {{ result.group.name }} techniques are either blocked or detectable. Keep mitigations up to date.
+                      }
+                    </div>
+                  </div>
+
+                  <!-- Radar Chart: Coverage by Tactic -->
+                  @if (radarData.length >= 3) {
+                    <div class="radar-section upgrade-section-block">
+                      <h4 class="radar-title">Coverage by Tactic</h4>
+                      <svg width="240" height="240" viewBox="0 0 240 240" class="radar-svg">
+                        <!-- Grid circles -->
+                        @for (ring of [0.25, 0.5, 0.75, 1.0]; track ring) {
+                          <circle cx="120" cy="120" [attr.r]="90 * ring" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+                        }
+                        <!-- Grid lines from center to each axis -->
+                        @for (coord of radarSvgCoords; track coord.tactic) {
+                          <line [attr.x1]="120" [attr.y1]="120"
+                                [attr.x2]="coord.gridX" [attr.y2]="coord.gridY"
+                                stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+                        }
+                        <!-- Coverage polygon -->
+                        @if (radarSvgPath) {
+                          <path [attr.d]="radarSvgPath" fill="rgba(88,166,255,0.2)" stroke="#58a6ff" stroke-width="1.5"/>
+                        }
+                        <!-- Data points -->
+                        @for (coord of radarSvgCoords; track coord.tactic) {
+                          <circle [attr.cx]="coord.x" [attr.cy]="coord.y" r="3" fill="#58a6ff"/>
+                        }
+                        <!-- Tactic labels -->
+                        @for (coord of radarSvgCoords; track coord.tactic) {
+                          <text [attr.x]="coord.labelX" [attr.y]="coord.labelY"
+                                text-anchor="middle" dominant-baseline="middle"
+                                font-size="7" fill="rgba(255,255,255,0.5)">
+                            {{ coord.tactic | slice:0:6 }}
+                          </text>
+                        }
+                        <!-- Ring percentage labels -->
+                        <text x="122" y="33" font-size="7" fill="rgba(255,255,255,0.3)">100%</text>
+                        <text x="122" y="53" font-size="7" fill="rgba(255,255,255,0.3)">75%</text>
+                        <text x="122" y="73" font-size="7" fill="rgba(255,255,255,0.3)">50%</text>
+                        <text x="122" y="93" font-size="7" fill="rgba(255,255,255,0.3)">25%</text>
+                      </svg>
+                    </div>
+                  }
+
+                </div>
+              }
+
+              <!-- Techniques Tab -->
+              @if (activeTab === 'techniques') {
+                <div class="techniques-tab">
+
+                  <!-- Filter pills + search -->
+                  <div class="filter-row">
+                    <div class="filter-pills upgrade-action-strip">
+                      <button
+                        class="pill"
+                        [class.active]="filterOutcome === 'all'"
+                        (click)="filterOutcome = 'all'; searchText = ''"
+                      >All ({{ result.techniques.length }})</button>
+                      <button
+                        class="pill pill-unknown"
+                        [class.active]="filterOutcome === 'unknown'"
+                        (click)="filterOutcome = 'unknown'"
+                      >Unknown ({{ result.unknownCount }})</button>
+                      <button
+                        class="pill pill-vulnerable"
+                        [class.active]="filterOutcome === 'vulnerable'"
+                        (click)="filterOutcome = 'vulnerable'"
+                      >Vulnerable ({{ result.vulnerableCount }})</button>
+                      <button
+                        class="pill pill-detected"
+                        [class.active]="filterOutcome === 'detected'"
+                        (click)="filterOutcome = 'detected'"
+                      >Detected ({{ result.detectedCount }})</button>
+                      <button
+                        class="pill pill-blocked"
+                        [class.active]="filterOutcome === 'blocked'"
+                        (click)="filterOutcome = 'blocked'"
+                      >Blocked ({{ result.blockedCount }})</button>
+                    </div>
+                    <input
+                      class="tech-search"
+                      type="text"
+                      placeholder="Search…"
+                      [(ngModel)]="searchText"
+                    />
+                  </div>
+
+                  <div class="table-wrap">
+                    <table class="tech-table">
+                      <thead>
+                        <tr>
+                          <th class="id-col">ATT&amp;CK ID</th>
+                          <th>Name</th>
+                          <th class="tactic-col">Tactic</th>
+                          <th class="outcome-col">Outcome</th>
+                          <th class="risk-col">Risk</th>
+                          <th class="mit-col">Impl. Mits</th>
+                          <th class="reasoning-col">Reasoning</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (st of filteredTechniques; track st.technique.id) {
+                          <tr
+                            class="tech-row"
+                            (click)="selectTechnique(st)"
+                            title="Click to view technique details"
+                          >
+                            <td class="tech-id">
+                              <a
+                                [href]="attackUrl(st.technique.attackId)"
+                                target="_blank"
+                                rel="noopener"
+                                (click)="$event.stopPropagation()"
+                              >{{ st.technique.attackId }}</a>
+                            </td>
+                            <td class="tech-name">{{ st.technique.name }}</td>
+                            <td class="tech-tactic">{{ st.technique.tacticShortnames[0] }}</td>
+                            <td class="tech-outcome">
+                              <span class="outcome-badge outcome-badge-{{ st.outcome }}">
+                                {{ st.outcome | uppercase }}
+                              </span>
+                            </td>
+                            <td class="tech-risk">
+                              <span class="risk-badge risk-badge-{{ st.riskLevel }}">
+                                {{ st.riskLevel | uppercase }}
+                              </span>
+                            </td>
+                            <td class="tech-mits">
+                              @if (st.mitigationCount > 0) {
+                                <span class="mit-count">
+                                  <span class="mit-impl">{{ st.implementedMitigations }}</span>
+                                  <span class="mit-sep">/</span>
+                                  <span class="mit-total">{{ st.mitigationCount }}</span>
+                                </span>
+                              } @else {
+                                <span class="mit-zero">—</span>
+                              }
+                            </td>
+                            <td class="tech-reasoning">{{ st.reasoning }}</td>
+                          </tr>
+                        }
+                        @if (filteredTechniques.length === 0) {
+                          <tr>
+                            <td colspan="7" class="empty-cell">No techniques match your filter.</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+
+                </div>
+              }
+
+              <!-- Remediation Plan Tab -->
+              @if (activeTab === 'plan') {
+                <div class="plan-tab">
+
+                  @if (remediationPlan.length === 0) {
+                    <div class="plan-empty">
+                      <div class="plan-empty-icon">✅</div>
+                      <div class="plan-empty-title">No Quick Wins Needed</div>
+                      <div class="plan-empty-desc">
+                        All {{ result.group.name }} techniques have active mitigation coverage. Consider expanding detection capabilities.
+                      </div>
+                    </div>
+                  } @else {
+                    <div class="plan-intro upgrade-section-block">
+                      <div class="plan-intro-text">
+                        To improve your readiness score, implement mitigations for these <strong>{{ remediationPlan.length }}</strong> technique{{ remediationPlan.length !== 1 ? 's' : '' }}. Techniques are ordered by available mitigations (most coverage first = biggest impact).
+                      </div>
+                      <div class="plan-impact-badge">
+                        +~{{ remediationScoreImpact }} pts potential improvement
+                      </div>
+                    </div>
+
+                    <div class="plan-list">
+                      @for (st of remediationPlan; track st.technique.id; let i = $index) {
+                        <div class="plan-item" [class.plan-item-critical]="st.riskLevel === 'critical'">
+                          <div class="plan-rank">{{ i + 1 }}</div>
+                          <div class="plan-info">
+                            <div class="plan-name">{{ st.technique.name }}</div>
+                            <div class="plan-meta">
+                              <span class="plan-id">{{ st.technique.attackId }}</span>
+                              @if (st.technique.tacticShortnames[0]) {
+                                <span class="plan-tactic">{{ st.technique.tacticShortnames[0] }}</span>
+                              }
+                              <span class="plan-outcome outcome-badge-{{ st.outcome }}">{{ st.outcome }}</span>
+                            </div>
+                            <div class="plan-mits-avail">
+                              {{ st.mitigationCount }} mitigation{{ st.mitigationCount !== 1 ? 's' : '' }} available to implement
+                            </div>
+                          </div>
+                          <div class="plan-actions">
+                            <div class="plan-mit-badge">
+                              <span class="plan-mit-num">{{ st.mitigationCount }}</span>
+                              <span class="plan-mit-label">mits</span>
+                            </div>
+                            <button
+                              class="plan-action-btn"
+                              (click)="selectTechnique(st)"
+                              title="Open in sidebar"
+                            >
+                              View →
+                            </button>
+                          </div>
+                        </div>
+                      }
+                    </div>
+
+                    <div class="plan-footer">
+                      Addressing these {{ remediationPlan.length }} technique{{ remediationPlan.length !== 1 ? 's' : '' }} would improve your score by approximately <strong>{{ remediationScoreImpact }} points</strong>.
+                    </div>
+                  }
+
+                </div>
+              }
+
+            </div>
+          }
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+}

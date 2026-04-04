@@ -1,0 +1,438 @@
+@if (visible) {
+  <div class="overlay" (click)="close()">
+    <div class="panel" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="panel-header">
+        <div class="header-left">
+          <span class="panel-title">📈 Coverage Timeline</span>
+          <span class="header-subtitle">
+            @if (snapshots.length === 0) {
+              No snapshots yet
+            } @else {
+              {{ snapshots.length }} snapshot{{ snapshots.length === 1 ? '' : 's' }}
+            }
+          </span>
+        </div>
+        <div class="header-actions">
+          @if (snapshots.length > 0) {
+            <button class="export-btn" (click)="exportCsv()" title="Export as CSV">⬇ CSV</button>
+          }
+          <button class="close-btn" (click)="close()" title="Close">✕</button>
+        </div>
+      </div>
+
+      <!-- Take Snapshot section (always visible at top of body) -->
+      <div class="snapshot-form">
+        <div class="snapshot-form-title">Take a Snapshot</div>
+        <div class="snapshot-inputs">
+          <input
+            class="label-input"
+            type="text"
+            placeholder="e.g. Q1 2024, Post-patching, After audit"
+            [(ngModel)]="newLabel"
+            (keydown.enter)="takeSnapshot()"
+          />
+          <button
+            class="snapshot-btn"
+            [class.success]="snapshotSuccess"
+            [disabled]="!newLabel.trim()"
+            (click)="takeSnapshot()"
+            title="Capture current coverage state"
+          >
+            @if (snapshotSuccess) {
+              ✓ Saved!
+            } @else {
+              📸 Take Snapshot
+            }
+          </button>
+        </div>
+        <textarea
+          class="notes-input"
+          placeholder="Optional notes (e.g. context, what changed, who reviewed)"
+          [(ngModel)]="newNotes"
+          rows="2"
+        ></textarea>
+        <div class="quick-labels">
+          <span class="quick-label-hint">Quick labels:</span>
+          @for (q of ['Q1', 'Q2', 'Q3', 'Q4']; track q) {
+            <button class="quick-btn" (click)="setQuickLabel(q)">{{ q }}</button>
+          }
+          <button class="quick-btn" (click)="newLabel = 'Baseline'">Baseline</button>
+          <button class="quick-btn" (click)="newLabel = 'Post-audit'">Post-audit</button>
+          <button class="quick-btn" (click)="newLabel = 'After patch'">After patch</button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tab-bar">
+        <button
+          class="tab-btn"
+          [class.active]="activeTab === 'timeline'"
+          (click)="setTab('timeline')"
+        >
+          Timeline
+          @if (snapshots.length > 0) {
+            <span class="tab-count">{{ snapshots.length }}</span>
+          }
+        </button>
+        <button
+          class="tab-btn"
+          [class.active]="activeTab === 'compare'"
+          (click)="setTab('compare')"
+        >Compare</button>
+        <button
+          class="tab-btn"
+          [class.active]="activeTab === 'trends'"
+          (click)="setTab('trends')"
+        >Trends</button>
+      </div>
+
+      <!-- Tab content -->
+      <div class="tab-content">
+
+        <!-- ── Timeline Tab ── -->
+        @if (activeTab === 'timeline') {
+          @if (snapshots.length === 0) {
+            <div class="empty-state">
+              <div class="empty-icon">📸</div>
+              <div class="empty-title">No snapshots yet</div>
+              <div class="empty-hint">Take your first snapshot above to start tracking your security program progress over time.</div>
+            </div>
+          } @else {
+            <div class="snapshot-list">
+              @for (snap of snapshotsNewest; track snap.id; let i = $index) {
+                <!-- The "previous" is the next item in this reversed array -->
+                <div class="snapshot-card">
+                  @if (editingId === snap.id) {
+                    <!-- Edit mode -->
+                    <div class="edit-form">
+                      <input
+                        class="edit-label-input"
+                        type="text"
+                        [(ngModel)]="editLabel"
+                        placeholder="Snapshot label"
+                        (keydown.enter)="saveEdit()"
+                        (keydown.escape)="cancelEdit()"
+                      />
+                      <textarea
+                        class="edit-notes-input"
+                        [(ngModel)]="editNotes"
+                        placeholder="Notes"
+                        rows="2"
+                      ></textarea>
+                      <div class="edit-actions">
+                        <button class="save-edit-btn" (click)="saveEdit()" [disabled]="!editLabel.trim()">Save</button>
+                        <button class="cancel-edit-btn" (click)="cancelEdit()">Cancel</button>
+                      </div>
+                    </div>
+                  } @else {
+                    <!-- Display mode -->
+                    <div class="card-header">
+                      <div class="card-meta">
+                        <span class="card-date">{{ formatDate(snap.createdAt) }}</span>
+                        <span class="card-label">{{ snap.label }}</span>
+                      </div>
+                      <div class="card-actions">
+                        <button class="icon-btn" (click)="startEdit(snap)" title="Edit label / notes">✏️</button>
+                        <button class="icon-btn danger" (click)="deleteSnapshot(snap.id)" title="Delete snapshot">🗑</button>
+                      </div>
+                    </div>
+
+                    <!-- Coverage summary row -->
+                    <div class="card-stats">
+                      <div class="coverage-wrap">
+                        <span class="coverage-pct">{{ snap.coveragePct }}%</span>
+                        <div class="coverage-bar-track">
+                          <div
+                            class="coverage-bar-fill"
+                            [style.width.%]="snap.coveragePct"
+                            [class.high]="snap.coveragePct >= 70"
+                            [class.mid]="snap.coveragePct >= 40 && snap.coveragePct < 70"
+                          ></div>
+                        </div>
+                        <!-- Delta from previous snapshot (previous in original order = next in reversed list) -->
+                        @if (i < snapshotsNewest.length - 1) {
+                          @let prev = snapshotsNewest[i + 1];
+                          @let delta = snap.coveragePct - prev.coveragePct;
+                          <span class="delta-badge" [class]="deltaClass(delta)">
+                            {{ deltaLabel(delta) }}
+                          </span>
+                        }
+                      </div>
+                      <div class="impl-summary">
+                        <span class="impl-chip impl-done" title="Implemented">✅ {{ snap.implCounts.implemented }}</span>
+                        <span class="impl-chip impl-prog" title="In Progress">🔄 {{ snap.implCounts.inProgress }}</span>
+                        <span class="impl-chip impl-plan" title="Planned">📋 {{ snap.implCounts.planned }}</span>
+                        <span class="impl-chip impl-none" title="Not Started">❌ {{ snap.implCounts.notStarted }}</span>
+                      </div>
+                    </div>
+
+                    <!-- Tech coverage -->
+                    <div class="card-sub">
+                      {{ snap.coveredTechniques }} / {{ snap.totalTechniques }} techniques covered
+                    </div>
+
+                    <!-- Notes (if any) -->
+                    @if (snap.notes) {
+                      <div class="card-notes">{{ snap.notes }}</div>
+                    }
+
+                    <!-- Tactic mini bars -->
+                    <div class="tactic-bars">
+                      @for (tc of snap.tacticCoverage; track tc.tacticId) {
+                        <div class="tactic-bar-item" [title]="tc.tacticName + ': ' + tc.covered + '/' + tc.total + ' (' + tc.pct + '%)'">
+                          <div class="tactic-mini-label">{{ tc.tacticName.length > 10 ? tc.tacticName.slice(0, 9) + '…' : tc.tacticName }}</div>
+                          <div class="tactic-mini-track">
+                            <div
+                              class="tactic-mini-fill"
+                              [style.width.%]="tc.pct"
+                              [class.high]="tc.pct >= 70"
+                              [class.mid]="tc.pct >= 40 && tc.pct < 70"
+                            ></div>
+                          </div>
+                          <div class="tactic-mini-pct">{{ tc.pct }}%</div>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        }
+
+        <!-- ── Compare Tab ── -->
+        @if (activeTab === 'compare') {
+          @if (snapshots.length < 2) {
+            <div class="empty-state">
+              <div class="empty-icon">⚔️</div>
+              <div class="empty-title">Need at least 2 snapshots</div>
+              <div class="empty-hint">Take a second snapshot to start comparing coverage changes.</div>
+            </div>
+          } @else {
+            <div class="compare-selectors">
+              <div class="selector-group">
+                <label class="selector-label">Snapshot A (baseline)</label>
+                <select class="snap-select" (change)="setCompareA($any($event.target).value)">
+                  <option value="">— Select snapshot —</option>
+                  @for (snap of snapshots; track snap.id) {
+                    <option [value]="snap.id" [selected]="compareA?.id === snap.id">
+                      {{ snap.label }} ({{ formatDate(snap.createdAt) }})
+                    </option>
+                  }
+                </select>
+              </div>
+              <div class="selector-vs">→</div>
+              <div class="selector-group">
+                <label class="selector-label">Snapshot B (current)</label>
+                <select class="snap-select" (change)="setCompareB($any($event.target).value)">
+                  <option value="">— Select snapshot —</option>
+                  @for (snap of snapshots; track snap.id) {
+                    <option [value]="snap.id" [selected]="compareB?.id === snap.id">
+                      {{ snap.label }} ({{ formatDate(snap.createdAt) }})
+                    </option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            @if (compareA && compareB) {
+              <!-- Overall diff -->
+              <div class="compare-overall">
+                <div class="overall-card">
+                  <div class="overall-label">Overall Coverage</div>
+                  <div class="overall-values">
+                    <span class="ov-a">{{ compareA.coveragePct }}%</span>
+                    <span class="ov-arrow">→</span>
+                    <span class="ov-b">{{ compareB.coveragePct }}%</span>
+                    <span class="delta-badge" [class]="deltaClass(compareB.coveragePct - compareA.coveragePct)">
+                      {{ deltaLabel(compareB.coveragePct - compareA.coveragePct) }}
+                    </span>
+                  </div>
+                </div>
+                <div class="overall-card">
+                  <div class="overall-label">Implemented Mitigations</div>
+                  <div class="overall-values">
+                    <span class="ov-a">{{ compareA.implCounts.implemented }}</span>
+                    <span class="ov-arrow">→</span>
+                    <span class="ov-b">{{ compareB.implCounts.implemented }}</span>
+                    <span class="delta-badge" [class]="deltaClass(compareB.implCounts.implemented - compareA.implCounts.implemented)">
+                      {{ deltaLabel(compareB.implCounts.implemented - compareA.implCounts.implemented) }}
+                    </span>
+                  </div>
+                </div>
+                <div class="overall-card">
+                  <div class="overall-label">In Progress</div>
+                  <div class="overall-values">
+                    <span class="ov-a">{{ compareA.implCounts.inProgress }}</span>
+                    <span class="ov-arrow">→</span>
+                    <span class="ov-b">{{ compareB.implCounts.inProgress }}</span>
+                    <span class="delta-badge" [class]="deltaClass(compareB.implCounts.inProgress - compareA.implCounts.inProgress)">
+                      {{ deltaLabel(compareB.implCounts.inProgress - compareA.implCounts.inProgress) }}
+                    </span>
+                  </div>
+                </div>
+                <div class="overall-card">
+                  <div class="overall-label">Planned</div>
+                  <div class="overall-values">
+                    <span class="ov-a">{{ compareA.implCounts.planned }}</span>
+                    <span class="ov-arrow">→</span>
+                    <span class="ov-b">{{ compareB.implCounts.planned }}</span>
+                    <span class="delta-badge" [class]="deltaClass(compareB.implCounts.planned - compareA.implCounts.planned)">
+                      {{ deltaLabel(compareB.implCounts.planned - compareA.implCounts.planned) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Per-tactic table -->
+              <div class="compare-section-title">Per-Tactic Coverage Change</div>
+              <div class="compare-table-wrap">
+                <table class="compare-table">
+                  <thead>
+                    <tr>
+                      <th>Tactic</th>
+                      <th class="pct-col">{{ compareA.label }}</th>
+                      <th class="pct-col">{{ compareB.label }}</th>
+                      <th class="pct-col">Delta</th>
+                      <th class="bar-col">Change</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (row of comparisonStats; track row.tacticName) {
+                      <tr class="compare-row" [class.improved]="row.delta > 0" [class.regressed]="row.delta < 0">
+                        <td class="tactic-name-cell">{{ row.tacticName }}</td>
+                        <td class="pct-cell">{{ row.pctA }}%</td>
+                        <td class="pct-cell">{{ row.pctB }}%</td>
+                        <td class="delta-cell">
+                          <span class="delta-badge" [class]="deltaClass(row.delta)">
+                            {{ deltaLabel(row.delta) }}
+                          </span>
+                        </td>
+                        <td class="bar-cell">
+                          <div class="diff-bar-wrap">
+                            <div class="diff-bar-a" [style.width.%]="row.pctA" title="A: {{ row.pctA }}%"></div>
+                            <div class="diff-bar-b" [style.width.%]="row.pctB" title="B: {{ row.pctB }}%"></div>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          }
+        }
+
+        <!-- ── Trends Tab ── -->
+        @if (activeTab === 'trends') {
+          @if (snapshots.length < 2) {
+            <div class="empty-state">
+              <div class="empty-icon">📊</div>
+              <div class="empty-title">Need at least 2 snapshots</div>
+              <div class="empty-hint">Take more snapshots over time to visualize your security program's progress.</div>
+            </div>
+          } @else {
+            <div class="trends-container">
+              <div class="trends-title">Coverage % Over Time</div>
+
+              <!-- Bar chart -->
+              <div class="bar-chart">
+                @for (tp of trends; track tp.snapshot.id) {
+                  <div class="bar-col-wrap">
+                    <div class="bar-outer">
+                      <div
+                        class="bar-fill"
+                        [style.height.%]="(tp.snapshot.coveragePct / maxCoveragePct) * 100"
+                        [class.high]="tp.snapshot.coveragePct >= 70"
+                        [class.mid]="tp.snapshot.coveragePct >= 40 && tp.snapshot.coveragePct < 70"
+                        [title]="tp.snapshot.label + ': ' + tp.snapshot.coveragePct + '%'"
+                      ></div>
+                    </div>
+                    <div class="bar-pct-label">{{ tp.snapshot.coveragePct }}%</div>
+                    @if (tp.delta !== null) {
+                      <div class="bar-delta" [class]="deltaClass(tp.delta)">{{ deltaLabel(tp.delta) }}</div>
+                    }
+                    <div class="bar-date-label">{{ formatDate(tp.snapshot.createdAt) }}</div>
+                    <div class="bar-snap-label" [title]="tp.snapshot.label">
+                      {{ tp.snapshot.label.length > 12 ? tp.snapshot.label.slice(0, 11) + '…' : tp.snapshot.label }}
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <!-- Impl status trends table -->
+              <div class="trends-title" style="margin-top: 32px;">Implementation Status Over Time</div>
+              <div class="trends-table-wrap">
+                <table class="trends-table">
+                  <thead>
+                    <tr>
+                      <th>Snapshot</th>
+                      <th>Date</th>
+                      <th class="num-col">Coverage</th>
+                      <th class="num-col">✅ Done</th>
+                      <th class="num-col">🔄 In Progress</th>
+                      <th class="num-col">📋 Planned</th>
+                      <th class="num-col">Delta</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (tp of trends; track tp.snapshot.id) {
+                      <tr class="trends-row">
+                        <td class="snap-label-cell">{{ tp.snapshot.label }}</td>
+                        <td class="snap-date-cell">{{ formatDate(tp.snapshot.createdAt) }}</td>
+                        <td class="num-cell">
+                          <span class="pct-badge" [class.high-pct]="tp.snapshot.coveragePct >= 70" [class.mid-pct]="tp.snapshot.coveragePct >= 40 && tp.snapshot.coveragePct < 70">
+                            {{ tp.snapshot.coveragePct }}%
+                          </span>
+                        </td>
+                        <td class="num-cell">{{ tp.snapshot.implCounts.implemented }}</td>
+                        <td class="num-cell">{{ tp.snapshot.implCounts.inProgress }}</td>
+                        <td class="num-cell">{{ tp.snapshot.implCounts.planned }}</td>
+                        <td class="num-cell">
+                          @if (tp.delta !== null) {
+                            <span class="delta-badge" [class]="deltaClass(tp.delta)">{{ deltaLabel(tp.delta) }}</span>
+                          } @else {
+                            <span class="baseline-label">baseline</span>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Summary stats -->
+              @if (snapshots.length >= 2) {
+                @let first = snapshots[0];
+                @let last = snapshots[snapshots.length - 1];
+                <div class="summary-box">
+                  <div class="summary-stat">
+                    <div class="summary-val" [class]="deltaClass(last.coveragePct - first.coveragePct)">
+                      {{ deltaLabel(last.coveragePct - first.coveragePct) }}
+                    </div>
+                    <div class="summary-label">Total coverage change</div>
+                  </div>
+                  <div class="summary-stat">
+                    <div class="summary-val delta-pos">+{{ last.implCounts.implemented - first.implCounts.implemented }}</div>
+                    <div class="summary-label">New implementations</div>
+                  </div>
+                  <div class="summary-stat">
+                    <div class="summary-val">{{ snapshots.length }}</div>
+                    <div class="summary-label">Snapshots tracked</div>
+                  </div>
+                  <div class="summary-stat">
+                    <div class="summary-val">{{ last.coveragePct }}%</div>
+                    <div class="summary-label">Current coverage</div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        }
+
+      </div>
+    </div>
+  </div>
+}

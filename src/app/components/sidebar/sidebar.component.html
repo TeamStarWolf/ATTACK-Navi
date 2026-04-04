@@ -1,0 +1,1171 @@
+<aside class="sidebar" [class.open]="open">
+  @if (technique) {
+    <div class="sidebar-inner">
+      <header class="sidebar-header">
+        <div class="title-block">
+          <div class="title-meta-row">
+            <a class="attack-id" [href]="technique.url" target="_blank" rel="noopener">{{ technique.attackId }}</a>
+            <span class="difficulty-badge" [style.background]="difficultyLevel.color + '22'" [style.color]="difficultyLevel.color" [style.border-color]="difficultyLevel.color + '55'">{{ difficultyLevel.label }}</span>
+            <a class="attck-link-btn" [href]="technique.url" target="_blank" rel="noopener" title="View on ATT&CK">ATT&amp;CK ↗</a>
+          </div>
+          <h2 class="technique-name">{{ technique.name }}</h2>
+        </div>
+        <div class="header-btns">
+          <button
+            class="watchlist-btn"
+            (click)="toggleWatchlist()"
+            [class.watched]="isWatched"
+            [title]="isWatched ? 'Remove from watchlist' : 'Add to watchlist'"
+          >
+            {{ isWatched ? '🔖' : '🏷️' }}
+            {{ isWatched ? 'Watching' : 'Watch' }}
+          </button>
+          <button class="graph-btn" (click)="openTechniqueGraph()" title="View relationship graph">🕸️ Graph</button>
+          <button class="collapse-all-btn" (click)="collapseAll()" title="Collapse all sections">⊟</button>
+          <button class="expand-rel-btn" (click)="expandRelevant()" title="Expand sections with data">⊞</button>
+          <button class="close-btn" (click)="close()" title="Close">✕</button>
+        </div>
+      </header>
+
+      <div class="sidebar-body">
+        <div class="meta-row">
+          @if (technique.platforms.length > 0) {
+            <div class="meta-item">
+              <span class="meta-label">Platforms</span>
+              <div class="platform-pills">
+                @for (p of technique.platforms; track p) {
+                  <span class="platform-pill" [title]="p">
+                    <span class="platform-icon">{{ getPlatformIcon(p) }}</span>
+                    <span class="platform-name">{{ p }}</span>
+                  </span>
+                }
+              </div>
+            </div>
+          }
+          @if (technique.tacticShortnames.length > 0) {
+            <div class="meta-item">
+              <span class="meta-label">Tactics</span>
+              <span class="meta-value">{{ technique.tacticShortnames.join(', ') }}</span>
+            </div>
+          }
+        </div>
+
+        @if (technique.description) {
+          <div class="description-wrap" [class.expanded]="descExpanded">
+            <p class="description" [innerHTML]="technique.description | attackText"></p>
+          </div>
+          <button class="desc-toggle" (click)="descExpanded = !descExpanded">
+            {{ descExpanded ? '▲ Collapse' : '▼ Description' }}
+          </button>
+        }
+
+        <!-- Extra metadata row -->
+        @if (technique.permissionsRequired.length > 0 || technique.defenseBypassed.length > 0) {
+          <div class="meta-tags-row">
+            @if (technique.permissionsRequired.length > 0) {
+              <div class="meta-tag-group">
+                <span class="meta-tag-label">Permissions</span>
+                <div class="tag-chips">
+                  @for (p of technique.permissionsRequired; track p) {
+                    <span class="tag-chip perm">{{ p }}</span>
+                  }
+                </div>
+              </div>
+            }
+            @if (technique.defenseBypassed.length > 0) {
+              <div class="meta-tag-group">
+                <span class="meta-tag-label">Bypasses</span>
+                <div class="tag-chips">
+                  @for (b of technique.defenseBypassed; track b) {
+                    <span class="tag-chip bypass">{{ b }}</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        @if (technique.effectivePermissions.length > 0 || technique.impactType.length > 0 || technique.systemRequirements.length > 0 || technique.remoteSupport || technique.capecIds.length > 0) {
+          <div class="meta-tags-row">
+            @if (technique.effectivePermissions.length > 0) {
+              <div class="meta-tag-group">
+                <span class="meta-tag-label">Effective Perms</span>
+                <div class="tag-chips">
+                  @for (p of technique.effectivePermissions; track p) {
+                    <span class="tag-chip perm">{{ p }}</span>
+                  }
+                </div>
+              </div>
+            }
+            @if (technique.impactType.length > 0) {
+              <div class="meta-tag-group">
+                <span class="meta-tag-label">Impact</span>
+                <div class="tag-chips">
+                  @for (i of technique.impactType; track i) {
+                    <span class="tag-chip impact">{{ i }}</span>
+                  }
+                </div>
+              </div>
+            }
+            @if (technique.systemRequirements.length > 0) {
+              <div class="meta-tag-group">
+                <span class="meta-tag-label">Requirements</span>
+                <div class="tag-chips">
+                  @for (r of technique.systemRequirements; track r) {
+                    <span class="tag-chip bypass">{{ r }}</span>
+                  }
+                </div>
+              </div>
+            }
+            @if (technique.remoteSupport) {
+              <div class="meta-tag-group">
+                <span class="meta-tag-label">Remote</span>
+                <span class="tag-chip perm">Supports Remote</span>
+              </div>
+            }
+            @if (technique.capecIds.length > 0) {
+              <div class="meta-tag-group">
+                <span class="meta-tag-label">CAPEC</span>
+                <div class="tag-chips">
+                  @for (c of technique.capecIds; track c) {
+                    <a class="tag-chip capec" [href]="'https://capec.mitre.org/data/definitions/' + c.replace('CAPEC-','')" target="_blank" rel="noopener">{{ c }}</a>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Coverage Score -->
+        <div class="coverage-score-card upgrade-section-block">
+          <div class="score-circle" [style.--score-color]="coverageColor">
+            <span class="score-number">{{ coverageScore }}</span>
+            <span class="score-label">/ 100</span>
+          </div>
+          <div class="score-breakdown">
+            <div class="score-title">Coverage Score <span class="score-grade" [style.color]="coverageColor">{{ coverageGrade }}</span></div>
+            <div class="score-items">
+              <span class="score-item" [class.active]="mitigations.length > 0">
+                🛡️ {{ mitigations.length }} Mitigations
+              </span>
+              <span class="score-item" [class.active]="carAnalytics.length > 0">
+                🔍 {{ carAnalytics.length }} CAR
+              </span>
+              <span class="score-item" [class.active]="atomicLiveCount > 0" [title]="atomicLiveCount + ' Atomic Red Team tests available'">
+                ⚗️ {{ atomicLiveCount > 0 ? atomicLiveCount : atomicTests.length }} Atomic
+              </span>
+              <span class="score-item" [class.active]="d3fendMeasures.length > 0">
+                🔰 {{ d3fendMeasures.length }} D3FEND
+              </span>
+              <span class="score-item" [class.active]="nistControls.length > 0">
+                📋 {{ nistControls.length }} NIST
+              </span>
+              <span class="score-item" [class.active]="criControls.length > 0">
+                🏦 {{ criControls.length }} CRI
+              </span>
+              <span class="score-item" [class.active]="capecEntries.length > 0">
+                🎯 {{ capecEntries.length }} CAPEC
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Signal Summary -->
+        @if (signals.length > 0) {
+          <div class="signal-grid">
+            @for (s of signals; track s.label) {
+              <span
+                class="signal-pill"
+                [class.signal-pill--clickable]="s.label === 'CVE'"
+                [style.borderColor]="s.color"
+                [title]="s.label === 'CVE' ? 'Click to highlight CVE-mapped techniques in matrix' : s.label"
+                (click)="s.label === 'CVE' ? onCvePillClick() : null"
+              >
+                <span class="signal-icon">{{ s.icon }}</span>
+                <span class="signal-value" [style.color]="s.color">{{ s.value }}</span>
+                <span class="signal-lbl">{{ s.label }}</span>
+              </span>
+            }
+          </div>
+        }
+
+        <!-- Technique Completeness Score -->
+        @if (technique) {
+          <div class="completeness-bar" [title]="'Data completeness: ' + completenessScore + '%'">
+            <div class="completeness-label">
+              <span>Completeness</span>
+              <span class="completeness-pct"
+                [style.color]="completenessScore >= 70 ? '#4caf50' : completenessScore >= 40 ? '#ff9800' : '#f44336'">
+                {{ completenessScore }}%
+              </span>
+            </div>
+            <div class="completeness-track">
+              <div class="completeness-fill"
+                [style.width.%]="completenessScore"
+                [style.background]="completenessScore >= 70 ? '#4caf50' : completenessScore >= 40 ? '#ff9800' : '#f44336'">
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Technique Note/Annotation -->
+        <section class="detail-section annotation-section upgrade-section-block">
+          <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('annotation')">
+            <span class="section-chevron">{{ isSectionCollapsed('annotation') ? '▸' : '▾' }}</span>
+            <span class="section-icon">📌</span> Annotation
+            @if (annotation) { <span class="section-count has-note">●</span> }
+          </h4>
+          @if (!isSectionCollapsed('annotation')) {
+            <textarea class="annotation-input" [(ngModel)]="annotationNote"
+                      placeholder="Add a note about this technique..." rows="3"
+                      (blur)="saveAnnotation()"></textarea>
+            <div class="annotation-controls">
+              <div class="color-picker">
+                @for (c of ['default','red','yellow','green','blue']; track c) {
+                  <button class="color-dot ann-{{ c }}"
+                          [class.selected]="annotationColor === c"
+                          (click)="annotationColor = c; saveAnnotation()"></button>
+                }
+              </div>
+              @if (annotation) {
+                <button class="clear-ann-btn" (click)="clearAnnotation()">Clear</button>
+              }
+            </div>
+          }
+        </section>
+
+        <!-- Data sources -->
+        @if (technique.dataSources.length > 0) {
+          <div class="data-sources-section upgrade-section-block">
+            <div class="section-label upgrade-section-title collapsible-title" (click)="toggleSection('datasources')">
+              <span class="section-chevron">{{ isSectionCollapsed('datasources') ? '▸' : '▾' }}</span>
+              📡 Data Sources
+            </div>
+            @if (!isSectionCollapsed('datasources')) {
+              <div class="ds-chips upgrade-chip-row">
+                @for (ds of technique.dataSources; track ds) {
+                  <span class="ds-chip">{{ ds }}</span>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Subtechniques -->
+        @if (technique.subtechniques.length) {
+          <section class="detail-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title" (click)="showSubtechniques = !showSubtechniques" style="cursor:pointer">
+              <span class="section-icon">🔀</span>
+              Subtechniques ({{ technique.subtechniques.length }})
+              <span class="toggle-arrow">{{ showSubtechniques ? '▲' : '▼' }}</span>
+            </h4>
+            @if (showSubtechniques) {
+              <div class="subtechnique-list">
+                @for (sub of technique.subtechniques; track sub.id) {
+                  <div class="subtechnique-row" (click)="selectSubtechnique(sub)">
+                    <span class="sub-id">{{ sub.attackId }}</span>
+                    <span class="sub-name">{{ sub.name }}</span>
+                    <span class="sub-mits" [class.has-mits]="sub.mitigationCount > 0">
+                      {{ sub.mitigationCount }}M
+                    </span>
+                  </div>
+                }
+              </div>
+            }
+          </section>
+        }
+
+        <!-- Detection -->
+        @if (technique.detectionText) {
+          <div class="detection-section upgrade-section-block">
+            <button class="detection-toggle" [class.expanded]="showDetection" (click)="showDetection = !showDetection">
+              🔍 Detection Guidance
+              <span class="toggle-arrow">{{ showDetection ? '▲' : '▼' }}</span>
+            </button>
+            @if (showDetection) {
+              <p class="detection-text" [innerHTML]="technique.detectionText | attackText"></p>
+            }
+          </div>
+        }
+
+        <!-- Data Components (detection sources) -->
+        @if (dataComponents.length > 0) {
+          <div class="data-components-section upgrade-section-block">
+            <div class="section-label upgrade-section-title collapsible-title" (click)="toggleSection('datacomponents')">
+              <span class="section-chevron">{{ isSectionCollapsed('datacomponents') ? '▸' : '▾' }}</span>
+              📡 Detected By
+            </div>
+            @if (!isSectionCollapsed('datacomponents')) {
+              <div class="dc-groups">
+                @for (grp of groupedDataComponents; track grp.sourceName) {
+                  <div class="dc-group">
+                    <button
+                      class="dc-source-btn"
+                      (click)="filterByDataSource(grp.sourceName)"
+                      [title]="'Filter matrix to ' + grp.sourceName + ' detectable techniques'"
+                    >{{ grp.sourceName }}</button>
+                    <div class="dc-components-row">
+                      @for (dc of grp.components; track dc.id) {
+                        <span class="dc-component">{{ dc.name }}</span>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Procedure Examples -->
+        @if (procedures.length > 0) {
+          <div class="procedures-section upgrade-section-block">
+            <button class="procedures-toggle" [class.expanded]="showProcedures" (click)="showProcedures = !showProcedures">
+              📋 Procedure Examples
+              <span class="proc-badge">{{ procedures.length }}</span>
+              <span class="toggle-arrow">{{ showProcedures ? '▲' : '▼' }}</span>
+            </button>
+            @if (showProcedures) {
+              <div class="procedures-list">
+                @for (proc of procedures.slice(0, procedureLimit); track proc.sourceId + proc.description) {
+                  <div class="proc-item" [class.group]="proc.sourceType === 'group'" [class.malware]="proc.sourceType === 'malware'" [class.tool]="proc.sourceType === 'tool'">
+                    <div class="proc-header">
+                      <a class="proc-id" [href]="'https://attack.mitre.org/' + (proc.sourceType === 'group' ? 'groups' : 'software') + '/' + proc.attackId" target="_blank" rel="noopener">{{ proc.attackId }}</a>
+                      <span class="proc-type">{{ proc.sourceType === 'group' ? '👥' : proc.sourceType === 'malware' ? '☣' : '🔧' }}</span>
+                      <span class="proc-name">{{ proc.sourceName }}</span>
+                    </div>
+                    <p class="proc-desc" [innerHTML]="proc.description | attackText"></p>
+                  </div>
+                }
+                @if (procedures.length > procedureLimit) {
+                  <button class="show-more-btn" (click)="procedureLimit = procedureLimit + 10">
+                    Show {{ procedures.length - procedureLimit }} more…
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <!-- CVE Exposure section -->
+        @if (cveExposures.length > 0) {
+          <div class="section-heading collapsible-title" (click)="toggleSection('cve')">
+            <span class="section-chevron">{{ isSectionCollapsed('cve') ? '▸' : '▾' }}</span>
+            <span>CVE Exposure</span>
+            <span class="section-count">{{ cveExposures.length }}</span>
+          </div>
+          @if (!isSectionCollapsed('cve')) {
+          <div class="cve-exposure-list">
+            @for (m of (showAllCves ? cveExposures : cveExposures.slice(0, 5)); track m.cveId) {
+              <div class="cve-item">
+                <a [href]="'https://nvd.nist.gov/vuln/detail/' + m.cveId" target="_blank" rel="noopener" class="cve-id">{{ m.cveId }}</a>
+                <div class="cve-tags">
+                  @if (m.exploitationTechnique.length > 0) {
+                    <span class="cve-tag exploit">exploit vector</span>
+                  }
+                  @if (m.primaryImpact.length > 0) {
+                    <span class="cve-tag primary">primary impact</span>
+                  }
+                  @if (m.secondaryImpact.length > 0) {
+                    <span class="cve-tag secondary">secondary</span>
+                  }
+                </div>
+              </div>
+            }
+            @if (cveExposures.length > 5) {
+              <button class="show-more-btn" (click)="showAllCves = !showAllCves">
+                {{ showAllCves ? 'Show less' : 'Show ' + (cveExposures.length - 5) + ' more CVEs' }}
+              </button>
+            }
+          </div>
+          }
+        }
+
+        <!-- NIST 800-53 Rev5 Controls section -->
+        @if (nistControls.length > 0) {
+          <div class="section-heading collapsible-title" (click)="toggleSection('nist')">
+            <span class="section-chevron">{{ isSectionCollapsed('nist') ? '▸' : '▾' }}</span>
+            <span>NIST 800-53 Rev5 Controls</span>
+            <span class="section-count">{{ nistControls.length }}</span>
+          </div>
+          @if (!isSectionCollapsed('nist')) {
+          <div class="nist-controls-list">
+            @for (ctrl of (showAllNist ? nistControls : nistControls.slice(0, 6)); track ctrl.id) {
+              <div class="nist-item">
+                <span class="nist-id">{{ ctrl.id }}</span>
+                <span class="nist-family">{{ ctrl.family }}</span>
+                <span class="nist-desc">{{ ctrl.description }}</span>
+              </div>
+            }
+            @if (nistControls.length > 6) {
+              <button class="show-more-btn" (click)="showAllNist = !showAllNist">
+                {{ showAllNist ? 'Show less' : 'Show ' + (nistControls.length - 6) + ' more controls' }}
+              </button>
+            }
+            <div class="nist-attribution">
+              <a href="https://center-for-threat-informed-defense.github.io/mappings-explorer/" target="_blank" rel="noopener">
+                Source: CTID Mappings Explorer
+              </a>
+            </div>
+          </div>
+          }
+        }
+
+        <!-- Cloud & CIS Controls section -->
+        @if (allCloudControls.length > 0) {
+          <div class="section-heading collapsible-title" (click)="toggleSection('cloud')">
+            <span class="section-chevron">{{ isSectionCollapsed('cloud') ? '▸' : '▾' }}</span>
+            <span>Cloud &amp; CIS Controls</span>
+            <span class="section-count">{{ allCloudControls.length }}</span>
+          </div>
+          @if (!isSectionCollapsed('cloud')) {
+          <div class="cloud-controls-list">
+            @for (c of visibleCloudControls; track c.id + c.provider) {
+              <div class="cloud-control">
+                <span class="ctrl-id">{{ c.id }}</span>
+                <span class="ctrl-type provider-{{ c.provider }}">{{ c.provider === 'cis' ? 'CIS' : c.provider }}</span>
+                <span class="ctrl-desc">{{ c.description }}</span>
+              </div>
+            }
+            @if (allCloudControls.length > 5) {
+              <button class="show-more-btn" (click)="showAllCloud = !showAllCloud">
+                {{ showAllCloud ? 'Show less' : 'Show ' + (allCloudControls.length - 5) + ' more controls' }}
+              </button>
+            }
+          </div>
+          }
+        }
+
+        <!-- VERIS Incident Actions section -->
+        @if (verisActions.length > 0) {
+          <section class="detail-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('veris')">
+              <span class="section-chevron">{{ isSectionCollapsed('veris') ? '▸' : '▾' }}</span>
+              <span class="section-icon">📋</span> VERIS Incident Actions
+              <span class="section-count">{{ verisActions.length }}</span>
+            </h4>
+            @if (!isSectionCollapsed('veris')) {
+            <div class="veris-list">
+              @for (a of (showAllVeris ? verisActions : verisActions.slice(0,4)); track a.id) {
+                <div class="veris-action">
+                  <span class="veris-cat">{{ a.category }}</span>
+                  <span class="veris-label">{{ a.label }}</span>
+                </div>
+              }
+              @if (verisActions.length > 4) {
+                <button class="show-more-btn" (click)="showAllVeris = !showAllVeris">
+                  {{ showAllVeris ? 'Show less' : 'Show ' + (verisActions.length - 4) + ' more actions' }}
+                </button>
+              }
+            </div>
+            <div class="ctid-attribution">
+              <a href="https://center-for-threat-informed-defense.github.io/mappings-explorer/" target="_blank" rel="noopener">CTID Mappings Explorer</a>
+            </div>
+            }
+          </section>
+        }
+
+        <!-- CRI Profile Controls section -->
+        @if (criControls.length > 0) {
+          <section class="detail-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('cri')">
+              <span class="section-chevron">{{ isSectionCollapsed('cri') ? '▸' : '▾' }}</span>
+              <span class="section-icon">🏦</span> CRI Financial Profile
+              <span class="section-count">{{ criControls.length }}</span>
+            </h4>
+            @if (!isSectionCollapsed('cri')) {
+            <div class="cri-controls-list">
+              @for (c of (showAllCri ? criControls : criControls.slice(0, 5)); track c.id) {
+                <div class="cri-control">
+                  <a [href]="c.url" target="_blank" rel="noopener" class="cri-id">{{ c.id }}</a>
+                  <span class="cri-func cri-func-{{ c.function }}">{{ c.functionLabel }}</span>
+                  <span class="cri-desc">{{ c.description }}</span>
+                </div>
+              }
+              @if (criControls.length > 5) {
+                <button class="show-more-btn" (click)="showAllCri = !showAllCri">
+                  {{ showAllCri ? 'Show less' : 'Show ' + (criControls.length - 5) + ' more controls' }}
+                </button>
+              }
+            </div>
+            <div class="ctid-attribution">
+              <a href="https://center-for-threat-informed-defense.github.io/mappings-explorer/external/cri_profile/" target="_blank" rel="noopener">CTID Mappings Explorer · CRI Profile v2.1</a>
+            </div>
+            }
+          </section>
+        }
+
+        <!-- CAPEC Attack Patterns section -->
+        @if (capecEntries.length > 0) {
+          <section class="detail-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('capec')">
+              <span class="section-chevron">{{ isSectionCollapsed('capec') ? '▸' : '▾' }}</span>
+              <span class="section-icon">🎯</span> CAPEC Attack Patterns
+              <span class="section-count">{{ capecEntries.length }}</span>
+            </h4>
+            @if (!isSectionCollapsed('capec')) {
+            <div class="capec-list">
+              @for (c of (showAllCapec ? capecEntries : capecEntries.slice(0, 4)); track c.id) {
+                <div class="capec-entry">
+                  <div class="capec-header">
+                    <a [href]="c.url" target="_blank" rel="noopener" class="capec-id">{{ c.id }}</a>
+                    @if (c.likelihood) {
+                      <span class="capec-badge capec-likelihood-{{ c.likelihood.toLowerCase() }}"
+                            title="Likelihood of attack">{{ c.likelihood }}</span>
+                    }
+                    @if (c.severity) {
+                      <span class="capec-badge capec-severity-{{ c.severity.toLowerCase() }}"
+                            title="Typical severity">{{ c.severity }} impact</span>
+                    }
+                    @if (c.cweIds.length > 0) {
+                      <span class="capec-cwe-pills">
+                        @for (cweId of c.cweIds.slice(0, 3); track cweId) {
+                          <a class="cwe-pill" [href]="cweService.getUrl(cweId)" target="_blank" rel="noopener" [title]="cweService.getInfo(cweId)?.name">
+                            {{ cweId }}@if (cweService.getInfo(cweId)?.name) { <span class="cwe-pill-name">{{ cweService.getInfo(cweId)!.name }}</span> }
+                          </a>
+                        }
+                      </span>
+                    }
+                  </div>
+                  <div class="capec-name">{{ c.name }}</div>
+                  @if (c.description) {
+                    <p class="capec-desc">{{ c.description }}</p>
+                  }
+                </div>
+              }
+              @if (capecEntries.length > 4) {
+                <button class="show-more-btn" (click)="showAllCapec = !showAllCapec">
+                  {{ showAllCapec ? 'Show less' : 'Show ' + (capecEntries.length - 4) + ' more patterns' }}
+                </button>
+              }
+            </div>
+            <div class="ctid-attribution">
+              <a href="https://capec.mitre.org/" target="_blank" rel="noopener">MITRE CAPEC</a>
+            </div>
+            }
+          </section>
+        }
+
+        <!-- ExploitDB Exploits section -->
+        @if (exploitCount > 0) {
+          <section class="detail-section upgrade-section-block exploitdb-section">
+            <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('exploitdb')">
+              <span class="section-chevron">{{ isSectionCollapsed('exploitdb') ? '▸' : '▾' }}</span>
+              <span class="section-icon">💥</span> ExploitDB Exploits
+              <span class="section-count">{{ exploitCount }}</span>
+            </h4>
+            @if (!isSectionCollapsed('exploitdb')) {
+              <p class="exploitdb-summary">
+                {{ exploitCount }} public exploit{{ exploitCount !== 1 ? 's' : '' }} mapped to this technique via CVE cross-reference.
+              </p>
+              <a class="framework-link" href="https://www.exploit-db.com/" target="_blank" rel="noopener">Exploit Database ↗</a>
+            }
+          </section>
+        }
+
+        <!-- Nuclei Templates section -->
+        @if (nucleiCount > 0) {
+          <section class="detail-section upgrade-section-block nuclei-section">
+            <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('nuclei')">
+              <span class="section-chevron">{{ isSectionCollapsed('nuclei') ? '▸' : '▾' }}</span>
+              <span class="section-icon">🔬</span> Nuclei Templates
+              <span class="section-count">{{ nucleiCount }}</span>
+            </h4>
+            @if (!isSectionCollapsed('nuclei')) {
+              <p class="nuclei-summary">
+                {{ nucleiCount }} Nuclei scan template{{ nucleiCount !== 1 ? 's' : '' }} mapped to this technique via CVE cross-reference.
+              </p>
+              <a class="framework-link" href="https://github.com/projectdiscovery/nuclei-templates" target="_blank" rel="noopener">Nuclei Templates ↗</a>
+            }
+          </section>
+        }
+
+        <!-- Tags section -->
+        <div class="tags-section upgrade-section-block">
+          <div class="section-label upgrade-section-title collapsible-title" (click)="toggleSection('tags')">
+            <span class="section-chevron">{{ isSectionCollapsed('tags') ? '▸' : '▾' }}</span>
+            🏷 Tags
+          </div>
+          @if (!isSectionCollapsed('tags')) {
+          <div class="tag-chips-row upgrade-chip-row">
+            @for (tag of currentTags; track tag) {
+              <span class="tag-chip-item">
+                {{ tag }}
+                <button class="tag-remove" (click)="removeTag(tag)">✕</button>
+              </span>
+            }
+          </div>
+          <div class="tag-presets upgrade-chip-row">
+            @for (p of presetTags; track p) {
+              <button
+                class="preset-tag"
+                [class.active]="currentTags.includes(p)"
+                (click)="addTag(p)"
+              >{{ p }}</button>
+            }
+          </div>
+          <div class="tag-input-row">
+            <input
+              type="text"
+              class="tag-input"
+              placeholder="Custom tag…"
+              [(ngModel)]="newTagInput"
+              (keydown.enter)="newTagInput && addTag(newTagInput)"
+            />
+            <button class="tag-add-btn" [disabled]="!newTagInput" (click)="addTag(newTagInput)">+</button>
+          </div>
+          }
+        </div>
+
+        <!-- Technique notes -->
+        <div class="tech-notes-section upgrade-section-block">
+          <div class="section-label upgrade-section-title collapsible-title" (click)="toggleSection('notes')">
+            <span class="section-chevron">{{ isSectionCollapsed('notes') ? '▸' : '▾' }}</span>
+            📝 Analyst Notes
+          </div>
+          @if (!isSectionCollapsed('notes')) {
+            <textarea
+              class="notes-textarea"
+              placeholder="Add notes about this technique — context, observations, applicability to your environment…"
+              [(ngModel)]="techniqueNote"
+              (blur)="saveTechNote()"
+              rows="3"
+            ></textarea>
+          }
+        </div>
+
+        <!-- Threat groups section -->
+        @if (threatGroups.length > 0) {
+          <div class="threat-section upgrade-section-block">
+            <h3 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('threats')">
+              <span class="section-chevron">{{ isSectionCollapsed('threats') ? '▸' : '▾' }}</span>
+              👥 Threat Actors
+              <span class="count-badge">{{ threatGroups.length }}</span>
+            </h3>
+            @if (!isSectionCollapsed('threats')) {
+            <div class="group-chips upgrade-chip-row">
+              @for (g of threatGroups; track g.id) {
+                <button class="group-chip" (click)="filterByGroup(g)" [title]="'View ' + g.name + ' in Threats panel'">
+                  {{ g.attackId }} {{ g.name }}
+                  <a [href]="'https://attack.mitre.org/groups/' + g.attackId" target="_blank" rel="noopener" (click)="$event.stopPropagation()" class="chip-ext">↗</a>
+                </button>
+              }
+            </div>
+            }
+          </div>
+        }
+
+        <!-- Software section -->
+        @if (softwareList.length > 0) {
+          <div class="software-section upgrade-section-block">
+            <h3 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('software')">
+              <span class="section-chevron">{{ isSectionCollapsed('software') ? '▸' : '▾' }}</span>
+              🛠️ Software / Malware
+              <span class="count-badge sw">{{ softwareList.length }}</span>
+            </h3>
+            @if (!isSectionCollapsed('software')) {
+            <div class="sw-chips upgrade-chip-row">
+              @for (sw of softwareList; track sw.id) {
+                <button
+                  class="sw-chip"
+                  [class.malware]="sw.type === 'malware'"
+                  (click)="filterBySoftware(sw)"
+                  [title]="sw.type === 'malware' ? 'Malware' : 'Tool'"
+                >
+                  {{ sw.attackId }} {{ sw.name }}
+                  <a [href]="'https://attack.mitre.org/software/' + sw.attackId" target="_blank" rel="noopener" (click)="$event.stopPropagation()" class="chip-ext">↗</a>
+                </button>
+              }
+            </div>
+            }
+          </div>
+        }
+
+        <!-- Campaigns section -->
+        @if (campaigns.length > 0) {
+          <div class="campaigns-section upgrade-section-block">
+            <h3 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('campaigns')">
+              <span class="section-chevron">{{ isSectionCollapsed('campaigns') ? '▸' : '▾' }}</span>
+              🎯 Campaigns
+              <span class="count-badge camp">{{ campaigns.length }}</span>
+            </h3>
+            @if (!isSectionCollapsed('campaigns')) {
+            <div class="camp-chips upgrade-chip-row">
+              @for (c of campaigns; track c.id) {
+                <button
+                  class="camp-chip"
+                  (click)="filterByCampaign(c)"
+                  [title]="c.firstSeen ? c.firstSeen.slice(0,10) : c.attackId"
+                >
+                  {{ c.attackId }} {{ c.name }}
+                  <a [href]="'https://attack.mitre.org/campaigns/' + c.attackId" target="_blank" rel="noopener" (click)="$event.stopPropagation()" class="chip-ext">↗</a>
+                </button>
+              }
+            </div>
+            }
+          </div>
+        }
+
+        <!-- D3FEND Active Defenses section -->
+        @if (d3fendMeasures.length > 0) {
+          <section class="sidebar-section d3fend-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('d3fend')">
+              <span class="section-chevron">{{ isSectionCollapsed('d3fend') ? '▸' : '▾' }}</span>
+              🛡 D3FEND Active Defenses <span class="count-badge upgrade-section-count">{{ d3fendMeasures.length }}</span>
+            </h4>
+            @if (!isSectionCollapsed('d3fend')) {
+            @for (group of groupedD3fend; track group.category) {
+              <div class="d3fend-category">
+                <div class="d3fend-cat-label d3fend-cat-{{ group.category | lowercase }}">{{ group.category }}</div>
+                @for (measure of group.measures; track measure.id) {
+                  <div class="d3fend-item">
+                    <div class="d3fend-header">
+                      <a [href]="measure.url" target="_blank" rel="noopener" class="d3fend-id">{{ measure.id }}</a>
+                      <span class="d3fend-name">{{ measure.name }}</span>
+                    </div>
+                    <p class="d3fend-def">{{ measure.definition }}</p>
+                  </div>
+                }
+              </div>
+            }
+            }
+          </section>
+        }
+
+        <!-- MITRE Engage Adversary Engagement section -->
+        @if (engageActivities.length > 0) {
+          <section class="sidebar-section engage-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('engage')">
+              <span class="section-chevron">{{ isSectionCollapsed('engage') ? '▸' : '▾' }}</span>
+              🎭 Engage Activities <span class="count-badge upgrade-section-count">{{ engageActivities.length }}</span>
+            </h4>
+            @if (!isSectionCollapsed('engage')) {
+            @for (act of engageActivities; track act.id) {
+              <div class="engage-item engage-cat-{{ act.category | lowercase }}">
+                <div class="engage-header">
+                  <a [href]="act.url" target="_blank" rel="noopener" class="engage-id">{{ act.id }}</a>
+                  <span class="engage-cat-badge engage-cat-{{ act.category | lowercase }}">{{ act.category }}</span>
+                  <span class="engage-name">{{ act.name }}</span>
+                </div>
+                <p class="engage-def">{{ act.definition }}</p>
+              </div>
+            }
+            <a href="https://engage.mitre.org" target="_blank" rel="noopener" class="framework-link">MITRE Engage ↗</a>
+            }
+          </section>
+        }
+
+        <!-- MITRE CAR Detection Analytics section -->
+        @if (carAnalytics.length > 0) {
+          <section class="sidebar-section car-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('car')">
+              <span class="section-chevron">{{ isSectionCollapsed('car') ? '▸' : '▾' }}</span>
+              🔬 CAR Detection Analytics <span class="count-badge upgrade-section-count">{{ carAnalytics.length }}</span>
+            </h4>
+            @if (!isSectionCollapsed('car')) {
+            @for (analytic of carAnalytics; track analytic.id) {
+              <div class="car-item">
+                <div class="car-header">
+                  <a [href]="analytic.url" target="_blank" rel="noopener" class="car-id">{{ analytic.id }}</a>
+                  <span class="car-name">{{ analytic.name }}</span>
+                  <div class="car-platforms">
+                    @for (p of analytic.platforms; track p) {
+                      <span class="car-platform">{{ p }}</span>
+                    }
+                  </div>
+                </div>
+                <p class="car-desc">{{ analytic.description }}</p>
+                @if (analytic.pseudocode) {
+                  <code class="car-pseudocode">{{ analytic.pseudocode }}</code>
+                }
+              </div>
+            }
+            <a href="https://car.mitre.org" target="_blank" rel="noopener" class="framework-link">MITRE CAR ↗</a>
+            }
+          </section>
+        }
+
+        <!-- Atomic Red Team Tests -->
+        @if (atomicLiveCount > 0 || atomicTests.length > 0) {
+          <section class="sidebar-section atomic-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('atomic')">
+              <span class="section-chevron">{{ isSectionCollapsed('atomic') ? '▸' : '▾' }}</span>
+              ⚛ Atomic Red Team Tests
+              <span class="count-badge upgrade-section-count">{{ atomicLiveCount > 0 ? atomicLiveCount : atomicTests.length }}</span>
+            </h4>
+
+            @if (!isSectionCollapsed('atomic')) {
+            @if (atomicFetching) {
+              <p class="atomic-live-hint">Loading tests from Atomic Red Team…</p>
+            } @else if (atomicLiveTests.length > 0) {
+              @for (test of atomicLiveTests; track test.guid || test.name) {
+                <div class="atomic-item">
+                  <div class="atomic-header">
+                    <span class="atomic-executor-badge" [title]="'Executor: ' + test.executorName">
+                      {{ executorIcon(test.executorName) }} {{ test.executorName }}
+                    </span>
+                    <div class="atomic-platforms">
+                      @for (p of test.platforms; track p) {
+                        <span class="atomic-platform">{{ p }}</span>
+                      }
+                    </div>
+                  </div>
+                  <span class="atomic-name">{{ test.name }}</span>
+                  @if (test.description) {
+                    <p class="atomic-desc">{{ test.description }}</p>
+                  }
+                </div>
+              }
+              <p class="atomic-more-note">
+                Showing {{ atomicLiveTests.length }} of {{ atomicLiveCount > 0 ? atomicLiveCount : atomicTests.length }} tests indexed from the Atomic Red Team library. View on GitHub for full details.
+              </p>
+            } @else {
+              <p class="atomic-live-hint">
+                {{ atomicLiveCount > 0 ? atomicLiveCount : atomicTests.length }} tests indexed from the Atomic Red Team library. View on GitHub for full details.
+              </p>
+            }
+            <a [href]="atomicGitHubUrl" target="_blank" rel="noopener" class="framework-link">View all on Atomic Red Team ↗</a>
+            }
+          </section>
+        }
+
+        <!-- MISP Galaxy -->
+        @if (mispCluster) {
+          <section class="sidebar-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('misp')">
+              <span class="section-chevron">{{ isSectionCollapsed('misp') ? '▸' : '▾' }}</span>
+              🔴 MISP Galaxy Cluster
+            </h4>
+            @if (!isSectionCollapsed('misp')) {
+            <div class="misp-cluster-card">
+              <div class="misp-cluster-value">{{ mispCluster.value }}</div>
+              @if (mispCluster.description) {
+                <p class="misp-cluster-desc">{{ mispCluster.description | slice:0:180 }}{{ mispCluster.description.length > 180 ? '…' : '' }}</p>
+              }
+              @if (mispCluster.mitrePlatforms.length > 0) {
+                <div class="misp-platforms">
+                  @for (p of mispCluster.mitrePlatforms; track p) {
+                    <span class="atomic-platform">{{ p }}</span>
+                  }
+                </div>
+              }
+              <div class="misp-tag-row">
+                <code class="misp-tag-text">misp-galaxy:mitre-attack-pattern="{{ mispCluster.value }}"</code>
+                <button class="misp-copy-btn" (click)="copyMispTag()" [title]="mispTagCopied ? 'Copied!' : 'Copy MISP tag'">
+                  {{ mispTagCopied ? '✓' : '📋' }}
+                </button>
+              </div>
+              @if (mispCluster.synonyms.length > 0) {
+                <div class="misp-synonyms">Also known as: {{ mispCluster.synonyms.slice(0,3).join(', ') }}</div>
+              }
+            </div>
+            }
+          </section>
+        }
+
+        <!-- OpenCTI Threat Intelligence -->
+        @if (openctiService.getConfig().connected || openctiIndicators.length > 0 || openctiLoading) {
+          <section class="sidebar-section upgrade-section-block opencti-section">
+            <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('opencti')">
+              <span class="section-chevron">{{ isSectionCollapsed('opencti') ? '▸' : '▾' }}</span>
+              <span class="section-icon">🔗</span> OpenCTI Indicators
+              @if (openctiIndicators.length > 0) {
+                <span class="section-count">{{ openctiIndicators.length }}</span>
+              }
+              @if (openctiLoading) {
+                <span class="loading-dot">...</span>
+              }
+            </h4>
+            @if (!isSectionCollapsed('opencti')) {
+            @if (openctiError) {
+              <div class="opencti-error">⚠ {{ openctiError }}</div>
+            }
+            @if (!openctiLoading && openctiIndicators.length === 0 && !openctiError) {
+              <div class="opencti-empty">No indicators found for this technique.</div>
+            }
+            @for (ind of openctiIndicators; track ind.id) {
+              <div class="opencti-indicator">
+                <div class="opencti-ind-header">
+                  <span class="opencti-pattern-type" [class]="'pt-' + ind.patternType">{{ ind.patternType }}</span>
+                  <span class="opencti-confidence" [class]="ind.confidence >= 75 ? 'conf-high' : ind.confidence >= 40 ? 'conf-med' : 'conf-low'">
+                    {{ ind.confidence }}%
+                  </span>
+                </div>
+                <div class="opencti-ind-name">{{ ind.name }}</div>
+                @if (ind.description) {
+                  <div class="opencti-ind-desc">{{ ind.description | slice:0:120 }}{{ ind.description.length > 120 ? '…' : '' }}</div>
+                }
+                @if (ind.labels.length > 0) {
+                  <div class="opencti-labels">
+                    @for (lbl of ind.labels; track lbl) {
+                      <span class="opencti-label">{{ lbl }}</span>
+                    }
+                  </div>
+                }
+                <div class="opencti-pattern">
+                  <code>{{ ind.pattern | slice:0:100 }}{{ ind.pattern.length > 100 ? '…' : '' }}</code>
+                </div>
+              </div>
+            }
+            }
+          </section>
+        }
+
+        <!-- Custom Controls section -->
+        @if (customMitigations.length > 0) {
+          <section class="detail-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('custom')">
+              <span class="section-chevron">{{ isSectionCollapsed('custom') ? '▸' : '▾' }}</span>
+              <span class="section-icon">🏢</span> Custom Controls
+              <span class="section-count">{{ customMitigations.length }}</span>
+            </h4>
+            @if (!isSectionCollapsed('custom')) {
+            @for (cm of customMitigations; track cm.id) {
+              <div class="custom-mit-row">
+                <div class="custom-mit-header">
+                  <span class="custom-mit-id">{{ cm.id }}</span>
+                  <span class="custom-mit-cat cat-{{ cm.category.toLowerCase().replace(' ', '-') }}">{{ cm.category }}</span>
+                  <span class="custom-mit-name">{{ cm.name }}</span>
+                  @if (cm.implStatus) {
+                    <span class="impl-badge impl-{{ cm.implStatus }}">{{ cm.implStatus }}</span>
+                  }
+                </div>
+                @if (cm.description) {
+                  <p class="custom-mit-desc">{{ cm.description }}</p>
+                }
+              </div>
+            }
+            }
+          </section>
+        }
+
+        <!-- Mitigations section -->
+        <div class="mitigations-section upgrade-section-block">
+          <h3 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('mitigations')">
+            <span class="section-chevron">{{ isSectionCollapsed('mitigations') ? '▸' : '▾' }}</span>
+            Mitigations
+            <span class="count-badge">{{ mitigations.length }}</span>
+            @if (implSummary.total > 0 && implSummary.implemented > 0) {
+              <span class="impl-summary-badge">&#10003; {{ implSummary.implemented }} done</span>
+            }
+          </h3>
+
+          @if (!isSectionCollapsed('mitigations')) {
+          @if (parentMitigations.length > 0) {
+            <div class="parent-mit-note upgrade-note-block">
+              <span class="parent-mit-label">↑ Parent technique mitigations</span>
+              <div class="parent-mit-chips upgrade-chip-row">
+                @for (rel of parentMitigations; track rel.mitigation.id) {
+                  <button class="parent-mit-chip" (click)="filterByMitigation(rel.mitigation)" [title]="rel.mitigation.name">
+                    {{ rel.mitigation.attackId }} {{ rel.mitigation.name }}
+                    <a [href]="rel.mitigation.url" target="_blank" rel="noopener" (click)="$event.stopPropagation()" class="chip-ext">↗</a>
+                  </button>
+                }
+              </div>
+            </div>
+          }
+          @if (mitigations.length === 0 && parentMitigations.length === 0) {
+            <p class="no-mitigations">No mitigations mapped to this technique.</p>
+          } @else if (mitigations.length > 0) {
+            @if (mitigations.length > 4) {
+              <div class="mit-search-wrap">
+                <input
+                  type="text"
+                  class="mit-search-input"
+                  placeholder="Filter mitigations…"
+                  [(ngModel)]="mitSearchText"
+                />
+                @if (mitSearchText) {
+                  <button class="mit-search-clear" (click)="mitSearchText = ''">✕</button>
+                }
+              </div>
+            }
+            @if (filteredMitigations.length === 0 && mitSearchText) {
+              <p class="mit-no-results">No mitigations match your search.</p>
+            }
+            @if (filteredMitigations.length > 1) {
+              <div class="bulk-update-row">
+                <span class="bulk-label">All {{ filteredMitigations.length }} mitigations:</span>
+                <div class="bulk-actions upgrade-action-strip">
+                  @for (s of statusOptions; track s) {
+                    <button
+                      class="bulk-status-btn"
+                      (click)="setAllMitigationStatus(s)"
+                      [style.background]="statusColors[s]"
+                      [title]="'Set all to ' + statusLabels[s]"
+                    >{{ statusLabels[s] }}</button>
+                  }
+                  <button class="bulk-clear-btn" (click)="clearAllMitigationStatus()">Clear All</button>
+                </div>
+              </div>
+            }
+            <ul class="mitigation-list">
+              @for (rel of filteredMitigations; track rel.mitigation.id) {
+                <li class="mitigation-item">
+                  <div class="mit-header">
+                    <a [href]="rel.mitigation.url" target="_blank" rel="noopener" class="mit-id">
+                      {{ rel.mitigation.attackId }}
+                    </a>
+                    <a [href]="rel.mitigation.url" target="_blank" rel="noopener" class="mit-name">{{ rel.mitigation.name }}</a>
+                    <button
+                      class="filter-mit-btn"
+                      (click)="filterByMitigation(rel.mitigation)"
+                      title="Highlight all techniques covered by this mitigation"
+                    >Show all →</button>
+                  </div>
+
+                  <!-- Implementation status -->
+                  <div class="impl-status-row">
+                    @for (s of statusOptions; track s) {
+                      <button
+                        class="impl-chip"
+                        [class.active]="getImplStatus(rel.mitigation.id) === s"
+                        [style.border-color]="getImplStatus(rel.mitigation.id) === s ? statusColors[s] : ''"
+                        [style.background]="getImplStatus(rel.mitigation.id) === s ? statusColors[s] : ''"
+                        [style.color]="getImplStatus(rel.mitigation.id) === s ? '#fff' : ''"
+                        (click)="setImplStatus(rel.mitigation.id, s)"
+                        [title]="statusLabels[s]"
+                      >{{ statusLabels[s] }}</button>
+                    }
+                  </div>
+
+                  @if (rel.description) {
+                    <div class="rel-desc-wrap" [class.expanded]="isRelDescExpanded(rel.mitigation.id)">
+                      <p class="rel-description" [innerHTML]="rel.description | attackText"></p>
+                      <div class="rel-desc-fade"></div>
+                    </div>
+                    <button class="rel-desc-toggle" (click)="toggleRelDesc(rel.mitigation.id)">
+                      {{ isRelDescExpanded(rel.mitigation.id) ? '▲ Less' : '▼ Context' }}
+                    </button>
+                  }
+                  @if (rel.mitigation.description) {
+                    <div class="mit-desc-wrap" [class.expanded]="isMitDescExpanded(rel.mitigation.id)">
+                      <p class="mit-description" [innerHTML]="rel.mitigation.description | attackText"></p>
+                      <div class="mit-desc-fade"></div>
+                    </div>
+                    <button class="mit-desc-toggle" (click)="toggleMitDesc(rel.mitigation.id)">
+                      {{ isMitDescExpanded(rel.mitigation.id) ? '▲ Less' : '▼ Show description' }}
+                    </button>
+                  }
+
+                  <!-- Documentation toggle -->
+                  <button
+                    class="doc-toggle-btn"
+                    [class.has-doc]="hasDoc(rel.mitigation.id)"
+                    (click)="toggleDoc(rel.mitigation.id)"
+                  >
+                    {{ hasDoc(rel.mitigation.id) ? '📄' : '📝' }}
+                    {{ isDocExpanded(rel.mitigation.id) ? 'Hide documentation' : (hasDoc(rel.mitigation.id) ? 'View / edit documentation' : 'Add documentation') }}
+                  </button>
+
+                  <!-- Documentation form -->
+                  @if (isDocExpanded(rel.mitigation.id)) {
+                    <div class="doc-form">
+                      <div class="doc-field">
+                        <label class="doc-label">Security Controls</label>
+                        <input
+                          type="text"
+                          class="doc-input"
+                          placeholder="e.g. NIST AC-2, CIS 5.1, ISO A.9.2.1"
+                          [(ngModel)]="getEditingDoc(rel.mitigation.id).controlRefs"
+                        />
+                        <span class="doc-hint">Comma-separated references to any framework</span>
+                      </div>
+                      <div class="doc-field">
+                        <label class="doc-label">Owner / Responsible Team</label>
+                        <input
+                          type="text"
+                          class="doc-input"
+                          placeholder="e.g. Security Engineering, John Smith"
+                          [(ngModel)]="getEditingDoc(rel.mitigation.id).owner"
+                        />
+                      </div>
+                      <div class="doc-field">
+                        <label class="doc-label">Target Date</label>
+                        <input
+                          type="date"
+                          class="doc-input"
+                          [(ngModel)]="getEditingDoc(rel.mitigation.id).dueDate"
+                        />
+                      </div>
+                      <div class="doc-field">
+                        <label class="doc-label">Evidence / Ticket URL</label>
+                        <input
+                          type="url"
+                          class="doc-input"
+                          placeholder="https://jira.company.com/ticket/SEC-123"
+                          [(ngModel)]="getEditingDoc(rel.mitigation.id).evidenceUrl"
+                        />
+                      </div>
+                      <div class="doc-field">
+                        <label class="doc-label">Implementation Notes</label>
+                        <textarea
+                          class="doc-textarea"
+                          placeholder="Describe how this mitigation is implemented, any exceptions, deviations from standard, or additional context…"
+                          [(ngModel)]="getEditingDoc(rel.mitigation.id).notes"
+                          rows="4"
+                        ></textarea>
+                      </div>
+                      <div class="doc-actions upgrade-action-strip">
+                        <button class="doc-save-btn" (click)="saveDoc(rel.mitigation.id)">💾 Save</button>
+                        <button class="doc-cancel-btn" (click)="toggleDoc(rel.mitigation.id)">Cancel</button>
+                      </div>
+                    </div>
+                  }
+                </li>
+              }
+            </ul>
+          }
+          }
+        </div>
+
+        @if (mitigations.length > 0 || threatGroups.length > 0) {
+          <section class="detail-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title" (click)="showRelGraph = !showRelGraph" style="cursor:pointer">
+              <span class="section-icon">🕸️</span> Relationship Graph
+              <span class="toggle-arrow">{{ showRelGraph ? '▲' : '▼' }}</span>
+            </h4>
+            @if (showRelGraph) {
+              <div class="rel-graph-container">
+                <svg width="400" height="240" viewBox="0 0 400 240" class="rel-graph-svg">
+                  @for (link of relGraphData.links; track link.source + link.target) {
+                    <line
+                      [attr.x1]="getNodeById(link.source)?.x"
+                      [attr.y1]="getNodeById(link.source)?.y"
+                      [attr.x2]="getNodeById(link.target)?.x"
+                      [attr.y2]="getNodeById(link.target)?.y"
+                      [attr.stroke]="link.type === 'mitigates' ? '#4ade80' : '#60a5fa'"
+                      stroke-opacity="0.4"
+                      stroke-width="1.5"
+                      [attr.stroke-dasharray]="link.type === 'uses' ? '4,3' : 'none'">
+                    </line>
+                  }
+                  @for (node of relGraphData.nodes; track node.id) {
+                    <g [attr.transform]="'translate(' + node.x + ',' + node.y + ')'">
+                      <circle
+                        [attr.r]="node.type === 'technique' ? 20 : 14"
+                        [attr.fill]="node.type === 'technique' ? '#1d4ed8' : node.type === 'mitigation' ? '#166534' : '#7c3aed'"
+                        fill-opacity="0.8"
+                        [attr.stroke]="node.type === 'technique' ? '#3b82f6' : node.type === 'mitigation' ? '#4ade80' : '#a78bfa'"
+                        stroke-width="1.5">
+                      </circle>
+                      <text text-anchor="middle" dominant-baseline="middle"
+                            font-size="8" fill="white" font-weight="600">
+                        {{ node.label }}
+                      </text>
+                    </g>
+                  }
+                </svg>
+                <div class="rel-graph-legend">
+                  <span class="leg-item"><span class="leg-dot" style="background:#3b82f6"></span> Technique</span>
+                  <span class="leg-item"><span class="leg-dot" style="background:#4ade80"></span> Mitigation</span>
+                  <span class="leg-item"><span class="leg-dot" style="background:#a78bfa"></span> Threat Group</span>
+                </div>
+              </div>
+            }
+          </section>
+        }
+
+      </div>
+    </div>
+  }
+</aside>

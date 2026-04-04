@@ -1,0 +1,69 @@
+@if (open) {
+  <div class="sigma-overlay" (click)="close()"></div>
+  <div class="sigma-panel" role="dialog" aria-modal="true" aria-label="Sigma Rule Export">
+    <div class="sigma-header">
+      <span class="sigma-title-icon">Σ</span>
+      <h2 class="sigma-title">Sigma Rule Export</h2>
+      <button class="sigma-close-btn" (click)="close()" title="Close">✕</button>
+    </div>
+
+    <div class="sigma-body">
+      <div class="sigma-section">
+        <div class="sigma-section-label">Export rules for:</div>
+        <div class="sigma-mode-options">
+          <label class="sigma-radio-label">
+            <input
+              type="radio"
+              name="sigmaMode"
+              value="current"
+              [(ngModel)]="selectedMode"
+              (ngModelChange)="onModeChange()"
+            />
+            <span class="sigma-radio-text">Current filter view</span>
+          </label>
+          <label class="sigma-radio-label">
+            <input
+              type="radio"
+              name="sigmaMode"
+              value="implemented"
+              [(ngModel)]="selectedMode"
+              (ngModelChange)="onModeChange()"
+            />
+            <span class="sigma-radio-text">Implemented techniques</span>
+          </label>
+          <label class="sigma-radio-label">
+            <input
+              type="radio"
+              name="sigmaMode"
+              value="all"
+              [(ngModel)]="selectedMode"
+              (ngModelChange)="onModeChange()"
+            />
+            <span class="sigma-radio-text">All techniques</span>
+          </label>
+        </div>
+        <div class="sigma-count-info">
+          <span class="sigma-count-badge">{{ techniqueCount }}</span>
+          <span class="sigma-count-text">{{ techniqueCount === 1 ? 'technique' : 'techniques' }} selected</span>
+        </div>
+      </div>
+
+      <div class="sigma-section">
+        <div class="sigma-section-label">Preview (first 3 rules):</div>
+        <pre class="sigma-preview">{{ previewYaml }}</pre>
+      </div>
+    </div>
+
+    <div class="sigma-footer">
+      <button
+        class="sigma-export-btn"
+        [disabled]="techniqueCount === 0"
+        (click)="exportAll()"
+        [title]="techniqueCount === 0 ? 'No techniques to export' : 'Download Sigma rules as YAML'"
+      >
+        ⬇ Export {{ countLabel }} as YAML
+      </button>
+      <button class="sigma-cancel-btn" (click)="close()">Cancel</button>
+    </div>
+  </div>
+}

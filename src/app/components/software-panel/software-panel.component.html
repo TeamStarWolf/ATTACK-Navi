@@ -1,0 +1,87 @@
+<div class="panel-overlay" [class.open]="open" (click)="close()"></div>
+<aside class="sw-panel" [class.open]="open">
+  <div class="panel-inner">
+    <header class="panel-header">
+      <div class="header-top">
+        <div class="title-block">
+          <span class="panel-label">Software &amp; Malware</span>
+          <span class="panel-sub">Tools and malware using ATT&amp;CK techniques</span>
+        </div>
+        <button class="close-btn" (click)="close()" title="Close">✕</button>
+      </div>
+
+      <div class="summary-row">
+        <div class="stat-chip">
+          <span class="stat-num">{{ software.length }}</span>
+          <span class="stat-lbl">Total</span>
+        </div>
+        <div class="stat-chip tool">
+          <span class="stat-num">{{ toolCount }}</span>
+          <span class="stat-lbl">Tools</span>
+        </div>
+        <div class="stat-chip malware">
+          <span class="stat-num">{{ malwareCount }}</span>
+          <span class="stat-lbl">Malware</span>
+        </div>
+        @if (activeCount > 0) {
+          <div class="stat-chip active">
+            <span class="stat-num">{{ activeCount }}</span>
+            <span class="stat-lbl">Active</span>
+          </div>
+        }
+      </div>
+
+      <div class="controls-row">
+        <input
+          class="search-input"
+          type="text"
+          placeholder="Search by name, ID, or alias…"
+          [(ngModel)]="searchText"
+          (ngModelChange)="applyFilter()"
+        />
+        <div class="type-tabs">
+          <button class="type-tab" [class.active]="typeFilter === 'all'" (click)="typeFilter = 'all'; applyFilter()">All</button>
+          <button class="type-tab" [class.active]="typeFilter === 'tool'" (click)="typeFilter = 'tool'; applyFilter()">Tools</button>
+          <button class="type-tab" [class.active]="typeFilter === 'malware'" (click)="typeFilter = 'malware'; applyFilter()">Malware</button>
+        </div>
+      </div>
+
+      @if (activeCount > 0) {
+        <div class="active-bar">
+          <span>{{ activeCount }} selected — techniques highlighted on matrix</span>
+          <button class="clear-btn" (click)="clearAll()">Clear all</button>
+        </div>
+      }
+    </header>
+
+    <div class="panel-body">
+      @if (filteredSoftware.length === 0) {
+        <p class="empty-msg">No results match your filter.</p>
+      } @else {
+        <ul class="sw-list">
+          @for (sw of filteredSoftware; track sw.id) {
+            <li
+              class="sw-item"
+              [class.active]="isActive(sw)"
+              [class.malware]="sw.type === 'malware'"
+              (click)="toggleSoftware(sw)"
+              [title]="sw.description"
+            >
+              <div class="sw-header">
+                <span class="sw-id">{{ sw.attackId }}</span>
+                <span class="sw-type" [class.malware]="sw.type === 'malware'" [class.tool]="sw.type === 'tool'">
+                  {{ sw.type === 'malware' ? '☣ Malware' : '🔧 Tool' }}
+                </span>
+                <span class="sw-name">{{ sw.name }}</span>
+                <span class="tech-badge" [title]="techniqueCount(sw) + ' techniques'">{{ techniqueCount(sw) }}</span>
+              </div>
+              @if (sw.aliases.length > 0) {
+                <div class="sw-aliases">{{ sw.aliases.join(', ') }}</div>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  </div>
+</aside>

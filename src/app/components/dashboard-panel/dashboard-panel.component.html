@@ -1,0 +1,291 @@
+@if (visible) {
+  <div class="dashboard-overlay">
+
+    <!-- Header -->
+    <div class="dashboard-header">
+      <div class="header-left">
+        <span class="header-title">Security Posture Dashboard</span>
+        <span class="header-date upgrade-mono">{{ currentDate }}</span>
+        @if (stats) {
+          <span class="risk-badge upgrade-mono" [style.color]="riskLevelColor" [style.border-color]="riskLevelColor">
+            {{ riskLevel | uppercase }} RISK
+          </span>
+        }
+      </div>
+      <button class="close-btn" (click)="close()" title="Close">✕</button>
+    </div>
+
+    @if (loading || !stats) {
+      <div class="loading-state">
+        <div class="loader-spinner"></div>
+        <p>Computing security posture metrics…</p>
+      </div>
+    } @else {
+
+      <div class="dashboard-scroll">
+        <div class="dashboard-grid">
+
+          <!-- ── ROW 1: Hero Metric Cards ────────────────────────────────── -->
+
+          <!-- Coverage Card -->
+          <div class="hero-card" style="border-left-color: #58a6ff">
+            <div class="hero-number" style="color: #58a6ff">{{ stats.coveragePct }}%</div>
+            <div class="hero-label">ATT&CK Coverage</div>
+            <div class="hero-sub">{{ stats.coveredTechniques }} / {{ stats.totalTechniques }} techniques</div>
+            @if (stats.hasTrendData) {
+              <div [class]="stats.coverageTrend >= 0 ? 'trend-up' : 'trend-down'">
+                {{ trendSign(stats.coverageTrend) }}{{ stats.coverageTrend | number:'1.0-0' }}% vs last snapshot
+              </div>
+            } @else {
+              <div class="trend-neutral">No prior snapshot</div>
+            }
+          </div>
+
+          <!-- Implemented Card -->
+          <div class="hero-card" style="border-left-color: #4ade80">
+            <div class="hero-number" style="color: #4ade80">{{ stats.implementedCount }}</div>
+            <div class="hero-label">Implemented</div>
+            <div class="hero-sub">mitigations fully deployed</div>
+            @if (stats.inProgressCount > 0) {
+              <div class="trend-up">{{ stats.inProgressCount }} in progress</div>
+            }
+          </div>
+
+          <!-- At Risk Card -->
+          <div class="hero-card" style="border-left-color: #f87171">
+            <div class="hero-number" style="color: #f87171">{{ stats.criticalRiskCount }}</div>
+            <div class="hero-label">At Risk</div>
+            <div class="hero-sub">no mitigation + threat groups</div>
+            <div class="trend-down">{{ stats.uncoveredCount }} total uncovered</div>
+          </div>
+
+          <!-- CVE Exposed Card -->
+          <div class="hero-card" style="border-left-color: #fb923c">
+            <div class="hero-number" style="color: #fb923c">{{ stats.cveExposedCount }}</div>
+            <div class="hero-label">CVE Exposed</div>
+            <div class="hero-sub">techniques with CVE mappings</div>
+            <div class="trend-neutral">{{ stats.detectionCoveragePct }}% detection coverage</div>
+          </div>
+
+          <!-- ── ROW 2: Tactic Bar Chart + Grade Gauge ───────────────────── -->
+
+          <!-- Tactic Coverage (spans 3 columns) -->
+          <div class="section-card tactic-section upgrade-section-block">
+            <div class="section-title upgrade-section-title">ATT&CK Tactic Coverage</div>
+            <div class="tactic-list">
+              @for (tactic of stats.tacticStats; track tactic.name) {
+                <div class="tactic-bar-row">
+                  <div class="tactic-name" [title]="tactic.name">{{ tactic.name }}</div>
+                  <div class="tactic-bar-bg">
+                    <div
+                      class="tactic-bar-fill"
+                      [style.width.%]="tactic.pct"
+                      [style.background]="tacticBarColor(tactic.pct)"
+                    ></div>
+                  </div>
+                  <div class="tactic-pct" [style.color]="tacticBarColor(tactic.pct)">{{ tactic.pct }}%</div>
+                  <div class="tactic-counts">{{ tactic.covered }}/{{ tactic.total }}</div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Overall Grade Gauge -->
+          <div class="section-card grade-section upgrade-section-block">
+            <div class="section-title upgrade-section-title">Overall Grade</div>
+            <div class="grade-gauge">
+              <div class="grade-circle" [style.border-color]="gradeColor">
+                <div class="grade-letter" [style.color]="gradeColor">{{ overallGrade }}</div>
+              </div>
+              <div class="grade-pct">{{ stats.coveragePct }}% Coverage</div>
+              @if (stats.hasTrendData) {
+                <div [class]="stats.coverageTrend >= 0 ? 'grade-trend-up' : 'grade-trend-down'">
+                  vs last snapshot: {{ trendSign(stats.coverageTrend) }}{{ stats.coverageTrend | number:'1.0-0' }}%
+                </div>
+              }
+              <div class="grade-scale">
+                <span style="color:#4ade80">A ≥80%</span>
+                <span style="color:#86efac">B ≥65%</span>
+                <span style="color:#facc15">C ≥50%</span>
+                <span style="color:#fb923c">D ≥35%</span>
+                <span style="color:#f87171">F &lt;35%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── ROW 3: Implementation Pipeline + Detection + Top Risks ──── -->
+
+          <!-- Implementation Pipeline -->
+          <div class="section-card upgrade-section-block">
+            <div class="section-title upgrade-section-title">Implementation Pipeline</div>
+            <div class="impl-list">
+              <div class="impl-row">
+                <div class="impl-label">Implemented</div>
+                <div class="impl-bar-bg">
+                  <div class="impl-bar-fill" style="background: #4ade80" [style.width.%]="implBarPct(stats.implementedCount)"></div>
+                </div>
+                <div class="impl-count">{{ stats.implementedCount }} ({{ implBarPct(stats.implementedCount) }}%)</div>
+              </div>
+              <div class="impl-row">
+                <div class="impl-label">In Progress</div>
+                <div class="impl-bar-bg">
+                  <div class="impl-bar-fill" style="background: #fb923c" [style.width.%]="implBarPct(stats.inProgressCount)"></div>
+                </div>
+                <div class="impl-count">{{ stats.inProgressCount }} ({{ implBarPct(stats.inProgressCount) }}%)</div>
+              </div>
+              <div class="impl-row">
+                <div class="impl-label">Planned</div>
+                <div class="impl-bar-bg">
+                  <div class="impl-bar-fill" style="background: #60a5fa" [style.width.%]="implBarPct(stats.plannedCount)"></div>
+                </div>
+                <div class="impl-count">{{ stats.plannedCount }} ({{ implBarPct(stats.plannedCount) }}%)</div>
+              </div>
+              <div class="impl-row">
+                <div class="impl-label">Not Started</div>
+                <div class="impl-bar-bg">
+                  <div class="impl-bar-fill" style="background: #f87171" [style.width.%]="implBarPct(stats.notStartedCount)"></div>
+                </div>
+                <div class="impl-count">{{ stats.notStartedCount }} ({{ implBarPct(stats.notStartedCount) }}%)</div>
+              </div>
+              <div class="impl-row">
+                <div class="impl-label">Untracked</div>
+                <div class="impl-bar-bg">
+                  <div class="impl-bar-fill" style="background: #4a6080"
+                    [style.width.%]="implBarPct(stats.totalMitigations - stats.implementedCount - stats.inProgressCount - stats.plannedCount - stats.notStartedCount)">
+                  </div>
+                </div>
+                <div class="impl-count">
+                  {{ stats.totalMitigations - stats.implementedCount - stats.inProgressCount - stats.plannedCount - stats.notStartedCount }}
+                  ({{ implBarPct(stats.totalMitigations - stats.implementedCount - stats.inProgressCount - stats.plannedCount - stats.notStartedCount) }}%)
+                </div>
+              </div>
+              <div class="impl-total">{{ stats.totalMitigations }} total mitigations in ATT&CK</div>
+            </div>
+          </div>
+
+          <!-- Detection Coverage -->
+          <div class="section-card upgrade-section-block">
+            <div class="section-title upgrade-section-title">Detection Coverage</div>
+            <div class="detection-list">
+              <div class="detection-row">
+                <div class="detection-label">
+                  <span class="det-source-dot" style="background: #58a6ff"></span>
+                  CAR Analytics
+                </div>
+                <div class="detection-bar-wrap">
+                  <div class="detection-bar-bg">
+                    <div class="detection-bar-fill" style="background: #58a6ff" [style.width.%]="detectionBarPct(stats.withCarCount)"></div>
+                  </div>
+                  <div class="detection-pct">{{ detectionBarPct(stats.withCarCount) }}%</div>
+                </div>
+                <div class="detection-count">{{ stats.withCarCount }} techniques</div>
+              </div>
+              <div class="detection-row">
+                <div class="detection-label">
+                  <span class="det-source-dot" style="background: #fb923c"></span>
+                  Atomic Red Team
+                </div>
+                <div class="detection-bar-wrap">
+                  <div class="detection-bar-bg">
+                    <div class="detection-bar-fill" style="background: #fb923c" [style.width.%]="detectionBarPct(stats.withAtomicCount)"></div>
+                  </div>
+                  <div class="detection-pct">{{ detectionBarPct(stats.withAtomicCount) }}%</div>
+                </div>
+                <div class="detection-count">{{ stats.withAtomicCount }} techniques</div>
+              </div>
+              <div class="detection-row">
+                <div class="detection-label">
+                  <span class="det-source-dot" style="background: #86efac"></span>
+                  D3FEND
+                </div>
+                <div class="detection-bar-wrap">
+                  <div class="detection-bar-bg">
+                    <div class="detection-bar-fill" style="background: #86efac" [style.width.%]="detectionBarPct(stats.withD3fendCount)"></div>
+                  </div>
+                  <div class="detection-pct">{{ detectionBarPct(stats.withD3fendCount) }}%</div>
+                </div>
+                <div class="detection-count">{{ stats.withD3fendCount }} techniques</div>
+              </div>
+              <div class="detection-row detection-combined">
+                <div class="detection-label">
+                  <span class="det-source-dot" style="background: #e879f9"></span>
+                  Combined (any)
+                </div>
+                <div class="detection-bar-wrap">
+                  <div class="detection-bar-bg">
+                    <div class="detection-bar-fill" style="background: #e879f9" [style.width.%]="stats.detectionCoveragePct"></div>
+                  </div>
+                  <div class="detection-pct">{{ stats.detectionCoveragePct }}%</div>
+                </div>
+                <div class="detection-count">
+                  {{ stats.withCarCount + stats.withAtomicCount + stats.withD3fendCount > 0 ? stats.detectionCoveragePct + '%' : '0' }} covered
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top Risk Areas -->
+          <div class="section-card upgrade-section-block">
+            <div class="section-title upgrade-section-title">Top Risk Areas</div>
+            @if (stats.topRiskTechniques.length === 0) {
+              <div class="risk-empty">
+                No critical-risk techniques found — great posture!
+              </div>
+            } @else {
+              <div class="risk-list upgrade-stack-list">
+                @for (tech of stats.topRiskTechniques; track tech.attackId; let i = $index) {
+                  <div class="risk-item">
+                    <div class="risk-rank">#{{ i + 1 }}</div>
+                    <div class="risk-info">
+                      <div class="risk-name">{{ tech.name }}</div>
+                      <div class="risk-meta">
+                        <span class="risk-id">{{ tech.attackId }}</span>
+                        <span class="risk-badge-no-mit">No mitigation</span>
+                      </div>
+                    </div>
+                    <div class="risk-groups">
+                      <span class="risk-group-count">{{ tech.threatGroupCount }}</span>
+                      <span class="risk-group-label">groups</span>
+                    </div>
+                  </div>
+                }
+              </div>
+              @if (stats.criticalRiskCount > 5) {
+                <div class="risk-more">+{{ stats.criticalRiskCount - 5 }} more critical-risk techniques</div>
+              }
+            }
+          </div>
+
+          <!-- ── ROW 4: Quick Links ────────────────────────────────────────── -->
+          <div class="quick-links-section upgrade-section-block">
+            <div class="section-title upgrade-section-title">Quick Navigation</div>
+            <div class="quick-links upgrade-action-strip">
+              <button class="quick-link-btn" (click)="openPanel('timeline')">
+                <span class="ql-icon">📅</span>
+                <span class="ql-label">View Timeline</span>
+              </button>
+              <button class="quick-link-btn" (click)="openPanel('scenario')">
+                <span class="ql-icon">🎭</span>
+                <span class="ql-label">Run Scenario</span>
+              </button>
+              <button class="quick-link-btn" (click)="openPanel('detection')">
+                <span class="ql-icon">⚠️</span>
+                <span class="ql-label">View Gaps</span>
+              </button>
+              <button class="quick-link-btn" (click)="openPanel('risk-matrix')">
+                <span class="ql-icon">🎯</span>
+                <span class="ql-label">Risk Matrix</span>
+              </button>
+              <button class="quick-link-btn quick-link-export" (click)="exportReport()">
+                <span class="ql-icon">📄</span>
+                <span class="ql-label">Export Report</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    }
+
+  </div>
+}

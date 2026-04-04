@@ -1,0 +1,33 @@
+@if (visible) {
+  <div class="modal-overlay" (click)="close()"></div>
+  <div class="help-modal">
+    <div class="help-header">
+      <span class="help-title">⌨️ Keyboard Shortcuts & Reference</span>
+      <button class="close-btn" (click)="close()">✕</button>
+    </div>
+    <div class="help-body">
+      <div class="groups-grid">
+        @for (group of groups; track group.title) {
+          <div class="shortcut-group">
+            <div class="group-title">{{ group.title }}</div>
+            <ul class="shortcut-list">
+              @for (s of group.shortcuts; track s.description) {
+                <li class="shortcut-row">
+                  <div class="keys">
+                    @for (k of s.keys; track k) {
+                      <kbd class="key">{{ k }}</kbd>
+                    }
+                  </div>
+                  <span class="shortcut-desc">{{ s.description }}</span>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+      </div>
+      <div class="help-footer">
+        Press <kbd class="key">?</kbd> to toggle this panel &middot; <kbd class="key">/</kbd> to focus search
+      </div>
+    </div>
+  </div>
+}

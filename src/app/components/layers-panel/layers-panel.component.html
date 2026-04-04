@@ -1,0 +1,96 @@
+<div class="layers-overlay" [class.open]="open" (click)="close()">
+  @if (open) {
+    <div class="layers-modal" (click)="$event.stopPropagation()">
+      <div class="panel-header">
+        <span class="panel-title">Saved Layers</span>
+        <button class="close-btn" (click)="close()">&#x2715;</button>
+      </div>
+
+      <div class="panel-body">
+        <!-- Save current state form -->
+        <div class="save-section">
+          @if (!showSaveForm) {
+            <button class="save-toggle-btn" (click)="showSaveForm = true">
+              + Save current state
+            </button>
+          } @else {
+            <div class="save-form">
+              <div class="form-field">
+                <label class="form-label">Name</label>
+                <input
+                  class="form-input"
+                  type="text"
+                  placeholder="Layer name…"
+                  [(ngModel)]="newLayerName"
+                  (keydown.enter)="save()"
+                  autofocus
+                />
+              </div>
+              <div class="form-field">
+                <label class="form-label">Description (optional)</label>
+                <input
+                  class="form-input"
+                  type="text"
+                  placeholder="Brief description…"
+                  [(ngModel)]="newLayerDesc"
+                  (keydown.enter)="save()"
+                />
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-secondary" (click)="showSaveForm = false; newLayerName = ''; newLayerDesc = ''">Cancel</button>
+                <button class="btn btn-primary" (click)="save()" [disabled]="!newLayerName.trim()">Save</button>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- Layer list -->
+        <div class="layer-list">
+          @let layers = (layers$ | async) ?? [];
+          @if (layers.length === 0) {
+            <div class="empty-state">
+              <p class="empty-msg">No saved layers.</p>
+              <p class="empty-hint">Save your current analysis state to recall it later.</p>
+            </div>
+          } @else {
+            @for (layer of layers; track layer.id) {
+              <div class="layer-card">
+                <div class="layer-meta">
+                  <span class="layer-name">{{ layer.name }}</span>
+                  <span class="layer-date">{{ formatDate(layer.createdAt) }}</span>
+                </div>
+                @if (layer.description) {
+                  <p class="layer-desc">{{ layer.description }}</p>
+                }
+                <div class="layer-actions">
+                  <button class="action-btn load-btn" (click)="load(layer.id)" title="Load this layer">Load</button>
+                  <button class="action-btn icon-btn" (click)="export(layer)" title="Export to JSON">&#x2B07;</button>
+                  <button class="action-btn icon-btn" (click)="duplicate(layer.id)" title="Duplicate">&#x29C9;</button>
+                  <button class="action-btn icon-btn delete-btn" (click)="delete(layer.id)" title="Delete">&#x1F5D1;</button>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      </div>
+
+      <div class="panel-footer">
+        @if (importError) {
+          <p class="import-error">{{ importError }}</p>
+        }
+        <button class="import-layer-btn" (click)="triggerImport()">
+          &#x2B06; Import layer from JSON
+        </button>
+        <input
+          #fileInput
+          type="file"
+          accept=".json"
+          style="display: none"
+          (change)="onFileImport($event)"
+        />
+      </div>
+    </div>
+  }
+</div>

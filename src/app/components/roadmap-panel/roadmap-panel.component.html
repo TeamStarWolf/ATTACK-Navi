@@ -1,0 +1,130 @@
+@if (open) {
+  <div class="roadmap-overlay" (click)="close()"></div>
+  <div class="roadmap-panel" role="dialog" aria-label="Remediation Roadmap">
+    <div class="roadmap-header">
+      <span class="roadmap-icon">🗺️</span>
+      <h2 class="roadmap-title">Remediation Roadmap</h2>
+      <div class="roadmap-header-actions">
+        <button class="export-btn" (click)="exportCsv()" title="Export roadmap as CSV">⬇ CSV</button>
+        <button class="close-btn" (click)="close()">✕</button>
+      </div>
+    </div>
+
+    <div class="roadmap-controls">
+      <div class="control-group">
+        <label class="control-label">Sort by</label>
+        <select class="control-select" [(ngModel)]="sortBy">
+          <option value="priority">Priority Score</option>
+          <option value="impact">Impact Score</option>
+          <option value="coverage">Techniques Covered</option>
+          <option value="status">Status</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label class="control-label">Show</label>
+        <select class="control-select" [(ngModel)]="filterStatus">
+          <option value="unstarted">Not started</option>
+          <option value="inprogress">In progress / Planned</option>
+          <option value="all">All mitigations</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="roadmap-legend">
+      <span class="legend-item"><span class="legend-dot priority">●</span> Priority = Impact ÷ Effort</span>
+      <span class="legend-item"><span class="legend-dot impact">●</span> Impact = Uncovered Techniques × Avg Threat Groups</span>
+    </div>
+
+    <div class="roadmap-body">
+      @for (item of sortedRoadmap; track item.mitigation.id; let i = $index) {
+        <div class="roadmap-item" [class.status-implemented]="item.currentStatus === 'implemented'" [class.status-inprogress]="item.currentStatus === 'in-progress'">
+          <div class="item-rank">{{ i + 1 }}</div>
+          <div class="item-main">
+            <div class="item-top">
+              <a [href]="item.mitigation.url" target="_blank" rel="noopener" class="item-id">{{ item.mitigation.attackId }}</a>
+              <span class="item-name">{{ item.mitigation.name }}</span>
+              <span class="item-effort effort-{{ item.effort | lowercase }}">{{ item.effort }}</span>
+            </div>
+            <div class="item-meta">
+              <span class="meta-chip">{{ item.techniquesCovered }} techniques</span>
+              <span class="meta-chip gap" [class.has-gap]="item.uncoveredTechniques > 0">{{ item.uncoveredTechniques }} gaps</span>
+              <span class="meta-chip">~{{ item.avgGroupCount }} groups</span>
+              @for (t of item.tacticsCovered; track t) {
+                <span class="meta-chip tactic">{{ t }}</span>
+              }
+            </div>
+          </div>
+          <div class="item-scores">
+            <div class="score-box impact-box">
+              <span class="score-val">{{ item.impactScore }}</span>
+              <span class="score-lbl">impact</span>
+            </div>
+            <div class="score-box priority-box">
+              <span class="score-val">{{ item.priorityScore }}</span>
+              <span class="score-lbl">priority</span>
+            </div>
+          </div>
+          <div class="item-status">
+            @for (s of ['implemented', 'in-progress', 'planned', 'not-started']; track s) {
+              <button
+                class="status-dot"
+                [class.active]="item.currentStatus === s"
+                [style.background]="item.currentStatus === s ? statusColors[s] : ''"
+                [title]="statusLabels[s]"
+                (click)="setStatus(item.mitigation.id, $any(s))"
+              ></button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Auto-Generate Roadmap Section -->
+    <div class="auto-roadmap-header">
+      <button class="generate-btn" (click)="generateAutoRoadmap()" [disabled]="generatingRoadmap">
+        @if (generatingRoadmap) {
+          <span class="spinner"></span> Analyzing...
+        } @else {
+          🚀 Auto-Generate Roadmap
+        }
+      </button>
+      <span class="generate-hint">Prioritizes by CVE exposure, threat group usage, and coverage gap</span>
+    </div>
+
+    @if (showAutoRoadmap && autoRoadmap) {
+      <div class="auto-roadmap">
+        <div class="auto-roadmap-summary">
+          <span>{{ autoRoadmapPriorityCount }} priority mitigations identified</span>
+          <span>{{ totalAutoRoadmapCves }} CVE exposures addressable</span>
+        </div>
+
+        @for (phase of autoRoadmap; track phase.quarter) {
+          <div class="phase-card" [style.border-left-color]="phase.color">
+            <div class="phase-header">
+              <span class="phase-quarter" [style.color]="phase.color">{{ phase.quarter }}</span>
+              <span class="phase-label">{{ phase.label }}</span>
+              <div class="phase-stats">
+                <span>{{ phase.mitigations.length }} mitigations</span>
+                <span>+{{ phase.techniquesGained }} technique coverage</span>
+                @if (phase.cvesCovered > 0) { <span class="cve-badge">{{ phase.cvesCovered }} CVEs</span> }
+              </div>
+            </div>
+            <div class="phase-mits">
+              @for (rm of phase.mitigations.slice(0, 5); track rm.mitigation.id) {
+                <div class="phase-mit-row">
+                  <span class="mit-id">{{ rm.mitigation.attackId }}</span>
+                  <span class="mit-name">{{ rm.mitigation.name }}</span>
+                  <span class="mit-score" [title]="'Priority: ' + rm.priorityScore">{{ rm.techniquesCount }}T</span>
+                  @if (rm.cveCount > 0) { <span class="mit-cve">{{ rm.cveCount }}CVE</span> }
+                </div>
+              }
+              @if (phase.mitigations.length > 5) {
+                <div class="phase-more">+{{ phase.mitigations.length - 5 }} more</div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+}

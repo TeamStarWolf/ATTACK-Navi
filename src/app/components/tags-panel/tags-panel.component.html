@@ -1,0 +1,132 @@
+@if (visible) {
+  <div class="overlay" (click)="close()">
+    <div class="panel" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="panel-header">
+        <div class="header-left">
+          <span class="panel-title">🏷️ Tag Manager</span>
+          <span class="header-subtitle">{{ tagStats.length }} unique tag{{ tagStats.length !== 1 ? 's' : '' }}</span>
+        </div>
+        <button class="close-btn" (click)="close()" title="Close">✕</button>
+      </div>
+
+      <!-- Stats row -->
+      <div class="stats-row">
+        <span class="stat-item">
+          <span class="stat-value">{{ tagStats.length }}</span>
+          <span class="stat-label">unique tags</span>
+        </span>
+        <span class="stat-sep">·</span>
+        <span class="stat-item">
+          <span class="stat-value">{{ totalUsages }}</span>
+          <span class="stat-label">total usages</span>
+        </span>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="panel-toolbar">
+        <div class="search-wrap">
+          <span class="search-icon">🔎</span>
+          <input
+            type="text"
+            class="search-input"
+            placeholder="Search tags…"
+            [(ngModel)]="searchText"
+          />
+          @if (searchText) {
+            <button class="clear-search" (click)="searchText = ''">✕</button>
+          }
+        </div>
+        <button class="export-btn" (click)="exportTagsCsv()" title="Export tags as CSV">⬇ CSV</button>
+      </div>
+
+      <div class="panel-body">
+
+        <!-- Left: Tag cloud -->
+        <div class="tag-cloud-col">
+          <div class="col-label">Tags</div>
+
+          @if (tagStats.length === 0) {
+            <div class="empty-state">
+              <div class="empty-icon">🏷️</div>
+              <p>No tags yet.</p>
+              <p class="empty-hint">Tag techniques from the technique sidebar to get started.</p>
+            </div>
+          }
+
+          <div class="tag-cloud">
+            @for (stat of filteredStats; track stat.tag) {
+              <button
+                class="tag-cloud-item"
+                [style.background]="stat.color + '22'"
+                [style.border-color]="stat.color + '66'"
+                [style.color]="stat.color"
+                [class.selected]="selectedTag === stat.tag"
+                (click)="selectTag(stat.tag)"
+                [title]="stat.count + ' technique(s)'"
+              >
+                {{ stat.tag }}
+                <span class="tag-count">{{ stat.count }}</span>
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Right: Selected tag detail -->
+        <div class="tag-detail-col">
+          @if (selectedTag) {
+            <div class="tag-detail">
+              <div class="detail-header">
+                <div class="detail-title-row">
+                  @if (renamingTag === selectedTag) {
+                    <input
+                      type="text"
+                      class="rename-input"
+                      [(ngModel)]="renameValue"
+                      (keydown.enter)="confirmRename()"
+                      (keydown.escape)="cancelRename()"
+                      autofocus
+                    />
+                    <button class="action-btn confirm-btn" (click)="confirmRename()">✓ Save</button>
+                    <button class="action-btn cancel-btn" (click)="cancelRename()">✕</button>
+                  } @else {
+                    <span class="detail-tag-name" [style.color]="getTagColor(selectedTag)">{{ selectedTag }}</span>
+                    <button class="action-btn rename-btn" (click)="startRename(selectedTag)" title="Rename tag">✏️ Rename</button>
+                    <button class="action-btn delete-btn" (click)="deleteTag(selectedTag)" title="Delete tag from all techniques">🗑️ Delete All</button>
+                  }
+                </div>
+                <div class="detail-actions">
+                  <button class="action-btn filter-btn" (click)="filterByTag(selectedTag)" title="Filter matrix to show techniques with this tag">
+                    🔽 Filter Matrix
+                  </button>
+                  <button class="action-btn close-detail-btn" (click)="clearSelection()">✕</button>
+                </div>
+              </div>
+
+              <div class="techniques-label">
+                {{ taggedTechniques.length }} technique{{ taggedTechniques.length !== 1 ? 's' : '' }} tagged
+              </div>
+
+              <div class="technique-list">
+                @for (tech of taggedTechniques; track tech.id) {
+                  <div class="technique-row">
+                    <span class="tech-id">{{ tech.attackId }}</span>
+                    <span class="tech-name">{{ tech.name }}</span>
+                    <button class="remove-tag-btn" (click)="removeTagFromTechnique(tech.id)" title="Remove tag from this technique">✕</button>
+                  </div>
+                }
+              </div>
+            </div>
+          } @else {
+            <div class="detail-empty">
+              <div class="detail-empty-icon">👈</div>
+              <p>Select a tag to see details</p>
+            </div>
+          }
+        </div>
+
+      </div>
+    </div>
+  </div>
+}

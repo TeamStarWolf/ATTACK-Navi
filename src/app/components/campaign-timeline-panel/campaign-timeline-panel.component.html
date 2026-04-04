@@ -1,0 +1,163 @@
+@if (open) {
+<div class="ctp-overlay">
+  <div class="ctp-panel">
+
+    <!-- Header -->
+    <div class="ctp-header">
+      <div class="ctp-title-row">
+        <span class="ctp-icon">📅</span>
+        <h2 class="ctp-title">Campaign Timeline</h2>
+        <div class="ctp-stats">
+          <span class="stat-pill">{{ totalCampaigns }} campaigns</span>
+          <span class="stat-pill">{{ datedBars.length }} dated</span>
+          @if (mostActivePeriod) {
+            <span class="stat-pill peak">Peak: {{ mostActivePeriod }}</span>
+          }
+          @if (activeCampaignIds.size > 0) {
+            <span class="stat-pill active-badge">{{ activeCampaignIds.size }} active</span>
+          }
+        </div>
+        <button class="ctp-close" (click)="close()">✕</button>
+      </div>
+
+      <!-- Controls row -->
+      <div class="ctp-controls">
+        <input
+          class="ctp-search"
+          type="text"
+          placeholder="Search campaigns, groups, aliases…"
+          [(ngModel)]="searchText"
+          (ngModelChange)="onSearch()"
+        />
+        <div class="ctp-action-btns">
+          @if (activeCampaignIds.size > 0) {
+            <button class="btn-sm btn-danger" (click)="clearAll()">Clear All</button>
+          }
+          @if (filteredBars.length > 0) {
+            <button class="btn-sm btn-primary" (click)="selectAll()">Select All Visible</button>
+          }
+        </div>
+      </div>
+
+      <!-- Group filter chips -->
+      @if (groupFilters.length > 1) {
+        <div class="group-filter-row">
+          <span class="gf-label">Groups:</span>
+          <button class="gf-all" [class.dim]="selectedGroupCount < groupFilters.length" (click)="selectAllGroups()">All</button>
+          @for (gf of groupFilters; track trackByGroup($index, gf)) {
+            <button
+              class="gf-chip"
+              [class.selected]="gf.selected"
+              [style.border-color]="gf.color"
+              [style.color]="gf.selected ? gf.color : '#8b949e'"
+              (click)="toggleGroupFilter(gf)"
+              [title]="gf.name + ' (' + gf.count + ' campaigns)'"
+            >
+              {{ gf.name }}
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Timeline body -->
+    <div class="ctp-body">
+
+      <!-- Year ruler -->
+      <div class="timeline-ruler">
+        <div class="ruler-label-spacer"></div>
+        <div class="ruler-track">
+          @for (year of yearTicks; track trackByYear($index, year)) {
+            <div class="ruler-year" [style.left.%]="getYearPct(year)">
+              {{ year }}
+            </div>
+          }
+          @for (year of yearTicks; track trackByYear($index, year)) {
+            <div class="ruler-tick" [style.left.%]="getYearPct(year)"></div>
+          }
+          <!-- Current year line -->
+          <div class="today-line" [style.left.%]="getYearPct(2026)"></div>
+        </div>
+      </div>
+
+      <!-- Dated campaigns -->
+      <div class="timeline-rows">
+        @for (bar of datedBars; track trackByBar($index, bar)) {
+          <div class="timeline-row" [class.row-active]="bar.isActive">
+            <div class="row-label" [title]="bar.campaign.name + ' — ' + bar.groupName">
+              <span class="row-name" [style.color]="bar.groupColor">{{ bar.campaign.name }}</span>
+              <span class="row-group">{{ bar.groupName }}</span>
+            </div>
+            <div class="row-track">
+              <div
+                class="campaign-bar"
+                [class.bar-selected]="bar.isActive"
+                [style.left.%]="bar.startPct"
+                [style.width.%]="bar.widthPct"
+                [style.background-color]="bar.isActive ? bar.groupColor : 'transparent'"
+                [style.border-color]="bar.groupColor"
+                (click)="toggleCampaign(bar)"
+                (mouseenter)="onBarHover($event, bar)"
+                (mouseleave)="onBarLeave()"
+                [title]="bar.campaign.name"
+              >
+                <span class="bar-label">
+                  {{ bar.startYear }}–{{ bar.endYear - 1 }} · {{ bar.techniqueCount }}T
+                </span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- No dated results -->
+      @if (datedBars.length === 0 && !searchText) {
+        <div class="ctp-empty">No campaign date data available in this domain.</div>
+      }
+      @if (datedBars.length === 0 && searchText) {
+        <div class="ctp-empty">No campaigns match "{{ searchText }}".</div>
+      }
+
+      <!-- Undated campaigns section -->
+      @if (undatedBars.length > 0) {
+        <div class="undated-section">
+          <div class="undated-heading">Campaigns with unknown dates ({{ undatedBars.length }})</div>
+          <div class="undated-grid">
+            @for (bar of undatedBars; track trackByBar($index, bar)) {
+              <div
+                class="undated-chip"
+                [class.chip-selected]="bar.isActive"
+                [style.border-color]="bar.groupColor"
+                [style.color]="bar.isActive ? bar.groupColor : '#8b949e'"
+                (click)="toggleCampaign(bar)"
+                [title]="bar.campaign.name + ' — ' + bar.groupName + ' · ' + bar.techniqueCount + ' techniques'"
+              >
+                {{ bar.campaign.name }}
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Tooltip -->
+    @if (hoveredCampaign) {
+      <div class="ctp-tooltip" [style.left.px]="tooltipX" [style.top.px]="tooltipY">
+        <div class="tt-name">{{ hoveredCampaign.name }}</div>
+        @if (hoveredCampaign.aliases.length > 0) {
+          <div class="tt-aliases">Also: {{ hoveredCampaign.aliases.join(', ') }}</div>
+        }
+        <div class="tt-techniques">{{ getTechniqueCount(hoveredCampaign) }} techniques used</div>
+        @if (hoveredCampaign.firstSeen || hoveredCampaign.lastSeen) {
+          <div class="tt-dates">
+            {{ hoveredCampaign.firstSeen | date:'MMM yyyy' }} –
+            {{ hoveredCampaign.lastSeen ? (hoveredCampaign.lastSeen | date:'MMM yyyy') : 'Ongoing' }}
+          </div>
+        }
+        <div class="tt-hint">Click to highlight techniques on matrix</div>
+      </div>
+    }
+
+  </div>
+</div>
+}

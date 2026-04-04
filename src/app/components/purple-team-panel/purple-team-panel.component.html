@@ -1,0 +1,167 @@
+@if (open) {
+  <div class="purple-overlay" (click)="close()"></div>
+  <div class="purple-panel" role="dialog" aria-label="Purple Team Scorecard">
+    <div class="purple-header">
+      <span class="purple-icon">🟣</span>
+      <h2 class="purple-title">Purple Team Scorecard</h2>
+      <button class="purple-close" (click)="close()">✕</button>
+    </div>
+
+    <!-- View mode tabs -->
+    <div class="purple-tabs">
+      <button class="ptab" [class.active]="viewMode === 'selected'" (click)="setViewMode('selected')">
+        Selected Technique
+      </button>
+      <button class="ptab" [class.active]="viewMode === 'gaps'" (click)="setViewMode('gaps')">
+        🔴 Coverage Gaps
+      </button>
+      <button class="ptab" [class.active]="viewMode === 'covered'" (click)="setViewMode('covered')">
+        🟢 Best Covered
+      </button>
+    </div>
+
+    <div class="purple-body">
+
+      <!-- Selected technique view -->
+      @if (viewMode === 'selected') {
+        @if (!selectedTech) {
+          <div class="purple-empty">
+            <div class="empty-icon">🎯</div>
+            <p class="empty-msg">Click any technique in the matrix to see its Purple Team scorecard.</p>
+            <p class="empty-hint">The scorecard shows D3FEND countermeasures, Engage activities, CAR analytics, and Atomic Red Team test coverage in one view.</p>
+          </div>
+        } @else {
+          <div class="tech-info">
+            <span class="tech-id">{{ selectedTech.attackId }}</span>
+            <span class="tech-name">{{ selectedTech.name }}</span>
+          </div>
+
+          <!-- Score bars -->
+          <div class="score-bars">
+            @for (bar of techScoreBar; track bar.label) {
+              <div class="score-row" (click)="setHeatmapMode(bar.mode)" [title]="'Switch matrix to ' + bar.label + ' heatmap'">
+                <span class="score-label">{{ bar.label }}</span>
+                <div class="score-track">
+                  <div class="score-fill" [style.width.%]="(bar.count / 15) * 100" [style.background]="bar.color"></div>
+                </div>
+                <span class="score-count" [style.color]="bar.count > 0 ? bar.color : '#3a5a7a'">{{ bar.count }}</span>
+              </div>
+            }
+          </div>
+
+          <!-- Framework summaries -->
+          <div class="framework-cards">
+            <div class="fw-card d3fend">
+              <div class="fw-card-header">🛡 D3FEND <span class="fw-count">{{ d3fendMeasures.length }}</span></div>
+              @if (d3fendMeasures.length === 0) {
+                <p class="fw-empty">No countermeasures mapped.</p>
+              } @else {
+                <ul class="fw-list">
+                  @for (m of d3fendMeasures.slice(0, 4); track m.id) {
+                    <li><a [href]="m.url" target="_blank" rel="noopener">{{ m.id }}: {{ m.name }}</a></li>
+                  }
+                  @if (d3fendMeasures.length > 4) {
+                    <li class="fw-more">+{{ d3fendMeasures.length - 4 }} more in sidebar</li>
+                  }
+                </ul>
+              }
+            </div>
+
+            <div class="fw-card engage">
+              <div class="fw-card-header">🎭 Engage <span class="fw-count">{{ engageActivities.length }}</span></div>
+              @if (engageActivities.length === 0) {
+                <p class="fw-empty">No engagement activities mapped.</p>
+              } @else {
+                <ul class="fw-list">
+                  @for (a of engageActivities.slice(0, 4); track a.id) {
+                    <li><a [href]="a.url" target="_blank" rel="noopener">{{ a.name }}</a></li>
+                  }
+                  @if (engageActivities.length > 4) {
+                    <li class="fw-more">+{{ engageActivities.length - 4 }} more in sidebar</li>
+                  }
+                </ul>
+              }
+            </div>
+
+            <div class="fw-card car">
+              <div class="fw-card-header">🔬 CAR Analytics <span class="fw-count">{{ carAnalytics.length }}</span></div>
+              @if (carAnalytics.length === 0) {
+                <p class="fw-empty">No detection analytics mapped.</p>
+              } @else {
+                <ul class="fw-list">
+                  @for (c of carAnalytics.slice(0, 4); track c.id) {
+                    <li><a [href]="c.url" target="_blank" rel="noopener">{{ c.id }}: {{ c.name }}</a></li>
+                  }
+                  @if (carAnalytics.length > 4) {
+                    <li class="fw-more">+{{ carAnalytics.length - 4 }} more in sidebar</li>
+                  }
+                </ul>
+              }
+            </div>
+
+            <div class="fw-card atomic">
+              <div class="fw-card-header">⚛ Atomic Tests <span class="fw-count">{{ atomicTests.length }}</span></div>
+              @if (atomicTests.length === 0) {
+                <p class="fw-empty">No tests available for this technique.</p>
+              } @else {
+                <ul class="fw-list">
+                  @for (t of atomicTests.slice(0, 4); track t.name) {
+                    <li><a [href]="t.url" target="_blank" rel="noopener">{{ t.name }}</a></li>
+                  }
+                  @if (atomicTests.length > 4) {
+                    <li class="fw-more">+{{ atomicTests.length - 4 }} more in sidebar</li>
+                  }
+                </ul>
+              }
+            </div>
+          </div>
+        }
+      }
+
+      <!-- Coverage gaps view -->
+      @if (viewMode === 'gaps') {
+        <p class="view-desc">Top 15 parent techniques with lowest cross-framework coverage:</p>
+        <div class="gap-table">
+          <div class="gap-row header-row">
+            <span>Technique</span>
+            <span>🛡</span><span>🎭</span><span>🔬</span><span>⚛</span>
+            <span>Rating</span>
+          </div>
+          @for (row of topGaps; track row.technique.id) {
+            <div class="gap-row" (click)="selectTech(row.technique)" [title]="row.technique.name">
+              <span class="gt-id">{{ row.technique.attackId }}</span>
+              <span class="gt-score" [class.zero]="row.d3fendCount === 0">{{ row.d3fendCount }}</span>
+              <span class="gt-score" [class.zero]="row.engageCount === 0">{{ row.engageCount }}</span>
+              <span class="gt-score" [class.zero]="row.carCount === 0">{{ row.carCount }}</span>
+              <span class="gt-score" [class.zero]="row.atomicCount === 0">{{ row.atomicCount }}</span>
+              <span class="gt-rating rating-{{ row.coverageRating }}">{{ row.coverageRating }}</span>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Best covered view -->
+      @if (viewMode === 'covered') {
+        <p class="view-desc">Top 15 parent techniques with highest cross-framework coverage:</p>
+        <div class="gap-table">
+          <div class="gap-row header-row">
+            <span>Technique</span>
+            <span>🛡</span><span>🎭</span><span>🔬</span><span>⚛</span>
+            <span>Total</span>
+          </div>
+          @for (row of topCovered; track row.technique.id) {
+            <div class="gap-row" (click)="selectTech(row.technique)" [title]="row.technique.name">
+              <span class="gt-id">{{ row.technique.attackId }}</span>
+              <span class="gt-score">{{ row.d3fendCount }}</span>
+              <span class="gt-score">{{ row.engageCount }}</span>
+              <span class="gt-score">{{ row.carCount }}</span>
+              <span class="gt-score">{{ row.atomicCount }}</span>
+              <span class="gt-total">{{ row.totalScore }}</span>
+            </div>
+          }
+        </div>
+      }
+
+    </div>
+  </div>
+}

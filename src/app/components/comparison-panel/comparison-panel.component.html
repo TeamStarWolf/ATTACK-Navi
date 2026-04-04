@@ -1,0 +1,107 @@
+<div class="comparison-overlay" [class.open]="open" (click)="close()">
+  @if (open) {
+    <div class="comparison-modal" (click)="$event.stopPropagation()">
+      <div class="panel-header">
+        <span class="panel-title">⚔️ Group Comparison</span>
+        <button class="close-btn" (click)="close()">✕</button>
+      </div>
+      <div class="panel-body">
+        <!-- Group selectors -->
+        <div class="selector-row">
+          <div class="selector">
+            <label class="sel-label a-label">Group A</label>
+            <select class="group-select" [(ngModel)]="selectedIdA" (change)="compute()">
+              <option value="">— Select group —</option>
+              @for (g of groups; track g.id) {
+                <option [value]="g.attackId">{{ g.attackId }} {{ g.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="vs-badge">VS</div>
+          <div class="selector">
+            <label class="sel-label b-label">Group B</label>
+            <select class="group-select" [(ngModel)]="selectedIdB" (change)="compute()">
+              <option value="">— Select group —</option>
+              @for (g of groups; track g.id) {
+                <option [value]="g.attackId">{{ g.attackId }} {{ g.name }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        @if (selectedIdA && selectedIdB && selectedIdA !== selectedIdB) {
+          <!-- Summary stats -->
+          <div class="summary-row">
+            <div class="stat-block a-color">
+              <span class="stat-n">{{ aOnly.length }}</span>
+              <span class="stat-lbl">Only A</span>
+            </div>
+            <div class="stat-block both-color">
+              <span class="stat-n">{{ both.length }}</span>
+              <span class="stat-lbl">Overlap ({{ overlapPct }}%)</span>
+            </div>
+            <div class="stat-block b-color">
+              <span class="stat-n">{{ bOnly.length }}</span>
+              <span class="stat-lbl">Only B</span>
+            </div>
+          </div>
+
+          <!-- Three columns -->
+          <div class="comparison-grid">
+            <!-- A only -->
+            <div class="comp-col">
+              <div class="col-header a-header">{{ selectedIdA }} only</div>
+              <div class="tech-list">
+                @for (t of aOnly; track t.id) {
+                  <button class="tech-chip a-chip" (click)="selectTechnique(t)" [title]="t.name">
+                    <span class="chip-id">{{ t.attackId }}</span>
+                    <span class="chip-name">{{ t.name }}</span>
+                  </button>
+                }
+                @if (aOnly.length === 0) { <span class="empty-msg">None</span> }
+              </div>
+            </div>
+
+            <!-- Both -->
+            <div class="comp-col">
+              <div class="col-header both-header">Both</div>
+              <div class="tech-list">
+                @for (t of both; track t.id) {
+                  <button class="tech-chip both-chip" (click)="selectTechnique(t)" [title]="t.name">
+                    <span class="chip-id">{{ t.attackId }}</span>
+                    <span class="chip-name">{{ t.name }}</span>
+                  </button>
+                }
+                @if (both.length === 0) { <span class="empty-msg">None</span> }
+              </div>
+            </div>
+
+            <!-- B only -->
+            <div class="comp-col">
+              <div class="col-header b-header">{{ selectedIdB }} only</div>
+              <div class="tech-list">
+                @for (t of bOnly; track t.id) {
+                  <button class="tech-chip b-chip" (click)="selectTechnique(t)" [title]="t.name">
+                    <span class="chip-id">{{ t.attackId }}</span>
+                    <span class="chip-name">{{ t.name }}</span>
+                  </button>
+                }
+                @if (bOnly.length === 0) { <span class="empty-msg">None</span> }
+              </div>
+            </div>
+          </div>
+
+          <!-- Filter buttons -->
+          <div class="filter-actions">
+            <button class="filter-btn a-btn" (click)="filterByGroup(selectedIdA)">Filter matrix → {{ selectedIdA }}</button>
+            <button class="filter-btn b-btn" (click)="filterByGroup(selectedIdB)">Filter matrix → {{ selectedIdB }}</button>
+          </div>
+        } @else if (selectedIdA && selectedIdB && selectedIdA === selectedIdB) {
+          <p class="hint-msg">Select two different groups to compare.</p>
+        } @else {
+          <p class="hint-msg">Select two threat groups above to see technique overlap.</p>
+        }
+      </div>
+    </div>
+  }
+</div>

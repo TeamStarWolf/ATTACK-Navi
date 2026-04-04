@@ -1,0 +1,136 @@
+<!-- Top bar -->
+<app-toolbar
+  [mitigations]="domain?.mitigations ?? []"
+  [techniques]="domain?.techniques ?? []"
+  [multiSelectMode]="matrixRef?.multiSelectMode ?? false"
+  (expandAll)="matrixRef?.expandAll()"
+  (collapseAll)="matrixRef?.collapseAll()"
+  (toggleMultiSelect)="matrixRef?.toggleMultiSelectMode()"
+  (exportCsv)="exportCsv()"
+  (exportTacticCsv)="exportTacticCsv()"
+  (exportImplPlan)="exportImplPlanCsv()"
+  (exportNavigatorLayer)="exportNavigatorLayer()"
+  (importNavigatorLayer)="importNavigatorLayer()"
+  (openNavigator)="openInNavigator()"
+  (exportState)="exportStateJson()"
+  (importState)="importStateJson()"
+  (exportFullReport)="exportFullReport()"
+  (exportMatrixPng)="exportMatrixPng()"
+  (exportHtmlReport)="exportHtmlCoverageReport()"
+  (exportXlsx)="exportXlsxWorkbook()"
+  (showGapView)="gapViewRef?.show()"
+  (toggleDark)="toggleDarkMode()"
+  (copyShareLink)="copyShareLink()"
+  [isLightMode]="isLightMode"
+  [currentDomain]="currentDomain"
+  (domainChange)="onDomainChange($event)"
+/>
+
+<!-- App shell: nav rail + workspace -->
+<div class="app-shell">
+
+  <!-- Left nav rail -->
+  <app-nav-rail
+    [activePanel]="activePanel$ | async"
+    (panelToggle)="onNavPanelToggle($event)"
+    (focusSearch)="focusTechniqueSearch()">
+  </app-nav-rail>
+
+  <!-- Workspace -->
+  <div class="workspace-area">
+    <div class="matrix-region">
+      <div class="context-bar">
+        <app-legend />
+        <app-quick-filters />
+      </div>
+      <app-filter-chips />
+
+      @if (domain) {
+        <div class="stats-health-row">
+          <app-stats-bar [domain]="domain" (tacticClicked)="scrollToTactic($event)" />
+          <app-data-health />
+        </div>
+      }
+
+      <div class="matrix-scroll">
+        @if (loading && !domain) {
+          <div class="state-screen">
+            <div class="loader-spinner"></div>
+            <p class="state-msg">Loading ATT&amp;CK {{ currentDomain | titlecase }} data…</p>
+            <p class="state-hint">Fetching STIX bundle from MITRE — this may take a moment.</p>
+          </div>
+        } @else if (error && !domain) {
+          <div class="state-screen">
+            <div class="error-icon">⚠️</div>
+            <p class="state-msg">Failed to load ATT&amp;CK data</p>
+            <p class="state-hint">{{ error }}</p>
+          </div>
+        } @else if (domain) {
+          <app-matrix #matrixRef [domain]="domain" (focusSearch)="focusTechniqueSearch()" (tacticClicked)="onTacticClick($event)" />
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sidebar (technique details) — fixed overlay -->
+<app-sidebar />
+
+<!-- Gap view — overlay -->
+<app-gap-view #gapViewRef />
+
+<!-- Panel overlays — all remain as full-screen panels -->
+<app-dashboard-panel />
+<app-threat-panel />
+<app-priority-panel />
+<app-whatif-panel />
+<app-report-panel />
+<app-controls-panel />
+<app-software-panel [software]="domain?.software ?? []" />
+<app-comparison-panel />
+<app-layers-panel />
+<app-cve-panel />
+<app-analytics-panel />
+<app-purple-team-panel />
+<app-sigma-export />
+<app-siem-export />
+<app-yara-export />
+<app-roadmap-panel />
+<app-actor-profile-panel />
+<app-detection-panel />
+<app-datasource-panel />
+<app-compliance-panel />
+<app-actor-compare-panel />
+<app-timeline-panel />
+<app-settings-panel />
+<app-custom-mit-panel />
+<app-killchain-panel />
+<app-risk-matrix-panel />
+<app-scenario-panel />
+<app-target-panel />
+<app-keyboard-help />
+<app-tactic-summary />
+<app-watchlist-panel />
+<app-changelog-panel />
+<app-tags-panel />
+<app-campaign-timeline-panel />
+<app-technique-graph-panel />
+<app-coverage-diff-panel />
+<app-threat-intelligence-panel />
+
+@if (selectedTechniqueCount > 0) {
+  <div class="bulk-action-bar">
+    <span class="bulk-count">{{ selectedTechniqueCount }} selected</span>
+    <div class="bulk-actions">
+      <button (click)="bulkAddToWatchlist()">🔖 Watch All</button>
+      <button (click)="bulkSetStatus('implemented')">✅ Mark Implemented</button>
+      <button (click)="bulkSetStatus('planned')">📋 Mark Planned</button>
+      <button (click)="bulkAddTag()">🏷️ Tag All</button>
+      <button (click)="clearMultiSelect()">✕ Clear</button>
+    </div>
+  </div>
+}
+
+@if (showToast) {
+  <div class="toast-notification">{{ toastMessage }}</div>
+}

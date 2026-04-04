@@ -1,0 +1,614 @@
+@if (visible) {
+  <div class="overlay" (click)="close()">
+    <div class="panel" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="panel-header">
+        <div class="header-left">
+          <span class="panel-title">Settings</span>
+          @if (isDirty) {
+            <span class="save-indicator">Changes auto-saved</span>
+          } @else {
+            <span class="save-indicator saved">All changes saved</span>
+          }
+        </div>
+        <button class="close-btn" (click)="close()" title="Close">✕</button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tab-bar">
+        <button
+          class="tab-btn"
+          [class.active]="activeTab === 'scoring'"
+          (click)="setTab('scoring')"
+        >Scoring Weights</button>
+        <button
+          class="tab-btn"
+          [class.active]="activeTab === 'display'"
+          (click)="setTab('display')"
+        >Display</button>
+        <button
+          class="tab-btn"
+          [class.active]="activeTab === 'organization'"
+          (click)="setTab('organization')"
+        >Organization</button>
+        <button
+          class="tab-btn"
+          [class.active]="activeTab === 'data'"
+          (click)="setTab('data')"
+        >Data</button>
+        <button
+          class="tab-btn"
+          [class.active]="activeTab === 'integrations'"
+          (click)="setTab('integrations')"
+        >Integrations</button>
+      </div>
+
+      <!-- Tab content -->
+      <div class="tab-content">
+
+        <!-- Scoring Weights Tab -->
+        @if (activeTab === 'scoring') {
+          <div class="section">
+            <p class="section-desc">
+              These weights determine the Coverage Score shown in the technique sidebar for each technique.
+              Adjust each dimension to reflect your organization's priorities.
+            </p>
+
+            <div class="weights-form">
+
+              <!-- Mitigations -->
+              <div class="weight-row">
+                <div class="weight-header">
+                  <span class="weight-label">Mitigations</span>
+                  <span class="weight-sublabel">ATT&amp;CK mitigations mapped to this technique</span>
+                </div>
+                <div class="settings-slider">
+                  <input
+                    class="slider-input"
+                    type="range"
+                    min="0"
+                    max="60"
+                    step="1"
+                    [(ngModel)]="settings.scoringWeights.mitigations"
+                    (ngModelChange)="onWeightChange()"
+                  />
+                  <span class="slider-value">{{ settings.scoringWeights.mitigations }}</span>
+                </div>
+              </div>
+
+              <!-- CAR Analytics -->
+              <div class="weight-row">
+                <div class="weight-header">
+                  <span class="weight-label">CAR Analytics</span>
+                  <span class="weight-sublabel">MITRE Cyber Analytics Repository detections</span>
+                </div>
+                <div class="settings-slider">
+                  <input
+                    class="slider-input"
+                    type="range"
+                    min="0"
+                    max="40"
+                    step="1"
+                    [(ngModel)]="settings.scoringWeights.car"
+                    (ngModelChange)="onWeightChange()"
+                  />
+                  <span class="slider-value">{{ settings.scoringWeights.car }}</span>
+                </div>
+              </div>
+
+              <!-- Atomic Red Team -->
+              <div class="weight-row">
+                <div class="weight-header">
+                  <span class="weight-label">Atomic Red Team</span>
+                  <span class="weight-sublabel">Atomic Red Team test coverage</span>
+                </div>
+                <div class="settings-slider">
+                  <input
+                    class="slider-input"
+                    type="range"
+                    min="0"
+                    max="30"
+                    step="1"
+                    [(ngModel)]="settings.scoringWeights.atomic"
+                    (ngModelChange)="onWeightChange()"
+                  />
+                  <span class="slider-value">{{ settings.scoringWeights.atomic }}</span>
+                </div>
+              </div>
+
+              <!-- D3FEND -->
+              <div class="weight-row">
+                <div class="weight-header">
+                  <span class="weight-label">D3FEND</span>
+                  <span class="weight-sublabel">MITRE D3FEND countermeasures</span>
+                </div>
+                <div class="settings-slider">
+                  <input
+                    class="slider-input"
+                    type="range"
+                    min="0"
+                    max="30"
+                    step="1"
+                    [(ngModel)]="settings.scoringWeights.d3fend"
+                    (ngModelChange)="onWeightChange()"
+                  />
+                  <span class="slider-value">{{ settings.scoringWeights.d3fend }}</span>
+                </div>
+              </div>
+
+              <!-- NIST Controls -->
+              <div class="weight-row">
+                <div class="weight-header">
+                  <span class="weight-label">NIST Controls</span>
+                  <span class="weight-sublabel">NIST 800-53 Rev5 control mappings</span>
+                </div>
+                <div class="settings-slider">
+                  <input
+                    class="slider-input"
+                    type="range"
+                    min="0"
+                    max="20"
+                    step="1"
+                    [(ngModel)]="settings.scoringWeights.nist"
+                    (ngModelChange)="onWeightChange()"
+                  />
+                  <span class="slider-value">{{ settings.scoringWeights.nist }}</span>
+                </div>
+              </div>
+
+              <!-- Totals row -->
+              <div class="weights-footer">
+                <div
+                  class="weights-total"
+                  [class.weights-ok]="weightsTotal === 100"
+                  [class.weights-bad]="weightsTotal !== 100"
+                >
+                  Total: {{ weightsTotal }} / 100
+                  @if (weightsTotal === 100) {
+                    <span class="total-icon">✓</span>
+                  } @else {
+                    <span class="total-icon">⚠</span>
+                  }
+                </div>
+                <button class="normalize-btn" (click)="autoNormalize()" title="Adjust weights proportionally to sum to 100">
+                  Auto-normalize to 100
+                </button>
+              </div>
+
+              <!-- Sample preview -->
+              <div class="score-preview">
+                <div class="preview-label">Preview: Sample technique score</div>
+                <div class="preview-desc">
+                  (3 mitigations, has CAR analytics, has Atomic tests, no D3FEND, has NIST controls)
+                </div>
+                <div class="preview-score-wrap">
+                  <div class="preview-bar-track">
+                    <div class="preview-bar-fill" [style.width.%]="sampleCoverageScore"></div>
+                  </div>
+                  <span class="preview-score-val" [class.score-green]="sampleCoverageScore >= 75" [class.score-orange]="sampleCoverageScore >= 50 && sampleCoverageScore < 75" [class.score-red]="sampleCoverageScore < 50">
+                    {{ sampleCoverageScore }}%
+                  </span>
+                </div>
+              </div>
+
+            </div>
+
+            <div class="section-actions">
+              <button class="btn-reset" (click)="resetToDefaults()">Reset All to Defaults</button>
+            </div>
+          </div>
+        }
+
+        <!-- Display Tab -->
+        @if (activeTab === 'display') {
+          <div class="section">
+            <div class="form-group">
+              <div class="form-label">Matrix Cell Size</div>
+              <div class="cell-size-options">
+                <label class="cell-size-option" [class.selected]="settings.matrixCellSize === 'compact'">
+                  <input
+                    type="radio"
+                    name="cellSize"
+                    value="compact"
+                    [(ngModel)]="settings.matrixCellSize"
+                    (ngModelChange)="onDisplayChange()"
+                  />
+                  <div class="cell-preview compact-preview">
+                    <div class="preview-cell"></div>
+                    <div class="preview-cell"></div>
+                    <div class="preview-cell"></div>
+                    <div class="preview-cell"></div>
+                  </div>
+                  <div class="cell-size-info">
+                    <span class="cell-size-name">Compact</span>
+                    <span class="cell-size-desc">Smaller cells, more visible at once</span>
+                  </div>
+                </label>
+
+                <label class="cell-size-option" [class.selected]="settings.matrixCellSize === 'normal'">
+                  <input
+                    type="radio"
+                    name="cellSize"
+                    value="normal"
+                    [(ngModel)]="settings.matrixCellSize"
+                    (ngModelChange)="onDisplayChange()"
+                  />
+                  <div class="cell-preview normal-preview">
+                    <div class="preview-cell"></div>
+                    <div class="preview-cell"></div>
+                    <div class="preview-cell"></div>
+                  </div>
+                  <div class="cell-size-info">
+                    <span class="cell-size-name">Normal</span>
+                    <span class="cell-size-desc">Default size</span>
+                  </div>
+                </label>
+
+                <label class="cell-size-option" [class.selected]="settings.matrixCellSize === 'large'">
+                  <input
+                    type="radio"
+                    name="cellSize"
+                    value="large"
+                    [(ngModel)]="settings.matrixCellSize"
+                    (ngModelChange)="onDisplayChange()"
+                  />
+                  <div class="cell-preview large-preview">
+                    <div class="preview-cell"></div>
+                    <div class="preview-cell"></div>
+                  </div>
+                  <div class="cell-size-info">
+                    <span class="cell-size-name">Large</span>
+                    <span class="cell-size-desc">Bigger cells, easier to read</span>
+                  </div>
+                </label>
+              </div>
+              <div class="cell-size-note">Note: Cell size preference is saved and will apply when matrix rendering supports it.</div>
+            </div>
+
+            <div class="form-group">
+              <div class="form-label">Heatmap Color Theme</div>
+              <div class="theme-swatches">
+                @for (theme of themes; track theme.id) {
+                  <button class="theme-swatch"
+                          [class.selected]="settings.heatmapColorTheme === theme.id"
+                          (click)="setColorTheme(theme.id)"
+                          [title]="theme.label">
+                    <div class="swatch-colors">
+                      @for (color of theme.colors; track $index) {
+                        <div class="swatch-dot" [style.background]="color"></div>
+                      }
+                    </div>
+                    <span class="swatch-label">{{ theme.label }}</span>
+                  </button>
+                }
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="form-label">Matrix Display Options</div>
+              <div class="checkbox-list">
+                <label class="checkbox-item">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="settings.showTechniqueIds"
+                    (ngModelChange)="onDisplayChange()"
+                  />
+                  <div class="checkbox-info">
+                    <span class="checkbox-label">Show technique IDs</span>
+                    <span class="checkbox-desc">Display T1234 identifiers on matrix cells</span>
+                  </div>
+                </label>
+
+                <label class="checkbox-item">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="settings.showMitigationCount"
+                    (ngModelChange)="onDisplayChange()"
+                  />
+                  <div class="checkbox-info">
+                    <span class="checkbox-label">Show mitigation count badge</span>
+                    <span class="checkbox-desc">Show number of mitigations on each cell</span>
+                  </div>
+                </label>
+
+                <label class="checkbox-item">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="settings.showSubtechniqueCount"
+                    (ngModelChange)="onDisplayChange()"
+                  />
+                  <div class="checkbox-info">
+                    <span class="checkbox-label">Show subtechnique count badge</span>
+                    <span class="checkbox-desc">Show number of subtechniques on parent cells</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Organization Tab -->
+        @if (activeTab === 'organization') {
+          <div class="section">
+            <p class="section-desc">
+              Organization information is included in generated HTML reports.
+            </p>
+
+            <div class="form-group">
+              <label class="form-label" for="orgName">Organization Name</label>
+              <input
+                id="orgName"
+                class="form-input"
+                type="text"
+                placeholder="e.g. Acme Security Team"
+                [(ngModel)]="settings.orgName"
+                (ngModelChange)="onOrgChange()"
+              />
+              <span class="form-hint">Appears in the header of generated HTML reports</span>
+            </div>
+
+            <div class="form-group">
+              <div class="form-label">Organization Logo</div>
+              <div class="logo-placeholder">
+                <span class="logo-coming-soon">Coming soon</span>
+                <span class="logo-desc">Logo upload will be available in a future update</span>
+              </div>
+            </div>
+
+            @if (settings.orgName) {
+              <div class="org-preview">
+                <div class="preview-label">Report header preview</div>
+                <div class="report-preview-box">
+                  <div class="report-preview-header">
+                    <div class="report-preview-org">{{ settings.orgName }}</div>
+                    <div class="report-preview-title">ATT&amp;CK Mitigation Coverage Report</div>
+                    <div class="report-preview-date">Generated {{ today }}</div>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Data Tab -->
+        @if (activeTab === 'data') {
+          <div class="section">
+
+            <div class="data-info-grid">
+              <div class="data-info-item">
+                <span class="data-info-label">ATT&amp;CK Version</span>
+                <span class="data-info-value">{{ attackVersion || settings.attackVersion || 'Loading…' }}</span>
+              </div>
+              <div class="data-info-item">
+                <span class="data-info-label">Data Source</span>
+                <span class="data-info-value">Live (GitHub STIX bundle)</span>
+              </div>
+              <div class="data-info-item">
+                <span class="data-info-label">Cache Status</span>
+                <span class="data-info-value cache-status">{{ cacheStatus }}</span>
+              </div>
+              <div class="data-info-item">
+                <span class="data-info-label">Mitigations Loaded</span>
+                <span class="data-info-value">{{ mitigationCount > 0 ? mitigationCount + ' mitigations' : 'Loading…' }}</span>
+              </div>
+            </div>
+
+            <div class="data-actions">
+              <button
+                class="btn-action btn-refresh"
+                (click)="refreshData()"
+                [disabled]="isRefreshing"
+                title="Clear cached data and re-fetch the latest STIX bundle from MITRE"
+              >
+                @if (isRefreshing) {
+                  <span class="spinner-inline"></span> Refreshing…
+                } @else {
+                  🔄 Refresh Data
+                }
+              </button>
+              <button
+                class="btn-action btn-clear-cache"
+                (click)="clearCache()"
+                title="Remove cached STIX bundle from IndexedDB"
+              >
+                🗑️ Clear Cache
+              </button>
+            </div>
+
+            <div class="data-section-divider"></div>
+
+            <div class="data-section-header">Timeline Snapshots</div>
+            <div class="data-info-grid">
+              <div class="data-info-item">
+                <span class="data-info-label">Stored Snapshots</span>
+                <span class="data-info-value">{{ snapshotCount }} snapshots ({{ snapshotSizeKb }} KB)</span>
+              </div>
+            </div>
+            <div class="data-actions">
+              <button
+                class="btn-action btn-clear-snapshots"
+                (click)="clearAllSnapshots()"
+                [disabled]="snapshotCount === 0"
+                title="Delete all stored timeline snapshots"
+              >
+                🗑️ Clear All Snapshots
+              </button>
+            </div>
+
+            <div class="data-section-divider"></div>
+
+            <div class="data-section-header">Implementation Data</div>
+            <div class="data-info-grid">
+              <div class="data-info-item">
+                <span class="data-info-label">Mitigations Tracked</span>
+                <span class="data-info-value">{{ mitigationCount > 0 ? mitigationCount + ' mitigations in dataset' : 'Loading…' }}</span>
+              </div>
+            </div>
+            <div class="data-actions">
+              <button
+                class="btn-action btn-export-impl"
+                (click)="exportImplCsv()"
+                [disabled]="mitigationCount === 0"
+                title="Export current implementation status to CSV"
+              >
+                📥 Export Implementation CSV
+              </button>
+            </div>
+
+          </div>
+        }
+
+        <!-- Integrations Tab -->
+        @if (activeTab === 'integrations') {
+          <div class="section">
+            <p class="section-desc">
+              Configure external API integrations to enhance CVE and threat intelligence lookups.
+            </p>
+
+            <!-- NVD API Key -->
+            <div class="form-group">
+              <div class="form-label">NVD API Key</div>
+              <div class="integration-row">
+                <input
+                  class="form-input integration-input"
+                  type="password"
+                  placeholder="Paste your NVD API key…"
+                  [(ngModel)]="nvdApiKey"
+                />
+                <button class="btn-action btn-refresh" (click)="saveNvdApiKey()">Save</button>
+              </div>
+              <span class="form-hint">
+                With an API key, NVD allows 50 requests per 30 seconds (vs 5 unauthenticated).
+                Get a free key at
+                <a href="https://nvd.nist.gov/developers/request-an-api-key" target="_blank" rel="noopener" class="settings-link">nvd.nist.gov</a>.
+              </span>
+              @if (settingsService.current.nvdApiKey) {
+                <div class="integration-status connected">
+                  <span>✓ API key saved</span>
+                </div>
+              }
+            </div>
+
+            <div class="data-section-divider"></div>
+
+            <!-- OpenCTI -->
+            <div class="form-group">
+              <div class="form-label">OpenCTI</div>
+              <div class="form-group">
+                <input
+                  class="form-input integration-input"
+                  type="url"
+                  placeholder="https://your-opencti-instance.com"
+                  [(ngModel)]="openCtiUrl"
+                />
+                <input
+                  class="form-input integration-input"
+                  type="password"
+                  placeholder="API token"
+                  [(ngModel)]="openCtiToken"
+                  style="margin-top: 8px;"
+                />
+              </div>
+              <div class="data-actions" style="margin-top: 8px;">
+                <button
+                  class="btn-action btn-refresh"
+                  (click)="testOpenCti()"
+                  [disabled]="openCtiTesting || !openCtiUrl || !openCtiToken"
+                >
+                  @if (openCtiTesting) {
+                    <span class="spinner-inline"></span> Testing…
+                  } @else {
+                    🔗 Test &amp; Save
+                  }
+                </button>
+                <button
+                  class="btn-action btn-clear-cache"
+                  (click)="clearOpenCti()"
+                  [disabled]="!openCtiUrl && !openCtiToken"
+                >
+                  Clear
+                </button>
+              </div>
+              @if (openCtiConnected) {
+                <div class="integration-status connected">
+                  <span>✓ Connected to OpenCTI</span>
+                </div>
+              } @else if (openCtiError) {
+                <div class="integration-status error">
+                  <span>✗ {{ openCtiError }}</span>
+                </div>
+              }
+              <span class="form-hint">
+                Connect to an OpenCTI instance to enrich techniques with threat intelligence indicators and actor mappings.
+              </span>
+            </div>
+
+            <div class="data-section-divider"></div>
+
+            <!-- MISP -->
+            <div class="form-group">
+              <div class="form-label">MISP</div>
+              <div class="form-group">
+                <input
+                  class="form-input integration-input"
+                  type="url"
+                  placeholder="https://your-misp-instance.com"
+                  [(ngModel)]="mispUrl"
+                />
+                <input
+                  class="form-input integration-input"
+                  type="password"
+                  placeholder="API key"
+                  [(ngModel)]="mispApiKey"
+                  style="margin-top: 8px;"
+                />
+                <input
+                  class="form-input integration-input"
+                  type="text"
+                  placeholder="Org ID (optional)"
+                  [(ngModel)]="mispOrgId"
+                  style="margin-top: 8px;"
+                />
+              </div>
+              <div class="data-actions" style="margin-top: 8px;">
+                <button
+                  class="btn-action btn-refresh"
+                  (click)="testMispConnection()"
+                  [disabled]="mispTesting || !mispUrl || !mispApiKey"
+                >
+                  @if (mispTesting) {
+                    <span class="spinner-inline"></span> Testing...
+                  } @else {
+                    Test &amp; Save
+                  }
+                </button>
+                <button
+                  class="btn-action btn-clear-cache"
+                  (click)="disconnectMisp()"
+                  [disabled]="!mispUrl && !mispApiKey"
+                >
+                  Disconnect
+                </button>
+              </div>
+              @if (mispConnected) {
+                <div class="integration-status connected">
+                  <span>Connected to MISP</span>
+                </div>
+              } @else if (mispError) {
+                <div class="integration-status error">
+                  <span>{{ mispError }}</span>
+                </div>
+              }
+              <span class="form-hint">
+                Connect to a MISP instance to query live threat events and attributes mapped to ATT&amp;CK techniques.
+              </span>
+            </div>
+
+          </div>
+        }
+
+      </div>
+    </div>
+  </div>
+}

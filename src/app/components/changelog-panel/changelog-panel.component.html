@@ -1,0 +1,77 @@
+@if (visible) {
+  <div class="panel-backdrop" (click)="close()"></div>
+  <div class="changelog-panel">
+
+    <div class="panel-header">
+      <div class="header-text">
+        <h2 class="panel-title">ATT&amp;CK Changelog</h2>
+        <p class="panel-subtitle">Recent MITRE ATT&amp;CK version history</p>
+      </div>
+      <button class="close-btn" (click)="close()" title="Close">✕</button>
+    </div>
+
+    <div class="panel-body">
+
+      @if (!loaded && releases.length === 0) {
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p class="loading-text">Loading changelog from GitHub...</p>
+        </div>
+      } @else if (loaded && releases.length === 0) {
+        <div class="error-state">
+          <p class="error-text">Could not load changelog.</p>
+          <a
+            href="https://github.com/mitre-attack/attack-stix-data/releases"
+            target="_blank"
+            rel="noopener"
+            class="fallback-link"
+          >View releases on GitHub &rarr;</a>
+        </div>
+      } @else {
+        <div class="releases-list">
+          @for (release of releases; track release.tag) {
+            <div class="release-card">
+              <div class="release-header">
+                <div class="release-meta">
+                  <span class="release-tag">{{ release.name || release.tag }}</span>
+                  <span class="release-date">Published: {{ formatDate(release.publishedAt) }}</span>
+                </div>
+                <a
+                  [href]="release.url"
+                  target="_blank"
+                  rel="noopener"
+                  class="github-link"
+                  (click)="$event.stopPropagation()"
+                >View on GitHub &#8599;</a>
+              </div>
+
+              <button
+                class="expand-btn"
+                (click)="toggleRelease(release.tag)"
+              >
+                {{ expandedRelease === release.tag ? 'Collapse \u25B2' : 'Expand \u25BC' }}
+              </button>
+
+              @if (expandedRelease === release.tag) {
+                <div class="release-body">
+                  <pre class="release-notes">{{ truncatedBody(release.body) }}</pre>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+    </div>
+
+    <div class="panel-footer">
+      <a
+        href="https://github.com/mitre-attack/attack-stix-data/releases"
+        target="_blank"
+        rel="noopener"
+        class="footer-link"
+      >View all releases on GitHub &rarr;</a>
+    </div>
+
+  </div>
+}

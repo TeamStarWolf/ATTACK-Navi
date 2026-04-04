@@ -1,0 +1,177 @@
+@if (open) {
+<div class="tgp-overlay" (click)="close()">
+  <div class="tgp-panel" (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="tgp-header">
+      <div class="tgp-title-row">
+        <span class="tgp-icon">🕸️</span>
+        <h2 class="tgp-title">
+          @if (technique) {
+            Relationship Graph — {{ technique.attackId }}: {{ technique.name }}
+          } @else {
+            Technique Relationship Graph
+          }
+        </h2>
+        <div class="tgp-meta">
+          <span class="meta-pill">{{ nodeCount }} nodes</span>
+          <span class="meta-pill">{{ edgeCount }} edges</span>
+        </div>
+        <button class="tgp-close" (click)="close()">✕</button>
+      </div>
+
+      <!-- Toggle options -->
+      <div class="tgp-toggles">
+        <label class="tog-label">Show:</label>
+        <button class="tog-btn" [class.active]="showMitigations" (click)="showMitigations=!showMitigations; rebuildWithOptions()">
+          🛡 Mitigations
+        </button>
+        <button class="tog-btn" [class.active]="showGroups" (click)="showGroups=!showGroups; rebuildWithOptions()">
+          👥 Groups
+        </button>
+        <button class="tog-btn" [class.active]="showSoftware" (click)="showSoftware=!showSoftware; rebuildWithOptions()">
+          🛠 Software
+        </button>
+        <button class="tog-btn" [class.active]="showCves" (click)="showCves=!showCves; rebuildWithOptions()">
+          🔴 CVEs
+        </button>
+        <button class="tog-btn" [class.active]="showCampaigns" (click)="showCampaigns=!showCampaigns; rebuildWithOptions()">
+          📅 Campaigns
+        </button>
+        <button class="tog-btn" [class.active]="showSubtechniques" (click)="showSubtechniques=!showSubtechniques; rebuildWithOptions()">
+          ↳ Sub-techniques
+        </button>
+      </div>
+    </div>
+
+    <!-- Graph body -->
+    <div class="tgp-body">
+      @if (!technique) {
+        <div class="tgp-empty">
+          <div class="empty-icon">🕸️</div>
+          <p>Select a technique on the matrix to visualize its relationships.</p>
+        </div>
+      } @else if (nodes.length <= 1) {
+        <div class="tgp-empty">
+          <div class="empty-icon">🔍</div>
+          <p>No related data found for {{ technique.attackId }} with current display options.</p>
+        </div>
+      } @else {
+        <svg
+          class="tgp-svg"
+          [attr.viewBox]="'0 0 ' + SVG_W + ' ' + SVG_H"
+          preserveAspectRatio="xMidYMid meet"
+        >
+          <!-- Arrow marker -->
+          <defs>
+            <marker id="arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="#30363d"/>
+            </marker>
+          </defs>
+
+          <!-- Edges -->
+          @for (edge of edges; track trackByEdge($index, edge)) {
+            @if (getEdgePath(edge)) {
+              <path
+                class="tgp-edge"
+                [attr.d]="getEdgePath(edge)"
+                fill="none"
+                stroke="#30363d"
+                stroke-width="1.5"
+                marker-end="url(#arrow)"
+                opacity="0.6"
+              />
+              @if (getEdgeMidpoint(edge); as mp) {
+                <text
+                  class="edge-label"
+                  [attr.x]="mp.x"
+                  [attr.y]="mp.y - 4"
+                  text-anchor="middle"
+                  fill="#484f58"
+                  font-size="9"
+                >{{ edge.label }}</text>
+              }
+            }
+          }
+
+          <!-- Nodes -->
+          @for (node of nodes; track trackByNode($index, node)) {
+            <g
+              class="tgp-node"
+              [attr.transform]="'translate(' + node.x + ',' + node.y + ')'"
+              (mousedown)="onNodeMouseDown($event, node)"
+              (click)="onNodeClick(node)"
+              (mouseenter)="onNodeHover(node)"
+              (mouseleave)="onNodeLeave()"
+              [class.node-center]="node.kind === 'technique' && node.pinned"
+              [class.clickable]="node.kind === 'technique' || node.kind === 'subtechnique' || node.kind === 'parent' || node.kind === 'group'"
+            >
+              <!-- Node circle -->
+              <circle
+                [attr.r]="node.pinned ? NODE_R + 4 : NODE_R"
+                [attr.fill]="getColor(node.kind) + '22'"
+                [attr.stroke]="getColor(node.kind)"
+                [attr.stroke-width]="node.pinned ? 2.5 : 1.5"
+              />
+              <!-- Icon -->
+              <text
+                text-anchor="middle"
+                dominant-baseline="middle"
+                font-size="14"
+                [attr.y]="node.sublabel ? -5 : 0"
+              >{{ getIcon(node.kind) }}</text>
+              <!-- Primary label -->
+              <text
+                class="node-label"
+                text-anchor="middle"
+                [attr.fill]="getColor(node.kind)"
+                font-size="9.5"
+                font-weight="600"
+                [attr.y]="node.sublabel ? 7 : 14"
+              >{{ node.label }}</text>
+              <!-- Sub-label -->
+              @if (node.sublabel) {
+                <text
+                  class="node-sublabel"
+                  text-anchor="middle"
+                  fill="#8b949e"
+                  font-size="8"
+                  [attr.y]="node.sublabel ? 17 : 24"
+                >{{ node.sublabel }}</text>
+              }
+            </g>
+          }
+        </svg>
+
+        <!-- Legend -->
+        <div class="tgp-legend">
+          @for (kind of legendKinds; track kind) {
+            <div class="legend-item">
+              <div class="legend-dot" [style.background]="kindColors[kind]"></div>
+              <span class="legend-icon">{{ kindIcons[kind] }}</span>
+              <span class="legend-label">{{ kind }}</span>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Hover tooltip -->
+      @if (hoveredNode) {
+        <div class="node-tooltip">
+          <span [style.color]="kindColors[hoveredNode.kind]">{{ kindIcons[hoveredNode.kind] }} {{ hoveredNode.label }}</span>
+          @if (hoveredNode.sublabel) {
+            <span class="tt-sub">{{ hoveredNode.sublabel }}</span>
+          }
+          @if (hoveredNode.kind === 'technique' || hoveredNode.kind === 'subtechnique' || hoveredNode.kind === 'parent') {
+            <span class="tt-hint">Click to select</span>
+          }
+          @if (hoveredNode.kind === 'group') {
+            <span class="tt-hint">Click to filter by group</span>
+          }
+          <span class="tt-drag">Drag to reposition</span>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+}

@@ -1,0 +1,86 @@
+<div class="stats-bar">
+  <div class="stat-group primary">
+    <div class="big-stat">
+      <span class="big-num">{{ coveragePct }}%</span>
+      <span class="big-label">Theoretical</span>
+    </div>
+    <div class="coverage-bar-wrap">
+      <div class="coverage-bar" title="{{ coveredTechniques }}/{{ totalTechniques }} have ≥1 mitigation">
+        <div class="coverage-fill" [style.width.%]="coveragePct"></div>
+      </div>
+      @if (implementedCount > 0) {
+        <div class="coverage-bar impl-bar" [title]="implementedCount + '/' + totalTechniques + ' covered by implemented mitigations'">
+          <div class="coverage-fill impl-fill" [style.width.%]="implementedPct"></div>
+        </div>
+      }
+      <span class="coverage-sub">
+        {{ coveredTechniques }}/{{ totalTechniques }} mapped
+        @if (implementedCount > 0) {
+          · <span class="impl-sub">{{ implementedCount }} implemented</span>
+        }
+      </span>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="stat-group counters">
+    <div class="counter clickable" (click)="toggleSubtechniques()" [title]="includeSubtechniques ? 'Click to show parent techniques only' : 'Click to include subtechniques'">
+      <span class="counter-num">{{ totalTechniques }}</span>
+      <span class="counter-label">{{ includeSubtechniques ? 'All Techniques' : 'Parent Techs' }}</span>
+    </div>
+    <div class="counter">
+      <span class="counter-num">{{ totalMitigations }}</span>
+      <span class="counter-label">Mitigations</span>
+    </div>
+    <div class="counter">
+      <span class="counter-num">{{ totalRelationships }}</span>
+      <span class="counter-label">Relationships</span>
+    </div>
+    <div class="counter warn">
+      <span class="counter-num">{{ totalTechniques - coveredTechniques }}</span>
+      <span class="counter-label">No Coverage</span>
+    </div>
+    <div class="counter camp">
+      <span class="counter-num">{{ domain.campaigns.length }}</span>
+      <span class="counter-label">Campaigns</span>
+    </div>
+  </div>
+
+  @if (showTacticBars) {
+    <div class="divider"></div>
+
+    <div class="tactic-bars">
+      @for (ts of tacticStats; track ts.name) {
+        <div class="tactic-stat clickable-tactic" [title]="ts.name + ': ' + ts.covered + '/' + ts.total + ' covered (' + ts.pct + '%) — Click to scroll'" (click)="tacticClicked.emit(ts.shortname)">
+          <div class="tactic-mini-bar">
+            <div class="tactic-fill" [style.height.%]="ts.pct" [style.background]="ts.pct >= 80 ? '#4caf50' : ts.pct >= 50 ? '#ffd54f' : '#ff9800'"></div>
+          </div>
+          <span class="tactic-pct">{{ ts.pct }}%</span>
+        </div>
+      }
+    </div>
+  }
+
+  @if (hasTrend) {
+    <div class="trend-section" (click)="openTimeline()" title="Open timeline panel">
+      <span class="trend-label">TREND</span>
+      <span class="trend-delta" [class.positive]="coverageTrend >= 0" [class.negative]="coverageTrend < 0">
+        {{ coverageTrend >= 0 ? '&uarr;' : '&darr;' }} {{ coverageTrend | number:'1.1-1' }}%
+      </span>
+      <svg class="sparkline" width="60" height="20" viewBox="0 0 60 20">
+        @for (point of sparklinePoints; track $index) {
+          <rect [attr.x]="point.x" [attr.y]="point.y" [attr.width]="point.w" [attr.height]="point.h"
+                [attr.fill]="point.color"></rect>
+        }
+      </svg>
+    </div>
+  }
+
+  <button class="tactic-toggle-btn"
+          (click)="toggleTacticBars()"
+          [title]="showTacticBars ? 'Hide per-tactic bars' : 'Show per-tactic coverage bars'">
+    {{ showTacticBars ? '◀' : '▶' }}
+    <span class="tactic-toggle-label">Tactics</span>
+  </button>
+</div>

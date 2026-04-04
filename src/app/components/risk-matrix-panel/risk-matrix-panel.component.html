@@ -1,0 +1,224 @@
+@if (visible) {
+  <div class="overlay" (click)="close()">
+    <div class="panel" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="panel-header">
+        <div class="header-left">
+          <span class="panel-title">Risk Priority Matrix</span>
+          @if (points.length > 0) {
+            <span class="header-subtitle">
+              Techniques plotted by threat exposure vs. security gap — focus on top-right quadrant
+            </span>
+          }
+        </div>
+        <button class="close-btn" (click)="close()" title="Close">✕</button>
+      </div>
+
+      @if (points.length === 0) {
+        <div class="loading-state">
+          <div class="loader-spinner"></div>
+          <p>Computing risk scores…</p>
+        </div>
+      } @else {
+
+        <!-- Quadrant summary cards -->
+        <div class="quadrant-cards">
+          <div class="quad-card quad-critical upgrade-section-block">
+            <div class="quad-count">{{ criticalCount }}</div>
+            <div class="quad-label">Critical</div>
+            <div class="quad-sub">Act Now</div>
+          </div>
+          <div class="quad-card quad-monitor upgrade-section-block">
+            <div class="quad-count">{{ monitorCount }}</div>
+            <div class="quad-label">Monitor</div>
+            <div class="quad-sub">Watch Closely</div>
+          </div>
+          <div class="quad-card quad-low upgrade-section-block">
+            <div class="quad-count">{{ lowPriorityCount }}</div>
+            <div class="quad-label">Address Later</div>
+            <div class="quad-sub">Lower Urgency</div>
+          </div>
+          <div class="quad-card quad-protected upgrade-section-block">
+            <div class="quad-count">{{ wellProtectedCount }}</div>
+            <div class="quad-label">Well Protected</div>
+            <div class="quad-sub">Well Covered</div>
+          </div>
+        </div>
+
+        <!-- Quadrant filter buttons -->
+        <div class="filter-bar upgrade-action-strip">
+          <button class="filter-btn" [class.active]="filterQuadrant === null" (click)="setFilterQuadrant(null)">All ({{ points.length }})</button>
+          <button class="filter-btn filter-critical" [class.active]="filterQuadrant === 'critical'" (click)="setFilterQuadrant('critical')">
+            Critical ({{ criticalCount }})
+          </button>
+          <button class="filter-btn filter-monitor" [class.active]="filterQuadrant === 'monitor'" (click)="setFilterQuadrant('monitor')">
+            Monitor ({{ monitorCount }})
+          </button>
+          <button class="filter-btn filter-low" [class.active]="filterQuadrant === 'low-priority'" (click)="setFilterQuadrant('low-priority')">
+            Address Later ({{ lowPriorityCount }})
+          </button>
+          <button class="filter-btn filter-protected" [class.active]="filterQuadrant === 'well-protected'" (click)="setFilterQuadrant('well-protected')">
+            Protected ({{ wellProtectedCount }})
+          </button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tab-bar">
+          <button class="tab-btn" [class.active]="activeTab === 'matrix'" (click)="setTab('matrix')">Matrix View</button>
+          <button class="tab-btn" [class.active]="activeTab === 'list'" (click)="setTab('list')">Priority List</button>
+          @if (activeTab === 'list') {
+            <div class="tab-search">
+              <input
+                class="search-input"
+                type="text"
+                placeholder="Search techniques…"
+                [(ngModel)]="searchText"
+              />
+            </div>
+          }
+        </div>
+
+        <!-- Tab content -->
+        <div class="tab-content">
+
+          <!-- Matrix View -->
+          @if (activeTab === 'matrix') {
+            <div class="matrix-wrap">
+              <div class="axis-label-y">Security Gap (↑ High)</div>
+              <div class="plot-area">
+                <div class="risk-plot">
+                  <!-- Quadrant backgrounds -->
+                  <div class="quadrant q-low-priority">Address Later</div>
+                  <div class="quadrant q-critical">Act Now</div>
+                  <div class="quadrant q-well-protected">Well Protected</div>
+                  <div class="quadrant q-monitor">Monitor</div>
+
+                  <!-- Crosshair lines -->
+                  <div class="crosshair-h"></div>
+                  <div class="crosshair-v"></div>
+
+                  <!-- Data points -->
+                  @for (p of filteredPoints; track p.technique.id) {
+                    <div
+                      class="risk-dot"
+                      [class]="'dot-' + p.quadrant"
+                      [style.left.%]="p.threatScore"
+                      [style.bottom.%]="p.gapScore"
+                      (mouseenter)="onPointHover(p, $event)"
+                      (mouseleave)="onPointLeave()"
+                      (click)="selectTechnique(p)"
+                      [title]="p.technique.name"
+                    ></div>
+                  }
+
+                  <!-- Axis labels -->
+                  <div class="x-axis-label">Threat Exposure →</div>
+                  <div class="y-axis-label">← Security Gap</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="matrix-legend upgrade-action-strip">
+              <span class="legend-item"><span class="legend-dot dot-critical"></span> Critical — high exposure, high gap</span>
+              <span class="legend-item"><span class="legend-dot dot-monitor"></span> Monitor — high exposure, low gap</span>
+              <span class="legend-item"><span class="legend-dot dot-low-priority"></span> Address Later — low exposure, high gap</span>
+              <span class="legend-item"><span class="legend-dot dot-well-protected"></span> Well Protected — low exposure, low gap</span>
+            </div>
+
+            <div class="matrix-hint">Click any dot to open technique details. Hover for quick info.</div>
+          }
+
+          <!-- Priority List -->
+          @if (activeTab === 'list') {
+            <div class="table-wrap">
+              <table class="risk-table">
+                <thead>
+                  <tr>
+                    <th class="rank-col">Rank</th>
+                    <th class="id-col">ATT&amp;CK ID</th>
+                    <th>Technique Name</th>
+                    <th class="tactic-col">Tactic</th>
+                    <th class="num-col" title="Threat Score (0-100)">Threat</th>
+                    <th class="num-col" title="Security Gap Score (0-100)">Gap</th>
+                    <th class="num-col" title="Risk Score = Threat × Gap / 100">Risk</th>
+                    <th class="num-col">Groups</th>
+                    <th class="num-col">Mits</th>
+                    <th class="quad-col">Quadrant</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (p of sortedListPoints; track p.technique.id; let i = $index) {
+                    <tr class="risk-row" (click)="selectTechnique(p)">
+                      <td class="rank-col rank-num">{{ i + 1 }}</td>
+                      <td class="tech-id">
+                        <a [href]="'https://attack.mitre.org/techniques/' + p.technique.attackId.replace('.', '/') + '/'"
+                           target="_blank" rel="noopener"
+                           (click)="$event.stopPropagation()">{{ p.technique.attackId }}</a>
+                      </td>
+                      <td class="tech-name">{{ p.technique.name }}</td>
+                      <td class="tech-tactic">{{ p.technique.tacticShortnames[0] }}</td>
+                      <td class="num-col">
+                        <div class="score-bar-wrap">
+                          <div class="score-bar threat-bar" [style.width.%]="p.threatScore"></div>
+                          <span class="score-val">{{ p.threatScore | number:'1.0-0' }}</span>
+                        </div>
+                      </td>
+                      <td class="num-col">
+                        <div class="score-bar-wrap">
+                          <div class="score-bar gap-bar" [style.width.%]="p.gapScore"></div>
+                          <span class="score-val">{{ p.gapScore | number:'1.0-0' }}</span>
+                        </div>
+                      </td>
+                      <td class="num-col">
+                        <span class="risk-score-badge badge-{{ p.quadrant }}">{{ p.riskScore | number:'1.0-0' }}</span>
+                      </td>
+                      <td class="num-col num-muted">{{ p.groupCount }}</td>
+                      <td class="num-col num-muted">{{ p.technique.mitigationCount }}</td>
+                      <td class="quad-col">
+                        <span class="quad-badge badge-{{ p.quadrant }}">{{ quadrantLabel(p.quadrant) }}</span>
+                      </td>
+                    </tr>
+                  }
+                  @if (sortedListPoints.length === 0) {
+                    <tr>
+                      <td colspan="10" class="empty-cell">No techniques match the current filter.</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+              @if (!showAll && totalListCount > 50) {
+                <div class="show-all-wrap">
+                  <button class="show-all-btn" (click)="showAll = true">
+                    Show all {{ totalListCount }} techniques
+                  </button>
+                </div>
+              }
+            </div>
+          }
+
+        </div>
+      }
+
+    </div>
+  </div>
+
+  <!-- Tooltip — rendered outside the panel so it's not clipped -->
+  @if (hoveredPoint) {
+    <div class="point-tooltip" [style.left.px]="tooltipPos.x" [style.top.px]="tooltipPos.y">
+      <div class="tooltip-id">{{ hoveredPoint.technique.attackId }}</div>
+      <div class="tooltip-name">{{ hoveredPoint.technique.name }}</div>
+      <div class="tooltip-row">
+        <span>Threat:</span> <strong>{{ hoveredPoint.threatScore | number:'1.0-0' }}</strong>
+        <span class="tooltip-sep">|</span>
+        <span>Gap:</span> <strong>{{ hoveredPoint.gapScore | number:'1.0-0' }}</strong>
+      </div>
+      <div class="tooltip-row">
+        <span>Groups:</span> <strong>{{ hoveredPoint.groupCount }}</strong>
+        <span class="tooltip-sep">|</span>
+        <span>Mitigations:</span> <strong>{{ hoveredPoint.technique.mitigationCount }}</strong>
+      </div>
+      <div class="tooltip-quad badge-{{ hoveredPoint.quadrant }}">{{ quadrantLabel(hoveredPoint.quadrant) }}</div>
+    </div>
+  }
+}

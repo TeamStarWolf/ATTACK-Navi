@@ -1,0 +1,158 @@
+@if (open) {
+  <div class="actor-overlay" (click)="close()"></div>
+  <div class="actor-panel" role="dialog" aria-label="Threat Actor Profile">
+
+    <!-- Header -->
+    <div class="actor-header">
+      @if (selectedProfile) {
+        <button class="back-btn" (click)="backToList()">← Groups</button>
+        <span class="actor-header-title">{{ selectedProfile.group.attackId }} {{ selectedProfile.group.name }}</span>
+      } @else {
+        <span class="actor-header-icon">👥</span>
+        <span class="actor-header-title">Threat Actor Profiles</span>
+      }
+      <button class="actor-close" (click)="close()">✕</button>
+    </div>
+
+    <!-- Group list view -->
+    @if (!selectedProfile) {
+      <div class="actor-search-bar upgrade-section-block">
+        <span class="search-icon">🔎</span>
+        <input type="text" class="actor-search" placeholder="Search groups, aliases…" [(ngModel)]="searchText" (input)="filterGroups()" />
+        <span class="group-count">{{ filteredGroups.length }} groups</span>
+      </div>
+      <div class="actor-list">
+        @for (group of filteredGroups; track group.id) {
+          <div class="actor-row upgrade-section-block" (click)="selectGroup(group)">
+            <div class="actor-row-main">
+              <span class="actor-row-id">{{ group.attackId }}</span>
+              <span class="actor-row-name">{{ group.name }}</span>
+              @if (group.aliases.length > 0) {
+                <span class="actor-aliases">aka {{ group.aliases.slice(0,3).join(', ') }}</span>
+              }
+            </div>
+            <div class="actor-row-actions">
+              <button class="filter-group-btn" (click)="$event.stopPropagation(); filterByGroup(group)" title="Filter matrix to this group">→ Matrix</button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Profile view -->
+    @if (selectedProfile) {
+      <div class="profile-tabs">
+        <button class="ptab" [class.active]="viewTab === 'overview'" (click)="viewTab = 'overview'">Overview</button>
+        <button class="ptab" [class.active]="viewTab === 'techniques'" (click)="viewTab = 'techniques'">
+          Techniques <span class="tab-count">{{ selectedProfile.techniques.length }}</span>
+        </button>
+        <button class="ptab" [class.active]="viewTab === 'software'" (click)="viewTab = 'software'">
+          Software <span class="tab-count">{{ selectedProfile.software.length }}</span>
+        </button>
+        <button class="ptab" [class.active]="viewTab === 'campaigns'" (click)="viewTab = 'campaigns'">
+          Campaigns <span class="tab-count">{{ selectedProfile.campaigns.length }}</span>
+        </button>
+      </div>
+
+      <div class="profile-body">
+
+        <!-- Overview tab -->
+        @if (viewTab === 'overview') {
+          <div class="profile-overview">
+            <div class="coverage-hero upgrade-section-block">
+              <div class="coverage-ring" [style]="'--pct: ' + selectedProfile.coveragePct">
+                <span class="coverage-pct">{{ selectedProfile.coveragePct }}%</span>
+                <span class="coverage-label">mitigated</span>
+              </div>
+              <div class="coverage-stats">
+                <div class="cov-stat"><span class="cov-val green">{{ selectedProfile.coveredCount }}</span><span class="cov-lbl">covered</span></div>
+                <div class="cov-stat"><span class="cov-val red">{{ selectedProfile.uncoveredCount }}</span><span class="cov-lbl">exposed</span></div>
+                <div class="cov-stat"><span class="cov-val">{{ selectedProfile.techniques.length }}</span><span class="cov-lbl">total TTPs</span></div>
+              </div>
+            </div>
+
+            @if (selectedProfile.group.description) {
+              <p class="group-desc">{{ selectedProfile.group.description }}</p>
+            }
+
+            <div class="tactic-breakdown upgrade-section-block">
+              <div class="breakdown-label upgrade-section-title">Techniques by tactic:</div>
+              @for (t of selectedProfile.tacticBreakdown; track t.tactic) {
+                <div class="tactic-bar-row">
+                  <span class="tactic-bar-name">{{ t.tactic }}</span>
+                  <div class="tactic-bar-track"><div class="tactic-bar-fill" [style.width.%]="(t.count / selectedProfile.techniques.length) * 100"></div></div>
+                  <span class="tactic-bar-count">{{ t.count }}</span>
+                </div>
+              }
+            </div>
+
+            @if (selectedProfile.topUncovered.length > 0) {
+              <div class="top-uncovered upgrade-section-block">
+                <div class="breakdown-label upgrade-section-title">🔴 Top exposed techniques:</div>
+                @for (t of selectedProfile.topUncovered; track t.id) {
+                  <div class="uncov-item" (click)="selectTechnique(t)">
+                    <span class="uncov-id">{{ t.attackId }}</span>
+                    <span class="uncov-name">{{ t.name }}</span>
+                  </div>
+                }
+              </div>
+            }
+
+            <div class="profile-actions upgrade-action-strip">
+              <button class="action-btn primary" (click)="filterByGroup(selectedProfile.group)">→ Highlight in Matrix</button>
+              <a [href]="'https://attack.mitre.org/groups/' + selectedProfile.group.attackId" target="_blank" rel="noopener" class="action-btn">ATT&amp;CK ↗</a>
+            </div>
+          </div>
+        }
+
+        <!-- Techniques tab -->
+        @if (viewTab === 'techniques') {
+          <div class="technique-list">
+            @for (tech of selectedProfile.techniques; track tech.id) {
+              <div class="tech-row" [class.covered]="getTechCoverage(tech.id)" (click)="selectTechnique(tech)">
+                <span class="tech-row-id">{{ tech.attackId }}</span>
+                <span class="tech-row-name">{{ tech.name }}</span>
+                <span class="tech-row-status">{{ getTechCoverage(tech.id) ? '✅' : '🔴' }}</span>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Software tab -->
+        @if (viewTab === 'software') {
+          @if (selectedProfile.software.length === 0) {
+            <p class="empty-tab">No software/malware data available.</p>
+          } @else {
+            <div class="sw-list">
+              @for (sw of selectedProfile.software; track sw.id) {
+                <div class="sw-row">
+                  <span class="sw-type">{{ sw.type === 'malware' ? '☣' : '🔧' }}</span>
+                  <a [href]="'https://attack.mitre.org/software/' + sw.attackId" target="_blank" rel="noopener" class="sw-id">{{ sw.attackId }}</a>
+                  <span class="sw-name">{{ sw.name }}</span>
+                </div>
+              }
+            </div>
+          }
+        }
+
+        <!-- Campaigns tab -->
+        @if (viewTab === 'campaigns') {
+          @if (selectedProfile.campaigns.length === 0) {
+            <p class="empty-tab">No campaigns attributed to this group.</p>
+          } @else {
+            <div class="camp-list">
+              @for (c of selectedProfile.campaigns; track c.id) {
+                <div class="camp-row">
+                  <a [href]="'https://attack.mitre.org/campaigns/' + c.attackId" target="_blank" rel="noopener" class="camp-id">{{ c.attackId }}</a>
+                  <span class="camp-name">{{ c.name }}</span>
+                  @if (c.firstSeen) { <span class="camp-date">{{ c.firstSeen.slice(0,7) }}</span> }
+                </div>
+              }
+            </div>
+          }
+        }
+
+      </div>
+    }
+  </div>
+}
