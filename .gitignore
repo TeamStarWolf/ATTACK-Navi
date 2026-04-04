@@ -40,6 +40,9 @@ testem.log
 # Claude Code
 .claude/
 
+# Visual Studio
+.vs/
+
 # System files
 .DS_Store
 Thumbs.db
