@@ -453,7 +453,7 @@ event connection_state_remove(c: connection) {
       `# Zeek Detection Package — MITRE ATT&CK`,
       `# Generated: ${new Date().toISOString().slice(0, 10)}`,
       `# Techniques: ${techniques.length}`,
-      `# Source: ATT&CK Mitigation Navigator`,
+      `# Source: ATT&CK Navi`,
       `#`,
       `# Installation:`,
       `#   zeek-pkg install ./attack-detection`,

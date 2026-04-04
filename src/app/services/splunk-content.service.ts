@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
 import { catchError, of } from 'rxjs';
+import { retryWithBackoff } from '../utils/retry';
 
 interface NavigatorLayer {
   name?: string;
@@ -35,7 +36,7 @@ export class SplunkContentService {
 
   private loadLive(): void {
     this.http.get<NavigatorLayer>(SPLUNK_LAYER_URL)
-      .pipe(catchError(() => of(null)))
+      .pipe(retryWithBackoff(), catchError(() => of(null)))
       .subscribe(layer => {
         if (layer?.techniques?.length) {
           this.ingestLayer(layer);

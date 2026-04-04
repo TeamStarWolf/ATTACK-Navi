@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, from, of, throwError } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
+import { retryWithBackoff } from '../utils/retry';
 import { Domain, TacticColumn } from '../models/domain';
 import { Tactic } from '../models/tactic';
 import { Technique } from '../models/technique';
@@ -51,6 +52,9 @@ export class DataService {
 
   currentDomain$ = new BehaviorSubject<AttackDomain>('enterprise');
 
+  /** ISO timestamp of the last successful domain data load */
+  lastFetched$ = new BehaviorSubject<string | null>(null);
+
   domain$: Observable<Domain | null> = this.domainSubject.asObservable();
   loading$: Observable<boolean> = this.loadingSubject.asObservable();
   error$: Observable<string | null> = this.errorSubject.asObservable();
@@ -98,6 +102,7 @@ export class DataService {
       next: (domain) => {
         this.domainSubject.next(domain);
         this.loadingSubject.next(false);
+        this.lastFetched$.next(new Date().toISOString());
       },
       error: (err) => {
         this.errorSubject.next(err?.message ?? 'Failed to load ATT&CK data');
@@ -177,6 +182,7 @@ export class DataService {
       switchMap((cached) => {
         if (cached) return of(cached);
         return this.http.get<any>(config.liveUrl).pipe(
+          retryWithBackoff(),
           switchMap((bundle) => from(this.saveToIDB(bundle, config.idbKey).then(() => this.parseBundle(bundle, config.name)))),
           catchError(() => config.bundledUrl ? this.loadBundled(config) : throwError(() => new Error('No bundled fallback for this domain'))),
         );

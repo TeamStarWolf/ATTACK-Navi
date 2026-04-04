@@ -4,6 +4,7 @@ import { BehaviorSubject, Observable, of, combineLatest, catchError } from 'rxjs
 import { map } from 'rxjs/operators';
 import { NvdCveItem, KevEntry } from '../models/cve';
 import { AttackCveService } from './attack-cve.service';
+import { retryWithBackoff } from '../utils/retry';
 
 // CWE → ATT&CK technique attackId mapping (common CWEs)
 export const CWE_TO_ATTACK: Record<string, string[]> = {
@@ -749,6 +750,9 @@ export class CveService {
   kevLoaded$: Observable<boolean> = this.kevLoadedSubject.asObservable();
   kevTechScores$: Observable<Map<string, number>> = this.kevTechScoresSubject.asObservable();
 
+  /** Emits the number of new KEV entries since the user last viewed CVE panel (0 = none). */
+  newKevCount$ = new BehaviorSubject<number>(0);
+
   /** Emits true once KEV data AND the CTID ATT&CK→CVE data are both loaded. */
   ctidKevReady$: Observable<boolean>;
 
@@ -765,7 +769,8 @@ export class CveService {
     // Fallback chain: allorigins proxy → direct CISA (may work in production) → empty.
     const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(this.KEV_URL)}`;
     this.http.get<any>(proxyUrl).pipe(
-      catchError(() => this.http.get<any>(this.KEV_URL)),
+      retryWithBackoff(),
+      catchError(() => this.http.get<any>(this.KEV_URL).pipe(retryWithBackoff())),
       catchError(() => of({ vulnerabilities: [] }))
     ).subscribe((data: any) => {
       const vulns: KevEntry[] = data.vulnerabilities ?? [];
@@ -775,6 +780,15 @@ export class CveService {
       }
       this.kevMapSubject.next(map);
       this.kevLoadedSubject.next(true);
+
+      // Track new KEV entries for notification badge
+      const currentCount = vulns.length;
+      const previousCount = parseInt(localStorage.getItem('mitre-nav-last-kev-count') ?? '0', 10);
+      if (previousCount > 0 && currentCount > previousCount) {
+        this.newKevCount$.next(currentCount - previousCount);
+      }
+      localStorage.setItem('mitre-nav-last-kev-count', String(currentCount));
+
       this.computeKevTechScores(vulns);
     });
   }
@@ -783,6 +797,11 @@ export class CveService {
    * Builds technique→count scores from CTID direct CVE→ATT&CK mappings for a list of KEV CVE IDs.
    * Returns a Map of techniqueAttackId → number of KEV CVEs that map to it via CTID data.
    */
+  /** Reset the new-KEV notification badge (called when user views the CVE panel). */
+  dismissKevBadge(): void {
+    this.newKevCount$.next(0);
+  }
+
   getKevScoresFromCtid(kevCveIds: string[]): Map<string, number> {
     const scores = new Map<string, number>();
     for (const cveId of kevCveIds) {
