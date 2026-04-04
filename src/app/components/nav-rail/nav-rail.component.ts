@@ -250,6 +250,70 @@ const NAV_ITEMS_BOTTOM: NavItem[] = [
     .help-btn:hover {
       color: #c2d8ea;
     }
+
+    /* Mobile: collapse to horizontal bottom bar */
+    @media (max-width: 768px) {
+      :host {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: 56px;
+        z-index: 200;
+        flex-direction: row;
+        border-right: none;
+        border-top: 1px solid rgba(151, 185, 211, 0.12);
+      }
+
+      .nav-rail-inner {
+        flex-direction: row;
+        padding: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+      .nav-list {
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: hidden;
+        gap: 0;
+        padding: 0 4px;
+        flex: 1;
+        -webkit-mask-image: none;
+        mask-image: none;
+        scrollbar-width: none;
+      }
+
+      .nav-list::-webkit-scrollbar {
+        display: none;
+      }
+
+      .nav-item {
+        width: 48px;
+        min-width: 48px;
+        min-height: 48px;
+        font-size: 13px;
+        margin: 0;
+        border-radius: 10px;
+      }
+
+      .nav-label {
+        font-size: 7px;
+      }
+
+      .nav-divider {
+        display: none;
+      }
+
+      .nav-divider-label {
+        display: none;
+      }
+
+      .nav-items-bottom {
+        display: none;
+      }
+    }
   `],
 })
 export class NavRailComponent {

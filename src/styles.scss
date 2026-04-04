@@ -317,3 +317,17 @@ body.light-mode {
 .campaign-id {
   border-radius: 999px !important;
 }
+
+@media (max-width: 768px) {
+  .panel-overlay {
+    padding: 0;
+  }
+
+  .panel {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100vh;
+    border-radius: 0;
+    margin: 0;
+  }
+}
