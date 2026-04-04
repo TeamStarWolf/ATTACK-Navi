@@ -1,6 +1,6 @@
 # Heatmap Modes Reference
 
-> Complete reference for all 24 heatmap coloring modes in the MITRE ATT&CK Mitigation Navigator.
+> Complete reference for all 24 heatmap coloring modes in the MITRE ATT&CK Navi.
 > Each mode recolors every technique cell in the matrix to visualize a different security dimension.
 
 ---

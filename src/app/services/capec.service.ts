@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
+import { retryWithBackoff } from '../utils/retry';
 
 export interface CapecEntry {
   id: string;           // e.g. "CAPEC-112"
@@ -41,6 +42,7 @@ export class CapecService {
 
   private load(): void {
     this.http.get<any>(CapecService.URL).pipe(
+      retryWithBackoff(),
       catchError(() => of({ objects: [] })),
     ).subscribe(data => {
       this.parseAndIndex(data);

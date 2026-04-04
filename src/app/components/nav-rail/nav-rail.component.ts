@@ -4,8 +4,14 @@ import {
   Output,
   EventEmitter,
   ChangeDetectionStrategy,
+  inject,
+  OnInit,
+  OnDestroy,
+  ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Subscription } from 'rxjs';
+import { CveService } from '../../services/cve.service';
 
 type NavItem =
   | { id: string; icon: string; label: string; group?: string }
@@ -82,10 +88,13 @@ const NAV_ITEMS_BOTTOM: NavItem[] = [
               [title]="item.label"
               [attr.aria-current]="activePanel === item.id ? 'page' : null"
               [attr.aria-label]="item.label"
-              (click)="panelToggle.emit(item.id)"
+              (click)="onNavClick(item.id)"
             >
               <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
               <span class="nav-label">{{ item.label }}</span>
+              @if (item.id === 'cve' && newKevCount > 0) {
+                <span class="nav-badge" [attr.aria-label]="newKevCount + ' new KEV entries'">+{{ newKevCount }}</span>
+              }
             </button>
           }
         }
@@ -200,6 +209,7 @@ const NAV_ITEMS_BOTTOM: NavItem[] = [
     }
 
     .nav-item {
+      position: relative;
       width: 64px;
       min-height: 50px;
       border-radius: 14px;
@@ -216,6 +226,31 @@ const NAV_ITEMS_BOTTOM: NavItem[] = [
       padding: 0;
       flex-shrink: 0;
       margin: 0 auto;
+    }
+
+    .nav-badge {
+      position: absolute;
+      top: 2px;
+      right: 4px;
+      min-width: 18px;
+      height: 18px;
+      border-radius: 9px;
+      background: #e53935;
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      line-height: 18px;
+      text-align: center;
+      padding: 0 4px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+      pointer-events: none;
+      animation: badge-pop 0.25s ease-out;
+    }
+
+    @keyframes badge-pop {
+      0% { transform: scale(0); }
+      70% { transform: scale(1.15); }
+      100% { transform: scale(1); }
     }
 
     .nav-icon {
@@ -322,13 +357,37 @@ const NAV_ITEMS_BOTTOM: NavItem[] = [
     }
   `],
 })
-export class NavRailComponent {
+export class NavRailComponent implements OnInit, OnDestroy {
   @Input() activePanel: string | null = null;
   @Output() panelToggle = new EventEmitter<string>();
   @Output() focusSearch = new EventEmitter<void>();
 
   readonly navItems = NAV_ITEMS;
   readonly navItemsBottom = NAV_ITEMS_BOTTOM;
+
+  newKevCount = 0;
+
+  private cveService = inject(CveService);
+  private cdr = inject(ChangeDetectorRef);
+  private kevSub?: Subscription;
+
+  ngOnInit(): void {
+    this.kevSub = this.cveService.newKevCount$.subscribe(count => {
+      this.newKevCount = count;
+      this.cdr.markForCheck();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.kevSub?.unsubscribe();
+  }
+
+  onNavClick(id: string): void {
+    if (id === 'cve') {
+      this.cveService.dismissKevBadge();
+    }
+    this.panelToggle.emit(id);
+  }
 
   isDivider(item: NavItem): item is { type: 'divider'; label: string } {
     return 'type' in item && item.type === 'divider';
