@@ -121,9 +121,23 @@
     color: #58a6ff;
   }
 
-  &.pf-high.active { background: rgba(248, 113, 113, 0.12); border-color: #f87171; color: #f87171; }
-  &.pf-medium.active { background: rgba(251, 191, 36, 0.12); border-color: #fbbf24; color: #fbbf24; }
-  &.pf-low.active { background: rgba(74, 222, 128, 0.12); border-color: #4ade80; color: #4ade80; }
+  &.pf-high.active {
+    background: rgba(248, 113, 113, 0.12);
+    border-color: #f87171;
+    color: #f87171;
+  }
+
+  &.pf-medium.active {
+    background: rgba(251, 191, 36, 0.12);
+    border-color: #fbbf24;
+    color: #fbbf24;
+  }
+
+  &.pf-low.active {
+    background: rgba(74, 222, 128, 0.12);
+    border-color: #4ade80;
+    color: #4ade80;
+  }
 }
 
 .filter-right {
@@ -285,9 +299,20 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
 
-  &.priority-high   { background: rgba(248, 113, 113, 0.15); color: #f87171; }
-  &.priority-medium { background: rgba(251, 191, 36, 0.15);  color: #fbbf24; }
-  &.priority-low    { background: rgba(74, 222, 128, 0.15);  color: #4ade80; }
+  &.priority-high {
+    background: rgba(248, 113, 113, 0.15);
+    color: #f87171;
+  }
+
+  &.priority-medium {
+    background: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+  }
+
+  &.priority-low {
+    background: rgba(74, 222, 128, 0.15);
+    color: #4ade80;
+  }
 }
 
 .priority-btns {
@@ -305,11 +330,28 @@
   color: #3a5a74;
   transition: all 0.1s;
 
-  &:hover { color: #8aaac8; border-color: #2a4a64; }
+  &:hover {
+    color: #8aaac8;
+    border-color: #2a4a64;
+  }
 
-  &.pri-high.active   { background: rgba(248, 113, 113, 0.15); border-color: #f87171; color: #f87171; }
-  &.pri-medium.active { background: rgba(251, 191, 36, 0.15);  border-color: #fbbf24; color: #fbbf24; }
-  &.pri-low.active    { background: rgba(74, 222, 128, 0.15);  border-color: #4ade80; color: #4ade80; }
+  &.pri-high.active {
+    background: rgba(248, 113, 113, 0.15);
+    border-color: #f87171;
+    color: #f87171;
+  }
+
+  &.pri-medium.active {
+    background: rgba(251, 191, 36, 0.15);
+    border-color: #fbbf24;
+    color: #fbbf24;
+  }
+
+  &.pri-low.active {
+    background: rgba(74, 222, 128, 0.15);
+    border-color: #4ade80;
+    color: #4ade80;
+  }
 }
 
 .entry-note {
@@ -386,7 +428,10 @@
   font-size: 11px;
   cursor: pointer;
 
-  &:hover { border-color: #2a4a64; color: #8aaac8; }
+  &:hover {
+    border-color: #2a4a64;
+    color: #8aaac8;
+  }
 }
 
 /* ── Entry Actions ── */
