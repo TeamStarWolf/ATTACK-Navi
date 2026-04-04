@@ -2,7 +2,7 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgb(0 0 0 / 60%);
   z-index: 1000;
   display: flex;
   align-items: stretch;
@@ -20,7 +20,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.6);
+  box-shadow: -8px 0 32px rgb(0 0 0 / 60%);
 }
 
 /* ── Header ── */
@@ -61,7 +61,7 @@
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgb(255 255 255 / 6%);
   border: none;
   color: #4a6080;
   font-size: 16px;
@@ -91,7 +91,7 @@
 .stat-card {
   flex: 1;
   background: #0a1828;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgb(255 255 255 / 6%);
   border-radius: 8px;
   padding: 10px 14px;
   display: flex;
@@ -183,7 +183,7 @@
   min-width: 18px;
   padding: 1px 5px;
   border-radius: 9px;
-  background: rgba(167, 139, 250, 0.15);
+  background: rgb(167 139 250 / 15%);
   color: #a78bfa;
   font-size: 10px;
   font-weight: 700;
@@ -226,8 +226,8 @@
 .action-btn {
   height: 32px;
   padding: 0 14px;
-  background: rgba(167, 139, 250, 0.12);
-  border: 1px solid rgba(167, 139, 250, 0.3);
+  background: rgb(167 139 250 / 12%);
+  border: 1px solid rgb(167 139 250 / 30%);
   border-radius: 6px;
   color: #a78bfa;
   font-size: 12px;
@@ -237,18 +237,18 @@
   transition: all 0.15s;
 
   &:hover {
-    background: rgba(167, 139, 250, 0.2);
+    background: rgb(167 139 250 / 20%);
     border-color: #a78bfa;
   }
 }
 
 .export-btn {
-  background: rgba(88, 166, 255, 0.1);
-  border-color: rgba(88, 166, 255, 0.3);
+  background: rgb(88 166 255 / 10%);
+  border-color: rgb(88 166 255 / 30%);
   color: #58a6ff;
 
   &:hover {
-    background: rgba(88, 166, 255, 0.2);
+    background: rgb(88 166 255 / 20%);
     border-color: #58a6ff;
   }
 }
@@ -308,7 +308,7 @@
 .intel-row {
   transition: background 0.1s;
 
-  &:nth-child(even) { background: rgba(10, 24, 40, 0.4); }
+  &:nth-child(even) { background: rgb(10 24 40 / 40%); }
   &:hover { background: #0a1828; }
 }
 
@@ -353,7 +353,7 @@
   font-size: 11px;
   font-weight: 700;
 
-  &.count-group { background: rgba(88, 166, 255, 0.12); color: #58a6ff; }
+  &.count-group { background: rgb(88 166 255 / 12%); color: #58a6ff; }
 }
 
 /* ── Score Badge ── */
@@ -367,10 +367,10 @@
   font-size: 11px;
   font-weight: 700;
 
-  &.score-none   { background: rgba(74, 96, 128, 0.15); color: #4a6080; }
-  &.score-low    { background: rgba(88, 166, 255, 0.15); color: #58a6ff; }
-  &.score-medium { background: rgba(167, 139, 250, 0.15); color: #a78bfa; }
-  &.score-high   { background: rgba(248, 113, 113, 0.15); color: #f87171; }
+  &.score-none   { background: rgb(74 96 128 / 15%); color: #4a6080; }
+  &.score-low    { background: rgb(88 166 255 / 15%); color: #58a6ff; }
+  &.score-medium { background: rgb(167 139 250 / 15%); color: #a78bfa; }
+  &.score-high   { background: rgb(248 113 113 / 15%); color: #f87171; }
 }
 
 /* ── Source Badge ── */
@@ -384,12 +384,12 @@
   letter-spacing: 0.5px;
 
   &.misp {
-    background: rgba(251, 146, 60, 0.12);
+    background: rgb(251 146 60 / 12%);
     color: #fb923c;
   }
 
   &.opencti {
-    background: rgba(167, 139, 250, 0.12);
+    background: rgb(167 139 250 / 12%);
     color: #a78bfa;
   }
 }
@@ -412,7 +412,7 @@
   width: 26px;
   height: 26px;
   border-radius: 5px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgb(255 255 255 / 6%);
   border: none;
   color: #4a6080;
   font-size: 14px;
@@ -489,7 +489,7 @@
 .alias-pill {
   padding: 2px 8px;
   border-radius: 10px;
-  background: rgba(88, 166, 255, 0.08);
+  background: rgb(88 166 255 / 8%);
   color: #58a6ff;
   font-size: 10px;
   font-weight: 600;
@@ -515,8 +515,8 @@
 .filter-btn {
   height: 26px;
   padding: 0 12px;
-  background: rgba(167, 139, 250, 0.1);
-  border: 1px solid rgba(167, 139, 250, 0.25);
+  background: rgb(167 139 250 / 10%);
+  border: 1px solid rgb(167 139 250 / 25%);
   border-radius: 5px;
   color: #a78bfa;
   font-size: 11px;
@@ -525,7 +525,7 @@
   transition: all 0.15s;
 
   &:hover {
-    background: rgba(167, 139, 250, 0.2);
+    background: rgb(167 139 250 / 20%);
     border-color: #a78bfa;
   }
 }
@@ -533,7 +533,7 @@
 /* ── MISP Event Template ── */
 .event-template {
   margin: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgb(255 255 255 / 6%);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -544,7 +544,7 @@
   justify-content: space-between;
   padding: 10px 14px;
   background: #0a1828;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgb(255 255 255 / 6%);
   font-size: 12px;
   font-weight: 600;
   color: #8aaac8;
@@ -558,7 +558,6 @@
   font-size: 11px;
   font-family: monospace;
   line-height: 1.5;
-  overflow-x: auto;
+  overflow: auto;
   max-height: 400px;
-  overflow-y: auto;
 }

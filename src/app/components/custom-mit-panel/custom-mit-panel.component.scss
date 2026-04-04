@@ -1,7 +1,7 @@
 .panel-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgb(0 0 0 / 50%);
   z-index: 199;
 }
 
@@ -14,7 +14,7 @@
   max-width: 100vw;
   background: #070d14;
   border-left: 1px solid #1a3448;
-  box-shadow: -12px 0 48px rgba(0, 0, 0, 0.7);
+  box-shadow: -12px 0 48px rgb(0 0 0 / 70%);
   z-index: 200;
   display: flex;
   flex-direction: column;
@@ -285,7 +285,7 @@
   letter-spacing: 0.5px;
   color: #58a6ff;
   font-family: monospace;
-  background: rgba(88, 166, 255, 0.1);
+  background: rgb(88 166 255 / 10%);
   padding: 2px 6px;
   border-radius: 4px;
   flex-shrink: 0;
@@ -325,8 +325,8 @@
 .tech-chip {
   font-family: monospace;
   font-size: 11px;
-  background: rgba(88, 166, 255, 0.08);
-  border: 1px solid rgba(88, 166, 255, 0.2);
+  background: rgb(88 166 255 / 8%);
+  border: 1px solid rgb(88 166 255 / 20%);
   color: #58a6ff;
   padding: 1px 6px;
   border-radius: 4px;
@@ -371,15 +371,15 @@
   flex-shrink: 0;
 }
 
-.cat-edr        { background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); }
-.cat-siem       { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; border: 1px solid rgba(139, 92, 246, 0.3); }
-.cat-network    { background: rgba(6, 182, 212, 0.15);  color: #06b6d4; border: 1px solid rgba(6, 182, 212, 0.3); }
-.cat-email      { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
-.cat-iam        { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
-.cat-endpoint   { background: rgba(249, 115, 22, 0.15); color: #f97316; border: 1px solid rgba(249, 115, 22, 0.3); }
-.cat-identity   { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
-.cat-cloud      { background: rgba(100, 116, 139, 0.15); color: #64748b; border: 1px solid rgba(100, 116, 139, 0.3); }
-.cat-custom     { background: rgba(107, 114, 128, 0.15); color: #9ca3af; border: 1px solid rgba(107, 114, 128, 0.3); }
+.cat-edr        { background: rgb(59 130 246 / 15%); color: #3b82f6; border: 1px solid rgb(59 130 246 / 30%); }
+.cat-siem       { background: rgb(139 92 246 / 15%); color: #8b5cf6; border: 1px solid rgb(139 92 246 / 30%); }
+.cat-network    { background: rgb(6 182 212 / 15%);  color: #06b6d4; border: 1px solid rgb(6 182 212 / 30%); }
+.cat-email      { background: rgb(245 158 11 / 15%); color: #f59e0b; border: 1px solid rgb(245 158 11 / 30%); }
+.cat-iam        { background: rgb(16 185 129 / 15%); color: #10b981; border: 1px solid rgb(16 185 129 / 30%); }
+.cat-endpoint   { background: rgb(249 115 22 / 15%); color: #f97316; border: 1px solid rgb(249 115 22 / 30%); }
+.cat-identity   { background: rgb(16 185 129 / 15%); color: #10b981; border: 1px solid rgb(16 185 129 / 30%); }
+.cat-cloud      { background: rgb(100 116 139 / 15%); color: #64748b; border: 1px solid rgb(100 116 139 / 30%); }
+.cat-custom     { background: rgb(107 114 128 / 15%); color: #9ca3af; border: 1px solid rgb(107 114 128 / 30%); }
 
 // ── Impl status badges ──────────────────────────────────
 .impl-badge {
@@ -394,10 +394,10 @@
   flex-shrink: 0;
 }
 
-.impl-implemented  { background: rgba(74, 222, 128, 0.15); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); }
-.impl-in-progress  { background: rgba(96, 165, 250, 0.15); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.3); }
-.impl-planned      { background: rgba(251, 146, 60, 0.15); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.3); }
-.impl-not-started  { background: rgba(248, 113, 113, 0.15); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3); }
+.impl-implemented  { background: rgb(74 222 128 / 15%); color: #4ade80; border: 1px solid rgb(74 222 128 / 30%); }
+.impl-in-progress  { background: rgb(96 165 250 / 15%); color: #60a5fa; border: 1px solid rgb(96 165 250 / 30%); }
+.impl-planned      { background: rgb(251 146 60 / 15%); color: #fb923c; border: 1px solid rgb(251 146 60 / 30%); }
+.impl-not-started  { background: rgb(248 113 113 / 15%); color: #f87171; border: 1px solid rgb(248 113 113 / 30%); }
 
 // ── List footer ─────────────────────────────────────────
 .list-footer {
@@ -521,8 +521,8 @@
   gap: 5px;
   font-family: monospace;
   font-size: 12px;
-  background: rgba(88, 166, 255, 0.1);
-  border: 1px solid rgba(88, 166, 255, 0.25);
+  background: rgb(88 166 255 / 10%);
+  border: 1px solid rgb(88 166 255 / 25%);
   color: #58a6ff;
   padding: 3px 8px;
   border-radius: 4px;
@@ -531,7 +531,7 @@
 .remove-tech-btn {
   background: none;
   border: none;
-  color: rgba(88, 166, 255, 0.5);
+  color: rgb(88 166 255 / 50%);
   cursor: pointer;
   font-size: 11px;
   padding: 0;

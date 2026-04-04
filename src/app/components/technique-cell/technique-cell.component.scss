@@ -10,7 +10,7 @@
 .tooltip-card {
   position: fixed;
   z-index: 9999;
-  background: rgba(12, 24, 36, 0.95);
+  background: rgb(12 24 36 / 95%);
   border: 1px solid var(--line-strong);
   color: var(--text-main);
   border-radius: 18px;
@@ -40,7 +40,7 @@
   .tt-badge {
     font-size: 10px;
     font-weight: 700;
-    background: rgba(99, 210, 151, 0.15);
+    background: rgb(99 210 151 / 15%);
     border-radius: 999px;
     padding: 3px 7px;
     white-space: nowrap;
@@ -57,7 +57,7 @@
     display: inline-block;
     font-size: 9px;
     font-weight: 700;
-    background: rgba(111, 211, 255, 0.12);
+    background: rgb(111 211 255 / 12%);
     color: var(--accent);
     border-radius: 999px;
     padding: 3px 6px;
@@ -67,7 +67,7 @@
 
 .tt-exposure {
   font-size: 10px;
-  background: rgba(255, 180, 84, 0.14);
+  background: rgb(255 180 84 / 14%);
   color: var(--accent-warm);
   border-radius: 999px;
   padding: 3px 7px;
@@ -87,8 +87,8 @@
   min-height: var(--cell-min-height, 32px);
   position: relative;
   transition: box-shadow 0.12s, opacity 0.12s, transform 0.12s;
-  border: 1px solid rgba(255, 255, 255, 0.035);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.015);
+  border: 1px solid rgb(255 255 255 / 3.5%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 1.5%);
 
   &:focus-visible {
     outline: 2px solid var(--accent);
@@ -96,13 +96,13 @@
   }
 
   &:hover {
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18);
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 18%);
     transform: translateY(-1px);
     z-index: 1;
   }
 
   &.selected {
-    box-shadow: 0 0 0 2px rgba(231, 238, 245, 0.85);
+    box-shadow: 0 0 0 2px rgb(231 238 245 / 85%);
     z-index: 2;
   }
 
@@ -134,7 +134,7 @@
 
   &.sub {
     border-radius: 5px 10px 10px 5px;
-    box-shadow: inset 3px 0 0 rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.015);
+    box-shadow: inset 3px 0 0 rgb(0 0 0 / 28%), inset 0 1px 0 rgb(255 255 255 / 1.5%);
 
     .id {
       opacity: 0.5;
@@ -169,7 +169,7 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    border: 1px solid rgb(255 255 255 / 50%);
     flex-shrink: 0;
   }
 
@@ -203,8 +203,8 @@
   }
 
   .badge {
-    background: rgba(7, 16, 24, 0.34);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgb(7 16 24 / 34%);
+    border: 1px solid rgb(255 255 255 / 5%);
     border-radius: 999px;
     padding: 1px 5px;
     font-size: 8px;
@@ -212,8 +212,8 @@
   }
 
   .exposure-badge {
-    background: rgba(255, 180, 84, 0.16);
-    border: 1px solid rgba(255, 180, 84, 0.18);
+    background: rgb(255 180 84 / 16%);
+    border: 1px solid rgb(255 180 84 / 18%);
     border-radius: 999px;
     padding: 1px 5px;
     font-size: 8px;

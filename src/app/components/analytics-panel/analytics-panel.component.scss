@@ -2,7 +2,7 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgb(0 0 0 / 50%);
   z-index: 999;
   display: flex;
   align-items: flex-start;
@@ -21,7 +21,7 @@
   width: 95vw;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 8px 32px rgb(0 0 0 / 60%);
 }
 
 /* ── Header ── */
@@ -117,8 +117,8 @@
   gap: 6px;
 
   &.kev-alert {
-    border-color: rgba(239, 68, 68, 0.4);
-    background: rgba(239, 68, 68, 0.06);
+    border-color: rgb(239 68 68 / 40%);
+    background: rgb(239 68 68 / 6%);
   }
 
   &.donut-card {
@@ -209,7 +209,7 @@
   color: #3a5a74;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  margin: 0 0 12px 0;
+  margin: 0 0 12px;
   padding-bottom: 8px;
   border-bottom: 1px solid #1a3448;
 }
@@ -217,7 +217,7 @@
 .section-sub {
   font-size: 12px;
   color: #4a6080;
-  margin: -8px 0 10px 0;
+  margin: -8px 0 10px;
 }
 
 /* ── Radar Chart ── */
@@ -378,9 +378,9 @@
 }
 
 .gaps-table-wrap {
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgb(255 255 255 / 5%);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.025);
+  background: rgb(255 255 255 / 2.5%);
 }
 
 .view-btn {
@@ -507,12 +507,12 @@
 }
 
 .badge-groups {
-  background: rgba(88, 166, 255, 0.12);
+  background: rgb(88 166 255 / 12%);
   color: #58a6ff;
 }
 
 .badge-kev {
-  background: rgba(248, 113, 113, 0.12);
+  background: rgb(248 113 113 / 12%);
   color: #f87171;
 }
 

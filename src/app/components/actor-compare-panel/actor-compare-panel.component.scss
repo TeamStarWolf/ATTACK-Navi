@@ -2,7 +2,7 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgb(0 0 0 / 60%);
   z-index: 1000;
   display: flex;
   align-items: stretch;
@@ -20,7 +20,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.6);
+  box-shadow: -8px 0 32px rgb(0 0 0 / 60%);
 }
 
 /* ── Header ── */
@@ -61,7 +61,7 @@
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgb(255 255 255 / 6%);
   border: none;
   color: #4a6080;
   font-size: 16px;
@@ -151,7 +151,7 @@
   max-height: 220px;
   overflow-y: auto;
   z-index: 100;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 50%);
 }
 
 .actor-option {
@@ -161,7 +161,7 @@
   padding: 8px 10px;
   cursor: pointer;
   transition: background 0.1s;
-  border-bottom: 1px solid rgba(26, 52, 72, 0.4);
+  border-bottom: 1px solid rgb(26 52 72 / 40%);
 
   &:last-child { border-bottom: none; }
 
@@ -205,13 +205,13 @@
   border: 1px solid;
 
   &.selected-actor-a {
-    background: rgba(249, 115, 22, 0.08);
-    border-color: rgba(249, 115, 22, 0.3);
+    background: rgb(249 115 22 / 8%);
+    border-color: rgb(249 115 22 / 30%);
   }
 
   &.selected-actor-b {
-    background: rgba(168, 85, 247, 0.08);
-    border-color: rgba(168, 85, 247, 0.3);
+    background: rgb(168 85 247 / 8%);
+    border-color: rgb(168 85 247 / 30%);
   }
 }
 
@@ -255,7 +255,7 @@
 
   &:hover {
     color: #c9d8e8;
-    background: rgba(255, 255, 255, 0.06);
+    background: rgb(255 255 255 / 6%);
   }
 }
 
@@ -395,14 +395,14 @@
 
   &.venn-a {
     left: 0;
-    background: rgba(249, 115, 22, 0.18);
-    border: 1.5px solid rgba(249, 115, 22, 0.5);
+    background: rgb(249 115 22 / 18%);
+    border: 1.5px solid rgb(249 115 22 / 50%);
   }
 
   &.venn-b {
     right: 0;
-    background: rgba(168, 85, 247, 0.18);
-    border: 1.5px solid rgba(168, 85, 247, 0.5);
+    background: rgb(168 85 247 / 18%);
+    border: 1.5px solid rgb(168 85 247 / 50%);
   }
 }
 
@@ -483,17 +483,17 @@
   font-weight: 700;
 
   &.tab-badge-overlap {
-    background: rgba(88, 166, 255, 0.15);
+    background: rgb(88 166 255 / 15%);
     color: #58a6ff;
   }
 
   &.tab-badge-a {
-    background: rgba(249, 115, 22, 0.15);
+    background: rgb(249 115 22 / 15%);
     color: #f97316;
   }
 
   &.tab-badge-b {
-    background: rgba(168, 85, 247, 0.15);
+    background: rgb(168 85 247 / 15%);
     color: #a855f7;
   }
 }
@@ -599,20 +599,20 @@
 .compare-row {
   transition: background 0.1s;
 
-  &:nth-child(even) { background: rgba(10, 24, 40, 0.4); }
+  &:nth-child(even) { background: rgb(10 24 40 / 40%); }
 
   &:hover { background: #0a1828; }
 
   &.overlap-row td:first-child {
-    border-left: 2px solid rgba(88, 166, 255, 0.4);
+    border-left: 2px solid rgb(88 166 255 / 40%);
   }
 
   &.unique-a-row td:first-child {
-    border-left: 2px solid rgba(249, 115, 22, 0.4);
+    border-left: 2px solid rgb(249 115 22 / 40%);
   }
 
   &.unique-b-row td:first-child {
-    border-left: 2px solid rgba(168, 85, 247, 0.4);
+    border-left: 2px solid rgb(168 85 247 / 40%);
   }
 }
 
@@ -657,11 +657,11 @@
   border-radius: 10px;
   font-size: 11px;
   font-weight: 700;
-  background: rgba(134, 239, 172, 0.12);
+  background: rgb(134 239 172 / 12%);
   color: #86efac;
 
   &.mit-high {
-    background: rgba(74, 222, 128, 0.15);
+    background: rgb(74 222 128 / 15%);
     color: #4ade80;
   }
 }
@@ -711,9 +711,9 @@
   border-radius: 2px;
   flex-shrink: 0;
 
-  &.legend-overlap { background: rgba(88, 166, 255, 0.6); border: 1px solid #58a6ff; }
-  &.legend-a       { background: rgba(249, 115, 22, 0.5); border: 1px solid #f97316; }
-  &.legend-b       { background: rgba(168, 85, 247, 0.5); border: 1px solid #a855f7; }
+  &.legend-overlap { background: rgb(88 166 255 / 60%); border: 1px solid #58a6ff; }
+  &.legend-a       { background: rgb(249 115 22 / 50%); border: 1px solid #f97316; }
+  &.legend-b       { background: rgb(168 85 247 / 50%); border: 1px solid #a855f7; }
 }
 
 .matrix-scroll {
@@ -774,21 +774,21 @@
   }
 
   &.matrix-card-overlap {
-    background: rgba(88, 166, 255, 0.15);
+    background: rgb(88 166 255 / 15%);
     color: #58a6ff;
-    border: 1px solid rgba(88, 166, 255, 0.3);
+    border: 1px solid rgb(88 166 255 / 30%);
   }
 
   &.matrix-card-a {
-    background: rgba(249, 115, 22, 0.12);
+    background: rgb(249 115 22 / 12%);
     color: #f97316;
-    border: 1px solid rgba(249, 115, 22, 0.25);
+    border: 1px solid rgb(249 115 22 / 25%);
   }
 
   &.matrix-card-b {
-    background: rgba(168, 85, 247, 0.12);
+    background: rgb(168 85 247 / 12%);
     color: #a855f7;
-    border: 1px solid rgba(168, 85, 247, 0.25);
+    border: 1px solid rgb(168 85 247 / 25%);
   }
 }
 

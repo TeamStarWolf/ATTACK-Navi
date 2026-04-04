@@ -85,7 +85,7 @@ export class YaraService {
     const yamlLines: string[] = [
       `rule ${ruleName} : ${tags.join(' ')} {`,
       `  meta:`,
-      ...Object.entries(meta).map(([k, v]) => `    ${k} = "${v.replace(/"/g, '\\"')}"`),
+      ...Object.entries(meta).map(([k, v]) => `    ${k} = "${v.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`),
       `  strings:`,
       ...p.strings.map(s => `    ${s}`),
       `  condition:`,

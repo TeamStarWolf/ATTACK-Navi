@@ -3,7 +3,7 @@
   align-items: center;
   gap: 6px;
   padding: 6px 14px;
-  background: rgba(111, 211, 255, 0.03);
+  background: rgb(111 211 255 / 3%);
   border-bottom: 1px solid var(--line-soft);
   flex-shrink: 0;
   flex-wrap: wrap;
@@ -22,8 +22,8 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  background: rgba(111, 211, 255, 0.12);
-  border: 1px solid rgba(111, 211, 255, 0.24);
+  background: rgb(111 211 255 / 12%);
+  border: 1px solid rgb(111 211 255 / 24%);
   border-radius: 999px;
   padding: 5px 10px 5px 12px;
 
@@ -38,7 +38,7 @@
   }
 
   .chip-remove {
-    background: rgba(255,255,255,0.1);
+    background: rgb(255 255 255 / 10%);
     border: none;
     border-radius: 50%;
     color: var(--text-muted);
@@ -53,7 +53,7 @@
     padding: 0;
 
     &:hover {
-      background: rgba(255,143,122,0.25);
+      background: rgb(255 143 122 / 25%);
       color: #ffd0c7;
     }
   }
@@ -72,8 +72,8 @@
   white-space: nowrap;
 
   &:hover {
-    background: rgba(255,143,122,0.12);
-    border-color: rgba(255,143,122,0.3);
+    background: rgb(255 143 122 / 12%);
+    border-color: rgb(255 143 122 / 30%);
     color: var(--danger);
   }
 }

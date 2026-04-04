@@ -1,7 +1,7 @@
 .tgp-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgb(0 0 0 / 75%);
   z-index: 610;
   display: flex;
   align-items: center;
@@ -18,7 +18,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 20px 60px rgb(0 0 0 / 70%);
 }
 
 /* Header */
@@ -103,10 +103,11 @@
   font-size: 0.72rem;
   cursor: pointer;
   transition: all 0.15s;
+
   &.active {
     border-color: #58a6ff;
     color: #58a6ff;
-    background: rgba(88,166,255,0.08);
+    background: rgb(88 166 255 / 8%);
   }
   &:hover:not(.active) { border-color: #8b949e; color: #8b949e; }
 }
@@ -134,7 +135,7 @@
   cursor: grab;
   &:active { cursor: grabbing; }
   &.clickable { cursor: pointer; }
-  &.node-center circle { filter: drop-shadow(0 0 8px rgba(88,166,255,0.4)); }
+  &.node-center circle { filter: drop-shadow(0 0 8px rgb(88 166 255 / 40%)); }
 }
 
 .node-label {
@@ -220,7 +221,7 @@
   flex-direction: column;
   gap: 2px;
   pointer-events: none;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 50%);
   z-index: 10;
   white-space: nowrap;
 

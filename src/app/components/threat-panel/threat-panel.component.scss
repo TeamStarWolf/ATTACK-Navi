@@ -2,7 +2,7 @@
 .panel-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgb(0 0 0 / 50%);
   z-index: 999;
 }
 
@@ -15,7 +15,7 @@
   height: 100vh;
   background: #0d1a26;
   border: 1px solid #1a3448;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 8px 32px rgb(0 0 0 / 60%);
   z-index: 1000;
   display: flex;
   flex-direction: column;
@@ -112,16 +112,16 @@
   height: 18px;
   padding: 0 5px;
   border-radius: 9px;
-  background: rgba(88, 166, 255, 0.15);
+  background: rgb(88 166 255 / 15%);
   color: #58a6ff;
   font-size: 10px;
   font-weight: 700;
-  border: 1px solid rgba(88, 166, 255, 0.25);
+  border: 1px solid rgb(88 166 255 / 25%);
 
   &.campaign {
-    background: rgba(160, 110, 255, 0.15);
+    background: rgb(160 110 255 / 15%);
     color: #a06eff;
-    border-color: rgba(160, 110, 255, 0.25);
+    border-color: rgb(160 110 255 / 25%);
   }
 }
 
@@ -166,9 +166,9 @@
 
 .clear-btn {
   padding: 5px 12px;
-  background: rgba(239, 68, 68, 0.12);
+  background: rgb(239 68 68 / 12%);
   color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  border: 1px solid rgb(239 68 68 / 25%);
   border-radius: 5px;
   font-size: 12px;
   cursor: pointer;
@@ -203,8 +203,8 @@
   &:hover { background: #0a1828; }
 
   &.selected {
-    background: rgba(88, 166, 255, 0.07);
-    border-bottom-color: rgba(88, 166, 255, 0.15);
+    background: rgb(88 166 255 / 7%);
+    border-bottom-color: rgb(88 166 255 / 15%);
   }
 }
 
@@ -227,7 +227,7 @@
 
   &.checked {
     border-color: #58a6ff;
-    background: rgba(88, 166, 255, 0.2);
+    background: rgb(88 166 255 / 20%);
   }
 }
 
@@ -246,7 +246,7 @@
   font-size: 11px;
   font-weight: 600;
   color: #58a6ff;
-  background: rgba(88, 166, 255, 0.1);
+  background: rgb(88 166 255 / 10%);
   border-radius: 4px;
   padding: 1px 5px;
   font-family: monospace;
@@ -315,13 +315,13 @@
 
 // Campaign-specific styles
 .campaign-row.selected {
-  background: rgba(160, 110, 255, 0.07);
-  border-bottom-color: rgba(160, 110, 255, 0.15);
+  background: rgb(160 110 255 / 7%);
+  border-bottom-color: rgb(160 110 255 / 15%);
 }
 
 .campaign-id {
   color: #a06eff;
-  background: rgba(160, 110, 255, 0.1);
+  background: rgb(160 110 255 / 10%);
   border-radius: 4px;
   padding: 1px 5px;
   font-size: 11px;
@@ -363,24 +363,24 @@
 .apply-btn {
   flex: 1;
   padding: 7px 12px;
-  background: rgba(26, 159, 255, 0.2);
+  background: rgb(26 159 255 / 20%);
   color: #58a6ff;
-  border: 1px solid rgba(26, 159, 255, 0.4);
+  border: 1px solid rgb(26 159 255 / 40%);
   border-radius: 5px;
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.15s;
 
-  &:hover { background: rgba(26, 159, 255, 0.32); }
+  &:hover { background: rgb(26 159 255 / 32%); }
 }
 
 .clear-all-btn {
   flex: 1;
   padding: 7px 12px;
-  background: rgba(239, 68, 68, 0.12);
+  background: rgb(239 68 68 / 12%);
   color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  border: 1px solid rgb(239 68 68 / 25%);
   border-radius: 5px;
   font-size: 12px;
   font-weight: 500;
@@ -390,7 +390,7 @@
 // Gap analysis section
 .gap-summary {
   border-top: 1px solid #1a3448;
-  background: rgba(239, 68, 68, 0.05);
+  background: rgb(239 68 68 / 5%);
 }
 
 .gap-toggle {
@@ -405,7 +405,7 @@
   cursor: pointer;
   display: flex;
   justify-content: space-between;
-  &:hover { background: rgba(239, 68, 68, 0.08); }
+  &:hover { background: rgb(239 68 68 / 8%); }
 }
 
 .gap-list {
@@ -418,8 +418,8 @@
 }
 
 .gap-row {
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(239, 68, 68, 0.15);
+  background: rgb(0 0 0 / 25%);
+  border: 1px solid rgb(239 68 68 / 15%);
   border-radius: 6px;
   padding: 7px 10px;
 }

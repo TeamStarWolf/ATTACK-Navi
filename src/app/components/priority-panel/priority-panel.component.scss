@@ -2,7 +2,7 @@
 .panel-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgb(0 0 0 / 50%);
   z-index: 999;
 }
 
@@ -15,7 +15,7 @@
   height: 100vh;
   background: #0d1a26;
   border: 1px solid #1a3448;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 8px 32px rgb(0 0 0 / 60%);
   z-index: 1000;
   display: flex;
   flex-direction: column;
@@ -210,7 +210,7 @@
   font-size: 11px;
   font-weight: 600;
   color: #58a6ff;
-  background: rgba(88, 166, 255, 0.1);
+  background: rgb(88 166 255 / 10%);
   border-radius: 4px;
   padding: 1px 5px;
   font-family: monospace;
@@ -235,7 +235,7 @@
 .unique-badge {
   font-size: 11px;
   font-weight: 600;
-  background: rgba(240, 160, 64, 0.15);
+  background: rgb(240 160 64 / 15%);
   color: #f0a040;
   padding: 1px 7px;
   border-radius: 10px;
@@ -249,7 +249,7 @@
 .exposure-badge {
   font-size: 11px;
   font-weight: 600;
-  background: rgba(239, 68, 68, 0.12);
+  background: rgb(239 68 68 / 12%);
   color: #f87171;
   padding: 1px 7px;
   border-radius: 10px;
@@ -258,18 +258,18 @@
 .kev-badge {
   font-size: 11px;
   font-weight: 700;
-  background: rgba(239, 68, 68, 0.18);
+  background: rgb(239 68 68 / 18%);
   color: #ff6b6b;
   padding: 1px 7px;
   border-radius: 10px;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid rgb(239 68 68 / 30%);
   white-space: nowrap;
 }
 
 .atomic-badge {
   font-size: 11px;
   font-weight: 600;
-  background: rgba(139, 92, 246, 0.15);
+  background: rgb(139 92 246 / 15%);
   color: #a78bfa;
   padding: 1px 7px;
   border-radius: 10px;
@@ -279,23 +279,23 @@
 .sigma-score-badge {
   font-size: 11px;
   font-weight: 600;
-  background: rgba(0, 188, 212, 0.15);
+  background: rgb(0 188 212 / 15%);
   color: #26c6da;
   padding: 1px 7px;
   border-radius: 10px;
   white-space: nowrap;
-  border: 1px solid rgba(0, 188, 212, 0.25);
+  border: 1px solid rgb(0 188 212 / 25%);
 }
 
 .nist-score-badge {
   font-size: 11px;
   font-weight: 600;
-  background: rgba(66, 165, 245, 0.15);
+  background: rgb(66 165 245 / 15%);
   color: #42a5f5;
   padding: 1px 7px;
   border-radius: 10px;
   white-space: nowrap;
-  border: 1px solid rgba(66, 165, 245, 0.25);
+  border: 1px solid rgb(66 165 245 / 25%);
 }
 
 .unified-badge {
@@ -329,34 +329,34 @@
 
   &[data-status="implemented"],
   &.implemented {
-    background: rgba(0, 200, 83, 0.15);
+    background: rgb(0 200 83 / 15%);
     color: #00c853;
-    border: 1px solid rgba(0, 200, 83, 0.3);
+    border: 1px solid rgb(0 200 83 / 30%);
   }
 
   &[data-status="in-progress"],
   &.in-progress {
-    background: rgba(26, 159, 255, 0.15);
+    background: rgb(26 159 255 / 15%);
     color: #58a6ff;
-    border: 1px solid rgba(26, 159, 255, 0.3);
+    border: 1px solid rgb(26 159 255 / 30%);
   }
 
   &[data-status="planned"],
   &.planned {
-    background: rgba(255, 152, 0, 0.15);
+    background: rgb(255 152 0 / 15%);
     color: #ffb74d;
-    border: 1px solid rgba(255, 152, 0, 0.3);
+    border: 1px solid rgb(255 152 0 / 30%);
   }
 
   &[data-status="not-started"],
   &.not-started {
-    background: rgba(239, 68, 68, 0.12);
+    background: rgb(239 68 68 / 12%);
     color: #f87171;
-    border: 1px solid rgba(239, 68, 68, 0.25);
+    border: 1px solid rgb(239 68 68 / 25%);
   }
 
   // Unset/neutral state
-  &:not([data-status]):not(.implemented):not(.in-progress):not(.planned):not(.not-started) {
+  &:not([data-status], .implemented, .in-progress, .planned, .not-started) {
     background: transparent;
     color: #4a6080;
     border: 1px solid #1a3448;

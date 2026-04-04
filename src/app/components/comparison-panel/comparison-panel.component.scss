@@ -3,7 +3,7 @@
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgb(0 0 0 / 50%);
   z-index: 999;
   align-items: center;
   justify-content: center;
@@ -24,7 +24,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 8px 32px rgb(0 0 0 / 60%);
 }
 
 // Header
@@ -192,9 +192,9 @@
   text-overflow: ellipsis;
 }
 
-.a-header    { background: rgba(255, 107, 107, 0.2); color: #ff6b6b; }
-.both-header { background: rgba(156, 107, 255, 0.2); color: #c09fff; }
-.b-header    { background: rgba(107, 159, 255, 0.2); color: #6b9fff; }
+.a-header    { background: rgb(255 107 107 / 20%); color: #ff6b6b; }
+.both-header { background: rgb(156 107 255 / 20%); color: #c09fff; }
+.b-header    { background: rgb(107 159 255 / 20%); color: #6b9fff; }
 
 .tech-list {
   overflow-y: auto;
@@ -223,21 +223,21 @@
 }
 
 .a-chip {
-  background: rgba(255, 107, 107, 0.1);
+  background: rgb(255 107 107 / 10%);
   color: #c9d8e8;
-  &:hover { background: rgba(255, 107, 107, 0.25); }
+  &:hover { background: rgb(255 107 107 / 25%); }
 }
 
 .both-chip {
-  background: rgba(156, 107, 255, 0.1);
+  background: rgb(156 107 255 / 10%);
   color: #c9d8e8;
-  &:hover { background: rgba(156, 107, 255, 0.25); }
+  &:hover { background: rgb(156 107 255 / 25%); }
 }
 
 .b-chip {
-  background: rgba(107, 159, 255, 0.1);
+  background: rgb(107 159 255 / 10%);
   color: #c9d8e8;
-  &:hover { background: rgba(107, 159, 255, 0.25); }
+  &:hover { background: rgb(107 159 255 / 25%); }
 }
 
 .chip-id {
@@ -277,17 +277,17 @@
 }
 
 .a-btn {
-  background: rgba(255, 107, 107, 0.15);
+  background: rgb(255 107 107 / 15%);
   color: #ff6b6b;
-  border-color: rgba(255, 107, 107, 0.3);
-  &:hover { background: rgba(255, 107, 107, 0.28); }
+  border-color: rgb(255 107 107 / 30%);
+  &:hover { background: rgb(255 107 107 / 28%); }
 }
 
 .b-btn {
-  background: rgba(107, 159, 255, 0.15);
+  background: rgb(107 159 255 / 15%);
   color: #6b9fff;
-  border-color: rgba(107, 159, 255, 0.3);
-  &:hover { background: rgba(107, 159, 255, 0.28); }
+  border-color: rgb(107 159 255 / 30%);
+  &:hover { background: rgb(107 159 255 / 28%); }
 }
 
 // Hint / empty messages
