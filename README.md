@@ -1,6 +1,6 @@
 # ATT&CK NAV
 
-**[Live Site](https://ccwilliams314.github.io/attack-nav/)** | **[Architecture](ARCHITECTURE.md)** | **[Workflows](WORKFLOWS.md)** | **[Data Sources](DATA_SOURCE_SCORECARD.md)**
+**[Live Site](https://teamstarwolf.github.io/attack-nav/)** | **[Architecture](ARCHITECTURE.md)** | **[Workflows](WORKFLOWS.md)** | **[Data Sources](DATA_SOURCE_SCORECARD.md)**
 
 An operational cybersecurity workbench built on the MITRE ATT&CK framework. Explore techniques across Enterprise, ICS, and Mobile domains. Analyze mitigation coverage, correlate threat intelligence, assess vulnerability exposure, and measure detection readiness — all from a single interactive matrix.
 
@@ -25,7 +25,7 @@ An operational cybersecurity workbench built on the MITRE ATT&CK framework. Expl
 
 ## Live Demo
 
-**https://ccwilliams314.github.io/attack-nav/**
+**https://teamstarwolf.github.io/attack-nav/**
 
 The app loads ATT&CK data directly from MITRE's GitHub repository. No backend server required — runs entirely in the browser.
 
