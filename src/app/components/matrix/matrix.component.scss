@@ -225,9 +225,11 @@
   margin-bottom: 3px;
 }
 
+/* Custom user-created techniques */
 .custom-technique {
   border: 1px dashed rgba(96, 165, 250, 0.5) !important;
   position: relative;
+
   &::after {
     content: '\2726';
     position: absolute;
