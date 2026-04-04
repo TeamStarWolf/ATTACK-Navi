@@ -25,7 +25,7 @@ An operational cybersecurity workbench built on the MITRE ATT&CK framework. Expl
 
 ## Live Demo
 
-**https://teamstarwolf.github.io/attack-nav/**
+**[https://teamstarwolf.github.io/attack-nav/](https://teamstarwolf.github.io/attack-nav/)**
 
 The app loads ATT&CK data directly from MITRE's GitHub repository. No backend server required — runs entirely in the browser.
 

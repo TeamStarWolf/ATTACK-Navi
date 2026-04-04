@@ -20,8 +20,13 @@
     "rxjs": "~7.8.0",
     "tinycolor2": "^1.6.0",
     "tslib": "^2.3.0",
-    "xlsx": "^0.18.5",
+    "xlsx-js-style": "^1.2.0",
     "zone.js": "~0.15.0"
+  },
+  "overrides": {
+    "tar": "^7.5.13",
+    "serialize-javascript": "^7.0.5",
+    "lodash": "^4.17.21"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^19.2.23",

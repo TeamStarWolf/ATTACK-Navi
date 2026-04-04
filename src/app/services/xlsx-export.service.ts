@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 import { Domain } from '../models/domain';
 import { ImplStatus, IMPL_STATUS_LABELS } from './implementation.service';
 import { CustomMitigation } from './custom-mitigation.service';
