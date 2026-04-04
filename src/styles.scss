@@ -24,6 +24,19 @@
     linear-gradient(180deg, #0a141e 0%, #08111a 42%, #09131c 100%);
 }
 
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #070d14;
+  color: #58a6ff;
+  padding: 8px;
+  z-index: 10000;
+  text-decoration: none;
+  font-weight: 600;
+  &:focus { top: 0; }
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
 }

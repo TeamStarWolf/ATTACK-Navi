@@ -29,13 +29,15 @@
               {
                 "glob": "**/*",
                 "input": "public"
-              }
+              },
+              "src/manifest.webmanifest"
             ],
             "styles": [
               "src/styles.scss"
             ],
             "scripts": [],
-            "allowedCommonJsDependencies": ["xlsx-js-style"]
+            "allowedCommonJsDependencies": ["xlsx-js-style"],
+            "serviceWorker": "ngsw-config.json"
           },
           "configurations": {
             "production": {

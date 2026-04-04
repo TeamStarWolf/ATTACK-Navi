@@ -1,4 +1,4 @@
-<header class="toolbar top-bar">
+<header class="toolbar top-bar" role="toolbar" aria-label="Matrix controls">
 
   <!-- Brand -->
   <div class="brand">
@@ -37,10 +37,11 @@
     <button class="icon-btn source-mode-btn"
             [class.active]="dataSourceMode === 'live'"
             (click)="dataSourceMode = dataSourceMode === 'live' ? 'bundled' : 'live'; onDataSourceChange()"
-            [title]="dataSourceMode === 'live' ? 'Live data — click for bundled' : 'Bundled data — click for live'">
+            [title]="dataSourceMode === 'live' ? 'Live data — click for bundled' : 'Bundled data — click for live'"
+            [attr.aria-label]="dataSourceMode === 'live' ? 'Switch to bundled data' : 'Switch to live data'">
       {{ dataSourceMode === 'live' ? '🌐' : '📦' }}
     </button>
-    <button class="icon-btn refresh-btn" (click)="forceRefresh()" [disabled]="loading" title="Force refresh ATT&CK data from MITRE">⟳</button>
+    <button class="icon-btn refresh-btn" (click)="forceRefresh()" [disabled]="loading" title="Force refresh ATT&CK data from MITRE" aria-label="Force refresh ATT&CK data">⟳</button>
     @if (loading) {
       <div class="spinner"></div>
     }
@@ -172,7 +173,8 @@
       <button class="icon-btn heatmap-btn"
               [class.active]="heatmapMode !== 'coverage' || sortMode !== 'alpha' || dimUncovered || multiSelectMode"
               (click)="toggleViewMenu()"
-              title="View & explore options">
+              title="View & explore options"
+              aria-label="View and explore options">
         🎨 {{ heatmapMode === 'coverage' ? 'Coverage' : heatmapMode === 'risk' ? 'Risk' : heatmapMode === 'exposure' ? 'Exposure' : heatmapMode === 'frequency' ? 'Frequency' : heatmapMode === 'software' ? 'Software' : heatmapMode === 'campaign' ? 'Campaign' : heatmapMode === 'status' ? 'Status' : heatmapMode === 'controls' ? 'Controls' : heatmapMode === 'kev' ? 'KEV' : heatmapMode === 'd3fend' ? 'D3FEND' : heatmapMode === 'atomic' ? 'Atomic' : heatmapMode === 'engage' ? 'Engage' : heatmapMode === 'car' ? 'CAR' : heatmapMode === 'cve' ? 'CVE' : heatmapMode === 'detection' ? 'Detection' : heatmapMode === 'cri' ? 'CRI' : heatmapMode === 'unified' ? 'Unified' : heatmapMode === 'sigma' ? 'Sigma' : heatmapMode === 'nist' ? 'NIST' : heatmapMode === 'veris' ? 'VERIS' : heatmapMode === 'epss' ? 'EPSS' : heatmapMode === 'elastic' ? 'Elastic' : heatmapMode === 'splunk' ? 'Splunk' : heatmapMode === 'intelligence' ? 'Intelligence' : 'Coverage' }} ▾
       </button>
       @if (showViewMenu) {
@@ -213,7 +215,7 @@
   <!-- Export / Import -->
   <div class="bar-group">
     <div class="views-dropdown">
-      <button class="icon-btn export-hub-btn" (click)="showExportMenu = !showExportMenu; showViewMenu = false; showViewsMenu = false; showSaveDialog = false" title="Export &amp; Import">
+      <button class="icon-btn export-hub-btn" (click)="showExportMenu = !showExportMenu; showViewMenu = false; showViewsMenu = false; showSaveDialog = false" title="Export &amp; Import" aria-label="Export and import">
         📦 Exports
       </button>
       @if (showExportMenu) {
@@ -225,6 +227,7 @@
           <button class="menu-action" (click)="exportFullReport.emit(); showExportMenu = false">⬇ Full Report</button>
           <button class="menu-action" (click)="exportMatrixPng.emit(); showExportMenu = false">📷 Matrix PNG</button>
           <button class="menu-action" (click)="exportHtmlReport.emit(); showExportMenu = false">📊 HTML Report</button>
+          <button class="menu-action" (click)="exportPdf.emit(); showExportMenu = false">📄 PDF Report</button>
           <button class="menu-action" (click)="exportXlsx.emit(); showExportMenu = false">📗 Excel Workbook</button>
           <button class="menu-action" (click)="printPage(); showExportMenu = false">🖨 Print Matrix</button>
           <button class="menu-action" (click)="exportNavigatorLayer.emit(); showExportMenu = false">⬇ Navigator Layer</button>
@@ -242,13 +245,13 @@
   <!-- Clear + Theme -->
   <div class="bar-group end-group">
     @if (activeMitigations.length > 0 || techniqueSearchText || selectedPlatform || selectedDataSource || dimUncovered || activeThreatGroupCount > 0 || implStatusFilter) {
-      <button class="icon-btn reset-btn" (click)="clearAll()" title="Clear all filters">✕ Clear</button>
+      <button class="icon-btn reset-btn" (click)="clearAll()" title="Clear all filters" aria-label="Clear all filters">✕ Clear</button>
     }
-    <button class="icon-btn share-btn" (click)="copyShareLink.emit()" title="Copy shareable link to clipboard">🔗 Share</button>
+    <button class="icon-btn share-btn" (click)="copyShareLink.emit()" title="Copy shareable link to clipboard" aria-label="Copy shareable link">🔗 Share</button>
 
     <!-- Save View button + dialog -->
     <div class="views-dropdown">
-      <button class="icon-btn save-view-btn" (click)="showSaveDialog = !showSaveDialog; showViewsMenu = false" title="Save current view">
+      <button class="icon-btn save-view-btn" (click)="showSaveDialog = !showSaveDialog; showViewsMenu = false" title="Save current view" aria-label="Save current view">
         💾
       </button>
       @if (showSaveDialog) {
@@ -267,7 +270,7 @@
 
     <!-- Views dropdown -->
     <div class="views-dropdown">
-      <button class="icon-btn views-menu-btn" (click)="showViewsMenu = !showViewsMenu; showSaveDialog = false" title="Saved views">
+      <button class="icon-btn views-menu-btn" (click)="showViewsMenu = !showViewsMenu; showSaveDialog = false" title="Saved views" aria-label="Saved views">
         📂{{ views.length > 0 ? ' ' + views.length : '' }}
       </button>
       @if (showViewsMenu) {
@@ -289,7 +292,7 @@
       }
     </div>
 
-    <button class="icon-btn theme-btn" (click)="toggleDark.emit()" [title]="isLightMode ? 'Switch to dark mode' : 'Switch to light mode'">
+    <button class="icon-btn theme-btn" (click)="toggleDark.emit()" [title]="isLightMode ? 'Switch to dark mode' : 'Switch to light mode'" [attr.aria-label]="isLightMode ? 'Switch to dark mode' : 'Switch to light mode'">
       {{ isLightMode ? '🌙' : '☀️' }}
     </button>
   </div>

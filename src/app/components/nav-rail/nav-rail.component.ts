@@ -68,7 +68,7 @@ const NAV_ITEMS_BOTTOM: NavItem[] = [
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="nav-rail-inner">
+    <nav class="nav-rail-inner" role="navigation" aria-label="Main navigation">
       <div class="nav-list">
         @for (item of navItems; track $index) {
           @if (isDivider(item)) {
@@ -80,9 +80,11 @@ const NAV_ITEMS_BOTTOM: NavItem[] = [
               class="nav-item"
               [class.active]="activePanel === item.id"
               [title]="item.label"
+              [attr.aria-current]="activePanel === item.id ? 'page' : null"
+              [attr.aria-label]="item.label"
               (click)="panelToggle.emit(item.id)"
             >
-              <span class="nav-icon">{{ item.icon }}</span>
+              <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
               <span class="nav-label">{{ item.label }}</span>
             </button>
           }
@@ -98,9 +100,11 @@ const NAV_ITEMS_BOTTOM: NavItem[] = [
               class="nav-item"
               [class.active]="activePanel === item.id"
               [title]="item.label"
+              [attr.aria-current]="activePanel === item.id ? 'page' : null"
+              [attr.aria-label]="item.label"
               (click)="panelToggle.emit(item.id)"
             >
-              <span class="nav-icon">{{ item.icon }}</span>
+              <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
               <span class="nav-label">{{ item.label }}</span>
             </button>
           }
@@ -108,13 +112,14 @@ const NAV_ITEMS_BOTTOM: NavItem[] = [
         <button
           class="nav-item help-btn"
           title="Focus search"
+          aria-label="Focus search"
           (click)="focusSearch.emit()"
         >
-          <span class="nav-icon">⌨️</span>
+          <span class="nav-icon" aria-hidden="true">⌨️</span>
           <span class="nav-label">Search</span>
         </button>
       </div>
-    </div>
+    </nav>
   `,
   styles: [`
     :host {

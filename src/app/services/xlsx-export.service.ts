@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
-import * as XLSX from 'xlsx-js-style';
 import { Domain } from '../models/domain';
 import { ImplStatus, IMPL_STATUS_LABELS } from './implementation.service';
 import { CustomMitigation } from './custom-mitigation.service';
 import { CoverageSnapshot } from './timeline.service';
+
+type XLSX = typeof import('xlsx-js-style');
 
 const STATUS_RANK: Record<string, number> = {
   'implemented': 4,
@@ -15,25 +16,27 @@ const STATUS_RANK: Record<string, number> = {
 @Injectable({ providedIn: 'root' })
 export class XlsxExportService {
 
-  exportWorkbook(
+  async exportWorkbook(
     domain: Domain,
     implStatusMap: Map<string, ImplStatus>,
     customMitigations: CustomMitigation[],
     snapshots: CoverageSnapshot[],
-  ): void {
+  ): Promise<void> {
     try {
+      const XLSX = await import('xlsx-js-style');
+
       const wb = XLSX.utils.book_new();
 
-      XLSX.utils.book_append_sheet(wb, this.buildOverviewSheet(domain, implStatusMap, customMitigations), 'Overview');
-      XLSX.utils.book_append_sheet(wb, this.buildTechniquesSheet(domain, implStatusMap, false), 'Techniques');
-      XLSX.utils.book_append_sheet(wb, this.buildTechniquesSheet(domain, implStatusMap, true), 'Subtechniques');
-      XLSX.utils.book_append_sheet(wb, this.buildMitigationsSheet(domain, implStatusMap), 'Mitigations');
-      XLSX.utils.book_append_sheet(wb, this.buildCoverageByTacticSheet(domain), 'Coverage by Tactic');
-      XLSX.utils.book_append_sheet(wb, this.buildGapsSheet(domain), 'Gaps');
-      XLSX.utils.book_append_sheet(wb, this.buildCustomControlsSheet(customMitigations), 'Custom Controls');
+      XLSX.utils.book_append_sheet(wb, this.buildOverviewSheet(XLSX, domain, implStatusMap, customMitigations), 'Overview');
+      XLSX.utils.book_append_sheet(wb, this.buildTechniquesSheet(XLSX, domain, implStatusMap, false), 'Techniques');
+      XLSX.utils.book_append_sheet(wb, this.buildTechniquesSheet(XLSX, domain, implStatusMap, true), 'Subtechniques');
+      XLSX.utils.book_append_sheet(wb, this.buildMitigationsSheet(XLSX, domain, implStatusMap), 'Mitigations');
+      XLSX.utils.book_append_sheet(wb, this.buildCoverageByTacticSheet(XLSX, domain), 'Coverage by Tactic');
+      XLSX.utils.book_append_sheet(wb, this.buildGapsSheet(XLSX, domain), 'Gaps');
+      XLSX.utils.book_append_sheet(wb, this.buildCustomControlsSheet(XLSX, customMitigations), 'Custom Controls');
 
       if (snapshots.length > 0) {
-        XLSX.utils.book_append_sheet(wb, this.buildTimelineSheet(snapshots), 'Timeline');
+        XLSX.utils.book_append_sheet(wb, this.buildTimelineSheet(XLSX, snapshots), 'Timeline');
       }
 
       const filename = `attack-coverage-${new Date().toISOString().split('T')[0]}.xlsx`;
@@ -47,10 +50,11 @@ export class XlsxExportService {
   // ── Sheet 1: Overview ────────────────────────────────────────────────────────
 
   private buildOverviewSheet(
+    XLSX: XLSX,
     domain: Domain,
     implStatusMap: Map<string, ImplStatus>,
     customMitigations: CustomMitigation[],
-  ): XLSX.WorkSheet {
+  ): any {
     const parentTechniques = domain.techniques.filter(t => !t.isSubtechnique);
     const subtechniques = domain.techniques.filter(t => t.isSubtechnique);
     const coveredTechniques = parentTechniques.filter(t => t.mitigationCount > 0);
@@ -97,10 +101,11 @@ export class XlsxExportService {
   // ── Sheet 2 & 3: Techniques / Subtechniques ──────────────────────────────────
 
   private buildTechniquesSheet(
+    XLSX: XLSX,
     domain: Domain,
     implStatusMap: Map<string, ImplStatus>,
     subtechsOnly: boolean,
-  ): XLSX.WorkSheet {
+  ): any {
     const headers = [
       'ATT&CK ID', 'Name', 'Tactics', 'Is Subtechnique', 'Parent ID',
       'Platforms', 'Mitigation Count', 'Impl Status (best)', 'URL',
@@ -148,9 +153,10 @@ export class XlsxExportService {
   // ── Sheet 4: Mitigations ─────────────────────────────────────────────────────
 
   private buildMitigationsSheet(
+    XLSX: XLSX,
     domain: Domain,
     implStatusMap: Map<string, ImplStatus>,
-  ): XLSX.WorkSheet {
+  ): any {
     const headers = [
       'Mitigation ID', 'Name', 'Implementation Status', 'Status Label',
       'Techniques Covered (count)', 'Description',
@@ -177,7 +183,7 @@ export class XlsxExportService {
 
   // ── Sheet 5: Coverage by Tactic ──────────────────────────────────────────────
 
-  private buildCoverageByTacticSheet(domain: Domain): XLSX.WorkSheet {
+  private buildCoverageByTacticSheet(XLSX: XLSX, domain: Domain): any {
     const headers = ['Tactic', 'ATT&CK ID', 'Total Techniques', 'Covered', 'Coverage %', 'Avg Mitigations'];
 
     const dataRows = domain.tacticColumns.map(col => {
@@ -204,7 +210,7 @@ export class XlsxExportService {
 
   // ── Sheet 6: Gaps ────────────────────────────────────────────────────────────
 
-  private buildGapsSheet(domain: Domain): XLSX.WorkSheet {
+  private buildGapsSheet(XLSX: XLSX, domain: Domain): any {
     const headers = ['ATT&CK ID', 'Name', 'Tactics', 'Platforms', 'Threat Groups (count)', 'URL'];
 
     const gaps = domain.techniques.filter(t => !t.isSubtechnique && t.mitigationCount === 0);
@@ -228,7 +234,7 @@ export class XlsxExportService {
 
   // ── Sheet 7: Custom Controls ─────────────────────────────────────────────────
 
-  private buildCustomControlsSheet(customMitigations: CustomMitigation[]): XLSX.WorkSheet {
+  private buildCustomControlsSheet(XLSX: XLSX, customMitigations: CustomMitigation[]): any {
     const headers = ['ID', 'Name', 'Category', 'Impl Status', 'Techniques Linked', 'Description', 'Created', 'Updated'];
 
     const dataRows = customMitigations.map(cm => [
@@ -249,7 +255,7 @@ export class XlsxExportService {
 
   // ── Sheet 8: Timeline ────────────────────────────────────────────────────────
 
-  private buildTimelineSheet(snapshots: CoverageSnapshot[]): XLSX.WorkSheet {
+  private buildTimelineSheet(XLSX: XLSX, snapshots: CoverageSnapshot[]): any {
     const headers = [
       'Date', 'Label', 'Coverage %', 'Covered', 'Total',
       'Implemented', 'In Progress', 'Planned', 'Notes',
@@ -274,7 +280,7 @@ export class XlsxExportService {
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
-  private setColumnWidths(ws: XLSX.WorkSheet, widths: number[]): void {
+  private setColumnWidths(ws: any, widths: number[]): void {
     ws['!cols'] = widths.map(w => ({ wch: w }));
   }
 }

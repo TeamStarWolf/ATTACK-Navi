@@ -57,11 +57,35 @@
   margin-bottom: 8px;
   padding: 12px 14px;
 }
-.result-kind-icon { font-size: 14px; padding-top: 1px; flex-shrink: 0; }
+.result-kind-badge {
+  font-size: 11px;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
 .result-body { flex: 1; min-width: 0; }
 .result-top { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; flex-wrap: wrap; }
 .result-id { font-size: 10px; font-weight: 700; font-family: monospace; }
 .result-name { font-size: 12px; font-weight: 600; color: #cdd9e5; }
-.result-kind-label { font-size: 9px; color: #2a4060; margin-left: auto; }
+.result-kind-label {
+  font-size: 9px;
+  margin-left: auto;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid;
+  font-weight: 600;
+  white-space: nowrap;
+}
 .result-desc { font-size: 10px; color: #4a6080; margin: 0; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.us-result.active-result {
+  background: #0f2030;
+  outline: 1px solid #1a4a6a;
+}
+
 .us-footer { padding: 6px 16px; font-size: 10px; color: #1a3448; border-top: 1px solid #0f1f2e; flex-shrink: 0; }

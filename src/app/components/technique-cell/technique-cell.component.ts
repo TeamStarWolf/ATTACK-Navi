@@ -24,6 +24,10 @@ import { SettingsService } from '../../services/settings.service';
   standalone: true,
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    'role': 'gridcell',
+    '[attr.aria-label]': 'technique.attackId + \': \' + technique.name',
+  },
   template: `
     <div
       class="cell"

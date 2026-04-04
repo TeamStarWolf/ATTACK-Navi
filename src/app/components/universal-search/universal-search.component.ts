@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, HostListener, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
@@ -13,7 +13,7 @@ import { Domain } from '../../models/domain';
 import { Technique } from '../../models/technique';
 import { Mitigation } from '../../models/mitigation';
 
-type ResultKind = 'technique' | 'mitigation' | 'd3fend' | 'car' | 'atomic' | 'engage' | 'group' | 'software';
+type ResultKind = 'technique' | 'mitigation' | 'd3fend' | 'car' | 'atomic' | 'engage' | 'group' | 'software' | 'campaign';
 
 interface SearchResult {
   kind: ResultKind;
@@ -34,19 +34,23 @@ interface SearchResult {
   styleUrl: './universal-search.component.scss',
 })
 export class UniversalSearchComponent implements OnInit, OnDestroy {
+  @ViewChild('searchInput') searchInputRef!: ElementRef<HTMLInputElement>;
+
   open = false;
   query = '';
   results: SearchResult[] = [];
   activeKindFilter: ResultKind | 'all' = 'all';
+  activeResultIndex = -1;
   domain: Domain | null = null;
   private search$ = new Subject<string>();
   private subs = new Subscription();
 
-  readonly kindFilterOptions: (ResultKind | 'all')[] = ['all', 'technique', 'mitigation', 'group', 'software', 'd3fend', 'car', 'atomic', 'engage'];
+  readonly kindFilterOptions: (ResultKind | 'all')[] = ['all', 'technique', 'mitigation', 'group', 'campaign', 'software', 'd3fend', 'car', 'atomic', 'engage'];
   readonly kindLabels: Record<ResultKind | 'all', string> = {
     all: 'All', technique: '⚔ Techniques', mitigation: '🛡 Mitigations',
     d3fend: '🛡 D3FEND', car: '🔬 CAR', atomic: '⚛ Atomic',
     engage: '🎭 Engage', group: '👥 Groups', software: '🛠 Software',
+    campaign: '🎯 Campaigns',
   };
 
   constructor(
@@ -78,10 +82,57 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
     if (e.key === 'Escape' && this.open) this.close();
   }
 
-  onInput(): void { this.search$.next(this.query); }
+  onInput(): void {
+    this.activeResultIndex = -1;
+    this.search$.next(this.query);
+  }
+
+  /** Subsequence fuzzy match: checks if all chars of query appear in order in text */
+  fuzzyMatch(query: string, text: string): boolean {
+    const ql = query.toLowerCase();
+    const tl = text.toLowerCase();
+    let qi = 0;
+    for (let ti = 0; ti < tl.length && qi < ql.length; ti++) {
+      if (tl[ti] === ql[qi]) qi++;
+    }
+    return qi === ql.length;
+  }
+
+  onResultKeydown(event: KeyboardEvent): void {
+    const visible = this.filteredResults;
+    if (!visible.length) return;
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      this.activeResultIndex = Math.min(this.activeResultIndex + 1, visible.length - 1);
+      this.scrollActiveIntoView();
+      this.cdr.markForCheck();
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      this.activeResultIndex = Math.max(this.activeResultIndex - 1, -1);
+      if (this.activeResultIndex === -1 && this.searchInputRef) {
+        this.searchInputRef.nativeElement.focus();
+      } else {
+        this.scrollActiveIntoView();
+      }
+      this.cdr.markForCheck();
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      if (this.activeResultIndex >= 0 && this.activeResultIndex < visible.length) {
+        this.selectResult(visible[this.activeResultIndex]);
+      }
+    }
+  }
+
+  private scrollActiveIntoView(): void {
+    setTimeout(() => {
+      const el = document.querySelector('.us-result.active-result');
+      if (el) el.scrollIntoView({ block: 'nearest' });
+    });
+  }
 
   private runSearch(q: string): void {
-    if (!q || q.length < 2) { this.results = []; this.cdr.markForCheck(); return; }
+    if (!q || q.length < 2) { this.results = []; this.activeResultIndex = -1; this.cdr.markForCheck(); return; }
     const ql = q.toLowerCase();
     const results: SearchResult[] = [];
 
@@ -100,6 +151,13 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
       for (const g of this.domain.groups) {
         const score = this.score(ql, g.attackId, g.name, (g.aliases ?? []).join(' '));
         if (score > 0) results.push({ kind: 'group', id: g.attackId, name: g.name, description: (g.aliases ?? []).join(', '), score, data: g });
+      }
+      // Campaigns
+      if (this.domain.campaigns) {
+        for (const c of this.domain.campaigns) {
+          const score = this.score(ql, c.attackId, c.name, c.description ?? '');
+          if (score > 0) results.push({ kind: 'campaign', id: c.attackId, name: c.name, description: c.description?.substring(0, 100), score, data: c });
+        }
       }
       // Software
       for (const s of this.domain.software) {
@@ -140,16 +198,18 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
     }
 
     this.results = results.sort((a, b) => b.score - a.score).slice(0, 60);
+    this.activeResultIndex = -1;
     this.cdr.markForCheck();
   }
 
   private score(q: string, id: string, name: string, desc: string): number {
     const idL = id.toLowerCase(), nameL = name.toLowerCase(), descL = desc.toLowerCase();
     if (idL === q || nameL === q) return 100;
-    if (idL.startsWith(q)) return 80;
-    if (nameL.startsWith(q)) return 70;
-    if (nameL.includes(q)) return 50;
-    if (descL.includes(q)) return 20;
+    if (idL.startsWith(q) || nameL.startsWith(q)) return 80;
+    if (nameL.includes(q)) return 60;
+    if (descL.includes(q)) return 40;
+    // Fuzzy subsequence match on name or id
+    if (this.fuzzyMatch(q, nameL) || this.fuzzyMatch(q, idL)) return 30;
     return 0;
   }
 
@@ -173,18 +233,24 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
     } else if (r.kind === 'group' && r.data) {
       this.filterService.toggleThreatGroup(r.data.id);
       this.filterService.setActivePanel('threats');
+    } else if (r.kind === 'campaign' && r.data) {
+      this.filterService.toggleCampaign(r.data.id);
+      this.close();
+    } else if (r.kind === 'software' && r.data) {
+      this.filterService.setActivePanel('software');
+      this.close();
     } else if (r.url) {
       window.open(r.url, '_blank', 'noopener');
     }
   }
 
   kindIcon(kind: ResultKind): string {
-    const icons: Record<ResultKind, string> = { technique: '⚔', mitigation: '🛡', d3fend: '🛡', car: '🔬', atomic: '⚛', engage: '🎭', group: '👥', software: '🛠' };
+    const icons: Record<ResultKind, string> = { technique: '⚔', mitigation: '🛡', d3fend: '🛡', car: '🔬', atomic: '⚛', engage: '🎭', group: '👥', software: '🛠', campaign: '🎯' };
     return icons[kind];
   }
 
   kindColor(kind: ResultKind): string {
-    const colors: Record<ResultKind, string> = { technique: '#58a6ff', mitigation: '#4caf50', d3fend: '#4caf50', car: '#58a6ff', atomic: '#e08030', engage: '#f0a040', group: '#9c70e0', software: '#f06060' };
+    const colors: Record<ResultKind, string> = { technique: '#58a6ff', mitigation: '#4caf50', d3fend: '#4caf50', car: '#58a6ff', atomic: '#e08030', engage: '#f0a040', group: '#9c70e0', software: '#f06060', campaign: '#e06090' };
     return colors[kind];
   }
 
