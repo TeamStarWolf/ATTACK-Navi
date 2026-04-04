@@ -815,3 +815,104 @@
     width: 100%;
   }
 }
+
+/* ---- Mobile: compact toolbar ---- */
+@media (max-width: 768px) {
+  .toolbar.top-bar {
+    height: auto;
+    min-height: 44px;
+    padding: 4px 8px;
+    flex-wrap: wrap;
+  }
+
+  .brand {
+    gap: 4px;
+    padding: 0 8px 0 4px;
+
+    .attack-version {
+      display: none;
+    }
+  }
+
+  .search-group {
+    flex-basis: 100%;
+    order: 10;
+  }
+
+  .search-wrap,
+  .technique-search {
+    width: 100%;
+  }
+
+  /* Hide data-source and status filter selects — too wide for mobile */
+  .filter-select {
+    display: none;
+  }
+
+  .bar-divider {
+    display: none;
+  }
+
+  /* Compact domain group: hide label, keep icons */
+  .group-label {
+    display: none;
+  }
+
+  .icon-btn {
+    height: 30px;
+    padding: 0 6px;
+    font-size: 11px;
+  }
+
+  /* Hide save/load/theme from end group, keep export + share + clear */
+  .save-view-btn,
+  .views-menu-btn,
+  .theme-btn {
+    display: none;
+  }
+
+  /* Platform row compact */
+  .platform-filter-row {
+    padding: 6px 8px;
+    min-height: 36px;
+  }
+}
+
+/* ---- Extra-small: further reduction ---- */
+@media (max-width: 480px) {
+  /* Hide heatmap button text label, show only icon */
+  .heatmap-btn {
+    font-size: 14px;
+    padding: 0 6px;
+    width: 30px;
+    overflow: hidden;
+
+    /* Collapse text after the emoji by limiting width */
+  }
+
+  .export-hub-btn {
+    font-size: 14px;
+    padding: 0 6px;
+    width: 30px;
+    overflow: hidden;
+  }
+
+  .brand-name {
+    display: none;
+  }
+
+  .search-field {
+    height: 32px;
+    padding: 0 6px;
+  }
+
+  .search-input {
+    font-size: 11px;
+  }
+
+  .domain-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
+}

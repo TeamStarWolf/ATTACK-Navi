@@ -2752,3 +2752,19 @@
     color: #c9d8e8;
   }
 }
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100vw;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .sidebar-body {
+    padding: 12px;
+  }
+
+  .sidebar-header {
+    padding: 8px 12px;
+  }
+}
