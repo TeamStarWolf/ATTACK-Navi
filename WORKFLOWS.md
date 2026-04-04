@@ -1,6 +1,6 @@
 # Analyst Workflow Guide
 
-This guide describes eight operational workflows supported by the MITRE ATT&CK Mitigation Navigator. Each workflow follows a structured sequence of steps using the panels, heatmaps, and sidebar sections built into the application.
+This guide describes eight operational workflows supported by the MITRE ATT&CK Navi. Each workflow follows a structured sequence of steps using the panels, heatmaps, and sidebar sections built into the application.
 
 The Navigator is organized around a left-hand navigation rail with panels grouped into four sections: **Threats**, **Analysis**, **Coverage**, and **Tools**. The ATT&CK matrix is always visible behind any open panel, and the technique sidebar opens whenever a matrix cell is selected.
 

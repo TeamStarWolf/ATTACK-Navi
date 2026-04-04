@@ -1,6 +1,6 @@
 # Contributing Guide
 
-This document describes how to set up the development environment, follow code conventions, and extend the MITRE ATT&CK Mitigation Navigator with new features.
+This document describes how to set up the development environment, follow code conventions, and extend the MITRE ATT&CK Navi with new features.
 
 ---
 
