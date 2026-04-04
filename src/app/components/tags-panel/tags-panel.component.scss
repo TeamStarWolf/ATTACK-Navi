@@ -2,7 +2,7 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgb(0 0 0 / 60%);
   z-index: 1000;
   display: flex;
   align-items: stretch;
@@ -20,7 +20,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.6);
+  box-shadow: -8px 0 32px rgb(0 0 0 / 60%);
 }
 
 /* ── Header ── */
@@ -51,13 +51,13 @@
 
 .header-subtitle {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgb(255 255 255 / 35%);
 }
 
 .close-btn {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgb(255 255 255 / 30%);
   font-size: 14px;
   cursor: pointer;
   padding: 4px 8px;
@@ -65,8 +65,8 @@
   flex-shrink: 0;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.06);
-    color: rgba(255, 255, 255, 0.7);
+    background: rgb(255 255 255 / 6%);
+    color: rgb(255 255 255 / 70%);
   }
 }
 
@@ -96,11 +96,11 @@
 
 .stat-label {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgb(255 255 255 / 35%);
 }
 
 .stat-sep {
-  color: rgba(255, 255, 255, 0.15);
+  color: rgb(255 255 255 / 15%);
 }
 
 /* ── Toolbar ── */
@@ -118,7 +118,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgb(255 255 255 / 4%);
   border: 1px solid #1a3448;
   border-radius: 6px;
   padding: 0 8px;
@@ -135,24 +135,24 @@
   flex: 1;
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgb(255 255 255 / 80%);
   font-size: 12px;
   outline: none;
 
   &::placeholder {
-    color: rgba(255, 255, 255, 0.25);
+    color: rgb(255 255 255 / 25%);
   }
 }
 
 .clear-search {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgb(255 255 255 / 30%);
   cursor: pointer;
   padding: 2px;
   font-size: 11px;
 
-  &:hover { color: rgba(255, 255, 255, 0.7); }
+  &:hover { color: rgb(255 255 255 / 70%); }
 }
 
 .export-btn {
@@ -160,8 +160,8 @@
   padding: 0 10px;
   height: 30px;
   border-radius: 6px;
-  background: rgba(0, 200, 83, 0.07);
-  border: 1px solid rgba(0, 200, 83, 0.18);
+  background: rgb(0 200 83 / 7%);
+  border: 1px solid rgb(0 200 83 / 18%);
   color: #4a9e68;
   cursor: pointer;
   white-space: nowrap;
@@ -169,7 +169,7 @@
   font-weight: 600;
 
   &:hover {
-    background: rgba(0, 200, 83, 0.14);
+    background: rgb(0 200 83 / 14%);
     color: #69f0ae;
   }
 }
@@ -196,7 +196,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.25);
+  color: rgb(255 255 255 / 25%);
   padding: 10px 14px 6px;
   flex-shrink: 0;
 }
@@ -209,11 +209,11 @@
   justify-content: center;
   padding: 24px;
   text-align: center;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgb(255 255 255 / 35%);
 
   .empty-icon { font-size: 32px; margin-bottom: 10px; }
   p { font-size: 12px; margin: 0 0 6px; }
-  .empty-hint { font-size: 11px; color: rgba(255, 255, 255, 0.2); }
+  .empty-hint { font-size: 11px; color: rgb(255 255 255 / 20%); }
 }
 
 .tag-cloud {
@@ -226,7 +226,7 @@
   gap: 6px;
 
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+  scrollbar-color: rgb(255 255 255 / 10%) transparent;
 }
 
 .tag-cloud-item {
@@ -249,7 +249,7 @@
 
   &.selected {
     filter: brightness(1.5);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 2px 8px rgb(0 0 0 / 40%);
     transform: translateY(-1px);
   }
 }
@@ -258,7 +258,7 @@
   font-size: 10px;
   font-weight: 700;
   opacity: 0.8;
-  background: rgba(0, 0, 0, 0.25);
+  background: rgb(0 0 0 / 25%);
   border-radius: 10px;
   padding: 0 5px;
   line-height: 16px;
@@ -304,10 +304,10 @@
 
 .rename-input {
   flex: 1;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgb(255 255 255 / 6%);
   border: 1px solid #58a6ff;
   border-radius: 6px;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgb(255 255 255 / 90%);
   font-size: 14px;
   font-weight: 600;
   padding: 4px 10px;
@@ -332,51 +332,51 @@
 }
 
 .rename-btn {
-  background: rgba(88, 166, 255, 0.1);
+  background: rgb(88 166 255 / 10%);
   color: #58a6ff;
 
-  &:hover { background: rgba(88, 166, 255, 0.2); }
+  &:hover { background: rgb(88 166 255 / 20%); }
 }
 
 .delete-btn {
-  background: rgba(248, 113, 113, 0.1);
+  background: rgb(248 113 113 / 10%);
   color: #f87171;
 
-  &:hover { background: rgba(248, 113, 113, 0.2); }
+  &:hover { background: rgb(248 113 113 / 20%); }
 }
 
 .confirm-btn {
-  background: rgba(0, 200, 83, 0.12);
+  background: rgb(0 200 83 / 12%);
   color: #4ade80;
 
-  &:hover { background: rgba(0, 200, 83, 0.22); }
+  &:hover { background: rgb(0 200 83 / 22%); }
 }
 
 .cancel-btn {
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.5);
+  background: rgb(255 255 255 / 6%);
+  color: rgb(255 255 255 / 50%);
 
-  &:hover { background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.8); }
+  &:hover { background: rgb(255 255 255 / 10%); color: rgb(255 255 255 / 80%); }
 }
 
 .filter-btn {
-  background: rgba(139, 92, 246, 0.1);
+  background: rgb(139 92 246 / 10%);
   color: #a78bfa;
 
-  &:hover { background: rgba(139, 92, 246, 0.2); }
+  &:hover { background: rgb(139 92 246 / 20%); }
 }
 
 .close-detail-btn {
   background: none;
-  color: rgba(255, 255, 255, 0.25);
+  color: rgb(255 255 255 / 25%);
   margin-left: auto;
 
-  &:hover { background: rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.6); }
+  &:hover { background: rgb(255 255 255 / 6%); color: rgb(255 255 255 / 60%); }
 }
 
 .techniques-label {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgb(255 255 255 / 35%);
   padding: 8px 16px 4px;
   flex-shrink: 0;
 }
@@ -387,7 +387,7 @@
   padding: 4px 0;
 
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+  scrollbar-color: rgb(255 255 255 / 10%) transparent;
 }
 
 .technique-row {
@@ -397,7 +397,7 @@
   gap: 8px;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgb(255 255 255 / 3%);
   }
 }
 
@@ -413,7 +413,7 @@
 .tech-name {
   flex: 1;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.75);
+  color: rgb(255 255 255 / 75%);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -423,7 +423,7 @@
 .remove-tag-btn {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.2);
+  color: rgb(255 255 255 / 20%);
   cursor: pointer;
   padding: 2px 6px;
   font-size: 11px;
@@ -438,7 +438,7 @@
 
   &:hover {
     color: #f87171;
-    background: rgba(248, 113, 113, 0.1);
+    background: rgb(248 113 113 / 10%);
   }
 }
 
@@ -448,7 +448,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.2);
+  color: rgb(255 255 255 / 20%);
   gap: 8px;
 
   .detail-empty-icon { font-size: 24px; }

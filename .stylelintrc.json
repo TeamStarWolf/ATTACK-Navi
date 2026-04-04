@@ -1,0 +1,25 @@
+{
+  "extends": "stylelint-config-standard-scss",
+  "ignoreUnknownRules": true,
+  "rules": {
+    "selector-type-no-unknown": [true, {
+      "ignoreTypes": ["/^app-/"]
+    }],
+    "property-no-unknown": [true, {
+      "ignoreProperties": ["accent-color"]
+    }],
+    "no-descending-specificity": null,
+    "no-duplicate-selectors": null,
+    "selector-class-pattern": null,
+    "keyframes-name-pattern": null,
+    "scss/dollar-variable-pattern": null,
+    "scss/at-extend-no-missing-placeholder": null,
+    "scss/operator-no-unspaced": null,
+    "declaration-empty-line-before": null,
+    "custom-property-empty-line-before": null,
+    "declaration-property-value-keyword-no-deprecated": null,
+    "declaration-block-single-line-max-declarations": null,
+    "block-no-empty": null,
+    "at-rule-empty-line-before": null
+  }
+}

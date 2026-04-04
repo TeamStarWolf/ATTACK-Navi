@@ -1,7 +1,7 @@
 .ctp-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgb(0 0 0 / 70%);
   z-index: 600;
   display: flex;
   align-items: stretch;
@@ -62,7 +62,7 @@
 }
 
 .stat-pill.peak { color: #ffa657; border-color: #ffa657; }
-.stat-pill.active-badge { color: #58a6ff; border-color: #58a6ff; background: rgba(88,166,255,0.08); }
+.stat-pill.active-badge { color: #58a6ff; border-color: #58a6ff; background: rgb(88 166 255 / 8%); }
 
 .ctp-close {
   background: none;
@@ -117,17 +117,17 @@
 }
 
 .btn-primary {
-  background: rgba(88,166,255,0.1);
+  background: rgb(88 166 255 / 10%);
   border-color: #58a6ff;
   color: #58a6ff;
-  &:hover { background: rgba(88,166,255,0.2); }
+  &:hover { background: rgb(88 166 255 / 20%); }
 }
 
 .btn-danger {
-  background: rgba(248,81,73,0.1);
+  background: rgb(248 81 73 / 10%);
   border-color: #f85149;
   color: #f85149;
-  &:hover { background: rgba(248,81,73,0.2); }
+  &:hover { background: rgb(248 81 73 / 20%); }
 }
 
 /* Group filters */
@@ -166,18 +166,18 @@
   font-size: 0.72rem;
   cursor: pointer;
   transition: all 0.15s;
+
   &:not(.selected) {
     opacity: 0.45;
     &:hover { opacity: 0.7; }
   }
-  &.selected { opacity: 1; background: rgba(88,166,255,0.05); }
+  &.selected { opacity: 1; background: rgb(88 166 255 / 5%); }
 }
 
 /* Body */
 .ctp-body {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden auto;
   padding-bottom: 20px;
 }
 
@@ -227,7 +227,7 @@
   position: absolute;
   width: 2px;
   height: 100%;
-  background: rgba(88, 166, 255, 0.4);
+  background: rgb(88 166 255 / 40%);
   top: 0;
   transform: translateX(-50%);
 }
@@ -302,7 +302,7 @@
 
   &.bar-selected {
     height: 22px;
-    box-shadow: 0 0 0 2px rgba(255,255,255,0.2);
+    box-shadow: 0 0 0 2px rgb(255 255 255 / 20%);
   }
 }
 
@@ -311,7 +311,7 @@
   padding: 0 5px;
   color: #e6edf3;
   white-space: nowrap;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 80%);
   overflow: hidden;
 }
 
@@ -345,7 +345,7 @@
   cursor: pointer;
   transition: all 0.15s;
   &:hover { filter: brightness(1.3); }
-  &.chip-selected { background: rgba(88,166,255,0.08); font-weight: 600; }
+  &.chip-selected { background: rgb(88 166 255 / 8%); font-weight: 600; }
 }
 
 /* Empty state */
@@ -367,7 +367,7 @@
   z-index: 100;
   min-width: 200px;
   max-width: 280px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 50%);
 }
 
 .tt-name {

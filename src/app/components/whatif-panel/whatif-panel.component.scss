@@ -2,7 +2,7 @@
 .panel-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgb(0 0 0 / 50%);
   z-index: 999;
 }
 
@@ -15,7 +15,7 @@
   height: 100vh;
   background: #0d1a26;
   border: 1px solid #1a3448;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 8px 32px rgb(0 0 0 / 60%);
   z-index: 1000;
   display: flex;
   flex-direction: column;
@@ -164,9 +164,9 @@
 
 .clear-btn {
   padding: 5px 12px;
-  background: rgba(239, 68, 68, 0.12);
+  background: rgb(239 68 68 / 12%);
   color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  border: 1px solid rgb(239 68 68 / 25%);
   border-radius: 5px;
   font-size: 12px;
   cursor: pointer;
@@ -195,8 +195,8 @@
   &:hover { background: #0a1828; }
 
   &.checked {
-    background: rgba(74, 222, 128, 0.05);
-    border-bottom-color: rgba(74, 222, 128, 0.12);
+    background: rgb(74 222 128 / 5%);
+    border-bottom-color: rgb(74 222 128 / 12%);
   }
 }
 
@@ -218,7 +218,7 @@
 
   &.checked {
     border-color: #4ade80;
-    background: rgba(74, 222, 128, 0.15);
+    background: rgb(74 222 128 / 15%);
   }
 }
 
@@ -238,7 +238,7 @@
   font-size: 11px;
   font-weight: 600;
   color: #58a6ff;
-  background: rgba(88, 166, 255, 0.1);
+  background: rgb(88 166 255 / 10%);
   border-radius: 4px;
   padding: 1px 5px;
   font-family: monospace;
@@ -263,24 +263,27 @@
   font-weight: 500;
 
   &[data-status="implemented"] {
-    background: rgba(0, 200, 83, 0.15);
+    background: rgb(0 200 83 / 15%);
     color: #00c853;
-    border: 1px solid rgba(0, 200, 83, 0.3);
+    border: 1px solid rgb(0 200 83 / 30%);
   }
+
   &[data-status="in-progress"] {
-    background: rgba(26, 159, 255, 0.15);
+    background: rgb(26 159 255 / 15%);
     color: #58a6ff;
-    border: 1px solid rgba(26, 159, 255, 0.3);
+    border: 1px solid rgb(26 159 255 / 30%);
   }
+
   &[data-status="planned"] {
-    background: rgba(255, 152, 0, 0.15);
+    background: rgb(255 152 0 / 15%);
     color: #ffb74d;
-    border: 1px solid rgba(255, 152, 0, 0.3);
+    border: 1px solid rgb(255 152 0 / 30%);
   }
+
   &[data-status="not-started"] {
-    background: rgba(239, 68, 68, 0.12);
+    background: rgb(239 68 68 / 12%);
     color: #f87171;
-    border: 1px solid rgba(239, 68, 68, 0.25);
+    border: 1px solid rgb(239 68 68 / 25%);
   }
 }
 
@@ -305,7 +308,7 @@
   font-size: 10px;
   font-weight: 600;
   color: #ffb74d;
-  background: rgba(255, 152, 0, 0.1);
+  background: rgb(255 152 0 / 10%);
   border-radius: 8px;
   padding: 1px 5px;
   white-space: nowrap;

@@ -1,7 +1,7 @@
 .panel-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgb(0 0 0 / 50%);
   z-index: 999;
 }
 
@@ -13,7 +13,7 @@
   width: 480px;
   background: #0d1a26;
   border-left: 1px solid #1a3448;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 8px 32px rgb(0 0 0 / 60%);
   z-index: 1000;
   display: flex;
   flex-direction: column;
@@ -89,9 +89,9 @@
   border-radius: 8px;
   white-space: nowrap;
 
-  &.implemented { background: rgba(0, 200, 83, 0.1); color: #4ade80; border: 1px solid rgba(0, 200, 83, 0.2); }
-  &.planned { background: rgba(88, 166, 255, 0.1); color: #58a6ff; border: 1px solid rgba(88, 166, 255, 0.2); }
-  &.coverage { background: rgba(255, 167, 38, 0.1); color: #ffa726; border: 1px solid rgba(255, 167, 38, 0.2); }
+  &.implemented { background: rgb(0 200 83 / 10%); color: #4ade80; border: 1px solid rgb(0 200 83 / 20%); }
+  &.planned { background: rgb(88 166 255 / 10%); color: #58a6ff; border: 1px solid rgb(88 166 255 / 20%); }
+  &.coverage { background: rgb(255 167 38 / 10%); color: #ffa726; border: 1px solid rgb(255 167 38 / 20%); }
 }
 
 .tab-bar {
@@ -188,17 +188,17 @@
   transition: opacity 0.15s;
   &:hover { opacity: 0.85; }
 
-  &.impl { background: rgba(0, 200, 83, 0.15); color: #4ade80; }
-  &.plan { background: rgba(88, 166, 255, 0.15); color: #58a6ff; }
+  &.impl { background: rgb(0 200 83 / 15%); color: #4ade80; }
+  &.plan { background: rgb(88 166 255 / 15%); color: #58a6ff; }
 }
 
 .import-status {
   font-size: 12px;
   color: #4ade80;
   padding: 6px 10px;
-  background: rgba(0, 200, 83, 0.1);
+  background: rgb(0 200 83 / 10%);
   border-radius: 6px;
-  border: 1px solid rgba(0, 200, 83, 0.2);
+  border: 1px solid rgb(0 200 83 / 20%);
 }
 
 .section-divider {
@@ -265,10 +265,10 @@
   transition: background 0.15s;
 
   &.add-btn {
-    background: rgba(26, 159, 255, 0.15);
+    background: rgb(26 159 255 / 15%);
     color: #58a6ff;
-    border: 1px solid rgba(26, 159, 255, 0.3);
-    &:hover { background: rgba(26, 159, 255, 0.25); }
+    border: 1px solid rgb(26 159 255 / 30%);
+    &:hover { background: rgb(26 159 255 / 25%); }
   }
 
   &.export-btn {
@@ -362,7 +362,7 @@
 
   &.active {
     border-color: #1a9fff;
-    background: rgba(26, 159, 255, 0.15);
+    background: rgb(26 159 255 / 15%);
     color: #58a6ff;
   }
 }
@@ -384,7 +384,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  background: rgba(26, 159, 255, 0.15);
+  background: rgb(26 159 255 / 15%);
   color: #58a6ff;
   border-radius: 10px;
   padding: 2px 8px;
@@ -434,7 +434,7 @@
   max-height: 200px;
   overflow-y: auto;
   z-index: 300;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 50%);
 
   li {
     display: flex;
@@ -477,10 +477,10 @@
   cursor: pointer;
 
   &.save {
-    background: rgba(26, 159, 255, 0.15);
+    background: rgb(26 159 255 / 15%);
     color: #58a6ff;
-    border: 1px solid rgba(26, 159, 255, 0.3);
-    &:hover { background: rgba(26, 159, 255, 0.25); }
+    border: 1px solid rgb(26 159 255 / 30%);
+    &:hover { background: rgb(26 159 255 / 25%); }
     &:disabled { opacity: 0.4; cursor: not-allowed; }
   }
 
@@ -535,7 +535,7 @@
   border-radius: 50%;
   flex-shrink: 0;
   margin-top: 5px;
-  &.impl-dot { background: #4ade80; box-shadow: 0 0 6px rgba(74, 222, 128, 0.4); }
+  &.impl-dot { background: #4ade80; box-shadow: 0 0 6px rgb(74 222 128 / 40%); }
   &.plan-dot { background: #58a6ff; }
 }
 
@@ -584,7 +584,7 @@
   color: #8aaac8;
   transition: opacity 0.1s, background 0.1s;
   &:hover { opacity: 1; background: #1a3448; }
-  &.delete-btn:hover { background: rgba(248, 113, 113, 0.12); color: #f87171; }
+  &.delete-btn:hover { background: rgb(248 113 113 / 12%); color: #f87171; }
 }
 
 .chevron {
@@ -622,8 +622,8 @@
 }
 
 .mit-ref-chip {
-  background: rgba(26, 159, 255, 0.1);
-  border: 1px solid rgba(26, 159, 255, 0.2);
+  background: rgb(26 159 255 / 10%);
+  border: 1px solid rgb(26 159 255 / 20%);
   color: #58a6ff;
   border-radius: 4px;
   padding: 2px 7px;
@@ -681,7 +681,7 @@
   font-size: 10px;
   font-weight: 700;
   color: #58a6ff;
-  background: rgba(26, 159, 255, 0.1);
+  background: rgb(26 159 255 / 10%);
   border-radius: 3px;
   padding: 2px 5px;
   white-space: nowrap;
@@ -703,7 +703,7 @@
 .ctrl-badge {
   font-size: 10px;
   font-weight: 700;
-  background: rgba(74, 222, 128, 0.12);
+  background: rgb(74 222 128 / 12%);
   color: #4ade80;
   border-radius: 8px;
   padding: 2px 7px;

@@ -2,9 +2,9 @@
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(circle at top left, rgba(255, 180, 84, 0.12), transparent 24%),
-    radial-gradient(circle at top right, rgba(111, 211, 255, 0.1), transparent 26%),
-    rgba(7, 14, 22, 0.96);
+    radial-gradient(circle at top left, rgb(255 180 84 / 12%), transparent 24%),
+    radial-gradient(circle at top right, rgb(111 211 255 / 10%), transparent 26%),
+    rgb(7 14 22 / 96%);
   z-index: 1000;
   display: flex;
   flex-direction: column;
@@ -17,8 +17,8 @@
 .dashboard-header {
   height: 68px;
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.03), transparent),
-    rgba(8, 18, 28, 0.9);
+    linear-gradient(180deg, rgb(255 255 255 / 3%), transparent),
+    rgb(8 18 28 / 90%);
   border-bottom: 1px solid var(--line-soft);
   padding: 0 28px;
   display: flex;
@@ -62,7 +62,7 @@
   padding: 5px 12px;
   border-radius: 999px;
   border: 1px solid;
-  background: rgba(255,255,255,0.03);
+  background: rgb(255 255 255 / 3%);
   white-space: nowrap;
 }
 
@@ -72,8 +72,8 @@
   gap: 6px;
   padding: 8px 14px;
   border-radius: 12px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: rgb(255 255 255 / 4%);
+  border: 1px solid rgb(255 255 255 / 6%);
   color: var(--text-muted);
   font-size: 12px;
   font-weight: 600;
@@ -83,14 +83,14 @@
   .cfg-icon { font-size: 14px; }
 
   &:hover {
-    background: rgba(255,255,255,0.08);
+    background: rgb(255 255 255 / 8%);
     color: var(--text-main);
-    border-color: rgba(255,255,255,0.12);
+    border-color: rgb(255 255 255 / 12%);
   }
 
   &.active {
-    background: rgba(88, 166, 255, 0.12);
-    border-color: rgba(88, 166, 255, 0.3);
+    background: rgb(88 166 255 / 12%);
+    border-color: rgb(88 166 255 / 30%);
     color: #58a6ff;
   }
 }
@@ -99,8 +99,8 @@
   width: 34px;
   height: 34px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgb(255 255 255 / 6%);
+  border: 1px solid rgb(255 255 255 / 5%);
   color: var(--text-faint);
   font-size: 16px;
   cursor: pointer;
@@ -111,7 +111,7 @@
   transition: background 0.15s, color 0.15s, transform 0.15s;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgb(255 255 255 / 10%);
     color: var(--text-main);
     transform: translateY(-1px);
   }
@@ -120,8 +120,8 @@
 // ─── Config Panel ────────────────────────────────────────────────────────────
 
 .config-panel {
-  background: rgba(8, 18, 28, 0.95);
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  background: rgb(8 18 28 / 95%);
+  border-bottom: 1px solid rgb(255 255 255 / 6%);
   padding: 16px 28px;
   flex-shrink: 0;
   max-height: 320px;
@@ -148,16 +148,16 @@
 .config-reset-btn {
   font-size: 11px;
   color: #58a6ff;
-  background: rgba(88, 166, 255, 0.08);
-  border: 1px solid rgba(88, 166, 255, 0.2);
+  background: rgb(88 166 255 / 8%);
+  border: 1px solid rgb(88 166 255 / 20%);
   border-radius: 8px;
   padding: 5px 12px;
   cursor: pointer;
   transition: all 0.15s;
 
   &:hover {
-    background: rgba(88, 166, 255, 0.16);
-    border-color: rgba(88, 166, 255, 0.35);
+    background: rgb(88 166 255 / 16%);
+    border-color: rgb(88 166 255 / 35%);
   }
 }
 
@@ -173,12 +173,12 @@
   gap: 10px;
   padding: 8px 12px;
   border-radius: 10px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.04);
+  background: rgb(255 255 255 / 3%);
+  border: 1px solid rgb(255 255 255 / 4%);
   transition: all 0.15s;
 
   &:hover {
-    background: rgba(255,255,255,0.05);
+    background: rgb(255 255 255 / 5%);
   }
 
   &.config-item-hidden {
@@ -208,8 +208,8 @@
   width: 24px;
   height: 24px;
   border-radius: 6px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: rgb(255 255 255 / 4%);
+  border: 1px solid rgb(255 255 255 / 6%);
   color: var(--text-faint);
   font-size: 10px;
   cursor: pointer;
@@ -219,7 +219,7 @@
   transition: all 0.15s;
 
   &:hover {
-    background: rgba(255,255,255,0.1);
+    background: rgb(255 255 255 / 10%);
     color: var(--text-main);
   }
 }
@@ -228,8 +228,8 @@
   min-width: 38px;
   height: 24px;
   border-radius: 6px;
-  background: rgba(248, 113, 113, 0.15);
-  border: 1px solid rgba(248, 113, 113, 0.25);
+  background: rgb(248 113 113 / 15%);
+  border: 1px solid rgb(248 113 113 / 25%);
   color: #f87171;
   font-size: 10px;
   font-weight: 700;
@@ -237,8 +237,8 @@
   transition: all 0.15s;
 
   &.toggled-on {
-    background: rgba(74, 222, 128, 0.15);
-    border-color: rgba(74, 222, 128, 0.3);
+    background: rgb(74 222 128 / 15%);
+    border-color: rgb(74 222 128 / 30%);
     color: #4ade80;
   }
 
@@ -262,7 +262,7 @@
   .loader-spinner {
     width: 40px;
     height: 40px;
-    border: 3px solid rgba(255,255,255,0.08);
+    border: 3px solid rgb(255 255 255 / 8%);
     border-top-color: var(--accent);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
@@ -283,8 +283,7 @@
 
 .dashboard-scroll {
   flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden auto;
   scrollbar-width: thin;
   scrollbar-color: #29475d transparent;
 }
@@ -297,7 +296,7 @@
   max-width: 1440px;
   margin: 0 auto;
 
-  @media (max-width: 900px) {
+  @media (width <= 900px) {
     grid-template-columns: 1fr;
     padding: 18px;
   }
@@ -306,8 +305,8 @@
 // ─── Widget Card ─────────────────────────────────────────────────────────────
 
 .widget-card {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: rgb(255 255 255 / 3%);
+  border: 1px solid rgb(255 255 255 / 6%);
   border-radius: 16px;
   display: flex;
   flex-direction: column;
@@ -315,15 +314,15 @@
   transition: border-color 0.2s, box-shadow 0.2s;
 
   &:hover {
-    border-color: rgba(255,255,255,0.1);
-    box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+    border-color: rgb(255 255 255 / 10%);
+    box-shadow: 0 4px 24px rgb(0 0 0 / 20%);
   }
 }
 
 .widget-span-2 {
   grid-column: span 2;
 
-  @media (max-width: 900px) {
+  @media (width <= 900px) {
     grid-column: span 1;
   }
 }
@@ -371,8 +370,8 @@
 
   &:hover {
     opacity: 1 !important;
-    background: rgba(248, 113, 113, 0.1);
-    border-color: rgba(248, 113, 113, 0.2);
+    background: rgb(248 113 113 / 10%);
+    border-color: rgb(248 113 113 / 20%);
     color: #f87171;
   }
 }
@@ -396,7 +395,7 @@
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
 
-  @media (max-width: 600px) {
+  @media (width <= 600px) {
     grid-template-columns: repeat(2, 1fr);
   }
 }
@@ -404,9 +403,9 @@
 .mini-stat {
   text-align: center;
   padding: 12px 6px;
-  background: rgba(255,255,255,0.02);
+  background: rgb(255 255 255 / 2%);
   border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.04);
+  border: 1px solid rgb(255 255 255 / 4%);
 }
 
 .mini-stat-value {
@@ -452,7 +451,7 @@
 .tactic-bar-bg {
   flex: 1;
   height: 10px;
-  background: rgba(255,255,255,0.06);
+  background: rgb(255 255 255 / 6%);
   border-radius: 999px;
   overflow: hidden;
 }
@@ -516,8 +515,8 @@
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  background: rgba(255, 143, 122, 0.05);
-  border: 1px solid rgba(255, 143, 122, 0.14);
+  background: rgb(255 143 122 / 5%);
+  border: 1px solid rgb(255 143 122 / 14%);
   border-radius: 12px;
 }
 
@@ -559,7 +558,7 @@
   font-weight: 700;
   padding: 2px 7px;
   border-radius: 999px;
-  background: rgba(255, 143, 122, 0.15);
+  background: rgb(255 143 122 / 15%);
   color: var(--danger);
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -608,7 +607,7 @@
   gap: 8px;
   padding: 6px 10px;
   border-radius: 8px;
-  background: rgba(255,255,255,0.02);
+  background: rgb(255 255 255 / 2%);
 }
 
 .health-dot {
@@ -655,9 +654,9 @@
 .intel-card {
   text-align: center;
   padding: 14px 6px;
-  background: rgba(255,255,255,0.02);
+  background: rgb(255 255 255 / 2%);
   border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.04);
+  border: 1px solid rgb(255 255 255 / 4%);
 }
 
 .intel-value {
@@ -687,9 +686,9 @@
 .det-card {
   text-align: center;
   padding: 14px 6px;
-  background: rgba(255,255,255,0.02);
+  background: rgb(255 255 255 / 2%);
   border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.04);
+  border: 1px solid rgb(255 255 255 / 4%);
 }
 
 .det-value {
@@ -725,8 +724,8 @@
 
 .kev-item {
   padding: 10px 12px;
-  background: rgba(248, 113, 113, 0.04);
-  border: 1px solid rgba(248, 113, 113, 0.1);
+  background: rgb(248 113 113 / 4%);
+  border: 1px solid rgb(248 113 113 / 10%);
   border-radius: 10px;
 }
 
@@ -756,7 +755,7 @@
   align-items: center;
   gap: 18px;
 
-  @media (max-width: 600px) {
+  @media (width <= 600px) {
     flex-direction: column;
   }
 }
@@ -805,8 +804,8 @@
   align-items: center;
   gap: 7px;
   padding: 10px 16px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: rgb(255 255 255 / 4%);
+  border: 1px solid rgb(255 255 255 / 6%);
   border-radius: 12px;
   cursor: pointer;
   color: var(--text-muted);
@@ -817,8 +816,8 @@
   .action-icon { font-size: 14px; }
 
   &:hover {
-    background: rgba(255,255,255,0.08);
-    border-color: rgba(255,255,255,0.12);
+    background: rgb(255 255 255 / 8%);
+    border-color: rgb(255 255 255 / 12%);
     color: var(--text-main);
     transform: translateY(-1px);
   }

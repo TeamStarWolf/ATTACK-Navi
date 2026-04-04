@@ -3,7 +3,7 @@
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgb(0 0 0 / 50%);
   z-index: 999;
   align-items: center;
   justify-content: center;
@@ -24,7 +24,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 8px 32px rgb(0 0 0 / 60%);
 }
 
 // Header
@@ -91,8 +91,8 @@
 .save-toggle-btn {
   width: 100%;
   padding: 8px 12px;
-  background: rgba(26, 159, 255, 0.08);
-  border: 1px dashed rgba(26, 159, 255, 0.3);
+  background: rgb(26 159 255 / 8%);
+  border: 1px dashed rgb(26 159 255 / 30%);
   color: #58a6ff;
   border-radius: 5px;
   font-size: 13px;
@@ -102,8 +102,8 @@
   font-family: inherit;
 
   &:hover {
-    background: rgba(26, 159, 255, 0.15);
-    border-color: rgba(26, 159, 255, 0.5);
+    background: rgb(26 159 255 / 15%);
+    border-color: rgb(26 159 255 / 50%);
     color: #8aaac8;
   }
 }
@@ -187,12 +187,12 @@
 }
 
 .btn-primary {
-  background: rgba(26, 159, 255, 0.2);
+  background: rgb(26 159 255 / 20%);
   color: #58a6ff;
-  border-color: rgba(26, 159, 255, 0.4);
+  border-color: rgb(26 159 255 / 40%);
 
   &:hover:not(:disabled) {
-    background: rgba(26, 159, 255, 0.32);
+    background: rgb(26 159 255 / 32%);
   }
 }
 
@@ -291,12 +291,12 @@
 }
 
 .load-btn {
-  background: rgba(26, 159, 255, 0.15);
+  background: rgb(26 159 255 / 15%);
   color: #58a6ff;
-  border-color: rgba(26, 159, 255, 0.3);
+  border-color: rgb(26 159 255 / 30%);
 
   &:hover {
-    background: rgba(26, 159, 255, 0.28);
+    background: rgb(26 159 255 / 28%);
   }
 }
 
@@ -314,12 +314,12 @@
 
 .delete-btn {
   margin-left: auto;
-  background: rgba(239, 68, 68, 0.12);
+  background: rgb(239 68 68 / 12%);
   color: #f87171;
-  border-color: rgba(239, 68, 68, 0.25);
+  border-color: rgb(239 68 68 / 25%);
 
   &:hover {
-    background: rgba(239, 68, 68, 0.22);
+    background: rgb(239 68 68 / 22%);
   }
 }
 
