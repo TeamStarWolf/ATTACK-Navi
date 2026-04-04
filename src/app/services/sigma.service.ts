@@ -1,13 +1,22 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject } from 'rxjs';
-import { catchError, of } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import { Technique } from '../models/technique';
 
 export interface SigmaRule {
   techniqueId: string;
   techniqueName: string;
   yaml: string;
+}
+
+export interface SigmaRuleDetail {
+  title: string;
+  id: string;
+  status: string;
+  level: string;
+  description: string;
+  url: string;
 }
 
 interface SigmaNavigatorLayer {
@@ -67,6 +76,7 @@ const SIGMA_LAYER_URLS = [
 @Injectable({ providedIn: 'root' })
 export class SigmaService {
   private directCounts = new Map<string, number>();
+  private ruleDetailCache = new Map<string, SigmaRuleDetail[]>();
 
   private loadedSubject = new BehaviorSubject<boolean>(false);
   readonly loaded$ = this.loadedSubject.asObservable();
@@ -116,6 +126,95 @@ export class SigmaService {
   /** Returns the full live counts map (techniqueID → count). */
   getLiveCounts(): ReadonlyMap<string, number> {
     return this.directCounts;
+  }
+
+  /** Returns cached rule details for a technique, if available. */
+  getCachedRules(attackId: string): SigmaRuleDetail[] | undefined {
+    return this.ruleDetailCache.get(attackId);
+  }
+
+  /**
+   * Fetch actual Sigma rule details for a technique from the SigmaHQ GitHub repo.
+   * Searches the GitHub code API for YAML files mentioning the technique tag,
+   * then fetches each raw file to extract YAML front matter fields.
+   * Results are cached per attackId.
+   */
+  fetchRulesForTechnique(attackId: string): Observable<SigmaRuleDetail[]> {
+    const cached = this.ruleDetailCache.get(attackId);
+    if (cached) return of(cached);
+
+    const tag = `attack.${attackId.toLowerCase()}`;
+    const url = `https://api.github.com/search/code?q=${encodeURIComponent(tag)}+repo:SigmaHQ/sigma+extension:yml&per_page=10`;
+
+    return this.http.get<{ items: Array<{ path: string; html_url: string }> }>(url).pipe(
+      map(resp => (resp.items ?? []).slice(0, 10)),
+      switchMap(items => {
+        if (items.length === 0) {
+          this.ruleDetailCache.set(attackId, []);
+          return of([] as SigmaRuleDetail[]);
+        }
+        // Fetch raw content for each file and extract front matter
+        const fetches = items.map(item => {
+          const rawUrl = `https://raw.githubusercontent.com/SigmaHQ/sigma/main/${item.path}`;
+          return this.http.get(rawUrl, { responseType: 'text' }).pipe(
+            map(yaml => this.parseYamlFrontMatter(yaml, item.html_url)),
+            catchError(() => of(null as SigmaRuleDetail | null)),
+          );
+        });
+        // Combine all fetches
+        return new Observable<SigmaRuleDetail[]>(subscriber => {
+          const results: (SigmaRuleDetail | null)[] = [];
+          let completed = 0;
+          for (const fetch$ of fetches) {
+            fetch$.subscribe({
+              next: val => {
+                results.push(val);
+                completed++;
+                if (completed === fetches.length) {
+                  const details = results.filter((r): r is SigmaRuleDetail => r !== null);
+                  this.ruleDetailCache.set(attackId, details);
+                  subscriber.next(details);
+                  subscriber.complete();
+                }
+              },
+              error: () => {
+                results.push(null);
+                completed++;
+                if (completed === fetches.length) {
+                  const details = results.filter((r): r is SigmaRuleDetail => r !== null);
+                  this.ruleDetailCache.set(attackId, details);
+                  subscriber.next(details);
+                  subscriber.complete();
+                }
+              },
+            });
+          }
+        });
+      }),
+      catchError(() => {
+        this.ruleDetailCache.set(attackId, []);
+        return of([] as SigmaRuleDetail[]);
+      }),
+    );
+  }
+
+  /** Extract title, id, status, level, description from Sigma YAML text. */
+  private parseYamlFrontMatter(yaml: string, htmlUrl: string): SigmaRuleDetail | null {
+    const getField = (field: string): string => {
+      const regex = new RegExp(`^${field}:\\s*(.+)$`, 'm');
+      const match = yaml.match(regex);
+      return match ? match[1].trim().replace(/^['"]|['"]$/g, '') : '';
+    };
+    const title = getField('title');
+    if (!title) return null;
+    return {
+      title,
+      id: getField('id'),
+      status: getField('status'),
+      level: getField('level'),
+      description: getField('description').slice(0, 200),
+      url: htmlUrl,
+    };
   }
 
   /**

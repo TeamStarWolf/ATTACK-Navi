@@ -1,0 +1,61 @@
+{
+  "$schema": "./node_modules/@angular/service-worker/config/schema.json",
+  "index": "/index.html",
+  "assetGroups": [
+    {
+      "name": "app",
+      "installMode": "prefetch",
+      "resources": {
+        "files": ["/favicon.ico", "/index.html", "/*.css", "/*.js"]
+      }
+    },
+    {
+      "name": "assets",
+      "installMode": "lazy",
+      "updateMode": "prefetch",
+      "resources": {
+        "files": ["/assets/**", "/*.(svg|cur|jpg|jpeg|png|apng|webp|avif|gif|otf|ttf|woff|woff2)"]
+      }
+    }
+  ],
+  "dataGroups": [
+    {
+      "name": "attack-stix",
+      "urls": ["https://raw.githubusercontent.com/mitre-attack/**"],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxSize": 10,
+        "maxAge": "24h",
+        "timeout": "10s"
+      }
+    },
+    {
+      "name": "external-data",
+      "urls": [
+        "https://raw.githubusercontent.com/center-for-threat-informed-defense/**",
+        "https://raw.githubusercontent.com/redcanaryco/**",
+        "https://raw.githubusercontent.com/SigmaHQ/**",
+        "https://raw.githubusercontent.com/elastic/**",
+        "https://raw.githubusercontent.com/splunk/**",
+        "https://raw.githubusercontent.com/MISP/**",
+        "https://raw.githubusercontent.com/mitre/cti/**"
+      ],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxSize": 20,
+        "maxAge": "12h",
+        "timeout": "10s"
+      }
+    },
+    {
+      "name": "apis",
+      "urls": ["https://api.first.org/**", "https://services.nvd.nist.gov/**"],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxSize": 50,
+        "maxAge": "6h",
+        "timeout": "15s"
+      }
+    }
+  ]
+}

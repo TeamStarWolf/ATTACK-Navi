@@ -1,4 +1,4 @@
-<aside class="sidebar" [class.open]="open">
+<aside class="sidebar" [class.open]="open" role="complementary" aria-label="Technique details">
   @if (technique) {
     <div class="sidebar-inner">
       <header class="sidebar-header">
@@ -215,7 +215,7 @@
 
         <!-- Technique Note/Annotation -->
         <section class="detail-section annotation-section upgrade-section-block">
-          <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('annotation')">
+          <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('annotation')" (click)="toggleSection('annotation')">
             <span class="section-chevron">{{ isSectionCollapsed('annotation') ? '▸' : '▾' }}</span>
             <span class="section-icon">📌</span> Annotation
             @if (annotation) { <span class="section-count has-note">●</span> }
@@ -242,7 +242,7 @@
         <!-- Data sources -->
         @if (technique.dataSources.length > 0) {
           <div class="data-sources-section upgrade-section-block">
-            <div class="section-label upgrade-section-title collapsible-title" (click)="toggleSection('datasources')">
+            <div class="section-label upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('datasources')" (click)="toggleSection('datasources')">
               <span class="section-chevron">{{ isSectionCollapsed('datasources') ? '▸' : '▾' }}</span>
               📡 Data Sources
             </div>
@@ -296,7 +296,7 @@
         <!-- Data Components (detection sources) -->
         @if (dataComponents.length > 0) {
           <div class="data-components-section upgrade-section-block">
-            <div class="section-label upgrade-section-title collapsible-title" (click)="toggleSection('datacomponents')">
+            <div class="section-label upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('datacomponents')" (click)="toggleSection('datacomponents')">
               <span class="section-chevron">{{ isSectionCollapsed('datacomponents') ? '▸' : '▾' }}</span>
               📡 Detected By
             </div>
@@ -353,7 +353,7 @@
 
         <!-- CVE Exposure section -->
         @if (cveExposures.length > 0) {
-          <div class="section-heading collapsible-title" (click)="toggleSection('cve')">
+          <div class="section-heading collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('cve')" (click)="toggleSection('cve')">
             <span class="section-chevron">{{ isSectionCollapsed('cve') ? '▸' : '▾' }}</span>
             <span>CVE Exposure</span>
             <span class="section-count">{{ cveExposures.length }}</span>
@@ -387,7 +387,7 @@
 
         <!-- NIST 800-53 Rev5 Controls section -->
         @if (nistControls.length > 0) {
-          <div class="section-heading collapsible-title" (click)="toggleSection('nist')">
+          <div class="section-heading collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('nist')" (click)="toggleSection('nist')">
             <span class="section-chevron">{{ isSectionCollapsed('nist') ? '▸' : '▾' }}</span>
             <span>NIST 800-53 Rev5 Controls</span>
             <span class="section-count">{{ nistControls.length }}</span>
@@ -417,7 +417,7 @@
 
         <!-- Cloud & CIS Controls section -->
         @if (allCloudControls.length > 0) {
-          <div class="section-heading collapsible-title" (click)="toggleSection('cloud')">
+          <div class="section-heading collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('cloud')" (click)="toggleSection('cloud')">
             <span class="section-chevron">{{ isSectionCollapsed('cloud') ? '▸' : '▾' }}</span>
             <span>Cloud &amp; CIS Controls</span>
             <span class="section-count">{{ allCloudControls.length }}</span>
@@ -443,7 +443,7 @@
         <!-- VERIS Incident Actions section -->
         @if (verisActions.length > 0) {
           <section class="detail-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('veris')">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('veris')" (click)="toggleSection('veris')">
               <span class="section-chevron">{{ isSectionCollapsed('veris') ? '▸' : '▾' }}</span>
               <span class="section-icon">📋</span> VERIS Incident Actions
               <span class="section-count">{{ verisActions.length }}</span>
@@ -472,7 +472,7 @@
         <!-- CRI Profile Controls section -->
         @if (criControls.length > 0) {
           <section class="detail-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('cri')">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('cri')" (click)="toggleSection('cri')">
               <span class="section-chevron">{{ isSectionCollapsed('cri') ? '▸' : '▾' }}</span>
               <span class="section-icon">🏦</span> CRI Financial Profile
               <span class="section-count">{{ criControls.length }}</span>
@@ -502,7 +502,7 @@
         <!-- CAPEC Attack Patterns section -->
         @if (capecEntries.length > 0) {
           <section class="detail-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('capec')">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('capec')" (click)="toggleSection('capec')">
               <span class="section-chevron">{{ isSectionCollapsed('capec') ? '▸' : '▾' }}</span>
               <span class="section-icon">🎯</span> CAPEC Attack Patterns
               <span class="section-count">{{ capecEntries.length }}</span>
@@ -553,7 +553,7 @@
         <!-- ExploitDB Exploits section -->
         @if (exploitCount > 0) {
           <section class="detail-section upgrade-section-block exploitdb-section">
-            <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('exploitdb')">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('exploitdb')" (click)="toggleSection('exploitdb')">
               <span class="section-chevron">{{ isSectionCollapsed('exploitdb') ? '▸' : '▾' }}</span>
               <span class="section-icon">💥</span> ExploitDB Exploits
               <span class="section-count">{{ exploitCount }}</span>
@@ -570,7 +570,7 @@
         <!-- Nuclei Templates section -->
         @if (nucleiCount > 0) {
           <section class="detail-section upgrade-section-block nuclei-section">
-            <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('nuclei')">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('nuclei')" (click)="toggleSection('nuclei')">
               <span class="section-chevron">{{ isSectionCollapsed('nuclei') ? '▸' : '▾' }}</span>
               <span class="section-icon">🔬</span> Nuclei Templates
               <span class="section-count">{{ nucleiCount }}</span>
@@ -586,7 +586,7 @@
 
         <!-- Tags section -->
         <div class="tags-section upgrade-section-block">
-          <div class="section-label upgrade-section-title collapsible-title" (click)="toggleSection('tags')">
+          <div class="section-label upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('tags')" (click)="toggleSection('tags')">
             <span class="section-chevron">{{ isSectionCollapsed('tags') ? '▸' : '▾' }}</span>
             🏷 Tags
           </div>
@@ -623,7 +623,7 @@
 
         <!-- Technique notes -->
         <div class="tech-notes-section upgrade-section-block">
-          <div class="section-label upgrade-section-title collapsible-title" (click)="toggleSection('notes')">
+          <div class="section-label upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('notes')" (click)="toggleSection('notes')">
             <span class="section-chevron">{{ isSectionCollapsed('notes') ? '▸' : '▾' }}</span>
             📝 Analyst Notes
           </div>
@@ -641,7 +641,7 @@
         <!-- Threat groups section -->
         @if (threatGroups.length > 0) {
           <div class="threat-section upgrade-section-block">
-            <h3 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('threats')">
+            <h3 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('threats')" (click)="toggleSection('threats')">
               <span class="section-chevron">{{ isSectionCollapsed('threats') ? '▸' : '▾' }}</span>
               👥 Threat Actors
               <span class="count-badge">{{ threatGroups.length }}</span>
@@ -662,7 +662,7 @@
         <!-- Software section -->
         @if (softwareList.length > 0) {
           <div class="software-section upgrade-section-block">
-            <h3 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('software')">
+            <h3 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('software')" (click)="toggleSection('software')">
               <span class="section-chevron">{{ isSectionCollapsed('software') ? '▸' : '▾' }}</span>
               🛠️ Software / Malware
               <span class="count-badge sw">{{ softwareList.length }}</span>
@@ -688,7 +688,7 @@
         <!-- Campaigns section -->
         @if (campaigns.length > 0) {
           <div class="campaigns-section upgrade-section-block">
-            <h3 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('campaigns')">
+            <h3 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('campaigns')" (click)="toggleSection('campaigns')">
               <span class="section-chevron">{{ isSectionCollapsed('campaigns') ? '▸' : '▾' }}</span>
               🎯 Campaigns
               <span class="count-badge camp">{{ campaigns.length }}</span>
@@ -713,7 +713,7 @@
         <!-- D3FEND Active Defenses section -->
         @if (d3fendMeasures.length > 0) {
           <section class="sidebar-section d3fend-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('d3fend')">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('d3fend')" (click)="toggleSection('d3fend')">
               <span class="section-chevron">{{ isSectionCollapsed('d3fend') ? '▸' : '▾' }}</span>
               🛡 D3FEND Active Defenses <span class="count-badge upgrade-section-count">{{ d3fendMeasures.length }}</span>
             </h4>
@@ -739,7 +739,7 @@
         <!-- MITRE Engage Adversary Engagement section -->
         @if (engageActivities.length > 0) {
           <section class="sidebar-section engage-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('engage')">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('engage')" (click)="toggleSection('engage')">
               <span class="section-chevron">{{ isSectionCollapsed('engage') ? '▸' : '▾' }}</span>
               🎭 Engage Activities <span class="count-badge upgrade-section-count">{{ engageActivities.length }}</span>
             </h4>
@@ -762,7 +762,7 @@
         <!-- MITRE CAR Detection Analytics section -->
         @if (carAnalytics.length > 0) {
           <section class="sidebar-section car-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('car')">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('car')" (click)="toggleSection('car')">
               <span class="section-chevron">{{ isSectionCollapsed('car') ? '▸' : '▾' }}</span>
               🔬 CAR Detection Analytics <span class="count-badge upgrade-section-count">{{ carAnalytics.length }}</span>
             </h4>
@@ -792,7 +792,7 @@
         <!-- Atomic Red Team Tests -->
         @if (atomicLiveCount > 0 || atomicTests.length > 0) {
           <section class="sidebar-section atomic-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('atomic')">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('atomic')" (click)="toggleSection('atomic')">
               <span class="section-chevron">{{ isSectionCollapsed('atomic') ? '▸' : '▾' }}</span>
               ⚛ Atomic Red Team Tests
               <span class="count-badge upgrade-section-count">{{ atomicLiveCount > 0 ? atomicLiveCount : atomicTests.length }}</span>
@@ -833,10 +833,44 @@
           </section>
         }
 
+        <!-- SigmaHQ Live Rules -->
+        @if (sigmaRules.length > 0 || sigmaRulesFetching) {
+          <section class="sidebar-section sigma-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('sigma')">
+              <span class="section-chevron">{{ isSectionCollapsed('sigma') ? '▸' : '▾' }}</span>
+              &Sigma; Sigma Rules <span class="count-badge upgrade-section-count">{{ sigmaRules.length }}</span>
+            </h4>
+            @if (!isSectionCollapsed('sigma')) {
+              @if (sigmaRulesFetching) {
+                <p class="atomic-live-hint">Loading rules from SigmaHQ...</p>
+              }
+              @for (rule of sigmaRules; track rule.id) {
+                <div class="car-item">
+                  <div class="car-header">
+                    <a [href]="rule.url" target="_blank" rel="noopener" class="car-id">{{ rule.title }}</a>
+                  </div>
+                  <div class="car-platforms">
+                    @if (rule.level) {
+                      <span class="car-platform">{{ rule.level }}</span>
+                    }
+                    @if (rule.status) {
+                      <span class="car-platform">{{ rule.status }}</span>
+                    }
+                  </div>
+                  @if (rule.description) {
+                    <p class="car-desc">{{ rule.description }}</p>
+                  }
+                </div>
+              }
+              <a href="https://github.com/SigmaHQ/sigma" target="_blank" rel="noopener" class="framework-link">SigmaHQ on GitHub ↗</a>
+            }
+          </section>
+        }
+
         <!-- MISP Galaxy -->
         @if (mispCluster) {
           <section class="sidebar-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('misp')">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('misp')" (click)="toggleSection('misp')">
               <span class="section-chevron">{{ isSectionCollapsed('misp') ? '▸' : '▾' }}</span>
               🔴 MISP Galaxy Cluster
             </h4>
@@ -870,7 +904,7 @@
         <!-- OpenCTI Threat Intelligence -->
         @if (openctiService.getConfig().connected || openctiIndicators.length > 0 || openctiLoading) {
           <section class="sidebar-section upgrade-section-block opencti-section">
-            <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('opencti')">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('opencti')" (click)="toggleSection('opencti')">
               <span class="section-chevron">{{ isSectionCollapsed('opencti') ? '▸' : '▾' }}</span>
               <span class="section-icon">🔗</span> OpenCTI Indicators
               @if (openctiIndicators.length > 0) {
@@ -918,7 +952,7 @@
         <!-- Custom Controls section -->
         @if (customMitigations.length > 0) {
           <section class="detail-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('custom')">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('custom')" (click)="toggleSection('custom')">
               <span class="section-chevron">{{ isSectionCollapsed('custom') ? '▸' : '▾' }}</span>
               <span class="section-icon">🏢</span> Custom Controls
               <span class="section-count">{{ customMitigations.length }}</span>
@@ -945,7 +979,7 @@
 
         <!-- Mitigations section -->
         <div class="mitigations-section upgrade-section-block">
-          <h3 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('mitigations')">
+          <h3 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('mitigations')" (click)="toggleSection('mitigations')">
             <span class="section-chevron">{{ isSectionCollapsed('mitigations') ? '▸' : '▾' }}</span>
             Mitigations
             <span class="count-badge">{{ mitigations.length }}</span>

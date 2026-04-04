@@ -68,6 +68,7 @@ export class ToolbarComponent implements OnInit, OnDestroy {
   @Output() exportFullReport = new EventEmitter<void>();
   @Output() exportMatrixPng = new EventEmitter<void>();
   @Output() exportHtmlReport = new EventEmitter<void>();
+  @Output() exportPdf = new EventEmitter<void>();
   @Output() exportXlsx = new EventEmitter<void>();
   @Output() showGapView = new EventEmitter<void>();
   @Output() toggleDark = new EventEmitter<void>();
