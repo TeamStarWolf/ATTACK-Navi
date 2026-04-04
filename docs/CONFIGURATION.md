@@ -1,6 +1,6 @@
 # Configuration Guide
 
-This document covers all configuration options for the MITRE ATT&CK Mitigation Navigator, including external integrations, display preferences, data management, and deployment.
+This document covers all configuration options for the MITRE ATT&CK Navi, including external integrations, display preferences, data management, and deployment.
 
 ---
 

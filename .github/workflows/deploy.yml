@@ -26,6 +26,7 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - run: npx ng test --no-watch --browsers=ChromeHeadless
       - run: npx ng build --base-href /attack-nav/
       - uses: actions/upload-pages-artifact@v3
         with:

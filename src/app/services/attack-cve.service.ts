@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { retryWithBackoff } from '../utils/retry';
 
 export interface CveAttackMapping {
   cveId: string;
@@ -43,9 +44,11 @@ export class AttackCveService {
   private load(): void {
     forkJoin({
       csv: this.http.get(AttackCveService.CSV_URL, { responseType: 'text' }).pipe(
+        retryWithBackoff(),
         catchError(() => of('')),
       ),
       kev: this.http.get<any>(AttackCveService.KEV_CTID_URL).pipe(
+        retryWithBackoff(),
         catchError(() => of({ mapping_objects: [] })),
       ),
     }).subscribe(({ csv, kev }) => {

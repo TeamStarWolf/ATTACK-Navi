@@ -1,6 +1,6 @@
 # Component Catalog
 
-> Auto-generated reference for all 50 Angular components in the MITRE ATT&CK Mitigation Navigator.
+> Auto-generated reference for all 50 Angular components in the MITRE ATT&CK Navi.
 > Each component is standalone, uses `ChangeDetectionStrategy.OnPush`, and lives under `src/app/components/`.
 
 ---

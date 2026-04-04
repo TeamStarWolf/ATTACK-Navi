@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-The MITRE ATT&CK Mitigation Navigator is a single-page Angular 19 application that visualizes
+The MITRE ATT&CK Navi is a single-page Angular 19 application that visualizes
 the full ATT&CK matrix, overlays mitigation coverage data, and integrates 40+ external threat
 intelligence, detection, vulnerability, and compliance data sources into a unified analyst
 workspace.

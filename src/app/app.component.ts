@@ -499,7 +499,7 @@ export class AppComponent implements OnInit {
       name: 'ATT&CK Mitigation Coverage',
       versions: { attack: '14', navigator: '4.9', layer: '4.5' },
       domain: 'enterprise-attack',
-      description: 'Exported from ATT&CK Mitigation Navigator',
+      description: 'Exported from ATT&CK Navi',
       filters: { platforms: ['Windows', 'Linux', 'macOS', 'Azure AD', 'Office 365', 'Google Workspace', 'SaaS', 'IaaS', 'Network', 'Containers', 'PRE'] },
       sorting: 0,
       layout: { layout: 'side', aggregateFunction: 'average', showID: false, showName: true, showAggregateScores: false, countUnscored: false },
