@@ -40,6 +40,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'cve', icon: '🔍', label: 'CVE' },
 
   { type: 'divider', label: 'Coverage' },
+  { id: 'assessment', icon: '🧭', label: 'ASSESS' },
   { id: 'controls', icon: '🔒', label: 'Controls' },
   { id: 'compliance', icon: '🛡️', label: 'Comply' },
   { id: 'priority', icon: '⬆️', label: 'Priority' },
@@ -290,6 +291,50 @@ const NAV_ITEMS_BOTTOM: NavItem[] = [
 
     .help-btn:hover {
       color: #c2d8ea;
+    }
+
+    /* ── Light mode ── */
+    :host-context(body.light-mode) {
+      background: #f1f5f9 !important;
+      border-right-color: #e2e8f0 !important;
+      backdrop-filter: none !important;
+    }
+
+    :host-context(body.light-mode) .nav-divider::before {
+      background: rgba(0, 0, 0, 0.08);
+    }
+
+    :host-context(body.light-mode) .nav-divider-label {
+      color: #94a3b8;
+    }
+
+    :host-context(body.light-mode) .nav-item {
+      color: #64748b;
+    }
+
+    :host-context(body.light-mode) .nav-item:hover {
+      background: rgba(0, 0, 0, 0.04);
+      border-color: rgba(0, 0, 0, 0.06);
+      color: #1a1a2e;
+    }
+
+    :host-context(body.light-mode) .nav-item.active {
+      background: rgba(37, 99, 235, 0.08);
+      color: #2563eb;
+      border-color: rgba(37, 99, 235, 0.2);
+      box-shadow: inset 0 1px 0 rgba(37, 99, 235, 0.04), 0 0 0 1px rgba(37, 99, 235, 0.06);
+    }
+
+    :host-context(body.light-mode) .help-btn {
+      color: #94a3b8;
+    }
+
+    :host-context(body.light-mode) .help-btn:hover {
+      color: #1a1a2e;
+    }
+
+    :host-context(body.light-mode) .nav-list {
+      scrollbar-color: #cbd5e1 transparent;
     }
 
     /* Mobile: collapse to horizontal bottom bar */

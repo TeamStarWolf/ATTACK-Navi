@@ -303,6 +303,64 @@ export class StixCollectionService {
     return this.importCollection(bundle);
   }
 
+  // ─── Share via URL ─────────────────────────────────────────────────────────
+
+  /**
+   * Export the current collection as a base64-encoded URL hash fragment.
+   * The returned URL can be shared; when loaded the app will offer to import.
+   */
+  shareAsUrl(name?: string, description?: string): string {
+    const bundle = this.exportCollection(
+      name || 'Shared Collection',
+      description || 'Shared via MITRE Mitigation Navigator',
+    );
+    const json = JSON.stringify(bundle);
+    const encoded = btoa(unescape(encodeURIComponent(json)));
+    const base = window.location.origin + window.location.pathname;
+    return `${base}#import=${encoded}`;
+  }
+
+  /**
+   * Check the current URL hash for an `import=` parameter.
+   * If found, decode the base64 STIX bundle and return it for confirmation.
+   */
+  parseImportFromHash(): { bundle: Record<string, any>; summary: ImportSummary } | null {
+    const hash = window.location.hash.slice(1);
+    if (!hash) return null;
+    try {
+      const params = new URLSearchParams(hash);
+      const encoded = params.get('import');
+      if (!encoded) return null;
+      const json = decodeURIComponent(escape(atob(encoded)));
+      const bundle = JSON.parse(json);
+      if (!bundle || bundle.type !== 'bundle') return null;
+      // Build preview summary without importing
+      const objects: any[] = bundle.objects ?? [];
+      const summary: ImportSummary = {
+        techniques: objects.filter(o => o.type === 'attack-pattern').length,
+        groups: objects.filter(o => o.type === 'intrusion-set').length,
+        mitigations: objects.filter(o => o.type === 'course-of-action').length,
+        notes: objects.filter(o => o.type === 'note').length,
+        skipped: 0,
+      };
+      return { bundle, summary };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Clear the import parameter from the URL hash without disturbing other parameters.
+   */
+  clearImportHash(): void {
+    const hash = window.location.hash.slice(1);
+    if (!hash) return;
+    const params = new URLSearchParams(hash);
+    params.delete('import');
+    const remaining = params.toString();
+    history.replaceState(null, '', remaining ? '#' + remaining : window.location.pathname + window.location.search);
+  }
+
   // ─── Download ─────────────────────────────────────────────────────────────
 
   downloadBundle(name: string, description: string): void {

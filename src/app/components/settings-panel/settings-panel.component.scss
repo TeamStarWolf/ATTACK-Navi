@@ -808,3 +808,111 @@
   color: rgba(255, 255, 255, 0.6);
   white-space: nowrap;
 }
+
+/* ── TAXII Server Section ── */
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+.taxii-server-item {
+  background: #07101a;
+  border: 1px solid #1a3448;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.taxii-server-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.taxii-server-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.taxii-server-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #c9d8e8;
+}
+
+.taxii-server-url {
+  font-size: 11px;
+  color: #4a6080;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.taxii-roots-row {
+  margin-top: 8px;
+}
+
+.taxii-collections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.taxii-collection-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  background: #0a1828;
+  border: 1px solid rgba(26, 52, 72, 0.5);
+  border-radius: 5px;
+}
+
+.taxii-collection-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.taxii-collection-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: #c9d8e8;
+}
+
+.taxii-collection-desc {
+  font-size: 10px;
+  color: #4a6080;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.taxii-no-collections {
+  font-size: 12px;
+  color: #3a5a74;
+  padding: 8px 0;
+}
+
+.taxii-add-form {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: #0a1828;
+  border: 1px solid #1a3448;
+  border-radius: 8px;
+}
+
+.taxii-add-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8aaac8;
+  margin-bottom: 8px;
+}

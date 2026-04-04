@@ -15,6 +15,8 @@ import { ImplementationService } from '../../services/implementation.service';
 import { TimelineService } from '../../services/timeline.service';
 import { OpenCtiService } from '../../services/opencti.service';
 import { MispService } from '../../services/misp.service';
+import { TaxiiService, TaxiiServerConfig, TaxiiCollection } from '../../services/taxii.service';
+import { ImportSummary } from '../../services/stix-collection.service';
 
 @Component({
   selector: 'app-settings-panel',
@@ -65,6 +67,22 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
   mispConnected = false;
   mispError = '';
 
+  // TAXII integration state
+  taxiiServers: TaxiiServerConfig[] = [];
+  taxiiNewName = '';
+  taxiiNewUrl = '';
+  taxiiNewUsername = '';
+  taxiiNewPassword = '';
+  taxiiTestingId: string | null = null;
+  taxiiTestResults = new Map<string, boolean>();
+  taxiiFetchingId: string | null = null;
+  taxiiApiRoots = new Map<string, string[]>();
+  taxiiSelectedApiRoot = new Map<string, string>();
+  taxiiCollections = new Map<string, TaxiiCollection[]>();
+  taxiiImportingCollection: string | null = null;
+  taxiiImportResult: ImportSummary | null = null;
+  taxiiError = '';
+
   private subs = new Subscription();
   private savedSettings: AppSettings = { ...DEFAULT_SETTINGS, scoringWeights: { ...DEFAULT_SETTINGS.scoringWeights } };
 
@@ -76,6 +94,7 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
     private timelineService: TimelineService,
     private openCtiService: OpenCtiService,
     private mispService: MispService,
+    private taxiiService: TaxiiService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -155,6 +174,13 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
     this.subs.add(
       this.mispService.serverLoading$.subscribe(loading => {
         if (!loading) this.mispTesting = false;
+        this.cdr.markForCheck();
+      }),
+    );
+
+    this.subs.add(
+      this.taxiiService.servers$.subscribe(servers => {
+        this.taxiiServers = servers;
         this.cdr.markForCheck();
       }),
     );
@@ -478,5 +504,128 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
     this.mispConnected = false;
     this.mispError = '';
     this.cdr.markForCheck();
+  }
+
+  // ─── TAXII integration ──────────────────────────────────────────────────
+
+  addTaxiiServer(): void {
+    if (!this.taxiiNewName || !this.taxiiNewUrl) return;
+    this.taxiiService.addServer({
+      name: this.taxiiNewName,
+      url: this.taxiiNewUrl,
+      username: this.taxiiNewUsername,
+      password: this.taxiiNewPassword,
+      enabled: true,
+    });
+    this.taxiiNewName = '';
+    this.taxiiNewUrl = '';
+    this.taxiiNewUsername = '';
+    this.taxiiNewPassword = '';
+    this.taxiiError = '';
+    this.cdr.markForCheck();
+  }
+
+  removeTaxiiServer(id: string): void {
+    this.taxiiService.removeServer(id);
+    this.taxiiTestResults.delete(id);
+    this.taxiiApiRoots.delete(id);
+    this.taxiiCollections.delete(id);
+    this.taxiiSelectedApiRoot.delete(id);
+    this.cdr.markForCheck();
+  }
+
+  testTaxiiServer(server: TaxiiServerConfig): void {
+    this.taxiiTestingId = server.id;
+    this.taxiiTestResults.delete(server.id);
+    this.taxiiError = '';
+    this.cdr.markForCheck();
+
+    this.taxiiService.testConnection(server).subscribe({
+      next: ok => {
+        this.taxiiTestResults.set(server.id, ok);
+        this.taxiiTestingId = null;
+        if (!ok) this.taxiiError = 'Connection failed. Check URL and credentials.';
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.taxiiTestResults.set(server.id, false);
+        this.taxiiTestingId = null;
+        this.taxiiError = 'Connection error.';
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  fetchTaxiiCollections(server: TaxiiServerConfig): void {
+    this.taxiiFetchingId = server.id;
+    this.taxiiError = '';
+    this.taxiiCollections.delete(server.id);
+    this.cdr.markForCheck();
+
+    this.taxiiService.discoverApiRoots(server).subscribe({
+      next: roots => {
+        this.taxiiApiRoots.set(server.id, roots);
+        if (roots.length > 0) {
+          const selectedRoot = roots[0];
+          this.taxiiSelectedApiRoot.set(server.id, selectedRoot);
+          this.loadTaxiiCollectionsForRoot(server, selectedRoot);
+        } else {
+          this.taxiiFetchingId = null;
+          this.taxiiError = 'No API roots found on this server.';
+          this.cdr.markForCheck();
+        }
+      },
+      error: () => {
+        this.taxiiFetchingId = null;
+        this.taxiiError = 'Failed to discover API roots.';
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  onTaxiiApiRootChange(server: TaxiiServerConfig, apiRoot: string): void {
+    this.taxiiSelectedApiRoot.set(server.id, apiRoot);
+    this.taxiiCollections.delete(server.id);
+    this.taxiiFetchingId = server.id;
+    this.cdr.markForCheck();
+    this.loadTaxiiCollectionsForRoot(server, apiRoot);
+  }
+
+  private loadTaxiiCollectionsForRoot(server: TaxiiServerConfig, apiRoot: string): void {
+    this.taxiiService.getCollections(server, apiRoot).subscribe({
+      next: cols => {
+        this.taxiiCollections.set(server.id, cols);
+        this.taxiiFetchingId = null;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.taxiiFetchingId = null;
+        this.taxiiError = 'Failed to load collections.';
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  importTaxiiCollection(server: TaxiiServerConfig, collection: TaxiiCollection): void {
+    const apiRoot = this.taxiiSelectedApiRoot.get(server.id);
+    if (!apiRoot) return;
+    this.taxiiImportingCollection = collection.id;
+    this.taxiiImportResult = null;
+    this.taxiiError = '';
+    this.cdr.markForCheck();
+
+    this.taxiiService.fetchCollection(server, apiRoot, collection.id).subscribe({
+      next: bundle => {
+        const result = this.taxiiService.importCollection(bundle);
+        this.taxiiImportResult = result;
+        this.taxiiImportingCollection = null;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.taxiiImportingCollection = null;
+        this.taxiiError = 'Failed to fetch collection objects.';
+        this.cdr.markForCheck();
+      },
+    });
   }
 }
