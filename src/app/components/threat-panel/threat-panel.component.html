@@ -1,0 +1,162 @@
+@if (visible) {
+  <div class="panel-overlay" (click)="close()"></div>
+  <aside class="panel">
+    <header class="panel-header">
+      <span class="panel-title">👥 Threat Actor Overlay</span>
+      <button class="close-btn" (click)="close()">✕</button>
+    </header>
+
+    <!-- Tabs -->
+    <div class="tab-bar">
+      <button class="tab-btn" [class.active]="activeTab === 'groups'" (click)="setTab('groups')">
+        Groups
+        @if (selectedGroupCount > 0) {
+          <span class="tab-badge">{{ selectedGroupCount }}</span>
+        }
+      </button>
+      <button class="tab-btn" [class.active]="activeTab === 'campaigns'" (click)="setTab('campaigns')">
+        Campaigns
+        @if (selectedCampaignCount > 0) {
+          <span class="tab-badge campaign">{{ selectedCampaignCount }}</span>
+        }
+      </button>
+    </div>
+
+    <!-- Gap Analysis Summary (when groups selected) -->
+    @if (gapRows.length > 0) {
+      <div class="gap-summary">
+        <button class="gap-toggle" (click)="showGapSection = !showGapSection">
+          ⚠ {{ gapRows.length }} unmitigated technique{{ gapRows.length !== 1 ? 's' : '' }} across selected {{ activeTab === 'groups' ? 'groups' : 'campaigns' }}
+          {{ showGapSection ? '▲' : '▼' }}
+        </button>
+        @if (showGapSection) {
+          <div class="gap-list">
+            @for (gap of gapRows; track gap.attackId) {
+              <div class="gap-row">
+                <div class="gap-header">
+                  <span class="gap-id">{{ gap.attackId }}</span>
+                  <span class="gap-name">{{ gap.name }}</span>
+                  @if (gap.kevCount > 0) {
+                    <span class="gap-kev" title="KEV CVEs mapped">🔴 {{ gap.kevCount }}</span>
+                  }
+                </div>
+                <div class="gap-meta">
+                  <span class="gap-tactic">{{ gap.tactic }}</span>
+                  <span class="gap-groups" [title]="(activeTab === 'groups' ? 'Groups: ' : 'Campaigns: ') + gap.groupNames.join(', ')">
+                    {{ gap.groupNames.slice(0, 2).join(', ') }}{{ gap.groupNames.length > 2 ? ' +' + (gap.groupNames.length - 2) : '' }}
+                  </span>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <div class="panel-body">
+      <p class="panel-desc">
+        @if (activeTab === 'groups') {
+          Select APT groups to highlight their techniques. Coverage % shows how many of their techniques have ≥1 mitigation.
+        } @else {
+          Select campaigns to highlight their techniques. Campaigns are time-bounded intrusion operations attributed to one or more groups.
+        }
+      </p>
+
+      <div class="search-row">
+        <input
+          type="text"
+          class="search-input"
+          [placeholder]="activeTab === 'groups' ? 'Search groups, aliases…' : 'Search campaigns, groups…'"
+          [(ngModel)]="searchText"
+          (input)="onSearch()"
+        />
+        @if (activeSelectionCount > 0) {
+          <button class="clear-btn" (click)="clearAll()">Clear ({{ activeSelectionCount }})</button>
+        }
+      </div>
+
+      <!-- Groups tab -->
+      @if (activeTab === 'groups') {
+        @if (filteredGroupRows.length === 0) {
+          <p class="empty">No groups match your search.</p>
+        } @else {
+          <ul class="group-list">
+            @for (row of filteredGroupRows; track row.group.id) {
+              <li
+                class="group-row"
+                [class.selected]="activeGroupIds.has(row.group.id)"
+                (click)="toggleGroup(row)"
+              >
+                <div class="group-check">
+                  <span class="checkbox" [class.checked]="activeGroupIds.has(row.group.id)">
+                    {{ activeGroupIds.has(row.group.id) ? '✓' : '' }}
+                  </span>
+                </div>
+                <div class="group-info">
+                  <div class="group-name-row">
+                    <span class="group-id">{{ row.group.attackId }}</span>
+                    <span class="group-name">{{ row.group.name }}</span>
+                  </div>
+                  @if (row.group.aliases.length > 0) {
+                    <div class="group-aliases">{{ row.group.aliases.slice(0, 3).join(', ') }}</div>
+                  }
+                </div>
+                <div class="group-stats">
+                  <div class="stat-num">{{ row.techniqueCount }}</div>
+                  <div class="stat-label">techniques</div>
+                  <div class="coverage-pill" [style.background]="coveragePct(row.techniqueCount, row.coveredCount) >= 60 ? '#4caf50' : coveragePct(row.techniqueCount, row.coveredCount) >= 30 ? '#ff9800' : '#e53935'">
+                    {{ coveragePct(row.techniqueCount, row.coveredCount) }}%
+                  </div>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      }
+
+      <!-- Campaigns tab -->
+      @if (activeTab === 'campaigns') {
+        @if (filteredCampaignRows.length === 0) {
+          <p class="empty">No campaigns match your search.</p>
+        } @else {
+          <ul class="group-list">
+            @for (row of filteredCampaignRows; track row.campaign.id) {
+              <li
+                class="group-row campaign-row"
+                [class.selected]="activeCampaignIds.has(row.campaign.id)"
+                (click)="toggleCampaign(row)"
+              >
+                <div class="group-check">
+                  <span class="checkbox campaign-check" [class.checked]="activeCampaignIds.has(row.campaign.id)">
+                    {{ activeCampaignIds.has(row.campaign.id) ? '✓' : '' }}
+                  </span>
+                </div>
+                <div class="group-info">
+                  <div class="group-name-row">
+                    <span class="group-id campaign-id">{{ row.campaign.attackId }}</span>
+                    <span class="group-name">{{ row.campaign.name }}</span>
+                  </div>
+                  <div class="campaign-meta">
+                    @if (row.campaign.firstSeen) {
+                      <span class="date-range">{{ formatDate(row.campaign.firstSeen) }}{{ row.campaign.lastSeen ? ' – ' + formatDate(row.campaign.lastSeen) : '' }}</span>
+                    }
+                    @if (row.attributedGroupNames.length > 0) {
+                      <span class="attributed-to">↳ {{ row.attributedGroupNames.slice(0, 2).join(', ') }}</span>
+                    }
+                  </div>
+                </div>
+                <div class="group-stats">
+                  <div class="stat-num">{{ row.techniqueCount }}</div>
+                  <div class="stat-label">techniques</div>
+                  <div class="coverage-pill" [style.background]="coveragePct(row.techniqueCount, row.coveredCount) >= 60 ? '#4caf50' : coveragePct(row.techniqueCount, row.coveredCount) >= 30 ? '#ff9800' : '#e53935'">
+                    {{ coveragePct(row.techniqueCount, row.coveredCount) }}%
+                  </div>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      }
+    </div>
+  </aside>
+}

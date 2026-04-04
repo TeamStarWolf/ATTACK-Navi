@@ -1,0 +1,178 @@
+@if (visible) {
+  <div class="overlay" (click)="close()">
+    <div class="panel" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="panel-header">
+        <div class="header-left">
+          <span class="panel-icon">🎯</span>
+          <span class="panel-title">Coverage Target Calculator</span>
+          <span class="header-subtitle">Find the minimum set of mitigations to reach your target coverage</span>
+        </div>
+        <button class="close-btn" (click)="close()" title="Close">✕</button>
+      </div>
+
+      <!-- Body -->
+      <div class="panel-body">
+
+        <!-- Input Section -->
+        <div class="input-section">
+
+          <div class="coverage-row">
+            <div class="coverage-item">
+              <span class="coverage-label">Current Coverage</span>
+              <div class="coverage-bar-wrap">
+                <div class="coverage-bar">
+                  <div class="coverage-bar-fill current-fill" [style.width.%]="currentPct"></div>
+                </div>
+                <span class="coverage-value">{{ currentPct }}%</span>
+              </div>
+            </div>
+
+            <div class="coverage-item">
+              <span class="coverage-label">Target Coverage</span>
+              <div class="coverage-bar-wrap">
+                <input
+                  class="target-slider"
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  [(ngModel)]="targetPct"
+                  (ngModelChange)="onTargetChange()"
+                />
+                <span class="coverage-value target-value">{{ targetPct }}%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="gap-row">
+            @if (gapPct > 0) {
+              <div class="gap-badge gap-positive">
+                Gap to close: +{{ gapPct }}%
+                @if (additionalTechniquesNeeded > 0) {
+                  <span class="gap-techs">({{ additionalTechniquesNeeded }} more techniques to cover)</span>
+                }
+              </div>
+            } @else if (targetPct <= currentPct) {
+              <div class="gap-badge gap-met">
+                Target already met! Current coverage ({{ currentPct }}%) exceeds target ({{ targetPct }}%).
+              </div>
+            }
+            @if (!targetReachable) {
+              <div class="gap-badge gap-unreachable">
+                Warning: Target {{ targetPct }}% may not be fully reachable — some techniques have no available mitigations.
+              </div>
+            }
+          </div>
+
+          <button
+            class="calculate-btn"
+            (click)="generatePlan()"
+            [disabled]="computing || targetPct <= currentPct"
+          >
+            @if (computing) {
+              <span class="btn-spinner"></span>
+              Calculating...
+            } @else {
+              Calculate Minimum Plan
+            }
+          </button>
+        </div>
+
+        <!-- Results Section -->
+        @if (planGenerated && !computing) {
+          <div class="results-section">
+
+            @if (plan.length === 0) {
+              <div class="no-plan">
+                <div class="no-plan-icon">✅</div>
+                <div class="no-plan-title">Target Already Reached</div>
+                <div class="no-plan-desc">Your current coverage already meets or exceeds the {{ targetPct }}% target.</div>
+              </div>
+            } @else {
+              <!-- Summary banner -->
+              <div class="results-banner">
+                <div class="results-banner-text">
+                  To reach <strong>{{ targetPct }}%</strong> coverage, implement these
+                  <strong>{{ plan.length }}</strong> mitigation{{ plan.length !== 1 ? 's' : '' }}
+                </div>
+                <div class="results-banner-sub">
+                  This will cover <strong>{{ totalAdditionalCovered }}</strong> additional technique{{ totalAdditionalCovered !== 1 ? 's' : '' }}
+                </div>
+              </div>
+
+              <!-- Progress bar -->
+              <div class="progress-section">
+                <div class="progress-label">Coverage progression</div>
+                <div class="progress-track">
+                  <div class="progress-start-marker" [style.left.%]="currentPct">
+                    <span class="progress-marker-label">{{ currentPct }}%</span>
+                  </div>
+                  <div class="progress-fill-base" [style.width.%]="currentPct"></div>
+                  @if (plan.length > 0) {
+                    <div
+                      class="progress-fill-gain"
+                      [style.left.%]="currentPct"
+                      [style.width.%]="plan[plan.length - 1].cumulativeCoverage - currentPct"
+                    ></div>
+                  }
+                  <div class="progress-target-line" [style.left.%]="targetPct">
+                    <span class="progress-target-label">{{ targetPct }}%</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Plan table -->
+              <div class="plan-table-wrap">
+                <table class="plan-table">
+                  <thead>
+                    <tr>
+                      <th class="rank-col">Priority</th>
+                      <th>Mitigation</th>
+                      <th class="new-techs-col">+Techniques</th>
+                      <th class="cumulative-col">Cumulative %</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of plan; track item.mitigation.id; let i = $index) {
+                      <tr class="plan-row">
+                        <td class="rank-cell">
+                          <span class="rank-badge">#{{ i + 1 }}</span>
+                        </td>
+                        <td class="mit-cell">
+                          <div class="mit-name">{{ item.mitigation.name }}</div>
+                          <div class="mit-meta">
+                            <a
+                              [href]="attackUrl(item.mitigation.attackId)"
+                              target="_blank"
+                              rel="noopener"
+                              class="mit-id"
+                              (click)="$event.stopPropagation()"
+                            >{{ item.mitigation.attackId }}</a>
+                          </div>
+                        </td>
+                        <td class="new-techs-cell">
+                          <span class="new-techs-badge">+{{ item.newTechniques.length }}</span>
+                        </td>
+                        <td class="cumulative-cell">
+                          <div class="cumulative-wrap">
+                            <div class="cumulative-bar">
+                              <div class="cumulative-fill" [style.width.%]="item.cumulativeCoverage"></div>
+                            </div>
+                            <span class="cumulative-pct">{{ item.cumulativeCoverage }}%</span>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+        }
+
+      </div>
+    </div>
+  </div>
+}

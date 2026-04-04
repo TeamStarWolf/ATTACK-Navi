@@ -1,0 +1,181 @@
+@if (visible) {
+  <div class="overlay" (click)="close()">
+    <div class="panel" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="panel-header">
+        <div class="header-left">
+          <span class="panel-title">Compliance Frameworks</span>
+          @if (complianceRows.length > 0) {
+            <span class="header-subtitle">
+              {{ activeTabCount }} techniques with {{ activeTab === 'cis' ? 'CIS Controls' : activeTab === 'nist' ? 'NIST 800-53' : activeTab === 'cri' ? 'CRI Profile' : activeTab.toUpperCase() }} coverage
+            </span>
+          }
+        </div>
+        <button class="close-btn" (click)="close()" title="Close">✕</button>
+      </div>
+
+      @if (complianceRows.length === 0) {
+        <div class="loading-state">
+          <div class="loader-spinner"></div>
+          <p>Loading compliance framework data…</p>
+        </div>
+      } @else {
+
+        <!-- Tabs -->
+        <div class="tab-bar">
+          <button class="tab-btn" [class.active]="activeTab === 'cis'" (click)="setTab('cis')">
+            CIS Controls v8
+            @if (cisTotal > 0) {
+              <span class="tab-badge tab-badge-cis">{{ cisTotal }}</span>
+            }
+          </button>
+          <button class="tab-btn" [class.active]="activeTab === 'aws'" (click)="setTab('aws')">
+            AWS
+            @if (awsTotal > 0) {
+              <span class="tab-badge tab-badge-aws">{{ awsTotal }}</span>
+            }
+            @if (!awsLoaded) {
+              <span class="loading-dot"></span>
+            }
+          </button>
+          <button class="tab-btn" [class.active]="activeTab === 'azure'" (click)="setTab('azure')">
+            Azure
+            @if (azureTotal > 0) {
+              <span class="tab-badge tab-badge-azure">{{ azureTotal }}</span>
+            }
+            @if (!azureLoaded) {
+              <span class="loading-dot"></span>
+            }
+          </button>
+          <button class="tab-btn" [class.active]="activeTab === 'gcp'" (click)="setTab('gcp')">
+            GCP
+            @if (gcpTotal > 0) {
+              <span class="tab-badge tab-badge-gcp">{{ gcpTotal }}</span>
+            }
+            @if (!gcpLoaded) {
+              <span class="loading-dot"></span>
+            }
+          </button>
+          <button class="tab-btn" [class.active]="activeTab === 'nist'" (click)="setTab('nist')">
+            🏛 NIST 800-53
+            @if (nistTotal > 0) {
+              <span class="tab-badge tab-badge-nist">{{ nistTotal }}</span>
+            }
+            @if (!nistLoaded) {
+              <span class="loading-dot"></span>
+            }
+          </button>
+          <button class="tab-btn" [class.active]="activeTab === 'cri'" (click)="setTab('cri')">
+            🏦 CRI Profile
+            @if (criTotal > 0) {
+              <span class="tab-badge tab-badge-cri">{{ criTotal }}</span>
+            }
+            @if (!criLoaded) {
+              <span class="loading-dot"></span>
+            }
+          </button>
+        </div>
+
+        <!-- Search + Sort -->
+        <div class="search-row">
+          <input
+            class="search-input"
+            type="text"
+            placeholder="Search techniques…"
+            [(ngModel)]="searchText"
+          />
+          <div class="sort-controls">
+            <span class="sort-label">Sort:</span>
+            <button class="sort-btn" [class.active]="sortBy === 'coverage'" (click)="sortBy = 'coverage'">Coverage</button>
+            <button class="sort-btn" [class.active]="sortBy === 'technique'" (click)="sortBy = 'technique'">Technique</button>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="tab-content">
+          <div class="table-wrap">
+            <table class="comp-table">
+              <thead>
+                <tr>
+                  <th>Technique</th>
+                  <th class="id-col">ATT&amp;CK ID</th>
+                  <th class="tactic-col">Tactic</th>
+                  <th class="num-col"># Controls</th>
+                  <th class="badge-col">Controls (preview)</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of displayRows; track row.id) {
+                  <tr class="comp-row">
+                    <td class="tech-name">{{ row.name }}</td>
+                    <td class="tech-id">
+                      <a [href]="attackUrl(row.attackId)" target="_blank" rel="noopener">{{ row.attackId }}</a>
+                    </td>
+                    <td class="tech-tactic">{{ row.tactic }}</td>
+                    <td class="num-col">
+                      <span class="count-badge" [class]="'count-' + activeTab">{{ activeCount(row) }}</span>
+                    </td>
+                    <td class="badge-col">
+                      <div class="ctrl-badges">
+                        @for (ctrl of topControls(row); track ctrl.id) {
+                          <span
+                            class="ctrl-pill"
+                            [class]="'ctrl-pill-' + activeTab"
+                            (mouseenter)="showTooltip($event, ctrl)"
+                            (mouseleave)="hideTooltip()"
+                          >{{ ctrl.id }}</span>
+                        }
+                        @if (activeCount(row) > 2) {
+                          <span class="ctrl-more">+{{ activeCount(row) - 2 }}</span>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+                @if (displayRows.length === 0) {
+                  <tr>
+                    <td colspan="5" class="empty-cell">
+                      @if (searchText) {
+                        No techniques match your search.
+                      } @else {
+                        No control mappings available for this framework yet.
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Footer attribution -->
+        <div class="panel-footer">
+          <a href="https://center-for-threat-informed-defense.github.io/mappings-explorer/" target="_blank" rel="noopener" class="ctid-link">
+            Data provided by CTID Mappings Explorer
+          </a>
+        </div>
+
+      }
+    </div>
+  </div>
+
+  <!-- Tooltip -->
+  @if (tooltipControl) {
+    <div
+      class="ctrl-tooltip"
+      [style.left.px]="tooltipX"
+      [style.top.px]="tooltipY"
+    >
+      <div class="tooltip-id">{{ tooltipControl.id }}</div>
+      <div class="tooltip-desc">{{ tooltipControl.description }}</div>
+      @if ($any(tooltipControl).group) {
+        <div class="tooltip-meta">Group: {{ $any(tooltipControl).group }}</div>
+      }
+      @if ($any(tooltipControl).provider) {
+        <div class="tooltip-meta">Provider: {{ $any(tooltipControl).provider | uppercase }}</div>
+      }
+      <div class="tooltip-type">{{ tooltipControl.mappingType }}</div>
+    </div>
+  }
+}

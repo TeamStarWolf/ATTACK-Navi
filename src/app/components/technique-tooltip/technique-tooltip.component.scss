@@ -1,0 +1,44 @@
+.tooltip-card {
+  position: fixed;
+  z-index: 9999;
+  width: 320px;
+  background: #131f2e;
+  border: 1px solid #1e3a5f;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  pointer-events: none;
+  animation: fadeIn 0.12s ease;
+
+  .tooltip-header {
+    margin-bottom: 6px;
+    .t-id { color: #58a6ff; font-weight: 700; font-size: 11px; margin-right: 6px; }
+    .t-name { color: #cdd9e5; font-weight: 600; font-size: 13px; }
+  }
+
+  .tooltip-meta {
+    display: flex; gap: 12px; margin-bottom: 6px;
+    .meta-item { font-size: 11px; color: #8b949e; }
+  }
+
+  .tooltip-platforms {
+    display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px;
+    .plat-badge {
+      background: #1a3448; color: #8b949e; border-radius: 3px;
+      padding: 1px 5px; font-size: 10px;
+    }
+  }
+
+  .tooltip-desc {
+    font-size: 11px; color: #768fa3; line-height: 1.4;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+    overflow: hidden; margin-bottom: 4px;
+  }
+
+  .tooltip-hint { font-size: 10px; color: #4a6080; font-style: italic; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

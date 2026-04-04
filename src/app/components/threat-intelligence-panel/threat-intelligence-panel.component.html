@@ -1,0 +1,261 @@
+@if (visible) {
+  <div class="overlay" (click)="close()">
+    <div class="panel" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="panel-header">
+        <div class="header-left">
+          <span class="panel-title">Threat Intelligence</span>
+          <span class="header-subtitle">
+            {{ galaxyClustersLoaded }} clusters
+            &middot; {{ totalGroups }} groups
+            &middot; {{ totalWithIntel }} techniques with signals
+          </span>
+        </div>
+        <button class="close-btn" (click)="close()" title="Close">&#x2715;</button>
+      </div>
+
+      <!-- Stats cards -->
+      <div class="stats-bar">
+        <div class="stat-card">
+          <span class="stat-value">{{ galaxyClustersLoaded }}</span>
+          <span class="stat-label">MISP Clusters</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" [class.connected]="openCtiConnected">
+            {{ openCtiConnected ? 'Connected' : 'Offline' }}
+          </span>
+          <span class="stat-label">OpenCTI</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value">{{ totalGroups }}</span>
+          <span class="stat-label">Threat Groups</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value">{{ totalWithIntel }}</span>
+          <span class="stat-label">Techniques w/ Intel</span>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tab-bar">
+        <button class="tab-btn" [class.active]="activeTab === 'overview'" (click)="setTab('overview')">
+          Intel Overview
+        </button>
+        <button class="tab-btn" [class.active]="activeTab === 'indicators'" (click)="setTab('indicators')">
+          Indicators
+        </button>
+        <button class="tab-btn" [class.active]="activeTab === 'actors'" (click)="setTab('actors')">
+          Threat Actors
+          @if (totalGroups > 0) {
+            <span class="tab-badge">{{ totalGroups }}</span>
+          }
+        </button>
+        <button class="tab-btn" [class.active]="activeTab === 'misp'" (click)="setTab('misp')">
+          MISP Events
+        </button>
+      </div>
+
+      <!-- Tab content -->
+      <div class="tab-content">
+
+        <!-- Overview tab -->
+        @if (activeTab === 'overview') {
+          @if (topIntelRows.length === 0) {
+            <div class="loading-state">
+              <div class="loader-spinner"></div>
+              <p>Loading intelligence data...</p>
+            </div>
+          } @else {
+            <div class="top-intro">Top 20 techniques by intelligence signal score</div>
+            <div class="table-wrap">
+              <table class="intel-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Technique</th>
+                    <th class="id-col">ATT&amp;CK ID</th>
+                    <th class="num-col" title="MISP Galaxy Cluster">MISP</th>
+                    <th class="num-col" title="Threat groups using technique">Groups</th>
+                    <th class="num-col">Score</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of topIntelRows; track row.attackId; let i = $index) {
+                    <tr class="intel-row">
+                      <td class="rank-col">{{ i + 1 }}</td>
+                      <td class="tech-name">{{ row.name }}</td>
+                      <td class="tech-id">{{ row.attackId }}</td>
+                      <td class="num-col">
+                        @if (row.mispCluster) {
+                          <span class="check-mark">&#x2713;</span>
+                        } @else {
+                          <span class="count-zero">&mdash;</span>
+                        }
+                      </td>
+                      <td class="num-col">
+                        @if (row.groupCount > 0) {
+                          <span class="count-badge count-group">{{ row.groupCount }}</span>
+                        } @else {
+                          <span class="count-zero">&mdash;</span>
+                        }
+                      </td>
+                      <td class="num-col">
+                        <span class="score-badge score-{{ scoreBracket(row.intelScore) }}">{{ row.intelScore }}</span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        }
+
+        <!-- Indicators tab -->
+        @if (activeTab === 'indicators') {
+          <div class="search-row">
+            <input
+              class="search-input"
+              type="text"
+              placeholder="Search by technique ID (e.g. T1059) or name..."
+              [(ngModel)]="indicatorSearch"
+              (keydown.enter)="searchIndicators()"
+            />
+            <button class="action-btn" (click)="searchIndicators()">Search</button>
+            @if (indicatorRows.length > 0) {
+              <button class="action-btn export-btn" (click)="exportIndicatorCsv()">Export CSV</button>
+            }
+          </div>
+
+          @if (indicatorLoading) {
+            <div class="loading-state">
+              <div class="loader-spinner"></div>
+              <p>Fetching indicators...</p>
+            </div>
+          } @else if (indicatorRows.length > 0) {
+            <div class="table-wrap">
+              <table class="intel-table">
+                <thead>
+                  <tr>
+                    <th>Source</th>
+                    <th>Type</th>
+                    <th>Value</th>
+                    <th class="num-col">Confidence</th>
+                    <th>Last Updated</th>
+                    <th class="action-col"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of indicatorRows; track $index) {
+                    <tr class="intel-row">
+                      <td>
+                        <span class="source-badge" [class.misp]="row.source === 'MISP'" [class.opencti]="row.source === 'OpenCTI'">
+                          {{ row.source }}
+                        </span>
+                      </td>
+                      <td class="type-cell">{{ row.type }}</td>
+                      <td class="value-cell" [title]="row.value">{{ row.value }}</td>
+                      <td class="num-col">{{ row.confidence }}%</td>
+                      <td>{{ row.lastUpdated }}</td>
+                      <td class="action-col">
+                        <button class="copy-btn" (click)="copyValue(row.value)" title="Copy value">&#x2398;</button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <div class="empty-state">
+              <p>Search by technique ID to find related indicators from MISP and OpenCTI.</p>
+              @if (!openCtiConnected) {
+                <p class="hint-text">OpenCTI is not connected. Configure it in Settings to see live indicators.</p>
+              }
+            </div>
+          }
+        }
+
+        <!-- Actors tab -->
+        @if (activeTab === 'actors') {
+          <div class="search-row">
+            <input
+              class="search-input"
+              type="text"
+              placeholder="Search threat actors..."
+              [(ngModel)]="actorSearch"
+              (input)="filterActors()"
+            />
+          </div>
+          @if (actorRows.length > 0) {
+            <div class="actor-list">
+              @for (row of actorRows; track row.groupId) {
+                <div class="actor-card">
+                  <div class="actor-header">
+                    <span class="actor-name">{{ row.name }}</span>
+                    <span class="actor-source">{{ row.source }}</span>
+                  </div>
+                  @if (row.aliases.length > 0) {
+                    <div class="actor-aliases">
+                      @for (alias of row.aliases.slice(0, 5); track alias) {
+                        <span class="alias-pill">{{ alias }}</span>
+                      }
+                      @if (row.aliases.length > 5) {
+                        <span class="alias-more">+{{ row.aliases.length - 5 }} more</span>
+                      }
+                    </div>
+                  }
+                  <div class="actor-footer">
+                    <span class="actor-tech-count">{{ row.techniqueCount }} techniques</span>
+                    <button class="filter-btn" (click)="filterMatrixByGroup(row)">Filter Matrix</button>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="empty-state">
+              <p>No threat actors found.</p>
+            </div>
+          }
+        }
+
+        <!-- MISP Events tab -->
+        @if (activeTab === 'misp') {
+          @if (galaxyClustersLoaded === 0) {
+            <div class="empty-state">
+              <p>MISP galaxy data is still loading...</p>
+            </div>
+          } @else {
+            <div class="search-row">
+              <input
+                class="search-input"
+                type="text"
+                placeholder="Enter technique ID (e.g. T1059)..."
+                [(ngModel)]="mispSearch"
+                (keydown.enter)="generateMispEvent()"
+              />
+              <button class="action-btn" (click)="generateMispEvent()">Create Event</button>
+            </div>
+
+            @if (mispEventTemplate) {
+              <div class="event-template">
+                <div class="event-template-header">
+                  <span>MISP Event Template</span>
+                  <button class="copy-btn" (click)="copyEventTemplate()" title="Copy to clipboard">&#x2398; Copy</button>
+                </div>
+                <pre class="event-json">{{ mispEventTemplate }}</pre>
+              </div>
+            } @else {
+              <div class="empty-state">
+                <p>Enter a technique ID above and click "Create Event" to generate a MISP event template.</p>
+                <p class="hint-text">
+                  The template includes MISP galaxy tags and ATT&amp;CK references ready for import.
+                </p>
+              </div>
+            }
+          }
+        }
+
+      </div>
+    </div>
+  </div>
+}
