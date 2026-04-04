@@ -240,6 +240,70 @@
   to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
+/* ---- Light mode overrides ---- */
+:host-context(body.light-mode) {
+  &::before {
+    opacity: 0;
+  }
+
+  .workspace-area {
+    background: #f1f5f9 !important;
+  }
+
+  .matrix-region {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+    backdrop-filter: none !important;
+  }
+
+  .context-bar {
+    background: #f8f9fa !important;
+    border-bottom-color: #e2e8f0 !important;
+    backdrop-filter: none !important;
+
+    app-legend { border-right-color: #e2e8f0 !important; }
+  }
+
+  .bulk-action-bar {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    backdrop-filter: none !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+
+    button {
+      background: #f1f5f9 !important;
+      border-color: #e2e8f0 !important;
+      color: #475569 !important;
+      &:hover { background: #e2e8f0 !important; color: #1a1a2e !important; }
+    }
+  }
+  .bulk-count { color: #2563eb !important; }
+
+  .ribbon-chip {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #475569 !important;
+    &:hover { background: #f1f5f9 !important; color: #1a1a2e !important; }
+  }
+
+  .state-screen {
+    color: #94a3b8 !important;
+    .loader-spinner {
+      border-color: rgba(0, 0, 0, 0.08) !important;
+      border-top-color: #2563eb !important;
+    }
+  }
+
+  .toast-notification {
+    background: #ffffff !important;
+    color: #1a1a2e !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+    backdrop-filter: none !important;
+  }
+}
+
 /* ---- Mobile layout adjustments for bottom nav ---- */
 @media (max-width: 768px) {
   .app-shell {

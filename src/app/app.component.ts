@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef, HostListener, DestroyRef, inject } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef, HostListener, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule, AsyncPipe } from '@angular/common';
 import { DataService, AttackDomain } from './services/data.service';
@@ -53,6 +53,7 @@ import { TechniqueGraphPanelComponent } from './components/technique-graph-panel
 import { CoverageDiffPanelComponent } from './components/coverage-diff-panel/coverage-diff-panel.component';
 import { ThreatIntelligencePanelComponent } from './components/threat-intelligence-panel/threat-intelligence-panel.component';
 import { CollectionPanelComponent } from './components/collection-panel/collection-panel.component';
+import { AssessmentWizardComponent } from './components/assessment-wizard/assessment-wizard.component';
 import { DataHealthComponent } from './components/data-health/data-health.component';
 import { MatrixExportService } from './services/matrix-export.service';
 import { HtmlReportService } from './services/html-report.service';
@@ -70,17 +71,18 @@ import { NavigatorLayerService } from './services/navigator-layer.service';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, AsyncPipe, MatrixComponent, SidebarComponent, ToolbarComponent, LegendComponent, StatsBarComponent, FilterChipsComponent, GapViewComponent, ThreatPanelComponent, PriorityPanelComponent, WhatifPanelComponent, ReportPanelComponent, KeyboardHelpComponent, ControlsPanelComponent, SoftwarePanelComponent, ComparisonPanelComponent, LayersPanelComponent, CvePanelComponent, AnalyticsPanelComponent, NavRailComponent, SigmaExportComponent, SiemExportComponent, PurpleTeamPanelComponent, YaraExportComponent, RoadmapPanelComponent, ActorProfilePanelComponent, DetectionPanelComponent, CompliancePanelComponent, ActorComparePanelComponent, TimelinePanelComponent, TacticSummaryComponent, SettingsPanelComponent, CustomMitPanelComponent, KillchainPanelComponent, RiskMatrixPanelComponent, ScenarioPanelComponent, QuickFiltersComponent, DashboardPanelComponent, DatasourcePanelComponent, WatchlistPanelComponent, ChangelogPanelComponent, TagsPanelComponent, TargetPanelComponent, CampaignTimelinePanelComponent, TechniqueGraphPanelComponent, CoverageDiffPanelComponent, ThreatIntelligencePanelComponent, CollectionPanelComponent, DataHealthComponent],
+  imports: [CommonModule, AsyncPipe, MatrixComponent, SidebarComponent, ToolbarComponent, LegendComponent, StatsBarComponent, FilterChipsComponent, GapViewComponent, ThreatPanelComponent, PriorityPanelComponent, WhatifPanelComponent, ReportPanelComponent, KeyboardHelpComponent, ControlsPanelComponent, SoftwarePanelComponent, ComparisonPanelComponent, LayersPanelComponent, CvePanelComponent, AnalyticsPanelComponent, NavRailComponent, SigmaExportComponent, SiemExportComponent, PurpleTeamPanelComponent, YaraExportComponent, RoadmapPanelComponent, ActorProfilePanelComponent, DetectionPanelComponent, CompliancePanelComponent, ActorComparePanelComponent, TimelinePanelComponent, TacticSummaryComponent, SettingsPanelComponent, CustomMitPanelComponent, KillchainPanelComponent, RiskMatrixPanelComponent, ScenarioPanelComponent, QuickFiltersComponent, DashboardPanelComponent, DatasourcePanelComponent, WatchlistPanelComponent, ChangelogPanelComponent, TagsPanelComponent, TargetPanelComponent, CampaignTimelinePanelComponent, TechniqueGraphPanelComponent, CoverageDiffPanelComponent, ThreatIntelligencePanelComponent, CollectionPanelComponent, AssessmentWizardComponent, DataHealthComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, AfterViewInit {
   private readonly destroyRef = inject(DestroyRef);
   @ViewChild(MatrixComponent) matrixRef?: MatrixComponent;
   @ViewChild(GapViewComponent) gapViewRef?: GapViewComponent;
   @ViewChild(TacticSummaryComponent) tacticSummary?: TacticSummaryComponent;
   @ViewChild(KeyboardHelpComponent) keyboardHelp?: KeyboardHelpComponent;
+  @ViewChild(CollectionPanelComponent) collectionPanel?: CollectionPanelComponent;
 
   domain: Domain | null = null;
   loading = true;
@@ -120,6 +122,11 @@ export class AppComponent implements OnInit {
       this.isLightMode = true;
       document.body.classList.add('light-mode');
     }
+  }
+
+  ngAfterViewInit(): void {
+    // Check URL for shared collection import after view is ready
+    setTimeout(() => this.collectionPanel?.checkUrlImport(), 500);
   }
 
   onDomainChange(domain: AttackDomain): void {
