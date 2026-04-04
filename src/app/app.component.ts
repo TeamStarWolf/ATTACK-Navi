@@ -1,4 +1,5 @@
-import { Component, OnInit, ViewChild, ElementRef, ChangeDetectionStrategy, ChangeDetectorRef, HostListener } from '@angular/core';
+import { Component, OnInit, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef, HostListener, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule, AsyncPipe } from '@angular/common';
 import { DataService, AttackDomain } from './services/data.service';
 import { Domain } from './models/domain';
@@ -63,6 +64,8 @@ import { TimelineService } from './services/timeline.service';
 import { TacticSummaryComponent, TacticSummaryData } from './components/tactic-summary/tactic-summary.component';
 import { Tactic } from './models/tactic';
 import { Technique } from './models/technique';
+import { BrowserFileService } from './services/browser-file.service';
+import { NavigatorLayerService } from './services/navigator-layer.service';
 
 @Component({
   selector: 'app-root',
@@ -73,6 +76,7 @@ import { Technique } from './models/technique';
   styleUrl: './app.component.scss',
 })
 export class AppComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   @ViewChild(MatrixComponent) matrixRef?: MatrixComponent;
   @ViewChild(GapViewComponent) gapViewRef?: GapViewComponent;
   @ViewChild(TacticSummaryComponent) tacticSummary?: TacticSummaryComponent;
@@ -100,13 +104,15 @@ export class AppComponent implements OnInit {
     private xlsxExport: XlsxExportService,
     private customMitService: CustomMitigationService,
     private timelineService: TimelineService,
+    private browserFileService: BrowserFileService,
+    private navigatorLayerService: NavigatorLayerService,
   ) {}
 
   ngOnInit(): void {
-    this.dataService.domain$.subscribe((d) => { this.domain = d; this.cdr.markForCheck(); });
-    this.dataService.loading$.subscribe((l) => { this.loading = l; this.cdr.markForCheck(); });
-    this.dataService.error$.subscribe((e) => { this.error = e; this.cdr.markForCheck(); });
-    this.dataService.currentDomain$.subscribe((d) => { this.currentDomain = d; this.cdr.markForCheck(); });
+    this.dataService.domain$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((d) => { this.domain = d; this.cdr.markForCheck(); });
+    this.dataService.loading$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((l) => { this.loading = l; this.cdr.markForCheck(); });
+    this.dataService.error$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((e) => { this.error = e; this.cdr.markForCheck(); });
+    this.dataService.currentDomain$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((d) => { this.currentDomain = d; this.cdr.markForCheck(); });
     this.dataService.loadDomain();
     this.activePanel$ = this.filterService.activePanel$;
     this.urlStateService.restoreFromUrl();
@@ -123,14 +129,18 @@ export class AppComponent implements OnInit {
 
   copyShareLink(): void {
     const url = this.urlStateService.getShareUrl();
-    navigator.clipboard.writeText(url).then(() => {
-      this.showCopiedToast();
-    });
+    navigator.clipboard.writeText(url)
+      .then(() => this.showToastMessage('Link copied to clipboard!'))
+      .catch(() => this.showToastMessage('Unable to copy the share link from this browser'));
   }
 
   showCopiedToast(): void {
+    this.showToastMessage('Link copied to clipboard!');
+  }
+
+  private showToastMessage(message: string): void {
     this.showToast = true;
-    this.toastMessage = '🔗 Link copied to clipboard!';
+    this.toastMessage = message;
     this.cdr.markForCheck();
     setTimeout(() => { this.showToast = false; this.cdr.markForCheck(); }, 2500);
   }
@@ -373,160 +383,39 @@ export class AppComponent implements OnInit {
       implementation: JSON.parse(this.implService.exportJson()),
       documentation: JSON.parse(this.docService.exportJson()),
     };
-    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'mitigation-navigator-state.json';
-    a.click();
-    URL.revokeObjectURL(a.href);
+    this.browserFileService.downloadJson(state, 'mitigation-navigator-state.json');
   }
 
-  importStateJson(): void {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        try {
-          const state = JSON.parse(ev.target?.result as string);
-          if (state.implementation) this.implService.importJson(JSON.stringify(state.implementation));
-          if (state.documentation) this.docService.importJson(JSON.stringify(state.documentation));
-        } catch { alert('Invalid state file.'); }
-      };
-      reader.readAsText(file);
-    };
-    input.click();
+  async importStateJson(): Promise<void> {
+    const json = await this.browserFileService.pickTextFile('.json');
+    if (!json) return;
+    try {
+      const state = JSON.parse(json) as { implementation?: unknown; documentation?: unknown };
+      if (state.implementation) this.implService.importJson(JSON.stringify(state.implementation));
+      if (state.documentation) this.docService.importJson(JSON.stringify(state.documentation));
+    } catch {
+      alert('Invalid state file.');
+    }
   }
 
-  importNavigatorLayer(): void {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file || !this.domain) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        try {
-          const layer = JSON.parse(ev.target?.result as string);
-          if (!layer.techniques || !Array.isArray(layer.techniques)) {
-            alert('Invalid Navigator layer: missing techniques array.');
-            return;
-          }
-          // Build a lookup: techniqueID → layer entry
-          const layerMap = new Map<string, any>();
-          for (const entry of layer.techniques) {
-            if (entry.techniqueID) layerMap.set(entry.techniqueID, entry);
-          }
-          // Apply scores as implementation status via impl service
-          for (const tech of this.domain!.techniques) {
-            const entry = layerMap.get(tech.attackId);
-            if (!entry) continue;
-            // If comment contains "implemented" → mark all mitigations as implemented
-            const comment: string = (entry.comment ?? '').toLowerCase();
-            const rels = this.domain!.mitigationsByTechnique.get(tech.id) ?? [];
-            for (const rel of rels) {
-              if (comment.includes('implemented')) {
-                this.implService.setStatus(rel.mitigation.id, 'implemented');
-              } else if (comment.includes('progress')) {
-                this.implService.setStatus(rel.mitigation.id, 'in-progress');
-              } else if (comment.includes('planned')) {
-                this.implService.setStatus(rel.mitigation.id, 'planned');
-              }
-            }
-          }
-          alert(`Layer "${layer.name ?? 'unnamed'}" imported — ${layerMap.size} technique annotations applied.`);
-        } catch { alert('Failed to parse Navigator layer JSON.'); }
-      };
-      reader.readAsText(file);
-    };
-    input.click();
+  async importNavigatorLayer(): Promise<void> {
+    if (!this.domain) return;
+    const json = await this.browserFileService.pickTextFile('.json');
+    if (!json) return;
+    try {
+      const result = await this.navigatorLayerService.importLayer(json, this.domain, this.implService);
+      alert(`Layer "${result.layerName}" imported - ${result.appliedCount} technique annotations applied.`);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Failed to import Navigator layer.');
+    }
   }
+
 
   exportNavigatorLayer(): void {
     if (!this.domain) return;
-    const statusMap = this.implService.getStatusMap();
-    const STATUS_SCORE: Record<string, number> = {
-      'implemented': 4,
-      'in-progress': 3,
-      'planned': 2,
-      'not-started': 1,
-    };
-    const STATUS_COLOR: Record<string, string> = {
-      'implemented': '#00c853',
-      'in-progress': '#1565c0',
-      'planned': '#ffa726',
-      'not-started': '#d32f2f',
-    };
-
-    const techniques: any[] = [];
-    for (const tech of this.domain.techniques) {
-      const rels = this.domain.mitigationsByTechnique.get(tech.id) ?? [];
-      const mitigationCount = rels.length;
-
-      // Coverage color: red (0) → green (4+)
-      const COVERAGE_COLORS = ['#d32f2f', '#ff9800', '#ffd54f', '#aed581', '#4caf50'];
-      const coverageColor = COVERAGE_COLORS[Math.min(mitigationCount, 4)];
-
-      // Check if any mitigation has an impl status
-      let bestStatus: string | null = null;
-      let bestScore = 0;
-      for (const rel of rels) {
-        const s = statusMap.get(rel.mitigation.id);
-        if (s && (STATUS_SCORE[s] ?? 0) > bestScore) {
-          bestStatus = s;
-          bestScore = STATUS_SCORE[s];
-        }
-      }
-
-      const entry: any = {
-        techniqueID: tech.attackId,
-        tactic: tech.tacticShortnames[0] ?? '',
-        color: bestStatus ? STATUS_COLOR[bestStatus] : coverageColor,
-        comment: bestStatus ? `Status: ${bestStatus}` : `${mitigationCount} mitigation(s)`,
-        enabled: true,
-        score: mitigationCount,
-        metadata: [],
-      };
-
-      techniques.push(entry);
-    }
-
-    const layer = {
-      name: 'ATT&CK Mitigation Coverage',
-      versions: { attack: '14', navigator: '4.9', layer: '4.5' },
-      domain: 'enterprise-attack',
-      description: 'Exported from ATT&CK Navi',
-      filters: { platforms: ['Windows', 'Linux', 'macOS', 'Azure AD', 'Office 365', 'Google Workspace', 'SaaS', 'IaaS', 'Network', 'Containers', 'PRE'] },
-      sorting: 0,
-      layout: { layout: 'side', aggregateFunction: 'average', showID: false, showName: true, showAggregateScores: false, countUnscored: false },
-      hideDisabled: false,
-      techniques,
-      gradient: {
-        colors: ['#d32f2f', '#4caf50'],
-        minValue: 0,
-        maxValue: 4,
-      },
-      legendItems: [
-        { label: 'Implemented', color: '#00c853' },
-        { label: 'In Progress', color: '#1565c0' },
-        { label: 'Planned', color: '#ffa726' },
-        { label: 'Not Started', color: '#d32f2f' },
-        { label: '0 mitigations', color: '#d32f2f' },
-        { label: '4+ mitigations', color: '#4caf50' },
-      ],
-    };
-
-    const blob = new Blob([JSON.stringify(layer, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'attack-navigator-layer.json';
-    a.click();
-    URL.revokeObjectURL(a.href);
+    this.navigatorLayerService.downloadLayer(this.domain, this.currentDomain, this.implService.getStatusMap(), this.browserFileService);
   }
+
 
   openInNavigator(): void {
     this.exportNavigatorLayer();
@@ -579,11 +468,6 @@ export class AppComponent implements OnInit {
   }
 
   private downloadCsv(content: string, filename: string): void {
-    const blob = new Blob([content], { type: 'text/csv' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(a.href);
+    this.browserFileService.downloadText(content, filename, 'text/csv');
   }
 }

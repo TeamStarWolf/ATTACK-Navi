@@ -9,6 +9,20 @@ export type ActivePanel = 'dashboard' | 'threats' | 'priority' | 'whatif' | 'rep
 export type HeatmapMode = 'coverage' | 'exposure' | 'status' | 'controls' | 'software' | 'campaign' | 'risk' | 'kev' | 'd3fend' | 'atomic' | 'engage' | 'car' | 'cve' | 'detection' | 'frequency' | 'cri' | 'unified' | 'sigma' | 'nist' | 'veris' | 'epss' | 'elastic' | 'splunk' | 'intelligence';
 export type SearchScope = 'name' | 'full';
 
+export interface FilterStateSnapshot {
+  heatmapMode: HeatmapMode;
+  activeThreatGroupIds: string[];
+  activeSoftwareIds: string[];
+  activeCampaignIds: string[];
+  activeMitigationFilterIds: string[];
+  whatIfMitigationIds: string[];
+  platformFilter: string | null;
+  sortMode: SortMode;
+  dimUncovered: boolean;
+  searchFilterMode: boolean;
+  hiddenTacticIds: string[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class FilterService {
   private selectedTechniqueSubject = new BehaviorSubject<Technique | null>(null);
@@ -455,18 +469,25 @@ export class FilterService {
     this.selectedTechniqueSubject.next(null);
     this.activeMitigationFiltersSubject.next([]);
     this.techniqueQuerySubject.next('');
+    this.sortModeSubject.next('alpha');
     this.platformFilterSubject.next(null);
     this.platformMultiSubject.next(new Set());
     this.dimUncoveredSubject.next(false);
+    this.hiddenTacticIdsSubject.next(new Set());
+    this.searchScopeSubject.next('name');
     this.activeThreatGroupIdsSubject.next(new Set());
     this.whatIfMitigationIdsSubject.next(new Set());
     this.activeSoftwareIdsSubject.next(new Set());
     this.activeCampaignIdsSubject.next(new Set());
     this.activeDataSourceSubject.next(null);
+    this.heatmapModeSubject.next('coverage');
+    this.implStatusFilterSubject.next(null);
+    this.searchFilterModeSubject.next(false);
+    this.cveTechniqueIdsSubject.next(new Set());
     this.techniqueSearchSubject.next('');
   }
 
-  getStateSnapshot(): any {
+  getStateSnapshot(): FilterStateSnapshot {
     return {
       heatmapMode: this.heatmapModeSubject.value,
       activeThreatGroupIds: [...this.activeThreatGroupIdsSubject.value],
@@ -482,7 +503,7 @@ export class FilterService {
     };
   }
 
-  restoreStateSnapshot(state: any): void {
+  restoreStateSnapshot(state: Partial<FilterStateSnapshot> | null | undefined): void {
     if (!state) return;
     if (state.heatmapMode) this.heatmapModeSubject.next(state.heatmapMode as HeatmapMode);
     if (state.platformFilter !== undefined) this.platformFilterSubject.next(state.platformFilter);

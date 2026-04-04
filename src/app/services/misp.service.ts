@@ -26,6 +26,8 @@ export interface MispConfig {
   apiKey: string;
   orgId: string;
   connected: boolean;
+  mode: 'direct' | 'proxy';
+  proxyUrl: string;
 }
 
 export interface MispAttribute {
@@ -87,7 +89,7 @@ export class MispService {
   readonly total$ = this.totalSubject.asObservable();
 
   // ─── Live server state ──────────────────────────────────────────────────
-  private serverConfig: MispConfig = { url: '', apiKey: '', orgId: '', connected: false };
+  private serverConfig: MispConfig = { url: '', apiKey: '', orgId: '', connected: false, mode: 'direct', proxyUrl: '' };
 
   private connectedSubject = new BehaviorSubject<boolean>(false);
   readonly connected$ = this.connectedSubject.asObservable();
@@ -114,7 +116,15 @@ export class MispService {
       const stored = localStorage.getItem('misp_config');
       if (stored) {
         const c = JSON.parse(stored);
-        this.serverConfig = { ...this.serverConfig, ...c, connected: false };
+        this.serverConfig = {
+          ...this.serverConfig,
+          url: typeof c?.url === 'string' ? c.url : '',
+          orgId: typeof c?.orgId === 'string' ? c.orgId : '',
+          connected: false,
+          apiKey: '',
+          mode: c?.mode === 'proxy' ? 'proxy' : 'direct',
+          proxyUrl: typeof c?.proxyUrl === 'string' ? c.proxyUrl : '',
+        };
       }
     } catch {
       // ignore
@@ -127,12 +137,17 @@ export class MispService {
       apiKey: config.apiKey,
       orgId: config.orgId,
       connected: false,
+      mode: config.mode === 'proxy' ? 'proxy' : 'direct',
+      proxyUrl: config.proxyUrl.replace(/\/$/, ''),
     };
+    this.attributeCache.clear();
+    this.eventCache.clear();
     try {
       localStorage.setItem('misp_config', JSON.stringify({
         url: this.serverConfig.url,
-        apiKey: this.serverConfig.apiKey,
         orgId: this.serverConfig.orgId,
+        mode: this.serverConfig.mode,
+        proxyUrl: this.serverConfig.proxyUrl,
       }));
     } catch {
       // ignore
@@ -145,7 +160,7 @@ export class MispService {
   }
 
   clearConfig(): void {
-    this.serverConfig = { url: '', apiKey: '', orgId: '', connected: false };
+    this.serverConfig = { url: '', apiKey: '', orgId: '', connected: false, mode: 'direct', proxyUrl: '' };
     this.connectedSubject.next(false);
     this.serverErrorSubject.next(null);
     localStorage.removeItem('misp_config');
@@ -154,7 +169,13 @@ export class MispService {
   }
 
   testConnection(): Observable<boolean> {
-    if (!this.serverConfig.url || !this.serverConfig.apiKey) {
+    if (this.serverConfig.mode === 'proxy') {
+      if (!this.serverConfig.proxyUrl) {
+        this.connectedSubject.next(false);
+        this.serverErrorSubject.next('No secure proxy URL configured.');
+        return of(false);
+      }
+    } else if (!this.serverConfig.url || !this.serverConfig.apiKey) {
       this.connectedSubject.next(false);
       this.serverErrorSubject.next('No URL or API key configured.');
       return of(false);
@@ -278,27 +299,23 @@ export class MispService {
   // ─── Private: MISP API fetch with CORS proxy fallback ───────────────────
 
   private mispFetch<T>(endpoint: string, body?: any): Observable<T> {
-    const url = `${this.serverConfig.url}${endpoint}`;
-    const headers = new HttpHeaders({
-      'Authorization': this.serverConfig.apiKey,
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-    });
+    const url = this.serverConfig.mode === 'proxy'
+      ? `${this.serverConfig.proxyUrl}/api/misp${endpoint}`
+      : `${this.serverConfig.url}${endpoint}`;
+    const headers = this.serverConfig.mode === 'proxy'
+      ? new HttpHeaders({
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        })
+      : new HttpHeaders({
+          'Authorization': this.serverConfig.apiKey,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        });
 
-    const request$ = body
+    return body
       ? this.http.post<T>(url, body, { headers })
       : this.http.get<T>(url, { headers });
-
-    // Fallback chain: direct request -> allorigins CORS proxy -> error
-    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-    const proxyRequest$ = body
-      ? this.http.post<T>(proxyUrl, body, { headers })
-      : this.http.get<T>(proxyUrl, { headers });
-
-    return request$.pipe(
-      catchError(() => proxyRequest$),
-      catchError(err => { throw err; }),
-    );
   }
 
   private load(): void {

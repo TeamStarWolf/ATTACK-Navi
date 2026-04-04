@@ -7,6 +7,8 @@ export interface OpenCtiConfig {
   url: string;       // e.g. https://demo.opencti.io
   token: string;     // API token (Bearer)
   connected: boolean;
+  mode: 'direct' | 'proxy';
+  proxyUrl: string;
 }
 
 export interface OpenCtiIndicator {
@@ -99,6 +101,8 @@ export class OpenCtiService {
     url: '',
     token: '',
     connected: false,
+    mode: 'direct',
+    proxyUrl: '',
   };
 
   private connectedSubject = new BehaviorSubject<boolean>(false);
@@ -125,17 +129,36 @@ export class OpenCtiService {
       const stored = localStorage.getItem('opencti_config');
       if (stored) {
         const c = JSON.parse(stored);
-        this.config = { ...this.config, ...c, connected: false };
+        this.config = {
+          ...this.config,
+          url: typeof c?.url === 'string' ? c.url : '',
+          connected: false,
+          token: '',
+          mode: c?.mode === 'proxy' ? 'proxy' : 'direct',
+          proxyUrl: typeof c?.proxyUrl === 'string' ? c.proxyUrl : '',
+        };
       }
     } catch {
       // ignore
     }
   }
 
-  saveConfig(url: string, token: string): void {
-    this.config = { url: url.replace(/\/$/, ''), token, connected: false };
+  saveConfig(config: Partial<OpenCtiConfig>): void {
+    this.config = {
+      url: (config.url ?? '').replace(/\/$/, ''),
+      token: config.token ?? '',
+      connected: false,
+      mode: config.mode === 'proxy' ? 'proxy' : 'direct',
+      proxyUrl: (config.proxyUrl ?? '').replace(/\/$/, ''),
+    };
+    this.indicatorCache.clear();
+    this.actorCache.clear();
     try {
-      localStorage.setItem('opencti_config', JSON.stringify({ url: this.config.url, token }));
+      localStorage.setItem('opencti_config', JSON.stringify({
+        url: this.config.url,
+        mode: this.config.mode,
+        proxyUrl: this.config.proxyUrl,
+      }));
     } catch {
       // ignore
     }
@@ -147,7 +170,7 @@ export class OpenCtiService {
   }
 
   clearConfig(): void {
-    this.config = { url: '', token: '', connected: false };
+    this.config = { url: '', token: '', connected: false, mode: 'direct', proxyUrl: '' };
     this.connectedSubject.next(false);
     localStorage.removeItem('opencti_config');
     this.indicatorCache.clear();
@@ -155,7 +178,13 @@ export class OpenCtiService {
   }
 
   testConnection(): void {
-    if (!this.config.url || !this.config.token) {
+    if (this.config.mode === 'proxy') {
+      if (!this.config.proxyUrl) {
+        this.connectedSubject.next(false);
+        this.errorSubject.next('No secure proxy URL configured.');
+        return;
+      }
+    } else if (!this.config.url || !this.config.token) {
       this.connectedSubject.next(false);
       this.errorSubject.next('No URL or token configured.');
       return;
@@ -309,11 +338,15 @@ export class OpenCtiService {
   // ─── Private helpers ──────────────────────────────────────────────────────
 
   private graphql<T>(query: string, variables: Record<string, unknown>): Observable<T> {
-    const endpoint = `${this.config.url}/graphql`;
-    const headers = new HttpHeaders({
-      'Authorization': `Bearer ${this.config.token}`,
-      'Content-Type': 'application/json',
-    });
+    const endpoint = this.config.mode === 'proxy'
+      ? `${this.config.proxyUrl}/api/opencti/graphql`
+      : `${this.config.url}/graphql`;
+    const headers = this.config.mode === 'proxy'
+      ? new HttpHeaders({ 'Content-Type': 'application/json' })
+      : new HttpHeaders({
+          'Authorization': `Bearer ${this.config.token}`,
+          'Content-Type': 'application/json',
+        });
 
     return this.http.post<{ data: T }>(endpoint, { query, variables }, { headers }).pipe(
       map(res => res.data),
