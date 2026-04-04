@@ -1,48 +1,63 @@
 @if (open) {
   <div class="us-overlay" (click)="close()"></div>
-  <div class="us-panel" role="dialog" aria-label="Universal Search">
+  <div class="us-panel" role="dialog" aria-label="Universal Search" (keydown)="onResultKeydown($event)">
     <div class="us-search-bar upgrade-section-block">
       <span class="us-icon">🔍</span>
       <input
+        #searchInput
         type="text"
         class="us-input"
-        placeholder="Search techniques, mitigations, groups, D3FEND, CAR, Atomic, Engage…"
+        placeholder="Search techniques, mitigations, groups, campaigns, software, D3FEND, CAR, Atomic, Engage..."
         [(ngModel)]="query"
         (input)="onInput()"
         autofocus
+        role="combobox"
+        aria-label="Search all entities"
+        [attr.aria-expanded]="results.length > 0"
+        aria-controls="us-results-list"
+        [attr.aria-activedescendant]="activeResultIndex >= 0 ? 'us-result-' + activeResultIndex : null"
       />
       @if (query) {
-        <button class="us-clear" (click)="query = ''; results = []">✕</button>
+        <button class="us-clear" (click)="query = ''; results = []; activeResultIndex = -1" aria-label="Clear search">✕</button>
       }
-      <button class="us-close" (click)="close()">Esc</button>
+      <button class="us-close" (click)="close()" aria-label="Close search">Esc</button>
     </div>
 
     @if (results.length > 0) {
-      <div class="us-kind-filters upgrade-action-strip">
+      <div class="us-kind-filters upgrade-action-strip" role="tablist" aria-label="Filter by result type">
         @for (kind of kindFilterOptions; track kind) {
           @if (kindCounts[kind] > 0 || kind === 'all') {
             <button
               class="kind-chip"
+              role="tab"
+              [attr.aria-selected]="activeKindFilter === kind"
               [class.active]="activeKindFilter === kind"
-              (click)="activeKindFilter = kind"
+              (click)="activeKindFilter = kind; activeResultIndex = -1"
             >{{ kindLabels[kind] }} <span class="kind-count">{{ kindCounts[kind] }}</span></button>
           }
         }
       </div>
     }
 
-    <div class="us-results">
+    <div class="us-results" id="us-results-list" role="listbox" aria-label="Search results">
       @if (query.length >= 2 && filteredResults.length === 0) {
         <div class="us-empty">No results for "{{ query }}"</div>
       }
-      @for (r of filteredResults; track r.kind + r.id) {
-        <div class="us-result upgrade-section-block" (click)="selectResult(r)">
-          <span class="result-kind-icon" [style.color]="kindColor(r.kind)">{{ kindIcon(r.kind) }}</span>
+      @for (r of filteredResults; track r.kind + r.id; let i = $index) {
+        <div
+          class="us-result upgrade-section-block"
+          [class.active-result]="i === activeResultIndex"
+          [id]="'us-result-' + i"
+          role="option"
+          [attr.aria-selected]="i === activeResultIndex"
+          (click)="selectResult(r)"
+        >
+          <span class="result-kind-badge" [style.background]="kindColor(r.kind)" aria-hidden="true">{{ kindIcon(r.kind) }}</span>
           <div class="result-body">
             <div class="result-top">
               <span class="result-id" [style.color]="kindColor(r.kind)">{{ r.id }}</span>
               <span class="result-name">{{ r.name }}</span>
-              <span class="result-kind-label">{{ kindLabels[r.kind] }}</span>
+              <span class="result-kind-label" [style.background]="kindColor(r.kind) + '22'" [style.color]="kindColor(r.kind)" [style.border-color]="kindColor(r.kind) + '44'">{{ kindLabels[r.kind] }}</span>
             </div>
             @if (r.description) {
               <p class="result-desc">{{ r.description }}</p>
@@ -53,7 +68,7 @@
     </div>
 
     <div class="us-footer">
-      <span>Ctrl+Shift+F to open · Esc to close · Enter to select</span>
+      <span>Ctrl+Shift+F to open · Esc to close · ↑↓ to navigate · Enter to select</span>
     </div>
   </div>
 }

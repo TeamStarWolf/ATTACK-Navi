@@ -42,7 +42,7 @@ import { CustomMitigationService, CustomMitigation } from '../../services/custom
 import { AnnotationService, TechniqueAnnotation } from '../../services/annotation.service';
 import { WatchlistService } from '../../services/watchlist.service';
 import { MispService, MispGalaxyCluster, MispTag } from '../../services/misp.service';
-import { SigmaService } from '../../services/sigma.service';
+import { SigmaService, SigmaRuleDetail } from '../../services/sigma.service';
 import { OpenCtiService, OpenCtiIndicator, OpenCtiThreatActor } from '../../services/opencti.service';
 import { EpssService } from '../../services/epss.service';
 import { ExploitdbService } from '../../services/exploitdb.service';
@@ -100,6 +100,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
   mispCluster: MispGalaxyCluster | null = null;
   mispTagCopied = false;
 
+  // Sigma Rules (live from SigmaHQ)
+  sigmaRules: SigmaRuleDetail[] = [];
+  sigmaRulesFetching = false;
+
   // Collapsible sections
   collapsedSections = new Set<string>();
 
@@ -121,7 +125,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       'annotation', 'datasources', 'subtechniques', 'detection', 'datacomponents',
       'procedures', 'cve', 'nist', 'cloud', 'veris', 'cri', 'capec',
       'exploitdb', 'nuclei', 'tags', 'notes', 'threats', 'software',
-      'campaigns', 'd3fend', 'engage', 'car', 'atomic', 'misp', 'opencti',
+      'campaigns', 'd3fend', 'engage', 'car', 'atomic', 'misp', 'opencti', 'sigma',
       'custom', 'mitigations', 'relgraph',
     ];
     for (const s of sections) this.collapsedSections.add(s);
@@ -148,6 +152,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     if (this.exploitCount === 0) this.collapsedSections.add('exploitdb');
     if (this.nucleiCount === 0) this.collapsedSections.add('nuclei');
     if (!this.mispCluster) this.collapsedSections.add('misp');
+    if (this.sigmaRules.length === 0 && !this.sigmaRulesFetching) this.collapsedSections.add('sigma');
     if (this.customMitigations.length === 0) this.collapsedSections.add('custom');
     this.cdr.markForCheck();
   }
@@ -326,6 +331,24 @@ export class SidebarComponent implements OnInit, OnDestroy {
             }),
           );
         }
+        // Sigma live rules
+        this.sigmaRules = [];
+        this.sigmaRulesFetching = false;
+        if (tech && this.sigmaService.getRuleCount(tech.attackId) > 0) {
+          const cached = this.sigmaService.getCachedRules(tech.attackId);
+          if (cached) {
+            this.sigmaRules = cached;
+          } else {
+            this.sigmaRulesFetching = true;
+            this.subs.add(
+              this.sigmaService.fetchRulesForTechnique(tech.attackId).subscribe(rules => {
+                this.sigmaRules = rules;
+                this.sigmaRulesFetching = false;
+                this.cdr.markForCheck();
+              }),
+            );
+          }
+        }
         this.cveExposures = tech ? this.attackCveService.getCvesForTechnique(tech.attackId).slice(0, 20) : [];
         this.showAllCves = false;
         this.nistControls = tech ? this.nistMappingService.getControlsForTechnique(tech.attackId) : [];
@@ -418,6 +441,26 @@ export class SidebarComponent implements OnInit, OnDestroy {
       this.docService.mitDocs$.subscribe((docs) => {
         this.mitDocs = docs;
         this.cdr.markForCheck();
+      }),
+    );
+
+    // Refresh Sigma rules when Sigma layer finishes loading
+    this.subs.add(
+      this.sigmaService.loaded$.subscribe((loaded) => {
+        if (loaded && this.technique) {
+          const count = this.sigmaService.getRuleCount(this.technique.attackId);
+          if (count > 0 && this.sigmaRules.length === 0 && !this.sigmaRulesFetching) {
+            this.sigmaRulesFetching = true;
+            this.cdr.markForCheck();
+            this.subs.add(
+              this.sigmaService.fetchRulesForTechnique(this.technique.attackId).subscribe(rules => {
+                this.sigmaRules = rules;
+                this.sigmaRulesFetching = false;
+                this.cdr.markForCheck();
+              }),
+            );
+          }
+        }
       }),
     );
 
