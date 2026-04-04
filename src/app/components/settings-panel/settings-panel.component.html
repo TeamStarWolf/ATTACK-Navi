@@ -647,6 +647,168 @@
               </span>
             </div>
 
+            <div class="data-section-divider"></div>
+
+            <!-- TAXII Servers -->
+            <div class="form-group">
+              <div class="form-label">TAXII 2.1 Servers</div>
+              <span class="form-hint" style="margin-bottom: 12px; display: block;">
+                Connect to TAXII 2.1 servers to import STIX collections (threat intelligence, custom ATT&amp;CK layers, etc.).
+              </span>
+
+              <!-- Existing servers list -->
+              @for (server of taxiiServers; track server.id) {
+                <div class="taxii-server-item">
+                  <div class="taxii-server-header">
+                    <div class="taxii-server-info">
+                      <span class="taxii-server-name">{{ server.name }}</span>
+                      <span class="taxii-server-url">{{ server.url }}</span>
+                    </div>
+                    <div class="data-actions" style="margin: 0; gap: 4px;">
+                      <button
+                        class="btn-action btn-refresh btn-sm"
+                        (click)="testTaxiiServer(server)"
+                        [disabled]="taxiiTestingId === server.id"
+                      >
+                        @if (taxiiTestingId === server.id) {
+                          <span class="spinner-inline"></span>
+                        } @else {
+                          Test
+                        }
+                      </button>
+                      <button
+                        class="btn-action btn-refresh btn-sm"
+                        (click)="fetchTaxiiCollections(server)"
+                        [disabled]="taxiiFetchingId === server.id"
+                      >
+                        @if (taxiiFetchingId === server.id) {
+                          <span class="spinner-inline"></span>
+                        } @else {
+                          Fetch Collections
+                        }
+                      </button>
+                      <button
+                        class="btn-action btn-clear-cache btn-sm"
+                        (click)="removeTaxiiServer(server.id)"
+                      >Remove</button>
+                    </div>
+                  </div>
+
+                  @if (taxiiTestResults.get(server.id) === true) {
+                    <div class="integration-status connected">
+                      <span>Connected successfully</span>
+                    </div>
+                  } @else if (taxiiTestResults.get(server.id) === false) {
+                    <div class="integration-status error">
+                      <span>Connection failed</span>
+                    </div>
+                  }
+
+                  <!-- API Root selector (if roots discovered) -->
+                  @if (taxiiApiRoots.get(server.id); as roots) {
+                    @if (roots.length > 0) {
+                      <div class="taxii-roots-row">
+                        <label class="form-label" style="font-size: 11px; margin-bottom: 4px;">API Root</label>
+                        <select
+                          class="form-input integration-input"
+                          [ngModel]="taxiiSelectedApiRoot.get(server.id)"
+                          (ngModelChange)="onTaxiiApiRootChange(server, $event)"
+                        >
+                          @for (root of roots; track root) {
+                            <option [value]="root">{{ root }}</option>
+                          }
+                        </select>
+                      </div>
+                    }
+                  }
+
+                  <!-- Collections list -->
+                  @if (taxiiCollections.get(server.id); as cols) {
+                    @if (cols.length > 0) {
+                      <div class="taxii-collections-list">
+                        @for (col of cols; track col.id) {
+                          <div class="taxii-collection-item">
+                            <div class="taxii-collection-info">
+                              <span class="taxii-collection-title">{{ col.title }}</span>
+                              @if (col.description) {
+                                <span class="taxii-collection-desc">{{ col.description }}</span>
+                              }
+                            </div>
+                            <button
+                              class="btn-action btn-refresh btn-sm"
+                              (click)="importTaxiiCollection(server, col)"
+                              [disabled]="taxiiImportingCollection === col.id"
+                            >
+                              @if (taxiiImportingCollection === col.id) {
+                                <span class="spinner-inline"></span> Importing...
+                              } @else {
+                                Import
+                              }
+                            </button>
+                          </div>
+                        }
+                      </div>
+                    } @else {
+                      <div class="taxii-no-collections">No readable collections found.</div>
+                    }
+                  }
+                </div>
+              }
+
+              @if (taxiiImportResult) {
+                <div class="integration-status connected" style="margin-top: 8px;">
+                  <span>Imported: {{ taxiiImportResult.techniques }} techniques, {{ taxiiImportResult.groups }} groups, {{ taxiiImportResult.mitigations }} mitigations, {{ taxiiImportResult.notes }} notes ({{ taxiiImportResult.skipped }} skipped)</span>
+                </div>
+              }
+
+              @if (taxiiError) {
+                <div class="integration-status error" style="margin-top: 8px;">
+                  <span>{{ taxiiError }}</span>
+                </div>
+              }
+
+              <!-- Add Server form -->
+              <div class="taxii-add-form">
+                <div class="taxii-add-title">Add TAXII Server</div>
+                <input
+                  class="form-input integration-input"
+                  type="text"
+                  placeholder="Server name (e.g. MITRE ATT&amp;CK)"
+                  [(ngModel)]="taxiiNewName"
+                />
+                <input
+                  class="form-input integration-input"
+                  type="url"
+                  placeholder="TAXII server URL (e.g. https://cti-taxii.mitre.org)"
+                  [(ngModel)]="taxiiNewUrl"
+                  style="margin-top: 6px;"
+                />
+                <input
+                  class="form-input integration-input"
+                  type="text"
+                  placeholder="Username (optional)"
+                  [(ngModel)]="taxiiNewUsername"
+                  autocomplete="off"
+                  style="margin-top: 6px;"
+                />
+                <input
+                  class="form-input integration-input"
+                  type="password"
+                  placeholder="Password (optional)"
+                  [(ngModel)]="taxiiNewPassword"
+                  autocomplete="off"
+                  style="margin-top: 6px;"
+                />
+                <div class="data-actions" style="margin-top: 8px;">
+                  <button
+                    class="btn-action btn-refresh"
+                    (click)="addTaxiiServer()"
+                    [disabled]="!taxiiNewName || !taxiiNewUrl"
+                  >Add Server</button>
+                </div>
+              </div>
+            </div>
+
           </div>
         }
 

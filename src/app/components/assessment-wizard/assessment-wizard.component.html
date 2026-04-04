@@ -1,0 +1,363 @@
+@if (visible) {
+  <div class="overlay" (click)="close()">
+    <div class="panel" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="panel-header">
+        <div class="header-left">
+          <span class="panel-title">Coverage Assessment Wizard</span>
+          <span class="header-subtitle">Step {{ currentStep }} of {{ totalSteps }}</span>
+        </div>
+        <button class="close-btn" (click)="close()" title="Close">&#10005;</button>
+      </div>
+
+      <!-- Step indicator -->
+      <div class="step-indicator">
+        @for (s of [1, 2, 3, 4, 5]; track s) {
+          <button
+            class="step-dot"
+            [class.active]="currentStep === s"
+            [class.completed]="currentStep > s"
+            [disabled]="s > getMaxReachableStep()"
+            (click)="goToStep(s)"
+            [title]="['Domain', 'Threats', 'Rate', 'Results', 'Export'][s - 1]"
+          >
+            @if (currentStep > s) {
+              <span class="dot-check">&#10003;</span>
+            } @else {
+              <span class="dot-num">{{ s }}</span>
+            }
+          </button>
+          @if (s < totalSteps) {
+            <div class="step-line" [class.filled]="currentStep > s"></div>
+          }
+        }
+      </div>
+
+      <!-- Content area -->
+      <div class="wizard-content">
+
+        <!-- ═══ Step 1: Select Domain ═══ -->
+        @if (currentStep === 1) {
+          <div class="step-body">
+            <h2 class="step-title">Select ATT&CK Domain</h2>
+            <p class="step-desc">
+              Choose the MITRE ATT&CK domain that best matches your organization's environment.
+            </p>
+            <div class="domain-cards">
+              @for (opt of domainOptions; track opt.value) {
+                <button
+                  class="domain-card"
+                  [class.selected]="selectedDomain === opt.value"
+                  (click)="selectDomain(opt.value)"
+                >
+                  <span class="domain-label">{{ opt.label }}</span>
+                  <span class="domain-desc">{{ opt.desc }}</span>
+                </button>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- ═══ Step 2: Select Threat Profile ═══ -->
+        @if (currentStep === 2) {
+          <div class="step-body">
+            <h2 class="step-title">Select Threat Profile</h2>
+            <p class="step-desc">
+              Which threat actors are relevant to your organization? Select groups to scope the assessment, or skip to assess all techniques.
+            </p>
+
+            <!-- Sector quick-picks -->
+            <div class="sector-bar">
+              @for (cat of sectorCategories; track cat.label) {
+                <button
+                  class="sector-chip"
+                  [class.active]="activeSectorFilter === cat.label"
+                  (click)="toggleSectorFilter(cat.label)"
+                >
+                  {{ cat.label }}
+                </button>
+              }
+            </div>
+
+            <!-- Search -->
+            <div class="group-search-row">
+              <input
+                class="form-input"
+                type="text"
+                placeholder="Search threat groups..."
+                [(ngModel)]="groupSearchQuery"
+                (ngModelChange)="filterGroups()"
+              />
+              <button class="action-btn secondary" (click)="selectAllVisible()">Select All Visible</button>
+              <button class="action-btn secondary" (click)="clearGroups()">Clear</button>
+            </div>
+
+            <div class="group-info">
+              {{ selectedGroupIds.size }} groups selected
+              @if (filteredGroups.length !== allGroups.length) {
+                <span> ({{ filteredGroups.length }} shown)</span>
+              }
+            </div>
+
+            <!-- Group list -->
+            <div class="group-list">
+              @for (group of filteredGroups; track group.id) {
+                <button
+                  class="group-item"
+                  [class.selected]="selectedGroupIds.has(group.id)"
+                  (click)="toggleGroup(group.id)"
+                >
+                  <span class="group-id">{{ group.attackId }}</span>
+                  <span class="group-name">{{ group.name }}</span>
+                  @if (group.aliases.length > 0) {
+                    <span class="group-aliases">{{ group.aliases.slice(0, 3).join(', ') }}</span>
+                  }
+                </button>
+              }
+              @if (filteredGroups.length === 0) {
+                <div class="empty-state">No groups match your search.</div>
+              }
+            </div>
+
+            <!-- Skip option -->
+            <div class="skip-section">
+              <button
+                class="action-btn"
+                [class.primary]="skipGroupSelection"
+                [class.secondary]="!skipGroupSelection"
+                (click)="setSkipGroups()"
+              >
+                Assess all techniques (skip group selection)
+              </button>
+            </div>
+          </div>
+        }
+
+        <!-- ═══ Step 3: Rate Implementation ═══ -->
+        @if (currentStep === 3) {
+          <div class="step-body">
+            <h2 class="step-title">Rate Implementation Status</h2>
+            <p class="step-desc">
+              For each technique, set the implementation status in your organization.
+            </p>
+
+            <!-- Progress bar -->
+            <div class="assessment-progress-row">
+              <div class="progress-bar-track">
+                <div class="progress-bar-fill" [style.width.%]="assessmentProgress"></div>
+              </div>
+              <span class="progress-label">{{ ratedTechniques }} / {{ totalTechniques }} rated ({{ assessmentProgress }}%)</span>
+            </div>
+
+            <div class="rate-actions">
+              <button class="action-btn secondary" (click)="markAllNotStarted()">Mark all unrated as Not Started</button>
+              <button class="action-btn secondary" (click)="expandAllTactics()">Expand All</button>
+              <button class="action-btn secondary" (click)="collapseAllTactics()">Collapse All</button>
+            </div>
+
+            <!-- Tactic sections -->
+            <div class="tactic-sections">
+              @for (ta of tacticAssessments; track ta.tacticShortname) {
+                <div class="tactic-section">
+                  <button class="tactic-header" (click)="toggleTactic(ta)">
+                    <span class="tactic-expand">{{ ta.expanded ? '&#9660;' : '&#9654;' }}</span>
+                    <span class="tactic-name">{{ ta.tacticName }}</span>
+                    <span class="tactic-count">{{ ta.techniques.length }} techniques</span>
+                    <span class="tactic-rated">
+                      {{ getRatedCount(ta) }} rated
+                    </span>
+                  </button>
+                  @if (ta.expanded) {
+                    <div class="technique-list">
+                      @for (tech of ta.techniques; track tech.id) {
+                        <div class="technique-row">
+                          <div class="tech-info">
+                            <span class="tech-id">{{ tech.attackId }}</span>
+                            <span class="tech-name-col">{{ tech.name }}</span>
+                            @if (tech.kevCount > 0) {
+                              <span class="kev-badge">KEV</span>
+                            }
+                            @if (tech.actorCount > 0) {
+                              <span class="actor-badge">{{ tech.actorCount }} actors</span>
+                            }
+                          </div>
+                          <div class="status-buttons">
+                            <button
+                              class="status-btn status-implemented"
+                              [class.active]="tech.status === 'implemented'"
+                              (click)="setTechniqueStatus(tech, 'implemented')"
+                              title="Implemented"
+                            >Impl</button>
+                            <button
+                              class="status-btn status-in-progress"
+                              [class.active]="tech.status === 'in-progress'"
+                              (click)="setTechniqueStatus(tech, 'in-progress')"
+                              title="In Progress"
+                            >WIP</button>
+                            <button
+                              class="status-btn status-planned"
+                              [class.active]="tech.status === 'planned'"
+                              (click)="setTechniqueStatus(tech, 'planned')"
+                              title="Planned"
+                            >Plan</button>
+                            <button
+                              class="status-btn status-not-started"
+                              [class.active]="tech.status === 'not-started'"
+                              (click)="setTechniqueStatus(tech, 'not-started')"
+                              title="Not Started"
+                            >None</button>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- ═══ Step 4: Review Results ═══ -->
+        @if (currentStep === 4) {
+          <div class="step-body">
+            <h2 class="step-title">Assessment Results</h2>
+
+            <!-- Summary cards -->
+            <div class="results-summary">
+              <div class="result-card">
+                <span class="result-value">{{ coverageCount }}</span>
+                <span class="result-label">of {{ totalAssessed }} mitigated</span>
+              </div>
+              <div class="result-card">
+                <span class="result-value">{{ coveragePercent }}%</span>
+                <span class="result-label">Coverage</span>
+              </div>
+              <div class="result-card" [ngClass]="getRiskClass()">
+                <span class="result-value">{{ riskScore }}</span>
+                <span class="result-label">Risk Score (0-100)</span>
+              </div>
+            </div>
+
+            <!-- Tactic breakdown -->
+            <div class="results-section">
+              <h3 class="section-title">Tactic Breakdown</h3>
+              <div class="tactic-breakdown">
+                @for (tb of tacticBreakdown; track tb.name) {
+                  <div class="breakdown-row">
+                    <span class="breakdown-name">{{ tb.name }}</span>
+                    <div class="breakdown-bar-track">
+                      <div
+                        class="breakdown-bar-fill"
+                        [style.width.%]="tb.percent"
+                        [class.high]="tb.percent >= 70"
+                        [class.medium]="tb.percent >= 40 && tb.percent < 70"
+                        [class.low]="tb.percent < 40"
+                      ></div>
+                    </div>
+                    <span class="breakdown-stat">{{ tb.covered }}/{{ tb.total }} ({{ tb.percent }}%)</span>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Priority gaps -->
+            @if (priorityGaps.length > 0) {
+              <div class="results-section">
+                <h3 class="section-title">Top Priority Gaps</h3>
+                <div class="gap-table">
+                  <div class="gap-header-row">
+                    <span class="gap-col-id">ID</span>
+                    <span class="gap-col-name">Technique</span>
+                    <span class="gap-col-actors">Actors</span>
+                    <span class="gap-col-kev">KEV</span>
+                    <span class="gap-col-status">Status</span>
+                  </div>
+                  @for (gap of priorityGaps; track gap.id) {
+                    <div class="gap-row">
+                      <span class="gap-col-id tech-id">{{ gap.attackId }}</span>
+                      <span class="gap-col-name">{{ gap.name }}</span>
+                      <span class="gap-col-actors">{{ gap.actorCount }}</span>
+                      <span class="gap-col-kev">
+                        @if (gap.kevCount > 0) {
+                          <span class="kev-badge">KEV</span>
+                        } @else {
+                          -
+                        }
+                      </span>
+                      <span class="gap-col-status" [ngClass]="getStatusClass(gap.status)">
+                        {{ getStatusLabel(gap.status) }}
+                      </span>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- ═══ Step 5: Export & Next Steps ═══ -->
+        @if (currentStep === 5) {
+          <div class="step-body">
+            <h2 class="step-title">Export &amp; Next Steps</h2>
+            <p class="step-desc">
+              Your assessment is complete. Export the results or apply them to the matrix view.
+            </p>
+
+            <div class="export-actions">
+              <button class="action-btn primary" (click)="exportCsv()">Export Assessment (CSV)</button>
+              <button class="action-btn primary" (click)="applyToMatrix()">Apply to Matrix</button>
+            </div>
+
+            @if (exportMessage) {
+              <div class="success-message">{{ exportMessage }}</div>
+            }
+
+            <div class="next-steps">
+              <h3 class="section-title">Recommended Next Steps</h3>
+              <div class="next-step-cards">
+                <button class="next-step-card" (click)="openPanel('priority')">
+                  <span class="next-icon">&#11014;&#65039;</span>
+                  <span class="next-label">Priority Panel</span>
+                  <span class="next-desc">View prioritized mitigation recommendations</span>
+                </button>
+                <button class="next-step-card" (click)="openPanel('detection')">
+                  <span class="next-icon">&#128300;</span>
+                  <span class="next-label">Detection Panel</span>
+                  <span class="next-desc">Plan detection coverage for uncovered techniques</span>
+                </button>
+                <button class="next-step-card" (click)="openPanel('coverage-diff')">
+                  <span class="next-icon">&Delta;</span>
+                  <span class="next-label">Coverage Diff</span>
+                  <span class="next-desc">Compare coverage snapshots over time</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+
+      </div>
+
+      <!-- Footer navigation -->
+      <div class="wizard-footer">
+        @if (currentStep > 1) {
+          <button class="action-btn secondary" (click)="prevStep()">Back</button>
+        } @else {
+          <div></div>
+        }
+        @if (currentStep < totalSteps) {
+          <button
+            class="action-btn primary"
+            [disabled]="!canGoNext()"
+            (click)="nextStep()"
+          >
+            Next
+          </button>
+        } @else {
+          <button class="action-btn primary" (click)="close()">Done</button>
+        }
+      </div>
+
+    </div>
+  </div>
+}
