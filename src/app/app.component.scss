@@ -227,7 +227,43 @@
   gap: 8px;
 }
 
+@media (max-width: 768px) {
+  .stats-health-row {
+    flex-wrap: wrap;
+    gap: 4px;
+    font-size: 10px;
+  }
+}
+
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateX(-50%) translateY(8px); }
   to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ---- Mobile layout adjustments for bottom nav ---- */
+@media (max-width: 768px) {
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .workspace-area {
+    padding: 4px 4px 60px 4px;
+  }
+
+  .matrix-region {
+    border-radius: 12px;
+  }
+
+  .context-bar {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .bulk-action-bar {
+    bottom: 64px;
+  }
+
+  .toast-notification {
+    bottom: 72px;
+  }
 }
