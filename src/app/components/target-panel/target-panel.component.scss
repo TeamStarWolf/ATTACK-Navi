@@ -2,7 +2,7 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
+  background: rgb(0 0 0 / 65%);
   z-index: 1000;
   display: flex;
   align-items: stretch;
@@ -20,7 +20,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: -8px 0 40px rgba(0, 0, 0, 0.7);
+  box-shadow: -8px 0 40px rgb(0 0 0 / 70%);
 }
 
 /* ── Header ── */
@@ -66,7 +66,7 @@
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgb(255 255 255 / 6%);
   border: none;
   color: #4a6080;
   font-size: 16px;
@@ -180,7 +180,7 @@
     border-radius: 50%;
     background: #58a6ff;
     cursor: pointer;
-    box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
+    box-shadow: 0 0 0 3px rgb(88 166 255 / 20%);
   }
 
   &::-moz-range-thumb {
@@ -207,20 +207,20 @@
   font-weight: 500;
 
   &.gap-positive {
-    background: rgba(88, 166, 255, 0.08);
-    border: 1px solid rgba(88, 166, 255, 0.2);
+    background: rgb(88 166 255 / 8%);
+    border: 1px solid rgb(88 166 255 / 20%);
     color: #58a6ff;
   }
 
   &.gap-met {
-    background: rgba(74, 222, 128, 0.08);
-    border: 1px solid rgba(74, 222, 128, 0.2);
+    background: rgb(74 222 128 / 8%);
+    border: 1px solid rgb(74 222 128 / 20%);
     color: #4ade80;
   }
 
   &.gap-unreachable {
-    background: rgba(251, 191, 36, 0.08);
-    border: 1px solid rgba(251, 191, 36, 0.2);
+    background: rgb(251 191 36 / 8%);
+    border: 1px solid rgb(251 191 36 / 20%);
     color: #fbbf24;
   }
 }
@@ -261,7 +261,7 @@
 .btn-spinner {
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(7, 13, 20, 0.3);
+  border: 2px solid rgb(7 13 20 / 30%);
   border-top-color: #070d14;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
@@ -309,8 +309,8 @@
 
 /* Results banner */
 .results-banner {
-  background: rgba(88, 166, 255, 0.08);
-  border: 1px solid rgba(88, 166, 255, 0.2);
+  background: rgb(88 166 255 / 8%);
+  border: 1px solid rgb(88 166 255 / 20%);
   border-radius: 10px;
   padding: 14px 18px;
 }
@@ -526,8 +526,8 @@
   justify-content: center;
   padding: 3px 10px;
   border-radius: 12px;
-  background: rgba(74, 222, 128, 0.1);
-  border: 1px solid rgba(74, 222, 128, 0.2);
+  background: rgb(74 222 128 / 10%);
+  border: 1px solid rgb(74 222 128 / 20%);
   color: #4ade80;
   font-size: 12px;
   font-weight: 700;
