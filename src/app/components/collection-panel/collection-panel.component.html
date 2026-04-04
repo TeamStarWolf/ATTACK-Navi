@@ -1,0 +1,318 @@
+@if (visible) {
+  <div class="overlay" (click)="close()">
+    <div class="panel" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="panel-header">
+        <div class="header-left">
+          <span class="panel-title">Collection Manager</span>
+          <span class="header-subtitle">
+            {{ customTechniqueCount + customGroupCount + customMitigationCount }} custom objects
+          </span>
+        </div>
+        <button class="close-btn" (click)="close()" title="Close">&#10005;</button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tab-bar">
+        <button
+          class="tab-btn"
+          [class.active]="activeTab === 'collection'"
+          (click)="setTab('collection')"
+        >My Collection</button>
+        <button
+          class="tab-btn"
+          [class.active]="activeTab === 'import'"
+          (click)="setTab('import')"
+        >Import</button>
+        <button
+          class="tab-btn"
+          [class.active]="activeTab === 'techniques'"
+          (click)="setTab('techniques')"
+        >
+          Custom Techniques
+          @if (customTechniqueCount > 0) {
+            <span class="tab-badge">{{ customTechniqueCount }}</span>
+          }
+        </button>
+      </div>
+
+      <div class="tab-content">
+
+        <!-- ═══ Tab 1: My Collection ═══ -->
+        @if (activeTab === 'collection') {
+          <div class="collection-tab">
+            <div class="summary-cards">
+              <div class="summary-card">
+                <span class="card-count">{{ customTechniqueCount }}</span>
+                <span class="card-label">Custom Techniques</span>
+              </div>
+              <div class="summary-card">
+                <span class="card-count">{{ customGroupCount }}</span>
+                <span class="card-label">Custom Groups</span>
+              </div>
+              <div class="summary-card">
+                <span class="card-count">{{ customMitigationCount }}</span>
+                <span class="card-label">Custom Mitigations</span>
+              </div>
+              <div class="summary-card">
+                <span class="card-count">{{ annotationCount }}</span>
+                <span class="card-label">Annotations</span>
+              </div>
+            </div>
+
+            <div class="export-section">
+              <h3 class="section-title">Export STIX Bundle</h3>
+              <div class="form-row">
+                <label class="form-label">Name</label>
+                <input
+                  class="form-input"
+                  type="text"
+                  placeholder="My Collection"
+                  [(ngModel)]="exportName"
+                />
+              </div>
+              <div class="form-row">
+                <label class="form-label">Description</label>
+                <input
+                  class="form-input"
+                  type="text"
+                  placeholder="Exported from MITRE Mitigation Navigator"
+                  [(ngModel)]="exportDescription"
+                />
+              </div>
+              <div class="button-row">
+                <button class="action-btn primary" (click)="downloadBundle()">
+                  Export STIX Bundle
+                </button>
+                <button class="action-btn secondary" (click)="copyToClipboard()">
+                  Copy to Clipboard
+                </button>
+              </div>
+              @if (copyMessage) {
+                <div class="success-message">{{ copyMessage }}</div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- ═══ Tab 2: Import ═══ -->
+        @if (activeTab === 'import') {
+          <div class="import-tab">
+
+            <div class="import-section">
+              <h3 class="section-title">Import from File</h3>
+              <input
+                #fileInput
+                type="file"
+                accept=".json"
+                style="display: none"
+                (change)="onFileSelected($event)"
+              />
+              <button class="action-btn primary" (click)="fileInput.click()">
+                Choose .json File
+              </button>
+            </div>
+
+            <div class="import-section">
+              <h3 class="section-title">Import from URL</h3>
+              <div class="url-row">
+                <input
+                  class="form-input"
+                  type="text"
+                  placeholder="https://example.com/collection.json"
+                  [(ngModel)]="importUrl"
+                />
+                <button
+                  class="action-btn primary"
+                  [disabled]="importFetching || !importUrl.trim()"
+                  (click)="fetchUrl()"
+                >
+                  {{ importFetching ? 'Fetching...' : 'Fetch' }}
+                </button>
+              </div>
+            </div>
+
+            @if (importPreview) {
+              <div class="preview-section">
+                <h3 class="section-title">Preview</h3>
+                <div class="preview-counts">
+                  <span class="preview-item">{{ importPreview.techniques }} techniques</span>
+                  <span class="preview-item">{{ importPreview.groups }} groups</span>
+                  <span class="preview-item">{{ importPreview.mitigations }} mitigations</span>
+                  <span class="preview-item">{{ importPreview.notes }} notes</span>
+                </div>
+                <button class="action-btn primary" (click)="importBundle()">
+                  Import Collection
+                </button>
+              </div>
+            }
+
+            @if (importMessage) {
+              <div class="success-message">{{ importMessage }}</div>
+            }
+
+            @if (importError) {
+              <div class="error-message">{{ importError }}</div>
+            }
+          </div>
+        }
+
+        <!-- ═══ Tab 3: Custom Techniques ═══ -->
+        @if (activeTab === 'techniques') {
+          <div class="techniques-tab">
+
+            <!-- New Technique Form -->
+            <div class="new-technique-form">
+              <h3 class="section-title">New Technique</h3>
+              <div class="form-grid">
+                <div class="form-row">
+                  <label class="form-label">Name</label>
+                  <input
+                    class="form-input"
+                    type="text"
+                    placeholder="Technique name"
+                    [(ngModel)]="newTechName"
+                  />
+                </div>
+                <div class="form-row">
+                  <label class="form-label">Attack ID</label>
+                  <input
+                    class="form-input"
+                    type="text"
+                    placeholder="T9001"
+                    [(ngModel)]="newTechAttackId"
+                  />
+                </div>
+              </div>
+              <div class="form-row">
+                <label class="form-label">Description</label>
+                <textarea
+                  class="form-textarea"
+                  placeholder="Technique description..."
+                  [(ngModel)]="newTechDescription"
+                  rows="2"
+                ></textarea>
+              </div>
+              <div class="form-row">
+                <label class="form-label">Tactics</label>
+                <div class="checkbox-grid">
+                  @for (tactic of allTactics; track tactic) {
+                    <label class="checkbox-label">
+                      <input
+                        type="checkbox"
+                        [checked]="newTechTactics.has(tactic)"
+                        (change)="toggleNewTactic(tactic)"
+                      />
+                      <span>{{ tactic }}</span>
+                    </label>
+                  }
+                </div>
+              </div>
+              <div class="form-row">
+                <label class="form-label">Platforms</label>
+                <div class="checkbox-grid platforms">
+                  @for (platform of allPlatforms; track platform) {
+                    <label class="checkbox-label">
+                      <input
+                        type="checkbox"
+                        [checked]="newTechPlatforms.has(platform)"
+                        (change)="toggleNewPlatform(platform)"
+                      />
+                      <span>{{ platform }}</span>
+                    </label>
+                  }
+                </div>
+              </div>
+              <button
+                class="action-btn primary"
+                [disabled]="!newTechName.trim()"
+                (click)="createTechnique()"
+              >
+                Create Technique
+              </button>
+            </div>
+
+            <!-- Techniques Table -->
+            @if (techniques.length > 0) {
+              <div class="table-wrap">
+                <table class="tech-table">
+                  <thead>
+                    <tr>
+                      <th>Attack ID</th>
+                      <th>Name</th>
+                      <th>Tactics</th>
+                      <th>Platforms</th>
+                      <th class="actions-col">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (tech of techniques; track tech.id) {
+                      @if (editingId === tech.id) {
+                        <!-- Inline Edit Row -->
+                        <tr class="edit-row">
+                          <td>
+                            <input class="inline-input" [(ngModel)]="editTech.attackId" />
+                          </td>
+                          <td>
+                            <input class="inline-input" [(ngModel)]="editTech.name" />
+                          </td>
+                          <td>
+                            <div class="inline-checkboxes">
+                              @for (t of allTactics; track t) {
+                                <label class="inline-cb">
+                                  <input type="checkbox" [checked]="editTactics.has(t)" (change)="toggleEditTactic(t)" />
+                                  <span>{{ t }}</span>
+                                </label>
+                              }
+                            </div>
+                          </td>
+                          <td>
+                            <div class="inline-checkboxes">
+                              @for (p of allPlatforms; track p) {
+                                <label class="inline-cb">
+                                  <input type="checkbox" [checked]="editPlatforms.has(p)" (change)="toggleEditPlatform(p)" />
+                                  <span>{{ p }}</span>
+                                </label>
+                              }
+                            </div>
+                          </td>
+                          <td class="actions-col">
+                            <button class="row-btn save-btn" (click)="saveEdit()">Save</button>
+                            <button class="row-btn cancel-btn" (click)="cancelEdit()">Cancel</button>
+                          </td>
+                        </tr>
+                      } @else {
+                        <tr class="tech-row">
+                          <td class="tech-id-cell">{{ tech.attackId }}</td>
+                          <td class="tech-name-cell">{{ tech.name }}</td>
+                          <td class="tactic-cell">{{ tacticDisplay(tech.tacticShortnames) }}</td>
+                          <td class="platform-cell">{{ platformDisplay(tech.platforms) }}</td>
+                          <td class="actions-col">
+                            @if (deleteConfirmId === tech.id) {
+                              <span class="confirm-text">Delete?</span>
+                              <button class="row-btn delete-confirm-btn" (click)="deleteTechnique(tech.id)">Yes</button>
+                              <button class="row-btn cancel-btn" (click)="cancelDelete()">No</button>
+                            } @else {
+                              <button class="row-btn edit-btn" (click)="startEdit(tech)">Edit</button>
+                              <button class="row-btn delete-btn" (click)="confirmDelete(tech.id)">Delete</button>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @else {
+              <div class="empty-state">
+                <p>No custom techniques yet. Use the form above to create one.</p>
+              </div>
+            }
+          </div>
+        }
+
+      </div>
+    </div>
+  </div>
+}

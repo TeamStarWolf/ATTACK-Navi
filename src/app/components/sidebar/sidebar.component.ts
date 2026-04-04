@@ -47,6 +47,7 @@ import { OpenCtiService, OpenCtiIndicator, OpenCtiThreatActor } from '../../serv
 import { EpssService } from '../../services/epss.service';
 import { ExploitdbService } from '../../services/exploitdb.service';
 import { NucleiService } from '../../services/nuclei.service';
+import { CustomTechniqueService } from '../../services/custom-technique.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -66,6 +67,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   procedures: ProcedureExample[] = [];
   dataComponents: MitreDataComponent[] = [];
   open = false;
+  isCustomTechnique = false;
   mitSearchText = '';
   showRelGraph = false;
   showDetection = false;
@@ -279,6 +281,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     private epssService: EpssService,
     private exploitdbService: ExploitdbService,
     private nucleiService: NucleiService,
+    private customTechniqueService: CustomTechniqueService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -287,6 +290,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
       this.filterService.selectedTechnique$.subscribe((tech) => {
         this.technique = tech;
         this.open = tech !== null;
+        this.isCustomTechnique = tech !== null && (
+          tech.id.startsWith('custom--') ||
+          this.customTechniqueService.getAll().some(ct => ct.attackId === tech.attackId)
+        );
         this.mitigations = tech ? this.dataService.getMitigationsForTechnique(tech.id) : [];
         this.parentMitigations = [];
         if (tech?.parentId) {
