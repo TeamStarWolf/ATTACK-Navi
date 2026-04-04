@@ -496,25 +496,45 @@
             <div class="form-group">
               <div class="form-label">OpenCTI</div>
               <div class="form-group">
-                <input
+                <select
                   class="form-input integration-input"
-                  type="url"
-                  placeholder="https://your-opencti-instance.com"
-                  [(ngModel)]="openCtiUrl"
-                />
-                <input
-                  class="form-input integration-input"
-                  type="password"
-                  placeholder="API token"
-                  [(ngModel)]="openCtiToken"
-                  style="margin-top: 8px;"
-                />
+                  [(ngModel)]="openCtiMode"
+                >
+                  <option value="direct">Direct browser mode</option>
+                  <option value="proxy">Secure backend proxy</option>
+                </select>
+                @if (openCtiMode === 'proxy') {
+                  <input
+                    class="form-input integration-input"
+                    type="url"
+                    placeholder="https://your-proxy-host.example"
+                    [(ngModel)]="openCtiProxyUrl"
+                    style="margin-top: 8px;"
+                  />
+                } @else {
+                  <input
+                    class="form-input integration-input"
+                    type="url"
+                    placeholder="https://your-opencti-instance.com"
+                    [(ngModel)]="openCtiUrl"
+                    style="margin-top: 8px;"
+                  />
+                  <input
+                    class="form-input integration-input"
+                    type="password"
+                    placeholder="API token"
+                    [(ngModel)]="openCtiToken"
+                    autocomplete="off"
+                    spellcheck="false"
+                    style="margin-top: 8px;"
+                  />
+                }
               </div>
               <div class="data-actions" style="margin-top: 8px;">
                 <button
                   class="btn-action btn-refresh"
                   (click)="testOpenCti()"
-                  [disabled]="openCtiTesting || !openCtiUrl || !openCtiToken"
+                  [disabled]="openCtiTesting || (openCtiMode === 'proxy' ? !openCtiProxyUrl : (!openCtiUrl || !openCtiToken))"
                 >
                   @if (openCtiTesting) {
                     <span class="spinner-inline"></span> Testing…
@@ -525,7 +545,7 @@
                 <button
                   class="btn-action btn-clear-cache"
                   (click)="clearOpenCti()"
-                  [disabled]="!openCtiUrl && !openCtiToken"
+                  [disabled]="!(openCtiMode === 'proxy' ? openCtiProxyUrl : (openCtiUrl || openCtiToken))"
                 >
                   Clear
                 </button>
@@ -541,6 +561,7 @@
               }
               <span class="form-hint">
                 Connect to an OpenCTI instance to enrich techniques with threat intelligence indicators and actor mappings.
+                Direct mode keeps tokens only in memory for the current session. Proxy mode uses your backend so the browser never stores the OpenCTI secret.
               </span>
             </div>
 
@@ -550,32 +571,52 @@
             <div class="form-group">
               <div class="form-label">MISP</div>
               <div class="form-group">
-                <input
+                <select
                   class="form-input integration-input"
-                  type="url"
-                  placeholder="https://your-misp-instance.com"
-                  [(ngModel)]="mispUrl"
-                />
-                <input
-                  class="form-input integration-input"
-                  type="password"
-                  placeholder="API key"
-                  [(ngModel)]="mispApiKey"
-                  style="margin-top: 8px;"
-                />
-                <input
-                  class="form-input integration-input"
-                  type="text"
-                  placeholder="Org ID (optional)"
-                  [(ngModel)]="mispOrgId"
-                  style="margin-top: 8px;"
-                />
+                  [(ngModel)]="mispMode"
+                >
+                  <option value="direct">Direct browser mode</option>
+                  <option value="proxy">Secure backend proxy</option>
+                </select>
+                @if (mispMode === 'proxy') {
+                  <input
+                    class="form-input integration-input"
+                    type="url"
+                    placeholder="https://your-proxy-host.example"
+                    [(ngModel)]="mispProxyUrl"
+                    style="margin-top: 8px;"
+                  />
+                } @else {
+                  <input
+                    class="form-input integration-input"
+                    type="url"
+                    placeholder="https://your-misp-instance.com"
+                    [(ngModel)]="mispUrl"
+                    style="margin-top: 8px;"
+                  />
+                  <input
+                    class="form-input integration-input"
+                    type="password"
+                    placeholder="API key"
+                    [(ngModel)]="mispApiKey"
+                    autocomplete="off"
+                    spellcheck="false"
+                    style="margin-top: 8px;"
+                  />
+                  <input
+                    class="form-input integration-input"
+                    type="text"
+                    placeholder="Org ID (optional)"
+                    [(ngModel)]="mispOrgId"
+                    style="margin-top: 8px;"
+                  />
+                }
               </div>
               <div class="data-actions" style="margin-top: 8px;">
                 <button
                   class="btn-action btn-refresh"
                   (click)="testMispConnection()"
-                  [disabled]="mispTesting || !mispUrl || !mispApiKey"
+                  [disabled]="mispTesting || (mispMode === 'proxy' ? !mispProxyUrl : (!mispUrl || !mispApiKey))"
                 >
                   @if (mispTesting) {
                     <span class="spinner-inline"></span> Testing...
@@ -586,7 +627,7 @@
                 <button
                   class="btn-action btn-clear-cache"
                   (click)="disconnectMisp()"
-                  [disabled]="!mispUrl && !mispApiKey"
+                  [disabled]="!(mispMode === 'proxy' ? mispProxyUrl : (mispUrl || mispApiKey))"
                 >
                   Disconnect
                 </button>
@@ -602,6 +643,7 @@
               }
               <span class="form-hint">
                 Connect to a MISP instance to query live threat events and attributes mapped to ATT&amp;CK techniques.
+                Direct mode keeps API keys only in memory for the current session. Proxy mode uses your backend so the browser never holds the MISP secret.
               </span>
             </div>
 

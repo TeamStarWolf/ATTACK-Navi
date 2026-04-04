@@ -27,7 +27,7 @@ An operational cybersecurity workbench built on the MITRE ATT&CK framework. Expl
 
 **[https://teamstarwolf.github.io/attack-nav/](https://teamstarwolf.github.io/attack-nav/)**
 
-The app loads ATT&CK data directly from MITRE's GitHub repository. No backend server required — runs entirely in the browser.
+The app loads ATT&CK data directly from MITRE's GitHub repository. The core matrix still runs without a backend, but secure OpenCTI/MISP deployments can now use an optional backend proxy under `server/`.
 
 ---
 
@@ -180,6 +180,18 @@ npx ng build
 ```
 
 Output: `dist/mitre-mitigation-navigator/browser/`
+
+### Optional Secure Proxy For OpenCTI / MISP
+
+If you want browser clients to stop holding OpenCTI or MISP secrets directly:
+
+```bash
+npm run proxy:install
+copy server\\.env.example server\\.env
+npm run proxy:start
+```
+
+Then set the Settings panel integration mode to `Secure backend proxy` and enter your proxy URL, for example `http://localhost:8787`.
 
 ### Deploy to GitHub Pages
 

@@ -20,19 +20,19 @@ export type AttackDomain = 'enterprise' | 'ics' | 'mobile';
 const DOMAIN_CONFIG: Record<AttackDomain, { liveUrl: string; bundledUrl: string | null; idbKey: string; name: string }> = {
   enterprise: {
     liveUrl: 'https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/enterprise-attack/enterprise-attack.json',
-    bundledUrl: 'assets/enterprise-attack.json',
+    bundledUrl: 'assets/data/enterprise-attack.json',
     idbKey: 'enterprise-attack-v2',
     name: 'Enterprise ATT&CK',
   },
   ics: {
     liveUrl: 'https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/ics-attack/ics-attack.json',
-    bundledUrl: null,
+    bundledUrl: 'assets/data/ics-attack.json',
     idbKey: 'ics-attack-v1',
     name: 'ICS ATT&CK',
   },
   mobile: {
     liveUrl: 'https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/mobile-attack/mobile-attack.json',
-    bundledUrl: null,
+    bundledUrl: 'assets/data/mobile-attack.json',
     idbKey: 'mobile-attack-v1',
     name: 'Mobile ATT&CK',
   },
@@ -41,6 +41,21 @@ const DOMAIN_CONFIG: Record<AttackDomain, { liveUrl: string; bundledUrl: string 
 const IDB_DB = 'mitre-navigator-cache';
 const IDB_STORE = 'stix-bundles';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+export const ATTACK_NAVIGATOR_DOMAIN_CONFIG: Record<AttackDomain, { navigatorDomain: string; defaultPlatforms: string[] }> = {
+  enterprise: {
+    navigatorDomain: 'enterprise-attack',
+    defaultPlatforms: ['Windows', 'Linux', 'macOS', 'Azure AD', 'Office 365', 'Google Workspace', 'SaaS', 'IaaS', 'Network', 'Containers', 'PRE'],
+  },
+  ics: {
+    navigatorDomain: 'ics-attack',
+    defaultPlatforms: ['Control Server', 'Data Historian', 'Device Configuration/Parameters', 'Engineering Workstation', 'Field Controller/RTU/PLC/IED', 'Human-Machine Interface', 'Input/Output Server', 'Safety Instrumented System/Protection Relay'],
+  },
+  mobile: {
+    navigatorDomain: 'mobile-attack',
+    defaultPlatforms: ['Android', 'iOS'],
+  },
+};
 
 @Injectable({ providedIn: 'root' })
 export class DataService {
@@ -54,6 +69,7 @@ export class DataService {
 
   /** ISO timestamp of the last successful domain data load */
   lastFetched$ = new BehaviorSubject<string | null>(null);
+  private loadRequestId = 0;
 
   domain$: Observable<Domain | null> = this.domainSubject.asObservable();
   loading$: Observable<boolean> = this.loadingSubject.asObservable();
@@ -68,6 +84,14 @@ export class DataService {
   setAttackDomain(domain: AttackDomain): void {
     this.attackDomain = domain;
     this.currentDomain$.next(domain);
+  }
+
+  getCurrentAttackDomain(): AttackDomain {
+    return this.attackDomain;
+  }
+
+  getCurrentDomain(): Domain | null {
+    return this.domainSubject.value;
   }
 
   switchDomain(domain: AttackDomain): void {
@@ -93,6 +117,7 @@ export class DataService {
   }
 
   loadDomain(): void {
+    const requestId = ++this.loadRequestId;
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
 
@@ -100,11 +125,13 @@ export class DataService {
     const load$ = this.mode === 'live' ? this.loadLive(config) : this.loadBundled(config);
     load$.subscribe({
       next: (domain) => {
+        if (requestId !== this.loadRequestId) return;
         this.domainSubject.next(domain);
         this.loadingSubject.next(false);
         this.lastFetched$.next(new Date().toISOString());
       },
       error: (err) => {
+        if (requestId !== this.loadRequestId) return;
         this.errorSubject.next(err?.message ?? 'Failed to load ATT&CK data');
         this.loadingSubject.next(false);
       },

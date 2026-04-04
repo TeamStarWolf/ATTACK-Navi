@@ -6,7 +6,9 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "proxy:install": "npm install --prefix server",
+    "proxy:start": "npm start --prefix server"
   },
   "private": true,
   "dependencies": {
