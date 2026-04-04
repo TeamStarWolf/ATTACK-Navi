@@ -12,276 +12,384 @@
           </span>
         }
       </div>
-      <button class="close-btn" (click)="close()" title="Close">✕</button>
+      <div class="header-right">
+        <button class="configure-btn" (click)="toggleConfig()" [class.active]="configOpen" title="Configure widgets">
+          <span class="cfg-icon">&#x2699;</span>
+          <span class="cfg-label">Configure</span>
+        </button>
+        <button class="close-btn" (click)="close()" title="Close">&#x2715;</button>
+      </div>
     </div>
+
+    <!-- Widget Configuration Panel -->
+    @if (configOpen) {
+      <div class="config-panel">
+        <div class="config-header">
+          <span class="config-title">Widget Configuration</span>
+          <button class="config-reset-btn" (click)="resetWidgets()">Reset to Defaults</button>
+        </div>
+        <div class="config-list">
+          @for (widget of allWidgets; track widget.id) {
+            <div class="config-item" [class.config-item-hidden]="!widget.visible">
+              <span class="config-icon">{{ widget.icon }}</span>
+              <span class="config-label">{{ widget.label }}</span>
+              <div class="config-actions">
+                <button class="config-move-btn" (click)="moveWidget(widget.id, 'up')" title="Move up">&#x25B2;</button>
+                <button class="config-move-btn" (click)="moveWidget(widget.id, 'down')" title="Move down">&#x25BC;</button>
+                <button
+                  class="config-toggle-btn"
+                  [class.toggled-on]="widget.visible"
+                  (click)="toggleWidget(widget.id)"
+                  [title]="widget.visible ? 'Hide widget' : 'Show widget'"
+                >
+                  {{ widget.visible ? 'ON' : 'OFF' }}
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
 
     @if (loading || !stats) {
       <div class="loading-state">
         <div class="loader-spinner"></div>
-        <p>Computing security posture metrics…</p>
+        <p>Computing security posture metrics...</p>
       </div>
     } @else {
 
       <div class="dashboard-scroll">
-        <div class="dashboard-grid">
+        <div class="widget-grid">
 
-          <!-- ── ROW 1: Hero Metric Cards ────────────────────────────────── -->
+          @for (widget of visibleWidgets; track trackWidget($index, widget)) {
 
-          <!-- Coverage Card -->
-          <div class="hero-card" style="border-left-color: #58a6ff">
-            <div class="hero-number" style="color: #58a6ff">{{ stats.coveragePct }}%</div>
-            <div class="hero-label">ATT&CK Coverage</div>
-            <div class="hero-sub">{{ stats.coveredTechniques }} / {{ stats.totalTechniques }} techniques</div>
-            @if (stats.hasTrendData) {
-              <div [class]="stats.coverageTrend >= 0 ? 'trend-up' : 'trend-down'">
-                {{ trendSign(stats.coverageTrend) }}{{ stats.coverageTrend | number:'1.0-0' }}% vs last snapshot
+            <!-- ============ COVERAGE SUMMARY ============ -->
+            @if (widget.id === 'coverage-summary') {
+              <div class="widget-card widget-coverage-summary">
+                <div class="widget-header">
+                  <span class="widget-icon">{{ widget.icon }}</span>
+                  <span class="widget-label">{{ widget.label }}</span>
+                  <button class="widget-pin-btn" (click)="toggleWidget(widget.id)" title="Hide widget">&#x1F4CC;</button>
+                </div>
+                <div class="widget-body">
+                  <div class="stat-cards-row">
+                    <div class="mini-stat">
+                      <div class="mini-stat-value" style="color: #58a6ff">{{ stats.totalTechniques }}</div>
+                      <div class="mini-stat-label">Total Techniques</div>
+                    </div>
+                    <div class="mini-stat">
+                      <div class="mini-stat-value" style="color: #4ade80">{{ stats.coveredTechniques }}</div>
+                      <div class="mini-stat-label">Covered</div>
+                    </div>
+                    <div class="mini-stat">
+                      <div class="mini-stat-value" [style.color]="gradeColor">{{ stats.coveragePct }}%</div>
+                      <div class="mini-stat-label">Coverage</div>
+                    </div>
+                    <div class="mini-stat">
+                      <div class="mini-stat-value" style="color: #e879f9">{{ stats.avgMitigations }}</div>
+                      <div class="mini-stat-label">Avg Mitigations</div>
+                    </div>
+                  </div>
+                  @if (stats.hasTrendData) {
+                    <div class="widget-footer-note" [class]="stats.coverageTrend >= 0 ? 'trend-up' : 'trend-down'">
+                      {{ trendSign(stats.coverageTrend) }}{{ stats.coverageTrend | number:'1.0-0' }}% vs last snapshot
+                    </div>
+                  }
+                </div>
               </div>
-            } @else {
-              <div class="trend-neutral">No prior snapshot</div>
             }
-          </div>
 
-          <!-- Implemented Card -->
-          <div class="hero-card" style="border-left-color: #4ade80">
-            <div class="hero-number" style="color: #4ade80">{{ stats.implementedCount }}</div>
-            <div class="hero-label">Implemented</div>
-            <div class="hero-sub">mitigations fully deployed</div>
-            @if (stats.inProgressCount > 0) {
-              <div class="trend-up">{{ stats.inProgressCount }} in progress</div>
-            }
-          </div>
-
-          <!-- At Risk Card -->
-          <div class="hero-card" style="border-left-color: #f87171">
-            <div class="hero-number" style="color: #f87171">{{ stats.criticalRiskCount }}</div>
-            <div class="hero-label">At Risk</div>
-            <div class="hero-sub">no mitigation + threat groups</div>
-            <div class="trend-down">{{ stats.uncoveredCount }} total uncovered</div>
-          </div>
-
-          <!-- CVE Exposed Card -->
-          <div class="hero-card" style="border-left-color: #fb923c">
-            <div class="hero-number" style="color: #fb923c">{{ stats.cveExposedCount }}</div>
-            <div class="hero-label">CVE Exposed</div>
-            <div class="hero-sub">techniques with CVE mappings</div>
-            <div class="trend-neutral">{{ stats.detectionCoveragePct }}% detection coverage</div>
-          </div>
-
-          <!-- ── ROW 2: Tactic Bar Chart + Grade Gauge ───────────────────── -->
-
-          <!-- Tactic Coverage (spans 3 columns) -->
-          <div class="section-card tactic-section upgrade-section-block">
-            <div class="section-title upgrade-section-title">ATT&CK Tactic Coverage</div>
-            <div class="tactic-list">
-              @for (tactic of stats.tacticStats; track tactic.name) {
-                <div class="tactic-bar-row">
-                  <div class="tactic-name" [title]="tactic.name">{{ tactic.name }}</div>
-                  <div class="tactic-bar-bg">
-                    <div
-                      class="tactic-bar-fill"
-                      [style.width.%]="tactic.pct"
-                      [style.background]="tacticBarColor(tactic.pct)"
-                    ></div>
-                  </div>
-                  <div class="tactic-pct" [style.color]="tacticBarColor(tactic.pct)">{{ tactic.pct }}%</div>
-                  <div class="tactic-counts">{{ tactic.covered }}/{{ tactic.total }}</div>
+            <!-- ============ TACTIC BREAKDOWN ============ -->
+            @if (widget.id === 'tactic-breakdown') {
+              <div class="widget-card widget-span-2">
+                <div class="widget-header">
+                  <span class="widget-icon">{{ widget.icon }}</span>
+                  <span class="widget-label">{{ widget.label }}</span>
+                  <button class="widget-pin-btn" (click)="toggleWidget(widget.id)" title="Hide widget">&#x1F4CC;</button>
                 </div>
-              }
-            </div>
-          </div>
-
-          <!-- Overall Grade Gauge -->
-          <div class="section-card grade-section upgrade-section-block">
-            <div class="section-title upgrade-section-title">Overall Grade</div>
-            <div class="grade-gauge">
-              <div class="grade-circle" [style.border-color]="gradeColor">
-                <div class="grade-letter" [style.color]="gradeColor">{{ overallGrade }}</div>
-              </div>
-              <div class="grade-pct">{{ stats.coveragePct }}% Coverage</div>
-              @if (stats.hasTrendData) {
-                <div [class]="stats.coverageTrend >= 0 ? 'grade-trend-up' : 'grade-trend-down'">
-                  vs last snapshot: {{ trendSign(stats.coverageTrend) }}{{ stats.coverageTrend | number:'1.0-0' }}%
-                </div>
-              }
-              <div class="grade-scale">
-                <span style="color:#4ade80">A ≥80%</span>
-                <span style="color:#86efac">B ≥65%</span>
-                <span style="color:#facc15">C ≥50%</span>
-                <span style="color:#fb923c">D ≥35%</span>
-                <span style="color:#f87171">F &lt;35%</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- ── ROW 3: Implementation Pipeline + Detection + Top Risks ──── -->
-
-          <!-- Implementation Pipeline -->
-          <div class="section-card upgrade-section-block">
-            <div class="section-title upgrade-section-title">Implementation Pipeline</div>
-            <div class="impl-list">
-              <div class="impl-row">
-                <div class="impl-label">Implemented</div>
-                <div class="impl-bar-bg">
-                  <div class="impl-bar-fill" style="background: #4ade80" [style.width.%]="implBarPct(stats.implementedCount)"></div>
-                </div>
-                <div class="impl-count">{{ stats.implementedCount }} ({{ implBarPct(stats.implementedCount) }}%)</div>
-              </div>
-              <div class="impl-row">
-                <div class="impl-label">In Progress</div>
-                <div class="impl-bar-bg">
-                  <div class="impl-bar-fill" style="background: #fb923c" [style.width.%]="implBarPct(stats.inProgressCount)"></div>
-                </div>
-                <div class="impl-count">{{ stats.inProgressCount }} ({{ implBarPct(stats.inProgressCount) }}%)</div>
-              </div>
-              <div class="impl-row">
-                <div class="impl-label">Planned</div>
-                <div class="impl-bar-bg">
-                  <div class="impl-bar-fill" style="background: #60a5fa" [style.width.%]="implBarPct(stats.plannedCount)"></div>
-                </div>
-                <div class="impl-count">{{ stats.plannedCount }} ({{ implBarPct(stats.plannedCount) }}%)</div>
-              </div>
-              <div class="impl-row">
-                <div class="impl-label">Not Started</div>
-                <div class="impl-bar-bg">
-                  <div class="impl-bar-fill" style="background: #f87171" [style.width.%]="implBarPct(stats.notStartedCount)"></div>
-                </div>
-                <div class="impl-count">{{ stats.notStartedCount }} ({{ implBarPct(stats.notStartedCount) }}%)</div>
-              </div>
-              <div class="impl-row">
-                <div class="impl-label">Untracked</div>
-                <div class="impl-bar-bg">
-                  <div class="impl-bar-fill" style="background: #4a6080"
-                    [style.width.%]="implBarPct(stats.totalMitigations - stats.implementedCount - stats.inProgressCount - stats.plannedCount - stats.notStartedCount)">
-                  </div>
-                </div>
-                <div class="impl-count">
-                  {{ stats.totalMitigations - stats.implementedCount - stats.inProgressCount - stats.plannedCount - stats.notStartedCount }}
-                  ({{ implBarPct(stats.totalMitigations - stats.implementedCount - stats.inProgressCount - stats.plannedCount - stats.notStartedCount) }}%)
-                </div>
-              </div>
-              <div class="impl-total">{{ stats.totalMitigations }} total mitigations in ATT&CK</div>
-            </div>
-          </div>
-
-          <!-- Detection Coverage -->
-          <div class="section-card upgrade-section-block">
-            <div class="section-title upgrade-section-title">Detection Coverage</div>
-            <div class="detection-list">
-              <div class="detection-row">
-                <div class="detection-label">
-                  <span class="det-source-dot" style="background: #58a6ff"></span>
-                  CAR Analytics
-                </div>
-                <div class="detection-bar-wrap">
-                  <div class="detection-bar-bg">
-                    <div class="detection-bar-fill" style="background: #58a6ff" [style.width.%]="detectionBarPct(stats.withCarCount)"></div>
-                  </div>
-                  <div class="detection-pct">{{ detectionBarPct(stats.withCarCount) }}%</div>
-                </div>
-                <div class="detection-count">{{ stats.withCarCount }} techniques</div>
-              </div>
-              <div class="detection-row">
-                <div class="detection-label">
-                  <span class="det-source-dot" style="background: #fb923c"></span>
-                  Atomic Red Team
-                </div>
-                <div class="detection-bar-wrap">
-                  <div class="detection-bar-bg">
-                    <div class="detection-bar-fill" style="background: #fb923c" [style.width.%]="detectionBarPct(stats.withAtomicCount)"></div>
-                  </div>
-                  <div class="detection-pct">{{ detectionBarPct(stats.withAtomicCount) }}%</div>
-                </div>
-                <div class="detection-count">{{ stats.withAtomicCount }} techniques</div>
-              </div>
-              <div class="detection-row">
-                <div class="detection-label">
-                  <span class="det-source-dot" style="background: #86efac"></span>
-                  D3FEND
-                </div>
-                <div class="detection-bar-wrap">
-                  <div class="detection-bar-bg">
-                    <div class="detection-bar-fill" style="background: #86efac" [style.width.%]="detectionBarPct(stats.withD3fendCount)"></div>
-                  </div>
-                  <div class="detection-pct">{{ detectionBarPct(stats.withD3fendCount) }}%</div>
-                </div>
-                <div class="detection-count">{{ stats.withD3fendCount }} techniques</div>
-              </div>
-              <div class="detection-row detection-combined">
-                <div class="detection-label">
-                  <span class="det-source-dot" style="background: #e879f9"></span>
-                  Combined (any)
-                </div>
-                <div class="detection-bar-wrap">
-                  <div class="detection-bar-bg">
-                    <div class="detection-bar-fill" style="background: #e879f9" [style.width.%]="stats.detectionCoveragePct"></div>
-                  </div>
-                  <div class="detection-pct">{{ stats.detectionCoveragePct }}%</div>
-                </div>
-                <div class="detection-count">
-                  {{ stats.withCarCount + stats.withAtomicCount + stats.withD3fendCount > 0 ? stats.detectionCoveragePct + '%' : '0' }} covered
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Top Risk Areas -->
-          <div class="section-card upgrade-section-block">
-            <div class="section-title upgrade-section-title">Top Risk Areas</div>
-            @if (stats.topRiskTechniques.length === 0) {
-              <div class="risk-empty">
-                No critical-risk techniques found — great posture!
-              </div>
-            } @else {
-              <div class="risk-list upgrade-stack-list">
-                @for (tech of stats.topRiskTechniques; track tech.attackId; let i = $index) {
-                  <div class="risk-item">
-                    <div class="risk-rank">#{{ i + 1 }}</div>
-                    <div class="risk-info">
-                      <div class="risk-name">{{ tech.name }}</div>
-                      <div class="risk-meta">
-                        <span class="risk-id">{{ tech.attackId }}</span>
-                        <span class="risk-badge-no-mit">No mitigation</span>
+                <div class="widget-body">
+                  <div class="tactic-list">
+                    @for (tactic of stats.tacticStats; track tactic.name) {
+                      <div class="tactic-bar-row">
+                        <div class="tactic-name" [title]="tactic.name">{{ tactic.name }}</div>
+                        <div class="tactic-bar-bg">
+                          <div
+                            class="tactic-bar-fill"
+                            [style.width.%]="tactic.pct"
+                            [style.background]="tacticBarColor(tactic.pct)"
+                          ></div>
+                        </div>
+                        <div class="tactic-pct" [style.color]="tacticBarColor(tactic.pct)">{{ tactic.pct }}%</div>
+                        <div class="tactic-counts">{{ tactic.covered }}/{{ tactic.total }}</div>
                       </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- ============ RADAR CHART ============ -->
+            @if (widget.id === 'radar-chart') {
+              <div class="widget-card">
+                <div class="widget-header">
+                  <span class="widget-icon">{{ widget.icon }}</span>
+                  <span class="widget-label">{{ widget.label }}</span>
+                  <button class="widget-pin-btn" (click)="toggleWidget(widget.id)" title="Hide widget">&#x1F4CC;</button>
+                </div>
+                <div class="widget-body radar-body">
+                  <svg viewBox="0 0 260 260" class="radar-svg">
+                    <!-- Grid circles -->
+                    @for (pct of radarChart.gridCircles; track pct) {
+                      <circle cx="130" cy="130" [attr.r]="pct" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+                    }
+                    <!-- Spokes -->
+                    @for (spoke of radarChart.spokes; track spoke.label) {
+                      <line [attr.x1]="spoke.x1" [attr.y1]="spoke.y1" [attr.x2]="spoke.x2" [attr.y2]="spoke.y2"
+                        stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+                      <text [attr.x]="spoke.labelX" [attr.y]="spoke.labelY"
+                        [attr.text-anchor]="spoke.anchor" fill="rgba(255,255,255,0.5)" font-size="8"
+                        dominant-baseline="middle">{{ spoke.label }}</text>
+                    }
+                    <!-- Data polygon -->
+                    @if (radarChart.polygon) {
+                      <polygon [attr.points]="radarChart.polygon"
+                        fill="rgba(88,166,255,0.18)" stroke="#58a6ff" stroke-width="1.5"/>
+                    }
+                  </svg>
+                </div>
+              </div>
+            }
+
+            <!-- ============ TOP GAPS ============ -->
+            @if (widget.id === 'gap-summary') {
+              <div class="widget-card widget-span-2">
+                <div class="widget-header">
+                  <span class="widget-icon">{{ widget.icon }}</span>
+                  <span class="widget-label">{{ widget.label }}</span>
+                  <button class="widget-pin-btn" (click)="toggleWidget(widget.id)" title="Hide widget">&#x1F4CC;</button>
+                </div>
+                <div class="widget-body">
+                  @if (stats.topRiskTechniques.length === 0) {
+                    <div class="risk-empty">No critical-risk techniques found -- great posture!</div>
+                  } @else {
+                    <div class="risk-list">
+                      @for (tech of stats.topRiskTechniques; track tech.attackId; let i = $index) {
+                        <div class="risk-item">
+                          <div class="risk-rank">#{{ i + 1 }}</div>
+                          <div class="risk-info">
+                            <div class="risk-name">{{ tech.name }}</div>
+                            <div class="risk-meta">
+                              <span class="risk-id">{{ tech.attackId }}</span>
+                              <span class="risk-badge-no-mit">No mitigation</span>
+                            </div>
+                          </div>
+                          <div class="risk-groups">
+                            <span class="risk-group-count">{{ tech.threatGroupCount }}</span>
+                            <span class="risk-group-label">groups</span>
+                          </div>
+                        </div>
+                      }
                     </div>
-                    <div class="risk-groups">
-                      <span class="risk-group-count">{{ tech.threatGroupCount }}</span>
-                      <span class="risk-group-label">groups</span>
+                    @if (stats.criticalRiskCount > 10) {
+                      <div class="risk-more">+{{ stats.criticalRiskCount - 10 }} more critical-risk techniques</div>
+                    }
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- ============ DATA HEALTH ============ -->
+            @if (widget.id === 'data-health') {
+              <div class="widget-card">
+                <div class="widget-header">
+                  <span class="widget-icon">{{ widget.icon }}</span>
+                  <span class="widget-label">{{ widget.label }}</span>
+                  <button class="widget-pin-btn" (click)="toggleWidget(widget.id)" title="Hide widget">&#x1F4CC;</button>
+                </div>
+                <div class="widget-body">
+                  <div class="health-grid">
+                    @for (entry of healthEntries; track entry.name) {
+                      <div class="health-row">
+                        <span
+                          class="health-dot"
+                          [class.dot-loaded]="entry.status === 'loaded'"
+                          [class.dot-loading]="entry.status === 'loading'"
+                          [class.dot-failed]="entry.status === 'failed'"
+                        ></span>
+                        <span class="health-name">{{ entry.name }}</span>
+                        <span class="health-status" [class]="'hs-' + entry.status">{{ entry.status }}</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- ============ INTEL SUMMARY ============ -->
+            @if (widget.id === 'intel-summary') {
+              <div class="widget-card">
+                <div class="widget-header">
+                  <span class="widget-icon">{{ widget.icon }}</span>
+                  <span class="widget-label">{{ widget.label }}</span>
+                  <button class="widget-pin-btn" (click)="toggleWidget(widget.id)" title="Hide widget">&#x1F4CC;</button>
+                </div>
+                <div class="widget-body">
+                  <div class="intel-cards">
+                    <div class="intel-card">
+                      <div class="intel-value">{{ stats.mispClusterCount }}</div>
+                      <div class="intel-label">MISP Clusters</div>
+                    </div>
+                    <div class="intel-card">
+                      <div class="intel-value" [style.color]="stats.openctiConnected ? '#4ade80' : '#4a6080'">
+                        {{ stats.openctiConnected ? 'Connected' : 'Offline' }}
+                      </div>
+                      <div class="intel-label">OpenCTI</div>
+                    </div>
+                    <div class="intel-card">
+                      <div class="intel-value" style="color: #fb923c">{{ stats.threatGroupCount }}</div>
+                      <div class="intel-label">Threat Groups</div>
                     </div>
                   </div>
-                }
+                </div>
               </div>
-              @if (stats.criticalRiskCount > 5) {
-                <div class="risk-more">+{{ stats.criticalRiskCount - 5 }} more critical-risk techniques</div>
-              }
             }
-          </div>
 
-          <!-- ── ROW 4: Quick Links ────────────────────────────────────────── -->
-          <div class="quick-links-section upgrade-section-block">
-            <div class="section-title upgrade-section-title">Quick Navigation</div>
-            <div class="quick-links upgrade-action-strip">
-              <button class="quick-link-btn" (click)="openPanel('timeline')">
-                <span class="ql-icon">📅</span>
-                <span class="ql-label">View Timeline</span>
-              </button>
-              <button class="quick-link-btn" (click)="openPanel('scenario')">
-                <span class="ql-icon">🎭</span>
-                <span class="ql-label">Run Scenario</span>
-              </button>
-              <button class="quick-link-btn" (click)="openPanel('detection')">
-                <span class="ql-icon">⚠️</span>
-                <span class="ql-label">View Gaps</span>
-              </button>
-              <button class="quick-link-btn" (click)="openPanel('risk-matrix')">
-                <span class="ql-icon">🎯</span>
-                <span class="ql-label">Risk Matrix</span>
-              </button>
-              <button class="quick-link-btn quick-link-export" (click)="exportReport()">
-                <span class="ql-icon">📄</span>
-                <span class="ql-label">Export Report</span>
-              </button>
-            </div>
-          </div>
+            <!-- ============ DETECTION SUMMARY ============ -->
+            @if (widget.id === 'detection-summary') {
+              <div class="widget-card">
+                <div class="widget-header">
+                  <span class="widget-icon">{{ widget.icon }}</span>
+                  <span class="widget-label">{{ widget.label }}</span>
+                  <button class="widget-pin-btn" (click)="toggleWidget(widget.id)" title="Hide widget">&#x1F4CC;</button>
+                </div>
+                <div class="widget-body">
+                  <div class="detection-cards">
+                    <div class="det-card">
+                      <div class="det-value" style="color: #facc15">{{ stats.sigmaRuleCount }}</div>
+                      <div class="det-label">Sigma Rules</div>
+                    </div>
+                    <div class="det-card">
+                      <div class="det-value" style="color: #60a5fa">{{ stats.elasticRuleCount }}</div>
+                      <div class="det-label">Elastic Rules</div>
+                    </div>
+                    <div class="det-card">
+                      <div class="det-value" style="color: #4ade80">{{ stats.splunkRuleCount }}</div>
+                      <div class="det-label">Splunk Rules</div>
+                    </div>
+                  </div>
+                  <div class="widget-footer-note">
+                    {{ stats.detectionCoveragePct }}% combined detection coverage
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- ============ RECENT KEV CVES ============ -->
+            @if (widget.id === 'recent-cves') {
+              <div class="widget-card">
+                <div class="widget-header">
+                  <span class="widget-icon">{{ widget.icon }}</span>
+                  <span class="widget-label">{{ widget.label }}</span>
+                  <button class="widget-pin-btn" (click)="toggleWidget(widget.id)" title="Hide widget">&#x1F4CC;</button>
+                </div>
+                <div class="widget-body">
+                  @if (stats.recentKevEntries.length === 0) {
+                    <div class="kev-empty">No KEV entries loaded yet.</div>
+                  } @else {
+                    <div class="kev-list">
+                      @for (kev of stats.recentKevEntries; track kev.cveID) {
+                        <div class="kev-item">
+                          <div class="kev-id">{{ kev.cveID }}</div>
+                          <div class="kev-vendor">{{ kev.vendorProject }} - {{ kev.product }}</div>
+                          <div class="kev-date">Added: {{ kev.dateAdded }}</div>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- ============ IMPLEMENTATION STATUS (Donut) ============ -->
+            @if (widget.id === 'impl-status') {
+              <div class="widget-card">
+                <div class="widget-header">
+                  <span class="widget-icon">{{ widget.icon }}</span>
+                  <span class="widget-label">{{ widget.label }}</span>
+                  <button class="widget-pin-btn" (click)="toggleWidget(widget.id)" title="Hide widget">&#x1F4CC;</button>
+                </div>
+                <div class="widget-body impl-body">
+                  <svg viewBox="0 0 120 120" class="donut-svg">
+                    @for (seg of implDonutSegments; track seg.label) {
+                      <circle
+                        cx="60" cy="60" r="45"
+                        fill="none"
+                        [attr.stroke]="seg.color"
+                        stroke-width="14"
+                        [attr.stroke-dasharray]="(seg.pct * 2.827) + ' ' + (283 - seg.pct * 2.827)"
+                        [attr.stroke-dashoffset]="(-seg.offset * 2.827)"
+                        transform="rotate(-90 60 60)"
+                      />
+                    }
+                    <text x="60" y="56" text-anchor="middle" fill="white" font-size="16" font-weight="700">
+                      {{ stats.implementedCount }}
+                    </text>
+                    <text x="60" y="72" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="8">
+                      implemented
+                    </text>
+                  </svg>
+                  <div class="donut-legend">
+                    @for (seg of implDonutSegments; track seg.label) {
+                      <div class="legend-item">
+                        <span class="legend-dot" [style.background]="seg.color"></span>
+                        <span class="legend-text">{{ seg.label }}: {{ seg.count }} ({{ seg.pct }}%)</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- ============ QUICK ACTIONS ============ -->
+            @if (widget.id === 'quick-actions') {
+              <div class="widget-card widget-span-2">
+                <div class="widget-header">
+                  <span class="widget-icon">{{ widget.icon }}</span>
+                  <span class="widget-label">{{ widget.label }}</span>
+                  <button class="widget-pin-btn" (click)="toggleWidget(widget.id)" title="Hide widget">&#x1F4CC;</button>
+                </div>
+                <div class="widget-body">
+                  <div class="quick-actions-row">
+                    <button class="action-btn" (click)="exportCsv()">
+                      <span class="action-icon">&#x1F4E5;</span>
+                      <span>Export XLSX</span>
+                    </button>
+                    <button class="action-btn" (click)="exportReport()">
+                      <span class="action-icon">&#x1F4C4;</span>
+                      <span>HTML Report</span>
+                    </button>
+                    <button class="action-btn" (click)="openPanel('detection')">
+                      <span class="action-icon">&#x26A0;&#xFE0F;</span>
+                      <span>Gap View</span>
+                    </button>
+                    <button class="action-btn" (click)="clearFilters()">
+                      <span class="action-icon">&#x1F9F9;</span>
+                      <span>Clear Filters</span>
+                    </button>
+                    <button class="action-btn" (click)="openPanel('timeline')">
+                      <span class="action-icon">&#x1F4C5;</span>
+                      <span>Timeline</span>
+                    </button>
+                    <button class="action-btn" (click)="openPanel('scenario')">
+                      <span class="action-icon">&#x1F3AD;</span>
+                      <span>Scenario</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+
+          }
 
         </div>
       </div>
