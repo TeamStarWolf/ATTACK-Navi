@@ -1,4 +1,6 @@
-# ATT&CK Workbench V18.1
+# ATT&CK NAV
+
+**Live Site: [https://ccwilliams314.github.io/attack-nav/](https://ccwilliams314.github.io/attack-nav/)**
 
 An Angular 19 application for exploring MITRE ATT&CK techniques, analyzing mitigation coverage, tracking implementation status, and correlating threat intelligence across 20+ cybersecurity frameworks and data sources.
 
