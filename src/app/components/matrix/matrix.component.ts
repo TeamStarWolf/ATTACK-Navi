@@ -42,6 +42,7 @@ import { WatchlistService } from '../../services/watchlist.service';
 import { TaggingService } from '../../services/tagging.service';
 import { TechniqueCellComponent } from '../technique-cell/technique-cell.component';
 import { TechniqueTooltipComponent } from '../technique-tooltip/technique-tooltip.component';
+import { CustomTechniqueService, CustomTechnique } from '../../services/custom-technique.service';
 
 @Component({
   selector: 'app-matrix',
@@ -188,6 +189,10 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
   // Frequency heatmap: technique STIX id → count of unique threat groups using it
   frequencyMap = new Map<string, number>();
 
+  // Custom techniques from user-created collection
+  customTechniques: CustomTechnique[] = [];
+  customTechniqueIds = new Set<string>();
+
   // Show/hide technique names
   showTechniqueNames = true;
 
@@ -240,6 +245,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     private elasticService: ElasticService,
     private splunkContentService: SplunkContentService,
     private mispService: MispService,
+    private customTechniqueService: CustomTechniqueService,
     private cdr: ChangeDetectorRef,
     private el: ElementRef,
   ) {}
@@ -871,6 +877,16 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
       }),
     );
 
+    // Subscribe to custom technique changes
+    this.subs.add(
+      this.customTechniqueService.techniques$.subscribe(techniques => {
+        this.customTechniques = techniques;
+        this.customTechniqueIds = new Set(techniques.map(t => t.attackId));
+        this.rebuildSortedColumns();
+        this.cdr.markForCheck();
+      }),
+    );
+
     // Restore search query from URL on init
     const initialSearch = this.filterService.getTechniqueSearch();
     if (initialSearch) {
@@ -957,6 +973,35 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     return this.hiddenTacticIds.size;
   }
 
+  private customTechToTechnique(ct: CustomTechnique): Technique {
+    return {
+      id: `custom--${ct.id}`,
+      attackId: ct.attackId,
+      name: ct.name,
+      description: ct.description,
+      url: '',
+      tacticShortnames: ct.tacticShortnames,
+      isSubtechnique: false,
+      parentId: null,
+      subtechniques: [],
+      mitigationCount: 0,
+      platforms: ct.platforms,
+      dataSources: ct.dataSources,
+      detectionText: '',
+      defenseBypassed: [],
+      permissionsRequired: [],
+      effectivePermissions: [],
+      systemRequirements: [],
+      impactType: [],
+      remoteSupport: false,
+      capecIds: [],
+    };
+  }
+
+  isCustomTechnique(tech: Technique): boolean {
+    return tech.id.startsWith('custom--') || this.customTechniqueIds.has(tech.attackId);
+  }
+
   private rebuildSortedColumns(): void {
     if (!this.domain) return;
     this.sortedColumns = this.domain.tacticColumns
@@ -969,6 +1014,12 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
         if (this.hasDataSourceFilter && this.dataSourceIds) {
           techniques = techniques.filter((t) => this.dataSourceIds!.has(t.id) || t.subtechniques.some((s) => this.dataSourceIds!.has(s.id)));
         }
+        // Append custom techniques for this tactic
+        const tacticShortname = col.tactic.shortname;
+        const customForTactic = this.customTechniques
+          .filter(ct => ct.tacticShortnames.includes(tacticShortname))
+          .map(ct => this.customTechToTechnique(ct));
+        techniques = [...techniques, ...customForTactic];
         if (this.sortMode === 'coverage') {
           techniques.sort((a, b) => a.mitigationCount - b.mitigationCount || a.attackId.localeCompare(b.attackId));
         }

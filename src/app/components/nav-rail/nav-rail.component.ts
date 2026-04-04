@@ -54,6 +54,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'tags', icon: '🏷️', label: 'Tags' },
   { id: 'roadmap', icon: '🗺️', label: 'Roadmap' },
   { id: 'changelog', icon: '📋', label: 'Changelog' },
+  { id: 'collection', icon: '📦', label: 'COLLECT' },
   { id: 'report', icon: '📄', label: 'Report' },
 ];
 
