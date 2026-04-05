@@ -237,3 +237,20 @@
     text-transform: uppercase;
   }
 }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .stats-bar {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 4px 8px;
+  }
+
+  .big-stat {
+    font-size: 13px;
+  }
+
+  .stat-group {
+    gap: 6px;
+  }
+}

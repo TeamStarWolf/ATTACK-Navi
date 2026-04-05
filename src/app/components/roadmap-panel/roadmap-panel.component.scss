@@ -166,3 +166,21 @@
 .phase-more {
   font-size: 10px; color: rgb(255 255 255 / 30%); padding: 4px 0; text-align: center;
 }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .roadmap-panel {
+    width: 100vw;
+    max-width: 100vw;
+    border-radius: 0;
+  }
+
+  .roadmap-header {
+    padding: 0 12px;
+  }
+
+  .roadmap-body {
+    padding: 12px;
+    font-size: 13px;
+  }
+}

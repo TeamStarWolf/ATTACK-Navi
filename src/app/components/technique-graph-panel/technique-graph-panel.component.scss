@@ -356,3 +356,23 @@
   .tt-hint { color: #58a6ff; font-size: 0.7rem; }
   .tt-drag { color: #484f58; font-size: 0.68rem; }
 }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .tgp-panel {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+    border: none;
+  }
+
+  .tgp-header {
+    padding: 12px;
+  }
+
+  .tgp-body {
+    padding: 12px;
+    font-size: 13px;
+  }
+}
