@@ -54,7 +54,7 @@ describe('NavRailComponent', () => {
   });
 
   it('should apply active class to the active panel', () => {
-    component.activePanel = 'dashboard';
+    fixture.componentRef.setInput('activePanel', 'dashboard');
     fixture.detectChanges();
     const activeBtn = fixture.nativeElement.querySelector('.nav-item.active');
     expect(activeBtn).toBeTruthy();
