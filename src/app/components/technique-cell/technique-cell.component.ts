@@ -176,6 +176,8 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
   @Input() splunkScore = 0;
   @Input() intelScore = 0;
   @Input() maxIntelScore = 1;
+  @Input() m365Score = 0;
+  @Input() maxM365Score = 1;
   @Input() showTechniqueId = true;
   @Input() showMitigationCount = true;
   @Input() showTechniqueName = true;
@@ -256,6 +258,8 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
       this.bgColor = this.computeSplunkColor(this.splunkScore);
     } else if (this.heatmapMode === 'intelligence') {
       this.bgColor = this.computeIntelligenceColor(this.intelScore, this.maxIntelScore);
+    } else if (this.heatmapMode === 'm365') {
+      this.bgColor = this.computeM365Color(this.m365Score);
     } else {
       this.bgColor = this.computeColor(this.technique.mitigationCount);
     }
@@ -459,6 +463,14 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
     if (count <= 8)  return '#7a4a1a';
     if (count <= 15) return '#c06a20';
     return '#ff9800';
+  }
+
+  private computeM365Color(count: number): string {
+    if (count === 0) return '#0a1a2e';
+    if (count <= 2)  return '#003a6e';
+    if (count <= 5)  return '#005a9e';
+    if (count <= 10) return '#0078d4';
+    return '#4ca6ff';
   }
 
   /** Unified Risk Score: 0–100 composite. Low = red (poorly defended/targeted), high = green. */

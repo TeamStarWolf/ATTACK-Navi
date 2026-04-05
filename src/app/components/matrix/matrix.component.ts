@@ -36,6 +36,7 @@ import { EpssService } from '../../services/epss.service';
 import { ElasticService } from '../../services/elastic.service';
 import { SplunkContentService } from '../../services/splunk-content.service';
 import { MispService } from '../../services/misp.service';
+import { M365DefenderService } from '../../services/m365-defender.service';
 import { SettingsService } from '../../services/settings.service';
 import { AnnotationService, TechniqueAnnotation } from '../../services/annotation.service';
 import { WatchlistService } from '../../services/watchlist.service';
@@ -162,6 +163,9 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
   // Intelligence heatmap scores: attackId -> intel signal count
   intelScoreMap = new Map<string, number>();
   maxIntelScore = 1;
+  // M365 Defender hunting query scores: attackId -> query count
+  m365ScoreMap = new Map<string, number>();
+  maxM365Score = 1;
   // Track current heatmap mode for loaded$ re-trigger
   private currentHeatmapMode: HeatmapMode = 'coverage';
   // Annotation map: techniqueId (attackId) -> annotation
@@ -245,6 +249,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     private elasticService: ElasticService,
     private splunkContentService: SplunkContentService,
     private mispService: MispService,
+    private m365DefenderService: M365DefenderService,
     private customTechniqueService: CustomTechniqueService,
     private cdr: ChangeDetectorRef,
     private el: ElementRef,
@@ -687,6 +692,13 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
             if (score > 0) this.intelScoreMap.set(tech.attackId, score);
           }
           this.maxIntelScore = this.intelScoreMap.size > 0 ? Math.max(...this.intelScoreMap.values()) : 1;
+        } else if (mode === 'm365' && this.domain) {
+          this.m365ScoreMap = new Map();
+          for (const tech of this.domain.techniques) {
+            const count = this.m365DefenderService.getHeatScore(tech.attackId);
+            if (count > 0) this.m365ScoreMap.set(tech.attackId, count);
+          }
+          this.maxM365Score = this.m365ScoreMap.size > 0 ? Math.max(...this.m365ScoreMap.values()) : 1;
         } else if (mode === 'epss' && this.domain) {
           this.epssScoreMap = new Map();
           // Collect all unique CVE IDs across all techniques
@@ -1298,6 +1310,10 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
 
   getIntelScore(t: Technique): number {
     return this.intelScoreMap.get(t.attackId) ?? 0;
+  }
+
+  getM365Score(t: Technique): number {
+    return this.m365ScoreMap.get(t.attackId) ?? 0;
   }
 
   getFrequencyScore(t: Technique): number {
