@@ -325,3 +325,21 @@
   padding-left: 2px;
   font-style: italic;
 }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .sw-panel {
+    width: 100vw;
+    max-width: 100vw;
+    border-radius: 0;
+  }
+
+  .panel-header {
+    padding: 0 12px;
+  }
+
+  .panel-body {
+    padding: 12px;
+    font-size: 13px;
+  }
+}
