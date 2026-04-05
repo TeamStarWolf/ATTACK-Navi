@@ -38,6 +38,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'technique-graph', icon: '🕸️', label: 'Graph' },
   { id: 'datasources', icon: '📡', label: 'Sources' },
   { id: 'cve', icon: '🔍', label: 'CVE' },
+  { id: 'gap-analysis', icon: '🔎', label: 'GAP RPT' },
 
   { type: 'divider', label: 'Coverage' },
   { id: 'assessment', icon: '🧭', label: 'ASSESS' },
@@ -48,6 +49,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'timeline', icon: '📅', label: 'Timeline' },
   { id: 'coverage-diff', icon: 'Δ', label: 'Diff' },
   { id: 'target', icon: '🎯', label: 'Target' },
+  { id: 'assets', icon: '💻', label: 'ASSETS' },
   { id: 'watchlist', icon: '🔖', label: 'Watchlist' },
 
   { type: 'divider', label: 'Tools' },

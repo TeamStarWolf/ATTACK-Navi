@@ -256,6 +256,16 @@ const MODE_CONFIGS: Record<HeatmapMode, LegendConfig> = {
       { color: '#4ca6ff', label: '11+' },
     ],
   },
+  'my-exposure': {
+    label: 'My Exposure',
+    stops: [
+      { color: '#1a2332', label: '0' },
+      { color: '#ff9800', label: '1' },
+      { color: '#f44336', label: '2–3' },
+      { color: '#d32f2f', label: '4–6' },
+      { color: '#b71c1c', label: '7+' },
+    ],
+  },
 };
 
 @Component({

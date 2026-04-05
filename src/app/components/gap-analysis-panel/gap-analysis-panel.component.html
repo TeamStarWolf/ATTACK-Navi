@@ -1,0 +1,247 @@
+@if (visible) {
+  <div class="gap-panel-overlay" (click)="close()">
+    <div class="gap-panel" (click)="$event.stopPropagation()">
+      <!-- Header -->
+      <div class="gap-header">
+        <div class="header-left">
+          <h2>Detection Gap Analysis</h2>
+          <span class="header-subtitle" *ngIf="result">
+            Generated {{ result.generatedAt | date:'medium' }}
+          </span>
+        </div>
+        <div class="header-actions">
+          @if (result) {
+            <button class="btn btn-sm" (click)="exportCsv()" title="Export CSV">CSV</button>
+            <button class="btn btn-sm" (click)="exportPdf()" title="Export PDF">PDF</button>
+            <button class="btn btn-sm" (click)="copyToClipboard()" title="Copy to Clipboard">Copy</button>
+          }
+          <button class="btn-close" (click)="close()" aria-label="Close">&times;</button>
+        </div>
+      </div>
+
+      <!-- Step 1: Select Threat Profile -->
+      @if (!result) {
+        <div class="step-section">
+          <h3 class="step-label">Step 1 — Select Threat Profile</h3>
+
+          <div class="toggle-row">
+            <label class="toggle-label">
+              <input type="checkbox" [(ngModel)]="analyzeAll" (ngModelChange)="onAnalyzeAllChange()" />
+              Analyze all techniques (no actor filter)
+            </label>
+          </div>
+
+          @if (!analyzeAll) {
+            <div class="quick-picks">
+              <button class="btn btn-sm btn-outline" (click)="selectTop10()">Top 10 by Technique Count</button>
+              <button class="btn btn-sm btn-outline" (click)="selectAptOnly()">APT Groups Only</button>
+              <button class="btn btn-sm btn-outline" (click)="selectAllGroups()">All Groups</button>
+              <button class="btn btn-sm btn-outline" (click)="clearSelection()">Clear</button>
+            </div>
+
+            <div class="actor-search">
+              <input type="text" class="search-input" placeholder="Search threat groups..."
+                     [(ngModel)]="actorSearch" />
+            </div>
+
+            <div class="actor-list">
+              @for (group of filteredGroups; track group.id) {
+                <label class="actor-item" [class.selected]="selectedActorIds.has(group.id)">
+                  <input type="checkbox"
+                         [checked]="selectedActorIds.has(group.id)"
+                         (change)="toggleActor(group.id)" />
+                  <span class="actor-name">{{ group.name }}</span>
+                  <span class="actor-id">{{ group.attackId }}</span>
+                  <span class="actor-count">{{ getGroupTechCount(group.id) }} techniques</span>
+                </label>
+              }
+            </div>
+
+            <div class="selection-summary">
+              {{ selectedActorIds.size }} group(s) selected
+            </div>
+          }
+
+          <button class="btn btn-primary generate-btn"
+                  [disabled]="!analyzeAll && selectedActorIds.size === 0"
+                  (click)="generate()">
+            Generate Report
+          </button>
+        </div>
+      }
+
+      <!-- Step 2: Results -->
+      @if (result) {
+        <div class="results-section">
+          <!-- Summary Cards Row -->
+          <div class="summary-cards">
+            <div class="summary-card card-blue">
+              <div class="card-num">{{ result.summary.totalTechniques }}</div>
+              <div class="card-label">Total Techniques</div>
+            </div>
+            <div class="summary-card card-green">
+              <div class="card-num">{{ result.summary.mitigated }}</div>
+              <div class="card-label">Mitigated</div>
+            </div>
+            <div class="summary-card card-blue">
+              <div class="card-num">{{ result.summary.detected }}</div>
+              <div class="card-label">Detected</div>
+            </div>
+            <div class="summary-card card-red" [class.pulse]="result.summary.fullyBlind > 0">
+              <div class="card-num">{{ result.summary.fullyBlind }}</div>
+              <div class="card-label">Fully Blind</div>
+            </div>
+            <div class="summary-card card-rag"
+                 [class.rag-green]="result.summary.ragStatus === 'green'"
+                 [class.rag-amber]="result.summary.ragStatus === 'amber'"
+                 [class.rag-red]="result.summary.ragStatus === 'red'">
+              <div class="card-num">{{ result.summary.ragStatus | uppercase }}</div>
+              <div class="card-label">Overall RAG</div>
+            </div>
+          </div>
+
+          <!-- Tactic Breakdown Table -->
+          <div class="section-block">
+            <h3>Tactic Breakdown</h3>
+            <div class="table-scroll">
+              <table class="gap-table">
+                <thead>
+                  <tr>
+                    <th>Tactic</th>
+                    <th class="num-col">Total</th>
+                    <th class="num-col">Mitigated</th>
+                    <th class="num-col">Detected</th>
+                    <th class="num-col">Blind</th>
+                    <th class="num-col">RAG</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of result.tacticBreakdown; track row.shortname) {
+                    <tr [class.row-green]="row.ragStatus === 'green'"
+                        [class.row-amber]="row.ragStatus === 'amber'"
+                        [class.row-red]="row.ragStatus === 'red'">
+                      <td>{{ row.tactic }}</td>
+                      <td class="num-col">{{ row.total }}</td>
+                      <td class="num-col">{{ row.mitigated }}</td>
+                      <td class="num-col">{{ row.detected }}</td>
+                      <td class="num-col">{{ row.blind }}</td>
+                      <td class="num-col">
+                        <span class="rag-badge"
+                              [class.rag-green]="row.ragStatus === 'green'"
+                              [class.rag-amber]="row.ragStatus === 'amber'"
+                              [class.rag-red]="row.ragStatus === 'red'">
+                          {{ row.ragStatus | uppercase }}
+                        </span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Detection Source Coverage -->
+          <div class="section-block">
+            <h3>Detection Source Coverage</h3>
+            <div class="coverage-bars">
+              @for (src of detectionSources; track src.key) {
+                <div class="coverage-row">
+                  <div class="coverage-label">{{ src.label }}</div>
+                  <div class="coverage-bar-track">
+                    <div class="coverage-bar-fill" [style.width.%]="src.pct"></div>
+                  </div>
+                  <div class="coverage-stat">{{ src.covered }}/{{ src.total }} ({{ src.pct }}%)</div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Prioritized Gaps Table -->
+          <div class="section-block">
+            <h3>
+              Prioritized Gaps
+              <span class="gap-count">({{ result.prioritizedGaps.length }} total, showing top {{ displayedGaps.length }})</span>
+            </h3>
+
+            <div class="gap-sort-row">
+              <button class="btn btn-sm" [class.active]="gapSort === 'priority'" (click)="gapSort = 'priority'; sortGaps()">Priority</button>
+              <button class="btn btn-sm" [class.active]="gapSort === 'kev'" (click)="gapSort = 'kev'; sortGaps()">KEV Count</button>
+              <button class="btn btn-sm" [class.active]="gapSort === 'groups'" (click)="gapSort = 'groups'; sortGaps()">Groups</button>
+              <button class="btn btn-sm" [class.active]="gapSort === 'name'" (click)="gapSort = 'name'; sortGaps()">Name</button>
+            </div>
+
+            <div class="table-scroll">
+              <table class="gap-table gaps-table">
+                <thead>
+                  <tr>
+                    <th>Technique</th>
+                    <th class="num-col">Priority</th>
+                    <th>Tactic</th>
+                    <th class="num-col">Groups</th>
+                    <th class="num-col">KEV</th>
+                    <th class="num-col">Exploit</th>
+                    <th>Detection</th>
+                    <th>Recommendation</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (gap of displayedGaps; track gap.technique.attackId) {
+                    <tr [class.critical-row]="gap.priority === 'critical'">
+                      <td>
+                        <button class="tech-link" (click)="openTechnique(gap.technique.attackId)">
+                          {{ gap.technique.attackId }}
+                        </button>
+                        <span class="tech-name">{{ gap.technique.name }}</span>
+                      </td>
+                      <td class="num-col">
+                        <span class="priority-badge"
+                              [class.pr-critical]="gap.priority === 'critical'"
+                              [class.pr-high]="gap.priority === 'high'"
+                              [class.pr-medium]="gap.priority === 'medium'"
+                              [class.pr-low]="gap.priority === 'low'">
+                          {{ gap.priority | uppercase }}
+                        </span>
+                      </td>
+                      <td class="tactic-cell">{{ gap.tactic }}</td>
+                      <td class="num-col">{{ gap.usedByGroups.length }}</td>
+                      <td class="num-col">{{ gap.kevCount }}</td>
+                      <td class="num-col">
+                        @if (gap.hasExploit) {
+                          <span class="exploit-indicator">YES</span>
+                        } @else {
+                          <span class="no-indicator">-</span>
+                        }
+                      </td>
+                      <td>
+                        @if (gap.detectionSources.length > 0) {
+                          <span class="det-sources">{{ gap.detectionSources.join(', ') }}</span>
+                        } @else {
+                          <span class="no-indicator">None</span>
+                        }
+                      </td>
+                      <td class="rec-cell">{{ gap.recommendation }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            @if (result.prioritizedGaps.length > gapLimit) {
+              <button class="btn btn-sm show-more-btn" (click)="showMoreGaps()">
+                Show More ({{ result.prioritizedGaps.length - gapLimit }} remaining)
+              </button>
+            }
+          </div>
+
+          <!-- Export buttons footer -->
+          <div class="export-footer">
+            <button class="btn btn-primary" (click)="exportCsv()">Export CSV</button>
+            <button class="btn btn-primary" (click)="exportPdf()">Export PDF</button>
+            <button class="btn" (click)="copyToClipboard()">Copy to Clipboard</button>
+            <button class="btn" (click)="resetReport()">New Report</button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+}
