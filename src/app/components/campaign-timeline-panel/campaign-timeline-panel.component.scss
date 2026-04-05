@@ -403,20 +403,3 @@
   padding-top: 4px;
   margin-top: 4px;
 }
-
-/* ── Mobile ── */
-@media (max-width: 768px) {
-  .ctp-panel {
-    max-width: 100vw;
-    border-radius: 0;
-  }
-
-  .ctp-header {
-    padding: 12px;
-  }
-
-  .ctp-body {
-    padding: 12px;
-    font-size: 13px;
-  }
-}
