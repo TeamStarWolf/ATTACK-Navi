@@ -1,0 +1,732 @@
+.gap-panel-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.gap-panel {
+  width: 100%;
+  max-width: 1200px;
+  background: #0d1b2a;
+  border-left: 1px solid rgba(151, 185, 211, 0.12);
+  border-right: 1px solid rgba(151, 185, 211, 0.12);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(88, 166, 255, 0.25) transparent;
+}
+
+// ─── Header ────────────────────────────────────────────────────────────────────
+
+.gap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(151, 185, 211, 0.12);
+  background: rgba(255, 255, 255, 0.02);
+  flex-shrink: 0;
+
+  h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #e0e8f0;
+    margin: 0;
+  }
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.header-subtitle {
+  font-size: 11px;
+  color: #6e8599;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-close {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #8899aa;
+  font-size: 20px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #e0e8f0;
+  }
+}
+
+// ─── Buttons ───────────────────────────────────────────────────────────────────
+
+.btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #c2d8ea;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.18);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &.active {
+    background: rgba(111, 211, 255, 0.15);
+    border-color: rgba(111, 211, 255, 0.3);
+    color: #6fd3ff;
+  }
+}
+
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid rgba(111, 211, 255, 0.25);
+  color: #6fd3ff;
+
+  &:hover {
+    background: rgba(111, 211, 255, 0.08);
+  }
+}
+
+.btn-primary {
+  background: rgba(33, 150, 243, 0.25);
+  border-color: rgba(33, 150, 243, 0.4);
+  color: #64b5f6;
+
+  &:hover {
+    background: rgba(33, 150, 243, 0.35);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+// ─── Step 1: Actor Selection ───────────────────────────────────────────────────
+
+.step-section {
+  padding: 20px 24px;
+}
+
+.step-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #c2d8ea;
+  margin: 0 0 12px;
+}
+
+.toggle-row {
+  margin-bottom: 12px;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #a0b4c8;
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #6fd3ff;
+  }
+}
+
+.quick-picks {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.actor-search {
+  margin-bottom: 8px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(151, 185, 211, 0.15);
+  border-radius: 6px;
+  color: #e0e8f0;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+
+  &::placeholder {
+    color: #506878;
+  }
+
+  &:focus {
+    border-color: rgba(111, 211, 255, 0.4);
+  }
+}
+
+.actor-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid rgba(151, 185, 211, 0.1);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(88, 166, 255, 0.25) transparent;
+}
+
+.actor-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #a0b4c8;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  transition: background 0.1s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  &.selected {
+    background: rgba(111, 211, 255, 0.06);
+    color: #c2d8ea;
+  }
+
+  input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: #6fd3ff;
+    flex-shrink: 0;
+  }
+}
+
+.actor-name {
+  flex: 1;
+  font-weight: 600;
+}
+
+.actor-id {
+  color: #506878;
+  font-size: 10px;
+  font-family: monospace;
+}
+
+.actor-count {
+  color: #506878;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.selection-summary {
+  padding: 8px 0;
+  font-size: 12px;
+  color: #6e8599;
+}
+
+.generate-btn {
+  margin-top: 8px;
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+}
+
+// ─── Step 2: Results ───────────────────────────────────────────────────────────
+
+.results-section {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+// ─── Summary Cards ─────────────────────────────────────────────────────────────
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+
+.summary-card {
+  border-radius: 10px;
+  padding: 14px 10px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.card-num {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.card-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #8899aa;
+  margin-top: 4px;
+}
+
+.card-blue {
+  background: rgba(33, 150, 243, 0.1);
+  border-color: rgba(33, 150, 243, 0.2);
+  .card-num { color: #64b5f6; }
+}
+
+.card-green {
+  background: rgba(76, 175, 80, 0.1);
+  border-color: rgba(76, 175, 80, 0.2);
+  .card-num { color: #4caf50; }
+}
+
+.card-red {
+  background: rgba(244, 67, 54, 0.1);
+  border-color: rgba(244, 67, 54, 0.2);
+  .card-num { color: #f44336; }
+}
+
+.card-rag {
+  border-width: 2px;
+}
+
+.rag-green {
+  background: rgba(76, 175, 80, 0.12);
+  border-color: rgba(76, 175, 80, 0.35);
+  .card-num { color: #4caf50; }
+}
+
+.rag-amber {
+  background: rgba(255, 152, 0, 0.12);
+  border-color: rgba(255, 152, 0, 0.35);
+  .card-num { color: #ff9800; }
+}
+
+.rag-red {
+  background: rgba(244, 67, 54, 0.12);
+  border-color: rgba(244, 67, 54, 0.35);
+  .card-num { color: #f44336; }
+}
+
+// Pulse animation for critical blind count
+.pulse {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(244, 67, 54, 0); }
+  50% { box-shadow: 0 0 16px 4px rgba(244, 67, 54, 0.25); }
+}
+
+// ─── Section Blocks ────────────────────────────────────────────────────────────
+
+.section-block {
+  h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #c2d8ea;
+    margin: 0 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(151, 185, 211, 0.12);
+  }
+}
+
+.gap-count {
+  font-weight: 400;
+  font-size: 11px;
+  color: #6e8599;
+  margin-left: 8px;
+}
+
+// ─── Tables ────────────────────────────────────────────────────────────────────
+
+.table-scroll {
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(88, 166, 255, 0.25) transparent;
+}
+
+.gap-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+
+  th {
+    background: rgba(255, 255, 255, 0.04);
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #8899aa;
+    border-bottom: 1px solid rgba(151, 185, 211, 0.12);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 6px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    color: #c2d8ea;
+  }
+
+  .num-col {
+    text-align: center;
+  }
+
+  tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+}
+
+// Tactic row RAG coloring
+.row-green {
+  background: rgba(76, 175, 80, 0.06);
+}
+
+.row-amber {
+  background: rgba(255, 152, 0, 0.06);
+}
+
+.row-red {
+  background: rgba(244, 67, 54, 0.06);
+}
+
+// RAG badges
+.rag-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.04em;
+
+  &.rag-green { background: #4caf50; }
+  &.rag-amber { background: #ff9800; }
+  &.rag-red   { background: #f44336; }
+}
+
+// Priority badges
+.priority-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+
+  &.pr-critical { background: #f44336; }
+  &.pr-high     { background: #ff9800; }
+  &.pr-medium   { background: #2196f3; }
+  &.pr-low      { background: #4caf50; }
+}
+
+.critical-row {
+  background: rgba(244, 67, 54, 0.05) !important;
+}
+
+// ─── Detection Coverage Bars ───────────────────────────────────────────────────
+
+.coverage-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 600px;
+}
+
+.coverage-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.coverage-label {
+  width: 60px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #8899aa;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.coverage-bar-track {
+  flex: 1;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.coverage-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2196f3, #6fd3ff);
+  border-radius: 8px;
+  transition: width 0.4s ease-out;
+  min-width: 2px;
+}
+
+.coverage-stat {
+  width: 100px;
+  font-size: 11px;
+  color: #6e8599;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+// ─── Gap sort row ──────────────────────────────────────────────────────────────
+
+.gap-sort-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+// ─── Technique link ────────────────────────────────────────────────────────────
+
+.tech-link {
+  background: none;
+  border: none;
+  color: #6fd3ff;
+  cursor: pointer;
+  font-family: 'Consolas', 'Fira Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0;
+  text-decoration: underline;
+  text-decoration-color: rgba(111, 211, 255, 0.3);
+  transition: color 0.15s;
+
+  &:hover {
+    color: #b3e5fc;
+  }
+}
+
+.tech-name {
+  margin-left: 6px;
+  font-size: 11px;
+  color: #8899aa;
+}
+
+.tactic-cell {
+  font-size: 11px;
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rec-cell {
+  font-size: 10px;
+  color: #8899aa;
+  max-width: 220px;
+}
+
+.exploit-indicator {
+  color: #f44336;
+  font-weight: 700;
+  font-size: 10px;
+}
+
+.no-indicator {
+  color: #506878;
+}
+
+.det-sources {
+  font-size: 10px;
+  color: #6fd3ff;
+}
+
+.show-more-btn {
+  margin-top: 8px;
+}
+
+// ─── Export Footer ─────────────────────────────────────────────────────────────
+
+.export-footer {
+  display: flex;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(151, 185, 211, 0.12);
+  flex-wrap: wrap;
+}
+
+// ─── Light Mode ────────────────────────────────────────────────────────────────
+
+:host-context(body.light-mode) {
+  .gap-panel {
+    background: #ffffff;
+    border-color: #e2e8f0;
+  }
+
+  .gap-header {
+    border-bottom-color: #e2e8f0;
+    h2 { color: #1a1a2e; }
+  }
+
+  .header-subtitle { color: #94a3b8; }
+
+  .btn-close {
+    border-color: #e2e8f0;
+    color: #64748b;
+    &:hover { background: #f1f5f9; color: #1a1a2e; }
+  }
+
+  .btn {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #334155;
+    &:hover { background: #f1f5f9; }
+    &.active {
+      background: rgba(37, 99, 235, 0.08);
+      border-color: rgba(37, 99, 235, 0.2);
+      color: #2563eb;
+    }
+  }
+
+  .btn-outline {
+    border-color: rgba(37, 99, 235, 0.25);
+    color: #2563eb;
+    background: transparent;
+    &:hover { background: rgba(37, 99, 235, 0.04); }
+  }
+
+  .btn-primary {
+    background: rgba(37, 99, 235, 0.1);
+    border-color: rgba(37, 99, 235, 0.25);
+    color: #2563eb;
+    &:hover { background: rgba(37, 99, 235, 0.15); }
+  }
+
+  .step-label, .section-block h3 { color: #1a1a2e; }
+  .toggle-label { color: #475569; }
+  .search-input {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #1a1a2e;
+    &::placeholder { color: #94a3b8; }
+    &:focus { border-color: #2563eb; }
+  }
+
+  .actor-list {
+    background: #fafbfc;
+    border-color: #e2e8f0;
+  }
+
+  .actor-item {
+    color: #475569;
+    border-bottom-color: #f1f5f9;
+    &:hover { background: #f8fafc; }
+    &.selected { background: rgba(37, 99, 235, 0.04); color: #1a1a2e; }
+  }
+
+  .actor-id, .actor-count { color: #94a3b8; }
+  .selection-summary { color: #94a3b8; }
+
+  .summary-card { border-color: #e2e8f0; }
+  .card-blue { background: rgba(33, 150, 243, 0.06); }
+  .card-green { background: rgba(76, 175, 80, 0.06); }
+  .card-red { background: rgba(244, 67, 54, 0.06); }
+  .card-label { color: #64748b; }
+
+  .gap-table {
+    th { background: #f8fafc; color: #64748b; border-bottom-color: #e2e8f0; }
+    td { border-bottom-color: #f1f5f9; color: #334155; }
+    tbody tr:hover { background: #f8fafc; }
+  }
+
+  .row-green { background: rgba(76, 175, 80, 0.04); }
+  .row-amber { background: rgba(255, 152, 0, 0.04); }
+  .row-red   { background: rgba(244, 67, 54, 0.04); }
+
+  .coverage-bar-track { background: #e2e8f0; }
+  .coverage-bar-fill { background: linear-gradient(90deg, #2563eb, #60a5fa); }
+  .coverage-label { color: #64748b; }
+  .coverage-stat { color: #94a3b8; }
+
+  .tech-link { color: #2563eb; text-decoration-color: rgba(37, 99, 235, 0.3); &:hover { color: #1d4ed8; } }
+  .tech-name { color: #94a3b8; }
+  .rec-cell { color: #94a3b8; }
+  .det-sources { color: #2563eb; }
+  .no-indicator { color: #cbd5e1; }
+  .gap-count { color: #94a3b8; }
+
+  .export-footer { border-top-color: #e2e8f0; }
+}
+
+// ─── Responsive ────────────────────────────────────────────────────────────────
+
+@media (max-width: 900px) {
+  .summary-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .coverage-bars {
+    max-width: 100%;
+  }
+
+  .gaps-table {
+    font-size: 10px;
+
+    .rec-cell { max-width: 150px; }
+    .tactic-cell { max-width: 100px; }
+  }
+}
+
+@media (max-width: 600px) {
+  .summary-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .gap-header {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .quick-picks {
+    flex-direction: column;
+  }
+}

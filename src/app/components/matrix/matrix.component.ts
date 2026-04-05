@@ -44,6 +44,7 @@ import { TaggingService } from '../../services/tagging.service';
 import { TechniqueCellComponent } from '../technique-cell/technique-cell.component';
 import { TechniqueTooltipComponent } from '../technique-tooltip/technique-tooltip.component';
 import { CustomTechniqueService, CustomTechnique } from '../../services/custom-technique.service';
+import { AssetInventoryService } from '../../services/asset-inventory.service';
 
 @Component({
   selector: 'app-matrix',
@@ -166,6 +167,9 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
   // M365 Defender hunting query scores: attackId -> query count
   m365ScoreMap = new Map<string, number>();
   maxM365Score = 1;
+  // My Exposure scores: attackId -> asset exposure count from AssetInventoryService
+  myExposureScoreMap = new Map<string, number>();
+  maxMyExposure = 1;
   // Track current heatmap mode for loaded$ re-trigger
   private currentHeatmapMode: HeatmapMode = 'coverage';
   // Annotation map: techniqueId (attackId) -> annotation
@@ -251,6 +255,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     private mispService: MispService,
     private m365DefenderService: M365DefenderService,
     private customTechniqueService: CustomTechniqueService,
+    private assetInventoryService: AssetInventoryService,
     private cdr: ChangeDetectorRef,
     private el: ElementRef,
   ) {}
@@ -725,6 +730,9 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
               this.cdr.markForCheck();
             });
           }
+        } else if (mode === 'my-exposure') {
+          // Scores come from AssetInventoryService subscription — just trigger redraw
+          this.cdr.markForCheck();
         } else {
           this.softwareScores = new Map();
           this.maxSoftware = 1;
@@ -827,6 +835,18 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
         if (loaded && this.currentHeatmapMode === 'veris') {
           this.filterService.setHeatmapMode('veris');
         }
+      }),
+    );
+
+    // Subscribe to asset inventory exposure map for 'my-exposure' heatmap
+    this.subs.add(
+      this.assetInventoryService.exposureMap$.subscribe(exposureMap => {
+        this.myExposureScoreMap = new Map();
+        for (const [techId, count] of exposureMap.entries()) {
+          this.myExposureScoreMap.set(techId, count);
+        }
+        this.maxMyExposure = this.myExposureScoreMap.size > 0 ? Math.max(...this.myExposureScoreMap.values()) : 1;
+        this.cdr.markForCheck();
       }),
     );
 
@@ -1314,6 +1334,10 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
 
   getM365Score(t: Technique): number {
     return this.m365ScoreMap.get(t.attackId) ?? 0;
+  }
+
+  getMyExposureScore(t: Technique): number {
+    return this.myExposureScoreMap.get(t.attackId) ?? 0;
   }
 
   getFrequencyScore(t: Technique): number {
