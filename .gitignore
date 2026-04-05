@@ -50,3 +50,7 @@ Thumbs.db
 # Server
 server/node_modules
 server/.env
+# Temp files
+*.har
+/attack-navi-live.png
+/live2.png
