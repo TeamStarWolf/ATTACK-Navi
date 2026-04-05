@@ -8,27 +8,28 @@
   [![GitHub Pages](https://img.shields.io/badge/live-github%20pages-0A66C2?style=for-the-badge&logo=github)](https://teamstarwolf.github.io/ATTACK-Navi/)
   [![Security](https://img.shields.io/badge/security-codeql%20%2B%20osv-2ECC71?style=for-the-badge)](.github/workflows)
 
-  **[Live Site](https://teamstarwolf.github.io/ATTACK-Navi/)** | **[Architecture](ARCHITECTURE.md)** | **[Workflows](WORKFLOWS.md)** | **[Data Sources](DATA_SOURCE_SCORECARD.md)** | **[Security](SECURITY.md)** | **[Contributing](CONTRIBUTING.md)**
+  **[Live Site](https://teamstarwolf.github.io/ATTACK-Navi/)** | **[Docs](docs/README.md)** | **[Application Overview](docs/application-overview.md)** | **[Workflows](WORKFLOWS.md)** | **[Architecture](ARCHITECTURE.md)** | **[Security](SECURITY.md)**
 </div>
 
-An operational cybersecurity workbench built on the MITRE ATT&CK framework. Explore techniques across Enterprise, ICS, and Mobile domains. Analyze mitigation coverage, correlate threat intelligence, assess vulnerability exposure, and measure detection readiness — all from a single interactive matrix.
+ATTACK-Navi is a browser-based cybersecurity analysis workbench built around the MITRE ATT&CK framework. It combines ATT&CK navigation, threat-intelligence context, exposure mapping, detection coverage, and reporting in a single interactive matrix.
 
 ---
 
-## Table of Contents
+## What ATTACK-Navi Focuses On
 
-- [Live Demo](#live-demo)
-- [Screenshots](#screenshots)
-- [Features](#features)
-- [Data Sources & Integrations](#data-sources--integrations)
-- [Getting Started](#getting-started)
-- [Architecture](#architecture)
-- [Configuration](#configuration)
-- [Keyboard Shortcuts](#keyboard-shortcuts)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Documentation](#documentation)
-- [License](#license)
+1. navigating ATT&CK as an analyst workspace instead of a static matrix
+2. correlating intelligence, exposure, compliance, and detection data at the technique level
+3. turning live analysis state into shareable reports, exports, and review-ready artifacts
+
+## Core Workflows
+
+| Workflow | What it supports |
+|----------|------------------|
+| Coverage review | Assess mitigations, controls, data sources, and completeness by tactic or technique |
+| Threat-intelligence correlation | Pivot from techniques into groups, campaigns, software, MISP events, and OpenCTI indicators |
+| Exposure analysis | Review CVE, KEV, EPSS, ExploitDB, and Nuclei evidence against ATT&CK techniques |
+| Detection validation | Inspect Sigma, Elastic, Splunk, Atomic Red Team, and CAR mappings in one place |
+| Reporting and sharing | Export CSV, XLSX, HTML, PNG, JSON state, and Navigator layers, or share URL-based filter state |
 
 ---
 
@@ -308,7 +309,7 @@ Adding an NVD API key in Settings enables faster CVE queries (200ms vs 500ms rat
 | Angular | 19.2 | UI framework (standalone components, OnPush) |
 | RxJS | 7.8 | Reactive state management |
 | TypeScript | 5.7 | Type safety |
-| SCSS | — | Component-scoped styling |
+| SCSS | N/A | Component-scoped styling |
 | xlsx | 0.18.5 | Excel workbook export |
 | tinycolor2 | 1.6 | Color manipulation for heatmaps |
 
@@ -354,9 +355,15 @@ src/
 
 | Document | Description |
 |----------|-------------|
+| [docs/README.md](docs/README.md) | Documentation index and recommended reading order |
+| [docs/application-overview.md](docs/application-overview.md) | Product-level overview of workflows, runtime model, strengths, and current limits |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Component architecture, data flow, state management patterns |
 | [WORKFLOWS.md](WORKFLOWS.md) | End-to-end analyst workflows: Behavior, Intel, Exposure, Detection, Validation, Defense |
 | [DATA_SOURCE_SCORECARD.md](DATA_SOURCE_SCORECARD.md) | Integration status for each data source with priority recommendations |
+| [docs/HEATMAPS.md](docs/HEATMAPS.md) | Heatmap modes, scoring intent, and implementation notes |
+| [docs/COMPONENTS.md](docs/COMPONENTS.md) | Component-level notes for the Angular UI surface |
+| [docs/SERVICES.md](docs/SERVICES.md) | Service responsibilities and data-loading helpers |
+| [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | Configuration flags, local settings, and integration setup details |
 | [MAPPINGS_CHEAT_SHEET.md](MAPPINGS_CHEAT_SHEET.md) | Reference guide for ATT&CK, CVE, CWE, CAPEC, CPE, D3FEND mapping systems |
 | [OPEN_SOURCE_INTEGRATIONS.md](OPEN_SOURCE_INTEGRATIONS.md) | Roadmap for open-source tool integrations |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Development setup, Angular conventions, and extension patterns |
@@ -371,6 +378,14 @@ src/
 - Prefer GitHub Pages or another static host for the core UI, and move integration secrets to server-side infrastructure when needed.
 - Review [SECURITY.md](SECURITY.md) before exposing a self-hosted deployment or enabling third-party integrations.
 - Follow [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) when proposing changes or reporting issues.
+
+---
+
+## Project Status
+
+ATTACK-Navi is already usable as a public analyst workbench and demo environment. The strongest current surfaces are matrix exploration, technique enrichment, threat-intelligence correlation, and export/reporting flows.
+
+Current documentation work is focused on making the application easier to understand as a product: what it is best at today, where live integrations fit, and where mapped data remains partial or source-dependent.
 
 ---
 
