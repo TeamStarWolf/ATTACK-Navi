@@ -178,6 +178,8 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
   @Input() maxIntelScore = 1;
   @Input() m365Score = 0;
   @Input() maxM365Score = 1;
+  @Input() myExposureScore = 0;
+  @Input() maxMyExposure = 1;
   @Input() showTechniqueId = true;
   @Input() showMitigationCount = true;
   @Input() showTechniqueName = true;
@@ -260,6 +262,8 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
       this.bgColor = this.computeIntelligenceColor(this.intelScore, this.maxIntelScore);
     } else if (this.heatmapMode === 'm365') {
       this.bgColor = this.computeM365Color(this.m365Score);
+    } else if (this.heatmapMode === 'my-exposure') {
+      this.bgColor = this.computeMyExposureColor(this.myExposureScore);
     } else {
       this.bgColor = this.computeColor(this.technique.mitigationCount);
     }
@@ -471,6 +475,14 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
     if (count <= 5)  return '#005a9e';
     if (count <= 10) return '#0078d4';
     return '#4ca6ff';
+  }
+
+  private computeMyExposureColor(score: number): string {
+    if (score === 0) return '#1a2332';
+    if (score === 1) return '#ff9800';
+    if (score <= 3)  return '#f44336';
+    if (score <= 6)  return '#d32f2f';
+    return '#b71c1c';
   }
 
   /** Unified Risk Score: 0–100 composite. Low = red (poorly defended/targeted), high = green. */

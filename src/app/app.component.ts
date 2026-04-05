@@ -55,6 +55,8 @@ import { ThreatIntelligencePanelComponent } from './components/threat-intelligen
 import { CollectionPanelComponent } from './components/collection-panel/collection-panel.component';
 import { AssessmentWizardComponent } from './components/assessment-wizard/assessment-wizard.component';
 import { DataHealthComponent } from './components/data-health/data-health.component';
+import { GapAnalysisPanelComponent } from './components/gap-analysis-panel/gap-analysis-panel.component';
+import { AssetPanelComponent } from './components/asset-panel/asset-panel.component';
 import { MatrixExportService } from './services/matrix-export.service';
 import { HtmlReportService } from './services/html-report.service';
 import { PdfReportService } from './services/pdf-report.service';
@@ -71,7 +73,7 @@ import { NavigatorLayerService } from './services/navigator-layer.service';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, AsyncPipe, MatrixComponent, SidebarComponent, ToolbarComponent, LegendComponent, StatsBarComponent, FilterChipsComponent, GapViewComponent, ThreatPanelComponent, PriorityPanelComponent, WhatifPanelComponent, ReportPanelComponent, KeyboardHelpComponent, ControlsPanelComponent, SoftwarePanelComponent, ComparisonPanelComponent, LayersPanelComponent, CvePanelComponent, AnalyticsPanelComponent, NavRailComponent, SigmaExportComponent, SiemExportComponent, PurpleTeamPanelComponent, YaraExportComponent, RoadmapPanelComponent, ActorProfilePanelComponent, DetectionPanelComponent, CompliancePanelComponent, ActorComparePanelComponent, TimelinePanelComponent, TacticSummaryComponent, SettingsPanelComponent, CustomMitPanelComponent, KillchainPanelComponent, RiskMatrixPanelComponent, ScenarioPanelComponent, QuickFiltersComponent, DashboardPanelComponent, DatasourcePanelComponent, WatchlistPanelComponent, ChangelogPanelComponent, TagsPanelComponent, TargetPanelComponent, CampaignTimelinePanelComponent, TechniqueGraphPanelComponent, CoverageDiffPanelComponent, ThreatIntelligencePanelComponent, CollectionPanelComponent, AssessmentWizardComponent, DataHealthComponent],
+  imports: [CommonModule, AsyncPipe, MatrixComponent, SidebarComponent, ToolbarComponent, LegendComponent, StatsBarComponent, FilterChipsComponent, GapViewComponent, ThreatPanelComponent, PriorityPanelComponent, WhatifPanelComponent, ReportPanelComponent, KeyboardHelpComponent, ControlsPanelComponent, SoftwarePanelComponent, ComparisonPanelComponent, LayersPanelComponent, CvePanelComponent, AnalyticsPanelComponent, NavRailComponent, SigmaExportComponent, SiemExportComponent, PurpleTeamPanelComponent, YaraExportComponent, RoadmapPanelComponent, ActorProfilePanelComponent, DetectionPanelComponent, CompliancePanelComponent, ActorComparePanelComponent, TimelinePanelComponent, TacticSummaryComponent, SettingsPanelComponent, CustomMitPanelComponent, KillchainPanelComponent, RiskMatrixPanelComponent, ScenarioPanelComponent, QuickFiltersComponent, DashboardPanelComponent, DatasourcePanelComponent, WatchlistPanelComponent, ChangelogPanelComponent, TagsPanelComponent, TargetPanelComponent, CampaignTimelinePanelComponent, TechniqueGraphPanelComponent, CoverageDiffPanelComponent, ThreatIntelligencePanelComponent, CollectionPanelComponent, AssessmentWizardComponent, DataHealthComponent, GapAnalysisPanelComponent, AssetPanelComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
