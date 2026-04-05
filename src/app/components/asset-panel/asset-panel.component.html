@@ -1,0 +1,244 @@
+@if (visible) {
+  <div class="overlay" (click)="close()">
+    <div class="panel" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <div class="panel-header">
+        <div class="header-left">
+          <span class="panel-icon">💻</span>
+          <span class="panel-title">Asset Inventory</span>
+          @if (assetCount > 0) {
+            <span class="count-badge">{{ assetCount }}</span>
+          }
+        </div>
+        <button class="close-btn" (click)="close()" title="Close">✕</button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tab-bar">
+        <button class="tab-btn" [class.active]="activeTab === 'inventory'" (click)="switchTab('inventory')">
+          📋 Inventory
+        </button>
+        <button class="tab-btn" [class.active]="activeTab === 'exposure'" (click)="switchTab('exposure')"
+                [disabled]="assetCount === 0">
+          ☢ Exposure
+        </button>
+      </div>
+
+      <!-- Tab 1: Inventory -->
+      @if (activeTab === 'inventory') {
+        <div class="tab-content">
+
+          <!-- Upload zone -->
+          <div class="upload-zone"
+               [class.drag-over]="dragOver"
+               (dragover)="onDragOver($event)"
+               (dragleave)="onDragLeave($event)"
+               (drop)="onDrop($event)">
+            <div class="upload-icon">📂</div>
+            <div class="upload-text">
+              Drop CSV file here or
+              <label class="browse-link">
+                browse
+                <input type="file" accept=".csv" (change)="onFileSelect($event)" hidden />
+              </label>
+            </div>
+            <div class="upload-hint">Columns: hostname, os, software (;-separated), tags (;-separated), criticality</div>
+          </div>
+
+          <!-- Actions row -->
+          <div class="actions-row">
+            <button class="action-btn add-btn" (click)="toggleAddForm()">
+              {{ showAddForm ? '✕ Cancel' : '+ Add Asset' }}
+            </button>
+            @if (assetCount > 0) {
+              <button class="action-btn export-btn" (click)="exportCsv()">⬇ Export CSV</button>
+              @if (!confirmingClear) {
+                <button class="action-btn clear-btn" (click)="clearAll()">🗑 Clear All</button>
+              } @else {
+                <span class="confirm-prompt">
+                  Are you sure?
+                  <button class="confirm-yes" (click)="clearAll()">Yes, clear</button>
+                  <button class="confirm-no" (click)="cancelClear()">Cancel</button>
+                </span>
+              }
+            }
+          </div>
+
+          <!-- Add form -->
+          @if (showAddForm) {
+            <div class="add-form">
+              <div class="form-row">
+                <label>Hostname</label>
+                <input type="text" [(ngModel)]="newHostname" placeholder="e.g. web-server-01" class="form-input" />
+              </div>
+              <div class="form-row">
+                <label>OS</label>
+                <input type="text" [(ngModel)]="newOs" placeholder="e.g. Ubuntu 22.04" class="form-input" />
+              </div>
+              <div class="form-row">
+                <label>Software</label>
+                <input type="text" [(ngModel)]="newSoftware" placeholder="Comma-separated: Apache 2.4.51, OpenSSL 3.0.2" class="form-input" />
+              </div>
+              <div class="form-row">
+                <label>Tags</label>
+                <input type="text" [(ngModel)]="newTags" placeholder="Comma-separated: web-server, dmz" class="form-input" />
+              </div>
+              <div class="form-row">
+                <label>Criticality</label>
+                <select [(ngModel)]="newCriticality" class="form-select">
+                  <option value="critical">Critical</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+              </div>
+              <button class="action-btn save-btn" (click)="addAsset()" [disabled]="!newHostname.trim()">Save Asset</button>
+            </div>
+          }
+
+          <!-- Asset table -->
+          @if (assetCount > 0) {
+            <div class="asset-table-wrap">
+              <table class="asset-table">
+                <thead>
+                  <tr>
+                    <th>Hostname</th>
+                    <th>OS</th>
+                    <th>Software</th>
+                    <th>Criticality</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (asset of assets; track trackAsset($index, asset)) {
+                    @if (editingId === asset.id) {
+                      <tr class="edit-row">
+                        <td><input type="text" [(ngModel)]="editHostname" class="inline-input" /></td>
+                        <td><input type="text" [(ngModel)]="editOs" class="inline-input" /></td>
+                        <td><input type="text" [(ngModel)]="editSoftware" class="inline-input" /></td>
+                        <td>
+                          <select [(ngModel)]="editCriticality" class="inline-select">
+                            <option value="critical">Critical</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                          </select>
+                        </td>
+                        <td>
+                          <button class="row-btn save" (click)="saveEdit()" title="Save">✓</button>
+                          <button class="row-btn cancel" (click)="cancelEdit()" title="Cancel">✕</button>
+                        </td>
+                      </tr>
+                    } @else {
+                      <tr>
+                        <td class="hostname-cell">{{ asset.hostname }}</td>
+                        <td>{{ asset.os }}</td>
+                        <td>
+                          <span class="sw-count">{{ asset.software.length }} pkg{{ asset.software.length !== 1 ? 's' : '' }}</span>
+                          @if (asset.software.length > 0) {
+                            <span class="sw-list" [title]="asset.software.join(', ')">{{ asset.software.slice(0, 3).join(', ') }}{{ asset.software.length > 3 ? '...' : '' }}</span>
+                          }
+                        </td>
+                        <td>
+                          <span class="crit-badge" [style.background]="criticalityColor(asset.criticality)">
+                            {{ asset.criticality }}
+                          </span>
+                        </td>
+                        <td>
+                          <button class="row-btn edit" (click)="startEdit(asset)" title="Edit">✎</button>
+                          <button class="row-btn delete" (click)="removeAsset(asset.id)" title="Delete">🗑</button>
+                        </td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <div class="empty-state">
+              <div class="empty-icon">📦</div>
+              <div class="empty-text">No assets imported yet</div>
+              <div class="empty-hint">Upload a CSV or add assets manually to see your exposure</div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Tab 2: Exposure Dashboard -->
+      @if (activeTab === 'exposure') {
+        <div class="tab-content">
+          @if (assetCount === 0) {
+            <div class="empty-state">
+              <div class="empty-icon">☢</div>
+              <div class="empty-text">Import assets first</div>
+              <div class="empty-hint">Add assets in the Inventory tab to see exposure analysis</div>
+            </div>
+          } @else {
+            <!-- Summary cards -->
+            <div class="summary-cards">
+              <div class="summary-card">
+                <div class="card-value">{{ assetCount }}</div>
+                <div class="card-label">Total Assets</div>
+              </div>
+              <div class="summary-card cve-card">
+                <div class="card-value">{{ totalExposedCves }}</div>
+                <div class="card-label">Exposed CVEs</div>
+              </div>
+              <div class="summary-card critical-card">
+                <div class="card-value">{{ criticalAssetsExposed }}</div>
+                <div class="card-label">Critical Exposed</div>
+              </div>
+              <div class="summary-card kev-card">
+                <div class="card-value">{{ kevExposedCount }}</div>
+                <div class="card-label">KEV Exposed</div>
+              </div>
+            </div>
+
+            <!-- Enable heatmap button -->
+            <div class="heatmap-action">
+              <button class="action-btn heatmap-btn" (click)="enableHeatmap()">
+                🎯 Enable My Exposure Heatmap
+              </button>
+            </div>
+
+            <!-- Per-technique exposure table -->
+            @if (techniqueRows.length > 0) {
+              <div class="exposure-table-wrap">
+                <table class="exposure-table">
+                  <thead>
+                    <tr>
+                      <th>Technique</th>
+                      <th>Name</th>
+                      <th>Assets</th>
+                      <th>Top CVE</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (row of techniqueRows; track trackRow($index, row)) {
+                      <tr>
+                        <td class="tech-id">{{ row.attackId }}</td>
+                        <td>{{ row.name }}</td>
+                        <td class="asset-count-cell">
+                          <span class="asset-count-badge">{{ row.assetCount }}</span>
+                        </td>
+                        <td class="cve-cell">{{ row.topCve }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @else {
+              <div class="empty-state">
+                <div class="empty-icon">✓</div>
+                <div class="empty-text">No known exposure found</div>
+                <div class="empty-hint">Your assets do not match any known CVE-to-ATT&CK mappings</div>
+              </div>
+            }
+          }
+        </div>
+      }
+
+    </div>
+  </div>
+}
