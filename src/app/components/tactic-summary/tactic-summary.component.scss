@@ -196,18 +196,3 @@
   padding: 6px 8px;
   border-radius: 4px;
 }
-
-/* ── Mobile ── */
-@media (max-width: 768px) {
-  .tactic-popup {
-    width: 240px;
-  }
-
-  .popup-header {
-    padding: 8px 10px;
-  }
-
-  .tactic-name {
-    font-size: 12px;
-  }
-}

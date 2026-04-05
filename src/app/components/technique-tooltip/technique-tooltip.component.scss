@@ -43,12 +43,3 @@
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
-/* ── Mobile ── */
-@media (max-width: 768px) {
-  .tooltip-card {
-    width: 260px;
-    padding: 10px;
-    font-size: 12px;
-  }
-}
