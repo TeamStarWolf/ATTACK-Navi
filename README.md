@@ -376,4 +376,6 @@ src/
 
 ## License
 
-This project is provided as-is for educational and research purposes. MITRE ATT&CK is a registered trademark of The MITRE Corporation. Data sourced from public APIs and open-source repositories under their respective licenses.
+[MIT License](LICENSE) for the application code in this repository.
+
+MITRE ATT&CK is a registered trademark of The MITRE Corporation. Third-party data sources, APIs, and upstream content remain subject to their own licenses and terms.
