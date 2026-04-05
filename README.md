@@ -1,6 +1,6 @@
 # ATT&CK NAV
 
-**[Live Site](https://teamstarwolf.github.io/attack-nav/)** | **[Architecture](ARCHITECTURE.md)** | **[Workflows](WORKFLOWS.md)** | **[Data Sources](DATA_SOURCE_SCORECARD.md)**
+**[Live Site](https://teamstarwolf.github.io/ATTACK-Navi/)** | **[Architecture](ARCHITECTURE.md)** | **[Workflows](WORKFLOWS.md)** | **[Data Sources](DATA_SOURCE_SCORECARD.md)**
 
 An operational cybersecurity workbench built on the MITRE ATT&CK framework. Explore techniques across Enterprise, ICS, and Mobile domains. Analyze mitigation coverage, correlate threat intelligence, assess vulnerability exposure, and measure detection readiness — all from a single interactive matrix.
 
@@ -25,7 +25,7 @@ An operational cybersecurity workbench built on the MITRE ATT&CK framework. Expl
 
 ## Live Demo
 
-**[https://teamstarwolf.github.io/attack-nav/](https://teamstarwolf.github.io/attack-nav/)**
+**[https://teamstarwolf.github.io/ATTACK-Navi/](https://teamstarwolf.github.io/ATTACK-Navi/)**
 
 The app loads ATT&CK data directly from MITRE's GitHub repository. The core matrix still runs without a backend, but secure OpenCTI/MISP deployments can now use an optional backend proxy under `server/`.
 
@@ -165,8 +165,8 @@ The app loads ATT&CK data directly from MITRE's GitHub repository. The core matr
 ### Install & Run
 
 ```bash
-git clone https://github.com/Ccwilliams314/attack-nav.git
-cd attack-nav
+git clone https://github.com/TeamStarWolf/ATTACK-Navi.git
+cd ATTACK-Navi
 npm install
 npx ng serve
 ```
