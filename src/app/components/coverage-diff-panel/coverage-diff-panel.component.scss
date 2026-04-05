@@ -343,23 +343,3 @@
   margin: 0;
   white-space: pre-wrap;
 }
-
-/* ── Mobile ── */
-@media (max-width: 768px) {
-  .cdp-panel {
-    width: 100vw;
-    max-width: 100vw;
-    max-height: 100vh;
-    border-radius: 0;
-    border: none;
-  }
-
-  .cdp-header {
-    padding: 12px;
-  }
-
-  .cdp-body {
-    padding: 12px;
-    font-size: 13px;
-  }
-}

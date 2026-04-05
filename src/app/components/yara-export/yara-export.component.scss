@@ -63,26 +63,3 @@
   border-radius: 5px; cursor: pointer; font-size: 12px;
   &:hover { border-color: #3a5a74; color: #8aaac8; }
 }
-
-/* ── Mobile ── */
-@media (max-width: 768px) {
-  .yara-panel {
-    width: 100vw;
-    max-width: 100vw;
-    max-height: 100vh;
-    border-radius: 0;
-    border: none;
-    top: 0;
-    left: 0;
-    transform: none;
-  }
-
-  .yara-header {
-    padding: 0 12px;
-  }
-
-  .yara-body {
-    padding: 12px;
-    font-size: 13px;
-  }
-}

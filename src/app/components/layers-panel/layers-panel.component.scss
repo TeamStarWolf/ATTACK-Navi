@@ -356,23 +356,3 @@
     border-color: #2a4a64;
   }
 }
-
-/* ── Mobile ── */
-@media (max-width: 768px) {
-  .layers-modal {
-    width: 100vw;
-    max-width: 100vw;
-    max-height: 100vh;
-    border-radius: 0;
-    border: none;
-  }
-
-  .panel-header {
-    padding: 0 12px;
-  }
-
-  .panel-body {
-    padding: 12px;
-    font-size: 13px;
-  }
-}

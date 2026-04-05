@@ -390,23 +390,3 @@
   background: rgb(255 255 255 / 6%);
   flex-shrink: 0;
 }
-
-/* ── Mobile ── */
-@media (max-width: 768px) {
-  .killchain-header {
-    padding: 0 12px;
-  }
-
-  .killchain-body {
-    padding: 12px;
-    font-size: 13px;
-  }
-
-  .header-left {
-    gap: 8px;
-  }
-
-  .panel-title {
-    font-size: 13px;
-  }
-}

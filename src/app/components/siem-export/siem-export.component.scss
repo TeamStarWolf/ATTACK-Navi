@@ -500,26 +500,3 @@
     background: #0d1f30;
   }
 }
-
-/* ── Mobile ── */
-@media (max-width: 768px) {
-  .siem-panel {
-    width: 100vw;
-    max-width: 100vw;
-    max-height: 100vh;
-    border-radius: 0;
-    border: none;
-    top: 0;
-    left: 0;
-    transform: none;
-  }
-
-  .siem-header {
-    padding: 0 12px;
-  }
-
-  .siem-body {
-    padding: 12px;
-    font-size: 13px;
-  }
-}
