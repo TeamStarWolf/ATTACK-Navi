@@ -44,8 +44,8 @@ The app loads ATT&CK data directly from MITRE's GitHub repository. The core matr
 
 <table>
 <tr>
-<td width="50%"><strong>Matrix + Heatmap Workspace</strong><br><img src="screenshots/attack-navi-live.png" width="100%" alt="ATTACK-Navi matrix view"></td>
-<td width="50%"><strong>Technique Detail + Enrichment Panels</strong><br><img src="screenshots/live2.png" width="100%" alt="ATTACK-Navi enrichment sidebar"></td>
+<td width="50%"><strong>Technique Detail + Enrichment Sidebar</strong><br><img src="screenshots/live2.png" width="100%" alt="ATTACK-Navi technique detail sidebar"></td>
+<td width="50%"><strong>Threat Intelligence Panel</strong><br><img src="screenshots/attack-navi-intel.png" width="100%" alt="ATTACK-Navi threat intelligence panel"></td>
 </tr>
 </table>
 
