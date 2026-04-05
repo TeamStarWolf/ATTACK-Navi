@@ -1,0 +1,16 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+  proxy:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "8787:8787"
+    env_file:
+      - server/.env
+    restart: unless-stopped
