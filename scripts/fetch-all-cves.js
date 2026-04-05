@@ -131,6 +131,31 @@ async function main() {
   console.log(`Techniques with CVE mappings: ${Object.keys(sorted).length}`);
   console.log(`Total CVE→technique mappings: ${totalMappings.toLocaleString()}`);
   console.log(`File size: ${fileSizeKB} KB`);
+
+  // Also export full uncapped CSV to Desktop folder
+  const csvDir = path.join('C:', 'Users', 'ccwil', 'Desktop', 'CVE-ATT&CK Mappings');
+  try { fs.mkdirSync(csvDir, { recursive: true }); } catch {}
+  let csv = 'CVE_ID,Technique_ID\n';
+  for (const [tech, cves] of Object.entries(sorted)) {
+    for (const cve of cves) csv += `${cve},${tech}\n`;
+  }
+  const csvPath = path.join(csvDir, 'cve-to-attack-FULL-4.5M.csv');
+  fs.writeFileSync(csvPath, csv);
+  console.log(`Full CSV: ${csvPath} (${(csv.length / 1024 / 1024).toFixed(1)} MB, ${totalMappings.toLocaleString()} rows)`);
+
+  // Also write counts
+  const countsPath = path.join(csvDir, 'cve-technique-counts-163.csv');
+  let countsCsv = 'Technique_ID,CVE_Count\n';
+  for (const [t, arr] of Object.entries(sorted).sort((a,b) => b[1].length - a[1].length)) {
+    countsCsv += `${t},${arr.length}\n`;
+  }
+  fs.writeFileSync(countsPath, countsCsv);
+  console.log(`Counts CSV: ${countsPath}`);
+
+  // Write uncapped JSON too
+  const jsonPath = path.join(csvDir, 'cve-technique-map-FULL.json');
+  fs.writeFileSync(jsonPath, JSON.stringify(sorted));
+  console.log(`Full JSON: ${jsonPath} (${(fs.statSync(jsonPath).size / 1024 / 1024).toFixed(1)} MB)`);
 }
 
 function processPage(data) {
