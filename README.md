@@ -1,6 +1,15 @@
-# ATT&CK NAV
+<div align="center">
+  <img src="screenshots/attack-navi-live.png" width="100%" alt="ATTACK-Navi matrix overview">
 
-**[Live Site](https://teamstarwolf.github.io/ATTACK-Navi/)** | **[Architecture](ARCHITECTURE.md)** | **[Workflows](WORKFLOWS.md)** | **[Data Sources](DATA_SOURCE_SCORECARD.md)**
+  # ATTACK-Navi
+
+  [![Angular 19](https://img.shields.io/badge/angular-19-DD0031?style=for-the-badge&logo=angular&logoColor=white)](https://angular.dev)
+  [![TypeScript](https://img.shields.io/badge/typescript-5.7-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+  [![GitHub Pages](https://img.shields.io/badge/live-github%20pages-0A66C2?style=for-the-badge&logo=github)](https://teamstarwolf.github.io/ATTACK-Navi/)
+  [![Security](https://img.shields.io/badge/security-codeql%20%2B%20osv-2ECC71?style=for-the-badge)](.github/workflows)
+
+  **[Live Site](https://teamstarwolf.github.io/ATTACK-Navi/)** | **[Architecture](ARCHITECTURE.md)** | **[Workflows](WORKFLOWS.md)** | **[Data Sources](DATA_SOURCE_SCORECARD.md)** | **[Security](SECURITY.md)** | **[Contributing](CONTRIBUTING.md)**
+</div>
 
 An operational cybersecurity workbench built on the MITRE ATT&CK framework. Explore techniques across Enterprise, ICS, and Mobile domains. Analyze mitigation coverage, correlate threat intelligence, assess vulnerability exposure, and measure detection readiness — all from a single interactive matrix.
 
@@ -28,6 +37,17 @@ An operational cybersecurity workbench built on the MITRE ATT&CK framework. Expl
 **[https://teamstarwolf.github.io/ATTACK-Navi/](https://teamstarwolf.github.io/ATTACK-Navi/)**
 
 The app loads ATT&CK data directly from MITRE's GitHub repository. The core matrix still runs without a backend, but secure OpenCTI/MISP deployments can now use an optional backend proxy under `server/`.
+
+---
+
+## Screenshots
+
+<table>
+<tr>
+<td width="50%"><strong>Matrix + Heatmap Workspace</strong><br><img src="screenshots/attack-navi-live.png" width="100%" alt="ATTACK-Navi matrix view"></td>
+<td width="50%"><strong>Technique Detail + Enrichment Panels</strong><br><img src="screenshots/live2.png" width="100%" alt="ATTACK-Navi enrichment sidebar"></td>
+</tr>
+</table>
 
 ---
 
@@ -339,6 +359,18 @@ src/
 | [DATA_SOURCE_SCORECARD.md](DATA_SOURCE_SCORECARD.md) | Integration status for each data source with priority recommendations |
 | [MAPPINGS_CHEAT_SHEET.md](MAPPINGS_CHEAT_SHEET.md) | Reference guide for ATT&CK, CVE, CWE, CAPEC, CPE, D3FEND mapping systems |
 | [OPEN_SOURCE_INTEGRATIONS.md](OPEN_SOURCE_INTEGRATIONS.md) | Roadmap for open-source tool integrations |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Development setup, Angular conventions, and extension patterns |
+| [SECURITY.md](SECURITY.md) | Vulnerability reporting guidance and deployment/security posture |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community participation expectations |
+
+---
+
+## Community & Security
+
+- Use the optional backend proxy under `server/` when you do not want browser clients handling OpenCTI or MISP credentials directly.
+- Prefer GitHub Pages or another static host for the core UI, and move integration secrets to server-side infrastructure when needed.
+- Review [SECURITY.md](SECURITY.md) before exposing a self-hosted deployment or enabling third-party integrations.
+- Follow [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) when proposing changes or reporting issues.
 
 ---
 
