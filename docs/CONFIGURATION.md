@@ -395,17 +395,17 @@ The Navigator encodes the current filter configuration in the URL hash fragment.
 
 Show Sigma heatmap with APT28 filter:
 ```
-https://example.com/attack-nav/#heat=sigma&grp=G0007
+https://example.com/ATTACK-Navi/#heat=sigma&grp=G0007
 ```
 
 Show CVE heatmap with Windows platform filter and credential search:
 ```
-https://example.com/attack-nav/#heat=cve&pf=Windows&tq=credential
+https://example.com/ATTACK-Navi/#heat=cve&pf=Windows&tq=credential
 ```
 
 Show coverage heatmap with two mitigations highlighted:
 ```
-https://example.com/attack-nav/#mit=M1036,M1038&dim=1
+https://example.com/ATTACK-Navi/#mit=M1036,M1038&dim=1
 ```
 
 ### Limitations
@@ -426,7 +426,7 @@ The repository includes a GitHub Actions workflow at `.github/workflows/deploy.y
 1. Checks out the repository
 2. Sets up Node.js 20 with npm cache
 3. Runs `npm ci` to install dependencies
-4. Builds with `npx ng build --base-href /attack-nav/`
+4. Builds with `npx ng build --base-href /ATTACK-Navi/`
 5. Uploads the `dist/mitre-mitigation-navigator/browser` directory as a Pages artifact
 6. Deploys to the `github-pages` environment
 
@@ -434,7 +434,7 @@ The repository includes a GitHub Actions workflow at `.github/workflows/deploy.y
 1. Go to your repository's Settings > Pages.
 2. Under "Source", select **GitHub Actions**.
 3. Push to `main` to trigger the first deployment.
-4. The site will be available at `https://<username>.github.io/attack-nav/`.
+4. The site will be available at `https://<username>.github.io/ATTACK-Navi/`.
 
 ### Custom Domain
 
@@ -518,7 +518,7 @@ EXPOSE 80
 
 | Setting | Value | Notes |
 |---------|-------|-------|
-| `--base-href` | Deployment path | `/attack-nav/` for GitHub Pages, `/` for root |
+| `--base-href` | Deployment path | `/ATTACK-Navi/` for GitHub Pages, `/` for root |
 | Build output | `dist/mitre-mitigation-navigator/browser` | Static files ready to serve |
 | Node.js | 20+ | Required by Angular 19 |
 | npm | 9+ | Comes with Node.js 20 |
