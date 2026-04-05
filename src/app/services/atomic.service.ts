@@ -439,4 +439,51 @@ export class AtomicService {
     }
     return all;
   }
+
+  // ─── Invoke-AtomicRedTeam Command Generation ────────────────────────────────
+
+  /**
+   * Generate a PowerShell script to install Invoke-AtomicRedTeam and run a
+   * specific technique test (or all tests for the technique).
+   */
+  generateInvokeCommand(attackId: string, testNumber?: number): string {
+    const lines = [
+      '# Install Invoke-AtomicRedTeam if needed',
+      "IEX (IWR 'https://raw.githubusercontent.com/redcanaryco/invoke-atomicredteam/master/install-atomicredteam.ps1' -UseBasicParsing)",
+      'Install-AtomicRedTeam -getAtomics',
+      '',
+      `# Run test for ${attackId}`,
+    ];
+    if (testNumber !== undefined) {
+      lines.push(`Invoke-AtomicTest ${attackId} -TestNumbers ${testNumber}`);
+    } else {
+      lines.push(`Invoke-AtomicTest ${attackId}`);
+    }
+    return lines.join('\n');
+  }
+
+  /** Generate a cleanup command for a technique. */
+  generateCleanupCommand(attackId: string): string {
+    return `Invoke-AtomicTest ${attackId} -Cleanup`;
+  }
+
+  /** Generate a batch execution script for multiple techniques. */
+  generateAllTestsScript(attackIds: string[]): string {
+    if (attackIds.length === 0) return '# No techniques selected';
+    const lines = [
+      '# Invoke-AtomicRedTeam Batch Execution Script',
+      '# Install Invoke-AtomicRedTeam if needed',
+      "IEX (IWR 'https://raw.githubusercontent.com/redcanaryco/invoke-atomicredteam/master/install-atomicredteam.ps1' -UseBasicParsing)",
+      'Install-AtomicRedTeam -getAtomics',
+      '',
+      `# Run tests for ${attackIds.length} techniques`,
+    ];
+    for (const id of attackIds) {
+      lines.push(`Write-Host "Running tests for ${id}..." -ForegroundColor Cyan`);
+      lines.push(`Invoke-AtomicTest ${id}`);
+      lines.push('');
+    }
+    lines.push('Write-Host "All tests complete." -ForegroundColor Green');
+    return lines.join('\n');
+  }
 }

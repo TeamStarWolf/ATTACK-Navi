@@ -48,6 +48,7 @@ import { EpssService } from '../../services/epss.service';
 import { ExploitdbService } from '../../services/exploitdb.service';
 import { NucleiService } from '../../services/nuclei.service';
 import { CustomTechniqueService } from '../../services/custom-technique.service';
+import { M365DefenderService, M365Query } from '../../services/m365-defender.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -104,6 +105,13 @@ export class SidebarComponent implements OnInit, OnDestroy {
   sigmaRules: SigmaRuleDetail[] = [];
   sigmaRulesFetching = false;
 
+  // Microsoft 365 Defender Hunting Queries
+  m365Queries: M365Query[] = [];
+
+  // Clipboard copy feedback
+  copiedInvoke = '';
+  copiedBatchScript = false;
+
   // Collapsible sections
   collapsedSections = new Set<string>();
 
@@ -126,7 +134,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       'procedures', 'cve', 'nist', 'cloud', 'veris', 'cri', 'capec',
       'exploitdb', 'nuclei', 'tags', 'notes', 'threats', 'software',
       'campaigns', 'd3fend', 'engage', 'car', 'atomic', 'misp', 'opencti', 'sigma',
-      'custom', 'mitigations', 'relgraph',
+      'custom', 'mitigations', 'relgraph', 'm365',
     ];
     for (const s of sections) this.collapsedSections.add(s);
     this.cdr.markForCheck();
@@ -153,6 +161,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     if (this.nucleiCount === 0) this.collapsedSections.add('nuclei');
     if (!this.mispCluster) this.collapsedSections.add('misp');
     if (this.sigmaRules.length === 0 && !this.sigmaRulesFetching) this.collapsedSections.add('sigma');
+    if (this.m365Queries.length === 0) this.collapsedSections.add('m365');
     if (this.customMitigations.length === 0) this.collapsedSections.add('custom');
     this.cdr.markForCheck();
   }
@@ -175,6 +184,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     if (this.cisControls.length > 0 || this.cloudControls.length > 0) score += 5;
     if (this.engageActivities.length > 0) score += 5;
     if (this.carAnalytics.length > 0) score += 5;
+    if (this.m365Queries.length > 0) score += 5;
     if (this.dataComponents.length > 0) score += 5;
     this.completenessScore = Math.min(score, 100);
   }
@@ -287,6 +297,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     private exploitdbService: ExploitdbService,
     private nucleiService: NucleiService,
     private customTechniqueService: CustomTechniqueService,
+    private m365DefenderService: M365DefenderService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -387,6 +398,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
         this.epssAvg = null;
         this.exploitCount = tech ? this.exploitdbService.getExploitCount(tech.attackId) : 0;
         this.nucleiCount = tech ? this.nucleiService.getTemplateCount(tech.attackId) : 0;
+        this.m365Queries = tech ? this.m365DefenderService.getQueriesForTechnique(tech.attackId) : [];
+        this.copiedInvoke = '';
+        this.copiedBatchScript = false;
         this.signals = tech ? this.getSignals(tech) : [];
         this.computeCompleteness();
         // OpenCTI — load if connected
@@ -1056,5 +1070,41 @@ export class SidebarComponent implements OnInit, OnDestroy {
     }
 
     return signals;
+  }
+
+  // ─── Invoke-AtomicRedTeam clipboard helpers ─────────────────────────────────
+
+  copyInvokeCommand(attackId: string, testNumber?: number): void {
+    const cmd = this.atomicService.generateInvokeCommand(attackId, testNumber);
+    navigator.clipboard.writeText(cmd).then(() => {
+      this.copiedInvoke = testNumber !== undefined ? `${attackId}#${testNumber}` : attackId;
+      this.cdr.markForCheck();
+      setTimeout(() => { this.copiedInvoke = ''; this.cdr.markForCheck(); }, 2000);
+    });
+  }
+
+  copyCleanupCommand(attackId: string): void {
+    const cmd = this.atomicService.generateCleanupCommand(attackId);
+    navigator.clipboard.writeText(cmd).then(() => {
+      this.copiedInvoke = 'cleanup';
+      this.cdr.markForCheck();
+      setTimeout(() => { this.copiedInvoke = ''; this.cdr.markForCheck(); }, 2000);
+    });
+  }
+
+  copyBatchScript(): void {
+    if (!this.technique) return;
+    const attackIds = [this.technique.attackId];
+    // Add sub-technique IDs if available
+    const subs = this.technique.subtechniques ?? [];
+    for (const sub of subs) {
+      attackIds.push(sub.attackId);
+    }
+    const script = this.atomicService.generateAllTestsScript(attackIds);
+    navigator.clipboard.writeText(script).then(() => {
+      this.copiedBatchScript = true;
+      this.cdr.markForCheck();
+      setTimeout(() => { this.copiedBatchScript = false; this.cdr.markForCheck(); }, 2000);
+    });
   }
 }
