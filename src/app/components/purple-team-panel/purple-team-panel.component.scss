@@ -248,21 +248,3 @@
 .rating-partial   { color: #ffa728; }
 .rating-poor      { color: #ffa728; }
 .rating-none      { color: #f87171; }
-
-/* ── Mobile ── */
-@media (max-width: 768px) {
-  .purple-panel {
-    width: 100vw;
-    max-width: 100vw;
-    border-radius: 0;
-  }
-
-  .purple-header {
-    padding: 0 12px;
-  }
-
-  .purple-body {
-    padding: 12px;
-    font-size: 13px;
-  }
-}

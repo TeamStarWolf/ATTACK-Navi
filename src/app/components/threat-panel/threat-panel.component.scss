@@ -471,21 +471,3 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
-/* ── Mobile ── */
-@media (max-width: 768px) {
-  .panel {
-    width: 100vw;
-    max-width: 100vw;
-    border-radius: 0;
-  }
-
-  .panel-header {
-    padding: 0 12px;
-  }
-
-  .panel-body {
-    padding: 12px;
-    font-size: 13px;
-  }
-}
