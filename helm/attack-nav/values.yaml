@@ -1,0 +1,39 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/teamstarwolf/attack-nav
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  className: "nginx"
+  hosts:
+    - host: attack-nav.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 64Mi
+
+proxy:
+  enabled: false
+  image:
+    repository: ghcr.io/teamstarwolf/attack-nav-proxy
+    tag: "latest"
+  env:
+    OPENCTI_URL: ""
+    OPENCTI_TOKEN: ""
+    MISP_URL: ""
+    MISP_API_KEY: ""
