@@ -73,3 +73,17 @@
     background: rgb(255 143 122 / 15%);
   }
 }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .quick-filters-bar {
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px 8px;
+  }
+
+  .toggle-btn {
+    font-size: 9px;
+    padding: 3px 7px;
+  }
+}
