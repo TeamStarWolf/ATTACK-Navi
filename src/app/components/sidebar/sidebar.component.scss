@@ -2826,3 +2826,115 @@
     padding: 8px 12px;
   }
 }
+
+// ─── Microsoft 365 Defender Hunting Queries ─────────────────────────────────
+.m365-section {
+  border-left: 2px solid #0078d4;
+}
+
+.m365-icon {
+  font-size: 12px;
+}
+
+.m365-badge {
+  background: rgb(0 120 212 / 20%) !important;
+  color: #4ca6ff !important;
+  border-color: rgb(0 120 212 / 30%) !important;
+}
+
+.m365-item {
+  padding: 5px 0;
+  border-bottom: 1px solid #0f1f2e;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  &:last-of-type { border-bottom: none; }
+}
+
+.m365-link {
+  font-size: 11px;
+  font-weight: 500;
+  color: #4ca6ff;
+  text-decoration: none;
+  flex: 1;
+  &:hover { text-decoration: underline; color: #80c0ff; }
+}
+
+.m365-tactic {
+  font-size: 9px;
+  color: #0078d4;
+  background: rgb(0 120 212 / 10%);
+  border: 1px solid rgb(0 120 212 / 20%);
+  padding: 1px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.m365-framework-link {
+  color: #0078d4 !important;
+  &:hover { color: #4ca6ff !important; }
+}
+
+// ─── Invoke-AtomicRedTeam Buttons ───────────────────────────────────────────
+.invoke-copy-btn {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 8px;
+  font-size: 9px;
+  font-weight: 600;
+  font-family: monospace;
+  color: #b0c8e0;
+  background: rgb(1 36 86 / 40%);
+  border: 1px solid rgb(1 36 86 / 60%);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  &:hover {
+    background: rgb(1 36 86 / 70%);
+    border-color: #012456;
+    color: #e0f0ff;
+  }
+}
+
+.invoke-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 8px 0 4px;
+  padding-top: 6px;
+  border-top: 1px solid #0f1f2e;
+}
+
+.invoke-run-all-btn,
+.invoke-cleanup-btn,
+.invoke-batch-btn {
+  padding: 3px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  font-family: monospace;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.invoke-run-all-btn {
+  color: #b0c8e0;
+  background: rgb(1 36 86 / 50%);
+  border: 1px solid rgb(1 36 86 / 70%);
+  &:hover { background: #012456; color: #e0f0ff; }
+}
+
+.invoke-cleanup-btn {
+  color: #ffb74d;
+  background: rgb(255 152 0 / 10%);
+  border: 1px solid rgb(255 152 0 / 25%);
+  &:hover { background: rgb(255 152 0 / 20%); color: #ffd54f; }
+}
+
+.invoke-batch-btn {
+  color: #4caf50;
+  background: rgb(76 175 80 / 10%);
+  border: 1px solid rgb(76 175 80 / 25%);
+  &:hover { background: rgb(76 175 80 / 20%); color: #81c784; }
+}

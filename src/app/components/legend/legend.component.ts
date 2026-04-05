@@ -246,6 +246,16 @@ const MODE_CONFIGS: Record<HeatmapMode, LegendConfig> = {
       { color: '#d32f2f', label: '11+' },
     ],
   },
+  m365: {
+    label: 'M365 Defender',
+    stops: [
+      { color: '#0a1a2e', label: '0' },
+      { color: '#003a6e', label: '1–2' },
+      { color: '#005a9e', label: '3–5' },
+      { color: '#0078d4', label: '6–10' },
+      { color: '#4ca6ff', label: '11+' },
+    ],
+  },
 };
 
 @Component({

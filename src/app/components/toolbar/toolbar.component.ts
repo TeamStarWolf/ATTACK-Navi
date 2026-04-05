@@ -298,6 +298,7 @@ export class ToolbarComponent implements OnInit, OnDestroy {
     { value: 'elastic',   label: '🟢 Elastic Rules'   },
     { value: 'splunk',    label: '🟠 Splunk Detections' },
     { value: 'intelligence', label: '🧠 Intelligence' },
+    { value: 'm365',         label: '🔷 M365 Defender' },
   ];
 
   setHeatmap(mode: import('../../services/filter.service').HeatmapMode): void {

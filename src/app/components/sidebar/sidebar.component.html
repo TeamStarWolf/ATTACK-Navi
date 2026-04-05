@@ -802,7 +802,7 @@
             @if (atomicFetching) {
               <p class="atomic-live-hint">Loading tests from Atomic Red Team…</p>
             } @else if (atomicLiveTests.length > 0) {
-              @for (test of atomicLiveTests; track test.guid || test.name) {
+              @for (test of atomicLiveTests; track test.guid || test.name; let i = $index) {
                 <div class="atomic-item">
                   <div class="atomic-header">
                     <span class="atomic-executor-badge" [title]="'Executor: ' + test.executorName">
@@ -818,6 +818,9 @@
                   @if (test.description) {
                     <p class="atomic-desc">{{ test.description }}</p>
                   }
+                  <button class="invoke-copy-btn" (click)="copyInvokeCommand(technique!.attackId, i + 1)" [title]="'Copy Invoke-AtomicTest command for test #' + (i + 1)">
+                    {{ copiedInvoke === technique!.attackId + '#' + (i + 1) ? 'Copied!' : 'Copy Invoke Command' }}
+                  </button>
                 </div>
               }
               <p class="atomic-more-note">
@@ -828,6 +831,17 @@
                 {{ atomicLiveCount > 0 ? atomicLiveCount : atomicTests.length }} tests indexed from the Atomic Red Team library. View on GitHub for full details.
               </p>
             }
+            <div class="invoke-actions">
+              <button class="invoke-run-all-btn" (click)="copyInvokeCommand(technique!.attackId)" title="Copy Invoke-AtomicTest command for all tests">
+                {{ copiedInvoke === technique!.attackId ? 'Copied!' : 'Copy Invoke Command' }}
+              </button>
+              <button class="invoke-cleanup-btn" (click)="copyCleanupCommand(technique!.attackId)" title="Copy cleanup command">
+                {{ copiedInvoke === 'cleanup' ? 'Copied!' : 'Copy Cleanup' }}
+              </button>
+              <button class="invoke-batch-btn" (click)="copyBatchScript()" title="Copy batch script for all sub-techniques">
+                {{ copiedBatchScript ? 'Copied!' : 'Run All Tests' }}
+              </button>
+            </div>
             <a [href]="atomicGitHubUrl" target="_blank" rel="noopener" class="framework-link">View all on Atomic Red Team ↗</a>
             }
           </section>
@@ -863,6 +877,26 @@
                 </div>
               }
               <a href="https://github.com/SigmaHQ/sigma" target="_blank" rel="noopener" class="framework-link">SigmaHQ on GitHub ↗</a>
+            }
+          </section>
+        }
+
+        <!-- Microsoft 365 Defender Hunting Queries -->
+        @if (m365Queries.length > 0) {
+          <section class="sidebar-section m365-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('m365')" (click)="toggleSection('m365')">
+              <span class="section-chevron">{{ isSectionCollapsed('m365') ? '▸' : '▾' }}</span>
+              <span class="m365-icon">&#x1F537;</span> Microsoft 365 Defender
+              <span class="count-badge upgrade-section-count m365-badge">{{ m365Queries.length }}</span>
+            </h4>
+            @if (!isSectionCollapsed('m365')) {
+              @for (query of m365Queries; track query.path) {
+                <div class="m365-item">
+                  <a [href]="query.url" target="_blank" rel="noopener" class="m365-link">{{ query.title }}</a>
+                  <span class="m365-tactic">{{ query.tactic }}</span>
+                </div>
+              }
+              <a href="https://github.com/microsoft/Microsoft-365-Defender-Hunting-Queries" target="_blank" rel="noopener" class="framework-link m365-framework-link">Microsoft 365 Defender Hunting Queries ↗</a>
             }
           </section>
         }
