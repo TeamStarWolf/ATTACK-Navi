@@ -1,0 +1,7 @@
+node_modules
+dist
+.angular
+.claude
+.vs
+.git
+server/node_modules
