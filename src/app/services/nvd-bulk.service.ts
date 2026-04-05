@@ -7,9 +7,9 @@ import { SettingsService } from './settings.service';
 import { CWE_TO_ATTACK } from './cve.service';
 
 /**
- * Fetches recent CVEs from the NVD 2.0 API (last 120 days),
- * maps CWEs to ATT&CK technique IDs via CWE_TO_ATTACK,
- * and deduplicates against AttackCveService.
+ * Loads a pre-computed CVE-to-ATT&CK technique mapping (every CVE in NVD
+ * mapped via CWE), then supplements with a 120-day live API fetch for
+ * the very latest CVEs.
  */
 @Injectable({ providedIn: 'root' })
 export class NvdBulkService {
@@ -29,13 +29,28 @@ export class NvdBulkService {
     private attackCveService: AttackCveService,
     private settingsService: SettingsService,
   ) {
-    // Wait for AttackCveService to finish loading, then start bulk fetch
-    this.attackCveService.loaded$.pipe(
-      filter(loaded => loaded),
-      take(1),
-    ).subscribe(() => {
-      this.fetchAll();
-    });
+    // Load pre-computed full mapping first, then supplement with live API
+    this.http.get<Record<string, string[]>>('assets/data/cve-technique-map.json')
+      .pipe(catchError(() => of(null)))
+      .subscribe(data => {
+        if (data) {
+          for (const [attackId, cveIds] of Object.entries(data)) {
+            const set = this.supplementaryMap.get(attackId) ?? new Set<string>();
+            for (const cveId of cveIds) set.add(cveId);
+            this.supplementaryMap.set(attackId, set);
+          }
+          this.totalSubject.next(this.countTotalCves());
+          this.coveredSubject.next(this.supplementaryMap.size);
+          this.loadedSubject.next(true);
+        }
+        // Then supplement with live 120-day fetch for the very latest CVEs
+        this.attackCveService.loaded$.pipe(
+          filter(loaded => loaded),
+          take(1),
+        ).subscribe(() => {
+          this.fetchAll();
+        });
+      });
   }
 
   getCveCountForTechnique(attackId: string): number {
