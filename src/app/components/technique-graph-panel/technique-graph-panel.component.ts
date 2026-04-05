@@ -7,6 +7,7 @@ import {
   HostListener,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
@@ -64,7 +65,7 @@ const KIND_ICONS: Record<GraphNode['kind'], string> = {
 @Component({
   selector: 'app-technique-graph-panel',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './technique-graph-panel.component.html',
   styleUrl: './technique-graph-panel.component.scss',
@@ -89,6 +90,24 @@ export class TechniqueGraphPanelComponent implements OnInit, OnDestroy {
   showCampaigns = true;
   showSubtechniques = true;
 
+  // Technique search
+  searchQuery = '';
+  searchResults: Technique[] = [];
+  showSearchDropdown = false;
+
+  // Zoom / pan
+  zoomLevel = 1;
+  readonly ZOOM_MIN = 0.4;
+  readonly ZOOM_MAX = 2.5;
+  readonly ZOOM_STEP = 0.15;
+  panX = 0;
+  panY = 0;
+  private isPanning = false;
+  private panStartX = 0;
+  private panStartY = 0;
+  private panNodeStartX = 0;
+  private panNodeStartY = 0;
+
   // Dragging
   private drag: DragState = { active: false, nodeId: '', startX: 0, startY: 0, nodeStartX: 0, nodeStartY: 0 };
 
@@ -105,6 +124,10 @@ export class TechniqueGraphPanelComponent implements OnInit, OnDestroy {
   readonly CENTER_X = 450;
   readonly CENTER_Y = 280;
   readonly NODE_R = 28;
+
+  get svgTransform(): string {
+    return `translate(${this.panX}, ${this.panY}) scale(${this.zoomLevel})`;
+  }
 
   constructor(
     private filterService: FilterService,
@@ -145,6 +168,79 @@ export class TechniqueGraphPanelComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void { this.subs.unsubscribe(); }
 
   close(): void { this.filterService.setActivePanel(null); }
+
+  // -- Technique search --
+  onSearchInput(query: string): void {
+    this.searchQuery = query;
+    if (!this.domain || query.trim().length < 2) {
+      this.searchResults = [];
+      this.showSearchDropdown = false;
+      this.cdr.markForCheck();
+      return;
+    }
+    const q = query.toLowerCase();
+    this.searchResults = this.domain.techniques
+      .filter(t => t.attackId.toLowerCase().includes(q) || t.name.toLowerCase().includes(q))
+      .slice(0, 12);
+    this.showSearchDropdown = this.searchResults.length > 0;
+    this.cdr.markForCheck();
+  }
+
+  selectSearchResult(tech: Technique): void {
+    this.searchQuery = '';
+    this.searchResults = [];
+    this.showSearchDropdown = false;
+    this.filterService.selectTechnique(tech);
+    // build() will fire via subscription
+  }
+
+  closeSearchDropdown(): void {
+    // Small delay so click on result registers first
+    setTimeout(() => {
+      this.showSearchDropdown = false;
+      this.cdr.markForCheck();
+    }, 200);
+  }
+
+  // -- Zoom --
+  zoomIn(): void {
+    this.zoomLevel = Math.min(this.ZOOM_MAX, +(this.zoomLevel + this.ZOOM_STEP).toFixed(2));
+    this.cdr.markForCheck();
+  }
+
+  zoomOut(): void {
+    this.zoomLevel = Math.max(this.ZOOM_MIN, +(this.zoomLevel - this.ZOOM_STEP).toFixed(2));
+    this.cdr.markForCheck();
+  }
+
+  resetView(): void {
+    this.zoomLevel = 1;
+    this.panX = 0;
+    this.panY = 0;
+    this.cdr.markForCheck();
+  }
+
+  onWheel(event: WheelEvent): void {
+    event.preventDefault();
+    if (event.deltaY < 0) {
+      this.zoomIn();
+    } else {
+      this.zoomOut();
+    }
+  }
+
+  // -- Pan (middle-click or shift+click on SVG background) --
+  onSvgMouseDown(event: MouseEvent): void {
+    // Only start pan if clicking on the SVG background (not a node)
+    if (event.button === 1 || (event.button === 0 && event.shiftKey)) {
+      event.preventDefault();
+      this.isPanning = true;
+      this.panStartX = event.clientX;
+      this.panStartY = event.clientY;
+      this.panNodeStartX = this.panX;
+      this.panNodeStartY = this.panY;
+    }
+  }
 
   getColor(kind: GraphNode['kind']): string { return KIND_COLORS[kind]; }
   getIcon(kind: GraphNode['kind']): string { return KIND_ICONS[kind]; }
@@ -334,17 +430,25 @@ export class TechniqueGraphPanelComponent implements OnInit, OnDestroy {
 
   @HostListener('document:mousemove', ['$event'])
   onMouseMove(event: MouseEvent): void {
+    if (this.isPanning) {
+      this.panX = this.panNodeStartX + (event.clientX - this.panStartX);
+      this.panY = this.panNodeStartY + (event.clientY - this.panStartY);
+      this.cdr.markForCheck();
+      return;
+    }
     if (!this.drag.active) return;
     const node = this.nodes.find(n => n.id === this.drag.nodeId);
     if (!node) return;
-    node.x = this.drag.nodeStartX + (event.clientX - this.drag.startX);
-    node.y = this.drag.nodeStartY + (event.clientY - this.drag.startY);
+    const scale = this.zoomLevel || 1;
+    node.x = this.drag.nodeStartX + (event.clientX - this.drag.startX) / scale;
+    node.y = this.drag.nodeStartY + (event.clientY - this.drag.startY) / scale;
     this.cdr.markForCheck();
   }
 
   @HostListener('document:mouseup')
   onMouseUp(): void {
     this.drag.active = false;
+    this.isPanning = false;
   }
 
   onNodeClick(node: GraphNode): void {
