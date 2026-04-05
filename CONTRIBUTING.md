@@ -63,7 +63,7 @@ npx ng build
 Output is written to `dist/mitre-mitigation-navigator/browser/`. For GitHub Pages deployment with a base path:
 
 ```bash
-npx ng build --base-href /attack-nav/
+npx ng build --base-href /ATTACK-Navi/
 ```
 
 ### Project Structure
