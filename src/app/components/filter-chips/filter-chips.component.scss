@@ -77,20 +77,3 @@
     color: var(--danger);
   }
 }
-
-/* ── Mobile ── */
-@media (max-width: 768px) {
-  .chips-bar {
-    gap: 4px;
-    padding: 4px 8px;
-  }
-
-  .chip {
-    padding: 3px 8px 3px 10px;
-    font-size: 11px;
-  }
-
-  .chips-label {
-    font-size: 9px;
-  }
-}

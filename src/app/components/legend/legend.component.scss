@@ -51,22 +51,3 @@
   white-space: nowrap;
   margin-left: 2px;
 }
-
-/* ── Mobile ── */
-@media (max-width: 768px) {
-  .legend {
-    gap: 6px;
-    padding: 4px 8px;
-    overflow-x: auto;
-    scrollbar-width: none;
-    &::-webkit-scrollbar { display: none; }
-  }
-
-  .legend-label {
-    font-size: 8px;
-  }
-
-  .legend-stop {
-    font-size: 9px;
-  }
-}
