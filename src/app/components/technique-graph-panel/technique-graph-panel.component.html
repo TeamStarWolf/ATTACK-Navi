@@ -20,6 +20,43 @@
         <button class="tgp-close" (click)="close()">✕</button>
       </div>
 
+      <!-- Technique search -->
+      <div class="tgp-search-row">
+        <div class="tgp-search-wrap">
+          <input
+            type="text"
+            class="tgp-search-input"
+            placeholder="Search technique by ID or name..."
+            [ngModel]="searchQuery"
+            (ngModelChange)="onSearchInput($event)"
+            (blur)="closeSearchDropdown()"
+          >
+          @if (showSearchDropdown) {
+            <div class="tgp-search-dropdown">
+              @for (tech of searchResults; track tech.id) {
+                <button class="tgp-search-result" (mousedown)="selectSearchResult(tech)">
+                  <span class="sr-id">{{ tech.attackId }}</span>
+                  <span class="sr-name">{{ tech.name }}</span>
+                  @if (tech.isSubtechnique) {
+                    <span class="sr-badge">sub</span>
+                  }
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Zoom controls -->
+        <div class="tgp-zoom-controls">
+          <button class="tgp-zoom-btn" (click)="zoomOut()" [disabled]="zoomLevel <= ZOOM_MIN" title="Zoom out">-</button>
+          <span class="tgp-zoom-label">{{ zoomLevel * 100 | number:'1.0-0' }}%</span>
+          <button class="tgp-zoom-btn" (click)="zoomIn()" [disabled]="zoomLevel >= ZOOM_MAX" title="Zoom in">+</button>
+          @if (zoomLevel !== 1 || panX !== 0 || panY !== 0) {
+            <button class="tgp-zoom-btn tgp-zoom-reset" (click)="resetView()" title="Reset view">Reset</button>
+          }
+        </div>
+      </div>
+
       <!-- Toggle options -->
       <div class="tgp-toggles">
         <label class="tog-label">Show:</label>
@@ -61,6 +98,8 @@
           class="tgp-svg"
           [attr.viewBox]="'0 0 ' + SVG_W + ' ' + SVG_H"
           preserveAspectRatio="xMidYMid meet"
+          (wheel)="onWheel($event)"
+          (mousedown)="onSvgMouseDown($event)"
         >
           <!-- Arrow marker -->
           <defs>
@@ -68,6 +107,9 @@
               <path d="M0,0 L6,3 L0,6 Z" fill="#30363d"/>
             </marker>
           </defs>
+
+          <!-- Zoom/pan transform wrapper -->
+          <g [attr.transform]="svgTransform">
 
           <!-- Edges -->
           @for (edge of edges; track trackByEdge($index, edge)) {
@@ -141,6 +183,8 @@
               }
             </g>
           }
+
+          </g><!-- /zoom-pan wrapper -->
         </svg>
 
         <!-- Legend -->

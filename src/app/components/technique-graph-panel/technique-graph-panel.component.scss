@@ -80,6 +80,132 @@
   &:hover { background: #21262d; color: #e6edf3; }
 }
 
+/* Search row */
+.tgp-search-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.tgp-search-wrap {
+  position: relative;
+  flex: 1;
+  max-width: 340px;
+}
+
+.tgp-search-input {
+  width: 100%;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  color: #e6edf3;
+  outline: none;
+  transition: border-color 0.15s;
+
+  &::placeholder { color: #484f58; }
+  &:focus { border-color: #58a6ff; box-shadow: 0 0 0 3px rgb(88 166 255 / 10%); }
+}
+
+.tgp-search-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 50%);
+}
+
+.tgp-search-result {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 12px;
+  background: none;
+  border: none;
+  color: #e6edf3;
+  font-size: 0.78rem;
+  cursor: pointer;
+  text-align: left;
+
+  &:hover { background: rgb(88 166 255 / 10%); }
+
+  .sr-id {
+    color: #58a6ff;
+    font-weight: 600;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.74rem;
+    flex-shrink: 0;
+  }
+  .sr-name {
+    color: #8b949e;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .sr-badge {
+    background: rgb(121 192 255 / 15%);
+    color: #79c0ff;
+    font-size: 0.62rem;
+    padding: 1px 5px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+}
+
+/* Zoom controls */
+.tgp-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 3px 6px;
+}
+
+.tgp-zoom-btn {
+  background: none;
+  border: 1px solid #30363d;
+  color: #8b949e;
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s;
+
+  &:hover:not(:disabled) { background: #21262d; color: #e6edf3; }
+  &:disabled { opacity: 0.3; cursor: default; }
+}
+
+.tgp-zoom-reset {
+  width: auto;
+  padding: 0 8px;
+  font-size: 0.7rem;
+  margin-left: 2px;
+}
+
+.tgp-zoom-label {
+  font-size: 0.72rem;
+  color: #8b949e;
+  min-width: 36px;
+  text-align: center;
+  font-family: 'Roboto Mono', monospace;
+}
+
 /* Toggles */
 .tgp-toggles {
   display: flex;
