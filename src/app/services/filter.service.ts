@@ -244,7 +244,9 @@ export class FilterService {
       const swAttackIds = (params.get('sw') ?? '').split(',').filter(Boolean);
       const campAttackIds = (params.get('camp') ?? '').split(',').filter(Boolean);
 
-      if (mitIds.length || grpIds.length || swAttackIds.length || campAttackIds.length) {
+      const techId = params.get('tech') ?? '';
+
+      if (mitIds.length || grpIds.length || swAttackIds.length || campAttackIds.length || techId) {
         this.dataService.domain$.pipe(filter(Boolean), take(1)).subscribe((domain) => {
           if (mitIds.length) {
             const mits = mitIds.map((id) => domain.mitigations.find((m) => m.attackId === id)).filter((m): m is Mitigation => m !== undefined);
@@ -261,6 +263,13 @@ export class FilterService {
           if (campAttackIds.length) {
             const ids = new Set(campAttackIds.map((id) => domain.campaigns.find((c) => c.attackId === id)?.id).filter((id): id is string => !!id));
             if (ids.size) this.activeCampaignIdsSubject.next(ids);
+          }
+          // Auto-select technique from URL (tech=T1059.001)
+          if (techId) {
+            const technique = domain.techniques.find((t: Technique) => t.attackId === techId);
+            if (technique) {
+              this.selectTechnique(technique);
+            }
           }
         });
       }

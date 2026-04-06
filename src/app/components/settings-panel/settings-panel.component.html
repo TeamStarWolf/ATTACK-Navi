@@ -456,6 +456,41 @@
               </button>
             </div>
 
+            <div class="data-section-divider"></div>
+
+            <div class="data-section-header">Bulk Import Status</div>
+            <p class="section-desc" style="margin: 4px 0 8px; font-size: 0.8rem; opacity: 0.7;">
+              Upload a CSV with columns <code>technique_id,status</code>. Valid status values: implemented, in-progress, planned, not-started.
+            </p>
+            <div class="data-actions">
+              <label class="btn-action btn-refresh" style="cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                📤 Import CSV
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  style="display: none"
+                  (change)="onCsvFileSelected($event)"
+                />
+              </label>
+            </div>
+            @if (csvImportResult) {
+              <div class="data-info-grid" style="margin-top: 8px;">
+                <div class="data-info-item">
+                  <span class="data-info-label">Imported</span>
+                  <span class="data-info-value" style="color: #4caf50;">{{ csvImportResult.imported }} statuses</span>
+                </div>
+                @if (csvImportResult.errors > 0) {
+                  <div class="data-info-item">
+                    <span class="data-info-label">Errors</span>
+                    <span class="data-info-value" style="color: #f44336;">{{ csvImportResult.errors }} rows skipped</span>
+                  </div>
+                }
+              </div>
+            }
+            @if (csvImportError) {
+              <div style="color: #f44336; font-size: 0.8rem; margin-top: 4px;">{{ csvImportError }}</div>
+            }
+
           </div>
         }
 
