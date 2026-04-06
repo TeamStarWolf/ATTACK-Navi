@@ -1245,6 +1245,52 @@
           </section>
         }
 
+        <!-- Wazuh XDR Rules -->
+        @if (wazuhRules.length > 0) {
+          <section class="sidebar-section wazuh-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('wazuh-xdr')" (click)="toggleSection('wazuh-xdr')">
+              <span class="section-chevron">{{ isSectionCollapsed('wazuh-xdr') ? '&#x25B8;' : '&#x25BE;' }}</span>
+              <span class="section-icon" style="color: #3AABE0;">&#x1F6E1;</span> Wazuh XDR
+              <span class="count-badge upgrade-section-count">{{ wazuhRules.length }}</span>
+            </h4>
+            @if (!isSectionCollapsed('wazuh-xdr')) {
+              @for (rule of wazuhRules; track rule.ruleId + rule.ruleGroup) {
+                <div class="tool-card" style="border-left: 3px solid #3AABE0;">
+                  <div class="tool-header">
+                    <span class="tool-name" style="color: #3AABE0;">Rule {{ rule.ruleId }}</span>
+                    <span class="tool-category-badge" [style.background]="rule.level >= 10 ? '#d32f2f' : rule.level >= 7 ? '#f57c00' : '#388e3c'" style="color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 8px;">Level {{ rule.level }}</span>
+                  </div>
+                  <div class="tool-desc">{{ rule.description }}</div>
+                  <div class="tool-desc" style="font-size: 11px; color: #888; margin-top: 2px;">Group: {{ rule.ruleGroup }}</div>
+                </div>
+              }
+            }
+          </section>
+        }
+
+        <!-- Threat Hunting Queries -->
+        @if (huntingQueries.length > 0) {
+          <section class="sidebar-section hunting-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('threat-hunting')" (click)="toggleSection('threat-hunting')">
+              <span class="section-chevron">{{ isSectionCollapsed('threat-hunting') ? '&#x25B8;' : '&#x25BE;' }}</span>
+              <span class="section-icon" style="color: #7B1FA2;">&#x1F50D;</span> Threat Hunting
+              <span class="count-badge upgrade-section-count">{{ huntingQueries.length }}</span>
+            </h4>
+            @if (!isSectionCollapsed('threat-hunting')) {
+              @for (q of huntingQueries; track q.url) {
+                <div class="tool-card" style="border-left: 3px solid #7B1FA2;">
+                  <div class="tool-header">
+                    <span class="tool-name" style="color: #7B1FA2;">{{ q.title }}</span>
+                    <span class="tool-category-badge" style="background: #7B1FA2; color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 8px;">{{ q.platform }}</span>
+                  </div>
+                  <div class="tool-desc" style="font-size: 11px; color: #888;">Tactic: {{ q.tactic }} &middot; Source: {{ q.source }}</div>
+                  <a class="tool-link" [href]="q.url" target="_blank" rel="noopener" style="color: #7B1FA2;">View Query</a>
+                </div>
+              }
+            }
+          </section>
+        }
+
         <!-- Custom Controls section -->
         @if (customMitigations.length > 0) {
           <section class="detail-section upgrade-section-block">
