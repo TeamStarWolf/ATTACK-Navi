@@ -1,6 +1,25 @@
 {
   "name": "mitre-mitigation-navigator",
   "version": "0.0.0",
+  "author": "TeamStarWolf",
+  "homepage": "https://teamstarwolf.github.io/ATTACK-Navi/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TeamStarWolf/ATTACK-Navi.git"
+  },
+  "bugs": {
+    "url": "https://github.com/TeamStarWolf/ATTACK-Navi/issues"
+  },
+  "keywords": [
+    "mitre-attack",
+    "cybersecurity",
+    "threat-intelligence",
+    "angular",
+    "attack-navigator",
+    "cve",
+    "sigma",
+    "detection"
+  ],
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
