@@ -995,6 +995,20 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     this.cdr.markForCheck();
   }
 
+  zoomToFit(): void {
+    const wrapper = this.el.nativeElement.querySelector('#matrix-content');
+    const table = this.el.nativeElement.querySelector('.matrix');
+    if (!wrapper || !table) return;
+    const visibleCols = this.sortedColumns.filter(c => !this.hiddenTacticIds.has(c.tactic.id)).length;
+    if (visibleCols === 0) return;
+    const viewportWidth = wrapper.clientWidth;
+    const colWidth = 140; // base column width from CSS --col-width
+    const tableNaturalWidth = visibleCols * colWidth + 20; // 20px padding buffer
+    const idealZoom = viewportWidth / tableNaturalWidth;
+    this.zoom = Math.max(this.ZOOM_MIN, Math.min(this.ZOOM_MAX, +idealZoom.toFixed(2)));
+    this.cdr.markForCheck();
+  }
+
   get noResults(): boolean {
     if (this.hasTechniqueSearch) return this.matchedIds.size === 0;
     if (this.searchQuery) return this.matchingIds.size === 0;

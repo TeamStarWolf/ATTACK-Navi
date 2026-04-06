@@ -2437,6 +2437,29 @@
   background: rgb(111 211 255 / 10%);
 }
 
+.share-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: transparent;
+  border: 1px solid var(--line-soft, #1a3448);
+  color: var(--text-muted, #4a6080);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: rgb(76 175 80 / 34%);
+    color: #4caf50;
+    background: rgb(76 175 80 / 10%);
+  }
+}
+
 .close-btn {
   width: 32px;
   height: 32px;
@@ -2937,4 +2960,113 @@
   background: rgb(76 175 80 / 10%);
   border: 1px solid rgb(76 175 80 / 25%);
   &:hover { background: rgb(76 175 80 / 20%); color: #81c784; }
+}
+
+// ─── SIEM Query Library cards ────────────────────────────────────────────────
+
+.siem-badge {
+  background: rgb(255 165 0 / 18%) !important;
+  color: #ffb347 !important;
+  border-color: rgb(255 165 0 / 30%) !important;
+}
+
+.siem-query-card {
+  background: #060f18;
+  border: 1px solid #1a3448;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  transition: border-color 0.15s;
+
+  &:last-of-type { margin-bottom: 0; }
+  &:hover { border-color: #2a4868; }
+}
+
+.siem-query-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.siem-query-platform {
+  font-size: 9px;
+  font-weight: 700;
+  color: #ffb347;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.siem-query-confidence {
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0 5px;
+  border-radius: 6px;
+  line-height: 16px;
+
+  &[data-confidence='high'] {
+    color: #7ee787;
+    background: rgb(126 231 135 / 10%);
+    border: 1px solid rgb(126 231 135 / 20%);
+  }
+  &[data-confidence='medium'] {
+    color: #fbbf24;
+    background: rgb(251 191 36 / 10%);
+    border: 1px solid rgb(251 191 36 / 20%);
+  }
+  &[data-confidence='low'] {
+    color: #f97583;
+    background: rgb(249 117 131 / 10%);
+    border: 1px solid rgb(249 117 131 / 20%);
+  }
+}
+
+.siem-query-copy-btn {
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid #1a3448;
+  border-radius: 3px;
+  color: #4a6080;
+  font-size: 10px;
+  padding: 1px 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  line-height: 1.3;
+
+  &:hover { color: #58a6ff; border-color: #2a4868; }
+  &.copied { color: #7ee787; border-color: rgb(126 231 135 / 30%); }
+}
+
+.siem-query-title {
+  font-size: 10px;
+  font-weight: 600;
+  color: #8aaac8;
+  margin-bottom: 4px;
+}
+
+.siem-query-code {
+  font-family: Consolas, Monaco, 'Fira Code', monospace;
+  font-size: 9px;
+  background: #020b13;
+  color: #a8d8a8;
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid rgb(255 255 255 / 5%);
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: auto;
+  max-height: 120px;
+  margin: 0;
+  line-height: 1.45;
+
+  code {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+  }
+
+  &::-webkit-scrollbar { width: 4px; height: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: rgb(255 255 255 / 8%); border-radius: 2px; }
 }
