@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+// https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 /**
  * Expands CWE_TO_ATTACK using the CTID's own capability_group → technique table
  * extracted from the KEV Mappings Explorer (155 unique techniques).

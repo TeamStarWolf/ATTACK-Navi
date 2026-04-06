@@ -57,6 +57,9 @@ import { EventLoggingService, LogConfig } from '../../services/event-logging.ser
 import { ElasticService } from '../../services/elastic.service';
 import { BloodHoundService, BloodHoundMapping } from '../../services/bloodhound.service';
 import { C2MappingService, C2Capability } from '../../services/c2-mapping.service';
+import { IocFeedService, IoC } from '../../services/ioc-feed.service';
+import { AzureIdentityService, AzureAttackPattern } from '../../services/azure-identity.service';
+import { OffensiveToolsService, OffensiveTool } from '../../services/offensive-tools.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -133,6 +136,16 @@ export class SidebarComponent implements OnInit, OnDestroy {
   // C2 Framework Capabilities
   c2Capabilities: C2Capability[] = [];
 
+  // IoC Threat Feed
+  iocs: IoC[] = [];
+
+  // Azure/Entra ID Attack Patterns
+  azureAttacks: AzureAttackPattern[] = [];
+  copiedKql = '';
+
+  // Offensive Tool Mappings
+  offensiveTools: OffensiveTool[] = [];
+
   // Clipboard copy feedback
   copiedInvoke = '';
   copiedBatchScript = false;
@@ -162,7 +175,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       'exploitdb', 'nuclei', 'tags', 'notes', 'threats', 'software',
       'campaigns', 'd3fend', 'engage', 'car', 'atomic', 'misp', 'opencti', 'sigma',
       'custom', 'mitigations', 'relgraph', 'm365', 'siem', 'payloads', 'logging',
-      'bloodhound', 'c2',
+      'bloodhound', 'c2', 'ioc-feed', 'azure-identity', 'offensive-tools',
     ];
     for (const s of sections) this.collapsedSections.add(s);
     this.cdr.markForCheck();
@@ -196,6 +209,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
     if (this.customMitigations.length === 0) this.collapsedSections.add('custom');
     if (this.adAttackPaths.length === 0) this.collapsedSections.add('bloodhound');
     if (this.c2Capabilities.length === 0) this.collapsedSections.add('c2');
+    if (this.iocs.length === 0) this.collapsedSections.add('ioc-feed');
+    if (this.azureAttacks.length === 0) this.collapsedSections.add('azure-identity');
+    if (this.offensiveTools.length === 0) this.collapsedSections.add('offensive-tools');
     this.cdr.markForCheck();
   }
 
@@ -357,6 +373,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
     private elasticService: ElasticService,
     private bloodhoundService: BloodHoundService,
     private c2MappingService: C2MappingService,
+    private iocFeedService: IocFeedService,
+    private azureIdentityService: AzureIdentityService,
+    private offensiveToolsService: OffensiveToolsService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -463,6 +482,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
         this.loggingConfigs = tech ? this.eventLoggingService.getLoggingConfig(tech.attackId) : [];
         this.adAttackPaths = tech ? this.bloodhoundService.getPathsForTechnique(tech.attackId) : [];
         this.c2Capabilities = tech ? this.c2MappingService.getCapabilitiesForTechnique(tech.attackId) : [];
+        this.iocs = tech ? this.iocFeedService.getIocsForTechnique(tech.attackId) : [];
+        this.azureAttacks = tech ? this.azureIdentityService.getAttacksForTechnique(tech.attackId) : [];
+        this.offensiveTools = tech ? this.offensiveToolsService.getToolsForTechnique(tech.attackId) : [];
+        this.copiedKql = '';
         this.copiedLoggingScript = false;
         this.markdownCopied = false;
         this.copiedSiemQuery = '';
@@ -638,6 +661,16 @@ export class SidebarComponent implements OnInit, OnDestroy {
       this.payloadsService.loaded$.subscribe((loaded) => {
         if (loaded && this.technique) {
           this.payloadRefs = this.payloadsService.getPayloadsForTechnique(this.technique.attackId);
+          this.cdr.markForCheck();
+        }
+      }),
+    );
+
+    // Refresh IoC feed when data finishes loading
+    this.subs.add(
+      this.iocFeedService.loaded$.subscribe((loaded) => {
+        if (loaded && this.technique) {
+          this.iocs = this.iocFeedService.getIocsForTechnique(this.technique.attackId);
           this.cdr.markForCheck();
         }
       }),
@@ -1205,6 +1238,14 @@ export class SidebarComponent implements OnInit, OnDestroy {
       this.copiedSiemQuery = query.platform + ':' + query.title;
       this.cdr.markForCheck();
       setTimeout(() => { this.copiedSiemQuery = ''; this.cdr.markForCheck(); }, 2000);
+    });
+  }
+
+  copyKql(attack: AzureAttackPattern): void {
+    navigator.clipboard.writeText(attack.detectionQuery).then(() => {
+      this.copiedKql = attack.name;
+      this.cdr.markForCheck();
+      setTimeout(() => { this.copiedKql = ''; this.cdr.markForCheck(); }, 2000);
     });
   }
 

@@ -1154,6 +1154,97 @@
           </section>
         }
 
+        <!-- Threat Indicators (IoC Feed) -->
+        @if (iocs.length > 0) {
+          <section class="sidebar-section ioc-feed-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('ioc-feed')" (click)="toggleSection('ioc-feed')">
+              <span class="section-chevron">{{ isSectionCollapsed('ioc-feed') ? '&#x25B8;' : '&#x25BE;' }}</span>
+              <span class="section-icon" style="color: #ef5350;">&#x1F6A8;</span> Threat Indicators
+              <span class="count-badge upgrade-section-count">{{ iocs.length }}</span>
+            </h4>
+            @if (!isSectionCollapsed('ioc-feed')) {
+              @for (ioc of iocs.slice(0, 20); track ioc.value) {
+                <div class="ioc-card">
+                  <span class="ioc-type-badge ioc-type-{{ ioc.type }}">{{ ioc.type | uppercase }}</span>
+                  <span class="ioc-value">{{ ioc.value }}</span>
+                </div>
+              }
+              @if (iocs.length > 20) {
+                <div class="section-more">+ {{ iocs.length - 20 }} more indicators</div>
+              }
+            }
+          </section>
+        }
+
+        <!-- Azure / Entra ID Attack Patterns -->
+        @if (azureAttacks.length > 0) {
+          <section class="sidebar-section azure-identity-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('azure-identity')" (click)="toggleSection('azure-identity')">
+              <span class="section-chevron">{{ isSectionCollapsed('azure-identity') ? '&#x25B8;' : '&#x25BE;' }}</span>
+              <span class="section-icon" style="color: #0078d4;">&#x2601;</span> Azure/Entra ID
+              <span class="count-badge upgrade-section-count">{{ azureAttacks.length }}</span>
+            </h4>
+            @if (!isSectionCollapsed('azure-identity')) {
+              @for (attack of azureAttacks; track attack.name) {
+                <div class="azure-card">
+                  <div class="azure-header">
+                    <span class="azure-name">{{ attack.name }}</span>
+                  </div>
+                  <div class="azure-desc">{{ attack.description }}</div>
+                  <div class="azure-row">
+                    <span class="azure-label">Services</span>
+                    <div class="azure-chips">
+                      @for (svc of attack.affectedServices; track svc) {
+                        <span class="azure-chip svc-chip">{{ svc }}</span>
+                      }
+                    </div>
+                  </div>
+                  <div class="azure-row">
+                    <span class="azure-label">KQL Detection</span>
+                    <div class="azure-kql-wrap">
+                      <code class="azure-kql">{{ attack.detectionQuery }}</code>
+                      <button class="azure-copy-btn" (click)="copyKql(attack)" [title]="copiedKql === attack.name ? 'Copied!' : 'Copy KQL query'">
+                        {{ copiedKql === attack.name ? 'Copied' : 'Copy' }}
+                      </button>
+                    </div>
+                  </div>
+                  <div class="azure-row">
+                    <span class="azure-label">Mitigations</span>
+                    <div class="azure-chips">
+                      @for (mit of attack.mitigations; track mit) {
+                        <span class="azure-chip mit-chip">{{ mit }}</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+            }
+          </section>
+        }
+
+        <!-- Known Offensive Tools -->
+        @if (offensiveTools.length > 0) {
+          <section class="sidebar-section tools-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('offensive-tools')" (click)="toggleSection('offensive-tools')">
+              <span class="section-chevron">{{ isSectionCollapsed('offensive-tools') ? '&#x25B8;' : '&#x25BE;' }}</span>
+              <span class="section-icon" style="color: #ff9800;">&#x1F529;</span> Known Tools
+              <span class="count-badge upgrade-section-count">{{ offensiveTools.length }}</span>
+            </h4>
+            @if (!isSectionCollapsed('offensive-tools')) {
+              @for (tool of offensiveTools; track tool.name) {
+                <div class="tool-card">
+                  <div class="tool-header">
+                    <span class="tool-name">{{ tool.name }}</span>
+                    <span class="tool-category-badge">{{ tool.category }}</span>
+                  </div>
+                  <div class="tool-desc">{{ tool.description }}</div>
+                  <a class="tool-link" [href]="tool.url" target="_blank" rel="noopener">{{ tool.url }}</a>
+                </div>
+              }
+            }
+          </section>
+        }
+
         <!-- Custom Controls section -->
         @if (customMitigations.length > 0) {
           <section class="detail-section upgrade-section-block">
