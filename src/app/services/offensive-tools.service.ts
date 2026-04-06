@@ -42,6 +42,26 @@ const TOOLS: OffensiveTool[] = [
   { name: 'SharPersist', category: 'Persistence', techniqueIds: ['T1053.005', 'T1547.001', 'T1543.003'], description: 'Windows persistence toolkit', url: 'https://github.com/mandiant/SharPersist' },
   // Evasion
   { name: 'SharpWitness', category: 'Screenshot', techniqueIds: ['T1113', 'T1595.002'], description: 'Website screenshot tool', url: 'https://github.com/Relkci/SharpWitness' },
+  // From followed researchers
+  { name: 'GraphRunner', category: 'Cloud Attack', techniqueIds: ['T1528', 'T1098.003', 'T1078.004', 'T1114', 'T1213'], description: 'Post-exploitation for Microsoft Graph API (dafthack)', url: 'https://github.com/dafthack/GraphRunner' },
+  { name: 'BloodHound Custom Queries', category: 'AD Enumeration', techniqueIds: ['T1087.002', 'T1069.002', 'T1482', 'T1078'], description: 'Custom BloodHound queries for AD attacks (dafthack)', url: 'https://github.com/dafthack/Bloodhound-Custom-Queries' },
+  { name: 'HiveNightmare', category: 'Privilege Escalation', techniqueIds: ['T1003.002', 'T1068'], description: 'Read SAM/SYSTEM/SECURITY hives as non-admin (GossiTheDog)', url: 'https://github.com/GossiTheDog/HiveNightmare' },
+  { name: 'SystemNightmare', category: 'Privilege Escalation', techniqueIds: ['T1068', 'T1548'], description: 'Instant SYSTEM prompt on Windows (GossiTheDog)', url: 'https://github.com/GossiTheDog/SystemNightmare' },
+  { name: 'Sysmon Config', category: 'Detection', techniqueIds: ['T1059', 'T1547', 'T1003', 'T1055'], description: 'High-quality Sysmon config template (GossiTheDog)', url: 'https://github.com/GossiTheDog/sysmon-config' },
+  { name: 'SharpSphere', category: 'Lateral Movement', techniqueIds: ['T1021', 'T1059'], description: '.NET tool for attacking vCenter (Relkci)', url: 'https://github.com/Relkci/SharpSphere' },
+  { name: 'DPAT', category: 'Credential Audit', techniqueIds: ['T1110', 'T1078'], description: 'Domain Password Audit Tool (Relkci)', url: 'https://github.com/Relkci/DPAT' },
+  { name: 'PowerMeta', category: 'Reconnaissance', techniqueIds: ['T1593', 'T1589.002', 'T1592'], description: 'Metadata extraction from public documents (Relkci)', url: 'https://github.com/Relkci/PowerMeta' },
+  { name: 'Find-WSUS', category: 'Defense', techniqueIds: ['T1195.002', 'T1557'], description: 'Find WSUS configs for CVE-2025-59287 (mubix)', url: 'https://github.com/mubix/Find-WSUS' },
+  { name: 'reCAPTCHA Phish', category: 'Phishing', techniqueIds: ['T1566.002', 'T1189', 'T1204.001'], description: 'Phishing with fake reCAPTCHA (JohnHammond)', url: 'https://github.com/JohnHammond/recaptcha-phish' },
+  { name: 'BeaKer', category: 'Visualization', techniqueIds: ['T1040', 'T1071.001'], description: 'Elasticsearch Kibana analytics for Zeek (mon0pixel)', url: 'https://github.com/mon0pixel/BeaKer' },
+  { name: 'GoSpoof', category: 'Network Spoofing', techniqueIds: ['T1557', 'T1557.001'], description: 'DNS spoofing tool (blackhillsinfosec)', url: 'https://github.com/blackhillsinfosec/GoSpoof' },
+  { name: 'WindowsAuditing', category: 'Defense', techniqueIds: ['T1059', 'T1547', 'T1003', 'T1078'], description: 'Windows audit policy configuration (blackhillsinfosec)', url: 'https://github.com/blackhillsinfosec/WindowsAuditing' },
+  // Well-known tools from starred repos
+  { name: 'SecLists', category: 'Wordlists', techniqueIds: ['T1110', 'T1595.003', 'T1190'], description: 'Security tester companion wordlists', url: 'https://github.com/danielmiessler/SecLists' },
+  { name: 'OpenSesame', category: 'Physical', techniqueIds: ['T1200'], description: 'Wireless garage door opener attack (samyk)', url: 'https://github.com/samyk/opensesame' },
+  { name: 'Invoke-AtomicRedTeam', category: 'Validation', techniqueIds: ['T1059.001', 'T1204.002'], description: 'PowerShell Atomic test executor', url: 'https://github.com/redcanaryco/invoke-atomicredteam' },
+  { name: 'log4j-scanner', category: 'Vulnerability Scanning', techniqueIds: ['T1190', 'T1059'], description: 'CISA Log4j vulnerability scanner', url: 'https://github.com/cisagov/log4j-scanner' },
+  { name: 'Commando-VM', category: 'Offensive Platform', techniqueIds: ['T1059', 'T1588.002'], description: 'Windows offensive distribution (Mandiant)', url: 'https://github.com/mandiant/commando-vm' },
 ];
 
 @Injectable({ providedIn: 'root' })
