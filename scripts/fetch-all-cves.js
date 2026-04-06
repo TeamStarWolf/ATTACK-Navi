@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+// https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 /**
  * Fetches ALL CVEs from NVD 2.0 API, extracts CWE IDs, maps to ATT&CK techniques
  * via CWE_TO_ATTACK, and outputs a pre-computed JSON asset.

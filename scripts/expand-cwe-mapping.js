@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+// https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 /**
  * Expands CWE_TO_ATTACK by adding authoritative technique mappings from:
  * 1. CAPEC → ATT&CK (via MITRE's CAPEC STIX data — CWE→CAPEC→ATT&CK chain)

@@ -1,3 +1,5 @@
+// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+// https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 export interface ProcedureExample {
   sourceId: string;    // STIX id of the group or software
   sourceName: string;

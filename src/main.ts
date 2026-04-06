@@ -1,3 +1,5 @@
+// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+// https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { bootstrapApplication } from '@angular/platform-browser';
 import { isDevMode } from '@angular/core';
 import { appConfig } from './app/app.config';

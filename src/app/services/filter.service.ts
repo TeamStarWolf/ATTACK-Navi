@@ -1,3 +1,5 @@
+// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+// https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, Subscription, combineLatest, map, debounceTime, filter, take } from 'rxjs';
 import { Technique } from '../models/technique';

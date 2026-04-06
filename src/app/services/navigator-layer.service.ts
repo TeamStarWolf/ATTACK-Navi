@@ -1,3 +1,5 @@
+// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+// https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { AttackDomain, ATTACK_NAVIGATOR_DOMAIN_CONFIG } from './data.service';
 import { Domain } from '../models/domain';
