@@ -3207,3 +3207,258 @@
   border: 1px solid rgba(111, 211, 255, 0.18);
   font-family: 'IBM Plex Mono', monospace;
 }
+
+/* ── IoC Threat Feed ── */
+.ioc-feed-section .section-title {
+  color: #ef5350;
+}
+
+.ioc-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  margin: 3px 0;
+  background: rgba(239, 83, 80, 0.06);
+  border: 1px solid rgba(239, 83, 80, 0.15);
+  border-radius: 6px;
+  border-left: 3px solid #ef5350;
+}
+
+.ioc-type-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.ioc-type-ip {
+  background: rgba(239, 83, 80, 0.15);
+  color: #ef5350;
+  border: 1px solid rgba(239, 83, 80, 0.25);
+}
+
+.ioc-type-domain {
+  background: rgba(171, 71, 188, 0.15);
+  color: #ce93d8;
+  border: 1px solid rgba(171, 71, 188, 0.25);
+}
+
+.ioc-type-hash {
+  background: rgba(255, 167, 38, 0.15);
+  color: #ffa726;
+  border: 1px solid rgba(255, 167, 38, 0.25);
+}
+
+.ioc-type-url {
+  background: rgba(66, 165, 245, 0.15);
+  color: #42a5f5;
+  border: 1px solid rgba(66, 165, 245, 0.25);
+}
+
+.ioc-type-email {
+  background: rgba(102, 187, 106, 0.15);
+  color: #66bb6a;
+  border: 1px solid rgba(102, 187, 106, 0.25);
+}
+
+.ioc-type-cve {
+  background: rgba(255, 112, 67, 0.15);
+  color: #ff7043;
+  border: 1px solid rgba(255, 112, 67, 0.25);
+}
+
+.ioc-value {
+  font-size: 0.75rem;
+  font-family: 'IBM Plex Mono', monospace;
+  color: #c9d8e8;
+  word-break: break-all;
+  line-height: 1.3;
+}
+
+.section-more {
+  font-size: 0.72rem;
+  color: #5e778e;
+  text-align: center;
+  padding: 4px 0;
+  font-style: italic;
+}
+
+/* ── Azure / Entra ID Attack Patterns ── */
+.azure-identity-section .section-title {
+  color: #0078d4;
+}
+
+.azure-card {
+  padding: 8px 10px;
+  margin: 5px 0;
+  background: rgba(0, 120, 212, 0.06);
+  border: 1px solid rgba(0, 120, 212, 0.18);
+  border-radius: 8px;
+  border-left: 3px solid #0078d4;
+}
+
+.azure-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.azure-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #4db8ff;
+}
+
+.azure-desc {
+  font-size: 0.75rem;
+  color: #93a8bb;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.azure-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 5px;
+
+  &:last-child { margin-bottom: 0; }
+}
+
+.azure-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #5e778e;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.azure-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.azure-chip {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.azure-chip.svc-chip {
+  background: rgba(0, 120, 212, 0.12);
+  color: #4db8ff;
+  border: 1px solid rgba(0, 120, 212, 0.22);
+}
+
+.azure-chip.mit-chip {
+  background: rgba(99, 210, 151, 0.10);
+  color: #63d297;
+  border: 1px solid rgba(99, 210, 151, 0.22);
+}
+
+.azure-kql-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.azure-kql {
+  flex: 1;
+  font-size: 0.7rem;
+  font-family: 'IBM Plex Mono', monospace;
+  color: #93a8bb;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 5px 8px;
+  border-radius: 4px;
+  line-height: 1.4;
+  word-break: break-all;
+  border: 1px solid rgba(0, 120, 212, 0.15);
+}
+
+.azure-copy-btn {
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(0, 120, 212, 0.15);
+  border: 1px solid rgba(0, 120, 212, 0.3);
+  color: #4db8ff;
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    background: rgba(0, 120, 212, 0.25);
+    border-color: #0078d4;
+  }
+}
+
+/* ── Known Offensive Tools ── */
+.tools-section .section-title {
+  color: #ff9800;
+}
+
+.tool-card {
+  padding: 8px 10px;
+  margin: 5px 0;
+  background: rgba(255, 152, 0, 0.06);
+  border: 1px solid rgba(255, 152, 0, 0.18);
+  border-radius: 8px;
+  border-left: 3px solid #ff9800;
+}
+
+.tool-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+
+.tool-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #ffb74d;
+}
+
+.tool-category-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  background: rgba(255, 152, 0, 0.12);
+  color: #ffa726;
+  border: 1px solid rgba(255, 152, 0, 0.25);
+  white-space: nowrap;
+}
+
+.tool-desc {
+  font-size: 0.75rem;
+  color: #93a8bb;
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.tool-link {
+  display: inline-block;
+  font-size: 0.7rem;
+  color: #ffb74d;
+  text-decoration: none;
+  word-break: break-all;
+  opacity: 0.8;
+  transition: opacity 0.15s;
+
+  &:hover {
+    opacity: 1;
+    text-decoration: underline;
+  }
+}
