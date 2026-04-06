@@ -4,39 +4,29 @@
   @if (technique) {
     <div class="sidebar-inner">
       <header class="sidebar-header">
-        <div class="title-block">
-          <div class="title-meta-row">
-            <a class="attack-id" [href]="technique.url" target="_blank" rel="noopener">{{ technique.attackId }}</a>
-            <span class="difficulty-badge" [style.background]="difficultyLevel.color + '22'" [style.color]="difficultyLevel.color" [style.border-color]="difficultyLevel.color + '55'">{{ difficultyLevel.label }}</span>
-            <a class="attck-link-btn" [href]="technique.url" target="_blank" rel="noopener" title="View on ATT&CK">ATT&amp;CK ↗</a>
+        <div class="header-top-row">
+          <div class="title-block">
+            <div class="title-meta-row">
+              <a class="attack-id" [href]="technique.url" target="_blank" rel="noopener">{{ technique.attackId }}</a>
+              <span class="difficulty-badge" [style.background]="difficultyLevel.color + '22'" [style.color]="difficultyLevel.color" [style.border-color]="difficultyLevel.color + '55'">{{ difficultyLevel.label }}</span>
+              <a class="attck-link-btn" [href]="technique.url" target="_blank" rel="noopener" title="View on ATT&CK">ATT&amp;CK ↗</a>
+            </div>
+            <h2 class="technique-name">
+              {{ technique.name }}
+              @if (isCustomTechnique) {
+                <span class="custom-badge">CUSTOM</span>
+              }
+            </h2>
           </div>
-          <h2 class="technique-name">
-            {{ technique.name }}
-            @if (isCustomTechnique) {
-              <span class="custom-badge">CUSTOM</span>
-            }
-          </h2>
+          <button class="close-btn" (click)="close()" title="Close">✕</button>
         </div>
         <div class="header-btns">
-          <button
-            class="watchlist-btn"
-            (click)="toggleWatchlist()"
-            [class.watched]="isWatched"
-            [title]="isWatched ? 'Remove from watchlist' : 'Add to watchlist'"
-          >
-            {{ isWatched ? '🔖' : '🏷️' }}
-            {{ isWatched ? 'Watching' : 'Watch' }}
-          </button>
-          <button class="share-btn" (click)="shareTechnique()" [title]="shareCopied ? 'Copied!' : 'Copy share link'">
-            {{ shareCopied ? 'Copied!' : 'Share' }}
-          </button>
-          <button class="share-btn" (click)="copyMarkdown()" [title]="markdownCopied ? 'Copied!' : 'Copy as Markdown summary'">
-            {{ markdownCopied ? 'Copied!' : 'MD' }}
-          </button>
-          <button class="graph-btn" (click)="openTechniqueGraph()" title="View relationship graph">🕸️ Graph</button>
+          <button class="watchlist-btn" (click)="toggleWatchlist()" [class.watched]="isWatched" [title]="isWatched ? 'Remove from watchlist' : 'Add to watchlist'">{{ isWatched ? '🔖' : '🏷️' }}</button>
+          <button class="share-btn" (click)="shareTechnique()" [title]="shareCopied ? 'Copied!' : 'Copy share link'">{{ shareCopied ? '✓' : '🔗' }}</button>
+          <button class="share-btn" (click)="copyMarkdown()" [title]="markdownCopied ? 'Copied!' : 'Copy as Markdown'">MD</button>
+          <button class="graph-btn" (click)="openTechniqueGraph()" title="View relationship graph">🕸️</button>
           <button class="collapse-all-btn" (click)="collapseAll()" title="Collapse all sections">⊟</button>
           <button class="expand-rel-btn" (click)="expandRelevant()" title="Expand sections with data">⊞</button>
-          <button class="close-btn" (click)="close()" title="Close">✕</button>
         </div>
       </header>
 
