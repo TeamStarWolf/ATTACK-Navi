@@ -12,6 +12,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { CveService } from '../../services/cve.service';
+import { DataService } from '../../services/data.service';
 
 type NavItem =
   | { id: string; icon: string; label: string; group?: string }
@@ -98,6 +99,9 @@ const NAV_ITEMS_BOTTOM: NavItem[] = [
               <span class="nav-label">{{ item.label }}</span>
               @if (item.id === 'cve' && newKevCount > 0) {
                 <span class="nav-badge" [attr.aria-label]="newKevCount + ' new KEV entries'">+{{ newKevCount }}</span>
+              }
+              @if (item.id === 'changelog' && newVersionAvailable) {
+                <span class="nav-badge version-badge" aria-label="New ATT&CK version available"></span>
               }
             </button>
           }
@@ -249,6 +253,16 @@ const NAV_ITEMS_BOTTOM: NavItem[] = [
       box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
       pointer-events: none;
       animation: badge-pop 0.25s ease-out;
+    }
+
+    .version-badge {
+      min-width: 10px !important;
+      width: 10px !important;
+      height: 10px !important;
+      padding: 0 !important;
+      border-radius: 50% !important;
+      background: #2196F3 !important;
+      box-shadow: 0 0 6px rgba(33, 150, 243, 0.6);
     }
 
     @keyframes badge-pop {
@@ -414,25 +428,43 @@ export class NavRailComponent implements OnInit, OnDestroy {
   readonly navItemsBottom = NAV_ITEMS_BOTTOM;
 
   newKevCount = 0;
+  newVersionAvailable = false;
 
   private cveService = inject(CveService);
+  private dataService = inject(DataService);
   private cdr = inject(ChangeDetectorRef);
   private kevSub?: Subscription;
+  private domainSub?: Subscription;
 
   ngOnInit(): void {
     this.kevSub = this.cveService.newKevCount$.subscribe(count => {
       this.newKevCount = count;
       this.cdr.markForCheck();
     });
+    this.domainSub = this.dataService.domain$.subscribe(domain => {
+      if (domain) {
+        const lastSeen = localStorage.getItem('last-seen-attack-version');
+        this.newVersionAvailable = lastSeen !== domain.attackVersion;
+      }
+      this.cdr.markForCheck();
+    });
   }
 
   ngOnDestroy(): void {
     this.kevSub?.unsubscribe();
+    this.domainSub?.unsubscribe();
   }
 
   onNavClick(id: string): void {
     if (id === 'cve') {
       this.cveService.dismissKevBadge();
+    }
+    if (id === 'changelog') {
+      const domain = this.dataService.getCurrentDomain();
+      if (domain) {
+        localStorage.setItem('last-seen-attack-version', domain.attackVersion);
+      }
+      this.newVersionAvailable = false;
     }
     this.panelToggle.emit(id);
   }
