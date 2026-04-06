@@ -307,6 +307,7 @@ export class ToolbarComponent implements OnInit, OnDestroy {
 
   setHeatmap(mode: import('../../services/filter.service').HeatmapMode): void {
     this.filterService.setHeatmapMode(mode);
+    this.showViewMenu = false;
   }
 
   cycleHeatmap(): void {
