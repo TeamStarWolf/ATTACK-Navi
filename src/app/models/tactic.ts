@@ -1,3 +1,5 @@
+// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+// https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 export interface Tactic {
   id: string;         // STIX id
   attackId: string;   // e.g. "TA0001"

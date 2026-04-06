@@ -1,3 +1,5 @@
+// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+// https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Tactic } from './tactic';
 import { Technique } from './technique';
 import { Mitigation, MitigationRelationship } from './mitigation';

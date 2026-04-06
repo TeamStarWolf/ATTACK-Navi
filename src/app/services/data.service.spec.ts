@@ -1,3 +1,5 @@
+// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+// https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';

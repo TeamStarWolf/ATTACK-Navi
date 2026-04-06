@@ -1,3 +1,5 @@
+// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+// https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 export type ControlFramework = 'NIST 800-53' | 'CIS Controls v8' | 'ISO 27001' | 'Custom';
 export type ControlStatus = 'implemented' | 'planned';
 
