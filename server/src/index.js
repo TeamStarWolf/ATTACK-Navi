@@ -1,3 +1,5 @@
+// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+// https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';

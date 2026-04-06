@@ -1,3 +1,5 @@
+// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+// https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
 import { LegendComponent } from './legend.component';
