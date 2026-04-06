@@ -1076,6 +1076,82 @@
           </section>
         }
 
+        <!-- BloodHound AD Attack Paths -->
+        @if (adAttackPaths.length > 0) {
+          <section class="sidebar-section bloodhound-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('bloodhound')" (click)="toggleSection('bloodhound')">
+              <span class="section-chevron">{{ isSectionCollapsed('bloodhound') ? '&#x25B8;' : '&#x25BE;' }}</span>
+              <span class="section-icon" style="color: #E34646;">&#x1F6E1;</span> AD Attack Paths
+              <span class="count-badge upgrade-section-count" style="background: rgba(227,70,70,0.18); color: #E34646;">{{ adAttackPaths.length }}</span>
+            </h4>
+            @if (!isSectionCollapsed('bloodhound')) {
+              @for (path of adAttackPaths; track path.attackPath) {
+                <div class="bloodhound-card">
+                  <div class="bloodhound-header">
+                    <span class="bloodhound-name">{{ path.attackPath }}</span>
+                  </div>
+                  <div class="bloodhound-desc">{{ path.description }}</div>
+                  <div class="bloodhound-row">
+                    <span class="bloodhound-label">Tools</span>
+                    <div class="bloodhound-chips">
+                      @for (tool of path.tools; track tool) {
+                        <span class="bloodhound-chip tool-chip">{{ tool }}</span>
+                      }
+                    </div>
+                  </div>
+                  <div class="bloodhound-row">
+                    <span class="bloodhound-label">Mitigations</span>
+                    <div class="bloodhound-chips">
+                      @for (mit of path.mitigations; track mit) {
+                        <span class="bloodhound-chip mit-chip">{{ mit }}</span>
+                      }
+                    </div>
+                  </div>
+                  <div class="bloodhound-row">
+                    <span class="bloodhound-label">Detection</span>
+                    <div class="bloodhound-chips">
+                      @for (hint of path.detectionHints; track hint) {
+                        <span class="bloodhound-chip detect-chip">{{ hint }}</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+            }
+          </section>
+        }
+
+        <!-- C2 Framework Capabilities -->
+        @if (c2Capabilities.length > 0) {
+          <section class="sidebar-section c2-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('c2')" (click)="toggleSection('c2')">
+              <span class="section-chevron">{{ isSectionCollapsed('c2') ? '&#x25B8;' : '&#x25BE;' }}</span>
+              <span class="section-icon">&#x1F4E1;</span> C2 Frameworks
+              <span class="count-badge upgrade-section-count">{{ c2Capabilities.length }}</span>
+            </h4>
+            @if (!isSectionCollapsed('c2')) {
+              @for (group of groupedC2; track group.framework) {
+                <div class="c2-framework-group">
+                  <div class="c2-framework-label" [style.border-left-color]="c2FrameworkColor(group.framework)" [style.color]="c2FrameworkColor(group.framework)">
+                    {{ group.framework }}
+                  </div>
+                  @for (cap of group.capabilities; track cap.capability) {
+                    <div class="c2-cap-card">
+                      <div class="c2-cap-name">{{ cap.capability }}</div>
+                      <div class="c2-cap-desc">{{ cap.description }}</div>
+                      <div class="c2-cap-techniques">
+                        @for (tid of cap.techniqueIds; track tid) {
+                          <span class="c2-tid">{{ tid }}</span>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            }
+          </section>
+        }
+
         <!-- Custom Controls section -->
         @if (customMitigations.length > 0) {
           <section class="detail-section upgrade-section-block">

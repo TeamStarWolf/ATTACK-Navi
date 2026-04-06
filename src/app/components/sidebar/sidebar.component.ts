@@ -53,6 +53,8 @@ import { SiemQueryService, SiemQuery } from '../../services/siem-query.service';
 import { PayloadsService, PayloadRef } from '../../services/payloads.service';
 import { EventLoggingService, LogConfig } from '../../services/event-logging.service';
 import { ElasticService } from '../../services/elastic.service';
+import { BloodHoundService, BloodHoundMapping } from '../../services/bloodhound.service';
+import { C2MappingService, C2Capability } from '../../services/c2-mapping.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -123,6 +125,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
   loggingConfigs: LogConfig[] = [];
   copiedLoggingScript = false;
 
+  // BloodHound AD Attack Paths
+  adAttackPaths: BloodHoundMapping[] = [];
+
+  // C2 Framework Capabilities
+  c2Capabilities: C2Capability[] = [];
+
   // Clipboard copy feedback
   copiedInvoke = '';
   copiedBatchScript = false;
@@ -152,6 +160,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       'exploitdb', 'nuclei', 'tags', 'notes', 'threats', 'software',
       'campaigns', 'd3fend', 'engage', 'car', 'atomic', 'misp', 'opencti', 'sigma',
       'custom', 'mitigations', 'relgraph', 'm365', 'siem', 'payloads', 'logging',
+      'bloodhound', 'c2',
     ];
     for (const s of sections) this.collapsedSections.add(s);
     this.cdr.markForCheck();
@@ -183,6 +192,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
     if (this.payloadRefs.length === 0) this.collapsedSections.add('payloads');
     if (this.loggingConfigs.length === 0) this.collapsedSections.add('logging');
     if (this.customMitigations.length === 0) this.collapsedSections.add('custom');
+    if (this.adAttackPaths.length === 0) this.collapsedSections.add('bloodhound');
+    if (this.c2Capabilities.length === 0) this.collapsedSections.add('c2');
     this.cdr.markForCheck();
   }
 
@@ -255,6 +266,26 @@ export class SidebarComponent implements OnInit, OnDestroy {
   // Nuclei template count for selected technique
   nucleiCount = 0;
 
+  /** C2 capabilities grouped by framework name for template rendering. */
+  get groupedC2(): { framework: string; capabilities: C2Capability[] }[] {
+    const map = new Map<string, C2Capability[]>();
+    for (const cap of this.c2Capabilities) {
+      const list = map.get(cap.framework) ?? [];
+      list.push(cap);
+      map.set(cap.framework, list);
+    }
+    return Array.from(map.entries()).map(([framework, capabilities]) => ({ framework, capabilities }));
+  }
+
+  c2FrameworkColor(name: string): string {
+    switch (name) {
+      case 'Sliver': return '#4CAF50';
+      case 'Cobalt Strike': return '#2196F3';
+      case 'Metasploit': return '#FF5722';
+      default: return '#888';
+    }
+  }
+
   /** Unified list with a consistent 'provider' field for template use. */
   get allCloudControls(): { id: string; description: string; provider: string; mappingType: string }[] {
     const cis = this.cisControls.map(c => ({ id: c.id, description: c.description, provider: 'cis', mappingType: c.mappingType }));
@@ -322,6 +353,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
     private payloadsService: PayloadsService,
     private eventLoggingService: EventLoggingService,
     private elasticService: ElasticService,
+    private bloodhoundService: BloodHoundService,
+    private c2MappingService: C2MappingService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -426,6 +459,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
         this.siemQueries = tech ? this.siemQueryService.getAllQueriesForTechnique(tech.attackId, tech.tacticShortnames) : [];
         this.payloadRefs = tech ? this.payloadsService.getPayloadsForTechnique(tech.attackId) : [];
         this.loggingConfigs = tech ? this.eventLoggingService.getLoggingConfig(tech.attackId) : [];
+        this.adAttackPaths = tech ? this.bloodhoundService.getPathsForTechnique(tech.attackId) : [];
+        this.c2Capabilities = tech ? this.c2MappingService.getCapabilitiesForTechnique(tech.attackId) : [];
         this.copiedLoggingScript = false;
         this.markdownCopied = false;
         this.copiedSiemQuery = '';

@@ -3070,3 +3070,138 @@
   &::-webkit-scrollbar-track { background: transparent; }
   &::-webkit-scrollbar-thumb { background: rgb(255 255 255 / 8%); border-radius: 2px; }
 }
+
+/* ── BloodHound AD Attack Paths ── */
+.bloodhound-section .section-title {
+  color: #E34646;
+}
+
+.bloodhound-card {
+  padding: 8px 10px;
+  margin: 5px 0;
+  background: rgba(227, 70, 70, 0.06);
+  border: 1px solid rgba(227, 70, 70, 0.18);
+  border-radius: 8px;
+  border-left: 3px solid #E34646;
+}
+
+.bloodhound-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.bloodhound-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #E34646;
+}
+
+.bloodhound-desc {
+  font-size: 0.75rem;
+  color: #93a8bb;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.bloodhound-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 5px;
+
+  &:last-child { margin-bottom: 0; }
+}
+
+.bloodhound-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #5e778e;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.bloodhound-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.bloodhound-chip {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.tool-chip {
+  background: rgba(227, 70, 70, 0.12);
+  color: #ff8f7a;
+  border: 1px solid rgba(227, 70, 70, 0.22);
+}
+
+.mit-chip {
+  background: rgba(99, 210, 151, 0.10);
+  color: #63d297;
+  border: 1px solid rgba(99, 210, 151, 0.22);
+}
+
+.detect-chip {
+  background: rgba(111, 211, 255, 0.10);
+  color: #6fd3ff;
+  border: 1px solid rgba(111, 211, 255, 0.22);
+}
+
+/* ── C2 Framework Capabilities ── */
+.c2-framework-group {
+  margin: 6px 0;
+}
+
+.c2-framework-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 3px 0 3px 8px;
+  border-left: 3px solid;
+  margin-bottom: 4px;
+}
+
+.c2-cap-card {
+  padding: 5px 8px 5px 14px;
+  margin: 3px 0;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.c2-cap-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #c9d8e8;
+}
+
+.c2-cap-desc {
+  font-size: 0.72rem;
+  color: #93a8bb;
+  margin: 2px 0;
+}
+
+.c2-cap-techniques {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 3px;
+}
+
+.c2-tid {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: rgba(111, 211, 255, 0.10);
+  color: #6fd3ff;
+  border: 1px solid rgba(111, 211, 255, 0.18);
+  font-family: 'IBM Plex Mono', monospace;
+}

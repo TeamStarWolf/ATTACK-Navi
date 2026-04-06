@@ -784,26 +784,32 @@ body.light-mode {
 }
 
 @media print {
-  app-toolbar, app-stats-bar, app-sidebar, app-gap-view,
-  app-threat-panel, app-priority-panel, app-whatif-panel,
-  app-report-panel, app-controls-panel, app-software-panel,
-  app-keyboard-help, app-filter-chips, app-legend {
+  body { background: #fff !important; color: #000 !important; }
+  app-toolbar, app-nav-rail, app-sidebar, .panel-overlay, .bulk-action-bar,
+  .toast-notification, .zoom-controls, app-data-health, app-legend {
     display: none !important;
   }
+
+  .app-shell { display: block !important; }
+  .workspace-area { padding: 0 !important; }
+  .matrix-region { border-radius: 0 !important; border: none !important; background: #fff !important; }
+
+  .matrix { width: 100% !important; font-size: 7px !important; }
+  .tactic-header { background: #f0f0f0 !important; color: #000 !important; font-size: 8px !important; border: 1px solid #ccc !important; }
+  .cell { background: #fff !important; color: #000 !important; border: 1px solid #ddd !important; font-size: 6px !important; min-width: 60px !important; max-width: 80px !important; }
 
   .content { margin: 0 !important; padding: 0 !important; overflow: visible !important; }
   .matrix-wrapper { overflow: visible !important; width: 100% !important; height: auto !important; }
 
-  body, html { background: #fff !important; color: #000 !important; }
-
-  table { width: 100% !important; font-size: 7px !important; }
-  .cell { min-width: 60px !important; max-width: 80px !important; font-size: 6px !important; }
-
-  .tactic-th {
-    background: #333 !important;
-    color: #fff !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+  body::before {
+    content: "ATT&CK Navi Coverage Report";
+    display: block;
+    text-align: center;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 10px 0;
+    border-bottom: 2px solid #000;
+    margin-bottom: 10px;
   }
 
   * {
@@ -811,7 +817,7 @@ body.light-mode {
     print-color-adjust: exact !important;
   }
 
-  @page { margin: 0.5cm; size: landscape; }
+  @page { size: landscape; margin: 0.5cm; }
 }
 
 .desc-link {
