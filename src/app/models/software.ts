@@ -1,3 +1,5 @@
+// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+// https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 export interface AttackSoftware {
   id: string;          // STIX id (tool-- or malware--)
   attackId: string;    // e.g. "S0001"
