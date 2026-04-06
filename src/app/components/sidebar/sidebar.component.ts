@@ -49,6 +49,7 @@ import { ExploitdbService } from '../../services/exploitdb.service';
 import { NucleiService } from '../../services/nuclei.service';
 import { CustomTechniqueService } from '../../services/custom-technique.service';
 import { M365DefenderService, M365Query } from '../../services/m365-defender.service';
+import { SiemQueryService, SiemQuery } from '../../services/siem-query.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -108,9 +109,14 @@ export class SidebarComponent implements OnInit, OnDestroy {
   // Microsoft 365 Defender Hunting Queries
   m365Queries: M365Query[] = [];
 
+  // SIEM Query Library
+  siemQueries: SiemQuery[] = [];
+  copiedSiemQuery = '';
+
   // Clipboard copy feedback
   copiedInvoke = '';
   copiedBatchScript = false;
+  shareCopied = false;
 
   // Collapsible sections
   collapsedSections = new Set<string>();
@@ -134,7 +140,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       'procedures', 'cve', 'nist', 'cloud', 'veris', 'cri', 'capec',
       'exploitdb', 'nuclei', 'tags', 'notes', 'threats', 'software',
       'campaigns', 'd3fend', 'engage', 'car', 'atomic', 'misp', 'opencti', 'sigma',
-      'custom', 'mitigations', 'relgraph', 'm365',
+      'custom', 'mitigations', 'relgraph', 'm365', 'siem',
     ];
     for (const s of sections) this.collapsedSections.add(s);
     this.cdr.markForCheck();
@@ -162,6 +168,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     if (!this.mispCluster) this.collapsedSections.add('misp');
     if (this.sigmaRules.length === 0 && !this.sigmaRulesFetching) this.collapsedSections.add('sigma');
     if (this.m365Queries.length === 0) this.collapsedSections.add('m365');
+    if (this.siemQueries.length === 0) this.collapsedSections.add('siem');
     if (this.customMitigations.length === 0) this.collapsedSections.add('custom');
     this.cdr.markForCheck();
   }
@@ -298,6 +305,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     private nucleiService: NucleiService,
     private customTechniqueService: CustomTechniqueService,
     private m365DefenderService: M365DefenderService,
+    private siemQueryService: SiemQueryService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -399,6 +407,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
         this.exploitCount = tech ? this.exploitdbService.getExploitCount(tech.attackId) : 0;
         this.nucleiCount = tech ? this.nucleiService.getTemplateCount(tech.attackId) : 0;
         this.m365Queries = tech ? this.m365DefenderService.getQueriesForTechnique(tech.attackId) : [];
+        this.siemQueries = tech ? this.siemQueryService.getAllQueriesForTechnique(tech.attackId, tech.tacticShortnames) : [];
+        this.copiedSiemQuery = '';
         this.copiedInvoke = '';
         this.copiedBatchScript = false;
         this.signals = tech ? this.getSignals(tech) : [];
@@ -773,6 +783,19 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.close();
   }
 
+  shareTechnique(): void {
+    if (!this.technique) return;
+    const base = window.location.origin + window.location.pathname;
+    const params = new URLSearchParams(window.location.hash.slice(1));
+    params.set('tech', this.technique.attackId);
+    const url = base + '#' + params.toString();
+    navigator.clipboard.writeText(url).then(() => {
+      this.shareCopied = true;
+      this.cdr.markForCheck();
+      setTimeout(() => { this.shareCopied = false; this.cdr.markForCheck(); }, 2000);
+    });
+  }
+
   openTechniqueGraph(): void {
     this.filterService.setActivePanel('technique-graph');
   }
@@ -1105,6 +1128,16 @@ export class SidebarComponent implements OnInit, OnDestroy {
       this.copiedBatchScript = true;
       this.cdr.markForCheck();
       setTimeout(() => { this.copiedBatchScript = false; this.cdr.markForCheck(); }, 2000);
+    });
+  }
+
+  // ─── SIEM Query Library clipboard helpers ──────────────────────────────────
+
+  copySiemQuery(query: SiemQuery): void {
+    navigator.clipboard.writeText(query.query).then(() => {
+      this.copiedSiemQuery = query.platform + ':' + query.title;
+      this.cdr.markForCheck();
+      setTimeout(() => { this.copiedSiemQuery = ''; this.cdr.markForCheck(); }, 2000);
     });
   }
 }

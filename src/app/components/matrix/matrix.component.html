@@ -24,6 +24,7 @@
       @if (zoom !== 1.0) {
         <button class="zoom-reset" (click)="resetZoom()" title="Reset zoom">↺</button>
       }
+      <button class="zoom-btn zoom-fit-btn" (click)="zoomToFit()" title="Zoom to fit all visible columns">Fit</button>
       <button class="zoom-btn name-toggle-btn"
               (click)="showTechniqueNames = !showTechniqueNames"
               [title]="showTechniqueNames ? 'Hide names (IDs only)' : 'Show names'"
@@ -81,7 +82,7 @@
                 <button class="hide-tactic-btn" (click)="hideTactic(col.tactic.id, $event); $event.stopPropagation()" title="Hide this tactic column">✕</button>
               </span>
             </div>
-            <span class="count">{{ col.techniques.length }}</span>
+            <span class="count tactic-count-badge">{{ col.techniques.length }}</span>
             <div class="tactic-coverage-bar" [title]="tacticCoverage(col) + '% mitigated'">
               <div
                 class="tactic-coverage-fill"
