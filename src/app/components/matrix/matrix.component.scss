@@ -181,11 +181,22 @@
     }
 
     .count {
-      display: block;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       font-size: calc(9px * var(--mz, 1));
-      color: var(--text-faint);
-      margin-top: 3px;
+      margin-top: 4px;
       font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .tactic-count-badge {
+      min-width: 22px;
+      padding: 1px 6px;
+      border-radius: 9px;
+      background: rgb(255 255 255 / 10%);
+      color: rgb(255 255 255 / 70%);
+      font-weight: 700;
+      letter-spacing: 0.3px;
     }
 
     .tactic-coverage-bar {
@@ -501,6 +512,14 @@
   &:hover {
     color: var(--text-main);
   }
+}
+
+.zoom-fit-btn {
+  font-size: 9px;
+  font-weight: 600;
+  min-width: 28px;
+  width: auto;
+  padding: 0 6px;
 }
 
 .name-toggle-btn {

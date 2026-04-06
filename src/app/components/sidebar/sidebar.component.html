@@ -25,6 +25,9 @@
             {{ isWatched ? '🔖' : '🏷️' }}
             {{ isWatched ? 'Watching' : 'Watch' }}
           </button>
+          <button class="share-btn" (click)="shareTechnique()" [title]="shareCopied ? 'Copied!' : 'Copy share link'">
+            {{ shareCopied ? 'Copied!' : 'Share' }}
+          </button>
           <button class="graph-btn" (click)="openTechniqueGraph()" title="View relationship graph">🕸️ Graph</button>
           <button class="collapse-all-btn" (click)="collapseAll()" title="Collapse all sections">⊟</button>
           <button class="expand-rel-btn" (click)="expandRelevant()" title="Expand sections with data">⊞</button>
@@ -897,6 +900,37 @@
                 </div>
               }
               <a href="https://github.com/microsoft/Microsoft-365-Defender-Hunting-Queries" target="_blank" rel="noopener" class="framework-link m365-framework-link">Microsoft 365 Defender Hunting Queries ↗</a>
+            }
+          </section>
+        }
+
+        <!-- SIEM Query Library -->
+        @if (siemQueries.length > 0) {
+          <section class="sidebar-section siem-queries-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('siem')" (click)="toggleSection('siem')">
+              <span class="section-chevron">{{ isSectionCollapsed('siem') ? '&#x25B8;' : '&#x25BE;' }}</span>
+              &#x26A1; SIEM Queries
+              <span class="count-badge upgrade-section-count siem-badge">{{ siemQueries.length }}</span>
+            </h4>
+            @if (!isSectionCollapsed('siem')) {
+              @for (query of siemQueries; track query.platform + query.title) {
+                <div class="siem-query-card">
+                  <div class="siem-query-card-header">
+                    <span class="siem-query-platform">{{ query.platformLabel }}</span>
+                    <span class="siem-query-confidence" [attr.data-confidence]="query.confidence">{{ query.confidence }}</span>
+                    <button
+                      class="siem-query-copy-btn"
+                      [class.copied]="copiedSiemQuery === query.platform + ':' + query.title"
+                      (click)="copySiemQuery(query)"
+                      [title]="copiedSiemQuery === query.platform + ':' + query.title ? 'Copied!' : 'Copy query'"
+                    >
+                      {{ copiedSiemQuery === query.platform + ':' + query.title ? '&#x2713;' : '&#x1F4CB;' }}
+                    </button>
+                  </div>
+                  <div class="siem-query-title">{{ query.title }}</div>
+                  <pre class="siem-query-code"><code>{{ query.query }}</code></pre>
+                </div>
+              }
             }
           </section>
         }

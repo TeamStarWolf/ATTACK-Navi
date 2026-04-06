@@ -7,12 +7,22 @@
       <span class="siem-title-icon">⚡</span>
       <div class="siem-header-text">
         <h2 class="siem-title">SIEM Detection Export</h2>
-        <p class="siem-subtitle">Export CAR analytics as Splunk SPL, Microsoft Sentinel KQL, or Elastic EQL</p>
+        <p class="siem-subtitle">Export CAR analytics or browse the SIEM Query Library</p>
       </div>
       <button class="siem-close-btn" (click)="close()" title="Close">✕</button>
     </div>
 
-    <div class="siem-body">
+    <!-- Tab bar -->
+    <div class="siem-tab-bar">
+      <button class="siem-tab" [class.active]="activeTab === 'export'" (click)="activeTab = 'export'">
+        CAR Export
+      </button>
+      <button class="siem-tab" [class.active]="activeTab === 'library'" (click)="activeTab = 'library'">
+        Query Library
+      </button>
+    </div>
+
+    <div class="siem-body" [style.display]="activeTab === 'export' ? '' : 'none'">
 
       <!-- Platform selector -->
       <div class="siem-section">
@@ -207,25 +217,131 @@
 
     </div>
 
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- Query Library tab body                                                -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <div class="siem-body library-body" [style.display]="activeTab === 'library' ? '' : 'none'">
+
+      <!-- Technique search -->
+      <div class="siem-section">
+        <div class="siem-section-label">Search Technique</div>
+        <div class="library-search-wrapper">
+          <input
+            type="text"
+            class="siem-filter-input"
+            placeholder="Search by ATT&CK ID or technique name..."
+            [(ngModel)]="librarySearchText"
+            (ngModelChange)="onLibrarySearchChange()"
+            autocomplete="off"
+          />
+          @if (libraryFilteredTechniques.length > 0) {
+            <div class="library-autocomplete">
+              @for (tech of libraryFilteredTechniques; track tech.attackId) {
+                <button class="autocomplete-option" (click)="selectLibraryTechnique(tech)">
+                  <span class="autocomplete-id">{{ tech.attackId }}</span>
+                  <span class="autocomplete-name">{{ tech.name }}</span>
+                </button>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      @if (librarySelectedTechniqueId) {
+        <!-- Platform filter pills -->
+        <div class="siem-section">
+          <div class="siem-section-label">Platform Filter</div>
+          <div class="library-platform-pills">
+            <button
+              class="library-pill"
+              [class.active]="libraryPlatformFilter === 'all'"
+              (click)="onLibraryPlatformFilter('all')"
+            >All</button>
+            @for (p of libraryPlatforms; track p.key) {
+              <button
+                class="library-pill"
+                [class.active]="libraryPlatformFilter === p.key"
+                (click)="onLibraryPlatformFilter(p.key)"
+              >
+                <span class="pill-icon">{{ p.icon }}</span> {{ p.label }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Query count -->
+        <div class="analytics-summary">
+          <div class="summary-stat">
+            <span class="summary-badge blue">{{ filteredLibraryQueries.length }}</span>
+            <span class="summary-label">{{ filteredLibraryQueries.length === 1 ? 'query' : 'queries' }}</span>
+          </div>
+          <span class="summary-sep">for</span>
+          <div class="summary-stat">
+            <span class="summary-badge green">{{ librarySelectedTechniqueId }}</span>
+          </div>
+        </div>
+
+        <!-- Query cards grid -->
+        <div class="library-card-grid">
+          @for (query of filteredLibraryQueries; track query.platform + query.title) {
+            <div class="library-card">
+              <div class="library-card-header">
+                <span class="library-card-platform">{{ query.platformLabel }}</span>
+                <span class="library-card-confidence" [attr.data-confidence]="query.confidence">{{ query.confidence }}</span>
+              </div>
+              <div class="library-card-title">{{ query.title }}</div>
+              <div class="library-card-desc">{{ query.description }}</div>
+              <div class="library-card-datasource">Data: {{ query.dataSource }}</div>
+              <pre class="library-card-query"><code>{{ query.query }}</code></pre>
+              <button
+                class="library-card-copy"
+                [class.success]="libraryCopied === query.platform + ':' + query.title"
+                (click)="copyLibraryQuery(query)"
+              >
+                {{ libraryCopied === query.platform + ':' + query.title ? '✓ Copied!' : '📋 Copy Query' }}
+              </button>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="library-empty-state">
+          <span class="library-empty-icon">🔍</span>
+          <p>Search for an ATT&CK technique above to browse pre-built SIEM detection queries across 5 platforms.</p>
+        </div>
+      }
+    </div>
+
     <!-- Footer actions -->
     <div class="siem-footer">
-      <button
-        class="siem-action-btn copy-btn"
-        [class.success]="copied"
-        [disabled]="analyticsCount === 0"
-        (click)="copyToClipboard()"
-        [title]="copied ? 'Copied!' : 'Copy to clipboard'"
-      >
-        {{ copied ? '✓ Copied!' : '📋 Copy' }}
-      </button>
-      <button
-        class="siem-action-btn download-btn"
-        [disabled]="analyticsCount === 0"
-        (click)="downloadFile()"
-        [title]="'Download as .' + fileExtension"
-      >
-        ⬇ Download .{{ fileExtension }}
-      </button>
+      @if (activeTab === 'export') {
+        <button
+          class="siem-action-btn copy-btn"
+          [class.success]="copied"
+          [disabled]="analyticsCount === 0"
+          (click)="copyToClipboard()"
+          [title]="copied ? 'Copied!' : 'Copy to clipboard'"
+        >
+          {{ copied ? '✓ Copied!' : '📋 Copy' }}
+        </button>
+        <button
+          class="siem-action-btn download-btn"
+          [disabled]="analyticsCount === 0"
+          (click)="downloadFile()"
+          [title]="'Download as .' + fileExtension"
+        >
+          ⬇ Download .{{ fileExtension }}
+        </button>
+      }
+      @if (activeTab === 'library') {
+        <button
+          class="siem-action-btn copy-btn"
+          [class.success]="libraryAllCopied"
+          [disabled]="filteredLibraryQueries.length === 0"
+          (click)="copyAllLibraryQueries()"
+        >
+          {{ libraryAllCopied ? '✓ All Copied!' : '📋 Copy All' }}
+        </button>
+      }
       <button class="siem-cancel-btn" (click)="close()">Close</button>
     </div>
 
