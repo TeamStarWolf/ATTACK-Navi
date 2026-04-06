@@ -22,6 +22,7 @@ const DEFAULT_WIDGETS: DashboardWidget[] = [
   { id: 'recent-cves',        label: 'Recent KEV CVEs',    icon: '\u{1F534}',  visible: true,  order: 7 },
   { id: 'impl-status',        label: 'Implementation Status', icon: '\u2705', visible: true,  order: 8 },
   { id: 'quick-actions',      label: 'Quick Actions',      icon: '\u26A1',     visible: false, order: 9 },
+  { id: 'technique-of-day',   label: 'Technique of the Day', icon: '\u{1F4A1}', visible: true,  order: 10 },
 ];
 
 @Injectable({ providedIn: 'root' })

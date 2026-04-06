@@ -72,6 +72,44 @@ export class ImplementationService {
     this.saveToStorage(map);
   }
 
+  /**
+   * Parse CSV text with columns `technique_id,status` and bulk-import statuses.
+   * Status values must be one of: implemented, in-progress, planned, not-started.
+   * The technique_id column matches against mitigation STIX IDs or ATT&CK IDs.
+   */
+  importStatusCsv(csvText: string): { imported: number; errors: number } {
+    const VALID_STATUSES = new Set<string>(['implemented', 'in-progress', 'planned', 'not-started']);
+    const lines = csvText.trim().split(/\r?\n/);
+    let imported = 0;
+    let errors = 0;
+    const map = new Map(this.statusMapSubject.value);
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      // Skip header row
+      if (i === 0 && /^technique.?id/i.test(line)) continue;
+
+      const parts = line.split(',').map(p => p.trim().replace(/^["']|["']$/g, ''));
+      if (parts.length < 2) { errors++; continue; }
+
+      const id = parts[0];
+      const status = parts[1].toLowerCase();
+
+      if (!id || !VALID_STATUSES.has(status)) {
+        errors++;
+        continue;
+      }
+
+      map.set(id, status as ImplStatus);
+      imported++;
+    }
+
+    this.statusMapSubject.next(map);
+    this.saveToStorage(map);
+    return { imported, errors };
+  }
+
   resetAll(): void {
     this.statusMapSubject.next(new Map());
     localStorage.removeItem(STORAGE_KEY);

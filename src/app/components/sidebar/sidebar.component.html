@@ -28,6 +28,9 @@
           <button class="share-btn" (click)="shareTechnique()" [title]="shareCopied ? 'Copied!' : 'Copy share link'">
             {{ shareCopied ? 'Copied!' : 'Share' }}
           </button>
+          <button class="share-btn" (click)="copyMarkdown()" [title]="markdownCopied ? 'Copied!' : 'Copy as Markdown summary'">
+            {{ markdownCopied ? 'Copied!' : 'MD' }}
+          </button>
           <button class="graph-btn" (click)="openTechniqueGraph()" title="View relationship graph">🕸️ Graph</button>
           <button class="collapse-all-btn" (click)="collapseAll()" title="Collapse all sections">⊟</button>
           <button class="expand-rel-btn" (click)="expandRelevant()" title="Expand sections with data">⊞</button>
@@ -1013,6 +1016,62 @@
                 </div>
               </div>
             }
+            }
+          </section>
+        }
+
+        <!-- PayloadsAllTheThings -->
+        @if (payloadRefs.length > 0) {
+          <section class="sidebar-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('payloads')" (click)="toggleSection('payloads')">
+              <span class="section-chevron">{{ isSectionCollapsed('payloads') ? '&#x25B8;' : '&#x25BE;' }}</span>
+              <span class="section-icon">&#x1F4E6;</span> PayloadsAllTheThings
+              <span class="count-badge upgrade-section-count">{{ payloadRefs.length }}</span>
+            </h4>
+            @if (!isSectionCollapsed('payloads')) {
+              @for (ref of payloadRefs; track ref.url) {
+                <div class="payload-ref-card" style="padding: 6px 8px; margin: 4px 0; background: rgba(255,255,255,0.04); border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);">
+                  <a [href]="ref.url" target="_blank" rel="noopener" style="color: #58a6ff; font-size: 0.82rem; text-decoration: none; display: flex; align-items: center; gap: 6px;">
+                    <span style="opacity: 0.6; font-size: 0.72rem;">{{ ref.category }}</span>
+                    <span>{{ ref.title }}</span>
+                    <span style="opacity: 0.5; margin-left: auto;">&#x2197;</span>
+                  </a>
+                </div>
+              }
+              <a href="https://github.com/swisskyrepo/PayloadsAllTheThings" target="_blank" rel="noopener" class="framework-link" style="display: block; margin-top: 6px; font-size: 0.75rem; color: #888;">PayloadsAllTheThings on GitHub &#x2197;</a>
+            }
+          </section>
+        }
+
+        <!-- Windows Event Logging Config -->
+        @if (loggingConfigs.length > 0) {
+          <section class="sidebar-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('logging')" (click)="toggleSection('logging')">
+              <span class="section-chevron">{{ isSectionCollapsed('logging') ? '&#x25B8;' : '&#x25BE;' }}</span>
+              <span class="section-icon">&#x1F4DD;</span> Logging Config
+              <span class="count-badge upgrade-section-count">{{ loggingConfigs.length }}</span>
+            </h4>
+            @if (!isSectionCollapsed('logging')) {
+              @for (cfg of loggingConfigs; track cfg.source) {
+                <div style="padding: 6px 8px; margin: 4px 0; background: rgba(255,255,255,0.04); border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                    <span style="color: #e0e0e0; font-size: 0.82rem; font-weight: 600;">{{ cfg.source }}</span>
+                    <span style="color: #888; font-size: 0.72rem;">Event {{ cfg.eventId }}</span>
+                  </div>
+                  @if (cfg.description) {
+                    <div style="color: #999; font-size: 0.75rem; margin-bottom: 4px;">{{ cfg.description }}</div>
+                  }
+                  <pre style="font-size: 0.72rem; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; color: #a5d6ff; margin: 0;"><code>{{ cfg.command }}</code></pre>
+                </div>
+              }
+              <button
+                class="share-btn"
+                style="margin-top: 6px; width: 100%;"
+                (click)="copyLoggingScript()"
+                [title]="copiedLoggingScript ? 'Copied!' : 'Copy combined PowerShell script'"
+              >
+                {{ copiedLoggingScript ? '&#x2713; Copied!' : '&#x1F4CB; Copy Script' }}
+              </button>
             }
           </section>
         }

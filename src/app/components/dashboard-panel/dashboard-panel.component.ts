@@ -9,6 +9,7 @@ import { CommonModule } from '@angular/common';
 import { Subscription, combineLatest, filter, take } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
+import { Technique } from '../../models/technique';
 import { ImplementationService } from '../../services/implementation.service';
 import { TimelineService } from '../../services/timeline.service';
 import { AttackCveService } from '../../services/attack-cve.service';
@@ -121,6 +122,12 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
 
   // Data health entries
   healthEntries: HealthEntry[] = [];
+
+  // Technique of the Day
+  todTechnique: Technique | null = null;
+  todTactic = '';
+  todDescription = '';
+  todMitigationCount = 0;
 
   private subs = new Subscription();
   private statsBuilt = false;
@@ -351,6 +358,10 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
 
       this.statsBuilt = true;
       this.loading = false;
+
+      // Technique of the Day: seeded random pick based on date
+      this.computeTechniqueOfDay(parentTechs, domain);
+
       this.cdr.markForCheck();
 
       // Async enrichment for MISP / OpenCTI after initial render
@@ -607,5 +618,39 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
 
   trackWidget(_index: number, widget: DashboardWidget): string {
     return widget.id;
+  }
+
+  // ─── Technique of the Day ─────────────────────────────────────────────
+  private computeTechniqueOfDay(parentTechs: Technique[], domain: any): void {
+    if (parentTechs.length === 0) return;
+
+    // Seed based on current date so it's consistent within the same day
+    const today = new Date();
+    const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+    // Simple hash-based pseudo-random from seed
+    let hash = seed;
+    hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
+    hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
+    hash = (hash >> 16) ^ hash;
+    const index = Math.abs(hash) % parentTechs.length;
+
+    const tech = parentTechs[index];
+    this.todTechnique = tech;
+    this.todTactic = tech.tacticShortnames.join(', ') || 'N/A';
+
+    // Strip HTML tags from description and truncate to 100 chars
+    const rawDesc = (tech.description || '').replace(/<[^>]*>/g, '').replace(/\(Citation:[^)]*\)/g, '').trim();
+    this.todDescription = rawDesc.length > 100 ? rawDesc.slice(0, 100) + '...' : rawDesc;
+
+    const mits = domain.mitigationsByTechnique.get(tech.id);
+    this.todMitigationCount = mits?.length ?? 0;
+  }
+
+  viewTechniqueOfDay(): void {
+    if (!this.todTechnique) return;
+    this.close();
+    setTimeout(() => {
+      this.filterService.selectTechnique(this.todTechnique);
+    }, 100);
   }
 }
