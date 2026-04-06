@@ -14,6 +14,9 @@ import { CisControlsService, CisControl } from '../../services/cis-controls.serv
 import { CloudControlsService, CloudControl } from '../../services/cloud-controls.service';
 import { NistMappingService, NistControl } from '../../services/nist-mapping.service';
 import { CriProfileService, CriControl } from '../../services/cri-profile.service';
+import { ComplianceMapperService, ComplianceFramework, ComplianceControl } from '../../services/compliance-mapper.service';
+import { ImplementationService, ImplStatus, IMPL_STATUS_LABELS, IMPL_STATUS_COLORS } from '../../services/implementation.service';
+import { Domain } from '../../models/domain';
 
 export interface ComplianceRow {
   id: string;
@@ -54,6 +57,16 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
   tooltipX = 0;
   tooltipY = 0;
 
+  // Framework mapper state
+  showFrameworkMapper = false;
+  selectedFramework: ComplianceFramework = 'SOC 2';
+  frameworkControls: { control: ComplianceControl; techniques: string[]; status: ImplStatus | null }[] = [];
+  frameworkSearchText = '';
+  private currentDomain: Domain | null = null;
+  statusLabels = IMPL_STATUS_LABELS;
+  statusColors = IMPL_STATUS_COLORS;
+  copySuccess = false;
+
   private subs = new Subscription();
 
   constructor(
@@ -63,6 +76,8 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
     private cloudService: CloudControlsService,
     private nistService: NistMappingService,
     private criService: CriProfileService,
+    private complianceMapper: ComplianceMapperService,
+    private implService: ImplementationService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -319,6 +334,79 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
   hideTooltip(): void {
     this.tooltipControl = null;
     this.cdr.markForCheck();
+  }
+
+  // --- Framework Mapper Methods ---
+  get availableFrameworks(): ComplianceFramework[] {
+    return this.complianceMapper.getFrameworks();
+  }
+
+  toggleFrameworkMapper(): void {
+    this.showFrameworkMapper = !this.showFrameworkMapper;
+    if (this.showFrameworkMapper) {
+      this.buildFrameworkControls();
+    }
+  }
+
+  setFramework(fw: ComplianceFramework): void {
+    this.selectedFramework = fw;
+    this.frameworkSearchText = '';
+    this.buildFrameworkControls();
+  }
+
+  buildFrameworkControls(): void {
+    this.dataService.domain$.pipe(filter(Boolean), take(1)).subscribe(domain => {
+      this.currentDomain = domain;
+      const controls = this.complianceMapper.getAllControls(this.selectedFramework);
+      this.frameworkControls = controls.map(c => ({
+        control: c,
+        techniques: this.complianceMapper.getTechniquesForControl(c.controlId, this.selectedFramework),
+        status: this.complianceMapper.getControlStatus(c.controlId, this.selectedFramework, domain),
+      }));
+      this.cdr.markForCheck();
+    });
+  }
+
+  get filteredFrameworkControls() {
+    const q = this.frameworkSearchText.trim().toLowerCase();
+    if (!q) return this.frameworkControls;
+    return this.frameworkControls.filter(c =>
+      c.control.controlId.toLowerCase().includes(q) ||
+      c.control.description.toLowerCase().includes(q) ||
+      c.techniques.some(t => t.toLowerCase().includes(q)),
+    );
+  }
+
+  getStatusColor(status: ImplStatus | null): string {
+    if (!status) return '#3a5a74';
+    return this.statusColors[status] ?? '#3a5a74';
+  }
+
+  getStatusLabel(status: ImplStatus | null): string {
+    if (!status) return 'Unknown';
+    return this.statusLabels[status] ?? status;
+  }
+
+  exportEvidenceReport(): void {
+    if (!this.currentDomain) {
+      this.dataService.domain$.pipe(filter(Boolean), take(1)).subscribe(domain => {
+        this.currentDomain = domain;
+        this.doExport();
+      });
+    } else {
+      this.doExport();
+    }
+  }
+
+  private doExport(): void {
+    const csv = this.complianceMapper.exportComplianceReport(this.selectedFramework, this.currentDomain!);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${this.selectedFramework.replace(/\s+/g, '_')}_compliance_report.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   private sortRows(rows: ComplianceRow[]): ComplianceRow[] {

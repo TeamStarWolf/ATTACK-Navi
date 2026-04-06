@@ -149,6 +149,71 @@
           </div>
         </div>
 
+        <!-- Framework Mapper Toggle -->
+        <div class="framework-mapper-bar">
+          <button class="framework-mapper-toggle" (click)="toggleFrameworkMapper()" [class.active]="showFrameworkMapper">
+            Framework Mapper {{ showFrameworkMapper ? '▴' : '▾' }}
+          </button>
+          @if (showFrameworkMapper) {
+            <div class="framework-tabs">
+              @for (fw of availableFrameworks; track fw) {
+                <button class="fw-tab" [class.active]="selectedFramework === fw" (click)="setFramework(fw)">{{ fw }}</button>
+              }
+            </div>
+          }
+        </div>
+
+        @if (showFrameworkMapper) {
+          <div class="framework-mapper-panel">
+            <div class="fw-toolbar">
+              <input
+                class="fw-search-input"
+                type="text"
+                placeholder="Search controls..."
+                [(ngModel)]="frameworkSearchText"
+              />
+              <button class="fw-export-btn" (click)="exportEvidenceReport()" title="Export evidence report as CSV">
+                Export Evidence Report
+              </button>
+            </div>
+            <div class="fw-table-wrap">
+              <table class="fw-table">
+                <thead>
+                  <tr>
+                    <th>Control ID</th>
+                    <th>Description</th>
+                    <th>ATT&amp;CK Techniques</th>
+                    <th class="fw-status-col">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of filteredFrameworkControls; track row.control.controlId) {
+                    <tr class="fw-row">
+                      <td class="fw-ctrl-id">{{ row.control.controlId }}</td>
+                      <td class="fw-ctrl-desc">{{ row.control.description }}</td>
+                      <td class="fw-techs">
+                        <div class="fw-tech-pills">
+                          @for (tid of row.techniques; track tid) {
+                            <span class="fw-tech-pill">{{ tid }}</span>
+                          }
+                        </div>
+                      </td>
+                      <td class="fw-status-col">
+                        <span class="fw-status-badge" [style.color]="getStatusColor(row.status)" [style.border-color]="getStatusColor(row.status) + '55'" [style.background]="getStatusColor(row.status) + '18'">
+                          {{ getStatusLabel(row.status) }}
+                        </span>
+                      </td>
+                    </tr>
+                  }
+                  @if (filteredFrameworkControls.length === 0) {
+                    <tr><td colspan="4" class="empty-cell">No controls match your search.</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+
         <!-- Footer attribution -->
         <div class="panel-footer">
           <a href="https://center-for-threat-informed-defense.github.io/mappings-explorer/" target="_blank" rel="noopener" class="ctid-link">
