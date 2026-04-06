@@ -268,6 +268,16 @@ const MODE_CONFIGS: Record<HeatmapMode, LegendConfig> = {
       { color: '#b71c1c', label: '7+' },
     ],
   },
+  wazuh: {
+    label: 'Wazuh XDR',
+    stops: [
+      { color: '#0a1520', label: '0' },
+      { color: '#0d3a5c', label: '1' },
+      { color: '#1a6fa0', label: '2–3' },
+      { color: '#2196c8', label: '4–5' },
+      { color: '#3aabe0', label: '6+' },
+    ],
+  },
 };
 
 @Component({

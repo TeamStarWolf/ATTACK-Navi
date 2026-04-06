@@ -47,6 +47,7 @@ import { TechniqueCellComponent } from '../technique-cell/technique-cell.compone
 import { TechniqueTooltipComponent } from '../technique-tooltip/technique-tooltip.component';
 import { CustomTechniqueService, CustomTechnique } from '../../services/custom-technique.service';
 import { AssetInventoryService } from '../../services/asset-inventory.service';
+import { WazuhService } from '../../services/wazuh.service';
 
 @Component({
   selector: 'app-matrix',
@@ -172,6 +173,9 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
   // My Exposure scores: attackId -> asset exposure count from AssetInventoryService
   myExposureScoreMap = new Map<string, number>();
   maxMyExposure = 1;
+  // Wazuh XDR rule scores: attackId -> rule count
+  wazuhScoreMap = new Map<string, number>();
+  maxWazuhScore = 1;
   // Track current heatmap mode for loaded$ re-trigger
   private currentHeatmapMode: HeatmapMode = 'coverage';
   // Annotation map: techniqueId (attackId) -> annotation
@@ -258,6 +262,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     private m365DefenderService: M365DefenderService,
     private customTechniqueService: CustomTechniqueService,
     private assetInventoryService: AssetInventoryService,
+    private wazuhService: WazuhService,
     private cdr: ChangeDetectorRef,
     private el: ElementRef,
   ) {}
@@ -735,6 +740,13 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
         } else if (mode === 'my-exposure') {
           // Scores come from AssetInventoryService subscription — just trigger redraw
           this.cdr.markForCheck();
+        } else if (mode === 'wazuh' && this.domain) {
+          this.wazuhScoreMap = new Map();
+          for (const tech of this.domain.techniques) {
+            const count = this.wazuhService.getRulesForTechnique(tech.attackId).length;
+            if (count > 0) this.wazuhScoreMap.set(tech.attackId, count);
+          }
+          this.maxWazuhScore = this.wazuhScoreMap.size > 0 ? Math.max(...this.wazuhScoreMap.values()) : 1;
         } else {
           this.softwareScores = new Map();
           this.maxSoftware = 1;
@@ -1354,6 +1366,10 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
 
   getMyExposureScore(t: Technique): number {
     return this.myExposureScoreMap.get(t.attackId) ?? 0;
+  }
+
+  getWazuhScore(t: Technique): number {
+    return this.wazuhScoreMap.get(t.attackId) ?? 0;
   }
 
   getFrequencyScore(t: Technique): number {

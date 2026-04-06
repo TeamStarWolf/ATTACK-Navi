@@ -302,6 +302,7 @@ export class ToolbarComponent implements OnInit, OnDestroy {
     { value: 'intelligence', label: '🧠 Intelligence' },
     { value: 'm365',         label: '🔷 M365 Defender' },
     { value: 'my-exposure',  label: '🎯 My Exposure'   },
+    { value: 'wazuh',        label: '🔵 Wazuh XDR'     },
   ];
 
   setHeatmap(mode: import('../../services/filter.service').HeatmapMode): void {

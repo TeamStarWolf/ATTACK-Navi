@@ -60,6 +60,8 @@ import { C2MappingService, C2Capability } from '../../services/c2-mapping.servic
 import { IocFeedService, IoC } from '../../services/ioc-feed.service';
 import { AzureIdentityService, AzureAttackPattern } from '../../services/azure-identity.service';
 import { OffensiveToolsService, OffensiveTool } from '../../services/offensive-tools.service';
+import { WazuhService, WazuhRule } from '../../services/wazuh.service';
+import { ThreatHuntingService, HuntingQuery } from '../../services/threat-hunting.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -146,6 +148,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
   // Offensive Tool Mappings
   offensiveTools: OffensiveTool[] = [];
 
+  // Wazuh XDR Rules
+  wazuhRules: WazuhRule[] = [];
+
+  // Threat Hunting Queries
+  huntingQueries: HuntingQuery[] = [];
+
   // Clipboard copy feedback
   copiedInvoke = '';
   copiedBatchScript = false;
@@ -176,6 +184,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       'campaigns', 'd3fend', 'engage', 'car', 'atomic', 'misp', 'opencti', 'sigma',
       'custom', 'mitigations', 'relgraph', 'm365', 'siem', 'payloads', 'logging',
       'bloodhound', 'c2', 'ioc-feed', 'azure-identity', 'offensive-tools',
+      'wazuh-xdr', 'threat-hunting',
     ];
     for (const s of sections) this.collapsedSections.add(s);
     this.cdr.markForCheck();
@@ -212,6 +221,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
     if (this.iocs.length === 0) this.collapsedSections.add('ioc-feed');
     if (this.azureAttacks.length === 0) this.collapsedSections.add('azure-identity');
     if (this.offensiveTools.length === 0) this.collapsedSections.add('offensive-tools');
+    if (this.wazuhRules.length === 0) this.collapsedSections.add('wazuh-xdr');
+    if (this.huntingQueries.length === 0) this.collapsedSections.add('threat-hunting');
     this.cdr.markForCheck();
   }
 
@@ -376,6 +387,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
     private iocFeedService: IocFeedService,
     private azureIdentityService: AzureIdentityService,
     private offensiveToolsService: OffensiveToolsService,
+    private wazuhService: WazuhService,
+    private threatHuntingService: ThreatHuntingService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -485,6 +498,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
         this.iocs = tech ? this.iocFeedService.getIocsForTechnique(tech.attackId) : [];
         this.azureAttacks = tech ? this.azureIdentityService.getAttacksForTechnique(tech.attackId) : [];
         this.offensiveTools = tech ? this.offensiveToolsService.getToolsForTechnique(tech.attackId) : [];
+        this.wazuhRules = tech ? this.wazuhService.getRulesForTechnique(tech.attackId) : [];
+        this.huntingQueries = tech ? this.threatHuntingService.getQueriesForTechnique(tech.attackId) : [];
         this.copiedKql = '';
         this.copiedLoggingScript = false;
         this.markdownCopied = false;
