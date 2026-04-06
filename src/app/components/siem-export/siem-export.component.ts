@@ -13,6 +13,7 @@ import { DataService } from '../../services/data.service';
 import { CARService, CarAnalytic } from '../../services/car.service';
 import { SuricataService, SuricataRule } from '../../services/suricata.service';
 import { ZeekService, ZeekScript } from '../../services/zeek.service';
+import { SiemQueryService, SiemQuery } from '../../services/siem-query.service';
 import { Technique } from '../../models/technique';
 
 export type SiemPlatform = 'splunk' | 'sentinel' | 'elastic' | 'suricata' | 'zeek';
@@ -22,6 +23,8 @@ interface AnalyticEntry {
   analytic: CarAnalytic;
   included: boolean;
 }
+
+export type SiemExportTab = 'export' | 'library';
 
 @Component({
   selector: 'app-siem-export',
@@ -33,6 +36,7 @@ interface AnalyticEntry {
 })
 export class SiemExportComponent implements OnInit, OnDestroy {
   open = false;
+  activeTab: SiemExportTab = 'export';
   activePlatform: SiemPlatform = 'splunk';
   exportMode: SiemExportMode = 'all';
   selectedTechniqueId = '';
@@ -48,6 +52,15 @@ export class SiemExportComponent implements OnInit, OnDestroy {
   suricataRuleCount = 0;
   zeekScriptCount = 0;
 
+  // ── Query Library tab state ────────────────────────────────────────────────
+  librarySearchText = '';
+  librarySelectedTechniqueId = '';
+  libraryPlatformFilter: SiemQuery['platform'] | 'all' = 'all';
+  libraryQueries: SiemQuery[] = [];
+  libraryCopied = '';
+  libraryAllCopied = false;
+  libraryFilteredTechniques: Technique[] = [];
+
   private subs = new Subscription();
   private allAnalytics: CarAnalytic[] = [];
   private tactics: string[] = [];
@@ -58,6 +71,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
     private carService: CARService,
     private suricataService: SuricataService,
     private zeekService: ZeekService,
+    private siemQueryService: SiemQueryService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -979,6 +993,83 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
   get techniqueOptions(): Technique[] {
     return this.techniques.filter(t => !t.isSubtechnique).slice(0, 300);
+  }
+
+  // ── Query Library tab ─────────────────────────────────────────────────────
+
+  onLibrarySearchChange(): void {
+    const q = this.librarySearchText.trim().toLowerCase();
+    if (q.length < 2) {
+      this.libraryFilteredTechniques = [];
+      this.cdr.markForCheck();
+      return;
+    }
+    this.libraryFilteredTechniques = this.techniques
+      .filter(t => t.attackId.toLowerCase().includes(q) || t.name.toLowerCase().includes(q))
+      .slice(0, 20);
+    this.cdr.markForCheck();
+  }
+
+  selectLibraryTechnique(tech: Technique): void {
+    this.librarySelectedTechniqueId = tech.attackId;
+    this.librarySearchText = `${tech.attackId} \u2014 ${tech.name}`;
+    this.libraryFilteredTechniques = [];
+    this.loadLibraryQueries(tech);
+  }
+
+  private loadLibraryQueries(tech: Technique): void {
+    this.libraryQueries = this.siemQueryService.getAllQueriesForTechnique(tech.attackId, tech.tacticShortnames);
+    this.libraryCopied = '';
+    this.libraryAllCopied = false;
+    this.cdr.markForCheck();
+  }
+
+  get filteredLibraryQueries(): SiemQuery[] {
+    if (this.libraryPlatformFilter === 'all') return this.libraryQueries;
+    return this.libraryQueries.filter(q => q.platform === this.libraryPlatformFilter);
+  }
+
+  onLibraryPlatformFilter(platform: SiemQuery['platform'] | 'all'): void {
+    this.libraryPlatformFilter = platform;
+    this.cdr.markForCheck();
+  }
+
+  copyLibraryQuery(query: SiemQuery): void {
+    navigator.clipboard.writeText(query.query).then(() => {
+      this.libraryCopied = query.platform + ':' + query.title;
+      this.cdr.markForCheck();
+      setTimeout(() => { this.libraryCopied = ''; this.cdr.markForCheck(); }, 2000);
+    });
+  }
+
+  copyAllLibraryQueries(): void {
+    const queries = this.filteredLibraryQueries;
+    if (queries.length === 0) return;
+    const combined = queries.map(q =>
+      `${'='.repeat(60)}\n` +
+      `Platform: ${q.platformLabel}\n` +
+      `Title: ${q.title}\n` +
+      `Description: ${q.description}\n` +
+      `Data Source: ${q.dataSource}\n` +
+      `Confidence: ${q.confidence}\n` +
+      `${'='.repeat(60)}\n\n` +
+      q.query
+    ).join('\n\n');
+    navigator.clipboard.writeText(combined).then(() => {
+      this.libraryAllCopied = true;
+      this.cdr.markForCheck();
+      setTimeout(() => { this.libraryAllCopied = false; this.cdr.markForCheck(); }, 2000);
+    });
+  }
+
+  get libraryPlatforms(): Array<{ key: SiemQuery['platform']; label: string; icon: string }> {
+    return [
+      { key: 'splunk', label: 'Splunk', icon: '\uD83D\uDD0D' },
+      { key: 'elastic', label: 'Elastic', icon: '\uD83D\uDD36' },
+      { key: 'microsoft', label: 'Microsoft KQL', icon: '\u2601\uFE0F' },
+      { key: 'chronicle', label: 'Chronicle', icon: '\uD83D\uDCCA' },
+      { key: 'crowdstrike', label: 'CrowdStrike', icon: '\uD83E\uDD85' },
+    ];
   }
 
   close(): void {
