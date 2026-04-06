@@ -64,6 +64,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'roadmap', icon: '🗺️', label: 'Roadmap' },
   { id: 'changelog', icon: '📋', label: 'Changelog' },
   { id: 'collection', icon: '📦', label: 'COLLECT' },
+  { id: 'ir-playbook', icon: '🚨', label: 'IR PLAY' },
   { id: 'report', icon: '📄', label: 'Report' },
 ];
 

@@ -1,0 +1,142 @@
+@if (visible) {
+  <div class="panel-overlay" (click)="close()">
+    <div class="panel ir-panel" (click)="$event.stopPropagation()">
+      <div class="panel-header">
+        <h2>🚨 Incident Response Playbook</h2>
+        <div class="header-actions">
+          @if (playbook) {
+            <button class="export-btn" (click)="exportMarkdown()">📄 Markdown</button>
+            <button class="export-btn" (click)="exportJson()">📋 JSON</button>
+            <button class="export-btn" (click)="copyToClipboard()">{{ copied ? '✓ Copied' : '📎 Copy' }}</button>
+          }
+          <button class="close-btn" (click)="close()">✕</button>
+        </div>
+      </div>
+
+      <div class="panel-body">
+        <!-- Search -->
+        <div class="search-section">
+          <label>Select technique to generate playbook:</label>
+          <input
+            type="text"
+            class="search-input"
+            placeholder="Search by ID or name (e.g. T1059 or PowerShell)"
+            [(ngModel)]="searchText"
+            (input)="onSearch()"
+          />
+          @if (searchResults.length > 0) {
+            <div class="search-dropdown">
+              @for (t of searchResults; track t.id) {
+                <button class="search-result" (click)="selectTechnique(t)">
+                  <span class="result-id">{{ t.attackId }}</span>
+                  <span class="result-name">{{ t.name }}</span>
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        @if (playbook) {
+          <!-- Summary -->
+          <div class="playbook-summary">
+            <div class="summary-header">
+              <h3>{{ playbook.techniqueId }} — {{ playbook.techniqueName }}</h3>
+              <span class="severity-badge" [style.background]="severityColor(playbook.severity)">
+                {{ playbook.severity | uppercase }}
+              </span>
+            </div>
+            <p class="summary-text">{{ playbook.summary }}</p>
+            <div class="summary-meta">
+              <span class="meta-item">Tactic: {{ playbook.tactic }}</span>
+              <span class="meta-item">Steps: {{ playbook.steps.length }}</span>
+            </div>
+          </div>
+
+          <!-- Phases -->
+          @for (phase of phaseList; track phase.id) {
+            <div class="phase-section">
+              <button class="phase-header" [style.borderLeftColor]="phase.color" (click)="togglePhase(phase.id)">
+                <span class="phase-icon">{{ phase.icon }}</span>
+                <span class="phase-label">{{ phase.label }}</span>
+                <span class="phase-count">{{ getStepsForPhase(phase.id).length }} steps</span>
+                <span class="phase-chevron">{{ expandedPhases.has(phase.id) ? '▾' : '▸' }}</span>
+              </button>
+
+              @if (expandedPhases.has(phase.id)) {
+                <div class="phase-steps">
+                  @for (step of getStepsForPhase(phase.id); track step.action) {
+                    <div class="step-card">
+                      <h4 class="step-action">{{ step.action }}</h4>
+                      <p class="step-details">{{ step.details }}</p>
+
+                      @if (step.tools.length) {
+                        <div class="step-tools">
+                          <span class="tools-label">Tools:</span>
+                          @for (tool of step.tools; track tool) {
+                            <span class="tool-badge">{{ tool }}</span>
+                          }
+                        </div>
+                      }
+
+                      @if (step.commands.length) {
+                        <div class="step-commands">
+                          @for (cmd of step.commands; track cmd) {
+                            <div class="command-row">
+                              <code class="command-text">{{ cmd }}</code>
+                              <button class="copy-cmd-btn" (click)="copyCommand(cmd)" title="Copy command">📋</button>
+                            </div>
+                          }
+                        </div>
+                      }
+
+                      @if (step.logSources.length) {
+                        <div class="step-logs">
+                          <span class="logs-label">Log Sources:</span>
+                          <span class="logs-text">{{ step.logSources.join(', ') }}</span>
+                        </div>
+                      }
+
+                      @if (step.automatable) {
+                        <span class="auto-badge">⚡ Automatable</span>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Indicators -->
+          @if (playbook.indicators.length) {
+            <div class="indicators-section">
+              <h3>🔎 Indicators of Compromise</h3>
+              <ul>
+                @for (ioc of playbook.indicators; track ioc) {
+                  <li>{{ ioc }}</li>
+                }
+              </ul>
+            </div>
+          }
+
+          <!-- Related Techniques -->
+          @if (playbook.relatedTechniques.length) {
+            <div class="related-section">
+              <h3>🔗 Related Techniques</h3>
+              <div class="related-list">
+                @for (t of playbook.relatedTechniques; track t) {
+                  <button class="related-btn" (click)="openTechnique(t)">{{ t }}</button>
+                }
+              </div>
+            </div>
+          }
+        } @else {
+          <div class="empty-state">
+            <span class="empty-icon">🚨</span>
+            <p>Search for a technique above to generate an incident response playbook.</p>
+            <p class="empty-sub">Playbooks include identification, containment, eradication, recovery, and lessons learned steps.</p>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}
