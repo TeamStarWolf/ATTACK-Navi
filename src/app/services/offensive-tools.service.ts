@@ -62,6 +62,17 @@ const TOOLS: OffensiveTool[] = [
   { name: 'Invoke-AtomicRedTeam', category: 'Validation', techniqueIds: ['T1059.001', 'T1204.002'], description: 'PowerShell Atomic test executor', url: 'https://github.com/redcanaryco/invoke-atomicredteam' },
   { name: 'log4j-scanner', category: 'Vulnerability Scanning', techniqueIds: ['T1190', 'T1059'], description: 'CISA Log4j vulnerability scanner', url: 'https://github.com/cisagov/log4j-scanner' },
   { name: 'Commando-VM', category: 'Offensive Platform', techniqueIds: ['T1059', 'T1588.002'], description: 'Windows offensive distribution (Mandiant)', url: 'https://github.com/mandiant/commando-vm' },
+  // From starred repos — additional
+  { name: 'Amass', category: 'Reconnaissance', techniqueIds: ['T1595.001', 'T1590', 'T1589'], description: 'In-depth attack surface mapping and asset discovery (OWASP)', url: 'https://github.com/owasp-amass/amass' },
+  { name: 'sqlmap', category: 'Exploitation', techniqueIds: ['T1190', 'T1059'], description: 'Automatic SQL injection and database takeover', url: 'https://github.com/sqlmapproject/sqlmap' },
+  { name: 'Sherlock', category: 'Reconnaissance', techniqueIds: ['T1589.001', 'T1593'], description: 'Hunt social media accounts by username', url: 'https://github.com/sherlock-project/sherlock' },
+  { name: 'x64dbg', category: 'Reverse Engineering', techniqueIds: ['T1588.002', 'T1027'], description: 'Open-source Windows debugger for RE/malware analysis', url: 'https://github.com/x64dbg/x64dbg' },
+  { name: 'ImHex', category: 'Reverse Engineering', techniqueIds: ['T1588.002', 'T1027'], description: 'Hex editor for reverse engineering', url: 'https://github.com/WerWolv/ImHex' },
+  { name: 'MobSF', category: 'Mobile Security', techniqueIds: ['T1407', 'T1404', 'T1418'], description: 'Mobile app security testing framework (OWASP)', url: 'https://github.com/MobSF/Mobile-Security-Framework-MobSF' },
+  { name: 'Vuls', category: 'Vulnerability Scanning', techniqueIds: ['T1595.002', 'T1190'], description: 'Agent-less vulnerability scanner for Linux/containers', url: 'https://github.com/future-architect/vuls' },
+  { name: 'Wazuh', category: 'XDR/SIEM', techniqueIds: ['T1059', 'T1078', 'T1190'], description: 'Open source security platform (XDR + SIEM)', url: 'https://github.com/wazuh/wazuh' },
+  { name: 'Strix', category: 'AI Security', techniqueIds: ['T1190', 'T1595.002'], description: 'AI-powered vulnerability finder', url: 'https://github.com/usestrix/strix' },
+  { name: 'BloodHound Tools', category: 'AD Enumeration', techniqueIds: ['T1087.002', 'T1069.002', 'T1482'], description: 'Miscellaneous tools for BloodHound analysis', url: 'https://github.com/BloodHoundAD/BloodHound-Tools' },
 ];
 
 @Injectable({ providedIn: 'root' })
