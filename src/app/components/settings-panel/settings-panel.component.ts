@@ -83,6 +83,10 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
   taxiiImportResult: ImportSummary | null = null;
   taxiiError = '';
 
+  // Bulk CSV import state
+  csvImportResult: { imported: number; errors: number } | null = null;
+  csvImportError = '';
+
   private subs = new Subscription();
   private savedSettings: AppSettings = { ...DEFAULT_SETTINGS, scoringWeights: { ...DEFAULT_SETTINGS.scoringWeights } };
 
@@ -627,5 +631,37 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       },
     });
+  }
+
+  // ─── Bulk CSV Import ────────────────────────────────────────────────────
+
+  onCsvFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    this.csvImportResult = null;
+    this.csvImportError = '';
+    this.cdr.markForCheck();
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const text = reader.result as string;
+        this.csvImportResult = this.implService.importStatusCsv(text);
+        this.cdr.markForCheck();
+      } catch (e: any) {
+        this.csvImportError = e?.message ?? 'Failed to parse CSV file';
+        this.cdr.markForCheck();
+      }
+    };
+    reader.onerror = () => {
+      this.csvImportError = 'Failed to read file';
+      this.cdr.markForCheck();
+    };
+    reader.readAsText(file);
+
+    // Reset file input so the same file can be re-selected
+    input.value = '';
   }
 }

@@ -50,6 +50,9 @@ import { NucleiService } from '../../services/nuclei.service';
 import { CustomTechniqueService } from '../../services/custom-technique.service';
 import { M365DefenderService, M365Query } from '../../services/m365-defender.service';
 import { SiemQueryService, SiemQuery } from '../../services/siem-query.service';
+import { PayloadsService, PayloadRef } from '../../services/payloads.service';
+import { EventLoggingService, LogConfig } from '../../services/event-logging.service';
+import { ElasticService } from '../../services/elastic.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -113,10 +116,18 @@ export class SidebarComponent implements OnInit, OnDestroy {
   siemQueries: SiemQuery[] = [];
   copiedSiemQuery = '';
 
+  // PayloadsAllTheThings
+  payloadRefs: PayloadRef[] = [];
+
+  // Event Logging Config
+  loggingConfigs: LogConfig[] = [];
+  copiedLoggingScript = false;
+
   // Clipboard copy feedback
   copiedInvoke = '';
   copiedBatchScript = false;
   shareCopied = false;
+  markdownCopied = false;
 
   // Collapsible sections
   collapsedSections = new Set<string>();
@@ -140,7 +151,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       'procedures', 'cve', 'nist', 'cloud', 'veris', 'cri', 'capec',
       'exploitdb', 'nuclei', 'tags', 'notes', 'threats', 'software',
       'campaigns', 'd3fend', 'engage', 'car', 'atomic', 'misp', 'opencti', 'sigma',
-      'custom', 'mitigations', 'relgraph', 'm365', 'siem',
+      'custom', 'mitigations', 'relgraph', 'm365', 'siem', 'payloads', 'logging',
     ];
     for (const s of sections) this.collapsedSections.add(s);
     this.cdr.markForCheck();
@@ -169,6 +180,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
     if (this.sigmaRules.length === 0 && !this.sigmaRulesFetching) this.collapsedSections.add('sigma');
     if (this.m365Queries.length === 0) this.collapsedSections.add('m365');
     if (this.siemQueries.length === 0) this.collapsedSections.add('siem');
+    if (this.payloadRefs.length === 0) this.collapsedSections.add('payloads');
+    if (this.loggingConfigs.length === 0) this.collapsedSections.add('logging');
     if (this.customMitigations.length === 0) this.collapsedSections.add('custom');
     this.cdr.markForCheck();
   }
@@ -306,6 +319,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
     private customTechniqueService: CustomTechniqueService,
     private m365DefenderService: M365DefenderService,
     private siemQueryService: SiemQueryService,
+    private payloadsService: PayloadsService,
+    private eventLoggingService: EventLoggingService,
+    private elasticService: ElasticService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -408,6 +424,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
         this.nucleiCount = tech ? this.nucleiService.getTemplateCount(tech.attackId) : 0;
         this.m365Queries = tech ? this.m365DefenderService.getQueriesForTechnique(tech.attackId) : [];
         this.siemQueries = tech ? this.siemQueryService.getAllQueriesForTechnique(tech.attackId, tech.tacticShortnames) : [];
+        this.payloadRefs = tech ? this.payloadsService.getPayloadsForTechnique(tech.attackId) : [];
+        this.loggingConfigs = tech ? this.eventLoggingService.getLoggingConfig(tech.attackId) : [];
+        this.copiedLoggingScript = false;
+        this.markdownCopied = false;
         this.copiedSiemQuery = '';
         this.copiedInvoke = '';
         this.copiedBatchScript = false;
@@ -571,6 +591,16 @@ export class SidebarComponent implements OnInit, OnDestroy {
         if (loaded && this.technique) {
           this.nucleiCount = this.nucleiService.getTemplateCount(this.technique.attackId);
           this.signals = this.getSignals(this.technique);
+          this.cdr.markForCheck();
+        }
+      }),
+    );
+
+    // Refresh PayloadsAllTheThings when data finishes loading
+    this.subs.add(
+      this.payloadsService.loaded$.subscribe((loaded) => {
+        if (loaded && this.technique) {
+          this.payloadRefs = this.payloadsService.getPayloadsForTechnique(this.technique.attackId);
           this.cdr.markForCheck();
         }
       }),
@@ -1138,6 +1168,72 @@ export class SidebarComponent implements OnInit, OnDestroy {
       this.copiedSiemQuery = query.platform + ':' + query.title;
       this.cdr.markForCheck();
       setTimeout(() => { this.copiedSiemQuery = ''; this.cdr.markForCheck(); }, 2000);
+    });
+  }
+
+  // ─── Copy as Markdown ──────────────────────────────────────────────────────
+
+  generateMarkdown(): string {
+    if (!this.technique) return '';
+    const t = this.technique;
+    const lines: string[] = [];
+
+    lines.push(`## ${t.attackId} — ${t.name}`);
+    lines.push(`**Tactic:** ${t.tacticShortnames.join(', ') || 'N/A'}`);
+    lines.push(`**Platforms:** ${t.platforms.join(', ') || 'N/A'}`);
+    lines.push(`**Mitigations:** ${this.mitigations.length}`);
+
+    if (this.threatGroups.length > 0) {
+      const groupNames = this.threatGroups.slice(0, 10).map(g => g.name).join(', ');
+      lines.push(`**Threat Groups:** ${groupNames}${this.threatGroups.length > 10 ? ', ...' : ''}`);
+    }
+
+    const sigmaCount = this.sigmaService.getRuleCount(t.attackId);
+    const elasticCount = this.elasticService.getRuleCount(t.attackId);
+    const detectionParts: string[] = [];
+    if (sigmaCount > 0) detectionParts.push(`Sigma (${sigmaCount} rules)`);
+    if (elasticCount > 0) detectionParts.push(`Elastic (${elasticCount} rules)`);
+    if (this.carAnalytics.length > 0) detectionParts.push(`CAR (${this.carAnalytics.length} analytics)`);
+    if (detectionParts.length > 0) {
+      lines.push(`**Detection:** ${detectionParts.join(', ')}`);
+    }
+
+    if (this.epssAvg !== null && this.epssAvg > 0) {
+      lines.push(`**EPSS Avg:** ${(this.epssAvg * 100).toFixed(1)}%`);
+    }
+
+    lines.push(`**Completeness:** ${this.completenessScore}%`);
+
+    if (this.cveExposures.length > 0) {
+      lines.push(`**CVEs:** ${this.cveExposures.length}`);
+    }
+
+    if (this.nistControls.length > 0) {
+      lines.push(`**NIST Controls:** ${this.nistControls.length}`);
+    }
+
+    return lines.join('\n');
+  }
+
+  copyMarkdown(): void {
+    const md = this.generateMarkdown();
+    if (!md) return;
+    navigator.clipboard.writeText(md).then(() => {
+      this.markdownCopied = true;
+      this.cdr.markForCheck();
+      setTimeout(() => { this.markdownCopied = false; this.cdr.markForCheck(); }, 2000);
+    });
+  }
+
+  // ─── Logging Config Script ────────────────────────────────────────────────
+
+  copyLoggingScript(): void {
+    if (!this.technique) return;
+    const script = this.eventLoggingService.generateScript([this.technique.attackId]);
+    navigator.clipboard.writeText(script).then(() => {
+      this.copiedLoggingScript = true;
+      this.cdr.markForCheck();
+      setTimeout(() => { this.copiedLoggingScript = false; this.cdr.markForCheck(); }, 2000);
     });
   }
 }
