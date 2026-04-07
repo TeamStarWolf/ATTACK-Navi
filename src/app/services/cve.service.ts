@@ -788,13 +788,11 @@ export class CveService {
 
   loadKev(): void {
     if (this.kevLoadedSubject.value) return;
-    // Try direct CISA fetch first (works in production with CSP connect-src).
-    // Fallback to allorigins proxy only if direct fetch fails (dev/CORS).
+    // Try direct CISA fetch first, then corsproxy.io fallback (1 attempt each).
     this.http.get<any>(this.KEV_URL).pipe(
-      retryWithBackoff(),
       catchError(() => {
-        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(this.KEV_URL)}`;
-        return this.http.get<any>(proxyUrl).pipe(retryWithBackoff());
+        const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(this.KEV_URL)}`;
+        return this.http.get<any>(proxyUrl);
       }),
       catchError(() => of({ vulnerabilities: [] }))
     ).subscribe((data: any) => {
