@@ -1,0 +1,78 @@
+<!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+     https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
+@if (visible) {
+  <div class="onboarding-overlay" (click)="dismiss()">
+    <div class="onboarding-card" (click)="$event.stopPropagation()">
+
+      <!-- Step 1: Welcome -->
+      @if (currentStep === 0) {
+        <div class="step-content">
+          <div class="step-icon">&#x1F6E1;</div>
+          <h2 class="step-title">Welcome to ATT&CK Navi</h2>
+          <p class="step-desc">Explore MITRE ATT&CK techniques, analyze coverage, and correlate threat intelligence across your organization.</p>
+          <button class="btn-primary" (click)="nextStep()">Next</button>
+        </div>
+      }
+
+      <!-- Step 2: Click a technique -->
+      @if (currentStep === 1) {
+        <div class="step-content">
+          <div class="step-icon">&#x1F5B1;</div>
+          <h2 class="step-title">Click a Technique</h2>
+          <p class="step-desc">Click any cell in the matrix to see 30+ enrichment sections: CVEs, detection rules, threat actors, and more.</p>
+          <div class="visual-hint">
+            <div class="hint-matrix">
+              <div class="hint-cell"></div>
+              <div class="hint-cell highlight"></div>
+              <div class="hint-cell"></div>
+              <div class="hint-cell"></div>
+              <div class="hint-cell"></div>
+              <div class="hint-cell"></div>
+            </div>
+            <div class="hint-arrow">&#x2190; Click any cell</div>
+          </div>
+          <div class="step-btns">
+            <button class="btn-secondary" (click)="prevStep()">Back</button>
+            <button class="btn-primary" (click)="nextStep()">Next</button>
+          </div>
+        </div>
+      }
+
+      <!-- Step 3: Try These First -->
+      @if (currentStep === 2) {
+        <div class="step-content">
+          <div class="step-icon">&#x1F680;</div>
+          <h2 class="step-title">Try These First</h2>
+          <div class="quick-cards">
+            @for (card of quickCards; track card.panel) {
+              <button class="quick-card" (click)="openPanel(card.panel)">
+                <span class="qc-icon">{{ card.icon }}</span>
+                <span class="qc-label">{{ card.label }}</span>
+              </button>
+            }
+          </div>
+          <div class="step-btns">
+            <button class="btn-secondary" (click)="prevStep()">Back</button>
+            <button class="btn-primary" (click)="getStarted()">Get Started</button>
+          </div>
+        </div>
+      }
+
+      <!-- Step dots -->
+      <div class="step-dots">
+        @for (step of [0, 1, 2]; track step) {
+          <button class="dot" [class.active]="currentStep === step" (click)="goToStep(step)"></button>
+        }
+      </div>
+
+      <!-- Don't show again -->
+      <label class="dont-show">
+        <input type="checkbox" [(ngModel)]="dontShowAgain" />
+        Don't show again
+      </label>
+
+      <!-- Dismiss -->
+      <button class="dismiss-btn" (click)="dismiss()" title="Close">&#x2715;</button>
+    </div>
+  </div>
+}
