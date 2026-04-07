@@ -135,7 +135,7 @@ async function main() {
   console.log(`File size: ${fileSizeKB} KB`);
 
   // Also export full uncapped CSV to Desktop folder
-  const csvDir = path.join('C:', 'Users', 'dev', 'Desktop', 'CVE-ATT&CK Mappings');
+  const csvDir = path.join('data', 'cve-attack-mappings');
   try { fs.mkdirSync(csvDir, { recursive: true }); } catch {}
   let csv = 'CVE_ID,Technique_ID\n';
   for (const [tech, cves] of Object.entries(sorted)) {
