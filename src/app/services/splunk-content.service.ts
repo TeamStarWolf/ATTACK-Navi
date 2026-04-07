@@ -4,7 +4,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
 import { catchError, of } from 'rxjs';
-import { retryWithBackoff } from '../utils/retry';
+
 
 interface NavigatorLayer {
   name?: string;
@@ -15,9 +15,6 @@ interface NavigatorLayer {
     tactic?: string;
   }>;
 }
-
-const SPLUNK_LAYER_URL =
-  'https://raw.githubusercontent.com/splunk/security_content/develop/dist/attack_navigator_layer.json';
 
 @Injectable({ providedIn: 'root' })
 export class SplunkContentService {
@@ -37,11 +34,30 @@ export class SplunkContentService {
   }
 
   private loadLive(): void {
-    this.http.get<NavigatorLayer>(SPLUNK_LAYER_URL)
-      .pipe(retryWithBackoff(), catchError(() => of(null)))
-      .subscribe(layer => {
-        if (layer?.techniques?.length) {
-          this.ingestLayer(layer);
+    // Splunk no longer publishes a unified Navigator layer.
+    // Scan the GitHub tree for .yml detection files and extract technique IDs.
+    this.http.get<any>('https://api.github.com/repos/splunk/security_content/git/trees/develop?recursive=1')
+      .pipe(catchError(() => of(null)))
+      .subscribe((tree: any) => {
+        if (tree?.tree) {
+          const counts = new Map<string, number>();
+          const techRegex = /[Tt](1\d{3}(?:\.\d{3})?)/;
+          for (const item of tree.tree) {
+            if (item.path?.startsWith('detections/') && item.path?.endsWith('.yml')) {
+              const match = item.path.match(techRegex);
+              if (match) {
+                const id = 'T' + match[1];
+                counts.set(id, (counts.get(id) ?? 0) + 1);
+              }
+            }
+          }
+          if (counts.size > 0) {
+            const layer: NavigatorLayer = { techniques: [] };
+            for (const [id, score] of counts) {
+              layer.techniques.push({ techniqueID: id, score });
+            }
+            this.ingestLayer(layer);
+          }
         }
         this.loadedSubject.next(true);
       });
