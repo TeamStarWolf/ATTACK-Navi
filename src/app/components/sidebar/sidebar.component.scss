@@ -1618,6 +1618,73 @@
   &.secondary { background: rgb(88 166 255 / 10%); color: #58a6ff; }
 }
 
+// CVE item top row (ID + badges)
+.cve-item-top {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+// CVE source badge (CTID green / CWE gray)
+.cve-source-badge {
+  font-size: 7px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  flex-shrink: 0;
+
+  &.cve-source-ctid {
+    background: rgb(74 222 128 / 12%);
+    color: #4ade80;
+    border: 1px solid rgb(74 222 128 / 25%);
+  }
+
+  &.cve-source-cwe {
+    background: rgb(107 114 128 / 12%);
+    color: #9ca3af;
+    border: 1px solid rgb(107 114 128 / 25%);
+  }
+}
+
+// Capability group chip in sidebar
+.cve-cap-group {
+  display: inline-block;
+  padding: 0 5px;
+  border-radius: 8px;
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border: 1px solid;
+  flex-shrink: 0;
+}
+
+// CVE rationale sentence
+.cve-rationale {
+  font-size: 10px;
+  color: #8aaac8;
+  line-height: 1.4;
+  margin: 3px 0 0;
+  font-style: italic;
+
+  &.cve-rationale--inferred {
+    color: #4a6080;
+  }
+}
+
+// CTID-curated CVE item gets a subtle green left border
+.cve-item--ctid {
+  border-left: 2px solid rgb(74 222 128 / 30%);
+}
+
+// Inferred CVE item gets no special border treatment
+.cve-item--inferred {
+  opacity: 0.85;
+}
+
 // NIST 800-53 Rev5 Controls
 .nist-controls-list {
   padding: 0 16px 8px;

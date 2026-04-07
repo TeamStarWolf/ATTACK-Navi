@@ -11,11 +11,12 @@ import { D3fendService } from '../../services/d3fend.service';
 import { CARService } from '../../services/car.service';
 import { AtomicService } from '../../services/atomic.service';
 import { EngageService } from '../../services/engage.service';
+import { AttackCveService } from '../../services/attack-cve.service';
 import { Domain } from '../../models/domain';
 import { Technique } from '../../models/technique';
 import { Mitigation } from '../../models/mitigation';
 
-type ResultKind = 'technique' | 'mitigation' | 'd3fend' | 'car' | 'atomic' | 'engage' | 'group' | 'software' | 'campaign';
+type ResultKind = 'technique' | 'mitigation' | 'd3fend' | 'car' | 'atomic' | 'engage' | 'group' | 'software' | 'campaign' | 'cve';
 
 interface SearchResult {
   kind: ResultKind;
@@ -47,12 +48,12 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
   private search$ = new Subject<string>();
   private subs = new Subscription();
 
-  readonly kindFilterOptions: (ResultKind | 'all')[] = ['all', 'technique', 'mitigation', 'group', 'campaign', 'software', 'd3fend', 'car', 'atomic', 'engage'];
+  readonly kindFilterOptions: (ResultKind | 'all')[] = ['all', 'technique', 'mitigation', 'cve', 'group', 'campaign', 'software', 'd3fend', 'car', 'atomic', 'engage'];
   readonly kindLabels: Record<ResultKind | 'all', string> = {
-    all: 'All', technique: '⚔ Techniques', mitigation: '🛡 Mitigations',
-    d3fend: '🛡 D3FEND', car: '🔬 CAR', atomic: '⚛ Atomic',
-    engage: '🎭 Engage', group: '👥 Groups', software: '🛠 Software',
-    campaign: '🎯 Campaigns',
+    all: 'All', technique: 'Techniques', mitigation: 'Mitigations',
+    cve: 'CVEs', d3fend: 'D3FEND', car: 'CAR', atomic: 'Atomic',
+    engage: 'Engage', group: 'Groups', software: 'Software',
+    campaign: 'Campaigns',
   };
 
   constructor(
@@ -62,6 +63,7 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
     private carService: CARService,
     private atomicService: AtomicService,
     private engageService: EngageService,
+    private attackCveService: AttackCveService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -199,6 +201,14 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
       }
     }
 
+    // CVE (search CTID mappings by CVE ID, description, or capability group)
+    const cveResults = this.attackCveService.searchCves(q);
+    for (const m of cveResults) {
+      const desc = m.description ? m.description.substring(0, 100) : (m.capabilityGroup ? `Category: ${m.capabilityGroup.replace(/_/g, ' ')}` : '');
+      const score = this.score(ql, m.cveId, m.cveId, m.description + ' ' + m.capabilityGroup);
+      results.push({ kind: 'cve', id: m.cveId, name: m.cveId, description: desc, url: `https://nvd.nist.gov/vuln/detail/${m.cveId}`, score: Math.max(score, 50), data: m });
+    }
+
     this.results = results.sort((a, b) => b.score - a.score).slice(0, 60);
     this.activeResultIndex = -1;
     this.cdr.markForCheck();
@@ -241,18 +251,21 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
     } else if (r.kind === 'software' && r.data) {
       this.filterService.setActivePanel('software');
       this.close();
+    } else if (r.kind === 'cve') {
+      this.filterService.setActivePanel('cve');
+      this.close();
     } else if (r.url) {
       window.open(r.url, '_blank', 'noopener');
     }
   }
 
   kindIcon(kind: ResultKind): string {
-    const icons: Record<ResultKind, string> = { technique: '⚔', mitigation: '🛡', d3fend: '🛡', car: '🔬', atomic: '⚛', engage: '🎭', group: '👥', software: '🛠', campaign: '🎯' };
+    const icons: Record<ResultKind, string> = { technique: '⚔', mitigation: '🛡', d3fend: '🛡', car: '🔬', atomic: '⚛', engage: '🎭', group: '👥', software: '🛠', campaign: '🎯', cve: '🔴' };
     return icons[kind];
   }
 
   kindColor(kind: ResultKind): string {
-    const colors: Record<ResultKind, string> = { technique: '#58a6ff', mitigation: '#4caf50', d3fend: '#4caf50', car: '#58a6ff', atomic: '#e08030', engage: '#f0a040', group: '#9c70e0', software: '#f06060', campaign: '#e06090' };
+    const colors: Record<ResultKind, string> = { technique: '#58a6ff', mitigation: '#4caf50', d3fend: '#4caf50', car: '#58a6ff', atomic: '#e08030', engage: '#f0a040', group: '#9c70e0', software: '#f06060', campaign: '#e06090', cve: '#ef4444' };
     return colors[kind];
   }
 

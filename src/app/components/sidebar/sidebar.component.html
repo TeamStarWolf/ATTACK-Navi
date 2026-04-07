@@ -359,19 +359,42 @@
           @if (!isSectionCollapsed('cve')) {
           <div class="cve-exposure-list">
             @for (m of (showAllCves ? cveExposures : cveExposures.slice(0, 5)); track m.cveId) {
-              <div class="cve-item">
-                <a [href]="'https://nvd.nist.gov/vuln/detail/' + m.cveId" target="_blank" rel="noopener" class="cve-id">{{ m.cveId }}</a>
-                <div class="cve-tags">
-                  @if (m.exploitationTechnique.length > 0) {
-                    <span class="cve-tag exploit">exploit vector</span>
+              <div class="cve-item" [class.cve-item--ctid]="m.source === 'ctid-kev'" [class.cve-item--inferred]="m.source === 'ctid-csv' && !m.capabilityGroup">
+                <div class="cve-item-top">
+                  <a [href]="'https://nvd.nist.gov/vuln/detail/' + m.cveId" target="_blank" rel="noopener" class="cve-id">{{ m.cveId }}</a>
+                  @if (m.source === 'ctid-kev') {
+                    <span class="cve-source-badge cve-source-ctid">CTID</span>
+                  } @else if (m.capabilityGroup) {
+                    <span class="cve-source-badge cve-source-ctid">CTID</span>
+                  } @else {
+                    <span class="cve-source-badge cve-source-cwe">CWE</span>
                   }
-                  @if (m.primaryImpact.length > 0) {
-                    <span class="cve-tag primary">primary impact</span>
+                  @if (m.capabilityGroup) {
+                    <span class="cve-cap-group" [style.background]="getCapGroupColor(m.capabilityGroup) + '18'" [style.color]="getCapGroupColor(m.capabilityGroup)" [style.border-color]="getCapGroupColor(m.capabilityGroup) + '40'">
+                      {{ formatCapGroup(m.capabilityGroup) }}
+                    </span>
                   }
-                  @if (m.secondaryImpact.length > 0) {
-                    <span class="cve-tag secondary">secondary</span>
-                  }
+                  <div class="cve-tags">
+                    @if (m.exploitationTechnique.length > 0) {
+                      <span class="cve-tag exploit">EXPLOIT</span>
+                    }
+                    @if (m.primaryImpact.length > 0) {
+                      <span class="cve-tag primary">PRIMARY</span>
+                    }
+                    @if (m.secondaryImpact.length > 0) {
+                      <span class="cve-tag secondary">SECONDARY</span>
+                    }
+                  </div>
                 </div>
+                @if (m.source === 'ctid-kev' || m.capabilityGroup) {
+                  <!-- CTID curated: show sentence -->
+                  @if (buildCveSentence(m)) {
+                    <p class="cve-rationale">{{ buildCveSentence(m) }}</p>
+                  }
+                } @else {
+                  <!-- CWE inferred -->
+                  <p class="cve-rationale cve-rationale--inferred">Mapped via CWE-based technique association</p>
+                }
               </div>
             }
             @if (cveExposures.length > 5) {
