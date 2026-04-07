@@ -11,7 +11,7 @@ Positive behavior includes:
 - being respectful in technical and non-technical discussion
 - giving and receiving feedback in good faith
 - prioritizing clarity, evidence, and collaboration
-- helping other contributors learn the codebase and domain context
+- helping other contributors learn the codebase
 
 Unacceptable behavior includes:
 
