@@ -128,7 +128,7 @@ const D3FEND_MAPPING: D3fendTechnique[] = [
   { id: 'D3-CRK', name: 'Credential Revocation', category: 'Evict', definition: 'Revoking certificates and tokens associated with compromised accounts.', url: 'https://d3fend.mitre.org/technique/d3f:CredentialRevocation', attackIds: ['T1552', 'T1078', 'T1098', 'T1556'] },
 ];
 
-const D3FEND_LIVE_API = 'https://d3fend.mitre.org/api/offensive-technique/attack/all.json';
+const D3FEND_LIVE_API = 'https://d3fend.mitre.org/api/technique/all.json';
 
 interface D3fendApiBinding {
   def_tech_label: { value: string };
