@@ -1,38 +1,46 @@
 ---
-name: Bug report
-about: Create a report to help us improve
-title: ''
-labels: ''
-assignees: ''
-
+name: Bug Report
+about: Report a bug or unexpected behavior
+title: "[Bug] "
+labels: bug
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+## Describe the Bug
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+A clear description of what the bug is.
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+## Steps to Reproduce
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+1. Go to ...
+2. Click on ...
+3. See error
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
+## Expected Behavior
 
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
+What you expected to happen.
 
-**Additional context**
-Add any other context about the problem here.
+## Screenshots
+
+If applicable, add screenshots.
+
+## Area
+
+Which part of the app is affected?
+
+- [ ] Matrix / heatmap
+- [ ] Sidebar
+- [ ] Panel (specify which)
+- [ ] Threat intelligence
+- [ ] Export / report
+- [ ] Settings
+- [ ] General
+
+## Environment
+
+- **Browser:** (e.g., Chrome 124, Firefox 126)
+- **OS:** (e.g., Windows 11, macOS 15)
+- **ATT&CK Domain:** Enterprise / Mobile / ICS
+
+## Console Errors
+
+If applicable, paste any browser console errors.

@@ -1,6 +1,6 @@
-# Contributing Guide
+# Contributing to ATTACK-Navi
 
-This document describes how to set up the development environment, follow code conventions, and extend the MITRE ATT&CK Navi with new features.
+Thanks for your interest in contributing! This document describes how to set up the development environment, follow code conventions, and extend ATTACK-Navi with new features.
 
 ---
 
@@ -842,3 +842,9 @@ fix/epss-display
 refactor/heatmap-colors
 docs/configuration-guide
 ```
+
+---
+
+## License
+
+By contributing, you agree that your contributions will be licensed under the MIT License.
