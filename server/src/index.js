@@ -12,7 +12,7 @@ const port = Number(process.env.PORT) || 8787;
 // Parse allowed origins from env
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
-  : [];
+  : ['http://localhost:4200']; // Safe default — not open to all origins
 
 app.use(cors({
   origin(origin, callback) {

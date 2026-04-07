@@ -151,7 +151,7 @@
                   <td class="id-cell">{{ m.attackId }}</td>
                   <td>
                     {{ m.name }}
-                    @if (m.evidenceUrl) {
+                    @if (m.evidenceUrl && (m.evidenceUrl.startsWith('https://') || m.evidenceUrl.startsWith('http://'))) {
                       <a [href]="m.evidenceUrl" target="_blank" rel="noopener" class="evidence-link">↗</a>
                     }
                   </td>

@@ -196,7 +196,9 @@ export class TaxiiService {
   }
 
   private saveToStorage(servers: TaxiiServerConfig[]): void {
-    const payload: TaxiiStoragePayload = { servers };
+    // Strip passwords before persisting — user must re-enter per session
+    const sanitized = servers.map(({ password: _omit, ...rest }) => rest);
+    const payload: TaxiiStoragePayload = { servers: sanitized as TaxiiServerConfig[] };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   }
 
