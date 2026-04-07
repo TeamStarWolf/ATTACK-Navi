@@ -1,0 +1,257 @@
+/* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+   https://github.com/TeamStarWolf/ATTACK-Navi - MIT License */
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(0 0 0 / 65%);
+  backdrop-filter: blur(6px);
+  animation: fadeIn 0.25s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.onboarding-card {
+  position: relative;
+  width: 460px;
+  max-width: 92vw;
+  background: #0d1a26;
+  border: 1px solid #1a3448;
+  border-radius: 16px;
+  padding: 40px 36px 28px;
+  box-shadow: 0 24px 80px rgb(0 0 0 / 60%);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.step-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+}
+
+.step-icon {
+  font-size: 48px;
+  line-height: 1;
+}
+
+.step-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #f0f4f8;
+  letter-spacing: -0.3px;
+}
+
+.step-desc {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #8aa8c0;
+  max-width: 380px;
+}
+
+/* Buttons */
+.btn-primary {
+  padding: 10px 32px;
+  border-radius: 8px;
+  background: #58a6ff;
+  border: none;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #79b8ff;
+  }
+}
+
+.btn-secondary {
+  padding: 10px 24px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid #1a3448;
+  color: #8aa8c0;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: #58a6ff;
+    color: #c9d8e8;
+  }
+}
+
+.step-btns {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+/* Visual hint for Step 2 */
+.visual-hint {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 8px 0;
+}
+
+.hint-matrix {
+  display: grid;
+  grid-template-columns: repeat(3, 36px);
+  gap: 4px;
+}
+
+.hint-cell {
+  width: 36px;
+  height: 28px;
+  border-radius: 4px;
+  background: #1a2e42;
+  border: 1px solid #243d55;
+}
+
+.hint-cell.highlight {
+  background: #264d73;
+  border-color: #58a6ff;
+  box-shadow: 0 0 12px rgb(88 166 255 / 35%);
+  animation: pulse 1.5s ease infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 8px rgb(88 166 255 / 25%); }
+  50% { box-shadow: 0 0 18px rgb(88 166 255 / 50%); }
+}
+
+.hint-arrow {
+  font-size: 13px;
+  color: #58a6ff;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Quick-start cards (Step 3) */
+.quick-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+  margin: 4px 0;
+}
+
+.quick-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #0f2233;
+  border: 1px solid #1a3448;
+  color: #c9d8e8;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+
+  &:hover {
+    border-color: #58a6ff;
+    background: #132d45;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgb(88 166 255 / 12%);
+  }
+}
+
+.qc-icon {
+  font-size: 20px;
+}
+
+.qc-label {
+  flex: 1;
+}
+
+/* Step dots */
+.step-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1a3448;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &.active {
+    background: #58a6ff;
+    transform: scale(1.3);
+  }
+
+  &:hover:not(.active) {
+    background: #2a4a66;
+  }
+}
+
+/* Don't show again */
+.dont-show {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 14px;
+  font-size: 12px;
+  color: #4a6880;
+  cursor: pointer;
+  user-select: none;
+
+  input[type='checkbox'] {
+    accent-color: #58a6ff;
+  }
+}
+
+/* Dismiss X */
+.dismiss-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #4a6880;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    background: rgb(255 255 255 / 6%);
+    color: #c9d8e8;
+    border-color: #1a3448;
+  }
+}

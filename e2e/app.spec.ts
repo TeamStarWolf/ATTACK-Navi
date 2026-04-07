@@ -99,4 +99,126 @@ test.describe('ATT&CK Navi', () => {
       await expect(page.locator('body')).not.toHaveClass(/light-mode/);
     }
   });
+
+  // ─── Additional E2E tests ─────────────────────────────────────────────────
+
+  test('assessment wizard opens', async ({ page }) => {
+    await page.goto(BASE);
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.nav-item', { hasText: 'ASSESS' }).click();
+    await expect(page.locator('app-assessment-wizard')).toBeVisible({ timeout: 5000 });
+  });
+
+  test('collection panel opens', async ({ page }) => {
+    await page.goto(BASE);
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.nav-item', { hasText: 'COLLECT' }).click();
+    await expect(page.locator('app-collection-panel')).toBeVisible({ timeout: 5000 });
+  });
+
+  test('gap analysis panel opens', async ({ page }) => {
+    await page.goto(BASE);
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.nav-item', { hasText: 'GAP RPT' }).click();
+    await expect(page.locator('app-gap-analysis-panel')).toBeVisible({ timeout: 5000 });
+  });
+
+  test('asset panel opens', async ({ page }) => {
+    await page.goto(BASE);
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.nav-item', { hasText: 'ASSETS' }).click();
+    await expect(page.locator('app-asset-panel')).toBeVisible({ timeout: 5000 });
+  });
+
+  test('IR playbook panel opens', async ({ page }) => {
+    await page.goto(BASE);
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.nav-item', { hasText: 'IR PLAY' }).click();
+    await expect(page.locator('app-ir-playbook-panel')).toBeVisible({ timeout: 5000 });
+  });
+
+  test('CVE panel opens', async ({ page }) => {
+    await page.goto(BASE);
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.nav-item', { hasText: 'CVE' }).click();
+    await expect(page.locator('app-cve-panel')).toBeVisible({ timeout: 5000 });
+  });
+
+  test('sigma export panel opens', async ({ page }) => {
+    await page.goto(BASE);
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.nav-item', { hasText: 'SIGMA' }).click();
+    await expect(page.locator('app-sigma-export')).toBeVisible({ timeout: 5000 });
+  });
+
+  test('settings panel opens', async ({ page }) => {
+    await page.goto(BASE);
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.nav-item', { hasText: 'Settings' }).click();
+    await expect(page.locator('app-settings-panel')).toBeVisible({ timeout: 5000 });
+  });
+
+  test('sidebar shows signal pills', async ({ page }) => {
+    await page.goto(BASE);
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.cell').first().click();
+    await expect(page.locator('.sidebar.open')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('.signal-pill')).toHaveCount({ minimum: 1 }, { timeout: 10000 });
+  });
+
+  test('sidebar shows completeness score', async ({ page }) => {
+    await page.goto(BASE);
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.cell').first().click();
+    await expect(page.locator('.sidebar.open')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('.completeness-bar')).toBeVisible();
+  });
+
+  test('sidebar collapsible sections toggle', async ({ page }) => {
+    await page.goto(BASE);
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.cell').first().click();
+    await expect(page.locator('.sidebar.open')).toBeVisible({ timeout: 5000 });
+    const section = page.locator('.collapsible-title').first();
+    await expect(section).toBeVisible();
+    await section.click();
+    // After clicking, the section's aria-expanded should toggle
+    await expect(section).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  test('technique URL pre-selection works', async ({ page }) => {
+    await page.goto(BASE + '/#tech=T1059');
+    await expect(page.locator('.sidebar.open')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('.sidebar-header .attack-id')).toContainText('T1059');
+  });
+
+  test('multiple heatmap modes render', async ({ page }) => {
+    await page.goto(BASE);
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    // Open heatmap dropdown
+    await page.locator('.heatmap-btn').click();
+    await expect(page.locator('.views-menu')).toBeVisible();
+    // Switch to KEV mode
+    const kevBtn = page.locator('.heatmap-mode-btn', { hasText: 'KEV' });
+    if (await kevBtn.count() > 0) {
+      await kevBtn.click();
+      // Matrix should still render with tactic headers
+      await expect(page.locator('.tactic-header')).toHaveCount({ minimum: 5 });
+    }
+  });
+
+  test('dashboard shows widgets', async ({ page }) => {
+    await page.goto(BASE);
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.nav-item', { hasText: 'Dashboard' }).click();
+    await expect(page.locator('app-dashboard-panel')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('.widget-card')).toHaveCount({ minimum: 3 }, { timeout: 10000 });
+  });
+
+  test('detection panel opens', async ({ page }) => {
+    await page.goto(BASE);
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.nav-item', { hasText: 'Detect' }).click();
+    await expect(page.locator('app-detection-panel')).toBeVisible({ timeout: 5000 });
+  });
 });
