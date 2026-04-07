@@ -18,6 +18,8 @@ import { NistMappingService, NistControl } from '../../services/nist-mapping.ser
 import { CriProfileService, CriControl } from '../../services/cri-profile.service';
 import { ComplianceMapperService, ComplianceFramework, ComplianceControl } from '../../services/compliance-mapper.service';
 import { ImplementationService, ImplStatus, IMPL_STATUS_LABELS, IMPL_STATUS_COLORS } from '../../services/implementation.service';
+import { CsaCcmService, CsaCcmControl } from '../../services/csa-ccm.service';
+import { M365ControlsService, M365Control } from '../../services/m365-controls.service';
 import { Domain } from '../../models/domain';
 
 export interface ComplianceRow {
@@ -37,6 +39,10 @@ export interface ComplianceRow {
   topGcpControls: CloudControl[];
   topNistControls: NistControl[];
   topCriControls: CriControl[];
+  csaCcmCount: number;
+  topCsaCcmControls: CsaCcmControl[];
+  m365CtrlCount: number;
+  topM365Controls: M365Control[];
 }
 
 @Component({
@@ -49,13 +55,13 @@ export interface ComplianceRow {
 })
 export class CompliancePanelComponent implements OnInit, OnDestroy {
   visible = false;
-  activeTab: 'cis' | 'aws' | 'azure' | 'gcp' | 'nist' | 'cri' = 'nist';
+  activeTab: 'cis' | 'aws' | 'azure' | 'gcp' | 'nist' | 'cri' | 'csa-ccm' | 'm365-ctrl' = 'nist';
   searchText = '';
   sortBy: 'technique' | 'coverage' = 'coverage';
   complianceRows: ComplianceRow[] = [];
 
   // Tooltip state
-  tooltipControl: CisControl | CloudControl | null = null;
+  tooltipControl: CisControl | CloudControl | CsaCcmControl | M365Control | null = null;
   tooltipX = 0;
   tooltipY = 0;
 
@@ -80,6 +86,8 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
     private criService: CriProfileService,
     private complianceMapper: ComplianceMapperService,
     private implService: ImplementationService,
+    private csaCcmService: CsaCcmService,
+    private m365ControlsService: M365ControlsService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -133,6 +141,26 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       }),
     );
+
+    // Refresh when CSA CCM data finishes loading
+    this.subs.add(
+      this.csaCcmService.loaded$.subscribe(loaded => {
+        if (loaded && this.visible) {
+          this.buildRows();
+        }
+        this.cdr.markForCheck();
+      }),
+    );
+
+    // Refresh when M365 Controls data finishes loading
+    this.subs.add(
+      this.m365ControlsService.loaded$.subscribe(loaded => {
+        if (loaded && this.visible) {
+          this.buildRows();
+        }
+        this.cdr.markForCheck();
+      }),
+    );
   }
 
   ngOnDestroy(): void {
@@ -150,6 +178,8 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
         const gcpControls = this.cloudService.getControlsForTechnique(tech.attackId, 'gcp');
         const nistControls = this.nistService.getControlsForTechnique(tech.attackId);
         const criControls = this.criService.getControlsForTechnique(tech.attackId);
+        const csaCcmControls = this.csaCcmService.getControlsForTechnique(tech.attackId);
+        const m365Ctrls = this.m365ControlsService.getControlsForTechnique(tech.attackId);
         rows.push({
           id: tech.id,
           name: tech.name,
@@ -167,6 +197,10 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
           topGcpControls: gcpControls.slice(0, 2),
           topNistControls: nistControls.slice(0, 2),
           topCriControls: criControls.slice(0, 2),
+          csaCcmCount: csaCcmControls.length,
+          topCsaCcmControls: csaCcmControls.slice(0, 2),
+          m365CtrlCount: m365Ctrls.length,
+          topM365Controls: m365Ctrls.slice(0, 2),
         });
       }
       this.complianceRows = rows;
@@ -178,7 +212,7 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
     this.filterService.setActivePanel(null);
   }
 
-  setTab(tab: 'cis' | 'aws' | 'azure' | 'gcp' | 'nist' | 'cri'): void {
+  setTab(tab: 'cis' | 'aws' | 'azure' | 'gcp' | 'nist' | 'cri' | 'csa-ccm' | 'm365-ctrl'): void {
     this.activeTab = tab;
     this.searchText = '';
   }
@@ -254,47 +288,63 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
     return this.activeRows.filter(r => r.criCount > 0 || this.sortBy === 'technique');
   }
 
+  get csaCcmRows(): ComplianceRow[] {
+    return this.activeRows.filter(r => r.csaCcmCount > 0 || this.sortBy === 'technique');
+  }
+
+  get m365CtrlRows(): ComplianceRow[] {
+    return this.activeRows.filter(r => r.m365CtrlCount > 0 || this.sortBy === 'technique');
+  }
+
   get displayRows(): ComplianceRow[] {
     switch (this.activeTab) {
-      case 'cis':   return this.cisRows;
-      case 'aws':   return this.awsRows;
-      case 'azure': return this.azureRows;
-      case 'gcp':   return this.gcpRows;
-      case 'nist':  return this.nistRows;
-      case 'cri':   return this.criRows;
+      case 'cis':      return this.cisRows;
+      case 'aws':      return this.awsRows;
+      case 'azure':    return this.azureRows;
+      case 'gcp':      return this.gcpRows;
+      case 'nist':     return this.nistRows;
+      case 'cri':      return this.criRows;
+      case 'csa-ccm':  return this.csaCcmRows;
+      case 'm365-ctrl': return this.m365CtrlRows;
     }
   }
 
   get activeTabCount(): number {
     switch (this.activeTab) {
-      case 'cis':   return this.complianceRows.filter(r => r.cisCount > 0).length;
-      case 'aws':   return this.complianceRows.filter(r => r.awsCount > 0).length;
-      case 'azure': return this.complianceRows.filter(r => r.azureCount > 0).length;
-      case 'gcp':   return this.complianceRows.filter(r => r.gcpCount > 0).length;
-      case 'nist':  return this.complianceRows.filter(r => r.nistCount > 0).length;
-      case 'cri':   return this.complianceRows.filter(r => r.criCount > 0).length;
+      case 'cis':      return this.complianceRows.filter(r => r.cisCount > 0).length;
+      case 'aws':      return this.complianceRows.filter(r => r.awsCount > 0).length;
+      case 'azure':    return this.complianceRows.filter(r => r.azureCount > 0).length;
+      case 'gcp':      return this.complianceRows.filter(r => r.gcpCount > 0).length;
+      case 'nist':     return this.complianceRows.filter(r => r.nistCount > 0).length;
+      case 'cri':      return this.complianceRows.filter(r => r.criCount > 0).length;
+      case 'csa-ccm':  return this.complianceRows.filter(r => r.csaCcmCount > 0).length;
+      case 'm365-ctrl': return this.complianceRows.filter(r => r.m365CtrlCount > 0).length;
     }
   }
 
   activeCount(row: ComplianceRow): number {
     switch (this.activeTab) {
-      case 'cis':   return row.cisCount;
-      case 'aws':   return row.awsCount;
-      case 'azure': return row.azureCount;
-      case 'gcp':   return row.gcpCount;
-      case 'nist':  return row.nistCount;
-      case 'cri':   return row.criCount;
+      case 'cis':      return row.cisCount;
+      case 'aws':      return row.awsCount;
+      case 'azure':    return row.azureCount;
+      case 'gcp':      return row.gcpCount;
+      case 'nist':     return row.nistCount;
+      case 'cri':      return row.criCount;
+      case 'csa-ccm':  return row.csaCcmCount;
+      case 'm365-ctrl': return row.m365CtrlCount;
     }
   }
 
-  topControls(row: ComplianceRow): (CisControl | CloudControl | NistControl | CriControl)[] {
+  topControls(row: ComplianceRow): (CisControl | CloudControl | NistControl | CriControl | CsaCcmControl | M365Control)[] {
     switch (this.activeTab) {
-      case 'cis':   return row.topCisControls;
-      case 'aws':   return row.topAwsControls;
-      case 'azure': return row.topAzureControls;
-      case 'gcp':   return row.topGcpControls;
-      case 'nist':  return row.topNistControls;
-      case 'cri':   return row.topCriControls;
+      case 'cis':      return row.topCisControls;
+      case 'aws':      return row.topAwsControls;
+      case 'azure':    return row.topAzureControls;
+      case 'gcp':      return row.topGcpControls;
+      case 'nist':     return row.topNistControls;
+      case 'cri':      return row.topCriControls;
+      case 'csa-ccm':  return row.topCsaCcmControls;
+      case 'm365-ctrl': return row.topM365Controls;
     }
   }
 
@@ -322,11 +372,35 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
     return loaded;
   }
 
+  get csaCcmTotal(): number {
+    let t = 0;
+    this.csaCcmService.total$.subscribe(v => t = v).unsubscribe();
+    return t;
+  }
+
+  get csaCcmLoaded(): boolean {
+    let loaded = false;
+    this.csaCcmService.loaded$.subscribe(v => loaded = v).unsubscribe();
+    return loaded;
+  }
+
+  get m365CtrlTotal(): number {
+    let t = 0;
+    this.m365ControlsService.total$.subscribe(v => t = v).unsubscribe();
+    return t;
+  }
+
+  get m365CtrlLoaded(): boolean {
+    let loaded = false;
+    this.m365ControlsService.loaded$.subscribe(v => loaded = v).unsubscribe();
+    return loaded;
+  }
+
   attackUrl(attackId: string): string {
     return `https://attack.mitre.org/techniques/${attackId.replace('.', '/')}/`;
   }
 
-  showTooltip(event: MouseEvent, ctrl: CisControl | CloudControl | NistControl | CriControl): void {
+  showTooltip(event: MouseEvent, ctrl: CisControl | CloudControl | NistControl | CriControl | CsaCcmControl | M365Control): void {
     this.tooltipControl = ctrl as CisControl | CloudControl;
     this.tooltipX = event.clientX + 12;
     this.tooltipY = event.clientY - 8;
@@ -421,8 +495,10 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
       case 'aws':   return [...rows].sort((a, b) => b.awsCount - a.awsCount);
       case 'azure': return [...rows].sort((a, b) => b.azureCount - a.azureCount);
       case 'gcp':   return [...rows].sort((a, b) => b.gcpCount - a.gcpCount);
-      case 'nist':  return [...rows].sort((a, b) => b.nistCount - a.nistCount);
-      case 'cri':   return [...rows].sort((a, b) => b.criCount - a.criCount);
+      case 'nist':     return [...rows].sort((a, b) => b.nistCount - a.nistCount);
+      case 'cri':      return [...rows].sort((a, b) => b.criCount - a.criCount);
+      case 'csa-ccm':  return [...rows].sort((a, b) => b.csaCcmCount - a.csaCcmCount);
+      case 'm365-ctrl': return [...rows].sort((a, b) => b.m365CtrlCount - a.m365CtrlCount);
     }
   }
 }

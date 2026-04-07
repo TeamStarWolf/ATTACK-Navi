@@ -62,6 +62,8 @@ import { AzureIdentityService, AzureAttackPattern } from '../../services/azure-i
 import { OffensiveToolsService, OffensiveTool } from '../../services/offensive-tools.service';
 import { WazuhService, WazuhRule } from '../../services/wazuh.service';
 import { ThreatHuntingService, HuntingQuery } from '../../services/threat-hunting.service';
+import { CsaCcmService, CsaCcmControl } from '../../services/csa-ccm.service';
+import { M365ControlsService, M365Control } from '../../services/m365-controls.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -154,6 +156,14 @@ export class SidebarComponent implements OnInit, OnDestroy {
   // Threat Hunting Queries
   huntingQueries: HuntingQuery[] = [];
 
+  // CSA CCM Controls
+  csaCcmControls: CsaCcmControl[] = [];
+  showAllCsaCcm = false;
+
+  // M365 Security Controls (CTID dataset)
+  m365Controls: M365Control[] = [];
+  showAllM365Controls = false;
+
   // Clipboard copy feedback
   copiedInvoke = '';
   copiedBatchScript = false;
@@ -184,7 +194,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       'campaigns', 'd3fend', 'engage', 'car', 'atomic', 'misp', 'opencti', 'sigma',
       'custom', 'mitigations', 'relgraph', 'm365', 'siem', 'payloads', 'logging',
       'bloodhound', 'c2', 'ioc-feed', 'azure-identity', 'offensive-tools',
-      'wazuh-xdr', 'threat-hunting',
+      'wazuh-xdr', 'threat-hunting', 'csa-ccm', 'm365-controls',
     ];
     for (const s of sections) this.collapsedSections.add(s);
     this.cdr.markForCheck();
@@ -223,6 +233,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
     if (this.offensiveTools.length === 0) this.collapsedSections.add('offensive-tools');
     if (this.wazuhRules.length === 0) this.collapsedSections.add('wazuh-xdr');
     if (this.huntingQueries.length === 0) this.collapsedSections.add('threat-hunting');
+    if (this.csaCcmControls.length === 0) this.collapsedSections.add('csa-ccm');
+    if (this.m365Controls.length === 0) this.collapsedSections.add('m365-controls');
     this.cdr.markForCheck();
   }
 
@@ -241,7 +253,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     if (this.threatGroups.length > 0) score += 5;
     if (this.softwareList.length > 0) score += 5;
     if (this.capecEntries.length > 0) score += 5;
-    if (this.cisControls.length > 0 || this.cloudControls.length > 0) score += 5;
+    if (this.cisControls.length > 0 || this.cloudControls.length > 0 || this.csaCcmControls.length > 0 || this.m365Controls.length > 0) score += 5;
     if (this.engageActivities.length > 0) score += 5;
     if (this.carAnalytics.length > 0) score += 5;
     if (this.m365Queries.length > 0) score += 5;
@@ -389,6 +401,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
     private offensiveToolsService: OffensiveToolsService,
     private wazuhService: WazuhService,
     private threatHuntingService: ThreatHuntingService,
+    private csaCcmService: CsaCcmService,
+    private m365ControlsService: M365ControlsService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -500,6 +514,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
         this.offensiveTools = tech ? this.offensiveToolsService.getToolsForTechnique(tech.attackId) : [];
         this.wazuhRules = tech ? this.wazuhService.getRulesForTechnique(tech.attackId) : [];
         this.huntingQueries = tech ? this.threatHuntingService.getQueriesForTechnique(tech.attackId) : [];
+        this.csaCcmControls = tech ? this.csaCcmService.getControlsForTechnique(tech.attackId) : [];
+        this.showAllCsaCcm = false;
+        this.m365Controls = tech ? this.m365ControlsService.getControlsForTechnique(tech.attackId) : [];
+        this.showAllM365Controls = false;
         this.copiedKql = '';
         this.copiedLoggingScript = false;
         this.markdownCopied = false;
@@ -644,6 +662,26 @@ export class SidebarComponent implements OnInit, OnDestroy {
       this.capecService.loaded$.subscribe((loaded) => {
         if (loaded && this.technique) {
           this.capecEntries = this.capecService.getCapecForTechnique(this.technique.attackId);
+          this.cdr.markForCheck();
+        }
+      }),
+    );
+
+    // Refresh CSA CCM controls when data finishes loading
+    this.subs.add(
+      this.csaCcmService.loaded$.subscribe((loaded) => {
+        if (loaded && this.technique) {
+          this.csaCcmControls = this.csaCcmService.getControlsForTechnique(this.technique.attackId);
+          this.cdr.markForCheck();
+        }
+      }),
+    );
+
+    // Refresh M365 Controls when data finishes loading
+    this.subs.add(
+      this.m365ControlsService.loaded$.subscribe((loaded) => {
+        if (loaded && this.technique) {
+          this.m365Controls = this.m365ControlsService.getControlsForTechnique(this.technique.attackId);
           this.cdr.markForCheck();
         }
       }),
