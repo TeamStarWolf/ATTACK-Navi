@@ -4,9 +4,9 @@ This repo now has enough UI surface area that a large redesign should be treated
 
 ## What Was Added
 
-- Global design tokens in [src/styles.scss](/C:/Users/dev/Documents/Projects/mitre-mitigation-navigator/src/styles.scss)
-- Reusable upgrade primitives in [src/styles/_upgrade-foundation.scss](/C:/Users/dev/Documents/Projects/mitre-mitigation-navigator/src/styles/_upgrade-foundation.scss)
-- Relaxed Angular build budgets in [angular.json](/C:/Users/dev/Documents/Projects/mitre-mitigation-navigator/angular.json) so larger visual work can land incrementally
+- Global design tokens in [src/styles.scss](src/styles.scss)
+- Reusable upgrade primitives in [src/styles/_upgrade-foundation.scss](src/styles/_upgrade-foundation.scss)
+- Relaxed Angular build budgets in [angular.json](angular.json) so larger visual work can land incrementally
 
 ## Shared Primitives
 
