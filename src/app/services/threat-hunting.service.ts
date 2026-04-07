@@ -99,7 +99,14 @@ export class ThreatHuntingService {
   private coveredSubject = new BehaviorSubject<number>(0);
   covered$: Observable<number> = this.coveredSubject.asObservable();
 
-  constructor() {
+  private initialized = false;
+
+  constructor() {}
+
+  /** Trigger data fetch on first use. Safe to call multiple times. */
+  loadOnDemand(): void {
+    if (this.initialized) return;
+    this.initialized = true;
     this.loadQueries();
   }
 

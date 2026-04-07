@@ -91,7 +91,14 @@ export class PayloadsService {
   private loadedSubject = new BehaviorSubject<boolean>(false);
   readonly loaded$: Observable<boolean> = this.loadedSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  private initialized = false;
+
+  constructor(private http: HttpClient) {}
+
+  /** Trigger data fetch on first use. Safe to call multiple times. */
+  loadOnDemand(): void {
+    if (this.initialized) return;
+    this.initialized = true;
     this.loadPayloads();
   }
 

@@ -33,10 +33,17 @@ export class NucleiService {
   /** Number of unique ATT&CK techniques covered by nuclei templates. */
   readonly covered$ = this.coveredSubject.asObservable();
 
+  private initialized = false;
+
   constructor(
     private http: HttpClient,
     private attackCveService: AttackCveService,
-  ) {
+  ) {}
+
+  /** Trigger data fetch on first use. Safe to call multiple times. */
+  loadOnDemand(): void {
+    if (this.initialized) return;
+    this.initialized = true;
     this.load();
   }
 

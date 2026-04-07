@@ -99,7 +99,14 @@ export class M365DefenderService {
   private coveredSubject = new BehaviorSubject<number>(0);
   readonly covered$ = this.coveredSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  private initialized = false;
+
+  constructor(private http: HttpClient) {}
+
+  /** Trigger data fetch on first use. Safe to call multiple times. */
+  loadOnDemand(): void {
+    if (this.initialized) return;
+    this.initialized = true;
     this.loadTree();
   }
 
