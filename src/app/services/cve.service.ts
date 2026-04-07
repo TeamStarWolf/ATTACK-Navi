@@ -788,12 +788,14 @@ export class CveService {
 
   loadKev(): void {
     if (this.kevLoadedSubject.value) return;
-    // CISA.gov doesn't send CORS headers — route through allorigins proxy.
-    // Fallback chain: allorigins proxy → direct CISA (may work in production) → empty.
-    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(this.KEV_URL)}`;
-    this.http.get<any>(proxyUrl).pipe(
+    // Try direct CISA fetch first (works in production with CSP connect-src).
+    // Fallback to allorigins proxy only if direct fetch fails (dev/CORS).
+    this.http.get<any>(this.KEV_URL).pipe(
       retryWithBackoff(),
-      catchError(() => this.http.get<any>(this.KEV_URL).pipe(retryWithBackoff())),
+      catchError(() => {
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(this.KEV_URL)}`;
+        return this.http.get<any>(proxyUrl).pipe(retryWithBackoff());
+      }),
       catchError(() => of({ vulnerabilities: [] }))
     ).subscribe((data: any) => {
       const vulns: KevEntry[] = data.vulnerabilities ?? [];
