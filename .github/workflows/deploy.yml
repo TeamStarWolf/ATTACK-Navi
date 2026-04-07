@@ -28,7 +28,7 @@ jobs:
       - run: npm ci
       - run: npx ng test --no-watch --browsers=ChromeHeadless
       - run: npx ng build --base-href /ATTACK-Navi/
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v4
         with:
           path: dist/mitre-mitigation-navigator/browser
 
