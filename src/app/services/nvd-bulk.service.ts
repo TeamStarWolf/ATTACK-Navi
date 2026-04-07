@@ -76,11 +76,12 @@ export class NvdBulkService {
     const delayMs = apiKey ? 200 : 500;
 
     let url = `https://services.nvd.nist.gov/rest/json/cves/2.0?lastModStartDate=${startDate}&lastModEndDate=${endDate}&resultsPerPage=2000&startIndex=${startIndex}`;
+    const headers: Record<string, string> = {};
     if (apiKey) {
-      url += `&apiKey=${encodeURIComponent(apiKey)}`;
+      headers['apiKey'] = apiKey;
     }
 
-    this.http.get<any>(url).pipe(
+    this.http.get<any>(url, { headers }).pipe(
       catchError(() => of(null)),
     ).subscribe(data => {
       if (!data) {
