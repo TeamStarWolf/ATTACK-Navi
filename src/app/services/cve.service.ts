@@ -848,7 +848,7 @@ export class CveService {
     // CWE-based scores (indirect)
     const cweScores = new Map<string, number>();
     for (const v of vulns) {
-      const cwes = v.cwes ? v.cwes.split(',').map((c: string) => c.trim()).filter(Boolean) : [];
+      const cwes = Array.isArray(v.cwes) ? v.cwes : (typeof v.cwes === 'string' && v.cwes ? v.cwes.split(',').map((c: string) => c.trim()).filter(Boolean) : []);
       const attackIds = mapCwesToAttackIds(cwes.length > 0 ? cwes : ['CWE-NVD-CWE-noinfo']);
       for (const id of attackIds) {
         cweScores.set(id, (cweScores.get(id) ?? 0) + 1);
