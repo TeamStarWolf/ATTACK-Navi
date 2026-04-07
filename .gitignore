@@ -54,3 +54,4 @@ server/.env
 *.har
 /attack-navi-live.png
 /live2.png
+src/assets/data/nvd/
