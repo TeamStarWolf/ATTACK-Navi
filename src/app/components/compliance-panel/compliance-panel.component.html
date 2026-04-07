@@ -10,7 +10,7 @@
           <span class="panel-title">Compliance Frameworks</span>
           @if (complianceRows.length > 0) {
             <span class="header-subtitle">
-              {{ activeTabCount }} techniques with {{ activeTab === 'cis' ? 'CIS Controls' : activeTab === 'nist' ? 'NIST 800-53' : activeTab === 'cri' ? 'CRI Profile' : activeTab.toUpperCase() }} coverage
+              {{ activeTabCount }} techniques with {{ activeTab === 'cis' ? 'CIS Controls' : activeTab === 'nist' ? 'NIST 800-53' : activeTab === 'cri' ? 'CRI Profile' : activeTab === 'csa-ccm' ? 'CSA CCM' : activeTab === 'm365-ctrl' ? 'M365 Controls' : activeTab.toUpperCase() }} coverage
             </span>
           }
         </div>
@@ -77,6 +77,24 @@
               <span class="loading-dot"></span>
             }
           </button>
+          <button class="tab-btn" [class.active]="activeTab === 'csa-ccm'" (click)="setTab('csa-ccm')">
+            &#9729; CSA CCM
+            @if (csaCcmTotal > 0) {
+              <span class="tab-badge tab-badge-csa">{{ csaCcmTotal }}</span>
+            }
+            @if (!csaCcmLoaded) {
+              <span class="loading-dot"></span>
+            }
+          </button>
+          <button class="tab-btn" [class.active]="activeTab === 'm365-ctrl'" (click)="setTab('m365-ctrl')">
+            &#128311; M365
+            @if (m365CtrlTotal > 0) {
+              <span class="tab-badge tab-badge-m365c">{{ m365CtrlTotal }}</span>
+            }
+            @if (!m365CtrlLoaded) {
+              <span class="loading-dot"></span>
+            }
+          </button>
         </div>
 
         <!-- Search + Sort -->
@@ -120,13 +138,13 @@
                     </td>
                     <td class="badge-col">
                       <div class="ctrl-badges">
-                        @for (ctrl of topControls(row); track ctrl.id) {
+                        @for (ctrl of topControls(row); track $any(ctrl).id || $any(ctrl).controlId) {
                           <span
                             class="ctrl-pill"
                             [class]="'ctrl-pill-' + activeTab"
                             (mouseenter)="showTooltip($event, ctrl)"
                             (mouseleave)="hideTooltip()"
-                          >{{ ctrl.id }}</span>
+                          >{{ $any(ctrl).id || $any(ctrl).controlId }}</span>
                         }
                         @if (activeCount(row) > 2) {
                           <span class="ctrl-more">+{{ activeCount(row) - 2 }}</span>
@@ -234,7 +252,7 @@
       [style.left.px]="tooltipX"
       [style.top.px]="tooltipY"
     >
-      <div class="tooltip-id">{{ tooltipControl.id }}</div>
+      <div class="tooltip-id">{{ $any(tooltipControl).id || $any(tooltipControl).controlId }}</div>
       <div class="tooltip-desc">{{ tooltipControl.description }}</div>
       @if ($any(tooltipControl).group) {
         <div class="tooltip-meta">Group: {{ $any(tooltipControl).group }}</div>
@@ -242,7 +260,13 @@
       @if ($any(tooltipControl).provider) {
         <div class="tooltip-meta">Provider: {{ $any(tooltipControl).provider | uppercase }}</div>
       }
-      <div class="tooltip-type">{{ tooltipControl.mappingType }}</div>
+      @if ($any(tooltipControl).scoreCategory) {
+        <div class="tooltip-meta">Category: {{ $any(tooltipControl).scoreCategory }}</div>
+      }
+      @if ($any(tooltipControl).scoreValue) {
+        <div class="tooltip-meta">Score: {{ $any(tooltipControl).scoreValue }}</div>
+      }
+      <div class="tooltip-type">{{ $any(tooltipControl).mappingType || 'technique_score' }}</div>
     </div>
   }
 }

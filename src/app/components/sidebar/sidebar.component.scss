@@ -3550,3 +3550,49 @@
     text-decoration: underline;
   }
 }
+
+// ── CSA CCM & M365 Controls Score Badges ─────────────────
+.ctrl-pill-badge {
+  font-size: 8px;
+  font-weight: 600;
+  border-radius: 3px;
+  padding: 1px 5px;
+  flex-shrink: 0;
+  text-transform: capitalize;
+
+  &.score-significant {
+    color: #4caf50;
+    background: rgba(76, 175, 80, 0.12);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+  }
+
+  &.score-partial {
+    color: #ff9800;
+    background: rgba(255, 152, 0, 0.12);
+    border: 1px solid rgba(255, 152, 0, 0.3);
+  }
+
+  &.score-minimal {
+    color: #e53935;
+    background: rgba(229, 57, 53, 0.12);
+    border: 1px solid rgba(229, 57, 53, 0.3);
+  }
+
+  &.category-protect {
+    color: #2196f3;
+    background: rgba(33, 150, 243, 0.12);
+    border: 1px solid rgba(33, 150, 243, 0.3);
+  }
+
+  &.category-detect {
+    color: #ab47bc;
+    background: rgba(171, 71, 188, 0.12);
+    border: 1px solid rgba(171, 71, 188, 0.3);
+  }
+
+  &.category-respond {
+    color: #ff7043;
+    background: rgba(255, 112, 67, 0.12);
+    border: 1px solid rgba(255, 112, 67, 0.3);
+  }
+}

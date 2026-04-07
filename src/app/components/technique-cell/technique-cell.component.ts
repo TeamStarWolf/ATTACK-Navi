@@ -184,6 +184,10 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
   @Input() maxMyExposure = 1;
   @Input() wazuhScore = 0;
   @Input() maxWazuhScore = 1;
+  @Input() csaCcmScore = 0;
+  @Input() maxCsaCcmScore = 1;
+  @Input() m365ControlsScore = 0;
+  @Input() maxM365ControlsScore = 1;
   @Input() showTechniqueId = true;
   @Input() showMitigationCount = true;
   @Input() showTechniqueName = true;
@@ -270,6 +274,10 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
       this.bgColor = this.computeMyExposureColor(this.myExposureScore);
     } else if (this.heatmapMode === 'wazuh') {
       this.bgColor = this.computeWazuhColor(this.wazuhScore);
+    } else if (this.heatmapMode === 'csa-ccm') {
+      this.bgColor = this.computeCsaCcmColor(this.csaCcmScore);
+    } else if (this.heatmapMode === 'm365-controls') {
+      this.bgColor = this.computeM365ControlsColor(this.m365ControlsScore);
     } else {
       this.bgColor = this.computeColor(this.technique.mitigationCount);
     }
@@ -497,6 +505,24 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
     if (count <= 3)  return '#1a6fa0';
     if (count <= 5)  return '#2196c8';
     return '#3aabe0';
+  }
+
+  /** CSA CCM: green gradient. */
+  private computeCsaCcmColor(count: number): string {
+    if (count === 0) return '#0a1a10';
+    if (count <= 2)  return '#1a4a2a';
+    if (count <= 5)  return '#2a7a3a';
+    if (count <= 10) return '#3aaa4a';
+    return '#4cce5a';
+  }
+
+  /** M365 Controls: Microsoft blue gradient. */
+  private computeM365ControlsColor(count: number): string {
+    if (count === 0) return '#0a1028';
+    if (count <= 2)  return '#0a3068';
+    if (count <= 5)  return '#0050a8';
+    if (count <= 10) return '#0070e8';
+    return '#40a0ff';
   }
 
   /** Unified Risk Score: 0–100 composite. Low = red (poorly defended/targeted), high = green. */
