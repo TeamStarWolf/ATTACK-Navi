@@ -48,6 +48,8 @@ import { TechniqueTooltipComponent } from '../technique-tooltip/technique-toolti
 import { CustomTechniqueService, CustomTechnique } from '../../services/custom-technique.service';
 import { AssetInventoryService } from '../../services/asset-inventory.service';
 import { WazuhService } from '../../services/wazuh.service';
+import { CsaCcmService } from '../../services/csa-ccm.service';
+import { M365ControlsService } from '../../services/m365-controls.service';
 
 @Component({
   selector: 'app-matrix',
@@ -176,6 +178,12 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
   // Wazuh XDR rule scores: attackId -> rule count
   wazuhScoreMap = new Map<string, number>();
   maxWazuhScore = 1;
+  // CSA CCM control scores: attackId -> control count
+  csaCcmScoreMap = new Map<string, number>();
+  maxCsaCcmScore = 1;
+  // M365 Controls scores: attackId -> control count
+  m365ControlsScoreMap = new Map<string, number>();
+  maxM365ControlsScore = 1;
   // Track current heatmap mode for loaded$ re-trigger
   private currentHeatmapMode: HeatmapMode = 'coverage';
   // Annotation map: techniqueId (attackId) -> annotation
@@ -263,6 +271,8 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     private customTechniqueService: CustomTechniqueService,
     private assetInventoryService: AssetInventoryService,
     private wazuhService: WazuhService,
+    private csaCcmService: CsaCcmService,
+    private m365ControlsService: M365ControlsService,
     private cdr: ChangeDetectorRef,
     private el: ElementRef,
   ) {}
@@ -747,6 +757,20 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
             if (count > 0) this.wazuhScoreMap.set(tech.attackId, count);
           }
           this.maxWazuhScore = this.wazuhScoreMap.size > 0 ? Math.max(...this.wazuhScoreMap.values()) : 1;
+        } else if (mode === 'csa-ccm' && this.domain) {
+          this.csaCcmScoreMap = new Map();
+          for (const tech of this.domain.techniques) {
+            const count = this.csaCcmService.getHeatScore(tech.attackId);
+            if (count > 0) this.csaCcmScoreMap.set(tech.attackId, count);
+          }
+          this.maxCsaCcmScore = this.csaCcmScoreMap.size > 0 ? Math.max(...this.csaCcmScoreMap.values()) : 1;
+        } else if (mode === 'm365-controls' && this.domain) {
+          this.m365ControlsScoreMap = new Map();
+          for (const tech of this.domain.techniques) {
+            const count = this.m365ControlsService.getHeatScore(tech.attackId);
+            if (count > 0) this.m365ControlsScoreMap.set(tech.attackId, count);
+          }
+          this.maxM365ControlsScore = this.m365ControlsScoreMap.size > 0 ? Math.max(...this.m365ControlsScoreMap.values()) : 1;
         } else {
           this.softwareScores = new Map();
           this.maxSoftware = 1;
@@ -878,6 +902,24 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
       this.splunkContentService.loaded$.subscribe(loaded => {
         if (loaded && this.currentHeatmapMode === 'splunk') {
           this.filterService.setHeatmapMode('splunk');
+        }
+      }),
+    );
+
+    // Re-render CSA CCM heatmap when CSA CCM data loads
+    this.subs.add(
+      this.csaCcmService.loaded$.subscribe(loaded => {
+        if (loaded && this.currentHeatmapMode === 'csa-ccm') {
+          this.filterService.setHeatmapMode('csa-ccm');
+        }
+      }),
+    );
+
+    // Re-render M365 Controls heatmap when M365 Controls data loads
+    this.subs.add(
+      this.m365ControlsService.loaded$.subscribe(loaded => {
+        if (loaded && this.currentHeatmapMode === 'm365-controls') {
+          this.filterService.setHeatmapMode('m365-controls');
         }
       }),
     );
@@ -1370,6 +1412,14 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
 
   getWazuhScore(t: Technique): number {
     return this.wazuhScoreMap.get(t.attackId) ?? 0;
+  }
+
+  getCsaCcmScore(t: Technique): number {
+    return this.csaCcmScoreMap.get(t.attackId) ?? 0;
+  }
+
+  getM365ControlsScore(t: Technique): number {
+    return this.m365ControlsScoreMap.get(t.attackId) ?? 0;
   }
 
   getFrequencyScore(t: Technique): number {

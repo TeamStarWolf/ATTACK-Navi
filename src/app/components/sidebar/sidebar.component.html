@@ -490,6 +490,69 @@
           </section>
         }
 
+        <!-- CSA CCM Controls section -->
+        @if (csaCcmControls.length > 0) {
+          <section class="detail-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('csa-ccm')" (click)="toggleSection('csa-ccm')">
+              <span class="section-chevron">{{ isSectionCollapsed('csa-ccm') ? '&#x25B8;' : '&#x25BE;' }}</span>
+              <span class="section-icon">&#9729;</span> CSA CCM Controls
+              <span class="section-count">{{ csaCcmControls.length }}</span>
+            </h4>
+            @if (!isSectionCollapsed('csa-ccm')) {
+            <div class="nist-controls-list">
+              @for (ctrl of (showAllCsaCcm ? csaCcmControls : csaCcmControls.slice(0, 6)); track ctrl.controlId + ctrl.scoreCategory) {
+                <div class="nist-item">
+                  <span class="nist-id">{{ ctrl.controlId }}</span>
+                  <span class="nist-family" [class]="'score-' + ctrl.scoreValue">{{ ctrl.scoreCategory }}</span>
+                  <span class="nist-desc">{{ ctrl.description }}</span>
+                  <span class="ctrl-pill-badge score-{{ ctrl.scoreValue }}">{{ ctrl.scoreValue }}</span>
+                </div>
+              }
+              @if (csaCcmControls.length > 6) {
+                <button class="show-more-btn" (click)="showAllCsaCcm = !showAllCsaCcm">
+                  {{ showAllCsaCcm ? 'Show less' : 'Show ' + (csaCcmControls.length - 6) + ' more controls' }}
+                </button>
+              }
+              <div class="ctid-attribution">
+                <a href="https://center-for-threat-informed-defense.github.io/mappings-explorer/" target="_blank" rel="noopener">CTID Mappings Explorer</a>
+              </div>
+            </div>
+            }
+          </section>
+        }
+
+        <!-- Microsoft 365 Controls section -->
+        @if (m365Controls.length > 0) {
+          <section class="detail-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('m365-controls')" (click)="toggleSection('m365-controls')">
+              <span class="section-chevron">{{ isSectionCollapsed('m365-controls') ? '&#x25B8;' : '&#x25BE;' }}</span>
+              <span class="section-icon">&#128311;</span> Microsoft 365 Controls
+              <span class="section-count">{{ m365Controls.length }}</span>
+            </h4>
+            @if (!isSectionCollapsed('m365-controls')) {
+            <div class="nist-controls-list">
+              @for (ctrl of (showAllM365Controls ? m365Controls : m365Controls.slice(0, 6)); track ctrl.controlId + ctrl.scoreCategory) {
+                <div class="nist-item">
+                  <span class="nist-id">{{ ctrl.controlId }}</span>
+                  <span class="nist-family">{{ ctrl.group }}</span>
+                  <span class="nist-desc">{{ ctrl.description }}</span>
+                  <span class="ctrl-pill-badge score-{{ ctrl.scoreValue }}">{{ ctrl.scoreValue }}</span>
+                  <span class="ctrl-pill-badge category-{{ ctrl.scoreCategory }}">{{ ctrl.scoreCategory }}</span>
+                </div>
+              }
+              @if (m365Controls.length > 6) {
+                <button class="show-more-btn" (click)="showAllM365Controls = !showAllM365Controls">
+                  {{ showAllM365Controls ? 'Show less' : 'Show ' + (m365Controls.length - 6) + ' more controls' }}
+                </button>
+              }
+              <div class="ctid-attribution">
+                <a href="https://center-for-threat-informed-defense.github.io/mappings-explorer/" target="_blank" rel="noopener">CTID Mappings Explorer</a>
+              </div>
+            </div>
+            }
+          </section>
+        }
+
         <!-- CRI Profile Controls section -->
         @if (criControls.length > 0) {
           <section class="detail-section upgrade-section-block">
