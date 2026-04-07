@@ -71,8 +71,7 @@ const DATASOURCE_TO_LOGSOURCE: Record<string, { category?: string; product?: str
 
 // SigmaHQ publishes Navigator layer stats for the current rule set
 const SIGMA_LAYER_URLS = [
-  'https://raw.githubusercontent.com/SigmaHQ/sigma-statistics/main/navigator_layer.json',
-  'https://raw.githubusercontent.com/SigmaHQ/sigma/master/other/statistics/sigma_statistics.json',
+  'https://raw.githubusercontent.com/SigmaHQ/sigma/master/other/sigma_attack_nav_coverage.json',
 ];
 
 @Injectable({ providedIn: 'root' })
