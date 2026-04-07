@@ -278,6 +278,26 @@ const MODE_CONFIGS: Record<HeatmapMode, LegendConfig> = {
       { color: '#3aabe0', label: '6+' },
     ],
   },
+  'csa-ccm': {
+    label: 'CSA CCM',
+    stops: [
+      { color: '#0a1a10', label: '0' },
+      { color: '#1a4a2a', label: '1–2' },
+      { color: '#2a7a3a', label: '3–5' },
+      { color: '#3aaa4a', label: '6–10' },
+      { color: '#4cce5a', label: '11+' },
+    ],
+  },
+  'm365-controls': {
+    label: 'M365 Controls',
+    stops: [
+      { color: '#0a1028', label: '0' },
+      { color: '#0a3068', label: '1–2' },
+      { color: '#0050a8', label: '3–5' },
+      { color: '#0070e8', label: '6–10' },
+      { color: '#40a0ff', label: '11+' },
+    ],
+  },
 };
 
 @Component({
