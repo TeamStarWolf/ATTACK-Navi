@@ -9,11 +9,15 @@ import { retryWithBackoff } from '../utils/retry';
 
 export interface CveAttackMapping {
   cveId: string;
-  primaryImpact: string[];        // T#### IDs
-  secondaryImpact: string[];      // T#### IDs
-  exploitationTechnique: string[]; // T#### IDs
+  description: string;              // capability_description
+  primaryImpact: string[];           // T#### IDs
+  secondaryImpact: string[];         // T#### IDs
+  exploitationTechnique: string[];   // T#### IDs
+  capabilityGroup: string;           // "xxe", "sql_injection", "buffer_overflow", etc.
+  comments: string[];                // analyst reasoning per mapping
+  references: string[];              // source URLs
   phase: string;
-  source: 'ctid-csv' | 'ctid-kev'; // which dataset this came from
+  source: 'ctid-csv' | 'ctid-kev';  // which dataset this came from
 }
 
 @Injectable({ providedIn: 'root' })
@@ -78,9 +82,13 @@ export class AttackCveService {
 
       const mapping: CveAttackMapping = {
         cveId,
+        description: '',
         primaryImpact: parseIds(parts[1] ?? ''),
         secondaryImpact: parseIds(parts[2] ?? ''),
         exploitationTechnique: parseIds(parts[3] ?? ''),
+        capabilityGroup: '',
+        comments: [],
+        references: [],
         phase: parts[5]?.trim() ?? '',
         source: 'ctid-csv',
       };
@@ -91,13 +99,17 @@ export class AttackCveService {
 
   /** Parse CTID mappings-explorer KEV JSON.
    *  Each mapping_object has a single CVE→technique link with a mapping_type.
-   *  We group by CVE so the existing CveAttackMapping shape is preserved.
+   *  We group by CVE so the existing CveAttackMapping shape is preserved,
+   *  and we now preserve comments, capability_description, capability_group,
+   *  and references from each mapping_object.
    */
   private parseAndIndexKevJson(data: any): void {
     const objects: any[] = data?.mapping_objects ?? [];
     // Group by CVE first so we can build a CveAttackMapping per CVE
     const byCve = new Map<string, {
       primary: string[]; secondary: string[]; exploitation: string[];
+      description: string; capabilityGroup: string;
+      comments: string[]; references: string[];
     }>();
 
     for (const obj of objects) {
@@ -107,9 +119,40 @@ export class AttackCveService {
       if (!cveId.startsWith('CVE-') || !/^T\d{4}/.test(techId)) continue;
 
       if (!byCve.has(cveId)) {
-        byCve.set(cveId, { primary: [], secondary: [], exploitation: [] });
+        byCve.set(cveId, {
+          primary: [], secondary: [], exploitation: [],
+          description: '', capabilityGroup: '', comments: [], references: [],
+        });
       }
       const entry = byCve.get(cveId)!;
+
+      // Collect capability_description (use first non-empty one per CVE)
+      const capDesc: string = obj.capability_description ?? '';
+      if (capDesc && !entry.description) {
+        entry.description = capDesc;
+      }
+
+      // Collect capability_group
+      const capGroup: string = obj.capability_group ?? '';
+      if (capGroup && !entry.capabilityGroup) {
+        entry.capabilityGroup = capGroup;
+      }
+
+      // Collect comments (analyst rationale per mapping_object)
+      const comment: string = obj.comments ?? '';
+      if (comment && !entry.comments.includes(comment)) {
+        entry.comments.push(comment);
+      }
+
+      // Collect references (source URLs from each mapping_object)
+      const refs: any[] = obj.references ?? [];
+      for (const ref of refs) {
+        const url = typeof ref === 'string' ? ref : (ref?.url ?? ref?.source ?? '');
+        if (url && !entry.references.includes(url)) {
+          entry.references.push(url);
+        }
+      }
+
       if (mtype === 'primary_impact' && !entry.primary.includes(techId)) {
         entry.primary.push(techId);
       } else if (mtype === 'secondary_impact' && !entry.secondary.includes(techId)) {
@@ -125,13 +168,18 @@ export class AttackCveService {
     }
 
     for (const [cveId, entry] of byCve) {
-      // If CVE already indexed from CSV, merge technique IDs in
+      // If CVE already indexed from CSV, merge technique IDs and metadata in
       const existing = this.byCveId.get(cveId);
       if (existing) {
         const addIfNew = (arr: string[], id: string) => { if (!arr.includes(id)) arr.push(id); };
         entry.primary.forEach(id => addIfNew(existing.primaryImpact, id));
         entry.secondary.forEach(id => addIfNew(existing.secondaryImpact, id));
         entry.exploitation.forEach(id => addIfNew(existing.exploitationTechnique, id));
+        // Merge metadata
+        if (!existing.description && entry.description) existing.description = entry.description;
+        if (!existing.capabilityGroup && entry.capabilityGroup) existing.capabilityGroup = entry.capabilityGroup;
+        entry.comments.forEach(c => addIfNew(existing.comments, c));
+        entry.references.forEach(r => addIfNew(existing.references, r));
         // Re-index the updated mapping
         const allTechs = [
           ...new Set([
@@ -149,9 +197,13 @@ export class AttackCveService {
       } else {
         const mapping: CveAttackMapping = {
           cveId,
+          description: entry.description,
           primaryImpact: entry.primary,
           secondaryImpact: entry.secondary,
           exploitationTechnique: entry.exploitation,
+          capabilityGroup: entry.capabilityGroup,
+          comments: entry.comments,
+          references: entry.references,
           phase: '',
           source: 'ctid-kev',
         };
@@ -210,5 +262,29 @@ export class AttackCveService {
   /** KEV-sourced CVEs only (from CTID KEV JSON). */
   getKevCvesForTechnique(attackId: string): CveAttackMapping[] {
     return this.getCvesForTechnique(attackId).filter(m => m.source === 'ctid-kev');
+  }
+
+  /** Search CVEs by ID, description, or capability group. Returns up to 50 results. */
+  searchCves(query: string): CveAttackMapping[] {
+    if (!query || query.length < 2) return [];
+    const ql = query.toLowerCase();
+    const results: CveAttackMapping[] = [];
+    for (const mapping of this.byCveId.values()) {
+      if (results.length >= 50) break;
+      if (
+        mapping.cveId.toLowerCase().includes(ql) ||
+        mapping.description.toLowerCase().includes(ql) ||
+        mapping.capabilityGroup.toLowerCase().includes(ql) ||
+        mapping.comments.some(c => c.toLowerCase().includes(ql))
+      ) {
+        results.push(mapping);
+      }
+    }
+    return results;
+  }
+
+  /** Return all CTID-curated mappings (both CSV and KEV sources). */
+  getAllCtidMappings(): CveAttackMapping[] {
+    return Array.from(this.byCveId.values());
   }
 }

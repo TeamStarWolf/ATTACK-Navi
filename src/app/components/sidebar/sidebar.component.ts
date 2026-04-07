@@ -1329,4 +1329,50 @@ export class SidebarComponent implements OnInit, OnDestroy {
       setTimeout(() => { this.copiedLoggingScript = false; this.cdr.markForCheck(); }, 2000);
     });
   }
+
+  // ─── CTID CVE Rationale Helpers ─────────────────────────────────────────────
+
+  /** Build a short CTID sentence for a CVE mapping */
+  buildCveSentence(m: CveAttackMapping): string {
+    const parts: string[] = [];
+    if (m.exploitationTechnique.length > 0) {
+      parts.push(`allows ${m.exploitationTechnique.join(', ')}`);
+    }
+    if (m.primaryImpact.length > 0) {
+      parts.push(`to gain ${m.primaryImpact.join(', ')}`);
+    }
+    if (m.secondaryImpact.length > 0) {
+      parts.push(`leading to ${m.secondaryImpact.join(', ')}`);
+    }
+    return parts.length > 0 ? parts.join(', ') : '';
+  }
+
+  /** Capability group color mapping */
+  getCapGroupColor(group: string): string {
+    const colors: Record<string, string> = {
+      xxe: '#a855f7',
+      sql_injection: '#ef4444',
+      buffer_overflow: '#f97316',
+      auth_bypass: '#3b82f6',
+      code_execution: '#eab308',
+      xss: '#ec4899',
+      command_injection: '#f43f5e',
+      path_traversal: '#14b8a6',
+      deserialization: '#8b5cf6',
+      privilege_escalation: '#6366f1',
+      information_disclosure: '#06b6d4',
+      memory_corruption: '#d97706',
+      race_condition: '#84cc16',
+      improper_input_validation: '#e11d48',
+      use_after_free: '#dc2626',
+      integer_overflow: '#ea580c',
+    };
+    return colors[group.toLowerCase()] ?? '#6b7280';
+  }
+
+  /** Format capability group name for display */
+  formatCapGroup(group: string): string {
+    if (!group) return '';
+    return group.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
 }
