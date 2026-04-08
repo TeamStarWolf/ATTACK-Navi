@@ -271,6 +271,19 @@
   font-size: 14px;
 }
 
+.generating-indicator {
+  text-align: center;
+  padding: 12px;
+  color: #64b5f6;
+  font-size: 13px;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
 // ─── Step 2: Results ───────────────────────────────────────────────────────────
 
 .results-section {

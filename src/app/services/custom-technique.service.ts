@@ -39,6 +39,12 @@ export class CustomTechniqueService {
   }
 
   create(data: Omit<CustomTechnique, 'id' | 'createdAt' | 'updatedAt'>): CustomTechnique {
+    if (!data.name || !data.name.trim()) {
+      throw new Error('Custom technique name is required.');
+    }
+    if (!data.attackId || !data.attackId.trim()) {
+      throw new Error('Custom technique ATT&CK ID is required.');
+    }
     const now = new Date().toISOString();
     const technique: CustomTechnique = {
       ...data,
