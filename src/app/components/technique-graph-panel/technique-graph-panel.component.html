@@ -2,7 +2,7 @@
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
 @if (open) {
 <div class="tgp-overlay" (click)="close()">
-  <div class="tgp-panel" (click)="$event.stopPropagation()">
+  <div class="tgp-panel" role="dialog" aria-modal="true" aria-label="Technique Relationship Graph" (click)="$event.stopPropagation()">
 
     <!-- Header -->
     <div class="tgp-header">
