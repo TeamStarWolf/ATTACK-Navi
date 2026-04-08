@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subscription } from 'rxjs';
+import { Subscription, filter, take } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
 import { AssetInventoryService, Asset, AssetExposure } from '../../services/asset-inventory.service';
 import { AttackCveService } from '../../services/attack-cve.service';
@@ -306,8 +306,7 @@ export class AssetPanelComponent implements OnInit, OnDestroy {
     }
 
     // Resolve technique names from domain
-    this.dataService.domain$.subscribe(domain => {
-      if (!domain) return;
+    this.dataService.domain$.pipe(filter(Boolean), take(1)).subscribe(domain => {
       const rows: TechniqueExposureRow[] = [];
       for (const [attackId, entry] of techMap) {
         const tech = domain.techniques.find(t => t.attackId === attackId);
