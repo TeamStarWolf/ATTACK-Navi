@@ -229,3 +229,20 @@
 .ann-yellow { background: #fbbf24; }
 .ann-green { background: #4ade80; }
 .ann-blue { background: #60a5fa; }
+
+/* ── Light mode overrides ── */
+:host-context(body.light-mode) {
+  .cell {
+    .badge {
+      background: #1e293b !important;
+      color: #ffffff !important;
+      border-color: rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .exposure-badge {
+      background: #ea580c !important;
+      color: #ffffff !important;
+      border-color: rgba(0, 0, 0, 0.1) !important;
+    }
+  }
+}
