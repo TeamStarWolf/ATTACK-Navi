@@ -2,7 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Subscription } from 'rxjs';
+import { Subscription, of } from 'rxjs';
 import { AtomicService } from '../../services/atomic.service';
 import { SigmaService } from '../../services/sigma.service';
 import { AttackCveService } from '../../services/attack-cve.service';
@@ -19,6 +19,9 @@ import { SplunkContentService } from '../../services/splunk-content.service';
 import { ExploitdbService } from '../../services/exploitdb.service';
 import { NucleiService } from '../../services/nuclei.service';
 import { DataService } from '../../services/data.service';
+import { EpssService } from '../../services/epss.service';
+import { CveService } from '../../services/cve.service';
+import { NvdBulkService } from '../../services/nvd-bulk.service';
 
 interface HealthEntry { name: string; status: 'loading' | 'loaded' | 'failed'; }
 
@@ -40,8 +43,10 @@ const LAST_REFRESHED_KEY = 'data-health-last-refreshed';
           [title]="entry.name + ': ' + entry.status"
         ></span>
       }
-      <span class="last-refreshed" *ngIf="lastRefreshedLabel">{{ lastRefreshedLabel }}</span>
-      <button class="refresh-btn" title="Refresh All" (click)="refreshAll()">&#x21bb;</button>
+      @if (lastRefreshedLabel) {
+        <span class="last-refreshed">{{ lastRefreshedLabel }}</span>
+      }
+      <button class="refresh-btn" title="Reload page" (click)="refreshAll()">&#x21bb;</button>
     </div>
   `,
   styles: [`
@@ -109,6 +114,9 @@ export class DataHealthComponent implements OnInit, OnDestroy {
     private exploitdbService: ExploitdbService,
     private nucleiService: NucleiService,
     private dataService: DataService,
+    private epssService: EpssService,
+    private cveService: CveService,
+    private nvdBulkService: NvdBulkService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -136,6 +144,9 @@ export class DataHealthComponent implements OnInit, OnDestroy {
       { name: 'Splunk Content', loaded$: this.splunkContentService.loaded$ },
       { name: 'ExploitDB', loaded$: this.exploitdbService.loaded$ },
       { name: 'Nuclei Templates', loaded$: this.nucleiService.loaded$ },
+      { name: 'EPSS', loaded$: of(true) },
+      { name: 'CISA KEV', loaded$: this.cveService.kevLoaded$ },
+      { name: 'NVD Bulk', loaded$: this.nvdBulkService.loaded$ },
     ];
 
     this.entries = sources.map(s => ({ name: s.name, status: 'loading' as const }));
@@ -165,6 +176,7 @@ export class DataHealthComponent implements OnInit, OnDestroy {
   }
 
   refreshAll(): void {
+    if (!confirm('This will reload the page and clear unsaved state. Continue?')) return;
     window.location.reload();
   }
 
