@@ -2,7 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, of, combineLatest, catchError } from 'rxjs';
+import { BehaviorSubject, Observable, Subscription, of, combineLatest, catchError } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { NvdCveItem, KevEntry } from '../models/cve';
 import { AttackCveService } from './attack-cve.service';
@@ -759,6 +759,9 @@ export class CveService {
   private readonly NVD_API = 'https://services.nvd.nist.gov/rest/json/cves/2.0';
   private readonly KEV_URL = 'https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json';
 
+  private searchSub?: Subscription;
+  private kevLoading = false;
+
   private searchResultsSubject = new BehaviorSubject<NvdCveItem[]>([]);
   private activeCveSubject = new BehaviorSubject<NvdCveItem | null>(null);
   private loadingSubject = new BehaviorSubject<boolean>(false);
@@ -789,7 +792,8 @@ export class CveService {
   }
 
   loadKev(): void {
-    if (this.kevLoadedSubject.value) return;
+    if (this.kevLoadedSubject.value || this.kevLoading) return;
+    this.kevLoading = true;
     // Try direct CISA fetch first, then corsproxy.io fallback (1 attempt each).
     this.http.get<any>(this.KEV_URL).pipe(
       catchError(() => {
@@ -804,6 +808,7 @@ export class CveService {
         map.set(v.cveID, v);
       }
       this.kevMapSubject.next(map);
+      this.kevLoading = false;
       this.kevLoadedSubject.next(true);
 
       // Track new KEV entries for notification badge
@@ -872,6 +877,7 @@ export class CveService {
 
   searchCves(query: string): void {
     if (!query.trim()) return;
+    this.searchSub?.unsubscribe();
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
 
@@ -880,7 +886,7 @@ export class CveService {
       ? `cveId=${encodeURIComponent(query.trim().toUpperCase())}`
       : `keywordSearch=${encodeURIComponent(query.trim())}&resultsPerPage=20`;
 
-    this.http.get<any>(`${this.NVD_API}?${params}`).pipe(
+    this.searchSub = this.http.get<any>(`${this.NVD_API}?${params}`).pipe(
       catchError(err => {
         this.errorSubject.next('NVD API error: ' + (err.message ?? 'network error'));
         this.loadingSubject.next(false);
