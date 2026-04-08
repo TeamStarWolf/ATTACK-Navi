@@ -2,7 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, catchError, of, timer, switchMap } from 'rxjs';
+import { BehaviorSubject, catchError, of, timer } from 'rxjs';
 import { filter, take } from 'rxjs/operators';
 import { AttackCveService } from './attack-cve.service';
 import { SettingsService } from './settings.service';
@@ -15,6 +15,7 @@ import { CWE_TO_ATTACK } from './cve.service';
  */
 @Injectable({ providedIn: 'root' })
 export class NvdBulkService {
+  private fetchSub?: import('rxjs').Subscription;
   private supplementaryMap = new Map<string, Set<string>>();
 
   private loadedSubject = new BehaviorSubject<boolean>(false);
@@ -45,7 +46,10 @@ export class NvdBulkService {
           this.coveredSubject.next(this.supplementaryMap.size);
           this.loadedSubject.next(true);
         }
-        // Then supplement with live 120-day fetch for the very latest CVEs
+        // Then supplement with live 120-day fetch for the very latest CVEs.
+        // Note: This runs regardless of whether the base JSON loaded successfully —
+        // intentional as a fallback so live NVD data can still populate technique scores
+        // even when the pre-computed mapping is unavailable.
         this.attackCveService.loaded$.pipe(
           filter(loaded => loaded),
           take(1),
@@ -81,7 +85,7 @@ export class NvdBulkService {
       headers['apiKey'] = apiKey;
     }
 
-    this.http.get<any>(url, { headers }).pipe(
+    this.fetchSub = this.http.get<any>(url, { headers }).pipe(
       catchError(() => of(null)),
     ).subscribe(data => {
       if (!data) {
@@ -99,9 +103,7 @@ export class NvdBulkService {
       const nextIndex = startIndex + 2000;
       if (nextIndex < totalResults) {
         // Delay between pages to respect rate limits
-        timer(delayMs).pipe(
-          switchMap(() => of(null)),
-        ).subscribe(() => {
+        this.fetchSub = timer(delayMs).subscribe(() => {
           this.fetchPage(nextIndex, startDate, endDate);
         });
       } else {

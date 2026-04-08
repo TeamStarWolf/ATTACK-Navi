@@ -366,6 +366,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
   editingDocs = new Map<string, MitigationDoc>();
 
   private subs = new Subscription();
+  private atomicSub?: Subscription;
+  private sigmaSub?: Subscription;
+  private openctiSub?: Subscription;
+  private epssSub?: Subscription;
 
   constructor(
     private filterService: FilterService,
@@ -416,6 +420,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.subs.add(
       this.filterService.selectedTechnique$.subscribe((tech) => {
+        this.atomicSub?.unsubscribe();
+        this.sigmaSub?.unsubscribe();
+        this.openctiSub?.unsubscribe();
+        this.epssSub?.unsubscribe();
         this.technique = tech;
         this.open = tech !== null;
         this.isCustomTechnique = tech !== null && (
@@ -446,13 +454,13 @@ export class SidebarComponent implements OnInit, OnDestroy {
           ? `https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/${tech.attackId}/${tech.attackId}.md`
           : 'https://github.com/redcanaryco/atomic-red-team';
         if (tech) {
-          this.subs.add(
-            this.atomicService.fetchLiveTests(tech.attackId, 5).subscribe(liveTests => {
+          this.atomicSub = this.atomicService.fetchLiveTests(tech.attackId, 5).subscribe(liveTests => {
+            if (this.technique?.attackId === tech.attackId) {
               this.atomicLiveTests = liveTests;
               this.atomicFetching = false;
               this.cdr.markForCheck();
-            }),
-          );
+            }
+          });
         }
         // Sigma live rules
         this.sigmaRules = [];
@@ -463,13 +471,13 @@ export class SidebarComponent implements OnInit, OnDestroy {
             this.sigmaRules = cached;
           } else {
             this.sigmaRulesFetching = true;
-            this.subs.add(
-              this.sigmaService.fetchRulesForTechnique(tech.attackId).subscribe(rules => {
+            this.sigmaSub = this.sigmaService.fetchRulesForTechnique(tech.attackId).subscribe(rules => {
+              if (this.technique?.attackId === tech.attackId) {
                 this.sigmaRules = rules;
                 this.sigmaRulesFetching = false;
                 this.cdr.markForCheck();
-              }),
-            );
+              }
+            });
           }
         }
         this.cveExposures = tech ? this.attackCveService.getCvesForTechnique(tech.attackId).slice(0, 20) : [];
@@ -539,35 +547,35 @@ export class SidebarComponent implements OnInit, OnDestroy {
         this.openctiError = '';
         if (tech && this.openctiService.getConfig().connected) {
           this.openctiLoading = true;
-          this.subs.add(
-            this.openctiService.getIndicatorsForTechnique(tech.attackId).subscribe({
-              next: (inds) => {
+          this.openctiSub = this.openctiService.getIndicatorsForTechnique(tech.attackId).subscribe({
+            next: (inds) => {
+              if (this.technique?.attackId === tech.attackId) {
                 this.openctiIndicators = inds;
                 this.openctiLoading = false;
                 this.cdr.markForCheck();
-              },
-              error: (e) => {
+              }
+            },
+            error: (e) => {
+              if (this.technique?.attackId === tech.attackId) {
                 this.openctiError = e?.message ?? 'Failed to load OpenCTI indicators';
                 this.openctiLoading = false;
                 this.cdr.markForCheck();
-              },
-            }),
-          );
+              }
+            },
+          });
         }
         // EPSS — fetch scores for CVEs mapped to this technique
         if (tech) {
           const cveIds = this.attackCveService.getCvesForTechnique(tech.attackId).map(m => m.cveId);
           if (cveIds.length > 0) {
-            this.subs.add(
-              this.epssService.fetchScores(cveIds).subscribe(scores => {
-                const vals = cveIds.map(id => scores.get(id)?.epss).filter((s): s is number => s !== undefined);
-                this.epssAvg = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
-                if (this.technique?.attackId === tech.attackId) {
-                  this.signals = this.getSignals(tech);
-                  this.cdr.markForCheck();
-                }
-              })
-            );
+            this.epssSub = this.epssService.fetchScores(cveIds).subscribe(scores => {
+              const vals = cveIds.map(id => scores.get(id)?.epss).filter((s): s is number => s !== undefined);
+              this.epssAvg = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+              if (this.technique?.attackId === tech.attackId) {
+                this.signals = this.getSignals(tech);
+                this.cdr.markForCheck();
+              }
+            });
           }
         }
         this.cdr.markForCheck();
@@ -924,6 +932,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subs.unsubscribe();
+    this.atomicSub?.unsubscribe();
+    this.sigmaSub?.unsubscribe();
+    this.openctiSub?.unsubscribe();
+    this.epssSub?.unsubscribe();
   }
 
   close(): void {
