@@ -733,19 +733,21 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
           if (allCveIds.size > 0) {
             this.epssLoading = true;
             this.cdr.markForCheck();
-            this.epssService.fetchScores([...allCveIds]).subscribe(scores => {
-              this.epssScoreMap = new Map();
-              for (const tech of this.domain!.techniques) {
-                const cves = this.attackCveService.getCvesForTechnique(tech.attackId);
-                const withScores = cves.map(m => scores.get(m.cveId)?.epss).filter((s): s is number => s !== undefined);
-                if (withScores.length > 0) {
-                  const avg = withScores.reduce((a, b) => a + b, 0) / withScores.length;
-                  this.epssScoreMap.set(tech.attackId, avg);
+            this.subs.add(
+              this.epssService.fetchScores([...allCveIds]).subscribe(scores => {
+                this.epssScoreMap = new Map();
+                for (const tech of this.domain!.techniques) {
+                  const cves = this.attackCveService.getCvesForTechnique(tech.attackId);
+                  const withScores = cves.map(m => scores.get(m.cveId)?.epss).filter((s): s is number => s !== undefined);
+                  if (withScores.length > 0) {
+                    const avg = withScores.reduce((a, b) => a + b, 0) / withScores.length;
+                    this.epssScoreMap.set(tech.attackId, avg);
+                  }
                 }
-              }
-              this.epssLoading = false;
-              this.cdr.markForCheck();
-            });
+                this.epssLoading = false;
+                this.cdr.markForCheck();
+              }),
+            );
           }
         } else if (mode === 'my-exposure') {
           // Scores come from AssetInventoryService subscription — just trigger redraw
