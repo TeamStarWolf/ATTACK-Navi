@@ -269,10 +269,19 @@ export class SidebarComponent implements OnInit, OnDestroy {
   // CVE Exposure
   cveExposures: CveAttackMapping[] = [];
   showAllCves = false;
+  /** Pre-computed EPSS scores for the current technique's CVEs (avoids repeated lookups in template) */
+  cveEpssCache = new Map<string, number | null>();
 
   getEpssForCve(cveId: string): number | null {
-    const score = this.epssService.getScore(cveId);
-    return score ? score.epss : null;
+    return this.cveEpssCache.get(cveId) ?? null;
+  }
+
+  private refreshCveEpssCache(): void {
+    this.cveEpssCache.clear();
+    for (const m of this.cveExposures) {
+      const score = this.epssService.getScore(m.cveId);
+      this.cveEpssCache.set(m.cveId, score ? score.epss : null);
+    }
   }
 
   // NIST 800-53 Rev5 Controls
@@ -481,6 +490,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
           }
         }
         this.cveExposures = tech ? this.attackCveService.getCvesForTechnique(tech.attackId).slice(0, 20) : [];
+        this.refreshCveEpssCache();
         this.showAllCves = false;
         this.nistControls = tech ? this.nistMappingService.getControlsForTechnique(tech.attackId) : [];
         this.showAllNist = false;
@@ -621,6 +631,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       this.attackCveService.loaded$.subscribe((loaded) => {
         if (loaded && this.technique) {
           this.cveExposures = this.attackCveService.getCvesForTechnique(this.technique.attackId).slice(0, 20);
+          this.refreshCveEpssCache();
           this.cdr.markForCheck();
         }
       }),

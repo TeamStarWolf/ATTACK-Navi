@@ -2,7 +2,7 @@
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
 @if (visible) {
   <div class="overlay" (click)="close()">
-    <div class="panel" (click)="$event.stopPropagation()">
+    <div class="panel" role="dialog" aria-modal="true" aria-label="Watchlist" (click)="$event.stopPropagation()">
 
       <!-- Header -->
       <div class="panel-header">

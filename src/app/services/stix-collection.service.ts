@@ -150,8 +150,14 @@ export class StixCollectionService {
 
   // ─── Import ───────────────────────────────────────────────────────────────
 
+  /** Maximum number of STIX objects allowed in a single import to prevent browser hangs */
+  private readonly STIX_IMPORT_LIMIT = 50000;
+
   importCollection(bundle: Record<string, any>): ImportSummary {
     const objects: any[] = bundle['objects'] ?? [];
+    if (objects.length > this.STIX_IMPORT_LIMIT) {
+      throw new Error(`STIX bundle contains ${objects.length} objects, exceeding the ${this.STIX_IMPORT_LIMIT}-object import limit.`);
+    }
     const summary: ImportSummary = { techniques: 0, groups: 0, mitigations: 0, notes: 0, skipped: 0 };
 
     // Index existing custom technique attackIds for dedup
