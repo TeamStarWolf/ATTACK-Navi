@@ -128,7 +128,7 @@ body.light-mode {
 
   /* ── 2. Toolbar ── */
   .toolbar.top-bar {
-    background: #fff !important;
+    background: #ffffff !important;
     border-bottom: 1px solid #e2e8f0 !important;
     box-shadow: 0 1px 3px rgb(0 0 0 / 6%) !important;
     backdrop-filter: none !important;
@@ -141,8 +141,8 @@ body.light-mode {
     border-color: rgb(0 0 0 / 8%) !important;
   }
 
-  .brand-name { color: #1a1a2e !important; }
-  .group-label { color: #94a3b8 !important; }
+  .brand-name { color: #1e293b !important; }
+  .group-label { color: #64748b !important; }
 
   .attack-version {
     color: #16a34a !important;
@@ -153,19 +153,19 @@ body.light-mode {
   .bar-divider, .bar-divider-sm { background: #e2e8f0 !important; }
 
   .search-field {
-    background: #f1f5f9 !important;
-    border-color: #e2e8f0 !important;
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
 
     &:focus-within, &.active {
-      border-color: #2563eb !important;
-      background: #fff !important;
-      box-shadow: 0 0 0 3px rgb(37 99 235 / 10%) !important;
+      border-color: #3b82f6 !important;
+      background: #ffffff !important;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15) !important;
     }
 
-    .search-icon { color: #94a3b8 !important; }
+    .search-icon { color: #64748b !important; }
 
     .search-input {
-      color: #1a1a2e !important;
+      color: #1e293b !important;
       &::placeholder { color: #94a3b8 !important; }
     }
 
@@ -191,20 +191,20 @@ body.light-mode {
   }
 
   .icon-btn {
-    background: #fff !important;
-    border-color: #e2e8f0 !important;
-    color: #475569 !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #334155 !important;
 
     &:hover {
       background: #f1f5f9 !important;
-      color: #1a1a2e !important;
+      color: #1e293b !important;
       border-color: #cbd5e1 !important;
     }
 
     &.active {
-      background: rgb(37 99 235 / 8%) !important;
-      border-color: rgb(37 99 235 / 30%) !important;
-      color: #2563eb !important;
+      background: #e0e7ff !important;
+      border-color: rgba(30, 64, 175, 0.25) !important;
+      color: #1e40af !important;
     }
   }
 
@@ -269,12 +269,12 @@ body.light-mode {
   }
 
   .dropdown {
-    background: #fff !important;
-    border-color: #e2e8f0 !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
     box-shadow: 0 4px 12px rgb(0 0 0 / 10%) !important;
 
     .dropdown-item {
-      color: #1a1a2e !important;
+      color: #1e293b !important;
       &:hover { background: #f1f5f9 !important; }
 
       .drop-id {
@@ -394,13 +394,20 @@ body.light-mode {
   .stats-bar {
     background: #fff !important;
     border-color: #e2e8f0 !important;
-    color: #1a1a2e !important;
+    color: #1e293b !important;
     box-shadow: 0 1px 2px rgb(0 0 0 / 4%) !important;
+    backdrop-filter: none !important;
   }
-  .stat-number { color: #1a1a2e !important; }
-  .stat-label { color: #64748b !important; }
-  .coverage-pct { color: #1a1a2e !important; }
-  .tactic-stat .tactic-name { color: #1a1a2e !important; }
+  .stat-number, .big-num, .counter-num { color: #1e293b !important; }
+  .stat-label, .big-label, .counter-label { color: #475569 !important; }
+  .coverage-pct, .coverage-sub { color: #1e293b !important; }
+  .tactic-stat .tactic-name { color: #1e293b !important; }
+  .tactic-stat .tactic-pct { color: #475569 !important; }
+  .trend-label { color: #475569 !important; }
+  .tactic-toggle-btn { color: #475569 !important; }
+  .tactic-mini-bar { background: rgb(0 0 0 / 4%) !important; border-color: #e2e8f0 !important; }
+  .counter.clickable:hover { background: rgb(0 0 0 / 4%) !important; }
+  .coverage-bar { background: rgb(0 0 0 / 6%) !important; }
 
   /* ── 4. Matrix cells ── */
   .matrix-wrapper {
@@ -431,18 +438,19 @@ body.light-mode {
   }
 
   .cell {
-    background: #fff !important;
-    color: #1a1a2e !important;
-    border-color: #e2e8f0 !important;
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border: 1px solid #e2e8f0 !important;
     box-shadow: 0 1px 2px rgb(0 0 0 / 4%) !important;
 
     &:hover {
+      background: #f1f5f9 !important;
       box-shadow: 0 2px 8px rgb(0 0 0 / 10%) !important;
       border-color: #cbd5e1 !important;
     }
 
     &.selected {
-      box-shadow: 0 0 0 2px #1a1a2e !important;
+      box-shadow: 0 0 0 2px #1e293b !important;
     }
 
     &.highlighted {
@@ -450,19 +458,19 @@ body.light-mode {
     }
 
     .id { color: #64748b !important; opacity: 1 !important; }
-    .name { color: #1a1a2e !important; }
+    .name { color: #1e293b !important; }
     .mit-count { color: #64748b !important; }
 
     .badge {
-      background: rgb(0 0 0 / 4%) !important;
-      border-color: rgb(0 0 0 / 8%) !important;
-      color: #475569 !important;
+      background: #1e293b !important;
+      border-color: rgba(0, 0, 0, 0.1) !important;
+      color: #ffffff !important;
     }
 
     .exposure-badge {
-      background: rgb(234 88 12 / 8%) !important;
-      border-color: rgb(234 88 12 / 18%) !important;
-      color: #ea580c !important;
+      background: #ea580c !important;
+      border-color: rgba(0, 0, 0, 0.1) !important;
+      color: #ffffff !important;
     }
 
     .impl-dot { border-color: rgb(0 0 0 / 25%) !important; }
@@ -498,10 +506,10 @@ body.light-mode {
   }
 
   .matrix-search-input {
-    background: #f1f5f9 !important;
-    border-color: #e2e8f0 !important;
-    color: #1a1a2e !important;
-    &:focus { border-color: #2563eb !important; box-shadow: 0 0 0 3px rgb(37 99 235 / 10%) !important; }
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #1e293b !important;
+    &:focus { border-color: #3b82f6 !important; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15) !important; }
     &::placeholder { color: #94a3b8 !important; }
   }
   .search-count { color: #2563eb !important; }
@@ -592,22 +600,56 @@ body.light-mode {
   }
 
   .sidebar-header {
-    background: #f8f9fa !important;
-    border-color: #e2e8f0 !important;
+    background: #f8fafc !important;
+    border-bottom: 1px solid #e2e8f0 !important;
     .attack-id { color: #2563eb !important; }
-    .technique-name { color: #1a1a2e !important; }
+    .technique-name { color: #0f172a !important; }
   }
-  .sidebar-body { background: #fff !important; }
+  .sidebar-body { background: #ffffff !important; }
 
   .close-btn {
-    color: #94a3b8 !important;
-    &:hover { background: #f1f5f9 !important; color: #475569 !important; }
+    color: #475569 !important;
+    border: 1px solid #e2e8f0 !important;
+    &:hover { background: #f1f5f9 !important; color: #1e293b !important; }
   }
   .description { color: #475569 !important; }
+  .desc-toggle { color: #2563eb !important; border-bottom-color: #e2e8f0 !important; &:hover { color: #1d4ed8 !important; } }
+  .description-wrap::after { background: linear-gradient(transparent, #ffffff) !important; }
   .meta-label { color: #64748b !important; }
-  .meta-value { color: #1a1a2e !important; }
-  .section-title { color: #1a1a2e !important; }
+  .meta-value { color: #1e293b !important; }
+  .section-label, .section-heading-row { color: #334155 !important; }
+  .section-title { color: #334155 !important; }
   .mitigation-item { border-color: #e2e8f0 !important; }
+  .sidebar .section-label { color: #334155 !important; }
+  .sidebar p, .sidebar .meta-item { color: #475569 !important; }
+
+  .signal-pill, .epss-pill, .kev-pill, .cve-pill {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  .tag-chip, .ds-chip {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: #334155 !important;
+  }
+
+  .detection-toggle {
+    background: rgb(37 99 235 / 6%) !important;
+    border-color: rgb(37 99 235 / 18%) !important;
+    color: #2563eb !important;
+    &:hover { background: rgb(37 99 235 / 10%) !important; }
+  }
+  .detection-text {
+    background: rgb(37 99 235 / 4%) !important;
+    border-color: rgb(37 99 235 / 12%) !important;
+    color: #475569 !important;
+  }
+
+  .data-sources-section, .detection-section, .data-components-section,
+  .procedures-section, .meta-tags-row {
+    border-bottom-color: #e2e8f0 !important;
+  }
 
   .mit-header {
     .mit-id { color: #2563eb !important; }
@@ -644,28 +686,30 @@ body.light-mode {
 
   /* ── 6. Panel overlays ── */
   .panel-overlay {
-    background: rgb(0 0 0 / 20%) !important;
-    backdrop-filter: blur(4px) !important;
+    background: rgba(0, 0, 0, 0.15) !important;
+    backdrop-filter: blur(2px) !important;
   }
 
   .panel {
-    background: #fff !important;
-    color: #1a1a2e !important;
-    border-color: #e2e8f0 !important;
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border: 1px solid #e2e8f0 !important;
+    border-right: none !important;
     box-shadow: -8px 0 24px rgb(0 0 0 / 10%) !important;
     backdrop-filter: none !important;
   }
 
   .panel-header, .tab-bar, .panel-footer {
-    background: #f8f9fa !important;
+    background: #f8fafc !important;
+    border-bottom: 1px solid #e2e8f0 !important;
     border-color: #e2e8f0 !important;
-    color: #1a1a2e !important;
+    color: #1e293b !important;
   }
-  .panel-title { color: #1a1a2e !important; }
+  .panel-title { color: #1e293b !important; }
 
   .panel-body {
-    background: #fff !important;
-    color: #1a1a2e !important;
+    background: #ffffff !important;
+    color: #1e293b !important;
   }
   .panel-desc { color: #64748b !important; }
   .empty { color: #94a3b8 !important; }
