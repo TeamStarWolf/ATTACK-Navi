@@ -64,10 +64,40 @@ function parseCve(cve) {
 
   // Map CWEs to ATT&CK techniques
   const attackIds = new Set();
+  const mappingReasons = [];
   for (const cwe of cwes) {
     const num = cwe.replace('CWE-', '');
     const techs = CWE_TO_ATTACK[num];
-    if (techs) for (const t of techs) attackIds.add(t);
+    if (techs) {
+      for (const t of techs) attackIds.add(t);
+      mappingReasons.push(`${cwe} → ${techs.join(', ')}`);
+    }
+  }
+
+  // Fallback: if no CWE mapping, use CVSS vector to infer techniques
+  if (attackIds.size === 0 && cvssData) {
+    const av = cvssData.attackVector;
+    const ci = cvssData.confidentialityImpact;
+    const ii = cvssData.integrityImpact;
+    const ai = cvssData.availabilityImpact;
+    const scope = cvssData.scope;
+    const ui = cvssData.userInteraction;
+
+    if (av === 'NETWORK' && ui === 'NONE') { attackIds.add('T1190'); mappingReasons.push('CVSS: Network/NoUI → T1190'); }
+    if (av === 'NETWORK' && ui === 'REQUIRED') { attackIds.add('T1204.001'); mappingReasons.push('CVSS: Network/UI → T1204.001'); }
+    if (av === 'LOCAL' && scope === 'CHANGED') { attackIds.add('T1068'); mappingReasons.push('CVSS: Local/ScopeChanged → T1068'); }
+    if (ci === 'HIGH') { attackIds.add('T1005'); mappingReasons.push('CVSS: ConfHigh → T1005'); }
+    if (ii === 'HIGH') { attackIds.add('T1565.001'); mappingReasons.push('CVSS: IntHigh → T1565.001'); }
+    if (ai === 'HIGH') { attackIds.add('T1499'); mappingReasons.push('CVSS: AvailHigh → T1499'); }
+
+    // Description-based fallback for famous CVEs without CWEs
+    const dl = desc.toLowerCase();
+    if (dl.includes('remote code execution') || dl.includes('rce')) { attackIds.add('T1059'); attackIds.add('T1203'); mappingReasons.push('Desc: RCE → T1059, T1203'); }
+    if (dl.includes('privilege escalation')) { attackIds.add('T1068'); mappingReasons.push('Desc: PrivEsc → T1068'); }
+    if (dl.includes('buffer overflow') || dl.includes('memory corruption')) { attackIds.add('T1203'); mappingReasons.push('Desc: BufferOverflow → T1203'); }
+    if (dl.includes('smb') || dl.includes('remote service')) { attackIds.add('T1210'); mappingReasons.push('Desc: RemoteService → T1210'); }
+    if (dl.includes('print spooler')) { attackIds.add('T1068'); attackIds.add('T1547.012'); mappingReasons.push('Desc: PrintSpooler → T1068, T1547.012'); }
+    if (dl.includes('backdoor') || dl.includes('supply chain') || dl.includes('malicious code')) { attackIds.add('T1195.002'); mappingReasons.push('Desc: SupplyChain → T1195.002'); }
   }
 
   // Extract CPEs (first 10)
@@ -109,6 +139,7 @@ function parseCve(cve) {
     confidentialityImpact: cvssData?.confidentialityImpact || null,
     integrityImpact: cvssData?.integrityImpact || null,
     availabilityImpact: cvssData?.availabilityImpact || null,
+    mappingReasons,
   };
 }
 
