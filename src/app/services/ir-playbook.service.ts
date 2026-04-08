@@ -5,6 +5,7 @@ import { Technique } from '../models/technique';
 import { Domain } from '../models/domain';
 import { SigmaService } from './sigma.service';
 import { ElasticService } from './elastic.service';
+import { AtomicService } from './atomic.service';
 
 export interface PlaybookStep {
   phase: 'identify' | 'contain' | 'eradicate' | 'recover' | 'lessons';
@@ -98,12 +99,30 @@ const TACTIC_RESPONSES: Record<string, { contain: string[]; eradicate: string[];
   },
 };
 
+// Technique-specific containment overrides — used instead of generic tactic contain steps when available
+const TECHNIQUE_CONTAINMENT: Record<string, string[]> = {
+  'T1059': ['Kill suspicious script interpreter processes (powershell.exe, cmd.exe, wscript.exe)', 'Block script execution via AppLocker or WDAC policy'],
+  'T1059.001': ['Kill powershell.exe processes', 'Enable Constrained Language Mode', 'Block encoded command execution'],
+  'T1078': ['Disable compromised account immediately', 'Revoke all active sessions and tokens', 'Reset password and MFA'],
+  'T1110': ['Enable account lockout policy', 'Block source IP at firewall', 'Enable MFA on targeted accounts'],
+  'T1003': ['Isolate host from network', 'Enable LSA Protection (RunAsPPL)', 'Dump and analyze LSASS memory for scope'],
+  'T1003.001': ['Enable Credential Guard', 'Kill procdump/mimikatz processes', 'Reset all credentials on affected host'],
+  'T1190': ['Take vulnerable service offline', 'Apply emergency WAF rule', 'Block exploit payload signatures'],
+  'T1547.001': ['Remove malicious Run key entries', 'Disable auto-start for suspicious entries'],
+  'T1053.005': ['Delete malicious scheduled task', 'Audit all scheduled tasks on affected hosts'],
+  'T1021.002': ['Disable SMB on affected hosts', 'Block port 445 between segments'],
+  'T1055': ['Kill injected process', 'Enable exploit protection mitigations'],
+  'T1486': ['Isolate ALL affected hosts immediately', 'Disable network shares', 'Activate incident response team'],
+  'T1071.001': ['Block C2 domain/IP at DNS and firewall', 'Sinkhole the domain if possible'],
+};
+
 @Injectable({ providedIn: 'root' })
 export class IRPlaybookService {
 
   constructor(
     private sigmaService: SigmaService,
     private elasticService: ElasticService,
+    private atomicService: AtomicService,
   ) {}
 
   generatePlaybook(technique: Technique, domain: Domain): IRPlaybook {
@@ -117,23 +136,54 @@ export class IRPlaybookService {
 
     const steps: PlaybookStep[] = [];
 
-    // Phase 1: Identify
+    // Phase 1: Identify — technique-specific detection guidance
+    const detectionGuidance = technique.detectionText
+      ? technique.detectionText.substring(0, 500)
+      : 'Review ATT&CK detection guidance for this technique.';
     steps.push({
       phase: 'identify',
       action: `Detect ${technique.name} activity`,
-      details: `Monitor for indicators of ${technique.name} (${technique.attackId}). ${technique.detectionText ? technique.detectionText.substring(0, 200) : 'Review ATT&CK detection guidance for this technique.'}`,
+      details: `Monitor for indicators of ${technique.name} (${technique.attackId}). ${detectionGuidance}`,
       tools: ['SIEM', hasSigma ? 'Sigma Rules' : '', hasElastic ? 'Elastic Detection Rules' : '', 'EDR'].filter(Boolean),
       commands: this.getDetectionCommands(technique, tactic),
       logSources,
       automatable: hasSigma || hasElastic,
     });
+    if (dataSources.length > 0) {
+      steps.push({
+        phase: 'identify',
+        action: 'Check technique-specific data sources',
+        details: `ATT&CK data sources for ${technique.attackId}: ${dataSources.join(', ')}. Ensure these log sources are enabled and forwarding to your SIEM.`,
+        tools: ['SIEM', 'Log Management'],
+        commands: [],
+        logSources,
+        automatable: false,
+      });
+    }
 
-    // Phase 2: Contain
+    // Phase 2: Contain — use technique-specific steps if available, then add generic tactic steps
+    const techniqueContain = TECHNIQUE_CONTAINMENT[technique.attackId];
+    if (techniqueContain) {
+      for (const action of techniqueContain) {
+        steps.push({
+          phase: 'contain',
+          action,
+          details: `Technique-specific containment for ${technique.attackId} (${technique.name}).`,
+          tools: this.getContainmentTools(tactic),
+          commands: this.getContainmentCommands(tactic, action),
+          logSources: [],
+          automatable: action.includes('Block') || action.includes('Kill') || action.includes('Disable'),
+        });
+      }
+    }
+    // Always add generic tactic containment as additional steps
     for (const action of responses.contain) {
+      // Skip if a technique-specific step already covers a similar action
+      if (techniqueContain && techniqueContain.some(tc => tc.toLowerCase().includes(action.split(' ')[0].toLowerCase()))) continue;
       steps.push({
         phase: 'contain',
         action,
-        details: `Immediate containment action for ${tactic.replace(/-/g, ' ')} activity.`,
+        details: `General containment action for ${tactic.replace(/-/g, ' ')} activity.`,
         tools: this.getContainmentTools(tactic),
         commands: this.getContainmentCommands(tactic, action),
         logSources: [],
@@ -141,7 +191,7 @@ export class IRPlaybookService {
       });
     }
 
-    // Phase 3: Eradicate
+    // Phase 3: Eradicate — generic tactic steps plus technique-specific mitigations
     for (const action of responses.eradicate) {
       steps.push({
         phase: 'eradicate',
@@ -149,6 +199,19 @@ export class IRPlaybookService {
         details: `Remove threat artifacts related to ${technique.name}.`,
         tools: this.getEradicationTools(tactic),
         commands: this.getEradicationCommands(tactic, action),
+        logSources: [],
+        automatable: false,
+      });
+    }
+    // Add ATT&CK mitigations as eradicate steps
+    const mits = domain.mitigationsByTechnique?.get(technique.id) || [];
+    for (const m of mits.slice(0, 5)) {
+      steps.push({
+        phase: 'eradicate',
+        action: `Implement ${m.mitigation.name} (${m.mitigation.attackId})`,
+        details: m.description || `Apply mitigation: ${m.mitigation.name}`,
+        tools: ['Configuration Management'],
+        commands: [],
         logSources: [],
         automatable: false,
       });
@@ -164,6 +227,19 @@ export class IRPlaybookService {
         commands: [],
         logSources: [],
         automatable: false,
+      });
+    }
+    // Add Atomic Red Team validation if tests exist
+    const atomicCount = this.atomicService.getTestCount(technique.attackId);
+    if (atomicCount > 0) {
+      steps.push({
+        phase: 'recover',
+        action: 'Validate remediation with Atomic Red Team',
+        details: `Run Atomic Red Team tests for ${technique.attackId} to verify the threat has been fully eradicated. ${atomicCount} test(s) available.`,
+        tools: ['Invoke-AtomicRedTeam'],
+        commands: [`Invoke-AtomicTest ${technique.attackId} -CheckPrereqs`, `Invoke-AtomicTest ${technique.attackId}`],
+        logSources: [],
+        automatable: true,
       });
     }
 
@@ -349,15 +425,54 @@ export class IRPlaybookService {
 
   private getIndicators(technique: Technique, tactic: string): string[] {
     const indicators: string[] = [];
-    indicators.push(`ATT&CK Technique: ${technique.attackId}`);
-    if (tactic === 'execution') indicators.push('Suspicious process creation', 'Encoded command line arguments', 'Unusual parent-child process relationships');
-    if (tactic === 'persistence') indicators.push('New registry run key entries', 'Unauthorized scheduled tasks', 'Modified startup folders');
-    if (tactic === 'credential-access') indicators.push('LSASS memory access', 'Unusual authentication failures', 'Kerberoasting activity');
-    if (tactic === 'lateral-movement') indicators.push('Unusual SMB/RDP connections', 'Pass-the-hash/ticket activity', 'Remote service creation');
-    if (tactic === 'command-and-control') indicators.push('Beaconing traffic patterns', 'DNS tunneling indicators', 'Unusual outbound connections');
-    if (tactic === 'exfiltration') indicators.push('Large outbound data transfers', 'Connections to cloud storage', 'Encrypted traffic to unknown destinations');
-    if (tactic === 'impact') indicators.push('Mass file encryption', 'Volume shadow copy deletion', 'Service disruption');
-    if (indicators.length === 1) indicators.push('Review technique-specific IOCs in threat intelligence feeds');
+    indicators.push(`ATT&CK Technique: ${technique.attackId} - ${technique.name}`);
+
+    // Extract technique-specific keywords from the technique description
+    const desc = (technique.description || '').toLowerCase();
+    const techKeywords: Record<string, string> = {
+      'powershell': 'PowerShell execution (ScriptBlock logging Event 4104)',
+      'cmd': 'Command-line interpreter execution',
+      'wmi': 'WMI activity (Event 5861)',
+      'registry': 'Registry modification events (Sysmon 12-14)',
+      'scheduled task': 'Scheduled task creation/modification',
+      'dll': 'Suspicious DLL loading (Sysmon Event 7)',
+      'lsass': 'LSASS memory access (Sysmon Event 10)',
+      'token': 'Token manipulation / impersonation',
+      'credential': 'Credential access or dumping artifacts',
+      'phishing': 'Suspicious email attachments or links',
+      'exploit': 'Exploit indicators in web/application logs',
+      'lateral': 'Unusual remote logons (Event 4624 Type 3/10)',
+      'remote desktop': 'RDP connection events (Event 1149)',
+      'smb': 'Unusual SMB file share access',
+      'service': 'New service installation (Event 7045)',
+      'dns': 'Unusual DNS query patterns',
+      'http': 'Suspicious HTTP/S traffic to unknown destinations',
+      'encrypt': 'Mass file modification / encryption indicators',
+      'exfiltrat': 'Large outbound data transfers',
+      'inject': 'Process injection artifacts (Sysmon Event 8/10)',
+      'script': 'Script interpreter execution (wscript.exe, cscript.exe, mshta.exe)',
+      'macro': 'Office macro execution indicators',
+      'persistence': 'New auto-start entries or scheduled tasks',
+    };
+    for (const [keyword, indicator] of Object.entries(techKeywords)) {
+      if (desc.includes(keyword)) indicators.push(indicator);
+    }
+
+    // Add data sources as indicator context
+    if (technique.dataSources?.length) {
+      indicators.push(`Key data sources: ${technique.dataSources.slice(0, 4).join(', ')}`);
+    }
+
+    // Fallback if no technique-specific indicators were found
+    if (indicators.length <= 1) {
+      indicators.push('Review technique-specific IOCs in threat intelligence feeds');
+      // Still add generic tactic indicators as last resort
+      if (tactic === 'execution') indicators.push('Suspicious process creation', 'Unusual parent-child process relationships');
+      if (tactic === 'credential-access') indicators.push('Unusual authentication failures');
+      if (tactic === 'command-and-control') indicators.push('Beaconing traffic patterns', 'Unusual outbound connections');
+      if (tactic === 'impact') indicators.push('Mass file encryption', 'Volume shadow copy deletion');
+    }
+
     return indicators;
   }
 }

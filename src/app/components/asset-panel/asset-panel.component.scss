@@ -466,6 +466,17 @@
   color: #e53935;
 }
 
+.exposure-disclaimer {
+  background: rgba(255, 193, 7, 0.08);
+  border: 1px solid rgba(255, 193, 7, 0.25);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: #b8a040;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
 .heatmap-action {
   text-align: center;
   margin-bottom: 16px;

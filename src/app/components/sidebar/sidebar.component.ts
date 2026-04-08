@@ -85,10 +85,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
   open = false;
   isCustomTechnique = false;
   mitSearchText = '';
-  showRelGraph = false;
-  showDetection = false;
-  showProcedures = false;
-  showSubtechniques = false;
+  // showRelGraph, showDetection, showProcedures, showSubtechniques
+  // now use isSectionCollapsed('relgraph'), etc. via collapsedSections Set
   descExpanded = false;
   procedureLimit = 5;
   statusLabels = IMPL_STATUS_LABELS;
@@ -235,6 +233,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
     if (this.huntingQueries.length === 0) this.collapsedSections.add('threat-hunting');
     if (this.csaCcmControls.length === 0) this.collapsedSections.add('csa-ccm');
     if (this.m365Controls.length === 0) this.collapsedSections.add('m365-controls');
+    if (!this.technique?.detectionText) this.collapsedSections.add('detection');
+    if (!this.technique || this.technique.subtechniques.length === 0) this.collapsedSections.add('subtechniques');
+    // Relationship graph collapsed by default — user opens explicitly
+    this.collapsedSections.add('relgraph');
     this.cdr.markForCheck();
   }
 
@@ -267,6 +269,11 @@ export class SidebarComponent implements OnInit, OnDestroy {
   // CVE Exposure
   cveExposures: CveAttackMapping[] = [];
   showAllCves = false;
+
+  getEpssForCve(cveId: string): number | null {
+    const score = this.epssService.getScore(cveId);
+    return score ? score.epss : null;
+  }
 
   // NIST 800-53 Rev5 Controls
   nistControls: NistControl[] = [];
@@ -385,7 +392,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     private sigmaService: SigmaService,
     public openctiService: OpenCtiService,
     public cweService: CweService,
-    private epssService: EpssService,
+    public epssService: EpssService,
     private exploitdbService: ExploitdbService,
     private nucleiService: NucleiService,
     private customTechniqueService: CustomTechniqueService,
@@ -489,11 +496,11 @@ export class SidebarComponent implements OnInit, OnDestroy {
         this.annotationColor = ann?.color ?? 'default';
         this.annotationPinned = ann?.isPinned ?? false;
         this.mitSearchText = '';
-        this.showRelGraph = false;
+        this.collapsedSections.add('relgraph');
         this._relGraphData = null;
-        this.showDetection = false;
-        this.showProcedures = false;
-        this.showSubtechniques = false;
+        this.collapsedSections.add('detection');
+        this.collapsedSections.add('procedures');
+        this.collapsedSections.add('subtechniques');
         this.descExpanded = false;
         this.procedureLimit = 5;
         this.expandedDocs.clear();

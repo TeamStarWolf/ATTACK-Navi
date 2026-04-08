@@ -354,42 +354,78 @@ export class AssetInventoryService {
   private findTechniquesForSoftware(keyword: string, result: Set<string>): void {
     const lower = keyword.toLowerCase();
 
-    // Map common software to known exploited techniques
+    // Heuristic mapping: software name -> commonly exploited ATT&CK techniques.
+    // This is keyword-based and approximate. For precise CVE-to-asset matching,
+    // import a vulnerability scan report with CPE data.
     const softwareTechMap: Record<string, string[]> = {
+      // Web servers
       'log4j': ['T1190', 'T1059', 'T1059.004', 'T1105', 'T1071.001'],
       'apache': ['T1190', 'T1505.003', 'T1059'],
-      'openssl': ['T1573', 'T1040', 'T1557'],
-      'openssh': ['T1021.004', 'T1078', 'T1110'],
       'nginx': ['T1190', 'T1505.003'],
-      'tomcat': ['T1190', 'T1505.003', 'T1059'],
+      'tomcat': ['T1190', 'T1059'],
       'iis': ['T1190', 'T1505.003'],
-      'exchange': ['T1190', 'T1078', 'T1114'],
+      // Microsoft ecosystem
+      'exchange': ['T1190', 'T1078'],
       'sharepoint': ['T1190', 'T1213'],
-      'wordpress': ['T1190', 'T1059.007', 'T1505.003'],
-      'drupal': ['T1190', 'T1059'],
-      'php': ['T1059', 'T1190', 'T1505.003'],
+      'office': ['T1204.002', 'T1566.001'],
+      'outlook': ['T1566', 'T1204'],
+      'teams': ['T1566', 'T1204'],
+      'edge': ['T1189', 'T1203'],
+      // Databases
       'mysql': ['T1190', 'T1059'],
       'postgres': ['T1190', 'T1059'],
-      'redis': ['T1190', 'T1059'],
+      'postgresql': ['T1190', 'T1059'],
+      'redis': ['T1190'],
       'mongodb': ['T1190'],
-      'docker': ['T1610', 'T1611', 'T1613'],
-      'kubernetes': ['T1610', 'T1611', 'T1613', 'T1078'],
-      'jenkins': ['T1190', 'T1059', 'T1078'],
-      'elasticsearch': ['T1190', 'T1213'],
-      'java': ['T1059', 'T1190', 'T1203'],
-      'python': ['T1059.006', 'T1059'],
-      'nodejs': ['T1059.007', 'T1059'],
-      'node': ['T1059.007', 'T1059'],
+      'elasticsearch': ['T1190', 'T1005'],
+      // CI/CD & DevOps
+      'jenkins': ['T1190', 'T1059'],
+      'gitlab': ['T1190', 'T1213'],
+      'docker': ['T1610', 'T1609'],
+      'kubernetes': ['T1610', 'T1609'],
+      // Collaboration & Productivity
+      'jira': ['T1190', 'T1213'],
+      'confluence': ['T1190', 'T1213'],
+      'grafana': ['T1190'],
+      'zoom': ['T1204', 'T1566'],
+      // Browsers
+      'chrome': ['T1189', 'T1203'],
+      'firefox': ['T1189', 'T1203'],
+      // CMS
+      'wordpress': ['T1190'],
+      'drupal': ['T1190'],
+      // Languages & runtimes
+      'java': ['T1190', 'T1203'],
+      'python': ['T1059.006'],
+      'node': ['T1059.007'],
+      'nodejs': ['T1059.007'],
+      'php': ['T1190', 'T1059'],
+      // VPN / Network infrastructure
+      'vmware': ['T1190', 'T1021'],
+      'citrix': ['T1190', 'T1133'],
+      'fortinet': ['T1190', 'T1133'],
+      'paloalto': ['T1190'],
+      'cisco': ['T1190', 'T1133'],
+      // Supply chain
+      'solarwinds': ['T1195.002'],
+      // Crypto & Auth
+      'openssl': ['T1573', 'T1040', 'T1557'],
+      'openssh': ['T1021.004', 'T1078', 'T1110'],
+      'vault': ['T1078', 'T1552'],
+      // Document / PDF
+      'adobe reader': ['T1203', 'T1204.002'],
+      'acrobat': ['T1203', 'T1204.002'],
+      // Frameworks
       'spring': ['T1190', 'T1059'],
       'struts': ['T1190', 'T1059'],
-      'curl': ['T1105', 'T1071.001'],
+      // Other infrastructure
       'samba': ['T1021.002', 'T1210'],
       'bind': ['T1190', 'T1584.002'],
-      'grafana': ['T1190', 'T1213'],
-      'vault': ['T1078', 'T1552'],
+      'curl': ['T1105', 'T1071.001'],
       'rabbitmq': ['T1190'],
       'kafka': ['T1190'],
-      'gitlab': ['T1190', 'T1213', 'T1078'],
+      'haproxy': ['T1190'],
+      'squid': ['T1190'],
     };
 
     // Check direct keyword match
@@ -399,34 +435,32 @@ export class AssetInventoryService {
       }
     }
 
-    // Also check CVE mappings from AttackCveService
-    // Look at all technique->CVE mappings for keyword matches in CVE IDs
-    // This covers cases where specific CVEs are known for a software package
+    // Also check CTID-curated CVE mappings for software name mentions
+    const allMappings = this.attackCveService.getAllCtidMappings();
+    const swFirstWord = lower.split(' ')[0];
+    if (swFirstWord.length >= 3) { // Avoid matching very short keywords
+      for (const mapping of allMappings) {
+        if (mapping.description?.toLowerCase().includes(swFirstWord)) {
+          for (const techId of [...mapping.primaryImpact, ...mapping.secondaryImpact, ...mapping.exploitationTechnique]) {
+            result.add(techId);
+          }
+        }
+      }
+    }
   }
 
   private findCvesForSoftware(keyword: string): string[] {
-    // Use the software->technique->CVE chain
-    const lower = keyword.toLowerCase();
+    // Use the software->technique->CVE chain.
+    // First, find technique IDs for this keyword using the shared heuristic method,
+    // then look up CVEs mapped to those techniques.
+    const matchedTechniqueIds = new Set<string>();
+    this.findTechniquesForSoftware(keyword, matchedTechniqueIds);
+
     const cveIds: string[] = [];
-
-    // Check known software->technique mappings and get their CVEs
-    const softwareTechMap: Record<string, string[]> = {
-      'log4j': ['T1190', 'T1059'],
-      'apache': ['T1190', 'T1505.003'],
-      'openssl': ['T1573', 'T1040'],
-      'exchange': ['T1190', 'T1078'],
-      'spring': ['T1190'],
-      'struts': ['T1190'],
-    };
-
-    for (const [sw, techs] of Object.entries(softwareTechMap)) {
-      if (lower.includes(sw)) {
-        for (const techId of techs) {
-          const mappings = this.attackCveService.getCvesForTechnique(techId);
-          for (const m of mappings) {
-            if (!cveIds.includes(m.cveId)) cveIds.push(m.cveId);
-          }
-        }
+    for (const techId of matchedTechniqueIds) {
+      const mappings = this.attackCveService.getCvesForTechnique(techId);
+      for (const m of mappings) {
+        if (!cveIds.includes(m.cveId)) cveIds.push(m.cveId);
       }
     }
 

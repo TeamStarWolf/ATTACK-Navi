@@ -7,14 +7,16 @@
       <div class="gap-header">
         <div class="header-left">
           <h2>Detection Gap Analysis</h2>
-          <span class="header-subtitle" *ngIf="result">
-            Generated {{ result.generatedAt | date:'medium' }}
-          </span>
+          @if (result) {
+            <span class="header-subtitle">
+              Generated {{ result.generatedAt | date:'medium' }}
+            </span>
+          }
         </div>
         <div class="header-actions">
           @if (result) {
             <button class="btn btn-sm" (click)="exportCsv()" title="Export CSV">CSV</button>
-            <button class="btn btn-sm" (click)="exportPdf()" title="Export PDF">PDF</button>
+            <button class="btn btn-sm" (click)="exportPdf()" title="Opens your browser's print dialog. Choose 'Save as PDF' to download.">Print / Save as PDF</button>
             <button class="btn btn-sm" (click)="copyToClipboard()" title="Copy to Clipboard">Copy</button>
           }
           <button class="btn-close" (click)="close()" aria-label="Close">&times;</button>
@@ -238,7 +240,7 @@
           <!-- Export buttons footer -->
           <div class="export-footer">
             <button class="btn btn-primary" (click)="exportCsv()">Export CSV</button>
-            <button class="btn btn-primary" (click)="exportPdf()">Export PDF</button>
+            <button class="btn btn-primary" (click)="exportPdf()" title="Opens your browser's print dialog. Choose 'Save as PDF' to download.">Print / Save as PDF</button>
             <button class="btn" (click)="copyToClipboard()">Copy to Clipboard</button>
             <button class="btn" (click)="resetReport()">New Report</button>
           </div>
