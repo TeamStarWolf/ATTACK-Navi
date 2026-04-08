@@ -2,7 +2,7 @@
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
 @if (visible) {
   <div class="gap-panel-overlay" (click)="close()">
-    <div class="gap-panel" (click)="$event.stopPropagation()">
+    <div class="gap-panel" role="dialog" aria-modal="true" aria-label="Detection Gap Analysis" (click)="$event.stopPropagation()">
       <!-- Header -->
       <div class="gap-header">
         <div class="header-left">
@@ -67,10 +67,17 @@
           }
 
           <button class="btn btn-primary generate-btn"
-                  [disabled]="!analyzeAll && selectedActorIds.size === 0"
+                  [disabled]="generating || (!analyzeAll && selectedActorIds.size === 0)"
                   (click)="generate()">
-            Generate Report
+            @if (generating) {
+              Generating...
+            } @else {
+              Generate Report
+            }
           </button>
+          @if (generating) {
+            <div class="generating-indicator">Analyzing techniques and computing gaps...</div>
+          }
         </div>
       }
 

@@ -2,7 +2,7 @@
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
 @if (visible) {
   <div class="panel-overlay" (click)="close()">
-    <div class="panel ir-panel" (click)="$event.stopPropagation()">
+    <div class="panel ir-panel" role="dialog" aria-modal="true" aria-label="Incident Response Playbook" (click)="$event.stopPropagation()">
       <div class="panel-header">
         <h2>🚨 Incident Response Playbook</h2>
         <div class="header-actions">

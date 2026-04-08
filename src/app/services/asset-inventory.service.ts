@@ -161,9 +161,15 @@ export class AssetInventoryService {
 
   // ── CSV import / export ─────────────────────────────────
 
+  /** Maximum number of CSV rows to import at once to prevent browser hangs */
+  private readonly CSV_IMPORT_LIMIT = 5000;
+
   importCsv(csvText: string): Asset[] {
     const lines = csvText.replace(/\r/g, '').split('\n');
     if (lines.length < 2) return [];
+    if (lines.length > this.CSV_IMPORT_LIMIT + 1) {
+      throw new Error(`CSV exceeds the ${this.CSV_IMPORT_LIMIT}-row import limit (${lines.length - 1} data rows). Please split the file.`);
+    }
 
     const header = lines[0].toLowerCase().split(',').map(h => h.trim());
     const hostnameIdx = header.indexOf('hostname');

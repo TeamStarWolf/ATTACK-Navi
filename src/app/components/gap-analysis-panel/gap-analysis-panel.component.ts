@@ -35,6 +35,7 @@ interface CoverageSourceRow {
 export class GapAnalysisPanelComponent implements OnInit, OnDestroy {
   visible = false;
   result: GapAnalysisResult | null = null;
+  generating = false;
 
   // Step 1 state
   analyzeAll = false;
@@ -150,12 +151,18 @@ export class GapAnalysisPanelComponent implements OnInit, OnDestroy {
 
   generate(): void {
     if (!this.domain) return;
-    const actorIds = this.analyzeAll ? [] : Array.from(this.selectedActorIds);
-    this.result = this.gapService.generateReport(this.domain, actorIds);
-    this.buildDetectionSources();
-    this.gapLimit = 20;
-    this.sortGaps();
+    this.generating = true;
     this.cdr.markForCheck();
+    // Defer to next tick so the spinner renders before the sync computation blocks the thread
+    setTimeout(() => {
+      const actorIds = this.analyzeAll ? [] : Array.from(this.selectedActorIds);
+      this.result = this.gapService.generateReport(this.domain!, actorIds);
+      this.generating = false;
+      this.buildDetectionSources();
+      this.gapLimit = 20;
+      this.sortGaps();
+      this.cdr.markForCheck();
+    }, 0);
   }
 
   private buildDetectionSources(): void {
