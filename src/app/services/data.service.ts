@@ -2,7 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, from, of, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, Subscription, from, of, throwError } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import { retryWithBackoff } from '../utils/retry';
 import { Domain, TacticColumn } from '../models/domain';
@@ -72,6 +72,7 @@ export class DataService {
   /** ISO timestamp of the last successful domain data load */
   lastFetched$ = new BehaviorSubject<string | null>(null);
   private loadRequestId = 0;
+  private domainSub?: Subscription;
 
   domain$: Observable<Domain | null> = this.domainSubject.asObservable();
   loading$: Observable<boolean> = this.loadingSubject.asObservable();
@@ -119,13 +120,14 @@ export class DataService {
   }
 
   loadDomain(): void {
+    this.domainSub?.unsubscribe();
     const requestId = ++this.loadRequestId;
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
 
     const config = DOMAIN_CONFIG[this.attackDomain];
     const load$ = this.mode === 'live' ? this.loadLive(config) : this.loadBundled(config);
-    load$.subscribe({
+    this.domainSub = load$.subscribe({
       next: (domain) => {
         if (requestId !== this.loadRequestId) return;
         this.domainSubject.next(domain);

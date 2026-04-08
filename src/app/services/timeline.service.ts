@@ -144,6 +144,11 @@ export class TimelineService {
     return this.snapshotsSubject.value;
   }
 
+  getStorageSizeKb(): number {
+    const raw = localStorage.getItem(this.STORAGE_KEY) ?? '';
+    return Math.round(raw.length / 1024);
+  }
+
   getLatest(): CoverageSnapshot | null {
     const snaps = this.snapshotsSubject.value;
     return snaps.length > 0 ? snaps[snaps.length - 1] : null;

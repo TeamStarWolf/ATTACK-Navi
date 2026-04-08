@@ -127,8 +127,7 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
     this.subs.add(
       this.timelineService.snapshots$.subscribe(snaps => {
         this.snapshotCount = snaps.length;
-        const raw = localStorage.getItem('mitre-nav-timeline-v1') ?? '';
-        this.snapshotSizeKb = Math.round(raw.length / 1024);
+        this.snapshotSizeKb = this.timelineService.getStorageSizeKb();
         this.cdr.markForCheck();
       }),
     );
