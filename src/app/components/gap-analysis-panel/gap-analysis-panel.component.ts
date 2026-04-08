@@ -244,6 +244,7 @@ export class GapAnalysisPanelComponent implements OnInit, OnDestroy {
   }
 
   resetReport(): void {
+    if (!confirm('This will discard your current gap analysis results. Continue?')) return;
     this.result = null;
     this.gapLimit = 20;
     this.cdr.markForCheck();

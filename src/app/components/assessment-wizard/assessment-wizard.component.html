@@ -178,10 +178,13 @@
                             <span class="tech-id">{{ tech.attackId }}</span>
                             <span class="tech-name-col">{{ tech.name }}</span>
                             @if (tech.kevCount > 0) {
-                              <span class="kev-badge">KEV</span>
+                              <span class="kev-badge" style="background:#dc262622;color:#dc2626;border:1px solid #dc262640;font-size:0.7rem;padding:1px 5px;border-radius:3px;font-weight:600">KEV({{ tech.kevCount }})</span>
                             }
                             @if (tech.actorCount > 0) {
-                              <span class="actor-badge">{{ tech.actorCount }} actors</span>
+                              <span class="actor-badge" [style.background]="tech.actorCount > 5 ? '#dc262622' : '#3b82f622'" [style.color]="tech.actorCount > 5 ? '#dc2626' : '#3b82f6'" [style.border]="'1px solid ' + (tech.actorCount > 5 ? '#dc262640' : '#3b82f640')" style="font-size:0.7rem;padding:1px 5px;border-radius:3px">{{ tech.actorCount }} actors</span>
+                            }
+                            @if (tech.epssMax > 0) {
+                              <span class="epss-badge" [style.background]="tech.epssMax >= 0.5 ? '#dc262622' : tech.epssMax >= 0.2 ? '#f57c0022' : '#ffa00022'" [style.color]="tech.epssMax >= 0.5 ? '#dc2626' : tech.epssMax >= 0.2 ? '#f57c00' : '#ffa000'" [style.border]="'1px solid ' + (tech.epssMax >= 0.5 ? '#dc262640' : tech.epssMax >= 0.2 ? '#f57c0040' : '#ffa00040')" style="font-size:0.7rem;padding:1px 5px;border-radius:3px" [title]="'Max EPSS probability of exploitation'">EPSS {{ (tech.epssMax * 100).toFixed(1) }}%</span>
                             }
                           </div>
                           <div class="status-buttons">

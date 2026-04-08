@@ -257,12 +257,12 @@
         <!-- Subtechniques -->
         @if (technique.subtechniques.length) {
           <section class="detail-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title" (click)="showSubtechniques = !showSubtechniques" style="cursor:pointer">
+            <h4 class="section-title upgrade-section-title" (click)="toggleSection('subtechniques')" style="cursor:pointer">
               <span class="section-icon">🔀</span>
               Subtechniques ({{ technique.subtechniques.length }})
-              <span class="toggle-arrow">{{ showSubtechniques ? '▲' : '▼' }}</span>
+              <span class="toggle-arrow">{{ isSectionCollapsed('subtechniques') ? '▼' : '▲' }}</span>
             </h4>
-            @if (showSubtechniques) {
+            @if (!isSectionCollapsed('subtechniques')) {
               <div class="subtechnique-list">
                 @for (sub of technique.subtechniques; track sub.id) {
                   <div class="subtechnique-row" (click)="selectSubtechnique(sub)">
@@ -281,11 +281,11 @@
         <!-- Detection -->
         @if (technique.detectionText) {
           <div class="detection-section upgrade-section-block">
-            <button class="detection-toggle" [class.expanded]="showDetection" (click)="showDetection = !showDetection">
+            <button class="detection-toggle" [class.expanded]="!isSectionCollapsed('detection')" (click)="toggleSection('detection')">
               🔍 Detection Guidance
-              <span class="toggle-arrow">{{ showDetection ? '▲' : '▼' }}</span>
+              <span class="toggle-arrow">{{ isSectionCollapsed('detection') ? '▼' : '▲' }}</span>
             </button>
-            @if (showDetection) {
+            @if (!isSectionCollapsed('detection')) {
               <p class="detection-text" [innerHTML]="technique.detectionText | attackText"></p>
             }
           </div>
@@ -322,12 +322,12 @@
         <!-- Procedure Examples -->
         @if (procedures.length > 0) {
           <div class="procedures-section upgrade-section-block">
-            <button class="procedures-toggle" [class.expanded]="showProcedures" (click)="showProcedures = !showProcedures">
+            <button class="procedures-toggle" [class.expanded]="!isSectionCollapsed('procedures')" (click)="toggleSection('procedures')">
               📋 Procedure Examples
               <span class="proc-badge">{{ procedures.length }}</span>
-              <span class="toggle-arrow">{{ showProcedures ? '▲' : '▼' }}</span>
+              <span class="toggle-arrow">{{ isSectionCollapsed('procedures') ? '▼' : '▲' }}</span>
             </button>
-            @if (showProcedures) {
+            @if (!isSectionCollapsed('procedures')) {
               <div class="procedures-list">
                 @for (proc of procedures.slice(0, procedureLimit); track proc.sourceId + proc.description) {
                   <div class="proc-item" [class.group]="proc.sourceType === 'group'" [class.malware]="proc.sourceType === 'malware'" [class.tool]="proc.sourceType === 'tool'">
@@ -361,13 +361,17 @@
             @for (m of (showAllCves ? cveExposures : cveExposures.slice(0, 5)); track m.cveId) {
               <div class="cve-item" [class.cve-item--ctid]="m.source === 'ctid-kev'" [class.cve-item--inferred]="m.source === 'ctid-csv' && !m.capabilityGroup">
                 <div class="cve-item-top">
-                  <a [href]="'https://nvd.nist.gov/vuln/detail/' + m.cveId" target="_blank" rel="noopener" class="cve-id">{{ m.cveId }}</a>
+                  <a [href]="'https://nvd.nist.gov/vuln/detail/' + m.cveId" target="_blank" rel="noopener" class="cve-id"
+                     [style.color]="getEpssForCve(m.cveId) !== null && getEpssForCve(m.cveId)! >= 0.5 ? '#d32f2f' : getEpssForCve(m.cveId) !== null && getEpssForCve(m.cveId)! >= 0.2 ? '#f57c00' : getEpssForCve(m.cveId) !== null && getEpssForCve(m.cveId)! >= 0.05 ? '#ffa000' : ''">{{ m.cveId }}</a>
                   @if (m.source === 'ctid-kev') {
                     <span class="cve-source-badge cve-source-ctid">CTID</span>
                   } @else if (m.capabilityGroup) {
                     <span class="cve-source-badge cve-source-ctid">CTID</span>
                   } @else {
                     <span class="cve-source-badge cve-source-cwe">CWE</span>
+                  }
+                  @if (getEpssForCve(m.cveId) !== null) {
+                    <span class="cve-tag" [style.background]="epssService.getEpssColor(getEpssForCve(m.cveId)!) + '22'" [style.color]="epssService.getEpssColor(getEpssForCve(m.cveId)!)" [style.border-color]="epssService.getEpssColor(getEpssForCve(m.cveId)!) + '55'" [title]="'EPSS: probability of exploitation in next 30 days'">EPSS {{ epssService.formatEpss(getEpssForCve(m.cveId)!) }}</span>
                   }
                   @if (m.capabilityGroup) {
                     <span class="cve-cap-group" [style.background]="getCapGroupColor(m.capabilityGroup) + '18'" [style.color]="getCapGroupColor(m.capabilityGroup)" [style.border-color]="getCapGroupColor(m.capabilityGroup) + '40'">
@@ -386,6 +390,9 @@
                     }
                   </div>
                 </div>
+                @if (m.description) {
+                  <p class="cve-rationale cve-desc-snippet" [title]="m.description">{{ m.description.length > 80 ? m.description.slice(0, 80) + '...' : m.description }}</p>
+                }
                 @if (m.source === 'ctid-kev' || m.capabilityGroup) {
                   <!-- CTID curated: show sentence -->
                   @if (buildCveSentence(m)) {
@@ -1577,11 +1584,11 @@
 
         @if (mitigations.length > 0 || threatGroups.length > 0) {
           <section class="detail-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title" (click)="showRelGraph = !showRelGraph" style="cursor:pointer">
+            <h4 class="section-title upgrade-section-title" (click)="toggleSection('relgraph')" style="cursor:pointer">
               <span class="section-icon">🕸️</span> Relationship Graph
-              <span class="toggle-arrow">{{ showRelGraph ? '▲' : '▼' }}</span>
+              <span class="toggle-arrow">{{ isSectionCollapsed('relgraph') ? '▼' : '▲' }}</span>
             </h4>
-            @if (showRelGraph) {
+            @if (!isSectionCollapsed('relgraph')) {
               <div class="rel-graph-container">
                 <svg width="400" height="240" viewBox="0 0 400 240" class="rel-graph-svg">
                   @for (link of relGraphData.links; track link.source + link.target) {
