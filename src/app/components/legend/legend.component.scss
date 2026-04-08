@@ -53,3 +53,26 @@
   white-space: nowrap;
   margin-left: 2px;
 }
+
+/* ── Light mode ── */
+:host-context(body.light-mode) {
+  .legend {
+    background: #f8fafc;
+  }
+
+  .legend-label {
+    color: #334155;
+  }
+
+  .stop-label {
+    color: #334155;
+  }
+
+  .scale-arrow {
+    color: #64748b;
+  }
+
+  .swatch {
+    border-color: rgba(0, 0, 0, 0.12) !important;
+  }
+}

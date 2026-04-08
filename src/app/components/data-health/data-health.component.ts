@@ -71,6 +71,18 @@ const LAST_REFRESHED_KEY = 'data-health-last-refreshed';
       transition: color 0.2s;
     }
     .refresh-btn:hover { color: #e2e8f0; }
+
+    :host-context(body.light-mode) .health-dot {
+      width: 10px;
+      height: 10px;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    :host-context(body.light-mode) .dot-loaded { background: #16a34a; }
+    :host-context(body.light-mode) .dot-loading { background: #d97706; }
+    :host-context(body.light-mode) .dot-failed { background: #dc2626; }
+    :host-context(body.light-mode) .last-refreshed { color: #475569; }
+    :host-context(body.light-mode) .refresh-btn { color: #64748b; }
+    :host-context(body.light-mode) .refresh-btn:hover { color: #1e293b; }
   `],
 })
 export class DataHealthComponent implements OnInit, OnDestroy {

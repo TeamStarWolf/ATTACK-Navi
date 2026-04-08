@@ -324,32 +324,41 @@ const NAV_ITEMS_BOTTOM: NavItem[] = [
     }
 
     :host-context(body.light-mode) .nav-divider-label {
-      color: #94a3b8;
+      color: #64748b;
+      font-weight: 600;
     }
 
     :host-context(body.light-mode) .nav-item {
-      color: #64748b;
+      color: #334155;
+    }
+
+    :host-context(body.light-mode) .nav-item .nav-icon {
+      color: #475569;
     }
 
     :host-context(body.light-mode) .nav-item:hover {
       background: rgba(0, 0, 0, 0.04);
       border-color: rgba(0, 0, 0, 0.06);
-      color: #1a1a2e;
+      color: #1e293b;
     }
 
     :host-context(body.light-mode) .nav-item.active {
-      background: rgba(37, 99, 235, 0.08);
-      color: #2563eb;
-      border-color: rgba(37, 99, 235, 0.2);
-      box-shadow: inset 0 1px 0 rgba(37, 99, 235, 0.04), 0 0 0 1px rgba(37, 99, 235, 0.06);
+      background: #e0e7ff;
+      color: #1e40af;
+      border-color: rgba(30, 64, 175, 0.25);
+      box-shadow: inset 0 1px 0 rgba(30, 64, 175, 0.06), 0 0 0 1px rgba(30, 64, 175, 0.1);
+    }
+
+    :host-context(body.light-mode) .nav-item.active .nav-icon {
+      color: #1e40af;
     }
 
     :host-context(body.light-mode) .help-btn {
-      color: #94a3b8;
+      color: #64748b;
     }
 
     :host-context(body.light-mode) .help-btn:hover {
-      color: #1a1a2e;
+      color: #1e293b;
     }
 
     :host-context(body.light-mode) .nav-list {
