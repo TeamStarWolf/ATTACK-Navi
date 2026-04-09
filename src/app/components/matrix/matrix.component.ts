@@ -50,6 +50,8 @@ import { AssetInventoryService } from '../../services/asset-inventory.service';
 import { WazuhService } from '../../services/wazuh.service';
 import { CsaCcmService } from '../../services/csa-ccm.service';
 import { M365ControlsService } from '../../services/m365-controls.service';
+import { Cve2CapecService } from '../../services/cve2capec.service';
+import { PocExploitService } from '../../services/poc-exploit.service';
 
 @Component({
   selector: 'app-matrix',
@@ -184,6 +186,12 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
   // M365 Controls scores: attackId -> control count
   m365ControlsScoreMap = new Map<string, number>();
   maxM365ControlsScore = 1;
+  // CVE2CAPEC kill chain scores: attackId -> chain count
+  killChainScoreMap = new Map<string, number>();
+  maxKillChainScore = 1;
+  // PoC Exploit scores: attackId -> PoC count
+  pocScoreMap = new Map<string, number>();
+  maxPocScore = 1;
   // Track current heatmap mode for loaded$ re-trigger
   private currentHeatmapMode: HeatmapMode = 'coverage';
   // Annotation map: techniqueId (attackId) -> annotation
@@ -273,6 +281,8 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     private wazuhService: WazuhService,
     private csaCcmService: CsaCcmService,
     private m365ControlsService: M365ControlsService,
+    private cve2capecService: Cve2CapecService,
+    private pocExploitService: PocExploitService,
     private cdr: ChangeDetectorRef,
     private el: ElementRef,
   ) {}
@@ -773,6 +783,20 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
             if (count > 0) this.m365ControlsScoreMap.set(tech.attackId, count);
           }
           this.maxM365ControlsScore = this.m365ControlsScoreMap.size > 0 ? Math.max(...this.m365ControlsScoreMap.values()) : 1;
+        } else if (mode === 'kill-chain' && this.domain) {
+          this.killChainScoreMap = new Map();
+          for (const tech of this.domain.techniques) {
+            const count = this.cve2capecService.getChainCount(tech.attackId);
+            if (count > 0) this.killChainScoreMap.set(tech.attackId, count);
+          }
+          this.maxKillChainScore = this.killChainScoreMap.size > 0 ? Math.max(...this.killChainScoreMap.values()) : 1;
+        } else if (mode === 'poc-exploits' && this.domain) {
+          this.pocScoreMap = new Map();
+          for (const tech of this.domain.techniques) {
+            const count = this.pocExploitService.getPocCount(tech.attackId);
+            if (count > 0) this.pocScoreMap.set(tech.attackId, count);
+          }
+          this.maxPocScore = this.pocScoreMap.size > 0 ? Math.max(...this.pocScoreMap.values()) : 1;
         } else {
           this.softwareScores = new Map();
           this.maxSoftware = 1;
@@ -922,6 +946,24 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
       this.m365ControlsService.loaded$.subscribe(loaded => {
         if (loaded && this.currentHeatmapMode === 'm365-controls') {
           this.filterService.setHeatmapMode('m365-controls');
+        }
+      }),
+    );
+
+    // Re-render CVE Kill Chain heatmap when CVE2CAPEC data loads
+    this.subs.add(
+      this.cve2capecService.loaded$.subscribe(loaded => {
+        if (loaded && this.currentHeatmapMode === 'kill-chain') {
+          this.filterService.setHeatmapMode('kill-chain');
+        }
+      }),
+    );
+
+    // Re-render PoC Exploits heatmap when PoC data loads
+    this.subs.add(
+      this.pocExploitService.loaded$.subscribe(loaded => {
+        if (loaded && this.currentHeatmapMode === 'poc-exploits') {
+          this.filterService.setHeatmapMode('poc-exploits');
         }
       }),
     );
@@ -1422,6 +1464,14 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
 
   getM365ControlsScore(t: Technique): number {
     return this.m365ControlsScoreMap.get(t.attackId) ?? 0;
+  }
+
+  getKillChainScore(t: Technique): number {
+    return this.killChainScoreMap.get(t.attackId) ?? 0;
+  }
+
+  getPocScore(t: Technique): number {
+    return this.pocScoreMap.get(t.attackId) ?? 0;
   }
 
   getFrequencyScore(t: Technique): number {

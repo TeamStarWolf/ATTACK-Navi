@@ -64,6 +64,8 @@ import { WazuhService, WazuhRule } from '../../services/wazuh.service';
 import { ThreatHuntingService, HuntingQuery } from '../../services/threat-hunting.service';
 import { CsaCcmService, CsaCcmControl } from '../../services/csa-ccm.service';
 import { M365ControlsService, M365Control } from '../../services/m365-controls.service';
+import { Cve2CapecService, KillChainEntry } from '../../services/cve2capec.service';
+import { PocExploitService } from '../../services/poc-exploit.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -193,6 +195,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       'custom', 'mitigations', 'relgraph', 'm365', 'siem', 'payloads', 'logging',
       'bloodhound', 'c2', 'ioc-feed', 'azure-identity', 'offensive-tools',
       'wazuh-xdr', 'threat-hunting', 'csa-ccm', 'm365-controls',
+      'kill-chain', 'poc-exploits',
     ];
     for (const s of sections) this.collapsedSections.add(s);
     this.cdr.markForCheck();
@@ -217,6 +220,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
     if (this.criControls.length === 0) this.collapsedSections.add('cri');
     if (this.exploitCount === 0) this.collapsedSections.add('exploitdb');
     if (this.nucleiCount === 0) this.collapsedSections.add('nuclei');
+    if (this.killChainEntries.length === 0) this.collapsedSections.add('kill-chain');
+    if (this.pocCount === 0) this.collapsedSections.add('poc-exploits');
     if (!this.mispCluster) this.collapsedSections.add('misp');
     if (this.sigmaRules.length === 0 && !this.sigmaRulesFetching) this.collapsedSections.add('sigma');
     if (this.m365Queries.length === 0) this.collapsedSections.add('m365');
@@ -323,6 +328,13 @@ export class SidebarComponent implements OnInit, OnDestroy {
   // Nuclei template count for selected technique
   nucleiCount = 0;
 
+  // CVE2CAPEC kill chain entries for selected technique
+  killChainEntries: KillChainEntry[] = [];
+  showAllKillChain = false;
+
+  // PoC exploit count for selected technique
+  pocCount = 0;
+
   /** C2 capabilities grouped by framework name for template rendering. */
   get groupedC2(): { framework: string; capabilities: C2Capability[] }[] {
     const map = new Map<string, C2Capability[]>();
@@ -423,6 +435,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
     private threatHuntingService: ThreatHuntingService,
     private csaCcmService: CsaCcmService,
     private m365ControlsService: M365ControlsService,
+    private cve2capecService: Cve2CapecService,
+    private pocExploitService: PocExploitService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -543,6 +557,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
         this.showAllCsaCcm = false;
         this.m365Controls = tech ? this.m365ControlsService.getControlsForTechnique(tech.attackId) : [];
         this.showAllM365Controls = false;
+        this.killChainEntries = tech ? this.cve2capecService.getChainForTechnique(tech.attackId) : [];
+        this.showAllKillChain = false;
+        this.pocCount = tech ? this.pocExploitService.getPocCount(tech.attackId) : 0;
         this.copiedKql = '';
         this.copiedLoggingScript = false;
         this.markdownCopied = false;
@@ -718,6 +735,28 @@ export class SidebarComponent implements OnInit, OnDestroy {
       this.exploitdbService.loaded$.subscribe((loaded) => {
         if (loaded && this.technique) {
           this.exploitCount = this.exploitdbService.getExploitCount(this.technique.attackId);
+          this.signals = this.getSignals(this.technique);
+          this.cdr.markForCheck();
+        }
+      }),
+    );
+
+    // Refresh CVE2CAPEC kill chain when data finishes loading
+    this.subs.add(
+      this.cve2capecService.loaded$.subscribe((loaded) => {
+        if (loaded && this.technique) {
+          this.killChainEntries = this.cve2capecService.getChainForTechnique(this.technique.attackId);
+          this.signals = this.getSignals(this.technique);
+          this.cdr.markForCheck();
+        }
+      }),
+    );
+
+    // Refresh PoC exploit counts when data finishes loading
+    this.subs.add(
+      this.pocExploitService.loaded$.subscribe((loaded) => {
+        if (loaded && this.technique) {
+          this.pocCount = this.pocExploitService.getPocCount(this.technique.attackId);
           this.signals = this.getSignals(this.technique);
           this.cdr.markForCheck();
         }
@@ -1215,6 +1254,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
     const nucleiCount = this.nucleiService.getTemplateCount(id);
     if (nucleiCount > 0) signals.push({ icon: '🔬', label: 'Nuclei', value: String(nucleiCount), color: '#3b82f6' });
+
+    const killChainCount = this.cve2capecService.getChainCount(id);
+    if (killChainCount > 0) signals.push({ icon: '🔗', label: 'Kill Chain', value: String(killChainCount), color: '#7b3faa' });
+
+    const pocCount = this.pocExploitService.getPocCount(id);
+    if (pocCount > 0) signals.push({ icon: '💣', label: 'PoC', value: String(pocCount), color: '#d96a2a' });
 
     return signals;
   }
