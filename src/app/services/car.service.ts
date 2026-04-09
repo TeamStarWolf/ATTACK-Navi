@@ -100,7 +100,18 @@ export class CARService {
     const direct = this.byAttackId.get(attackId) ?? [];
     const parentId = attackId.includes('.') ? attackId.split('.')[0] : null;
     const parent = parentId ? (this.byAttackId.get(parentId) ?? []) : [];
-    return [...direct, ...parent.filter(p => !direct.some(d => d.id === p.id))];
+    const prefix = attackId + '.';
+    const fromSubs = attackId.includes('.')
+      ? []
+      : [...this.byAttackId.entries()]
+          .filter(([id]) => id.startsWith(prefix))
+          .flatMap(([, analytics]) => analytics);
+    const seen = new Set<string>();
+    return [...direct, ...parent, ...fromSubs].filter(analytic => {
+      if (seen.has(analytic.id)) return false;
+      seen.add(analytic.id);
+      return true;
+    });
   }
 
   /**
@@ -109,8 +120,15 @@ export class CARService {
    */
   getLiveCount(attackId: string): number {
     const liveCount = this.liveCountMap.get(attackId) ?? 0;
+    let rolledUpLive = liveCount;
+    if (!attackId.includes('.')) {
+      const prefix = attackId + '.';
+      for (const [id, count] of this.liveCountMap.entries()) {
+        if (id.startsWith(prefix)) rolledUpLive += count;
+      }
+    }
     const hardcodedCount = this.getAnalytics(attackId).length;
-    return Math.max(liveCount, hardcodedCount);
+    return Math.max(rolledUpLive, hardcodedCount);
   }
 
   /** Whether the live layer has data for this technique (beyond hardcoded). */

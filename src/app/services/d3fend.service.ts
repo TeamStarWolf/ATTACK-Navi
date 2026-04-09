@@ -228,16 +228,27 @@ export class D3fendService {
   getCountermeasures(attackId: string): D3fendTechnique[] {
     // Merge hardcoded + live data, deduplicated by technique ID
     const parentId = attackId.includes('.') ? attackId.split('.')[0] : null;
+    const prefix = attackId + '.';
 
     const hardcoded = [
       ...(this.byAttackId.get(attackId) ?? []),
       ...(parentId ? (this.byAttackId.get(parentId) ?? []) : []),
+      ...(!attackId.includes('.')
+        ? [...this.byAttackId.entries()]
+            .filter(([id]) => id.startsWith(prefix))
+            .flatMap(([, values]) => values)
+        : []),
     ];
     const seen = new Set(hardcoded.map(d => d.id));
 
     const live = [
       ...(this.liveMap.get(attackId) ?? []),
       ...(parentId ? (this.liveMap.get(parentId) ?? []) : []),
+      ...(!attackId.includes('.')
+        ? [...this.liveMap.entries()]
+            .filter(([id]) => id.startsWith(prefix))
+            .flatMap(([, values]) => values)
+        : []),
     ].filter(d => !seen.has(d.id));
 
     return [...hardcoded, ...live];
