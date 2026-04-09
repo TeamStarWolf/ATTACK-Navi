@@ -134,11 +134,13 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
   maxD3fend = 1;
   // Atomic Red Team scores: technique.attackId -> count
   atomicScoreMap = new Map<string, number>();
-  maxAtomic = 10;
+  maxAtomic = 1;
   // Engage activity scores: technique.id -> count
   engageScoreMap = new Map<string, number>();
+  maxEngageScore = 1;
   // CAR analytic scores: technique.id -> count
   carScoreMap = new Map<string, number>();
+  maxCarScore = 1;
   // CRI Profile scores: technique.id -> count of CRI controls
   criScoreMap = new Map<string, number>();
   maxCriScore = 1;
@@ -218,6 +220,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
 
   // Frequency heatmap: technique STIX id → count of unique threat groups using it
   frequencyMap = new Map<string, number>();
+  maxFrequencyScore = 1;
 
   // Custom techniques from user-created collection
   customTechniques: CustomTechnique[] = [];
@@ -286,6 +289,12 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     private cdr: ChangeDetectorRef,
     private el: ElementRef,
   ) {}
+
+  private refreshActiveHeatmap(...modes: HeatmapMode[]): void {
+    if (modes.includes(this.currentHeatmapMode)) {
+      this.filterService.setHeatmapMode(this.currentHeatmapMode);
+    }
+  }
 
   private wheelListener = (event: WheelEvent): void => {
     if (!event.ctrlKey) return;
@@ -509,6 +518,12 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     this.subs.add(
       this.filterService.heatmapMode$.subscribe((mode) => {
         this.currentHeatmapMode = mode;
+        if (mode === 'kev' || mode === 'unified') {
+          this.cveService.loadKev();
+        }
+        if (mode === 'm365') {
+          this.m365DefenderService.loadOnDemand();
+        }
         if (mode === 'software' && this.domain) {
           this.softwareScores = new Map();
           for (const [techId, swList] of this.domain.softwareByTechnique.entries()) {
@@ -564,7 +579,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
             const score = this.atomicService.getHeatScore(tech.attackId);
             if (score > 0) this.atomicScoreMap.set(tech.id, score);
           }
-          this.maxAtomic = this.atomicScoreMap.size > 0 ? Math.max(...this.atomicScoreMap.values()) : 10;
+          this.maxAtomic = this.atomicScoreMap.size > 0 ? Math.max(...this.atomicScoreMap.values()) : 1;
         } else if (mode === 'engage' && this.domain) {
           this.softwareScores = new Map();
           this.maxSoftware = 1;
@@ -577,6 +592,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
             const count = this.engageService.getActivities(tech.attackId).length;
             if (count > 0) this.engageScoreMap.set(tech.id, count);
           }
+          this.maxEngageScore = this.engageScoreMap.size > 0 ? Math.max(...this.engageScoreMap.values()) : 1;
         } else if (mode === 'car' && this.domain) {
           this.softwareScores = new Map();
           this.maxSoftware = 1;
@@ -590,6 +606,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
             const count = this.carService.getLiveCount(tech.attackId);
             if (count > 0) this.carScoreMap.set(tech.id, count);
           }
+          this.maxCarScore = this.carScoreMap.size > 0 ? Math.max(...this.carScoreMap.values()) : 1;
         } else if (mode === 'cve' && this.domain) {
           this.softwareScores = new Map();
           this.maxSoftware = 1;
@@ -632,6 +649,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
           for (const [techId, groups] of this.domain.groupsByTechnique.entries()) {
             if (groups.length > 0) this.frequencyMap.set(techId, groups.length);
           }
+          this.maxFrequencyScore = this.frequencyMap.size > 0 ? Math.max(...this.frequencyMap.values()) : 1;
         } else if (mode === 'cri' && this.domain) {
           this.softwareScores = new Map();
           this.maxSoftware = 1;
@@ -837,6 +855,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
       this.cveService.kevTechScores$.subscribe(scores => {
         this.kevScores = scores;
         this.maxKev = scores.size > 0 ? Math.max(...scores.values()) : 1;
+        this.refreshActiveHeatmap('unified');
         this.cdr.markForCheck();
       }),
     );
@@ -845,6 +864,22 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
       this.filterService.cveTechniqueIds$.subscribe(ids => {
         this.cveTechniqueIds = ids;
         this.cdr.markForCheck();
+      }),
+    );
+
+    this.subs.add(
+      this.d3fendService.loaded$.subscribe(loaded => {
+        if (loaded) {
+          this.refreshActiveHeatmap('d3fend', 'detection', 'unified');
+        }
+      }),
+    );
+
+    this.subs.add(
+      this.atomicService.loaded$.subscribe(loaded => {
+        if (loaded) {
+          this.refreshActiveHeatmap('atomic', 'detection', 'unified');
+        }
       }),
     );
 
@@ -872,13 +907,16 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
         if (loaded && this.currentHeatmapMode === 'car') {
           this.filterService.setHeatmapMode('car');
         }
+        if (loaded && (this.currentHeatmapMode === 'detection' || this.currentHeatmapMode === 'unified')) {
+          this.filterService.setHeatmapMode(this.currentHeatmapMode);
+        }
       }),
     );
 
     // Re-render detection/sigma heatmap when Sigma live counts arrive
     this.subs.add(
       this.sigmaService.loaded$.subscribe(loaded => {
-        if (loaded && (this.currentHeatmapMode === 'detection' || this.currentHeatmapMode === 'sigma')) {
+        if (loaded && (this.currentHeatmapMode === 'detection' || this.currentHeatmapMode === 'sigma' || this.currentHeatmapMode === 'unified')) {
           this.filterService.setHeatmapMode(this.currentHeatmapMode);
         }
       }),
@@ -911,6 +949,22 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
         }
         this.maxMyExposure = this.myExposureScoreMap.size > 0 ? Math.max(...this.myExposureScoreMap.values()) : 1;
         this.cdr.markForCheck();
+      }),
+    );
+
+    this.subs.add(
+      this.mispService.loaded$.subscribe(loaded => {
+        if (loaded) {
+          this.refreshActiveHeatmap('intelligence');
+        }
+      }),
+    );
+
+    this.subs.add(
+      this.m365DefenderService.loaded$.subscribe(loaded => {
+        if (loaded) {
+          this.refreshActiveHeatmap('m365');
+        }
       }),
     );
 
@@ -1478,22 +1532,117 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     return this.frequencyMap.get(t.id) ?? 0;
   }
 
-  /** Returns the minimap cell background color for a technique (coverage mode only). */
+  private getRelativeHeatColor(score: number, max: number, zero: string, colors: [string, string, string, string]): string {
+    if (score === 0) return zero;
+    const ratio = max > 0 ? score / max : 0;
+    if (ratio >= 0.75) return colors[3];
+    if (ratio >= 0.5) return colors[2];
+    if (ratio >= 0.25) return colors[1];
+    return colors[0];
+  }
+
+  private getThresholdHeatColor(score: number, zero: string, stops: Array<{ limit: number; color: string }>): string {
+    if (score === 0) return zero;
+    for (const stop of stops) {
+      if (score <= stop.limit) return stop.color;
+    }
+    return stops[stops.length - 1]?.color ?? zero;
+  }
+
+  /** Returns the minimap cell background color for the currently active heatmap mode. */
   getCellColor(tech: Technique): string {
-    if (this.heatmapMode === 'coverage') {
-      const colors = this.settingsService.getCoverageColors();
-      const count = Math.min(tech.mitigationCount, colors.length - 1);
-      return colors[count < 0 ? 0 : count];
+    switch (this.heatmapMode) {
+      case 'coverage': {
+        const colors = this.settingsService.getCoverageColors();
+        const count = Math.min(tech.mitigationCount, colors.length - 1);
+        return colors[count < 0 ? 0 : count];
+      }
+      case 'frequency':
+        return this.getRelativeHeatColor(this.getFrequencyScore(tech), this.maxFrequencyScore, '#1c2a38', ['#1e3a5f', '#1565c0', '#0ea5e9', '#38bdf8']);
+      case 'status': {
+        const status = this.getTechniqueImplStatus(tech);
+        if (status === 'implemented') return '#4caf50';
+        if (status === 'in-progress') return '#ff9800';
+        if (status === 'planned') return '#2196f3';
+        if (status === 'not-started') return '#e53935';
+        return '#90a4ae';
+      }
+      case 'controls': {
+        const status = this.getControlStatus(tech);
+        if (status === 'covered') return '#00c853';
+        if (status === 'planned') return '#1565c0';
+        return '#1c2b30';
+      }
+      case 'exposure':
+        return this.getRelativeHeatColor(this.getExposureScore(tech), this.maxExposure, '#eceff1', ['#ffb74d', '#ff7043', '#e53935', '#b71c1c']);
+      case 'software':
+        return this.getRelativeHeatColor(this.getSoftwareScore(tech), this.maxSoftware, '#eceff1', ['#ffb74d', '#ff7043', '#e53935', '#b71c1c']);
+      case 'campaign':
+        return this.getRelativeHeatColor(this.getCampaignScore(tech), this.maxCampaign, '#eceff1', ['#ce93d8', '#ab47bc', '#7b1fa2', '#4a148c']);
+      case 'risk':
+        return this.getRelativeHeatColor(this.getRiskScore(tech), this.maxRisk, '#eceff1', ['#ff7043', '#e53935', '#b71c1c', '#4a0000']);
+      case 'kev':
+        return this.getRelativeHeatColor(this.getKevScore(tech), this.maxKev, '#eceff1', ['#ffd54f', '#ffb300', '#ff7043', '#d32f2f']);
+      case 'd3fend':
+        return this.getRelativeHeatColor(this.getD3fendScore(tech), this.maxD3fend, '#d32f2f', ['#e64a19', '#f57c00', '#1565c0', '#1a6fba']);
+      case 'atomic':
+        return this.getRelativeHeatColor(this.getAtomicScore(tech), this.maxAtomic, '#1a1a0a', ['#6d3a10', '#c06020', '#e08030', '#f0a040']);
+      case 'engage':
+        return this.getRelativeHeatColor(this.getEngageScore(tech), this.maxEngageScore, '#0a1a0a', ['#4a3a10', '#906020', '#c08030', '#f0a040']);
+      case 'car':
+        return this.getRelativeHeatColor(this.getCarScore(tech), this.maxCarScore, '#0a0a1a', ['#0d2a4a', '#1a4a7a', '#2a6aaa', '#58a6ff']);
+      case 'cve':
+        return this.getRelativeHeatColor(this.getCveScore(tech), this.maxCveScore, '#1a2332', ['#4a1a4a', '#7b2d8b', '#a855b5', '#d946ef']);
+      case 'detection':
+        return this.getRelativeHeatColor(this.getDetectionScore(tech), this.maxDetectionScore, '#1a2332', ['#0c2d2d', '#0d5e5e', '#0e8a7a', '#10b981']);
+      case 'cri':
+        return this.getRelativeHeatColor(this.getCriScore(tech), this.maxCriScore, '#1a0a2e', ['#ce93d8', '#ab47bc', '#8e24aa', '#6a1b9a']);
+      case 'unified':
+        return this.getThresholdHeatColor(this.getUnifiedScore(tech), '#7f0000', [
+          { limit: 15, color: '#7f0000' },
+          { limit: 30, color: '#c62828' },
+          { limit: 50, color: '#e65100' },
+          { limit: 65, color: '#f9a825' },
+          { limit: 80, color: '#558b2f' },
+          { limit: Number.POSITIVE_INFINITY, color: '#1b5e20' },
+        ]);
+      case 'sigma':
+        return this.getRelativeHeatColor(this.getSigmaScore(tech), this.maxSigmaScore, '#0a1a1a', ['#0d4a3a', '#0d7a5e', '#0ea87a', '#10b981']);
+      case 'nist':
+        return this.getRelativeHeatColor(this.getNistScore(tech), this.maxNistScore, '#0d1b2a', ['#1a4a7a', '#1565c0', '#1976d2', '#42a5f5']);
+      case 'veris':
+        return this.getRelativeHeatColor(this.getVerisScore(tech), this.maxVerisScore, '#1a0a0a', ['#5c1a1a', '#a83232', '#d64e4e', '#f28b8b']);
+      case 'epss': {
+        const epss = this.getEpssScore(tech);
+        if (epss === 0) return '#1a1a0a';
+        if (epss < 0.01) return '#5c4a00';
+        if (epss < 0.05) return '#c17900';
+        if (epss < 0.2) return '#e65100';
+        return '#d32f2f';
+      }
+      case 'elastic':
+        return this.getRelativeHeatColor(this.getElasticScore(tech), this.maxElasticScore, '#0a1a0a', ['#1a3a1a', '#2a6a2a', '#3a9a3a', '#4caf50']);
+      case 'splunk':
+        return this.getRelativeHeatColor(this.getSplunkScore(tech), this.maxSplunkScore, '#1a0a0a', ['#4a2a0a', '#7a4a1a', '#c06a20', '#ff9800']);
+      case 'intelligence':
+        return this.getRelativeHeatColor(this.getIntelScore(tech), this.maxIntelScore, '#0a1a2e', ['#1a3a7a', '#5a2d8b', '#8b1a5a', '#d32f2f']);
+      case 'm365':
+        return this.getRelativeHeatColor(this.getM365Score(tech), this.maxM365Score, '#0a1a2e', ['#003a6e', '#005a9e', '#0078d4', '#4ca6ff']);
+      case 'my-exposure':
+        return this.getRelativeHeatColor(this.getMyExposureScore(tech), this.maxMyExposure, '#1a2332', ['#ff9800', '#f44336', '#d32f2f', '#b71c1c']);
+      case 'wazuh':
+        return this.getRelativeHeatColor(this.getWazuhScore(tech), this.maxWazuhScore, '#0a1520', ['#0d3a5c', '#1a6fa0', '#2196c8', '#3aabe0']);
+      case 'csa-ccm':
+        return this.getRelativeHeatColor(this.getCsaCcmScore(tech), this.maxCsaCcmScore, '#0a1a10', ['#1a4a2a', '#2a7a3a', '#3aaa4a', '#4cce5a']);
+      case 'm365-controls':
+        return this.getRelativeHeatColor(this.getM365ControlsScore(tech), this.maxM365ControlsScore, '#0a1028', ['#0a3068', '#0050a8', '#0070e8', '#40a0ff']);
+      case 'kill-chain':
+        return this.getRelativeHeatColor(this.getKillChainScore(tech), this.maxKillChainScore, '#0e0a1a', ['#2d1a5e', '#5a2d8b', '#7b3faa', '#9c5cc5']);
+      case 'poc-exploits':
+        return this.getRelativeHeatColor(this.getPocScore(tech), this.maxPocScore, '#1a0e0a', ['#5c2a0a', '#a84a1a', '#d96a2a', '#ff8c3a']);
+      default:
+        return '#1a2a3a';
     }
-    if (this.heatmapMode === 'frequency') {
-      const score = this.frequencyMap.get(tech.id) ?? 0;
-      if (score === 0) return '#1c2a38';
-      if (score <= 2) return '#1e3a5f';
-      if (score <= 5) return '#1565c0';
-      if (score <= 10) return '#0ea5e9';
-      return '#38bdf8';
-    }
-    return '#1a2a3a';
   }
 
   isDimmed(t: Technique): boolean {

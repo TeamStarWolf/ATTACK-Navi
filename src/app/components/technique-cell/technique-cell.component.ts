@@ -160,22 +160,31 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
   @Input() d3fendScore = 0;
   @Input() maxD3fend = 1;
   @Input() atomicScore = 0;
-  @Input() maxAtomic = 10;
+  @Input() maxAtomic = 1;
   @Input() engageScore = 0;
+  @Input() maxEngageScore = 1;
   @Input() carScore = 0;
+  @Input() maxCarScore = 1;
   @Input() cveScore = 0;
   @Input() maxCveScore = 1;
   @Input() detectionScore = 0;
+  @Input() maxDetectionScore = 1;
   @Input() frequencyScore = 0;
+  @Input() maxFrequencyScore = 1;
   @Input() criScore = 0;
   @Input() maxCriScore = 1;
   @Input() unifiedScore = 0;
   @Input() sigmaScore = 0;
+  @Input() maxSigmaScore = 1;
   @Input() nistScore = 0;
+  @Input() maxNistScore = 1;
   @Input() verisScore = 0;
+  @Input() maxVerisScore = 1;
   @Input() epssScore = 0;
   @Input() elasticScore = 0;
+  @Input() maxElasticScore = 1;
   @Input() splunkScore = 0;
+  @Input() maxSplunkScore = 1;
   @Input() intelScore = 0;
   @Input() maxIntelScore = 1;
   @Input() m365Score = 0;
@@ -239,53 +248,53 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
     } else if (this.heatmapMode === 'risk') {
       this.bgColor = this.computeRiskColor(this.riskScore, this.maxRisk);
     } else if (this.heatmapMode === 'kev') {
-      this.bgColor = this.computeKevColor(this.kevScore, this.maxKev);
+      this.bgColor = this.computeRelativeColor(this.kevScore, this.maxKev, '#eceff1', ['#ffd54f', '#ffb300', '#ff7043', '#d32f2f']);
     } else if (this.heatmapMode === 'd3fend') {
-      this.bgColor = this.computeD3fendColor(this.d3fendScore);
+      this.bgColor = this.computeRelativeColor(this.d3fendScore, this.maxD3fend, '#d32f2f', ['#e64a19', '#f57c00', '#1565c0', '#1a6fba']);
     } else if (this.heatmapMode === 'atomic') {
-      this.bgColor = this.computeAtomicColor(this.atomicScore);
+      this.bgColor = this.computeRelativeColor(this.atomicScore, this.maxAtomic, '#1a1a0a', ['#6d3a10', '#c06020', '#e08030', '#f0a040']);
     } else if (this.heatmapMode === 'engage') {
-      this.bgColor = this.computeEngageColor(this.engageScore);
+      this.bgColor = this.computeRelativeColor(this.engageScore, this.maxEngageScore, '#0a1a0a', ['#4a3a10', '#906020', '#c08030', '#f0a040']);
     } else if (this.heatmapMode === 'car') {
-      this.bgColor = this.computeCarColor(this.carScore);
+      this.bgColor = this.computeRelativeColor(this.carScore, this.maxCarScore, '#0a0a1a', ['#0d2a4a', '#1a4a7a', '#2a6aaa', '#58a6ff']);
     } else if (this.heatmapMode === 'cve') {
-      this.bgColor = this.computeCveColor();
+      this.bgColor = this.computeRelativeColor(this.cveScore, this.maxCveScore, '#1a2332', ['#4a1a4a', '#7b2d8b', '#a855b5', '#d946ef']);
     } else if (this.heatmapMode === 'detection') {
-      this.bgColor = this.computeDetectionColor();
+      this.bgColor = this.computeRelativeColor(this.detectionScore, this.maxDetectionScore, '#1a2332', ['#0c2d2d', '#0d5e5e', '#0e8a7a', '#10b981']);
     } else if (this.heatmapMode === 'frequency') {
-      this.bgColor = this.computeFrequencyColor(this.frequencyScore);
+      this.bgColor = this.computeRelativeColor(this.frequencyScore, this.maxFrequencyScore, '#1c2a38', ['#1e3a5f', '#1565c0', '#0ea5e9', '#38bdf8']);
     } else if (this.heatmapMode === 'cri') {
       this.bgColor = this.computeCriColor(this.criScore, this.maxCriScore);
     } else if (this.heatmapMode === 'unified') {
       this.bgColor = this.computeUnifiedColor(this.unifiedScore);
     } else if (this.heatmapMode === 'sigma') {
-      this.bgColor = this.computeSigmaColor(this.sigmaScore);
+      this.bgColor = this.computeRelativeColor(this.sigmaScore, this.maxSigmaScore, '#0a1a1a', ['#0d4a3a', '#0d7a5e', '#0ea87a', '#10b981']);
     } else if (this.heatmapMode === 'nist') {
-      this.bgColor = this.computeNistColor(this.nistScore);
+      this.bgColor = this.computeRelativeColor(this.nistScore, this.maxNistScore, '#0d1b2a', ['#1a4a7a', '#1565c0', '#1976d2', '#42a5f5']);
     } else if (this.heatmapMode === 'veris') {
-      this.bgColor = this.computeVerisColor(this.verisScore);
+      this.bgColor = this.computeRelativeColor(this.verisScore, this.maxVerisScore, '#1a0a0a', ['#5c1a1a', '#a83232', '#d64e4e', '#f28b8b']);
     } else if (this.heatmapMode === 'epss') {
       this.bgColor = this.computeEpssColor(this.epssScore);
     } else if (this.heatmapMode === 'elastic') {
-      this.bgColor = this.computeElasticColor(this.elasticScore);
+      this.bgColor = this.computeRelativeColor(this.elasticScore, this.maxElasticScore, '#0a1a0a', ['#1a3a1a', '#2a6a2a', '#3a9a3a', '#4caf50']);
     } else if (this.heatmapMode === 'splunk') {
-      this.bgColor = this.computeSplunkColor(this.splunkScore);
+      this.bgColor = this.computeRelativeColor(this.splunkScore, this.maxSplunkScore, '#1a0a0a', ['#4a2a0a', '#7a4a1a', '#c06a20', '#ff9800']);
     } else if (this.heatmapMode === 'intelligence') {
-      this.bgColor = this.computeIntelligenceColor(this.intelScore, this.maxIntelScore);
+      this.bgColor = this.computeRelativeColor(this.intelScore, this.maxIntelScore, '#0a1a2e', ['#1a3a7a', '#5a2d8b', '#8b1a5a', '#d32f2f']);
     } else if (this.heatmapMode === 'm365') {
-      this.bgColor = this.computeM365Color(this.m365Score);
+      this.bgColor = this.computeRelativeColor(this.m365Score, this.maxM365Score, '#0a1a2e', ['#003a6e', '#005a9e', '#0078d4', '#4ca6ff']);
     } else if (this.heatmapMode === 'my-exposure') {
-      this.bgColor = this.computeMyExposureColor(this.myExposureScore);
+      this.bgColor = this.computeRelativeColor(this.myExposureScore, this.maxMyExposure, '#1a2332', ['#ff9800', '#f44336', '#d32f2f', '#b71c1c']);
     } else if (this.heatmapMode === 'wazuh') {
-      this.bgColor = this.computeWazuhColor(this.wazuhScore);
+      this.bgColor = this.computeRelativeColor(this.wazuhScore, this.maxWazuhScore, '#0a1520', ['#0d3a5c', '#1a6fa0', '#2196c8', '#3aabe0']);
     } else if (this.heatmapMode === 'csa-ccm') {
-      this.bgColor = this.computeCsaCcmColor(this.csaCcmScore);
+      this.bgColor = this.computeRelativeColor(this.csaCcmScore, this.maxCsaCcmScore, '#0a1a10', ['#1a4a2a', '#2a7a3a', '#3aaa4a', '#4cce5a']);
     } else if (this.heatmapMode === 'm365-controls') {
-      this.bgColor = this.computeM365ControlsColor(this.m365ControlsScore);
+      this.bgColor = this.computeRelativeColor(this.m365ControlsScore, this.maxM365ControlsScore, '#0a1028', ['#0a3068', '#0050a8', '#0070e8', '#40a0ff']);
     } else if (this.heatmapMode === 'kill-chain') {
-      this.bgColor = this.computeKillChainColor(this.killChainScore);
+      this.bgColor = this.computeRelativeColor(this.killChainScore, this.maxKillChainScore, '#0e0a1a', ['#2d1a5e', '#5a2d8b', '#7b3faa', '#9c5cc5']);
     } else if (this.heatmapMode === 'poc-exploits') {
-      this.bgColor = this.computePocColor(this.pocScore);
+      this.bgColor = this.computeRelativeColor(this.pocScore, this.maxPocScore, '#1a0e0a', ['#5c2a0a', '#a84a1a', '#d96a2a', '#ff8c3a']);
     } else {
       this.bgColor = this.computeColor(this.technique.mitigationCount);
     }
@@ -306,6 +315,15 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
   onMouseLeave(): void {
     this.showTooltip = false;
     this.cdr.markForCheck();
+  }
+
+  private computeRelativeColor(score: number, max: number, zero: string, colors: [string, string, string, string]): string {
+    if (score === 0) return zero;
+    const ratio = max > 0 ? score / max : 0;
+    if (ratio >= 0.75) return colors[3];
+    if (ratio >= 0.5) return colors[2];
+    if (ratio >= 0.25) return colors[1];
+    return colors[0];
   }
 
   private computeColor(count: number): string {

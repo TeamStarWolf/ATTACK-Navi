@@ -2,7 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, Subscription, of, combineLatest, catchError } from 'rxjs';
+import { BehaviorSubject, Observable, Subscription, of, combineLatest, catchError, timeout } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { NvdCveItem, KevEntry } from '../models/cve';
 import { AttackCveService } from './attack-cve.service';
@@ -767,6 +767,7 @@ export class CveService {
   private loadingSubject = new BehaviorSubject<boolean>(false);
   private errorSubject = new BehaviorSubject<string | null>(null);
   private kevMapSubject = new BehaviorSubject<Map<string, KevEntry>>(new Map());
+  private nvdCacheSubject = new BehaviorSubject<Map<string, NvdCveItem>>(new Map());
   private kevLoadedSubject = new BehaviorSubject<boolean>(false);
   // Map of attackId -> number of KEV CVEs mapped to it
   private kevTechScoresSubject = new BehaviorSubject<Map<string, number>>(new Map());
@@ -775,6 +776,7 @@ export class CveService {
   activeCve$: Observable<NvdCveItem | null> = this.activeCveSubject.asObservable();
   loading$: Observable<boolean> = this.loadingSubject.asObservable();
   error$: Observable<string | null> = this.errorSubject.asObservable();
+  nvdCache$: Observable<Map<string, NvdCveItem>> = this.nvdCacheSubject.asObservable();
   kevLoaded$: Observable<boolean> = this.kevLoadedSubject.asObservable();
   kevTechScores$: Observable<Map<string, number>> = this.kevTechScoresSubject.asObservable();
 
@@ -789,16 +791,23 @@ export class CveService {
       this.kevLoadedSubject,
       this.attackCveService.loaded$,
     ]).pipe(map(([kevLoaded, ctidLoaded]) => kevLoaded && ctidLoaded));
+
+    this.attackCveService.loaded$.subscribe(loaded => {
+      if (loaded && this.kevMapSubject.value.size > 0) {
+        this.computeKevTechScores([...this.kevMapSubject.value.values()]);
+      }
+    });
   }
 
   loadKev(): void {
     if (this.kevLoadedSubject.value || this.kevLoading) return;
     this.kevLoading = true;
-    // Try direct CISA fetch first, then corsproxy.io fallback (1 attempt each).
+    // Try direct CISA fetch first, but fail over quickly if it hangs.
     this.http.get<any>(this.KEV_URL).pipe(
+      timeout(6000),
       catchError(() => {
         const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(this.KEV_URL)}`;
-        return this.http.get<any>(proxyUrl);
+        return this.http.get<any>(proxyUrl).pipe(timeout(8000));
       }),
       catchError(() => of({ vulnerabilities: [] }))
     ).subscribe((data: any) => {
@@ -832,8 +841,8 @@ export class CveService {
     this.newKevCount$.next(0);
   }
 
-  getKevScoresFromCtid(kevCveIds: string[]): Map<string, number> {
-    const scores = new Map<string, number>();
+  getKevScoresFromCtid(kevCveIds: string[]): Map<string, Set<string>> {
+    const scores = new Map<string, Set<string>>();
     for (const cveId of kevCveIds) {
       const mapping = this.attackCveService.getMappingForCve(cveId);
       if (!mapping) continue;
@@ -845,34 +854,53 @@ export class CveService {
         ]),
       ];
       for (const techId of allTechs) {
-        scores.set(techId, (scores.get(techId) ?? 0) + 1);
+        this.addTechniqueCve(scores, techId, cveId);
       }
     }
     return scores;
   }
 
   private computeKevTechScores(vulns: KevEntry[]): void {
+    const merged = new Map<string, Set<string>>();
+
     // CWE-based scores (indirect)
-    const cweScores = new Map<string, number>();
     for (const v of vulns) {
       const cwes = Array.isArray(v.cwes) ? v.cwes : (typeof v.cwes === 'string' && v.cwes ? v.cwes.split(',').map((c: string) => c.trim()).filter(Boolean) : []);
       const attackIds = mapCwesToAttackIds(cwes.length > 0 ? cwes : ['CWE-NVD-CWE-noinfo']);
       for (const id of attackIds) {
-        cweScores.set(id, (cweScores.get(id) ?? 0) + 1);
+        this.addTechniqueCve(merged, id, v.cveID);
       }
     }
 
     // CTID-based scores (direct) — only available if AttackCveService has loaded
     const kevCveIds = vulns.map(v => v.cveID);
     const ctidScores = this.getKevScoresFromCtid(kevCveIds);
-
-    // Merge: take the max of each source so CTID data can only raise a score, not lower it
-    const merged = new Map<string, number>(cweScores);
-    for (const [techId, ctidCount] of ctidScores) {
-      merged.set(techId, Math.max(merged.get(techId) ?? 0, ctidCount));
+    for (const [techId, cveIds] of ctidScores) {
+      if (!merged.has(techId)) merged.set(techId, new Set<string>());
+      for (const cveId of cveIds) {
+        merged.get(techId)!.add(cveId);
+      }
     }
 
-    this.kevTechScoresSubject.next(merged);
+    const counts = new Map<string, number>();
+    for (const [techId, cveIds] of merged) {
+      counts.set(techId, cveIds.size);
+    }
+
+    this.kevTechScoresSubject.next(counts);
+  }
+
+  private addTechniqueCve(map: Map<string, Set<string>>, techId: string, cveId: string): void {
+    if (!techId) return;
+
+    if (!map.has(techId)) map.set(techId, new Set<string>());
+    map.get(techId)!.add(cveId);
+
+    if (techId.includes('.')) {
+      const parentId = techId.split('.')[0];
+      if (!map.has(parentId)) map.set(parentId, new Set<string>());
+      map.get(parentId)!.add(cveId);
+    }
   }
 
   searchCves(query: string): void {
@@ -896,6 +924,7 @@ export class CveService {
       this.loadingSubject.next(false);
       if (!data) return;
       const items = (data.vulnerabilities ?? []).map((v: any) => this.parseNvdItem(v.cve));
+      this.cacheNvdItems(items);
       this.searchResultsSubject.next(items);
     });
   }
@@ -907,6 +936,23 @@ export class CveService {
   clearResults(): void {
     this.searchResultsSubject.next([]);
     this.activeCveSubject.next(null);
+  }
+
+  /** Return all normalized NVD CVE records that have been loaded into the local cache. */
+  getAllCachedCves(): NvdCveItem[] {
+    return [...this.nvdCacheSubject.value.values()];
+  }
+
+  /** Return a specific cached NVD CVE record when available. */
+  getCachedCve(cveId: string): NvdCveItem | null {
+    return this.nvdCacheSubject.value.get(cveId) ?? null;
+  }
+
+  /** Return cached NVD records for a specific set of CVE IDs. */
+  getCachedCves(cveIds: string[]): NvdCveItem[] {
+    return cveIds
+      .map(id => this.nvdCacheSubject.value.get(id))
+      .filter((item): item is NvdCveItem => !!item);
   }
 
   /** Reverse-lookup: given an ATT&CK technique ID, return all CWE IDs that map to it */
@@ -950,6 +996,7 @@ export class CveService {
           catchError(() => of({ vulnerabilities: [] }))
         ).subscribe(data => {
           const items = (data?.vulnerabilities ?? []).map((v: any) => this.parseNvdItem(v.cve));
+          this.cacheNvdItems(items);
           for (const item of items) {
             if (!allItems.has(item.id)) allItems.set(item.id, item);
           }
@@ -967,6 +1014,43 @@ export class CveService {
 
   getKevEntry(cveId: string): KevEntry | undefined {
     return this.kevMapSubject.value.get(cveId);
+  }
+
+  /** Return all KEV entries as a flat array. */
+  getAllKevEntries(): KevEntry[] {
+    return [...this.kevMapSubject.value.values()];
+  }
+
+  /** Group KEV entries by vendor/project. */
+  getKevByVendor(): Map<string, KevEntry[]> {
+    const byVendor = new Map<string, KevEntry[]>();
+    for (const entry of this.kevMapSubject.value.values()) {
+      const vendor = entry.vendorProject || 'Unknown';
+      if (!byVendor.has(vendor)) byVendor.set(vendor, []);
+      byVendor.get(vendor)!.push(entry);
+    }
+    return byVendor;
+  }
+
+  /** Return KEV entries aggregated by month (dateAdded). */
+  getKevTimeline(): { month: string; count: number }[] {
+    const byMonth = new Map<string, number>();
+    for (const entry of this.kevMapSubject.value.values()) {
+      const month = entry.dateAdded?.substring(0, 7) || 'unknown';
+      byMonth.set(month, (byMonth.get(month) ?? 0) + 1);
+    }
+    return [...byMonth.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([month, count]) => ({ month, count }));
+  }
+
+  private cacheNvdItems(items: NvdCveItem[]): void {
+    if (items.length === 0) return;
+    const next = new Map(this.nvdCacheSubject.value);
+    for (const item of items) {
+      next.set(item.id, item);
+    }
+    this.nvdCacheSubject.next(next);
   }
 
   private parseNvdItem(cve: any): NvdCveItem {
