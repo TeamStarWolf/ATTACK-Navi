@@ -675,6 +675,58 @@
           </section>
         }
 
+        <!-- CVE Kill Chain section (CVE2CAPEC integration) -->
+        @if (killChainEntries.length > 0) {
+          <section class="detail-section upgrade-section-block kill-chain-section">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('kill-chain')" (click)="toggleSection('kill-chain')">
+              <span class="section-chevron">{{ isSectionCollapsed('kill-chain') ? '▸' : '▾' }}</span>
+              <span class="section-icon">🔗</span> CVE Kill Chain
+              <span class="section-count">{{ killChainEntries.length }}</span>
+            </h4>
+            @if (!isSectionCollapsed('kill-chain')) {
+              <p class="kill-chain-summary">
+                {{ killChainEntries.length }} CVE{{ killChainEntries.length !== 1 ? 's' : '' }} with full kill chain mapping (CVE → CWE → CAPEC → ATT&amp;CK → D3FEND).
+              </p>
+              <ul class="kill-chain-list">
+                @for (entry of (showAllKillChain ? killChainEntries : killChainEntries.slice(0, 5)); track entry.cveId) {
+                  <li class="kill-chain-item">
+                    <span class="kc-cve">{{ entry.cveId }}</span>
+                    <span class="kc-arrow">→</span>
+                    <span class="kc-step" title="CWE">{{ entry.cwes.length }} CWE</span>
+                    <span class="kc-arrow">→</span>
+                    <span class="kc-step" title="CAPEC">{{ entry.capecs.length }} CAPEC</span>
+                    @if (entry.defenses.length > 0) {
+                      <span class="kc-arrow">→</span>
+                      <span class="kc-defense" title="D3FEND defenses">{{ entry.defenses.length }} D3FEND</span>
+                    }
+                  </li>
+                }
+              </ul>
+              @if (killChainEntries.length > 5 && !showAllKillChain) {
+                <button class="show-more-btn" (click)="showAllKillChain = true">Show all {{ killChainEntries.length }} chains</button>
+              }
+              <a class="framework-link" href="https://github.com/Galeax/CVE2CAPEC" target="_blank" rel="noopener">CVE2CAPEC ↗</a>
+            }
+          </section>
+        }
+
+        <!-- PoC Exploits section (trickest/cve integration) -->
+        @if (pocCount > 0) {
+          <section class="detail-section upgrade-section-block poc-exploit-section">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('poc-exploits')" (click)="toggleSection('poc-exploits')">
+              <span class="section-chevron">{{ isSectionCollapsed('poc-exploits') ? '▸' : '▾' }}</span>
+              <span class="section-icon">💣</span> PoC Exploits
+              <span class="section-count">{{ pocCount }}</span>
+            </h4>
+            @if (!isSectionCollapsed('poc-exploits')) {
+              <p class="poc-summary">
+                {{ pocCount }} proof-of-concept exploit{{ pocCount !== 1 ? 's' : '' }} available for CVEs mapped to this technique.
+              </p>
+              <a class="framework-link" href="https://github.com/trickest/cve" target="_blank" rel="noopener">trickest/cve Repository ↗</a>
+            }
+          </section>
+        }
+
         <!-- Tags section -->
         <div class="tags-section upgrade-section-block">
           <div class="section-label upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('tags')" (click)="toggleSection('tags')">
