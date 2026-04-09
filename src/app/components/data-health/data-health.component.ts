@@ -22,6 +22,8 @@ import { DataService } from '../../services/data.service';
 import { EpssService } from '../../services/epss.service';
 import { CveService } from '../../services/cve.service';
 import { NvdBulkService } from '../../services/nvd-bulk.service';
+import { Cve2CapecService } from '../../services/cve2capec.service';
+import { PocExploitService } from '../../services/poc-exploit.service';
 
 interface HealthEntry { name: string; status: 'loading' | 'loaded' | 'failed'; }
 
@@ -117,6 +119,8 @@ export class DataHealthComponent implements OnInit, OnDestroy {
     private epssService: EpssService,
     private cveService: CveService,
     private nvdBulkService: NvdBulkService,
+    private cve2capecService: Cve2CapecService,
+    private pocExploitService: PocExploitService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -147,6 +151,8 @@ export class DataHealthComponent implements OnInit, OnDestroy {
       { name: 'EPSS', loaded$: of(true) },
       { name: 'CISA KEV', loaded$: this.cveService.kevLoaded$ },
       { name: 'NVD Bulk', loaded$: this.nvdBulkService.loaded$ },
+      { name: 'CVE2CAPEC', loaded$: this.cve2capecService.loaded$ },
+      { name: 'PoC Exploits', loaded$: this.pocExploitService.loaded$ },
     ];
 
     this.entries = sources.map(s => ({ name: s.name, status: 'loading' as const }));

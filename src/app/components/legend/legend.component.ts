@@ -298,6 +298,26 @@ const MODE_CONFIGS: Record<HeatmapMode, LegendConfig> = {
       { color: '#40a0ff', label: '11+' },
     ],
   },
+  'kill-chain': {
+    label: 'CVE Kill Chain',
+    stops: [
+      { color: '#0e0a1a', label: '0' },
+      { color: '#2d1a5e', label: '1–3' },
+      { color: '#5a2d8b', label: '4–8' },
+      { color: '#7b3faa', label: '9–15' },
+      { color: '#9c5cc5', label: '16+' },
+    ],
+  },
+  'poc-exploits': {
+    label: 'PoC Exploits',
+    stops: [
+      { color: '#1a0e0a', label: '0' },
+      { color: '#5c2a0a', label: '1–2' },
+      { color: '#a84a1a', label: '3–5' },
+      { color: '#d96a2a', label: '6–10' },
+      { color: '#ff8c3a', label: '11+' },
+    ],
+  },
 };
 
 @Component({
