@@ -3018,6 +3018,115 @@
   }
 }
 
+// ─── Sigma Community Counts ──────────────────────────────────────────────────
+.sigma-source-counts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: #94a3b8;
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  background: rgb(16 185 129 / 6%);
+  border-radius: 4px;
+}
+
+.sigma-source-label {
+  font-weight: 500;
+  color: #10b981;
+  &.community { color: #8b5cf6; }
+}
+
+.sigma-source-sep {
+  color: #475569;
+}
+
+.sigma-links {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.community-link {
+  color: #8b5cf6 !important;
+  &:hover { color: #a78bfa !important; }
+}
+
+// ─── EVTX Samples ───────────────────────────────────────────────────────────
+.evtx-section {
+  border-left: 2px solid #0078d4;
+}
+
+.evtx-icon {
+  font-size: 12px;
+}
+
+.evtx-badge {
+  background: rgb(0 120 212 / 20%) !important;
+  color: #4ca6ff !important;
+  border-color: rgb(0 120 212 / 30%) !important;
+}
+
+.evtx-item {
+  padding: 5px 0;
+  border-bottom: 1px solid #0f1f2e;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  &:last-of-type { border-bottom: none; }
+}
+
+.evtx-link {
+  font-size: 11px;
+  font-weight: 500;
+  color: #4ca6ff;
+  text-decoration: none;
+  flex: 1;
+  word-break: break-all;
+  &:hover { text-decoration: underline; color: #80c0ff; }
+}
+
+.evtx-tactic {
+  font-size: 9px;
+  color: #0078d4;
+  background: rgb(0 120 212 / 10%);
+  border: 1px solid rgb(0 120 212 / 20%);
+  padding: 1px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+// ─── Sentinel ATT&CK Rules ──────────────────────────────────────────────────
+.sentinel-section {
+  border-left: 2px solid #0078d4;
+}
+
+.sentinel-icon {
+  font-size: 12px;
+}
+
+.sentinel-badge {
+  background: rgb(0 120 212 / 20%) !important;
+  color: #4ca6ff !important;
+  border-color: rgb(0 120 212 / 30%) !important;
+}
+
+.sentinel-item {
+  padding: 5px 0;
+  border-bottom: 1px solid #0f1f2e;
+  &:last-of-type { border-bottom: none; }
+}
+
+.sentinel-link {
+  font-size: 11px;
+  font-weight: 500;
+  color: #4ca6ff;
+  text-decoration: none;
+  word-break: break-all;
+  &:hover { text-decoration: underline; color: #80c0ff; }
+}
+
 // ─── Microsoft 365 Defender Hunting Queries ─────────────────────────────────
 .m365-section {
   border-left: 2px solid #0078d4;
@@ -3672,5 +3781,56 @@
     color: #ff7043;
     background: rgba(255, 112, 67, 0.12);
     border: 1px solid rgba(255, 112, 67, 0.3);
+  }
+}
+
+// Anthropic Cybersecurity Skills section
+.anthropic-skills-section {
+  .anthropic-badge {
+    background: rgba(217, 119, 87, 0.18);
+    color: #D97757;
+  }
+
+  .anthropic-skills-info {
+    padding: 6px 0;
+  }
+
+  .anthropic-skill-count {
+    font-size: 0.82rem;
+    color: #D97757;
+    font-weight: 600;
+  }
+
+  .anthropic-link {
+    color: #D97757 !important;
+    &:hover { color: #e8956e !important; }
+  }
+}
+
+// ThreatHunter Playbook section
+.playbook-section {
+  .playbook-badge {
+    background: rgba(46, 125, 50, 0.18);
+    color: #2E7D32;
+  }
+
+  .playbook-info {
+    padding: 6px 0;
+  }
+
+  .playbook-count {
+    font-size: 0.82rem;
+    color: #4caf50;
+    font-weight: 600;
+  }
+
+  .playbook-link,
+  .playbook-repo-link {
+    color: #4caf50 !important;
+    &:hover { color: #66bb6a !important; }
+  }
+
+  .playbook-repo-link {
+    margin-left: 8px;
   }
 }

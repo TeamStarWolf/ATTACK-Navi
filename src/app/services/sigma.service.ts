@@ -88,6 +88,14 @@ export class SigmaService {
   private coveredSubject = new BehaviorSubject<number>(0);
   readonly covered$ = this.coveredSubject.asObservable();
 
+  private communityCounts = new Map<string, number>();
+  private communityLoadedSubject = new BehaviorSubject<boolean>(false);
+  readonly communityLoaded$ = this.communityLoadedSubject.asObservable();
+  private communityTotalSubject = new BehaviorSubject<number>(0);
+  readonly communityTotal$ = this.communityTotalSubject.asObservable();
+  private communityCoveredSubject = new BehaviorSubject<number>(0);
+  readonly communityCovered$ = this.communityCoveredSubject.asObservable();
+
   constructor(private http: HttpClient) {
     this.loadLive();
   }
@@ -245,6 +253,45 @@ export class SigmaService {
     let sub = 0;
     const prefix = attackId + '.';
     for (const [id, count] of this.directCounts) {
+      if (id.startsWith(prefix)) sub += count;
+    }
+    return direct + sub;
+  }
+
+  /** Load community Sigma rules from mdecrevoisier/SIGMA-detection-rules. */
+  loadCommunityRules(): void {
+    if (this.communityLoadedSubject.value) return;
+    this.http
+      .get<any>('https://api.github.com/repos/mdecrevoisier/SIGMA-detection-rules/git/trees/main?recursive=1')
+      .pipe(catchError(() => of(null)))
+      .subscribe((tree: any) => {
+        if (tree?.tree) {
+          const techRegex = /T(\d{4}(?:\.\d{3})?)/;
+          let total = 0;
+          for (const item of tree.tree) {
+            if (item.type === 'blob' && item.path?.endsWith('.yml')) {
+              const match = item.path.match(techRegex);
+              if (match) {
+                const id = 'T' + match[1];
+                this.communityCounts.set(id, (this.communityCounts.get(id) ?? 0) + 1);
+                total++;
+              }
+            }
+          }
+          this.communityTotalSubject.next(total);
+          this.communityCoveredSubject.next(this.communityCounts.size);
+        }
+        this.communityLoadedSubject.next(true);
+      });
+  }
+
+  /** Community rule count for a technique. */
+  getCommunityRuleCount(techniqueId: string): number {
+    const direct = this.communityCounts.get(techniqueId) ?? 0;
+    if (techniqueId.includes('.')) return direct;
+    let sub = 0;
+    const prefix = techniqueId + '.';
+    for (const [id, count] of this.communityCounts) {
       if (id.startsWith(prefix)) sub += count;
     }
     return direct + sub;

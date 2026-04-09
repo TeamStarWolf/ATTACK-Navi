@@ -66,6 +66,10 @@ import { CsaCcmService, CsaCcmControl } from '../../services/csa-ccm.service';
 import { M365ControlsService, M365Control } from '../../services/m365-controls.service';
 import { Cve2CapecService, KillChainEntry } from '../../services/cve2capec.service';
 import { PocExploitService } from '../../services/poc-exploit.service';
+import { AnthropicSkillsService } from '../../services/anthropic-skills.service';
+import { ThreatHunterPlaybookService } from '../../services/threathunter-playbook.service';
+import { EvtxSamplesService, EvtxSample } from '../../services/evtx-samples.service';
+import { SentinelRulesService, SentinelRule } from '../../services/sentinel-rules.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -164,6 +168,24 @@ export class SidebarComponent implements OnInit, OnDestroy {
   m365Controls: M365Control[] = [];
   showAllM365Controls = false;
 
+  // Community Sigma rule count for current technique
+  sigmaCommunityCount = 0;
+  sigmaOfficialCount = 0;
+
+  // EVTX Samples
+  evtxSamples: EvtxSample[] = [];
+
+  // Sentinel Rules
+  sentinelRules: SentinelRule[] = [];
+  sentinelRuleCount = 0;
+
+  // Anthropic Cybersecurity Skills
+  anthropicSkillCount = 0;
+
+  // ThreatHunter Playbook
+  playbookCount = 0;
+  playbookUrl: string | null = null;
+
   // Clipboard copy feedback
   copiedInvoke = '';
   copiedBatchScript = false;
@@ -195,7 +217,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
       'custom', 'mitigations', 'relgraph', 'm365', 'siem', 'payloads', 'logging',
       'bloodhound', 'c2', 'ioc-feed', 'azure-identity', 'offensive-tools',
       'wazuh-xdr', 'threat-hunting', 'csa-ccm', 'm365-controls',
-      'kill-chain', 'poc-exploits',
+      'kill-chain', 'poc-exploits', 'evtx-samples', 'sentinel-rules',
+      'anthropic-skills', 'threathunter-playbook',
     ];
     for (const s of sections) this.collapsedSections.add(s);
     this.cdr.markForCheck();
@@ -238,6 +261,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
     if (this.huntingQueries.length === 0) this.collapsedSections.add('threat-hunting');
     if (this.csaCcmControls.length === 0) this.collapsedSections.add('csa-ccm');
     if (this.m365Controls.length === 0) this.collapsedSections.add('m365-controls');
+    if (this.evtxSamples.length === 0) this.collapsedSections.add('evtx-samples');
+    if (this.sentinelRules.length === 0) this.collapsedSections.add('sentinel-rules');
+    if (this.anthropicSkillCount === 0) this.collapsedSections.add('anthropic-skills');
+    if (this.playbookCount === 0) this.collapsedSections.add('threathunter-playbook');
     if (!this.technique?.detectionText) this.collapsedSections.add('detection');
     if (!this.technique || this.technique.subtechniques.length === 0) this.collapsedSections.add('subtechniques');
     // Relationship graph collapsed by default — user opens explicitly
@@ -437,6 +464,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
     private m365ControlsService: M365ControlsService,
     private cve2capecService: Cve2CapecService,
     private pocExploitService: PocExploitService,
+    private anthropicSkillsService: AnthropicSkillsService,
+    private threatHunterPlaybookService: ThreatHunterPlaybookService,
+    private evtxSamplesService: EvtxSamplesService,
+    private sentinelRulesService: SentinelRulesService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -503,6 +534,11 @@ export class SidebarComponent implements OnInit, OnDestroy {
             });
           }
         }
+        // Anthropic Cybersecurity Skills
+        this.anthropicSkillCount = tech ? this.anthropicSkillsService.getSkillCount(tech.attackId) : 0;
+        // ThreatHunter Playbook
+        this.playbookCount = tech ? this.threatHunterPlaybookService.getPlaybookCount(tech.attackId) : 0;
+        this.playbookUrl = tech ? this.threatHunterPlaybookService.getPlaybookUrl(tech.attackId) : null;
         this.cveExposures = tech ? this.attackCveService.getCvesForTechnique(tech.attackId).slice(0, 20) : [];
         this.refreshCveEpssCache();
         this.showAllCves = false;
@@ -560,6 +596,25 @@ export class SidebarComponent implements OnInit, OnDestroy {
         this.killChainEntries = tech ? this.cve2capecService.getChainForTechnique(tech.attackId) : [];
         this.showAllKillChain = false;
         this.pocCount = tech ? this.pocExploitService.getPocCount(tech.attackId) : 0;
+        // Community Sigma counts
+        this.sigmaOfficialCount = tech ? this.sigmaService.getRuleCount(tech.attackId) : 0;
+        this.sigmaCommunityCount = tech ? this.sigmaService.getCommunityRuleCount(tech.attackId) : 0;
+        // EVTX Samples (load on demand)
+        if (tech) {
+          this.evtxSamplesService.loadOnDemand();
+          this.evtxSamples = this.evtxSamplesService.getSamplesForTechnique(tech.attackId);
+        } else {
+          this.evtxSamples = [];
+        }
+        // Sentinel Rules (load on demand)
+        if (tech) {
+          this.sentinelRulesService.loadOnDemand();
+          this.sentinelRules = this.sentinelRulesService.getRulesForTechnique(tech.attackId);
+          this.sentinelRuleCount = this.sentinelRulesService.getRuleCount(tech.attackId);
+        } else {
+          this.sentinelRules = [];
+          this.sentinelRuleCount = 0;
+        }
         this.copiedKql = '';
         this.copiedLoggingScript = false;
         this.markdownCopied = false;
@@ -639,6 +694,40 @@ export class SidebarComponent implements OnInit, OnDestroy {
               }),
             );
           }
+        }
+      }),
+    );
+
+    // Refresh community Sigma counts when loaded
+    this.subs.add(
+      this.sigmaService.communityLoaded$.subscribe((loaded) => {
+        if (loaded && this.technique) {
+          this.sigmaCommunityCount = this.sigmaService.getCommunityRuleCount(this.technique.attackId);
+          this.cdr.markForCheck();
+        }
+      }),
+    );
+
+    // Load community Sigma rules on demand (first sidebar open)
+    this.sigmaService.loadCommunityRules();
+
+    // Refresh EVTX samples when loaded
+    this.subs.add(
+      this.evtxSamplesService.loaded$.subscribe((loaded) => {
+        if (loaded && this.technique) {
+          this.evtxSamples = this.evtxSamplesService.getSamplesForTechnique(this.technique.attackId);
+          this.cdr.markForCheck();
+        }
+      }),
+    );
+
+    // Refresh Sentinel rules when loaded
+    this.subs.add(
+      this.sentinelRulesService.loaded$.subscribe((loaded) => {
+        if (loaded && this.technique) {
+          this.sentinelRules = this.sentinelRulesService.getRulesForTechnique(this.technique.attackId);
+          this.sentinelRuleCount = this.sentinelRulesService.getRuleCount(this.technique.attackId);
+          this.cdr.markForCheck();
         }
       }),
     );
