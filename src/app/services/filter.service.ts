@@ -8,7 +8,7 @@ import { DataService } from './data.service';
 
 export type SortMode = 'alpha' | 'coverage';
 export type ActivePanel = 'dashboard' | 'threats' | 'priority' | 'whatif' | 'report' | 'controls' | 'software' | 'comparison' | 'layers' | 'cve' | 'analytics' | 'sigma' | 'purple' | 'actor' | 'search' | 'yara' | 'roadmap' | 'detection' | 'compliance' | 'actor-compare' | 'timeline' | 'settings' | 'custom-mit' | 'killchain' | 'risk-matrix' | 'scenario' | 'siem' | 'datasources' | 'watchlist' | 'changelog' | 'tags' | 'target' | 'campaign-timeline' | 'technique-graph' | 'coverage-diff' | 'intelligence' | 'collection' | 'assessment' | 'assets' | 'gap-analysis' | 'ir-playbook' | null;
-export type HeatmapMode = 'coverage' | 'exposure' | 'status' | 'controls' | 'software' | 'campaign' | 'risk' | 'kev' | 'd3fend' | 'atomic' | 'engage' | 'car' | 'cve' | 'detection' | 'frequency' | 'cri' | 'unified' | 'sigma' | 'nist' | 'veris' | 'epss' | 'elastic' | 'splunk' | 'intelligence' | 'm365' | 'my-exposure' | 'wazuh' | 'csa-ccm' | 'm365-controls';
+export type HeatmapMode = 'coverage' | 'exposure' | 'status' | 'controls' | 'software' | 'campaign' | 'risk' | 'kev' | 'd3fend' | 'atomic' | 'engage' | 'car' | 'cve' | 'detection' | 'frequency' | 'cri' | 'unified' | 'sigma' | 'nist' | 'veris' | 'epss' | 'elastic' | 'splunk' | 'intelligence' | 'm365' | 'my-exposure' | 'wazuh' | 'csa-ccm' | 'm365-controls' | 'kill-chain' | 'poc-exploits';
 export type SearchScope = 'name' | 'full';
 
 export interface FilterStateSnapshot {

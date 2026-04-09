@@ -188,6 +188,10 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
   @Input() maxCsaCcmScore = 1;
   @Input() m365ControlsScore = 0;
   @Input() maxM365ControlsScore = 1;
+  @Input() killChainScore = 0;
+  @Input() maxKillChainScore = 1;
+  @Input() pocScore = 0;
+  @Input() maxPocScore = 1;
   @Input() showTechniqueId = true;
   @Input() showMitigationCount = true;
   @Input() showTechniqueName = true;
@@ -278,6 +282,10 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
       this.bgColor = this.computeCsaCcmColor(this.csaCcmScore);
     } else if (this.heatmapMode === 'm365-controls') {
       this.bgColor = this.computeM365ControlsColor(this.m365ControlsScore);
+    } else if (this.heatmapMode === 'kill-chain') {
+      this.bgColor = this.computeKillChainColor(this.killChainScore);
+    } else if (this.heatmapMode === 'poc-exploits') {
+      this.bgColor = this.computePocColor(this.pocScore);
     } else {
       this.bgColor = this.computeColor(this.technique.mitigationCount);
     }
@@ -523,6 +531,24 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
     if (count <= 5)  return '#0050a8';
     if (count <= 10) return '#0070e8';
     return '#40a0ff';
+  }
+
+  /** CVE Kill Chain: purple gradient (chain depth / complexity theme). */
+  private computeKillChainColor(count: number): string {
+    if (count === 0) return '#0e0a1a';
+    if (count <= 3)  return '#2d1a5e';
+    if (count <= 8)  return '#5a2d8b';
+    if (count <= 15) return '#7b3faa';
+    return '#9c5cc5';
+  }
+
+  /** PoC Exploits: orange-red gradient (weaponized/danger theme). */
+  private computePocColor(count: number): string {
+    if (count === 0) return '#1a0e0a';
+    if (count <= 2)  return '#5c2a0a';
+    if (count <= 5)  return '#a84a1a';
+    if (count <= 10) return '#d96a2a';
+    return '#ff8c3a';
   }
 
   /** Unified Risk Score: 0–100 composite. Low = red (poorly defended/targeted), high = green. */
