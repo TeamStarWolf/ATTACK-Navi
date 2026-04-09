@@ -11,11 +11,17 @@ export class AttackTextPipe implements PipeTransform {
     if (!text) return '';
     // Strip all existing HTML tags to prevent XSS from external/imported data
     const stripped = text.replace(/<[^>]*>/g, '');
-    const html = stripped
-      // Strip citation markers: (Citation: XYZ)
-      .replace(/\s*\(Citation:[^)]+\)/g, '')
-      // Convert [text](url) markdown links to anchors (https only)
-      .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener" class="desc-link">$1</a>');
+    // Strip citation markers: (Citation: XYZ)
+    const cleaned = stripped.replace(/\s*\(Citation:[^)]+\)/g, '');
+    // Convert [text](url) markdown links to anchors — escape captured values
+    const html = cleaned.replace(
+      /\[([^\]]+)\]\((https?:\/\/[^)"'<>]+)\)/g,
+      (_m, label: string, url: string) => {
+        const safeUrl = url.replace(/"/g, '&quot;');
+        const safeLabel = label.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return `<a href="${safeUrl}" target="_blank" rel="noopener" class="desc-link">${safeLabel}</a>`;
+      }
+    );
     return this.sanitizer.bypassSecurityTrustHtml(html);
   }
 }
