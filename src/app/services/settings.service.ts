@@ -137,7 +137,9 @@ export class SettingsService {
 
   private save(s: AppSettings): void {
     try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(s));
+      // Strip sensitive credentials before persisting
+      const { nvdApiKey: _omit, ...safe } = s;
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(safe));
     } catch { /* quota exceeded — silently ignore */ }
   }
 }
