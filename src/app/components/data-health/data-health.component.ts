@@ -24,6 +24,10 @@ import { CveService } from '../../services/cve.service';
 import { NvdBulkService } from '../../services/nvd-bulk.service';
 import { Cve2CapecService } from '../../services/cve2capec.service';
 import { PocExploitService } from '../../services/poc-exploit.service';
+import { EvtxSamplesService } from '../../services/evtx-samples.service';
+import { SentinelRulesService } from '../../services/sentinel-rules.service';
+import { AnthropicSkillsService } from '../../services/anthropic-skills.service';
+import { ThreatHunterPlaybookService } from '../../services/threathunter-playbook.service';
 
 interface HealthEntry { name: string; status: 'loading' | 'loaded' | 'failed'; }
 
@@ -121,6 +125,10 @@ export class DataHealthComponent implements OnInit, OnDestroy {
     private nvdBulkService: NvdBulkService,
     private cve2capecService: Cve2CapecService,
     private pocExploitService: PocExploitService,
+    private evtxSamplesService: EvtxSamplesService,
+    private sentinelRulesService: SentinelRulesService,
+    private anthropicSkillsService: AnthropicSkillsService,
+    private threatHunterPlaybookService: ThreatHunterPlaybookService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -153,6 +161,10 @@ export class DataHealthComponent implements OnInit, OnDestroy {
       { name: 'NVD Bulk', loaded$: this.nvdBulkService.loaded$ },
       { name: 'CVE2CAPEC', loaded$: this.cve2capecService.loaded$ },
       { name: 'PoC Exploits', loaded$: this.pocExploitService.loaded$ },
+      { name: 'EVTX Samples', loaded$: this.evtxSamplesService.loaded$ },
+      { name: 'Sentinel Rules', loaded$: this.sentinelRulesService.loaded$ },
+      { name: 'Anthropic Skills', loaded$: this.anthropicSkillsService.loaded$ },
+      { name: 'ThreatHunter Playbook', loaded$: this.threatHunterPlaybookService.loaded$ },
     ];
 
     this.entries = sources.map(s => ({ name: s.name, status: 'loading' as const }));

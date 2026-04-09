@@ -260,28 +260,64 @@ export class EmulationPlanService {
     return lines.join('\n');
   }
 
-  /** Generate a MITRE Caldera adversary profile JSON. */
-  exportCalderaProfile(plan: EmulationPlan): any {
-    return {
-      adversary_id: plan.id,
-      name: plan.name,
-      description: plan.description,
-      atomic_ordering: plan.steps.map(s => s.techniqueId),
-      objective: '',
-      tags: ['auto-generated', plan.actorId],
-      has_repeatable_abilities: false,
-      plugin: '',
-      steps: plan.steps.map(step => ({
-        technique_id: step.techniqueId,
-        technique_name: step.techniqueName,
-        phase: step.phase,
-        order: step.order,
-        command: step.invokeCommand,
-        expected_detection: step.expectedDetection,
-        log_source: step.expectedLogSource,
-        success_criteria: step.successCriteria,
-      })),
+  /**
+   * Export a MITRE Caldera adversary profile as a downloadable YAML file.
+   * Groups steps by tactic phase number (initial-access=1, execution=2, etc.).
+   */
+  exportCalderaProfile(plan: EmulationPlan): void {
+    const phaseMap: Record<string, number> = {
+      'reconnaissance': 1,
+      'resource-development': 1,
+      'initial-access': 1,
+      'execution': 2,
+      'persistence': 3,
+      'privilege-escalation': 4,
+      'defense-evasion': 5,
+      'credential-access': 6,
+      'discovery': 7,
+      'lateral-movement': 8,
+      'collection': 9,
+      'command-and-control': 10,
+      'exfiltration': 11,
+      'impact': 12,
     };
+
+    // Group steps by phase number
+    const phases = new Map<number, EmulationStep[]>();
+    for (const step of plan.steps) {
+      // Derive tactic shortname from phase display name
+      const tacticKey = Object.entries(TACTIC_DISPLAY).find(
+        ([, display]) => display === step.phase,
+      )?.[0] ?? 'execution';
+      const phaseNum = phaseMap[tacticKey] ?? 2;
+      if (!phases.has(phaseNum)) phases.set(phaseNum, []);
+      phases.get(phaseNum)!.push(step);
+    }
+
+    // Build YAML
+    const lines: string[] = [];
+    lines.push('---');
+    lines.push(`name: "${plan.actorName} Emulation - ATTACK-Navi"`);
+    lines.push(`description: "Auto-generated adversary profile from ATTACK-Navi emulation plan"`);
+    lines.push('phases:');
+
+    const sortedPhases = [...phases.keys()].sort((a, b) => a - b);
+    for (const phaseNum of sortedPhases) {
+      lines.push(`  ${phaseNum}:`);
+      for (const step of phases.get(phaseNum)!) {
+        lines.push(`    - technique:`);
+        lines.push(`        attack_id: "${step.techniqueId}"`);
+        lines.push(`        name: "${step.techniqueName}"`);
+      }
+    }
+
+    const yaml = lines.join('\n') + '\n';
+    const filename = `caldera-${plan.actorId || 'profile'}-${new Date().toISOString().split('T')[0]}.yml`;
+    const blob = new Blob([yaml], { type: 'text/yaml' });
+    const url = URL.createObjectURL(blob);
+    const a = Object.assign(document.createElement('a'), { href: url, download: filename });
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   /** Save a plan to localStorage. */
