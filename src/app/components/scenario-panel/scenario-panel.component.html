@@ -471,6 +471,12 @@
                   [disabled]="!activeThreatSimResult || activeThreatSimResult.gaps.length === 0"
                   title="Export gaps as CSV"
                 >Export CSV</button>
+                <button
+                  class="sim-export-btn caldera-export-btn"
+                  (click)="exportCalderaProfile()"
+                  [disabled]="!selectedGroup"
+                  title="Export Caldera adversary profile (YAML)"
+                >Export Caldera</button>
                 <button class="sim-close-btn" (click)="closeThreatSim()">Close</button>
               </div>
             </div>

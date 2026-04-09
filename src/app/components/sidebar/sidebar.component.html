@@ -991,13 +991,18 @@
         }
 
         <!-- SigmaHQ Live Rules -->
-        @if (sigmaRules.length > 0 || sigmaRulesFetching) {
+        @if (sigmaRules.length > 0 || sigmaRulesFetching || sigmaCommunityCount > 0) {
           <section class="sidebar-section sigma-section upgrade-section-block">
             <h4 class="section-title upgrade-section-title collapsible-title" (click)="toggleSection('sigma')">
               <span class="section-chevron">{{ isSectionCollapsed('sigma') ? '▸' : '▾' }}</span>
-              &Sigma; Sigma Rules <span class="count-badge upgrade-section-count">{{ sigmaRules.length }}</span>
+              &Sigma; Sigma Rules <span class="count-badge upgrade-section-count">{{ sigmaRules.length + sigmaCommunityCount }}</span>
             </h4>
             @if (!isSectionCollapsed('sigma')) {
+              <div class="sigma-source-counts">
+                <span class="sigma-source-label">SigmaHQ: {{ sigmaOfficialCount }} rules</span>
+                <span class="sigma-source-sep">|</span>
+                <span class="sigma-source-label community">Community: {{ sigmaCommunityCount }} rules</span>
+              </div>
               @if (sigmaRulesFetching) {
                 <p class="atomic-live-hint">Loading rules from SigmaHQ...</p>
               }
@@ -1019,7 +1024,86 @@
                   }
                 </div>
               }
-              <a href="https://github.com/SigmaHQ/sigma" target="_blank" rel="noopener" class="framework-link">SigmaHQ on GitHub ↗</a>
+              <div class="sigma-links">
+                <a href="https://github.com/SigmaHQ/sigma" target="_blank" rel="noopener" class="framework-link">SigmaHQ on GitHub ↗</a>
+                <a href="https://github.com/mdecrevoisier/SIGMA-detection-rules" target="_blank" rel="noopener" class="framework-link community-link">Community Rules ↗</a>
+              </div>
+            }
+          </section>
+        }
+
+        <!-- Anthropic Cybersecurity Skills -->
+        @if (anthropicSkillCount > 0) {
+          <section class="sidebar-section anthropic-skills-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('anthropic-skills')" (click)="toggleSection('anthropic-skills')">
+              <span class="section-chevron">{{ isSectionCollapsed('anthropic-skills') ? '&#9656;' : '&#9662;' }}</span>
+              Cybersecurity Skills <span class="count-badge upgrade-section-count anthropic-badge">{{ anthropicSkillCount }}</span>
+            </h4>
+            @if (!isSectionCollapsed('anthropic-skills')) {
+              <div class="anthropic-skills-info">
+                <span class="anthropic-skill-count">{{ anthropicSkillCount }} skill{{ anthropicSkillCount !== 1 ? 's' : '' }} mapped to this technique</span>
+              </div>
+              <a href="https://github.com/mukul975/Anthropic-Cybersecurity-Skills" target="_blank" rel="noopener" class="framework-link anthropic-link">Anthropic Cybersecurity Skills ↗</a>
+            }
+          </section>
+        }
+
+        <!-- ThreatHunter Playbook -->
+        @if (playbookCount > 0) {
+          <section class="sidebar-section playbook-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('threathunter-playbook')" (click)="toggleSection('threathunter-playbook')">
+              <span class="section-chevron">{{ isSectionCollapsed('threathunter-playbook') ? '&#9656;' : '&#9662;' }}</span>
+              Threat Hunter Playbook <span class="count-badge upgrade-section-count playbook-badge">{{ playbookCount }}</span>
+            </h4>
+            @if (!isSectionCollapsed('threathunter-playbook')) {
+              <div class="playbook-info">
+                <span class="playbook-count">{{ playbookCount }} playbook{{ playbookCount !== 1 ? 's' : '' }} for this technique</span>
+              </div>
+              @if (playbookUrl) {
+                <a [href]="playbookUrl" target="_blank" rel="noopener" class="framework-link playbook-link">View Playbook ↗</a>
+              }
+              <a href="https://github.com/OTRF/ThreatHunter-Playbook" target="_blank" rel="noopener" class="framework-link playbook-repo-link">ThreatHunter Playbook on GitHub ↗</a>
+            }
+          </section>
+        }
+
+        <!-- EVTX Samples -->
+        @if (evtxSamples.length > 0) {
+          <section class="sidebar-section evtx-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('evtx-samples')" (click)="toggleSection('evtx-samples')">
+              <span class="section-chevron">{{ isSectionCollapsed('evtx-samples') ? '▸' : '▾' }}</span>
+              <span class="evtx-icon">&#x1F4BE;</span> EVTX Samples
+              <span class="count-badge upgrade-section-count evtx-badge">{{ evtxSamples.length }}</span>
+            </h4>
+            @if (!isSectionCollapsed('evtx-samples')) {
+              @for (sample of evtxSamples; track sample.url) {
+                <div class="evtx-item">
+                  <a [href]="sample.url" target="_blank" rel="noopener" class="evtx-link">{{ sample.filename }}</a>
+                  @if (sample.tactic) {
+                    <span class="evtx-tactic">{{ sample.tactic }}</span>
+                  }
+                </div>
+              }
+              <a href="https://github.com/mdecrevoisier/EVTX-to-MITRE-Attack" target="_blank" rel="noopener" class="framework-link">EVTX-to-MITRE-Attack ↗</a>
+            }
+          </section>
+        }
+
+        <!-- Sentinel ATT&CK Detection Rules -->
+        @if (sentinelRuleCount > 0) {
+          <section class="sidebar-section sentinel-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" [attr.aria-expanded]="!isSectionCollapsed('sentinel-rules')" (click)="toggleSection('sentinel-rules')">
+              <span class="section-chevron">{{ isSectionCollapsed('sentinel-rules') ? '▸' : '▾' }}</span>
+              <span class="sentinel-icon">&#x1F6E1;</span> Sentinel Rules
+              <span class="count-badge upgrade-section-count sentinel-badge">{{ sentinelRuleCount }}</span>
+            </h4>
+            @if (!isSectionCollapsed('sentinel-rules')) {
+              @for (rule of sentinelRules; track rule.url) {
+                <div class="sentinel-item">
+                  <a [href]="rule.url" target="_blank" rel="noopener" class="sentinel-link">{{ rule.filename }}</a>
+                </div>
+              }
+              <a href="https://github.com/edoardogerosa/sentinel-attack" target="_blank" rel="noopener" class="framework-link">Sentinel ATT&CK ↗</a>
             }
           </section>
         }

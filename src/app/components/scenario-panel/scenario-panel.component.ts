@@ -17,6 +17,7 @@ import { CARService } from '../../services/car.service';
 import { AtomicService } from '../../services/atomic.service';
 import { D3fendService } from '../../services/d3fend.service';
 import { ThreatSimulationService, SimulationResult as ThreatSimResult, SimulationGap } from '../../services/threat-simulation.service';
+import { EmulationPlanService } from '../../services/emulation-plan.service';
 import { ThreatGroup } from '../../models/group';
 import { Technique } from '../../models/technique';
 
@@ -81,6 +82,7 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
     private atomicService: AtomicService,
     private d3fendService: D3fendService,
     private threatSimService: ThreatSimulationService,
+    private emulationPlanService: EmulationPlanService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -490,6 +492,13 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
     a.download = `simulation-${result.actor.attackId}-gaps.csv`;
     a.click();
     URL.revokeObjectURL(a.href);
+  }
+
+  exportCalderaProfile(): void {
+    if (!this.selectedGroup || !this.cachedDomain) return;
+    const plan = this.emulationPlanService.generatePlan(this.selectedGroup.id, this.cachedDomain);
+    if (plan.steps.length === 0) return;
+    this.emulationPlanService.exportCalderaProfile(plan);
   }
 
   priorityColor(priority: string): string {
