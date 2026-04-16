@@ -13,13 +13,13 @@ export class AttackTextPipe implements PipeTransform {
     const stripped = text.replace(/<[^>]*>/g, '');
     // Strip citation markers: (Citation: XYZ)
     const cleaned = stripped.replace(/\s*\(Citation:[^)]+\)/g, '');
-    // Convert [text](url) markdown links to anchors — escape captured values
+    // Convert [text](url) markdown links to anchors — escape captured values.
+    // URL excludes attribute-breaking and template-injection characters.
     const html = cleaned.replace(
-      /\[([^\]]+)\]\((https?:\/\/[^)"'<>]+)\)/g,
+      /\[([^\]]+)\]\((https?:\/\/[^)"'<>`\s]+)\)/g,
       (_m, label: string, url: string) => {
-        const safeUrl = url.replace(/"/g, '&quot;');
-        const safeLabel = label.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        return `<a href="${safeUrl}" target="_blank" rel="noopener" class="desc-link">${safeLabel}</a>`;
+        const safeLabel = label.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return `<a href="${url}" target="_blank" rel="noopener" class="desc-link">${safeLabel}</a>`;
       }
     );
     return this.sanitizer.bypassSecurityTrustHtml(html);

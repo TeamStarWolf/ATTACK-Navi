@@ -120,11 +120,16 @@ export class SettingsService {
   private load(): AppSettings {
     try {
       const raw = localStorage.getItem(this.STORAGE_KEY);
-      if (!raw) return { ...DEFAULT_SETTINGS };
+      if (!raw) {
+        const sessionKey = sessionStorage.getItem(this.STORAGE_KEY + '-key') ?? '';
+        return { ...DEFAULT_SETTINGS, nvdApiKey: sessionKey };
+      }
       const parsed = JSON.parse(raw) as Partial<AppSettings>;
+      const sessionKey = sessionStorage.getItem(this.STORAGE_KEY + '-key') ?? '';
       return {
         ...DEFAULT_SETTINGS,
         ...parsed,
+        nvdApiKey: sessionKey, // Always sourced from sessionStorage
         scoringWeights: {
           ...DEFAULT_SETTINGS.scoringWeights,
           ...(parsed.scoringWeights ?? {}),
@@ -137,9 +142,15 @@ export class SettingsService {
 
   private save(s: AppSettings): void {
     try {
-      // Strip sensitive credentials before persisting
-      const { nvdApiKey: _omit, ...safe } = s;
+      // Strip sensitive credentials from localStorage; persist key in sessionStorage
+      // (survives page refresh but not browser restart, and never persists to disk)
+      const { nvdApiKey, ...safe } = s;
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(safe));
+      if (nvdApiKey) {
+        sessionStorage.setItem(this.STORAGE_KEY + '-key', nvdApiKey);
+      } else {
+        sessionStorage.removeItem(this.STORAGE_KEY + '-key');
+      }
     } catch { /* quota exceeded — silently ignore */ }
   }
 }
