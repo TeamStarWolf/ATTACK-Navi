@@ -83,7 +83,7 @@ export class PurpleTeamPanelComponent implements OnInit, OnDestroy {
       this.filterService.selectedTechnique$.subscribe(tech => {
         this.selectedTech = tech;
         if (tech) {
-          this.d3fendMeasures = this.d3fendService.getCountermeasures(tech.attackId);
+          this.d3fendMeasures = this.d3fendService.getCountermeasures(tech.attackId, true);
           this.engageActivities = this.engageService.getActivities(tech.attackId);
           this.carAnalytics = this.carService.getAnalytics(tech.attackId);
           this.atomicTests = this.atomicService.getTests(tech.attackId);
