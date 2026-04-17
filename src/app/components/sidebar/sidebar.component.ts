@@ -496,7 +496,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
         this.campaigns = tech ? this.dataService.getCampaignsForTechnique(tech.id) : [];
         this.procedures = tech ? this.dataService.getProceduresForTechnique(tech.id) : [];
         this.dataComponents = tech ? this.dataService.getDataComponentsForTechnique(tech.id) : [];
-        this.d3fendMeasures = tech ? this.d3fendService.getCountermeasures(tech.attackId) : [];
+        this.d3fendMeasures = tech ? this.d3fendService.getCountermeasures(tech.attackId, true) : [];
         this.engageActivities = tech ? this.engageService.getActivities(tech.attackId) : [];
         this.carAnalytics = tech ? this.carService.getAnalytics(tech.attackId) : [];
         this.atomicTests = tech ? this.atomicService.getTests(tech.attackId) : [];

@@ -128,104 +128,217 @@ const D3FEND_MAPPING: D3fendTechnique[] = [
   { id: 'D3-CRK', name: 'Credential Revocation', category: 'Evict', definition: 'Revoking certificates and tokens associated with compromised accounts.', url: 'https://d3fend.mitre.org/technique/d3f:CredentialRevocation', attackIds: ['T1552', 'T1078', 'T1098', 'T1556'] },
 ];
 
-const D3FEND_LIVE_API = 'https://d3fend.mitre.org/api/technique/all.json';
+// D3FEND 1.4.0+ per-technique mapping endpoint. Returns SPARQL-style bindings
+// with authoritative def_tactic_label (Harden/Detect/Isolate/Deceive/Evict).
+const D3FEND_TECHNIQUE_API = 'https://d3fend.mitre.org/api/offensive-technique/attack/';
+// JSON-LD list of every defensive technique currently in the ontology.
+// Used at startup to prune bundled entries whose IDs/names were removed or
+// reassigned in D3FEND 1.4.0 (e.g. D3-PRS, D3-CE).
+const D3FEND_ALL_TECHNIQUES_API = 'https://d3fend.mitre.org/api/technique/all.json';
 
-interface D3fendApiBinding {
-  def_tech_label: { value: string };
-  def_tech_id: { value: string };
-  off_tech: { value: string };
-  off_tech_label?: { value: string };
-  def_artifact_rel_label?: { value: string };
+interface D3fendOntologyNode {
+  '@id'?: string;
+  'd3f:d3fend-id'?: string;
+  'rdfs:label'?: string;
+}
+interface D3fendOntologyResponse {
+  '@graph'?: D3fendOntologyNode[];
 }
 
-interface D3fendApiResponse {
-  results: {
-    bindings: D3fendApiBinding[];
-  };
+interface D3fendSparqlLiteral { value: string }
+interface D3fendSparqlBinding {
+  def_tactic_label?: D3fendSparqlLiteral;
+  def_tech_label?: D3fendSparqlLiteral;
+  def_tech_id?: D3fendSparqlLiteral;
+  def_tech?: D3fendSparqlLiteral;
 }
+interface D3fendAttackResponse {
+  off_to_def?: { results?: { bindings?: D3fendSparqlBinding[] } };
+}
+
+const VALID_CATEGORIES: ReadonlySet<D3fendTechnique['category']> =
+  new Set(['Harden', 'Detect', 'Isolate', 'Deceive', 'Evict']);
+
+// IDs that were removed from the D3FEND ontology in 1.4.0 (verified against
+// api/technique/all.json on 2026-04-17). These bundled entries produce dead
+// links to d3fend.mitre.org, so we filter them out at service init — before
+// any network call — so offline users aren't shown broken tiles either.
+const REMOVED_IN_D3FEND_1_4_0: ReadonlySet<string> = new Set([
+  'D3-PAMDA', 'D3-RCAM', 'D3-FR', 'D3-UAA', 'D3-CIPA', 'D3-DNSD', 'D3-MPR',
+  'D3-ILA', 'D3-SAML', 'D3-BI', 'D3-SAPE', 'D3-CAR', 'D3-RFM', 'D3-AAC',
+  'D3-OAH', 'D3-NFW', 'D3-URL', 'D3-ATH', 'D3-LFA', 'D3-JT', 'D3-CHA',
+  'D3-UAM', 'D3-EMAL', 'D3-DISC', 'D3-EXA', 'D3-WIA', 'D3-PCSM', 'D3-NPA',
+  'D3-CAL', 'D3-WAF', 'D3-SBX', 'D3-TTPD', 'D3-DFAS', 'D3-SEG', 'D3-AG',
+  'D3-VSEG', 'D3-QUA', 'D3-EDR', 'D3-PROXF', 'D3-CNTX', 'D3-PRVZ', 'D3-HCR',
+  'D3-HPN', 'D3-HNET', 'D3-HFD', 'D3-NDA', 'D3-NTD', 'D3-HP', 'D3-HT',
+  'D3-DCY', 'D3-DNET', 'D3-DFND', 'D3-STO', 'D3-ACR', 'D3-PRS', 'D3-ISR',
+  'D3-ARTF', 'D3-NKR', 'D3-CRK',
+]);
+
+// IDs whose labels were reassigned to a different technique in 1.4.0
+// (e.g. D3-CE was "Credential Encryption", is now "Credential Eviction").
+// The bundled ATT&CK mappings were written for the OLD meaning, so the
+// mappings no longer apply. Drop these too; live per-technique fetches
+// fill in the current mappings from the D3FEND API.
+const REASSIGNED_IN_D3FEND_1_4_0: ReadonlySet<string> = new Set([
+  'D3-HBPI', 'D3-MAN', 'D3-IOPR', 'D3-SRA', 'D3-EI', 'D3-BA', 'D3-PLA',
+  'D3-CE', 'D3-SPP', 'D3-PMAD', 'D3-ANET', 'D3-SCH', 'D3-SYSM', 'D3-EHB',
+  'D3-PH', 'D3-ACH', 'D3-CP', 'D3-MA', 'D3-TBI', 'D3-RTA', 'D3-DA', 'D3-IAA',
+  'D3-OAM',
+]);
 
 @Injectable({ providedIn: 'root' })
 export class D3fendService {
   private byAttackId = new Map<string, D3fendTechnique[]>();
   private liveIndex = new Map<string, D3fendTechnique>();
 
-  /** Live data keyed by ATT&CK ID (populated after API call succeeds) */
+  /** Live data keyed by ATT&CK ID (populated lazily per technique) */
   private liveMap = new Map<string, D3fendTechnique[]>();
 
-  /** True once hardcoded data is indexed (immediate); emits again after live load */
+  /** Track in-flight and completed fetches to dedupe requests. */
+  private fetchStatus = new Map<string, 'pending' | 'done'>();
+
+  /** Current D3FEND ontology ID -> label. Empty until startup fetch resolves. */
+  private currentOntology = new Map<string, string>();
+
+  /** Emits on bundled-ready and after each successful live fetch merges. */
   loaded$ = new BehaviorSubject<boolean>(true);
 
   constructor(private http: HttpClient) {
-    // Build index from bundled hardcoded data
+    // Build index from bundled data, excluding entries that are invalid in
+    // D3FEND 1.4.0. This runs synchronously at startup so stale tiles never
+    // render — even before the live ontology fetch resolves or when offline.
     for (const d of D3FEND_MAPPING) {
+      if (REMOVED_IN_D3FEND_1_4_0.has(d.id)) continue;
+      if (REASSIGNED_IN_D3FEND_1_4_0.has(d.id)) continue;
       this.liveIndex.set(d.id, d);
       for (const attackId of d.attackIds) {
         if (!this.byAttackId.has(attackId)) this.byAttackId.set(attackId, []);
         this.byAttackId.get(attackId)!.push(d);
       }
     }
-    this.loadLiveOntology();
+    this.loadOntologyIndex();
   }
 
   /**
-   * Fetches D3FEND → ATT&CK mappings from the live D3FEND API and merges
-   * them with the hardcoded bundled data. Gracefully falls back if the
-   * request fails or returns unexpected data (e.g., CORS or 404).
+   * Fetch the current D3FEND defensive technique index and reconcile bundled
+   * entries against it. Drops bundled entries whose IDs were removed from the
+   * ontology (e.g. D3-PRS) and corrects labels for IDs that were reassigned
+   * to a different technique (e.g. D3-CE Credential Encryption -> Eviction).
+   * No-op on network failure — bundled data stays as offline fallback.
    */
-  loadLiveOntology(): void {
-    this.http.get<D3fendApiResponse>(D3FEND_LIVE_API)
+  private loadOntologyIndex(): void {
+    this.http.get<D3fendOntologyResponse>(D3FEND_ALL_TECHNIQUES_API)
       .pipe(catchError(() => of(null)))
       .subscribe(response => {
-        if (!response?.results?.bindings) return;
+        const graph = response?.['@graph'];
+        if (!graph?.length) return;
 
-        const bindings = response.results.bindings;
-        const tempMap = new Map<string, D3fendTechnique[]>();
-
-        for (const b of bindings) {
-          const offTechUrl = b.off_tech?.value ?? '';
-          // Extract T-ID from URL, e.g. .../T1059/001 → T1059.001
-          const match = offTechUrl.match(/techniques\/(T\d{4}(?:\/\d{3})?)/);
-          if (!match) continue;
-          const attackId = match[1].replace('/', '.');
-
-          const defId = b.def_tech_id?.value ?? '';
-          const defLabel = b.def_tech_label?.value ?? '';
-          if (!defId || !defLabel) continue;
-
-          // Determine category from the technique ID prefix
-          const category = this.inferCategory(defId);
-
-          if (!tempMap.has(attackId)) tempMap.set(attackId, []);
-          const existing = tempMap.get(attackId)!;
-          if (!existing.some(t => t.id === defId)) {
-            existing.push({
-              id: defId,
-              name: defLabel,
-              definition: `D3FEND countermeasure ${defLabel} counters this technique.`,
-              url: `https://d3fend.mitre.org/technique/d3f:${defLabel.replace(/\s+/g, '')}`,
-              category,
-              attackIds: [attackId],
-            });
-          }
+        for (const node of graph) {
+          const id = node['d3f:d3fend-id'];
+          const label = node['rdfs:label'];
+          if (id && label && id.startsWith('D3-')) this.currentOntology.set(id, label);
         }
+        if (!this.currentOntology.size) return;
 
-        this.liveMap = tempMap;
+        this.reconcileBundledData();
         this.loaded$.next(true);
       });
   }
 
-  private inferCategory(defId: string): D3fendTechnique['category'] {
-    // D3FEND IDs encode category in their prefix structure; use ID ranges as a heuristic.
-    // Fall back to 'Detect' as the most common category.
-    const id = defId.toUpperCase();
-    if (id.startsWith('D3-H') || id.includes('HARD') || id.includes('AUTH') || id.includes('CRED') || id.includes('ENC') || id.includes('POL') || id.includes('SIGN') || id.includes('BOOT') || id.includes('PATCH') || id.includes('MAN') || id.includes('UAP') || id.includes('PAM') || id.includes('EAL') || id.includes('AAC') || id.includes('OAH') || id.includes('NFW') || id.includes('RFM') || id.includes('CAR') || id.includes('ACH') || id.includes('SAML') || id.includes('SPP') || id.includes('UAA') || id.includes('CP') || id.includes('SAPE') || id.includes('BI') || id.includes('FE') || id.includes('DNSAL') || id.includes('DNSD') || id.includes('IOPR') || id.includes('EHB') || id.includes('PH') || id.includes('MPR') || id.includes('ILA')) return 'Harden';
-    if (id.includes('ISOL') || id.includes('SEG') || id.includes('WAF') || id.includes('SBX') || id.includes('EDR') || id.includes('PROX') || id.includes('CNTX') || id.includes('PRV') || id.includes('QUA') || id.includes('AG') || id.includes('VSEG') || id.includes('OAM') || id.includes('DFAS') || id.includes('TTPD') || id.includes('NI')) return 'Isolate';
-    if (id.includes('DCY') || id.includes('DNET') || id.includes('DFND') || id.includes('HCR') || id.includes('HPN') || id.includes('HNET') || id.includes('HFD') || id.includes('NDA') || id.includes('NTD') || id.includes('HP') || id.includes('HT')) return 'Deceive';
-    if (id.includes('EVT') || id.includes('EVICT') || id.includes('ACR') || id.includes('PRS') || id.includes('ISR') || id.includes('ARTF') || id.includes('NKR') || id.includes('CRK') || id.includes('PT') || id.includes('STO') || id.includes('FR')) return 'Evict';
-    return 'Detect';
+  /** Drop bundled entries whose ID or name no longer matches current D3FEND. */
+  private reconcileBundledData(): void {
+    const norm = (s: string) => s.toLowerCase().replace(/[\s\-/]/g, '');
+    // We drop both fully-removed IDs *and* IDs reassigned to a different
+    // technique — the bundled ATT&CK mappings were written for the old name
+    // and no longer apply. Live per-technique fetches fill in the current
+    // mappings from d3fend.mitre.org.
+    const keep = (d: D3fendTechnique): boolean => {
+      const current = this.currentOntology.get(d.id);
+      return !!current && norm(current) === norm(d.name);
+    };
+
+    const survivors = D3FEND_MAPPING.filter(keep);
+    this.liveIndex.clear();
+    this.byAttackId.clear();
+    for (const d of survivors) {
+      this.liveIndex.set(d.id, d);
+      for (const attackId of d.attackIds) {
+        if (!this.byAttackId.has(attackId)) this.byAttackId.set(attackId, []);
+        this.byAttackId.get(attackId)!.push(d);
+      }
+    }
   }
 
-  getCountermeasures(attackId: string): D3fendTechnique[] {
+  /**
+   * Fetch live D3FEND countermeasures for a single ATT&CK technique from
+   * d3fend.mitre.org (v1.4.0 ontology). Deduplicates in-flight and completed
+   * requests. On success, merges results into `liveMap` and emits `loaded$`
+   * so subscribers (matrix, panels) re-render.
+   */
+  private fetchLiveForAttackId(attackId: string): void {
+    if (this.fetchStatus.has(attackId)) return;
+    // D3FEND URL format uses slash for subtechniques: T1059.001 -> T1059/001
+    const urlId = attackId.replace('.', '/');
+    this.fetchStatus.set(attackId, 'pending');
+
+    this.http.get<D3fendAttackResponse>(`${D3FEND_TECHNIQUE_API}${urlId}.json`)
+      .pipe(catchError(() => of(null)))
+      .subscribe(response => {
+        this.fetchStatus.set(attackId, 'done');
+        const bindings = response?.off_to_def?.results?.bindings;
+        if (!bindings?.length) return;
+
+        const collected: D3fendTechnique[] = [];
+        const seen = new Set<string>();
+        for (const b of bindings) {
+          const defId = b.def_tech_id?.value ?? '';
+          const defLabel = b.def_tech_label?.value ?? '';
+          const tactic = b.def_tactic_label?.value ?? '';
+          if (!defId || !defLabel) continue;
+          if (seen.has(defId)) continue;
+          seen.add(defId);
+
+          const category = VALID_CATEGORIES.has(tactic as D3fendTechnique['category'])
+            ? (tactic as D3fendTechnique['category'])
+            : 'Detect';
+
+          // Prefer ontology URI fragment for URL when available.
+          const uri = b.def_tech?.value ?? '';
+          const fragment = uri.split('#')[1] ?? defLabel.replace(/\s+/g, '');
+
+          collected.push({
+            id: defId,
+            name: defLabel,
+            definition: `D3FEND ${category.toLowerCase()} countermeasure that counters ${attackId}.`,
+            url: `https://d3fend.mitre.org/technique/d3f:${fragment}`,
+            category,
+            attackIds: [attackId],
+          });
+          if (!this.liveIndex.has(defId)) this.liveIndex.set(defId, collected[collected.length - 1]);
+        }
+
+        if (collected.length) {
+          this.liveMap.set(attackId, collected);
+          this.loaded$.next(true);
+        }
+      });
+  }
+
+  /**
+   * @param attackId e.g. "T1059" or "T1059.001"
+   * @param fetchLive when true, kick off a live D3FEND API fetch (deduped).
+   *   Pass false from hot paths like matrix rendering where hundreds of
+   *   techniques are queried just for counts — otherwise we'd fire 200+
+   *   requests at startup. Panel/detail views that actually display
+   *   countermeasures should pass true.
+   */
+  getCountermeasures(attackId: string, fetchLive = false): D3fendTechnique[] {
+    if (fetchLive) {
+      this.fetchLiveForAttackId(attackId);
+      if (attackId.includes('.')) this.fetchLiveForAttackId(attackId.split('.')[0]);
+    }
+
     // Merge hardcoded + live data, deduplicated by technique ID
     const parentId = attackId.includes('.') ? attackId.split('.')[0] : null;
     const prefix = attackId + '.';
