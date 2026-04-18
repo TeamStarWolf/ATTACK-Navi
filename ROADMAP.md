@@ -137,7 +137,7 @@
 | Migrate from Karma to Jest (faster tests) | Medium | Low |
 | Add Storybook for component documentation | Low | Medium |
 | Internationalization (i18n) framework | Low | High |
-| Migrate inline nav-rail template to separate files | Low | Low |
+| ~~Migrate inline nav-rail template to separate files~~ ✅ | Low | Low |
 | Add OpenTelemetry for performance monitoring | Low | Medium |
 
 ---
@@ -151,4 +151,4 @@
 - [x] Add print stylesheet optimization
 - [x] Add technique count badges on tactic headers
 - [x] Add "Share this technique" button (URL with technique pre-selected)
-- [ ] Add changelog panel auto-update notification
+- [x] Add changelog panel auto-update notification
