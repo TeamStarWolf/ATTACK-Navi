@@ -66,3 +66,20 @@ There is also an optional backend proxy under `server/` for environments that do
 | [Workflows](../WORKFLOWS.md) | Analyst workflow descriptions by use case |
 | [Data Source Scorecard](../DATA_SOURCE_SCORECARD.md) | Integration depth and source quality snapshot |
 | [Security](../SECURITY.md) | Deployment and vulnerability-reporting guidance |
+
+---
+
+## Community Context
+
+ATTACK-Navi is part of the [TeamStarWolf](https://github.com/TeamStarWolf/TeamStarWolf) public resource library. Each discipline page in that library describes how ATTACK-Navi fits into a practitioner's workflow for that area, alongside learning paths, free training, and tooling recommendations.
+
+| If you are working on... | See this discipline page |
+|---|---|
+| Threat intelligence and adversary tracking | [Threat Intelligence](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/threat-intelligence.md) |
+| Detection rule development and SIEM coverage | [Detection Engineering](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/detection-engineering.md) |
+| Active incident investigation | [Incident Response](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/incident-response.md) |
+| Red team and adversary emulation planning | [Offensive Security](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/offensive-security.md) |
+| Vulnerability prioritization and CVE analysis | [Vulnerability Management](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/vulnerability-management.md) |
+| Cloud attack surface and container security | [Cloud Security](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/cloud-security.md) |
+| Network monitoring and C2 detection | [Network Security](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/network-security.md) |
+| Malware behavior and capability mapping | [Malware Analysis](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/malware-analysis.md) |
