@@ -14,11 +14,11 @@
 ## Tier 1: Highest Impact (Next Sprint)
 
 ### 1.1 Real-Time Alert Correlation Engine
-**Why**: The app shows static coverage — but defenders need to correlate live alerts against ATT&CK in real time.
+**Why**: The app shows static coverage â€” but defenders need to correlate live alerts against ATT&CK in real time.
 - Ingest Syslog/CEF/JSON events via WebSocket or polling
 - Map incoming alerts to ATT&CK techniques using Sigma rule matching
 - "Active Threats" heatmap showing which techniques are firing NOW
-- Timeline view: alert → technique → tactic chain visualization
+- Timeline view: alert â†’ technique â†’ tactic chain visualization
 - Alert fatigue scoring: suppress low-confidence repeat alerts
 
 ### 1.2 Asset Inventory + CVE Exposure Scoring
@@ -27,7 +27,7 @@
 - Match assets against CVE CPE strings
 - Per-technique exposure score: "3 of your servers run vulnerable Apache"
 - "My Exposure" heatmap mode showing only YOUR risk, not theoretical
-- Priority queue: techniques sorted by (your assets) × (EPSS) × (KEV)
+- Priority queue: techniques sorted by (your assets) Ã— (EPSS) Ã— (KEV)
 
 ### 1.3 Detection Gap Analysis Report
 **Why**: CISOs need a one-page answer to "where are we blind?"
@@ -105,7 +105,7 @@
 ## Tier 4: Nice to Have (Future)
 
 ### 4.1 Browser Extension
-- Right-click any CVE/technique ID on any webpage → view in ATTACK-Navi
+- Right-click any CVE/technique ID on any webpage â†’ view in ATTACK-Navi
 - Highlight ATT&CK technique IDs on threat intel blog posts
 - Quick-add to watchlist from any page
 
@@ -115,7 +115,7 @@
 - Push notifications for new KEV entries
 
 ### 4.3 AI-Powered Analysis
-- "Describe your environment" → auto-suggest priority techniques
+- "Describe your environment" â†’ auto-suggest priority techniques
 - Natural language queries: "Show me credential theft techniques targeting Windows AD"
 - Auto-summarize technique coverage in plain English for executives
 
@@ -137,7 +137,8 @@
 | Migrate from Karma to Jest (faster tests) | Medium | Low |
 | Add Storybook for component documentation | Low | Medium |
 | Internationalization (i18n) framework | Low | High |
-| ~~Migrate inline nav-rail template to separate files~~ ✅ | Low | Low |
+| ~~Migrate inline nav-rail template to separate files~~ âœ… | Low | Low |
+| ~~Add Docker build and smoke-test CI workflow~~ ✅ | Low | Low |
 | Add OpenTelemetry for performance monitoring | Low | Medium |
 
 ---
