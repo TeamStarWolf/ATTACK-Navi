@@ -21,16 +21,29 @@ import { SplunkContentService } from '../../services/splunk-content.service';
 import { ExploitdbService } from '../../services/exploitdb.service';
 import { NucleiService } from '../../services/nuclei.service';
 import { DataService } from '../../services/data.service';
+import { EpssService } from '../../services/epss.service';
+import { CveService } from '../../services/cve.service';
+import { NvdBulkService } from '../../services/nvd-bulk.service';
+import { Cve2CapecService } from '../../services/cve2capec.service';
+import { PocExploitService } from '../../services/poc-exploit.service';
+import { EvtxSamplesService } from '../../services/evtx-samples.service';
+import { SentinelRulesService } from '../../services/sentinel-rules.service';
+import { AnthropicSkillsService } from '../../services/anthropic-skills.service';
+import { ThreatHunterPlaybookService } from '../../services/threathunter-playbook.service';
 
 describe('DataHealthComponent', () => {
   let component: DataHealthComponent;
   let fixture: ComponentFixture<DataHealthComponent>;
 
   const loadedSubjects: Record<string, BehaviorSubject<boolean>> = {};
-  const serviceNames = [
+
+  // Services that expose loaded$ (used in the component's sources array)
+  const loadedServiceNames = [
     'atomic', 'sigma', 'attackCve', 'capec', 'misp',
     'nist', 'cri', 'cloud', 'veris', 'd3fend',
     'car', 'elastic', 'splunk', 'exploitdb', 'nuclei',
+    'nvdBulk', 'cve2capec', 'pocExploit', 'evtxSamples',
+    'sentinelRules', 'anthropicSkills', 'threatHunterPlaybook',
   ];
 
   function makeMockService(): { loaded$: BehaviorSubject<boolean> } {
@@ -40,11 +53,19 @@ describe('DataHealthComponent', () => {
 
   beforeEach(async () => {
     const mocks: Record<string, any> = {};
-    for (const name of serviceNames) {
+    for (const name of loadedServiceNames) {
       const mock = makeMockService();
       loadedSubjects[name] = mock.loaded$;
       mocks[name] = mock;
     }
+
+    // EpssService is injected but sources use of(true) inline - provide minimal mock
+    const mockEpssService = {};
+
+    // CveService exposes kevLoaded$ (not loaded$)
+    const mockCveKevLoaded$ = new BehaviorSubject<boolean>(false);
+    loadedSubjects['cveKev'] = mockCveKevLoaded$;
+    const mockCveService = { kevLoaded$: mockCveKevLoaded$ };
 
     const mockDataService = {
       lastFetched$: of(null),
@@ -71,6 +92,15 @@ describe('DataHealthComponent', () => {
         { provide: ExploitdbService, useValue: mocks['exploitdb'] },
         { provide: NucleiService, useValue: mocks['nuclei'] },
         { provide: DataService, useValue: mockDataService },
+        { provide: EpssService, useValue: mockEpssService },
+        { provide: CveService, useValue: mockCveService },
+        { provide: NvdBulkService, useValue: mocks['nvdBulk'] },
+        { provide: Cve2CapecService, useValue: mocks['cve2capec'] },
+        { provide: PocExploitService, useValue: mocks['pocExploit'] },
+        { provide: EvtxSamplesService, useValue: mocks['evtxSamples'] },
+        { provide: SentinelRulesService, useValue: mocks['sentinelRules'] },
+        { provide: AnthropicSkillsService, useValue: mocks['anthropicSkills'] },
+        { provide: ThreatHunterPlaybookService, useValue: mocks['threatHunterPlaybook'] },
       ],
     }).compileComponents();
 
@@ -85,21 +115,23 @@ describe('DataHealthComponent', () => {
 
   it('should show health dots for each service', () => {
     const dots = fixture.nativeElement.querySelectorAll('.health-dot');
-    expect(dots.length).toBe(15);
+    expect(dots.length).toBe(24);
   });
 
   it('should show dots in loading state initially', () => {
+    // EPSS uses of(true) inline so it loads immediately; all others start loading
     const loadingDots = fixture.nativeElement.querySelectorAll('.dot-loading');
-    expect(loadingDots.length).toBe(15);
+    expect(loadingDots.length).toBe(23);
   });
 
   it('should transition dot to loaded state when service loads', () => {
     loadedSubjects['atomic'].next(true);
     fixture.detectChanges();
+    // EPSS pre-loaded (of(true)) + atomic = 2 loaded
     const loadedDots = fixture.nativeElement.querySelectorAll('.dot-loaded');
-    expect(loadedDots.length).toBe(1);
+    expect(loadedDots.length).toBe(2);
     const loadingDots = fixture.nativeElement.querySelectorAll('.dot-loading');
-    expect(loadingDots.length).toBe(14);
+    expect(loadingDots.length).toBe(22);
   });
 
   it('should show refresh button', () => {
