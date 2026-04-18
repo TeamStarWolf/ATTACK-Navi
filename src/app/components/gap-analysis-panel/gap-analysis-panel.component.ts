@@ -232,6 +232,10 @@ export class GapAnalysisPanelComponent implements OnInit, OnDestroy {
     if (this.result) this.gapService.exportPdf(this.result);
   }
 
+  exportXlsx(): void {
+    if (this.result) this.gapService.exportXlsx(this.result);
+  }
+
   copyToClipboard(): void {
     if (!this.result) return;
     const lines: string[] = [];

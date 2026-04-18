@@ -16,6 +16,7 @@
         <div class="header-actions">
           @if (result) {
             <button class="btn btn-sm" (click)="exportCsv()" title="Export CSV">CSV</button>
+            <button class="btn btn-sm" (click)="exportXlsx()" title="Export styled Excel workbook (Summary + By Tactic + Gaps + Recommendations)">Excel</button>
             <button class="btn btn-sm" (click)="exportPdf()" title="Opens your browser's print dialog. Choose 'Save as PDF' to download.">Print / Save as PDF</button>
             <button class="btn btn-sm" (click)="copyToClipboard()" title="Copy to Clipboard">Copy</button>
           }
@@ -247,6 +248,7 @@
           <!-- Export buttons footer -->
           <div class="export-footer">
             <button class="btn btn-primary" (click)="exportCsv()">Export CSV</button>
+            <button class="btn btn-primary" (click)="exportXlsx()" title="Styled multi-sheet Excel workbook">Export Excel</button>
             <button class="btn btn-primary" (click)="exportPdf()" title="Opens your browser's print dialog. Choose 'Save as PDF' to download.">Print / Save as PDF</button>
             <button class="btn" (click)="copyToClipboard()">Copy to Clipboard</button>
             <button class="btn" (click)="resetReport()">New Report</button>

@@ -446,6 +446,192 @@ export class GapAnalysisService {
     this.printViaIframe(html);
   }
 
+  /**
+   * Generate a multi-sheet XLSX workbook of the gap report.
+   *
+   * Sheets:
+   *   1. Summary             — overall counts + RAG status + detection-source breakdown
+   *   2. By Tactic           — tactic-level breakdown with per-tactic RAG
+   *   3. Prioritized Gaps    — full table sorted by priority (critical → low)
+   *   4. Recommendations     — distilled actions for the top gaps
+   */
+  async exportXlsx(result: GapAnalysisResult): Promise<void> {
+    try {
+      const XLSX = await import('xlsx-js-style');
+      const wb = XLSX.utils.book_new();
+
+      // ── Sheet 1: Summary ─────────────────────────────────────────────────
+      const sumRows: (string | number)[][] = [
+        ['Detection Gap Analysis Report'],
+        ['Generated', new Date(result.generatedAt).toLocaleString()],
+        ['Domain', result.domain],
+        ['Threat actors selected', result.selectedActors.length],
+        [],
+        ['Overall Risk', result.summary.ragStatus.toUpperCase()],
+        [],
+        ['Metric', 'Count'],
+        ['Total techniques', result.summary.totalTechniques],
+        ['Techniques used by selected actors', result.summary.actorTechniques],
+        ['Mitigated', result.summary.mitigated],
+        ['Detected', result.summary.detected],
+        ['Validated', result.summary.validated],
+        ['Fully blind (no detection, no mitigation)', result.summary.fullyBlind],
+        ['Coverage %', result.summary.coveragePercent],
+        ['Detection %', result.summary.detectionPercent],
+        [],
+        ['Detection source', 'Covered', 'Total', 'Coverage %'],
+        ...this.detectionCoverageRows(result.detectionCoverage),
+      ];
+      const sumWs = XLSX.utils.aoa_to_sheet(sumRows);
+      sumWs['!cols'] = [{ wch: 44 }, { wch: 16 }, { wch: 12 }, { wch: 14 }];
+      this.styleHeader(XLSX, sumWs, 'A1');
+      XLSX.utils.book_append_sheet(wb, sumWs, 'Summary');
+
+      // ── Sheet 2: By Tactic ───────────────────────────────────────────────
+      const tacticHeader = ['Tactic', 'Total', 'Mitigated', 'Detected', 'Blind', 'RAG'];
+      const tacticRows = result.tacticBreakdown.map(r => [
+        r.tactic, r.total, r.mitigated, r.detected, r.blind, r.ragStatus.toUpperCase(),
+      ]);
+      const tacticWs = XLSX.utils.aoa_to_sheet([tacticHeader, ...tacticRows]);
+      tacticWs['!cols'] = [{ wch: 28 }, { wch: 8 }, { wch: 11 }, { wch: 11 }, { wch: 8 }, { wch: 8 }];
+      this.styleHeaderRow(XLSX, tacticWs, tacticHeader.length);
+      this.colorRagColumn(XLSX, tacticWs, 5, tacticRows.length);
+      XLSX.utils.book_append_sheet(wb, tacticWs, 'By Tactic');
+
+      // ── Sheet 3: Prioritized Gaps ────────────────────────────────────────
+      const gapHeader = [
+        'Priority', 'Technique ID', 'Technique Name', 'Tactic',
+        'Used by groups', 'Detection sources', 'KEV count', 'EPSS avg',
+        'Has exploit', 'Recommendation',
+      ];
+      const gapRows = result.prioritizedGaps.map(g => [
+        g.priority.toUpperCase(),
+        g.technique.attackId,
+        g.technique.name,
+        g.tactic,
+        g.usedByGroups.length,
+        g.detectionSources.length === 0 ? '—' : g.detectionSources.join(', '),
+        g.kevCount,
+        g.epssAvg !== null ? g.epssAvg.toFixed(3) : '—',
+        g.hasExploit ? 'YES' : 'no',
+        g.recommendation,
+      ]);
+      const gapWs = XLSX.utils.aoa_to_sheet([gapHeader, ...gapRows]);
+      gapWs['!cols'] = [
+        { wch: 10 }, { wch: 12 }, { wch: 42 }, { wch: 18 },
+        { wch: 14 }, { wch: 30 }, { wch: 10 }, { wch: 10 },
+        { wch: 12 }, { wch: 60 },
+      ];
+      this.styleHeaderRow(XLSX, gapWs, gapHeader.length);
+      this.colorPriorityColumn(XLSX, gapWs, 0, gapRows.length);
+      XLSX.utils.book_append_sheet(wb, gapWs, 'Prioritized Gaps');
+
+      // ── Sheet 4: Recommendations ─────────────────────────────────────────
+      const top = result.prioritizedGaps.slice(0, 25);
+      const recHeader = ['Rank', 'Technique', 'Why it matters', 'Recommended next action'];
+      const recRows = top.map((g, i) => [
+        i + 1,
+        `${g.technique.attackId} — ${g.technique.name}`,
+        this.whyItMatters(g),
+        g.recommendation,
+      ]);
+      const recWs = XLSX.utils.aoa_to_sheet([recHeader, ...recRows]);
+      recWs['!cols'] = [{ wch: 6 }, { wch: 40 }, { wch: 50 }, { wch: 60 }];
+      this.styleHeaderRow(XLSX, recWs, recHeader.length);
+      XLSX.utils.book_append_sheet(wb, recWs, 'Recommendations');
+
+      const filename = `attack-gap-report-${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, filename);
+    } catch (err) {
+      console.error('Gap report XLSX export failed:', err);
+      alert('Excel export failed. Please try a CSV export instead.');
+    }
+  }
+
+  // ─── XLSX helpers ─────────────────────────────────────────────────────────
+
+  private detectionCoverageRows(dc: DetectionCoverage): (string | number)[][] {
+    const pct = (c: number, t: number) => (t > 0 ? Math.round((c / t) * 100) : 0);
+    const sources: Array<[string, { covered: number; total: number }]> = [
+      ['Sigma', dc.sigma],
+      ['Elastic', dc.elastic],
+      ['Splunk ESCU', dc.splunk],
+      ['M365 Defender', dc.m365],
+      ['Atomic Red Team', dc.atomic],
+      ['MITRE CAR', dc.car],
+    ];
+    return sources.map(([name, cov]) => [name, cov.covered, cov.total, pct(cov.covered, cov.total)]);
+  }
+
+  private whyItMatters(g: PrioritizedGap): string {
+    const bits: string[] = [];
+    if (g.usedByGroups.length > 0) bits.push(`Used by ${g.usedByGroups.length} tracked actor${g.usedByGroups.length === 1 ? '' : 's'}`);
+    if (g.kevCount > 0) bits.push(`${g.kevCount} CVE${g.kevCount === 1 ? '' : 's'} in KEV`);
+    if (g.hasExploit) bits.push('Public exploit available');
+    if (g.epssAvg !== null && g.epssAvg > 0.1) bits.push(`EPSS avg ${(g.epssAvg * 100).toFixed(0)}%`);
+    if (g.detectionSources.length === 0) bits.push('No detection in any source');
+    return bits.join(' · ') || 'No specific risk indicators';
+  }
+
+  private styleHeader(XLSX: any, ws: any, cellAddr: string): void {
+    if (ws[cellAddr]) {
+      ws[cellAddr].s = {
+        font: { bold: true, sz: 14, color: { rgb: 'FFFFFF' } },
+        fill: { fgColor: { rgb: '1F2937' } },
+        alignment: { horizontal: 'left', vertical: 'center' },
+      };
+    }
+  }
+
+  private styleHeaderRow(XLSX: any, ws: any, cols: number): void {
+    for (let c = 0; c < cols; c++) {
+      const addr = XLSX.utils.encode_cell({ r: 0, c });
+      if (ws[addr]) {
+        ws[addr].s = {
+          font: { bold: true, color: { rgb: 'FFFFFF' } },
+          fill: { fgColor: { rgb: '374151' } },
+          alignment: { horizontal: 'left' },
+        };
+      }
+    }
+  }
+
+  private colorRagColumn(XLSX: any, ws: any, col: number, rowCount: number): void {
+    const colors: Record<string, string> = { GREEN: '10B981', AMBER: 'F59E0B', RED: 'EF4444' };
+    for (let r = 1; r <= rowCount; r++) {
+      const addr = XLSX.utils.encode_cell({ r, c: col });
+      const cell = ws[addr];
+      if (!cell) continue;
+      const rag = String(cell.v ?? '').trim();
+      if (colors[rag]) {
+        cell.s = {
+          font: { bold: true, color: { rgb: 'FFFFFF' } },
+          fill: { fgColor: { rgb: colors[rag] } },
+          alignment: { horizontal: 'center' },
+        };
+      }
+    }
+  }
+
+  private colorPriorityColumn(XLSX: any, ws: any, col: number, rowCount: number): void {
+    const colors: Record<string, string> = {
+      CRITICAL: 'B91C1C', HIGH: 'EF4444', MEDIUM: 'F59E0B', LOW: '6B7280',
+    };
+    for (let r = 1; r <= rowCount; r++) {
+      const addr = XLSX.utils.encode_cell({ r, c: col });
+      const cell = ws[addr];
+      if (!cell) continue;
+      const p = String(cell.v ?? '').trim();
+      if (colors[p]) {
+        cell.s = {
+          font: { bold: true, color: { rgb: 'FFFFFF' } },
+          fill: { fgColor: { rgb: colors[p] } },
+          alignment: { horizontal: 'center' },
+        };
+      }
+    }
+  }
+
   private printViaIframe(html: string): void {
     const iframe = document.createElement('iframe');
     iframe.style.position = 'fixed';
