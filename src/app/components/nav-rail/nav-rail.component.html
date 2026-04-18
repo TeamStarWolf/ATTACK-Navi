@@ -1,0 +1,59 @@
+
+    <nav class="nav-rail-inner" role="navigation" aria-label="Main navigation">
+      <div class="nav-list">
+        @for (item of navItems; track $index) {
+          @if (isDivider(item)) {
+            <div class="nav-divider">
+              <span class="nav-divider-label">{{ item.label }}</span>
+            </div>
+          } @else {
+            <button
+              class="nav-item"
+              [class.active]="activePanel === item.id"
+              [title]="item.label"
+              [attr.aria-current]="activePanel === item.id ? 'page' : null"
+              [attr.aria-label]="item.label"
+              (click)="onNavClick(item.id)"
+            >
+              <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+              <span class="nav-label">{{ item.label }}</span>
+              @if (item.id === 'cve' && newKevCount > 0) {
+                <span class="nav-badge" [attr.aria-label]="newKevCount + ' new KEV entries'">+{{ newKevCount }}</span>
+              }
+              @if (item.id === 'changelog' && newVersionAvailable) {
+                <span class="nav-badge version-badge" aria-label="New ATT&CK version available"></span>
+              }
+            </button>
+          }
+        }
+      </div>
+      <div class="nav-items-bottom">
+        <div class="nav-divider bottom-divider">
+          <span class="nav-divider-label"></span>
+        </div>
+        @for (item of navItemsBottom; track $index) {
+          @if (!isDivider(item)) {
+            <button
+              class="nav-item"
+              [class.active]="activePanel === item.id"
+              [title]="item.label"
+              [attr.aria-current]="activePanel === item.id ? 'page' : null"
+              [attr.aria-label]="item.label"
+              (click)="panelToggle.emit(item.id)"
+            >
+              <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+              <span class="nav-label">{{ item.label }}</span>
+            </button>
+          }
+        }
+        <button
+          class="nav-item help-btn"
+          title="Focus search"
+          aria-label="Focus search"
+          (click)="focusSearch.emit()"
+        >
+          <span class="nav-icon" aria-hidden="true">⌨️</span>
+          <span class="nav-label">Search</span>
+        </button>
+      </div>
+    </nav>
