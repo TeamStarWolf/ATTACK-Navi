@@ -25,8 +25,8 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      # --force: overrides stale lock file (has @angular-devkit@21.x) after downgrade to ^19.2.0
-      - run: npm install --force
+      # lock file has @angular-devkit@21.x — delete and regenerate from package.json
+      - run: rm -f package-lock.json && npm install
       - run: npx ng test --no-watch --browsers=ChromeHeadless
       - run: npx ng build --base-href /ATTACK-Navi/
       - uses: actions/upload-pages-artifact@v4
