@@ -1,0 +1,280 @@
+<!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+     https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
+<div class="library-workbench">
+
+  <!-- Tab strip -->
+  <nav class="lib-tabs" role="tablist" aria-label="Library views">
+    <button role="tab" [attr.aria-selected]="currentTab === 'explore'"
+            [class.active]="currentTab === 'explore'" (click)="setTab('explore')">
+      <span class="tab-icon">🔎</span> Explore
+    </button>
+    <button role="tab" [attr.aria-selected]="currentTab === 'coverage'"
+            [class.active]="currentTab === 'coverage'" (click)="setTab('coverage')">
+      <span class="tab-icon">📊</span> Coverage
+    </button>
+    <button role="tab" [attr.aria-selected]="currentTab === 'vendors'"
+            [class.active]="currentTab === 'vendors'" (click)="setTab('vendors')">
+      <span class="tab-icon">🏢</span> Vendors
+    </button>
+    <button role="tab" [attr.aria-selected]="currentTab === 'lookup'"
+            [class.active]="currentTab === 'lookup'" (click)="setTab('lookup')">
+      <span class="tab-icon">🎯</span> Lookup
+    </button>
+    <span class="lib-meta">
+      @if (loading) { Loading library… }
+      @else { {{ totalAssets | number }} assets · {{ vendorTotal() | number }} vendors }
+    </span>
+  </nav>
+
+  <!-- Explore tab -->
+  @if (currentTab === 'explore' && !loading) {
+    <section class="lib-section explore">
+      <div class="lib-controls">
+        <input type="search" class="lib-search"
+               placeholder="Search title, description, vendor, category…"
+               [value]="query"
+               (input)="onSearchInput($any($event.target).value)" />
+
+        <div class="type-tabs">
+          <button [class.active]="typeFilter === 'all'"
+                  (click)="setTypeFilter('all')">
+            All ({{ totalAssets }})
+          </button>
+          @for (t of assetTypes; track t) {
+            <button [class.active]="typeFilter === t" (click)="setTypeFilter(t)">
+              {{ typeLabels[t] }} ({{ countOf(t) }})
+            </button>
+          }
+        </div>
+
+        @if (availableCategories.length > 0) {
+          <select class="lib-select"
+                  [value]="categoryFilter"
+                  (change)="onCategoryChange($any($event.target).value)">
+            <option value="">All categories ({{ availableCategories.length }})</option>
+            @for (c of availableCategories; track c) {
+              <option [value]="c">{{ c }}</option>
+            }
+          </select>
+        }
+
+        <span class="lib-result-count">{{ filteredAssets.length | number }} matches</span>
+      </div>
+
+      <!-- ATT&CK tactic chip row -->
+      <div class="tactic-chips" role="group" aria-label="Filter by ATT&CK tactic">
+        <span class="chips-label">ATT&CK tactic:</span>
+        <button class="tactic-chip" [class.active]="tacticFilter === ''" (click)="setTacticFilter('')">
+          Any
+        </button>
+        @for (t of tacticOrder; track t) {
+          <button class="tactic-chip" [class.active]="tacticFilter === t" (click)="setTacticFilter(t)">
+            {{ tacticLabel(t) }}
+          </button>
+        }
+      </div>
+
+      @if (filteredAssets.length === 0) {
+        <p class="lib-empty">No assets match your filter.</p>
+      } @else {
+        <ul class="lib-card-grid">
+          @for (a of visibleAssets; track a.id) {
+            <li class="lib-card" [attr.data-type]="a.type">
+              <div class="card-head">
+                <a [href]="a.url" target="_blank" rel="noopener noreferrer" class="card-title">{{ a.title }}</a>
+                <span class="card-badge" [attr.data-type]="a.type">{{ a.type }}</span>
+              </div>
+              @if (a.description) {
+                <p class="card-desc">{{ a.description }}</p>
+              }
+              <div class="card-meta">
+                @if (a.category) { <span class="meta-pill">{{ a.category }}</span> }
+                @if (a.subcategory) { <span class="meta-pill meta-sub">{{ a.subcategory }}</span> }
+                @if (a.vendor && a.vendor !== a.title) { <span class="meta-pill meta-vendor">{{ a.vendor }}</span> }
+                @for (t of (a.attack_tactics ?? []).slice(0, 2); track t) {
+                  <span class="meta-pill meta-tactic">{{ tacticLabel(t) }}</span>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+
+        @if (totalPages > 1) {
+          <nav class="lib-pagination">
+            <button (click)="prevPage()" [disabled]="page === 0">← Prev</button>
+            <span>Page {{ page + 1 }} of {{ totalPages }}</span>
+            <button (click)="nextPage()" [disabled]="page >= totalPages - 1">Next →</button>
+          </nav>
+        }
+      }
+    </section>
+  }
+
+  <!-- Coverage tab -->
+  @if (currentTab === 'coverage' && !loading) {
+    <section class="lib-section coverage">
+      <div class="lib-metric-row">
+        @for (t of assetTypes; track t) {
+          <div class="lib-metric">
+            <div class="metric-value">{{ countOf(t) | number }}</div>
+            <div class="metric-label">{{ typeLabels[t] }}</div>
+          </div>
+        }
+        <div class="lib-metric">
+          <div class="metric-value">{{ vendorTotal() | number }}</div>
+          <div class="metric-label">distinct vendors</div>
+        </div>
+      </div>
+
+      <h3 class="lib-h3">By ATT&amp;CK tactic</h3>
+      <p class="lib-muted">
+        Heuristic mapping of assets to ATT&amp;CK tactics. Click a row to filter the Explore tab.
+      </p>
+      <div class="tactic-bar-table">
+        @for (t of tacticStats; track t.slug) {
+          <button class="tactic-bar-row"
+                  [class.has-data]="t.count > 0"
+                  [class.active]="tacticFilter === t.slug"
+                  (click)="setTacticFilter(t.slug); setTab('explore')">
+            <div class="tactic-bar-label">{{ t.label }}</div>
+            <div class="tactic-bar-track">
+              <div class="tactic-bar-fill" [style.width.%]="(t.count / maxTacticCount) * 100"></div>
+            </div>
+            <div class="tactic-bar-count">{{ t.count }}</div>
+          </button>
+        }
+      </div>
+
+      <h3 class="lib-h3">By category</h3>
+      <p class="lib-muted">
+        Each row is a content category. Bar segments show how each asset type contributes.
+      </p>
+
+      <div class="bar-table">
+        @for (row of coverageRows; track row.category) {
+          <div class="bar-row">
+            <div class="bar-label" [title]="row.category">{{ row.category }}</div>
+            <div class="bar-track" [style.width.%]="(row.total / maxBarTotal) * 100">
+              @for (kv of row.byType | keyvalue; track kv.key) {
+                <div class="bar-seg"
+                     [attr.data-type]="kv.key"
+                     [style.flex]="kv.value"
+                     [title]="labelOf(kv.key) + ': ' + kv.value">
+                  @if ($any(kv.value) >= 3) { {{ kv.value }} }
+                </div>
+              }
+            </div>
+            <div class="bar-total">{{ row.total }}</div>
+          </div>
+        }
+      </div>
+    </section>
+  }
+
+  <!-- Vendors tab -->
+  @if (currentTab === 'vendors' && !loading) {
+    <section class="lib-section vendors">
+      <div class="vendor-layout">
+        <aside class="vendor-list">
+          <input type="search" class="lib-search"
+                 placeholder="Filter vendors…"
+                 [value]="vendorQuery"
+                 (input)="onVendorSearchInput($any($event.target).value)" />
+          <ul>
+            @for (v of vendorList; track v[0]) {
+              <li>
+                <button [class.selected]="selectedVendor === v[0]"
+                        (click)="selectVendor(v[0])">
+                  <span>{{ v[0] }}</span>
+                  <span class="count">{{ v[1] }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        </aside>
+
+        <section class="vendor-detail">
+          @if (!selectedVendor) {
+            <div class="lib-empty">Select a vendor to see all assets attributed to them.</div>
+          } @else {
+            <h3 class="lib-h3">{{ selectedVendor }}</h3>
+            <p class="lib-muted">{{ vendorAssets.length }} assets</p>
+            <ul class="lib-card-grid">
+              @for (a of vendorAssets; track a.id) {
+                <li class="lib-card" [attr.data-type]="a.type">
+                  <div class="card-head">
+                    <a [href]="a.url" target="_blank" rel="noopener noreferrer" class="card-title">{{ a.title }}</a>
+                    <span class="card-badge" [attr.data-type]="a.type">{{ a.type }}</span>
+                  </div>
+                  @if (a.description) { <p class="card-desc">{{ a.description }}</p> }
+                  <div class="card-meta">
+                    @if (a.category) { <span class="meta-pill">{{ a.category }}</span> }
+                    @if (a.subcategory) { <span class="meta-pill meta-sub">{{ a.subcategory }}</span> }
+                  </div>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+      </div>
+    </section>
+  }
+
+  <!-- Lookup tab -->
+  @if (currentTab === 'lookup' && !loading) {
+    <section class="lib-section lookup">
+      <p class="lib-muted">
+        Type a TTP, technique, vendor, or topic. Results are grouped by asset type so you see
+        what to read, watch, follow, or run.
+      </p>
+
+      <input type="search" class="lib-search lib-search-large"
+             placeholder="e.g. BloodHound, Kerberos, container escape, supply chain…"
+             [value]="lookupQuery"
+             (input)="onLookupInput($any($event.target).value)" />
+
+      @if (!lookupQuery) {
+        <div class="suggestions">
+          <p class="lib-muted small">Try:</p>
+          <ul class="suggestion-row">
+            @for (s of suggestions; track s) {
+              <li><button (click)="pickSuggestion(s)">{{ s }}</button></li>
+            }
+          </ul>
+        </div>
+      } @else {
+        @for (g of lookupGroups; track g.type) {
+          <section class="lookup-group">
+            <h3 class="lib-h3">
+              {{ g.type }} <span class="lib-muted small">({{ g.assets.length }})</span>
+            </h3>
+            <ul class="lib-card-grid">
+              @for (a of g.assets.slice(0, 24); track a.id) {
+                <li class="lib-card" [attr.data-type]="a.type">
+                  <div class="card-head">
+                    <a [href]="a.url" target="_blank" rel="noopener noreferrer" class="card-title">{{ a.title }}</a>
+                  </div>
+                  @if (a.description) { <p class="card-desc">{{ a.description }}</p> }
+                  <div class="card-meta">
+                    @if (a.category) { <span class="meta-pill">{{ a.category }}</span> }
+                    @if (a.vendor) { <span class="meta-pill meta-vendor">{{ a.vendor }}</span> }
+                  </div>
+                </li>
+              }
+            </ul>
+            @if (g.assets.length > 24) {
+              <p class="lib-muted small">+{{ g.assets.length - 24 }} more — refine the search to narrow.</p>
+            }
+          </section>
+        }
+        @if (lookupGroups.length === 0) {
+          <p class="lib-empty">No matches.</p>
+        }
+      }
+    </section>
+  }
+
+  @if (loading) {
+    <div class="lib-loading">Loading library…</div>
+  }
+</div>
