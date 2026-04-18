@@ -104,9 +104,12 @@ export class LibraryService {
    * Used by the technique sidebar to suggest related Library assets.
    */
   getAssetsForTechnique(attackId: string, name: string, tacticSlugs: string[]): LibraryAsset[] {
-    const idLower = attackId.toLowerCase();
-    const nameLower = (name ?? '').toLowerCase();
-    const tactics = new Set(tacticSlugs);
+    const idLower = (attackId ?? '').toLowerCase().trim();
+    const nameLower = (name ?? '').toLowerCase().trim();
+    const tactics = new Set(tacticSlugs ?? []);
+
+    // No signal to score against → return empty
+    if (!idLower && !nameLower && tactics.size === 0) return [];
 
     // Score assets: tactic-tag match = 2, name keyword match = 3, attack-id mention = 5
     const scored: Array<{ asset: LibraryAsset; score: number }> = [];
@@ -115,9 +118,9 @@ export class LibraryService {
       let score = 0;
       const haystack = `${a.title} ${a.description} ${a.category} ${a.subcategory}`.toLowerCase();
 
-      if (a.attack_tactics?.some(t => tactics.has(t))) score += 2;
+      if (tactics.size > 0 && a.attack_tactics?.some(t => tactics.has(t))) score += 2;
 
-      if (haystack.includes(idLower)) score += 5;
+      if (idLower && haystack.includes(idLower)) score += 5;
 
       if (nameLower) {
         // Match meaningful keyword substrings of the technique name (drop short tokens).
