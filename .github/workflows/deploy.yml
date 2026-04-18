@@ -25,8 +25,8 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      # Use --legacy-peer-deps: lock file has mixed Angular 19/21 versions after downgrade
-      - run: npm install --legacy-peer-deps
+      # --force: overrides stale lock file (has @angular-devkit@21.x) after downgrade to ^19.2.0
+      - run: npm install --force
       - run: npx ng test --no-watch --browsers=ChromeHeadless
       - run: npx ng build --base-href /ATTACK-Navi/
       - uses: actions/upload-pages-artifact@v4
