@@ -69,3 +69,22 @@ When adding new docs:
 - distinguish live data from bundled or derived data
 - call out partial coverage honestly when a mapping or integration is incomplete
 - keep workflow and panel names consistent with the running application
+
+---
+
+## Community Learning Resources
+
+ATTACK-Navi is maintained by [TeamStarWolf](https://github.com/TeamStarWolf), a public cybersecurity resource library. The discipline pages below provide learning paths, free training, tools, certifications, and guidance for each major area of practice. ATTACK-Navi is referenced throughout each page as the recommended ATT&CK analysis surface for that discipline.
+
+| Discipline | How ATTACK-Navi applies |
+|---|---|
+| [Threat Intelligence](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/threat-intelligence.md) | Threat group filters, campaign timelines, MISP/OpenCTI correlation, and STIX export |
+| [Detection Engineering](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/detection-engineering.md) | Sigma rule coverage, Elastic/Splunk detection counts, Atomic Red Team test mapping, and CAR analytics |
+| [Incident Response](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/incident-response.md) | Technique-to-TTP pivot during active investigations; ATT&CK coverage gap analysis post-incident |
+| [Offensive Security](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/offensive-security.md) | ATT&CK technique mapping for red team operations; CVE/EPSS correlation for exploitation planning |
+| [Vulnerability Management](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/vulnerability-management.md) | CVE-to-technique overlays, EPSS scores, CISA KEV indicators, and ExploitDB cross-reference |
+| [Cloud Security](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/cloud-security.md) | Cloud technique clusters in ATT&CK; detection and compliance coverage for cloud-specific TTPs |
+| [Network Security](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/network-security.md) | Command-and-Control, Lateral Movement, and Exfiltration technique analysis with detection coverage |
+| [Malware Analysis](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/malware-analysis.md) | Map observed malware capabilities to ATT&CK techniques; correlate with threat group attribution |
+
+Visit the [TeamStarWolf profile](https://github.com/TeamStarWolf/TeamStarWolf) for the full resource library including books, starred repositories, YouTube channels, and follow lists.
