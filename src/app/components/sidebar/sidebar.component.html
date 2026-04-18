@@ -53,6 +53,12 @@
           }
         </div>
 
+        <!-- Library cross-reference: tools/channels/X-accounts mapped to this technique -->
+        <app-library-cross-ref
+          [attackId]="technique.attackId"
+          [techniqueName]="technique.name"
+          [tacticSlugs]="technique.tacticShortnames" />
+
         @if (technique.description) {
           <div class="description-wrap" [class.expanded]="descExpanded">
             <p class="description" [innerHTML]="technique.description | attackText"></p>

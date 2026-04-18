@@ -1,6 +1,8 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject } from 'rxjs';
 
 export interface SiemQuery {
   platform: 'splunk' | 'elastic' | 'microsoft' | 'chronicle' | 'crowdstrike';
@@ -863,11 +865,55 @@ export class SiemQueryService {
     'splunk', 'elastic', 'microsoft', 'chronicle', 'crowdstrike',
   ];
 
+  private http = inject(HttpClient);
+
+  /**
+   * Hand-curated technique-specific queries loaded from
+   * src/assets/technique-queries.json. Keyed by ATT&CK ID (e.g. "T1003.001").
+   * Each entry is an array of platform queries that override the generic
+   * tactic templates for that technique.
+   */
+  private techniqueQueries = new BehaviorSubject<Record<string, SiemQuery[]>>({});
+  readonly techniqueQueries$ = this.techniqueQueries.asObservable();
+
+  constructor() {
+    this.http.get<{ queries: Record<string, Array<Omit<SiemQuery, 'platformLabel'>>> }>(
+      'assets/technique-queries.json',
+    ).subscribe({
+      next: data => {
+        const enriched: Record<string, SiemQuery[]> = {};
+        for (const [id, list] of Object.entries(data.queries ?? {})) {
+          enriched[id] = list.map(q => ({
+            ...q,
+            platformLabel: PLATFORM_LABELS[q.platform] ?? q.platform,
+          }));
+        }
+        this.techniqueQueries.next(enriched);
+      },
+      error: e => console.warn('[SiemQueryService] failed to load technique-queries.json', e),
+    });
+  }
+
+  /** Number of techniques with hand-curated query coverage. */
+  getCuratedTechniqueCount(): number {
+    return Object.keys(this.techniqueQueries.value).length;
+  }
+
+  /** Whether a given technique has hand-curated queries (not just tactic templates). */
+  hasCuratedQueries(attackId: string): boolean {
+    return !!this.techniqueQueries.value[attackId]?.length;
+  }
+
   /**
    * Return all platform queries for a given ATT&CK technique and tactic.
-   * If tactic is empty or unknown, falls back to execution or returns empty.
+   * Per-technique curated queries take precedence over generic tactic templates.
    */
   getQueriesForTechnique(attackId: string, tactic: string): SiemQuery[] {
+    // 1) Per-technique curated queries (preferred)
+    const curated = this.techniqueQueries.value[attackId];
+    if (curated && curated.length > 0) return curated;
+
+    // 2) Fall back to tactic-level template
     const matched = matchTactic(tactic);
     if (!matched) return [];
 
