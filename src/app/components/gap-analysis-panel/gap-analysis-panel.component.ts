@@ -13,6 +13,8 @@ import { Subscription, filter, take } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
 import { GapAnalysisService, GapAnalysisResult, PrioritizedGap } from '../../services/gap-analysis.service';
+import { LibraryService } from '../../services/library.service';
+import { ViewModeService } from '../../services/view-mode.service';
 import { ThreatGroup } from '../../models/group';
 import { Domain } from '../../models/domain';
 
@@ -57,7 +59,28 @@ export class GapAnalysisPanelComponent implements OnInit, OnDestroy {
     private dataService: DataService,
     private gapService: GapAnalysisService,
     private cdr: ChangeDetectorRef,
+    private libraryService: LibraryService,
+    private viewModeService: ViewModeService,
   ) {}
+
+  /** Count of starred Library tools relevant to a technique's tactic. */
+  libraryCountFor(gap: PrioritizedGap): number {
+    // gap.tactic is the human-readable tactic name; map to slug
+    const slug = this.tacticToSlug(gap.tactic);
+    return this.libraryService.getAssetsForTactic(slug).length;
+  }
+
+  /** Open Library Index filtered to the gap's tactic. */
+  openLibraryForGap(gap: PrioritizedGap): void {
+    this.viewModeService.set('library');
+    // The library workbench reads the persisted tactic filter via its own
+    // localStorage signal. Close the panel so the matrix swap is visible.
+    this.close();
+  }
+
+  private tacticToSlug(tactic: string): string {
+    return tactic.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
 
   ngOnInit(): void {
     this.subs.add(
