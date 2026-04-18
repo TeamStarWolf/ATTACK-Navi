@@ -301,3 +301,65 @@ $st-untested: #9ca3af;
   background: var(--bg-main, #0c0e12);
   display: flex; justify-content: flex-end; gap: 6px;
 }
+
+// ─── Telemetry Coverage Matrix ───────────────────────────────────────────────
+
+.vp-tel-summary {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 14px; margin-bottom: 12px;
+  background: var(--bg-main, #0c0e12);
+  border: 1px solid var(--border-subtle, #2a2f3d);
+  border-radius: 8px;
+}
+.vp-tel-bar-track {
+  flex: 1; max-width: 320px;
+  height: 14px; border-radius: 7px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+.vp-tel-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, $st-failed 0%, $st-partial 50%, $st-passed 100%);
+  border-radius: 7px;
+  transition: width 0.4s ease-out;
+  min-width: 2px;
+}
+.vp-tel-stat {
+  font-size: 13px; color: var(--text-main, #e6e8ee);
+  strong { font-size: 18px; margin-right: 6px; color: $st-passed; }
+}
+
+.vp-tel-table {
+  width: 100%; border-collapse: collapse; font-size: 12px;
+  th {
+    text-align: left; padding: 8px 10px;
+    background: var(--bg-main, #0c0e12);
+    border-bottom: 1px solid var(--border-subtle, #2a2f3d);
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-muted, #8b93a7); font-weight: 700;
+    position: sticky; top: 0;
+  }
+  td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border-subtle, #2a2f3d);
+    vertical-align: top;
+    color: var(--text-main, #e6e8ee);
+  }
+  tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
+  tbody tr[data-configured="true"] {
+    background: rgba(16, 185, 129, 0.05);
+    &:hover { background: rgba(16, 185, 129, 0.10); }
+  }
+  .vp-tel-cfg { width: 90px; text-align: center; }
+  .vp-tel-count { width: 60px; text-align: center; font-weight: 700; }
+  .vp-tel-techs { display: flex; flex-wrap: wrap; gap: 4px; max-width: 360px; }
+  code { font-family: var(--font-mono, monospace); }
+}
+.vp-tel-techchip {
+  display: inline-block; padding: 1px 6px;
+  background: rgba(78, 161, 255, 0.10);
+  border: 1px solid rgba(78, 161, 255, 0.25);
+  color: #4ea1ff;
+  border-radius: 4px; font-size: 10px;
+  font-family: var(--font-mono, monospace);
+}
