@@ -382,4 +382,18 @@ export class ToolbarComponent implements OnInit, OnDestroy {
   closeTechniqueDropdown(): void {
     setTimeout(() => { this.showTechniqueDropdown = false; this.cveSearchHint = null; this.cdr.markForCheck(); }, 150);
   }
+
+  /** Returns a consistent daily technique selected by date-seeded index. */
+  get techniqueOfDay(): import('../../models/technique').Technique | null {
+    if (!this.techniques.length) return null;
+    const today = new Date();
+    const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+    return this.techniques[seed % this.techniques.length] ?? null;
+  }
+
+  selectTechniqueOfDay(): void {
+    const t = this.techniqueOfDay;
+    if (t) this.selectTechnique(t);
+  }
+
 }
