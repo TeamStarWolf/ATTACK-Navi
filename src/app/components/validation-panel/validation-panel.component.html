@@ -1,0 +1,326 @@
+<!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+     https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
+@if (visible) {
+  <div class="vp-overlay" (click)="close()">
+    <div class="vp-panel" role="dialog" aria-modal="true" aria-label="Detection Validation" (click)="$event.stopPropagation()">
+
+      <header class="vp-head">
+        <div class="vp-head-left">
+          <h2>Detection Validation Workbench</h2>
+          <span class="vp-subtitle">
+            Purple-team loop: telemetry → attack → detection → response → evidence
+          </span>
+        </div>
+        <div class="vp-head-actions">
+          <input type="file" accept="application/json" (change)="importRuns($event)" id="vp-import-runs" style="display:none">
+          <label for="vp-import-runs" class="vp-btn">Import JSON</label>
+          <button class="vp-btn" (click)="exportRuns()">Export Runs JSON</button>
+          <button class="vp-btn" (click)="exportNavigatorLayer()">Export ATT&amp;CK Layer</button>
+          <button class="vp-close" (click)="close()" aria-label="Close">&times;</button>
+        </div>
+      </header>
+
+      <!-- KPI tiles -->
+      <section class="vp-kpis">
+        <div class="vp-kpi" data-status="passed">
+          <div class="vp-kpi-value">{{ statusCounts.passed }}</div>
+          <div class="vp-kpi-label">Passed</div>
+        </div>
+        <div class="vp-kpi" data-status="partial">
+          <div class="vp-kpi-value">{{ statusCounts.partial }}</div>
+          <div class="vp-kpi-label">Partial</div>
+        </div>
+        <div class="vp-kpi" data-status="failed">
+          <div class="vp-kpi-value">{{ statusCounts.failed }}</div>
+          <div class="vp-kpi-label">Failed</div>
+        </div>
+        <div class="vp-kpi" data-status="no-telemetry">
+          <div class="vp-kpi-value">{{ statusCounts['no-telemetry'] }}</div>
+          <div class="vp-kpi-label">No Telemetry</div>
+        </div>
+        <div class="vp-kpi" data-status="untested">
+          <div class="vp-kpi-value">{{ totalCards - (statusCounts.passed + statusCounts.partial + statusCounts.failed + statusCounts['no-telemetry']) }}</div>
+          <div class="vp-kpi-label">Untested (in scope)</div>
+        </div>
+      </section>
+
+      <!-- Tabs -->
+      <nav class="vp-tabs" role="tablist">
+        <button [class.active]="currentTab === 'overview'" (click)="setTab('overview')">📊 Overview</button>
+        <button [class.active]="currentTab === 'techniques'" (click)="setTab('techniques')">🎯 Techniques</button>
+        <button [class.active]="currentTab === 'runs'" (click)="setTab('runs')">📜 Run History</button>
+        <button [class.active]="currentTab === 'evidence'" (click)="setTab('evidence')">📁 Evidence</button>
+      </nav>
+
+      <!-- Overview -->
+      @if (currentTab === 'overview') {
+        <section class="vp-section">
+          <p class="vp-muted">
+            This workbench tracks every layer of detection validation. For each in-scope technique
+            you'll see required telemetry, available detections, atomic test commands, the latest
+            run result, and the linked response playbook. Record runs, attach evidence URLs,
+            export ATT&amp;CK Navigator layers colored by validation status, and JSON-export the
+            complete history for hand-off.
+          </p>
+          <ul class="vp-checklist">
+            <li>📡 <strong>Telemetry</strong> — verify your SIEM has the required event sources</li>
+            <li>⚔️ <strong>Attack</strong> — execute Atomic Red Team tests + record outcome</li>
+            <li>🔬 <strong>Detection</strong> — log which Sigma / Splunk / KQL / YARA-L rules fired</li>
+            <li>🚨 <strong>Response</strong> — link to the IR Playbook + record actions taken</li>
+            <li>📁 <strong>Evidence</strong> — attach URLs to screenshots / wiki / S3 artifacts</li>
+          </ul>
+          <p class="vp-muted">
+            Coverage so far: <strong>{{ statusCounts.passed + statusCounts.partial + statusCounts.failed + statusCounts['no-telemetry'] }}</strong> validations recorded across
+            <strong>{{ totalCards }}</strong> in-scope techniques.
+          </p>
+        </section>
+      }
+
+      <!-- Techniques -->
+      @if (currentTab === 'techniques') {
+        <section class="vp-section">
+          <div class="vp-controls">
+            <input type="search" class="vp-search"
+                   placeholder="Search by ATT&amp;CK ID or name…"
+                   [(ngModel)]="searchText" />
+            <select class="vp-select" [(ngModel)]="statusFilter">
+              <option value="all">All statuses</option>
+              <option value="passed">Passed</option>
+              <option value="partial">Partial</option>
+              <option value="failed">Failed</option>
+              <option value="no-telemetry">No Telemetry</option>
+              <option value="untested">Untested</option>
+            </select>
+            <span class="vp-result-count">{{ filteredCards.length }} of {{ totalCards }} in scope</span>
+          </div>
+
+          <ul class="vp-card-grid">
+            @for (c of filteredCards; track c.technique.attackId) {
+              <li class="vp-tcard" [attr.data-status]="c.latestRun?.status ?? 'untested'">
+                <div class="vp-tcard-head">
+                  <span class="vp-tid">{{ c.technique.attackId }}</span>
+                  <span class="vp-tname">{{ c.technique.name }}</span>
+                  @if (c.latestRun) {
+                    <span class="vp-status-badge" [attr.data-status]="c.latestRun.status">
+                      {{ statusLabel(c.latestRun.status) }}
+                    </span>
+                  } @else {
+                    <span class="vp-status-badge" data-status="untested">UNTESTED</span>
+                  }
+                </div>
+                <div class="vp-tcard-meta">
+                  <span title="Required telemetry sources">📡 {{ c.telemetryConfigCount }} log sources</span>
+                  <span title="Atomic Red Team tests available">⚔️ {{ c.atomicTestCount }} atomic tests</span>
+                  <span title="Detection rules available">🔬 {{ c.detectionsAvailable.length }} det. rules</span>
+                  @if (c.libraryAssetCount > 0) {
+                    <span title="Library tools mapped to this tactic">📚 {{ c.libraryAssetCount }} library tools</span>
+                  }
+                </div>
+                @if (c.latestRun) {
+                  <div class="vp-tcard-runline">
+                    Last run {{ c.latestRun.runDate | date:'short' }}
+                    @if (c.latestRun.operator) { · by {{ c.latestRun.operator }} }
+                    · fired {{ c.latestRun.detectionsFired.length }}/{{ c.latestRun.detectionsExpected.length }}
+                  </div>
+                }
+                <div class="vp-tcard-actions">
+                  <button class="vp-btn vp-btn-primary" (click)="openRecordModal(c)">+ Record Run</button>
+                </div>
+              </li>
+            }
+            @if (filteredCards.length === 0) {
+              <li class="vp-empty">No techniques match the current filter.</li>
+            }
+          </ul>
+        </section>
+      }
+
+      <!-- Runs history -->
+      @if (currentTab === 'runs') {
+        <section class="vp-section">
+          @if (allRuns.length === 0) {
+            <p class="vp-muted">No validation runs recorded yet. Switch to the Techniques tab and click "Record Run" on any technique.</p>
+          } @else {
+            <table class="vp-runs-table">
+              <thead>
+                <tr>
+                  <th>When</th>
+                  <th>Technique</th>
+                  <th>Status</th>
+                  <th>Detections fired</th>
+                  <th>Operator</th>
+                  <th>Notes</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of allRuns; track r.id) {
+                  <tr [attr.data-status]="r.status">
+                    <td>{{ r.runDate | date:'short' }}</td>
+                    <td><code>{{ r.techniqueId }}</code> {{ r.techniqueName }}</td>
+                    <td><span class="vp-status-badge" [attr.data-status]="r.status">{{ statusLabel(r.status) }}</span></td>
+                    <td>{{ r.detectionsFired.length }}/{{ r.detectionsExpected.length }}</td>
+                    <td>{{ r.operator || '—' }}</td>
+                    <td class="vp-runs-notes">{{ r.notes }}</td>
+                    <td><button class="vp-btn-tiny" (click)="deleteRun(r.id)" title="Delete">✕</button></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </section>
+      }
+
+      <!-- Evidence -->
+      @if (currentTab === 'evidence') {
+        <section class="vp-section">
+          <p class="vp-muted">
+            Per-run evidence artifacts. Attach URLs (S3, internal wiki, screenshots) when
+            recording a run; they'll appear here grouped by technique for hand-off to auditors
+            or downstream teams.
+          </p>
+          @if (allRuns.length === 0) {
+            <p class="vp-muted">No runs recorded yet.</p>
+          } @else {
+            <ul class="vp-evidence-list">
+              @for (r of allRuns; track r.id) {
+                <li class="vp-evidence-item" [attr.data-status]="r.status">
+                  <div class="vp-evidence-head">
+                    <code>{{ r.techniqueId }}</code>
+                    <strong>{{ r.techniqueName }}</strong>
+                    <span class="vp-status-badge" [attr.data-status]="r.status">{{ statusLabel(r.status) }}</span>
+                    <span class="vp-evidence-when">{{ r.runDate | date:'short' }}</span>
+                  </div>
+                  @if (r.atomicCommand) {
+                    <div class="vp-evidence-section">
+                      <span class="vp-evidence-label">Attack command:</span>
+                      <pre>{{ r.atomicCommand }}</pre>
+                    </div>
+                  }
+                  @if (r.responseActions.length > 0) {
+                    <div class="vp-evidence-section">
+                      <span class="vp-evidence-label">Response actions:</span>
+                      <ul>
+                        @for (a of r.responseActions; track a) { <li>{{ a }}</li> }
+                      </ul>
+                    </div>
+                  }
+                  @if (r.evidenceLinks.length > 0) {
+                    <div class="vp-evidence-section">
+                      <span class="vp-evidence-label">Evidence links:</span>
+                      <ul>
+                        @for (l of r.evidenceLinks; track l) {
+                          <li><a [href]="l" target="_blank" rel="noreferrer">{{ l }}</a></li>
+                        }
+                      </ul>
+                    </div>
+                  }
+                  @if (r.notes) {
+                    <div class="vp-evidence-section">
+                      <span class="vp-evidence-label">Notes:</span>
+                      <p>{{ r.notes }}</p>
+                    </div>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        </section>
+      }
+
+      <!-- Record run modal -->
+      @if (showRecordModal && selectedTechnique) {
+        <div class="vp-modal-overlay" (click)="cancelRecord()">
+          <div class="vp-modal" (click)="$event.stopPropagation()">
+            <header class="vp-modal-head">
+              <h3>Record Validation Run — {{ selectedTechnique.attackId }} {{ selectedTechnique.name }}</h3>
+              <button class="vp-close" (click)="cancelRecord()">&times;</button>
+            </header>
+            <div class="vp-modal-body">
+              <label>
+                <span class="vp-label">Operator</span>
+                <input type="text" [(ngModel)]="formOperator" placeholder="who ran this validation" />
+              </label>
+
+              <fieldset>
+                <legend>📡 Telemetry available</legend>
+                @if ((formTelemetryAvailable | keyvalue).length === 0) {
+                  <p class="vp-muted small">No required telemetry mapped for this technique.</p>
+                }
+                @for (kv of formTelemetryAvailable | keyvalue; track kv.key) {
+                  <label class="vp-checkbox">
+                    <input type="checkbox" [(ngModel)]="formTelemetryAvailable[kv.key]" />
+                    {{ kv.key }}
+                  </label>
+                }
+              </fieldset>
+
+              <fieldset>
+                <legend>⚔️ Attack execution</legend>
+                <label>
+                  <span class="vp-label">Atomic test ID (optional)</span>
+                  <input type="text" [(ngModel)]="formAtomicTestId" placeholder="e.g. AT-001" />
+                </label>
+                <label>
+                  <span class="vp-label">Invoke command</span>
+                  <textarea rows="3" [(ngModel)]="formAtomicCommand" placeholder="powershell -c &quot;...&quot;"></textarea>
+                </label>
+                <label>
+                  <span class="vp-label">Outcome</span>
+                  <select [(ngModel)]="formAttackResult">
+                    <option value="executed">Executed</option>
+                    <option value="failed-prereq">Failed prerequisite</option>
+                    <option value="blocked">Blocked by control</option>
+                    <option value="errored">Errored</option>
+                  </select>
+                </label>
+              </fieldset>
+
+              <fieldset>
+                <legend>🔬 Detections fired</legend>
+                @if (formDetectionsExpected.length === 0) {
+                  <p class="vp-muted small">No detection rules registered for this technique.</p>
+                }
+                @for (d of formDetectionsExpected; track d) {
+                  <label class="vp-checkbox">
+                    <input type="checkbox" [(ngModel)]="formDetectionsFired[d]" />
+                    {{ d }}
+                  </label>
+                }
+              </fieldset>
+
+              <fieldset>
+                <legend>🚨 Response</legend>
+                <label>
+                  <span class="vp-label">Linked playbook</span>
+                  <input type="text" [(ngModel)]="formResponsePlaybook" />
+                </label>
+                <label>
+                  <span class="vp-label">Actions taken (one per line)</span>
+                  <textarea rows="3" [(ngModel)]="formResponseActions" placeholder="isolated host&#10;rotated credentials&#10;filed ticket #123"></textarea>
+                </label>
+              </fieldset>
+
+              <fieldset>
+                <legend>📁 Evidence</legend>
+                <label>
+                  <span class="vp-label">Evidence URLs (one per line)</span>
+                  <textarea rows="3" [(ngModel)]="formEvidenceLinks" placeholder="https://wiki.example.com/runbook-123&#10;https://s3.example.com/screenshot.png"></textarea>
+                </label>
+                <label>
+                  <span class="vp-label">Notes</span>
+                  <textarea rows="3" [(ngModel)]="formNotes" placeholder="postmortem observations"></textarea>
+                </label>
+              </fieldset>
+            </div>
+            <footer class="vp-modal-foot">
+              <button class="vp-btn" (click)="cancelRecord()">Cancel</button>
+              <button class="vp-btn vp-btn-primary" (click)="saveRun()">Save Run</button>
+            </footer>
+          </div>
+        </div>
+      }
+
+    </div>
+  </div>
+}
