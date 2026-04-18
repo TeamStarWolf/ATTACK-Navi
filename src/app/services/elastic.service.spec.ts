@@ -9,8 +9,9 @@ describe('ElasticService', () => {
   let service: ElasticService;
   let httpMock: HttpTestingController;
 
-  const ELASTIC_LAYER_URL =
-    'https://raw.githubusercontent.com/elastic/detection-rules/main/etc/attack-navigator-layer.json';
+  // Service now scans the GitHub tree instead of fetching a pre-built layer
+  const ELASTIC_TREE_URL =
+    'https://api.github.com/repos/elastic/detection-rules/git/trees/main?recursive=1';
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -28,13 +29,14 @@ describe('ElasticService', () => {
     httpMock.verify();
   });
 
-  // Helper: flush the live load request that fires in the constructor
-  function flushLiveLoad(layer: any = null): void {
-    const req = httpMock.expectOne(ELASTIC_LAYER_URL);
-    if (layer === null) {
+  // Helper: flush the live load request that fires in the constructor.
+  // Pass null to simulate an HTTP error; pass a tree object to simulate success.
+  function flushLiveLoad(tree: any = null): void {
+    const req = httpMock.expectOne(ELASTIC_TREE_URL);
+    if (tree === null) {
       req.error(new ProgressEvent('error'));
     } else {
-      req.flush(layer);
+      req.flush(tree);
     }
   }
 
@@ -183,15 +185,16 @@ describe('ElasticService', () => {
     expect(service.getRuleCount('T1059')).toBe(7); // 0 + 3 + 4
   });
 
-  // --- Live load from constructor ---
+  // --- Live load from constructor (GitHub tree scan) ---
 
   it('should ingest the live layer from the constructor HTTP call', () => {
+    // Service scans rules/*.toml paths and extracts technique IDs from filenames
     flushLiveLoad({
-      techniques: [
-        { techniqueID: 'T1059', score: 10 },
+      tree: [
+        { path: 'rules/T1059_test.toml', type: 'blob' },
       ],
     });
-    expect(service.getRuleCount('T1059')).toBe(10);
+    expect(service.getRuleCount('T1059')).toBe(1);
   });
 
   it('should handle constructor HTTP error gracefully', () => {
