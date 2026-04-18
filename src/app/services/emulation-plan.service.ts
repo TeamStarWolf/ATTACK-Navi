@@ -313,11 +313,86 @@ export class EmulationPlanService {
 
     const yaml = lines.join('\n') + '\n';
     const filename = `caldera-${plan.actorId || 'profile'}-${new Date().toISOString().split('T')[0]}.yml`;
-    const blob = new Blob([yaml], { type: 'text/yaml' });
+    this.downloadBlob(yaml, filename, 'text/yaml');
+  }
+
+  /**
+   * Export plan as a SCYTHE Communtity Threat Edition campaign YAML.
+   * Spec: https://github.com/scythe-io/community-threats/blob/master/README.md
+   * SCYTHE describes campaigns as ordered "step" entries with mitre.attack_id,
+   * mitre.technique_name, and an optional command for the operator to run.
+   */
+  exportScytheCampaign(plan: EmulationPlan): void {
+    const lines: string[] = [];
+    lines.push('---');
+    lines.push(`name: "${this.escapeYaml(plan.name)}"`);
+    lines.push(`adversary: "${this.escapeYaml(plan.actorName)}"`);
+    lines.push(`adversary_id: "${plan.actorId}"`);
+    lines.push(`description: |`);
+    for (const line of plan.description.split('\n')) {
+      lines.push(`  ${line}`);
+    }
+    lines.push(`generated_at: "${plan.createdAt}"`);
+    lines.push(`generator: "ATTACK-Navi (https://github.com/TeamStarWolf/ATTACK-Navi)"`);
+    lines.push('');
+    lines.push('campaign:');
+    for (const step of plan.steps) {
+      lines.push(`  - step: ${step.order}`);
+      lines.push(`    phase: "${this.escapeYaml(step.phase)}"`);
+      lines.push(`    objective: "${this.escapeYaml(step.objective)}"`);
+      lines.push(`    mitre:`);
+      lines.push(`      attack_id: "${step.techniqueId}"`);
+      lines.push(`      technique_name: "${this.escapeYaml(step.techniqueName)}"`);
+      if (step.atomicTestId) {
+        lines.push(`      atomic_red_team_test: "${step.atomicTestId}"`);
+      }
+      if (step.invokeCommand) {
+        // Multi-line command via YAML block scalar
+        lines.push(`    command: |`);
+        for (const cmdLine of step.invokeCommand.split('\n')) {
+          lines.push(`      ${cmdLine}`);
+        }
+      }
+      lines.push(`    success_criteria: "${this.escapeYaml(step.successCriteria)}"`);
+      lines.push(`    expected_detection: "${this.escapeYaml(step.expectedDetection)}"`);
+      lines.push(`    expected_log_source: "${this.escapeYaml(step.expectedLogSource)}"`);
+      if (step.prerequisites.length > 0) {
+        lines.push(`    prerequisites:`);
+        for (const pre of step.prerequisites) {
+          lines.push(`      - "${this.escapeYaml(pre)}"`);
+        }
+      }
+      lines.push('');
+    }
+
+    const yaml = lines.join('\n');
+    const filename = `scythe-${plan.actorId || 'campaign'}-${new Date().toISOString().split('T')[0]}.yml`;
+    this.downloadBlob(yaml, filename, 'text/yaml');
+  }
+
+  /**
+   * Export the plan as portable JSON (the same shape returned by generatePlan).
+   * Useful for piping into custom tooling or sharing across teams.
+   */
+  exportJson(plan: EmulationPlan): void {
+    const json = JSON.stringify(plan, null, 2);
+    const filename = `emulation-plan-${plan.actorId || 'plan'}-${new Date().toISOString().split('T')[0]}.json`;
+    this.downloadBlob(json, filename, 'application/json');
+  }
+
+  // ─── Internal helpers ────────────────────────────────────────────────────
+
+  private downloadBlob(content: string, filename: string, mime: string): void {
+    const blob = new Blob([content], { type: mime });
     const url = URL.createObjectURL(blob);
     const a = Object.assign(document.createElement('a'), { href: url, download: filename });
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  private escapeYaml(s: string): string {
+    // Escape backslashes and double-quotes for YAML double-quoted strings.
+    return (s ?? '').replace(/\\/g, '\\\\').replace(/"/g, '\\"');
   }
 
   /** Save a plan to localStorage. */

@@ -29,6 +29,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'actor', icon: '🕵️', label: 'Actors' },
   { id: 'actor-compare', icon: '⚖️', label: 'Actor vs.' },
   { id: 'scenario', icon: '🎭', label: 'Scenario' },
+  { id: 'emulation', icon: '⚔️', label: 'Emulate' },
   { id: 'campaign-timeline', icon: '🗓️', label: 'Campaigns' },
   { id: 'software', icon: '🛠️', label: 'Software' },
   { id: 'intelligence', icon: '🧠', label: 'INTEL' },
