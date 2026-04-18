@@ -43,6 +43,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'datasources', icon: '📡', label: 'Sources' },
   { id: 'cve', icon: '🔍', label: 'CVE' },
   { id: 'gap-analysis', icon: '🔎', label: 'GAP RPT' },
+  { id: 'validation', icon: '🎯', label: 'Validate' },
 
   { type: 'divider', label: 'Coverage' },
   { id: 'assessment', icon: '🧭', label: 'ASSESS' },
