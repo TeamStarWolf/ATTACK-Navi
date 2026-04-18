@@ -24,6 +24,32 @@
         </div>
       } @else {
 
+        <!-- Compliance Score Dashboard -->
+        @if (frameworkScores.length > 0) {
+          <div class="score-dashboard">
+            <div class="score-dashboard-head">
+              <h3>Compliance Score Dashboard</h3>
+              <button class="export-btn" (click)="exportComplianceXlsx()" title="Export multi-sheet Excel workbook of all framework mappings">📊 Export Excel</button>
+            </div>
+            <div class="score-grid">
+              @for (fw of frameworkScores; track fw.key) {
+                <button class="score-card"
+                        [attr.data-status]="fw.status"
+                        [class.active]="activeTab === fw.key"
+                        (click)="setTab($any(fw.key))"
+                        [title]="fw.label + ' — click to filter'">
+                  <div class="score-label">{{ fw.label }}</div>
+                  <div class="score-value">{{ fw.pct }}<span class="score-pct">%</span></div>
+                  <div class="score-bar">
+                    <div class="score-bar-fill" [style.width.%]="fw.pct" [attr.data-status]="fw.status"></div>
+                  </div>
+                  <div class="score-meta">{{ fw.covered }}/{{ fw.total }}</div>
+                </button>
+              }
+            </div>
+          </div>
+        }
+
         <!-- Tabs -->
         <div class="tab-bar">
           <button class="tab-btn" [class.active]="activeTab === 'cis'" (click)="setTab('cis')">
@@ -94,6 +120,16 @@
             @if (!m365CtrlLoaded) {
               <span class="loading-dot"></span>
             }
+          </button>
+
+          <button class="tab-btn" [class.active]="activeTab === 'soc2'" (click)="setTab('soc2')" title="SOC 2 Type II">
+            &#128274; SOC 2
+          </button>
+          <button class="tab-btn" [class.active]="activeTab === 'iso27001'" (click)="setTab('iso27001')" title="ISO 27001:2022">
+            &#128274; ISO 27001
+          </button>
+          <button class="tab-btn" [class.active]="activeTab === 'pci'" (click)="setTab('pci')" title="PCI DSS v4.0">
+            &#128274; PCI DSS
           </button>
         </div>
 
