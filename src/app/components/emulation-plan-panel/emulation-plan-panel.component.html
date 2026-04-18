@@ -1,0 +1,162 @@
+<!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+     https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
+@if (visible) {
+  <div class="emu-overlay" (click)="close()">
+    <div class="emu-panel" role="dialog" aria-modal="true" aria-label="Threat Actor Emulation Plan" (click)="$event.stopPropagation()">
+
+      <!-- Header -->
+      <header class="emu-head">
+        <div class="emu-head-left">
+          <h2>Threat Actor Emulation Plan</h2>
+          @if (plan) {
+            <span class="emu-subtitle">{{ plan.actorName }} · {{ plan.totalSteps }} steps · generated {{ plan.createdAt | date:'medium' }}</span>
+          }
+        </div>
+        <div class="emu-head-actions">
+          @if (plan) {
+            <button class="emu-btn" (click)="saveCurrentPlan()" title="Save plan to localStorage">💾 Save</button>
+            <button class="emu-btn" (click)="exportMarkdown()" title="Export as Markdown runbook">Markdown</button>
+            <button class="emu-btn" (click)="exportCaldera()" title="Export Caldera adversary profile">Caldera</button>
+            <button class="emu-btn" (click)="exportScythe()" title="Export SCYTHE community-threats campaign">SCYTHE</button>
+            <button class="emu-btn" (click)="exportJson()" title="Export plan as JSON">JSON</button>
+            <button class="emu-btn emu-btn-secondary" (click)="clearGroup()">New Plan</button>
+          }
+          <button class="emu-close" (click)="close()" aria-label="Close">&times;</button>
+        </div>
+      </header>
+
+      @if (!plan) {
+        <!-- Step 1: pick a threat actor -->
+        <section class="emu-step-section">
+          <h3 class="emu-step-label">Step 1 — Select a threat actor to emulate</h3>
+
+          <div class="emu-quick-picks">
+            <span class="emu-qp-label">Common picks:</span>
+            @for (qp of quickPicks; track qp) {
+              <button class="emu-qp-btn" (click)="pickQuickGroup(qp)">{{ qp }}</button>
+            }
+          </div>
+
+          <input type="search"
+                 class="emu-search"
+                 placeholder="Search by name, alias, or ATT&CK ID (e.g. APT29, Cozy Bear, G0016)…"
+                 [(ngModel)]="groupSearch" />
+
+          @if (groupSearch || filteredGroups.length > 0) {
+            <ul class="emu-group-list">
+              @for (g of filteredGroups; track g.attackId) {
+                <li>
+                  <button class="emu-group-row"
+                          [class.selected]="selectedGroup?.attackId === g.attackId"
+                          (click)="selectGroup(g)">
+                    <span class="emu-group-id">{{ g.attackId }}</span>
+                    <span class="emu-group-name">{{ g.name }}</span>
+                    @if (g.aliases.length > 0) {
+                      <span class="emu-group-aliases">{{ g.aliases.slice(0, 3).join(', ') }}</span>
+                    }
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+
+          @if (selectedGroup) {
+            <div class="emu-selected-actor">
+              <strong>Selected:</strong> {{ selectedGroup.name }} ({{ selectedGroup.attackId }})
+              <button class="emu-btn emu-btn-primary" (click)="generatePlan()" [disabled]="generating">
+                @if (generating) { Generating… } @else { Generate Plan → }
+              </button>
+            </div>
+          }
+
+          @if (savedPlans.length > 0) {
+            <div class="emu-saved">
+              <h4>Saved plans</h4>
+              <ul>
+                @for (sp of savedPlans; track sp.id) {
+                  <li class="emu-saved-row">
+                    <button class="emu-saved-load" (click)="loadPlan(sp)">
+                      <span class="emu-saved-name">{{ sp.name }}</span>
+                      <span class="emu-saved-meta">{{ sp.totalSteps }} steps · {{ sp.createdAt | date:'short' }}</span>
+                    </button>
+                    <button class="emu-saved-delete" (click)="deleteSavedPlan(sp.id)">✕</button>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+        </section>
+      } @else {
+        <!-- Plan view -->
+        <section class="emu-plan-section">
+          <p class="emu-plan-desc">{{ plan.description }}</p>
+
+          @for (pg of phaseGroups; track pg.phase) {
+            <article class="emu-phase">
+              <header class="emu-phase-head">
+                <h3>{{ pg.phase }}</h3>
+                <span class="emu-phase-count">{{ pg.steps.length }} {{ pg.steps.length === 1 ? 'step' : 'steps' }}</span>
+              </header>
+
+              <ol class="emu-step-list">
+                @for (step of pg.steps; track step.order) {
+                  <li class="emu-step" [class.expanded]="isExpanded(step.order)">
+                    <button class="emu-step-head" (click)="toggleStep(step.order)">
+                      <span class="emu-step-order">#{{ step.order }}</span>
+                      <span class="emu-step-id">{{ step.techniqueId }}</span>
+                      <span class="emu-step-name">{{ step.techniqueName }}</span>
+                      <span class="emu-step-objective">{{ step.objective }}</span>
+                      <span class="emu-step-toggle">{{ isExpanded(step.order) ? '▾' : '▸' }}</span>
+                    </button>
+
+                    @if (isExpanded(step.order)) {
+                      <div class="emu-step-detail">
+                        <dl class="emu-step-meta">
+                          @if (step.atomicTestId) {
+                            <dt>Atomic Red Team test</dt>
+                            <dd><code>{{ step.atomicTestId }}</code></dd>
+                          }
+                          @if (step.invokeCommand) {
+                            <dt>Invoke command</dt>
+                            <dd>
+                              <pre class="emu-code">{{ step.invokeCommand }}</pre>
+                              <button class="emu-btn emu-btn-tiny" (click)="copyCommand(step.invokeCommand)">📋 Copy</button>
+                            </dd>
+                          }
+                          <dt>Success criteria</dt>
+                          <dd>{{ step.successCriteria }}</dd>
+                          <dt>Expected detection</dt>
+                          <dd>{{ step.expectedDetection }}</dd>
+                          <dt>Log source</dt>
+                          <dd>{{ step.expectedLogSource }}</dd>
+                          @if (step.prerequisites.length > 0) {
+                            <dt>Prerequisites</dt>
+                            <dd>
+                              <ul>
+                                @for (pre of step.prerequisites; track pre) {
+                                  <li>{{ pre }}</li>
+                                }
+                              </ul>
+                            </dd>
+                          }
+                          @if (libraryCountForStep(step) > 0) {
+                            <dt>From the Library</dt>
+                            <dd>
+                              <button class="emu-lib-link" (click)="jumpToLibrary()" title="Open the Library Index">
+                                📚 {{ libraryCountForStep(step) }} starred {{ libraryCountForStep(step) === 1 ? 'tool' : 'tools' }} relevant to this phase →
+                              </button>
+                            </dd>
+                          }
+                        </dl>
+                      </div>
+                    }
+                  </li>
+                }
+              </ol>
+            </article>
+          }
+        </section>
+      }
+    </div>
+  </div>
+}
