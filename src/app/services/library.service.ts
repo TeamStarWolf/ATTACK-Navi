@@ -61,6 +61,7 @@ export function tacticLabel(slug: string): string {
 export class LibraryService {
   private http = inject(HttpClient);
   private loaded = new BehaviorSubject<boolean>(false);
+  private cached: LibraryData = EMPTY;
 
   /** Hot observable that emits the library data once loaded. */
   readonly library$: Observable<LibraryData> = this.http
@@ -68,6 +69,7 @@ export class LibraryService {
     .pipe(
       map(data => {
         this.loaded.next(true);
+        this.cached = data;
         return data;
       }),
       catchError(err => {
@@ -79,4 +81,56 @@ export class LibraryService {
     );
 
   loaded$: Observable<boolean> = this.loaded.asObservable();
+
+  constructor() {
+    // Eager-subscribe so cross-reference helpers work even when the Library
+    // view hasn't been opened yet (e.g. when used by the technique sidebar
+    // in the ATT&CK Workbench).
+    this.library$.subscribe();
+  }
+
+  // ─── Cross-reference helpers ───────────────────────────────────────────────
+  // Used by ATT&CK Workbench panels to surface Library assets relevant to a
+  // selected technique, tactic, or freeform query.
+
+  /** All assets tagged with the given ATT&CK tactic slug. */
+  getAssetsForTactic(slug: string): LibraryAsset[] {
+    if (!slug) return [];
+    return this.cached.assets.filter(a => a.attack_tactics?.includes(slug));
+  }
+
+  /**
+   * Loose match of an asset against a technique's ID, name, or related text.
+   * Used by the technique sidebar to suggest related Library assets.
+   */
+  getAssetsForTechnique(attackId: string, name: string, tacticSlugs: string[]): LibraryAsset[] {
+    const idLower = attackId.toLowerCase();
+    const nameLower = (name ?? '').toLowerCase();
+    const tactics = new Set(tacticSlugs);
+
+    // Score assets: tactic-tag match = 2, name keyword match = 3, attack-id mention = 5
+    const scored: Array<{ asset: LibraryAsset; score: number }> = [];
+
+    for (const a of this.cached.assets) {
+      let score = 0;
+      const haystack = `${a.title} ${a.description} ${a.category} ${a.subcategory}`.toLowerCase();
+
+      if (a.attack_tactics?.some(t => tactics.has(t))) score += 2;
+
+      if (haystack.includes(idLower)) score += 5;
+
+      if (nameLower) {
+        // Match meaningful keyword substrings of the technique name (drop short tokens).
+        const tokens = nameLower.split(/[\s\W]+/).filter(t => t.length >= 5);
+        for (const tok of tokens) {
+          if (haystack.includes(tok)) score += 3;
+        }
+      }
+
+      if (score > 0) scored.push({ asset: a, score });
+    }
+
+    scored.sort((a, b) => b.score - a.score);
+    return scored.slice(0, 24).map(s => s.asset);
+  }
 }
