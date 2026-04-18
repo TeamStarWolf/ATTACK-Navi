@@ -17,6 +17,7 @@ import { Mitigation } from '../../models/mitigation';
 import { Technique } from '../../models/technique';
 import { FilterService, SortMode, SearchScope } from '../../services/filter.service';
 import { DataService, DataSourceMode, AttackDomain } from '../../services/data.service';
+import { ViewMode } from '../../services/view-mode.service';
 import { SavedViewsService, SavedView } from '../../services/saved-views.service';
 import { AttackCveService } from '../../services/attack-cve.service';
 import { UniversalSearchComponent } from '../universal-search/universal-search.component';
@@ -53,6 +54,26 @@ export class ToolbarComponent implements OnInit, OnDestroy {
   @Input() isLightMode = false;
   @Input() set currentDomain(value: AttackDomain) {
     this.attackDomain = value;
+  }
+  @Input() viewMode: ViewMode = 'workbench';
+  @Output() viewModeChange = new EventEmitter<ViewMode>();
+  brandMenuOpen = false;
+  toggleBrandMenu(): void {
+    this.brandMenuOpen = !this.brandMenuOpen;
+    this.cdr.markForCheck();
+  }
+  selectViewMode(mode: ViewMode): void {
+    this.brandMenuOpen = false;
+    if (mode !== this.viewMode) {
+      this.viewModeChange.emit(mode);
+    }
+    this.cdr.markForCheck();
+  }
+  closeBrandMenu(): void {
+    if (this.brandMenuOpen) {
+      this.brandMenuOpen = false;
+      this.cdr.markForCheck();
+    }
   }
   @Output() domainChange = new EventEmitter<AttackDomain>();
   @Output() expandAll = new EventEmitter<void>();

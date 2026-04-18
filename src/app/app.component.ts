@@ -6,6 +6,8 @@ import { CommonModule, AsyncPipe } from '@angular/common';
 import { DataService, AttackDomain } from './services/data.service';
 import { Domain } from './models/domain';
 import { FilterService, ActivePanel } from './services/filter.service';
+import { ViewModeService, ViewMode } from './services/view-mode.service';
+import { LibraryWorkbenchComponent } from './components/library-workbench/library-workbench.component';
 import { Observable } from 'rxjs';
 import { MatrixComponent } from './components/matrix/matrix.component';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
@@ -77,7 +79,7 @@ import { NavigatorLayerService } from './services/navigator-layer.service';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, AsyncPipe, MatrixComponent, SidebarComponent, ToolbarComponent, LegendComponent, StatsBarComponent, FilterChipsComponent, GapViewComponent, ThreatPanelComponent, PriorityPanelComponent, WhatifPanelComponent, ReportPanelComponent, KeyboardHelpComponent, ControlsPanelComponent, SoftwarePanelComponent, ComparisonPanelComponent, LayersPanelComponent, CvePanelComponent, AnalyticsPanelComponent, NavRailComponent, SigmaExportComponent, SiemExportComponent, PurpleTeamPanelComponent, YaraExportComponent, RoadmapPanelComponent, ActorProfilePanelComponent, DetectionPanelComponent, CompliancePanelComponent, ActorComparePanelComponent, TimelinePanelComponent, TacticSummaryComponent, SettingsPanelComponent, CustomMitPanelComponent, KillchainPanelComponent, RiskMatrixPanelComponent, ScenarioPanelComponent, QuickFiltersComponent, DashboardPanelComponent, DatasourcePanelComponent, WatchlistPanelComponent, ChangelogPanelComponent, TagsPanelComponent, TargetPanelComponent, CampaignTimelinePanelComponent, TechniqueGraphPanelComponent, CoverageDiffPanelComponent, ThreatIntelligencePanelComponent, CollectionPanelComponent, AssessmentWizardComponent, DataHealthComponent, GapAnalysisPanelComponent, AssetPanelComponent, IRPlaybookPanelComponent, OnboardingComponent],
+  imports: [CommonModule, AsyncPipe, MatrixComponent, SidebarComponent, ToolbarComponent, LegendComponent, StatsBarComponent, FilterChipsComponent, GapViewComponent, ThreatPanelComponent, PriorityPanelComponent, WhatifPanelComponent, ReportPanelComponent, KeyboardHelpComponent, ControlsPanelComponent, SoftwarePanelComponent, ComparisonPanelComponent, LayersPanelComponent, CvePanelComponent, AnalyticsPanelComponent, NavRailComponent, SigmaExportComponent, SiemExportComponent, PurpleTeamPanelComponent, YaraExportComponent, RoadmapPanelComponent, ActorProfilePanelComponent, DetectionPanelComponent, CompliancePanelComponent, ActorComparePanelComponent, TimelinePanelComponent, TacticSummaryComponent, SettingsPanelComponent, CustomMitPanelComponent, KillchainPanelComponent, RiskMatrixPanelComponent, ScenarioPanelComponent, QuickFiltersComponent, DashboardPanelComponent, DatasourcePanelComponent, WatchlistPanelComponent, ChangelogPanelComponent, TagsPanelComponent, TargetPanelComponent, CampaignTimelinePanelComponent, TechniqueGraphPanelComponent, CoverageDiffPanelComponent, ThreatIntelligencePanelComponent, CollectionPanelComponent, AssessmentWizardComponent, DataHealthComponent, GapAnalysisPanelComponent, AssetPanelComponent, IRPlaybookPanelComponent, OnboardingComponent, LibraryWorkbenchComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
@@ -95,6 +97,12 @@ export class AppComponent implements OnInit, AfterViewInit {
   error: string | null = null;
   isLightMode = false;
   activePanel$!: Observable<ActivePanel>;
+  viewMode: ViewMode = 'workbench';
+  private viewModeService = inject(ViewModeService);
+  onViewModeChange(mode: ViewMode): void {
+    this.viewModeService.set(mode);
+    this.viewMode = mode;
+  }
   showToast = false;
   toastMessage = '';
   currentDomain: AttackDomain = 'enterprise';
@@ -123,6 +131,9 @@ export class AppComponent implements OnInit, AfterViewInit {
     this.dataService.currentDomain$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((d) => { this.currentDomain = d; this.cdr.markForCheck(); });
     this.dataService.loadDomain();
     this.activePanel$ = this.filterService.activePanel$;
+    this.viewModeService.viewMode$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(m => { this.viewMode = m; this.cdr.markForCheck(); });
     this.urlStateService.restoreFromUrl();
     if (localStorage.getItem('mitre-nav-theme') === 'light') {
       this.isLightMode = true;
