@@ -71,10 +71,12 @@ import { ThreatHunterPlaybookService } from '../../services/threathunter-playboo
 import { EvtxSamplesService, EvtxSample } from '../../services/evtx-samples.service';
 import { SentinelRulesService, SentinelRule } from '../../services/sentinel-rules.service';
 
+import { LibraryCrossRefComponent } from '../library-cross-ref/library-cross-ref.component';
+
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, FormsModule, AttackTextPipe],
+  imports: [CommonModule, FormsModule, AttackTextPipe, LibraryCrossRefComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss',
