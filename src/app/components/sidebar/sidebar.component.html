@@ -59,6 +59,9 @@
           [techniqueName]="technique.name"
           [tacticSlugs]="technique.tacticShortnames" />
 
+        <!-- Latest detection-validation status -->
+        <app-validation-status-pill [attackId]="technique.attackId" />
+
         @if (technique.description) {
           <div class="description-wrap" [class.expanded]="descExpanded">
             <p class="description" [innerHTML]="technique.description | attackText"></p>

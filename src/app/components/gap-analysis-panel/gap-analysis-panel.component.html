@@ -233,12 +233,18 @@
                       </td>
                       <td class="rec-cell">
                         {{ gap.recommendation }}
-                        @if (libraryCountFor(gap) > 0) {
-                          <button class="lib-badge" (click)="openLibraryForGap(gap)"
-                                  [title]="'Open Library Index filtered to ' + gap.tactic">
-                            📚 {{ libraryCountFor(gap) }} library {{ libraryCountFor(gap) === 1 ? 'tool' : 'tools' }} →
+                        <div class="rec-cell-actions">
+                          @if (libraryCountFor(gap) > 0) {
+                            <button class="lib-badge" (click)="openLibraryForGap(gap)"
+                                    [title]="'Open Library Index filtered to ' + gap.tactic">
+                              📚 {{ libraryCountFor(gap) }} library {{ libraryCountFor(gap) === 1 ? 'tool' : 'tools' }} →
+                            </button>
+                          }
+                          <button class="validate-badge" (click)="openValidationForGap(gap)"
+                                  [title]="'Open the Detection Validation Workbench for ' + gap.technique.attackId">
+                            🎯 Validate {{ gap.technique.attackId }} →
                           </button>
-                        }
+                        </div>
                       </td>
                     </tr>
                   }

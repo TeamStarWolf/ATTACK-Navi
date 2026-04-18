@@ -78,6 +78,11 @@ export class GapAnalysisPanelComponent implements OnInit, OnDestroy {
     this.close();
   }
 
+  /** Open the Detection Validation Workbench for the gap's technique. */
+  openValidationForGap(_gap: PrioritizedGap): void {
+    this.filterService.setActivePanel('validation');
+  }
+
   private tacticToSlug(tactic: string): string {
     return tactic.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   }
