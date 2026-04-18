@@ -294,7 +294,16 @@
       }
     </div>
 
-    <button class="icon-btn theme-btn" (click)="toggleDark.emit()" [title]="isLightMode ? 'Switch to dark mode' : 'Switch to light mode'" [attr.aria-label]="isLightMode ? 'Switch to dark mode' : 'Switch to light mode'">
+    <!-- Technique of the Day -->
+    @if (techniqueOfDay) {
+      <button class="icon-btn totd-btn"
+              (click)="selectTechniqueOfDay()"
+              [title]="'Technique of the Day: ' + techniqueOfDay.name + ' (' + techniqueOfDay.attackId + ')'">
+        🎯
+      </button>
+    }
+
+        <button class="icon-btn theme-btn" (click)="toggleDark.emit()" [title]="isLightMode ? 'Switch to dark mode' : 'Switch to light mode'" [attr.aria-label]="isLightMode ? 'Switch to dark mode' : 'Switch to light mode'">
       {{ isLightMode ? '🌙' : '☀️' }}
     </button>
   </div>
