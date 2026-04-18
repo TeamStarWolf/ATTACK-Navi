@@ -17,6 +17,7 @@ on:
       - 'nginx.conf'
       - 'src/**'
       - 'package*.json'
+  workflow_dispatch:
 
 permissions:
   contents: read
