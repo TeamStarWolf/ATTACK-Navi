@@ -2,7 +2,8 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+# Delete lock file and regenerate to resolve peer dependency conflicts
+RUN rm -f package-lock.json && npm install
 COPY . .
 RUN npx ng build --configuration production --base-href /
 
