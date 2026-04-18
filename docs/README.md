@@ -86,5 +86,8 @@ ATTACK-Navi is maintained by [TeamStarWolf](https://github.com/TeamStarWolf), a 
 | [Cloud Security](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/cloud-security.md) | Cloud technique clusters in ATT&CK; detection and compliance coverage for cloud-specific TTPs |
 | [Network Security](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/network-security.md) | Command-and-Control, Lateral Movement, and Exfiltration technique analysis with detection coverage |
 | [Malware Analysis](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/malware-analysis.md) | Map observed malware capabilities to ATT&CK techniques; correlate with threat group attribution |
+| [ICS/OT Security](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/ics-ot-security.md) | ICS ATT&CK matrix domain; visualize OT-specific techniques, adversary emulation in industrial environments |
+| [Application Security](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/application-security.md) | Initial Access and Execution technique mapping; connect web exploitation to the full ATT&CK kill chain |
+| [AI & LLM Security](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/ai-llm-security.md) | ATTACK-Navi as an example of AI-assisted ATT&CK analysis; maps AI-enabled attack techniques across the matrix |
 
 Visit the [TeamStarWolf profile](https://github.com/TeamStarWolf/TeamStarWolf) for the full resource library including books, starred repositories, YouTube channels, and follow lists.
