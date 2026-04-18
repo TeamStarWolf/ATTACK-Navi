@@ -83,3 +83,6 @@ ATTACK-Navi is part of the [TeamStarWolf](https://github.com/TeamStarWolf/TeamSt
 | Cloud attack surface and container security | [Cloud Security](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/cloud-security.md) |
 | Network monitoring and C2 detection | [Network Security](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/network-security.md) |
 | Malware behavior and capability mapping | [Malware Analysis](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/malware-analysis.md) |
+| Industrial control system and OT threats | [ICS/OT Security](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/ics-ot-security.md) |
+| Web application and API security | [Application Security](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/application-security.md) |
+| AI/LLM red teaming and AI-enabled attacks | [AI & LLM Security](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/ai-llm-security.md) |
