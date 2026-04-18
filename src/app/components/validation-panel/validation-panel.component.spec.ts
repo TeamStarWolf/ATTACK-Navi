@@ -11,6 +11,7 @@ import { AtomicService } from '../../services/atomic.service';
 import { SigmaService } from '../../services/sigma.service';
 import { SiemQueryService } from '../../services/siem-query.service';
 import { LibraryService } from '../../services/library.service';
+import { TelemetryCoverageService } from '../../services/telemetry-coverage.service';
 
 describe('ValidationPanelComponent', () => {
   let component: ValidationPanelComponent;
@@ -45,6 +46,13 @@ describe('ValidationPanelComponent', () => {
         { provide: SigmaService, useValue: { getRuleCount: () => 0 } },
         { provide: SiemQueryService, useValue: { hasCuratedQueries: () => false } },
         { provide: LibraryService, useValue: { getAssetsForTactic: () => [] } },
+        { provide: TelemetryCoverageService, useValue: {
+            status$: new BehaviorSubject(new Set<string>()),
+            buildMatrix: () => [],
+            summary: () => ({ total: 0, configured: 0, pct: 0 }),
+            toggle: jasmine.createSpy(),
+            clearAll: jasmine.createSpy(),
+        }},
       ],
     });
     fixture = TestBed.createComponent(ValidationPanelComponent);
@@ -63,6 +71,8 @@ describe('ValidationPanelComponent', () => {
   it('setTab updates the active tab', () => {
     component.setTab('techniques');
     expect(component.currentTab).toBe('techniques');
+    component.setTab('telemetry');
+    expect(component.currentTab).toBe('telemetry');
     component.setTab('runs');
     expect(component.currentTab).toBe('runs');
     component.setTab('evidence');
