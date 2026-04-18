@@ -58,12 +58,14 @@ describe('NucleiService', () => {
   }
 
   function triggerLoad(treeEntries: any[]): void {
+    service.loadOnDemand(); // set up subscription before emitting
     mockAttackCveLoaded$.next(true);
     const req = httpMock.expectOne(TREE_URL);
     req.flush({ sha: 'def456', url: TREE_URL, tree: treeEntries, truncated: false });
   }
 
   function triggerLoadError(): void {
+    service.loadOnDemand(); // set up subscription before emitting
     mockAttackCveLoaded$.next(true);
     const req = httpMock.expectOne(TREE_URL);
     req.error(new ProgressEvent('error'));
