@@ -19,6 +19,7 @@ import { AtomicService } from '../../services/atomic.service';
 import { SigmaService } from '../../services/sigma.service';
 import { SiemQueryService } from '../../services/siem-query.service';
 import { LibraryService } from '../../services/library.service';
+import { TelemetryCoverageService, TelemetrySourceRow } from '../../services/telemetry-coverage.service';
 import { Domain } from '../../models/domain';
 import { Technique } from '../../models/technique';
 
@@ -51,10 +52,16 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
   private sigmaService = inject(SigmaService);
   private siemQueryService = inject(SiemQueryService);
   private libraryService = inject(LibraryService);
+  private telemetryCoverage = inject(TelemetryCoverageService);
   private cdr = inject(ChangeDetectorRef);
 
   // UI state
-  currentTab: 'overview' | 'techniques' | 'runs' | 'evidence' = 'overview';
+  currentTab: 'overview' | 'techniques' | 'telemetry' | 'runs' | 'evidence' = 'overview';
+
+  // Telemetry coverage matrix
+  telemetryMatrix: TelemetrySourceRow[] = [];
+  telemetrySearch = '';
+  telemetryFilter: 'all' | 'configured' | 'missing' = 'all';
   searchText = '';
   selectedTechnique: Technique | null = null;
   domain: Domain | null = null;
@@ -84,12 +91,18 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
       this.visible = p === 'validation';
       if (this.visible) {
         this.loadDomain();
+        this.telemetryMatrix = this.telemetryCoverage.buildMatrix();
       }
       this.cdr.markForCheck();
     }));
 
     this.subs.add(this.validationService.runs$.subscribe(() => {
       if (this.visible) this.rebuildCards();
+      this.cdr.markForCheck();
+    }));
+
+    this.subs.add(this.telemetryCoverage.status$.subscribe(() => {
+      this.telemetryMatrix = this.telemetryCoverage.buildMatrix();
       this.cdr.markForCheck();
     }));
   }
@@ -257,6 +270,33 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
 
   close(): void {
     this.filterService.setActivePanel(null);
+  }
+
+  // ─── Telemetry coverage tab ───────────────────────────────────────────────
+
+  get filteredTelemetryMatrix(): TelemetrySourceRow[] {
+    const q = this.telemetrySearch.trim().toLowerCase();
+    return this.telemetryMatrix.filter(r => {
+      if (this.telemetryFilter === 'configured' && !r.configured) return false;
+      if (this.telemetryFilter === 'missing' && r.configured) return false;
+      if (!q) return true;
+      return r.source.toLowerCase().includes(q) ||
+             r.eventId.toLowerCase().includes(q) ||
+             r.techniques.some(t => t.toLowerCase().includes(q));
+    });
+  }
+
+  get telemetrySummary(): { total: number; configured: number; pct: number } {
+    return this.telemetryCoverage.summary();
+  }
+
+  toggleTelemetry(key: string): void {
+    this.telemetryCoverage.toggle(key);
+  }
+
+  clearAllTelemetry(): void {
+    if (!confirm('Clear all telemetry coverage flags? This wipes the configured-source map.')) return;
+    this.telemetryCoverage.clearAll();
   }
 
   // Helpers used in template

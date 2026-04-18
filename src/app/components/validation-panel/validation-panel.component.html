@@ -48,6 +48,7 @@
       <nav class="vp-tabs" role="tablist">
         <button [class.active]="currentTab === 'overview'" (click)="setTab('overview')">📊 Overview</button>
         <button [class.active]="currentTab === 'techniques'" (click)="setTab('techniques')">🎯 Techniques</button>
+        <button [class.active]="currentTab === 'telemetry'" (click)="setTab('telemetry')">📡 Telemetry</button>
         <button [class.active]="currentTab === 'runs'" (click)="setTab('runs')">📜 Run History</button>
         <button [class.active]="currentTab === 'evidence'" (click)="setTab('evidence')">📁 Evidence</button>
       </nav>
@@ -132,6 +133,85 @@
               <li class="vp-empty">No techniques match the current filter.</li>
             }
           </ul>
+        </section>
+      }
+
+      <!-- Telemetry coverage matrix -->
+      @if (currentTab === 'telemetry') {
+        <section class="vp-section">
+          <div class="vp-tel-summary">
+            <div class="vp-tel-bar-track" [title]="telemetrySummary.configured + ' of ' + telemetrySummary.total + ' log sources configured'">
+              <div class="vp-tel-bar-fill" [style.width.%]="telemetrySummary.pct"></div>
+            </div>
+            <div class="vp-tel-stat">
+              <strong>{{ telemetrySummary.pct }}%</strong>
+              telemetry coverage
+              <span class="vp-muted small">
+                ({{ telemetrySummary.configured }} of {{ telemetrySummary.total }} required log sources)
+              </span>
+            </div>
+          </div>
+
+          <p class="vp-muted">
+            Tick a row when your SIEM is actually ingesting that source. Coverage cascades into
+            per-technique validation: techniques whose required sources are missing default to
+            <em>no-telemetry</em> in run results.
+          </p>
+
+          <div class="vp-controls">
+            <input type="search" class="vp-search"
+                   placeholder="Search source, event ID, or technique…"
+                   [(ngModel)]="telemetrySearch" />
+            <select class="vp-select" [(ngModel)]="telemetryFilter">
+              <option value="all">All sources</option>
+              <option value="configured">Configured</option>
+              <option value="missing">Missing</option>
+            </select>
+            <span class="vp-result-count">{{ filteredTelemetryMatrix.length }} of {{ telemetryMatrix.length }} sources</span>
+            <button class="vp-btn" (click)="clearAllTelemetry()">Reset all</button>
+          </div>
+
+          @if (filteredTelemetryMatrix.length === 0) {
+            <p class="vp-muted">No log sources match the current filter.</p>
+          } @else {
+            <table class="vp-tel-table">
+              <thead>
+                <tr>
+                  <th class="vp-tel-cfg">Configured?</th>
+                  <th>Log source</th>
+                  <th>Event ID</th>
+                  <th>Used by</th>
+                  <th>Techniques</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of filteredTelemetryMatrix; track row.key) {
+                  <tr [attr.data-configured]="row.configured">
+                    <td class="vp-tel-cfg">
+                      <label class="vp-checkbox">
+                        <input type="checkbox"
+                               [checked]="row.configured"
+                               (change)="toggleTelemetry(row.key)" />
+                      </label>
+                    </td>
+                    <td>
+                      <strong>{{ row.source }}</strong>
+                      @if (row.description) {
+                        <div class="vp-muted small">{{ row.description }}</div>
+                      }
+                    </td>
+                    <td><code>{{ row.eventId }}</code></td>
+                    <td class="vp-tel-count">{{ row.techniques.length }}</td>
+                    <td class="vp-tel-techs">
+                      @for (t of row.techniques; track t) {
+                        <code class="vp-tel-techchip">{{ t }}</code>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
         </section>
       }
 
