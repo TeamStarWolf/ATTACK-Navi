@@ -43,6 +43,7 @@
   gap: 8px;
   flex-shrink: 0;
   padding: 0 16px 0 8px;
+  position: relative;
 
   .brand-icon {
     font-size: 18px;
@@ -64,6 +65,108 @@
     text-transform: uppercase;
     color: var(--text-main);
     white-space: nowrap;
+  }
+
+  .brand-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: inherit;
+    padding: 4px 10px 4px 4px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+
+    &:hover {
+      background: rgb(255 255 255 / 4%);
+      border-color: rgb(255 255 255 / 8%);
+    }
+  }
+  &.menu-open .brand-trigger {
+    background: rgb(255 255 255 / 6%);
+    border-color: rgb(255 255 255 / 12%);
+  }
+
+  .brand-mode-badge {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    color: var(--accent, #4ea1ff);
+    background: rgb(78 161 255 / 14%);
+    border: 1px solid rgb(78 161 255 / 32%);
+    padding: 2px 7px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .brand-caret {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-left: 2px;
+  }
+
+  .brand-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 4px;
+    z-index: 50;
+    min-width: 320px;
+    background: var(--bg-elev, #161922);
+    border: 1px solid var(--border-subtle, #2a2f3d);
+    border-radius: 10px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .brand-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-main, #e6e8ee);
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+
+    &:hover {
+      background: rgb(255 255 255 / 4%);
+    }
+    &.active {
+      background: rgb(78 161 255 / 12%);
+    }
+
+    .bm-icon {
+      font-size: 22px;
+      width: 32px;
+      text-align: center;
+    }
+    .bm-text {
+      flex: 1;
+      min-width: 0;
+    }
+    .bm-title {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .bm-desc {
+      font-size: 11.5px;
+      color: var(--text-muted, #8b93a7);
+      margin-top: 1px;
+    }
+    .bm-check {
+      color: var(--accent, #4ea1ff);
+      font-size: 14px;
+      font-weight: 700;
+    }
   }
 }
 

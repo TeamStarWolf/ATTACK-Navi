@@ -2,15 +2,47 @@
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
 <header class="toolbar top-bar" role="toolbar" aria-label="Matrix controls">
 
-  <!-- Brand -->
-  <div class="brand">
-    <span class="brand-icon">🛡️</span>
-    <span class="brand-name">ATT&amp;CK Nav</span>
-    @if (attackVersion) {
+  <!-- Brand (clickable view-mode switcher) -->
+  <div class="brand brand-menu" [class.menu-open]="brandMenuOpen">
+    <button type="button" class="brand-trigger" (click)="toggleBrandMenu()"
+            [attr.aria-haspopup]="'true'" [attr.aria-expanded]="brandMenuOpen"
+            title="Switch view">
+      <span class="brand-icon">🛡️</span>
+      <span class="brand-name">ATT&amp;CK Nav</span>
+      <span class="brand-mode-badge">{{ viewMode === 'library' ? 'LIBRARY' : 'WORKBENCH' }}</span>
+      <span class="brand-caret">▾</span>
+    </button>
+    @if (attackVersion && viewMode === 'workbench') {
       <span class="attack-version">v{{ attackVersion }}</span>
+    }
+
+    @if (brandMenuOpen) {
+      <div class="brand-dropdown" role="menu">
+        <button type="button" role="menuitem" class="brand-menu-item"
+                [class.active]="viewMode === 'workbench'"
+                (click)="selectViewMode('workbench')">
+          <span class="bm-icon">🛡️</span>
+          <div class="bm-text">
+            <div class="bm-title">ATT&amp;CK Workbench</div>
+            <div class="bm-desc">Matrix, coverage, detections, threat actors</div>
+          </div>
+          @if (viewMode === 'workbench') { <span class="bm-check">✓</span> }
+        </button>
+        <button type="button" role="menuitem" class="brand-menu-item"
+                [class.active]="viewMode === 'library'"
+                (click)="selectViewMode('library')">
+          <span class="bm-icon">📚</span>
+          <div class="bm-text">
+            <div class="bm-title">Library Index</div>
+            <div class="bm-desc">Searchable tools, channels, accounts</div>
+          </div>
+          @if (viewMode === 'library') { <span class="bm-check">✓</span> }
+        </button>
+      </div>
     }
   </div>
 
+  @if (viewMode === 'workbench') {
   <div class="bar-divider"></div>
 
   <!-- Domain + data source controls -->
@@ -241,14 +273,16 @@
       }
     </div>
   </div>
+  } <!-- end viewMode === 'workbench' for the matrix-specific groups -->
 
   <div class="bar-divider"></div>
 
-  <!-- Clear + Theme -->
+  <!-- Clear + Theme (theme always visible; clear/save/views only in workbench mode) -->
   <div class="bar-group end-group">
-    @if (activeMitigations.length > 0 || techniqueSearchText || selectedPlatform || selectedDataSource || dimUncovered || activeThreatGroupCount > 0 || implStatusFilter) {
+    @if (viewMode === 'workbench' && (activeMitigations.length > 0 || techniqueSearchText || selectedPlatform || selectedDataSource || dimUncovered || activeThreatGroupCount > 0 || implStatusFilter)) {
       <button class="icon-btn reset-btn" (click)="clearAll()" title="Clear all filters" aria-label="Clear all filters">✕ Clear</button>
     }
+    @if (viewMode === 'workbench') {
     <button class="icon-btn share-btn" (click)="copyShareLink.emit()" title="Copy shareable link to clipboard" aria-label="Copy shareable link">🔗 Share</button>
 
     <!-- Save View button + dialog -->
@@ -293,6 +327,7 @@
         </div>
       }
     </div>
+    } <!-- end viewMode === 'workbench' for Share/Save/Views -->
 
     <!-- Technique of the Day -->
     @if (techniqueOfDay) {
@@ -311,7 +346,7 @@
 </header>
 
 <!-- Platform filter pill row — only shown when active or expanded -->
-@if (activePlatforms.size > 0 || showPlatformRow) {
+@if (viewMode === 'workbench' && (activePlatforms.size > 0 || showPlatformRow)) {
   <div class="platform-filter-row">
     <span class="filter-label">Platforms:</span>
     @for (p of PLATFORM_PILLS; track p.name) {
@@ -328,4 +363,6 @@
   </div>
 }
 
-<app-universal-search></app-universal-search>
+@if (viewMode === 'workbench') {
+  <app-universal-search></app-universal-search>
+}

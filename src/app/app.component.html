@@ -27,10 +27,17 @@
   [isLightMode]="isLightMode"
   [currentDomain]="currentDomain"
   (domainChange)="onDomainChange($event)"
+  [viewMode]="viewMode"
+  (viewModeChange)="onViewModeChange($event)"
 />
 
+<!-- Library view (top-level workspace swap) -->
+@if (viewMode === 'library') {
+  <app-library-workbench />
+}
+
 <!-- App shell: nav rail + workspace -->
-<div class="app-shell">
+<div class="app-shell" [hidden]="viewMode === 'library'">
 
   <!-- Left nav rail -->
   <app-nav-rail
