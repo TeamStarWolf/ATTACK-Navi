@@ -25,10 +25,11 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: npm ci
+      # package-lock.json is regenerated here until it is committed post-downgrade
+      - run: npm install
       - run: npx ng test --no-watch --browsers=ChromeHeadless
       - run: npx ng build --base-href /ATTACK-Navi/
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v4
         with:
           path: dist/mitre-mitigation-navigator/browser
 
