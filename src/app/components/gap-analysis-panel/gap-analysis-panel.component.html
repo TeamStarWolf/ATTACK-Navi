@@ -231,7 +231,15 @@
                           <span class="no-indicator">None</span>
                         }
                       </td>
-                      <td class="rec-cell">{{ gap.recommendation }}</td>
+                      <td class="rec-cell">
+                        {{ gap.recommendation }}
+                        @if (libraryCountFor(gap) > 0) {
+                          <button class="lib-badge" (click)="openLibraryForGap(gap)"
+                                  [title]="'Open Library Index filtered to ' + gap.tactic">
+                            📚 {{ libraryCountFor(gap) }} library {{ libraryCountFor(gap) === 1 ? 'tool' : 'tools' }} →
+                          </button>
+                        }
+                      </td>
                     </tr>
                   }
                 </tbody>

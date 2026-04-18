@@ -745,3 +745,25 @@
     flex-direction: column;
   }
 }
+
+// Library cross-reference badge in gap rows
+.lib-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  background: rgba(78, 161, 255, 0.10);
+  border: 1px solid rgba(78, 161, 255, 0.32);
+  color: #4ea1ff;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+
+  &:hover {
+    background: rgba(78, 161, 255, 0.20);
+    border-color: #4ea1ff;
+  }
+}
