@@ -144,11 +144,11 @@
 
 ## Quick Wins (< 1 Hour Each)
 
-- [ ] Add "Copy as Markdown" button for technique details
-- [ ] Add CSV import for bulk implementation status
-- [ ] Add "Technique of the Day" random highlight
-- [ ] Add matrix zoom to fit viewport button
-- [ ] Add print stylesheet optimization
-- [ ] Add technique count badges on tactic headers
-- [ ] Add "Share this technique" button (URL with technique pre-selected)
+- [x] Add "Copy as Markdown" button for technique details
+- [x] Add CSV import for bulk implementation status
+- [x] Add "Technique of the Day" random highlight
+- [x] Add matrix zoom to fit viewport button
+- [x] Add print stylesheet optimization
+- [x] Add technique count badges on tactic headers
+- [x] Add "Share this technique" button (URL with technique pre-selected)
 - [ ] Add changelog panel auto-update notification
