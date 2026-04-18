@@ -9,8 +9,9 @@ describe('SplunkContentService', () => {
   let service: SplunkContentService;
   let httpMock: HttpTestingController;
 
-  const SPLUNK_LAYER_URL =
-    'https://raw.githubusercontent.com/splunk/security_content/develop/dist/attack_navigator_layer.json';
+  // Service now scans the GitHub tree instead of fetching a pre-built layer
+  const SPLUNK_TREE_URL =
+    'https://api.github.com/repos/splunk/security_content/git/trees/develop?recursive=1';
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -28,13 +29,14 @@ describe('SplunkContentService', () => {
     httpMock.verify();
   });
 
-  // Helper: flush the live load request that fires in the constructor
-  function flushLiveLoad(layer: any = null): void {
-    const req = httpMock.expectOne(SPLUNK_LAYER_URL);
-    if (layer === null) {
+  // Helper: flush the live load request that fires in the constructor.
+  // Pass null to simulate an HTTP error; pass a tree object to simulate success.
+  function flushLiveLoad(tree: any = null): void {
+    const req = httpMock.expectOne(SPLUNK_TREE_URL);
+    if (tree === null) {
       req.error(new ProgressEvent('error'));
     } else {
-      req.flush(layer);
+      req.flush(tree);
     }
   }
 
@@ -179,15 +181,16 @@ describe('SplunkContentService', () => {
     expect(service.getRuleCount('T1059')).toBe(7);
   });
 
-  // --- Live load from constructor ---
+  // --- Live load from constructor (GitHub tree scan) ---
 
   it('should ingest the live layer from the constructor HTTP call', () => {
+    // Service scans detections/*.yml paths and extracts technique IDs from filenames
     flushLiveLoad({
-      techniques: [
-        { techniqueID: 'T1059', score: 10 },
+      tree: [
+        { path: 'detections/T1059_test.yml', type: 'blob' },
       ],
     });
-    expect(service.getRuleCount('T1059')).toBe(10);
+    expect(service.getRuleCount('T1059')).toBe(1);
   });
 
   it('should handle constructor HTTP error gracefully', () => {
