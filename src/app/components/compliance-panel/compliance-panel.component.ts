@@ -22,6 +22,15 @@ import { CsaCcmService, CsaCcmControl } from '../../services/csa-ccm.service';
 import { M365ControlsService, M365Control } from '../../services/m365-controls.service';
 import { Domain } from '../../models/domain';
 
+export interface FrameworkScore {
+  key: string;            // tab id (cis, nist, soc2, etc.)
+  label: string;          // display label
+  total: number;          // total controls or techniques in framework
+  covered: number;        // count covered / implemented
+  pct: number;            // 0–100
+  status: 'red' | 'amber' | 'green';
+}
+
 export interface ComplianceRow {
   id: string;
   name: string;
@@ -55,10 +64,11 @@ export interface ComplianceRow {
 })
 export class CompliancePanelComponent implements OnInit, OnDestroy {
   visible = false;
-  activeTab: 'cis' | 'aws' | 'azure' | 'gcp' | 'nist' | 'cri' | 'csa-ccm' | 'm365-ctrl' = 'nist';
+  activeTab: 'cis' | 'aws' | 'azure' | 'gcp' | 'nist' | 'cri' | 'csa-ccm' | 'm365-ctrl' | 'soc2' | 'iso27001' | 'pci' = 'nist';
   searchText = '';
   sortBy: 'technique' | 'coverage' = 'coverage';
   complianceRows: ComplianceRow[] = [];
+  cachedDomain: Domain | null = null;
 
   // Tooltip state
   tooltipControl: CisControl | CloudControl | CsaCcmControl | M365Control | null = null;
@@ -169,6 +179,7 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
 
   buildRows(): void {
     this.dataService.domain$.pipe(filter(Boolean), take(1)).subscribe(domain => {
+      this.cachedDomain = domain;
       const rows: ComplianceRow[] = [];
       for (const tech of domain.techniques) {
         if (tech.isSubtechnique) continue;
@@ -204,6 +215,7 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
         });
       }
       this.complianceRows = rows;
+      this.computeFrameworkScores();
       this.cdr.markForCheck();
     });
   }
@@ -212,9 +224,138 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
     this.filterService.setActivePanel(null);
   }
 
-  setTab(tab: 'cis' | 'aws' | 'azure' | 'gcp' | 'nist' | 'cri' | 'csa-ccm' | 'm365-ctrl'): void {
-    this.activeTab = tab;
+  setTab(tab: 'cis' | 'aws' | 'azure' | 'gcp' | 'nist' | 'cri' | 'csa-ccm' | 'm365-ctrl' | 'soc2' | 'iso27001' | 'pci'): void {
+    this.activeTab = tab as any;
     this.searchText = '';
+  }
+
+  /** Per-framework compliance score (covered ÷ total controls). */
+  frameworkScores: FrameworkScore[] = [];
+
+  computeFrameworkScores(): void {
+    if (!this.cachedDomain) return;
+    const fws: FrameworkScore[] = [];
+
+    // Mapping-based frameworks (count controls covered by ≥1 mitigated technique)
+    const summarizeMapper = (fw: ComplianceFramework, key: 'soc2' | 'iso27001' | 'pci', label: string) => {
+      const all = this.complianceMapper.getAllControls(fw);
+      let implemented = 0;
+      for (const c of all) {
+        const status = this.complianceMapper.getControlStatus(c.controlId, fw, this.cachedDomain!);
+        if (status === 'implemented') implemented++;
+      }
+      const pct = all.length > 0 ? Math.round((implemented / all.length) * 100) : 0;
+      fws.push({
+        key, label, total: all.length, covered: implemented, pct,
+        status: pct >= 80 ? 'green' : pct >= 50 ? 'amber' : 'red',
+      });
+    };
+    summarizeMapper('SOC 2', 'soc2', 'SOC 2 Type II');
+    summarizeMapper('ISO 27001', 'iso27001', 'ISO 27001:2022');
+    summarizeMapper('PCI DSS', 'pci', 'PCI DSS v4.0');
+
+    // Technique-coverage frameworks (% techniques with at least one control mapped)
+    const techCoverage = (key: any, label: string, count: (r: ComplianceRow) => number) => {
+      const total = this.complianceRows.length;
+      const covered = this.complianceRows.filter(r => count(r) > 0).length;
+      const pct = total > 0 ? Math.round((covered / total) * 100) : 0;
+      fws.push({
+        key, label, total, covered, pct,
+        status: pct >= 80 ? 'green' : pct >= 50 ? 'amber' : 'red',
+      });
+    };
+    techCoverage('cis',       'CIS v8',      r => r.cisCount);
+    techCoverage('nist',      'NIST 800-53', r => r.nistCount);
+    techCoverage('cri',       'CRI Profile', r => r.criCount);
+    techCoverage('csa-ccm',   'CSA CCM',     r => r.csaCcmCount);
+    techCoverage('m365-ctrl', 'M365',        r => r.m365CtrlCount);
+    techCoverage('aws',       'AWS',         r => r.awsCount);
+    techCoverage('azure',     'Azure',       r => r.azureCount);
+    techCoverage('gcp',       'GCP',         r => r.gcpCount);
+
+    this.frameworkScores = fws;
+    this.cdr.markForCheck();
+  }
+
+  /** XLSX export — multi-sheet workbook of all framework mappings. */
+  async exportComplianceXlsx(): Promise<void> {
+    if (!this.cachedDomain) return;
+    try {
+      const XLSX = await import('xlsx-js-style');
+      const wb = XLSX.utils.book_new();
+
+      // Summary sheet
+      const sumRows: (string | number)[][] = [
+        ['Compliance Framework Score Summary'],
+        ['Generated', new Date().toLocaleString()],
+        ['Domain', this.cachedDomain.name],
+        [],
+        ['Framework', 'Total controls / techniques', 'Covered', 'Coverage %', 'Status'],
+      ];
+      for (const fw of this.frameworkScores) {
+        sumRows.push([fw.label, fw.total, fw.covered, `${fw.pct}%`, fw.status.toUpperCase()]);
+      }
+      const sumWs = XLSX.utils.aoa_to_sheet(sumRows);
+      sumWs['!cols'] = [{ wch: 26 }, { wch: 28 }, { wch: 12 }, { wch: 14 }, { wch: 10 }];
+      this.styleHeaderRow(XLSX, sumWs, 5, 4);
+      this.colorScoreColumn(XLSX, sumWs, 4, this.frameworkScores.length);
+      XLSX.utils.book_append_sheet(wb, sumWs, 'Summary');
+
+      // Per-framework control sheets
+      for (const fw of [
+        { id: 'SOC 2' as ComplianceFramework, sheet: 'SOC 2' },
+        { id: 'ISO 27001' as ComplianceFramework, sheet: 'ISO 27001' },
+        { id: 'PCI DSS' as ComplianceFramework, sheet: 'PCI DSS' },
+      ]) {
+        const all = this.complianceMapper.getAllControls(fw.id);
+        const rows: (string | number)[][] = [['Control ID', 'Description', 'Mapped techniques', 'Status']];
+        for (const c of all) {
+          const techs = this.complianceMapper.getTechniquesForControl(c.controlId, fw.id);
+          const status = this.complianceMapper.getControlStatus(c.controlId, fw.id, this.cachedDomain) ?? 'not-started';
+          rows.push([c.controlId, c.description, techs.join(', '), status]);
+        }
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        ws['!cols'] = [{ wch: 14 }, { wch: 56 }, { wch: 36 }, { wch: 14 }];
+        this.styleHeaderRow(XLSX, ws, 4, 0);
+        XLSX.utils.book_append_sheet(wb, ws, fw.sheet);
+      }
+
+      const filename = `compliance-report-${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, filename);
+    } catch (err) {
+      console.error('Compliance XLSX export failed', err);
+      alert('Excel export failed. Try CSV instead.');
+    }
+  }
+
+  private styleHeaderRow(XLSX: any, ws: any, cols: number, rowIdx: number): void {
+    for (let c = 0; c < cols; c++) {
+      const addr = XLSX.utils.encode_cell({ r: rowIdx, c });
+      if (ws[addr]) {
+        ws[addr].s = {
+          font: { bold: true, color: { rgb: 'FFFFFF' } },
+          fill: { fgColor: { rgb: '374151' } },
+        };
+      }
+    }
+  }
+
+  private colorScoreColumn(XLSX: any, ws: any, col: number, rowCount: number): void {
+    // Status column: GREEN/AMBER/RED background
+    const colors: Record<string, string> = { GREEN: '10B981', AMBER: 'F59E0B', RED: 'EF4444' };
+    for (let r = 5; r < 5 + rowCount; r++) {
+      const addr = XLSX.utils.encode_cell({ r, c: col });
+      if (ws[addr]) {
+        const v = String(ws[addr].v ?? '').trim();
+        if (colors[v]) {
+          ws[addr].s = {
+            font: { bold: true, color: { rgb: 'FFFFFF' } },
+            fill: { fgColor: { rgb: colors[v] } },
+            alignment: { horizontal: 'center' },
+          };
+        }
+      }
+    }
   }
 
   get cisLoaded(): boolean {
@@ -306,6 +447,10 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
       case 'cri':      return this.criRows;
       case 'csa-ccm':  return this.csaCcmRows;
       case 'm365-ctrl': return this.m365CtrlRows;
+      case 'soc2':
+      case 'iso27001':
+      case 'pci':
+      default:         return [];   // mapper-frameworks render via dashboard cards, not row tables
     }
   }
 
@@ -319,6 +464,10 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
       case 'cri':      return this.complianceRows.filter(r => r.criCount > 0).length;
       case 'csa-ccm':  return this.complianceRows.filter(r => r.csaCcmCount > 0).length;
       case 'm365-ctrl': return this.complianceRows.filter(r => r.m365CtrlCount > 0).length;
+      case 'soc2':
+      case 'iso27001':
+      case 'pci':
+      default:         return this.frameworkScores.find(f => f.key === this.activeTab)?.covered ?? 0;
     }
   }
 
@@ -332,6 +481,7 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
       case 'cri':      return row.criCount;
       case 'csa-ccm':  return row.csaCcmCount;
       case 'm365-ctrl': return row.m365CtrlCount;
+      default:         return 0;
     }
   }
 
@@ -345,6 +495,7 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
       case 'cri':      return row.topCriControls;
       case 'csa-ccm':  return row.topCsaCcmControls;
       case 'm365-ctrl': return row.topM365Controls;
+      default:         return [];
     }
   }
 
@@ -499,6 +650,7 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
       case 'cri':      return [...rows].sort((a, b) => b.criCount - a.criCount);
       case 'csa-ccm':  return [...rows].sort((a, b) => b.csaCcmCount - a.csaCcmCount);
       case 'm365-ctrl': return [...rows].sort((a, b) => b.m365CtrlCount - a.m365CtrlCount);
+      default: return rows;
     }
   }
 }
