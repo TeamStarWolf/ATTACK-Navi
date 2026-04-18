@@ -72,11 +72,12 @@ import { EvtxSamplesService, EvtxSample } from '../../services/evtx-samples.serv
 import { SentinelRulesService, SentinelRule } from '../../services/sentinel-rules.service';
 
 import { LibraryCrossRefComponent } from '../library-cross-ref/library-cross-ref.component';
+import { ValidationStatusPillComponent } from '../validation-status-pill/validation-status-pill.component';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, FormsModule, AttackTextPipe, LibraryCrossRefComponent],
+  imports: [CommonModule, FormsModule, AttackTextPipe, LibraryCrossRefComponent, ValidationStatusPillComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss',
