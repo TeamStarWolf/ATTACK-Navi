@@ -58,27 +58,8 @@ const TACTIC_FOLDER_MAP: Record<string, string> = {
   'ResourceDevelopment': 'resource-development',
 };
 
-/**
- * Map of ATT&CK tactic shortnames to technique ID prefixes.
- * Used as a fallback when files don't contain explicit technique IDs.
- */
-const TACTIC_TECHNIQUE_PREFIXES: Record<string, string[]> = {
-  'reconnaissance': ['T1595', 'T1592', 'T1589', 'T1590', 'T1591', 'T1596', 'T1593', 'T1594', 'T1597', 'T1598'],
-  'resource-development': ['T1583', 'T1584', 'T1585', 'T1586', 'T1587', 'T1588', 'T1608'],
-  'initial-access': ['T1189', 'T1190', 'T1133', 'T1200', 'T1566', 'T1091', 'T1195', 'T1199', 'T1078'],
-  'execution': ['T1059', 'T1203', 'T1559', 'T1106', 'T1053', 'T1129', 'T1072', 'T1569', 'T1047', 'T1204'],
-  'persistence': ['T1098', 'T1197', 'T1547', 'T1037', 'T1136', 'T1543', 'T1546', 'T1133', 'T1574', 'T1525', 'T1556', 'T1137', 'T1542', 'T1053', 'T1505', 'T1205', 'T1078'],
-  'privilege-escalation': ['T1548', 'T1134', 'T1547', 'T1037', 'T1543', 'T1484', 'T1546', 'T1068', 'T1574', 'T1055', 'T1053', 'T1078'],
-  'defense-evasion': ['T1548', 'T1134', 'T1197', 'T1140', 'T1006', 'T1484', 'T1480', 'T1211', 'T1222', 'T1564', 'T1574', 'T1562', 'T1036', 'T1556', 'T1578', 'T1112', 'T1601', 'T1599', 'T1027', 'T1542', 'T1055', 'T1207', 'T1014', 'T1218', 'T1216', 'T1553', 'T1221', 'T1205', 'T1127', 'T1535', 'T1550', 'T1078', 'T1497', 'T1600', 'T1220'],
-  'credential-access': ['T1557', 'T1110', 'T1555', 'T1212', 'T1187', 'T1606', 'T1056', 'T1556', 'T1111', 'T1621', 'T1040', 'T1003', 'T1528', 'T1558', 'T1539', 'T1552'],
-  'discovery': ['T1087', 'T1010', 'T1217', 'T1580', 'T1538', 'T1526', 'T1482', 'T1083', 'T1615', 'T1046', 'T1135', 'T1040', 'T1201', 'T1120', 'T1069', 'T1057', 'T1012', 'T1018', 'T1518', 'T1082', 'T1614', 'T1016', 'T1049', 'T1033', 'T1007', 'T1124', 'T1497'],
-  'lateral-movement': ['T1210', 'T1534', 'T1570', 'T1563', 'T1021', 'T1091', 'T1072', 'T1080', 'T1550'],
-  'collection': ['T1557', 'T1560', 'T1123', 'T1119', 'T1185', 'T1115', 'T1530', 'T1602', 'T1213', 'T1005', 'T1039', 'T1025', 'T1074', 'T1114', 'T1056', 'T1113', 'T1125'],
-  'command-and-control': ['T1071', 'T1092', 'T1132', 'T1001', 'T1568', 'T1573', 'T1008', 'T1105', 'T1104', 'T1095', 'T1571', 'T1572', 'T1090', 'T1219', 'T1205', 'T1102'],
-  'exfiltration': ['T1020', 'T1030', 'T1048', 'T1041', 'T1011', 'T1052', 'T1567', 'T1029', 'T1537'],
-  'impact': ['T1531', 'T1485', 'T1486', 'T1565', 'T1491', 'T1561', 'T1499', 'T1495', 'T1490', 'T1498', 'T1496', 'T1489', 'T1529'],
-};
-
+// NOTE: Microsoft archived this repo in 2022 — the queries are genuine and
+// still served, but no longer updated.
 const GITHUB_TREE_URL =
   'https://api.github.com/repos/microsoft/Microsoft-365-Defender-Hunting-Queries/git/trees/master?recursive=1';
 
@@ -183,29 +164,19 @@ export class M365DefenderService {
         path: node.path,
       };
 
-      // Extract technique IDs from the filename (e.g. T1059, T1059.001)
+      // Extract technique IDs from the filename (e.g. T1059, T1059.001).
+      // Only files Microsoft explicitly tagged with a technique id are
+      // attributed to techniques — untagged files previously fanned out to
+      // EVERY technique in the tactic (up to 35), crediting techniques with
+      // queries that have nothing to do with them.
       const techIds = this.extractTechniqueIds(node.path);
       totalQueries++;
 
-      if (techIds.length > 0) {
-        for (const id of techIds) {
-          const existing = this.queryMap.get(id) ?? [];
-          existing.push(query);
-          this.queryMap.set(id, existing);
-          coveredIds.add(id.split('.')[0]); // count parent technique as covered
-        }
-      } else {
-        // No technique ID found -- associate with the tactic's known techniques
-        const tacticTechs = TACTIC_TECHNIQUE_PREFIXES[tacticShortname] ?? [];
-        for (const techPrefix of tacticTechs) {
-          const existing = this.queryMap.get(techPrefix) ?? [];
-          // Avoid duplicating the same query file for the same technique
-          if (!existing.some(q => q.path === query.path)) {
-            existing.push(query);
-            this.queryMap.set(techPrefix, existing);
-            coveredIds.add(techPrefix);
-          }
-        }
+      for (const id of techIds) {
+        const existing = this.queryMap.get(id) ?? [];
+        existing.push(query);
+        this.queryMap.set(id, existing);
+        coveredIds.add(id.split('.')[0]); // count parent technique as covered
       }
     }
 

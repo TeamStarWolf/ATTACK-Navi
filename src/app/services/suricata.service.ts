@@ -1,5 +1,8 @@
-// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+﻿// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
+// PROVENANCE: curated heuristic content, hand-maintained in this repo -- not
+// derived from an authoritative upstream dataset. Technique associations are
+// editorial suggestions, not MITRE-published relationships.
 import { Injectable } from '@angular/core';
 import { Technique } from '../models/technique';
 
@@ -24,14 +27,14 @@ const RULE_TEMPLATES: Record<string, Omit<SuricataRule, 'sid' | 'attackId' | 'te
       rule: `alert http $HOME_NET any -> $EXTERNAL_NET any (msg:"ATT&CK T1071.001 - Suspicious C2 HTTP User-Agent"; flow:established,to_server; http.user_agent; content:"curl/"; nocase; threshold:type limit,track by_src,count 5,seconds 60; classtype:trojan-activity; metadata:attack_technique T1071.001; rev:1;)`,
     },
     {
-      description: 'Detects beaconing pattern — regular HTTP requests at fixed intervals',
+      description: 'Detects beaconing pattern â€” regular HTTP requests at fixed intervals',
       severity: 'medium',
       rule: `alert http $HOME_NET any -> $EXTERNAL_NET any (msg:"ATT&CK T1071.001 - HTTP Beaconing Activity"; flow:established,to_server; http.method; content:"POST"; threshold:type both,track by_src,count 10,seconds 300; classtype:command-and-control; metadata:attack_technique T1071.001; rev:1;)`,
     },
   ],
   'T1071.004': [
     {
-      description: 'Detects DNS-based C2 — unusually long DNS queries',
+      description: 'Detects DNS-based C2 â€” unusually long DNS queries',
       severity: 'high',
       rule: `alert dns any any -> any 53 (msg:"ATT&CK T1071.004 - Long DNS Query (potential C2 exfil)"; dns.query; isdataat:50,relative; pcre:"/^[a-z0-9\\-\\.]{50,}/i"; threshold:type limit,track by_src,count 3,seconds 60; classtype:command-and-control; metadata:attack_technique T1071.004; rev:1;)`,
     },
@@ -43,7 +46,7 @@ const RULE_TEMPLATES: Record<string, Omit<SuricataRule, 'sid' | 'attackId' | 'te
   ],
   'T1048.003': [
     {
-      description: 'Detects data exfiltration via DNS — high volume of TXT queries',
+      description: 'Detects data exfiltration via DNS â€” high volume of TXT queries',
       severity: 'high',
       rule: `alert dns $HOME_NET any -> any 53 (msg:"ATT&CK T1048.003 - DNS Data Exfiltration"; dns.query; content:"|00 10|"; offset:2; threshold:type both,track by_src,count 50,seconds 60; classtype:data-theft; metadata:attack_technique T1048.003; rev:2;)`,
     },
@@ -69,7 +72,7 @@ const RULE_TEMPLATES: Record<string, Omit<SuricataRule, 'sid' | 'attackId' | 'te
   ],
   'T1110': [
     {
-      description: 'Detects brute force authentication — many failed logins from same source',
+      description: 'Detects brute force authentication â€” many failed logins from same source',
       severity: 'medium',
       rule: `alert tcp $EXTERNAL_NET any -> $HOME_NET [22,23,3389,21,25,110,143] (msg:"ATT&CK T1110 - Brute Force Login Attempt"; flow:established,to_server; threshold:type both,track by_src,count 20,seconds 60; classtype:attempted-user; metadata:attack_technique T1110; rev:1;)`,
     },
@@ -88,14 +91,14 @@ const RULE_TEMPLATES: Record<string, Omit<SuricataRule, 'sid' | 'attackId' | 'te
   ],
   'T1040': [
     {
-      description: 'Detects ARP spoofing — potential network sniffing setup',
+      description: 'Detects ARP spoofing â€” potential network sniffing setup',
       severity: 'high',
       rule: `alert arp any any -> any any (msg:"ATT&CK T1040 - ARP Spoofing Detected"; arp.opcode:2; pcre:"/^(?!ff:ff:ff:ff:ff:ff).{17}$/"; threshold:type both,track by_src,count 10,seconds 10; classtype:protocol-command-decode; metadata:attack_technique T1040; rev:1;)`,
     },
   ],
   'T1557': [
     {
-      description: 'Detects LLMNR/NBT-NS poisoning — potential MitM setup',
+      description: 'Detects LLMNR/NBT-NS poisoning â€” potential MitM setup',
       severity: 'high',
       rule: `alert udp any any -> 224.0.0.252 5355 (msg:"ATT&CK T1557 - LLMNR Query (potential poisoning)"; content:"|00 00 00 01|"; offset:4; depth:4; threshold:type both,track by_src,count 5,seconds 30; classtype:policy-violation; metadata:attack_technique T1557; rev:1;)`,
     },
@@ -109,7 +112,7 @@ const RULE_TEMPLATES: Record<string, Omit<SuricataRule, 'sid' | 'attackId' | 'te
   ],
   'T1021.004': [
     {
-      description: 'Detects SSH lateral movement — internal SSH connections',
+      description: 'Detects SSH lateral movement â€” internal SSH connections',
       severity: 'medium',
       rule: `alert tcp $HOME_NET any -> $HOME_NET 22 (msg:"ATT&CK T1021.004 - Internal SSH Lateral Movement"; flow:established,to_server; content:"SSH-2.0-"; depth:8; threshold:type both,track by_src,count 10,seconds 300; classtype:policy-violation; metadata:attack_technique T1021.004; rev:1;)`,
     },
@@ -144,7 +147,7 @@ const RULE_TEMPLATES: Record<string, Omit<SuricataRule, 'sid' | 'attackId' | 'te
   ],
 };
 
-// ATT&CK ID → SID number mapping
+// ATT&CK ID â†’ SID number mapping
 function attackIdToSid(attackId: string): number {
   let hash = 0;
   for (let i = 0; i < attackId.length; i++) {
@@ -204,7 +207,7 @@ export class SuricataService {
 
   generateRulesForTechniques(techniques: Technique[]): string {
     const header = [
-      `# Suricata IDS Rules — MITRE ATT&CK`,
+      `# Suricata IDS Rules â€” MITRE ATT&CK`,
       `# Generated: ${new Date().toISOString().slice(0, 10)}`,
       `# Techniques: ${techniques.length}`,
       `# Source: ATT&CK Navi`,
@@ -221,7 +224,7 @@ export class SuricataService {
     for (const tech of techniques) {
       const techRules = this.generateRulesForTechnique(tech);
       if (techRules.length > 0) {
-        rules.push(`# ${tech.attackId} — ${tech.name}`);
+        rules.push(`# ${tech.attackId} â€” ${tech.name}`);
         for (const r of techRules) {
           rules.push(`# ${r.description}`);
           rules.push(r.rule);

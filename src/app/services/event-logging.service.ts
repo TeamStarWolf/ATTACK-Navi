@@ -1,5 +1,8 @@
-// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+﻿// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
+// PROVENANCE: curated heuristic content, hand-maintained in this repo -- not
+// derived from an authoritative upstream dataset. Technique associations are
+// editorial suggestions, not MITRE-published relationships.
 import { Injectable } from '@angular/core';
 
 export interface LogConfig {
@@ -212,7 +215,7 @@ export class EventLoggingService {
       const configs = TECHNIQUE_TO_LOGGING[attackId];
       if (!configs) continue;
 
-      commands.push(`# ── ${attackId} ──────────────────────���───────────`);
+      commands.push(`# â”€â”€ ${attackId} â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ï¿½ï¿½ï¿½â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€`);
       for (const config of configs) {
         const key = config.command.trim();
         if (seen.has(key)) continue;
