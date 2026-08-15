@@ -11,119 +11,59 @@ import {
   ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, NavigationEnd } from '@angular/router';
-import { Subscription, filter } from 'rxjs';
+import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { CveService } from '../../services/cve.service';
 import { DataService } from '../../services/data.service';
-import { PANEL_ROUTE_MAP } from '../../app.routes-map';
+import { IconComponent } from '../../shared/icons/icon.component';
 
-type NavItem =
-  | { id: string; icon: string; label: string; group?: string }
-  | { type: 'divider'; label: string };
+interface WorkspaceNavItem {
+  /** Workspace root path — routerLinkActive matches any child tab. */
+  route: string;
+  icon: string;
+  label: string;
+}
 
-const NAV_ITEMS: NavItem[] = [
-  { id: 'dashboard', icon: '📊', label: 'Dashboard' },
-  { id: 'search', icon: '🔎', label: 'Search' },
-
-  { type: 'divider', label: 'Threats' },
-  { id: 'threats', icon: '👥', label: 'Threats' },
-  { id: 'actor', icon: '🕵️', label: 'Actors' },
-  { id: 'actor-compare', icon: '⚖️', label: 'Actor vs.' },
-  { id: 'scenario', icon: '🎭', label: 'Scenario' },
-  { id: 'emulation', icon: '⚔️', label: 'Emulate' },
-  { id: 'campaign-timeline', icon: '🗓️', label: 'Campaigns' },
-  { id: 'software', icon: '🛠️', label: 'Software' },
-  { id: 'intelligence', icon: '🧠', label: 'INTEL' },
-
-  { type: 'divider', label: 'Analysis' },
-  { id: 'killchain', icon: '⛓️', label: 'Kill Chain' },
-  { id: 'risk-matrix', icon: '📉', label: 'Risk' },
-  { id: 'analytics', icon: '📈', label: 'Analytics' },
-  { id: 'detection', icon: '🔬', label: 'Detect' },
-  { id: 'technique-graph', icon: '🕸️', label: 'Graph' },
-  { id: 'datasources', icon: '📡', label: 'Sources' },
-  { id: 'cve', icon: '🔍', label: 'CVE' },
-  { id: 'gap-analysis', icon: '🔎', label: 'GAP RPT' },
-  { id: 'validation', icon: '🎯', label: 'Validate' },
-
-  { type: 'divider', label: 'Coverage' },
-  { id: 'assessment', icon: '🧭', label: 'ASSESS' },
-  { id: 'controls', icon: '🔒', label: 'Controls' },
-  { id: 'compliance', icon: '🛡️', label: 'Comply' },
-  { id: 'priority', icon: '⬆️', label: 'Priority' },
-  { id: 'whatif', icon: '🔮', label: 'What-If' },
-  { id: 'timeline', icon: '📅', label: 'Timeline' },
-  { id: 'coverage-diff', icon: 'Δ', label: 'Diff' },
-  { id: 'target', icon: '🎯', label: 'Target' },
-  { id: 'assets', icon: '💻', label: 'ASSETS' },
-  { id: 'watchlist', icon: '🔖', label: 'Watchlist' },
-
-  { type: 'divider', label: 'Tools' },
-  { id: 'sigma', icon: 'Σ', label: 'SIGMA' },
-  { id: 'siem', icon: '⚡', label: 'SIEM' },
-  { id: 'yara', icon: '📝', label: 'YARA' },
-  { id: 'purple', icon: '🟣', label: 'Purple' },
-  { id: 'layers', icon: '📚', label: 'Layers' },
-  { id: 'comparison', icon: '⚔️', label: 'Compare' },
-  { id: 'custom-mit', icon: '🏢', label: 'Custom' },
-  { id: 'tags', icon: '🏷️', label: 'Tags' },
-  { id: 'roadmap', icon: '🗺️', label: 'Roadmap' },
-  { id: 'changelog', icon: '📋', label: 'Changelog' },
-  { id: 'collection', icon: '📦', label: 'COLLECT' },
-  { id: 'ir-playbook', icon: '🚨', label: 'IR PLAY' },
-  { id: 'report', icon: '📄', label: 'Report' },
-];
-
-const NAV_ITEMS_BOTTOM: NavItem[] = [
-  { id: 'settings', icon: '⚙️', label: 'Settings' },
+/**
+ * One item per workspace (the tabs inside each workspace carry the detail
+ * destinations). Order mirrors the daily workflow: observe → investigate →
+ * detect → measure → improve.
+ */
+const WORKSPACES: WorkspaceNavItem[] = [
+  { route: '/matrix', icon: 'grid', label: 'Matrix' },
+  { route: '/dashboard', icon: 'layout-dashboard', label: 'Dashboard' },
+  { route: '/intel', icon: 'users', label: 'Intel' },
+  { route: '/detect', icon: 'radar', label: 'Detect' },
+  { route: '/exposure', icon: 'shield-alert', label: 'Exposure' },
+  { route: '/coverage', icon: 'shield-check', label: 'Coverage' },
+  { route: '/library', icon: 'layers', label: 'Library' },
+  { route: '/reports', icon: 'file-text', label: 'Reports' },
 ];
 
 @Component({
   selector: 'app-nav-rail',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink, RouterLinkActive, IconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './nav-rail.component.html',
   styleUrl: './nav-rail.component.scss',
 })
 export class NavRailComponent implements OnInit, OnDestroy {
-  /** Panel id whose route matches the current URL (drives the active highlight). */
-  activePanel: string | null = null;
-  @Output() panelToggle = new EventEmitter<string>();
-  @Output() focusSearch = new EventEmitter<void>();
+  /** Opens the keyboard-help overlay (hosted by AppComponent). */
+  @Output() helpClick = new EventEmitter<void>();
 
-  readonly navItems = NAV_ITEMS;
-  readonly navItemsBottom = NAV_ITEMS_BOTTOM;
+  readonly workspaces = WORKSPACES;
 
   newKevCount = 0;
   newVersionAvailable = false;
 
   private cveService = inject(CveService);
   private dataService = inject(DataService);
-  private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
   private kevSub?: Subscription;
   private domainSub?: Subscription;
-  private routerSub?: Subscription;
-
-  /** Reverse lookup: route path → legacy panel id. */
-  private static readonly PATH_TO_PANEL: ReadonlyMap<string, string> = new Map(
-    Object.entries(PANEL_ROUTE_MAP)
-      .filter((e): e is [string, string[]] => Array.isArray(e[1]))
-      .map(([id, commands]) => [commands.join('/').replace(/\/{2,}/g, '/'), id]),
-  );
-
-  private syncActiveFromUrl(url: string): void {
-    const path = url.split('?')[0];
-    this.activePanel = NavRailComponent.PATH_TO_PANEL.get(path) ?? null;
-    this.cdr.markForCheck();
-  }
 
   ngOnInit(): void {
-    this.syncActiveFromUrl(this.router.url);
-    this.routerSub = this.router.events
-      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
-      .subscribe(e => this.syncActiveFromUrl(e.urlAfterRedirects));
     this.kevSub = this.cveService.newKevCount$.subscribe(count => {
       this.newKevCount = count;
       this.cdr.markForCheck();
@@ -140,21 +80,11 @@ export class NavRailComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.kevSub?.unsubscribe();
     this.domainSub?.unsubscribe();
-    this.routerSub?.unsubscribe();
   }
 
-  onNavClick(id: string): void {
-    // (KEV badge dismissal lives in CvePanelComponent.ngOnInit and the
-    // version stamp in ChangelogPanelComponent.ngOnInit so deep links and
-    // palette navigation clear them too. The rail clears its own dot
-    // immediately on click since it has no reactive stream to observe.)
-    if (id === 'changelog') {
-      this.newVersionAvailable = false;
-    }
-    this.panelToggle.emit(id);
-  }
-
-  isDivider(item: NavItem): item is { type: 'divider'; label: string } {
-    return 'type' in item && item.type === 'divider';
+  onSettingsClick(): void {
+    // Clear the version dot immediately; the persistent stamp happens in
+    // ChangelogPanelComponent.ngOnInit when the changelog tab is visited.
+    this.newVersionAvailable = false;
   }
 }
