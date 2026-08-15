@@ -28,6 +28,8 @@ jobs:
       # lock file has @angular-devkit@21.x — delete and regenerate from package.json
       - run: rm -f package-lock.json && npm install
       - run: npx ng test --no-watch --browsers=ChromeHeadless
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
       - run: npx ng build --base-href /ATTACK-Navi/
       - uses: actions/upload-pages-artifact@v4
         with:

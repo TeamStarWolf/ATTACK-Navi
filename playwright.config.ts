@@ -14,7 +14,10 @@ export default defineConfig({
   webServer: {
     command: 'npx ng serve --port 4200',
     port: 4200,
-    reuseExistingServer: true,
+    // Locally a long-lived `ng serve` can go stale (dead HMR socket serving
+    // an old bundle) — restart it when e2e results look impossible. CI always
+    // starts fresh.
+    reuseExistingServer: !process.env['CI'],
     timeout: 120000,
   },
 });

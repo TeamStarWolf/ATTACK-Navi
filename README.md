@@ -122,13 +122,18 @@ The app loads ATT&CK data directly from MITRE's GitHub repository. The core matr
 - STIX 2.1 bundles, MISP event templates
 
 ### User Experience
-- 35+ navigable panels via icon rail
-- Collapsible sidebar sections with smart expand (shows sections with data)
-- Data source health ribbon — 15+ green/yellow/red status dots
+- 9 routed workspaces (Matrix, Dashboard, Intel, Detect, Exposure, Coverage,
+  Library, Reports, Settings) with tabbed destinations, lazy loading, and
+  bookmarkable URLs — browser back/forward works everywhere
+- Command palette (Ctrl+K): search techniques, groups, CVEs, mitigations, and
+  jump to any page or run actions by name
+- Technique sidebar with 48 enrichment sections, a grouped jump index, and
+  "curated" chips marking hand-curated (vs. authoritative) mappings
+- Collapsible matrix context strip (legend, quick filters, stats, data health)
 - Dark/light theme toggle
-- Mobile-responsive layout (bottom nav bar, full-width sidebar)
-- URL hash state persistence — shareable links
-- Keyboard shortcuts for power users
+- Mobile-responsive layout (bottom workspace bar, full-width sidebar)
+- Shareable links — filter state lives in the URL; pre-router links migrate
+- Keyboard shortcuts for power users (press `?`)
 
 ---
 
@@ -222,25 +227,30 @@ The repository includes a GitHub Actions workflow (`.github/workflows/deploy.yml
 
 ## Architecture
 
-The application follows a reactive state management pattern using Angular 19 standalone components with OnPush change detection.
+The application follows a reactive state management pattern using Angular 19 standalone components with OnPush change detection, and hash-based routing (GitHub Pages friendly) with per-workspace lazy loading.
 
 ```
 AppComponent (shell)
-  +-- ToolbarComponent (top bar, heatmap selector, search, filters)
-  +-- NavRailComponent (35+ panel icons, responsive bottom bar on mobile)
-  +-- MatrixComponent (ATT&CK grid, heatmap rendering, technique cells)
-  +-- SidebarComponent (25+ enrichment sections per technique)
-  +-- 30+ PanelComponents (overlay panels for each feature)
-  +-- DataHealthComponent (service status ribbon)
+  +-- ToolbarComponent (global bar: brand, domain, palette trigger, views, theme)
+  +-- NavRailComponent (10 workspace links, responsive bottom bar on mobile)
+  +-- RouterOutlet
+  |     +-- MatrixPageComponent (grid + matrix controls + context strip; route-reused)
+  |     +-- WorkspaceShellComponent per workspace (tab bar from route data)
+  |           +-- ~40 lazily loaded page components (former overlay panels)
+  +-- SidebarComponent (48 enrichment sections + jump index; global drawer)
+  +-- UniversalSearchComponent (command palette overlay)
+  +-- KeyboardHelpComponent (shortcuts overlay, rendered from models/shortcuts.ts)
 ```
 
 ### State Management
 
-**FilterService** is the central state hub. All UI state flows through RxJS BehaviorSubjects:
-- Selected technique, active panel, heatmap mode
+**FilterService** owns filter/selection state through RxJS BehaviorSubjects;
+**UrlStateService** syncs it with router query params (shareable URLs);
+**PanelNavService** resolves legacy panel ids to routes; navigation state itself
+lives in the Angular Router:
+- Selected technique, heatmap mode
 - Filter selections (groups, campaigns, software, platforms, data sources)
 - Search terms, implementation status filters
-- Bidirectional URL hash synchronization
 
 ### Data Flow
 

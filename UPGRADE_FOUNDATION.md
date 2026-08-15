@@ -1,5 +1,13 @@
 # Upgrade Foundation
 
+> **Status (2026-08-15): the system upgrade this document called for shipped as
+> v0.8.0.** Shell + nav (routed workspaces, new rail, slim toolbar), matrix
+> chrome (controls row + collapsible context strip), and the shared page-panel
+> treatment for all former overlays are done; the sidebar gained a grouped jump
+> index. Remaining opportunistic work: migrating legacy per-component hex
+> colors onto the token scales in `src/styles/_tokens.scss` (grep ratchet:
+> count of `:host-context(body.light-mode)` blocks should only go down).
+
 This repo now has enough UI surface area that a large redesign should be treated as a system upgrade instead of isolated component edits.
 
 ## What Was Added

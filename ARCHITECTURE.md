@@ -1,5 +1,21 @@
 # Architecture
 
+> **v0.8.0 routing migration (2026-08-15).** The application adopted the Angular
+> Router: the 44 always-mounted overlay panels described in older sections of
+> this document are now lazily loaded routed pages organized into 9 workspaces
+> (`/matrix`, `/dashboard`, `/intel`, `/detect`, `/exposure`, `/coverage`,
+> `/library`, `/reports`, `/settings`) using hash routing
+> (`provideRouter(routes, withHashLocation())`). The `ActivePanel` union,
+> `FilterService.activePanel$`, `togglePanel`, and `ViewModeService` no longer
+> exist — navigation goes through `PanelNavService` (legacy panel id → route via
+> `app.routes-map.ts`), the nav rail uses `routerLink`, and filter state is
+> synchronized with router query params by `UrlStateService`. `/matrix` and
+> selected wizard pages use a `RouteReuseStrategy` (`data.reuse: true`) so they
+> detach instead of being destroyed. Legacy share links (`#tech=T1059`, raw
+> filter-key hashes, `#import=` collection payloads) are rewritten pre-bootstrap
+> by `src/app/utils/legacy-hash-shim.ts`. Sections below marked "(pre-router)"
+> describe the old overlay system and are retained only for history.
+
 ## 1. Overview
 
 The MITRE ATT&CK Navi is a single-page Angular 19 application that visualizes
@@ -11,12 +27,15 @@ Key technical characteristics:
 
 - **Angular 19 standalone components** -- every component uses `standalone: true`; there are no
   NgModules.
+- **Angular Router with hash routing** -- 9 lazily loaded workspaces; every destination has a
+  bookmarkable `#/workspace/tab` URL (see the v0.8.0 note above).
 - **OnPush change detection** -- all components set `changeDetection: ChangeDetectionStrategy.OnPush`
   and call `ChangeDetectorRef.markForCheck()` explicitly when async state arrives.
 - **RxJS BehaviorSubject state** -- the application has no NgRx or other store library.  All shared
   state lives in singleton services that expose `BehaviorSubject` observables and plain getters.
 - **Dark-first theming** -- the default palette is dark (`#070d14` base).  A `light-mode` CSS class
-  on `<body>` flips to the light theme.  Theme choice persists in `localStorage`.
+  on `<body>` flips to the light theme.  Theme choice persists in `localStorage`
+  (owned by `ThemeService`).
 
 The application ships as a static SPA with no backend.  All data is fetched client-side from
 public GitHub-hosted STIX bundles, CTID mapping files, and vendor-published Navigator layers.
@@ -444,7 +463,7 @@ Compact colored badges displayed at the top of the sidebar summarizing key count
 
 ---
 
-## 8. Panel System
+## 8. Panel System (pre-router — superseded by the v0.8.0 routing migration)
 
 ### ActivePanel Type
 
