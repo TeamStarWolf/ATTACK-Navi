@@ -1,0 +1,72 @@
+/* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+   https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
+
+   Design tokens — single source of truth for spacing, type, radius, z-index,
+   and semantic color roles. Role tokens resolve through the legacy palette
+   variables (declared in styles.scss / body.light-mode), so both themes stay
+   symmetric automatically: light mode re-points the underlying palette and
+   every role token follows.
+
+   Rule (see UPGRADE_FOUNDATION.md): new or touched chrome uses ONLY these
+   role tokens — no raw hex, no :host-context(body.light-mode) forks. */
+
+:root {
+  /* ── Spacing scale ─────────────────────────────────────────────── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 48px;
+
+  /* ── Type scale ────────────────────────────────────────────────── */
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+
+  /* ── Radius scale ──────────────────────────────────────────────── */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 999px;
+
+  /* ── Z-index scale ─────────────────────────────────────────────── */
+  --z-sticky: 10;
+  --z-rail: 50;
+  --z-toolbar: 60;
+  --z-sidebar: 100;
+  --z-overlay: 400;
+  --z-palette: 900;
+  --z-toast: 950;
+  --z-tooltip: 1000;
+
+  /* ── Dark defaults for tokens that previously existed only in
+        body.light-mode (keeps the two theme token sets symmetric) ── */
+  --bg-surface: #0f1d29;
+  --bg-hover: rgb(255 255 255 / 6%);
+  --bg-active: rgb(255 255 255 / 10%);
+  --text-secondary: #93a8bb;
+  --border-subtle: var(--line-soft);
+  --border-default: var(--line-strong);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 30%);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 32%);
+  --accent-blue: #6fd3ff;
+  --accent-green: #63d297;
+  --accent-red: #ff8f7a;
+  --accent-orange: #ffb454;
+  --accent-purple: #b998f5;
+
+  /* ── Semantic role tokens (theme-independent aliases) ──────────── */
+  --bg-app: var(--bg-base);
+  --bg-raised: var(--bg-elevated);
+  --text-primary: var(--text-main);
+  --border-strong: var(--line-strong);
+  --accent-hover: var(--accent-strong);
+  --warning: var(--accent-warm);
+  --info: var(--accent);
+}
