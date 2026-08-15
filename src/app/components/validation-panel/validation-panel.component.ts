@@ -1,4 +1,4 @@
-// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+﻿// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import {
   Component,
@@ -11,7 +11,6 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription, filter, take } from 'rxjs';
-import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
 import { ValidationService, ValidationRun, ValidationStatus } from '../../services/validation.service';
 import { EventLoggingService } from '../../services/event-logging.service';
@@ -42,9 +41,6 @@ interface TechniqueValidationCard {
   styleUrls: ['./validation-panel.component.scss'],
 })
 export class ValidationPanelComponent implements OnInit, OnDestroy {
-  visible = false;
-
-  private filterService = inject(FilterService);
   private dataService = inject(DataService);
   private validationService = inject(ValidationService);
   private eventLogService = inject(EventLoggingService);
@@ -87,17 +83,11 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
   private subs = new Subscription();
 
   ngOnInit(): void {
-    this.subs.add(this.filterService.activePanel$.subscribe(p => {
-      this.visible = p === 'validation';
-      if (this.visible) {
-        this.loadDomain();
-        this.telemetryMatrix = this.telemetryCoverage.buildMatrix();
-      }
-      this.cdr.markForCheck();
-    }));
+    this.loadDomain();
+    this.telemetryMatrix = this.telemetryCoverage.buildMatrix();
 
     this.subs.add(this.validationService.runs$.subscribe(() => {
-      if (this.visible) this.rebuildCards();
+      this.rebuildCards();
       this.cdr.markForCheck();
     }));
 
@@ -111,7 +101,7 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
     this.subs.unsubscribe();
   }
 
-  // ─── Data loading ─────────────────────────────────────────────────────────
+  // â”€â”€â”€ Data loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   private loadDomain(): void {
     this.dataService.domain$.pipe(filter(Boolean), take(1)).subscribe(d => {
@@ -123,7 +113,7 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
 
   private rebuildCards(): void {
     if (!this.domain) return;
-    // Keep card list small — only techniques with at least one validation input
+    // Keep card list small â€” only techniques with at least one validation input
     const cards: TechniqueValidationCard[] = [];
     for (const tech of this.domain.techniques) {
       if (tech.isSubtechnique) continue;
@@ -151,7 +141,7 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
     this.techniqueCards = cards;
   }
 
-  // ─── UI actions ───────────────────────────────────────────────────────────
+  // â”€â”€â”€ UI actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   setTab(t: typeof this.currentTab): void {
     this.currentTab = t;
@@ -268,11 +258,7 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
     URL.revokeObjectURL(url);
   }
 
-  close(): void {
-    this.filterService.setActivePanel(null);
-  }
-
-  // ─── Telemetry coverage tab ───────────────────────────────────────────────
+  // â”€â”€â”€ Telemetry coverage tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   get filteredTelemetryMatrix(): TelemetrySourceRow[] {
     const q = this.telemetrySearch.trim().toLowerCase();

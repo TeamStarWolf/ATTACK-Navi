@@ -11,6 +11,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription, filter, take } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
+import { PanelNavService } from '../../services/panel-nav.service';
 import { DataService } from '../../services/data.service';
 import { GapAnalysisService, GapAnalysisResult, PrioritizedGap } from '../../services/gap-analysis.service';
 import { LibraryService } from '../../services/library.service';
@@ -56,6 +57,7 @@ export class GapAnalysisPanelComponent implements OnInit, OnDestroy {
 
   constructor(
     private filterService: FilterService,
+    private panelNav: PanelNavService,
     private dataService: DataService,
     private gapService: GapAnalysisService,
     private cdr: ChangeDetectorRef,
@@ -80,7 +82,7 @@ export class GapAnalysisPanelComponent implements OnInit, OnDestroy {
 
   /** Open the Detection Validation Workbench for the gap's technique. */
   openValidationForGap(_gap: PrioritizedGap): void {
-    this.filterService.setActivePanel('validation');
+    this.panelNav.open('validation');
   }
 
   private tacticToSlug(tactic: string): string {

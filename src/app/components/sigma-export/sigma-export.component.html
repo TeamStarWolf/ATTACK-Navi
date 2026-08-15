@@ -1,12 +1,9 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-@if (open) {
-  <div class="sigma-overlay" (click)="close()"></div>
-  <div class="sigma-panel" role="dialog" aria-modal="true" aria-label="Sigma Rule Export">
+<section class="page-panel sigma-panel" aria-label="Sigma Rule Export">
     <div class="sigma-header">
       <span class="sigma-title-icon">Σ</span>
       <h2 class="sigma-title">Sigma Rule Export</h2>
-      <button class="sigma-close-btn" (click)="close()" title="Close">✕</button>
     </div>
 
     <div class="sigma-body">
@@ -65,7 +62,5 @@
       >
         ⬇ Export {{ countLabel }} as YAML
       </button>
-      <button class="sigma-cancel-btn" (click)="close()">Cancel</button>
     </div>
-  </div>
-}
+</section>

@@ -3,14 +3,14 @@
 import {
   Component,
   OnInit,
-  OnDestroy,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subscription, filter, take } from 'rxjs';
+import { filter, take } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
+import { PanelNavService } from '../../services/panel-nav.service';
 import { DataService } from '../../services/data.service';
 import { MitreDataComponent } from '../../models/datasource';
 
@@ -36,36 +36,22 @@ export interface FlatComponent {
   templateUrl: './datasource-panel.component.html',
   styleUrl: './datasource-panel.component.scss',
 })
-export class DatasourcePanelComponent implements OnInit, OnDestroy {
-  visible = false;
+export class DatasourcePanelComponent implements OnInit {
   activeTab: 'sources' | 'components' = 'sources';
   searchText = '';
   rows: DataSourceRow[] = [];
   flatComponents: FlatComponent[] = [];
   sortBy: 'name' | 'techniques' = 'techniques';
 
-  private subs = new Subscription();
-
   constructor(
     private filterService: FilterService,
     private dataService: DataService,
+    private panelNav: PanelNavService,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(
-      this.filterService.activePanel$.subscribe(p => {
-        this.visible = p === 'datasources';
-        if (this.visible && this.rows.length === 0) {
-          this.buildRows();
-        }
-        this.cdr.markForCheck();
-      }),
-    );
-  }
-
-  ngOnDestroy(): void {
-    this.subs.unsubscribe();
+    this.buildRows();
   }
 
   buildRows(): void {
@@ -149,7 +135,8 @@ export class DatasourcePanelComponent implements OnInit, OnDestroy {
 
   filterBySource(sourceName: string): void {
     this.filterService.setDataSourceFilter(sourceName);
-    this.close();
+    // Applying a matrix filter — take the user to the matrix to see it.
+    this.panelNav.open('matrix');
   }
 
   toggleRow(row: DataSourceRow): void {
@@ -163,7 +150,4 @@ export class DatasourcePanelComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  close(): void {
-    this.filterService.setActivePanel(null);
-  }
 }

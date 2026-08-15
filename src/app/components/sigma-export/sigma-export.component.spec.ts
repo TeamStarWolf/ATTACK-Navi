@@ -32,16 +32,15 @@ describe('SigmaExportComponent', () => {
     fixture.detectChanges();
   });
 
-  it('is created and starts closed', () => {
+  it('is created', () => {
     expect(component).toBeTruthy();
-    expect(component.open).toBe(false);
   });
 
   it('selectedMode starts at "current"', () => {
     expect(component.selectedMode).toBe('current');
   });
 
-  it('previewYaml starts empty', () => {
-    expect(component.previewYaml).toBe('');
+  it('previewYaml shows the empty-mode message before a domain loads', () => {
+    expect(component.previewYaml).toBe('# No techniques found for the selected mode.');
   });
 });

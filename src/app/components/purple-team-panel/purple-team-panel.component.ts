@@ -37,7 +37,6 @@ interface TechniqueScore {
   styleUrl: './purple-team-panel.component.scss',
 })
 export class PurpleTeamPanelComponent implements OnInit, OnDestroy {
-  open = false;
   domain: Domain | null = null;
   selectedTech: Technique | null = null;
 
@@ -66,16 +65,9 @@ export class PurpleTeamPanelComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.subs.add(
-      this.filterService.activePanel$.subscribe(panel => {
-        this.open = panel === 'purple';
-        if (this.open && this.domain) this.computeOverview();
-        this.cdr.markForCheck();
-      }),
-    );
-    this.subs.add(
       this.dataService.domain$.subscribe(domain => {
         this.domain = domain;
-        if (this.open && domain) this.computeOverview();
+        if (domain) this.computeOverview();
         this.cdr.markForCheck();
       }),
     );
@@ -92,8 +84,6 @@ export class PurpleTeamPanelComponent implements OnInit, OnDestroy {
       }),
     );
   }
-
-  close(): void { this.filterService.setActivePanel(null); }
 
   setViewMode(mode: 'selected' | 'gaps' | 'covered'): void {
     this.viewMode = mode;
