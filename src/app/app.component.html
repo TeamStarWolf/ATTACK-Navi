@@ -16,10 +16,7 @@
 <div class="app-shell">
 
   <!-- Left nav rail -->
-  <app-nav-rail
-    (panelToggle)="onNavPanelToggle($event)"
-    (focusSearch)="focusTechniqueSearch()">
-  </app-nav-rail>
+  <app-nav-rail (helpClick)="keyboardHelp?.toggle()" />
 
   <!-- Workspace -->
   <div class="workspace-area">

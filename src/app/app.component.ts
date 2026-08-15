@@ -143,10 +143,6 @@ export class AppComponent implements OnInit {
     }
   }
 
-  onNavPanelToggle(panelId: string): void {
-    this.panelNav.toggle(panelId);
-  }
-
   toggleDarkMode(): void {
     this.isLightMode = !this.isLightMode;
     if (this.isLightMode) {

@@ -72,12 +72,26 @@ test.describe('ATT&CK Navi', () => {
     await expect(page.locator('.heatmap-btn')).toContainText('Risk');
   });
 
-  test('nav rail opens panels', async ({ page }) => {
+  test('nav rail routes to every workspace', async ({ page }) => {
     await page.goto(BASE);
     await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
-    // Click INTEL nav item
-    await page.locator('.nav-item', { hasText: 'INTEL' }).click();
-    await expect(page.locator('app-threat-intelligence-panel > *').first()).toBeVisible({ timeout: 5000 });
+    const workspaces: Array<[label: string, urlPart: string]> = [
+      ['Dashboard', '/dashboard'],
+      ['Intel', '/intel'],
+      ['Detect', '/detect'],
+      ['Exposure', '/exposure'],
+      ['Coverage', '/coverage'],
+      ['Library', '/library'],
+      ['Reports', '/reports'],
+    ];
+    for (const [label, urlPart] of workspaces) {
+      await page.locator('.nav-item', { hasText: label }).click();
+      await expect(page).toHaveURL(new RegExp(`#${urlPart}`));
+      await expect(page.locator('app-workspace-shell').first()).toBeVisible({ timeout: 5000 });
+    }
+    // Matrix returns home
+    await page.locator('.nav-item', { hasText: 'Matrix' }).click();
+    await expect(page.locator('.matrix-wrapper')).toBeVisible({ timeout: 5000 });
   });
 
   test('dashboard panel opens', async ({ page }) => {
@@ -86,6 +100,24 @@ test.describe('ATT&CK Navi', () => {
     // Click Dashboard nav item
     await page.locator('.nav-item', { hasText: 'Dashboard' }).click();
     await expect(page.locator('app-dashboard-panel > *').first()).toBeVisible({ timeout: 5000 });
+  });
+
+  test('workspace tab bar switches tabs', async ({ page }) => {
+    await page.goto(BASE + '/#/intel/groups');
+    await expect(page.locator('app-threat-panel > *').first()).toBeVisible({ timeout: 15000 });
+    await page.locator('app-workspace-shell a', { hasText: 'Software' }).click();
+    await expect(page).toHaveURL(/#\/intel\/software/);
+    await expect(page.locator('app-software-panel > *').first()).toBeVisible({ timeout: 5000 });
+  });
+
+  test('browser back returns to the previous workspace', async ({ page }) => {
+    await page.goto(BASE);
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.nav-item', { hasText: 'Coverage' }).click();
+    await expect(page).toHaveURL(/#\/coverage/);
+    await page.goBack();
+    await expect(page).toHaveURL(/#\/matrix/);
+    await expect(page.locator('.matrix-wrapper')).toBeVisible({ timeout: 5000 });
   });
 
   test('escape closes sidebar', async ({ page }) => {
@@ -114,60 +146,36 @@ test.describe('ATT&CK Navi', () => {
 
   // â”€â”€â”€ Additional E2E tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  test('assessment wizard opens', async ({ page }) => {
-    await page.goto(BASE);
-    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
-    await page.locator('.nav-item', { hasText: 'ASSESS' }).click();
-    await expect(page.locator('app-assessment-wizard > *').first()).toBeVisible({ timeout: 5000 });
-  });
+  // Direct-URL deep links: one per formerly-overlay destination that had a
+  // dedicated nav item. Tab-level destinations are reachable by URL alone.
+  const DEEP_LINKS: Array<[name: string, url: string, host: string]> = [
+    ['assessment wizard', '/#/coverage/assessment', 'app-assessment-wizard'],
+    ['collections', '/#/library/collections', 'app-collection-panel'],
+    ['gap analysis', '/#/exposure/gap-analysis', 'app-gap-analysis-panel'],
+    ['assets', '/#/coverage/assets', 'app-asset-panel'],
+    ['IR playbooks', '/#/reports/playbooks', 'app-ir-playbook-panel'],
+    ['CVE', '/#/exposure/cve', 'app-cve-panel'],
+    ['sigma', '/#/detect/sigma', 'app-sigma-export'],
+  ];
+  for (const [name, url, host] of DEEP_LINKS) {
+    test(`deep link renders ${name}`, async ({ page }) => {
+      await page.goto(BASE + url);
+      await expect(page.locator(`${host} > *`).first()).toBeVisible({ timeout: 15000 });
+    });
+  }
 
-  test('collection panel opens', async ({ page }) => {
-    await page.goto(BASE);
-    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
-    await page.locator('.nav-item', { hasText: 'COLLECT' }).click();
-    await expect(page.locator('app-collection-panel > *').first()).toBeVisible({ timeout: 5000 });
-  });
-
-  test('gap analysis panel opens', async ({ page }) => {
-    await page.goto(BASE);
-    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
-    await page.locator('.nav-item', { hasText: 'GAP RPT' }).click();
-    await expect(page.locator('app-gap-analysis-panel > *').first()).toBeVisible({ timeout: 5000 });
-  });
-
-  test('asset panel opens', async ({ page }) => {
-    await page.goto(BASE);
-    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
-    await page.locator('.nav-item', { hasText: 'ASSETS' }).click();
-    await expect(page.locator('app-asset-panel > *').first()).toBeVisible({ timeout: 5000 });
-  });
-
-  test('IR playbook panel opens', async ({ page }) => {
-    await page.goto(BASE);
-    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
-    await page.locator('.nav-item', { hasText: 'IR PLAY' }).click();
-    await expect(page.locator('app-ir-playbook-panel > *').first()).toBeVisible({ timeout: 5000 });
-  });
-
-  test('CVE panel opens', async ({ page }) => {
-    await page.goto(BASE);
-    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
-    await page.locator('.nav-item', { hasText: 'CVE' }).click();
-    await expect(page.locator('app-cve-panel > *').first()).toBeVisible({ timeout: 5000 });
-  });
-
-  test('sigma export panel opens', async ({ page }) => {
-    await page.goto(BASE);
-    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
-    await page.locator('.nav-item', { hasText: 'SIGMA' }).click();
-    await expect(page.locator('app-sigma-export > *').first()).toBeVisible({ timeout: 5000 });
-  });
-
-  test('settings panel opens', async ({ page }) => {
+  test('settings opens from the rail', async ({ page }) => {
     await page.goto(BASE);
     await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
     await page.locator('.nav-item', { hasText: 'Settings' }).click();
     await expect(page.locator('app-settings-panel > *').first()).toBeVisible({ timeout: 5000 });
+  });
+
+  test('help button opens keyboard shortcuts overlay', async ({ page }) => {
+    await page.goto(BASE);
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.help-btn').click();
+    await expect(page.locator('app-keyboard-help .help-overlay, app-keyboard-help .keyboard-help, app-keyboard-help > *').first()).toBeVisible({ timeout: 5000 });
   });
 
   test('sidebar shows signal pills', async ({ page }) => {
@@ -232,5 +240,19 @@ test.describe('ATT&CK Navi', () => {
     await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
     await page.locator('.nav-item', { hasText: 'Detect' }).click();
     await expect(page.locator('app-detection-panel > *').first()).toBeVisible({ timeout: 5000 });
+  });
+
+  test('deep link survives a reload', async ({ page }) => {
+    await page.goto(BASE + '/#/coverage/controls');
+    await expect(page.locator('app-controls-panel > *').first()).toBeVisible({ timeout: 15000 });
+    await page.reload();
+    await expect(page.locator('app-controls-panel > *').first()).toBeVisible({ timeout: 15000 });
+    await expect(page).toHaveURL(/#\/coverage\/controls/);
+  });
+
+  test('legacy filter-key share link lands on the matrix with filters applied', async ({ page }) => {
+    await page.goto(BASE + '/#heat=kev');
+    await expect(page).toHaveURL(/#\/matrix\?.*heat=kev/);
+    await expect(page.locator('.matrix-wrapper')).toBeVisible({ timeout: 15000 });
   });
 });

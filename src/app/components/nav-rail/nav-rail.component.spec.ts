@@ -1,12 +1,13 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { ChangeDetectorRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { NavRailComponent } from './nav-rail.component';
 import { CveService } from '../../services/cve.service';
+import { DataService } from '../../services/data.service';
 
 describe('NavRailComponent', () => {
   let component: NavRailComponent;
@@ -25,7 +26,9 @@ describe('NavRailComponent', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
+        provideRouter([]),
         { provide: CveService, useValue: mockCveService },
+        { provide: DataService, useValue: { domain$: new BehaviorSubject(null) } },
       ],
     }).compileComponents();
 
@@ -38,59 +41,64 @@ describe('NavRailComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should render all nav group dividers', () => {
-    const dividers = fixture.nativeElement.querySelectorAll('.nav-divider-label');
-    const labels = Array.from(dividers)
-      .map((el: any) => el.textContent.trim())
-      .filter((t: string) => t.length > 0);
-    expect(labels).toContain('Threats');
-    expect(labels).toContain('Analysis');
-    expect(labels).toContain('Coverage');
-    expect(labels).toContain('Tools');
+  it('renders one item per workspace plus Help and Settings', () => {
+    const items = fixture.nativeElement.querySelectorAll('.nav-item');
+    // 8 workspaces + Help + Settings
+    expect(items.length).toBe(10);
   });
 
-  it('should emit panelToggle on nav item click', () => {
-    spyOn(component.panelToggle, 'emit');
-    const navBtn = fixture.nativeElement.querySelector('.nav-item');
-    navBtn.click();
-    expect(component.panelToggle.emit).toHaveBeenCalled();
+  it('workspace items are router links with the workspace root path', () => {
+    const links = [...fixture.nativeElement.querySelectorAll('.nav-list a.nav-item')] as HTMLAnchorElement[];
+    const hrefs = links.map(a => a.getAttribute('href'));
+    expect(hrefs).toContain('/matrix');
+    expect(hrefs).toContain('/intel');
+    expect(hrefs).toContain('/detect');
+    expect(hrefs).toContain('/exposure');
+    expect(hrefs).toContain('/coverage');
+    expect(hrefs).toContain('/library');
+    expect(hrefs).toContain('/reports');
+    expect(hrefs).toContain('/dashboard');
   });
 
-  it('should apply active class to the active panel', () => {
-    component.activePanel = 'dashboard';
-    // OnPush: mark the view dirty since activePanel is set directly, not via router.
-    fixture.componentRef.injector.get(ChangeDetectorRef).markForCheck();
-    fixture.detectChanges();
-    const activeBtn = fixture.nativeElement.querySelector('.nav-item.active');
-    expect(activeBtn).toBeTruthy();
-    expect(activeBtn.getAttribute('aria-label')).toBe('Dashboard');
+  it('labels are human words, not shouty abbreviations', () => {
+    const labels = [...fixture.nativeElement.querySelectorAll('.nav-label')].map(
+      (el: any) => el.textContent.trim(),
+    );
+    expect(labels).toEqual([
+      'Matrix', 'Dashboard', 'Intel', 'Detect', 'Exposure', 'Coverage',
+      'Library', 'Reports', 'Help', 'Settings',
+    ]);
   });
 
-  it('should show KEV badge when newKevCount > 0', () => {
+  it('renders SVG icons (no emoji glyphs)', () => {
+    const icons = fixture.nativeElement.querySelectorAll('.nav-item app-icon svg');
+    expect(icons.length).toBe(10);
+  });
+
+  it('shows the KEV badge on Exposure when newKevCount > 0', () => {
     newKevCount$.next(5);
     fixture.detectChanges();
     const badge = fixture.nativeElement.querySelector('.nav-badge');
     expect(badge).toBeTruthy();
     expect(badge.textContent).toContain('+5');
+    expect(badge.closest('.nav-item').getAttribute('aria-label')).toBe('Exposure');
   });
 
-  it('should not show KEV badge when newKevCount is 0', () => {
+  it('hides the KEV badge when newKevCount is 0', () => {
     newKevCount$.next(0);
     fixture.detectChanges();
-    const badge = fixture.nativeElement.querySelector('.nav-badge');
-    expect(badge).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('.nav-badge')).toBeFalsy();
   });
 
-  it('should emit panelToggle for the CVE nav item (badge dismissal lives in the CVE page now)', () => {
-    spyOn(component.panelToggle, 'emit');
-    component.onNavClick('cve');
-    expect(component.panelToggle.emit).toHaveBeenCalledWith('cve');
+  it('emits helpClick when the Help button is clicked', () => {
+    spyOn(component.helpClick, 'emit');
+    fixture.nativeElement.querySelector('.help-btn').click();
+    expect(component.helpClick.emit).toHaveBeenCalled();
   });
 
-  it('should render nav items with icons and labels', () => {
-    const navItems = fixture.nativeElement.querySelectorAll('.nav-list .nav-item');
-    expect(navItems.length).toBeGreaterThan(10);
-    const firstLabel = navItems[0].querySelector('.nav-label');
-    expect(firstLabel.textContent.trim()).toBe('Dashboard');
+  it('clicking Settings clears the version dot', () => {
+    component.newVersionAvailable = true;
+    component.onSettingsClick();
+    expect(component.newVersionAvailable).toBe(false);
   });
 });
