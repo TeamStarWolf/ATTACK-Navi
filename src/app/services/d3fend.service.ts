@@ -14,7 +14,13 @@ export interface D3fendTechnique {
   attackIds: string[]; // ATT&CK technique IDs this counters
 }
 
-// Bundled D3FEND→ATT&CK mapping (~100 countermeasures)
+// ─────────────────────────────────────────────────────────────────────────────
+// PROVENANCE: curated editorial seed (~97 countermeasures), NOT an official
+// export. It serves only as an offline fallback: the live D3FEND ontology API
+// (loadOntologyIndex / per-technique fetch below) replaces these entries the
+// moment it responds, and live data always takes precedence. Treat any entry
+// rendered from this seed as unverified until confirmed at d3fend.mitre.org.
+// ─────────────────────────────────────────────────────────────────────────────
 const D3FEND_MAPPING: D3fendTechnique[] = [
   // --- Original 30 entries (with category added) ---
   { id: 'D3-PSA', name: 'Process Spawn Analysis', category: 'Detect', definition: 'Analyzing process spawn events to detect anomalous parent-child relationships.', url: 'https://d3fend.mitre.org/technique/d3f:ProcessSpawnAnalysis', attackIds: ['T1059', 'T1055', 'T1078', 'T1053'] },

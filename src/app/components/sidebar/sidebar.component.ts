@@ -200,6 +200,80 @@ export class SidebarComponent implements OnInit, OnDestroy {
   // Collapsible sections
   collapsedSections = new Set<string>();
 
+  /** Grouped jump index — the 48 sections organized by theme (D12/P4). */
+  readonly sectionIndex: ReadonlyArray<{ label: string; sections: ReadonlyArray<{ id: string; label: string }> }> = [
+    { label: 'Technique', sections: [
+      { id: 'annotation', label: 'Annotations' }, { id: 'subtechniques', label: 'Subtechniques' },
+      { id: 'detection', label: 'Detection' }, { id: 'datasources', label: 'Data Sources' },
+      { id: 'datacomponents', label: 'Data Components' }, { id: 'procedures', label: 'Procedures' },
+      { id: 'mitigations', label: 'Mitigations' }, { id: 'relgraph', label: 'Relationship Graph' },
+    ]},
+    { label: 'Threat Intel', sections: [
+      { id: 'threats', label: 'Threat Groups' }, { id: 'software', label: 'Software' },
+      { id: 'campaigns', label: 'Campaigns' }, { id: 'misp', label: 'MISP' },
+      { id: 'opencti', label: 'OpenCTI' }, { id: 'ioc-feed', label: 'IOC Feed' },
+    ]},
+    { label: 'Vulnerabilities', sections: [
+      { id: 'cve', label: 'CVEs' }, { id: 'capec', label: 'CAPEC' },
+      { id: 'exploitdb', label: 'Exploit-DB' }, { id: 'nuclei', label: 'Nuclei' },
+      { id: 'kill-chain', label: 'Kill Chain' }, { id: 'poc-exploits', label: 'PoC Exploits' },
+    ]},
+    { label: 'Compliance', sections: [
+      { id: 'nist', label: 'NIST 800-53' }, { id: 'cloud', label: 'Cloud Controls' },
+      { id: 'veris', label: 'VERIS' }, { id: 'csa-ccm', label: 'CSA CCM' },
+      { id: 'm365-controls', label: 'M365 Controls' }, { id: 'cri', label: 'CRI Profile' },
+    ]},
+    { label: 'Detections', sections: [
+      { id: 'sigma', label: 'Sigma' }, { id: 'car', label: 'CAR' },
+      { id: 'atomic', label: 'Atomic' }, { id: 'd3fend', label: 'D3FEND' },
+      { id: 'engage', label: 'Engage' }, { id: 'siem', label: 'SIEM Queries' },
+      { id: 'sentinel-rules', label: 'Sentinel' }, { id: 'm365', label: 'M365 Hunting' },
+      { id: 'wazuh-xdr', label: 'Wazuh XDR' }, { id: 'evtx-samples', label: 'EVTX Samples' },
+    ]},
+    { label: 'Offense & Hunting', sections: [
+      { id: 'payloads', label: 'Payloads' }, { id: 'offensive-tools', label: 'Offensive Tools' },
+      { id: 'c2', label: 'C2 Matrix' }, { id: 'bloodhound', label: 'BloodHound' },
+      { id: 'azure-identity', label: 'Azure Identity' }, { id: 'threat-hunting', label: 'Threat Hunting' },
+      { id: 'threathunter-playbook', label: 'THP Notebooks' }, { id: 'logging', label: 'Logging Setup' },
+      { id: 'anthropic-skills', label: 'Skills' },
+    ]},
+    { label: 'Workspace', sections: [
+      { id: 'tags', label: 'Tags' }, { id: 'notes', label: 'Notes' },
+      { id: 'custom', label: 'Custom Mitigations' },
+    ]},
+  ];
+
+  /**
+   * Sections backed by hand-curated editorial mappings (provenance-stamped
+   * services) rather than an authoritative published source. Rendered with
+   * a 'curated' chip so analysts know to verify before acting.
+   */
+  static readonly CURATED_SECTIONS = new Set([
+    'payloads', 'offensive-tools', 'c2', 'bloodhound', 'azure-identity',
+    'logging', 'ioc-feed', 'wazuh-xdr', 'siem', 'threat-hunting',
+  ]);
+
+  showJumpIndex = false;
+
+  toggleJumpIndex(): void {
+    this.showJumpIndex = !this.showJumpIndex;
+    this.cdr.markForCheck();
+  }
+
+  jumpToSection(id: string): void {
+    this.collapsedSections.delete(id);
+    this.cdr.markForCheck();
+    // Instant scroll: smooth scrolling gets cancelled by the layout shift
+    // when the target section expands in the same frame.
+    setTimeout(() => {
+      document.getElementById('sb-sec-' + id)?.scrollIntoView({ block: 'start' });
+    });
+  }
+
+  isCurated(id: string): boolean {
+    return SidebarComponent.CURATED_SECTIONS.has(id);
+  }
+
   toggleSection(name: string): void {
     if (this.collapsedSections.has(name)) {
       this.collapsedSections.delete(name);
@@ -478,6 +552,13 @@ export class SidebarComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    // Start dense: everything collapsed except the core technique profile.
+    // The jump index and the expand-relevant button open the rest on demand.
+    this.collapseAll();
+    for (const core of ['annotation', 'subtechniques', 'detection', 'datasources', 'mitigations']) {
+      this.collapsedSections.delete(core);
+    }
+
     this.subs.add(
       this.filterService.selectedTechnique$.subscribe((tech) => {
         this.atomicSub?.unsubscribe();
