@@ -1,6 +1,6 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, HostListener, ElementRef, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
@@ -8,6 +8,11 @@ import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
 import { PanelNavService } from '../../services/panel-nav.service';
 import { CommandPaletteService } from '../../services/command-palette.service';
+import { HelpOverlayService } from '../../services/help-overlay.service';
+import { ThemeService } from '../../services/theme.service';
+import { UrlStateService } from '../../services/url-state.service';
+import { ExportActionsService } from '../../services/export-actions.service';
+import { NAV_COMMANDS, ACTION_COMMANDS } from '../../models/palette-commands';
 import { DataService } from '../../services/data.service';
 import { D3fendService } from '../../services/d3fend.service';
 import { CARService } from '../../services/car.service';
@@ -18,7 +23,7 @@ import { Domain } from '../../models/domain';
 import { Technique } from '../../models/technique';
 import { Mitigation } from '../../models/mitigation';
 
-type ResultKind = 'technique' | 'mitigation' | 'd3fend' | 'car' | 'atomic' | 'engage' | 'group' | 'software' | 'campaign' | 'cve';
+type ResultKind = 'technique' | 'mitigation' | 'd3fend' | 'car' | 'atomic' | 'engage' | 'group' | 'software' | 'campaign' | 'cve' | 'nav' | 'action';
 
 interface SearchResult {
   kind: ResultKind;
@@ -50,9 +55,10 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
   private search$ = new Subject<string>();
   private subs = new Subscription();
 
-  readonly kindFilterOptions: (ResultKind | 'all')[] = ['all', 'technique', 'mitigation', 'cve', 'group', 'campaign', 'software', 'd3fend', 'car', 'atomic', 'engage'];
+  readonly kindFilterOptions: (ResultKind | 'all')[] = ['all', 'nav', 'action', 'technique', 'mitigation', 'cve', 'group', 'campaign', 'software', 'd3fend', 'car', 'atomic', 'engage'];
   readonly kindLabels: Record<ResultKind | 'all', string> = {
-    all: 'All', technique: 'Techniques', mitigation: 'Mitigations',
+    all: 'All', nav: 'Go to', action: 'Actions',
+    technique: 'Techniques', mitigation: 'Mitigations',
     cve: 'CVEs', d3fend: 'D3FEND', car: 'CAR', atomic: 'Atomic',
     engage: 'Engage', group: 'Groups', software: 'Software',
     campaign: 'Campaigns',
@@ -62,6 +68,10 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
     private filterService: FilterService,
     private panelNav: PanelNavService,
     private palette: CommandPaletteService,
+    private helpOverlay: HelpOverlayService,
+    private themeService: ThemeService,
+    private urlStateService: UrlStateService,
+    private exportActions: ExportActionsService,
     private dataService: DataService,
     private d3fendService: D3fendService,
     private carService: CARService,
@@ -79,15 +89,6 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
     }));
     this.subs.add(this.dataService.domain$.subscribe(d => { this.domain = d; }));
     this.subs.add(this.search$.pipe(debounceTime(150), distinctUntilChanged()).subscribe(q => this.runSearch(q)));
-  }
-
-  @HostListener('document:keydown', ['$event'])
-  onKey(e: KeyboardEvent): void {
-    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'f') {
-      e.preventDefault();
-      this.palette.toggle();
-    }
-    if (e.key === 'Escape' && this.open) this.close();
   }
 
   onInput(): void {
@@ -143,6 +144,23 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
     if (!q || q.length < 2) { this.results = []; this.activeResultIndex = -1; this.cdr.markForCheck(); return; }
     const ql = q.toLowerCase();
     const results: SearchResult[] = [];
+
+    // Navigation commands ("Go to …") — boosted so destinations beat entities
+    // on name matches ("dashboard", "gap analysis", "export").
+    for (const nav of NAV_COMMANDS) {
+      const score = this.score(ql, nav.panelId, nav.label, `${nav.workspace} ${nav.keywords ?? ''}`);
+      if (score > 0) {
+        results.push({ kind: 'nav', id: nav.panelId, name: nav.label, description: `Go to ${nav.workspace}`, score: score + 15, data: nav });
+      }
+    }
+
+    // Action commands ("Do …")
+    for (const action of ACTION_COMMANDS) {
+      const score = this.score(ql, action.id, action.label, `${action.description} ${action.keywords ?? ''}`);
+      if (score > 0) {
+        results.push({ kind: 'action', id: action.id, name: action.label, description: action.description, score: score + 10, data: action });
+      }
+    }
 
     if (this.domain) {
       // Techniques
@@ -240,7 +258,13 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
   }
 
   selectResult(r: SearchResult): void {
-    if (r.kind === 'technique' && r.data) {
+    if (r.kind === 'nav') {
+      this.panelNav.open(r.id);
+      this.close();
+    } else if (r.kind === 'action') {
+      this.runAction(r.id);
+      this.close();
+    } else if (r.kind === 'technique' && r.data) {
       this.filterService.selectTechnique(r.data);
       this.close();
     } else if (r.kind === 'mitigation' && r.data) {
@@ -264,13 +288,28 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
     }
   }
 
+  private runAction(id: string): void {
+    switch (id) {
+      case 'toggle-theme': this.themeService.toggle(); break;
+      case 'clear-filters': this.filterService.clearAll(); break;
+      case 'copy-share-link':
+        void navigator.clipboard.writeText(this.urlStateService.getShareUrl());
+        break;
+      case 'keyboard-help': this.helpOverlay.open(); break;
+      case 'export-csv': this.exportActions.exportCsv(); break;
+      case 'export-xlsx': void this.exportActions.exportXlsxWorkbook(); break;
+      case 'export-navigator': this.exportActions.exportNavigatorLayer(); break;
+      case 'open-navigator': this.exportActions.openInNavigator(); break;
+    }
+  }
+
   kindIcon(kind: ResultKind): string {
-    const icons: Record<ResultKind, string> = { technique: '⚔', mitigation: '🛡', d3fend: '🛡', car: '🔬', atomic: '⚛', engage: '🎭', group: '👥', software: '🛠', campaign: '🎯', cve: '🔴' };
+    const icons: Record<ResultKind, string> = { nav: '→', action: '⚡', technique: '⚔', mitigation: '🛡', d3fend: '🛡', car: '🔬', atomic: '⚛', engage: '🎭', group: '👥', software: '🛠', campaign: '🎯', cve: '🔴' };
     return icons[kind];
   }
 
   kindColor(kind: ResultKind): string {
-    const colors: Record<ResultKind, string> = { technique: '#58a6ff', mitigation: '#4caf50', d3fend: '#4caf50', car: '#58a6ff', atomic: '#e08030', engage: '#f0a040', group: '#9c70e0', software: '#f06060', campaign: '#e06090', cve: '#ef4444' };
+    const colors: Record<ResultKind, string> = { nav: '#6fd3ff', action: '#fbbf24', technique: '#58a6ff', mitigation: '#4caf50', d3fend: '#4caf50', car: '#58a6ff', atomic: '#e08030', engage: '#f0a040', group: '#9c70e0', software: '#f06060', campaign: '#e06090', cve: '#ef4444' };
     return colors[kind];
   }
 

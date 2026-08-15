@@ -18,6 +18,7 @@ import { Technique } from '../../models/technique';
 import { FilterService } from '../../services/filter.service';
 import { DataService, DataSourceMode, AttackDomain } from '../../services/data.service';
 import { CommandPaletteService } from '../../services/command-palette.service';
+import { ThemeService } from '../../services/theme.service';
 import { SavedViewsService, SavedView } from '../../services/saved-views.service';
 
 export const PLATFORMS = [
@@ -55,13 +56,13 @@ export const PLATFORM_PILLS = [
 })
 export class ToolbarComponent implements OnInit, OnDestroy {
   @Input() techniques: Technique[] = [];
-  @Input() isLightMode = false;
   @Input() set currentDomain(value: AttackDomain) {
     this.attackDomain = value;
   }
   @Output() domainChange = new EventEmitter<AttackDomain>();
-  @Output() toggleDark = new EventEmitter<void>();
   @Output() copyShareLink = new EventEmitter<void>();
+
+  isLightMode = false;
 
   attackVersion = '';
   dataSourceMode: DataSourceMode = 'live';
@@ -82,11 +83,13 @@ export class ToolbarComponent implements OnInit, OnDestroy {
     private dataService: DataService,
     private router: Router,
     private palette: CommandPaletteService,
+    private themeService: ThemeService,
     private cdr: ChangeDetectorRef,
     private savedViewsService: SavedViewsService,
   ) {}
 
   ngOnInit(): void {
+    this.subs.add(this.themeService.isLight$.subscribe((v) => { this.isLightMode = v; this.cdr.markForCheck(); }));
     this.subs.add(this.dataService.loading$.subscribe((l) => { this.loading = l; this.cdr.markForCheck(); }));
     this.subs.add(this.dataService.domain$.subscribe((d) => {
       this.attackVersion = d?.attackVersion ?? '';
@@ -99,6 +102,10 @@ export class ToolbarComponent implements OnInit, OnDestroy {
 
   openPalette(): void {
     this.palette.open();
+  }
+
+  toggleTheme(): void {
+    this.themeService.toggle();
   }
 
   onDataSourceChange(): void {
