@@ -37,8 +37,8 @@ const CAR_ANALYTICS: CarAnalytic[] = [
   { id: 'CAR-2021-05-003', name: 'BCDEdit Failure Recovery Modification', description: 'Detects modification of boot recovery settings used in ransomware attacks.', url: 'https://car.mitre.org/analytics/CAR-2021-05-003/', platforms: ['Windows'], attackIds: ['T1490'], pseudocode: 'process WHERE exe = "bcdedit.exe" AND command_line CONTAINS "recoveryenabled No"' },
   { id: 'CAR-2021-11-001', name: 'Registry Edit with Creation of SafeDllSearchMode', description: 'Detects DLL search order hijacking via registry modification.', url: 'https://car.mitre.org/analytics/CAR-2021-11-001/', platforms: ['Windows'], attackIds: ['T1574.001', 'T1112'], pseudocode: 'registry_modification WHERE key CONTAINS "SafeDllSearchMode" AND value = 0' },
   { id: 'CAR-2022-03-001', name: 'BITS Job Persistence', description: 'Detects BITS jobs configured for persistence or command execution.', url: 'https://car.mitre.org/analytics/CAR-2022-03-001/', platforms: ['Windows'], attackIds: ['T1197', 'T1547'], pseudocode: 'bits_job WHERE notify_cmd_line != null OR job_type = "UPLOAD" AND remote_url CONTAINS "cmd"' },
-  { id: 'CAR-2022-06-001', name: 'Shell Spawned by Java Utility', description: 'Detects shell processes spawned by Java utilities, often associated with exploitation.', url: 'https://car.mitre.org/analytics/CAR-2022-06-001/', platforms: ['Windows', 'Linux'], attackIds: ['T1190', 'T1059'], pseudocode: 'process WHERE parent_exe CONTAINS "java" AND child_exe IN ["cmd.exe","bash","sh","powershell.exe"]' },
-  { id: 'CAR-2023-01-001', name: 'Defense Evasion Activity via PowerShell', description: 'Detects PowerShell commands commonly used to bypass defenses.', url: 'https://car.mitre.org/analytics/CAR-2023-01-001/', platforms: ['Windows'], attackIds: ['T1562', 'T1059.001'], pseudocode: 'process WHERE exe = "powershell.exe" AND command_line MATCHES (Set-MpPreference|Disable-WindowsOptionalFeature|netsh advfirewall)' },
+  // (CAR-2022-06-001 and CAR-2023-01-001 removed 2026-08-15: those ids do
+  // not exist in the upstream mitre-attack/car repository — their pages 404.)
 ];
 
 @Injectable({ providedIn: 'root' })
