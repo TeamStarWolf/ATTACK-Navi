@@ -18,6 +18,7 @@ import { Tactic } from '../../models/tactic';
 import { Technique } from '../../models/technique';
 import { ImplStatus, ImplementationService } from '../../services/implementation.service';
 import { MatrixComponent } from '../../components/matrix/matrix.component';
+import { MatrixControlsComponent } from './matrix-controls.component';
 import { LegendComponent } from '../../components/legend/legend.component';
 import { QuickFiltersComponent } from '../../components/quick-filters/quick-filters.component';
 import { FilterChipsComponent } from '../../components/filter-chips/filter-chips.component';
@@ -42,6 +43,7 @@ import {
     CommonModule,
     TitleCasePipe,
     MatrixComponent,
+    MatrixControlsComponent,
     LegendComponent,
     QuickFiltersComponent,
     FilterChipsComponent,

@@ -3,13 +3,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { BehaviorSubject, of } from 'rxjs';
+import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 import { ToolbarComponent } from './toolbar.component';
 import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
 import { SavedViewsService } from '../../services/saved-views.service';
-import { AttackCveService } from '../../services/attack-cve.service';
-import { ExportActionsService } from '../../services/export-actions.service';
+import { CommandPaletteService } from '../../services/command-palette.service';
 
 describe('ToolbarComponent', () => {
   let component: ToolbarComponent;
@@ -17,36 +17,10 @@ describe('ToolbarComponent', () => {
   let mockFilterService: jasmine.SpyObj<FilterService>;
   let mockDataService: jasmine.SpyObj<DataService>;
   let mockSavedViewsService: jasmine.SpyObj<SavedViewsService>;
-  let mockAttackCveService: jasmine.SpyObj<AttackCveService>;
-  let mockExportActions: jasmine.SpyObj<ExportActionsService>;
+  let mockPalette: jasmine.SpyObj<CommandPaletteService>;
 
   beforeEach(async () => {
-    mockFilterService = jasmine.createSpyObj('FilterService', [
-      'setHeatmapMode',
-      'setTechniqueQuery',
-      'setSortMode',
-      'setDimUncovered',
-      'setPlatformFilter',
-      'setActivePanel',
-      'setSearchScope',
-      'setSearchFilterMode',
-      'setImplStatusFilter',
-      'setActiveDataSource',
-    ], {
-      activeMitigationFilters$: of([]),
-      techniqueQuery$: of(''),
-      sortMode$: of('alpha' as const),
-      dimUncovered$: of(false),
-      platformFilter$: of(null),
-      platformMulti$: of(new Set<string>()),
-      activePanel$: of(null),
-      activeThreatGroupIds$: of(new Set<string>()),
-      heatmapMode$: of('coverage' as const),
-      implStatusFilter$: of(null),
-      searchScope$: of('name' as const),
-      searchFilterMode$: of(false),
-      activeDataSource$: of(null),
-    });
+    mockFilterService = jasmine.createSpyObj('FilterService', ['setTechniqueQuery']);
 
     mockDataService = jasmine.createSpyObj('DataService', ['fetchDomain'], {
       loading$: of(false),
@@ -57,27 +31,18 @@ describe('ToolbarComponent', () => {
       views$: of([]),
     });
 
-    mockAttackCveService = jasmine.createSpyObj('AttackCveService', ['getMappingForCve'], {
-      loaded$: of(false),
-    });
-
-    mockExportActions = jasmine.createSpyObj('ExportActionsService', [
-      'exportCsv', 'exportTacticCsv', 'exportImplPlanCsv', 'exportFullReport',
-      'exportMatrixPng', 'exportHtmlCoverageReport', 'exportPdf', 'exportXlsxWorkbook',
-      'exportNavigatorLayer', 'openInNavigator', 'importNavigatorLayer',
-      'exportStateJson', 'importStateJson',
-    ]);
+    mockPalette = jasmine.createSpyObj('CommandPaletteService', ['open', 'close', 'toggle']);
 
     await TestBed.configureTestingModule({
       imports: [ToolbarComponent],
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
+        provideRouter([]),
         { provide: FilterService, useValue: mockFilterService },
         { provide: DataService, useValue: mockDataService },
         { provide: SavedViewsService, useValue: mockSavedViewsService },
-        { provide: AttackCveService, useValue: mockAttackCveService },
-        { provide: ExportActionsService, useValue: mockExportActions },
+        { provide: CommandPaletteService, useValue: mockPalette },
       ],
     }).compileComponents();
 
@@ -95,12 +60,6 @@ describe('ToolbarComponent', () => {
     expect(domainBtns.length).toBe(3);
   });
 
-  it('should render the heatmap dropdown button', () => {
-    const heatmapBtn = fixture.nativeElement.querySelector('.heatmap-btn');
-    expect(heatmapBtn).toBeTruthy();
-    expect(heatmapBtn.textContent).toContain('Coverage');
-  });
-
   it('should emit domainChange when domain button clicked', () => {
     spyOn(component.domainChange, 'emit');
     const icsDomainBtn = fixture.nativeElement.querySelectorAll('.domain-btn')[1];
@@ -109,27 +68,22 @@ describe('ToolbarComponent', () => {
     expect(component.domainChange.emit).toHaveBeenCalledWith('ics');
   });
 
-  it('should call setTechniqueQuery on search input', () => {
-    const input = fixture.nativeElement.querySelector('.technique-search .search-input');
-    expect(input).toBeTruthy();
-    input.value = 'T1059';
-    input.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
-    expect(mockFilterService.setTechniqueQuery).toHaveBeenCalledWith('T1059');
+  it('carries no matrix-scoped controls (they moved to the matrix page)', () => {
+    expect(fixture.nativeElement.querySelector('.heatmap-btn')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('.export-menu')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('input.search-input')).toBeFalsy();
   });
 
-  it('should invoke the export service when export menu item is clicked', () => {
-    // Open the export menu
-    component.showExportMenu = true;
-    fixture.detectChanges();
-    const exportBtn = fixture.nativeElement.querySelector('.export-menu .menu-action');
-    expect(exportBtn).toBeTruthy();
-    exportBtn.click();
-    expect(mockExportActions.exportCsv).toHaveBeenCalled();
+  it('the search trigger opens the command palette', () => {
+    const trigger = fixture.nativeElement.querySelector('.palette-trigger');
+    expect(trigger).toBeTruthy();
+    trigger.click();
+    expect(mockPalette.open).toHaveBeenCalled();
   });
 
-  it('should render the search input', () => {
-    const searchInput = fixture.nativeElement.querySelector('.search-input');
-    expect(searchInput).toBeTruthy();
+  it('brand links back to the matrix', () => {
+    const brand = fixture.nativeElement.querySelector('a.brand-link');
+    expect(brand).toBeTruthy();
+    expect(brand.getAttribute('href')).toBe('/matrix');
   });
 });

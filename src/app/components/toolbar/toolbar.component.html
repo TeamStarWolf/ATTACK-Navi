@@ -1,48 +1,18 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-<header class="toolbar top-bar" role="toolbar" aria-label="Matrix controls">
+<header class="toolbar top-bar" role="toolbar" aria-label="Global controls">
 
-  <!-- Brand (clickable view-mode switcher) -->
-  <div class="brand brand-menu" [class.menu-open]="brandMenuOpen">
-    <button type="button" class="brand-trigger" (click)="toggleBrandMenu()"
-            [attr.aria-haspopup]="'true'" [attr.aria-expanded]="brandMenuOpen"
-            title="Switch view">
+  <!-- Brand -->
+  <div class="brand">
+    <a class="brand-trigger brand-link" routerLink="/matrix" title="ATT&CK Navi — Matrix home">
       <span class="brand-icon">🛡️</span>
       <span class="brand-name">ATT&amp;CK Nav</span>
-      <span class="brand-mode-badge">{{ viewMode === 'library' ? 'LIBRARY' : 'WORKBENCH' }}</span>
-      <span class="brand-caret">▾</span>
-    </button>
-    @if (attackVersion && viewMode === 'workbench') {
+    </a>
+    @if (attackVersion) {
       <span class="attack-version">v{{ attackVersion }}</span>
-    }
-
-    @if (brandMenuOpen) {
-      <div class="brand-dropdown" role="menu">
-        <button type="button" role="menuitem" class="brand-menu-item"
-                [class.active]="viewMode === 'workbench'"
-                (click)="selectViewMode('workbench')">
-          <span class="bm-icon">🛡️</span>
-          <div class="bm-text">
-            <div class="bm-title">ATT&amp;CK Workbench</div>
-            <div class="bm-desc">Matrix, coverage, detections, threat actors</div>
-          </div>
-          @if (viewMode === 'workbench') { <span class="bm-check">✓</span> }
-        </button>
-        <button type="button" role="menuitem" class="brand-menu-item"
-                [class.active]="viewMode === 'library'"
-                (click)="selectViewMode('library')">
-          <span class="bm-icon">📚</span>
-          <div class="bm-text">
-            <div class="bm-title">Library Index</div>
-            <div class="bm-desc">Searchable tools, channels, accounts</div>
-          </div>
-          @if (viewMode === 'library') { <span class="bm-check">✓</span> }
-        </button>
-      </div>
     }
   </div>
 
-  @if (viewMode === 'workbench') {
   <div class="bar-divider"></div>
 
   <!-- Domain + data source controls -->
@@ -83,206 +53,19 @@
 
   <div class="bar-divider"></div>
 
-  <!-- Technique search (center focus) -->
+  <!-- Global search: opens the command palette -->
   <div class="search-group">
-    <div class="search-wrap technique-search">
-      <div class="search-field" [class.active]="techniqueSearchText">
-        <span class="search-icon">🔎</span>
-        <input
-          type="text"
-          placeholder="Search techniques…"
-          [(ngModel)]="techniqueSearchText"
-          (input)="onTechniqueSearchInput()"
-          (blur)="closeTechniqueDropdown()"
-          (focus)="onTechniqueSearchInput()"
-          class="search-input"
-          autocomplete="off"
-        />
-        @if (techniqueSearchText) {
-          <button class="clear-btn" (click)="techniqueSearchText=''; onTechniqueSearchInput()" title="Clear">✕</button>
-        }
-        <button
-          class="scope-btn"
-          [class.active]="searchFilterMode"
-          (click)="toggleSearchFilterMode()"
-          [title]="searchFilterMode ? 'Filter mode active — click for highlight mode' : 'Highlight mode — click for filter mode'"
-        >{{ searchFilterMode ? '🔽' : '🔲' }}</button>
-        <button
-          class="scope-btn"
-          [class.active]="searchScope === 'full'"
-          (click)="toggleSearchScope()"
-          [title]="searchScope === 'full' ? 'Full-text search — click for name-only' : 'Name search — click for full-text'"
-        >{{ searchScope === 'full' ? '📄' : 'Aa' }}</button>
-      </div>
-      @if (showTechniqueDropdown) {
-        <ul class="dropdown">
-          @if (cveSearchHint) {
-            <li class="dropdown-item cve-hint-item" (mousedown)="showTechniqueDropdown = false">
-              <span class="drop-id">🔴 {{ cveSearchHint.cveId }}</span>
-              <span class="drop-name">
-                @if (cveSearchHint.techniqueCount > 0) {
-                  Highlighting {{ cveSearchHint.techniqueCount }} technique{{ cveSearchHint.techniqueCount !== 1 ? 's' : '' }}
-                } @else {
-                  No mapped techniques in dataset
-                }
-              </span>
-            </li>
-          }
-          @for (t of filteredTechniques; track t.id) {
-            <li class="dropdown-item" (mousedown)="selectTechnique(t)">
-              <span class="drop-id">{{ t.attackId }}</span>
-              <span class="drop-name">{{ t.name }}</span>
-            </li>
-          }
-        </ul>
-      }
-    </div>
-
-    <!-- Mitigation filter -->
-    <div class="search-wrap">
-      <div class="search-field" [class.active]="activeMitigations.length > 0">
-        <span class="search-icon">🔍</span>
-        <input
-          type="text"
-          [placeholder]="activeMitigations.length > 0 ? 'Add mitigation…' : 'Filter by mitigation…'"
-          [(ngModel)]="mitigationSearchText"
-          (input)="onMitigationSearchInput()"
-          (blur)="closeDropdown()"
-          (focus)="onMitigationSearchInput()"
-          class="search-input"
-          autocomplete="off"
-        />
-        @if (mitigationSearchText) {
-          <button class="clear-btn" (click)="mitigationSearchText=''; onMitigationSearchInput()" title="Clear">✕</button>
-        }
-      </div>
-      @if (showDropdown) {
-        <ul class="dropdown">
-          @for (m of filteredMitigations; track m.id) {
-            <li class="dropdown-item" (mousedown)="selectMitigation(m)">
-              <span class="drop-id">{{ m.attackId }}</span>
-              <span class="drop-name">{{ m.name }}</span>
-            </li>
-          }
-        </ul>
-      }
-    </div>
-  </div>
-
-  <div class="bar-divider"></div>
-
-  <!-- Matrix controls -->
-  <div class="bar-group">
-
-    <!-- Platform toggle -->
-    <button class="icon-btn platform-row-btn"
-            [class.active]="activePlatforms.size > 0 || showPlatformRow"
-            (click)="togglePlatformRow()"
-            [title]="activePlatforms.size > 0 ? activePlatforms.size + ' platform(s) active — click to expand' : 'Filter by platform'">
-      🖥{{ activePlatforms.size > 0 ? ' ' + activePlatforms.size : '' }}
+    <button class="palette-trigger" (click)="openPalette()" aria-label="Search or jump to anything">
+      <span class="search-icon">🔎</span>
+      <span class="palette-placeholder">Search or jump to…</span>
+      <kbd class="palette-kbd">Ctrl K</kbd>
     </button>
-
-    <!-- Data source filter -->
-    <select class="filter-select ds-select" [(ngModel)]="selectedDataSource" (change)="onDetectionSourceChange()" title="Filter by data source">
-      <option value="">All data sources</option>
-      @for (ds of dataSourceNames; track ds) {
-        <option [value]="ds">{{ ds }}</option>
-      }
-    </select>
-
-    <!-- Impl status filter -->
-    <select class="filter-select" [(ngModel)]="implStatusFilter" (change)="onImplStatusFilterChange()" title="Filter by implementation status">
-      <option value="">All statuses</option>
-      @for (o of implStatusOptions; track o.value) {
-        <option [value]="o.value">{{ o.label }}</option>
-      }
-    </select>
   </div>
 
   <div class="bar-divider"></div>
 
-  <!-- View / Explore controls (popover) -->
-  <div class="bar-group">
-    <div class="views-dropdown">
-      <button class="icon-btn heatmap-btn"
-              [class.active]="heatmapMode !== 'coverage' || sortMode !== 'alpha' || dimUncovered || multiSelectMode"
-              (click)="toggleViewMenu()"
-              title="View & explore options"
-              aria-label="View and explore options">
-        🎨 {{ heatmapMode === 'coverage' ? 'Coverage' : heatmapMode === 'risk' ? 'Risk' : heatmapMode === 'exposure' ? 'Exposure' : heatmapMode === 'frequency' ? 'Frequency' : heatmapMode === 'software' ? 'Software' : heatmapMode === 'campaign' ? 'Campaign' : heatmapMode === 'status' ? 'Status' : heatmapMode === 'controls' ? 'Controls' : heatmapMode === 'kev' ? 'KEV' : heatmapMode === 'd3fend' ? 'D3FEND' : heatmapMode === 'atomic' ? 'Atomic' : heatmapMode === 'engage' ? 'Engage' : heatmapMode === 'car' ? 'CAR' : heatmapMode === 'cve' ? 'CVE' : heatmapMode === 'detection' ? 'Detection' : heatmapMode === 'cri' ? 'CRI' : heatmapMode === 'unified' ? 'Unified' : heatmapMode === 'sigma' ? 'Sigma' : heatmapMode === 'nist' ? 'NIST' : heatmapMode === 'veris' ? 'VERIS' : heatmapMode === 'epss' ? 'EPSS' : heatmapMode === 'elastic' ? 'Elastic' : heatmapMode === 'splunk' ? 'Splunk' : heatmapMode === 'intelligence' ? 'Intelligence' : heatmapMode === 'm365' ? 'M365' : heatmapMode === 'my-exposure' ? 'My Exposure' : heatmapMode === 'wazuh' ? 'Wazuh' : 'Coverage' }} ▾
-      </button>
-      @if (showViewMenu) {
-        <div class="views-menu view-panel" (click)="$event.stopPropagation()">
-          <div class="views-menu-header">Heatmap</div>
-          <div class="heatmap-grid">
-            @for (m of heatmapModes; track m.value) {
-              <button class="heatmap-mode-btn" [class.active]="heatmapMode === m.value" (click)="setHeatmap(m.value)">
-                {{ m.label }}
-              </button>
-            }
-          </div>
-          <div class="views-menu-header" style="margin-top:8px">Matrix</div>
-          <div class="view-actions">
-            <button class="menu-action" [class.active]="sortMode === 'coverage'" (click)="toggleSort()">
-              {{ sortMode === 'alpha' ? '↕ Sort by risk' : '↕ Sort A–Z' }}
-            </button>
-            <button class="menu-action" [class.active]="dimUncovered" (click)="toggleDimUncovered()">
-              👁 {{ dimUncovered ? 'Show all' : 'Dim uncovered' }}
-            </button>
-            <button class="menu-action" (click)="showGapView.emit(); showViewMenu = false">⚠ Gap view</button>
-            <button class="menu-action" [class.active]="multiSelectMode" (click)="onToggleMultiSelect(); showViewMenu = false">
-              ☑ {{ multiSelectMode ? 'Exit multi-select' : 'Multi-select' }}
-            </button>
-          </div>
-          <div class="views-menu-header" style="margin-top:8px">Subtechniques</div>
-          <div class="view-actions">
-            <button class="menu-action" (click)="onExpandAll(); showViewMenu = false">⊞ Expand all</button>
-            <button class="menu-action" (click)="onCollapseAll(); showViewMenu = false">⊟ Collapse all</button>
-          </div>
-        </div>
-      }
-    </div>
-  </div>
-
-  <div class="bar-divider"></div>
-
-  <!-- Export / Import -->
-  <div class="bar-group">
-    <div class="views-dropdown">
-      <button class="icon-btn export-hub-btn" (click)="showExportMenu = !showExportMenu; showViewMenu = false; showViewsMenu = false; showSaveDialog = false" title="Export &amp; Import" aria-label="Export and import">
-        📦 Exports
-      </button>
-      @if (showExportMenu) {
-        <div class="views-menu export-menu" (click)="$event.stopPropagation()">
-          <div class="views-menu-header">Export & Import</div>
-          <button class="menu-action" (click)="exportActions.exportCsv(); showExportMenu = false">⬇ Coverage CSV</button>
-          <button class="menu-action" (click)="exportActions.exportTacticCsv(); showExportMenu = false">⬇ Tactic Summary</button>
-          <button class="menu-action" (click)="exportActions.exportImplPlanCsv(); showExportMenu = false">⬇ Implementation Plan</button>
-          <button class="menu-action" (click)="exportActions.exportFullReport(); showExportMenu = false">⬇ Full Report</button>
-          <button class="menu-action" (click)="exportActions.exportMatrixPng(); showExportMenu = false">📷 Matrix PNG</button>
-          <button class="menu-action" (click)="exportActions.exportHtmlCoverageReport(); showExportMenu = false">📊 HTML Report</button>
-          <button class="menu-action" (click)="exportActions.exportPdf(); showExportMenu = false">📄 PDF Report</button>
-          <button class="menu-action" (click)="exportActions.exportXlsxWorkbook(); showExportMenu = false">📗 Excel Workbook</button>
-          <button class="menu-action" (click)="printPage(); showExportMenu = false">🖨 Print Matrix</button>
-          <button class="menu-action" (click)="exportActions.exportNavigatorLayer(); showExportMenu = false">⬇ Navigator Layer</button>
-          <button class="menu-action" (click)="exportActions.openInNavigator(); showExportMenu = false">🧭 Open In Navigator</button>
-          <button class="menu-action" (click)="exportActions.importNavigatorLayer(); showExportMenu = false">⬆ Import Navigator Layer</button>
-          <button class="menu-action" (click)="exportActions.exportStateJson(); showExportMenu = false">⬇ Export State</button>
-          <button class="menu-action" (click)="exportActions.importStateJson(); showExportMenu = false">⬆ Import State</button>
-        </div>
-      }
-    </div>
-  </div>
-  } <!-- end viewMode === 'workbench' for the matrix-specific groups -->
-
-  <div class="bar-divider"></div>
-
-  <!-- Clear + Theme (theme always visible; clear/save/views only in workbench mode) -->
+  <!-- Global actions -->
   <div class="bar-group end-group">
-    @if (viewMode === 'workbench' && (activeMitigations.length > 0 || techniqueSearchText || selectedPlatform || selectedDataSource || dimUncovered || activeThreatGroupCount > 0 || implStatusFilter)) {
-      <button class="icon-btn reset-btn" (click)="clearAll()" title="Clear all filters" aria-label="Clear all filters">✕ Clear</button>
-    }
-    @if (viewMode === 'workbench') {
     <button class="icon-btn share-btn" (click)="copyShareLink.emit()" title="Copy shareable link to clipboard" aria-label="Copy shareable link">🔗 Share</button>
 
     <!-- Save View button + dialog -->
@@ -327,7 +110,6 @@
         </div>
       }
     </div>
-    } <!-- end viewMode === 'workbench' for Share/Save/Views -->
 
     <!-- Technique of the Day -->
     @if (techniqueOfDay) {
@@ -338,31 +120,9 @@
       </button>
     }
 
-        <button class="icon-btn theme-btn" (click)="toggleDark.emit()" [title]="isLightMode ? 'Switch to dark mode' : 'Switch to light mode'" [attr.aria-label]="isLightMode ? 'Switch to dark mode' : 'Switch to light mode'">
+    <button class="icon-btn theme-btn" (click)="toggleDark.emit()" [title]="isLightMode ? 'Switch to dark mode' : 'Switch to light mode'" [attr.aria-label]="isLightMode ? 'Switch to dark mode' : 'Switch to light mode'">
       {{ isLightMode ? '🌙' : '☀️' }}
     </button>
   </div>
 
 </header>
-
-<!-- Platform filter pill row — only shown when active or expanded -->
-@if (viewMode === 'workbench' && (activePlatforms.size > 0 || showPlatformRow)) {
-  <div class="platform-filter-row">
-    <span class="filter-label">Platforms:</span>
-    @for (p of PLATFORM_PILLS; track p.name) {
-      <button class="platform-pill"
-              [class.active]="activePlatforms.has(p.name)"
-              (click)="togglePlatformPill(p.name)"
-              [title]="p.name">
-        {{ p.icon }} {{ p.name }}
-      </button>
-    }
-    @if (activePlatforms.size > 0) {
-      <button class="platform-clear" (click)="clearPlatformPills()">✕ Clear</button>
-    }
-  </div>
-}
-
-@if (viewMode === 'workbench') {
-  <app-universal-search></app-universal-search>
-}

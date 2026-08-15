@@ -57,6 +57,7 @@ export const PANEL_ROUTE_MAP: Readonly<Partial<Record<string, string[]>>> = {
   // P1d: Reports workspace
   report: ['/reports', 'builder'],
   'ir-playbook': ['/reports', 'playbooks'],
+  exports: ['/reports', 'exports'],
   // P1d: Settings workspace
   settings: ['/settings', 'preferences'],
   changelog: ['/settings', 'changelog'],

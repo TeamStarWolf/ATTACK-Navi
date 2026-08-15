@@ -1,0 +1,181 @@
+<!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+     https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
+<div class="matrix-controls" role="toolbar" aria-label="Matrix filters and view options">
+
+  <!-- Technique search -->
+  <div class="search-wrap technique-search">
+    <div class="search-field" [class.active]="techniqueSearchText">
+      <span class="search-icon">🔎</span>
+      <input
+        type="text"
+        placeholder="Search techniques…"
+        [(ngModel)]="techniqueSearchText"
+        (input)="onTechniqueSearchInput()"
+        (blur)="closeTechniqueDropdown()"
+        (focus)="onTechniqueSearchInput()"
+        class="search-input"
+        autocomplete="off"
+      />
+      @if (techniqueSearchText) {
+        <button class="clear-btn" (click)="techniqueSearchText=''; onTechniqueSearchInput()" title="Clear">✕</button>
+      }
+      <button
+        class="scope-btn"
+        [class.active]="searchFilterMode"
+        (click)="toggleSearchFilterMode()"
+        [title]="searchFilterMode ? 'Filter mode active — click for highlight mode' : 'Highlight mode — click for filter mode'"
+      >{{ searchFilterMode ? '🔽' : '🔲' }}</button>
+      <button
+        class="scope-btn"
+        [class.active]="searchScope === 'full'"
+        (click)="toggleSearchScope()"
+        [title]="searchScope === 'full' ? 'Full-text search — click for name-only' : 'Name search — click for full-text'"
+      >{{ searchScope === 'full' ? '📄' : 'Aa' }}</button>
+    </div>
+    @if (showTechniqueDropdown) {
+      <ul class="dropdown">
+        @if (cveSearchHint) {
+          <li class="dropdown-item cve-hint-item" (mousedown)="showTechniqueDropdown = false">
+            <span class="drop-id">🔴 {{ cveSearchHint.cveId }}</span>
+            <span class="drop-name">
+              @if (cveSearchHint.techniqueCount > 0) {
+                Highlighting {{ cveSearchHint.techniqueCount }} technique{{ cveSearchHint.techniqueCount !== 1 ? 's' : '' }}
+              } @else {
+                No mapped techniques in dataset
+              }
+            </span>
+          </li>
+        }
+        @for (t of filteredTechniques; track t.id) {
+          <li class="dropdown-item" (mousedown)="selectTechnique(t)">
+            <span class="drop-id">{{ t.attackId }}</span>
+            <span class="drop-name">{{ t.name }}</span>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  <!-- Mitigation filter -->
+  <div class="search-wrap">
+    <div class="search-field" [class.active]="activeMitigations.length > 0">
+      <span class="search-icon">🔍</span>
+      <input
+        type="text"
+        [placeholder]="activeMitigations.length > 0 ? 'Add mitigation…' : 'Filter by mitigation…'"
+        [(ngModel)]="mitigationSearchText"
+        (input)="onMitigationSearchInput()"
+        (blur)="closeDropdown()"
+        (focus)="onMitigationSearchInput()"
+        class="search-input"
+        autocomplete="off"
+      />
+      @if (mitigationSearchText) {
+        <button class="clear-btn" (click)="mitigationSearchText=''; onMitigationSearchInput()" title="Clear">✕</button>
+      }
+    </div>
+    @if (showDropdown) {
+      <ul class="dropdown">
+        @for (m of filteredMitigations; track m.id) {
+          <li class="dropdown-item" (mousedown)="selectMitigation(m)">
+            <span class="drop-id">{{ m.attackId }}</span>
+            <span class="drop-name">{{ m.name }}</span>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  <div class="controls-divider"></div>
+
+  <!-- Platform toggle -->
+  <button class="icon-btn platform-row-btn"
+          [class.active]="activePlatforms.size > 0 || showPlatformRow"
+          (click)="togglePlatformRow()"
+          [title]="activePlatforms.size > 0 ? activePlatforms.size + ' platform(s) active — click to expand' : 'Filter by platform'">
+    🖥{{ activePlatforms.size > 0 ? ' ' + activePlatforms.size : '' }}
+  </button>
+
+  <!-- Data source filter -->
+  <select class="filter-select ds-select" [(ngModel)]="selectedDataSource" (change)="onDetectionSourceChange()" title="Filter by data source">
+    <option value="">All data sources</option>
+    @for (ds of dataSourceNames; track ds) {
+      <option [value]="ds">{{ ds }}</option>
+    }
+  </select>
+
+  <!-- Impl status filter -->
+  <select class="filter-select" [(ngModel)]="implStatusFilter" (change)="onImplStatusFilterChange()" title="Filter by implementation status">
+    <option value="">All statuses</option>
+    @for (o of implStatusOptions; track o.value) {
+      <option [value]="o.value">{{ o.label }}</option>
+    }
+  </select>
+
+  <div class="controls-divider"></div>
+
+  <!-- View / Explore controls (popover) -->
+  <div class="views-dropdown">
+    <button class="icon-btn heatmap-btn"
+            [class.active]="heatmapMode !== 'coverage' || sortMode !== 'alpha' || dimUncovered || multiSelectMode"
+            (click)="toggleViewMenu()"
+            title="View & explore options"
+            aria-label="View and explore options">
+      🎨 {{ heatmapShort }} ▾
+    </button>
+    @if (showViewMenu) {
+      <div class="views-menu view-panel" (click)="$event.stopPropagation()">
+        @for (group of heatmapGroups; track group) {
+          <div class="views-menu-header">{{ group }}</div>
+          <div class="heatmap-grid">
+            @for (m of modesForGroup(group); track m.value) {
+              <button class="heatmap-mode-btn" [class.active]="heatmapMode === m.value" (click)="setHeatmap(m.value)">
+                {{ m.label }}
+              </button>
+            }
+          </div>
+        }
+        <div class="views-menu-header" style="margin-top:8px">Matrix</div>
+        <div class="view-actions">
+          <button class="menu-action" [class.active]="sortMode === 'coverage'" (click)="toggleSort()">
+            {{ sortMode === 'alpha' ? '↕ Sort by risk' : '↕ Sort A–Z' }}
+          </button>
+          <button class="menu-action" [class.active]="dimUncovered" (click)="toggleDimUncovered()">
+            👁 {{ dimUncovered ? 'Show all' : 'Dim uncovered' }}
+          </button>
+          <button class="menu-action" (click)="onGapView(); showViewMenu = false">⚠ Gap view</button>
+          <button class="menu-action" [class.active]="multiSelectMode" (click)="onToggleMultiSelect(); showViewMenu = false">
+            ☑ {{ multiSelectMode ? 'Exit multi-select' : 'Multi-select' }}
+          </button>
+        </div>
+        <div class="views-menu-header" style="margin-top:8px">Subtechniques</div>
+        <div class="view-actions">
+          <button class="menu-action" (click)="onExpandAll(); showViewMenu = false">⊞ Expand all</button>
+          <button class="menu-action" (click)="onCollapseAll(); showViewMenu = false">⊟ Collapse all</button>
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (hasActiveFilters) {
+    <button class="icon-btn reset-btn" (click)="clearAll()" title="Clear all filters" aria-label="Clear all filters">✕ Clear</button>
+  }
+</div>
+
+<!-- Platform filter pill row — only shown when active or expanded -->
+@if (activePlatforms.size > 0 || showPlatformRow) {
+  <div class="platform-filter-row">
+    <span class="filter-label">Platforms:</span>
+    @for (p of PLATFORM_PILLS; track p.name) {
+      <button class="platform-pill"
+              [class.active]="activePlatforms.has(p.name)"
+              (click)="togglePlatformPill(p.name)"
+              [title]="p.name">
+        {{ p.icon }} {{ p.name }}
+      </button>
+    }
+    @if (activePlatforms.size > 0) {
+      <button class="platform-clear" (click)="clearPlatformPills()">✕ Clear</button>
+    }
+  </div>
+}

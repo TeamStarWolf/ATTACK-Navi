@@ -1,0 +1,27 @@
+<!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+     https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
+<section class="page-panel page-panel--full export-hub" aria-label="Export Hub">
+  <div class="hub-header">
+    <h2 class="hub-title">Export Hub</h2>
+    <p class="hub-subtitle">Every export and import in one place — data, reports, Navigator layers and workspace state.</p>
+  </div>
+
+  <div class="hub-body">
+    @for (section of sections; track section.title) {
+      <div class="hub-section">
+        <h3 class="section-title">{{ section.title }}</h3>
+        <div class="card-grid">
+          @for (card of section.cards; track card.title) {
+            <button class="export-card" (click)="run(card)">
+              <span class="card-icon" aria-hidden="true">{{ card.icon }}</span>
+              <span class="card-text">
+                <span class="card-title">{{ card.title }}</span>
+                <span class="card-desc">{{ card.desc }}</span>
+              </span>
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</section>
