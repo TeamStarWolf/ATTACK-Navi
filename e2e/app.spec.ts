@@ -1,8 +1,14 @@
-﻿// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { test, expect } from '@playwright/test';
 
 const BASE = 'http://localhost:4200';
+
+// CI runs against `ng serve`, which JIT-compiles each lazy route the first
+// time it is hit. On the constrained CI runner that cold compile can take
+// tens of seconds, so deep-link assertions (which land directly on a cold
+// route) get a much longer budget there than locally.
+const ROUTE_TIMEOUT = process.env['CI'] ? 60000 : 15000;
 
 test.describe('ATT&CK Navi', () => {
   // Serve the bundled STIX asset for MITRE ATT&CK data requests. Each test
@@ -20,7 +26,7 @@ test.describe('ATT&CK Navi', () => {
   test('loads the matrix', async ({ page }) => {
     await page.goto(BASE);
     await expect(page.locator('app-root > *').first()).toBeVisible();
-    await expect(page.locator('.matrix-wrapper')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('.matrix-wrapper')).toBeVisible({ timeout: ROUTE_TIMEOUT });
     // Matrix should have tactic header columns
     const tacticHeaders = page.locator('.tactic-header');
     await expect(tacticHeaders.first()).toBeVisible();
@@ -30,14 +36,14 @@ test.describe('ATT&CK Navi', () => {
 
   test('clicking a technique opens sidebar', async ({ page }) => {
     await page.goto(BASE);
-    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
     await page.locator('.cell').first().click();
     await expect(page.locator('.sidebar.open')).toBeVisible({ timeout: 5000 });
   });
 
   test('sidebar shows technique details', async ({ page }) => {
     await page.goto(BASE);
-    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
     await page.locator('.cell').first().click();
     await expect(page.locator('.sidebar.open .sidebar-body')).toBeVisible({ timeout: 5000 });
     // Should contain a technique ID (T followed by digits)
@@ -46,7 +52,7 @@ test.describe('ATT&CK Navi', () => {
 
   test('search filters techniques', async ({ page }) => {
     await page.goto(BASE);
-    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
     const searchInput = page.locator('input[placeholder*="Search techniques"]');
     await searchInput.fill('PowerShell');
     // Toolbar search (highlight mode) marks matches .highlighted and the rest .dimmed
@@ -59,7 +65,7 @@ test.describe('ATT&CK Navi', () => {
 
   test('heatmap mode switches', async ({ page }) => {
     await page.goto(BASE);
-    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
     // Open heatmap/view dropdown
     await page.locator('.heatmap-btn').click();
     await expect(page.locator('.views-menu')).toBeVisible();
@@ -74,7 +80,7 @@ test.describe('ATT&CK Navi', () => {
 
   test('nav rail routes to every workspace', async ({ page }) => {
     await page.goto(BASE);
-    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
     const workspaces: Array<[label: string, urlPart: string]> = [
       ['Dashboard', '/dashboard'],
       ['Intel', '/intel'],
@@ -96,7 +102,7 @@ test.describe('ATT&CK Navi', () => {
 
   test('dashboard panel opens', async ({ page }) => {
     await page.goto(BASE);
-    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
     // Click Dashboard nav item
     await page.locator('.nav-item', { hasText: 'Dashboard' }).click();
     await expect(page.locator('app-dashboard-panel > *').first()).toBeVisible({ timeout: 5000 });
@@ -104,7 +110,7 @@ test.describe('ATT&CK Navi', () => {
 
   test('workspace tab bar switches tabs', async ({ page }) => {
     await page.goto(BASE + '/#/intel/groups');
-    await expect(page.locator('app-threat-panel > *').first()).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('app-threat-panel > *').first()).toBeVisible({ timeout: ROUTE_TIMEOUT });
     await page.locator('app-workspace-shell a', { hasText: 'Software' }).click();
     await expect(page).toHaveURL(/#\/intel\/software/);
     await expect(page.locator('app-software-panel > *').first()).toBeVisible({ timeout: 5000 });
@@ -112,7 +118,7 @@ test.describe('ATT&CK Navi', () => {
 
   test('browser back returns to the previous workspace', async ({ page }) => {
     await page.goto(BASE);
-    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
     await page.locator('.nav-item', { hasText: 'Coverage' }).click();
     await expect(page).toHaveURL(/#\/coverage/);
     await page.goBack();
@@ -122,7 +128,7 @@ test.describe('ATT&CK Navi', () => {
 
   test('escape closes sidebar', async ({ page }) => {
     await page.goto(BASE);
-    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
     await page.locator('.cell').first().click();
     await expect(page.locator('.sidebar.open')).toBeVisible({ timeout: 5000 });
     await page.keyboard.press('Escape');
@@ -132,7 +138,7 @@ test.describe('ATT&CK Navi', () => {
 
   test('theme toggle works', async ({ page }) => {
     await page.goto(BASE);
-    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
     // Find and click theme toggle button
     const themeBtn = page.locator('.theme-btn');
     if (await themeBtn.count() > 0) {
@@ -160,27 +166,27 @@ test.describe('ATT&CK Navi', () => {
   for (const [name, url, host] of DEEP_LINKS) {
     test(`deep link renders ${name}`, async ({ page }) => {
       await page.goto(BASE + url);
-      await expect(page.locator(`${host} > *`).first()).toBeVisible({ timeout: 15000 });
+      await expect(page.locator(`${host} > *`).first()).toBeVisible({ timeout: ROUTE_TIMEOUT });
     });
   }
 
   test('settings opens from the rail', async ({ page }) => {
     await page.goto(BASE);
-    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
     await page.locator('.nav-item', { hasText: 'Settings' }).click();
     await expect(page.locator('app-settings-panel > *').first()).toBeVisible({ timeout: 5000 });
   });
 
   test('help button opens keyboard shortcuts overlay', async ({ page }) => {
     await page.goto(BASE);
-    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
     await page.locator('.help-btn').click();
     await expect(page.locator('app-keyboard-help .help-overlay, app-keyboard-help .keyboard-help, app-keyboard-help > *').first()).toBeVisible({ timeout: 5000 });
   });
 
   test('sidebar shows signal pills', async ({ page }) => {
     await page.goto(BASE);
-    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
     await page.locator('.cell').first().click();
     await expect(page.locator('.sidebar.open')).toBeVisible({ timeout: 5000 });
     await expect(page.locator('.signal-pill').first()).toBeVisible({ timeout: 10000 });
@@ -188,7 +194,7 @@ test.describe('ATT&CK Navi', () => {
 
   test('sidebar shows completeness score', async ({ page }) => {
     await page.goto(BASE);
-    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
     await page.locator('.cell').first().click();
     await expect(page.locator('.sidebar.open')).toBeVisible({ timeout: 5000 });
     await expect(page.locator('.completeness-bar')).toBeVisible();
@@ -196,7 +202,7 @@ test.describe('ATT&CK Navi', () => {
 
   test('sidebar collapsible sections toggle', async ({ page }) => {
     await page.goto(BASE);
-    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
     await page.locator('.cell').first().click();
     await expect(page.locator('.sidebar.open')).toBeVisible({ timeout: 5000 });
     const section = page.locator('.collapsible-title').first();
@@ -208,13 +214,13 @@ test.describe('ATT&CK Navi', () => {
 
   test('technique URL pre-selection works', async ({ page }) => {
     await page.goto(BASE + '/#tech=T1059');
-    await expect(page.locator('.sidebar.open')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('.sidebar.open')).toBeVisible({ timeout: ROUTE_TIMEOUT });
     await expect(page.locator('.sidebar-header .attack-id')).toContainText('T1059');
   });
 
   test('multiple heatmap modes render', async ({ page }) => {
     await page.goto(BASE);
-    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
     // Open heatmap dropdown
     await page.locator('.heatmap-btn').click();
     await expect(page.locator('.views-menu')).toBeVisible();
@@ -229,7 +235,7 @@ test.describe('ATT&CK Navi', () => {
 
   test('dashboard shows widgets', async ({ page }) => {
     await page.goto(BASE);
-    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
     await page.locator('.nav-item', { hasText: 'Dashboard' }).click();
     await expect(page.locator('app-dashboard-panel > *').first()).toBeVisible({ timeout: 5000 });
     await expect(page.locator('.widget-card').nth(2)).toBeVisible({ timeout: 10000 });
@@ -237,22 +243,22 @@ test.describe('ATT&CK Navi', () => {
 
   test('detection panel opens', async ({ page }) => {
     await page.goto(BASE);
-    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: 15000 });
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
     await page.locator('.nav-item', { hasText: 'Detect' }).click();
     await expect(page.locator('app-detection-panel > *').first()).toBeVisible({ timeout: 5000 });
   });
 
   test('deep link survives a reload', async ({ page }) => {
     await page.goto(BASE + '/#/coverage/controls');
-    await expect(page.locator('app-controls-panel > *').first()).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('app-controls-panel > *').first()).toBeVisible({ timeout: ROUTE_TIMEOUT });
     await page.reload();
-    await expect(page.locator('app-controls-panel > *').first()).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('app-controls-panel > *').first()).toBeVisible({ timeout: ROUTE_TIMEOUT });
     await expect(page).toHaveURL(/#\/coverage\/controls/);
   });
 
   test('legacy filter-key share link lands on the matrix with filters applied', async ({ page }) => {
     await page.goto(BASE + '/#heat=kev');
     await expect(page).toHaveURL(/#\/matrix\?.*heat=kev/);
-    await expect(page.locator('.matrix-wrapper')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('.matrix-wrapper')).toBeVisible({ timeout: ROUTE_TIMEOUT });
   });
 });
