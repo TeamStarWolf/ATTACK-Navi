@@ -3,41 +3,64 @@
 
   # ATTACK-Navi
 
-  [![Angular 19](https://img.shields.io/badge/angular-19-DD0031?style=for-the-badge&logo=angular&logoColor=white)](https://angular.dev)
-  [![TypeScript](https://img.shields.io/badge/typescript-5.7-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-  [![GitHub Pages](https://img.shields.io/badge/live-github%20pages-0A66C2?style=for-the-badge&logo=github)](https://teamstarwolf.github.io/ATTACK-Navi/)
-  [![Security](https://img.shields.io/badge/security-codeql%20%2B%20osv-2ECC71?style=for-the-badge)](.github/workflows)
+  **A browser-based MITRE ATT&CK® analyst workbench — navigate the matrix, correlate threat intelligence, map exposure, measure detection coverage, and generate review-ready reports, all in one place.**
 
-  **[Live Site](https://teamstarwolf.github.io/ATTACK-Navi/)** | **[Docs](docs/README.md)** | **[Application Overview](docs/application-overview.md)** | **[Workflows](WORKFLOWS.md)** | **[Architecture](ARCHITECTURE.md)** | **[Security](SECURITY.md)**
+  [![Angular 19](https://img.shields.io/badge/Angular-19-DD0031?style=for-the-badge&logo=angular&logoColor=white)](https://angular.dev)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+  [![Live on GitHub Pages](https://img.shields.io/badge/Live-GitHub%20Pages-0A66C2?style=for-the-badge&logo=github)](https://teamstarwolf.github.io/ATTACK-Navi/)
+  [![Tests](https://img.shields.io/badge/tests-652%20unit%20%2B%2029%20e2e-2ECC71?style=for-the-badge)](.github/workflows/deploy.yml)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
+
+  **[▶ Live Demo](https://teamstarwolf.github.io/ATTACK-Navi/)** &nbsp;·&nbsp; [Docs](docs/README.md) &nbsp;·&nbsp; [Architecture](ARCHITECTURE.md) &nbsp;·&nbsp; [Workflows](WORKFLOWS.md) &nbsp;·&nbsp; [Changelog](CHANGELOG.md) &nbsp;·&nbsp; [Security](SECURITY.md)
 </div>
-
-ATTACK-Navi is a browser-based cybersecurity analysis workbench built around the MITRE ATT&CK framework. It combines ATT&CK navigation, threat-intelligence context, exposure mapping, detection coverage, and reporting in a single interactive matrix.
 
 ---
 
-## What ATTACK-Navi Focuses On
+## Overview
 
-1. navigating ATT&CK as an analyst workspace instead of a static matrix
-2. correlating intelligence, exposure, compliance, and detection data at the technique level
-3. turning live analysis state into shareable reports, exports, and review-ready artifacts
+ATTACK-Navi turns the MITRE ATT&CK matrix into a working analyst environment rather than a static reference. A single interactive grid becomes the entry point to nine focused workspaces that layer real threat-intelligence, vulnerability, detection, and compliance data onto every technique — then let you turn that live analysis into shareable links, exports, and reports.
 
-## Core Workflows
+It runs entirely in the browser as a static single-page app with **no backend required**: ATT&CK data and every open-source mapping are fetched client-side from their authoritative sources at runtime. An optional proxy under `server/` exists only for keeping OpenCTI/MISP credentials off the client.
 
-| Workflow | What it supports |
-|----------|------------------|
-| Coverage review | Assess mitigations, controls, data sources, and completeness by tactic or technique |
-| Threat-intelligence correlation | Pivot from techniques into groups, campaigns, software, MISP events, and OpenCTI indicators |
-| Exposure analysis | Review CVE, KEV, EPSS, ExploitDB, and Nuclei evidence against ATT&CK techniques |
-| Detection validation | Inspect Sigma, Elastic, Splunk, Atomic Red Team, and CAR mappings in one place |
-| Reporting and sharing | Export CSV, XLSX, HTML, PNG, JSON state, and Navigator layers, or share URL-based filter state |
+> **Why it's different:** every factual linkage is grounded. Mappings are either fetched live from authoritative repositories (MITRE, CTID, MISP, SigmaHQ, …), computed from real ATT&CK STIX relationships, or clearly labeled `curated` where they are editorial. See [Data Integrity](#data-integrity).
+
+### At a glance
+
+| | |
+|---|---|
+| **Domains** | Enterprise (835 techniques + subtechniques), ICS, and Mobile |
+| **Workspaces** | 9 routed, lazy-loaded areas with bookmarkable URLs |
+| **Heatmap modes** | 31, grouped into Coverage, Threat Landscape, Vulnerabilities, Detections, and Frameworks |
+| **Sidebar enrichment** | 48 sections per technique, from CVEs to detection rules to threat actors |
+| **Data sources** | 30+ live integrations plus user-configurable MISP / OpenCTI |
+| **Command palette** | `Ctrl+K` — search entities or jump to any of 46 destinations by name |
+| **Backend** | None required (static SPA); optional secrets proxy under `server/` |
 
 ---
 
 ## Live Demo
 
-**[https://teamstarwolf.github.io/ATTACK-Navi/](https://teamstarwolf.github.io/ATTACK-Navi/)**
+**➡ [https://teamstarwolf.github.io/ATTACK-Navi/](https://teamstarwolf.github.io/ATTACK-Navi/)**
 
-The app loads ATT&CK data directly from MITRE's GitHub repository. The core matrix still runs without a backend, but secure OpenCTI/MISP deployments can now use an optional backend proxy under `server/`.
+The app loads ATT&CK data directly from MITRE's GitHub repository — no sign-up, no server. Try `Ctrl+K` to jump anywhere, click any matrix cell to open the enrichment sidebar, and press `?` for the full shortcut list.
+
+---
+
+## Workspaces
+
+Everything lives in nine workspaces on the left rail. Each has its own URL and a tab bar for its destinations; browser back/forward and bookmarks work throughout.
+
+| Workspace | Purpose | Key destinations |
+|-----------|---------|------------------|
+| **Matrix** | The ATT&CK grid and home base | Heatmaps, filters, multi-select, gap view |
+| **Dashboard** | Program-level rollups | Overview, Analytics |
+| **Intel** | Threat-intelligence correlation | Groups, Actors, Compare, Scenarios, Emulation, Campaigns, Software, Feeds (MISP/OpenCTI) |
+| **Detect** | Detection engineering | Detections, Sigma, SIEM, YARA, Validation, Data Sources, Purple Team |
+| **Exposure** | Vulnerability & risk | CVE, Risk Matrix, Kill Chain, Technique Graph, Gap Analysis, Priority, What-If |
+| **Coverage** | Mitigation & compliance | Assessment, Controls, Custom Mitigations, Compliance, Diff, Timeline, Target, Assets |
+| **Library** | Saved work & references | Workbench, Layers, Collections, Comparison, Roadmap, Watchlist, Tags |
+| **Reports** | Deliverables | Report Builder, IR Playbooks, Export Hub |
+| **Settings** | Configuration | Preferences, Changelog, integrations |
 
 ---
 
@@ -55,23 +78,24 @@ The app loads ATT&CK data directly from MITRE's GitHub repository. The core matr
 ## Features
 
 ### Interactive ATT&CK Matrix
-- Full Enterprise (201 techniques, 424 subtechniques), ICS, and Mobile domain support
-- Click any technique to open a detailed sidebar with 25+ enrichment sections
+- Full Enterprise, ICS, and Mobile domain support
+- Click any technique to open a detailed sidebar with 48 enrichment sections and a grouped jump index
 - Expand/collapse subtechniques per tactic column
-- Multi-select techniques for bulk operations
-- Sort by risk score, dim uncovered techniques, gap view mode
+- Multi-select techniques for bulk operations (watchlist, status, tags)
+- Sort by risk score, dim uncovered techniques, gap-view mode
+- Matrix chrome (legend, quick filters, stats, data health) collapses into one context strip
 
-### 24 Heatmap Visualization Modes
+### 31 Heatmap Visualization Modes
 
-| Category | Modes |
-|----------|-------|
-| **Coverage** | Coverage, Status, Controls |
-| **Risk** | Risk, Exposure, Frequency, Unified Risk, EPSS Probability |
-| **Threat Intel** | Campaign, Software, KEV, Intelligence |
-| **Detection** | Sigma Rules, Elastic Rules, Splunk Detections, CAR, Detection |
-| **Defense** | D3FEND, Engage |
-| **Compliance** | NIST 800-53, CRI Profile, VERIS Actions |
-| **Vulnerability** | CVE |
+Defined in a single source of truth (`src/app/models/heatmap-modes.ts`) and presented in a grouped picker:
+
+| Group | Modes |
+|-------|-------|
+| **Coverage & Posture** | Coverage, Status, Controls, Unified Risk, Frequency |
+| **Threat Landscape** | Risk, Exposure, Software, Campaign, Intelligence, My Exposure |
+| **Vulnerabilities** | KEV, CVE, EPSS Probability, CVE Kill Chain, PoC Exploits |
+| **Detections** | Detection, Sigma, Elastic, Splunk, Wazuh, M365 Defender, CAR, Atomic |
+| **Frameworks** | D3FEND, Engage, NIST 800-53, VERIS, CRI Profile, CSA CCM, M365 Controls |
 
 ### Threat Intelligence Platform (TIP)
 - Unified panel combining MISP Galaxy, OpenCTI indicators, and ATT&CK threat groups
@@ -81,20 +105,19 @@ The app loads ATT&CK data directly from MITRE's GitHub repository. The core matr
 - OpenCTI GraphQL integration for STIX/YARA/Sigma indicators
 
 ### Vulnerability & Exposure Analysis
-- **2,000+ CVE-to-ATT&CK mappings** from CTID curated datasets
-- **NVD bulk precomputation** — recent CVEs (120-day window) mapped via 708 CWE entries
+- **271,000+ CVE-to-ATT&CK mappings** from the CTID CVE2CAPEC pipeline (bundled, provenance-stamped)
 - **CISA KEV catalog** with ransomware campaign indicators
-- **EPSS scores** — exploitation probability from FIRST.org API
+- **EPSS scores** — exploitation probability from the FIRST.org API
 - **ExploitDB** — public exploit availability per technique
 - **Nuclei templates** — automated scan template counts per technique
 
 ### Detection & Validation
-- **Sigma** — live rule counts from SigmaHQ Navigator layer + rule generation/export
+- **Sigma** — live rule counts from the SigmaHQ Navigator layer + rule generation/export
 - **Elastic Detection Rules** — rule counts from elastic/detection-rules
 - **Splunk Security Content** — detection counts from splunk/security_content
-- **Atomic Red Team** — 167+ test procedures with live GitHub YAML fetching
-- **CAR Analytics** — MITRE Cyber Analytics Repository mappings
-- **Zeek/Suricata/YARA** — template generation per technique
+- **Atomic Red Team** — live per-technique test counts and on-demand YAML (no bundled seed)
+- **CAR Analytics** — MITRE Cyber Analytics Repository navigator layer
+- **Zeek / Suricata / YARA** — template generation per technique
 
 ### Compliance & Controls
 - **NIST 800-53 Rev5** — control-to-technique mappings from CTID
@@ -116,24 +139,35 @@ The app loads ATT&CK data directly from MITRE's GitHub repository. The core matr
 - **Technique completeness score** — 0-100% from 13 data sources
 
 ### Export Formats
-- CSV, XLSX (multi-sheet workbook), HTML report, PNG screenshot
-- JSON state (save/restore), ATT&CK Navigator layer format
+- CSV, XLSX (multi-sheet workbook), HTML report, PNG screenshot, PDF
+- JSON state (save/restore), ATT&CK Navigator layer format (export + import)
 - Sigma rules, SIEM queries, YARA rules, Suricata rules
 - STIX 2.1 bundles, MISP event templates
+- All gathered into a single **Export Hub** card grid under Reports
 
 ### User Experience
-- 9 routed workspaces (Matrix, Dashboard, Intel, Detect, Exposure, Coverage,
-  Library, Reports, Settings) with tabbed destinations, lazy loading, and
-  bookmarkable URLs — browser back/forward works everywhere
-- Command palette (Ctrl+K): search techniques, groups, CVEs, mitigations, and
-  jump to any page or run actions by name
+- 9 routed, lazy-loaded workspaces with bookmarkable URLs — back/forward works everywhere
+- **Command palette (`Ctrl+K`)** — one box to search techniques, groups, CVEs, mitigations, and
+  jump to any of 46 destinations or run actions (export, theme, share) by name
 - Technique sidebar with 48 enrichment sections, a grouped jump index, and
-  "curated" chips marking hand-curated (vs. authoritative) mappings
-- Collapsible matrix context strip (legend, quick filters, stats, data health)
-- Dark/light theme toggle
-- Mobile-responsive layout (bottom workspace bar, full-width sidebar)
-- Shareable links — filter state lives in the URL; pre-router links migrate
-- Keyboard shortcuts for power users (press `?`)
+  `curated` chips marking hand-curated versus authoritative mappings
+- Consolidated 10-item navigation rail with SVG icons (down from 44 emoji buttons)
+- Collapsible matrix context strip; dark/light theme toggle
+- Mobile-responsive layout (bottom workspace bar, full-width sidebar, 48px touch targets)
+- Shareable links — filter state lives in the URL; pre-overhaul share links migrate automatically
+- Full keyboard support with an in-app cheat sheet (press `?`)
+
+---
+
+## Data Integrity
+
+Security tooling is only useful if its claims are trustworthy, so ATTACK-Navi holds every factual linkage to one of three grounded origins:
+
+- **Live-fetched from authoritative sources** — CVE→ATT&CK from the [CTID CVE2CAPEC pipeline](https://github.com/Galeax/CVE2CAPEC), MISP galaxy clusters, the D3FEND ontology API, MITRE CAR, and the SigmaHQ / Elastic / Splunk / M365 rule trees.
+- **Computed from real ATT&CK STIX relationships** — gap analysis, what-if simulation, priority scoring, coverage targets, and roadmaps all derive from published group→technique and mitigation→technique data, never invented associations.
+- **Clearly labeled `curated`** — editorial seeds (IR playbooks, offensive-tool associations, and the like) carry an in-code `PROVENANCE` banner and a visible `curated` chip in the sidebar so analysts know to verify before acting.
+
+Fabricated or unverifiable mappings inherited from earlier prototypes were audited and removed rather than shipped as fact. See [MAPPINGS_CHEAT_SHEET.md](MAPPINGS_CHEAT_SHEET.md) and [DATA_SOURCE_SCORECARD.md](DATA_SOURCE_SCORECARD.md).
 
 ---
 
@@ -144,11 +178,10 @@ The app loads ATT&CK data directly from MITRE's GitHub repository. The core matr
 | Source | Provider | Data |
 |--------|----------|------|
 | ATT&CK STIX | MITRE GitHub | Techniques, groups, software, campaigns, mitigations |
-| Atomic Red Team | Red Canary GitHub | Test procedure counts + on-demand YAML |
-| CVE Mappings | CTID GitHub | 839 curated + 1,183 KEV CVE-to-ATT&CK mappings |
-| CISA KEV | CISA JSON feed | Known exploited vulnerabilities catalog |
+| Atomic Red Team | Red Canary GitHub | Live test counts + on-demand per-technique YAML |
+| CVE Mappings | CTID CVE2CAPEC | 271k+ CVE-to-ATT&CK mappings (bundled, provenance-stamped) |
+| CISA KEV | cisagov/kev-data | Known exploited vulnerabilities catalog |
 | EPSS | FIRST.org API | Exploitation probability scores (batched) |
-| NVD Bulk | NIST NVD 2.0 API | Recent CVEs mapped via CWE (120-day window) |
 | Elastic Rules | Elastic GitHub | Detection rule counts per technique |
 | Splunk Content | Splunk GitHub | Detection content counts per technique |
 | ExploitDB | Offensive Security GitLab | Public exploit availability |
@@ -158,9 +191,9 @@ The app loads ATT&CK data directly from MITRE's GitHub repository. The core matr
 | CRI Profile | CTID GitHub | CRI v2.1 control mappings |
 | VERIS | CTID GitHub | Incident action framework |
 | CAPEC | MITRE CTI GitHub | Attack pattern STIX bundle |
-| MISP Galaxy | MISP GitHub | 1,242 ATT&CK cluster entries |
-| Sigma Layer | SigmaHQ GitHub | Rule count Navigator layer |
-| CWE Catalog | Bundled JSON | 708 weakness entries |
+| MISP Galaxy | MISP GitHub | ATT&CK cluster entries (mitre-attack-pattern.json) |
+| Sigma Layer | SigmaHQ GitHub | Rule-count Navigator layer |
+| M365 Defender | mappings-explorer | Hunting-query counts per technique |
 
 ### User-Configurable
 
@@ -174,9 +207,9 @@ The app loads ATT&CK data directly from MITRE's GitHub repository. The core matr
 
 | Source | Content |
 |--------|---------|
-| D3FEND | ~100 defensive countermeasures |
-| MITRE Engage | ~30 adversary engagement activities |
-| CAR | ~30 detection analytics |
+| D3FEND | Curated countermeasure seed (fallback; the live ontology API takes precedence) |
+| MITRE Engage | Adversary engagement activities from the official Engage dataset |
+| CAR | Real CAR analytics seed (verified against upstream; live navigator layer supplies counts) |
 | Zeek | Network telemetry script templates |
 | Suricata | IDS rule templates |
 | YARA | Malware detection pattern templates |
@@ -186,7 +219,7 @@ The app loads ATT&CK data directly from MITRE's GitHub repository. The core matr
 ## Getting Started
 
 ### Prerequisites
-- Node.js 18+ and npm
+- Node.js 20+ and npm
 
 ### Install & Run
 
@@ -198,6 +231,13 @@ npx ng serve
 ```
 
 Open [http://localhost:4200](http://localhost:4200).
+
+### Test
+
+```bash
+npx ng test --watch=false --browsers=ChromeHeadless   # 652 unit tests
+npx playwright test                                    # 29 end-to-end tests
+```
 
 ### Production Build
 
@@ -221,7 +261,7 @@ Then set the Settings panel integration mode to `Secure backend proxy` and enter
 
 ### Deploy to GitHub Pages
 
-The repository includes a GitHub Actions workflow (`.github/workflows/deploy.yml`) that automatically builds and deploys to GitHub Pages on every push to `main`.
+The repository includes a GitHub Actions workflow (`.github/workflows/deploy.yml`) that runs the unit tests, builds the production bundle, gates on the Playwright end-to-end suite, and deploys to GitHub Pages on every push to `main` (and on a daily schedule).
 
 ---
 
@@ -261,18 +301,15 @@ DataService (loads ATT&CK STIX)
     --> SidebarComponent (hydrates technique details from 15+ services)
 ```
 
-### Heatmap Pipeline (7 steps per mode)
+### Routing & Lazy Loading
 
-Each of the 24 heatmap modes follows this pipeline:
-1. `filter.service.ts` — HeatmapMode type union
-2. `legend.component.ts` — color scale configuration
-3. `toolbar.component.ts` — dropdown entry
-4. `toolbar.component.html` — button label
-5. `matrix.component.ts` — score map computation
-6. `technique-cell.component.ts` — color method
-7. `matrix.component.html` — input bindings (3 instances)
+Navigation uses the Angular Router with **hash routing** (GitHub Pages friendly) and per-workspace lazy loading, so each workspace ships as its own code chunk and the initial bundle stays small (~1 MB). Filter state is serialized into router query params by `UrlStateService`, which is what makes every view shareable and bookmarkable.
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the full walkthrough.
+### Heatmap Modes (single source of truth)
+
+All 31 heatmap modes are declared once in `src/app/models/heatmap-modes.ts` (value, label, short name, and group). The picker, the trigger button, and mode cycling all read from that list, so adding a mode is a one-line edit.
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) and [docs/HEATMAPS.md](docs/HEATMAPS.md) for the full walkthrough.
 
 ---
 
@@ -304,11 +341,21 @@ Adding an NVD API key in Settings enables faster CVE queries (200ms vs 500ms rat
 
 ## Keyboard Shortcuts
 
+Defined once in `src/app/models/shortcuts.ts` and rendered by the in-app help overlay (`?`).
+
 | Key | Action |
 |-----|--------|
-| `Escape` | Close sidebar / active panel |
-| `/` | Focus search |
-| `?` | Show keyboard help |
+| `Ctrl` + `K` | Open the command palette (search or jump anywhere) |
+| `Ctrl` + `Shift` + `F` | Toggle the command palette |
+| `Ctrl` + `F` | Focus the matrix technique search |
+| `Ctrl` + `E` | Expand all subtechniques |
+| `?` | Open / close the keyboard help |
+| `Esc` | Close palette or help; otherwise deselect the technique |
+| `m` / `d` / `t` / `w` / `r` | Jump to Matrix / Dashboard / Timeline / Watchlist / Risk |
+| `c` | Clear all filters |
+| `↑ ↓ ← →` | Move the focused cell within / across tactic columns |
+| `Enter` / `Space` | Open the focused technique in the sidebar |
+| `/` | Jump to the technique search box |
 
 ---
 
@@ -316,12 +363,15 @@ Adding an NVD API key in Settings enables faster CVE queries (200ms vs 500ms rat
 
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| Angular | 19.2 | UI framework (standalone components, OnPush) |
+| Angular | 19.2 | UI framework (standalone components, OnPush, Router) |
 | RxJS | 7.8 | Reactive state management |
 | TypeScript | 5.7 | Type safety |
-| SCSS | N/A | Component-scoped styling |
-| xlsx | 0.18.5 | Excel workbook export |
-| tinycolor2 | 1.6 | Color manipulation for heatmaps |
+| SCSS | — | Design tokens + component-scoped styling |
+| Karma / Jasmine | — | Unit testing (652 specs) |
+| Playwright | — | End-to-end testing (29 specs, gates every deploy) |
+| xlsx-js-style | 1.2 | Excel workbook export |
+
+No UI component library, no state-management library, and no backend for the core app — just Angular, RxJS, and the design-token system.
 
 ---
 
@@ -330,33 +380,31 @@ Adding an NVD API key in Settings enables faster CVE queries (200ms vs 500ms rat
 ```
 src/
   app/
-    components/          # 49 UI components
-      matrix/            # Main ATT&CK grid renderer
-      sidebar/           # Technique detail drawer (25+ sections)
-      toolbar/           # Top bar with search, filters, heatmap selector
-      nav-rail/          # Navigation icon rail (35+ panels)
-      threat-intelligence-panel/  # Unified TIP (MISP + OpenCTI)
-      cve-panel/         # CVE/exposure analysis
-      detection-panel/   # Detection rule coverage
-      analytics-panel/   # Radar chart + tactic breakdown
-      ...                # 40+ additional panels
-    services/            # 43 injectable services
-      data.service.ts    # Core ATT&CK STIX loader
-      filter.service.ts  # Central UI state (BehaviorSubjects)
-      cve.service.ts     # NVD + CWE-to-ATT&CK (708 mappings)
-      attack-cve.service.ts  # CTID CVE mappings (2,000+)
-      misp.service.ts    # MISP Galaxy + live server
-      opencti.service.ts # OpenCTI GraphQL integration
-      elastic.service.ts # Elastic Detection Rules
-      sigma.service.ts   # Sigma rule mapping + generation
-      epss.service.ts    # EPSS exploitation scores
-      ...                # 30+ additional services
-    models/              # 11 TypeScript interfaces
-    pipes/               # Custom template pipes
-  assets/
-    data/
-      cwe-catalog.json   # 708-entry CWE catalog
-  styles.scss            # Global styles + panel overlays
+    app.routes.ts          # Top-level routes; each workspace lazy-loads its chunk
+    app.routes-map.ts      # Legacy panel id -> route resolution (PanelNavService)
+    components/            # 60+ feature components (matrix, sidebar, panels, chrome)
+      matrix/              # Main ATT&CK grid renderer
+      sidebar/             # Technique detail drawer (48 sections + jump index)
+      toolbar/             # Global top bar (brand, domain, palette, views, theme)
+      nav-rail/            # 10-item workspace navigation rail
+      universal-search/    # Command palette (entities + nav + action commands)
+      ...
+    pages/                 # Routed workspace shells and page-level components
+      matrix/              # Matrix page + matrix-controls row
+      intel/ detect/ ...   # Per-workspace route files (*.routes.ts)
+      reports/             # Report builder, IR playbooks, Export Hub
+    layout/                # WorkspaceShell + PageSection chrome
+    services/              # 80+ injectable services (data, filters, integrations)
+      data.service.ts      # Core ATT&CK STIX loader
+      filter.service.ts    # Central filter/selection state (BehaviorSubjects)
+      url-state.service.ts # URL <-> filter-state sync (shareable links)
+      panel-nav.service.ts # Legacy panel id -> router navigation
+      hotkeys.service.ts   # Single global keyboard listener
+      attack-cve.service.ts, misp.service.ts, opencti.service.ts, ...
+    models/                # Domain models + heatmap-modes / shortcuts / palette commands
+    shared/icons/          # Inline SVG icon registry (lucide-style)
+  assets/data/             # Bundled ATT&CK snapshot + CVE-technique map (provenance-stamped)
+  styles/                  # Design tokens + shared workspace chrome
 ```
 
 ---
@@ -393,14 +441,20 @@ src/
 
 ## Project Status
 
-ATTACK-Navi is already usable as a public analyst workbench and demo environment. The strongest current surfaces are matrix exploration, technique enrichment, threat-intelligence correlation, and export/reporting flows.
+ATTACK-Navi is a working public analyst workbench and demo. Its strongest surfaces today are matrix exploration, technique enrichment, threat-intelligence correlation, and the export/reporting flows.
 
-Current documentation work is focused on making the application easier to understand as a product: what it is best at today, where live integrations fit, and where mapped data remains partial or source-dependent.
+The **v0.8.0** release restructured navigation from 44 always-mounted overlay panels into 9 routed, lazy-loaded workspaces with bookmarkable URLs and a command palette, and completed a data-integrity pass that grounds or clearly labels every factual linkage (see the [Changelog](CHANGELOG.md)). Where mapped data is editorial or source-dependent, it is marked `curated` in the UI rather than presented as authoritative.
+
+---
+
+## Contributing
+
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, Angular conventions, and how to add a workspace, data source, or heatmap mode. Please also review the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ---
 
 ## License
 
-[MIT License](LICENSE) for the application code in this repository.
+Released under the [MIT License](LICENSE) for the application code in this repository.
 
-MITRE ATT&CK is a registered trademark of The MITRE Corporation. Third-party data sources, APIs, and upstream content remain subject to their own licenses and terms.
+MITRE ATT&CK® is a registered trademark of The MITRE Corporation. Third-party data sources, APIs, and upstream content remain subject to their own licenses and terms. This project is not affiliated with or endorsed by MITRE.
