@@ -1076,3 +1076,29 @@
   background: #f8fafc;
   color: #64748b;
 }
+
+/* === Mobile: single scrollable row instead of a 2.4-row wrap === */
+@media (max-width: 768px) {
+  .toolbar.top-bar {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    scrollbar-width: none;
+    height: 50px !important;
+  }
+
+  .toolbar.top-bar::-webkit-scrollbar { display: none; }
+
+  .attack-version,
+  .group-label,
+  .totd-btn,
+  .save-view-btn,
+  .views-menu-btn {
+    display: none !important;
+  }
+
+  .palette-trigger {
+    min-width: 150px;
+  }
+
+  .palette-kbd { display: none; }
+}

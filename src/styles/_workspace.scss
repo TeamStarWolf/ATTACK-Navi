@@ -86,6 +86,16 @@
   padding: var(--space-4);
 }
 
+/* Light theme: re-declared (not just re-pointed) so the tab colors are
+   recomputed when body.light-mode toggles — inherited-var changes alone
+   left transitioning colors stuck on their dark values. */
+body.light-mode .ws-tab {
+  color: var(--text-secondary);
+
+  &:hover { color: var(--text-primary); }
+  &.active { color: var(--accent); }
+}
+
 /* Root wrapper for a converted panel's content (replaces its old overlay). */
 .page-panel {
   display: flex;
@@ -98,6 +108,40 @@
 
 .page-panel--full {
   max-width: none;
+  /* Bound the panel to the workspace viewport so its drawer-era internal
+     layout (flex column + overflow:auto body) scrolls INSIDE the panel —
+     keeping search rows, stat bars and tab strips pinned — instead of
+     growing the page thousands of pixels tall. */
+  max-height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── De-duplicated page titles ─────────────────────────────────────────
+   The workspace shell header already names the workspace and the active
+   tab, so pages don't need to restate their own name. Inside routed pages
+   we hide the title/icon glyphs (subtitles, counts and action buttons
+   stay), and collapse headers that carried nothing but the name. */
+.workspace-body .page-panel .panel-title,
+.workspace-body .page-panel .panel-icon,
+.workspace-body .page-panel > .panel-header h2,
+.workspace-body .page-panel > .cdp-header .cdp-title,
+.workspace-body .page-panel > .cdp-header .cdp-icon,
+.workspace-body .page-panel .roadmap-title,
+.workspace-body .page-panel .roadmap-icon,
+.workspace-body .page-panel .hub-title,
+.workspace-body .page-panel .report-title,
+.workspace-body .page-panel > header .header-text .panel-title {
+  display: none !important;
+}
+
+/* Headers with no remaining content (no subtitle, count, or actions)
+   collapse entirely rather than leaving an empty strip. */
+.workspace-body .page-panel .panel-header:not(
+  :has(button, select, input, a, .header-subtitle, .panel-summary, .panel-subtitle,
+       .count-badge, .entry-count-badge, .header-actions, .stats-bar, .header-stats)
+) {
+  display: none !important;
 }
 
 /* Card-style section within a page. */
@@ -126,4 +170,19 @@
 
 .page-section-body {
   padding: var(--space-4);
+}
+
+/* Keyboard focus visibility for post-overhaul chrome. */
+.nav-item:focus-visible,
+.jump-chip:focus-visible,
+.jump-index-toggle:focus-visible,
+.palette-trigger:focus-visible,
+.context-strip-toggle:focus-visible,
+.export-card:focus-visible,
+.heatmap-mode-btn:focus-visible,
+.menu-action:focus-visible,
+.icon-btn:focus-visible,
+.domain-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }

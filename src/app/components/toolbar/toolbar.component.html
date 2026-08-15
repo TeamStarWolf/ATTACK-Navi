@@ -5,7 +5,7 @@
   <!-- Brand -->
   <div class="brand">
     <a class="brand-trigger brand-link" routerLink="/matrix" title="ATT&CK Navi — Matrix home">
-      <span class="brand-icon">🛡️</span>
+      <app-icon class="brand-icon" name="shield" [size]="18" aria-hidden="true" />
       <span class="brand-name">ATT&amp;CK Nav</span>
     </a>
     @if (attackVersion) {
@@ -23,19 +23,19 @@
               [class.active]="attackDomain === 'enterprise'"
               (click)="attackDomain = 'enterprise'; onDomainChange()"
               title="Enterprise ATT&CK">
-        🏢
+        <app-icon name="building" [size]="15" aria-hidden="true" />
       </button>
       <button class="domain-btn"
               [class.active]="attackDomain === 'ics'"
               (click)="attackDomain = 'ics'; onDomainChange()"
               title="ICS ATT&CK">
-        🏭
+        <app-icon name="factory" [size]="15" aria-hidden="true" />
       </button>
       <button class="domain-btn"
               [class.active]="attackDomain === 'mobile'"
               (click)="attackDomain = 'mobile'; onDomainChange()"
               title="Mobile ATT&CK">
-        📱
+        <app-icon name="smartphone" [size]="15" aria-hidden="true" />
       </button>
     </div>
     <button class="icon-btn source-mode-btn"
@@ -43,9 +43,11 @@
             (click)="dataSourceMode = dataSourceMode === 'live' ? 'bundled' : 'live'; onDataSourceChange()"
             [title]="dataSourceMode === 'live' ? 'Live data — click for bundled' : 'Bundled data — click for live'"
             [attr.aria-label]="dataSourceMode === 'live' ? 'Switch to bundled data' : 'Switch to live data'">
-      {{ dataSourceMode === 'live' ? '🌐' : '📦' }}
+      <app-icon [name]="dataSourceMode === 'live' ? 'globe' : 'package'" [size]="15" aria-hidden="true" />
     </button>
-    <button class="icon-btn refresh-btn" (click)="forceRefresh()" [disabled]="loading" title="Force refresh ATT&CK data from MITRE" aria-label="Force refresh ATT&CK data">⟳</button>
+    <button class="icon-btn refresh-btn" (click)="forceRefresh()" [disabled]="loading" title="Force refresh ATT&CK data from MITRE" aria-label="Force refresh ATT&CK data">
+      <app-icon name="refresh-cw" [size]="15" aria-hidden="true" />
+    </button>
     @if (loading) {
       <div class="spinner"></div>
     }
@@ -56,7 +58,7 @@
   <!-- Global search: opens the command palette -->
   <div class="search-group">
     <button class="palette-trigger" (click)="openPalette()" aria-label="Search or jump to anything">
-      <span class="search-icon">🔎</span>
+      <app-icon class="search-icon" name="search" [size]="14" aria-hidden="true" />
       <span class="palette-placeholder">Search or jump to…</span>
       <kbd class="palette-kbd">Ctrl K</kbd>
     </button>
@@ -66,12 +68,14 @@
 
   <!-- Global actions -->
   <div class="bar-group end-group">
-    <button class="icon-btn share-btn" (click)="copyShareLink.emit()" title="Copy shareable link to clipboard" aria-label="Copy shareable link">🔗 Share</button>
+    <button class="icon-btn share-btn" (click)="copyShareLink.emit()" title="Copy shareable link to clipboard" aria-label="Copy shareable link">
+      <app-icon name="share-2" [size]="14" aria-hidden="true" /> Share
+    </button>
 
     <!-- Save View button + dialog -->
     <div class="views-dropdown">
       <button class="icon-btn save-view-btn" (click)="showSaveDialog = !showSaveDialog; showViewsMenu = false" title="Save current view" aria-label="Save current view">
-        💾
+        <app-icon name="save" [size]="15" aria-hidden="true" />
       </button>
       @if (showSaveDialog) {
         <div class="save-dialog" (click)="$event.stopPropagation()">
@@ -90,7 +94,7 @@
     <!-- Views dropdown -->
     <div class="views-dropdown">
       <button class="icon-btn views-menu-btn" (click)="showViewsMenu = !showViewsMenu; showSaveDialog = false" title="Saved views" aria-label="Saved views">
-        📂{{ views.length > 0 ? ' ' + views.length : '' }}
+        <app-icon name="folder" [size]="15" aria-hidden="true" />{{ views.length > 0 ? ' ' + views.length : '' }}
       </button>
       @if (showViewsMenu) {
         <div class="views-menu" (click)="$event.stopPropagation()">
@@ -116,12 +120,12 @@
       <button class="icon-btn totd-btn"
               (click)="selectTechniqueOfDay()"
               [title]="'Technique of the Day: ' + techniqueOfDay.name + ' (' + techniqueOfDay.attackId + ')'">
-        🎯
+        <app-icon name="target" [size]="15" aria-hidden="true" />
       </button>
     }
 
     <button class="icon-btn theme-btn" (click)="toggleTheme()" [title]="isLightMode ? 'Switch to dark mode' : 'Switch to light mode'" [attr.aria-label]="isLightMode ? 'Switch to dark mode' : 'Switch to light mode'">
-      {{ isLightMode ? '🌙' : '☀️' }}
+      <app-icon [name]="isLightMode ? 'moon' : 'sun'" [size]="15" aria-hidden="true" />
     </button>
   </div>
 
