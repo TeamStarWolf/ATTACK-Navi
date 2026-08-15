@@ -1,8 +1,6 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-@if (open) {
-  <div class="siem-overlay" (click)="close()"></div>
-  <div class="siem-panel" role="dialog" aria-modal="true" aria-label="SIEM Detection Export">
+<section class="page-panel page-panel--full siem-panel" aria-label="SIEM Detection Export">
 
     <!-- Header -->
     <div class="siem-header">
@@ -11,7 +9,6 @@
         <h2 class="siem-title">SIEM Detection Export</h2>
         <p class="siem-subtitle">Export CAR analytics or browse the SIEM Query Library</p>
       </div>
-      <button class="siem-close-btn" (click)="close()" title="Close">✕</button>
     </div>
 
     <!-- Tab bar -->
@@ -344,8 +341,6 @@
           {{ libraryAllCopied ? '✓ All Copied!' : '📋 Copy All' }}
         </button>
       }
-      <button class="siem-cancel-btn" (click)="close()">Close</button>
     </div>
 
-  </div>
-}
+</section>

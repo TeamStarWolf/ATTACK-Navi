@@ -1,12 +1,9 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-@if (open) {
-  <div class="yara-overlay" (click)="close()"></div>
-  <div class="yara-panel" role="dialog" aria-label="YARA Rule Export">
+<section class="page-panel yara-panel" aria-label="YARA Rule Export">
     <div class="yara-header">
       <span class="yara-icon">🔎</span>
       <h2 class="yara-title">YARA Rule Export</h2>
-      <button class="yara-close" (click)="close()">✕</button>
     </div>
     <div class="yara-body">
       <div class="yara-section">
@@ -32,8 +29,6 @@
         <button class="yara-export-btn" (click)="export()" [disabled]="coveredCount === 0">
           ⬇ Download .yar ({{ coveredCount }} rules)
         </button>
-        <button class="yara-cancel-btn" (click)="close()">Cancel</button>
       </div>
     </div>
-  </div>
-}
+</section>

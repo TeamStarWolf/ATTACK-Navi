@@ -2,15 +2,16 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter, Router } from '@angular/router';
 import { ValidationStatusPillComponent } from './validation-status-pill.component';
 import { ValidationService } from '../../services/validation.service';
-import { FilterService } from '../../services/filter.service';
 
 describe('ValidationStatusPillComponent', () => {
   let component: ValidationStatusPillComponent;
   let fixture: ComponentFixture<ValidationStatusPillComponent>;
   let validation: any;
-  let filter: any;
 
   beforeEach(() => {
     validation = {
@@ -18,12 +19,13 @@ describe('ValidationStatusPillComponent', () => {
       forTechnique: jasmine.createSpy('forTechnique').and.returnValue([]),
       latestFor: jasmine.createSpy('latestFor').and.returnValue(null),
     };
-    filter = { setActivePanel: jasmine.createSpy('setActivePanel') };
     TestBed.configureTestingModule({
       imports: [ValidationStatusPillComponent],
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
         { provide: ValidationService, useValue: validation },
-        { provide: FilterService, useValue: filter },
       ],
     });
     fixture = TestBed.createComponent(ValidationStatusPillComponent);
@@ -43,9 +45,11 @@ describe('ValidationStatusPillComponent', () => {
     expect(validation.latestFor).toHaveBeenCalledWith('T1003.001');
   });
 
-  it('openValidationPanel switches to the validation panel', () => {
+  it('openValidationPanel navigates to the validation route', () => {
+    const router = TestBed.inject(Router);
+    const navigateSpy = spyOn(router, 'navigate').and.resolveTo(true);
     component.openValidationPanel();
-    expect(filter.setActivePanel).toHaveBeenCalledWith('validation');
+    expect(navigateSpy).toHaveBeenCalledWith(['/detect', 'validation'], jasmine.any(Object));
   });
 
   it('statusLabel returns short uppercase labels', () => {

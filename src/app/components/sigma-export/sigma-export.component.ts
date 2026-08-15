@@ -28,7 +28,6 @@ export type SigmaExportMode = 'current' | 'implemented' | 'all' | 'custom';
   styleUrl: './sigma-export.component.scss',
 })
 export class SigmaExportComponent implements OnInit, OnDestroy {
-  open = false;
   domain: Domain | null = null;
   selectedMode: SigmaExportMode = 'current';
   previewYaml = '';
@@ -47,21 +46,9 @@ export class SigmaExportComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.subs.add(
-      this.filterService.activePanel$.subscribe(panel => {
-        this.open = panel === 'sigma';
-        if (this.open) {
-          this.generatePreview();
-        }
-        this.cdr.markForCheck();
-      }),
-    );
-
-    this.subs.add(
       this.dataService.domain$.subscribe(domain => {
         this.domain = domain;
-        if (this.open) {
-          this.generatePreview();
-        }
+        this.generatePreview();
         this.cdr.markForCheck();
       }),
     );
@@ -130,10 +117,6 @@ export class SigmaExportComponent implements OnInit, OnDestroy {
 
   onModeChange(): void {
     this.generatePreview();
-  }
-
-  close(): void {
-    this.filterService.setActivePanel(null);
   }
 
   get countLabel(): string {

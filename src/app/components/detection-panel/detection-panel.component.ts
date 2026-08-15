@@ -3,14 +3,12 @@
 import {
   Component,
   OnInit,
-  OnDestroy,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subscription, filter, take } from 'rxjs';
-import { FilterService } from '../../services/filter.service';
+import { filter, take } from 'rxjs';
 import { DataService } from '../../services/data.service';
 import { CARService } from '../../services/car.service';
 import { AtomicService } from '../../services/atomic.service';
@@ -42,17 +40,13 @@ interface TacticGroup {
   templateUrl: './detection-panel.component.html',
   styleUrl: './detection-panel.component.scss',
 })
-export class DetectionPanelComponent implements OnInit, OnDestroy {
-  visible = false;
+export class DetectionPanelComponent implements OnInit {
   activeTab: 'overview' | 'gaps' | 'top' | 'tactic' = 'overview';
   searchText = '';
   sortBy: 'score' | 'name' | 'tactic' = 'score';
   detectionRows: DetectionRow[] = [];
 
-  private subs = new Subscription();
-
   constructor(
-    private filterService: FilterService,
     private dataService: DataService,
     private carService: CARService,
     private atomicService: AtomicService,
@@ -61,19 +55,7 @@ export class DetectionPanelComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(
-      this.filterService.activePanel$.subscribe(p => {
-        this.visible = p === 'detection';
-        if (this.visible && this.detectionRows.length === 0) {
-          this.buildRows();
-        }
-        this.cdr.markForCheck();
-      }),
-    );
-  }
-
-  ngOnDestroy(): void {
-    this.subs.unsubscribe();
+    this.buildRows();
   }
 
   buildRows(): void {
@@ -99,10 +81,6 @@ export class DetectionPanelComponent implements OnInit, OnDestroy {
       this.detectionRows = rows;
       this.cdr.markForCheck();
     });
-  }
-
-  close(): void {
-    this.filterService.setActivePanel(null);
   }
 
   setTab(tab: 'overview' | 'gaps' | 'top' | 'tactic'): void {

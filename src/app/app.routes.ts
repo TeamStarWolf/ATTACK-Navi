@@ -16,5 +16,9 @@ export const routes: Routes = [
       import('./pages/matrix/matrix-page.component').then((c) => c.MatrixPageComponent),
     data: { title: 'Matrix', icon: 'grid', reuse: true },
   },
+  {
+    path: 'detect',
+    loadChildren: () => import('./pages/detect/detect.routes').then((m) => m.DETECT_ROUTES),
+  },
   { path: '**', redirectTo: 'matrix' },
 ];

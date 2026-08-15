@@ -1,12 +1,9 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-@if (open) {
-  <div class="purple-overlay" (click)="close()"></div>
-  <div class="purple-panel" role="dialog" aria-modal="true" aria-label="Purple Team Scorecard">
+<section class="page-panel page-panel--full purple-panel" aria-label="Purple Team Scorecard">
     <div class="purple-header">
       <span class="purple-icon">🟣</span>
       <h2 class="purple-title">Purple Team Scorecard</h2>
-      <button class="purple-close" (click)="close()">✕</button>
     </div>
 
     <!-- View mode tabs -->
@@ -165,5 +162,4 @@
       }
 
     </div>
-  </div>
-}
+</section>

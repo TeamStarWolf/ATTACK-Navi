@@ -10,6 +10,14 @@
 export const PANEL_ROUTE_MAP: Readonly<Partial<Record<string, string[]>>> = {
   // P1a: the matrix is the home page (a nav "toggle" of any panel lands here).
   matrix: ['/matrix'],
+  // P1b: Detection workspace
+  detection: ['/detect', 'detections'],
+  sigma: ['/detect', 'sigma'],
+  siem: ['/detect', 'siem'],
+  yara: ['/detect', 'yara'],
+  validation: ['/detect', 'validation'],
+  datasources: ['/detect', 'data-sources'],
+  purple: ['/detect', 'purple-team'],
 };
 
 export function routeForPanel(id: string): string[] | undefined {
