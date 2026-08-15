@@ -120,7 +120,7 @@
       </button>
     }
 
-    <button class="icon-btn theme-btn" (click)="toggleDark.emit()" [title]="isLightMode ? 'Switch to dark mode' : 'Switch to light mode'" [attr.aria-label]="isLightMode ? 'Switch to dark mode' : 'Switch to light mode'">
+    <button class="icon-btn theme-btn" (click)="toggleTheme()" [title]="isLightMode ? 'Switch to dark mode' : 'Switch to light mode'" [attr.aria-label]="isLightMode ? 'Switch to dark mode' : 'Switch to light mode'">
       {{ isLightMode ? '🌙' : '☀️' }}
     </button>
   </div>

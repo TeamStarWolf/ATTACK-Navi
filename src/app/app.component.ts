@@ -1,6 +1,6 @@
-﻿// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { Component, OnInit, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef, HostListener, DestroyRef, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
@@ -15,9 +15,10 @@ import { NavRailComponent } from './components/nav-rail/nav-rail.component';
 import { OnboardingComponent } from './components/onboarding/onboarding.component';
 import { UniversalSearchComponent } from './components/universal-search/universal-search.component';
 import { UrlStateService } from './services/url-state.service';
-import { PanelNavService } from './services/panel-nav.service';
-import { CommandPaletteService } from './services/command-palette.service';
 import { MatrixControlService } from './services/matrix-control.service';
+import { HotkeysService } from './services/hotkeys.service';
+import { HelpOverlayService } from './services/help-overlay.service';
+import { ThemeService } from './services/theme.service';
 
 @Component({
   selector: 'app-root',
@@ -30,13 +31,11 @@ import { MatrixControlService } from './services/matrix-control.service';
 export class AppComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   @ViewChild(GapViewComponent) gapViewRef?: GapViewComponent;
-  @ViewChild(KeyboardHelpComponent) keyboardHelp?: KeyboardHelpComponent;
 
   domain: Domain | null = null;
-  isLightMode = false;
-  private panelNav = inject(PanelNavService);
-  private palette = inject(CommandPaletteService);
   private matrixControl = inject(MatrixControlService);
+  private hotkeys = inject(HotkeysService);
+  protected helpOverlay = inject(HelpOverlayService);
   showToast = false;
   toastMessage = '';
   currentDomain: AttackDomain = 'enterprise';
@@ -46,6 +45,7 @@ export class AppComponent implements OnInit {
     private filterService: FilterService,
     private cdr: ChangeDetectorRef,
     private urlStateService: UrlStateService,
+    private themeService: ThemeService,
   ) {}
 
   ngOnInit(): void {
@@ -56,10 +56,8 @@ export class AppComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.gapViewRef?.show());
     this.urlStateService.init();
-    if (localStorage.getItem('mitre-nav-theme') === 'light') {
-      this.isLightMode = true;
-      document.body.classList.add('light-mode');
-    }
+    this.themeService.init();
+    this.hotkeys.init();
   }
 
   onDomainChange(domain: AttackDomain): void {
@@ -83,86 +81,5 @@ export class AppComponent implements OnInit {
     this.toastMessage = message;
     this.cdr.markForCheck();
     setTimeout(() => { this.showToast = false; this.cdr.markForCheck(); }, 2500);
-  }
-
-  @HostListener('document:keydown', ['$event'])
-  onGlobalKeydown(event: KeyboardEvent): void {
-    // Skip if typing in an input field
-    const target = event.target as HTMLElement;
-    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return;
-    if (target.isContentEditable) return;
-
-    if (event.key === 'Escape') {
-      // The palette handles its own Escape; here Escape deselects the technique.
-      if (this.palette.isOpen) return;
-      this.filterService.selectTechnique(null);
-      event.preventDefault();
-      return;
-    }
-
-    if (event.ctrlKey || event.metaKey) {
-      switch (event.key) {
-        case 'f':
-          event.preventDefault();
-          this.focusTechniqueSearch();
-          break;
-        case 'k':
-          event.preventDefault();
-          this.palette.open();
-          break;
-        case 'e':
-          event.preventDefault();
-          this.matrixControl.expandAll();
-          break;
-      }
-      return;
-    }
-
-    // Single-key shortcuts (no modifier)
-    switch (event.key) {
-      case 'd':
-        event.preventDefault();
-        this.panelNav.toggle('dashboard');
-        break;
-      case 't':
-        event.preventDefault();
-        this.panelNav.toggle('timeline');
-        break;
-      case 'w':
-        event.preventDefault();
-        this.panelNav.toggle('watchlist');
-        break;
-      case 'r':
-        event.preventDefault();
-        this.panelNav.toggle('risk-matrix');
-        break;
-      case 'c':
-        event.preventDefault();
-        this.filterService.clearAll();
-        break;
-      case 'm':
-        event.preventDefault();
-        this.panelNav.open('matrix');
-        break;
-    }
-  }
-
-  toggleDarkMode(): void {
-    this.isLightMode = !this.isLightMode;
-    if (this.isLightMode) {
-      document.body.classList.add('light-mode');
-    } else {
-      document.body.classList.remove('light-mode');
-    }
-    localStorage.setItem('mitre-nav-theme', this.isLightMode ? 'light' : 'dark');
-    this.cdr.markForCheck();
-  }
-
-  focusTechniqueSearch(): void {
-    const input = document.querySelector<HTMLInputElement>('.technique-search .search-input');
-    if (input) {
-      input.focus();
-      input.select();
-    }
   }
 }
