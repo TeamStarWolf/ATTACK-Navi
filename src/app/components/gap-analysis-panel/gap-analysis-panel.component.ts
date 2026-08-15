@@ -15,7 +15,6 @@ import { PanelNavService } from '../../services/panel-nav.service';
 import { DataService } from '../../services/data.service';
 import { GapAnalysisService, GapAnalysisResult, PrioritizedGap } from '../../services/gap-analysis.service';
 import { LibraryService } from '../../services/library.service';
-import { ViewModeService } from '../../services/view-mode.service';
 import { ThreatGroup } from '../../models/group';
 import { Domain } from '../../models/domain';
 
@@ -61,7 +60,6 @@ export class GapAnalysisPanelComponent implements OnInit, OnDestroy {
     private gapService: GapAnalysisService,
     private cdr: ChangeDetectorRef,
     private libraryService: LibraryService,
-    private viewModeService: ViewModeService,
   ) {}
 
   /** Count of starred Library tools relevant to a technique's tactic. */
@@ -75,7 +73,7 @@ export class GapAnalysisPanelComponent implements OnInit, OnDestroy {
   openLibraryForGap(gap: PrioritizedGap): void {
     // The library workbench reads the persisted tactic filter via its own
     // localStorage signal.
-    this.viewModeService.set('library');
+    this.panelNav.open('library');
   }
 
   /** Open the Detection Validation Workbench for the gap's technique. */

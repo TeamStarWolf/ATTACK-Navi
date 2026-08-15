@@ -6,7 +6,7 @@ import { Subscription } from 'rxjs';
 import { Domain } from '../../models/domain';
 import { ImplementationService } from '../../services/implementation.service';
 import { TimelineService } from '../../services/timeline.service';
-import { FilterService } from '../../services/filter.service';
+import { PanelNavService } from '../../services/panel-nav.service';
 
 interface TacticStat {
   name: string;
@@ -45,7 +45,7 @@ export class StatsBarComponent implements OnInit, OnChanges, OnDestroy {
     private implService: ImplementationService,
     private cdr: ChangeDetectorRef,
     private timelineService: TimelineService,
-    private filterService: FilterService,
+    private panelNav: PanelNavService,
   ) {}
 
   ngOnInit(): void {
@@ -83,7 +83,7 @@ export class StatsBarComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   openTimeline(): void {
-    this.filterService.setActivePanel('timeline');
+    this.panelNav.open('timeline');
   }
 
   get sparklineData(): number[] {

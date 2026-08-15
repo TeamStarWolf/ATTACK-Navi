@@ -23,6 +23,7 @@ import { MitreDataComponent } from '../../models/datasource';
 import { Campaign } from '../../models/campaign';
 import { AttackTextPipe } from '../../pipes/attack-text.pipe';
 import { FilterService } from '../../services/filter.service';
+import { PanelNavService } from '../../services/panel-nav.service';
 import { DataService } from '../../services/data.service';
 import { ImplementationService, ImplStatus, IMPL_STATUS_LABELS, IMPL_STATUS_COLORS } from '../../services/implementation.service';
 import { DocumentationService, MitigationDoc } from '../../services/documentation.service';
@@ -425,6 +426,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   constructor(
     private filterService: FilterService,
+    private panelNav: PanelNavService,
     private dataService: DataService,
     private implService: ImplementationService,
     private docService: DocumentationService,
@@ -1113,7 +1115,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   openTechniqueGraph(): void {
-    this.filterService.setActivePanel('technique-graph');
+    this.panelNav.open('technique-graph');
   }
 
   filterByMitigation(mitigation: Mitigation): void {
@@ -1132,19 +1134,19 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   filterByGroup(group: ThreatGroup): void {
     this.filterService.toggleThreatGroup(group.id);
-    this.filterService.setActivePanel('threats');
+    this.panelNav.open('threats');
     this.filterService.selectTechnique(null);
   }
 
   filterBySoftware(sw: AttackSoftware): void {
     this.filterService.toggleSoftware(sw.id);
-    this.filterService.setActivePanel('software');
+    this.panelNav.open('software');
     this.filterService.selectTechnique(null);
   }
 
   filterByCampaign(campaign: Campaign): void {
     this.filterService.toggleCampaign(campaign.id);
-    this.filterService.setActivePanel('threats');
+    this.panelNav.open('threats');
     this.filterService.selectTechnique(null);
   }
 

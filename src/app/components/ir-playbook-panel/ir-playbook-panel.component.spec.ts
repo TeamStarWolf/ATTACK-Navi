@@ -3,7 +3,6 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
 import { IRPlaybookPanelComponent } from './ir-playbook-panel.component';
-import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
 import { IRPlaybookService } from '../../services/ir-playbook.service';
 
@@ -15,10 +14,6 @@ describe('IRPlaybookPanelComponent', () => {
     TestBed.configureTestingModule({
       imports: [IRPlaybookPanelComponent],
       providers: [
-        { provide: FilterService, useValue: {
-            activePanel$: new BehaviorSubject<string | null>(null),
-            setActivePanel: jasmine.createSpy('setActivePanel'),
-        }},
         { provide: DataService, useValue: { domain$: new BehaviorSubject(null) }},
         { provide: IRPlaybookService, useValue: { generatePlaybook: () => null } },
       ],
@@ -28,9 +23,8 @@ describe('IRPlaybookPanelComponent', () => {
     fixture.detectChanges();
   });
 
-  it('is created and starts closed', () => {
+  it('is created', () => {
     expect(component).toBeTruthy();
-    expect(component.visible).toBe(false);
   });
 
   it('search starts empty with no results', () => {

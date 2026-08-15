@@ -1,6 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed, ComponentFixture } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { ComparisonPanelComponent } from './comparison-panel.component';
 import { FilterService } from '../../services/filter.service';
@@ -14,9 +15,10 @@ describe('ComparisonPanelComponent', () => {
     TestBed.configureTestingModule({
       imports: [ComparisonPanelComponent],
       providers: [
+        provideRouter([]),
         { provide: FilterService, useValue: {
-            activePanel$: new BehaviorSubject<string | null>(null),
-            setActivePanel: jasmine.createSpy('setActivePanel'),
+            selectTechnique: jasmine.createSpy(),
+            toggleThreatGroup: jasmine.createSpy(),
         }},
         { provide: DataService, useValue: { domain$: new BehaviorSubject(null) }},
       ],
@@ -26,18 +28,11 @@ describe('ComparisonPanelComponent', () => {
     fixture.detectChanges();
   });
 
-  it('is created and starts closed', () => {
+  it('is created', () => {
     expect(component).toBeTruthy();
-    expect(component.open).toBe(false);
   });
 
   it('groups list starts empty', () => {
     expect(component.groups).toEqual([]);
-  });
-
-  it('close() invokes filterService.setActivePanel(null)', () => {
-    const fs = TestBed.inject(FilterService) as any;
-    component.close();
-    expect(fs.setActivePanel).toHaveBeenCalledWith(null);
   });
 });

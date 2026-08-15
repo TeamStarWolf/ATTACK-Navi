@@ -1,6 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed, ComponentFixture } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { LayersPanelComponent } from './layers-panel.component';
 import { LayersService } from '../../services/layers.service';
@@ -16,11 +17,9 @@ describe('LayersPanelComponent', () => {
     TestBed.configureTestingModule({
       imports: [LayersPanelComponent],
       providers: [
+        provideRouter([]),
         { provide: LayersService, useValue: { layers$: new BehaviorSubject([]) }},
-        { provide: FilterService, useValue: {
-            activePanel$: new BehaviorSubject<string | null>(null),
-            setActivePanel: jasmine.createSpy('setActivePanel'),
-        }},
+        { provide: FilterService, useValue: {} },
         { provide: ImplementationService, useValue: {} },
         { provide: DocumentationService, useValue: {} },
       ],
@@ -30,9 +29,8 @@ describe('LayersPanelComponent', () => {
     fixture.detectChanges();
   });
 
-  it('is created and starts closed', () => {
+  it('is created', () => {
     expect(component).toBeTruthy();
-    expect(component.open).toBe(false);
   });
 
   it('newLayerName starts empty', () => {

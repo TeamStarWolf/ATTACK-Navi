@@ -1,5 +1,6 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
+import { ChangeDetectorRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -56,7 +57,9 @@ describe('NavRailComponent', () => {
   });
 
   it('should apply active class to the active panel', () => {
-    fixture.componentRef.setInput('activePanel', 'dashboard');
+    component.activePanel = 'dashboard';
+    // OnPush: mark the view dirty since activePanel is set directly, not via router.
+    fixture.componentRef.injector.get(ChangeDetectorRef).markForCheck();
     fixture.detectChanges();
     const activeBtn = fixture.nativeElement.querySelector('.nav-item.active');
     expect(activeBtn).toBeTruthy();

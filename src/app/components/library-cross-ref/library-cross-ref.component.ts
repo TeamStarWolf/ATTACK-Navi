@@ -14,7 +14,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { LibraryService, LibraryAsset } from '../../services/library.service';
-import { ViewModeService } from '../../services/view-mode.service';
+import { PanelNavService } from '../../services/panel-nav.service';
 
 /**
  * Shows Library assets (tools / channels / X accounts) related to a given
@@ -174,7 +174,7 @@ export class LibraryCrossRefComponent implements OnInit, OnChanges, OnDestroy {
   @Input() tacticSlugs: string[] = [];
 
   private library = inject(LibraryService);
-  private viewMode = inject(ViewModeService);
+  private panelNav = inject(PanelNavService);
   private cdr = inject(ChangeDetectorRef);
   private sub?: Subscription;
 
@@ -209,7 +209,7 @@ export class LibraryCrossRefComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   openLibrary(): void {
-    this.viewMode.set('library');
+    this.panelNav.open('library');
   }
 
   shortType(t: string): string {

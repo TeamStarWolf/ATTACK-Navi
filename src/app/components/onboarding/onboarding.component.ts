@@ -3,12 +3,12 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { FilterService, ActivePanel } from '../../services/filter.service';
+import { PanelNavService } from '../../services/panel-nav.service';
 
 interface QuickStartCard {
   icon: string;
   label: string;
-  panel: Exclude<ActivePanel, null>;
+  panel: string;
 }
 
 @Component({
@@ -21,7 +21,7 @@ interface QuickStartCard {
 })
 export class OnboardingComponent {
   private readonly STORAGE_KEY = 'onboarding-completed';
-  private filterService = inject(FilterService);
+  private panelNav = inject(PanelNavService);
 
   visible = !localStorage.getItem(this.STORAGE_KEY);
   currentStep = 0;
@@ -64,8 +64,8 @@ export class OnboardingComponent {
     this.visible = false;
   }
 
-  openPanel(panel: Exclude<ActivePanel, null>): void {
-    this.filterService.setActivePanel(panel);
+  openPanel(panel: string): void {
+    this.panelNav.open(panel);
     this.getStarted();
   }
 }

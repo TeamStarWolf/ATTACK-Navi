@@ -1,8 +1,6 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-@if (visible) {
-  <div class="panel-overlay" (click)="close()">
-    <div class="panel ir-panel" role="dialog" aria-modal="true" aria-label="Incident Response Playbook" (click)="$event.stopPropagation()">
+<section class="page-panel page-panel--full ir-panel" aria-label="Incident Response Playbook">
       <div class="panel-header">
         <h2>🚨 Incident Response Playbook</h2>
         <div class="header-actions">
@@ -11,7 +9,6 @@
             <button class="export-btn" (click)="exportJson()">📋 JSON</button>
             <button class="export-btn" (click)="copyToClipboard()">{{ copied ? '✓ Copied' : '📎 Copy' }}</button>
           }
-          <button class="close-btn" (click)="close()">✕</button>
         </div>
       </div>
 
@@ -139,6 +136,4 @@
           </div>
         }
       </div>
-    </div>
-  </div>
-}
+</section>

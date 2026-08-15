@@ -6,6 +6,8 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
+import { PanelNavService } from '../../services/panel-nav.service';
+import { CommandPaletteService } from '../../services/command-palette.service';
 import { DataService } from '../../services/data.service';
 import { D3fendService } from '../../services/d3fend.service';
 import { CARService } from '../../services/car.service';
@@ -58,6 +60,8 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
 
   constructor(
     private filterService: FilterService,
+    private panelNav: PanelNavService,
+    private palette: CommandPaletteService,
     private dataService: DataService,
     private d3fendService: D3fendService,
     private carService: CARService,
@@ -68,8 +72,8 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(this.filterService.activePanel$.subscribe(panel => {
-      this.open = (panel as string) === 'search';
+    this.subs.add(this.palette.open$.subscribe(open => {
+      this.open = open;
       if (!this.open) { this.query = ''; this.results = []; }
       this.cdr.markForCheck();
     }));
@@ -81,7 +85,7 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
   onKey(e: KeyboardEvent): void {
     if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'f') {
       e.preventDefault();
-      this.filterService.togglePanel('search' as any);
+      this.palette.toggle();
     }
     if (e.key === 'Escape' && this.open) this.close();
   }
@@ -244,15 +248,16 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
       this.close();
     } else if (r.kind === 'group' && r.data) {
       this.filterService.toggleThreatGroup(r.data.id);
-      this.filterService.setActivePanel('threats');
+      this.panelNav.open('threats');
+      this.close();
     } else if (r.kind === 'campaign' && r.data) {
       this.filterService.toggleCampaign(r.data.id);
       this.close();
     } else if (r.kind === 'software' && r.data) {
-      this.filterService.setActivePanel('software');
+      this.panelNav.open('software');
       this.close();
     } else if (r.kind === 'cve') {
-      this.filterService.setActivePanel('cve');
+      this.panelNav.open('cve');
       this.close();
     } else if (r.url) {
       window.open(r.url, '_blank', 'noopener');
@@ -269,6 +274,6 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
     return colors[kind];
   }
 
-  close(): void { this.filterService.setActivePanel(null); }
+  close(): void { this.palette.close(); }
   ngOnDestroy(): void { this.subs.unsubscribe(); }
 }

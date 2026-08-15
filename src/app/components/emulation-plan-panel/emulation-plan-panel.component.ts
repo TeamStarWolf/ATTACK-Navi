@@ -18,7 +18,7 @@ import {
   EmulationStep,
 } from '../../services/emulation-plan.service';
 import { LibraryService } from '../../services/library.service';
-import { ViewModeService } from '../../services/view-mode.service';
+import { PanelNavService } from '../../services/panel-nav.service';
 import { ThreatGroup } from '../../models/group';
 import { Domain } from '../../models/domain';
 
@@ -60,7 +60,7 @@ export class EmulationPlanPanelComponent implements OnInit, OnDestroy {
     private dataService: DataService,
     private emulationService: EmulationPlanService,
     private libraryService: LibraryService,
-    private viewModeService: ViewModeService,
+    private panelNav: PanelNavService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -173,7 +173,7 @@ export class EmulationPlanPanelComponent implements OnInit, OnDestroy {
   }
 
   jumpToLibrary(): void {
-    this.viewModeService.set('library');
+    this.panelNav.open('library');
   }
 
   // ─── Saving / loading ─────────────────────────────────────────────────────

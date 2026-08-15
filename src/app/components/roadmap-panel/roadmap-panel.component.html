@@ -1,14 +1,11 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-@if (open) {
-  <div class="roadmap-overlay" (click)="close()"></div>
-  <div class="roadmap-panel" role="dialog" aria-label="Remediation Roadmap">
+<section class="page-panel page-panel--full roadmap-panel" aria-label="Remediation Roadmap">
     <div class="roadmap-header">
       <span class="roadmap-icon">🗺️</span>
       <h2 class="roadmap-title">Remediation Roadmap</h2>
       <div class="roadmap-header-actions">
         <button class="export-btn" (click)="exportCsv()" title="Export roadmap as CSV">⬇ CSV</button>
-        <button class="close-btn" (click)="close()">✕</button>
       </div>
     </div>
 
@@ -128,5 +125,4 @@
         }
       </div>
     }
-  </div>
-}
+</section>

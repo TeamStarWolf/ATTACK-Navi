@@ -4,7 +4,6 @@ import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRe
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
-import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
 import { ImplementationService, ImplStatus, IMPL_STATUS_LABELS, IMPL_STATUS_COLORS } from '../../services/implementation.service';
 import { AttackCveService } from '../../services/attack-cve.service';
@@ -74,7 +73,6 @@ const EFFORT_WEIGHT: Record<RoadmapItem['effort'], number> = { 'Low': 1, 'Medium
   styleUrl: './roadmap-panel.component.scss',
 })
 export class RoadmapPanelComponent implements OnInit, OnDestroy {
-  open = false;
   domain: Domain | null = null;
   roadmap: RoadmapItem[] = [];
   sortBy: 'priority' | 'impact' | 'coverage' | 'status' = 'priority';
@@ -89,7 +87,6 @@ export class RoadmapPanelComponent implements OnInit, OnDestroy {
   showAutoRoadmap = false;
 
   constructor(
-    private filterService: FilterService,
     private dataService: DataService,
     private implService: ImplementationService,
     private attackCveService: AttackCveService,
@@ -97,24 +94,17 @@ export class RoadmapPanelComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(this.filterService.activePanel$.subscribe(panel => {
-      this.open = (panel as string) === 'roadmap';
-      if (this.open && this.domain) this.buildRoadmap();
-      this.cdr.markForCheck();
-    }));
     this.subs.add(this.dataService.domain$.subscribe(domain => {
       this.domain = domain;
-      if (this.open) this.buildRoadmap();
+      this.buildRoadmap();
       this.cdr.markForCheck();
     }));
     this.subs.add(this.implService.status$.subscribe(map => {
       this.implStatusMap = map;
-      if (this.open) this.buildRoadmap();
+      this.buildRoadmap();
       this.cdr.markForCheck();
     }));
   }
-
-  close(): void { this.filterService.setActivePanel(null); }
 
   private buildRoadmap(): void {
     if (!this.domain) return;

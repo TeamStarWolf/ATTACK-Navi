@@ -10,7 +10,6 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
-import { FilterService } from '../../services/filter.service';
 import { SettingsService, AppSettings, DEFAULT_SETTINGS } from '../../services/settings.service';
 import { DataService } from '../../services/data.service';
 import { ImplementationService } from '../../services/implementation.service';
@@ -29,7 +28,6 @@ import { ImportSummary } from '../../services/stix-collection.service';
   styleUrl: './settings-panel.component.scss',
 })
 export class SettingsPanelComponent implements OnInit, OnDestroy {
-  visible = false;
   settings: AppSettings = { ...DEFAULT_SETTINGS, scoringWeights: { ...DEFAULT_SETTINGS.scoringWeights } };
   activeTab: 'scoring' | 'display' | 'organization' | 'data' | 'integrations' = 'scoring';
 
@@ -93,7 +91,6 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
   private savedSettings: AppSettings = { ...DEFAULT_SETTINGS, scoringWeights: { ...DEFAULT_SETTINGS.scoringWeights } };
 
   constructor(
-    private filterService: FilterService,
     readonly settingsService: SettingsService,
     private dataService: DataService,
     private implService: ImplementationService,
@@ -105,17 +102,9 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(
-      this.filterService.activePanel$.subscribe(p => {
-        this.visible = p === 'settings';
-        if (this.visible) {
-          this.reloadSettings();
-          this.refreshDataInfo();
-          this.loadIntegrationsState();
-        }
-        this.cdr.markForCheck();
-      }),
-    );
+    this.reloadSettings();
+    this.refreshDataInfo();
+    this.loadIntegrationsState();
 
     this.subs.add(
       this.settingsService.settings$.subscribe(s => {
@@ -288,10 +277,6 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
     this.settingsService.reset();
     this.reloadSettings();
     this.cdr.markForCheck();
-  }
-
-  close(): void {
-    this.filterService.setActivePanel(null);
   }
 
   onWeightChange(): void {

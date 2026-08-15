@@ -10,7 +10,6 @@ import {
 import { CommonModule } from '@angular/common';
 import { Subscription, combineLatest } from 'rxjs';
 import { Domain } from '../../models/domain';
-import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
 import { ImplementationService, ImplStatus, IMPL_STATUS_LABELS } from '../../services/implementation.service';
 import { DocumentationService, MitigationDoc } from '../../services/documentation.service';
@@ -50,7 +49,6 @@ interface DocumentedMit {
   styleUrl: './report-panel.component.scss',
 })
 export class ReportPanelComponent implements OnInit, OnDestroy {
-  visible = false;
   domain: Domain | null = null;
   reportDate = '';
 
@@ -74,7 +72,6 @@ export class ReportPanelComponent implements OnInit, OnDestroy {
   private subs = new Subscription();
 
   constructor(
-    private filterService: FilterService,
     private dataService: DataService,
     private implService: ImplementationService,
     private docService: DocumentationService,
@@ -191,21 +188,10 @@ export class ReportPanelComponent implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       }),
     );
-
-    this.subs.add(
-      this.filterService.activePanel$.subscribe((panel) => {
-        this.visible = panel === 'report';
-        this.cdr.markForCheck();
-      }),
-    );
   }
 
   ngOnDestroy(): void {
     this.subs.unsubscribe();
-  }
-
-  close(): void {
-    this.filterService.setActivePanel(null);
   }
 
   print(): void {

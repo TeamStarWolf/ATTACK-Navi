@@ -3,30 +3,30 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { routeForPanel } from '../app.routes-map';
-import { ActivePanel, FilterService } from './filter.service';
+import { CommandPaletteService } from './command-palette.service';
 
 /**
- * Single entry point for "open panel X" during and after the router
- * migration. Ids present in PANEL_ROUTE_MAP navigate (query params
- * preserved so matrix filters survive); ids not yet converted fall back
- * to the legacy ActivePanel overlay mechanism. Once every panel is
- * routed, the fallback (and FilterService.activePanel) is deleted.
+ * Single entry point for "open panel X". Panel ids resolve to routes via
+ * PANEL_ROUTE_MAP (query params preserved so matrix filters survive);
+ * 'search' opens the command palette overlay. Unknown ids are ignored.
  */
 @Injectable({ providedIn: 'root' })
 export class PanelNavService {
   private readonly router = inject(Router);
-  private readonly filterService = inject(FilterService);
+  private readonly palette = inject(CommandPaletteService);
 
   isRouted(id: string): boolean {
     return routeForPanel(id) !== undefined;
   }
 
   open(id: string): void {
+    if (id === 'search') {
+      this.palette.open();
+      return;
+    }
     const commands = routeForPanel(id);
     if (commands) {
       void this.router.navigate(commands, { queryParamsHandling: 'preserve' });
-    } else {
-      this.filterService.setActivePanel(id as Exclude<ActivePanel, null>);
     }
   }
 
@@ -35,11 +35,12 @@ export class PanelNavService {
    * active destination returns to the matrix.
    */
   toggle(id: string): void {
-    const commands = routeForPanel(id);
-    if (!commands) {
-      this.filterService.togglePanel(id as Exclude<ActivePanel, null>);
+    if (id === 'search') {
+      this.palette.toggle();
       return;
     }
+    const commands = routeForPanel(id);
+    if (!commands) return;
     const target = commands.join('/').replace(/\/{2,}/g, '/');
     const current = this.router.url.split('?')[0];
     if (current === target && target !== '/matrix') {
