@@ -1,5 +1,8 @@
-// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+﻿// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
+// PROVENANCE: folder-to-technique attribution below is curated in this repo --
+// the payload content is fetched live, but which techniques each PayloadsAllTheThings
+// folder maps to is an editorial judgment, not a published mapping.
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
@@ -146,7 +149,7 @@ export class PayloadsService {
 
       if (!attackId) continue;
 
-      // Build the URL — prefer the directory with a README
+      // Build the URL â€” prefer the directory with a README
       const hasReadme = readmeFiles.has(dir.path + '/README.md');
       const url = `${GITHUB_BASE}/${encodeURIComponent(dir.path).replace(/%2F/g, '/')}`;
 
