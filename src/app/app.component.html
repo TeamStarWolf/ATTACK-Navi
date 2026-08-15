@@ -3,9 +3,7 @@
 <!-- Top bar -->
 <app-toolbar
   [techniques]="domain?.techniques ?? []"
-  (toggleDark)="toggleDarkMode()"
   (copyShareLink)="copyShareLink()"
-  [isLightMode]="isLightMode"
   [currentDomain]="currentDomain"
   (domainChange)="onDomainChange($event)"
 />
@@ -14,7 +12,7 @@
 <div class="app-shell">
 
   <!-- Left nav rail -->
-  <app-nav-rail (helpClick)="keyboardHelp?.toggle()" />
+  <app-nav-rail (helpClick)="helpOverlay.toggle()" />
 
   <!-- Workspace -->
   <div class="workspace-area">
