@@ -498,6 +498,34 @@
   &.group { border-left: 2px solid rgb(255 167 38 / 50%); }
   &.malware { border-left: 2px solid rgb(248 113 113 / 50%); }
   &.tool { border-left: 2px solid rgb(26 159 255 / 50%); }
+  &.campaign { border-left: 2px solid rgb(185 152 245 / 50%); }
+}
+
+.dc-notes {
+  margin-top: 6px;
+  border-top: 1px solid #1a3448;
+}
+
+.dc-note {
+  padding: 6px 10px;
+  border-bottom: 1px solid #12283a;
+
+  &:last-child { border-bottom: none; }
+}
+
+.dc-note-source {
+  font-size: 10px;
+  font-weight: 600;
+  color: #6fd3ff;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dc-note-text {
+  margin: 3px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #93a8bb;
 }
 
 .proc-header {
