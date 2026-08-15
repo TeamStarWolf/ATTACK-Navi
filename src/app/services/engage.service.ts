@@ -1,6 +1,9 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 export interface EngageActivity {
   id: string;           // e.g., "EAC0002"
@@ -8,47 +11,85 @@ export interface EngageActivity {
   category: 'Prepare' | 'Expose' | 'Affect' | 'Elicit' | 'Understand';
   definition: string;
   url: string;
-  attackIds: string[];  // ATT&CK technique IDs this activity targets
+  attackIds: string[];  // ATT&CK technique IDs this activity applies to
 }
 
-const ENGAGE_ACTIVITIES: EngageActivity[] = [
-  // Expose Operations — learn about adversary
-  { id: 'EAC0001', name: 'API Monitoring', category: 'Expose', definition: 'Monitoring API calls to detect adversary tool activity and tradecraft.', url: 'https://engage.mitre.org/matrix/', attackIds: ['T1059', 'T1055', 'T1106', 'T1047'] },
-  { id: 'EAC0002', name: 'Behavioral Analytics', category: 'Expose', definition: 'Using behavioral detection to identify adversary activity based on actions, not signatures.', url: 'https://engage.mitre.org/matrix/', attackIds: ['T1059', 'T1078', 'T1055', 'T1021', 'T1071'] },
-  { id: 'EAC0004', name: 'Network Monitoring', category: 'Expose', definition: 'Capturing and analyzing network traffic to detect adversary C2 and exfiltration.', url: 'https://engage.mitre.org/matrix/', attackIds: ['T1071', 'T1041', 'T1095', 'T1046', 'T1040', 'T1572'] },
-  { id: 'EAC0005', name: 'Software Manipulation', category: 'Expose', definition: 'Altering software behavior to reveal adversary interaction with a system.', url: 'https://engage.mitre.org/matrix/', attackIds: ['T1195', 'T1554', 'T1574'] },
-  { id: 'EAC0014', name: 'System Activity Monitoring', category: 'Expose', definition: 'Collecting system telemetry to track adversary host-based activity.', url: 'https://engage.mitre.org/matrix/', attackIds: ['T1059', 'T1078', 'T1021', 'T1053', 'T1543', 'T1547'] },
-  { id: 'EAC0015', name: 'Email Monitoring', category: 'Expose', definition: 'Monitoring email communications for phishing and adversary use of email infrastructure.', url: 'https://engage.mitre.org/matrix/', attackIds: ['T1566', 'T1598', 'T1534', 'T1114'] },
-  // Affect Operations — degrade adversary capability
-  { id: 'EAC0003', name: 'Burn-In', category: 'Affect', definition: 'Operating a deception environment long-term to build adversary confidence before disruption.', url: 'https://engage.mitre.org/matrix/', attackIds: ['T1204', 'T1566', 'T1059'] },
-  { id: 'EAC0007', name: 'Disruption', category: 'Affect', definition: 'Interrupting adversary operations to prevent achievement of objectives.', url: 'https://engage.mitre.org/matrix/', attackIds: ['T1485', 'T1490', 'T1489'] },
-  { id: 'EAC0008', name: 'Isolation', category: 'Affect', definition: 'Containing adversary access to limit lateral movement and impact.', url: 'https://engage.mitre.org/matrix/', attackIds: ['T1021', 'T1570', 'T1534', 'T1080'] },
-  { id: 'EAC0009', name: 'Malware Detonation', category: 'Affect', definition: 'Executing adversary malware in a controlled environment to study behavior.', url: 'https://engage.mitre.org/matrix/', attackIds: ['T1204', 'T1059', 'T1027', 'T1566.001'] },
-  { id: 'EAC0018', name: 'Peripheral Management', category: 'Affect', definition: 'Controlling physical I/O devices to prevent unauthorized data transfer.', url: 'https://engage.mitre.org/matrix/', attackIds: ['T1091', 'T1052', 'T1200'] },
-  // Elicit — draw out adversary TTPs
-  { id: 'EAC0016', name: 'Pocket Litter', category: 'Elicit', definition: 'Placing realistic but fake artifacts (documents, credentials, configs) to attract adversary interaction.', url: 'https://engage.mitre.org/matrix/', attackIds: ['T1082', 'T1083', 'T1005', 'T1213'] },
-  { id: 'EAC0017', name: 'Honey Credentials', category: 'Elicit', definition: 'Deploying fake credentials to detect unauthorized access attempts.', url: 'https://engage.mitre.org/matrix/', attackIds: ['T1078', 'T1003', 'T1552', 'T1110'] },
-  { id: 'EAC0021', name: 'Lures', category: 'Elicit', definition: 'Presenting enticing artifacts to direct adversary toward monitored deception environments.', url: 'https://engage.mitre.org/matrix/', attackIds: ['T1204', 'T1566', 'T1598'] },
-  // Prepare — set conditions
-  { id: 'EAC0010', name: 'Network Diversity', category: 'Prepare', definition: 'Varying network configurations to complicate adversary lateral movement planning.', url: 'https://engage.mitre.org/matrix/', attackIds: ['T1046', 'T1018', 'T1016'] },
-  { id: 'EAC0011', name: 'Baseline', category: 'Prepare', definition: 'Establishing normal activity baselines to detect deviations caused by adversary activity.', url: 'https://engage.mitre.org/matrix/', attackIds: ['T1059', 'T1078', 'T1021', 'T1071'] },
-  { id: 'EAC0022', name: 'Attack Vector Migration', category: 'Prepare', definition: 'Moving critical assets away from anticipated adversary attack paths.', url: 'https://engage.mitre.org/matrix/', attackIds: ['T1190', 'T1133', 'T1566'] },
-  // Understand — analyze engagement outcomes
-  { id: 'EAC0019', name: 'Threat Intelligence Collection', category: 'Understand', definition: 'Collecting indicators and TTP data from adversary engagement for future defense.', url: 'https://engage.mitre.org/matrix/', attackIds: ['T1059', 'T1071', 'T1041', 'T1055', 'T1078'] },
-  { id: 'EAC0020', name: 'Adversary Capability Analysis', category: 'Understand', definition: 'Analyzing adversary tools and techniques observed during the engagement.', url: 'https://engage.mitre.org/matrix/', attackIds: ['T1027', 'T1059', 'T1055', 'T1562'] },
-];
+// MITRE Engage's published dataset (github.com/mitre/engage). The previous
+// implementation shipped a generated table that reused real EAC ids with
+// invented names, definitions, and technique mappings (e.g. EAC0002 is
+// officially "Network Monitoring", not "Behavioral Analytics") — everything
+// now comes from the official JSON files.
+const ENGAGE_DATA_BASE = 'https://raw.githubusercontent.com/mitre/engage/main/Data/json';
+
+interface EngageActivityRow { id: string; name?: string; description?: string }
+interface EngageAttackMappingRow { attack_id?: string; eac_id?: string }
+interface EngageGoalApproachRow { goal_id?: string; approach_id?: string }
+interface EngageApproachActivityRow { approach_id?: string; activity_id?: string }
+interface EngageGoalRow { id: string; name?: string }
 
 @Injectable({ providedIn: 'root' })
 export class EngageService {
   private byAttackId = new Map<string, EngageActivity[]>();
 
-  constructor() {
-    for (const act of ENGAGE_ACTIVITIES) {
-      for (const id of act.attackIds) {
-        if (!this.byAttackId.has(id)) this.byAttackId.set(id, []);
-        this.byAttackId.get(id)!.push(act);
+  private loadedSubject = new BehaviorSubject<boolean>(false);
+  readonly loaded$ = this.loadedSubject.asObservable();
+
+  constructor(private http: HttpClient) {
+    this.load();
+  }
+
+  private load(): void {
+    const get = <T>(file: string) =>
+      this.http.get<T[]>(`${ENGAGE_DATA_BASE}/${file}`).pipe(catchError(() => of([] as T[])));
+
+    forkJoin({
+      activities: get<EngageActivityRow>('activities.json'),
+      attackMap: get<EngageAttackMappingRow>('attack_mapping.json'),
+      goalApproach: get<EngageGoalApproachRow>('goal_approach_mappings.json'),
+      approachActivity: get<EngageApproachActivityRow>('approach_activity_mappings.json'),
+      goals: get<EngageGoalRow>('goals.json'),
+    }).subscribe(({ activities, attackMap, goalApproach, approachActivity, goals }) => {
+      // Category = the activity's goal, resolved activity → approach → goal.
+      const goalNames = new Map(goals.map(g => [g.id, g.name ?? '']));
+      const approachGoal = new Map<string, string>();
+      for (const row of goalApproach) {
+        if (row.approach_id && row.goal_id && !approachGoal.has(row.approach_id)) {
+          approachGoal.set(row.approach_id, goalNames.get(row.goal_id) ?? '');
+        }
       }
-    }
+      const activityCategory = new Map<string, string>();
+      for (const row of approachActivity) {
+        if (row.activity_id && row.approach_id && !activityCategory.has(row.activity_id)) {
+          activityCategory.set(row.activity_id, approachGoal.get(row.approach_id) ?? '');
+        }
+      }
+
+      const registry = new Map<string, EngageActivity>();
+      for (const a of activities) {
+        if (!a.id) continue;
+        const category = activityCategory.get(a.id);
+        registry.set(a.id, {
+          id: a.id,
+          name: a.name ?? '',
+          category: (category as EngageActivity['category']) || 'Expose',
+          definition: a.description ?? '',
+          url: 'https://engage.mitre.org/matrix/',
+          attackIds: [],
+        });
+      }
+
+      for (const row of attackMap) {
+        const activity = row.eac_id ? registry.get(row.eac_id) : undefined;
+        const attackId = row.attack_id;
+        if (!activity || !attackId) continue;
+        if (!activity.attackIds.includes(attackId)) activity.attackIds.push(attackId);
+        if (!this.byAttackId.has(attackId)) this.byAttackId.set(attackId, []);
+        const list = this.byAttackId.get(attackId)!;
+        if (!list.some(existing => existing.id === activity.id)) list.push(activity);
+      }
+
+      this.loadedSubject.next(true);
+    });
   }
 
   getActivities(attackId: string): EngageActivity[] {
