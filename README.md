@@ -261,7 +261,7 @@ Then set the Settings panel integration mode to `Secure backend proxy` and enter
 
 ### Deploy to GitHub Pages
 
-The repository includes a GitHub Actions workflow (`.github/workflows/deploy.yml`) that runs the unit tests, builds the production bundle, gates on the Playwright end-to-end suite, and deploys to GitHub Pages on every push to `main` (and on a daily schedule).
+The repository includes a GitHub Actions workflow (`.github/workflows/deploy.yml`) that runs the unit tests, builds the production bundle, and deploys to GitHub Pages on every push to `main` (and on a daily schedule). The Playwright end-to-end suite runs in a separate, non-blocking workflow (`e2e.yml`).
 
 ---
 
