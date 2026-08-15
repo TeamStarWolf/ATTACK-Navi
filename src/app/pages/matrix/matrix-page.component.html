@@ -2,18 +2,24 @@
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
 <div class="matrix-region">
   <app-matrix-controls />
-  <div class="context-bar">
-    <app-legend />
-    <app-quick-filters />
-  </div>
-  <app-filter-chips />
 
-  @if (domain) {
-    <div class="stats-health-row">
-      <app-stats-bar [domain]="domain" (tacticClicked)="scrollToTactic($event)" />
-      <app-data-health />
+  <!-- Collapsible context strip: legend, quick filters, stats, data health -->
+  <button class="context-strip-toggle" (click)="toggleContextStrip()" [attr.aria-expanded]="contextStripOpen">
+    {{ contextStripOpen ? '▴ Hide context' : '▾ Legend · quick filters · stats' }}
+  </button>
+  @if (contextStripOpen) {
+    <div class="context-bar">
+      <app-legend />
+      <app-quick-filters />
     </div>
+    @if (domain) {
+      <div class="stats-health-row">
+        <app-stats-bar [domain]="domain" (tacticClicked)="scrollToTactic($event)" />
+        <app-data-health />
+      </div>
+    }
   }
+  <app-filter-chips />
 
   <div class="matrix-scroll">
     @if (loading && !domain) {

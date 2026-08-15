@@ -3862,3 +3862,116 @@
     margin-left: 8px;
   }
 }
+
+/* === P4: jump index + curated badges === */
+.jump-index {
+  position: sticky;
+  top: -16px;
+  z-index: 5;
+  background: rgba(7, 13, 20, 0.97);
+  border-bottom: 1px solid rgba(151, 185, 211, 0.12);
+  margin: -16px -16px 12px;
+  padding: 0 16px;
+  backdrop-filter: blur(8px);
+}
+
+.jump-index-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 0;
+  background: transparent;
+  border: none;
+  color: #8aaac8;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.jump-index-toggle:hover { color: #c9d8e8; }
+
+.jump-caret { font-size: 10px; }
+
+.jump-groups {
+  padding-bottom: 10px;
+  max-height: 45vh;
+  overflow-y: auto;
+}
+
+.jump-group { margin-bottom: 8px; }
+
+.jump-group-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #4a6080;
+  margin-bottom: 4px;
+}
+
+.jump-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.jump-chip {
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: #8aaac8;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.jump-chip:hover {
+  color: #c9d8e8;
+  border-color: rgba(111, 211, 255, 0.4);
+}
+
+.jump-chip.curated {
+  border-style: dashed;
+  border-color: rgba(251, 191, 36, 0.35);
+}
+
+/* Curated chips on section titles: hand-curated editorial mappings */
+#sb-sec-payloads::after,
+#sb-sec-offensive-tools::after,
+#sb-sec-c2::after,
+#sb-sec-bloodhound::after,
+#sb-sec-azure-identity::after,
+#sb-sec-logging::after,
+#sb-sec-ioc-feed::after,
+#sb-sec-wazuh-xdr::after,
+#sb-sec-siem::after,
+#sb-sec-threat-hunting::after {
+  content: 'curated';
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border: 1px dashed rgba(251, 191, 36, 0.45);
+  border-radius: 8px;
+  color: #fbbf24;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  cursor: help;
+}
+
+:host-context(body.light-mode) .jump-index {
+  background: rgba(248, 250, 252, 0.97);
+  border-bottom-color: #e2e8f0;
+}
+
+:host-context(body.light-mode) .jump-chip {
+  background: #fff;
+  border-color: #e2e8f0;
+  color: #475569;
+}

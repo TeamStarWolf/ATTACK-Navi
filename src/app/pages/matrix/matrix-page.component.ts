@@ -68,6 +68,17 @@ export class MatrixPageComponent implements OnInit {
   error: string | null = null;
   currentDomain: AttackDomain = 'enterprise';
 
+  /** Legend/quick-filters/stats strip — collapsed by default, sticky choice. */
+  contextStripOpen = localStorage.getItem('matrix-context-strip') === 'open';
+
+  toggleContextStrip(): void {
+    this.contextStripOpen = !this.contextStripOpen;
+    try {
+      localStorage.setItem('matrix-context-strip', this.contextStripOpen ? 'open' : 'closed');
+    } catch { /* storage unavailable */ }
+    this.cdr.markForCheck();
+  }
+
   ngOnInit(): void {
     this.dataService.domain$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((d) => {
       this.domain = d;
