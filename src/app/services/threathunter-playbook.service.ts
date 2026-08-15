@@ -15,9 +15,11 @@ interface PlaybookNavigatorLayer {
   }>;
 }
 
+// Repo restructured (default branch is now `main`, hunts under docs/hunts) —
+// the navigator layer lives at docs/hunts/windows/attack_navigator.json.
 const PLAYBOOK_LAYER_URLS = [
-  'https://raw.githubusercontent.com/OTRF/ThreatHunter-Playbook/master/attack_navigator/ThreatHunter_Playbook.json',
-  'https://raw.githubusercontent.com/OTRF/ThreatHunter-Playbook/master/docs/notebooks/attack_navigator_layer.json',
+  'https://raw.githubusercontent.com/OTRF/ThreatHunter-Playbook/main/docs/hunts/windows/attack_navigator.json',
+  'https://raw.githubusercontent.com/OTRF/ThreatHunter-Playbook/master/docs/hunts/windows/attack_navigator.json',
 ];
 
 @Injectable({ providedIn: 'root' })
@@ -88,12 +90,8 @@ export class ThreatHunterPlaybookService {
   /** Build a URL to the ThreatHunter Playbook page for a technique. */
   getPlaybookUrl(attackId: string): string | null {
     if (this.playbookCounts.has(attackId) || this.getPlaybookCount(attackId) > 0) {
-      // Use the tactic from layer data, or fall back to generic search
-      const tactic = this.tacticMap.get(attackId);
-      if (tactic) {
-        return `https://threathunterplaybook.com/notebooks/${tactic}/${attackId}.html`;
-      }
-      // Fallback: link to the playbook search
+      // The site's /notebooks/<tactic>/<id>.html pages were removed in the
+      // docs/hunts restructure — search is the stable per-technique entry.
       return `https://threathunterplaybook.com/search.html?q=${attackId}`;
     }
     return null;

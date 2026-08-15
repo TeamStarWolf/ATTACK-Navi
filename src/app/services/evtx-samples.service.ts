@@ -33,7 +33,7 @@ export class EvtxSamplesService {
     if (this.loadRequested) return;
     this.loadRequested = true;
     this.http
-      .get<any>('https://api.github.com/repos/mdecrevoisier/EVTX-to-MITRE-Attack/git/trees/main?recursive=1')
+      .get<any>('https://api.github.com/repos/mdecrevoisier/EVTX-to-MITRE-Attack/git/trees/master?recursive=1')
       .pipe(catchError(() => of(null)))
       .subscribe((tree: any) => {
         if (tree?.tree) {
@@ -55,7 +55,7 @@ export class EvtxSamplesService {
               }
             }
             const filename = segments[segments.length - 1];
-            const url = `https://github.com/mdecrevoisier/EVTX-to-MITRE-Attack/blob/main/${item.path}`;
+            const url = `https://github.com/mdecrevoisier/EVTX-to-MITRE-Attack/blob/master/${item.path}`;
             const sample: EvtxSample = { filename, url, tactic };
             if (!this.samplesMap.has(id)) {
               this.samplesMap.set(id, []);

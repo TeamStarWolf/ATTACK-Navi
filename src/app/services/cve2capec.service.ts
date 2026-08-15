@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { retryWithBackoff } from '../utils/retry';
+import { gunzipToText } from '../utils/gunzip';
 
 export interface KillChainEntry {
   cveId: string;
@@ -39,22 +40,29 @@ export class Cve2CapecService {
 
   private load(): void {
     const currentYear = new Date().getFullYear();
-    // Fetch current year + previous year for reasonable coverage
+    // Fetch current year + previous year for reasonable coverage.
+    // Upstream now ships gzip-compressed JSONL (database/CVE-<year>.jsonl.gz).
     const urls = [
-      `${Cve2CapecService.BASE_URL}/CVE-${currentYear}.jsonl`,
-      `${Cve2CapecService.BASE_URL}/CVE-${currentYear - 1}.jsonl`,
+      `${Cve2CapecService.BASE_URL}/CVE-${currentYear}.jsonl.gz`,
+      `${Cve2CapecService.BASE_URL}/CVE-${currentYear - 1}.jsonl.gz`,
     ];
 
     forkJoin(
       urls.map(url =>
-        this.http.get(url, { responseType: 'text' }).pipe(
+        this.http.get(url, { responseType: 'arraybuffer' }).pipe(
           retryWithBackoff(),
-          catchError(() => of('')),
+          catchError(() => of(null)),
         ),
       ),
-    ).subscribe(results => {
-      for (const text of results) {
-        if (text) this.parseJsonl(text);
+    ).subscribe(async results => {
+      for (const buffer of results) {
+        if (!buffer || buffer.byteLength === 0) continue;
+        try {
+          const text = await gunzipToText(buffer);
+          if (text) this.parseJsonl(text);
+        } catch {
+          // Corrupt payload or unsupported browser — skip this year file.
+        }
       }
       this.totalSubject.next(this.byCveId.size);
       this.coveredSubject.next(this.byTechniqueId.size);
