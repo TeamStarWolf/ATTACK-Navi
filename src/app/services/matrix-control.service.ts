@@ -1,7 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
 
 /** The slice of MatrixComponent's API that global chrome may drive. */
 export interface MatrixApi {
@@ -55,5 +55,13 @@ export class MatrixControlService {
   /** Matrix pushes state changes it makes on its own (e.g. Escape clears). */
   notifyMultiSelectMode(value: boolean): void {
     this.multiSelectModeSubject.next(value);
+  }
+
+  /** Gap-view overlay requests (the overlay is hosted by AppComponent). */
+  private readonly gapViewSubject = new Subject<void>();
+  readonly gapViewRequests$: Observable<void> = this.gapViewSubject.asObservable();
+
+  requestGapView(): void {
+    this.gapViewSubject.next();
   }
 }
