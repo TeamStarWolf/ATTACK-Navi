@@ -16,6 +16,10 @@ export interface CarAnalytic {
   pseudocode?: string;  // Detection pseudocode/logic
 }
 
+// PROVENANCE: offline seed of real MITRE CAR analytics (each id verified to
+// exist in the upstream mitre-attack/car repository — two fabricated ids were
+// removed 2026-08-15). Serves as a fallback until loadLive() fetches the live
+// CAR navigator layer, which then supplies authoritative coverage counts.
 const CAR_ANALYTICS: CarAnalytic[] = [
   { id: 'CAR-2013-02-003', name: 'Processes Spawning cmd.exe', description: 'Detects command prompt spawned from unusual parent processes.', url: 'https://car.mitre.org/analytics/CAR-2013-02-003/', platforms: ['Windows'], attackIds: ['T1059.003'], pseudocode: 'process WHERE parent_exe NOT IN whitelist AND child_exe = "cmd.exe"' },
   { id: 'CAR-2013-05-002', name: 'Scheduled Task Creation', description: 'Detects creation of scheduled tasks, which can be used for persistence.', url: 'https://car.mitre.org/analytics/CAR-2013-05-002/', platforms: ['Windows'], attackIds: ['T1053.005'], pseudocode: 'process WHERE exe = "schtasks.exe" AND command_line CONTAINS "/create"' },
