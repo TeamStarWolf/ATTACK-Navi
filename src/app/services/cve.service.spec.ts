@@ -3,23 +3,50 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { CveService, CWE_TO_ATTACK } from './cve.service';
+import { CveService } from './cve.service';
+import { CapecService } from './capec.service';
 
 describe('CveService', () => {
   let service: CveService;
 
+  const capecEntry = (id: string, attackIds: string[], cweIds: string[]) => ({
+    id, name: id, description: '', likelihood: '', severity: '', attackIds, cweIds,
+    url: `https://capec.mitre.org/data/definitions/${id.replace('CAPEC-', '')}.html`,
+  });
+
+  const mockCapec = {
+    getCapecForCwe: (cwe: string) =>
+      cwe === 'CWE-89' ? [capecEntry('CAPEC-66', ['T1190', 'T1059'], ['CWE-89'])] : [],
+    getCapecForTechnique: (attackId: string) =>
+      attackId === 'T1190' ? [capecEntry('CAPEC-66', ['T1190'], ['CWE-89', 'CWE-20'])] : [],
+  };
+
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: CapecService, useValue: mockCapec },
+      ],
     });
     service = TestBed.inject(CveService);
   });
 
+  describe('mapCwesToAttackIds (CWE→CAPEC→ATT&CK chain)', () => {
+    it('maps CWEs to techniques via published CAPEC chains', () => {
+      expect(service.mapCwesToAttackIds(['CWE-89'])).toEqual(['T1059', 'T1190']);
+    });
+
+    it('returns no mappings for CWEs without a published chain', () => {
+      expect(service.mapCwesToAttackIds(['CWE-99999'])).toEqual([]);
+      expect(service.mapCwesToAttackIds([])).toEqual([]);
+    });
+  });
+
   describe('getAttackToCweIds', () => {
-    it('returns CWEs that map to a known ATT&CK technique', () => {
+    it('returns CWEs published as related to a technique', () => {
       const cwes = service.getAttackToCweIds('T1190');
-      // T1190 (Exploit Public-Facing) maps to multiple CWEs
-      expect(cwes.length).toBeGreaterThan(0);
+      expect(cwes).toContain('CWE-89');
       expect(cwes).toContain('CWE-20');
     });
 
@@ -29,14 +56,6 @@ describe('CveService', () => {
 
     it('returns empty array for empty input', () => {
       expect(service.getAttackToCweIds('')).toEqual([]);
-    });
-  });
-
-  describe('CWE_TO_ATTACK constant', () => {
-    it('contains entries for common CWE classes', () => {
-      expect(CWE_TO_ATTACK['CWE-79']).toBeTruthy();
-      expect(CWE_TO_ATTACK['CWE-89']).toBeTruthy();
-      expect(CWE_TO_ATTACK['CWE-22']).toContain('T1190');
     });
   });
 
