@@ -84,8 +84,6 @@ full list of 20 BehaviorSubjects and 7 derived observables.
 | `toggleSoftware(softwareId)` | Toggle a software filter |
 | `toggleCampaign(campaignId)` | Toggle a campaign filter |
 | `setDataSourceFilter(name)` | Set the data source name filter |
-| `setActivePanel(panel)` | Set the visible overlay panel |
-| `togglePanel(panel)` | Toggle an overlay panel on/off |
 | `setHeatmapMode(mode)` | Set the active heatmap coloring mode |
 | `setImplStatusFilter(status)` | Filter by implementation status |
 | `setCveFilter(techniqueIds)` | Highlight techniques from CVE panel |

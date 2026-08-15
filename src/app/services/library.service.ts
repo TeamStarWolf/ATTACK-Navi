@@ -17,7 +17,9 @@ export interface LibraryAsset {
   vendor: string;
   handle: string;
   affiliation: string;
-  attack_tactics: string[];
+  // Optional: parsed from JSON where the field may be absent (the service and
+  // templates guard with ?./??). Typed honestly so those guards are valid.
+  attack_tactics?: string[];
   metadata: Record<string, unknown>;
 }
 

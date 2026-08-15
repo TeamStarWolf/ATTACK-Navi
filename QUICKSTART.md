@@ -6,12 +6,17 @@ Open the app: **https://teamstarwolf.github.io/ATTACK-Navi/**
 
 The matrix loads automatically with Enterprise ATT&CK data. No login required.
 
+> **Finding things:** the left rail holds nine workspaces (Matrix, Dashboard, Intel, Detect,
+> Exposure, Coverage, Library, Reports, Settings), each with a tab bar. The quickest way anywhere
+> is **`Ctrl+K`** — type a destination name and press Enter. Every destination also has its own
+> URL, so you can bookmark it. Press **`?`** for the full shortcut list.
+
 ---
 
 ## Core Workflow: "How secure am I?"
 
 ### Step 1: Run the Assessment Wizard
-1. Click **ASSESS** in the nav rail (left sidebar)
+1. Go to **Coverage → Assessment** (or press `Ctrl+K`, type "assessment")
 2. Pick your domain (Enterprise is most common)
 3. Select threat actors relevant to your industry
 4. Rate your implementation status for each technique
@@ -19,13 +24,13 @@ The matrix loads automatically with Enterprise ATT&CK data. No login required.
 6. Export the results
 
 ### Step 2: Import Your Assets
-1. Click **ASSETS** in the nav rail
+1. Go to **Coverage → Assets** (or `Ctrl+K` → "assets")
 2. Upload a CSV with columns: `hostname, os, software, tags, criticality`
 3. Switch to the Exposure tab to see which techniques affect YOUR environment
 4. Enable the "My Exposure" heatmap to see your personalized risk
 
 ### Step 3: Run Gap Analysis
-1. Click **GAP RPT** in the nav rail
+1. Go to **Exposure → Gap Analysis** (or `Ctrl+K` → "gap analysis")
 2. Select the threat actors you care about
 3. Click Generate — you get a RAG (Red/Amber/Green) report showing:
    - Which actor techniques you've mitigated
@@ -113,12 +118,12 @@ Click the **Share** button in the sidebar header. Copies a URL like:
 Anyone opening that link sees the technique pre-selected.
 
 ### Share Your Collection
-In the **COLLECT** panel, click "Share Link" to generate a URL containing your custom techniques and annotations (base64-encoded in the hash).
+Go to **Library → Collections** and click "Share Link" to generate a URL containing your custom techniques and annotations (base64-encoded in the hash).
 
 ### Export Formats
-Click **Exports** in the toolbar:
+Go to **Reports → Export Hub** for the full card grid of formats:
 - CSV, XLSX (multi-sheet), HTML report, PDF, PNG screenshot
-- ATT&CK Navigator JSON layer
+- ATT&CK Navigator JSON layer (export + import)
 - STIX 2.1 bundle
 - Sigma rules, SIEM queries, YARA rules
 

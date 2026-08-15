@@ -103,9 +103,9 @@ These components form the application frame and are always visible.
 |----------|-------|
 | **Selector** | `app-nav-rail` |
 | **File** | `src/app/components/nav-rail/nav-rail.component.ts` |
-| **Purpose** | Fixed left-side vertical navigation rail. Organizes 37+ panel launchers into five groups (Threats, Analysis, Coverage, Tools) plus a bottom-pinned Settings button. Emits panel toggle events to open/close side panels. |
-| **Inputs** | `activePanel: string \| null` |
-| **Outputs** | `panelToggle: EventEmitter<string>`, `focusSearch: EventEmitter<void>` |
+| **Purpose** | Fixed left-side vertical navigation rail. Lists 8 workspace `routerLink`s (Matrix, Dashboard, Intel, Detect, Exposure, Coverage, Library, Reports) plus a Help button and a bottom-pinned Settings link. Active state comes from `routerLinkActive` / the current URL. |
+| **Inputs** | *(none — navigation is via `routerLink`)* |
+| **Outputs** | `helpClick: EventEmitter<void>` (opens the keyboard-help overlay) |
 
 ---
 
@@ -695,27 +695,19 @@ Components that render the ATT&CK matrix grid and its supporting UI.
 
 ## Architecture Notes
 
-### State Management
+### Navigation & State (v0.8.0)
 
-All panels subscribe to `FilterService.activePanel$` (type `ActivePanel`) to toggle their visibility. The `ActivePanel` union type defines all valid panel IDs:
-
-```typescript
-export type ActivePanel =
-  | 'dashboard' | 'threats' | 'priority' | 'whatif' | 'report'
-  | 'controls' | 'software' | 'comparison' | 'layers' | 'cve'
-  | 'analytics' | 'sigma' | 'purple' | 'actor' | 'search'
-  | 'yara' | 'roadmap' | 'detection' | 'compliance' | 'actor-compare'
-  | 'timeline' | 'settings' | 'custom-mit' | 'killchain' | 'risk-matrix'
-  | 'scenario' | 'siem' | 'datasources' | 'watchlist' | 'changelog'
-  | 'tags' | 'target' | 'campaign-timeline' | 'technique-graph'
-  | 'coverage-diff' | 'intelligence'
-  | null;
-```
+The former `ActivePanel` overlay system — where every panel subscribed to
+`FilterService.activePanel$` to toggle a `visible`/`open` flag — has been **removed**. Panels are
+now routed pages: navigation goes through the Angular Router, with `app.routes-map.ts` mapping a
+legacy panel id to its route and `PanelNavService` resolving it. Filter/selection state still lives
+in `FilterService` (RxJS `BehaviorSubject`s); `UrlStateService` syncs it to router query params.
 
 ### Component Conventions
 
 - All components are **standalone** (no NgModules).
-- All use **OnPush** change detection for performance.
-- Panel components follow the pattern: subscribe to `activePanel$`, set `visible`/`open` flag, call `cdr.markForCheck()`.
-- Cleanup is handled via a `Subscription` bag (`private subs = new Subscription()`) unsubscribed in `ngOnDestroy`.
+- All use **OnPush** change detection; async state calls `cdr.markForCheck()`.
+- Routed page components load their data in `ngOnInit` (no `activePanel$` "on open" trigger).
+- Cleanup uses a `Subscription` bag (`private subs = new Subscription()`) released in `ngOnDestroy`.
+- Cross-page navigation uses `PanelNavService.open(id)` / `.toggle(id)`, never a panel flag.
 - Matrix score data flows from `MatrixComponent` to `TechniqueCellComponent` via `@Input()` bindings (one input per heatmap mode's score).
