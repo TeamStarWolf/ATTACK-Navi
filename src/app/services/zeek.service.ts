@@ -1,5 +1,8 @@
-// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+﻿// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
+// PROVENANCE: curated heuristic content, hand-maintained in this repo -- not
+// derived from an authoritative upstream dataset. Technique associations are
+// editorial suggestions, not MITRE-published relationships.
 import { Injectable } from '@angular/core';
 import { Technique } from '../models/technique';
 
@@ -63,7 +66,7 @@ event http_request(c: connection, method: string, original_URI: string, unescape
 }`,
   }],
   'T1071.004': [{
-    description: 'Detect DNS-based C2 — long queries, high entropy domains, TXT record abuse',
+    description: 'Detect DNS-based C2 â€” long queries, high entropy domains, TXT record abuse',
     filename: 'detect-dns-c2.zeek',
     events: ['dns_request', 'dns_A_reply'],
     script: `@load base/protocols/dns
@@ -95,7 +98,7 @@ function entropy(s: string): double {
 }
 
 event dns_request(c: connection, msg: dns_msg, query: string, qtype: count, qclass: count) {
-  # Long DNS queries — potential data exfiltration
+  # Long DNS queries â€” potential data exfiltration
   if (|query| > 50) {
     NOTICE([$note=DNS_C2_Long_Query,
             $conn=c,
@@ -104,7 +107,7 @@ event dns_request(c: connection, msg: dns_msg, query: string, qtype: count, qcla
             $identifier=cat(c$id$orig_h, "long_query")]);
   }
 
-  # TXT record queries — commonly used for C2
+  # TXT record queries â€” commonly used for C2
   if (qtype == 16) {  # TXT record type
     dns_query_counts[c$id$orig_h] += 1;
     if (dns_query_counts[c$id$orig_h] > 10) {
@@ -117,7 +120,7 @@ event dns_request(c: connection, msg: dns_msg, query: string, qtype: count, qcla
 }`,
   }],
   'T1046': [{
-    description: 'Detect network port scanning — multiple destination ports from single source',
+    description: 'Detect network port scanning â€” multiple destination ports from single source',
     filename: 'detect-port-scan.zeek',
     events: ['connection_attempt', 'connection_rejected'],
     script: `@load base/frameworks/notice
@@ -147,7 +150,7 @@ event connection_attempt(c: connection) {
   if (|port_scan_tracker[src]| >= scan_threshold) {
     NOTICE([$note=Port_Scan_Detected,
             $conn=c,
-            $msg=fmt("ATT&CK T1046: Port scan from %s — %d unique ports probed",
+            $msg=fmt("ATT&CK T1046: Port scan from %s â€” %d unique ports probed",
                      src, |port_scan_tracker[src]|),
             $identifier=cat(src, "port_scan")]);
     delete port_scan_tracker[src];
@@ -155,7 +158,7 @@ event connection_attempt(c: connection) {
 }`,
   }],
   'T1040': [{
-    description: 'Detect network sniffing — ARP cache poisoning and promiscuous mode indicators',
+    description: 'Detect network sniffing â€” ARP cache poisoning and promiscuous mode indicators',
     filename: 'detect-network-sniffing.zeek',
     events: ['arp_request', 'arp_reply'],
     script: `@load base/frameworks/notice
@@ -174,10 +177,10 @@ global arp_reply_counts: table[addr] of count &default=0 &create_expire=30 sec;
 global arp_cache: table[addr] of string &create_expire=10 min;
 
 event arp_reply(mac_src: string, mac_dst: string, SPA: addr, SHA: string, TPA: addr, THA: string) {
-  # Detect ARP cache poisoning — same IP responding with different MACs
+  # Detect ARP cache poisoning â€” same IP responding with different MACs
   if (SPA in arp_cache && arp_cache[SPA] != SHA) {
     NOTICE([$note=ARP_Spoofing_Detected,
-            $msg=fmt("ATT&CK T1040: ARP spoofing — IP %s claimed by %s (was %s)",
+            $msg=fmt("ATT&CK T1040: ARP spoofing â€” IP %s claimed by %s (was %s)",
                      SPA, SHA, arp_cache[SPA]),
             $identifier=cat(SPA, "arp_spoof")]);
   }
@@ -186,7 +189,7 @@ event arp_reply(mac_src: string, mac_dst: string, SPA: addr, SHA: string, TPA: a
   arp_reply_counts[SPA] += 1;
   if (arp_reply_counts[SPA] > 30) {
     NOTICE([$note=ARP_Flood_Detected,
-            $msg=fmt("ATT&CK T1040: ARP flood from %s (MAC: %s) — %d replies in 30s",
+            $msg=fmt("ATT&CK T1040: ARP flood from %s (MAC: %s) â€” %d replies in 30s",
                      SPA, SHA, arp_reply_counts[SPA]),
             $identifier=cat(SPA, "arp_flood")]);
     delete arp_reply_counts[SPA];
@@ -194,7 +197,7 @@ event arp_reply(mac_src: string, mac_dst: string, SPA: addr, SHA: string, TPA: a
 }`,
   }],
   'T1041': [{
-    description: 'Detect data exfiltration over existing C2 channel — large outbound transfers',
+    description: 'Detect data exfiltration over existing C2 channel â€” large outbound transfers',
     filename: 'detect-exfil-c2.zeek',
     events: ['connection_state_remove', 'HTTP::log_http'],
     script: `@load base/frameworks/notice
@@ -232,7 +235,7 @@ event connection_state_remove(c: connection) {
   if (outbound_bytes[c$id$orig_h] > exfil_threshold_bytes * 5) {
     NOTICE([$note=Sustained_Outbound_Transfer,
             $conn=c,
-            $msg=fmt("ATT&CK T1041: Sustained outbound from %s — %d bytes total in last hour",
+            $msg=fmt("ATT&CK T1041: Sustained outbound from %s â€” %d bytes total in last hour",
                      c$id$orig_h, outbound_bytes[c$id$orig_h]),
             $identifier=cat(c$id$orig_h, "sustained_exfil")]);
     delete outbound_bytes[c$id$orig_h];
@@ -267,7 +270,7 @@ event ssh_auth_failed(c: connection, user: string, client_version: string, serve
   if (ssh_failures[src] >= ssh_threshold) {
     NOTICE([$note=SSH_Brute_Force,
             $conn=c,
-            $msg=fmt("ATT&CK T1110: SSH brute force from %s — %d failures for user '%s'",
+            $msg=fmt("ATT&CK T1110: SSH brute force from %s â€” %d failures for user '%s'",
                      src, ssh_failures[src], user),
             $identifier=cat(src, "ssh_brute")]);
     delete ssh_failures[src];
@@ -275,7 +278,7 @@ event ssh_auth_failed(c: connection, user: string, client_version: string, serve
 }`,
   }],
   'T1557': [{
-    description: 'Detect MitM attacks — LLMNR/NBT-NS poisoning, ARP spoofing',
+    description: 'Detect MitM attacks â€” LLMNR/NBT-NS poisoning, ARP spoofing',
     filename: 'detect-mitm.zeek',
     events: ['dns_request', 'arp_reply'],
     script: `@load base/frameworks/notice
@@ -301,7 +304,7 @@ event dns_request(c: connection, msg: dns_msg, query: string, qtype: count, qcla
     if (|llmnr_responders[c$id$orig_h]| > 5) {
       NOTICE([$note=LLMNR_Poisoning_Detected,
               $conn=c,
-              $msg=fmt("ATT&CK T1557: Possible LLMNR/MDNS poisoning from %s — responding to %d queries",
+              $msg=fmt("ATT&CK T1557: Possible LLMNR/MDNS poisoning from %s â€” responding to %d queries",
                        c$id$orig_h, |llmnr_responders[c$id$orig_h]|),
               $identifier=cat(c$id$orig_h, "llmnr")]);
     }
@@ -309,7 +312,7 @@ event dns_request(c: connection, msg: dns_msg, query: string, qtype: count, qcla
 }`,
   }],
   'T1190': [{
-    description: 'Detect exploitation of public-facing applications — SQLi, XSS, path traversal',
+    description: 'Detect exploitation of public-facing applications â€” SQLi, XSS, path traversal',
     filename: 'detect-webapp-exploitation.zeek',
     events: ['http_request', 'http_reply'],
     script: `@load base/frameworks/notice
@@ -423,7 +426,7 @@ export class ZeekService {
         attackId: tech.attackId,
         techniqueName: tech.name,
         filename: `detect-${tech.attackId.toLowerCase().replace('.', '-')}.zeek`,
-        description: `Generic network detection for ${tech.attackId} — ${tech.name}`,
+        description: `Generic network detection for ${tech.attackId} â€” ${tech.name}`,
         events: ['connection_state_remove'],
         script: `@load base/frameworks/notice
 
@@ -452,7 +455,7 @@ event connection_state_remove(c: connection) {
 
   generatePackageForTechniques(techniques: Technique[]): string {
     const header = [
-      `# Zeek Detection Package — MITRE ATT&CK`,
+      `# Zeek Detection Package â€” MITRE ATT&CK`,
       `# Generated: ${new Date().toISOString().slice(0, 10)}`,
       `# Techniques: ${techniques.length}`,
       `# Source: ATT&CK Navi`,
@@ -467,7 +470,7 @@ event connection_state_remove(c: connection) {
     for (const tech of techniques) {
       const techScripts = this.generateScriptsForTechnique(tech);
       for (const s of techScripts) {
-        scripts.push(`# ========== ${s.attackId} — ${tech.name} ==========`);
+        scripts.push(`# ========== ${s.attackId} â€” ${tech.name} ==========`);
         scripts.push(`# Events: ${s.events.join(', ')}`);
         scripts.push(`# ${s.description}`);
         scripts.push(s.script);

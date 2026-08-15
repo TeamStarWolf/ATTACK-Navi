@@ -1,5 +1,8 @@
-// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+﻿// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
+// PROVENANCE: curated heuristic content, hand-maintained in this repo -- not
+// derived from an authoritative upstream dataset. Technique associations are
+// editorial suggestions, not MITRE-published relationships.
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
@@ -133,7 +136,7 @@ export class IocFeedService {
       }
     }
 
-    // Domains (simple heuristic — word.tld pattern, excluding IPs)
+    // Domains (simple heuristic â€” word.tld pattern, excluding IPs)
     const domainRegex = /\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+(?:com|net|org|io|ru|cn|xyz|top|tk|info|biz|cc|pw|club)\b/gi;
     for (const match of text.matchAll(domainRegex)) {
       const val = match[0].toLowerCase();

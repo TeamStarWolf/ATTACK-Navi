@@ -1,5 +1,8 @@
-// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+﻿// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
+// PROVENANCE: curated heuristic content, hand-maintained in this repo -- not
+// derived from an authoritative upstream dataset. Technique associations are
+// editorial suggestions, not MITRE-published relationships.
 import { Injectable } from '@angular/core';
 import { Technique } from '../models/technique';
 
@@ -21,7 +24,7 @@ export interface YaraRule {
   yaml: string;
 }
 
-// ATT&CK technique → YARA detection patterns
+// ATT&CK technique â†’ YARA detection patterns
 const YARA_PATTERNS: YaraPattern[] = [
   { attackId: 'T1059.001', strings: ['$ps1 = "powershell" nocase wide ascii', '$enc = "-EncodedCommand" nocase', '$nop = "-NonInteractive" nocase', '$bypass = "-ExecutionPolicy Bypass" nocase', '$iex = "IEX" nocase', '$webclient = "New-Object Net.WebClient" nocase', '$download = "DownloadString" nocase'], conditions: ['2 of ($ps1, $enc, $nop, $bypass) or ($iex and $webclient) or ($download and $webclient)'], meta: { description: 'Detects suspicious PowerShell execution patterns', reference: 'https://attack.mitre.org/techniques/T1059/001/' } },
   { attackId: 'T1059.003', strings: ['$cmd = "cmd.exe" nocase wide ascii', '$c = "/c " nocase', '$k = "/k " nocase', '$hidden = "/q" nocase', '$pipe = "2>&1" ascii', '$env = "%COMSPEC%" nocase'], conditions: ['$cmd and ($c or $k) and ($hidden or $pipe or $env)'], meta: { description: 'Detects suspicious cmd.exe execution', reference: 'https://attack.mitre.org/techniques/T1059/003/' } },
