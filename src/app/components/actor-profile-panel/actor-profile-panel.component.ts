@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
+import { PanelNavService } from '../../services/panel-nav.service';
 import { DataService } from '../../services/data.service';
 import { ImplementationService } from '../../services/implementation.service';
 import { ThreatGroup } from '../../models/group';
@@ -34,7 +35,6 @@ interface GroupProfile {
   styleUrl: './actor-profile-panel.component.scss',
 })
 export class ActorProfilePanelComponent implements OnInit, OnDestroy {
-  open = false;
   domain: Domain | null = null;
   allGroups: ThreatGroup[] = [];
   filteredGroups: ThreatGroup[] = [];
@@ -46,20 +46,16 @@ export class ActorProfilePanelComponent implements OnInit, OnDestroy {
 
   constructor(
     private filterService: FilterService,
+    private panelNav: PanelNavService,
     private dataService: DataService,
     private implService: ImplementationService,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(this.filterService.activePanel$.subscribe(panel => {
-      this.open = (panel as string) === 'actor';
-      if (this.open && this.domain) this.loadGroups();
-      this.cdr.markForCheck();
-    }));
     this.subs.add(this.dataService.domain$.subscribe(domain => {
       this.domain = domain;
-      if (this.open && domain) this.loadGroups();
+      if (domain) this.loadGroups();
       this.cdr.markForCheck();
     }));
     this.subs.add(this.implService.status$.subscribe(map => {
@@ -123,15 +119,15 @@ export class ActorProfilePanelComponent implements OnInit, OnDestroy {
 
   filterByGroup(group: ThreatGroup): void {
     this.filterService.toggleThreatGroup(group.id);
-    this.filterService.setActivePanel(null);
+    // Show the applied group filter on the matrix.
+    this.panelNav.open('matrix');
   }
 
   selectTechnique(tech: Technique): void {
     this.filterService.selectTechnique(tech);
-    this.filterService.setActivePanel(null);
+    // The technique sidebar opens over the matrix.
+    this.panelNav.open('matrix');
   }
-
-  close(): void { this.filterService.setActivePanel(null); }
 
   getTechCoverage(techId: string): boolean {
     for (const [mitId, status] of this.implStatusMap.entries()) {

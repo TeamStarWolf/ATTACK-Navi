@@ -1,8 +1,6 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-@if (visible) {
-  <div class="overlay" (click)="close()">
-    <div class="panel" role="dialog" aria-modal="true" aria-label="Coverage Assessment Wizard" (click)="$event.stopPropagation()">
+<section class="page-panel page-panel--full panel" aria-label="Coverage Assessment Wizard">
 
       <!-- Header -->
       <div class="panel-header">
@@ -10,7 +8,6 @@
           <span class="panel-title">Coverage Assessment Wizard</span>
           <span class="header-subtitle">Step {{ currentStep }} of {{ totalSteps }}</span>
         </div>
-        <button class="close-btn" (click)="close()" title="Close">&#10005;</button>
       </div>
 
       <!-- Step indicator -->
@@ -359,10 +356,9 @@
             Next
           </button>
         } @else {
-          <button class="action-btn primary" (click)="close()">Done</button>
+          <button class="action-btn primary" (click)="applyToMatrix()">Done</button>
         }
       </div>
 
-    </div>
-  </div>
-}
+
+</section>

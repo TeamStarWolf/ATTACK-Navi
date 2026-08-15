@@ -1,26 +1,11 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-.emu-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-
 .emu-panel {
   background: var(--bg-elev, #161922);
   border: 1px solid var(--border-subtle, #2a2f3d);
   border-radius: 10px;
-  width: 100%;
-  max-width: 1180px;
-  max-height: 92vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
   overflow: hidden;
 }
 

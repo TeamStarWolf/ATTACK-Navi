@@ -1,8 +1,6 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-@if (open) {
-<div class="cdp-overlay">
-  <div class="cdp-panel" role="dialog" aria-modal="true" aria-label="Coverage Diff">
+<section class="page-panel page-panel--full cdp-panel" aria-label="Coverage Diff">
 
     <!-- Header -->
     <div class="cdp-header">
@@ -10,7 +8,6 @@
         <span class="cdp-icon">📊</span>
         <h2 class="cdp-title">Coverage Diff</h2>
         <p class="cdp-subtitle">Compare two coverage snapshots to measure improvement over time</p>
-        <button class="cdp-close" (click)="close()">✕</button>
       </div>
 
       <!-- Snapshot selectors -->
@@ -167,6 +164,4 @@
 
       }
     </div>
-  </div>
-</div>
-}
+</section>

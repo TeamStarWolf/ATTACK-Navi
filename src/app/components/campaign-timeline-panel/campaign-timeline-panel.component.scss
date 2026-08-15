@@ -1,18 +1,9 @@
 /* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
    https://github.com/TeamStarWolf/ATTACK-Navi - MIT License */
-.ctp-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgb(0 0 0 / 70%);
-  z-index: 600;
-  display: flex;
-  align-items: stretch;
-  backdrop-filter: blur(2px);
-}
-
 .ctp-panel {
   background: #0d1117;
-  border-right: 1px solid #21262d;
+  border: 1px solid #21262d;
+  border-radius: 10px;
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;

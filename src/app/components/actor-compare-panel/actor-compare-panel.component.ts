@@ -32,7 +32,6 @@ export interface TechniqueRow {
   styleUrl: './actor-compare-panel.component.scss',
 })
 export class ActorComparePanelComponent implements OnInit, OnDestroy {
-  visible = false;
 
   groups: ThreatGroup[] = [];
   actorA: ThreatGroup | null = null;
@@ -57,15 +56,7 @@ export class ActorComparePanelComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(
-      this.filterService.activePanel$.subscribe(p => {
-        this.visible = p === 'actor-compare';
-        if (this.visible && !this.mapBuilt) {
-          this.loadData();
-        }
-        this.cdr.markForCheck();
-      }),
-    );
+    this.loadData();
   }
 
   ngOnDestroy(): void {
@@ -245,10 +236,6 @@ export class ActorComparePanelComponent implements OnInit, OnDestroy {
 
   setTab(tab: 'overlap' | 'unique-a' | 'unique-b' | 'matrix'): void {
     this.activeTab = tab;
-  }
-
-  close(): void {
-    this.filterService.setActivePanel(null);
   }
 
   attackUrl(attackId: string): string {

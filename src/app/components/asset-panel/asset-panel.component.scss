@@ -1,27 +1,12 @@
 /* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
    https://github.com/TeamStarWolf/ATTACK-Navi - MIT License */
-.overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 900;
-  background: rgba(0, 0, 0, 0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(4px);
-}
-
 .panel {
-  width: 90vw;
-  max-width: 960px;
-  max-height: 85vh;
   background: #0d1b2a;
   border: 1px solid rgba(151, 185, 211, 0.15);
-  border-radius: 16px;
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
 }
 
 .panel-header {
@@ -57,21 +42,6 @@
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 10px;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  color: #6e8599;
-  font-size: 18px;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 6px;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: #e2e8f0;
-  }
 }
 
 // ── Tabs ──────────────────────────────────────────────
@@ -656,14 +626,6 @@
     background: #f8fafc;
     border-color: #e2e8f0;
     color: #334155;
-  }
-
-  .close-btn {
-    color: #94a3b8;
-    &:hover {
-      color: #1a1a2e;
-      background: #f1f5f9;
-    }
   }
 
   .asset-table-wrap,

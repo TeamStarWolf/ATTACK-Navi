@@ -1,14 +1,11 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-@if (visible) {
-  <div class="panel-overlay" (click)="close()"></div>
-  <aside class="controls-panel" role="dialog" aria-modal="true" aria-label="Security Controls">
+<section class="page-panel page-panel--full controls-panel" aria-label="Security Controls">
 
     <!-- Header -->
     <div class="panel-header">
       <div class="panel-title-row">
         <span class="panel-title">🔒 Security Controls</span>
-        <button class="close-btn" (click)="close()">✕</button>
       </div>
       <div class="panel-summary">
         <span class="summary-chip implemented">✅ {{ implementedCount }} implemented</span>
@@ -241,5 +238,4 @@
       }
 
     </div>
-  </aside>
-}
+</section>

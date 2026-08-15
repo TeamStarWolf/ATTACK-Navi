@@ -1,8 +1,6 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-@if (visible) {
-  <div class="overlay" (click)="close()">
-    <div class="panel" role="dialog" aria-modal="true" aria-label="Asset Inventory" (click)="$event.stopPropagation()">
+<section class="page-panel page-panel--full panel asset-page" aria-label="Asset Inventory">
 
       <!-- Header -->
       <div class="panel-header">
@@ -13,7 +11,6 @@
             <span class="count-badge">{{ assetCount }}</span>
           }
         </div>
-        <button class="close-btn" (click)="close()" title="Close">✕</button>
       </div>
 
       <!-- Tabs -->
@@ -245,6 +242,4 @@
         </div>
       }
 
-    </div>
-  </div>
-}
+</section>

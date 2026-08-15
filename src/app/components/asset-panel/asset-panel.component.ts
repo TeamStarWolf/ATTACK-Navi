@@ -11,6 +11,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription, filter, take } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
+import { PanelNavService } from '../../services/panel-nav.service';
 import { AssetInventoryService, Asset, AssetExposure } from '../../services/asset-inventory.service';
 import { AttackCveService } from '../../services/attack-cve.service';
 import { CveService } from '../../services/cve.service';
@@ -33,7 +34,6 @@ interface TechniqueExposureRow {
   styleUrl: './asset-panel.component.scss',
 })
 export class AssetPanelComponent implements OnInit, OnDestroy {
-  visible = false;
   activeTab: 'inventory' | 'exposure' = 'inventory';
 
   // Inventory state
@@ -72,6 +72,7 @@ export class AssetPanelComponent implements OnInit, OnDestroy {
 
   constructor(
     private filterService: FilterService,
+    private panelNav: PanelNavService,
     private assetService: AssetInventoryService,
     private attackCveService: AttackCveService,
     private cveService: CveService,
@@ -80,15 +81,7 @@ export class AssetPanelComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(
-      this.filterService.activePanel$.subscribe(panel => {
-        this.visible = panel === 'assets';
-        if (this.visible) {
-          this.refreshExposure();
-        }
-        this.cdr.markForCheck();
-      }),
-    );
+    this.refreshExposure();
 
     this.subs.add(
       this.assetService.assets$.subscribe(assets => {
@@ -108,10 +101,6 @@ export class AssetPanelComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subs.unsubscribe();
-  }
-
-  close(): void {
-    this.filterService.setActivePanel(null);
   }
 
   switchTab(tab: 'inventory' | 'exposure'): void {
@@ -269,6 +258,8 @@ export class AssetPanelComponent implements OnInit, OnDestroy {
 
   enableHeatmap(): void {
     this.filterService.setHeatmapMode('my-exposure');
+    // Show the heatmap on the matrix.
+    this.panelNav.open('matrix');
   }
 
   private refreshExposure(): void {

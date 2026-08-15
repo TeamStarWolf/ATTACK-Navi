@@ -26,8 +26,7 @@ describe('ActorComparePanelComponent', () => {
     fixture.detectChanges();
   });
 
-  it('is created and starts hidden', () => {
+  it('is created', () => {
     expect(component).toBeTruthy();
-    expect(component.visible).toBe(false);
   });
 });

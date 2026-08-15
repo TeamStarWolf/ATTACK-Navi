@@ -1,8 +1,6 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-@if (open) {
-<div class="ctp-overlay">
-  <div class="ctp-panel" role="dialog" aria-modal="true" aria-label="Campaign Timeline">
+<section class="page-panel page-panel--full ctp-panel" aria-label="Campaign Timeline">
 
     <!-- Header -->
     <div class="ctp-header">
@@ -19,7 +17,6 @@
             <span class="stat-pill active-badge">{{ activeCampaignIds.size }} active</span>
           }
         </div>
-        <button class="ctp-close" (click)="close()">✕</button>
       </div>
 
       <!-- Controls row -->
@@ -160,6 +157,5 @@
       </div>
     }
 
-  </div>
-</div>
-}
+
+</section>

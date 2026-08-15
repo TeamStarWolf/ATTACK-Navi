@@ -28,5 +28,13 @@ export const routes: Routes = [
     path: 'dashboard',
     loadChildren: () => import('./pages/dashboard/dashboard.routes').then((m) => m.DASHBOARD_ROUTES),
   },
+  {
+    path: 'intel',
+    loadChildren: () => import('./pages/intel/intel.routes').then((m) => m.INTEL_ROUTES),
+  },
+  {
+    path: 'coverage',
+    loadChildren: () => import('./pages/coverage/coverage.routes').then((m) => m.COVERAGE_ROUTES),
+  },
   { path: '**', redirectTo: 'matrix' },
 ];

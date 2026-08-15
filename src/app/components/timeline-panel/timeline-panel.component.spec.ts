@@ -3,7 +3,6 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
 import { TimelinePanelComponent } from './timeline-panel.component';
-import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
 import { ImplementationService } from '../../services/implementation.service';
 import { TimelineService } from '../../services/timeline.service';
@@ -16,10 +15,6 @@ describe('TimelinePanelComponent', () => {
     TestBed.configureTestingModule({
       imports: [TimelinePanelComponent],
       providers: [
-        { provide: FilterService, useValue: {
-            activePanel$: new BehaviorSubject<string | null>(null),
-            setActivePanel: jasmine.createSpy(),
-        }},
         { provide: DataService, useValue: { domain$: new BehaviorSubject(null) }},
         { provide: ImplementationService, useValue: { status$: new BehaviorSubject(new Map()) }},
         { provide: TimelineService, useValue: { snapshots$: new BehaviorSubject([]), getAll: () => [] }},
@@ -30,8 +25,7 @@ describe('TimelinePanelComponent', () => {
     fixture.detectChanges();
   });
 
-  it('is created and starts hidden', () => {
+  it('is created', () => {
     expect(component).toBeTruthy();
-    expect(component.visible).toBe(false);
   });
 });

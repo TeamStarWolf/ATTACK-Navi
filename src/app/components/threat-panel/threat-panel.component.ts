@@ -46,7 +46,6 @@ interface GapRow {
   styleUrl: './threat-panel.component.scss',
 })
 export class ThreatPanelComponent implements OnInit, OnDestroy {
-  visible = false;
   activeTab: 'groups' | 'campaigns' = 'groups';
   searchText = '';
 
@@ -119,12 +118,6 @@ export class ThreatPanelComponent implements OnInit, OnDestroy {
       }),
     );
 
-    this.subs.add(
-      this.filterService.activePanel$.subscribe((panel) => {
-        this.visible = panel === 'threats';
-        this.cdr.markForCheck();
-      }),
-    );
   }
 
   ngOnDestroy(): void {
@@ -235,10 +228,6 @@ export class ThreatPanelComponent implements OnInit, OnDestroy {
     } else {
       this.filterService.clearCampaigns();
     }
-  }
-
-  close(): void {
-    this.filterService.setActivePanel(null);
   }
 
   get selectedGroupCount(): number { return this.activeGroupIds.size; }

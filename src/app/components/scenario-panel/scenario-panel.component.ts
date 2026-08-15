@@ -55,7 +55,6 @@ interface SimulationResult {
   styleUrl: './scenario-panel.component.scss',
 })
 export class ScenarioPanelComponent implements OnInit, OnDestroy {
-  visible = false;
   groups: ThreatGroup[] = [];
   selectedGroup: ThreatGroup | null = null;
   result: SimulationResult | null = null;
@@ -87,15 +86,7 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(
-      this.filterService.activePanel$.subscribe(p => {
-        this.visible = p === 'scenario';
-        if (this.visible && this.groups.length === 0) {
-          this.loadGroups();
-        }
-        this.cdr.markForCheck();
-      }),
-    );
+    this.loadGroups();
   }
 
   ngOnDestroy(): void {
@@ -397,10 +388,6 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
 
   attackUrl(attackId: string): string {
     return `https://attack.mitre.org/techniques/${attackId.replace('.', '/')}/`;
-  }
-
-  close(): void {
-    this.filterService.setActivePanel(null);
   }
 
   // ─── Threat Simulation (enhanced) ───────────────────────���─────────────

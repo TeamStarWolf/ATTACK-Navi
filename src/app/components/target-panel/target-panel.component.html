@@ -1,8 +1,6 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-@if (visible) {
-  <div class="overlay" (click)="close()">
-    <div class="panel" role="dialog" aria-modal="true" aria-label="Target Profile" (click)="$event.stopPropagation()">
+<section class="page-panel page-panel--full panel target-page" aria-label="Target Profile">
 
       <!-- Header -->
       <div class="panel-header">
@@ -11,7 +9,6 @@
           <span class="panel-title">Coverage Target Calculator</span>
           <span class="header-subtitle">Find the minimum set of mitigations to reach your target coverage</span>
         </div>
-        <button class="close-btn" (click)="close()" title="Close">✕</button>
       </div>
 
       <!-- Body -->
@@ -175,6 +172,4 @@
         }
 
       </div>
-    </div>
-  </div>
-}
+</section>

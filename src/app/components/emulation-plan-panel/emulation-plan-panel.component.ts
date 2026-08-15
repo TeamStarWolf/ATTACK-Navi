@@ -36,7 +36,6 @@ interface PhaseGroup {
   styleUrls: ['./emulation-plan-panel.component.scss'],
 })
 export class EmulationPlanPanelComponent implements OnInit, OnDestroy {
-  visible = false;
 
   // Data
   domain: Domain | null = null;
@@ -66,16 +65,8 @@ export class EmulationPlanPanelComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(
-      this.filterService.activePanel$.subscribe(p => {
-        this.visible = p === 'emulation';
-        if (this.visible) {
-          this.ensureGroupsLoaded();
-          this.savedPlans = this.emulationService.getSavedPlans();
-        }
-        this.cdr.markForCheck();
-      }),
-    );
+    this.ensureGroupsLoaded();
+    this.savedPlans = this.emulationService.getSavedPlans();
   }
 
   ngOnDestroy(): void {
@@ -183,7 +174,6 @@ export class EmulationPlanPanelComponent implements OnInit, OnDestroy {
 
   jumpToLibrary(): void {
     this.viewModeService.set('library');
-    this.close();
   }
 
   // ─── Saving / loading ─────────────────────────────────────────────────────
@@ -234,9 +224,4 @@ export class EmulationPlanPanelComponent implements OnInit, OnDestroy {
     if (this.plan) this.emulationService.exportJson(this.plan);
   }
 
-  // ─── Lifecycle ────────────────────────────────────────────────────────────
-
-  close(): void {
-    this.filterService.setActivePanel(null);
-  }
 }
