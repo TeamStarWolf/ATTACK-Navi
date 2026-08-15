@@ -98,6 +98,11 @@ describe('PdfReportService', () => {
       campaigns: [],
       campaignsByTechnique: new Map(),
       techniquesByCampaign: new Map(),
+      softwareByGroup: new Map(),
+      groupsBySoftware: new Map(),
+      softwareByCampaign: new Map(),
+      campaignsByGroup: new Map(),
+      detectionNotesByTechnique: new Map(),
     } as Domain;
   }
 

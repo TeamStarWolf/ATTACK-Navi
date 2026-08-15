@@ -5,7 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, Subscription, from, of, throwError } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 import { retryWithBackoff } from '../utils/retry';
-import { Domain, TacticColumn } from '../models/domain';
+import { Domain, TacticColumn, DetectionNote } from '../models/domain';
 import { Tactic } from '../models/tactic';
 import { Technique } from '../models/technique';
 import { Mitigation, MitigationRelationship } from '../models/mitigation';
@@ -158,24 +158,29 @@ export class DataService {
     return this.domainSubject.value?.techniquesByGroup.get(groupId) ?? [];
   }
 
+  /**
+   * Software a group actually uses per the ATT&CK STIX `uses` relationships.
+   * (Previously this was inferred from shared techniques, which over-attributed:
+   * any software touching a technique got credited to every group using it.)
+   */
   getSoftwareForGroup(groupId: string): AttackSoftware[] {
-    const domain = this.domainSubject.value;
-    if (!domain) return [];
-    // Find software that shares at least one technique with this group
-    const groupTechIds = new Set((domain.techniquesByGroup.get(groupId) ?? []).map(t => t.id));
-    if (!groupTechIds.size) return [];
-    const result = new Map<string, AttackSoftware>();
-    for (const sw of domain.software) {
-      const swTechs = domain.techniquesBySoftware.get(sw.id) ?? [];
-      if (swTechs.some(t => groupTechIds.has(t.id))) {
-        result.set(sw.id, sw);
-      }
-    }
-    return [...result.values()];
+    return this.domainSubject.value?.softwareByGroup.get(groupId) ?? [];
+  }
+
+  getGroupsForSoftware(softwareId: string): ThreatGroup[] {
+    return this.domainSubject.value?.groupsBySoftware.get(softwareId) ?? [];
+  }
+
+  getSoftwareForCampaign(campaignId: string): AttackSoftware[] {
+    return this.domainSubject.value?.softwareByCampaign.get(campaignId) ?? [];
   }
 
   getCampaignsForGroup(groupId: string): Campaign[] {
-    return (this.domainSubject.value?.campaigns ?? []).filter(c => c.attributedGroupIds.includes(groupId));
+    return this.domainSubject.value?.campaignsByGroup.get(groupId) ?? [];
+  }
+
+  getDetectionNotesForTechnique(techniqueId: string): import('../models/domain').DetectionNote[] {
+    return this.domainSubject.value?.detectionNotesByTechnique.get(techniqueId) ?? [];
   }
 
   getSoftwareForTechnique(techniqueId: string): AttackSoftware[] {
@@ -293,9 +298,12 @@ export class DataService {
     const groupsMap = new Map<string, ThreatGroup>();
     const usesRels: Array<{ groupRef: string; techniqueRef: string; description: string }> = [];
     const softwareUsesRels: Array<{ softwareRef: string; techniqueRef: string; description: string }> = [];
-    const campaignUsesRels: Array<{ campaignRef: string; techniqueRef: string }> = [];
+    const campaignUsesRels: Array<{ campaignRef: string; techniqueRef: string; description: string }> = [];
+    // group/campaign → software toolkit relationships ("uses" with a tool/malware target)
+    const groupSoftwareRels: Array<{ groupRef: string; softwareRef: string }> = [];
+    const campaignSoftwareRels: Array<{ campaignRef: string; softwareRef: string }> = [];
     // detects: detection-strategy → technique (v18) or data-component → technique (legacy)
-    const detectsRels: Array<{ sourceRef: string; techniqueRef: string }> = [];
+    const detectsRels: Array<{ sourceRef: string; techniqueRef: string; description: string }> = [];
 
     for (const obj of bundle.objects ?? []) {
       // x-mitre-collection is never revoked — parse it before the revoked check
@@ -471,7 +479,17 @@ export class DataService {
             ) {
               softwareUsesRels.push({ softwareRef: obj.source_ref, techniqueRef: obj.target_ref, description: obj.description ?? '' });
             } else if (obj.source_ref?.startsWith('campaign--')) {
-              campaignUsesRels.push({ campaignRef: obj.source_ref, techniqueRef: obj.target_ref });
+              campaignUsesRels.push({ campaignRef: obj.source_ref, techniqueRef: obj.target_ref, description: obj.description ?? '' });
+            }
+          } else if (
+            obj.relationship_type === 'uses' &&
+            (obj.target_ref?.startsWith('tool--') || obj.target_ref?.startsWith('malware--'))
+          ) {
+            // Toolkit relationships: which software a group/campaign employs
+            if (obj.source_ref?.startsWith('intrusion-set--')) {
+              groupSoftwareRels.push({ groupRef: obj.source_ref, softwareRef: obj.target_ref });
+            } else if (obj.source_ref?.startsWith('campaign--')) {
+              campaignSoftwareRels.push({ campaignRef: obj.source_ref, softwareRef: obj.target_ref });
             }
           } else if (
             obj.relationship_type === 'detects' &&
@@ -479,7 +497,7 @@ export class DataService {
              obj.source_ref?.startsWith('x-mitre-data-component--')) &&
             obj.target_ref?.startsWith('attack-pattern--')
           ) {
-            detectsRels.push({ sourceRef: obj.source_ref, techniqueRef: obj.target_ref });
+            detectsRels.push({ sourceRef: obj.source_ref, techniqueRef: obj.target_ref, description: obj.description ?? '' });
           } else if (
             obj.relationship_type === 'attributed-to' &&
             obj.source_ref?.startsWith('campaign--') &&
@@ -624,6 +642,8 @@ export class DataService {
     const techniquesByDataComponent = new Map<string, Technique[]>();
     const dataComponentsByTechnique = new Map<string, MitreDataComponent[]>();
 
+    const detectionNotesByTechnique = new Map<string, DetectionNote[]>();
+
     for (const rel of detectsRels) {
       const technique = techniquesMap.get(rel.techniqueRef);
       if (!technique) continue;
@@ -641,15 +661,26 @@ export class DataService {
         }
       }
 
+      const dcNames: string[] = [];
       for (const dcId of dcIds) {
         const dc = dataComponentsMap.get(dcId);
         if (!dc) continue;
+        dcNames.push(dc.name);
 
         if (!techniquesByDataComponent.has(dc.id)) techniquesByDataComponent.set(dc.id, []);
         techniquesByDataComponent.get(dc.id)!.push(technique);
 
         if (!dataComponentsByTechnique.has(technique.id)) dataComponentsByTechnique.set(technique.id, []);
         dataComponentsByTechnique.get(technique.id)!.push(dc);
+      }
+
+      // Preserve the relationship's detection guidance (dropped previously)
+      if (rel.description) {
+        if (!detectionNotesByTechnique.has(technique.id)) detectionNotesByTechnique.set(technique.id, []);
+        detectionNotesByTechnique.get(technique.id)!.push({
+          dataComponentName: dcNames.join(', ') || 'Detection strategy',
+          description: rel.description,
+        });
       }
     }
 
@@ -667,6 +698,83 @@ export class DataService {
 
       if (!techniquesByCampaign.has(campaign.id)) techniquesByCampaign.set(campaign.id, []);
       techniquesByCampaign.get(campaign.id)!.push(technique);
+
+      // Campaign procedure examples (descriptions were dropped previously)
+      if (rel.description) {
+        if (!proceduresByTechnique.has(technique.id)) proceduresByTechnique.set(technique.id, []);
+        proceduresByTechnique.get(technique.id)!.push({
+          sourceId: campaign.id,
+          sourceName: campaign.name,
+          attackId: campaign.attackId,
+          sourceType: 'campaign',
+          description: rel.description,
+        });
+      }
+    }
+
+    // ── Build toolkit indexes (group/campaign → software) ────────────────────
+    const softwareByGroup = new Map<string, AttackSoftware[]>();
+    const groupsBySoftware = new Map<string, ThreatGroup[]>();
+    const softwareByCampaign = new Map<string, AttackSoftware[]>();
+
+    for (const rel of groupSoftwareRels) {
+      const group = groupsMap.get(rel.groupRef);
+      const sw = softwareMap.get(rel.softwareRef);
+      if (!group || !sw) continue;
+
+      if (!softwareByGroup.has(group.id)) softwareByGroup.set(group.id, []);
+      softwareByGroup.get(group.id)!.push(sw);
+
+      if (!groupsBySoftware.has(sw.id)) groupsBySoftware.set(sw.id, []);
+      groupsBySoftware.get(sw.id)!.push(group);
+    }
+
+    for (const rel of campaignSoftwareRels) {
+      const campaign = campaignsMap.get(rel.campaignRef);
+      const sw = softwareMap.get(rel.softwareRef);
+      if (!campaign || !sw) continue;
+
+      if (!softwareByCampaign.has(campaign.id)) softwareByCampaign.set(campaign.id, []);
+      softwareByCampaign.get(campaign.id)!.push(sw);
+    }
+
+    // ── Campaign attribution reverse index (group → campaigns) ───────────────
+    const campaignsByGroup = new Map<string, Campaign[]>();
+    for (const campaign of campaignsMap.values()) {
+      for (const groupId of campaign.attributedGroupIds) {
+        if (!groupsMap.has(groupId)) continue;
+        if (!campaignsByGroup.has(groupId)) campaignsByGroup.set(groupId, []);
+        campaignsByGroup.get(groupId)!.push(campaign);
+      }
+    }
+
+    // ── Dedupe + deterministic ordering for every relationship index ─────────
+    // STIX bundles can carry multiple `uses` relationships for the same pair
+    // (one per reference); insertion order is otherwise bundle-dependent.
+    const dedupeSortById = <T extends { id: string; attackId: string }>(map: Map<string, T[]>): void => {
+      for (const [key, items] of map) {
+        const unique = [...new Map(items.map((item) => [item.id, item])).values()];
+        unique.sort((a, b) => a.attackId.localeCompare(b.attackId));
+        map.set(key, unique);
+      }
+    };
+    dedupeSortById(groupsByTechnique);
+    dedupeSortById(techniquesByGroup);
+    dedupeSortById(softwareByTechnique);
+    dedupeSortById(techniquesBySoftware);
+    dedupeSortById(campaignsByTechnique);
+    dedupeSortById(techniquesByCampaign);
+    dedupeSortById(techniquesByMitigation);
+    dedupeSortById(techniquesByDataComponent);
+    dedupeSortById(softwareByGroup);
+    dedupeSortById(groupsBySoftware);
+    dedupeSortById(softwareByCampaign);
+    dedupeSortById(campaignsByGroup);
+    // Data components have no attackId — dedupe by id, order by name
+    for (const [key, items] of dataComponentsByTechnique) {
+      const unique = [...new Map(items.map((dc) => [dc.id, dc])).values()];
+      unique.sort((a, b) => a.name.localeCompare(b.name));
+      dataComponentsByTechnique.set(key, unique);
     }
 
     const techniques = [...techniquesMap.values()];
@@ -704,6 +812,11 @@ export class DataService {
       campaigns,
       campaignsByTechnique,
       techniquesByCampaign,
+      softwareByGroup,
+      groupsBySoftware,
+      softwareByCampaign,
+      campaignsByGroup,
+      detectionNotesByTechnique,
     };
   }
 

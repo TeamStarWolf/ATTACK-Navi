@@ -14,6 +14,12 @@ export interface TacticColumn {
   techniques: Technique[]; // parent techniques only, sorted by attackId
 }
 
+/** How a data component / detection strategy detects a technique (STIX `detects` description). */
+export interface DetectionNote {
+  dataComponentName: string;
+  description: string;
+}
+
 export interface Domain {
   name: string;
   attackVersion: string;  // e.g. "16.1"
@@ -39,4 +45,9 @@ export interface Domain {
   campaigns: Campaign[];
   campaignsByTechnique: Map<string, Campaign[]>;  // technique STIX id → campaigns using it
   techniquesByCampaign: Map<string, Technique[]>; // campaign STIX id → techniques it uses
+  softwareByGroup: Map<string, AttackSoftware[]>; // group STIX id → software it uses
+  groupsBySoftware: Map<string, ThreatGroup[]>;   // software STIX id → groups using it
+  softwareByCampaign: Map<string, AttackSoftware[]>; // campaign STIX id → software it uses
+  campaignsByGroup: Map<string, Campaign[]>;      // group STIX id → campaigns attributed to it
+  detectionNotesByTechnique: Map<string, DetectionNote[]>; // technique STIX id → detection guidance
 }
