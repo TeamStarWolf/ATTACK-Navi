@@ -4,6 +4,11 @@ import { bootstrapApplication } from '@angular/platform-browser';
 import { isDevMode } from '@angular/core';
 import { appConfig } from './app/app.config';
 import { AppComponent } from './app/app.component';
+import { applyLegacyHashShim } from './app/utils/legacy-hash-shim';
+
+// Rewrite pre-router share links (#tech=T1059, #heat=kev&grp=G0016) into
+// routed URLs BEFORE bootstrap so the router's initial navigation sees them.
+applyLegacyHashShim();
 
 bootstrapApplication(AppComponent, appConfig)
   .catch((err) => console.error(err));

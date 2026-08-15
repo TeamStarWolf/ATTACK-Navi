@@ -1,0 +1,209 @@
+/* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+   https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
+   Styles moved from app.component.scss along with the matrix-region markup. */
+:host {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+}
+
+.matrix-region {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+  border: 1px solid var(--line-soft);
+  border-radius: 24px;
+  background: rgb(9 18 28 / 72%);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(16px);
+}
+
+.context-bar {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--line-soft);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 2%), transparent),
+    rgb(11 23 34 / 82%);
+  flex-shrink: 0;
+  backdrop-filter: blur(12px);
+  overflow: hidden;
+
+  app-legend {
+    flex-shrink: 0;
+    border-right: 1px solid var(--line-soft);
+  }
+
+  app-quick-filters {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.stats-health-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.matrix-scroll {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.state-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: var(--text-faint);
+
+  .loader-spinner {
+    width: 44px;
+    height: 44px;
+    border: 3px solid rgb(255 255 255 / 8%);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  .error-icon { font-size: 40px; }
+
+  .state-msg {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0;
+  }
+
+  .state-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 0;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.bulk-action-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgb(13 28 40 / 90%);
+  border: 1px solid var(--line-strong);
+  border-radius: 18px;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: var(--z-overlay);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(18px);
+}
+
+.bulk-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.bulk-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+
+  button {
+    font-size: 11px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 5%);
+    border: 1px solid var(--line-soft);
+    color: var(--text-main);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s, transform 0.15s;
+
+    &:hover {
+      background: rgb(255 255 255 / 10%);
+      border-color: var(--line-strong);
+      transform: translateY(-1px);
+    }
+  }
+}
+
+/* ---- Light mode overrides (moved with the markup; burn down in P4) ---- */
+:host-context(body.light-mode) {
+  .matrix-region {
+    background: #fff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 6%) !important;
+    backdrop-filter: none !important;
+  }
+
+  .context-bar {
+    background: #f8f9fa !important;
+    border-bottom-color: #e2e8f0 !important;
+    backdrop-filter: none !important;
+
+    app-legend { border-right-color: #e2e8f0 !important; }
+  }
+
+  .bulk-action-bar {
+    background: #fff !important;
+    border-color: #e2e8f0 !important;
+    backdrop-filter: none !important;
+    box-shadow: 0 4px 12px rgb(0 0 0 / 10%) !important;
+
+    button {
+      background: #f1f5f9 !important;
+      border-color: #e2e8f0 !important;
+      color: #475569 !important;
+      &:hover { background: #e2e8f0 !important; color: #1a1a2e !important; }
+    }
+  }
+  .bulk-count { color: #2563eb !important; }
+
+  .state-screen {
+    color: #94a3b8 !important;
+
+    .loader-spinner {
+      border-color: rgb(0 0 0 / 8%) !important;
+      border-top-color: #2563eb !important;
+    }
+  }
+}
+
+@media (width <= 768px) {
+  .stats-health-row {
+    flex-wrap: wrap;
+    gap: 4px;
+    font-size: 10px;
+  }
+
+  .matrix-region {
+    border-radius: 12px;
+  }
+
+  .context-bar {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .bulk-action-bar {
+    bottom: 64px;
+  }
+}
