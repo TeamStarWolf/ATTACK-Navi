@@ -20,6 +20,7 @@ import { DataService, DataSourceMode, AttackDomain } from '../../services/data.s
 import { CommandPaletteService } from '../../services/command-palette.service';
 import { ThemeService } from '../../services/theme.service';
 import { SavedViewsService, SavedView } from '../../services/saved-views.service';
+import { IconComponent } from '../../shared/icons/icon.component';
 
 export const PLATFORMS = [
   'Windows', 'Linux', 'macOS', 'Azure AD', 'Office 365',
@@ -49,7 +50,7 @@ export const PLATFORM_PILLS = [
 @Component({
   selector: 'app-toolbar',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, IconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './toolbar.component.html',
   styleUrl: './toolbar.component.scss',

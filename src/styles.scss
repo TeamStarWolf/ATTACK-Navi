@@ -90,6 +90,9 @@ body.light-mode {
   --bg-base: #f8f9fa;
   --bg-surface: #fff;
   --bg-elevated: #fff;
+  --bg-panel: #ffffff;
+  --bg-panel-strong: #f1f5f9;
+  --bg-soft: rgb(0 0 0 / 3%);
   --bg-hover: rgb(0 0 0 / 4%);
   --bg-active: rgb(0 0 0 / 8%);
   --text-main: #1a1a2e;
@@ -881,14 +884,15 @@ body.light-mode {
 }
 
 .panel {
+  /* Symmetric card chrome. (This rule once styled right-edge slide-in
+     drawers — border-right:none, 24px 0 0 24px radius, left-cast shadow —
+     but every panel is a routed page now, so the drawer geometry is gone.) */
   background:
     linear-gradient(180deg, rgb(255 255 255 / 2.5%), transparent 100px),
     rgb(8 18 28 / 95%) !important;
   border: 1px solid var(--line-soft) !important;
-  border-right: none !important;
-  border-radius: 24px 0 0 24px;
-  box-shadow: -24px 0 48px rgb(0 0 0 / 42%) !important;
-  backdrop-filter: blur(18px);
+  border-radius: 10px;
+  box-shadow: var(--shadow-md);
 }
 
 .panel-header,

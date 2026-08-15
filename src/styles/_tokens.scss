@@ -70,3 +70,21 @@
   --warning: var(--accent-warm);
   --info: var(--accent);
 }
+
+/* CSS gotcha: var() aliases substitute at the element where they are
+   DECLARED. The aliases above live on :root (html), but the light theme
+   re-points the underlying palette on body.light-mode — one level below —
+   so without this block the aliases would keep their captured dark values
+   forever. Re-declaring them here makes substitution happen on body, where
+   the light palette is in effect. */
+body.light-mode {
+  --bg-app: var(--bg-base);
+  --bg-raised: var(--bg-elevated);
+  --text-primary: var(--text-main);
+  --border-strong: var(--line-strong);
+  --accent-hover: var(--accent-strong);
+  --warning: var(--accent-warm);
+  --info: var(--accent);
+  --border-subtle: var(--line-soft);
+  --border-default: var(--line-strong);
+}
