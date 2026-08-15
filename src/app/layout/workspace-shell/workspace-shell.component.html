@@ -1,0 +1,31 @@
+<!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+     https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
+<div class="workspace-shell">
+  <header class="workspace-header">
+    <h1 class="workspace-title">
+      <app-icon [name]="icon" [size]="18" />
+      {{ title }}
+    </h1>
+    @if (tabs.length > 1) {
+      <nav class="workspace-tabs" [attr.aria-label]="title + ' sections'">
+        @for (tab of tabs; track tab.path) {
+          <a
+            class="ws-tab"
+            [routerLink]="['./', tab.path]"
+            routerLinkActive="active"
+            queryParamsHandling="preserve"
+            [attr.aria-current]="null"
+          >
+            @if (tab.icon) {
+              <app-icon [name]="tab.icon" [size]="14" />
+            }
+            {{ tab.label }}
+          </a>
+        }
+      </nav>
+    }
+  </header>
+  <div class="workspace-body">
+    <router-outlet />
+  </div>
+</div>
