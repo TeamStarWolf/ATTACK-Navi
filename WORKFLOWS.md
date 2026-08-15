@@ -1,8 +1,20 @@
 # Analyst Workflow Guide
 
-This guide describes eight operational workflows supported by the MITRE ATT&CK Navi. Each workflow follows a structured sequence of steps using the panels, heatmaps, and sidebar sections built into the application.
+This guide describes eight operational workflows supported by the MITRE ATT&CK Navi. Each workflow follows a structured sequence of steps using the workspaces, heatmaps, and sidebar sections built into the application.
 
-The Navigator is organized around a left-hand navigation rail with panels grouped into four sections: **Threats**, **Analysis**, **Coverage**, and **Tools**. The ATT&CK matrix is always visible behind any open panel, and the technique sidebar opens whenever a matrix cell is selected.
+> **Navigation (v0.8.0).** The app is now organized into **nine routed workspaces** on the left
+> rail — Matrix, Dashboard, Intel, Detect, Exposure, Coverage, Library, Reports, Settings — each
+> with a tab bar for its destinations. The workflow steps below sometimes say "open the *X* panel
+> from the nav rail"; the destinations still exist, just reached differently:
+>
+> - **Fastest:** press `Ctrl+K` and type the destination name (e.g. "gap analysis", "sigma", "cve").
+> - **By rail + tab:** click the workspace, then its tab. Quick map of the old groupings →
+>   workspaces: *Threats* → **Intel**, *Analysis* → **Exposure** / **Detect** / **Dashboard**,
+>   *Coverage* → **Coverage**, *Tools* → **Detect** / **Reports** / **Library**.
+> - **Direct link:** every destination has a bookmarkable URL, e.g. `#/exposure/gap-analysis`.
+>
+> The ATT&CK matrix lives at `#/matrix`, and the technique sidebar opens whenever you select a
+> matrix cell — from any workspace.
 
 ---
 

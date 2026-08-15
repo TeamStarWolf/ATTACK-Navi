@@ -49,31 +49,30 @@ public GitHub-hosted STIX bundles, CTID mapping files, and vendor-published Navi
 `AppComponent` is the composition root.  It is the only component that directly touches the DOM
 (`document.body`, `document.querySelector`) and `window` APIs (clipboard, scroll).
 
+Post-router (v0.8.0) it is a thin shell: it hosts the toolbar, nav rail, a `<router-outlet>`,
+and the global overlays (sidebar drawer, command palette, keyboard help, gap view, onboarding).
+The workspace pages themselves are lazy-loaded by the router, not rendered here.
+
 ### Responsibilities
 
 | Concern | How |
 |---|---|
-| Domain loading | Subscribes to `DataService.domain$`, `loading$`, `error$`, `currentDomain$` and calls `loadDomain()` on init. |
-| Panel orchestration | Wires `FilterService.activePanel$` to conditionally render 35+ overlay panel components. |
-| Keyboard shortcuts | `@HostListener('document:keydown')` handles `Escape`, `Ctrl+F`, `Ctrl+K`, `Ctrl+E`, and single-key shortcuts `d`, `t`, `w`, `r`, `c`. |
+| Domain loading | Subscribes to `DataService.domain$` / `currentDomain$` and calls `loadDomain()` on init. |
+| Routed workspaces | A `<router-outlet>` renders the active workspace; there is no panel orchestration here anymore (see §8). |
+| Global initialization | Calls `UrlStateService.init()`, `ThemeService.init()`, and `HotkeysService.init()` once on startup. |
 | Domain switching | `onDomainChange()` calls `FilterService.clearAll()` then `DataService.switchDomain()`. |
-| URL state | Instantiates `UrlStateService` and calls `restoreFromUrl()` on init. |
-| Export flows | Nine export methods (CSV, XLSX, HTML report, PNG, JSON state, Navigator layer) and two import methods (state JSON, Navigator layer). |
-| Bulk actions | Delegates multi-select operations (watchlist, status, tag) to `MatrixComponent` via `@ViewChild`. |
-| Theme toggle | Adds/removes `light-mode` on `document.body`; persists to `localStorage('mitre-nav-theme')`. |
-| Tactic summary popup | `TacticSummaryComponent` shown on tactic header click. |
+| Gap-view overlay | Subscribes to `MatrixControlService.gapViewRequests$` to show the gap-view overlay on request from the matrix page. |
+| Share link | `copyShareLink()` copies `UrlStateService.getShareUrl()` and shows a toast. |
+
+Keyboard handling moved to `HotkeysService` (a single global listener), theming to `ThemeService`,
+and exports to `ExportActionsService` — the AppComponent no longer owns any of them.
 
 ### Imports (standalone)
 
-The component imports 49 child components inline in its `@Component.imports` array, including all
-panel components, the nav rail, toolbar, matrix, sidebar, stats bar, filter chips, gap view, legend,
-data health, and more.
-
-### Constructor injections
-
-`DataService`, `FilterService`, `ImplementationService`, `DocumentationService`,
-`MatrixExportService`, `HtmlReportService`, `ChangeDetectorRef`, `UrlStateService`,
-`XlsxExportService`, `CustomMitigationService`, `TimelineService`.
+The shell imports only the chrome it hosts directly: `ToolbarComponent`, `NavRailComponent`,
+`SidebarComponent`, `GapViewComponent`, `KeyboardHelpComponent`, `OnboardingComponent`,
+`UniversalSearchComponent`, and `RouterOutlet`. Workspace pages are loaded via `loadComponent`
+route configs, not imported here.
 
 ---
 
@@ -105,8 +104,7 @@ to resolve STIX IDs from the loaded domain).
 | `activeSoftwareIdsSubject` | `Set<string>` | Active software/malware filter. |
 | `activeCampaignIdsSubject` | `Set<string>` | Active campaign filter. |
 | `activeDataSourceSubject` | `string \| null` | Active ATT&CK data source name filter. |
-| `activePanelSubject` | `ActivePanel` | Currently visible overlay panel (or `null`). |
-| `heatmapModeSubject` | `HeatmapMode` | Active heatmap coloring mode (23 modes). |
+| `heatmapModeSubject` | `HeatmapMode` | Active heatmap coloring mode (31 modes; see `models/heatmap-modes.ts`). |
 | `implStatusFilterSubject` | `string \| null` | Filter techniques by implementation status. |
 | `searchFilterModeSubject` | `boolean` | When true, search acts as a filter (hides non-matches). |
 | `cveTechniqueIdsSubject` | `Set<string>` | Technique IDs highlighted by CVE panel clicks. |
@@ -126,72 +124,63 @@ Computed via `combineLatest` + `map` in the constructor:
 | `campaignTechniqueIds$` | Techniques used by any selected campaign. |
 | `dataSourceFilteredIds$` | Techniques detectable via the selected data source. |
 
-#### Type Definitions
+> **Note (v0.8.0):** the former `ActivePanel` type union no longer exists — panel navigation is
+> the router's job now (see §8). `HeatmapMode` remains a string union, but the labels, groups, and
+> short names for all 31 modes are centralized in `src/app/models/heatmap-modes.ts` (the single
+> source consumed by the picker and cycling logic).
 
-```typescript
-type ActivePanel = 'dashboard' | 'threats' | 'priority' | 'whatif' | 'report'
-  | 'controls' | 'software' | 'comparison' | 'layers' | 'cve' | 'analytics'
-  | 'sigma' | 'purple' | 'actor' | 'search' | 'yara' | 'roadmap'
-  | 'detection' | 'compliance' | 'actor-compare' | 'timeline' | 'settings'
-  | 'custom-mit' | 'killchain' | 'risk-matrix' | 'scenario' | 'siem'
-  | 'datasources' | 'watchlist' | 'changelog' | 'tags' | 'target'
-  | 'campaign-timeline' | 'technique-graph' | 'coverage-diff'
-  | 'intelligence' | null;
+#### URL / filter-state sync (`UrlStateService`)
 
-type HeatmapMode = 'coverage' | 'exposure' | 'status' | 'controls'
-  | 'software' | 'campaign' | 'risk' | 'kev' | 'd3fend' | 'atomic'
-  | 'engage' | 'car' | 'cve' | 'detection' | 'frequency' | 'cri'
-  | 'unified' | 'sigma' | 'nist' | 'veris' | 'epss' | 'elastic'
-  | 'splunk' | 'intelligence';
-```
+Filter state is synchronized with the **router's query params** (inside the hash URL, e.g.
+`#/matrix?mit=M1036,M1049&heat=exposure&dim=1`), not raw `location.hash`:
 
-#### URL Hash Sync
+- **Writer:** `FilterService.urlRelevantState$` (debounced) is re-serialized on every change and
+  written via `Router.navigateByUrl(tree, { replaceUrl: true })`, with a last-written guard to
+  avoid reader/writer feedback loops.
+- **Reader:** on the first `NavigationEnd`, query params are parsed and applied via
+  `FilterService.applyUrlState()`. Entity IDs (mitigations, groups, software, campaigns) resolve
+  from their ATT&CK IDs once `DataService.domain$` loads.
+- **Legacy links:** `src/app/utils/legacy-hash-shim.ts` rewrites pre-router share links
+  (`#tech=T1059`, raw filter-key hashes, `#import=` collection payloads) before bootstrap.
 
-All filter state is bidirectionally synchronized with `window.location.hash` using URL-encoded
-query parameters (e.g. `#mit=M1036,M1049&heat=exposure&dim=1`).
-
-- **Write path:** A `combineLatest` of 15 subjects pipes through `debounceTime(300)` and calls
-  `history.replaceState()` to update the hash without navigation.
-- **Read path:** `readUrlState()` runs in the constructor, parses the hash with `URLSearchParams`,
-  and pushes restored values into the appropriate subjects.  Entity IDs (mitigations, groups,
-  software, campaigns) are resolved from their ATT&CK IDs via `DataService.domain$` once the
-  domain loads.
-
-This makes every filter combination shareable as a URL.
+Every filter combination — and now every workspace — is shareable as a URL.
 
 ---
 
 ## 4. Component Architecture
 
-### Component Tree
+### Component Tree (v0.8.0)
 
 ```
-AppComponent
-  +-- ToolbarComponent              (search, domain selector, export/import, theme toggle)
-  +-- NavRailComponent              (left icon sidebar, panel toggles)
-  +-- StatsBarComponent             (coverage statistics bar)
-  +-- FilterChipsComponent          (active filter chips with remove buttons)
-  +-- QuickFiltersComponent         (preset filter shortcuts)
-  +-- MatrixComponent               (ATT&CK tactic/technique grid)
-  |     +-- TechniqueCellComponent  (individual technique cell, heatmap color)
-  |     +-- TechniqueTooltipComponent (hover tooltip)
-  +-- SidebarComponent              (technique detail drawer, 25+ sections)
-  +-- LegendComponent               (heatmap color legend)
-  +-- TacticSummaryComponent        (tactic header click popup)
-  +-- DataHealthComponent           (data source load status indicators)
-  +-- [35 overlay panel components] (each conditionally rendered by activePanel$)
+AppComponent (shell)
+  +-- ToolbarComponent              (brand, domain selector, palette trigger, views, theme)
+  +-- NavRailComponent              (10 workspace routerLinks + Help + Settings)
+  +-- <router-outlet>
+  |     +-- MatrixPageComponent     (route: /matrix; reuse:true)
+  |     |     +-- MatrixControlsComponent  (search, filters, heatmap picker)
+  |     |     +-- MatrixComponent          (ATT&CK grid)
+  |     |     |     +-- TechniqueCellComponent / TechniqueTooltipComponent
+  |     |     +-- Legend / QuickFilters / FilterChips / StatsBar / DataHealth
+  |     +-- WorkspaceShellComponent  (one per workspace: header + tab bar + outlet)
+  |           +-- ~40 lazily loaded page components (former overlay panels)
+  +-- SidebarComponent              (technique detail drawer, 48 sections + jump index)
+  +-- UniversalSearchComponent      (command palette overlay)
+  +-- KeyboardHelpComponent         (shortcuts overlay)
+  +-- GapViewComponent / OnboardingComponent  (overlays)
 ```
 
 ### Core Components
 
 **ToolbarComponent** (`src/app/components/toolbar/`)
-Top bar with technique search input, domain selector (Enterprise/ICS/Mobile), heatmap mode
-picker, export/import menus, theme toggle, and share-link button.  Communicates exclusively
-through `FilterService` setters and `@Output()` events to `AppComponent`.
+Global top bar: brand link to `/matrix`, domain selector (Enterprise/ICS/Mobile), the live/bundled
+toggle, one palette-trigger search box (`Ctrl+K`), saved views, share, and theme. Matrix-scoped
+controls (technique/mitigation search, filters, heatmap picker) live in `MatrixControlsComponent`
+on the matrix page, not here.
 
 **NavRailComponent** (`src/app/components/nav-rail/`)
-Vertical icon rail on the left edge.  Each icon toggles a specific panel via
-`FilterService.togglePanel()`.  Active panel is highlighted via `activePanel$` subscription.
+Vertical rail on the left edge with one `routerLink` per workspace (Matrix, Dashboard, Intel,
+Detect, Exposure, Coverage, Library, Reports) plus Help and Settings. Active state comes from
+`routerLinkActive` / the current URL — no `activePanel` subscription.
 
 **MatrixComponent** (`src/app/components/matrix/`)
 The main workspace.  Receives `domain: Domain` as `@Input()` from `AppComponent`.  Subscribes
@@ -615,7 +604,7 @@ Every component has a colocated `.scss` file that uses Angular's default `ViewEn
 
 | Breakpoint | Target |
 |---|---|
-| `@media (max-width: 768px)` | Tablet -- nav rail collapses, matrix scrolls horizontally |
+| `@media (max-width: 768px)` | Tablet -- nav rail becomes a horizontal bottom bar; matrix scrolls horizontally |
 | `@media (max-width: 480px)` | Phone -- single-column layout, sidebar becomes full-screen |
 
 ### Heatmap Color Themes

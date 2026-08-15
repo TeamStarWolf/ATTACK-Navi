@@ -2,8 +2,6 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import {
   Component,
-  OnInit,
-  OnDestroy,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   ViewChild,
@@ -11,7 +9,7 @@ import {
 } from '@angular/core';
 import { CommonModule, AsyncPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Observable, Subscription } from 'rxjs';
+import { Observable } from 'rxjs';
 import { LayersService, LayerSnapshot } from '../../services/layers.service';
 import { FilterService } from '../../services/filter.service';
 import { PanelNavService } from '../../services/panel-nav.service';
@@ -26,7 +24,7 @@ import { DocumentationService } from '../../services/documentation.service';
   templateUrl: './layers-panel.component.html',
   styleUrl: './layers-panel.component.scss',
 })
-export class LayersPanelComponent implements OnInit, OnDestroy {
+export class LayersPanelComponent {
   @ViewChild('fileInput') fileInputRef!: ElementRef<HTMLInputElement>;
 
   layers$!: Observable<LayerSnapshot[]>;
@@ -34,8 +32,6 @@ export class LayersPanelComponent implements OnInit, OnDestroy {
   newLayerDesc = '';
   showSaveForm = false;
   importError = '';
-
-  private subs = new Subscription();
 
   constructor(
     private layersService: LayersService,
@@ -47,10 +43,6 @@ export class LayersPanelComponent implements OnInit, OnDestroy {
   ) {
     this.layers$ = this.layersService.layers$;
   }
-
-  ngOnInit(): void {}
-
-  ngOnDestroy(): void { this.subs.unsubscribe(); }
 
   save(): void {
     const name = this.newLayerName.trim();

@@ -358,129 +358,76 @@ Update the tooltip to show your mode's value when hovering over a cell.
 
 ---
 
-## 5. Adding a New Panel
+## 5. Adding a New Page (Workspace Tab)
 
-Panels are full-height views that slide in from the right side of the screen, overlaying part of the matrix.
+Since v0.8.0 the app uses the Angular Router: destinations are **lazy-loaded routed pages**, each a
+tab inside one of the nine workspaces. There is no overlay/`ActivePanel` system anymore.
 
 ### Step 1: Create the Component
 
-Generate or create a new component:
-
-```
-src/app/components/my-panel/
-  my-panel.component.ts
-  my-panel.component.html
-  my-panel.component.scss
-```
-
-Use the standard standalone pattern:
+Create a standalone component under `components/` (feature panels) or `pages/` (page-level views):
 
 ```typescript
-import {
-  Component,
-  OnInit,
-  OnDestroy,
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-} from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Subscription } from 'rxjs';
-import { FilterService } from '../../services/filter.service';
+import { DataService } from '../../services/data.service';
 
 @Component({
-  selector: 'app-my-panel',
+  selector: 'app-my-page',
   standalone: true,
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  templateUrl: './my-panel.component.html',
-  styleUrl: './my-panel.component.scss',
+  templateUrl: './my-page.component.html',
+  styleUrl: './my-page.component.scss',
 })
-export class MyPanelComponent implements OnInit, OnDestroy {
-  visible = false;
-  private subs = new Subscription();
-
-  constructor(
-    private filterService: FilterService,
-    private cdr: ChangeDetectorRef,
-  ) {}
+export class MyPageComponent implements OnInit {
+  constructor(private dataService: DataService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
-    this.subs.add(
-      this.filterService.activePanel$.subscribe(p => {
-        this.visible = p === 'my-panel';
-        if (this.visible) {
-          // Load data or refresh state when panel opens
-        }
-        this.cdr.markForCheck();
-      }),
-    );
-  }
-
-  ngOnDestroy(): void {
-    this.subs.unsubscribe();
-  }
-
-  close(): void {
-    this.filterService.setActivePanel(null);
+    // Load data here — this runs when the route activates. No activePanel$ trigger.
   }
 }
 ```
 
-### Step 2: Add the ActivePanel Type
-
-**File:** `src/app/services/filter.service.ts`
-
-Add your panel ID to the `ActivePanel` type union:
-
-```typescript
-export type ActivePanel = 'dashboard' | ... | 'my-panel' | null;
-```
-
-### Step 3: Add a Nav Rail Item
-
-**File:** `src/app/components/nav-rail/nav-rail.component.ts`
-
-Add an entry to the `NAV_ITEMS` array in the appropriate group:
-
-```typescript
-const NAV_ITEMS: NavItem[] = [
-  // ... existing items ...
-  { type: 'divider', label: 'Tools' },
-  // ... existing tools ...
-  { id: 'my-panel', icon: '🔧', label: 'My Panel' },
-];
-```
-
-The `id` must match the string used in `ActivePanel` and in the panel component's visibility check.
-
-### Step 4: Wire in AppComponent
-
-**File:** `src/app/app.component.ts`
-
-Import the component:
-
-```typescript
-import { MyPanelComponent } from './components/my-panel/my-panel.component';
-```
-
-Add it to the `imports` array in the `@Component` decorator:
-
-```typescript
-imports: [
-  // ... existing imports ...
-  MyPanelComponent,
-],
-```
-
-**File:** `src/app/app.component.html`
-
-Add the component tag in the panel area (alongside other panel tags):
+The template's root element uses the shared page chrome:
 
 ```html
-<app-my-panel></app-my-panel>
+<section class="page-panel page-panel--full my-page" aria-label="My Page">
+  <!-- ...content... A flex column with an overflow:auto body keeps chrome pinned
+       while the body scrolls inside the workspace. -->
+</section>
 ```
 
-The component handles its own visibility internally via the `FilterService.activePanel$` subscription.
+### Step 2: Register the Route
+
+Add a child route to the workspace's route file (e.g. `src/app/pages/exposure/exposure.routes.ts`):
+
+```typescript
+{
+  path: 'my-page',
+  loadComponent: () =>
+    import('../../components/my-page/my-page.component').then(c => c.MyPageComponent),
+  data: { tab: 'My Page', icon: 'target' },   // tab label + registry icon
+}
+```
+
+The `data.tab` and `data.icon` drive the workspace tab bar automatically. Add `reuse: true` to
+`data` if the page holds transient state that should survive navigation away and back.
+
+### Step 3: Map the Legacy Id (optional)
+
+If code, the command palette, or a share link should reach the page by a short id, add it to
+`src/app/app.routes-map.ts`:
+
+```typescript
+'my-page': ['/exposure', 'my-page'],
+```
+
+`PanelNavService.open('my-page')` now routes there, and it can be surfaced in the palette by adding
+a `NAV_COMMANDS` entry in `src/app/models/palette-commands.ts`.
+
+That's it — no `AppComponent` import, no `ActivePanel` type, no nav-rail edit. The rail lists
+workspaces, not individual pages; the router and the workspace shell handle the rest.
 
 ---
 
