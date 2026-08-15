@@ -323,7 +323,8 @@ export class StixCollectionService {
       description || 'Shared via MITRE Mitigation Navigator',
     );
     const json = JSON.stringify(bundle);
-    const encoded = btoa(unescape(encodeURIComponent(json)));
+    // encodeURIComponent the base64 so `+`/`=` survive URLSearchParams parsing.
+    const encoded = encodeURIComponent(btoa(unescape(encodeURIComponent(json))));
     const base = window.location.origin + window.location.pathname;
     return `${base}#import=${encoded}`;
   }
@@ -333,8 +334,14 @@ export class StixCollectionService {
    * If found, decode the base64 STIX bundle and return it for confirmation.
    */
   parseImportFromHash(): { bundle: Record<string, any>; summary: ImportSummary } | null {
-    const hash = window.location.hash.slice(1);
+    let hash = window.location.hash.slice(1);
     if (!hash) return null;
+    // Under hash routing the hash is `/path?import=...` — parse the query part.
+    const qIdx = hash.indexOf('?');
+    if (hash.startsWith('/')) {
+      if (qIdx === -1) return null;
+      hash = hash.slice(qIdx + 1);
+    }
     try {
       const params = new URLSearchParams(hash);
       const encoded = params.get('import');
@@ -363,6 +370,17 @@ export class StixCollectionService {
   clearImportHash(): void {
     const hash = window.location.hash.slice(1);
     if (!hash) return;
+    // Under hash routing keep the route path and drop only the import param.
+    if (hash.startsWith('/')) {
+      const qIdx = hash.indexOf('?');
+      if (qIdx === -1) return;
+      const path = hash.slice(0, qIdx);
+      const params = new URLSearchParams(hash.slice(qIdx + 1));
+      params.delete('import');
+      const remaining = params.toString();
+      history.replaceState(null, '', window.location.pathname + window.location.search + '#' + path + (remaining ? '?' + remaining : ''));
+      return;
+    }
     const params = new URLSearchParams(hash);
     params.delete('import');
     const remaining = params.toString();

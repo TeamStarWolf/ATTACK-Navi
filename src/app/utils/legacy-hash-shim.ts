@@ -20,6 +20,11 @@ export function rewriteLegacyHash(hash: string, storedViewMode: string | null): 
   }
   if (hash.startsWith('#/')) return null; // already a routed URL
   const legacyParams = hash.startsWith('#') ? hash.slice(1) : hash;
+  // Shared-collection links (`#import=<base64>`) land on the collections
+  // page, whose component offers the import dialog on init.
+  if (/(^|&)import=/.test(legacyParams)) {
+    return `#/library/collections?${legacyParams}`;
+  }
   return `#/matrix?${legacyParams}`;
 }
 

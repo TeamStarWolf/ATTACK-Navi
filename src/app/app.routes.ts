@@ -36,5 +36,17 @@ export const routes: Routes = [
     path: 'coverage',
     loadChildren: () => import('./pages/coverage/coverage.routes').then((m) => m.COVERAGE_ROUTES),
   },
+  {
+    path: 'library',
+    loadChildren: () => import('./pages/library/library.routes').then((m) => m.LIBRARY_ROUTES),
+  },
+  {
+    path: 'reports',
+    loadChildren: () => import('./pages/reports/reports.routes').then((m) => m.REPORTS_ROUTES),
+  },
+  {
+    path: 'settings',
+    loadChildren: () => import('./pages/settings/settings.routes').then((m) => m.SETTINGS_ROUTES),
+  },
   { path: '**', redirectTo: 'matrix' },
 ];

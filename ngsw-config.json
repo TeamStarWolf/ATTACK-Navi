@@ -3,10 +3,18 @@
   "index": "/index.html",
   "assetGroups": [
     {
-      "name": "app",
+      "name": "app-shell",
       "installMode": "prefetch",
       "resources": {
-        "files": ["/favicon.ico", "/index.html", "/*.css", "/*.js"]
+        "files": ["/favicon.ico", "/index.html", "/*.css", "/main-*.js", "/polyfills-*.js"]
+      }
+    },
+    {
+      "name": "lazy-code",
+      "installMode": "lazy",
+      "updateMode": "prefetch",
+      "resources": {
+        "files": ["/*.js"]
       }
     },
     {

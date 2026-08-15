@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
+import { PanelNavService } from '../../services/panel-nav.service';
 import { DataService } from '../../services/data.service';
 import { Domain } from '../../models/domain';
 import { ThreatGroup } from '../../models/group';
@@ -24,7 +25,6 @@ interface CompTechnique {
   styleUrl: './comparison-panel.component.scss',
 })
 export class ComparisonPanelComponent implements OnInit, OnDestroy {
-  open = false;
   domain: Domain | null = null;
   groups: ThreatGroup[] = [];
   selectedIdA = '';
@@ -36,15 +36,12 @@ export class ComparisonPanelComponent implements OnInit, OnDestroy {
 
   constructor(
     private filterService: FilterService,
+    private panelNav: PanelNavService,
     private dataService: DataService,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(this.filterService.activePanel$.subscribe(p => {
-      this.open = p === 'comparison';
-      this.cdr.markForCheck();
-    }));
     this.subs.add(this.dataService.domain$.subscribe(d => {
       this.domain = d;
       // Collect all unique groups from domain
@@ -61,8 +58,6 @@ export class ComparisonPanelComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void { this.subs.unsubscribe(); }
-
-  close(): void { this.filterService.setActivePanel(null); }
 
   compute(): void {
     if (!this.domain || !this.selectedIdA || !this.selectedIdB || this.selectedIdA === this.selectedIdB) {
@@ -110,7 +105,7 @@ export class ComparisonPanelComponent implements OnInit, OnDestroy {
     const g = this.groups.find(g => g.attackId === attackId);
     if (g) {
       this.filterService.toggleThreatGroup(g.id);
-      this.filterService.setActivePanel('threats');
+      this.panelNav.open('threats');
     }
   }
 }

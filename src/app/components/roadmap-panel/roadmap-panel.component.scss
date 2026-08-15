@@ -1,12 +1,8 @@
 /* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
    https://github.com/TeamStarWolf/ATTACK-Navi - MIT License */
-.roadmap-overlay { position: fixed; inset: 0; background: rgb(0 0 0 / 50%); z-index: 999; }
-
 .roadmap-panel {
-  position: fixed; top: 0; right: 0; width: 700px; height: 100vh;
-  background: #0d1a26; border-left: 1px solid #1a3448;
-  box-shadow: 0 8px 32px rgb(0 0 0 / 60%);
-  z-index: 1000; display: flex; flex-direction: column; overflow: hidden;
+  background: #0d1a26; border: 1px solid #1a3448; border-radius: 10px;
+  display: flex; flex-direction: column; overflow: hidden;
 }
 
 .roadmap-header {
@@ -21,12 +17,6 @@
   padding: 4px 10px; background: #0a1828; border: 1px solid #1a3448; color: #8aaac8;
   border-radius: 5px; cursor: pointer; font-size: 11px;
   &:hover { color: #c9d8e8; }
-}
-
-.close-btn {
-  width: 28px; height: 28px; border-radius: 6px; background: transparent; border: none;
-  color: #4a6080; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;
-  &:hover { background: #1a3448; color: #c9d8e8; }
 }
 
 .roadmap-controls {

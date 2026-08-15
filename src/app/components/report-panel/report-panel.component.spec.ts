@@ -3,7 +3,6 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
 import { ReportPanelComponent } from './report-panel.component';
-import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
 import { ImplementationService } from '../../services/implementation.service';
 import { DocumentationService } from '../../services/documentation.service';
@@ -16,13 +15,10 @@ describe('ReportPanelComponent', () => {
     TestBed.configureTestingModule({
       imports: [ReportPanelComponent],
       providers: [
-        { provide: FilterService, useValue: {
-            activePanel$: new BehaviorSubject<string | null>(null),
-            setActivePanel: jasmine.createSpy(),
-        }},
         { provide: DataService, useValue: { domain$: new BehaviorSubject(null) }},
         { provide: ImplementationService, useValue: { status$: new BehaviorSubject(new Map()) }},
         { provide: DocumentationService, useValue: {
+            mitDocs$: new BehaviorSubject(new Map()),
             getMitDoc: () => ({ notes: '', owner: '', dueDate: '', controlRefs: '', evidenceUrl: '' }),
             getTechNote: () => '',
         }},
@@ -33,8 +29,7 @@ describe('ReportPanelComponent', () => {
     fixture.detectChanges();
   });
 
-  it('is created and starts hidden', () => {
+  it('is created', () => {
     expect(component).toBeTruthy();
-    expect(component.visible).toBe(false);
   });
 });

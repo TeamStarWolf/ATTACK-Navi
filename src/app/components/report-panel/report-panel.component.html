@@ -1,14 +1,11 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-@if (visible) {
-  <div class="modal-overlay" (click)="close()"></div>
-  <div class="report-modal" role="dialog" aria-modal="true" aria-label="Coverage Report">
+<section class="page-panel page-panel--full report-modal" aria-label="Coverage Report">
     <div class="report-toolbar">
       <span class="report-title">📋 Coverage Report</span>
       <div class="report-actions">
         <button class="export-btn" (click)="exportCsv()">⬇ Export CSV</button>
         <button class="print-btn" (click)="print()">🖨 Print / Save PDF</button>
-        <button class="close-btn" (click)="close()">✕ Close</button>
       </div>
     </div>
 
@@ -193,5 +190,4 @@
         </table>
       </section>
     </div>
-  </div>
-}
+</section>

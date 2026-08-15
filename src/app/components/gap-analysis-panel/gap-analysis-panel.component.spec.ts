@@ -8,7 +8,6 @@ import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
 import { GapAnalysisService } from '../../services/gap-analysis.service';
 import { LibraryService } from '../../services/library.service';
-import { ViewModeService } from '../../services/view-mode.service';
 
 describe('GapAnalysisPanelComponent', () => {
   let component: GapAnalysisPanelComponent;
@@ -30,7 +29,6 @@ describe('GapAnalysisPanelComponent', () => {
             exportXlsx: jasmine.createSpy(),
         }},
         { provide: LibraryService, useValue: { getAssetsForTactic: () => [] }},
-        { provide: ViewModeService, useValue: { set: jasmine.createSpy() }},
       ],
     });
     fixture = TestBed.createComponent(GapAnalysisPanelComponent);

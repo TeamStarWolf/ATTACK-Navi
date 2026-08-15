@@ -3,9 +3,9 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { Router, provideRouter } from '@angular/router';
 import { LibraryCrossRefComponent } from './library-cross-ref.component';
 import { LibraryService } from '../../services/library.service';
-import { ViewModeService } from '../../services/view-mode.service';
 
 describe('LibraryCrossRefComponent', () => {
   let component: LibraryCrossRefComponent;
@@ -17,11 +17,11 @@ describe('LibraryCrossRefComponent', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
+        provideRouter([]),
         { provide: LibraryService, useValue: {
             library$: { subscribe: () => ({ unsubscribe: () => {} }) },
             getAssetsForTechnique: () => [],
         } },
-        { provide: ViewModeService, useValue: { set: jasmine.createSpy('set') } },
       ],
     });
     fixture = TestBed.createComponent(LibraryCrossRefComponent);
@@ -41,9 +41,10 @@ describe('LibraryCrossRefComponent', () => {
     expect(component.shortType('field-note')).toBe('FI');
   });
 
-  it('openLibrary delegates to ViewModeService.set("library")', () => {
+  it('openLibrary navigates to the library workspace', () => {
+    const router = TestBed.inject(Router);
+    const navSpy = spyOn(router, 'navigate').and.resolveTo(true);
     component.openLibrary();
-    const vm = TestBed.inject(ViewModeService) as any;
-    expect(vm.set).toHaveBeenCalledWith('library');
+    expect(navSpy).toHaveBeenCalledWith(['/library', 'workbench'], jasmine.objectContaining({ queryParamsHandling: 'preserve' }));
   });
 });
