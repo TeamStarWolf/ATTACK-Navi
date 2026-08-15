@@ -2,7 +2,6 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import {
   Component,
-  OnInit,
   OnDestroy,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -59,7 +58,7 @@ const SECTOR_CATEGORIES: SectorCategory[] = [
   templateUrl: './assessment-wizard.component.html',
   styleUrl: './assessment-wizard.component.scss',
 })
-export class AssessmentWizardComponent implements OnInit, OnDestroy {
+export class AssessmentWizardComponent implements OnDestroy {
   currentStep = 1;
   readonly totalSteps = 5;
 
@@ -109,8 +108,6 @@ export class AssessmentWizardComponent implements OnInit, OnDestroy {
     private epssService: EpssService,
     private cdr: ChangeDetectorRef,
   ) {}
-
-  ngOnInit(): void {}
 
   ngOnDestroy(): void {
     this.subs.unsubscribe();

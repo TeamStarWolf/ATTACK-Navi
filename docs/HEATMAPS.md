@@ -1,6 +1,6 @@
 # Heatmap Modes Reference
 
-> Complete reference for all 24 heatmap coloring modes in the MITRE ATT&CK Navi.
+> Complete reference for all 31 heatmap coloring modes in the MITRE ATT&CK Navi.
 > Each mode recolors every technique cell in the matrix to visualize a different security dimension.
 
 ---
@@ -461,7 +461,7 @@ To add a 25th heatmap mode, modify these seven files in order:
 
 ## Color Scale Design Principles
 
-The 24 heatmap modes follow these design conventions:
+The 31 heatmap modes follow these design conventions:
 
 1. **Dark backgrounds for zero**: All gradient scales use a very dark color (#0a--#1a range) for zero-score cells, maintaining matrix readability.
 
