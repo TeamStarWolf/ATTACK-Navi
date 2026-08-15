@@ -339,32 +339,32 @@ export class D3fendService {
       if (attackId.includes('.')) this.fetchLiveForAttackId(attackId.split('.')[0]);
     }
 
-    // Merge hardcoded + live data, deduplicated by technique ID
+    // Authoritative-first: when the official d3fend.mitre.org API has
+    // responded for this technique, its mappings ARE the answer. The bundled
+    // static seed is an offline fallback only — it must never override or
+    // pad live data (it previously took precedence, so a stale/incorrect
+    // seed entry could not be corrected by the real ontology).
     const parentId = attackId.includes('.') ? attackId.split('.')[0] : null;
     const prefix = attackId + '.';
 
-    const hardcoded = [
-      ...(this.byAttackId.get(attackId) ?? []),
-      ...(parentId ? (this.byAttackId.get(parentId) ?? []) : []),
+    const collect = (map: Map<string, D3fendTechnique[]>): D3fendTechnique[] => [
+      ...(map.get(attackId) ?? []),
+      ...(parentId ? (map.get(parentId) ?? []) : []),
       ...(!attackId.includes('.')
-        ? [...this.byAttackId.entries()]
+        ? [...map.entries()]
             .filter(([id]) => id.startsWith(prefix))
             .flatMap(([, values]) => values)
         : []),
     ];
-    const seen = new Set(hardcoded.map(d => d.id));
 
-    const live = [
-      ...(this.liveMap.get(attackId) ?? []),
-      ...(parentId ? (this.liveMap.get(parentId) ?? []) : []),
-      ...(!attackId.includes('.')
-        ? [...this.liveMap.entries()]
-            .filter(([id]) => id.startsWith(prefix))
-            .flatMap(([, values]) => values)
-        : []),
-    ].filter(d => !seen.has(d.id));
-
-    return [...hardcoded, ...live];
+    const live = collect(this.liveMap);
+    if (live.length) {
+      const seen = new Set<string>();
+      return live.filter(d => (seen.has(d.id) ? false : (seen.add(d.id), true)));
+    }
+    const fallback = collect(this.byAttackId);
+    const seen = new Set<string>();
+    return fallback.filter(d => (seen.has(d.id) ? false : (seen.add(d.id), true)));
   }
 
   getAllTechniques(): D3fendTechnique[] {

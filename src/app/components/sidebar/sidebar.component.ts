@@ -91,6 +91,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   campaigns: Campaign[] = [];
   procedures: ProcedureExample[] = [];
   dataComponents: MitreDataComponent[] = [];
+  detectionNotes: import('../../models/domain').DetectionNote[] = [];
   open = false;
   isCustomTechnique = false;
   mitSearchText = '';
@@ -499,6 +500,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
         this.campaigns = tech ? this.dataService.getCampaignsForTechnique(tech.id) : [];
         this.procedures = tech ? this.dataService.getProceduresForTechnique(tech.id) : [];
         this.dataComponents = tech ? this.dataService.getDataComponentsForTechnique(tech.id) : [];
+        this.detectionNotes = tech ? this.dataService.getDetectionNotesForTechnique(tech.id) : [];
         this.d3fendMeasures = tech ? this.d3fendService.getCountermeasures(tech.attackId, true) : [];
         this.engageActivities = tech ? this.engageService.getActivities(tech.attackId) : [];
         this.carAnalytics = tech ? this.carService.getAnalytics(tech.attackId) : [];

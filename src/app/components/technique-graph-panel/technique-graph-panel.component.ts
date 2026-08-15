@@ -306,29 +306,44 @@ export class TechniqueGraphPanelComponent implements OnInit, OnDestroy {
     }
 
     // Threat groups
-    if (this.showGroups) {
-      const groups = (domain.groupsByTechnique.get(tech.id) ?? []).slice(0, 6);
-      for (const g of groups) {
-        rings.push({ kind: 'group', items: [{ id: g.id, label: g.attackId, sublabel: g.name.substring(0, 14) }] });
-        edges.push({ source: g.id, target: tech.id, label: 'uses' });
-      }
+    const shownGroups = this.showGroups ? (domain.groupsByTechnique.get(tech.id) ?? []).slice(0, 6) : [];
+    for (const g of shownGroups) {
+      rings.push({ kind: 'group', items: [{ id: g.id, label: g.attackId, sublabel: g.name.substring(0, 14) }] });
+      edges.push({ source: g.id, target: tech.id, label: 'uses' });
     }
 
     // Software
-    if (this.showSoftware) {
-      const sw = (domain.softwareByTechnique.get(tech.id) ?? []).slice(0, 5);
-      for (const s of sw) {
-        rings.push({ kind: 'software', items: [{ id: s.id, label: s.attackId, sublabel: s.name.substring(0, 14) }] });
-        edges.push({ source: s.id, target: tech.id, label: 'uses' });
-      }
+    const shownSoftware = this.showSoftware ? (domain.softwareByTechnique.get(tech.id) ?? []).slice(0, 5) : [];
+    for (const s of shownSoftware) {
+      rings.push({ kind: 'software', items: [{ id: s.id, label: s.attackId, sublabel: s.name.substring(0, 14) }] });
+      edges.push({ source: s.id, target: tech.id, label: 'uses' });
     }
 
     // Campaigns
-    if (this.showCampaigns) {
-      const camps = (domain.campaignsByTechnique.get(tech.id) ?? []).slice(0, 5);
-      for (const c of camps) {
-        rings.push({ kind: 'campaign', items: [{ id: c.id, label: c.attackId, sublabel: c.name.substring(0, 14) }] });
-        edges.push({ source: c.id, target: tech.id, label: 'uses' });
+    const shownCampaigns = this.showCampaigns ? (domain.campaignsByTechnique.get(tech.id) ?? []).slice(0, 5) : [];
+    for (const c of shownCampaigns) {
+      rings.push({ kind: 'campaign', items: [{ id: c.id, label: c.attackId, sublabel: c.name.substring(0, 14) }] });
+      edges.push({ source: c.id, target: tech.id, label: 'uses' });
+    }
+
+    // Cross-entity relationships between nodes already in the graph:
+    // which of these groups wield which of these software, and which
+    // campaigns are attributed to which groups.
+    const shownSoftwareIds = new Set(shownSoftware.map(s => s.id));
+    for (const g of shownGroups) {
+      for (const sw of domain.softwareByGroup.get(g.id) ?? []) {
+        if (shownSoftwareIds.has(sw.id)) {
+          edges.push({ source: g.id, target: sw.id, label: 'uses' });
+        }
+      }
+    }
+    const shownGroupIds = new Set(shownGroups.map(g => g.id));
+    for (const c of shownCampaigns) {
+      const campaign = domain.campaigns.find(dc => dc.id === c.id);
+      for (const groupId of campaign?.attributedGroupIds ?? []) {
+        if (shownGroupIds.has(groupId)) {
+          edges.push({ source: c.id, target: groupId, label: 'attributed-to' });
+        }
       }
     }
 

@@ -323,6 +323,16 @@
                     </div>
                   </div>
                 }
+                @if (detectionNotes.length > 0) {
+                  <div class="dc-notes">
+                    @for (note of detectionNotes; track note.description) {
+                      <div class="dc-note">
+                        <span class="dc-note-source">{{ note.dataComponentName }}</span>
+                        <p class="dc-note-text" [innerHTML]="note.description | attackText"></p>
+                      </div>
+                    }
+                  </div>
+                }
               </div>
             }
           </div>
@@ -339,10 +349,10 @@
             @if (!isSectionCollapsed('procedures')) {
               <div class="procedures-list">
                 @for (proc of procedures.slice(0, procedureLimit); track proc.sourceId + proc.description) {
-                  <div class="proc-item" [class.group]="proc.sourceType === 'group'" [class.malware]="proc.sourceType === 'malware'" [class.tool]="proc.sourceType === 'tool'">
+                  <div class="proc-item" [class.group]="proc.sourceType === 'group'" [class.malware]="proc.sourceType === 'malware'" [class.tool]="proc.sourceType === 'tool'" [class.campaign]="proc.sourceType === 'campaign'">
                     <div class="proc-header">
-                      <a class="proc-id" [href]="'https://attack.mitre.org/' + (proc.sourceType === 'group' ? 'groups' : 'software') + '/' + proc.attackId" target="_blank" rel="noopener">{{ proc.attackId }}</a>
-                      <span class="proc-type">{{ proc.sourceType === 'group' ? '👥' : proc.sourceType === 'malware' ? '☣' : '🔧' }}</span>
+                      <a class="proc-id" [href]="'https://attack.mitre.org/' + (proc.sourceType === 'group' ? 'groups' : proc.sourceType === 'campaign' ? 'campaigns' : 'software') + '/' + proc.attackId" target="_blank" rel="noopener">{{ proc.attackId }}</a>
+                      <span class="proc-type">{{ proc.sourceType === 'group' ? '👥' : proc.sourceType === 'campaign' ? '🗓' : proc.sourceType === 'malware' ? '☣' : '🔧' }}</span>
                       <span class="proc-name">{{ proc.sourceName }}</span>
                     </div>
                     <p class="proc-desc" [innerHTML]="proc.description | attackText"></p>
