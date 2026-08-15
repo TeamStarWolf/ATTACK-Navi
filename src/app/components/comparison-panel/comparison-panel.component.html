@@ -1,11 +1,8 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-<div class="comparison-overlay" [class.open]="open" (click)="close()">
-  @if (open) {
-    <div class="comparison-modal" (click)="$event.stopPropagation()">
+<section class="page-panel page-panel--full comparison-modal" aria-label="Group Comparison">
       <div class="panel-header">
         <span class="panel-title">⚔️ Group Comparison</span>
-        <button class="close-btn" (click)="close()">✕</button>
       </div>
       <div class="panel-body">
         <!-- Group selectors -->
@@ -104,6 +101,4 @@
           <p class="hint-msg">Select two threat groups above to see technique overlap.</p>
         }
       </div>
-    </div>
-  }
-</div>
+</section>

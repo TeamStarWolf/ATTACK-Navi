@@ -11,6 +11,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription, filter, take } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
+import { PanelNavService } from '../../services/panel-nav.service';
 import { WatchlistService, WatchlistEntry } from '../../services/watchlist.service';
 import { DataService } from '../../services/data.service';
 
@@ -23,7 +24,6 @@ import { DataService } from '../../services/data.service';
   styleUrl: './watchlist-panel.component.scss',
 })
 export class WatchlistPanelComponent implements OnInit, OnDestroy {
-  visible = false;
   entries: WatchlistEntry[] = [];
   filterPriority: 'all' | 'high' | 'medium' | 'low' = 'all';
   sortBy: 'added' | 'priority' | 'name' = 'priority';
@@ -37,19 +37,13 @@ export class WatchlistPanelComponent implements OnInit, OnDestroy {
 
   constructor(
     private filterService: FilterService,
+    private panelNav: PanelNavService,
     private watchlistService: WatchlistService,
     private dataService: DataService,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(
-      this.filterService.activePanel$.subscribe(p => {
-        this.visible = p === 'watchlist';
-        this.cdr.markForCheck();
-      }),
-    );
-
     this.subs.add(
       this.watchlistService.entries$.subscribe(entries => {
         this.entries = entries;
@@ -102,7 +96,8 @@ export class WatchlistPanelComponent implements OnInit, OnDestroy {
       const tech = domain.techniques.find(t => t.attackId === entry.techniqueId);
       if (tech) {
         this.filterService.selectTechnique(tech);
-        this.close();
+        // Show the selected technique on the matrix.
+        this.panelNav.open('matrix');
       }
     });
   }
@@ -141,10 +136,6 @@ export class WatchlistPanelComponent implements OnInit, OnDestroy {
     this.editingNoteId = null;
     this.editingNoteText = '';
     this.cdr.markForCheck();
-  }
-
-  close(): void {
-    this.filterService.setActivePanel(null);
   }
 
   formatDate(iso: string): string {

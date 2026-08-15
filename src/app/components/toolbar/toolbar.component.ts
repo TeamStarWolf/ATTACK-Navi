@@ -12,14 +12,14 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subscription } from 'rxjs';
+import { Router, NavigationEnd } from '@angular/router';
+import { Subscription, filter } from 'rxjs';
 import { Mitigation } from '../../models/mitigation';
 import { Technique } from '../../models/technique';
 import { FilterService, SortMode, SearchScope } from '../../services/filter.service';
 import { DataService, DataSourceMode, AttackDomain } from '../../services/data.service';
 import { MatrixControlService } from '../../services/matrix-control.service';
 import { ExportActionsService } from '../../services/export-actions.service';
-import { ViewMode } from '../../services/view-mode.service';
 import { SavedViewsService, SavedView } from '../../services/saved-views.service';
 import { AttackCveService } from '../../services/attack-cve.service';
 import { UniversalSearchComponent } from '../universal-search/universal-search.component';
@@ -57,17 +57,20 @@ export class ToolbarComponent implements OnInit, OnDestroy {
   @Input() set currentDomain(value: AttackDomain) {
     this.attackDomain = value;
   }
-  @Input() viewMode: ViewMode = 'workbench';
-  @Output() viewModeChange = new EventEmitter<ViewMode>();
+  /** Derived from the current route: /library/* = library, everything else = workbench. */
+  viewMode: 'workbench' | 'library' = 'workbench';
   brandMenuOpen = false;
   toggleBrandMenu(): void {
     this.brandMenuOpen = !this.brandMenuOpen;
     this.cdr.markForCheck();
   }
-  selectViewMode(mode: ViewMode): void {
+  selectViewMode(mode: 'workbench' | 'library'): void {
     this.brandMenuOpen = false;
     if (mode !== this.viewMode) {
-      this.viewModeChange.emit(mode);
+      void this.router.navigate(
+        mode === 'library' ? ['/library'] : ['/matrix'],
+        { queryParamsHandling: 'preserve' },
+      );
     }
     this.cdr.markForCheck();
   }
@@ -88,7 +91,6 @@ export class ToolbarComponent implements OnInit, OnDestroy {
 
   readonly PLATFORM_PILLS = PLATFORM_PILLS;
 
-  activePanel: import('../../services/filter.service').ActivePanel = null;
   activeThreatGroupCount = 0;
   attackVersion = '';
   heatmapMode: import('../../services/filter.service').HeatmapMode = 'coverage';
@@ -137,6 +139,7 @@ export class ToolbarComponent implements OnInit, OnDestroy {
   constructor(
     private filterService: FilterService,
     private dataService: DataService,
+    private router: Router,
     private cdr: ChangeDetectorRef,
     private savedViewsService: SavedViewsService,
     private attackCveService: AttackCveService,
@@ -178,7 +181,13 @@ export class ToolbarComponent implements OnInit, OnDestroy {
     this.subs.add(this.filterService.platformFilter$.subscribe((p) => { this.selectedPlatform = p ?? ''; this.cdr.markForCheck(); }));
     this.subs.add(this.filterService.platformMulti$.subscribe((ps) => { this.activePlatforms = ps; this.cdr.markForCheck(); }));
     this.subs.add(this.dataService.loading$.subscribe((l) => { this.loading = l; this.cdr.markForCheck(); }));
-    this.subs.add(this.filterService.activePanel$.subscribe((p) => { this.activePanel = p; this.cdr.markForCheck(); }));
+    this.viewMode = this.router.url.startsWith('/library') ? 'library' : 'workbench';
+    this.subs.add(
+      this.router.events.pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd)).subscribe((e) => {
+        this.viewMode = e.urlAfterRedirects.startsWith('/library') ? 'library' : 'workbench';
+        this.cdr.markForCheck();
+      }),
+    );
     this.subs.add(this.filterService.activeThreatGroupIds$.subscribe((ids) => { this.activeThreatGroupCount = ids.size; this.cdr.markForCheck(); }));
     this.subs.add(this.filterService.heatmapMode$.subscribe((m) => { this.heatmapMode = m; this.cdr.markForCheck(); }));
     this.subs.add(this.filterService.implStatusFilter$.subscribe((s) => { this.implStatusFilter = s ?? ''; this.cdr.markForCheck(); }));
@@ -294,9 +303,6 @@ export class ToolbarComponent implements OnInit, OnDestroy {
 
   toggleSort(): void { this.filterService.setSortMode(this.sortMode === 'alpha' ? 'coverage' : 'alpha'); }
   toggleDimUncovered(): void { this.filterService.toggleDimUncovered(); }
-  togglePanel(panel: 'threats' | 'priority' | 'whatif' | 'report' | 'controls' | 'software' | 'comparison' | 'layers' | 'cve' | 'analytics'): void {
-    this.filterService.togglePanel(panel);
-  }
 
   readonly heatmapModes: { value: import('../../services/filter.service').HeatmapMode; label: string }[] = [
     { value: 'coverage',  label: '🛡 Coverage'  },

@@ -1,8 +1,6 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-@if (visible) {
-  <div class="overlay" (click)="close()">
-    <div class="panel" role="dialog" aria-modal="true" aria-label="STIX Collection Manager" (click)="$event.stopPropagation()">
+<section class="page-panel page-panel--full panel collection-page" aria-label="STIX Collection Manager">
 
       <!-- Header -->
       <div class="panel-header">
@@ -12,7 +10,6 @@
             {{ customTechniqueCount + customGroupCount + customMitigationCount }} custom objects
           </span>
         </div>
-        <button class="close-btn" (click)="close()" title="Close">&#10005;</button>
       </div>
 
       <!-- Tabs -->
@@ -323,9 +320,7 @@
         }
 
       </div>
-    </div>
-  </div>
-}
+</section>
 
 <!-- Shared collection import dialog -->
 @if (showImportDialog && importDialogSummary) {

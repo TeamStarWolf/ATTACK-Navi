@@ -2,10 +2,9 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 
 /**
- * Maps legacy ActivePanel ids to router commands. Grows batch-by-batch as
- * panels convert from overlays to routed pages (P1b–P1d); ids absent here
- * still open as legacy overlays via FilterService. When all batches land,
- * every id maps and the ActivePanel machinery is deleted.
+ * Maps legacy panel ids to router commands. Every destination the old
+ * ActivePanel overlay system knew is a routed page now; PanelNavService
+ * resolves ids through this map (unknown ids are ignored).
  */
 export const PANEL_ROUTE_MAP: Readonly<Partial<Record<string, string[]>>> = {
   // P1a: the matrix is the home page (a nav "toggle" of any panel lands here).
@@ -47,6 +46,20 @@ export const PANEL_ROUTE_MAP: Readonly<Partial<Record<string, string[]>>> = {
   timeline: ['/coverage', 'timeline'],
   target: ['/coverage', 'target'],
   assets: ['/coverage', 'assets'],
+  // P1d: Library workspace
+  library: ['/library', 'workbench'],
+  layers: ['/library', 'layers'],
+  collection: ['/library', 'collections'],
+  comparison: ['/library', 'comparison'],
+  roadmap: ['/library', 'roadmap'],
+  watchlist: ['/library', 'watchlist'],
+  tags: ['/library', 'tags'],
+  // P1d: Reports workspace
+  report: ['/reports', 'builder'],
+  'ir-playbook': ['/reports', 'playbooks'],
+  // P1d: Settings workspace
+  settings: ['/settings', 'preferences'],
+  changelog: ['/settings', 'changelog'],
 };
 
 export function routeForPanel(id: string): string[] | undefined {

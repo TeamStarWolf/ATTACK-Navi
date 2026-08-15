@@ -19,7 +19,6 @@ import { Domain } from '../../models/domain';
   styleUrl: './ir-playbook-panel.component.scss',
 })
 export class IRPlaybookPanelComponent implements OnInit, OnDestroy {
-  visible = false;
   domain: Domain | null = null;
   searchText = '';
   searchResults: Technique[] = [];
@@ -36,10 +35,6 @@ export class IRPlaybookPanelComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(this.filterService.activePanel$.subscribe(p => {
-      this.visible = p === 'ir-playbook';
-      this.cdr.markForCheck();
-    }));
     this.subs.add(this.dataService.domain$.subscribe(d => {
       this.domain = d;
       this.cdr.markForCheck();
@@ -47,8 +42,6 @@ export class IRPlaybookPanelComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void { this.subs.unsubscribe(); }
-
-  close(): void { this.filterService.setActivePanel(null); }
 
   onSearch(): void {
     if (!this.domain || this.searchText.length < 2) { this.searchResults = []; return; }

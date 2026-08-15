@@ -10,7 +10,6 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
-import { FilterService } from '../../services/filter.service';
 import { CustomTechniqueService, CustomTechnique } from '../../services/custom-technique.service';
 import { CustomGroupService } from '../../services/custom-group.service';
 import { CustomMitigationService } from '../../services/custom-mitigation.service';
@@ -37,7 +36,6 @@ const ALL_PLATFORMS = [
   styleUrl: './collection-panel.component.scss',
 })
 export class CollectionPanelComponent implements OnInit, OnDestroy {
-  visible = false;
   activeTab: 'collection' | 'import' | 'techniques' = 'collection';
 
   // Tab 1 — My Collection
@@ -81,7 +79,6 @@ export class CollectionPanelComponent implements OnInit, OnDestroy {
   private subs = new Subscription();
 
   constructor(
-    private filterService: FilterService,
     private customTechniqueService: CustomTechniqueService,
     private customGroupService: CustomGroupService,
     private customMitigationService: CustomMitigationService,
@@ -91,13 +88,10 @@ export class CollectionPanelComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(
-      this.filterService.activePanel$.subscribe(p => {
-        this.visible = p === 'collection';
-        if (this.visible) this.refreshCounts();
-        this.cdr.markForCheck();
-      }),
-    );
+    this.refreshCounts();
+    // Offer to import a shared collection when the URL carries an
+    // `import=` payload (share links land on this page via the hash shim).
+    this.checkUrlImport();
 
     this.subs.add(
       this.customTechniqueService.techniques$.subscribe(t => {
@@ -117,10 +111,6 @@ export class CollectionPanelComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subs.unsubscribe();
-  }
-
-  close(): void {
-    this.filterService.setActivePanel(null);
   }
 
   setTab(tab: 'collection' | 'import' | 'techniques'): void {
@@ -168,7 +158,7 @@ export class CollectionPanelComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Called from AppComponent on init to check URL for shared collection import */
+  /** Checks the URL for a shared-collection import payload (called on init). */
   checkUrlImport(): void {
     const result = this.stixCollectionService.parseImportFromHash();
     if (!result) return;

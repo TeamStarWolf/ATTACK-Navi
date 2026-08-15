@@ -3,9 +3,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { BehaviorSubject, of } from 'rxjs';
+import { of } from 'rxjs';
 import { CollectionPanelComponent } from './collection-panel.component';
-import { FilterService } from '../../services/filter.service';
 import { CustomTechniqueService } from '../../services/custom-technique.service';
 import { CustomGroupService } from '../../services/custom-group.service';
 import { CustomMitigationService } from '../../services/custom-mitigation.service';
@@ -15,15 +14,8 @@ import { StixCollectionService } from '../../services/stix-collection.service';
 describe('CollectionPanelComponent', () => {
   let component: CollectionPanelComponent;
   let fixture: ComponentFixture<CollectionPanelComponent>;
-  let activePanel$: BehaviorSubject<string | null>;
 
   beforeEach(async () => {
-    activePanel$ = new BehaviorSubject<string | null>('collection');
-
-    const mockFilterService = jasmine.createSpyObj('FilterService', ['setActivePanel'], {
-      activePanel$: activePanel$.asObservable(),
-    });
-
     const mockCustomTechniqueService = jasmine.createSpyObj(
       'CustomTechniqueService',
       ['getAll', 'create', 'update', 'delete'],
@@ -54,15 +46,15 @@ describe('CollectionPanelComponent', () => {
 
     const mockStixCollectionService = jasmine.createSpyObj(
       'StixCollectionService',
-      ['exportCollection', 'parseBundle', 'importBundle', 'fetchAndParseUrl']
+      ['exportCollection', 'parseBundle', 'importBundle', 'fetchAndParseUrl', 'parseImportFromHash']
     );
+    mockStixCollectionService.parseImportFromHash.and.returnValue(null);
 
     await TestBed.configureTestingModule({
       imports: [CollectionPanelComponent],
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: FilterService, useValue: mockFilterService },
         { provide: CustomTechniqueService, useValue: mockCustomTechniqueService },
         { provide: CustomGroupService, useValue: mockCustomGroupService },
         { provide: CustomMitigationService, useValue: mockCustomMitigationService },
@@ -80,10 +72,14 @@ describe('CollectionPanelComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should be visible when activePanel is collection', () => {
-    expect(component.visible).toBeTrue();
+  it('renders the panel', () => {
     const panel = fixture.nativeElement.querySelector('.panel');
     expect(panel).toBeTruthy();
+  });
+
+  it('checks the URL for a shared-collection import on init', () => {
+    const stix = TestBed.inject(StixCollectionService) as any;
+    expect(stix.parseImportFromHash).toHaveBeenCalled();
   });
 
   it('should show 3 tabs', () => {
@@ -129,13 +125,5 @@ describe('CollectionPanelComponent', () => {
     tabs[2].click();
     fixture.detectChanges();
     expect(component.activeTab).toBe('techniques');
-  });
-
-  it('should hide when activePanel is not collection', () => {
-    activePanel$.next(null);
-    fixture.detectChanges();
-    expect(component.visible).toBeFalse();
-    const panel = fixture.nativeElement.querySelector('.panel');
-    expect(panel).toBeFalsy();
   });
 });

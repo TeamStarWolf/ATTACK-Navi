@@ -1,15 +1,12 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-@if (visible) {
-  <div class="panel-backdrop" (click)="close()"></div>
-  <div class="changelog-panel" role="dialog" aria-modal="true" aria-label="ATT&CK Changelog">
+<section class="page-panel page-panel--full changelog-panel" aria-label="ATT&CK Changelog">
 
     <div class="panel-header">
       <div class="header-text">
         <h2 class="panel-title">ATT&amp;CK Changelog</h2>
         <p class="panel-subtitle">Recent MITRE ATT&amp;CK version history</p>
       </div>
-      <button class="close-btn" (click)="close()" title="Close">✕</button>
     </div>
 
     <div class="panel-body">
@@ -75,5 +72,4 @@
       >View all releases on GitHub &rarr;</a>
     </div>
 
-  </div>
-}
+</section>

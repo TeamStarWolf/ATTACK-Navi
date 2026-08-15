@@ -8,7 +8,9 @@ import { applyLegacyHashShim } from './app/utils/legacy-hash-shim';
 
 // Rewrite pre-router share links (#tech=T1059, #heat=kev&grp=G0016) into
 // routed URLs BEFORE bootstrap so the router's initial navigation sees them.
-applyLegacyHashShim();
+// migrateViewMode: users who last used the pre-router library view land on
+// /library once; the legacy storage key is deleted after migration.
+applyLegacyHashShim(true);
 
 bootstrapApplication(AppComponent, appConfig)
   .catch((err) => console.error(err));

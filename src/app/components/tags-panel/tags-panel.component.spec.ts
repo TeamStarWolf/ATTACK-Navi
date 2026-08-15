@@ -1,6 +1,7 @@
-// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+﻿// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed, ComponentFixture } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { TagsPanelComponent } from './tags-panel.component';
 import { FilterService } from '../../services/filter.service';
@@ -15,9 +16,9 @@ describe('TagsPanelComponent', () => {
     TestBed.configureTestingModule({
       imports: [TagsPanelComponent],
       providers: [
+        provideRouter([]),
         { provide: FilterService, useValue: {
-            activePanel$: new BehaviorSubject<string | null>(null),
-            setActivePanel: jasmine.createSpy(),
+            setTechniqueQuery: jasmine.createSpy(),
         }},
         { provide: TaggingService, useValue: {
             tagsByTechnique$: new BehaviorSubject(new Map()),
@@ -32,8 +33,7 @@ describe('TagsPanelComponent', () => {
     fixture.detectChanges();
   });
 
-  it('is created and starts hidden', () => {
+  it('is created', () => {
     expect(component).toBeTruthy();
-    expect(component.visible).toBe(false);
   });
 });

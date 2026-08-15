@@ -1,13 +1,13 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed, ComponentFixture } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { EmulationPlanPanelComponent } from './emulation-plan-panel.component';
 import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
 import { EmulationPlanService } from '../../services/emulation-plan.service';
 import { LibraryService } from '../../services/library.service';
-import { ViewModeService } from '../../services/view-mode.service';
 
 describe('EmulationPlanPanelComponent', () => {
   let component: EmulationPlanPanelComponent;
@@ -17,10 +17,8 @@ describe('EmulationPlanPanelComponent', () => {
     TestBed.configureTestingModule({
       imports: [EmulationPlanPanelComponent],
       providers: [
-        { provide: FilterService, useValue: {
-            activePanel$: new BehaviorSubject<string | null>(null),
-            setActivePanel: jasmine.createSpy(),
-        }},
+        provideRouter([]),
+        { provide: FilterService, useValue: {} },
         { provide: DataService, useValue: { domain$: new BehaviorSubject(null) }},
         { provide: EmulationPlanService, useValue: {
             generatePlan: () => null,
@@ -29,7 +27,6 @@ describe('EmulationPlanPanelComponent', () => {
             deletePlan: jasmine.createSpy(),
         }},
         { provide: LibraryService, useValue: { getAssetsForTactic: () => [] }},
-        { provide: ViewModeService, useValue: { set: jasmine.createSpy() }},
       ],
     });
     fixture = TestBed.createComponent(EmulationPlanPanelComponent);

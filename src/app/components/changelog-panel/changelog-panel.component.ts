@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
-import { FilterService } from '../../services/filter.service';
+import { DataService } from '../../services/data.service';
 import { ChangelogService, AttackRelease } from '../../services/changelog.service';
 
 @Component({
@@ -21,7 +21,6 @@ import { ChangelogService, AttackRelease } from '../../services/changelog.servic
   styleUrl: './changelog-panel.component.scss',
 })
 export class ChangelogPanelComponent implements OnInit, OnDestroy {
-  visible = false;
   releases: AttackRelease[] = [];
   loaded = false;
   expandedRelease: string | null = null;
@@ -29,18 +28,18 @@ export class ChangelogPanelComponent implements OnInit, OnDestroy {
   private subs = new Subscription();
 
   constructor(
-    private filterService: FilterService,
     private changelogService: ChangelogService,
+    private dataService: DataService,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(
-      this.filterService.activePanel$.subscribe(p => {
-        this.visible = p === 'changelog';
-        this.cdr.markForCheck();
-      }),
-    );
+    // Stamp the current ATT&CK version as seen so the nav "new version"
+    // dot clears — on nav clicks, deep links and palette navigation alike.
+    const domain = this.dataService.getCurrentDomain();
+    if (domain) {
+      localStorage.setItem('last-seen-attack-version', domain.attackVersion);
+    }
 
     this.subs.add(
       this.changelogService.releases$.subscribe(releases => {
@@ -59,10 +58,6 @@ export class ChangelogPanelComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subs.unsubscribe();
-  }
-
-  close(): void {
-    this.filterService.setActivePanel(null);
   }
 
   toggleRelease(tag: string): void {

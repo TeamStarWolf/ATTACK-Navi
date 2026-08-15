@@ -2,7 +2,6 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import {
   Component,
-  Input,
   Output,
   EventEmitter,
   ChangeDetectionStrategy,
@@ -12,9 +11,11 @@ import {
   ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Subscription } from 'rxjs';
+import { Router, NavigationEnd } from '@angular/router';
+import { Subscription, filter } from 'rxjs';
 import { CveService } from '../../services/cve.service';
 import { DataService } from '../../services/data.service';
+import { PANEL_ROUTE_MAP } from '../../app.routes-map';
 
 type NavItem =
   | { id: string; icon: string; label: string; group?: string }
@@ -86,7 +87,8 @@ const NAV_ITEMS_BOTTOM: NavItem[] = [
   styleUrl: './nav-rail.component.scss',
 })
 export class NavRailComponent implements OnInit, OnDestroy {
-  @Input() activePanel: string | null = null;
+  /** Panel id whose route matches the current URL (drives the active highlight). */
+  activePanel: string | null = null;
   @Output() panelToggle = new EventEmitter<string>();
   @Output() focusSearch = new EventEmitter<void>();
 
@@ -98,11 +100,30 @@ export class NavRailComponent implements OnInit, OnDestroy {
 
   private cveService = inject(CveService);
   private dataService = inject(DataService);
+  private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
   private kevSub?: Subscription;
   private domainSub?: Subscription;
+  private routerSub?: Subscription;
+
+  /** Reverse lookup: route path → legacy panel id. */
+  private static readonly PATH_TO_PANEL: ReadonlyMap<string, string> = new Map(
+    Object.entries(PANEL_ROUTE_MAP)
+      .filter((e): e is [string, string[]] => Array.isArray(e[1]))
+      .map(([id, commands]) => [commands.join('/').replace(/\/{2,}/g, '/'), id]),
+  );
+
+  private syncActiveFromUrl(url: string): void {
+    const path = url.split('?')[0];
+    this.activePanel = NavRailComponent.PATH_TO_PANEL.get(path) ?? null;
+    this.cdr.markForCheck();
+  }
 
   ngOnInit(): void {
+    this.syncActiveFromUrl(this.router.url);
+    this.routerSub = this.router.events
+      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+      .subscribe(e => this.syncActiveFromUrl(e.urlAfterRedirects));
     this.kevSub = this.cveService.newKevCount$.subscribe(count => {
       this.newKevCount = count;
       this.cdr.markForCheck();
@@ -119,16 +140,15 @@ export class NavRailComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.kevSub?.unsubscribe();
     this.domainSub?.unsubscribe();
+    this.routerSub?.unsubscribe();
   }
 
   onNavClick(id: string): void {
-    // (KEV badge dismissal moved into CvePanelComponent.ngOnInit so deep
-    // links and palette navigation clear it too.)
+    // (KEV badge dismissal lives in CvePanelComponent.ngOnInit and the
+    // version stamp in ChangelogPanelComponent.ngOnInit so deep links and
+    // palette navigation clear them too. The rail clears its own dot
+    // immediately on click since it has no reactive stream to observe.)
     if (id === 'changelog') {
-      const domain = this.dataService.getCurrentDomain();
-      if (domain) {
-        localStorage.setItem('last-seen-attack-version', domain.attackVersion);
-      }
       this.newVersionAvailable = false;
     }
     this.panelToggle.emit(id);

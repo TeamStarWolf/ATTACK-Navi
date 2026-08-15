@@ -14,6 +14,7 @@ import { FormsModule } from '@angular/forms';
 import { Observable, Subscription } from 'rxjs';
 import { LayersService, LayerSnapshot } from '../../services/layers.service';
 import { FilterService } from '../../services/filter.service';
+import { PanelNavService } from '../../services/panel-nav.service';
 import { ImplementationService } from '../../services/implementation.service';
 import { DocumentationService } from '../../services/documentation.service';
 
@@ -29,7 +30,6 @@ export class LayersPanelComponent implements OnInit, OnDestroy {
   @ViewChild('fileInput') fileInputRef!: ElementRef<HTMLInputElement>;
 
   layers$!: Observable<LayerSnapshot[]>;
-  open = false;
   newLayerName = '';
   newLayerDesc = '';
   showSaveForm = false;
@@ -40,6 +40,7 @@ export class LayersPanelComponent implements OnInit, OnDestroy {
   constructor(
     private layersService: LayersService,
     private filterService: FilterService,
+    private panelNav: PanelNavService,
     private implService: ImplementationService,
     private docService: DocumentationService,
     private cdr: ChangeDetectorRef,
@@ -47,14 +48,7 @@ export class LayersPanelComponent implements OnInit, OnDestroy {
     this.layers$ = this.layersService.layers$;
   }
 
-  ngOnInit(): void {
-    this.subs.add(
-      this.filterService.activePanel$.subscribe(p => {
-        this.open = p === 'layers';
-        this.cdr.markForCheck();
-      }),
-    );
-  }
+  ngOnInit(): void {}
 
   ngOnDestroy(): void { this.subs.unsubscribe(); }
 
@@ -70,7 +64,8 @@ export class LayersPanelComponent implements OnInit, OnDestroy {
 
   load(id: string): void {
     this.layersService.loadLayer(id, this.filterService, this.implService, this.docService);
-    this.filterService.setActivePanel(null);
+    // Show the loaded layer on the matrix.
+    this.panelNav.open('matrix');
   }
 
   delete(id: string): void {
@@ -107,10 +102,6 @@ export class LayersPanelComponent implements OnInit, OnDestroy {
     reader.readAsText(file);
     // Reset so the same file can be re-imported
     (event.target as HTMLInputElement).value = '';
-  }
-
-  close(): void {
-    this.filterService.setActivePanel(null);
   }
 
   formatDate(iso: string): string {

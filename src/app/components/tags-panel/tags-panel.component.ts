@@ -11,6 +11,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
+import { PanelNavService } from '../../services/panel-nav.service';
 import { TaggingService } from '../../services/tagging.service';
 import { DataService } from '../../services/data.service';
 
@@ -36,7 +37,6 @@ interface TaggedTechnique {
   styleUrl: './tags-panel.component.scss',
 })
 export class TagsPanelComponent implements OnInit, OnDestroy {
-  visible = false;
   tagStats: TagStat[] = [];
   searchText = '';
   selectedTag: string | null = null;
@@ -49,30 +49,21 @@ export class TagsPanelComponent implements OnInit, OnDestroy {
 
   constructor(
     private filterService: FilterService,
+    private panelNav: PanelNavService,
     private taggingService: TaggingService,
     private dataService: DataService,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(
-      this.filterService.activePanel$.subscribe(p => {
-        this.visible = p === 'tags';
-        if (this.visible) {
-          this.buildStats();
-        }
-        this.cdr.markForCheck();
-      }),
-    );
+    this.buildStats();
 
     // Rebuild stats when tags change
     this.subs.add(
       this.taggingService.tags$.subscribe(() => {
-        if (this.visible) {
-          this.buildStats();
-          if (this.selectedTag) {
-            this.selectTag(this.selectedTag);
-          }
+        this.buildStats();
+        if (this.selectedTag) {
+          this.selectTag(this.selectedTag);
         }
         this.cdr.markForCheck();
       }),
@@ -87,11 +78,9 @@ export class TagsPanelComponent implements OnInit, OnDestroy {
             this.techniqueMap.set(t.id, { id: t.id, attackId: t.attackId, name: t.name });
           }
         }
-        if (this.visible) {
-          this.buildStats();
-          if (this.selectedTag) {
-            this.selectTag(this.selectedTag);
-          }
+        this.buildStats();
+        if (this.selectedTag) {
+          this.selectTag(this.selectedTag);
         }
         this.cdr.markForCheck();
       }),
@@ -144,7 +133,8 @@ export class TagsPanelComponent implements OnInit, OnDestroy {
     if (firstId) {
       this.filterService.setTechniqueQuery(firstId.attackId);
     }
-    this.close();
+    // Show the applied filter on the matrix.
+    this.panelNav.open('matrix');
   }
 
   startRename(tag: string): void {
@@ -222,10 +212,6 @@ export class TagsPanelComponent implements OnInit, OnDestroy {
     a.download = 'technique-tags.csv';
     a.click();
     URL.revokeObjectURL(url);
-  }
-
-  close(): void {
-    this.filterService.setActivePanel(null);
   }
 
   get filteredStats(): TagStat[] {

@@ -1,32 +1,13 @@
 /* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
    https://github.com/TeamStarWolf/ATTACK-Navi - MIT License */
-// Overlay backdrop
-.layers-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgb(0 0 0 / 50%);
-  z-index: 999;
-  align-items: center;
-  justify-content: center;
-
-  &.open {
-    display: flex;
-  }
-}
-
-// Modal container
+// Panel container
 .layers-modal {
-  width: 560px;
-  max-width: 95vw;
-  max-height: 88vh;
   background: #0d1a26;
   border: 1px solid #1a3448;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 8px 32px rgb(0 0 0 / 60%);
 }
 
 // Header

@@ -1,60 +1,41 @@
 ﻿// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { Component, OnInit, AfterViewInit, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef, HostListener, DestroyRef, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef, HostListener, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CommonModule, AsyncPipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { DataService, AttackDomain } from './services/data.service';
 import { Domain } from './models/domain';
-import { FilterService, ActivePanel } from './services/filter.service';
-import { ViewModeService, ViewMode } from './services/view-mode.service';
-import { LibraryWorkbenchComponent } from './components/library-workbench/library-workbench.component';
-import { Observable } from 'rxjs';
+import { FilterService } from './services/filter.service';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
 import { ToolbarComponent } from './components/toolbar/toolbar.component';
 import { GapViewComponent } from './components/gap-view/gap-view.component';
-import { ReportPanelComponent } from './components/report-panel/report-panel.component';
 import { KeyboardHelpComponent } from './components/keyboard-help/keyboard-help.component';
-import { ComparisonPanelComponent } from './components/comparison-panel/comparison-panel.component';
-import { LayersPanelComponent } from './components/layers-panel/layers-panel.component';
 import { NavRailComponent } from './components/nav-rail/nav-rail.component';
-import { RoadmapPanelComponent } from './components/roadmap-panel/roadmap-panel.component';
-import { SettingsPanelComponent } from './components/settings-panel/settings-panel.component';
-import { WatchlistPanelComponent } from './components/watchlist-panel/watchlist-panel.component';
-import { ChangelogPanelComponent } from './components/changelog-panel/changelog-panel.component';
-import { TagsPanelComponent } from './components/tags-panel/tags-panel.component';
-import { CollectionPanelComponent } from './components/collection-panel/collection-panel.component';
-import { IRPlaybookPanelComponent } from './components/ir-playbook-panel/ir-playbook-panel.component';
 import { OnboardingComponent } from './components/onboarding/onboarding.component';
 import { UrlStateService } from './services/url-state.service';
 import { PanelNavService } from './services/panel-nav.service';
+import { CommandPaletteService } from './services/command-palette.service';
 import { MatrixControlService } from './services/matrix-control.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, AsyncPipe, RouterOutlet, SidebarComponent, ToolbarComponent, GapViewComponent, ReportPanelComponent, KeyboardHelpComponent, ComparisonPanelComponent, LayersPanelComponent, NavRailComponent, RoadmapPanelComponent, SettingsPanelComponent, WatchlistPanelComponent, ChangelogPanelComponent, TagsPanelComponent, CollectionPanelComponent, IRPlaybookPanelComponent, OnboardingComponent, LibraryWorkbenchComponent],
+  imports: [CommonModule, RouterOutlet, SidebarComponent, ToolbarComponent, GapViewComponent, KeyboardHelpComponent, NavRailComponent, OnboardingComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
-export class AppComponent implements OnInit, AfterViewInit {
+export class AppComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   @ViewChild(GapViewComponent) gapViewRef?: GapViewComponent;
   @ViewChild(KeyboardHelpComponent) keyboardHelp?: KeyboardHelpComponent;
-  @ViewChild(CollectionPanelComponent) collectionPanel?: CollectionPanelComponent;
 
   domain: Domain | null = null;
   isLightMode = false;
-  activePanel$!: Observable<ActivePanel>;
-  viewMode: ViewMode = 'workbench';
-  private viewModeService = inject(ViewModeService);
   private panelNav = inject(PanelNavService);
+  private palette = inject(CommandPaletteService);
   private matrixControl = inject(MatrixControlService);
-  onViewModeChange(mode: ViewMode): void {
-    this.viewModeService.set(mode);
-    this.viewMode = mode;
-  }
   showToast = false;
   toastMessage = '';
   currentDomain: AttackDomain = 'enterprise';
@@ -70,20 +51,11 @@ export class AppComponent implements OnInit, AfterViewInit {
     this.dataService.domain$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((d) => { this.domain = d; this.cdr.markForCheck(); });
     this.dataService.currentDomain$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((d) => { this.currentDomain = d; this.cdr.markForCheck(); });
     this.dataService.loadDomain();
-    this.activePanel$ = this.filterService.activePanel$;
-    this.viewModeService.viewMode$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(m => { this.viewMode = m; this.cdr.markForCheck(); });
     this.urlStateService.init();
     if (localStorage.getItem('mitre-nav-theme') === 'light') {
       this.isLightMode = true;
       document.body.classList.add('light-mode');
     }
-  }
-
-  ngAfterViewInit(): void {
-    // Check URL for shared collection import after view is ready
-    setTimeout(() => this.collectionPanel?.checkUrlImport(), 500);
   }
 
   onDomainChange(domain: AttackDomain): void {
@@ -117,12 +89,8 @@ export class AppComponent implements OnInit, AfterViewInit {
     if (target.isContentEditable) return;
 
     if (event.key === 'Escape') {
-      const activePanel = this.filterService.getActivePanel();
-      if (activePanel) {
-        this.filterService.setActivePanel(null);
-        event.preventDefault();
-        return;
-      }
+      // The palette handles its own Escape; here Escape deselects the technique.
+      if (this.palette.isOpen) return;
       this.filterService.selectTechnique(null);
       event.preventDefault();
       return;
@@ -136,7 +104,7 @@ export class AppComponent implements OnInit, AfterViewInit {
           break;
         case 'k':
           event.preventDefault();
-          this.filterService.setActivePanel('search');
+          this.palette.open();
           break;
         case 'e':
           event.preventDefault();

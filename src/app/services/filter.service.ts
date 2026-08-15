@@ -8,7 +8,6 @@ import { Domain } from '../models/domain';
 import { DataService } from './data.service';
 
 export type SortMode = 'alpha' | 'coverage';
-export type ActivePanel = 'dashboard' | 'threats' | 'priority' | 'whatif' | 'report' | 'controls' | 'software' | 'comparison' | 'layers' | 'cve' | 'analytics' | 'sigma' | 'purple' | 'actor' | 'search' | 'yara' | 'roadmap' | 'detection' | 'compliance' | 'actor-compare' | 'timeline' | 'settings' | 'custom-mit' | 'killchain' | 'risk-matrix' | 'scenario' | 'siem' | 'datasources' | 'watchlist' | 'changelog' | 'tags' | 'target' | 'campaign-timeline' | 'technique-graph' | 'coverage-diff' | 'intelligence' | 'collection' | 'assessment' | 'assets' | 'gap-analysis' | 'ir-playbook' | 'library' | 'emulation' | 'validation' | null;
 export type HeatmapMode = 'coverage' | 'exposure' | 'status' | 'controls' | 'software' | 'campaign' | 'risk' | 'kev' | 'd3fend' | 'atomic' | 'engage' | 'car' | 'cve' | 'detection' | 'frequency' | 'cri' | 'unified' | 'sigma' | 'nist' | 'veris' | 'epss' | 'elastic' | 'splunk' | 'intelligence' | 'm365' | 'my-exposure' | 'wazuh' | 'csa-ccm' | 'm365-controls' | 'kill-chain' | 'poc-exploits';
 export type SearchScope = 'name' | 'full';
 
@@ -41,7 +40,6 @@ export class FilterService {
   private activeSoftwareIdsSubject = new BehaviorSubject<Set<string>>(new Set());
   private activeCampaignIdsSubject = new BehaviorSubject<Set<string>>(new Set());
   private activeDataSourceSubject = new BehaviorSubject<string | null>(null);
-  private activePanelSubject = new BehaviorSubject<ActivePanel>(null);
   private heatmapModeSubject = new BehaviorSubject<HeatmapMode>('coverage');
   private implStatusFilterSubject = new BehaviorSubject<string | null>(null);
   private searchFilterModeSubject = new BehaviorSubject<boolean>(false);
@@ -64,7 +62,6 @@ export class FilterService {
   activeSoftwareIds$: Observable<Set<string>> = this.activeSoftwareIdsSubject.asObservable();
   activeCampaignIds$: Observable<Set<string>> = this.activeCampaignIdsSubject.asObservable();
   activeDataSource$: Observable<string | null> = this.activeDataSourceSubject.asObservable();
-  activePanel$: Observable<ActivePanel> = this.activePanelSubject.asObservable();
   heatmapMode$: Observable<HeatmapMode> = this.heatmapModeSubject.asObservable();
   implStatusFilter$: Observable<string | null> = this.implStatusFilterSubject.asObservable();
 
@@ -426,19 +423,6 @@ export class FilterService {
 
   setDataSourceFilter(name: string | null): void {
     this.activeDataSourceSubject.next(name);
-  }
-
-  getActivePanel(): ActivePanel {
-    return this.activePanelSubject.value;
-  }
-
-  setActivePanel(panel: ActivePanel): void {
-    this.activePanelSubject.next(panel);
-  }
-
-  togglePanel(panel: Exclude<ActivePanel, null>): void {
-    const current = this.activePanelSubject.value;
-    this.activePanelSubject.next(current === panel ? null : panel);
   }
 
   setHeatmapMode(mode: HeatmapMode): void {
