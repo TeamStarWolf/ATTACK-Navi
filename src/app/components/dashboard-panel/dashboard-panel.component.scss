@@ -1,17 +1,15 @@
 /* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
    https://github.com/TeamStarWolf/ATTACK-Navi - MIT License */
 .dashboard-overlay {
-  position: fixed;
-  inset: 0;
   background:
     radial-gradient(circle at top left, rgb(255 180 84 / 12%), transparent 24%),
     radial-gradient(circle at top right, rgb(111 211 255 / 10%), transparent 26%),
     rgb(7 14 22 / 96%);
-  z-index: 1000;
+  border: 1px solid #1a3448;
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  backdrop-filter: blur(12px);
 }
 
 // ─── Header ──────────────────────────────────────────────────────────────────

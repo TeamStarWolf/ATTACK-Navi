@@ -1,24 +1,11 @@
 /* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
    https://github.com/TeamStarWolf/ATTACK-Navi - MIT License */
-// Overlay backdrop
-.panel-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgb(0 0 0 / 50%);
-  z-index: 999;
-}
-
-// Panel drawer
+// Page container (was a fixed right drawer pre-router)
 .panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 460px;
-  height: 100vh;
+  position: relative;
   background: #0d1a26;
   border: 1px solid #1a3448;
-  box-shadow: 0 8px 32px rgb(0 0 0 / 60%);
-  z-index: 1000;
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
   overflow: hidden;

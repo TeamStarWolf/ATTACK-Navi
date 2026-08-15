@@ -36,7 +36,6 @@ interface CoverageSourceRow {
   styleUrl: './gap-analysis-panel.component.scss',
 })
 export class GapAnalysisPanelComponent implements OnInit, OnDestroy {
-  visible = false;
   result: GapAnalysisResult | null = null;
   generating = false;
 
@@ -74,10 +73,9 @@ export class GapAnalysisPanelComponent implements OnInit, OnDestroy {
 
   /** Open Library Index filtered to the gap's tactic. */
   openLibraryForGap(gap: PrioritizedGap): void {
-    this.viewModeService.set('library');
     // The library workbench reads the persisted tactic filter via its own
-    // localStorage signal. Close the panel so the matrix swap is visible.
-    this.close();
+    // localStorage signal.
+    this.viewModeService.set('library');
   }
 
   /** Open the Detection Validation Workbench for the gap's technique. */
@@ -90,15 +88,7 @@ export class GapAnalysisPanelComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.subs.add(
-      this.filterService.activePanel$.subscribe(p => {
-        this.visible = p === 'gap-analysis';
-        if (this.visible && this.allGroups.length === 0) {
-          this.loadGroups();
-        }
-        this.cdr.markForCheck();
-      }),
-    );
+    this.loadGroups();
   }
 
   ngOnDestroy(): void {
@@ -291,7 +281,4 @@ export class GapAnalysisPanelComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  close(): void {
-    this.filterService.setActivePanel(null);
-  }
 }

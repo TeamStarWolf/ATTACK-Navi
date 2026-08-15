@@ -32,7 +32,6 @@ export interface RiskPoint {
   styleUrl: './risk-matrix-panel.component.scss',
 })
 export class RiskMatrixPanelComponent implements OnInit, OnDestroy {
-  visible = false;
   points: RiskPoint[] = [];
   maxGroupCount = 0;
   maxMitigationCount = 0;
@@ -52,15 +51,7 @@ export class RiskMatrixPanelComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(
-      this.filterService.activePanel$.subscribe(p => {
-        this.visible = p === 'risk-matrix';
-        if (this.visible && this.points.length === 0) {
-          this.buildPoints();
-        }
-        this.cdr.markForCheck();
-      }),
-    );
+    this.buildPoints();
   }
 
   ngOnDestroy(): void {
@@ -178,10 +169,6 @@ export class RiskMatrixPanelComponent implements OnInit, OnDestroy {
     this.searchText = '';
     this.showAll = false;
     this.cdr.markForCheck();
-  }
-
-  close(): void {
-    this.filterService.setActivePanel(null);
   }
 
   quadrantLabel(q: RiskPoint['quadrant']): string {

@@ -15,16 +15,12 @@ import { SidebarComponent } from './components/sidebar/sidebar.component';
 import { ToolbarComponent } from './components/toolbar/toolbar.component';
 import { GapViewComponent } from './components/gap-view/gap-view.component';
 import { ThreatPanelComponent } from './components/threat-panel/threat-panel.component';
-import { PriorityPanelComponent } from './components/priority-panel/priority-panel.component';
-import { WhatifPanelComponent } from './components/whatif-panel/whatif-panel.component';
 import { ReportPanelComponent } from './components/report-panel/report-panel.component';
 import { KeyboardHelpComponent } from './components/keyboard-help/keyboard-help.component';
 import { ControlsPanelComponent } from './components/controls-panel/controls-panel.component';
 import { SoftwarePanelComponent } from './components/software-panel/software-panel.component';
 import { ComparisonPanelComponent } from './components/comparison-panel/comparison-panel.component';
 import { LayersPanelComponent } from './components/layers-panel/layers-panel.component';
-import { CvePanelComponent } from './components/cve-panel/cve-panel.component';
-import { AnalyticsPanelComponent } from './components/analytics-panel/analytics-panel.component';
 import { NavRailComponent } from './components/nav-rail/nav-rail.component';
 import { RoadmapPanelComponent } from './components/roadmap-panel/roadmap-panel.component';
 import { ActorProfilePanelComponent } from './components/actor-profile-panel/actor-profile-panel.component';
@@ -33,21 +29,16 @@ import { ActorComparePanelComponent } from './components/actor-compare-panel/act
 import { TimelinePanelComponent } from './components/timeline-panel/timeline-panel.component';
 import { SettingsPanelComponent } from './components/settings-panel/settings-panel.component';
 import { CustomMitPanelComponent } from './components/custom-mit-panel/custom-mit-panel.component';
-import { KillchainPanelComponent } from './components/killchain-panel/killchain-panel.component';
-import { RiskMatrixPanelComponent } from './components/risk-matrix-panel/risk-matrix-panel.component';
 import { ScenarioPanelComponent } from './components/scenario-panel/scenario-panel.component';
 import { TargetPanelComponent } from './components/target-panel/target-panel.component';
-import { DashboardPanelComponent } from './components/dashboard-panel/dashboard-panel.component';
 import { WatchlistPanelComponent } from './components/watchlist-panel/watchlist-panel.component';
 import { ChangelogPanelComponent } from './components/changelog-panel/changelog-panel.component';
 import { TagsPanelComponent } from './components/tags-panel/tags-panel.component';
 import { CampaignTimelinePanelComponent } from './components/campaign-timeline-panel/campaign-timeline-panel.component';
-import { TechniqueGraphPanelComponent } from './components/technique-graph-panel/technique-graph-panel.component';
 import { CoverageDiffPanelComponent } from './components/coverage-diff-panel/coverage-diff-panel.component';
 import { ThreatIntelligencePanelComponent } from './components/threat-intelligence-panel/threat-intelligence-panel.component';
 import { CollectionPanelComponent } from './components/collection-panel/collection-panel.component';
 import { AssessmentWizardComponent } from './components/assessment-wizard/assessment-wizard.component';
-import { GapAnalysisPanelComponent } from './components/gap-analysis-panel/gap-analysis-panel.component';
 import { AssetPanelComponent } from './components/asset-panel/asset-panel.component';
 import { IRPlaybookPanelComponent } from './components/ir-playbook-panel/ir-playbook-panel.component';
 import { OnboardingComponent } from './components/onboarding/onboarding.component';
@@ -58,7 +49,7 @@ import { MatrixControlService } from './services/matrix-control.service';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, AsyncPipe, RouterOutlet, SidebarComponent, ToolbarComponent, GapViewComponent, ThreatPanelComponent, PriorityPanelComponent, WhatifPanelComponent, ReportPanelComponent, KeyboardHelpComponent, ControlsPanelComponent, SoftwarePanelComponent, ComparisonPanelComponent, LayersPanelComponent, CvePanelComponent, AnalyticsPanelComponent, NavRailComponent, RoadmapPanelComponent, ActorProfilePanelComponent, CompliancePanelComponent, ActorComparePanelComponent, TimelinePanelComponent, SettingsPanelComponent, CustomMitPanelComponent, KillchainPanelComponent, RiskMatrixPanelComponent, ScenarioPanelComponent, DashboardPanelComponent, WatchlistPanelComponent, ChangelogPanelComponent, TagsPanelComponent, TargetPanelComponent, CampaignTimelinePanelComponent, TechniqueGraphPanelComponent, CoverageDiffPanelComponent, ThreatIntelligencePanelComponent, CollectionPanelComponent, AssessmentWizardComponent, GapAnalysisPanelComponent, AssetPanelComponent, IRPlaybookPanelComponent, OnboardingComponent, LibraryWorkbenchComponent, EmulationPlanPanelComponent],
+  imports: [CommonModule, AsyncPipe, RouterOutlet, SidebarComponent, ToolbarComponent, GapViewComponent, ThreatPanelComponent, ReportPanelComponent, KeyboardHelpComponent, ControlsPanelComponent, SoftwarePanelComponent, ComparisonPanelComponent, LayersPanelComponent, NavRailComponent, RoadmapPanelComponent, ActorProfilePanelComponent, CompliancePanelComponent, ActorComparePanelComponent, TimelinePanelComponent, SettingsPanelComponent, CustomMitPanelComponent, ScenarioPanelComponent, WatchlistPanelComponent, ChangelogPanelComponent, TagsPanelComponent, TargetPanelComponent, CampaignTimelinePanelComponent, CoverageDiffPanelComponent, ThreatIntelligencePanelComponent, CollectionPanelComponent, AssessmentWizardComponent, AssetPanelComponent, IRPlaybookPanelComponent, OnboardingComponent, LibraryWorkbenchComponent, EmulationPlanPanelComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',

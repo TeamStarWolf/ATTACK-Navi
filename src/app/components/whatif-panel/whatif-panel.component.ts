@@ -34,7 +34,6 @@ interface WhatIfRow {
   styleUrl: './whatif-panel.component.scss',
 })
 export class WhatifPanelComponent implements OnInit, OnDestroy {
-  visible = false;
   searchText = '';
   rows: WhatIfRow[] = [];
   filteredRows: WhatIfRow[] = [];
@@ -117,12 +116,6 @@ export class WhatifPanelComponent implements OnInit, OnDestroy {
       }),
     );
 
-    this.subs.add(
-      this.filterService.activePanel$.subscribe((panel) => {
-        this.visible = panel === 'whatif';
-        this.cdr.markForCheck();
-      }),
-    );
   }
 
   ngOnDestroy(): void {
@@ -161,10 +154,6 @@ export class WhatifPanelComponent implements OnInit, OnDestroy {
 
   clearAll(): void {
     this.filterService.clearWhatIf();
-  }
-
-  close(): void {
-    this.filterService.setActivePanel(null);
   }
 
   get checkedCount(): number {

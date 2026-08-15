@@ -122,9 +122,8 @@ export class NavRailComponent implements OnInit, OnDestroy {
   }
 
   onNavClick(id: string): void {
-    if (id === 'cve') {
-      this.cveService.dismissKevBadge();
-    }
+    // (KEV badge dismissal moved into CvePanelComponent.ngOnInit so deep
+    // links and palette navigation clear it too.)
     if (id === 'changelog') {
       const domain = this.dataService.getCurrentDomain();
       if (domain) {

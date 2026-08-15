@@ -1,29 +1,14 @@
 /* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
    https://github.com/TeamStarWolf/ATTACK-Navi - MIT License */
-/* ── Overlay ── */
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: rgb(0 0 0 / 60%);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 /* ── Panel ── */
 .panel {
   position: relative;
-  width: 1100px;
-  max-width: 98vw;
-  max-height: 96vh;
   background: #070d14;
   border: 1px solid #1a3448;
   border-radius: 12px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 24px 64px rgb(0 0 0 / 70%);
 }
 
 /* ── Header ── */
