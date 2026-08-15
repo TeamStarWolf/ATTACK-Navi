@@ -4,7 +4,9 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
-  timeout: 30000,
+  // CI's `ng serve` JIT-compiles lazy routes on first hit; give each test a
+  // much larger envelope there so a cold deep-link compile doesn't time out.
+  timeout: process.env['CI'] ? 120000 : 30000,
   retries: 1,
   use: {
     baseURL: 'http://localhost:4200',
