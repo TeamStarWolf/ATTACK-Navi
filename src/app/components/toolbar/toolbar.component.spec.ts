@@ -9,6 +9,7 @@ import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
 import { SavedViewsService } from '../../services/saved-views.service';
 import { AttackCveService } from '../../services/attack-cve.service';
+import { ExportActionsService } from '../../services/export-actions.service';
 
 describe('ToolbarComponent', () => {
   let component: ToolbarComponent;
@@ -17,6 +18,7 @@ describe('ToolbarComponent', () => {
   let mockDataService: jasmine.SpyObj<DataService>;
   let mockSavedViewsService: jasmine.SpyObj<SavedViewsService>;
   let mockAttackCveService: jasmine.SpyObj<AttackCveService>;
+  let mockExportActions: jasmine.SpyObj<ExportActionsService>;
 
   beforeEach(async () => {
     mockFilterService = jasmine.createSpyObj('FilterService', [
@@ -59,6 +61,13 @@ describe('ToolbarComponent', () => {
       loaded$: of(false),
     });
 
+    mockExportActions = jasmine.createSpyObj('ExportActionsService', [
+      'exportCsv', 'exportTacticCsv', 'exportImplPlanCsv', 'exportFullReport',
+      'exportMatrixPng', 'exportHtmlCoverageReport', 'exportPdf', 'exportXlsxWorkbook',
+      'exportNavigatorLayer', 'openInNavigator', 'importNavigatorLayer',
+      'exportStateJson', 'importStateJson',
+    ]);
+
     await TestBed.configureTestingModule({
       imports: [ToolbarComponent],
       providers: [
@@ -68,6 +77,7 @@ describe('ToolbarComponent', () => {
         { provide: DataService, useValue: mockDataService },
         { provide: SavedViewsService, useValue: mockSavedViewsService },
         { provide: AttackCveService, useValue: mockAttackCveService },
+        { provide: ExportActionsService, useValue: mockExportActions },
       ],
     }).compileComponents();
 
@@ -108,15 +118,14 @@ describe('ToolbarComponent', () => {
     expect(mockFilterService.setTechniqueQuery).toHaveBeenCalledWith('T1059');
   });
 
-  it('should emit exportCsv when export menu item is clicked', () => {
-    spyOn(component.exportCsv, 'emit');
+  it('should invoke the export service when export menu item is clicked', () => {
     // Open the export menu
     component.showExportMenu = true;
     fixture.detectChanges();
     const exportBtn = fixture.nativeElement.querySelector('.export-menu .menu-action');
     expect(exportBtn).toBeTruthy();
     exportBtn.click();
-    expect(component.exportCsv.emit).toHaveBeenCalled();
+    expect(mockExportActions.exportCsv).toHaveBeenCalled();
   });
 
   it('should render the search input', () => {

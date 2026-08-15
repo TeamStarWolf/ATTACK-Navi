@@ -1,50 +1,72 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { NavigationEnd, Router } from '@angular/router';
+import { filter, take } from 'rxjs';
 import { FilterService } from './filter.service';
 
 /**
- * UrlStateService provides a clean API for sharing the current filter state as a URL.
+ * Owns the URL <-> filter-state sync under the router.
  *
- * The core URL read/write logic lives in FilterService (which already syncs state
- * to/from window.location.hash on every filter change via debounced subscription).
- * This service wraps that behaviour and adds the clipboard/share surface.
+ * Filter state used to live in the raw location hash; it now lives in router
+ * query params inside the hash URL (e.g. `#/matrix?heat=kev&grp=G0016`), so
+ * share links keep working (via the legacy-hash shim in main.ts) and query
+ * params survive workspace navigation (`queryParamsHandling: 'preserve'`).
+ *
+ * Reader: applies query params once, on the router's first NavigationEnd.
+ * Writer: re-serializes on every (debounced) filter change with
+ * `replaceUrl: true`, so filter edits never spam browser history. A
+ * last-written guard prevents reader/writer feedback loops.
  */
 @Injectable({ providedIn: 'root' })
 export class UrlStateService {
-  constructor(private filterService: FilterService) {}
+  private readonly router = inject(Router);
+  private readonly filterService = inject(FilterService);
 
-  /**
-   * Restore state from the current URL hash.
-   * FilterService already calls readUrlState() in its own constructor, so this is
-   * a no-op at runtime.  It is kept here so AppComponent can call it explicitly
-   * at ngOnInit (belt-and-suspenders, and for clarity in the call-site).
-   */
-  restoreFromUrl(): void {
-    // FilterService handles this in its constructor via readUrlState().
-    // Nothing additional is needed here.
+  private lastWritten: string | null = null;
+  private started = false;
+
+  /** Called once from AppComponent.ngOnInit. */
+  init(): void {
+    if (this.started) return;
+    this.started = true;
+
+    // Reader: apply the initial URL's query params (deep links, legacy links).
+    this.router.events
+      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd), take(1))
+      .subscribe(() => {
+        const queryParams = this.router.parseUrl(this.router.url).queryParams;
+        const params = new URLSearchParams();
+        for (const [key, value] of Object.entries(queryParams)) {
+          if (typeof value === 'string') params.set(key, value);
+        }
+        if ([...params.keys()].length) {
+          this.filterService.applyUrlState(params);
+        }
+      });
+
+    // Writer: serialize filter state into query params on every change.
+    this.filterService.urlRelevantState$.subscribe(() => {
+      const params = this.filterService.serializeUrlState();
+      const serialized = new URLSearchParams(params).toString();
+      if (serialized === this.lastWritten) return;
+      this.lastWritten = serialized;
+      const tree = this.router.parseUrl(this.router.url);
+      tree.queryParams = params;
+      void this.router.navigateByUrl(tree, { replaceUrl: true });
+    });
   }
 
-  /**
-   * Trigger a URL sync on the next tick.  FilterService already debounce-syncs on
-   * every observable change, so in practice callers don't need to call this directly.
-   */
-  syncToUrl(): void {
-    // FilterService owns the authoritative sync loop.
-    // This method exists as an explicit escape-hatch if needed.
-  }
-
-  /**
-   * Return the full current URL (including whatever hash FilterService has written).
-   */
+  /** Full current URL — the hash already carries route + filter state. */
   getShareUrl(): string {
     return window.location.href;
   }
 
-  /**
-   * Remove the URL hash entirely (clears all shareable state from the address bar).
-   */
+  /** Clear all shareable filter state, keeping the current route path. */
   clearUrl(): void {
-    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    const tree = this.router.parseUrl(this.router.url);
+    tree.queryParams = {};
+    this.lastWritten = '';
+    void this.router.navigateByUrl(tree, { replaceUrl: true });
   }
 }

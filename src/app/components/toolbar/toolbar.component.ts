@@ -17,6 +17,8 @@ import { Mitigation } from '../../models/mitigation';
 import { Technique } from '../../models/technique';
 import { FilterService, SortMode, SearchScope } from '../../services/filter.service';
 import { DataService, DataSourceMode, AttackDomain } from '../../services/data.service';
+import { MatrixControlService } from '../../services/matrix-control.service';
+import { ExportActionsService } from '../../services/export-actions.service';
 import { ViewMode } from '../../services/view-mode.service';
 import { SavedViewsService, SavedView } from '../../services/saved-views.service';
 import { AttackCveService } from '../../services/attack-cve.service';
@@ -76,23 +78,8 @@ export class ToolbarComponent implements OnInit, OnDestroy {
     }
   }
   @Output() domainChange = new EventEmitter<AttackDomain>();
-  @Output() expandAll = new EventEmitter<void>();
-  @Output() collapseAll = new EventEmitter<void>();
-  @Output() toggleMultiSelect = new EventEmitter<void>();
-  @Input() multiSelectMode = false;
-  @Output() exportCsv = new EventEmitter<void>();
-  @Output() exportTacticCsv = new EventEmitter<void>();
-  @Output() exportImplPlan = new EventEmitter<void>();
-  @Output() exportState = new EventEmitter<void>();
-  @Output() importState = new EventEmitter<void>();
-  @Output() exportNavigatorLayer = new EventEmitter<void>();
-  @Output() importNavigatorLayer = new EventEmitter<void>();
-  @Output() openNavigator = new EventEmitter<void>();
-  @Output() exportFullReport = new EventEmitter<void>();
-  @Output() exportMatrixPng = new EventEmitter<void>();
-  @Output() exportHtmlReport = new EventEmitter<void>();
-  @Output() exportPdf = new EventEmitter<void>();
-  @Output() exportXlsx = new EventEmitter<void>();
+  /** Matrix subtechnique/multi-select state now flows through MatrixControlService. */
+  multiSelectMode = false;
   @Output() showGapView = new EventEmitter<void>();
   @Output() toggleDark = new EventEmitter<void>();
   @Output() copyShareLink = new EventEmitter<void>();
@@ -153,7 +140,21 @@ export class ToolbarComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private savedViewsService: SavedViewsService,
     private attackCveService: AttackCveService,
+    private matrixControl: MatrixControlService,
+    protected exportActions: ExportActionsService,
   ) {}
+
+  onExpandAll(): void {
+    this.matrixControl.expandAll();
+  }
+
+  onCollapseAll(): void {
+    this.matrixControl.collapseAll();
+  }
+
+  onToggleMultiSelect(): void {
+    this.matrixControl.toggleMultiSelect();
+  }
 
   ngOnInit(): void {
     this.subs.add(
@@ -190,6 +191,7 @@ export class ToolbarComponent implements OnInit, OnDestroy {
     }));
     this.subs.add(this.filterService.activeDataSource$.subscribe((ds) => { this.selectedDataSource = ds ?? ''; this.cdr.markForCheck(); }));
     this.subs.add(this.savedViewsService.views$.subscribe(views => { this.views = views; this.cdr.markForCheck(); }));
+    this.subs.add(this.matrixControl.multiSelectMode$.subscribe((v) => { this.multiSelectMode = v; this.cdr.markForCheck(); }));
   }
 
   ngOnDestroy(): void { this.subs.unsubscribe(); }

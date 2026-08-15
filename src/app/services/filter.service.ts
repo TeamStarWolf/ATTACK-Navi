@@ -1,9 +1,10 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, Subscription, combineLatest, map, debounceTime, filter, take } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest, map, debounceTime, filter, take } from 'rxjs';
 import { Technique } from '../models/technique';
 import { Mitigation } from '../models/mitigation';
+import { Domain } from '../models/domain';
 import { DataService } from './data.service';
 
 export type SortMode = 'alpha' | 'coverage';
@@ -78,7 +79,9 @@ export class FilterService {
   private platformMultiSubject = new BehaviorSubject<Set<string>>(new Set());
   platformMulti$: Observable<Set<string>> = this.platformMultiSubject.asObservable();
 
-  private urlSub: Subscription | null = null;
+  /** Debounced signal that URL-relevant state changed (consumed by UrlStateService). */
+  urlRelevantState$!: Observable<void>;
+  private domainSnapshot: Domain | null = null;
 
   constructor(private dataService: DataService) {
     this.highlightedTechniqueIds$ = combineLatest([
@@ -194,9 +197,12 @@ export class FilterService {
       }),
     );
 
-    this.readUrlState();
+    this.dataService.domain$.subscribe((d) => (this.domainSnapshot = d));
 
-    this.urlSub = combineLatest([
+    // Emits (debounced) whenever any URL-relevant filter state changes.
+    // UrlStateService subscribes to this and serializes into router query
+    // params — FilterService itself has no Router dependency.
+    this.urlRelevantState$ = combineLatest([
       this.activeMitigationFiltersSubject,
       this.techniqueQuerySubject,
       this.platformFilterSubject,
@@ -212,16 +218,15 @@ export class FilterService {
       this.techniqueSearchSubject,
       this.dataService.domain$,
       this.platformMultiSubject,
-    ]).pipe(debounceTime(300)).subscribe(([mits, tq, pf, dim, ds, groupIds, swIds, campIds, heat, impl, scope, sfm, tsearch, domain, platMulti]) => {
-      this.writeUrlState(mits, tq, pf, dim, ds, groupIds, swIds, campIds, heat, impl, scope, sfm, tsearch, domain, platMulti);
-    });
+    ]).pipe(debounceTime(300), map(() => void 0));
   }
 
-  private readUrlState(): void {
-    const hash = window.location.hash.slice(1);
-    if (!hash) return;
+  /**
+   * Apply shareable state from URL query params (formerly the raw location
+   * hash — see UrlStateService and the legacy-hash shim in main.ts).
+   */
+  applyUrlState(params: URLSearchParams): void {
     try {
-      const params = new URLSearchParams(hash);
       const tq = params.get('tq') ?? '';
       if (tq) this.techniqueQuerySubject.next(tq);
       const pf = params.get('pf');
@@ -278,38 +283,53 @@ export class FilterService {
     } catch { /* ignore parse errors */ }
   }
 
-  private writeUrlState(
-    mits: Mitigation[], tq: string, pf: string | null, dim: boolean,
-    ds: string | null, groupIds: Set<string>, swIds: Set<string>, campIds: Set<string>,
-    heat: HeatmapMode, impl: string | null, scope: SearchScope, sfm: boolean, tsearch: string, domain: any,
-    platMulti: Set<string> = new Set(),
-  ): void {
-    const params = new URLSearchParams();
-    if (mits.length) params.set('mit', mits.map((m) => m.attackId).join(','));
-    if (tq.trim()) params.set('tq', tq.trim());
-    if (pf) params.set('pf', pf);
-    if (platMulti.size) params.set('plat', [...platMulti].join(','));
-    if (dim) params.set('dim', '1');
-    if (sfm) params.set('sfm', '1');
-    if (ds) params.set('ds', ds);
-    if (heat !== 'coverage') params.set('heat', heat);
-    if (impl) params.set('impl', impl);
-    if (scope !== 'name') params.set('scope', scope);
-    if (tsearch.trim()) params.set('tsearch', tsearch.trim());
-    if (domain && groupIds.size) {
-      const ids = [...groupIds].map((id) => domain.groups.find((g: any) => g.id === id)?.attackId).filter(Boolean);
-      if (ids.length) params.set('grp', ids.join(','));
+  /**
+   * Serialize the current shareable filter state to URL query params.
+   * Same keys as the pre-router hash format (mit, tq, pf, plat, dim, sfm,
+   * ds, heat, impl, scope, tsearch, grp, sw, camp) so old links stay valid
+   * through the legacy-hash shim.
+   */
+  serializeUrlState(): Record<string, string> {
+    const domain = this.domainSnapshot;
+    const params: Record<string, string> = {};
+    const mits = this.activeMitigationFiltersSubject.value;
+    if (mits.length) params['mit'] = mits.map((m) => m.attackId).join(',');
+    const tq = this.techniqueQuerySubject.value;
+    if (tq.trim()) params['tq'] = tq.trim();
+    const pf = this.platformFilterSubject.value;
+    if (pf) params['pf'] = pf;
+    const platMulti = this.platformMultiSubject.value;
+    if (platMulti.size) params['plat'] = [...platMulti].join(',');
+    if (this.dimUncoveredSubject.value) params['dim'] = '1';
+    if (this.searchFilterModeSubject.value) params['sfm'] = '1';
+    const ds = this.activeDataSourceSubject.value;
+    if (ds) params['ds'] = ds;
+    const heat = this.heatmapModeSubject.value;
+    if (heat !== 'coverage') params['heat'] = heat;
+    const impl = this.implStatusFilterSubject.value;
+    if (impl) params['impl'] = impl;
+    const scope = this.searchScopeSubject.value;
+    if (scope !== 'name') params['scope'] = scope;
+    const tsearch = this.techniqueSearchSubject.value;
+    if (tsearch.trim()) params['tsearch'] = tsearch.trim();
+    if (domain) {
+      const groupIds = this.activeThreatGroupIdsSubject.value;
+      if (groupIds.size) {
+        const ids = [...groupIds].map((id) => domain.groups.find((g) => g.id === id)?.attackId).filter(Boolean);
+        if (ids.length) params['grp'] = ids.join(',');
+      }
+      const swIds = this.activeSoftwareIdsSubject.value;
+      if (swIds.size) {
+        const ids = [...swIds].map((id) => domain.software.find((s) => s.id === id)?.attackId).filter(Boolean);
+        if (ids.length) params['sw'] = ids.join(',');
+      }
+      const campIds = this.activeCampaignIdsSubject.value;
+      if (campIds.size) {
+        const ids = [...campIds].map((id) => domain.campaigns.find((c) => c.id === id)?.attackId).filter(Boolean);
+        if (ids.length) params['camp'] = ids.join(',');
+      }
     }
-    if (domain && swIds.size) {
-      const ids = [...swIds].map((id) => domain.software.find((s: any) => s.id === id)?.attackId).filter(Boolean);
-      if (ids.length) params.set('sw', ids.join(','));
-    }
-    if (domain && campIds.size) {
-      const ids = [...campIds].map((id) => domain.campaigns.find((c: any) => c.id === id)?.attackId).filter(Boolean);
-      if (ids.length) params.set('camp', ids.join(','));
-    }
-    const hash = params.toString();
-    history.replaceState(null, '', hash ? '#' + hash : window.location.pathname + window.location.search);
+    return params;
   }
 
   selectTechnique(technique: Technique | null): void {
