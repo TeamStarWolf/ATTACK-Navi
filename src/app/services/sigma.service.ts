@@ -3,7 +3,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
-import { catchError, map, switchMap } from 'rxjs/operators';
+import { catchError, map, shareReplay, switchMap } from 'rxjs/operators';
 import { Technique } from '../models/technique';
 
 export interface SigmaRule {
@@ -143,20 +143,27 @@ export class SigmaService {
   }
 
   /**
-   * Fetch actual Sigma rule details for a technique from the SigmaHQ GitHub repo.
-   * Searches the GitHub code API for YAML files mentioning the technique tag,
-   * then fetches each raw file to extract YAML front matter fields.
+   * Fetch actual Sigma rule details for a technique from the community
+   * SIGMA-detection-rules repo (files are named by ATT&CK technique id).
+   * The GitHub code-search API used previously requires authentication and
+   * always returns 401 from a browser, so it never produced results.
    * Results are cached per attackId.
    */
   fetchRulesForTechnique(attackId: string): Observable<SigmaRuleDetail[]> {
     const cached = this.ruleDetailCache.get(attackId);
     if (cached) return of(cached);
 
-    const tag = `attack.${attackId.toLowerCase()}`;
-    const url = `https://api.github.com/search/code?q=${encodeURIComponent(tag)}+repo:SigmaHQ/sigma+extension:yml&per_page=10`;
-
-    return this.http.get<{ items: Array<{ path: string; html_url: string }> }>(url).pipe(
-      map(resp => (resp.items ?? []).slice(0, 10)),
+    return this.getCommunityRulePaths().pipe(
+      map(paths => {
+        const needle = attackId.toLowerCase();
+        return paths
+          .filter(p => p.toLowerCase().includes(needle))
+          .slice(0, 10)
+          .map(path => ({
+            path,
+            html_url: `https://github.com/mdecrevoisier/SIGMA-detection-rules/blob/main/${path}`,
+          }));
+      }),
       switchMap(items => {
         if (items.length === 0) {
           this.ruleDetailCache.set(attackId, []);
@@ -164,7 +171,7 @@ export class SigmaService {
         }
         // Fetch raw content for each file and extract front matter
         const fetches = items.map(item => {
-          const rawUrl = `https://raw.githubusercontent.com/SigmaHQ/sigma/main/${item.path}`;
+          const rawUrl = `https://raw.githubusercontent.com/mdecrevoisier/SIGMA-detection-rules/main/${item.path}`;
           return this.http.get(rawUrl, { responseType: 'text' }).pipe(
             map(yaml => this.parseYamlFrontMatter(yaml, item.html_url)),
             catchError(() => of(null as SigmaRuleDetail | null)),
@@ -258,31 +265,44 @@ export class SigmaService {
     return direct + sub;
   }
 
+  private communityRulePaths$?: Observable<string[]>;
+
+  /** Cached list of .yml rule paths in mdecrevoisier/SIGMA-detection-rules. */
+  private getCommunityRulePaths(): Observable<string[]> {
+    if (!this.communityRulePaths$) {
+      this.communityRulePaths$ = this.http
+        .get<any>('https://api.github.com/repos/mdecrevoisier/SIGMA-detection-rules/git/trees/main?recursive=1')
+        .pipe(
+          map((tree: any) =>
+            ((tree?.tree ?? []) as Array<{ type: string; path?: string }>)
+              .filter(item => item.type === 'blob' && !!item.path?.endsWith('.yml'))
+              .map(item => item.path as string),
+          ),
+          catchError(() => of([] as string[])),
+          shareReplay(1),
+        );
+    }
+    return this.communityRulePaths$;
+  }
+
   /** Load community Sigma rules from mdecrevoisier/SIGMA-detection-rules. */
   loadCommunityRules(): void {
     if (this.communityLoadedSubject.value) return;
-    this.http
-      .get<any>('https://api.github.com/repos/mdecrevoisier/SIGMA-detection-rules/git/trees/main?recursive=1')
-      .pipe(catchError(() => of(null)))
-      .subscribe((tree: any) => {
-        if (tree?.tree) {
-          const techRegex = /T(\d{4}(?:\.\d{3})?)/;
-          let total = 0;
-          for (const item of tree.tree) {
-            if (item.type === 'blob' && item.path?.endsWith('.yml')) {
-              const match = item.path.match(techRegex);
-              if (match) {
-                const id = 'T' + match[1];
-                this.communityCounts.set(id, (this.communityCounts.get(id) ?? 0) + 1);
-                total++;
-              }
-            }
-          }
-          this.communityTotalSubject.next(total);
-          this.communityCoveredSubject.next(this.communityCounts.size);
+    this.getCommunityRulePaths().subscribe(paths => {
+      const techRegex = /T(\d{4}(?:\.\d{3})?)/;
+      let total = 0;
+      for (const path of paths) {
+        const match = path.match(techRegex);
+        if (match) {
+          const id = 'T' + match[1];
+          this.communityCounts.set(id, (this.communityCounts.get(id) ?? 0) + 1);
+          total++;
         }
-        this.communityLoadedSubject.next(true);
-      });
+      }
+      this.communityTotalSubject.next(total);
+      this.communityCoveredSubject.next(this.communityCounts.size);
+      this.communityLoadedSubject.next(true);
+    });
   }
 
   /** Community rule count for a technique. */

@@ -68,10 +68,12 @@ export class NvdBulkService {
   }
 
   private fetchAll(): void {
+    // NVD 2.0 requires an ISO-8601 offset (Z) on date params and rejects
+    // ranges over 120 days — start-of-day-119 → end-of-day-today stays under it.
     const now = new Date();
-    const past = new Date(now.getTime() - 120 * 24 * 60 * 60 * 1000);
-    const startDate = past.toISOString().slice(0, 10) + 'T00:00:00.000';
-    const endDate = now.toISOString().slice(0, 10) + 'T23:59:59.999';
+    const past = new Date(now.getTime() - 119 * 24 * 60 * 60 * 1000);
+    const startDate = past.toISOString().slice(0, 10) + 'T00:00:00.000Z';
+    const endDate = now.toISOString().slice(0, 10) + 'T23:59:59.999Z';
     this.fetchPage(0, startDate, endDate);
   }
 

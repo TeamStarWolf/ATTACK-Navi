@@ -757,7 +757,12 @@ export function mapCwesToAttackIds(cwes: string[]): string[] {
 @Injectable({ providedIn: 'root' })
 export class CveService {
   private readonly NVD_API = 'https://services.nvd.nist.gov/rest/json/cves/2.0';
-  private readonly KEV_URL = 'https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json';
+  // CISA's official GitHub mirror of the KEV catalog (updated with the feed).
+  // raw.githubusercontent.com sends Access-Control-Allow-Origin: * — the
+  // cisa.gov feed does not, so it is only a fallback (works via extensions/
+  // proxies but is CORS-blocked in a plain browser context).
+  private readonly KEV_URL = 'https://raw.githubusercontent.com/cisagov/kev-data/develop/known_exploited_vulnerabilities.json';
+  private readonly KEV_FALLBACK_URL = 'https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json';
 
   private searchSub?: Subscription;
   private kevLoading = false;
@@ -802,13 +807,10 @@ export class CveService {
   loadKev(): void {
     if (this.kevLoadedSubject.value || this.kevLoading) return;
     this.kevLoading = true;
-    // Try direct CISA fetch first, but fail over quickly if it hangs.
+    // GitHub mirror first (CORS-safe), direct CISA feed as fallback.
     this.http.get<any>(this.KEV_URL).pipe(
-      timeout(6000),
-      catchError(() => {
-        const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(this.KEV_URL)}`;
-        return this.http.get<any>(proxyUrl).pipe(timeout(8000));
-      }),
+      timeout(10000),
+      catchError(() => this.http.get<any>(this.KEV_FALLBACK_URL).pipe(timeout(8000))),
       catchError(() => of({ vulnerabilities: [] }))
     ).subscribe((data: any) => {
       const vulns: KevEntry[] = data.vulnerabilities ?? [];
