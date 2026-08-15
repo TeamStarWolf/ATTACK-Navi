@@ -21,6 +21,7 @@ import { Domain, TacticColumn } from '../../models/domain';
 import { Tactic } from '../../models/tactic';
 import { Technique } from '../../models/technique';
 import { FilterService, SortMode, HeatmapMode } from '../../services/filter.service';
+import { MatrixControlService } from '../../services/matrix-control.service';
 import { ImplementationService, ImplStatus } from '../../services/implementation.service';
 import { CveService } from '../../services/cve.service';
 import { ControlsService } from '../../services/controls.service';
@@ -288,6 +289,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     private pocExploitService: PocExploitService,
     private cdr: ChangeDetectorRef,
     private el: ElementRef,
+    private matrixControl: MatrixControlService,
   ) {}
 
   private refreshActiveHeatmap(...modes: HeatmapMode[]): void {
@@ -421,6 +423,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.matrixControl.register(this);
     this.el.nativeElement.addEventListener('wheel', this.wheelListener, { passive: false });
 
     this.subs.add(
@@ -1082,6 +1085,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.matrixControl.unregister(this);
     this.el.nativeElement.removeEventListener('wheel', this.wheelListener);
     this.subs.unsubscribe();
   }
@@ -1252,6 +1256,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
   toggleMultiSelectMode(): void {
     this.multiSelectMode = !this.multiSelectMode;
     if (!this.multiSelectMode) this.selectedTechIds.clear();
+    this.matrixControl.notifyMultiSelectMode(this.multiSelectMode);
     this.cdr.markForCheck();
   }
 
@@ -1293,7 +1298,10 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
 
   clearSelection(): void {
     this.selectedTechIds.clear();
-    if (this.multiSelectMode) this.multiSelectMode = false;
+    if (this.multiSelectMode) {
+      this.multiSelectMode = false;
+      this.matrixControl.notifyMultiSelectMode(false);
+    }
     this.cdr.markForCheck();
   }
 

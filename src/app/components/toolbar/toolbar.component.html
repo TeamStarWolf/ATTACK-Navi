@@ -230,14 +230,14 @@
               👁 {{ dimUncovered ? 'Show all' : 'Dim uncovered' }}
             </button>
             <button class="menu-action" (click)="showGapView.emit(); showViewMenu = false">⚠ Gap view</button>
-            <button class="menu-action" [class.active]="multiSelectMode" (click)="toggleMultiSelect.emit(); showViewMenu = false">
+            <button class="menu-action" [class.active]="multiSelectMode" (click)="onToggleMultiSelect(); showViewMenu = false">
               ☑ {{ multiSelectMode ? 'Exit multi-select' : 'Multi-select' }}
             </button>
           </div>
           <div class="views-menu-header" style="margin-top:8px">Subtechniques</div>
           <div class="view-actions">
-            <button class="menu-action" (click)="expandAll.emit(); showViewMenu = false">⊞ Expand all</button>
-            <button class="menu-action" (click)="collapseAll.emit(); showViewMenu = false">⊟ Collapse all</button>
+            <button class="menu-action" (click)="onExpandAll(); showViewMenu = false">⊞ Expand all</button>
+            <button class="menu-action" (click)="onCollapseAll(); showViewMenu = false">⊟ Collapse all</button>
           </div>
         </div>
       }
@@ -255,20 +255,20 @@
       @if (showExportMenu) {
         <div class="views-menu export-menu" (click)="$event.stopPropagation()">
           <div class="views-menu-header">Export & Import</div>
-          <button class="menu-action" (click)="exportCsv.emit(); showExportMenu = false">⬇ Coverage CSV</button>
-          <button class="menu-action" (click)="exportTacticCsv.emit(); showExportMenu = false">⬇ Tactic Summary</button>
-          <button class="menu-action" (click)="exportImplPlan.emit(); showExportMenu = false">⬇ Implementation Plan</button>
-          <button class="menu-action" (click)="exportFullReport.emit(); showExportMenu = false">⬇ Full Report</button>
-          <button class="menu-action" (click)="exportMatrixPng.emit(); showExportMenu = false">📷 Matrix PNG</button>
-          <button class="menu-action" (click)="exportHtmlReport.emit(); showExportMenu = false">📊 HTML Report</button>
-          <button class="menu-action" (click)="exportPdf.emit(); showExportMenu = false">📄 PDF Report</button>
-          <button class="menu-action" (click)="exportXlsx.emit(); showExportMenu = false">📗 Excel Workbook</button>
+          <button class="menu-action" (click)="exportActions.exportCsv(); showExportMenu = false">⬇ Coverage CSV</button>
+          <button class="menu-action" (click)="exportActions.exportTacticCsv(); showExportMenu = false">⬇ Tactic Summary</button>
+          <button class="menu-action" (click)="exportActions.exportImplPlanCsv(); showExportMenu = false">⬇ Implementation Plan</button>
+          <button class="menu-action" (click)="exportActions.exportFullReport(); showExportMenu = false">⬇ Full Report</button>
+          <button class="menu-action" (click)="exportActions.exportMatrixPng(); showExportMenu = false">📷 Matrix PNG</button>
+          <button class="menu-action" (click)="exportActions.exportHtmlCoverageReport(); showExportMenu = false">📊 HTML Report</button>
+          <button class="menu-action" (click)="exportActions.exportPdf(); showExportMenu = false">📄 PDF Report</button>
+          <button class="menu-action" (click)="exportActions.exportXlsxWorkbook(); showExportMenu = false">📗 Excel Workbook</button>
           <button class="menu-action" (click)="printPage(); showExportMenu = false">🖨 Print Matrix</button>
-          <button class="menu-action" (click)="exportNavigatorLayer.emit(); showExportMenu = false">⬇ Navigator Layer</button>
-          <button class="menu-action" (click)="openNavigator.emit(); showExportMenu = false">🧭 Open In Navigator</button>
-          <button class="menu-action" (click)="importNavigatorLayer.emit(); showExportMenu = false">⬆ Import Navigator Layer</button>
-          <button class="menu-action" (click)="exportState.emit(); showExportMenu = false">⬇ Export State</button>
-          <button class="menu-action" (click)="importState.emit(); showExportMenu = false">⬆ Import State</button>
+          <button class="menu-action" (click)="exportActions.exportNavigatorLayer(); showExportMenu = false">⬇ Navigator Layer</button>
+          <button class="menu-action" (click)="exportActions.openInNavigator(); showExportMenu = false">🧭 Open In Navigator</button>
+          <button class="menu-action" (click)="exportActions.importNavigatorLayer(); showExportMenu = false">⬆ Import Navigator Layer</button>
+          <button class="menu-action" (click)="exportActions.exportStateJson(); showExportMenu = false">⬇ Export State</button>
+          <button class="menu-action" (click)="exportActions.importStateJson(); showExportMenu = false">⬆ Import State</button>
         </div>
       }
     </div>

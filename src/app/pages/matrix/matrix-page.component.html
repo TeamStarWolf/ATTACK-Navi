@@ -1,0 +1,55 @@
+<!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+     https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
+<div class="matrix-region">
+  <div class="context-bar">
+    <app-legend />
+    <app-quick-filters />
+  </div>
+  <app-filter-chips />
+
+  @if (domain) {
+    <div class="stats-health-row">
+      <app-stats-bar [domain]="domain" (tacticClicked)="scrollToTactic($event)" />
+      <app-data-health />
+    </div>
+  }
+
+  <div class="matrix-scroll">
+    @if (loading && !domain) {
+      <div class="state-screen">
+        <div class="loader-spinner"></div>
+        <p class="state-msg">Loading ATT&amp;CK {{ currentDomain | titlecase }} data…</p>
+        <p class="state-hint">Fetching STIX bundle from MITRE — this may take a moment.</p>
+      </div>
+    } @else if (error && !domain) {
+      <div class="state-screen">
+        <div class="error-icon">⚠️</div>
+        <p class="state-msg">Failed to load ATT&amp;CK data</p>
+        <p class="state-hint">{{ error }}</p>
+      </div>
+    } @else if (domain) {
+      <app-matrix
+        #matrixRef
+        [domain]="domain"
+        (focusSearch)="focusTechniqueSearch()"
+        (tacticClicked)="onTacticClick($event)"
+      />
+    }
+  </div>
+</div>
+
+<!-- Tactic summary popover (matrix-scoped) -->
+<app-tactic-summary />
+
+@if (selectedTechniqueCount > 0) {
+  <div class="bulk-action-bar">
+    <span class="bulk-count">{{ selectedTechniqueCount }} selected</span>
+    <div class="bulk-actions">
+      <button (click)="bulkAddToWatchlist()">🔖 Watch All</button>
+      <button (click)="bulkSetStatus('implemented')">✅ Mark Implemented</button>
+      <button (click)="bulkSetStatus('planned')">📋 Mark Planned</button>
+      <button (click)="bulkAddTag()">🏷️ Tag All</button>
+      <button (click)="clearMultiSelect()">✕ Clear</button>
+    </div>
+  </div>
+}
