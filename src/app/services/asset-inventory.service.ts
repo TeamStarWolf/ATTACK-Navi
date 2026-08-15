@@ -360,9 +360,13 @@ export class AssetInventoryService {
   private findTechniquesForSoftware(keyword: string, result: Set<string>): void {
     const lower = keyword.toLowerCase();
 
-    // Heuristic mapping: software name -> commonly exploited ATT&CK techniques.
-    // This is keyword-based and approximate. For precise CVE-to-asset matching,
-    // import a vulnerability scan report with CPE data.
+    // PROVENANCE: curated editorial heuristic, NOT an authoritative mapping.
+    // These are hand-picked "software X is commonly exploited via technique Y"
+    // associations (all anchored on directionally-correct entries such as
+    // T1190 Exploit Public-Facing Application for server software). They drive
+    // only the approximate "my-exposure" heatmap; the per-asset CVE detail view
+    // (getExposureDetails) uses real CVE->CAPEC->ATT&CK mappings instead. For
+    // precise results, import a vulnerability scan with CPE data.
     const softwareTechMap: Record<string, string[]> = {
       // Web servers
       'log4j': ['T1190', 'T1059', 'T1059.004', 'T1105', 'T1071.001'],
