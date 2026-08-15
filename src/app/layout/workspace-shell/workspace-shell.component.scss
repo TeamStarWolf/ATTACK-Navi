@@ -1,0 +1,9 @@
+/* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+   https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
+   Chrome classes (.workspace-shell, .workspace-header, .ws-tab, …) are global
+   in src/styles/_workspace.scss so converted panels can share them. */
+:host {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
