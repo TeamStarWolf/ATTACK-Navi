@@ -1,4 +1,4 @@
-// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+﻿// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import {
   Component,
@@ -9,7 +9,6 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subscription, filter, take } from 'rxjs';
-import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
 import { Tactic } from '../../models/tactic';
 
@@ -34,7 +33,6 @@ export interface TacticStat {
   styleUrl: './killchain-panel.component.scss',
 })
 export class KillchainPanelComponent implements OnInit, OnDestroy {
-  visible = false;
   tacticStats: TacticStat[] = [];
   selectedTacticId: string | null = null;
   hoveredTacticId: string | null = null;
@@ -42,21 +40,12 @@ export class KillchainPanelComponent implements OnInit, OnDestroy {
   private subs = new Subscription();
 
   constructor(
-    private filterService: FilterService,
     private dataService: DataService,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(
-      this.filterService.activePanel$.subscribe(p => {
-        this.visible = p === 'killchain';
-        if (this.visible && this.tacticStats.length === 0) {
-          this.buildStats();
-        }
-        this.cdr.markForCheck();
-      }),
-    );
+    this.buildStats();
   }
 
   ngOnDestroy(): void {
@@ -130,10 +119,6 @@ export class KillchainPanelComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  close(): void {
-    this.filterService.setActivePanel(null);
-  }
-
   coverageClass(pct: number): string {
     if (pct >= 75) return 'coverage-green';
     if (pct >= 50) return 'coverage-yellow';
@@ -170,7 +155,7 @@ export class KillchainPanelComponent implements OnInit, OnDestroy {
   }
 
   get totalThreatGroups(): number {
-    // Unique across all tactics — need to re-derive from domain
+    // Unique across all tactics â€” need to re-derive from domain
     // For summary we use max of all distinct groups seen in tacticStats as a proxy
     // (could double count across tactics, but this is a display metric)
     const seen = new Set<string>();

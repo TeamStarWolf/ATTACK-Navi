@@ -26,8 +26,8 @@ describe('RiskMatrixPanelComponent', () => {
     fixture.detectChanges();
   });
 
-  it('is created and starts hidden', () => {
+  it('is created on the matrix tab', () => {
     expect(component).toBeTruthy();
-    expect(component.visible).toBe(false);
+    expect(component.activeTab).toBe('matrix');
   });
 });

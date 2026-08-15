@@ -1,12 +1,12 @@
 /* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
    https://github.com/TeamStarWolf/ATTACK-Navi - MIT License */
 .killchain-overlay {
-  position: fixed;
-  inset: 0;
   background: #070d14;
-  z-index: 1000;
+  border: 1px solid #1a3448;
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 /* ── Header ── */

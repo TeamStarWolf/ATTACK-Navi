@@ -12,6 +12,7 @@ import { FormsModule } from '@angular/forms';
 import { Subscription, combineLatest } from 'rxjs';
 import { Mitigation } from '../../models/mitigation';
 import { FilterService } from '../../services/filter.service';
+import { PanelNavService } from '../../services/panel-nav.service';
 import { DataService } from '../../services/data.service';
 import { ImplementationService, ImplStatus, IMPL_STATUS_LABELS, IMPL_STATUS_COLORS } from '../../services/implementation.service';
 import { CveService } from '../../services/cve.service';
@@ -43,7 +44,6 @@ interface PriorityRow {
   styleUrl: './priority-panel.component.scss',
 })
 export class PriorityPanelComponent implements OnInit, OnDestroy {
-  visible = false;
   rows: PriorityRow[] = [];
   sortKey: 'unique' | 'total' | 'exposure' | 'kev' | 'atomic' | 'sigma' | 'unified' | 'nist' = 'unique';
   searchText = '';
@@ -57,6 +57,7 @@ export class PriorityPanelComponent implements OnInit, OnDestroy {
 
   constructor(
     private filterService: FilterService,
+    private panelNav: PanelNavService,
     private dataService: DataService,
     private implService: ImplementationService,
     private cveService: CveService,
@@ -134,13 +135,6 @@ export class PriorityPanelComponent implements OnInit, OnDestroy {
         });
 
         this.applyFilter();
-        this.cdr.markForCheck();
-      }),
-    );
-
-    this.subs.add(
-      this.filterService.activePanel$.subscribe((panel) => {
-        this.visible = panel === 'priority';
         this.cdr.markForCheck();
       }),
     );
@@ -226,10 +220,7 @@ export class PriorityPanelComponent implements OnInit, OnDestroy {
 
   filterByMitigation(row: PriorityRow): void {
     this.filterService.filterByMitigation(row.mitigation);
-    this.filterService.setActivePanel(null);
-  }
-
-  close(): void {
-    this.filterService.setActivePanel(null);
+    // Applying a matrix filter — show it on the matrix.
+    this.panelNav.open('matrix');
   }
 }

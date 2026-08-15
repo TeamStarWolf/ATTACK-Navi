@@ -20,5 +20,13 @@ export const routes: Routes = [
     path: 'detect',
     loadChildren: () => import('./pages/detect/detect.routes').then((m) => m.DETECT_ROUTES),
   },
+  {
+    path: 'exposure',
+    loadChildren: () => import('./pages/exposure/exposure.routes').then((m) => m.EXPOSURE_ROUTES),
+  },
+  {
+    path: 'dashboard',
+    loadChildren: () => import('./pages/dashboard/dashboard.routes').then((m) => m.DASHBOARD_ROUTES),
+  },
   { path: '**', redirectTo: 'matrix' },
 ];

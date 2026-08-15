@@ -1,13 +1,10 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-@if (open) {
-  <div class="overlay" (click)="close()">
-    <div class="panel" role="dialog" aria-modal="true" aria-label="Analytics Dashboard" (click)="$event.stopPropagation()">
+<section class="page-panel page-panel--full panel" aria-label="Analytics Dashboard">
 
       <!-- Header -->
       <div class="panel-header">
         <span class="panel-title">📈 Analytics Dashboard</span>
-        <button class="close-btn" (click)="close()" title="Close">✕</button>
       </div>
 
       @if (!domain) {
@@ -234,6 +231,4 @@
         </div>
 
       }
-    </div>
-  </div>
-}
+</section>

@@ -1,8 +1,6 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-@if (visible) {
-  <div class="gap-panel-overlay" (click)="close()">
-    <div class="gap-panel" role="dialog" aria-modal="true" aria-label="Detection Gap Analysis" (click)="$event.stopPropagation()">
+<section class="page-panel page-panel--full gap-panel" aria-label="Detection Gap Analysis">
       <!-- Header -->
       <div class="gap-header">
         <div class="header-left">
@@ -20,7 +18,6 @@
             <button class="btn btn-sm" (click)="exportPdf()" title="Opens your browser's print dialog. Choose 'Save as PDF' to download.">Print / Save as PDF</button>
             <button class="btn btn-sm" (click)="copyToClipboard()" title="Copy to Clipboard">Copy</button>
           }
-          <button class="btn-close" (click)="close()" aria-label="Close">&times;</button>
         </div>
       </div>
 
@@ -269,6 +266,4 @@
           </div>
         </div>
       }
-    </div>
-  </div>
-}
+</section>

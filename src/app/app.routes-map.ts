@@ -18,6 +18,17 @@ export const PANEL_ROUTE_MAP: Readonly<Partial<Record<string, string[]>>> = {
   validation: ['/detect', 'validation'],
   datasources: ['/detect', 'data-sources'],
   purple: ['/detect', 'purple-team'],
+  // P1b: Exposure workspace
+  cve: ['/exposure', 'cve'],
+  'risk-matrix': ['/exposure', 'risk'],
+  killchain: ['/exposure', 'kill-chain'],
+  'technique-graph': ['/exposure', 'graph'],
+  'gap-analysis': ['/exposure', 'gap-analysis'],
+  priority: ['/exposure', 'priority'],
+  whatif: ['/exposure', 'what-if'],
+  // P1b: Dashboard workspace
+  dashboard: ['/dashboard', 'overview'],
+  analytics: ['/dashboard', 'analytics'],
 };
 
 export function routeForPanel(id: string): string[] | undefined {

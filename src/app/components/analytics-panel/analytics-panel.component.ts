@@ -10,6 +10,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
+import { PanelNavService } from '../../services/panel-nav.service';
 import { DataService } from '../../services/data.service';
 import { ImplementationService } from '../../services/implementation.service';
 import { CveService } from '../../services/cve.service';
@@ -53,7 +54,6 @@ interface TopMitigation {
   styleUrl: './analytics-panel.component.scss',
 })
 export class AnalyticsPanelComponent implements OnInit, OnDestroy {
-  open = false;
   domain: Domain | null = null;
   tacticStats: TacticStat[] = [];
   implSummary: Record<string, number> = {};
@@ -73,6 +73,7 @@ export class AnalyticsPanelComponent implements OnInit, OnDestroy {
 
   constructor(
     private filterService: FilterService,
+    private panelNav: PanelNavService,
     private dataService: DataService,
     private implService: ImplementationService,
     private cveService: CveService,
@@ -82,13 +83,6 @@ export class AnalyticsPanelComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(
-      this.filterService.activePanel$.subscribe(p => {
-        this.open = p === 'analytics';
-        this.cdr.markForCheck();
-      }),
-    );
-
     this.subs.add(
       this.dataService.domain$.subscribe(d => {
         this.domain = d;
@@ -246,12 +240,9 @@ export class AnalyticsPanelComponent implements OnInit, OnDestroy {
     const tech = this.domain.techniques.find(t => t.attackId === attackId);
     if (tech) {
       this.filterService.selectTechnique(tech);
-      this.close();
+      // The technique sidebar opens over the matrix.
+      this.panelNav.open('matrix');
     }
-  }
-
-  close(): void {
-    this.filterService.setActivePanel(null);
   }
 
   get implTotal(): number {
