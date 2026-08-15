@@ -14,11 +14,16 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   webServer: {
-    command: 'npx ng serve --port 4200',
+    // CI serves the prebuilt production bundle statically: `ng serve` JIT-
+    // compiles each lazy route on first hit, which starved deep-link tests
+    // on the constrained runner (>60s per cold route). The workflow runs
+    // `ng build` before `playwright test`. Locally we keep the dev server.
+    command: process.env['CI']
+      ? 'npx http-server dist/mitre-mitigation-navigator/browser -p 4200 -s'
+      : 'npx ng serve --port 4200',
     port: 4200,
     // Locally a long-lived `ng serve` can go stale (dead HMR socket serving
-    // an old bundle) — restart it when e2e results look impossible. CI always
-    // starts fresh.
+    // an old bundle) — restart it when e2e results look impossible.
     reuseExistingServer: !process.env['CI'],
     timeout: 120000,
   },
