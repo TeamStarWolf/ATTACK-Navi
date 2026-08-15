@@ -2,6 +2,47 @@
 
 All notable changes to ATTACK-Navi are documented here.
 
+## v0.8.0 — Navigation Overhaul & Data Accuracy (2026-08-15)
+
+### The big one: real navigation
+- **Angular Router adopted (hash routing)** — every one of the 44 former overlay
+  panels is now a routed page with a bookmarkable URL, working back/forward, and
+  per-workspace lazy loading. Legacy share links (`#tech=T1059`, filter-key
+  hashes, `#import=` collection links) are migrated transparently at startup.
+- **9 workspaces** — Matrix, Dashboard, Intel, Detect, Exposure, Coverage,
+  Library, Reports, Settings — each with a tab bar carrying its destinations.
+  The pre-router "library view mode" became the Library ▸ Workbench tab.
+- **Nav rail redesigned** — 44 emoji buttons with 8px labels became 10 workspace
+  links with SVG icons and legible labels. Mobile bottom bar now includes Help
+  and Settings.
+- **Toolbar slimmed** — matrix-scoped controls (searches, filters, heatmap
+  picker) moved onto the matrix page; the 14-item export menu became the
+  Reports ▸ Export Hub card grid; one global search box opens the command
+  palette.
+- **Command palette (Ctrl+K)** — searches entities *and* commands: "Go to" any
+  of the 44 destinations (old names still match) and actions (exports, theme,
+  clear filters, share, help).
+- **One keyboard listener** — shortcuts defined once in `models/shortcuts.ts`,
+  implemented by `HotkeysService`, rendered by the help overlay (`?`). Modifier
+  combos now work while typing in inputs.
+- **Sidebar jump index** — the 48 detail sections are reachable through a sticky
+  grouped index; sections start collapsed except the core technique profile.
+  Hand-curated sections carry a visible "curated" chip.
+- **Performance** — initial bundle 2.2 MB → ~1.0 MB raw; service worker now
+  caches lazy chunks on demand instead of prefetching everything.
+
+### Data accuracy
+- Removed two CAR analytics that do not exist upstream (CAR-2022-06-001,
+  CAR-2023-01-001) and the entire hardcoded Atomic test table (21 of 27
+  spot-checked names were not in the upstream index) — Atomic details now come
+  only from live per-technique YAML and Red Canary's published counts.
+- D3FEND bundled seed is provenance-stamped as a curated fallback; the live
+  ontology API always wins.
+
+### Infrastructure
+- Playwright e2e suite (29 tests) now gates every deploy in CI.
+- Initial-bundle budget ratcheted from 3 MB warn to 1.2 MB warn / 2 MB error.
+
 ## v0.7.0 — Reliability & Infrastructure (2026-04-17)
 
 ### New Features

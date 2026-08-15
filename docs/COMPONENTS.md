@@ -1,7 +1,14 @@
 # Component Catalog
 
-> Auto-generated reference for all 50 Angular components in the MITRE ATT&CK Navi.
-> Each component is standalone, uses `ChangeDetectionStrategy.OnPush`, and lives under `src/app/components/`.
+> Auto-generated reference for the Angular components in the MITRE ATT&CK Navi.
+> Each component is standalone and uses `ChangeDetectionStrategy.OnPush`.
+>
+> **v0.8.0 note:** the "Panel ID" column below is historical — panels are now
+> routed pages (see `src/app/app.routes-map.ts` for the id → route mapping).
+> Newer components live outside `src/app/components/`: page shells under
+> `src/app/pages/` (matrix page + controls, export hub, per-workspace route
+> files), layout chrome under `src/app/layout/` (workspace shell, page
+> section), and the icon system under `src/app/shared/icons/`.
 
 ---
 
