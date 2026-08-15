@@ -13,6 +13,7 @@ import { GapViewComponent } from './components/gap-view/gap-view.component';
 import { KeyboardHelpComponent } from './components/keyboard-help/keyboard-help.component';
 import { NavRailComponent } from './components/nav-rail/nav-rail.component';
 import { OnboardingComponent } from './components/onboarding/onboarding.component';
+import { UniversalSearchComponent } from './components/universal-search/universal-search.component';
 import { UrlStateService } from './services/url-state.service';
 import { PanelNavService } from './services/panel-nav.service';
 import { CommandPaletteService } from './services/command-palette.service';
@@ -21,7 +22,7 @@ import { MatrixControlService } from './services/matrix-control.service';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, SidebarComponent, ToolbarComponent, GapViewComponent, KeyboardHelpComponent, NavRailComponent, OnboardingComponent],
+  imports: [CommonModule, RouterOutlet, SidebarComponent, ToolbarComponent, GapViewComponent, KeyboardHelpComponent, NavRailComponent, OnboardingComponent, UniversalSearchComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
@@ -51,6 +52,9 @@ export class AppComponent implements OnInit {
     this.dataService.domain$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((d) => { this.domain = d; this.cdr.markForCheck(); });
     this.dataService.currentDomain$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((d) => { this.currentDomain = d; this.cdr.markForCheck(); });
     this.dataService.loadDomain();
+    this.matrixControl.gapViewRequests$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.gapViewRef?.show());
     this.urlStateService.init();
     if (localStorage.getItem('mitre-nav-theme') === 'light') {
       this.isLightMode = true;

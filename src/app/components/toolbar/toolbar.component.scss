@@ -1022,3 +1022,57 @@
     font-size: 14px;
   }
 }
+
+/* ── P2b additions: brand link + palette trigger ── */
+.brand-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.palette-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  min-width: 220px;
+  padding: 0 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: #4a6080;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.palette-trigger:hover {
+  border-color: rgba(111, 211, 255, 0.35);
+  color: #8aaac8;
+}
+
+.palette-placeholder {
+  flex: 1;
+  text-align: left;
+}
+
+.palette-kbd {
+  font-family: inherit;
+  font-size: 10px;
+  padding: 1px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  color: #4a6080;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+:host-context(body.light-mode) .palette-trigger {
+  background: #fff;
+  border-color: #e2e8f0;
+  color: #64748b;
+}
+
+:host-context(body.light-mode) .palette-kbd {
+  border-color: #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
+}

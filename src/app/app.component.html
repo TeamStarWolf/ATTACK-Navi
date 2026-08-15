@@ -2,9 +2,7 @@
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
 <!-- Top bar -->
 <app-toolbar
-  [mitigations]="domain?.mitigations ?? []"
   [techniques]="domain?.techniques ?? []"
-  (showGapView)="gapViewRef?.show()"
   (toggleDark)="toggleDarkMode()"
   (copyShareLink)="copyShareLink()"
   [isLightMode]="isLightMode"
@@ -32,6 +30,7 @@
 
 <!-- Global overlays -->
 <app-keyboard-help />
+<app-universal-search />
 
 @if (showToast) {
   <div class="toast-notification">{{ toastMessage }}</div>

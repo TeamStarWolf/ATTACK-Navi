@@ -22,6 +22,12 @@ export const REPORTS_ROUTES: Routes = [
           import('../../components/ir-playbook-panel/ir-playbook-panel.component').then(c => c.IRPlaybookPanelComponent),
         data: { tab: 'IR Playbooks', icon: 'siren' },
       },
+      {
+        path: 'exports',
+        loadComponent: () =>
+          import('./export-hub.component').then(c => c.ExportHubComponent),
+        data: { tab: 'Export Hub', icon: 'download' },
+      },
     ],
   },
 ];
