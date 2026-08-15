@@ -1,8 +1,6 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-@if (visible) {
-  <div class="emu-overlay" (click)="close()">
-    <div class="emu-panel" role="dialog" aria-modal="true" aria-label="Threat Actor Emulation Plan" (click)="$event.stopPropagation()">
+<section class="page-panel page-panel--full emu-panel" aria-label="Threat Actor Emulation Plan">
 
       <!-- Header -->
       <header class="emu-head">
@@ -21,7 +19,6 @@
             <button class="emu-btn" (click)="exportJson()" title="Export plan as JSON">JSON</button>
             <button class="emu-btn emu-btn-secondary" (click)="clearGroup()">New Plan</button>
           }
-          <button class="emu-close" (click)="close()" aria-label="Close">&times;</button>
         </div>
       </header>
 
@@ -157,6 +154,4 @@
           }
         </section>
       }
-    </div>
-  </div>
-}
+</section>

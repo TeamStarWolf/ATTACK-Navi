@@ -37,9 +37,8 @@ describe('EmulationPlanPanelComponent', () => {
     fixture.detectChanges();
   });
 
-  it('is created and starts hidden', () => {
+  it('is created', () => {
     expect(component).toBeTruthy();
-    expect(component.visible).toBe(false);
   });
 
   it('exposes 6 quick-pick threat actors', () => {

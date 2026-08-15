@@ -2,9 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import {
   Component,
-  Input,
   OnInit,
-  OnChanges,
   OnDestroy,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -24,10 +22,8 @@ import { DataService } from '../../services/data.service';
   templateUrl: './software-panel.component.html',
   styleUrl: './software-panel.component.scss',
 })
-export class SoftwarePanelComponent implements OnInit, OnChanges, OnDestroy {
-  @Input() software: AttackSoftware[] = [];
-
-  open = false;
+export class SoftwarePanelComponent implements OnInit, OnDestroy {
+  software: AttackSoftware[] = [];
   searchText = '';
   typeFilter: 'all' | 'tool' | 'malware' = 'all';
   filteredSoftware: AttackSoftware[] = [];
@@ -42,10 +38,11 @@ export class SoftwarePanelComponent implements OnInit, OnChanges, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    // Self-sourced from the domain (was an @Input from the app shell pre-router)
     this.subs.add(
-      this.filterService.activePanel$.subscribe((panel) => {
-        this.open = panel === 'software';
-        this.cdr.markForCheck();
+      this.dataService.domain$.subscribe((domain) => {
+        this.software = domain?.software ?? [];
+        this.applyFilter();
       }),
     );
     this.subs.add(
@@ -54,12 +51,9 @@ export class SoftwarePanelComponent implements OnInit, OnChanges, OnDestroy {
         this.cdr.markForCheck();
       }),
     );
-    this.applyFilter();
   }
 
   ngOnDestroy(): void { this.subs.unsubscribe(); }
-
-  ngOnChanges(): void { this.applyFilter(); }
 
   applyFilter(): void {
     const q = this.searchText.toLowerCase().trim();
@@ -74,8 +68,6 @@ export class SoftwarePanelComponent implements OnInit, OnChanges, OnDestroy {
     });
     this.cdr.markForCheck();
   }
-
-  close(): void { this.filterService.setActivePanel(null); }
 
   toggleSoftware(sw: AttackSoftware): void {
     this.filterService.toggleSoftware(sw.id);

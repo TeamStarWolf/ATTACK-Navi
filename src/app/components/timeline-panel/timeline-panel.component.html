@@ -1,8 +1,6 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-@if (visible) {
-  <div class="overlay" (click)="close()">
-    <div class="panel" role="dialog" aria-modal="true" aria-label="Coverage Timeline" (click)="$event.stopPropagation()">
+<section class="page-panel page-panel--full panel timeline-page" aria-label="Coverage Timeline">
 
       <!-- Header -->
       <div class="panel-header">
@@ -20,7 +18,6 @@
           @if (snapshots.length > 0) {
             <button class="export-btn" (click)="exportCsv()" title="Export as CSV">⬇ CSV</button>
           }
-          <button class="close-btn" (click)="close()" title="Close">✕</button>
         </div>
       </div>
 
@@ -435,6 +432,4 @@
         }
 
       </div>
-    </div>
-  </div>
-}
+</section>

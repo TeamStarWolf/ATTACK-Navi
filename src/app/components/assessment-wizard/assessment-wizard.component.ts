@@ -11,6 +11,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription, combineLatest, filter, take } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
+import { PanelNavService } from '../../services/panel-nav.service';
 import { DataService, AttackDomain } from '../../services/data.service';
 import { ImplementationService, ImplStatus } from '../../services/implementation.service';
 import { CveService } from '../../services/cve.service';
@@ -59,7 +60,6 @@ const SECTOR_CATEGORIES: SectorCategory[] = [
   styleUrl: './assessment-wizard.component.scss',
 })
 export class AssessmentWizardComponent implements OnInit, OnDestroy {
-  visible = false;
   currentStep = 1;
   readonly totalSteps = 5;
 
@@ -102,6 +102,7 @@ export class AssessmentWizardComponent implements OnInit, OnDestroy {
 
   constructor(
     private filterService: FilterService,
+    private panelNav: PanelNavService,
     private dataService: DataService,
     private implService: ImplementationService,
     private cveService: CveService,
@@ -109,21 +110,10 @@ export class AssessmentWizardComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
   ) {}
 
-  ngOnInit(): void {
-    this.subs.add(
-      this.filterService.activePanel$.subscribe(p => {
-        this.visible = p === 'assessment';
-        this.cdr.markForCheck();
-      }),
-    );
-  }
+  ngOnInit(): void {}
 
   ngOnDestroy(): void {
     this.subs.unsubscribe();
-  }
-
-  close(): void {
-    this.filterService.setActivePanel(null);
   }
 
   // ─── Navigation ──────────────────────────────────────────────────────────
@@ -473,11 +463,11 @@ export class AssessmentWizardComponent implements OnInit, OnDestroy {
 
   applyToMatrix(): void {
     // Statuses already saved via implService during step 3 — just navigate to matrix
-    this.filterService.setActivePanel(null);
+    this.panelNav.open('matrix');
   }
 
   openPanel(panel: string): void {
-    this.filterService.setActivePanel(panel as any);
+    this.panelNav.open(panel);
   }
 
   getStatusLabel(status: ImplStatus | null): string {

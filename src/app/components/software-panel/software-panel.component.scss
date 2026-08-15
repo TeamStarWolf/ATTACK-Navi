@@ -1,32 +1,13 @@
 /* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
    https://github.com/TeamStarWolf/ATTACK-Navi - MIT License */
-// Overlay backdrop
-.panel-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 999;
-  background: rgb(0 0 0 / 50%);
-  &.open { display: block; }
-}
-
-// Left-side drawer panel
+// Page container (was a fixed left drawer pre-router)
 .sw-panel {
-  position: fixed;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 440px;
   background: #0d1a26;
-  border-right: 1px solid #1a3448;
-  box-shadow: 8px 0 32px rgb(0 0 0 / 60%);
-  transform: translateX(-100%);
-  transition: transform 0.25s ease;
-  z-index: 1000;
+  border: 1px solid #1a3448;
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
-
-  &.open { transform: translateX(0); }
+  overflow: hidden;
 }
 
 .panel-inner {

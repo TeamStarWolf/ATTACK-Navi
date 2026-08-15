@@ -29,6 +29,24 @@ export const PANEL_ROUTE_MAP: Readonly<Partial<Record<string, string[]>>> = {
   // P1b: Dashboard workspace
   dashboard: ['/dashboard', 'overview'],
   analytics: ['/dashboard', 'analytics'],
+  // P1c: Threat Intel workspace
+  threats: ['/intel', 'groups'],
+  actor: ['/intel', 'actors'],
+  'actor-compare': ['/intel', 'compare'],
+  scenario: ['/intel', 'scenarios'],
+  emulation: ['/intel', 'emulation'],
+  'campaign-timeline': ['/intel', 'campaigns'],
+  software: ['/intel', 'software'],
+  intelligence: ['/intel', 'feeds'],
+  // P1c: Coverage workspace
+  assessment: ['/coverage', 'assessment'],
+  controls: ['/coverage', 'controls'],
+  'custom-mit': ['/coverage', 'custom-mitigations'],
+  compliance: ['/coverage', 'compliance'],
+  'coverage-diff': ['/coverage', 'diff'],
+  timeline: ['/coverage', 'timeline'],
+  target: ['/coverage', 'target'],
+  assets: ['/coverage', 'assets'],
 };
 
 export function routeForPanel(id: string): string[] | undefined {

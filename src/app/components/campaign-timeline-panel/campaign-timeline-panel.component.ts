@@ -6,7 +6,6 @@ import {
   OnDestroy,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
-  HostListener,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -52,7 +51,6 @@ const GROUP_COLORS = [
   styleUrl: './campaign-timeline-panel.component.scss',
 })
 export class CampaignTimelinePanelComponent implements OnInit, OnDestroy {
-  open = false;
   domain: Domain | null = null;
 
   searchText = '';
@@ -91,16 +89,9 @@ export class CampaignTimelinePanelComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.subs.add(
-      this.filterService.activePanel$.subscribe(p => {
-        this.open = p === 'campaign-timeline';
-        if (this.open && this.domain) this.build();
-        this.cdr.markForCheck();
-      }),
-    );
-    this.subs.add(
       this.dataService.domain$.subscribe(d => {
         this.domain = d;
-        if (this.open && d) this.build();
+        if (d) this.build();
         this.cdr.markForCheck();
       }),
     );
@@ -114,8 +105,6 @@ export class CampaignTimelinePanelComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void { this.subs.unsubscribe(); }
-
-  close(): void { this.filterService.setActivePanel(null); }
 
   private build(): void {
     if (!this.domain) return;
@@ -329,7 +318,4 @@ export class CampaignTimelinePanelComponent implements OnInit, OnDestroy {
   trackByBar(_: number, bar: CampaignBar): string { return bar.campaign.id; }
   trackByYear(_: number, y: number): number { return y; }
   trackByGroup(_: number, g: GroupFilter): string { return g.id; }
-
-  @HostListener('document:keydown.escape')
-  onEsc(): void { if (this.open) this.close(); }
 }

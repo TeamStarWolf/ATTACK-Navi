@@ -27,9 +27,8 @@ describe('SoftwarePanelComponent', () => {
     fixture.detectChanges();
   });
 
-  it('is created and starts closed', () => {
+  it('is created', () => {
     expect(component).toBeTruthy();
-    expect(component.open).toBe(false);
   });
 
   it('exposes activeSoftwareIds initialized as empty Set', () => {

@@ -3,14 +3,12 @@
 import {
   Component,
   OnInit,
-  OnDestroy,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subscription, filter, take } from 'rxjs';
-import { FilterService } from '../../services/filter.service';
+import { filter, take } from 'rxjs';
 import { DataService } from '../../services/data.service';
 import { ImplementationService } from '../../services/implementation.service';
 import { Mitigation } from '../../models/mitigation';
@@ -29,8 +27,7 @@ interface PlanMitigation {
   templateUrl: './target-panel.component.html',
   styleUrl: './target-panel.component.scss',
 })
-export class TargetPanelComponent implements OnInit, OnDestroy {
-  visible = false;
+export class TargetPanelComponent implements OnInit {
   targetPct = 80;
   currentPct = 0;
   gapPct = 0;
@@ -39,29 +36,15 @@ export class TargetPanelComponent implements OnInit, OnDestroy {
   planGenerated = false;
 
   private cachedDomain: any = null;
-  private subs = new Subscription();
 
   constructor(
-    private filterService: FilterService,
     private dataService: DataService,
     private implService: ImplementationService,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(
-      this.filterService.activePanel$.subscribe(p => {
-        this.visible = p === 'target';
-        if (this.visible) {
-          this.loadDomainAndCompute();
-        }
-        this.cdr.markForCheck();
-      }),
-    );
-  }
-
-  ngOnDestroy(): void {
-    this.subs.unsubscribe();
+    this.loadDomainAndCompute();
   }
 
   private loadDomainAndCompute(): void {
@@ -191,9 +174,5 @@ export class TargetPanelComponent implements OnInit, OnDestroy {
 
   attackUrl(mitId: string): string {
     return `https://attack.mitre.org/mitigations/${mitId}/`;
-  }
-
-  close(): void {
-    this.filterService.setActivePanel(null);
   }
 }

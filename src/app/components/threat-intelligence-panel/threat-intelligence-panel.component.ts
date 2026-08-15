@@ -57,7 +57,6 @@ interface MispEventRow {
   styleUrl: './threat-intelligence-panel.component.scss',
 })
 export class ThreatIntelligencePanelComponent implements OnInit, OnDestroy {
-  visible = false;
   activeTab: 'overview' | 'indicators' | 'actors' | 'misp' = 'overview';
 
   // Overview
@@ -95,15 +94,7 @@ export class ThreatIntelligencePanelComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(
-      this.filterService.activePanel$.subscribe(p => {
-        this.visible = p === 'intelligence';
-        if (this.visible && this.topIntelRows.length === 0) {
-          this.buildOverview();
-        }
-        this.cdr.markForCheck();
-      }),
-    );
+    this.buildOverview();
 
     this.subs.add(
       this.openCtiService.connected$.subscribe(c => {
@@ -133,10 +124,6 @@ export class ThreatIntelligencePanelComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subs.unsubscribe();
-  }
-
-  close(): void {
-    this.filterService.setActivePanel(null);
   }
 
   setTab(tab: 'overview' | 'indicators' | 'actors' | 'misp'): void {
