@@ -10,7 +10,6 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
-import { FilterService } from '../../services/filter.service';
 import { CustomMitigationService, CustomMitigation } from '../../services/custom-mitigation.service';
 import { DataService } from '../../services/data.service';
 import { ImplStatus, IMPL_STATUS_LABELS, IMPL_STATUS_COLORS } from '../../services/implementation.service';
@@ -27,7 +26,6 @@ const DEFAULT_CATEGORIES = ['EDR', 'SIEM', 'Network', 'Email', 'IAM', 'Endpoint'
   styleUrl: './custom-mit-panel.component.scss',
 })
 export class CustomMitPanelComponent implements OnInit, OnDestroy {
-  visible = false;
   mitigations: CustomMitigation[] = [];
   activeTab: 'list' | 'create' | 'edit' = 'list';
   form: Partial<CustomMitigation> | null = null;
@@ -46,20 +44,12 @@ export class CustomMitPanelComponent implements OnInit, OnDestroy {
   private allTechniques: Technique[] = [];
 
   constructor(
-    private filterService: FilterService,
     private customMitigationService: CustomMitigationService,
     private dataService: DataService,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(
-      this.filterService.activePanel$.subscribe(panel => {
-        this.visible = panel === 'custom-mit';
-        this.cdr.markForCheck();
-      }),
-    );
-
     this.subs.add(
       this.customMitigationService.mitigations$.subscribe(mits => {
         this.mitigations = mits;
@@ -200,10 +190,6 @@ export class CustomMitPanelComponent implements OnInit, OnDestroy {
       for (const id of m.techniqueIds) ids.add(id);
     }
     return ids.size;
-  }
-
-  close(): void {
-    this.filterService.setActivePanel(null);
   }
 
   categorySlug(category: string): string {

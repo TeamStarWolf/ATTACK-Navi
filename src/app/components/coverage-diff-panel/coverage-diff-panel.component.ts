@@ -6,12 +6,10 @@ import {
   OnDestroy,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
-  HostListener,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
-import { FilterService } from '../../services/filter.service';
 import { TimelineService, CoverageSnapshot } from '../../services/timeline.service';
 
 interface TacticDiff {
@@ -43,7 +41,6 @@ interface ImplDiff {
   styleUrl: './coverage-diff-panel.component.scss',
 })
 export class CoverageDiffPanelComponent implements OnInit, OnDestroy {
-  open = false;
   snapshots: CoverageSnapshot[] = [];
 
   selectedBaseId = '';
@@ -58,18 +55,11 @@ export class CoverageDiffPanelComponent implements OnInit, OnDestroy {
   private subs = new Subscription();
 
   constructor(
-    private filterService: FilterService,
     private timelineService: TimelineService,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(
-      this.filterService.activePanel$.subscribe(p => {
-        this.open = p === 'coverage-diff';
-        this.cdr.markForCheck();
-      }),
-    );
     this.subs.add(
       this.timelineService.snapshots$.subscribe(snaps => {
         this.snapshots = snaps;
@@ -84,8 +74,6 @@ export class CoverageDiffPanelComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void { this.subs.unsubscribe(); }
-
-  close(): void { this.filterService.setActivePanel(null); }
 
   onSelectionChange(): void { this.compute(); }
 
@@ -186,7 +174,4 @@ export class CoverageDiffPanelComponent implements OnInit, OnDestroy {
   }
 
   trackByTactic(_: number, t: TacticDiff): string { return t.tacticId; }
-
-  @HostListener('document:keydown.escape')
-  onEsc(): void { if (this.open) this.close(); }
 }

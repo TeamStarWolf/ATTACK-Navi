@@ -1,6 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed, ComponentFixture } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { ControlsPanelComponent } from './controls-panel.component';
 import { ControlsService } from '../../services/controls.service';
@@ -15,10 +16,11 @@ describe('ControlsPanelComponent', () => {
     TestBed.configureTestingModule({
       imports: [ControlsPanelComponent],
       providers: [
+        provideRouter([]),
         { provide: ControlsService, useValue: { controls$: new BehaviorSubject([]) } },
         { provide: FilterService, useValue: {
-            activePanel$: new BehaviorSubject<string | null>(null),
-            setActivePanel: jasmine.createSpy(),
+            filterByMitigation: jasmine.createSpy(),
+            addMitigationFilter: jasmine.createSpy(),
         }},
         { provide: DataService, useValue: { domain$: new BehaviorSubject(null) }},
       ],

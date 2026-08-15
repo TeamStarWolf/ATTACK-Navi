@@ -1,4 +1,4 @@
-// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+﻿// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import {
   Component,
@@ -13,6 +13,7 @@ import { combineLatest, Subscription } from 'rxjs';
 import { SecurityControl, ControlFramework, ControlStatus, FRAMEWORK_TEMPLATES, FrameworkTemplate } from '../../models/security-control';
 import { ControlsService } from '../../services/controls.service';
 import { FilterService } from '../../services/filter.service';
+import { PanelNavService } from '../../services/panel-nav.service';
 import { DataService } from '../../services/data.service';
 import { Domain } from '../../models/domain';
 import { Mitigation } from '../../models/mitigation';
@@ -40,7 +41,6 @@ interface MitigationRow {
   styleUrl: './controls-panel.component.scss',
 })
 export class ControlsPanelComponent implements OnInit, OnDestroy {
-  visible = false;
   activeTab: 'my-controls' | 'by-mitigation' = 'my-controls';
   searchText = '';
   showAddForm = false;
@@ -86,6 +86,7 @@ export class ControlsPanelComponent implements OnInit, OnDestroy {
   constructor(
     private controlsService: ControlsService,
     private filterService: FilterService,
+    private panelNav: PanelNavService,
     private dataService: DataService,
     private cdr: ChangeDetectorRef,
   ) {}
@@ -100,12 +101,6 @@ export class ControlsPanelComponent implements OnInit, OnDestroy {
           this.cdr.markForCheck();
         },
       ),
-    );
-    this.subs.add(
-      this.filterService.activePanel$.subscribe((p) => {
-        this.visible = p === 'controls';
-        this.cdr.markForCheck();
-      }),
     );
   }
 
@@ -184,7 +179,8 @@ export class ControlsPanelComponent implements OnInit, OnDestroy {
 
   filterByMitigation(row: MitigationRow): void {
     this.filterService.filterByMitigation(row.mitigation);
-    this.filterService.setActivePanel(null);
+    // Show the applied filter on the matrix.
+    this.panelNav.open('matrix');
   }
 
   // Form helpers
@@ -280,7 +276,7 @@ export class ControlsPanelComponent implements OnInit, OnDestroy {
   importTemplate(template: FrameworkTemplate, status: ControlStatus): void {
     if (!this.domain) return;
     const added = this.controlsService.importFromTemplate(template, this.domain, status);
-    this.importStatus = added > 0 ? `✓ Added ${added} controls from ${template.name}` : `Already imported`;
+    this.importStatus = added > 0 ? `âœ“ Added ${added} controls from ${template.name}` : `Already imported`;
     setTimeout(() => { this.importStatus = ''; this.cdr.markForCheck(); }, 3000);
     this.cdr.markForCheck();
   }
@@ -311,7 +307,6 @@ export class ControlsPanelComponent implements OnInit, OnDestroy {
     input.click();
   }
 
-  close(): void { this.filterService.setActivePanel(null); }
 
   getMitigationName(mitId: string): string {
     const m = this.domain?.mitigations.find((x) => x.id === mitId);

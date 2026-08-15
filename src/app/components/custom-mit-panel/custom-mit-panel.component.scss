@@ -1,23 +1,9 @@
 /* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
    https://github.com/TeamStarWolf/ATTACK-Navi - MIT License */
-.panel-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgb(0 0 0 / 50%);
-  z-index: 199;
-}
-
 .custom-mit-panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 800px;
-  max-width: 100vw;
   background: #070d14;
-  border-left: 1px solid #1a3448;
-  box-shadow: -12px 0 48px rgb(0 0 0 / 70%);
-  z-index: 200;
+  border: 1px solid #1a3448;
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
   overflow: hidden;

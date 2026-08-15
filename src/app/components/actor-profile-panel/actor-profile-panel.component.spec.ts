@@ -2,6 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
+import { provideRouter } from '@angular/router';
 import { ActorProfilePanelComponent } from './actor-profile-panel.component';
 import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
@@ -15,9 +16,10 @@ describe('ActorProfilePanelComponent', () => {
     TestBed.configureTestingModule({
       imports: [ActorProfilePanelComponent],
       providers: [
+        provideRouter([]),
         { provide: FilterService, useValue: {
-            activePanel$: new BehaviorSubject<string | null>(null),
-            setActivePanel: jasmine.createSpy('setActivePanel'),
+            toggleThreatGroup: jasmine.createSpy(),
+            selectTechnique: jasmine.createSpy(),
         }},
         { provide: DataService, useValue: { domain$: new BehaviorSubject(null) }},
         { provide: ImplementationService, useValue: { status$: new BehaviorSubject(new Map()) }},
@@ -28,9 +30,8 @@ describe('ActorProfilePanelComponent', () => {
     fixture.detectChanges();
   });
 
-  it('is created and starts closed', () => {
+  it('is created', () => {
     expect(component).toBeTruthy();
-    expect(component.open).toBe(false);
   });
 
   it('searchText starts empty', () => {

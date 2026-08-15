@@ -42,33 +42,17 @@
 <app-gap-view #gapViewRef />
 
 <!-- Panel overlays — converted to routed pages batch-by-batch (P1b-P1d) -->
-<app-threat-panel />
 <app-report-panel />
-<app-controls-panel />
-<app-software-panel [software]="domain?.software ?? []" />
 <app-comparison-panel />
 <app-layers-panel />
 <app-roadmap-panel />
-<app-actor-profile-panel />
-<app-compliance-panel />
-<app-actor-compare-panel />
-<app-timeline-panel />
 <app-settings-panel />
-<app-custom-mit-panel />
-<app-scenario-panel />
-<app-target-panel />
 <app-keyboard-help />
 <app-watchlist-panel />
 <app-changelog-panel />
 <app-tags-panel />
-<app-campaign-timeline-panel />
-<app-coverage-diff-panel />
-<app-threat-intelligence-panel />
 <app-collection-panel />
-<app-assessment-wizard />
-<app-asset-panel />
 <app-ir-playbook-panel />
-<app-emulation-plan-panel />
 
 @if (showToast) {
   <div class="toast-notification">{{ toastMessage }}</div>

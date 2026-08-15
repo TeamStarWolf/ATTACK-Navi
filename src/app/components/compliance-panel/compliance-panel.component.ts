@@ -10,7 +10,6 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription, filter, take } from 'rxjs';
-import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
 import { CisControlsService, CisControl } from '../../services/cis-controls.service';
 import { CloudControlsService, CloudControl } from '../../services/cloud-controls.service';
@@ -63,7 +62,6 @@ export interface ComplianceRow {
   styleUrl: './compliance-panel.component.scss',
 })
 export class CompliancePanelComponent implements OnInit, OnDestroy {
-  visible = false;
   activeTab: 'cis' | 'aws' | 'azure' | 'gcp' | 'nist' | 'cri' | 'csa-ccm' | 'm365-ctrl' | 'soc2' | 'iso27001' | 'pci' = 'nist';
   searchText = '';
   sortBy: 'technique' | 'coverage' = 'coverage';
@@ -88,7 +86,6 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
   private subs = new Subscription();
 
   constructor(
-    private filterService: FilterService,
     private dataService: DataService,
     private cisService: CisControlsService,
     private cloudService: CloudControlsService,
@@ -102,75 +99,27 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(
-      this.filterService.activePanel$.subscribe(p => {
-        this.visible = p === 'compliance';
-        if (this.visible && this.complianceRows.length === 0) {
-          this.buildRows();
-        }
-        this.cdr.markForCheck();
-      }),
-    );
+    this.buildRows();
 
-    // Refresh when CIS data finishes loading
-    this.subs.add(
-      this.cisService.loaded$.subscribe(loaded => {
-        if (loaded && this.visible) {
-          this.buildRows();
-        }
-        this.cdr.markForCheck();
-      }),
-    );
-
-    // Refresh when any cloud data finishes loading
-    this.subs.add(
-      this.cloudService.loaded$.subscribe(loaded => {
-        if (loaded && this.visible) {
-          this.buildRows();
-        }
-        this.cdr.markForCheck();
-      }),
-    );
-
-    // Refresh when NIST data finishes loading
-    this.subs.add(
-      this.nistService.loaded$.subscribe(loaded => {
-        if (loaded && this.visible) {
-          this.buildRows();
-        }
-        this.cdr.markForCheck();
-      }),
-    );
-
-    // Refresh when CRI data finishes loading
-    this.subs.add(
-      this.criService.loaded$.subscribe(loaded => {
-        if (loaded && this.visible) {
-          this.buildRows();
-        }
-        this.cdr.markForCheck();
-      }),
-    );
-
-    // Refresh when CSA CCM data finishes loading
-    this.subs.add(
-      this.csaCcmService.loaded$.subscribe(loaded => {
-        if (loaded && this.visible) {
-          this.buildRows();
-        }
-        this.cdr.markForCheck();
-      }),
-    );
-
-    // Refresh when M365 Controls data finishes loading
-    this.subs.add(
-      this.m365ControlsService.loaded$.subscribe(loaded => {
-        if (loaded && this.visible) {
-          this.buildRows();
-        }
-        this.cdr.markForCheck();
-      }),
-    );
+    // Refresh whenever a framework's mapping data finishes loading
+    const refreshOn = [
+      this.cisService.loaded$,
+      this.cloudService.loaded$,
+      this.nistService.loaded$,
+      this.criService.loaded$,
+      this.csaCcmService.loaded$,
+      this.m365ControlsService.loaded$,
+    ];
+    for (const loaded$ of refreshOn) {
+      this.subs.add(
+        loaded$.subscribe(loaded => {
+          if (loaded) {
+            this.buildRows();
+          }
+          this.cdr.markForCheck();
+        }),
+      );
+    }
   }
 
   ngOnDestroy(): void {
@@ -218,10 +167,6 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
       this.computeFrameworkScores();
       this.cdr.markForCheck();
     });
-  }
-
-  close(): void {
-    this.filterService.setActivePanel(null);
   }
 
   setTab(tab: 'cis' | 'aws' | 'azure' | 'gcp' | 'nist' | 'cri' | 'csa-ccm' | 'm365-ctrl' | 'soc2' | 'iso27001' | 'pci'): void {

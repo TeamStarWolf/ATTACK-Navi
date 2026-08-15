@@ -3,7 +3,6 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
 import { CustomMitPanelComponent } from './custom-mit-panel.component';
-import { FilterService } from '../../services/filter.service';
 import { CustomMitigationService } from '../../services/custom-mitigation.service';
 import { DataService } from '../../services/data.service';
 
@@ -15,10 +14,6 @@ describe('CustomMitPanelComponent', () => {
     TestBed.configureTestingModule({
       imports: [CustomMitPanelComponent],
       providers: [
-        { provide: FilterService, useValue: {
-            activePanel$: new BehaviorSubject<string | null>(null),
-            setActivePanel: jasmine.createSpy(),
-        }},
         { provide: CustomMitigationService, useValue: { mitigations$: new BehaviorSubject([]), all: [] } },
         { provide: DataService, useValue: { domain$: new BehaviorSubject(null) }},
       ],
@@ -28,8 +23,7 @@ describe('CustomMitPanelComponent', () => {
     fixture.detectChanges();
   });
 
-  it('is created and starts hidden', () => {
+  it('is created', () => {
     expect(component).toBeTruthy();
-    expect(component.visible).toBe(false);
   });
 });

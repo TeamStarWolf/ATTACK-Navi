@@ -1,8 +1,6 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-@if (visible) {
-  <div class="overlay" (click)="close()">
-    <div class="panel" role="dialog" aria-modal="true" aria-label="Threat Intelligence" (click)="$event.stopPropagation()">
+<section class="page-panel page-panel--full panel" aria-label="Threat Intelligence">
 
       <!-- Header -->
       <div class="panel-header">
@@ -14,7 +12,6 @@
             &middot; {{ totalWithIntel }} techniques with signals
           </span>
         </div>
-        <button class="close-btn" (click)="close()" title="Close">&#x2715;</button>
       </div>
 
       <!-- Stats cards -->
@@ -258,6 +255,5 @@
         }
 
       </div>
-    </div>
-  </div>
-}
+
+</section>

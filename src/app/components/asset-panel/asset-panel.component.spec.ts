@@ -1,6 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed, ComponentFixture } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
 import { AssetPanelComponent } from './asset-panel.component';
 import { FilterService } from '../../services/filter.service';
@@ -17,9 +18,9 @@ describe('AssetPanelComponent', () => {
     TestBed.configureTestingModule({
       imports: [AssetPanelComponent],
       providers: [
+        provideRouter([]),
         { provide: FilterService, useValue: {
-            activePanel$: new BehaviorSubject<string | null>(null),
-            setActivePanel: jasmine.createSpy(),
+            setHeatmapMode: jasmine.createSpy(),
         }},
         { provide: AssetInventoryService, useValue: {
             assets$: new BehaviorSubject([]),

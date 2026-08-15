@@ -10,7 +10,6 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription, filter, take } from 'rxjs';
-import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
 import { ImplementationService } from '../../services/implementation.service';
 import { TimelineService, CoverageSnapshot } from '../../services/timeline.service';
@@ -40,7 +39,6 @@ interface ComparisonRow {
   styleUrl: './timeline-panel.component.scss',
 })
 export class TimelinePanelComponent implements OnInit, OnDestroy {
-  visible = false;
   snapshots: CoverageSnapshot[] = [];
   activeTab: 'timeline' | 'compare' | 'trends' = 'timeline';
   newLabel = '';
@@ -56,7 +54,6 @@ export class TimelinePanelComponent implements OnInit, OnDestroy {
   private successTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
-    private filterService: FilterService,
     private dataService: DataService,
     private implService: ImplementationService,
     private timelineService: TimelineService,
@@ -64,13 +61,6 @@ export class TimelinePanelComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(
-      this.filterService.activePanel$.subscribe(p => {
-        this.visible = p === 'timeline';
-        this.cdr.markForCheck();
-      }),
-    );
-
     this.subs.add(
       this.timelineService.snapshots$.subscribe(snaps => {
         this.snapshots = snaps;
@@ -147,10 +137,6 @@ export class TimelinePanelComponent implements OnInit, OnDestroy {
   setTab(tab: 'timeline' | 'compare' | 'trends'): void {
     this.activeTab = tab;
     this.cdr.markForCheck();
-  }
-
-  close(): void {
-    this.filterService.setActivePanel(null);
   }
 
   exportCsv(): void {
