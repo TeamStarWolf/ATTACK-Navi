@@ -1,4 +1,4 @@
-// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+﻿// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Component, OnInit, AfterViewInit, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef, HostListener, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -10,7 +10,6 @@ import { FilterService, ActivePanel } from './services/filter.service';
 import { ViewModeService, ViewMode } from './services/view-mode.service';
 import { LibraryWorkbenchComponent } from './components/library-workbench/library-workbench.component';
 import { EmulationPlanPanelComponent } from './components/emulation-plan-panel/emulation-plan-panel.component';
-import { ValidationPanelComponent } from './components/validation-panel/validation-panel.component';
 import { Observable } from 'rxjs';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
 import { ToolbarComponent } from './components/toolbar/toolbar.component';
@@ -27,14 +26,8 @@ import { LayersPanelComponent } from './components/layers-panel/layers-panel.com
 import { CvePanelComponent } from './components/cve-panel/cve-panel.component';
 import { AnalyticsPanelComponent } from './components/analytics-panel/analytics-panel.component';
 import { NavRailComponent } from './components/nav-rail/nav-rail.component';
-import { SigmaExportComponent } from './components/sigma-export/sigma-export.component';
-import { SiemExportComponent } from './components/siem-export/siem-export.component';
-import { PurpleTeamPanelComponent } from './components/purple-team-panel/purple-team-panel.component';
-import { YaraExportComponent } from './components/yara-export/yara-export.component';
 import { RoadmapPanelComponent } from './components/roadmap-panel/roadmap-panel.component';
 import { ActorProfilePanelComponent } from './components/actor-profile-panel/actor-profile-panel.component';
-import { DetectionPanelComponent } from './components/detection-panel/detection-panel.component';
-import { DatasourcePanelComponent } from './components/datasource-panel/datasource-panel.component';
 import { CompliancePanelComponent } from './components/compliance-panel/compliance-panel.component';
 import { ActorComparePanelComponent } from './components/actor-compare-panel/actor-compare-panel.component';
 import { TimelinePanelComponent } from './components/timeline-panel/timeline-panel.component';
@@ -65,7 +58,7 @@ import { MatrixControlService } from './services/matrix-control.service';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, AsyncPipe, RouterOutlet, SidebarComponent, ToolbarComponent, GapViewComponent, ThreatPanelComponent, PriorityPanelComponent, WhatifPanelComponent, ReportPanelComponent, KeyboardHelpComponent, ControlsPanelComponent, SoftwarePanelComponent, ComparisonPanelComponent, LayersPanelComponent, CvePanelComponent, AnalyticsPanelComponent, NavRailComponent, SigmaExportComponent, SiemExportComponent, PurpleTeamPanelComponent, YaraExportComponent, RoadmapPanelComponent, ActorProfilePanelComponent, DetectionPanelComponent, CompliancePanelComponent, ActorComparePanelComponent, TimelinePanelComponent, SettingsPanelComponent, CustomMitPanelComponent, KillchainPanelComponent, RiskMatrixPanelComponent, ScenarioPanelComponent, DashboardPanelComponent, DatasourcePanelComponent, WatchlistPanelComponent, ChangelogPanelComponent, TagsPanelComponent, TargetPanelComponent, CampaignTimelinePanelComponent, TechniqueGraphPanelComponent, CoverageDiffPanelComponent, ThreatIntelligencePanelComponent, CollectionPanelComponent, AssessmentWizardComponent, GapAnalysisPanelComponent, AssetPanelComponent, IRPlaybookPanelComponent, OnboardingComponent, LibraryWorkbenchComponent, EmulationPlanPanelComponent, ValidationPanelComponent],
+  imports: [CommonModule, AsyncPipe, RouterOutlet, SidebarComponent, ToolbarComponent, GapViewComponent, ThreatPanelComponent, PriorityPanelComponent, WhatifPanelComponent, ReportPanelComponent, KeyboardHelpComponent, ControlsPanelComponent, SoftwarePanelComponent, ComparisonPanelComponent, LayersPanelComponent, CvePanelComponent, AnalyticsPanelComponent, NavRailComponent, RoadmapPanelComponent, ActorProfilePanelComponent, CompliancePanelComponent, ActorComparePanelComponent, TimelinePanelComponent, SettingsPanelComponent, CustomMitPanelComponent, KillchainPanelComponent, RiskMatrixPanelComponent, ScenarioPanelComponent, DashboardPanelComponent, WatchlistPanelComponent, ChangelogPanelComponent, TagsPanelComponent, TargetPanelComponent, CampaignTimelinePanelComponent, TechniqueGraphPanelComponent, CoverageDiffPanelComponent, ThreatIntelligencePanelComponent, CollectionPanelComponent, AssessmentWizardComponent, GapAnalysisPanelComponent, AssetPanelComponent, IRPlaybookPanelComponent, OnboardingComponent, LibraryWorkbenchComponent, EmulationPlanPanelComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',

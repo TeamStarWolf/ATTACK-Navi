@@ -1,8 +1,6 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-@if (visible) {
-  <div class="vp-overlay" (click)="close()">
-    <div class="vp-panel" role="dialog" aria-modal="true" aria-label="Detection Validation" (click)="$event.stopPropagation()">
+<section class="page-panel page-panel--full vp-panel" aria-label="Detection Validation">
 
       <header class="vp-head">
         <div class="vp-head-left">
@@ -16,7 +14,6 @@
           <label for="vp-import-runs" class="vp-btn">Import JSON</label>
           <button class="vp-btn" (click)="exportRuns()">Export Runs JSON</button>
           <button class="vp-btn" (click)="exportNavigatorLayer()">Export ATT&amp;CK Layer</button>
-          <button class="vp-close" (click)="close()" aria-label="Close">&times;</button>
         </div>
       </header>
 
@@ -401,6 +398,4 @@
         </div>
       }
 
-    </div>
-  </div>
-}
+</section>

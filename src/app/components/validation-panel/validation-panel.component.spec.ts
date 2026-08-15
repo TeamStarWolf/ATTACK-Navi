@@ -3,7 +3,6 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
 import { ValidationPanelComponent } from './validation-panel.component';
-import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
 import { ValidationService } from '../../services/validation.service';
 import { EventLoggingService } from '../../services/event-logging.service';
@@ -22,10 +21,6 @@ describe('ValidationPanelComponent', () => {
     TestBed.configureTestingModule({
       imports: [ValidationPanelComponent],
       providers: [
-        { provide: FilterService, useValue: {
-            activePanel$: new BehaviorSubject<string | null>(null),
-            setActivePanel: jasmine.createSpy(),
-        }},
         { provide: DataService, useValue: { domain$: new BehaviorSubject(null) }},
         { provide: ValidationService, useValue: {
             runs$: new BehaviorSubject([]),
@@ -62,9 +57,8 @@ describe('ValidationPanelComponent', () => {
 
   afterEach(() => localStorage.clear());
 
-  it('is created and starts hidden on the overview tab', () => {
+  it('is created on the overview tab', () => {
     expect(component).toBeTruthy();
-    expect(component.visible).toBe(false);
     expect(component.currentTab).toBe('overview');
   });
 

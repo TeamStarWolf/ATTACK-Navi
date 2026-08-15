@@ -7,7 +7,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { ValidationService, ValidationRun, ValidationStatus } from '../../services/validation.service';
-import { FilterService } from '../../services/filter.service';
+import { PanelNavService } from '../../services/panel-nav.service';
 
 const STATUS_LABEL: Record<ValidationStatus, string> = {
   passed: 'PASS', failed: 'FAIL', partial: 'PARTIAL',
@@ -102,7 +102,7 @@ export class ValidationStatusPillComponent implements OnInit, OnChanges, OnDestr
   @Input() attackId = '';
 
   private validation = inject(ValidationService);
-  private filterService = inject(FilterService);
+  private panelNav = inject(PanelNavService);
   private cdr = inject(ChangeDetectorRef);
   private sub?: Subscription;
 
@@ -135,7 +135,7 @@ export class ValidationStatusPillComponent implements OnInit, OnChanges, OnDestr
   }
 
   openValidationPanel(): void {
-    this.filterService.setActivePanel('validation');
+    this.panelNav.open('validation');
   }
 
   statusLabel(s: ValidationStatus): string {

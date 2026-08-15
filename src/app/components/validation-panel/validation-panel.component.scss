@@ -6,19 +6,11 @@ $st-failed: #ef4444;
 $st-no-tel: #6b7280;
 $st-untested: #9ca3af;
 
-.vp-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.6); z-index: 1000;
-  display: flex; align-items: center; justify-content: center;
-  padding: 20px;
-}
 .vp-panel {
   background: var(--bg-elev, #161922);
   border: 1px solid var(--border-subtle, #2a2f3d);
   border-radius: 10px;
-  width: 100%; max-width: 1280px; max-height: 92vh;
   display: flex; flex-direction: column; overflow: hidden;
-  box-shadow: 0 24px 60px rgba(0,0,0,0.5);
 }
 
 .vp-head {

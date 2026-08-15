@@ -19,7 +19,6 @@ import { Domain } from '../../models/domain';
   styleUrl: './yara-export.component.scss',
 })
 export class YaraExportComponent implements OnInit, OnDestroy {
-  open = false;
   domain: Domain | null = null;
   selectedMode: 'current' | 'implemented' | 'all' = 'all';
   previewRules: YaraRule[] = [];
@@ -36,19 +35,13 @@ export class YaraExportComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(this.filterService.activePanel$.subscribe(panel => {
-      this.open = (panel as string) === 'yara';
-      if (this.open) this.generatePreview();
-      this.cdr.markForCheck();
-    }));
     this.subs.add(this.dataService.domain$.subscribe(domain => {
       this.domain = domain;
-      if (this.open) this.generatePreview();
+      this.generatePreview();
       this.cdr.markForCheck();
     }));
   }
 
-  close(): void { this.filterService.setActivePanel(null); }
   setMode(mode: 'current' | 'implemented' | 'all'): void { this.selectedMode = mode; this.generatePreview(); }
 
   private getTechniques(): Technique[] {

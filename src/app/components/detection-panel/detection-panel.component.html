@@ -1,8 +1,6 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-@if (visible) {
-  <div class="overlay" (click)="close()">
-    <div class="panel" role="dialog" aria-modal="true" aria-label="Detection Coverage" (click)="$event.stopPropagation()">
+<section class="page-panel page-panel--full panel" aria-label="Detection Coverage">
 
       <!-- Header -->
       <div class="panel-header">
@@ -14,7 +12,6 @@
             </span>
           }
         </div>
-        <button class="close-btn" (click)="close()" title="Close">✕</button>
       </div>
 
       @if (detectionRows.length === 0) {
@@ -266,6 +263,4 @@
 
         </div>
       }
-    </div>
-  </div>
-}
+</section>
