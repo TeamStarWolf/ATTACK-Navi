@@ -1,5 +1,8 @@
-// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+﻿// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
+// PROVENANCE: curated heuristic content, hand-maintained in this repo -- not
+// derived from an authoritative upstream dataset. Technique associations are
+// editorial suggestions, not MITRE-published relationships.
 import { Injectable } from '@angular/core';
 
 export interface BloodHoundMapping {
