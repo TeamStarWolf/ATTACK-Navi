@@ -2,163 +2,89 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, catchError, of, timer } from 'rxjs';
-import { filter, take } from 'rxjs/operators';
-import { AttackCveService } from './attack-cve.service';
-import { SettingsService } from './settings.service';
-import { CWE_TO_ATTACK } from './cve.service';
+import { BehaviorSubject, catchError, of } from 'rxjs';
+
+/** v2 asset schema: exact per-technique count + most-recent CVE id sample. */
+interface CveMapEntryV2 {
+  c: number;
+  s: string[];
+}
+
+interface CveMapMetaV2 {
+  source?: string;
+  generated?: string;
+  cveCount?: number;
+  refCount?: number;
+  sampleCap?: number;
+}
 
 /**
- * Loads a pre-computed CVE-to-ATT&CK technique mapping (every CVE in NVD
- * mapped via CWE), then supplements with a 120-day live API fetch for
- * the very latest CVEs.
+ * Historical CVE→ATT&CK technique index, generated from the CVE2CAPEC
+ * pipeline (CVE → CWE → CAPEC → ATT&CK over MITRE-published data, all CVE
+ * years). Replaces the previous NVD-scan supplement that mapped CVEs through
+ * a generated CWE→technique table whose entries were largely unverifiable.
+ * The bundled asset carries exact counts plus a capped sample of the most
+ * recent CVE ids per technique (see scripts note in CHANGELOG).
  */
 @Injectable({ providedIn: 'root' })
 export class NvdBulkService {
-  private fetchSub?: import('rxjs').Subscription;
-  private supplementaryMap = new Map<string, Set<string>>();
+  private counts = new Map<string, number>();
+  private samples = new Map<string, string[]>();
+  private meta: CveMapMetaV2 = {};
 
   private loadedSubject = new BehaviorSubject<boolean>(false);
   loaded$ = this.loadedSubject.asObservable();
 
   private totalSubject = new BehaviorSubject<number>(0);
+  /** Unique CVEs with at least one derived technique mapping. */
   total$ = this.totalSubject.asObservable();
 
   private coveredSubject = new BehaviorSubject<number>(0);
+  /** Techniques with at least one mapped CVE. */
   covered$ = this.coveredSubject.asObservable();
 
-  constructor(
-    private http: HttpClient,
-    private attackCveService: AttackCveService,
-    private settingsService: SettingsService,
-  ) {
-    // Load pre-computed full mapping first, then supplement with live API
-    this.http.get<Record<string, string[]>>('assets/data/cve-technique-map.json')
+  constructor(private http: HttpClient) {
+    this.http
+      .get<Record<string, CveMapEntryV2 | CveMapMetaV2>>('assets/data/cve-technique-map.json')
       .pipe(catchError(() => of(null)))
       .subscribe(data => {
         if (data) {
-          for (const [attackId, cveIds] of Object.entries(data)) {
-            const set = this.supplementaryMap.get(attackId) ?? new Set<string>();
-            for (const cveId of cveIds) set.add(cveId);
-            this.supplementaryMap.set(attackId, set);
+          for (const [key, value] of Object.entries(data)) {
+            if (key === '__meta') {
+              this.meta = value as CveMapMetaV2;
+              continue;
+            }
+            const entry = value as CveMapEntryV2;
+            if (typeof entry?.c !== 'number') continue;
+            this.counts.set(key, entry.c);
+            this.samples.set(key, entry.s ?? []);
           }
-          this.totalSubject.next(this.countTotalCves());
-          this.coveredSubject.next(this.supplementaryMap.size);
-          this.loadedSubject.next(true);
+          this.totalSubject.next(this.meta.cveCount ?? this.counts.size);
+          this.coveredSubject.next(this.counts.size);
         }
-        // Then supplement with live 120-day fetch for the very latest CVEs.
-        // Note: This runs regardless of whether the base JSON loaded successfully —
-        // intentional as a fallback so live NVD data can still populate technique scores
-        // even when the pre-computed mapping is unavailable.
-        this.attackCveService.loaded$.pipe(
-          filter(loaded => loaded),
-          take(1),
-        ).subscribe(() => {
-          this.fetchAll();
-        });
+        this.loadedSubject.next(true);
       });
   }
 
+  /** Exact count of pipeline-mapped CVEs for a technique (subtechniques roll up). */
   getCveCountForTechnique(attackId: string): number {
-    return this.supplementaryMap.get(attackId)?.size ?? 0;
+    const direct = this.counts.get(attackId) ?? 0;
+    if (attackId.includes('.')) return direct;
+    let sub = 0;
+    const prefix = attackId + '.';
+    for (const [id, count] of this.counts) {
+      if (id.startsWith(prefix)) sub += count;
+    }
+    return direct + sub;
   }
 
+  /** Most recent mapped CVE ids for a technique (capped sample, newest first). */
   getCvesForTechnique(attackId: string): string[] {
-    return [...(this.supplementaryMap.get(attackId) ?? [])];
+    return [...(this.samples.get(attackId) ?? [])];
   }
 
-  private fetchAll(): void {
-    // NVD 2.0 requires an ISO-8601 offset (Z) on date params and rejects
-    // ranges over 120 days — start-of-day-119 → end-of-day-today stays under it.
-    const now = new Date();
-    const past = new Date(now.getTime() - 119 * 24 * 60 * 60 * 1000);
-    const startDate = past.toISOString().slice(0, 10) + 'T00:00:00.000Z';
-    const endDate = now.toISOString().slice(0, 10) + 'T23:59:59.999Z';
-    this.fetchPage(0, startDate, endDate);
-  }
-
-  private fetchPage(startIndex: number, startDate: string, endDate: string): void {
-    const apiKey = this.settingsService.current.nvdApiKey;
-    const delayMs = apiKey ? 200 : 500;
-
-    let url = `https://services.nvd.nist.gov/rest/json/cves/2.0?lastModStartDate=${startDate}&lastModEndDate=${endDate}&resultsPerPage=2000&startIndex=${startIndex}`;
-    const headers: Record<string, string> = {};
-    if (apiKey) {
-      headers['apiKey'] = apiKey;
-    }
-
-    this.fetchSub = this.http.get<any>(url, { headers }).pipe(
-      catchError(() => of(null)),
-    ).subscribe(data => {
-      if (!data) {
-        this.loadedSubject.next(true);
-        return;
-      }
-
-      const totalResults: number = data.totalResults ?? 0;
-      const vulnerabilities: any[] = data.vulnerabilities ?? [];
-
-      this.processPage(vulnerabilities);
-      this.totalSubject.next(this.countTotalCves());
-      this.coveredSubject.next(this.supplementaryMap.size);
-
-      const nextIndex = startIndex + 2000;
-      if (nextIndex < totalResults) {
-        // Delay between pages to respect rate limits
-        this.fetchSub = timer(delayMs).subscribe(() => {
-          this.fetchPage(nextIndex, startDate, endDate);
-        });
-      } else {
-        this.loadedSubject.next(true);
-      }
-    });
-  }
-
-  private processPage(vulnerabilities: any[]): void {
-    for (const entry of vulnerabilities) {
-      const cve = entry?.cve;
-      if (!cve) continue;
-
-      const cveId: string = cve.id ?? '';
-      if (!cveId.startsWith('CVE-')) continue;
-
-      // Deduplicate: skip CVEs already in AttackCveService
-      if (this.attackCveService.getMappingForCve(cveId)) continue;
-
-      // Extract CWE IDs from weaknesses
-      const weaknesses: any[] = cve.weaknesses ?? [];
-      const cweIds = new Set<string>();
-      for (const w of weaknesses) {
-        const descriptions: any[] = w.description ?? [];
-        for (const d of descriptions) {
-          const val: string = d.value ?? '';
-          if (val.startsWith('CWE-') && val !== 'CWE-noinfo' && val !== 'CWE-Other') {
-            cweIds.add(val);
-          }
-        }
-      }
-
-      // Map each CWE to ATT&CK technique IDs
-      for (const cweId of cweIds) {
-        const attackIds = CWE_TO_ATTACK[cweId];
-        if (!attackIds) continue;
-        for (const attackId of attackIds) {
-          if (!this.supplementaryMap.has(attackId)) {
-            this.supplementaryMap.set(attackId, new Set());
-          }
-          this.supplementaryMap.get(attackId)!.add(cveId);
-        }
-      }
-    }
-  }
-
-  private countTotalCves(): number {
-    const allCves = new Set<string>();
-    for (const cveSet of this.supplementaryMap.values()) {
-      for (const cve of cveSet) {
-        allCves.add(cve);
-      }
-    }
-    return allCves.size;
+  /** Provenance of the bundled index (source pipeline + generation date). */
+  getMeta(): CveMapMetaV2 {
+    return { ...this.meta };
   }
 }
