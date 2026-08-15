@@ -78,11 +78,9 @@ describe('NavRailComponent', () => {
     expect(badge).toBeFalsy();
   });
 
-  it('should dismiss KEV badge when CVE nav item is clicked', () => {
-    const cveService = TestBed.inject(CveService) as jasmine.SpyObj<CveService>;
+  it('should emit panelToggle for the CVE nav item (badge dismissal lives in the CVE page now)', () => {
     spyOn(component.panelToggle, 'emit');
     component.onNavClick('cve');
-    expect(cveService.dismissKevBadge).toHaveBeenCalled();
     expect(component.panelToggle.emit).toHaveBeenCalledWith('cve');
   });
 

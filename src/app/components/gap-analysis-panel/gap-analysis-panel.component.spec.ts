@@ -2,6 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
+import { provideRouter } from '@angular/router';
 import { GapAnalysisPanelComponent } from './gap-analysis-panel.component';
 import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
@@ -17,9 +18,9 @@ describe('GapAnalysisPanelComponent', () => {
     TestBed.configureTestingModule({
       imports: [GapAnalysisPanelComponent],
       providers: [
+        provideRouter([]),
         { provide: FilterService, useValue: {
-            activePanel$: new BehaviorSubject<string | null>(null),
-            setActivePanel: jasmine.createSpy(),
+            selectTechnique: jasmine.createSpy(),
         }},
         { provide: DataService, useValue: { domain$: new BehaviorSubject(null) }},
         { provide: GapAnalysisService, useValue: {
@@ -37,8 +38,7 @@ describe('GapAnalysisPanelComponent', () => {
     fixture.detectChanges();
   });
 
-  it('is created and starts hidden', () => {
+  it('is created', () => {
     expect(component).toBeTruthy();
-    expect(component.visible).toBe(false);
   });
 });

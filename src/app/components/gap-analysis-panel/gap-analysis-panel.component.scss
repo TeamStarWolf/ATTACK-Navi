@@ -1,16 +1,5 @@
 /* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
    https://github.com/TeamStarWolf/ATTACK-Navi - MIT License */
-.gap-panel-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 300;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: stretch;
-  justify-content: center;
-  backdrop-filter: blur(4px);
-}
-
 .gap-panel {
   width: 100%;
   max-width: 1200px;

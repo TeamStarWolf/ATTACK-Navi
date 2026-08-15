@@ -3,7 +3,6 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
 import { KillchainPanelComponent } from './killchain-panel.component';
-import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
 
 describe('KillchainPanelComponent', () => {
@@ -14,10 +13,6 @@ describe('KillchainPanelComponent', () => {
     TestBed.configureTestingModule({
       imports: [KillchainPanelComponent],
       providers: [
-        { provide: FilterService, useValue: {
-            activePanel$: new BehaviorSubject<string | null>(null),
-            setActivePanel: jasmine.createSpy(),
-        }},
         { provide: DataService, useValue: { domain$: new BehaviorSubject(null) }},
       ],
     });
@@ -26,9 +21,8 @@ describe('KillchainPanelComponent', () => {
     fixture.detectChanges();
   });
 
-  it('is created and starts hidden', () => {
+  it('is created', () => {
     expect(component).toBeTruthy();
-    expect(component.visible).toBe(false);
   });
 
   it('selectedTacticId starts null', () => {

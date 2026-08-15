@@ -12,6 +12,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
+import { PanelNavService } from '../../services/panel-nav.service';
 import { DataService } from '../../services/data.service';
 import { AttackCveService } from '../../services/attack-cve.service';
 import { Domain } from '../../models/domain';
@@ -73,7 +74,6 @@ const KIND_ICONS: Record<GraphNode['kind'], string> = {
   styleUrl: './technique-graph-panel.component.scss',
 })
 export class TechniqueGraphPanelComponent implements OnInit, OnDestroy {
-  open = false;
   domain: Domain | null = null;
   technique: Technique | null = null;
 
@@ -135,41 +135,34 @@ export class TechniqueGraphPanelComponent implements OnInit, OnDestroy {
     private filterService: FilterService,
     private dataService: DataService,
     private cveService: AttackCveService,
+    private panelNav: PanelNavService,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
     this.subs.add(
-      this.filterService.activePanel$.subscribe(p => {
-        this.open = p === 'technique-graph';
-        if (this.open && this.domain && this.technique) this.build();
-        this.cdr.markForCheck();
-      }),
-    );
-    this.subs.add(
       this.dataService.domain$.subscribe(d => {
         this.domain = d;
+        if (d && this.technique) this.build();
         this.cdr.markForCheck();
       }),
     );
     this.subs.add(
       this.filterService.selectedTechnique$.subscribe(t => {
         this.technique = t;
-        if (this.open && this.domain && t) this.build();
+        if (this.domain && t) this.build();
         this.cdr.markForCheck();
       }),
     );
     this.subs.add(
       this.cveService.loaded$.subscribe(loaded => {
-        if (loaded && this.open && this.technique) this.build();
+        if (loaded && this.technique) this.build();
         this.cdr.markForCheck();
       }),
     );
   }
 
   ngOnDestroy(): void { this.subs.unsubscribe(); }
-
-  close(): void { this.filterService.setActivePanel(null); }
 
   // -- Technique search --
   onSearchInput(query: string): void {
@@ -476,7 +469,7 @@ export class TechniqueGraphPanelComponent implements OnInit, OnDestroy {
     }
     if (node.kind === 'group') {
       this.filterService.toggleThreatGroup(node.id);
-      this.filterService.setActivePanel('threats');
+      this.panelNav.open('threats');
     }
   }
 
@@ -489,7 +482,4 @@ export class TechniqueGraphPanelComponent implements OnInit, OnDestroy {
   get legendKinds(): Array<GraphNode['kind']> {
     return ['technique', 'subtechnique', 'parent', 'mitigation', 'group', 'software', 'cve', 'campaign'];
   }
-
-  @HostListener('document:keydown.escape')
-  onEsc(): void { if (this.open) this.close(); }
 }

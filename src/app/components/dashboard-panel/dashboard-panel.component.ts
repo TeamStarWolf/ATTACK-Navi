@@ -10,6 +10,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { Subscription, combineLatest, filter, take } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
+import { PanelNavService } from '../../services/panel-nav.service';
 import { DataService } from '../../services/data.service';
 import { Technique } from '../../models/technique';
 import { ImplementationService } from '../../services/implementation.service';
@@ -109,7 +110,6 @@ interface HealthEntry {
   styleUrl: './dashboard-panel.component.scss',
 })
 export class DashboardPanelComponent implements OnInit, OnDestroy {
-  visible = false;
   stats: DashboardStats | null = null;
   loading = true;
   configOpen = false;
@@ -136,6 +136,7 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
 
   constructor(
     private filterService: FilterService,
+    private panelNav: PanelNavService,
     private dataService: DataService,
     private implService: ImplementationService,
     private timelineService: TimelineService,
@@ -168,30 +169,20 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
       }),
     );
 
-    this.subs.add(
-      this.filterService.activePanel$.subscribe(p => {
-        this.visible = p === 'dashboard';
-        if (this.visible && !this.statsBuilt) {
-          this.buildStats();
-        }
-        this.cdr.markForCheck();
-      }),
-    );
+    this.buildStats();
 
-    // Refresh stats when impl status changes (if already visible)
+    // Refresh stats when impl status changes
     this.subs.add(
       this.implService.status$.subscribe(() => {
-        if (this.visible) {
-          this.statsBuilt = false;
-          this.buildStats();
-        }
+        this.statsBuilt = false;
+        this.buildStats();
       }),
     );
 
     // Refresh stats when CVE data loads
     this.subs.add(
       this.attackCveService.loaded$.subscribe(loaded => {
-        if (loaded && this.visible) {
+        if (loaded) {
           this.statsBuilt = false;
           this.buildStats();
         }
@@ -522,19 +513,13 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
   }
 
   // ─── Navigation and export actions ─────────────────────────────────────
-  close(): void {
-    this.configOpen = false;
-    this.filterService.setActivePanel(null);
-  }
-
   openPanel(panel: string): void {
-    this.close();
-    setTimeout(() => this.filterService.setActivePanel(panel as any), 100);
+    this.configOpen = false;
+    this.panelNav.open(panel);
   }
 
   exportReport(): void {
     this.dataService.domain$.pipe(filter(Boolean), take(1)).subscribe(domain => {
-      this.close();
       this.htmlReportService.generateAndOpen(domain, this.implService.getStatusMap());
     });
   }
@@ -650,9 +635,8 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
 
   viewTechniqueOfDay(): void {
     if (!this.todTechnique) return;
-    this.close();
-    setTimeout(() => {
-      this.filterService.selectTechnique(this.todTechnique);
-    }, 100);
+    // The technique sidebar is a global overlay — open it over the matrix.
+    this.panelNav.open('matrix');
+    this.filterService.selectTechnique(this.todTechnique);
   }
 }
