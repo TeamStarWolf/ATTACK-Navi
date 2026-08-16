@@ -15,7 +15,10 @@
   --line-strong: rgb(151 185 211 / 22%);
   --text-main: #e7eef5;
   --text-muted: #93a8bb;
-  --text-faint: #5e778e;
+  /* 5.2:1 on --bg-base, ≥4.5:1 on raised card surfaces (the old #5e778e sat
+     at ~4.0:1 — WCAG AA fail for the small hint text this token exists for;
+     flagged by axe on export-hub cards among others). */
+  --text-faint: #7b95ad;
   --accent: #6fd3ff;
   --accent-strong: #2ca8e2;
   --accent-warm: #ffb454;
@@ -98,20 +101,26 @@ body.light-mode {
   --text-main: #1a1a2e;
   --text-secondary: #4a5568;
   --text-muted: #4a5568;
-  --text-faint: #718096;
+  /* #566579: ≥4.7:1 on every light surface incl. 3%-tint inputs (two
+     lighter slates measured 4.44 and 4.47 — both just under AA). */
+  --text-faint: #566579;
   --border-subtle: rgb(0 0 0 / 8%);
   --border-default: rgb(0 0 0 / 12%);
   --line-soft: rgb(0 0 0 / 8%);
   --line-strong: rgb(0 0 0 / 14%);
-  --accent: #2563eb;
-  --accent-strong: #1d4ed8;
+  /* blue-700/800: blue-600 measured 4.33:1 on tinted active-tab fills —
+     just under AA for the small tab labels (axe-flagged). */
+  --accent: #1d4ed8;
+  --accent-strong: #1e40af;
   --accent-warm: #ea580c;
   --accent-blue: #2563eb;
   --accent-green: #16a34a;
   --accent-red: #dc2626;
   --accent-orange: #ea580c;
   --accent-purple: #7c3aed;
-  --success: #16a34a;
+  /* green-700: #16a34a was 3.3:1 on white — failed WCAG AA for the small
+     text this token colors (e.g. the toolbar version badge; axe-flagged). */
+  --success: #15803d;
   --danger: #dc2626;
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 5%);
   --shadow-md: 0 4px 6px rgb(0 0 0 / 7%);
@@ -150,7 +159,9 @@ body.light-mode {
   .group-label { color: #64748b !important; }
 
   .attack-version {
-    color: #16a34a !important;
+    /* green-800: 5.9:1 on the pale green pill background (axe-flagged at
+       3.3:1 with the old green-600). */
+    color: #166534 !important;
     background: rgb(22 163 74 / 8%) !important;
     border-color: rgb(22 163 74 / 20%) !important;
   }
@@ -250,8 +261,8 @@ body.light-mode {
   }
 
   .scope-btn {
-    color: #94a3b8 !important;
-    &:hover { border-color: #2563eb !important; color: #2563eb !important; }
+    color: #566579 !important; /* was #94a3b8 — 2.6:1 on white (axe) */
+    &:hover { border-color: #2563eb !important; color: #1d4ed8 !important; }
 
     &.active {
       background: rgb(37 99 235 / 8%) !important;
@@ -431,10 +442,13 @@ body.light-mode {
     border-right-color: #e2e8f0 !important;
   }
 
+  /* Tactic headers keep their saturated per-tactic colors in light mode,
+     so header text stays theme-neutral WHITE. The old dark-slate overrides
+     put near-black text on dark navy (axe: 1.07:1 — invisible). */
   .tactic-th { background: #1e3a5f !important; }
-  .tactic-name-text { color: #1a1a2e !important; }
-  .count { color: #94a3b8 !important; }
-  .tactic-pct { color: #64748b !important; }
+  .tactic-name-text { color: #ffffff !important; }
+  .count { color: rgb(255 255 255 / 95%) !important; }
+  .tactic-pct { color: rgb(255 255 255 / 92%) !important; }
   .tactic-coverage-bar { background: rgb(0 0 0 / 6%) !important; }
 
   .tactic-col {
@@ -442,16 +456,16 @@ body.light-mode {
     background: transparent !important;
   }
 
+  /* Heatmap cells keep their DATA colors in light mode. The old block
+     forced every cell white — which silently disabled the entire heatmap
+     visualization for light-theme users (while the legend still showed
+     color scales). Per-cell text color is computed for WCAG contrast
+     against the actual heat color, so no per-theme text overrides needed. */
   .cell {
-    background: #ffffff !important;
-    color: #1e293b !important;
-    border: 1px solid #e2e8f0 !important;
-    box-shadow: 0 1px 2px rgb(0 0 0 / 4%) !important;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 8%) !important;
 
     &:hover {
-      background: #f1f5f9 !important;
-      box-shadow: 0 2px 8px rgb(0 0 0 / 10%) !important;
-      border-color: #cbd5e1 !important;
+      box-shadow: 0 2px 8px rgb(0 0 0 / 18%) !important;
     }
 
     &.selected {
@@ -459,23 +473,7 @@ body.light-mode {
     }
 
     &.highlighted {
-      box-shadow: 0 0 0 2px #2563eb !important;
-    }
-
-    .id { color: #64748b !important; opacity: 1 !important; }
-    .name { color: #1e293b !important; }
-    .mit-count { color: #64748b !important; }
-
-    .badge {
-      background: #1e293b !important;
-      border-color: rgba(0, 0, 0, 0.1) !important;
-      color: #ffffff !important;
-    }
-
-    .exposure-badge {
-      background: #ea580c !important;
-      border-color: rgba(0, 0, 0, 0.1) !important;
-      color: #ffffff !important;
+      box-shadow: 0 0 0 2px #1d4ed8 !important;
     }
 
     .impl-dot { border-color: rgb(0 0 0 / 25%) !important; }
@@ -832,6 +830,26 @@ body.light-mode {
 
   .state-msg { color: #1a1a2e !important; }
   .state-hint { color: #64748b !important; }
+
+  /* ── Legacy panel-body light coverage (axe-flagged islands) ── */
+  /* Timeline snapshot form kept its dark background while text tokens
+     went light-slate (3.2:1). */
+  .snapshot-form { background: #f8fafc !important; border-bottom-color: #e2e8f0 !important; }
+  .label-input,
+  .notes-input,
+  .quick-btn {
+    background: #fff !important;
+    border-color: #e2e8f0 !important;
+    color: #334155 !important;
+  }
+  .snapshot-card { background: #fff !important; border-color: #e2e8f0 !important; }
+  .card-label { color: #1a1a2e !important; }
+
+  /* Threat-group list rows: light rows from this block, but the dark-design
+     text colors stayed (1.45:1 on white). */
+  .group-name,
+  .stat-num { color: #1a1a2e !important; }
+  .group-aliases { color: #64748b !important; }
 }
 
 @media print {

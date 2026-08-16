@@ -74,7 +74,7 @@
   margin-bottom: -1px;
   font-size: 12px;
   font-weight: 500;
-  color: #4a6080;
+  color: var(--text-faint);
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s;
 
@@ -102,7 +102,7 @@
 .section-label {
   font-size: 10px;
   font-weight: 600;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.8px;
 }
@@ -132,7 +132,7 @@
 
 .tmpl-count {
   font-size: 10px;
-  color: #3a5a74;
+  color: var(--text-faint);
 }
 
 .tmpl-actions {
@@ -189,7 +189,7 @@
   &:focus-within { border-color: #1a9fff; }
 }
 
-.search-icon { font-size: 12px; color: #4a6080; flex-shrink: 0; }
+.search-icon { font-size: 12px; color: var(--text-faint); flex-shrink: 0; }
 
 .search-input {
   flex: 1;
@@ -199,13 +199,13 @@
   color: #c9d8e8;
   font-size: 12px;
   height: 32px;
-  &::placeholder { color: #3a5a74; }
+  &::placeholder { color: var(--text-faint); }
 }
 
 .clear-btn {
   background: none;
   border: none;
-  color: #4a6080;
+  color: var(--text-faint);
   cursor: pointer;
   font-size: 11px;
   padding: 2px 4px;
@@ -263,7 +263,7 @@
 .form-title {
   font-size: 10px;
   font-weight: 600;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.8px;
 }
@@ -283,7 +283,7 @@
 .form-label {
   font-size: 10px;
   font-weight: 600;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.8px;
 }
@@ -297,7 +297,7 @@
   padding: 7px 12px;
   outline: none;
   &:focus { border-color: #1a9fff; }
-  &::placeholder { color: #3a5a74; }
+  &::placeholder { color: var(--text-faint); }
 }
 
 .form-select {
@@ -316,7 +316,7 @@
   border: 1px solid #1a3448;
   border-radius: 5px;
   background: #0a1828;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 11px;
   font-weight: 600;
   padding: 6px;
@@ -359,7 +359,7 @@
 .mit-chip-remove {
   background: none;
   border: none;
-  color: #4a6080;
+  color: var(--text-faint);
   cursor: pointer;
   font-size: 10px;
   padding: 0;
@@ -380,7 +380,7 @@
   font-size: 12px;
   padding: 2px 4px;
   outline: none;
-  &::placeholder { color: #3a5a74; }
+  &::placeholder { color: var(--text-faint); }
 }
 
 .mit-suggestions {
@@ -517,7 +517,7 @@
 
 .card-meta {
   font-size: 11px;
-  color: #4a6080;
+  color: var(--text-faint);
   margin-top: 2px;
   display: flex;
   align-items: center;
@@ -527,7 +527,7 @@
 
 .meta-ref { color: #8aaac8; }
 .meta-sep { color: #1a3448; }
-.meta-count { color: #4a6080; }
+.meta-count { color: var(--text-faint); }
 
 .card-actions {
   display: flex;
@@ -552,7 +552,7 @@
 
 .chevron {
   font-size: 9px;
-  color: #3a5a74;
+  color: var(--text-faint);
   margin-left: 2px;
 }
 
@@ -572,7 +572,7 @@
 .detail-label {
   font-size: 10px;
   font-weight: 600;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.8px;
   margin-bottom: 6px;
@@ -596,7 +596,7 @@
 
 .no-mits {
   font-size: 11px;
-  color: #3a5a74;
+  color: var(--text-faint);
   font-style: italic;
 }
 
@@ -606,12 +606,12 @@
   align-items: center;
   gap: 8px;
   padding: 40px 20px;
-  color: #4a6080;
+  color: var(--text-faint);
   text-align: center;
 
   .empty-icon { font-size: 32px; opacity: 0.5; }
   p { margin: 0; font-size: 13px; }
-  .empty-hint { font-size: 11px; color: #3a5a74; }
+  .empty-hint { font-size: 11px; color: var(--text-faint); }
 }
 
 // By-mitigation tab

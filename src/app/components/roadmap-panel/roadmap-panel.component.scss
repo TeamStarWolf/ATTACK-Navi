@@ -24,14 +24,14 @@
   border-bottom: 1px solid #0f1f2e; flex-shrink: 0;
 }
 .control-group { display: flex; align-items: center; gap: 6px; }
-.control-label { font-size: 10px; font-weight: 600; color: #3a5a74; text-transform: uppercase; letter-spacing: 0.8px; }
+.control-label { font-size: 10px; font-weight: 600; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.8px; }
 
 .control-select {
   background: #0a1828; border: 1px solid #1a3448; color: #c9d8e8; font-size: 11px;
   padding: 5px 10px; border-radius: 5px;
   &:focus { border-color: #1a9fff; outline: none; }
 }
-.roadmap-legend { display: flex; gap: 16px; padding: 5px 16px; font-size: 11px; color: #3a5a74; flex-shrink: 0; }
+.roadmap-legend { display: flex; gap: 16px; padding: 5px 16px; font-size: 11px; color: var(--text-faint); flex-shrink: 0; }
 .legend-dot { &.priority { color: #58a6ff; } &.impact { color: #ffa728; } }
 .roadmap-body { flex: 1; overflow-y: auto; background: #070d14; padding: 4px 0; }
 
@@ -43,7 +43,7 @@
   &.status-implemented { background: rgb(74 222 128 / 4%); }
   &.status-inprogress { background: rgb(88 166 255 / 4%); }
 }
-.item-rank { font-size: 11px; font-weight: 700; color: #3a5a74; width: 22px; text-align: right; flex-shrink: 0; padding-top: 2px; }
+.item-rank { font-size: 11px; font-weight: 700; color: var(--text-faint); width: 22px; text-align: right; flex-shrink: 0; padding-top: 2px; }
 .item-main { flex: 1; min-width: 0; }
 .item-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
 
@@ -64,9 +64,9 @@
 .item-meta { display: flex; gap: 4px; flex-wrap: wrap; }
 
 .meta-chip {
-  font-size: 10px; background: #0f1f2e; color: #4a6080; padding: 2px 7px; border-radius: 4px;
+  font-size: 10px; background: #0f1f2e; color: var(--text-faint); padding: 2px 7px; border-radius: 4px;
   &.gap.has-gap { background: rgb(255 167 40 / 10%); color: #ffa728; }
-  &.tactic { color: #4a6080; }
+  &.tactic { color: var(--text-faint); }
 }
 .item-scores { display: flex; gap: 4px; flex-shrink: 0; }
 
@@ -75,7 +75,7 @@
   padding: 4px 8px; text-align: center; min-width: 46px;
 }
 .score-val { display: block; font-size: 14px; font-weight: 700; line-height: 1; }
-.score-lbl { display: block; font-size: 9px; color: #3a5a74; text-transform: uppercase; margin-top: 1px; }
+.score-lbl { display: block; font-size: 9px; color: var(--text-faint); text-transform: uppercase; margin-top: 1px; }
 .impact-box .score-val { color: #ffa728; }
 .priority-box .score-val { color: #58a6ff; }
 .item-status { display: flex; flex-direction: column; gap: 3px; align-items: center; flex-shrink: 0; }

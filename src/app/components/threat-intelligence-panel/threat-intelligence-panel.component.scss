@@ -39,7 +39,7 @@
 
 .header-subtitle {
   font-size: 12px;
-  color: #4a6080;
+  color: var(--text-faint);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -51,7 +51,7 @@
   border-radius: 6px;
   background: rgb(255 255 255 / 6%);
   border: none;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 16px;
   cursor: pointer;
   display: flex;
@@ -100,7 +100,7 @@
 .stat-label {
   font-size: 10px;
   font-weight: 600;
-  color: #4a6080;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -146,7 +146,7 @@
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -207,7 +207,7 @@
   outline: none;
   transition: border-color 0.15s;
 
-  &::placeholder { color: #3a5a74; }
+  &::placeholder { color: var(--text-faint); }
   &:focus { border-color: #a78bfa; }
 }
 
@@ -245,7 +245,7 @@
 .top-intro {
   padding: 10px 16px;
   font-size: 11px;
-  color: #3a5a74;
+  color: var(--text-faint);
   border-bottom: 1px solid #1a3448;
   background: #070d14;
 }
@@ -273,7 +273,7 @@
     padding: 10px 12px;
     font-size: 10px;
     font-weight: 600;
-    color: #3a5a74;
+    color: var(--text-faint);
     text-transform: uppercase;
     letter-spacing: 0.8px;
     border-bottom: 1px solid #1a3448;
@@ -303,7 +303,7 @@
 .rank-col {
   font-size: 11px;
   font-weight: 700;
-  color: #3a5a74;
+  color: var(--text-faint);
   width: 32px;
   text-align: center;
 }
@@ -355,7 +355,7 @@
   font-size: 11px;
   font-weight: 700;
 
-  &.score-none   { background: rgb(74 96 128 / 15%); color: #4a6080; }
+  &.score-none   { background: rgb(74 96 128 / 15%); color: var(--text-faint); }
   &.score-low    { background: rgb(88 166 255 / 15%); color: #58a6ff; }
   &.score-medium { background: rgb(167 139 250 / 15%); color: #a78bfa; }
   &.score-high   { background: rgb(248 113 113 / 15%); color: #f87171; }
@@ -402,7 +402,7 @@
   border-radius: 5px;
   background: rgb(255 255 255 / 6%);
   border: none;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 14px;
   cursor: pointer;
   display: inline-flex;
@@ -420,13 +420,13 @@
 .empty-state {
   padding: 48px 24px;
   text-align: center;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 13px;
 
   .hint-text {
     margin-top: 8px;
     font-size: 11px;
-    color: #3a5a74;
+    color: var(--text-faint);
     font-style: italic;
   }
 }
@@ -462,7 +462,7 @@
 .actor-source {
   font-size: 10px;
   font-weight: 600;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -485,7 +485,7 @@
 
 .alias-more {
   font-size: 10px;
-  color: #3a5a74;
+  color: var(--text-faint);
   padding: 2px 4px;
 }
 
@@ -497,7 +497,7 @@
 
 .actor-tech-count {
   font-size: 11px;
-  color: #4a6080;
+  color: var(--text-faint);
 }
 
 .filter-btn {

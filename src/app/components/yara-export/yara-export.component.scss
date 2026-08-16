@@ -16,14 +16,14 @@
 
 .yara-close {
   width: 28px; height: 28px; border-radius: 6px; background: transparent; border: none;
-  color: #4a6080; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: var(--text-faint); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;
   &:hover { background: #1a3448; color: #c9d8e8; }
 }
 .yara-body { flex: 1; overflow-y: auto; padding: 16px; background: #070d14; }
 .yara-section { margin-bottom: 16px; }
 
 .yara-section-label {
-  font-size: 10px; font-weight: 600; color: #3a5a74; text-transform: uppercase;
+  font-size: 10px; font-weight: 600; color: var(--text-faint); text-transform: uppercase;
   letter-spacing: 0.8px; margin-bottom: 8px;
 }
 .yara-modes { display: flex; flex-direction: column; gap: 6px; }
@@ -39,7 +39,7 @@
   padding: 8px 14px; background: #040a10; border: 1px solid #0f1f2e;
   border-radius: 5px; font-size: 12px;
 }
-.yara-stat { font-size: 12px; color: #4a6080; strong { color: #58a6ff; font-size: 14px; font-weight: 700; } }
+.yara-stat { font-size: 12px; color: var(--text-faint); strong { color: #58a6ff; font-size: 14px; font-weight: 700; } }
 .yara-stat-sep { color: #1a3448; }
 
 .yara-code-preview {
@@ -57,7 +57,7 @@
 }
 
 .yara-cancel-btn {
-  padding: 5px 12px; background: none; border: 1px solid #1a3448; color: #4a6080;
+  padding: 5px 12px; background: none; border: 1px solid #1a3448; color: var(--text-faint);
   border-radius: 5px; cursor: pointer; font-size: 12px;
-  &:hover { border-color: #3a5a74; color: #8aaac8; }
+  &:hover { border-color: var(--text-faint); color: #8aaac8; }
 }

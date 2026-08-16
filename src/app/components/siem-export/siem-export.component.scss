@@ -44,7 +44,7 @@
 .siem-subtitle {
   margin: 0;
   font-size: 10px;
-  color: #3a5a74;
+  color: var(--text-faint);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -56,7 +56,7 @@
   border-radius: 6px;
   background: transparent;
   border: none;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 16px;
   cursor: pointer;
   display: flex;
@@ -102,7 +102,7 @@
 .siem-section-label {
   font-size: 10px;
   font-weight: 600;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.8px;
 }
@@ -135,7 +135,7 @@
   border-radius: 6px;
   border: 1px solid #1a3448;
   background: #0a1620;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 12px;
   cursor: pointer;
   transition: all 0.15s;
@@ -270,7 +270,7 @@
 
 .summary-label {
   font-size: 11px;
-  color: #4a6080;
+  color: var(--text-faint);
 }
 
 .summary-sep {
@@ -279,7 +279,7 @@
 
   &.file-ext {
     margin-left: auto;
-    color: #3a5a74;
+    color: var(--text-faint);
     font-family: Consolas, Monaco, monospace;
     font-size: 11px;
   }
@@ -323,7 +323,7 @@
   background: transparent;
   border: 1px solid #1a3448;
   border-radius: 5px;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 11px;
   padding: 5px 10px;
   cursor: pointer;
@@ -503,7 +503,7 @@
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -599,7 +599,7 @@
   border-radius: 12px;
   background: #0a1828;
   border: 1px solid #1a3448;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
@@ -692,14 +692,14 @@
 
 .library-card-desc {
   font-size: 10px;
-  color: #4a6080;
+  color: var(--text-faint);
   line-height: 1.4;
   margin-bottom: 4px;
 }
 
 .library-card-datasource {
   font-size: 10px;
-  color: #3a5a74;
+  color: var(--text-faint);
   margin-bottom: 8px;
 }
 
@@ -773,7 +773,7 @@
 
 .library-empty-state p {
   font-size: 12px;
-  color: #4a6080;
+  color: var(--text-faint);
   line-height: 1.5;
   max-width: 360px;
   margin: 0;
