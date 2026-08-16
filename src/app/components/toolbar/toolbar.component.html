@@ -37,6 +37,12 @@
               title="Mobile ATT&CK">
         <app-icon name="smartphone" [size]="15" aria-hidden="true" />
       </button>
+      <button class="domain-btn"
+              [class.active]="attackDomain === 'f3'"
+              (click)="attackDomain = 'f3'; onDomainChange()"
+              title="F3 Fraud Framework (CTID)">
+        <app-icon name="scale" [size]="15" aria-hidden="true" />
+      </button>
     </div>
     <button class="icon-btn source-mode-btn"
             [class.active]="dataSourceMode === 'live'"
