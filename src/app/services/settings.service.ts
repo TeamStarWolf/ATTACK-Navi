@@ -59,7 +59,9 @@ export class SettingsService {
   settings$ = this.settingsSubject.asObservable();
 
   readonly COLOR_THEMES: Record<string, string[]> = {
-    default:    ['#d32f2f', '#e65100', '#f9a825', '#558b2f', '#1b5e20'],
+    // #b45309 (was #e65100): the old orange was a contrast dead zone — neither
+    // black nor white text reached WCAG AA on it (axe: 37 cells at 4.24:1).
+    default:    ['#d32f2f', '#b45309', '#f9a825', '#558b2f', '#1b5e20'],
     redgreen:   ['#dc2626', '#f97316', '#eab308', '#16a34a', '#15803d'],
     blueorange: ['#1d4ed8', '#2563eb', '#0ea5e9', '#f59e0b', '#d97706'],
     monochrome: ['#111827', '#374151', '#6b7280', '#9ca3af', '#e5e7eb'],

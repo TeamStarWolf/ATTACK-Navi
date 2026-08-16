@@ -27,13 +27,11 @@ import { SettingsService } from '../../services/settings.service';
   standalone: true,
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: {
-    'role': 'gridcell',
-    '[attr.aria-label]': 'technique.attackId + \': \' + technique.name',
-  },
   template: `
     <div
       class="cell"
+      role="button"
+      [attr.aria-label]="technique.attackId + ': ' + technique.name"
       tabindex="0"
       [class.sub]="technique.isSubtechnique"
       [class.highlighted]="isHighlighted"
@@ -301,9 +299,11 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
     }
     // Pick whichever text color actually has the higher WCAG contrast
     // against the computed background (isLight()'s brightness threshold
-    // mis-served mid-tone backgrounds).
+    // mis-served mid-tone backgrounds). Candidates are PURE black/white:
+    // #212121 lost to white on mid greens at 3.95 vs 4.08 — both failing —
+    // where #000 clears AA at 5.15.
     this.textColor = tinycolor
-      .mostReadable(this.bgColor, ['#212121', '#ffffff'])
+      .mostReadable(this.bgColor, ['#000000', '#ffffff'])
       .toHexString();
     this.implDotColor = this.implStatus ? this.computeStatusColor(this.implStatus) : '';
   }

@@ -263,10 +263,17 @@ export class SidebarComponent implements OnInit, OnDestroy {
   jumpToSection(id: string): void {
     this.collapsedSections.delete(id);
     this.cdr.markForCheck();
-    // Instant scroll: smooth scrolling gets cancelled by the layout shift
-    // when the target section expands in the same frame.
+    // Smooth scroll — but only AFTER the expansion has fully rendered
+    // (two frames), otherwise the layout shift cancels the animation.
+    // Users who prefer reduced motion get an instant jump.
     setTimeout(() => {
-      document.getElementById('sb-sec-' + id)?.scrollIntoView({ block: 'start' });
+      requestAnimationFrame(() => {
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        document.getElementById('sb-sec-' + id)?.scrollIntoView({
+          block: 'start',
+          behavior: reduced ? 'auto' : 'smooth',
+        });
+      });
     });
   }
 

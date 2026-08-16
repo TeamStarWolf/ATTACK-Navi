@@ -39,7 +39,7 @@
 
 .header-subtitle {
   font-size: 12px;
-  color: #4a6080;
+  color: var(--text-faint);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -86,7 +86,7 @@
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -161,7 +161,7 @@
   outline: none;
   transition: border-color 0.15s;
 
-  &::placeholder { color: #3a5a74; }
+  &::placeholder { color: var(--text-faint); }
   &:focus { border-color: #58a6ff; }
 }
 
@@ -174,7 +174,7 @@
 
 .sort-label {
   font-size: 11px;
-  color: #3a5a74;
+  color: var(--text-faint);
   margin-right: 2px;
 }
 
@@ -183,7 +183,7 @@
   background: transparent;
   border: 1px solid #1a3448;
   border-radius: 5px;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 11px;
   cursor: pointer;
   transition: all 0.15s;
@@ -228,7 +228,7 @@
     padding: 10px 12px;
     font-size: 10px;
     font-weight: 600;
-    color: #3a5a74;
+    color: var(--text-faint);
     text-transform: uppercase;
     letter-spacing: 0.8px;
     border-bottom: 1px solid #1a3448;
@@ -294,7 +294,7 @@
 .empty-cell {
   text-align: center;
   padding: 32px;
-  color: #3a5a74;
+  color: var(--text-faint);
   font-style: italic;
 }
 
@@ -342,7 +342,7 @@
 
 .ctrl-more {
   font-size: 10px;
-  color: #3a5a74;
+  color: var(--text-faint);
   padding: 2px 4px;
 }
 
@@ -355,7 +355,7 @@
 
   .ctid-link {
     font-size: 11px;
-    color: #3a5a74;
+    color: var(--text-faint);
     text-decoration: none;
     transition: color 0.15s;
 
@@ -399,7 +399,7 @@
   background: transparent;
   border: 1px solid #1a3448;
   border-radius: 5px;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
@@ -436,7 +436,7 @@
   color: #c9d8e8;
   font-size: 12px;
   outline: none;
-  &::placeholder { color: #3a5a74; }
+  &::placeholder { color: var(--text-faint); }
   &:focus { border-color: #58a6ff; }
 }
 
@@ -471,7 +471,7 @@
     padding: 7px 12px;
     font-size: 10px;
     font-weight: 600;
-    color: #3a5a74;
+    color: var(--text-faint);
     text-transform: uppercase;
     letter-spacing: 0.7px;
     border-bottom: 1px solid #1a3448;
@@ -569,13 +569,13 @@
 
   .tooltip-meta {
     font-size: 10px;
-    color: #4a6080;
+    color: var(--text-faint);
     margin-top: 4px;
   }
 
   .tooltip-type {
     font-size: 10px;
-    color: #4a6080;
+    color: var(--text-faint);
     text-transform: capitalize;
     margin-top: 2px;
     font-style: italic;
