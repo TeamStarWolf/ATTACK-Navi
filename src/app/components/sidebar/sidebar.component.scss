@@ -233,7 +233,7 @@
 .desc-toggle {
   background: none;
   border: none;
-  color: #3a8fd4;
+  color: var(--accent);
   font-size: 11px;
   cursor: pointer;
   padding: 4px 0 12px;
@@ -508,7 +508,7 @@
 
 .dc-note {
   padding: 6px 10px;
-  border-bottom: 1px solid #12283a;
+  border-bottom: 1px solid var(--border-subtle);
 
   &:last-child { border-bottom: none; }
 }
@@ -1051,7 +1051,7 @@
 
   .mit-description {
     font-size: 11px;
-    color: #4a6178;
+    color: var(--text-faint);
     margin: 0;
     line-height: 1.5;
   }
@@ -1061,7 +1061,7 @@
     border: none;
     padding: 2px 0 4px;
     font-size: 10px;
-    color: #3a5570;
+    color: var(--text-faint);
     cursor: pointer;
     display: block;
     width: 100%;
@@ -1099,7 +1099,7 @@
     border: none;
     padding: 1px 0 4px;
     font-size: 10px;
-    color: #2a4a6a;
+    color: var(--text-faint);
     cursor: pointer;
     display: block;
     width: 100%;
@@ -1341,7 +1341,7 @@
 .car-platform {
   font-size: 8px;
   background: var(--bg-hover);
-  color: #4a7a9a;
+  color: var(--text-faint);
   padding: 1px 4px;
   border-radius: 3px;
   font-weight: 600;
@@ -1450,7 +1450,7 @@
 
 .atomic-desc {
   font-size: 10px;
-  color: #5a7a94;
+  color: var(--text-faint);
   margin: 3px 0 0;
   line-height: 1.45;
   font-style: italic;
@@ -1492,7 +1492,7 @@
 
 .misp-cluster-desc {
   font-size: 10px;
-  color: #5a7a94;
+  color: var(--text-faint);
   margin: 0 0 6px;
   line-height: 1.45;
 }
@@ -1971,7 +1971,7 @@
 
 .cri-desc {
   font-size: 11px;
-  color: #4a6178;
+  color: var(--text-faint);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2019,7 +2019,7 @@
 
 .capec-desc {
   font-size: 11px;
-  color: #4a6178;
+  color: var(--text-faint);
   margin: 0;
   line-height: 1.45;
   display: -webkit-box;
@@ -2096,7 +2096,7 @@
   gap: 6px;
   font-size: 12px;
   font-weight: 700;
-  color: #5a7a90;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin: 0 0 10px;
@@ -2491,21 +2491,15 @@
 /* Visual overhaul layer */
 .sidebar {
   width: 460px;
-  background:
-    linear-gradient(180deg, rgb(255 255 255 / 2.5%), transparent 110px),
-    rgb(8 18 28 / 94%);
+  background: var(--bg-elevated);
   border-left: 1px solid var(--line-soft);
-  box-shadow: -24px 0 48px rgb(0 0 0 / 40%);
-  backdrop-filter: blur(20px);
+  box-shadow: -12px 0 32px rgb(0 0 0 / 25%);
 }
 
 .sidebar-header {
   height: 72px;
   padding: 0 18px;
-  background:
-    linear-gradient(135deg, rgb(255 180 84 / 8%), transparent 45%),
-    linear-gradient(180deg, rgb(255 255 255 / 2%), transparent),
-    rgb(8 18 28 / 92%);
+  background: var(--bg-panel-strong);
   border-bottom: 1px solid var(--line-soft);
 
   .attack-id {
@@ -2822,7 +2816,7 @@
   text-transform: uppercase;
   padding: 1px 6px;
   border-radius: 4px;
-  &.pt-stix    { background: #1e3a5f; color: var(--accent); }
+  &.pt-stix    { background: var(--bg-panel-strong); color: var(--accent); }
   &.pt-yara    { background: #2d1b1b; color: var(--danger); }
   &.pt-sigma   { background: #0f2e2a; color: #34d399; }
   &.pt-suricata { background: #1a1a2e; color: #a78bfa; }
@@ -3276,7 +3270,7 @@
 }
 
 .siem-query-card {
-  background: #060f18;
+  background: var(--bg-base);
   border: 1px solid var(--border-subtle);
   border-radius: 6px;
   padding: 8px 10px;
@@ -3353,7 +3347,7 @@
 .siem-query-code {
   font-family: Consolas, Monaco, 'Fira Code', monospace;
   font-size: 9px;
-  background: #020b13;
+  background: var(--bg-base);
   color: #a8d8a8;
   padding: 6px 8px;
   border-radius: 4px;
@@ -3422,7 +3416,7 @@
 .bloodhound-label {
   font-size: 0.68rem;
   font-weight: 600;
-  color: #5e778e;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -3585,7 +3579,7 @@
 
 .section-more {
   font-size: 0.72rem;
-  color: #5e778e;
+  color: var(--text-faint);
   text-align: center;
   padding: 4px 0;
   font-style: italic;
@@ -3637,7 +3631,7 @@
 .azure-label {
   font-size: 0.68rem;
   font-weight: 600;
-  color: #5e778e;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -3868,7 +3862,7 @@
   position: sticky;
   top: -16px;
   z-index: 5;
-  background: rgba(7, 13, 20, 0.97);
+  background: var(--bg-elevated);
   border-bottom: 1px solid rgba(151, 185, 211, 0.12);
   margin: -16px -16px 12px;
   padding: 0 16px;

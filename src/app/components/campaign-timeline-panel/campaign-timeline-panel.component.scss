@@ -251,8 +251,8 @@
   border-bottom: 1px solid var(--bg-panel-strong);
   min-height: 32px;
   transition: background 0.12s;
-  &:hover { background: #0f1923; }
-  &.row-active { background: #0c1929; }
+  &:hover { background: var(--bg-hover); }
+  &.row-active { background: var(--bg-active); }
 }
 
 .row-label {

@@ -4,8 +4,8 @@
   position: fixed;
   z-index: 9999;
   width: 320px;
-  background: #131f2e;
-  border: 1px solid #1e3a5f;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
   border-radius: 8px;
   padding: 12px;
   box-shadow: 0 8px 24px rgb(0 0 0 / 60%);

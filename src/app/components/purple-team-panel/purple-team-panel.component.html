@@ -43,7 +43,7 @@
                 <div class="score-track">
                   <div class="score-fill" [style.width.%]="(bar.count / 15) * 100" [style.background]="bar.color"></div>
                 </div>
-                <span class="score-count" [style.color]="bar.count > 0 ? bar.color : '#3a5a7a'">{{ bar.count }}</span>
+                <span class="score-count" [style.color]="bar.count > 0 ? bar.color : 'var(--text-faint)'">{{ bar.count }}</span>
               </div>
             }
           </div>

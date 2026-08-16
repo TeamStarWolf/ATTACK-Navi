@@ -187,7 +187,7 @@ $unknown: var(--danger);
   }
 
   &.selected {
-    background: #0f2035;
+    background: var(--bg-panel-strong);
     box-shadow: inset 2px 0 0 var(--accent);
   }
 }

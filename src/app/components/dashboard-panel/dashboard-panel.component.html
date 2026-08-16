@@ -74,11 +74,11 @@
                 <div class="widget-body">
                   <div class="stat-cards-row">
                     <div class="mini-stat">
-                      <div class="mini-stat-value" style="color: #58a6ff">{{ stats.totalTechniques }}</div>
+                      <div class="mini-stat-value" style="color: var(--accent)">{{ stats.totalTechniques }}</div>
                       <div class="mini-stat-label">Total Techniques</div>
                     </div>
                     <div class="mini-stat">
-                      <div class="mini-stat-value" style="color: #4ade80">{{ stats.coveredTechniques }}</div>
+                      <div class="mini-stat-value" style="color: var(--success)">{{ stats.coveredTechniques }}</div>
                       <div class="mini-stat-label">Covered</div>
                     </div>
                     <div class="mini-stat">
@@ -86,7 +86,7 @@
                       <div class="mini-stat-label">Coverage</div>
                     </div>
                     <div class="mini-stat">
-                      <div class="mini-stat-value" style="color: #e879f9">{{ stats.avgMitigations }}</div>
+                      <div class="mini-stat-value" style="color: var(--accent-purple)">{{ stats.avgMitigations }}</div>
                       <div class="mini-stat-label">Avg Mitigations</div>
                     </div>
                   </div>
@@ -153,7 +153,7 @@
                     <!-- Data polygon -->
                     @if (radarChart.polygon) {
                       <polygon [attr.points]="radarChart.polygon"
-                        fill="rgba(88,166,255,0.18)" stroke="#58a6ff" stroke-width="1.5"/>
+                        fill="rgba(88,166,255,0.18)" stroke="var(--accent)" stroke-width="1.5"/>
                     }
                   </svg>
                 </div>
@@ -240,13 +240,13 @@
                       <div class="intel-label">MISP Clusters</div>
                     </div>
                     <div class="intel-card">
-                      <div class="intel-value" [style.color]="stats.openctiConnected ? '#4ade80' : '#4a6080'">
+                      <div class="intel-value" [style.color]="stats.openctiConnected ? 'var(--success)' : 'var(--text-faint)'">
                         {{ stats.openctiConnected ? 'Connected' : 'Offline' }}
                       </div>
                       <div class="intel-label">OpenCTI</div>
                     </div>
                     <div class="intel-card">
-                      <div class="intel-value" style="color: #fb923c">{{ stats.threatGroupCount }}</div>
+                      <div class="intel-value" style="color: var(--accent-warm)">{{ stats.threatGroupCount }}</div>
                       <div class="intel-label">Threat Groups</div>
                     </div>
                   </div>
@@ -273,7 +273,7 @@
                       <div class="det-label">Elastic Rules</div>
                     </div>
                     <div class="det-card">
-                      <div class="det-value" style="color: #4ade80">{{ stats.splunkRuleCount }}</div>
+                      <div class="det-value" style="color: var(--success)">{{ stats.splunkRuleCount }}</div>
                       <div class="det-label">Splunk Rules</div>
                     </div>
                   </div>
@@ -400,12 +400,12 @@
                 <div class="widget-body">
                   @if (todTechnique) {
                     <div style="margin-bottom: 8px;">
-                      <span style="color: #58a6ff; font-weight: 700; font-size: 1rem;">{{ todTechnique.attackId }}</span>
+                      <span style="color: var(--accent); font-weight: 700; font-size: 1rem;">{{ todTechnique.attackId }}</span>
                       <span style="color: #e0e0e0; font-weight: 600; margin-left: 6px;">{{ todTechnique.name }}</span>
                     </div>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;">
-                      <span style="font-size: 0.75rem; color: #999;">Tactic: <span style="color: #ccc;">{{ todTactic }}</span></span>
-                      <span style="font-size: 0.75rem; color: #999;">Mitigations: <span style="color: #4ade80;">{{ todMitigationCount }}</span></span>
+                      <span style="font-size: 0.75rem; color: var(--text-muted);">Tactic: <span style="color: #ccc;">{{ todTactic }}</span></span>
+                      <span style="font-size: 0.75rem; color: var(--text-muted);">Mitigations: <span style="color: var(--success);">{{ todMitigationCount }}</span></span>
                     </div>
                     @if (todDescription) {
                       <p style="font-size: 0.78rem; color: #aaa; margin: 4px 0 10px; line-height: 1.4;">{{ todDescription }}</p>
