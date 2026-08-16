@@ -1,7 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Subscription } from 'rxjs';
 import { FilterService, HeatmapMode } from '../../services/filter.service';
 import { SettingsService } from '../../services/settings.service';
@@ -325,7 +325,7 @@ const MODE_CONFIGS: Record<HeatmapMode, LegendConfig> = {
 @Component({
   selector: 'app-legend',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="legend">

@@ -7,7 +7,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Subscription, filter, take } from 'rxjs';
 import { DataService } from '../../services/data.service';
@@ -33,7 +33,7 @@ interface ComparisonRow {
 @Component({
   selector: 'app-timeline-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './timeline-panel.component.html',
   styleUrl: './timeline-panel.component.scss',

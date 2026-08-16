@@ -7,7 +7,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Subscription, combineLatest } from 'rxjs';
 import { Mitigation } from '../../models/mitigation';
@@ -28,7 +28,7 @@ interface WhatIfRow {
 @Component({
   selector: 'app-whatif-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './whatif-panel.component.html',
   styleUrl: './whatif-panel.component.scss',

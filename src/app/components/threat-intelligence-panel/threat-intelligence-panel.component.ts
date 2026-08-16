@@ -7,7 +7,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Subscription, combineLatest, filter, take } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
@@ -51,7 +51,7 @@ interface MispEventRow {
 @Component({
   selector: 'app-threat-intelligence-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './threat-intelligence-panel.component.html',
   styleUrl: './threat-intelligence-panel.component.scss',

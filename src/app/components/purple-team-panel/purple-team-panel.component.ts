@@ -7,7 +7,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Subscription } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
 import { D3fendService, D3fendTechnique } from '../../services/d3fend.service';
@@ -31,7 +31,7 @@ interface TechniqueScore {
 @Component({
   selector: 'app-purple-team-panel',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './purple-team-panel.component.html',
   styleUrl: './purple-team-panel.component.scss',

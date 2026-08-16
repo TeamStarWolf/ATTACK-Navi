@@ -1,7 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Subscription } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
@@ -13,7 +13,7 @@ import { Domain } from '../../models/domain';
 @Component({
   selector: 'app-yara-export',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './yara-export.component.html',
   styleUrl: './yara-export.component.scss',

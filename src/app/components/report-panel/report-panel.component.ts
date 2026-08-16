@@ -7,7 +7,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Subscription, combineLatest } from 'rxjs';
 import { Domain } from '../../models/domain';
 import { DataService } from '../../services/data.service';
@@ -43,7 +43,7 @@ interface DocumentedMit {
 @Component({
   selector: 'app-report-panel',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './report-panel.component.html',
   styleUrl: './report-panel.component.scss',
