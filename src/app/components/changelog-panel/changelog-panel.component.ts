@@ -7,7 +7,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Subscription } from 'rxjs';
 import { DataService } from '../../services/data.service';
 import { ChangelogService, AttackRelease } from '../../services/changelog.service';
@@ -15,7 +15,7 @@ import { ChangelogService, AttackRelease } from '../../services/changelog.servic
 @Component({
   selector: 'app-changelog-panel',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './changelog-panel.component.html',
   styleUrl: './changelog-panel.component.scss',

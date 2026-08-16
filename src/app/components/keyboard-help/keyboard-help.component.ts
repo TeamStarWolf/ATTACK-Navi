@@ -1,7 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Subscription } from 'rxjs';
 import { HelpOverlayService } from '../../services/help-overlay.service';
 import { SHORTCUTS, ShortcutDef } from '../../models/shortcuts';
@@ -20,7 +20,7 @@ interface ShortcutGroup {
 @Component({
   selector: 'app-keyboard-help',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './keyboard-help.component.html',
   styleUrl: './keyboard-help.component.scss',

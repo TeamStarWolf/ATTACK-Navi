@@ -7,7 +7,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
@@ -31,7 +31,7 @@ interface TaggedTechnique {
 @Component({
   selector: 'app-tags-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './tags-panel.component.html',
   styleUrl: './tags-panel.component.scss',

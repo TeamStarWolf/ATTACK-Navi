@@ -1,7 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ExportActionsService } from '../../services/export-actions.service';
 import { WorkspaceBundleService } from '../../services/workspace-bundle.service';
 
@@ -26,7 +26,7 @@ interface ExportSection {
 @Component({
   selector: 'app-export-hub',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './export-hub.component.html',
   styleUrl: './export-hub.component.scss',

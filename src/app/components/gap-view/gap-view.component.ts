@@ -7,7 +7,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Subscription } from 'rxjs';
 import { Technique } from '../../models/technique';
 import { Domain } from '../../models/domain';
@@ -22,7 +22,7 @@ interface GapGroup {
 @Component({
   selector: 'app-gap-view',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [`
     .gap-overlay {
