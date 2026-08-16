@@ -40,7 +40,7 @@
 
 .header-subtitle {
   font-size: 11px;
-  color: #4a6080;
+  color: var(--text-faint);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -52,7 +52,7 @@
   border-radius: 6px;
   background: rgb(255 255 255 / 6%);
   border: none;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 16px;
   cursor: pointer;
   display: flex;
@@ -133,7 +133,7 @@
 
 .quad-sub {
   font-size: 10px;
-  color: #4a6080;
+  color: var(--text-faint);
   margin-top: 1px;
 }
 
@@ -154,7 +154,7 @@
   border-radius: 20px;
   border: 1px solid #1a3448;
   background: transparent;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 11px;
   font-weight: 500;
   cursor: pointer;
@@ -190,7 +190,7 @@
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -220,7 +220,7 @@
   outline: none;
   transition: border-color 0.15s;
 
-  &::placeholder { color: #3a5a74; }
+  &::placeholder { color: var(--text-faint); }
   &:focus { border-color: #58a6ff; }
 }
 
@@ -353,7 +353,7 @@
   gap: 16px;
   padding: 10px 16px;
   font-size: 11px;
-  color: #4a6080;
+  color: var(--text-faint);
 }
 
 .quad-count,
@@ -482,7 +482,7 @@
     padding: 9px 10px;
     font-size: 10px;
     font-weight: 600;
-    color: #3a5a74;
+    color: var(--text-faint);
     text-transform: uppercase;
     letter-spacing: 0.8px;
     border-bottom: 1px solid #1a3448;
@@ -514,7 +514,7 @@
 .rank-num {
   font-size: 11px;
   font-weight: 700;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-align: center;
 }
 
@@ -541,7 +541,7 @@
 }
 
 .num-muted {
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 12px;
   text-align: center;
 }
@@ -620,7 +620,7 @@
 .empty-cell {
   text-align: center;
   padding: 32px;
-  color: #3a5a74;
+  color: var(--text-faint);
   font-style: italic;
 }
 

@@ -42,7 +42,7 @@
   border-radius: 6px;
   background: transparent;
   border: none;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 16px;
   line-height: 1;
   cursor: pointer;
@@ -110,7 +110,7 @@
 .form-label {
   font-size: 10px;
   font-weight: 600;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.8px;
 }
@@ -128,7 +128,7 @@
   font-family: inherit;
 
   &::placeholder {
-    color: #3a5a74;
+    color: var(--text-faint);
   }
 
   &:focus {
@@ -160,7 +160,7 @@
 
 .btn-secondary {
   background: transparent;
-  color: #4a6080;
+  color: var(--text-faint);
   border-color: #1a3448;
 
   &:hover:not(:disabled) {
@@ -204,7 +204,7 @@
 }
 
 .empty-hint {
-  color: #3a5a74;
+  color: var(--text-faint);
   font-size: 12px;
   margin: 0;
 }
@@ -242,14 +242,14 @@
 
 .layer-date {
   font-size: 11px;
-  color: #3a5a74;
+  color: var(--text-faint);
   white-space: nowrap;
   flex-shrink: 0;
 }
 
 .layer-desc {
   font-size: 12px;
-  color: #4a6080;
+  color: var(--text-faint);
   margin: 4px 0 8px;
   white-space: nowrap;
   overflow: hidden;
@@ -285,7 +285,7 @@
 
 .icon-btn {
   background: transparent;
-  color: #4a6080;
+  color: var(--text-faint);
   border-color: #1a3448;
   padding: 4px 8px;
 
@@ -325,7 +325,7 @@
   padding: 8px 12px;
   background: transparent;
   border: 1px solid #1a3448;
-  color: #4a6080;
+  color: var(--text-faint);
   border-radius: 5px;
   font-size: 13px;
   cursor: pointer;

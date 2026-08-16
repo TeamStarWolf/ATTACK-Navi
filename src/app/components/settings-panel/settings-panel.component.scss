@@ -53,7 +53,7 @@
   border-radius: 6px;
   background: rgb(255 255 255 / 6%);
   border: none;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 16px;
   cursor: pointer;
   display: flex;
@@ -83,7 +83,7 @@
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -117,7 +117,7 @@
 
 .section-desc {
   font-size: 12px;
-  color: #4a6080;
+  color: var(--text-faint);
   line-height: 1.6;
   margin: 0;
 }
@@ -162,7 +162,7 @@
 
 .weight-sublabel {
   font-size: 11px;
-  color: #3a5a74;
+  color: var(--text-faint);
 }
 
 /* ── Slider ── */
@@ -259,7 +259,7 @@
 .preview-label {
   font-size: 11px;
   font-weight: 600;
-  color: #4a6080;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.8px;
   margin-bottom: 4px;
@@ -267,7 +267,7 @@
 
 .preview-desc {
   font-size: 11px;
-  color: #3a5a74;
+  color: var(--text-faint);
   margin-bottom: 12px;
   line-height: 1.4;
 }
@@ -332,7 +332,7 @@
 .form-label {
   font-size: 11px;
   font-weight: 600;
-  color: #4a6080;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.8px;
 }
@@ -349,7 +349,7 @@
   transition: border-color 0.15s;
   max-width: 400px;
 
-  &::placeholder { color: #3a5a74; }
+  &::placeholder { color: var(--text-faint); }
 
   &:focus {
     border-color: #58a6ff;
@@ -358,7 +358,7 @@
 
 .form-hint {
   font-size: 11px;
-  color: #3a5a74;
+  color: var(--text-faint);
 }
 
 /* ── Cell Size Options ── */
@@ -446,7 +446,7 @@
 
 .cell-size-desc {
   font-size: 10px;
-  color: #4a6080;
+  color: var(--text-faint);
 }
 
 .cell-size-note {
@@ -501,7 +501,7 @@
 
 .checkbox-desc {
   font-size: 11px;
-  color: #4a6080;
+  color: var(--text-faint);
 }
 
 /* ── Logo Placeholder ── */
@@ -520,7 +520,7 @@
 
 .logo-coming-soon {
   font-size: 13px;
-  color: #3a5a74;
+  color: var(--text-faint);
   font-weight: 600;
 }
 
@@ -563,7 +563,7 @@
 
 .report-preview-date {
   font-size: 11px;
-  color: #4a6080;
+  color: var(--text-faint);
 }
 
 /* ── Data Tab ── */
@@ -591,7 +591,7 @@
 
 .data-info-label {
   font-size: 12px;
-  color: #4a6080;
+  color: var(--text-faint);
   font-weight: 500;
 }
 
@@ -685,7 +685,7 @@
 .data-section-header {
   font-size: 11px;
   font-weight: 600;
-  color: #4a6080;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.8px;
 }
@@ -833,7 +833,7 @@
 
 .taxii-server-url {
   font-size: 11px;
-  color: #4a6080;
+  color: var(--text-faint);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -878,7 +878,7 @@
 
 .taxii-collection-desc {
   font-size: 10px;
-  color: #4a6080;
+  color: var(--text-faint);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -886,7 +886,7 @@
 
 .taxii-no-collections {
   font-size: 12px;
-  color: #3a5a74;
+  color: var(--text-faint);
   padding: 8px 0;
 }
 

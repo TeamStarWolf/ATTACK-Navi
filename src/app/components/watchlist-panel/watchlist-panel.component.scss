@@ -54,7 +54,7 @@
   border-radius: 6px;
   background: rgb(255 255 255 / 6%);
   border: none;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 16px;
   cursor: pointer;
   display: flex;
@@ -92,7 +92,7 @@
   border-radius: 6px;
   background: transparent;
   border: 1px solid #1a3448;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 11px;
   cursor: pointer;
   transition: all 0.15s;
@@ -147,7 +147,7 @@
   outline: none;
   min-width: 0;
 
-  &::placeholder { color: #3a5a74; }
+  &::placeholder { color: var(--text-faint); }
   &:focus { border-color: #58a6ff; }
 }
 
@@ -197,7 +197,7 @@
 
 .empty-hint {
   font-size: 12px;
-  color: #3a5a74;
+  color: var(--text-faint);
   margin: 0;
   max-width: 320px;
   line-height: 1.5;
@@ -274,7 +274,7 @@
 
 .entry-added {
   font-size: 10px;
-  color: #3a5a74;
+  color: var(--text-faint);
   white-space: nowrap;
 }
 
@@ -315,7 +315,7 @@
   border: 1px solid #1a3448;
   font-size: 9px;
   cursor: pointer;
-  color: #3a5a74;
+  color: var(--text-faint);
   transition: all 0.1s;
 
   &:hover {
@@ -359,7 +359,7 @@
 .add-note-btn {
   background: transparent;
   border: none;
-  color: #3a5a74;
+  color: var(--text-faint);
   font-size: 11px;
   cursor: pointer;
   padding: 0;
@@ -387,7 +387,7 @@
   box-sizing: border-box;
 
   &:focus { border-color: #58a6ff; }
-  &::placeholder { color: #3a5a74; }
+  &::placeholder { color: var(--text-faint); }
 }
 
 .note-actions {
@@ -412,7 +412,7 @@
   border-radius: 5px;
   background: transparent;
   border: 1px solid #1a3448;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 11px;
   cursor: pointer;
 
@@ -450,7 +450,7 @@
   border-radius: 5px;
   background: transparent;
   border: 1px solid #1a3448;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 13px;
   cursor: pointer;
   display: flex;
@@ -492,5 +492,5 @@
 
 .footer-count {
   font-size: 11px;
-  color: #3a5a74;
+  color: var(--text-faint);
 }

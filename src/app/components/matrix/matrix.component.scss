@@ -195,8 +195,11 @@
       min-width: 22px;
       padding: 1px 6px;
       border-radius: 9px;
-      background: rgb(255 255 255 / 10%);
-      color: rgb(255 255 255 / 70%);
+      /* Theme-neutral over saturated tactic-header colors: a dark
+         translucent pill with near-white text passes WCAG on every hue
+         (the old 70%-white on 10%-white pill failed on 106 headers). */
+      background: rgb(0 0 0 / 35%);
+      color: rgb(255 255 255 / 95%);
       font-weight: 700;
       letter-spacing: 0.3px;
     }
@@ -219,7 +222,9 @@
     .tactic-pct {
       display: block;
       font-size: calc(8px * var(--mz, 1));
-      color: var(--text-muted);
+      /* Theme-neutral: sits on saturated per-tactic header colors, where
+         the muted theme gray failed WCAG contrast (axe: 108 nodes). */
+      color: rgb(255 255 255 / 92%);
       margin-top: 4px;
     }
   }
