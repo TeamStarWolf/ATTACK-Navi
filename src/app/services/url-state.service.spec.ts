@@ -22,9 +22,16 @@ describe('UrlStateService', () => {
     router = TestBed.inject(Router);
   });
 
+  /** Completes the router's initial navigation so the writer starts. */
+  function completeInitialNavigation(): void {
+    void router.navigateByUrl('/');
+    tick(400); // NavigationEnd + the writer's initial debounced emission
+  }
+
   it('writes filter state into router query params (replaceUrl, no history spam)', fakeAsync(() => {
-    const navigateSpy = spyOn(router, 'navigateByUrl').and.resolveTo(true);
     service.init();
+    completeInitialNavigation();
+    const navigateSpy = spyOn(router, 'navigateByUrl').and.resolveTo(true);
     filterService.setHeatmapMode('kev');
     tick(400);
     expect(navigateSpy).toHaveBeenCalled();
@@ -34,14 +41,28 @@ describe('UrlStateService', () => {
   }));
 
   it('does not rewrite the URL when serialized state is unchanged', fakeAsync(() => {
-    const navigateSpy = spyOn(router, 'navigateByUrl').and.resolveTo(true);
     service.init();
+    completeInitialNavigation();
+    const navigateSpy = spyOn(router, 'navigateByUrl').and.resolveTo(true);
     filterService.setHeatmapMode('kev');
     tick(400);
     const callsAfterFirst = navigateSpy.calls.count();
     filterService.setHeatmapMode('kev');
     tick(400);
     expect(navigateSpy.calls.count()).toBe(callsAfterFirst);
+  }));
+
+  it('REGRESSION: never navigates before the initial navigation completes (deep-link boot race)', fakeAsync(() => {
+    // The writer once subscribed immediately; its first debounced emission
+    // fired while a deep link's lazy route was still loading, navigated to
+    // the not-yet-resolved '/' and cancelled the user's navigation (only
+    // reproducible on slow machines — CI's 2-core runners lost the race
+    // every time, fast dev machines never did).
+    const navigateSpy = spyOn(router, 'navigateByUrl').and.resolveTo(true);
+    service.init();
+    filterService.setHeatmapMode('kev');
+    tick(1000);
+    expect(navigateSpy).not.toHaveBeenCalled();
   }));
 
   it('round-trips: serialized params apply back to identical state', () => {
