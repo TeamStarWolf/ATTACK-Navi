@@ -3,7 +3,7 @@
 .tactic-popup {
   position: fixed;
   width: 280px;
-  background: #0d1f2d;
+  background: var(--bg-panel-strong);
   border: 1px solid rgb(88 166 255 / 20%);
   border-radius: 8px;
   box-shadow: 0 8px 32px rgb(0 0 0 / 60%);
@@ -13,7 +13,7 @@
 }
 
 .popup-header {
-  background: #07101a;
+  background: var(--bg-raised);
   padding: 10px 12px;
   border-radius: 8px 8px 0 0;
   display: flex;
@@ -23,7 +23,7 @@
 
 .tactic-id {
   font-size: 10px;
-  color: #58a6ff;
+  color: var(--accent);
   font-weight: 600;
 }
 
@@ -84,7 +84,7 @@
 
 .coverage-fill {
   height: 100%;
-  background: #4ade80;
+  background: var(--success);
   border-radius: 2px;
   transition: width 0.3s;
 }
@@ -113,11 +113,11 @@
 }
 
 .impl-green {
-  background: #4ade80;
+  background: var(--success);
 }
 
 .impl-blue {
-  background: #60a5fa;
+  background: var(--accent);
 }
 
 .impl-purple {
@@ -140,11 +140,11 @@
   color: rgb(255 255 255 / 50%);
 
   &.green {
-    color: #4ade80;
+    color: var(--success);
   }
 
   &.blue {
-    color: #60a5fa;
+    color: var(--accent);
   }
 
   &.purple {
@@ -171,7 +171,7 @@
 
 .tech-id {
   font-size: 10px;
-  color: #58a6ff;
+  color: var(--accent);
   min-width: 50px;
   flex-shrink: 0;
 }
@@ -186,14 +186,14 @@
 
 .mit-count {
   font-size: 10px;
-  color: #4ade80;
+  color: var(--success);
   font-weight: 600;
   flex-shrink: 0;
 }
 
 .uncovered-warning {
   font-size: 11px;
-  color: #fb923c;
+  color: var(--accent-warm);
   background: rgb(251 146 60 / 8%);
   padding: 6px 8px;
   border-radius: 4px;

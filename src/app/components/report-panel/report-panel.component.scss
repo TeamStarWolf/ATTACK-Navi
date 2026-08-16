@@ -1,8 +1,8 @@
 /* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
    https://github.com/TeamStarWolf/ATTACK-Navi - MIT License */
 .report-modal {
-  background: #0d1a26;
-  border: 1px solid #1a3448;
+  background: var(--bg-panel-strong);
+  border: 1px solid var(--border-subtle);
   border-radius: 10px;
   display: flex;
   flex-direction: column;
@@ -11,8 +11,8 @@
 
 .report-toolbar {
   height: 52px;
-  background: #07101a;
-  border-bottom: 1px solid #1a3448;
+  background: var(--bg-raised);
+  border-bottom: 1px solid var(--border-subtle);
   padding: 0 16px;
   display: flex;
   align-items: center;
@@ -23,7 +23,7 @@
 .report-title {
   font-size: 15px;
   font-weight: 600;
-  color: #c9d8e8;
+  color: var(--text-main);
   flex: 1;
 }
 
@@ -34,28 +34,28 @@
 
 .export-btn {
   padding: 4px 10px;
-  background: #0a1828;
-  color: #8aaac8;
-  border: 1px solid #1a3448;
+  background: var(--bg-panel-strong);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
   border-radius: 5px;
   font-size: 11px;
   cursor: pointer;
   transition: color 0.15s;
 
-  &:hover { color: #c9d8e8; }
+  &:hover { color: var(--text-main); }
 }
 
 .print-btn {
   padding: 4px 10px;
-  background: #0a1828;
-  color: #8aaac8;
-  border: 1px solid #1a3448;
+  background: var(--bg-panel-strong);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
   border-radius: 5px;
   font-size: 11px;
   cursor: pointer;
   transition: color 0.15s;
 
-  &:hover { color: #c9d8e8; }
+  &:hover { color: var(--text-main); }
 }
 
 .close-btn {
@@ -74,8 +74,8 @@
   transition: background 0.15s, color 0.15s;
 
   &:hover {
-    background: #1a3448;
-    color: #c9d8e8;
+    background: var(--border-subtle);
+    color: var(--text-main);
   }
 }
 
@@ -83,18 +83,18 @@
   flex: 1;
   overflow-y: auto;
   padding: 24px 32px;
-  background: #070d14;
+  background: var(--bg-panel);
 }
 
 .report-header {
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 2px solid #1a3448;
+  border-bottom: 2px solid var(--border-subtle);
 
   h1 {
     font-size: 22px;
     font-weight: 700;
-    color: #c9d8e8;
+    color: var(--text-main);
     margin: 0 0 4px;
   }
 }
@@ -111,16 +111,16 @@
   h2 {
     font-size: 16px;
     font-weight: 700;
-    color: #c9d8e8;
+    color: var(--text-main);
     margin: 0 0 12px;
     padding-bottom: 6px;
-    border-bottom: 1px solid #1a3448;
+    border-bottom: 1px solid var(--border-subtle);
   }
 
   h3 {
     font-size: 13px;
     font-weight: 600;
-    color: #8aaac8;
+    color: var(--text-muted);
     margin: 16px 0 8px;
   }
 }
@@ -139,8 +139,8 @@
 }
 
 .summary-card {
-  background: #0a1828;
-  border: 1px solid #1a3448;
+  background: var(--bg-panel-strong);
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
   padding: 12px;
   text-align: center;
@@ -154,14 +154,14 @@
 .card-num {
   font-size: 32px;
   font-weight: 700;
-  color: #c9d8e8;
+  color: var(--text-main);
   line-height: 1;
 }
 
 .card-label {
   font-size: 12px;
   font-weight: 600;
-  color: #8aaac8;
+  color: var(--text-muted);
   margin-top: 4px;
 }
 
@@ -191,13 +191,13 @@
   font-size: 11px;
   width: 130px;
   flex-shrink: 0;
-  color: #8aaac8;
+  color: var(--text-muted);
 }
 
 .impl-bar-bg {
   flex: 1;
   height: 14px;
-  background: #1a3448;
+  background: var(--border-subtle);
   border-radius: 7px;
   overflow: hidden;
 }
@@ -207,10 +207,10 @@
   border-radius: 7px;
   transition: width 0.3s;
 
-  &[data-status="implemented"] { background: #4ade80; }
+  &[data-status="implemented"] { background: var(--success); }
   &[data-status="in-progress"] { background: #ff9800; }
-  &[data-status="planned"] { background: #58a6ff; }
-  &[data-status="not-started"] { background: #f87171; }
+  &[data-status="planned"] { background: var(--accent); }
+  &[data-status="not-started"] { background: var(--danger); }
 }
 
 .impl-count {
@@ -229,33 +229,33 @@
   th {
     text-align: left;
     padding: 8px 10px;
-    background: #0a1828;
+    background: var(--bg-panel-strong);
     font-size: 10px;
     font-weight: 600;
     color: var(--text-faint);
     text-transform: uppercase;
     letter-spacing: 0.8px;
-    border-bottom: 1px solid #1a3448;
+    border-bottom: 1px solid var(--border-subtle);
   }
 
   td {
     padding: 7px 10px;
-    border-bottom: 1px solid #0f1f2e;
+    border-bottom: 1px solid var(--bg-hover);
     vertical-align: top;
-    color: #c9d8e8;
+    color: var(--text-main);
   }
 
-  tr:hover td { background: #0a1828; }
+  tr:hover td { background: var(--bg-panel-strong); }
 }
 
 .tactic-name-cell {
   font-weight: 500;
-  color: #c9d8e8;
+  color: var(--text-main);
 }
 
 .num-cell {
   text-align: center;
-  color: #8aaac8;
+  color: var(--text-muted);
 }
 
 .pct-cell {
@@ -268,7 +268,7 @@
 .mini-bar-wrap {
   width: 60px;
   height: 8px;
-  background: #1a3448;
+  background: var(--border-subtle);
   border-radius: 4px;
   overflow: hidden;
   flex-shrink: 0;
@@ -288,7 +288,7 @@
 .id-cell {
   font-family: monospace;
   font-weight: 600;
-  color: #58a6ff;
+  color: var(--accent);
   white-space: nowrap;
 }
 
@@ -300,14 +300,14 @@
 .doc-table {
   th, td { font-size: 11px; }
 
-  .owner-cell, .date-cell { white-space: nowrap; color: #8aaac8; }
-  .controls-cell { color: #58a6ff; font-size: 10px; }
-  .notes-cell { font-size: 11px; color: #8aaac8; max-width: 200px; white-space: pre-wrap; }
+  .owner-cell, .date-cell { white-space: nowrap; color: var(--text-muted); }
+  .controls-cell { color: var(--accent); font-size: 10px; }
+  .notes-cell { font-size: 11px; color: var(--text-muted); max-width: 200px; white-space: pre-wrap; }
 }
 
 .evidence-link {
   margin-left: 4px;
-  color: #58a6ff;
+  color: var(--accent);
   text-decoration: none;
   font-size: 10px;
   &:hover { text-decoration: underline; }
@@ -320,10 +320,10 @@
   white-space: nowrap;
   font-weight: 600;
 
-  &[data-status*="Implemented"] { background: rgb(74 222 128 / 12%); color: #4ade80; }
-  &[data-status*="Progress"] { background: rgb(255 152 0 / 12%); color: #ffa726; }
-  &[data-status*="Planned"] { background: rgb(88 166 255 / 12%); color: #58a6ff; }
-  &[data-status*="Not Started"] { background: rgb(248 113 113 / 12%); color: #f87171; }
+  &[data-status*="Implemented"] { background: rgb(74 222 128 / 12%); color: var(--success); }
+  &[data-status*="Progress"] { background: rgb(255 152 0 / 12%); color: var(--accent-warm); }
+  &[data-status*="Planned"] { background: rgb(88 166 255 / 12%); color: var(--accent); }
+  &[data-status*="Not Started"] { background: rgb(248 113 113 / 12%); color: var(--danger); }
 }
 
 @media print {

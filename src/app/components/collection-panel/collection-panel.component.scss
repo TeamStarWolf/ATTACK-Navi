@@ -3,7 +3,7 @@
 /* ── Panel ── */
 .panel {
   position: relative;
-  background: #070d14;
+  background: var(--bg-panel);
   border: 1px solid rgb(255 255 255 / 6%);
   border-radius: 10px;
   display: flex;
@@ -14,7 +14,7 @@
 /* ── Header ── */
 .panel-header {
   height: 52px;
-  background: #07101a;
+  background: var(--bg-raised);
   border-bottom: 1px solid rgb(255 255 255 / 6%);
   padding: 0 16px;
   display: flex;
@@ -33,7 +33,7 @@
 .panel-title {
   font-size: 15px;
   font-weight: 600;
-  color: #c9d8e8;
+  color: var(--text-main);
   flex-shrink: 0;
 }
 
@@ -61,8 +61,8 @@
   transition: background 0.15s, color 0.15s;
 
   &:hover {
-    background: #1a3448;
-    color: #c9d8e8;
+    background: var(--border-subtle);
+    color: var(--text-main);
   }
 }
 
@@ -72,7 +72,7 @@
   align-items: center;
   gap: 0;
   padding: 0 16px;
-  background: #07101a;
+  background: var(--bg-raised);
   border-bottom: 1px solid rgb(255 255 255 / 6%);
   flex-shrink: 0;
 }
@@ -92,11 +92,11 @@
   transition: color 0.15s, border-color 0.15s;
   margin-bottom: -1px;
 
-  &:hover { color: #8aaac8; }
+  &:hover { color: var(--text-muted); }
 
   &.active {
-    color: #60a5fa;
-    border-bottom-color: #60a5fa;
+    color: var(--accent);
+    border-bottom-color: var(--accent);
   }
 }
 
@@ -108,7 +108,7 @@
   padding: 1px 5px;
   border-radius: 9px;
   background: rgb(96 165 250 / 15%);
-  color: #60a5fa;
+  color: var(--accent);
   font-size: 10px;
   font-weight: 700;
 }
@@ -133,7 +133,7 @@
 }
 
 .summary-card {
-  background: #0a1828;
+  background: var(--bg-panel-strong);
   border: 1px solid rgb(255 255 255 / 6%);
   border-radius: 8px;
   padding: 16px 12px;
@@ -149,7 +149,7 @@
 .card-count {
   font-size: 24px;
   font-weight: 700;
-  color: #60a5fa;
+  color: var(--accent);
 }
 
 .card-label {
@@ -160,7 +160,7 @@
 }
 
 .export-section {
-  background: #0a1828;
+  background: var(--bg-panel-strong);
   border: 1px solid rgb(255 255 255 / 6%);
   border-radius: 8px;
   padding: 16px;
@@ -169,7 +169,7 @@
 .section-title {
   font-size: 13px;
   font-weight: 600;
-  color: #c9d8e8;
+  color: var(--text-main);
   margin: 0 0 12px;
 }
 
@@ -190,27 +190,27 @@
 .form-input {
   width: 100%;
   height: 32px;
-  background: #070d14;
+  background: var(--bg-panel);
   border: 1px solid rgb(255 255 255 / 6%);
   border-radius: 6px;
   padding: 0 10px;
-  color: #c9d8e8;
+  color: var(--text-main);
   font-size: 13px;
   outline: none;
   transition: border-color 0.15s;
   box-sizing: border-box;
 
   &::placeholder { color: var(--text-faint); }
-  &:focus { border-color: #60a5fa; }
+  &:focus { border-color: var(--accent); }
 }
 
 .form-textarea {
   width: 100%;
-  background: #070d14;
+  background: var(--bg-panel);
   border: 1px solid rgb(255 255 255 / 6%);
   border-radius: 6px;
   padding: 8px 10px;
-  color: #c9d8e8;
+  color: var(--text-main);
   font-size: 13px;
   outline: none;
   resize: vertical;
@@ -219,7 +219,7 @@
   font-family: inherit;
 
   &::placeholder { color: var(--text-faint); }
-  &:focus { border-color: #60a5fa; }
+  &:focus { border-color: var(--accent); }
 }
 
 .button-row {
@@ -240,7 +240,7 @@
   &.primary {
     background: rgb(96 165 250 / 15%);
     border-color: rgb(96 165 250 / 30%);
-    color: #60a5fa;
+    color: var(--accent);
 
     &:hover {
       background: rgb(96 165 250 / 25%);
@@ -256,11 +256,11 @@
   &.secondary {
     background: rgb(255 255 255 / 6%);
     border-color: rgb(255 255 255 / 6%);
-    color: #8aaac8;
+    color: var(--text-muted);
 
     &:hover {
       background: rgb(255 255 255 / 10%);
-      color: #c9d8e8;
+      color: var(--text-main);
     }
   }
 }
@@ -271,7 +271,7 @@
   border-radius: 6px;
   background: rgb(74 222 128 / 10%);
   border: 1px solid rgb(74 222 128 / 20%);
-  color: #4ade80;
+  color: var(--success);
   font-size: 12px;
 }
 
@@ -281,7 +281,7 @@
   border-radius: 6px;
   background: rgb(248 113 113 / 10%);
   border: 1px solid rgb(248 113 113 / 20%);
-  color: #f87171;
+  color: var(--danger);
   font-size: 12px;
 }
 
@@ -291,7 +291,7 @@
 }
 
 .import-section {
-  background: #0a1828;
+  background: var(--bg-panel-strong);
   border: 1px solid rgb(255 255 255 / 6%);
   border-radius: 8px;
   padding: 16px;
@@ -314,7 +314,7 @@
 }
 
 .preview-section {
-  background: #0a1828;
+  background: var(--bg-panel-strong);
   border: 1px solid rgb(96 165 250 / 20%);
   border-radius: 8px;
   padding: 16px;
@@ -330,7 +330,7 @@
 
 .preview-item {
   font-size: 13px;
-  color: #c9d8e8;
+  color: var(--text-main);
   font-weight: 500;
   padding: 4px 10px;
   background: rgb(96 165 250 / 8%);
@@ -343,7 +343,7 @@
 }
 
 .new-technique-form {
-  background: #0a1828;
+  background: var(--bg-panel-strong);
   border: 1px solid rgb(255 255 255 / 6%);
   border-radius: 8px;
   padding: 16px;
@@ -371,12 +371,12 @@
   align-items: center;
   gap: 5px;
   font-size: 11px;
-  color: #8aaac8;
+  color: var(--text-muted);
   cursor: pointer;
   padding: 3px 0;
 
   input[type="checkbox"] {
-    accent-color: #60a5fa; /* stylelint-disable-line property-no-unknown */
+    accent-color: var(--accent); /* stylelint-disable-line property-no-unknown */
     width: 13px;
     height: 13px;
     cursor: pointer;
@@ -407,14 +407,14 @@
     text-transform: uppercase;
     letter-spacing: 0.8px;
     border-bottom: 1px solid rgb(255 255 255 / 6%);
-    background: #0a1020;
+    background: var(--bg-panel);
     white-space: nowrap;
   }
 
   td {
     padding: 8px 10px;
-    border-bottom: 1px solid #0d1a26;
-    color: #c9d8e8;
+    border-bottom: 1px solid var(--bg-panel-strong);
+    color: var(--text-main);
     vertical-align: top;
   }
 
@@ -427,8 +427,8 @@
 .tech-row {
   transition: background 0.1s;
 
-  &:nth-child(even) { background: rgb(10 24 40 / 40%); }
-  &:hover { background: #0a1828; }
+  &:nth-child(even) { background: var(--bg-hover); }
+  &:hover { background: var(--bg-panel-strong); }
 }
 
 .edit-row {
@@ -438,7 +438,7 @@
 .tech-id-cell {
   font-family: monospace;
   font-size: 12px;
-  color: #60a5fa;
+  color: var(--accent);
 }
 
 .tech-name-cell {
@@ -452,7 +452,7 @@
 .tactic-cell,
 .platform-cell {
   font-size: 11px;
-  color: #8aaac8;
+  color: var(--text-muted);
   max-width: 180px;
   white-space: nowrap;
   overflow: hidden;
@@ -462,16 +462,16 @@
 .inline-input {
   width: 100%;
   height: 28px;
-  background: #070d14;
+  background: var(--bg-panel);
   border: 1px solid rgb(255 255 255 / 6%);
   border-radius: 4px;
   padding: 0 6px;
-  color: #c9d8e8;
+  color: var(--text-main);
   font-size: 12px;
   outline: none;
   box-sizing: border-box;
 
-  &:focus { border-color: #60a5fa; }
+  &:focus { border-color: var(--accent); }
 }
 
 .inline-checkboxes {
@@ -485,13 +485,13 @@
   align-items: center;
   gap: 3px;
   font-size: 10px;
-  color: #8aaac8;
+  color: var(--text-muted);
   cursor: pointer;
 
   input {
     width: 11px;
     height: 11px;
-    accent-color: #60a5fa; /* stylelint-disable-line property-no-unknown */
+    accent-color: var(--accent); /* stylelint-disable-line property-no-unknown */
     cursor: pointer;
   }
 }
@@ -508,34 +508,34 @@
 
   &.edit-btn {
     background: rgb(96 165 250 / 10%);
-    color: #60a5fa;
+    color: var(--accent);
     border-color: rgb(96 165 250 / 20%);
     &:hover { background: rgb(96 165 250 / 20%); }
   }
 
   &.delete-btn {
     background: rgb(248 113 113 / 10%);
-    color: #f87171;
+    color: var(--danger);
     border-color: rgb(248 113 113 / 20%);
     &:hover { background: rgb(248 113 113 / 20%); }
   }
 
   &.save-btn {
     background: rgb(74 222 128 / 10%);
-    color: #4ade80;
+    color: var(--success);
     border-color: rgb(74 222 128 / 20%);
     &:hover { background: rgb(74 222 128 / 20%); }
   }
 
   &.cancel-btn {
     background: rgb(255 255 255 / 6%);
-    color: #8aaac8;
+    color: var(--text-muted);
     &:hover { background: rgb(255 255 255 / 10%); }
   }
 
   &.delete-confirm-btn {
     background: rgb(248 113 113 / 15%);
-    color: #f87171;
+    color: var(--danger);
     border-color: rgb(248 113 113 / 30%);
     &:hover { background: rgb(248 113 113 / 25%); }
   }
@@ -543,7 +543,7 @@
 
 .confirm-text {
   font-size: 11px;
-  color: #f87171;
+  color: var(--danger);
   margin-right: 4px;
 }
 
@@ -559,7 +559,7 @@
 .share-url-display {
   margin-top: 8px;
   padding: 8px 10px;
-  background: #070d14;
+  background: var(--bg-panel);
   border: 1px solid rgb(255 255 255 / 6%);
   border-radius: 6px;
   overflow: hidden;
@@ -567,7 +567,7 @@
 
 .share-url-text {
   font-size: 11px;
-  color: #60a5fa;
+  color: var(--accent);
   word-break: break-all;
   font-family: monospace;
 }
@@ -584,7 +584,7 @@
 }
 
 .import-dialog {
-  background: #0a1828;
+  background: var(--bg-panel-strong);
   border: 1px solid rgb(96 165 250 / 20%);
   border-radius: 12px;
   padding: 24px;
@@ -596,13 +596,13 @@
 .import-dialog-title {
   font-size: 16px;
   font-weight: 600;
-  color: #c9d8e8;
+  color: var(--text-main);
   margin: 0 0 8px;
 }
 
 .import-dialog-desc {
   font-size: 13px;
-  color: #6e8599;
+  color: var(--text-faint);
   margin: 0 0 16px;
 }
 

@@ -1,8 +1,8 @@
 /* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
    https://github.com/TeamStarWolf/ATTACK-Navi - MIT License */
 .killchain-overlay {
-  background: #070d14;
-  border: 1px solid #1a3448;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
   border-radius: 10px;
   display: flex;
   flex-direction: column;
@@ -11,7 +11,7 @@
 
 /* ── Header ── */
 .killchain-header {
-  background: #07101a;
+  background: var(--bg-raised);
   height: 52px;
   display: flex;
   align-items: center;
@@ -31,7 +31,7 @@
 .panel-title {
   font-size: 15px;
   font-weight: 600;
-  color: #c9d8e8;
+  color: var(--text-main);
   flex-shrink: 0;
 }
 
@@ -59,8 +59,8 @@
   transition: background 0.15s, color 0.15s;
 
   &:hover {
-    background: #1a3448;
-    color: #c9d8e8;
+    background: var(--border-subtle);
+    color: var(--text-main);
   }
 }
 
@@ -71,15 +71,15 @@
   align-items: center;
   gap: 16px;
   padding: 48px;
-  color: #8aaac8;
+  color: var(--text-muted);
   flex: 1;
   justify-content: center;
 
   .loader-spinner {
     width: 36px;
     height: 36px;
-    border: 3px solid #1a3448;
-    border-top-color: #58a6ff;
+    border: 3px solid var(--border-subtle);
+    border-top-color: var(--accent);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
   }
@@ -111,14 +111,14 @@
   /* custom scrollbar */
   &::-webkit-scrollbar { height: 6px; }
   &::-webkit-scrollbar-track { background: transparent; }
-  &::-webkit-scrollbar-thumb { background: #1a3448; border-radius: 3px; }
+  &::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 3px; }
 }
 
 /* ── Tactic card ── */
 .tactic-card {
   width: 160px;
   min-height: 150px;
-  background: #0d1f2d;
+  background: var(--bg-panel-strong);
   border-radius: 8px;
   padding: 12px;
   cursor: pointer;
@@ -136,7 +136,7 @@
   }
 
   &.selected {
-    border-color: #58a6ff;
+    border-color: var(--accent);
     background: #0d2035;
     transform: translateY(-2px);
   }
@@ -145,7 +145,7 @@
 .card-attack-id {
   font-family: monospace;
   font-size: 10px;
-  color: #58a6ff;
+  color: var(--accent);
   font-weight: 600;
   letter-spacing: 0.5px;
 }
@@ -153,7 +153,7 @@
 .card-tactic-name {
   font-size: 12px;
   font-weight: 700;
-  color: #c9d8e8;
+  color: var(--text-main);
   line-height: 1.3;
   min-height: 30px;
 }
@@ -174,14 +174,14 @@
   transition: width 0.4s ease;
 }
 
-.coverage-green  { background: #4ade80; }
-.coverage-yellow { background: #fbbf24; }
-.coverage-orange { background: #f97316; }
-.coverage-red    { background: #f87171; }
+.coverage-green  { background: var(--success); }
+.coverage-yellow { background: var(--accent-warm); }
+.coverage-orange { background: var(--accent-warm); }
+.coverage-red    { background: var(--danger); }
 
 .card-tech-count {
   font-size: 10px;
-  color: #8aaac8;
+  color: var(--text-muted);
 }
 
 .card-group-count {
@@ -213,7 +213,7 @@
 
   &::-webkit-scrollbar { width: 6px; }
   &::-webkit-scrollbar-track { background: transparent; }
-  &::-webkit-scrollbar-thumb { background: #1a3448; border-radius: 3px; }
+  &::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 3px; }
 }
 
 .kc-table {
@@ -235,15 +235,15 @@
     color: var(--text-faint);
     text-transform: uppercase;
     letter-spacing: 0.8px;
-    border-bottom: 1px solid #1a3448;
+    border-bottom: 1px solid var(--border-subtle);
     white-space: nowrap;
-    background: #070d14;
+    background: var(--bg-panel);
   }
 
   td {
     padding: 9px 12px;
-    border-bottom: 1px solid #0d1a26;
-    color: #c9d8e8;
+    border-bottom: 1px solid var(--bg-panel-strong);
+    color: var(--text-main);
     vertical-align: middle;
   }
 }
@@ -253,11 +253,11 @@
   transition: background 0.1s;
 
   &:nth-child(even) {
-    background: rgb(10 24 40 / 30%);
+    background: var(--bg-hover);
   }
 
   &:hover {
-    background: #0a1828;
+    background: var(--bg-panel-strong);
   }
 
   &.row-selected {
@@ -292,14 +292,14 @@
 
 .col-tactic-name {
   font-weight: 600;
-  color: #c9d8e8;
+  color: var(--text-main);
   white-space: nowrap;
 }
 
 .attack-id-badge {
   font-family: monospace;
   font-size: 11px;
-  color: #58a6ff;
+  color: var(--accent);
   font-weight: 600;
 }
 
@@ -335,7 +335,7 @@
 /* ── Uncovered tech ── */
 .uncovered-name {
   font-size: 11px;
-  color: #f87171;
+  color: var(--danger);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -345,7 +345,7 @@
 
 .fully-covered {
   font-size: 11px;
-  color: #4ade80;
+  color: var(--success);
   font-style: italic;
 }
 
@@ -354,7 +354,7 @@
   display: flex;
   align-items: center;
   padding: 10px 24px;
-  background: #07101a;
+  background: var(--bg-raised);
   border-top: 1px solid rgb(255 255 255 / 6%);
   flex-shrink: 0;
   flex-wrap: wrap;
@@ -379,12 +379,12 @@
 .summary-value {
   font-size: 12px;
   font-weight: 700;
-  color: #c9d8e8;
+  color: var(--text-main);
   white-space: nowrap;
 }
 
-.summary-green { color: #4ade80; }
-.summary-red   { color: #f87171; }
+.summary-green { color: var(--success); }
+.summary-red   { color: var(--danger); }
 
 .summary-sep {
   width: 1px;

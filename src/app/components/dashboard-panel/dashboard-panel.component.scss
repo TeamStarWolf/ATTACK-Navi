@@ -5,7 +5,7 @@
     radial-gradient(circle at top left, rgb(255 180 84 / 12%), transparent 24%),
     radial-gradient(circle at top right, rgb(111 211 255 / 10%), transparent 26%),
     rgb(7 14 22 / 96%);
-  border: 1px solid #1a3448;
+  border: 1px solid var(--border-subtle);
   border-radius: 10px;
   display: flex;
   flex-direction: column;
@@ -91,7 +91,7 @@
   &.active {
     background: rgb(88 166 255 / 12%);
     border-color: rgb(88 166 255 / 30%);
-    color: #58a6ff;
+    color: var(--accent);
   }
 }
 
@@ -147,7 +147,7 @@
 
 .config-reset-btn {
   font-size: 11px;
-  color: #58a6ff;
+  color: var(--accent);
   background: rgb(88 166 255 / 8%);
   border: 1px solid rgb(88 166 255 / 20%);
   border-radius: 8px;
@@ -230,7 +230,7 @@
   border-radius: 6px;
   background: rgb(248 113 113 / 15%);
   border: 1px solid rgb(248 113 113 / 25%);
-  color: #f87171;
+  color: var(--danger);
   font-size: 10px;
   font-weight: 700;
   cursor: pointer;
@@ -239,7 +239,7 @@
   &.toggled-on {
     background: rgb(74 222 128 / 15%);
     border-color: rgb(74 222 128 / 30%);
-    color: #4ade80;
+    color: var(--success);
   }
 
   &:hover {
@@ -372,7 +372,7 @@
     opacity: 1 !important;
     background: rgb(248 113 113 / 10%);
     border-color: rgb(248 113 113 / 20%);
-    color: #f87171;
+    color: var(--danger);
   }
 }
 
@@ -662,7 +662,7 @@
 .intel-value {
   font-size: 20px;
   font-weight: 700;
-  color: #58a6ff;
+  color: var(--accent);
   line-height: 1;
   font-family: 'IBM Plex Mono', monospace;
 }
@@ -732,7 +732,7 @@
 .kev-id {
   font-size: 12px;
   font-weight: 700;
-  color: #f87171;
+  color: var(--danger);
   font-family: 'IBM Plex Mono', monospace;
 }
 
