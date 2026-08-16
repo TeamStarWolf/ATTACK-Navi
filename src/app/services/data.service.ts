@@ -2,8 +2,8 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, Subscription, from, of, throwError } from 'rxjs';
-import { catchError, switchMap } from 'rxjs/operators';
+import { BehaviorSubject, Observable, Subscription, EMPTY, concat, from, of, throwError } from 'rxjs';
+import { catchError, switchMap, tap, throwIfEmpty } from 'rxjs/operators';
 import { retryWithBackoff } from '../utils/retry';
 import { Domain, TacticColumn, DetectionNote } from '../models/domain';
 import { Tactic } from '../models/tactic';
@@ -71,6 +71,13 @@ export class DataService {
 
   /** ISO timestamp of the last successful domain data load */
   lastFetched$ = new BehaviorSubject<string | null>(null);
+
+  /**
+   * Where the currently displayed domain data came from:
+   * 'bundled' = shipped snapshot (instant first paint), 'cached' = IndexedDB
+   * copy of a previous live fetch, 'live' = fresh from MITRE this session.
+   */
+  freshness$ = new BehaviorSubject<'bundled' | 'cached' | 'live' | null>(null);
   private loadRequestId = 0;
   private domainSub?: Subscription;
 
@@ -126,7 +133,9 @@ export class DataService {
     this.errorSubject.next(null);
 
     const config = DOMAIN_CONFIG[this.attackDomain];
-    const load$ = this.mode === 'live' ? this.loadLive(config) : this.loadBundled(config);
+    const load$ = this.mode === 'live'
+      ? this.loadLive(config)
+      : this.loadBundled(config).pipe(tap(() => this.freshness$.next('bundled')));
     this.domainSub = load$.subscribe({
       next: (domain) => {
         if (requestId !== this.loadRequestId) return;
@@ -216,11 +225,27 @@ export class DataService {
   private loadLive(config: typeof DOMAIN_CONFIG[AttackDomain]): Observable<Domain> {
     return from(this.loadFromIDB(config.idbKey)).pipe(
       switchMap((cached) => {
-        if (cached) return of(cached);
-        return this.http.get<any>(config.liveUrl).pipe(
+        if (cached) {
+          return of(cached).pipe(tap(() => this.freshness$.next('cached')));
+        }
+        // Bundled-first (stale-while-revalidate): paint instantly from the
+        // shipped snapshot, then fetch the live STIX in the background and
+        // re-emit when it lands. If live fails we silently stay on the
+        // snapshot; an error is raised only when BOTH sources fail.
+        const bundledFirst$ = config.bundledUrl
+          ? this.loadBundled(config).pipe(
+              tap(() => this.freshness$.next('bundled')),
+              catchError(() => EMPTY),
+            )
+          : EMPTY as Observable<Domain>;
+        const live$ = this.http.get<any>(config.liveUrl).pipe(
           retryWithBackoff(),
           switchMap((bundle) => from(this.saveToIDB(bundle, config.idbKey).then(() => this.parseBundle(bundle, config.name)))),
-          catchError(() => config.bundledUrl ? this.loadBundled(config) : throwError(() => new Error('No bundled fallback for this domain'))),
+          tap(() => this.freshness$.next('live')),
+          catchError(() => EMPTY as Observable<Domain>),
+        );
+        return concat(bundledFirst$, live$).pipe(
+          throwIfEmpty(() => new Error('Failed to load ATT&CK data (live fetch and bundled snapshot both unavailable)')),
         );
       }),
     );
