@@ -692,33 +692,66 @@
   }
 }
 
+/* ── Mobile: stacked single-column matrix ─────────────────────────────
+   Below 768px the 14-column pan-around grid becomes a vertical document:
+   tactic columns stack full-width with sticky section labels (from the
+   td's data-tactic attribute), the thead disappears, and cells get
+   touch-friendly sizing. All heatmaps, selection, and expansion keep
+   working — only the layout changes. */
 @media (width <= 768px) {
   :host {
-    --col-width: calc(110px * var(--mz));
-    --cell-base-height: 24px;
-    --cell-base-font: 9px;
+    --col-width: 100%;
+    --cell-base-height: 34px;
+    --cell-base-font: 12px;
   }
 
   .matrix-wrapper {
     -webkit-overflow-scrolling: touch;
+    overflow-x: hidden;
+  }
+
+  .matrix,
+  .matrix tbody,
+  .matrix tr {
+    display: block;
+    width: 100%;
+  }
+
+  .matrix thead {
+    display: none; /* replaced by per-column sticky labels */
+  }
+
+  .tactic-col {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    border-right: none;
+    border-bottom: 1px solid var(--line-soft);
+    padding-bottom: 6px;
+
+    /* Sticky tactic section label, sourced from [attr.data-tactic]. */
+    &::before {
+      content: attr(data-tactic) ' · ' attr(data-count);
+      display: block;
+      position: sticky;
+      top: 0;
+      z-index: 8;
+      padding: 9px 14px;
+      background: var(--bg-raised);
+      border-bottom: 1px solid var(--line-soft);
+      color: var(--text-primary);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+  }
+
+  .technique-group {
+    padding: 0 8px;
   }
 
   .zoom-controls {
-    bottom: 8px;
-    right: 8px;
-    transform: scale(0.85);
-  }
-
-  .tactic-header {
-    font-size: 9px;
-    padding: 4px 2px;
-  }
-}
-
-@media (width <= 480px) {
-  :host {
-    --col-width: calc(90px * var(--mz));
-    --cell-base-height: 20px;
-    --cell-base-font: 8px;
+    display: none; /* zoom is meaningless in the stacked layout */
   }
 }
