@@ -45,6 +45,7 @@ export const NAV_COMMANDS: readonly NavCommand[] = [
   { panelId: 'gap-analysis', label: 'Gap Analysis', workspace: 'Exposure', keywords: 'gap report gaps uncovered' },
   { panelId: 'priority', label: 'Priority Mitigations', workspace: 'Exposure', keywords: 'ranked priorities' },
   { panelId: 'whatif', label: 'What-If Simulator', workspace: 'Exposure', keywords: 'simulate coverage' },
+  { panelId: 'ctem', label: 'CTEM Program Board', workspace: 'Exposure', keywords: 'continuous threat exposure management gartner stages' },
 
   { panelId: 'assessment', label: 'Assessment Wizard', workspace: 'Coverage', keywords: 'assess maturity wizard' },
   { panelId: 'controls', label: 'Security Controls', workspace: 'Coverage', keywords: 'nist cis controls' },

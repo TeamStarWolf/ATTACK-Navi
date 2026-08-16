@@ -1,0 +1,40 @@
+<!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+     https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
+<section class="page-panel page-panel--full ctem-page" aria-label="CTEM program board">
+  <div class="ctem-header">
+    <div>
+      <h2 class="ctem-title">Continuous Threat Exposure Management</h2>
+      <p class="ctem-subtitle">
+        Your live program data organized along Gartner's five CTEM stages.
+        <span class="curated-chip" title="The stage framing is editorial; every number is live app data">curated framing</span>
+      </p>
+    </div>
+  </div>
+
+  <div class="ctem-board">
+    @for (stage of stages; track stage.n) {
+      <div class="stage-card">
+        <div class="stage-head">
+          <span class="stage-num">{{ stage.n }}</span>
+          <div>
+            <h3 class="stage-name">{{ stage.name }}</h3>
+            <p class="stage-q">{{ stage.question }}</p>
+          </div>
+        </div>
+        <dl class="stage-metrics">
+          @for (m of stage.metrics; track m.label) {
+            <div class="metric-row">
+              <dt>{{ m.label }}</dt>
+              <dd>{{ m.value }}</dd>
+            </div>
+          }
+        </dl>
+        <div class="stage-links">
+          @for (l of stage.links; track l.label) {
+            <a class="stage-link" [routerLink]="l.route" queryParamsHandling="preserve">{{ l.label }} →</a>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</section>
