@@ -1,8 +1,8 @@
 /* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
    https://github.com/TeamStarWolf/ATTACK-Navi - MIT License */
 .purple-panel {
-  background: #0d1a26;
-  border: 1px solid #1a3448;
+  background: var(--bg-panel-strong);
+  border: 1px solid var(--border-subtle);
   border-radius: 10px;
   display: flex;
   flex-direction: column;
@@ -15,8 +15,8 @@
   gap: 10px;
   height: 52px;
   padding: 0 16px;
-  background: #07101a;
-  border-bottom: 1px solid #1a3448;
+  background: var(--bg-raised);
+  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
@@ -25,7 +25,7 @@
 .purple-title {
   font-size: 15px;
   font-weight: 600;
-  color: #c9d8e8;
+  color: var(--text-main);
   margin: 0;
   flex: 1;
 }
@@ -33,13 +33,13 @@
 .purple-close {
   width: 28px; height: 28px; border-radius: 6px; background: transparent; border: none;
   color: var(--text-faint); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;
-  &:hover { background: #1a3448; color: #c9d8e8; }
+  &:hover { background: var(--border-subtle); color: var(--text-main); }
 }
 
 .purple-tabs {
   display: flex;
-  background: #07101a;
-  border-bottom: 1px solid #1a3448;
+  background: var(--bg-raised);
+  border-bottom: 1px solid var(--border-subtle);
   padding: 0 16px;
   flex-shrink: 0;
 }
@@ -56,22 +56,22 @@
   color: var(--text-faint);
   cursor: pointer;
   transition: all 0.15s;
-  &:hover { color: #8aaac8; }
-  &.active { color: #58a6ff; border-bottom-color: #58a6ff; }
+  &:hover { color: var(--text-muted); }
+  &.active { color: var(--accent); border-bottom-color: var(--accent); }
 }
 
 .purple-body {
   flex: 1;
   overflow-y: auto;
   padding: 14px 16px;
-  background: #070d14;
+  background: var(--bg-panel);
 }
 
 .purple-empty {
   text-align: center;
   padding: 40px 20px;
   .empty-icon { font-size: 32px; margin-bottom: 12px; }
-  .empty-msg { color: #8aaac8; font-size: 13px; margin-bottom: 8px; }
+  .empty-msg { color: var(--text-muted); font-size: 13px; margin-bottom: 8px; }
   .empty-hint { color: var(--text-faint); font-size: 11px; }
 }
 
@@ -81,19 +81,19 @@
   gap: 8px;
   margin-bottom: 14px;
   padding-bottom: 10px;
-  border-bottom: 1px solid #1a3448;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .tech-id {
   font-size: 11px;
   font-weight: 600;
-  color: #58a6ff;
+  color: var(--accent);
   font-family: monospace;
   background: rgb(88 166 255 / 10%);
   border-radius: 4px;
   padding: 1px 5px;
 }
-.tech-name { font-size: 13px; font-weight: 600; color: #c9d8e8; }
+.tech-name { font-size: 13px; font-weight: 600; color: var(--text-main); }
 
 .score-bars {
   display: flex;
@@ -109,7 +109,7 @@
   cursor: pointer;
   padding: 4px 6px;
   border-radius: 4px;
-  &:hover { background: #0f1f2e; }
+  &:hover { background: var(--bg-hover); }
 }
 
 .score-label {
@@ -124,7 +124,7 @@
 .score-track {
   flex: 1;
   height: 6px;
-  background: #1a3448;
+  background: var(--border-subtle);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -136,7 +136,7 @@
   min-width: 2px;
 
   // Per-framework fill colors are set inline:
-  // D3FEND: #58a6ff, Engage: #4ade80, CAR: #ffa728, Atomic: #f87171
+  // D3FEND: var(--accent), Engage: var(--success), CAR: var(--accent-warm), Atomic: var(--danger)
 }
 
 .score-count {
@@ -154,22 +154,22 @@
 }
 
 .fw-card {
-  background: #0a1828;
-  border: 1px solid #1a3448;
+  background: var(--bg-panel-strong);
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
   padding: 12px;
 
   // Colored left-border accent per framework:
-  &.d3fend { border-left: 3px solid #58a6ff; }
-  &.engage  { border-left: 3px solid #4ade80; }
-  &.car     { border-left: 3px solid #ffa728; }
-  &.atomic  { border-left: 3px solid #f87171; }
+  &.d3fend { border-left: 3px solid var(--accent); }
+  &.engage  { border-left: 3px solid var(--success); }
+  &.car     { border-left: 3px solid var(--accent-warm); }
+  &.atomic  { border-left: 3px solid var(--danger); }
 }
 
 .fw-card-header {
   font-size: 11px;
   font-weight: 700;
-  color: #c9d8e8;
+  color: var(--text-main);
   margin-bottom: 7px;
   display: flex;
   align-items: center;
@@ -177,8 +177,8 @@
 }
 
 .fw-count {
-  background: #1a3448;
-  color: #8aaac8;
+  background: var(--border-subtle);
+  color: var(--text-muted);
   font-size: 9px;
   padding: 1px 5px;
   border-radius: 10px;
@@ -200,7 +200,7 @@
     text-decoration: none;
     display: block;
     line-height: 1.3;
-    &:hover { color: #8aaac8; }
+    &:hover { color: var(--text-muted); }
   }
 }
 .fw-more { font-size: 9px; color: var(--text-faint); font-style: italic; }
@@ -218,7 +218,7 @@
   border-radius: 4px;
   cursor: pointer;
   font-size: 11px;
-  &:hover { background: #0f1f2e; }
+  &:hover { background: var(--bg-hover); }
 
   &.header-row {
     cursor: default;
@@ -230,12 +230,12 @@
     &:hover { background: none; }
   }
 }
-.gt-id { font-family: monospace; font-weight: 700; color: #58a6ff; font-size: 10px; }
+.gt-id { font-family: monospace; font-weight: 700; color: var(--accent); font-size: 10px; }
 .gt-score { text-align: center; color: var(--text-faint); font-weight: 600; &.zero { color: #2a3a4a; } }
-.gt-total { text-align: right; font-weight: 700; color: #58a6ff; }
+.gt-total { text-align: right; font-weight: 700; color: var(--accent); }
 .gt-rating { text-align: right; font-size: 10px; font-weight: 600; }
-.rating-excellent { color: #4ade80; }
-.rating-good      { color: #58a6ff; }
-.rating-partial   { color: #ffa728; }
-.rating-poor      { color: #ffa728; }
-.rating-none      { color: #f87171; }
+.rating-excellent { color: var(--success); }
+.rating-good      { color: var(--accent); }
+.rating-partial   { color: var(--accent-warm); }
+.rating-poor      { color: var(--accent-warm); }
+.rating-none      { color: var(--danger); }

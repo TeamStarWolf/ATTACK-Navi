@@ -155,12 +155,13 @@ export class PriorityPanelComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
+  // Fills must hold >=4.5:1 against the badge's white text in both themes.
   getUnifiedColor(score: number): string {
     if (score <= 15) return '#7f0000';
     if (score <= 30) return '#c62828';
-    if (score <= 50) return '#e65100';
-    if (score <= 65) return '#f9a825';
-    if (score <= 80) return '#558b2f';
+    if (score <= 50) return '#b03a00';
+    if (score <= 65) return '#854d0e';
+    if (score <= 80) return '#2e7d32';
     return '#1b5e20';
   }
 

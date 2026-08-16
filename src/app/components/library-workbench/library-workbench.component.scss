@@ -7,15 +7,15 @@
   width: 100%;
   height: 100%;
   overflow: auto;
-  background: var(--bg-main, #0c0e12);
+  background: var(--bg-main, var(--bg-panel));
   color: var(--text-main, #e6e8ee);
 }
 
 // Type accent colors
-$lib-tool: #4ea1ff;
+$lib-tool: var(--accent);
 $lib-channel: #ef4444;
 $lib-x-account: #a78bfa;
-$lib-book: #f59e0b;
+$lib-book: var(--accent-warm);
 $lib-field-note: #10b981;
 
 .library-workbench {
@@ -29,7 +29,7 @@ $lib-field-note: #10b981;
   display: flex;
   align-items: center;
   gap: 4px;
-  border-bottom: 1px solid var(--border-subtle, #2a2f3d);
+  border-bottom: 1px solid var(--border-subtle, var(--border-subtle));
   margin-bottom: 20px;
 
   button {
@@ -48,8 +48,8 @@ $lib-field-note: #10b981;
       color: var(--text-main, #e6e8ee);
     }
     &.active {
-      color: var(--accent, #4ea1ff);
-      border-bottom-color: var(--accent, #4ea1ff);
+      color: var(--accent, var(--accent));
+      border-bottom-color: var(--accent, var(--accent));
     }
     .tab-icon {
       margin-right: 6px;
@@ -79,8 +79,8 @@ $lib-field-note: #10b981;
 .lib-search {
   flex: 1;
   min-width: 240px;
-  background: var(--bg-elev, #161922);
-  border: 1px solid var(--border-subtle, #2a2f3d);
+  background: var(--bg-elev, var(--bg-panel-strong));
+  border: 1px solid var(--border-subtle, var(--border-subtle));
   color: var(--text-main, #e6e8ee);
   padding: 9px 14px;
   border-radius: 8px;
@@ -88,7 +88,7 @@ $lib-field-note: #10b981;
   outline: none;
 
   &:focus {
-    border-color: var(--accent, #4ea1ff);
+    border-color: var(--accent, var(--accent));
   }
 
   &.lib-search-large {
@@ -99,8 +99,8 @@ $lib-field-note: #10b981;
   }
 }
 .lib-select {
-  background: var(--bg-elev, #161922);
-  border: 1px solid var(--border-subtle, #2a2f3d);
+  background: var(--bg-elev, var(--bg-panel-strong));
+  border: 1px solid var(--border-subtle, var(--border-subtle));
   color: var(--text-main, #e6e8ee);
   padding: 8px 14px;
   border-radius: 8px;
@@ -113,8 +113,8 @@ $lib-field-note: #10b981;
   flex-wrap: wrap;
 
   button {
-    background: var(--bg-elev, #161922);
-    border: 1px solid var(--border-subtle, #2a2f3d);
+    background: var(--bg-elev, var(--bg-panel-strong));
+    border: 1px solid var(--border-subtle, var(--border-subtle));
     color: var(--text-muted, #8b93a7);
     padding: 7px 13px;
     border-radius: 6px;
@@ -126,9 +126,10 @@ $lib-field-note: #10b981;
       color: var(--text-main, #e6e8ee);
     }
     &.active {
-      background: var(--accent, #4ea1ff);
-      color: #000;
-      border-color: var(--accent, #4ea1ff);
+      background: var(--accent, var(--accent));
+      // --bg-base flips with the theme, so it always opposes the accent fill
+      color: var(--bg-base);
+      border-color: var(--accent, var(--accent));
       font-weight: 600;
     }
   }
@@ -150,14 +151,14 @@ $lib-field-note: #10b981;
   gap: 10px;
 }
 .lib-card {
-  background: var(--bg-elev, #161922);
-  border: 1px solid var(--border-subtle, #2a2f3d);
+  background: var(--bg-elev, var(--bg-panel-strong));
+  border: 1px solid var(--border-subtle, var(--border-subtle));
   border-radius: 8px;
   padding: 12px 14px;
   transition: border-color 0.15s, transform 0.15s;
 
   &:hover {
-    border-color: var(--accent, #4ea1ff);
+    border-color: var(--accent, var(--accent));
     transform: translateY(-1px);
   }
 }
@@ -176,7 +177,7 @@ $lib-field-note: #10b981;
   text-decoration: none;
 
   &:hover {
-    color: var(--accent, #4ea1ff);
+    color: var(--accent, var(--accent));
   }
 }
 .card-desc {
@@ -199,15 +200,15 @@ $lib-field-note: #10b981;
   font-size: 10.5px;
   padding: 2px 7px;
   border-radius: 999px;
-  background: var(--bg-main, #0c0e12);
+  background: var(--bg-main, var(--bg-panel));
   color: var(--text-muted, #8b93a7);
-  border: 1px solid var(--border-subtle, #2a2f3d);
+  border: 1px solid var(--border-subtle, var(--border-subtle));
 }
-.meta-sub { color: #6dd5d4; }
-.meta-vendor { color: var(--accent, #4ea1ff); }
+.meta-sub { color: var(--accent); }
+.meta-vendor { color: var(--accent, var(--accent)); }
 .meta-tactic {
   background: rgba(245, 158, 11, 0.14);
-  color: #f59e0b;
+  color: var(--accent-warm);
   border-color: rgba(245, 158, 11, 0.28);
 }
 
@@ -219,8 +220,8 @@ $lib-field-note: #10b981;
   gap: 5px;
   margin: 12px 0 16px;
   padding: 10px 12px;
-  background: var(--bg-elev, #161922);
-  border: 1px solid var(--border-subtle, #2a2f3d);
+  background: var(--bg-elev, var(--bg-panel-strong));
+  border: 1px solid var(--border-subtle, var(--border-subtle));
   border-radius: 8px;
 }
 .chips-label {
@@ -232,8 +233,8 @@ $lib-field-note: #10b981;
   margin-right: 6px;
 }
 .tactic-chip {
-  background: var(--bg-main, #0c0e12);
-  border: 1px solid var(--border-subtle, #2a2f3d);
+  background: var(--bg-main, var(--bg-panel));
+  border: 1px solid var(--border-subtle, var(--border-subtle));
   color: var(--text-muted, #8b93a7);
   padding: 4px 10px;
   border-radius: 999px;
@@ -246,9 +247,9 @@ $lib-field-note: #10b981;
     border-color: rgba(245, 158, 11, 0.4);
   }
   &.active {
-    background: #f59e0b;
-    color: #000;
-    border-color: #f59e0b;
+    background: var(--accent-warm);
+    color: var(--bg-base);
+    border-color: var(--accent-warm);
     font-weight: 700;
   }
 }
@@ -274,8 +275,8 @@ $lib-field-note: #10b981;
   transition: background 0.12s, border-color 0.12s;
 
   &.has-data:hover {
-    background: var(--bg-elev, #161922);
-    border-color: var(--border-subtle, #2a2f3d);
+    background: var(--bg-elev, var(--bg-panel-strong));
+    border-color: var(--border-subtle, var(--border-subtle));
   }
   &.active {
     background: rgba(245, 158, 11, 0.10);
@@ -293,13 +294,13 @@ $lib-field-note: #10b981;
 }
 .tactic-bar-track {
   height: 14px;
-  background: var(--bg-main, #0c0e12);
+  background: var(--bg-main, var(--bg-panel));
   border-radius: 4px;
   overflow: hidden;
 }
 .tactic-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #f59e0b 0%, #f97316 100%);
+  background: linear-gradient(90deg, var(--accent-warm) 0%, var(--accent-warm) 100%);
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -347,8 +348,8 @@ $lib-field-note: #10b981;
   color: var(--text-muted, #8b93a7);
 
   button {
-    background: var(--bg-elev, #161922);
-    border: 1px solid var(--border-subtle, #2a2f3d);
+    background: var(--bg-elev, var(--bg-panel-strong));
+    border: 1px solid var(--border-subtle, var(--border-subtle));
     color: var(--text-main, #e6e8ee);
     padding: 7px 14px;
     border-radius: 6px;
@@ -386,15 +387,15 @@ $lib-field-note: #10b981;
   margin: 8px 0 24px;
 }
 .lib-metric {
-  background: var(--bg-elev, #161922);
-  border: 1px solid var(--border-subtle, #2a2f3d);
+  background: var(--bg-elev, var(--bg-panel-strong));
+  border: 1px solid var(--border-subtle, var(--border-subtle));
   border-radius: 10px;
   padding: 14px 18px;
 
   .metric-value {
     font-size: 26px;
     font-weight: 700;
-    color: var(--accent, #4ea1ff);
+    color: var(--accent, var(--accent));
     font-variant-numeric: tabular-nums;
   }
   .metric-label {
@@ -461,8 +462,8 @@ $lib-field-note: #10b981;
   margin-top: 8px;
 }
 .vendor-list {
-  background: var(--bg-elev, #161922);
-  border: 1px solid var(--border-subtle, #2a2f3d);
+  background: var(--bg-elev, var(--bg-panel-strong));
+  border: 1px solid var(--border-subtle, var(--border-subtle));
   border-radius: 8px;
   padding: 10px;
   max-height: calc(100vh - 280px);
@@ -492,15 +493,15 @@ $lib-field-note: #10b981;
     text-align: left;
 
     &:hover {
-      background: var(--bg-main, #0c0e12);
+      background: var(--bg-main, var(--bg-panel));
     }
     &.selected {
-      background: var(--accent, #4ea1ff);
+      background: var(--accent, var(--accent));
       color: #000;
     }
   }
   .count {
-    background: var(--bg-main, #0c0e12);
+    background: var(--bg-main, var(--bg-panel));
     padding: 1px 7px;
     border-radius: 999px;
     font-size: 10.5px;
@@ -525,8 +526,8 @@ $lib-field-note: #10b981;
   gap: 6px;
 
   button {
-    background: var(--bg-elev, #161922);
-    border: 1px solid var(--border-subtle, #2a2f3d);
+    background: var(--bg-elev, var(--bg-panel-strong));
+    border: 1px solid var(--border-subtle, var(--border-subtle));
     color: var(--text-muted, #8b93a7);
     padding: 5px 12px;
     border-radius: 999px;
@@ -534,8 +535,8 @@ $lib-field-note: #10b981;
     font-size: 12px;
 
     &:hover {
-      color: var(--accent, #4ea1ff);
-      border-color: var(--accent, #4ea1ff);
+      color: var(--accent, var(--accent));
+      border-color: var(--accent, var(--accent));
     }
   }
 }
@@ -543,7 +544,7 @@ $lib-field-note: #10b981;
   margin: 24px 0;
 
   .lib-h3 {
-    border-bottom: 1px solid var(--border-subtle, #2a2f3d);
+    border-bottom: 1px solid var(--border-subtle, var(--border-subtle));
     padding-bottom: 6px;
     text-transform: capitalize;
   }

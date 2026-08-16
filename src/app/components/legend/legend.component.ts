@@ -197,7 +197,7 @@ const MODE_CONFIGS: Record<HeatmapMode, LegendConfig> = {
       { color: '#1a4a7a', label: '1–5' },
       { color: '#1565c0', label: '6–15' },
       { color: '#1976d2', label: '16–30' },
-      { color: '#42a5f5', label: '31+' },
+      { color: 'var(--accent)', label: '31+' },
     ],
   },
   veris: {

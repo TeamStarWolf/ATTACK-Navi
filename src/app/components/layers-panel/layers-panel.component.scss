@@ -2,8 +2,8 @@
    https://github.com/TeamStarWolf/ATTACK-Navi - MIT License */
 // Panel container
 .layers-modal {
-  background: #0d1a26;
-  border: 1px solid #1a3448;
+  background: var(--bg-panel-strong);
+  border: 1px solid var(--border-subtle);
   border-radius: 10px;
   overflow: hidden;
   display: flex;
@@ -13,8 +13,8 @@
 // Header
 .panel-header {
   height: 52px;
-  background: #07101a;
-  border-bottom: 1px solid #1a3448;
+  background: var(--bg-raised);
+  border-bottom: 1px solid var(--border-subtle);
   padding: 0 16px;
   display: flex;
   align-items: center;
@@ -29,7 +29,7 @@
 .panel-title {
   font-size: 15px;
   font-weight: 600;
-  color: #c9d8e8;
+  color: var(--text-main);
   flex: 1;
   white-space: nowrap;
   overflow: hidden;
@@ -52,8 +52,8 @@
   flex-shrink: 0;
 
   &:hover {
-    background: #1a3448;
-    color: #c9d8e8;
+    background: var(--border-subtle);
+    color: var(--text-main);
   }
 }
 
@@ -63,7 +63,7 @@
   padding: 16px;
   flex: 1;
   min-height: 0;
-  background: #070d14;
+  background: var(--bg-panel);
 }
 
 // Save section
@@ -76,7 +76,7 @@
   padding: 8px 12px;
   background: rgb(26 159 255 / 8%);
   border: 1px dashed rgb(26 159 255 / 30%);
-  color: #58a6ff;
+  color: var(--accent);
   border-radius: 5px;
   font-size: 13px;
   cursor: pointer;
@@ -87,13 +87,13 @@
   &:hover {
     background: rgb(26 159 255 / 15%);
     border-color: rgb(26 159 255 / 50%);
-    color: #8aaac8;
+    color: var(--text-muted);
   }
 }
 
 .save-form {
-  background: #0a1828;
-  border: 1px solid #1a3448;
+  background: var(--bg-panel-strong);
+  border: 1px solid var(--border-subtle);
   border-radius: 6px;
   padding: 12px;
   display: flex;
@@ -116,9 +116,9 @@
 }
 
 .form-input {
-  background: #070d14;
-  border: 1px solid #1a3448;
-  color: #c9d8e8;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
   padding: 7px 12px;
   border-radius: 5px;
   font-size: 13px;
@@ -132,7 +132,7 @@
   }
 
   &:focus {
-    border-color: #1a9fff;
+    border-color: var(--accent);
   }
 }
 
@@ -161,17 +161,17 @@
 .btn-secondary {
   background: transparent;
   color: var(--text-faint);
-  border-color: #1a3448;
+  border-color: var(--border-subtle);
 
   &:hover:not(:disabled) {
-    color: #c9d8e8;
-    border-color: #2a4a64;
+    color: var(--text-main);
+    border-color: var(--border-default);
   }
 }
 
 .btn-primary {
   background: rgb(26 159 255 / 20%);
-  color: #58a6ff;
+  color: var(--accent);
   border-color: rgb(26 159 255 / 40%);
 
   &:hover:not(:disabled) {
@@ -181,7 +181,7 @@
 
 .section-divider {
   height: 1px;
-  background: #1a3448;
+  background: var(--border-subtle);
   margin: 12px 0;
 }
 
@@ -198,7 +198,7 @@
 }
 
 .empty-msg {
-  color: #c9d8e8;
+  color: var(--text-main);
   font-size: 14px;
   margin: 0 0 6px;
 }
@@ -210,14 +210,14 @@
 }
 
 .layer-card {
-  background: #0a1828;
-  border: 1px solid #1a3448;
+  background: var(--bg-panel-strong);
+  border: 1px solid var(--border-subtle);
   border-radius: 6px;
   padding: 10px 12px;
   transition: border-color 0.15s;
 
   &:hover {
-    border-color: #2a4a64;
+    border-color: var(--border-default);
   }
 }
 
@@ -232,7 +232,7 @@
 .layer-name {
   font-size: 13px;
   font-weight: 600;
-  color: #c9d8e8;
+  color: var(--text-main);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -275,7 +275,7 @@
 
 .load-btn {
   background: rgb(26 159 255 / 15%);
-  color: #58a6ff;
+  color: var(--accent);
   border-color: rgb(26 159 255 / 30%);
 
   &:hover {
@@ -286,19 +286,19 @@
 .icon-btn {
   background: transparent;
   color: var(--text-faint);
-  border-color: #1a3448;
+  border-color: var(--border-subtle);
   padding: 4px 8px;
 
   &:hover {
-    background: #1a3448;
-    color: #c9d8e8;
+    background: var(--border-subtle);
+    color: var(--text-main);
   }
 }
 
 .delete-btn {
   margin-left: auto;
   background: rgb(239 68 68 / 12%);
-  color: #f87171;
+  color: var(--danger);
   border-color: rgb(239 68 68 / 25%);
 
   &:hover {
@@ -309,14 +309,14 @@
 // Footer
 .panel-footer {
   padding: 12px 16px;
-  background: #07101a;
-  border-top: 1px solid #1a3448;
+  background: var(--bg-raised);
+  border-top: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
 .import-error {
   font-size: 12px;
-  color: #f87171;
+  color: var(--danger);
   margin: 0 0 8px;
 }
 
@@ -324,7 +324,7 @@
   width: 100%;
   padding: 8px 12px;
   background: transparent;
-  border: 1px solid #1a3448;
+  border: 1px solid var(--border-subtle);
   color: var(--text-faint);
   border-radius: 5px;
   font-size: 13px;
@@ -334,8 +334,8 @@
   font-family: inherit;
 
   &:hover {
-    background: #1a3448;
-    color: #c9d8e8;
-    border-color: #2a4a64;
+    background: var(--border-subtle);
+    color: var(--text-main);
+    border-color: var(--border-default);
   }
 }

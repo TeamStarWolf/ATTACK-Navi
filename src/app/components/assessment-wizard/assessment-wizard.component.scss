@@ -3,7 +3,7 @@
 /* ── Panel ── */
 .panel {
   position: relative;
-  background: #070d14;
+  background: var(--bg-panel);
   border: 1px solid rgb(255 255 255 / 6%);
   border-radius: 10px;
   display: flex;
@@ -14,7 +14,7 @@
 /* ── Header ── */
 .panel-header {
   height: 52px;
-  background: #07101a;
+  background: var(--bg-raised);
   border-bottom: 1px solid rgb(255 255 255 / 6%);
   padding: 0 16px;
   display: flex;
@@ -32,7 +32,7 @@
 .panel-title {
   font-size: 15px;
   font-weight: 600;
-  color: #c9d8e8;
+  color: var(--text-main);
 }
 
 .header-subtitle {
@@ -56,8 +56,8 @@
   transition: background 0.15s, color 0.15s;
 
   &:hover {
-    background: #1a3448;
-    color: #c9d8e8;
+    background: var(--border-subtle);
+    color: var(--text-main);
   }
 }
 
@@ -68,7 +68,7 @@
   justify-content: center;
   gap: 0;
   padding: 16px 24px;
-  background: #07101a;
+  background: var(--bg-raised);
   border-bottom: 1px solid rgb(255 255 255 / 6%);
   flex-shrink: 0;
 }
@@ -77,7 +77,7 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #0a1828;
+  background: var(--bg-panel-strong);
   border: 2px solid rgb(255 255 255 / 10%);
   color: var(--text-faint);
   font-size: 12px;
@@ -90,14 +90,14 @@
 
   &.active {
     background: rgb(96 165 250 / 15%);
-    border-color: #60a5fa;
-    color: #60a5fa;
+    border-color: var(--accent);
+    color: var(--accent);
   }
 
   &.completed {
     background: rgb(74 222 128 / 15%);
-    border-color: #4ade80;
-    color: #4ade80;
+    border-color: var(--success);
+    color: var(--success);
   }
 
   &:disabled {
@@ -118,7 +118,7 @@
   transition: background 0.2s;
 
   &.filled {
-    background: #4ade80;
+    background: var(--success);
   }
 }
 
@@ -136,13 +136,13 @@
 .step-title {
   font-size: 18px;
   font-weight: 600;
-  color: #c9d8e8;
+  color: var(--text-main);
   margin: 0 0 8px;
 }
 
 .step-desc {
   font-size: 13px;
-  color: #6e8599;
+  color: var(--text-faint);
   margin: 0 0 20px;
   line-height: 1.5;
 }
@@ -159,7 +159,7 @@
   flex-direction: column;
   gap: 8px;
   padding: 20px;
-  background: #0a1828;
+  background: var(--bg-panel-strong);
   border: 2px solid rgb(255 255 255 / 6%);
   border-radius: 12px;
   cursor: pointer;
@@ -168,11 +168,11 @@
 
   &:hover {
     border-color: rgb(96 165 250 / 30%);
-    background: #0d1f30;
+    background: var(--bg-panel-strong);
   }
 
   &.selected {
-    border-color: #60a5fa;
+    border-color: var(--accent);
     background: rgb(96 165 250 / 8%);
   }
 }
@@ -180,12 +180,12 @@
 .domain-label {
   font-size: 16px;
   font-weight: 600;
-  color: #c9d8e8;
+  color: var(--text-main);
 }
 
 .domain-desc {
   font-size: 12px;
-  color: #6e8599;
+  color: var(--text-faint);
   line-height: 1.5;
 }
 
@@ -200,9 +200,9 @@
 .sector-chip {
   padding: 5px 14px;
   border-radius: 16px;
-  background: #0a1828;
+  background: var(--bg-panel-strong);
   border: 1px solid rgb(255 255 255 / 6%);
-  color: #6e8599;
+  color: var(--text-faint);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
@@ -210,13 +210,13 @@
 
   &:hover {
     border-color: rgb(96 165 250 / 30%);
-    color: #c9d8e8;
+    color: var(--text-main);
   }
 
   &.active {
     background: rgb(96 165 250 / 15%);
-    border-color: #60a5fa;
-    color: #60a5fa;
+    border-color: var(--accent);
+    color: var(--accent);
   }
 }
 
@@ -230,17 +230,17 @@
 .group-search-row .form-input {
   flex: 1;
   height: 32px;
-  background: #070d14;
+  background: var(--bg-panel);
   border: 1px solid rgb(255 255 255 / 6%);
   border-radius: 6px;
   padding: 0 10px;
-  color: #c9d8e8;
+  color: var(--text-main);
   font-size: 13px;
   outline: none;
   box-sizing: border-box;
 
   &::placeholder { color: var(--text-faint); }
-  &:focus { border-color: #60a5fa; }
+  &:focus { border-color: var(--accent); }
 }
 
 .group-info {
@@ -254,7 +254,7 @@
   overflow-y: auto;
   border: 1px solid rgb(255 255 255 / 6%);
   border-radius: 8px;
-  background: #0a1828;
+  background: var(--bg-panel-strong);
 }
 
 .group-item {
@@ -286,14 +286,14 @@
 .group-id {
   font-family: monospace;
   font-size: 11px;
-  color: #60a5fa;
+  color: var(--accent);
   flex-shrink: 0;
   width: 52px;
 }
 
 .group-name {
   font-size: 13px;
-  color: #c9d8e8;
+  color: var(--text-main);
   font-weight: 500;
   flex: 1;
   min-width: 0;
@@ -336,21 +336,21 @@
 .progress-bar-track {
   flex: 1;
   height: 8px;
-  background: #0a1828;
+  background: var(--bg-panel-strong);
   border-radius: 4px;
   overflow: hidden;
 }
 
 .progress-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #60a5fa, #4ade80);
+  background: linear-gradient(90deg, var(--accent), var(--success));
   border-radius: 4px;
   transition: width 0.3s;
 }
 
 .progress-label {
   font-size: 12px;
-  color: #6e8599;
+  color: var(--text-faint);
   flex-shrink: 0;
 }
 
@@ -378,14 +378,14 @@
   gap: 10px;
   width: 100%;
   padding: 10px 14px;
-  background: #0a1828;
+  background: var(--bg-panel-strong);
   border: none;
   cursor: pointer;
   text-align: left;
   transition: background 0.1s;
 
   &:hover {
-    background: #0d1f30;
+    background: var(--bg-panel-strong);
   }
 }
 
@@ -398,7 +398,7 @@
 .tactic-name {
   font-size: 13px;
   font-weight: 600;
-  color: #c9d8e8;
+  color: var(--text-main);
   flex: 1;
 }
 
@@ -409,7 +409,7 @@
 
 .tactic-rated {
   font-size: 11px;
-  color: #60a5fa;
+  color: var(--accent);
 }
 
 .technique-list {
@@ -445,13 +445,13 @@
 .tech-id {
   font-family: monospace;
   font-size: 11px;
-  color: #60a5fa;
+  color: var(--accent);
   flex-shrink: 0;
 }
 
 .tech-name-col {
   font-size: 12px;
-  color: #c9d8e8;
+  color: var(--text-main);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -471,7 +471,7 @@
   padding: 1px 6px;
   border-radius: 4px;
   background: rgb(251 191 36 / 12%);
-  color: #fbbf24;
+  color: var(--accent-warm);
   font-size: 9px;
   font-weight: 600;
   flex-shrink: 0;
@@ -496,31 +496,31 @@
 
   &:hover {
     background: rgb(255 255 255 / 8%);
-    color: #c9d8e8;
+    color: var(--text-main);
   }
 
   &.status-implemented.active {
     background: rgb(74 222 128 / 15%);
     border-color: rgb(74 222 128 / 30%);
-    color: #4ade80;
+    color: var(--success);
   }
 
   &.status-in-progress.active {
     background: rgb(251 191 36 / 15%);
     border-color: rgb(251 191 36 / 30%);
-    color: #fbbf24;
+    color: var(--accent-warm);
   }
 
   &.status-planned.active {
     background: rgb(96 165 250 / 15%);
     border-color: rgb(96 165 250 / 30%);
-    color: #60a5fa;
+    color: var(--accent);
   }
 
   &.status-not-started.active {
     background: rgb(248 113 113 / 15%);
     border-color: rgb(248 113 113 / 30%);
-    color: #f87171;
+    color: var(--danger);
   }
 }
 
@@ -533,7 +533,7 @@
 }
 
 .result-card {
-  background: #0a1828;
+  background: var(--bg-panel-strong);
   border: 1px solid rgb(255 255 255 / 6%);
   border-radius: 10px;
   padding: 20px 16px;
@@ -559,11 +559,11 @@
 .result-value {
   font-size: 28px;
   font-weight: 700;
-  color: #60a5fa;
+  color: var(--accent);
 
-  .risk-high & { color: #f87171; }
-  .risk-medium & { color: #fbbf24; }
-  .risk-low & { color: #4ade80; }
+  .risk-high & { color: var(--danger); }
+  .risk-medium & { color: var(--accent-warm); }
+  .risk-low & { color: var(--success); }
 }
 
 .result-label {
@@ -573,7 +573,7 @@
 }
 
 .results-section {
-  background: #0a1828;
+  background: var(--bg-panel-strong);
   border: 1px solid rgb(255 255 255 / 6%);
   border-radius: 8px;
   padding: 16px;
@@ -583,7 +583,7 @@
 .section-title {
   font-size: 13px;
   font-weight: 600;
-  color: #c9d8e8;
+  color: var(--text-main);
   margin: 0 0 12px;
 }
 
@@ -601,7 +601,7 @@
 
 .breakdown-name {
   font-size: 12px;
-  color: #8aaac8;
+  color: var(--text-muted);
   width: 160px;
   flex-shrink: 0;
   overflow: hidden;
@@ -622,9 +622,9 @@
   border-radius: 3px;
   transition: width 0.3s;
 
-  &.high { background: #4ade80; }
-  &.medium { background: #fbbf24; }
-  &.low { background: #f87171; }
+  &.high { background: var(--success); }
+  &.medium { background: var(--accent-warm); }
+  &.low { background: var(--danger); }
 }
 
 .breakdown-stat {
@@ -657,7 +657,7 @@
   padding: 6px 0;
   border-bottom: 1px solid rgb(255 255 255 / 3%);
   font-size: 12px;
-  color: #c9d8e8;
+  color: var(--text-main);
   align-items: center;
 
   &:last-child { border-bottom: none; }
@@ -669,10 +669,10 @@
 .gap-col-kev { width: 50px; text-align: center; flex-shrink: 0; }
 .gap-col-status { width: 100px; text-align: right; flex-shrink: 0; font-size: 11px; }
 
-.status-implemented { color: #4ade80; }
-.status-in-progress { color: #fbbf24; }
-.status-planned { color: #60a5fa; }
-.status-not-started { color: #f87171; }
+.status-implemented { color: var(--success); }
+.status-in-progress { color: var(--accent-warm); }
+.status-planned { color: var(--accent); }
+.status-not-started { color: var(--danger); }
 .status-unrated { color: var(--text-faint); }
 
 /* ── Step 5: Export ── */
@@ -688,12 +688,12 @@
   border-radius: 6px;
   background: rgb(74 222 128 / 10%);
   border: 1px solid rgb(74 222 128 / 20%);
-  color: #4ade80;
+  color: var(--success);
   font-size: 12px;
 }
 
 .next-steps {
-  background: #0a1828;
+  background: var(--bg-panel-strong);
   border: 1px solid rgb(255 255 255 / 6%);
   border-radius: 8px;
   padding: 16px;
@@ -711,7 +711,7 @@
   align-items: center;
   gap: 6px;
   padding: 16px 12px;
-  background: #070d14;
+  background: var(--bg-panel);
   border: 1px solid rgb(255 255 255 / 6%);
   border-radius: 8px;
   cursor: pointer;
@@ -720,7 +720,7 @@
 
   &:hover {
     border-color: rgb(96 165 250 / 30%);
-    background: #0d1f30;
+    background: var(--bg-panel-strong);
   }
 }
 
@@ -731,7 +731,7 @@
 .next-label {
   font-size: 13px;
   font-weight: 600;
-  color: #c9d8e8;
+  color: var(--text-main);
 }
 
 .next-desc {
@@ -746,7 +746,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 24px;
-  background: #07101a;
+  background: var(--bg-raised);
   border-top: 1px solid rgb(255 255 255 / 6%);
   flex-shrink: 0;
 }
@@ -764,7 +764,7 @@
   &.primary {
     background: rgb(96 165 250 / 15%);
     border-color: rgb(96 165 250 / 30%);
-    color: #60a5fa;
+    color: var(--accent);
 
     &:hover {
       background: rgb(96 165 250 / 25%);
@@ -780,11 +780,11 @@
   &.secondary {
     background: rgb(255 255 255 / 6%);
     border-color: rgb(255 255 255 / 6%);
-    color: #8aaac8;
+    color: var(--text-muted);
 
     &:hover {
       background: rgb(255 255 255 / 10%);
-      color: #c9d8e8;
+      color: var(--text-main);
     }
   }
 }

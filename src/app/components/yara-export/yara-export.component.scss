@@ -1,25 +1,25 @@
 /* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
    https://github.com/TeamStarWolf/ATTACK-Navi - MIT License */
 .yara-panel {
-  width: 100%; max-width: 720px; background: #0d1a26;
-  border: 1px solid #1a3448; border-radius: 8px;
+  width: 100%; max-width: 720px; background: var(--bg-panel-strong);
+  border: 1px solid var(--border-subtle); border-radius: 8px;
   display: flex; flex-direction: column; overflow: hidden;
 }
 
 .yara-header {
   display: flex; align-items: center; gap: 10px;
-  height: 52px; padding: 0 16px; background: #07101a;
-  border-bottom: 1px solid #1a3448; flex-shrink: 0;
+  height: 52px; padding: 0 16px; background: var(--bg-raised);
+  border-bottom: 1px solid var(--border-subtle); flex-shrink: 0;
 }
 .yara-icon { font-size: 18px; }
-.yara-title { font-size: 15px; font-weight: 600; color: #c9d8e8; margin: 0; flex: 1; }
+.yara-title { font-size: 15px; font-weight: 600; color: var(--text-main); margin: 0; flex: 1; }
 
 .yara-close {
   width: 28px; height: 28px; border-radius: 6px; background: transparent; border: none;
   color: var(--text-faint); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;
-  &:hover { background: #1a3448; color: #c9d8e8; }
+  &:hover { background: var(--border-subtle); color: var(--text-main); }
 }
-.yara-body { flex: 1; overflow-y: auto; padding: 16px; background: #070d14; }
+.yara-body { flex: 1; overflow-y: auto; padding: 16px; background: var(--bg-panel); }
 .yara-section { margin-bottom: 16px; }
 
 .yara-section-label {
@@ -29,35 +29,35 @@
 .yara-modes { display: flex; flex-direction: column; gap: 6px; }
 
 .yara-radio {
-  font-size: 12px; color: #c9d8e8; display: flex; align-items: center; gap: 6px; cursor: pointer;
-  input { cursor: pointer; accent-color: #58a6ff; }
+  font-size: 12px; color: var(--text-main); display: flex; align-items: center; gap: 6px; cursor: pointer;
+  input { cursor: pointer; accent-color: var(--accent); }
   &:has(input:checked) { font-weight: 600; }
 }
 
 .yara-stats {
   display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
-  padding: 8px 14px; background: #040a10; border: 1px solid #0f1f2e;
+  padding: 8px 14px; background: var(--bg-panel); border: 1px solid var(--bg-hover);
   border-radius: 5px; font-size: 12px;
 }
-.yara-stat { font-size: 12px; color: var(--text-faint); strong { color: #58a6ff; font-size: 14px; font-weight: 700; } }
-.yara-stat-sep { color: #1a3448; }
+.yara-stat { font-size: 12px; color: var(--text-faint); strong { color: var(--accent); font-size: 14px; font-weight: 700; } }
+.yara-stat-sep { color: var(--border-subtle); }
 
 .yara-code-preview {
-  background: #040a10; border: 1px solid #1a3448; border-radius: 5px;
-  padding: 10px; font-size: 11px; color: #8aaac8; font-family: Consolas, Monaco, monospace;
+  background: var(--bg-panel); border: 1px solid var(--border-subtle); border-radius: 5px;
+  padding: 10px; font-size: 11px; color: var(--text-muted); font-family: Consolas, Monaco, monospace;
   overflow: auto; max-height: 280px; white-space: pre; margin: 0;
 }
 .yara-actions { display: flex; gap: 8px; padding-top: 4px; }
 
 .yara-export-btn {
   padding: 5px 12px; background: rgb(26 159 255 / 15%); border: 1px solid rgb(26 159 255 / 30%);
-  color: #58a6ff; border-radius: 5px; cursor: pointer; font-size: 12px;
+  color: var(--accent); border-radius: 5px; cursor: pointer; font-size: 12px;
   &:hover:not(:disabled) { background: rgb(26 159 255 / 25%); }
   &:disabled { opacity: 0.4; cursor: not-allowed; }
 }
 
 .yara-cancel-btn {
-  padding: 5px 12px; background: none; border: 1px solid #1a3448; color: var(--text-faint);
+  padding: 5px 12px; background: none; border: 1px solid var(--border-subtle); color: var(--text-faint);
   border-radius: 5px; cursor: pointer; font-size: 12px;
-  &:hover { border-color: var(--text-faint); color: #8aaac8; }
+  &:hover { border-color: var(--text-faint); color: var(--text-muted); }
 }

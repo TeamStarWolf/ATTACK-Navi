@@ -14,20 +14,20 @@
 
   .tooltip-header {
     margin-bottom: 6px;
-    .t-id { color: #58a6ff; font-weight: 700; font-size: 11px; margin-right: 6px; }
-    .t-name { color: #cdd9e5; font-weight: 600; font-size: 13px; }
+    .t-id { color: var(--accent); font-weight: 700; font-size: 11px; margin-right: 6px; }
+    .t-name { color: var(--text-main); font-weight: 600; font-size: 13px; }
   }
 
   .tooltip-meta {
     display: flex; gap: 12px; margin-bottom: 6px;
-    .meta-item { font-size: 11px; color: #8b949e; }
+    .meta-item { font-size: 11px; color: var(--text-muted); }
   }
 
   .tooltip-platforms {
     display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px;
 
     .plat-badge {
-      background: #1a3448; color: #8b949e; border-radius: 3px;
+      background: var(--border-subtle); color: var(--text-muted); border-radius: 3px;
       padding: 1px 5px; font-size: 10px;
     }
   }

@@ -1,8 +1,8 @@
 /* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
    https://github.com/TeamStarWolf/ATTACK-Navi - MIT License */
 .panel {
-  background: #0d1a26;
-  border: 1px solid #1a3448;
+  background: var(--bg-panel-strong);
+  border: 1px solid var(--border-subtle);
   border-radius: 10px;
   display: flex;
   flex-direction: column;
@@ -16,8 +16,8 @@
   align-items: center;
   gap: 12px;
   padding: 14px 18px;
-  background: #07101a;
-  border-bottom: 1px solid #1a3448;
+  background: var(--bg-raised);
+  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
@@ -30,7 +30,7 @@
   display: block;
   font-size: 15px;
   font-weight: 700;
-  color: #c9d8e8;
+  color: var(--text-main);
   letter-spacing: 0.2px;
 }
 
@@ -54,7 +54,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  &:hover { background: #1a3448; color: #c9d8e8; }
+  &:hover { background: var(--border-subtle); color: var(--text-main); }
 }
 
 // ── Coverage summary bar ──────────────────────────────────────────────────────
@@ -65,7 +65,7 @@
   gap: 12px;
   padding: 10px 18px;
   background: rgb(88 166 255 / 4%);
-  border-bottom: 1px solid #1a3448;
+  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
@@ -78,7 +78,7 @@
 .coverage-num {
   font-size: 18px;
   font-weight: 700;
-  color: #58a6ff;
+  color: var(--accent);
   line-height: 1;
 }
 
@@ -90,7 +90,7 @@
 }
 
 .coverage-divider {
-  color: #1a3448;
+  color: var(--border-subtle);
   font-size: 16px;
 }
 
@@ -99,8 +99,8 @@
 .tab-bar {
   display: flex;
   padding: 0 18px;
-  border-bottom: 1px solid #1a3448;
-  background: #070d14;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-panel);
   flex-shrink: 0;
 }
 
@@ -118,11 +118,11 @@
   gap: 6px;
   transition: color 0.15s;
 
-  &:hover { color: #7395b0; }
+  &:hover { color: var(--text-faint); }
 
   &.active {
-    color: #58a6ff;
-    border-bottom-color: #58a6ff;
+    color: var(--accent);
+    border-bottom-color: var(--accent);
   }
 }
 
@@ -132,7 +132,7 @@
   padding: 1px 6px;
   border-radius: 8px;
   background: rgb(88 166 255 / 10%);
-  color: #58a6ff;
+  color: var(--accent);
 }
 
 // ── Search + sort ─────────────────────────────────────────────────────────────
@@ -142,8 +142,8 @@
   align-items: center;
   gap: 10px;
   padding: 10px 18px;
-  border-bottom: 1px solid #1a3448;
-  background: #070d14;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-panel);
   flex-shrink: 0;
 }
 
@@ -164,17 +164,17 @@
 .search-input {
   width: 100%;
   padding: 6px 10px 6px 28px;
-  background: #0a1828;
-  border: 1px solid #1a3448;
+  background: var(--bg-panel-strong);
+  border: 1px solid var(--border-subtle);
   border-radius: 5px;
-  color: #c9d8e8;
+  color: var(--text-main);
   font-size: 12px;
   font-family: inherit;
   outline: none;
   box-sizing: border-box;
 
   &::placeholder { color: var(--text-faint); }
-  &:focus { border-color: #58a6ff; }
+  &:focus { border-color: var(--accent); }
 }
 
 .search-clear {
@@ -186,7 +186,7 @@
   font-size: 12px;
   cursor: pointer;
   padding: 2px 4px;
-  &:hover { color: #c9d8e8; }
+  &:hover { color: var(--text-main); }
 }
 
 .sort-group {
@@ -210,13 +210,13 @@
   padding: 3px 9px;
   border-radius: 10px;
   background: rgb(255 255 255 / 4%);
-  border: 1px solid #1a3448;
+  border: 1px solid var(--border-subtle);
   color: var(--text-faint);
   cursor: pointer;
   transition: all 0.12s;
 
-  &:hover { background: #1a3448; color: #7395b0; }
-  &.active { background: rgb(88 166 255 / 12%); border-color: rgb(88 166 255 / 30%); color: #58a6ff; }
+  &:hover { background: var(--border-subtle); color: var(--text-faint); }
+  &.active { background: rgb(88 166 255 / 12%); border-color: rgb(88 166 255 / 30%); color: var(--accent); }
 }
 
 // ── Sources table ─────────────────────────────────────────────────────────────
@@ -231,8 +231,8 @@
   border-collapse: collapse;
 
   thead tr {
-    background: #070d14;
-    border-bottom: 1px solid #1a3448;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-subtle);
     position: sticky;
     top: 0;
     z-index: 1;
@@ -253,7 +253,7 @@
   }
 
   tbody tr.source-row {
-    border-bottom: 1px solid #0f1f2e;
+    border-bottom: 1px solid var(--bg-hover);
     transition: background 0.1s;
 
     &:hover { background: rgb(88 166 255 / 4%); }
@@ -274,14 +274,14 @@
   gap: 6px;
   background: transparent;
   border: none;
-  color: #c9d8e8;
+  color: var(--text-main);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   padding: 0;
   text-align: left;
 
-  &:hover { color: #58a6ff; }
+  &:hover { color: var(--accent); }
 }
 
 .expand-icon {
@@ -303,18 +303,18 @@
 
 .comp-badge {
   background: rgb(88 166 255 / 8%);
-  color: #58a6ff;
+  color: var(--accent);
   border: 1px solid rgb(88 166 255 / 20%);
 }
 
 .tech-badge {
   background: rgb(255 255 255 / 4%);
   color: var(--text-faint);
-  border: 1px solid #1a3448;
+  border: 1px solid var(--border-subtle);
 
   &.has-techs {
     background: rgb(74 222 128 / 8%);
-    color: #4ade80;
+    color: var(--success);
     border-color: rgb(74 222 128 / 25%);
   }
 }
@@ -326,7 +326,7 @@
   border-radius: 10px;
   background: rgb(88 166 255 / 8%);
   border: 1px solid rgb(88 166 255 / 20%);
-  color: #58a6ff;
+  color: var(--accent);
   cursor: pointer;
   transition: background 0.15s;
 
@@ -338,7 +338,7 @@
 .component-detail-row td {
   padding: 0 14px 10px 32px;
   background: rgb(88 166 255 / 3%);
-  border-bottom: 1px solid #0f1f2e;
+  border-bottom: 1px solid var(--bg-hover);
 }
 
 .component-detail-list {
@@ -354,7 +354,7 @@
   border-radius: 10px;
   background: rgb(88 166 255 / 8%);
   border: 1px solid rgb(88 166 255 / 20%);
-  color: #7395b0;
+  color: var(--text-faint);
 }
 
 .component-name {
@@ -385,7 +385,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 18px;
-  border-bottom: 1px solid #0f1f2e;
+  border-bottom: 1px solid var(--bg-hover);
   cursor: pointer;
   transition: background 0.1s;
   gap: 12px;
@@ -406,7 +406,7 @@
   display: block;
   font-size: 12px;
   font-weight: 600;
-  color: #c9d8e8;
+  color: var(--text-main);
 }
 
 .comp-source {
@@ -429,13 +429,13 @@
   padding: 2px 7px;
   border-radius: 8px;
   background: rgb(74 222 128 / 8%);
-  color: #4ade80;
+  color: var(--success);
   border: 1px solid rgb(74 222 128 / 25%);
 }
 
 .comp-filter-hint {
   font-size: 10px;
-  color: #58a6ff;
+  color: var(--accent);
   opacity: 0;
   transition: opacity 0.1s;
   font-weight: 600;
@@ -466,7 +466,7 @@
   width: 28px;
   height: 28px;
   border: 3px solid rgb(88 166 255 / 15%);
-  border-top-color: #58a6ff;
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
