@@ -15,6 +15,7 @@ import {
 import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import tinycolor from 'tinycolor2';
+import { SAFE_SEQ, SAFE_STATUS, SAFE_CONTROLS } from '../../models/safe-palette';
 import { Technique } from '../../models/technique';
 import { HeatmapMode } from '../../services/filter.service';
 import { ImplStatus } from '../../services/implementation.service';
@@ -298,8 +299,12 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
     } else {
       this.bgColor = this.computeColor(this.technique.mitigationCount);
     }
-    const tc = tinycolor(this.bgColor);
-    this.textColor = tc.isLight() ? '#212121' : '#ffffff';
+    // Pick whichever text color actually has the higher WCAG contrast
+    // against the computed background (isLight()'s brightness threshold
+    // mis-served mid-tone backgrounds).
+    this.textColor = tinycolor
+      .mostReadable(this.bgColor, ['#212121', '#ffffff'])
+      .toHexString();
     this.implDotColor = this.implStatus ? this.computeStatusColor(this.implStatus) : '';
   }
 
@@ -319,11 +324,13 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
 
   private computeRelativeColor(score: number, max: number, zero: string, colors: [string, string, string, string]): string {
     if (score === 0) return zero;
+    // Colorblind-safe mode: one viridis ramp for every relative mode.
+    const ramp = this.settingsService.current.colorblindSafe ? SAFE_SEQ : colors;
     const ratio = max > 0 ? score / max : 0;
-    if (ratio >= 0.75) return colors[3];
-    if (ratio >= 0.5) return colors[2];
-    if (ratio >= 0.25) return colors[1];
-    return colors[0];
+    if (ratio >= 0.75) return ramp[3];
+    if (ratio >= 0.5) return ramp[2];
+    if (ratio >= 0.25) return ramp[1];
+    return ramp[0];
   }
 
   private computeColor(count: number): string {
@@ -334,24 +341,17 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   private computeExposureColor(score: number, max: number): string {
-    if (score === 0) return '#eceff1';
-    const ratio = max > 0 ? score / max : 0;
-    if (ratio >= 0.75) return '#b71c1c';
-    if (ratio >= 0.5) return '#e53935';
-    if (ratio >= 0.25) return '#ff7043';
-    return '#ffb74d';
+    return this.computeRelativeColor(score, max, '#eceff1', ['#ffb74d', '#ff7043', '#e53935', '#b71c1c']);
   }
 
   private computeCampaignColor(score: number, max: number): string {
-    if (score === 0) return '#eceff1';
-    const ratio = max > 0 ? score / max : 0;
-    if (ratio >= 0.75) return '#4a148c';
-    if (ratio >= 0.5) return '#7b1fa2';
-    if (ratio >= 0.25) return '#ab47bc';
-    return '#ce93d8';
+    return this.computeRelativeColor(score, max, '#eceff1', ['#ce93d8', '#ab47bc', '#7b1fa2', '#4a148c']);
   }
 
   private computeControlColor(status: 'covered' | 'planned' | 'none'): string {
+    if (this.settingsService.current.colorblindSafe) {
+      return SAFE_CONTROLS[status] ?? SAFE_CONTROLS['none'];
+    }
     switch (status) {
       case 'covered': return '#00c853';
       case 'planned': return '#1565c0';
@@ -360,72 +360,13 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   private computeRiskColor(score: number, max: number): string {
-    if (score === 0) return '#eceff1';
-    const ratio = max > 0 ? score / max : 0;
-    if (ratio >= 0.75) return '#4a0000';
-    if (ratio >= 0.5) return '#b71c1c';
-    if (ratio >= 0.25) return '#e53935';
-    return '#ff7043';
-  }
-
-  private computeKevColor(score: number, max: number): string {
-    if (score === 0) return '#eceff1';
-    if (score <= 2) return '#ffd54f';
-    if (score <= 5) return '#ff9800';
-    return '#d32f2f';
-  }
-
-  private computeD3fendColor(score: number): string {
-    if (score === 0) return '#d32f2f';
-    if (score === 1) return '#e64a19';
-    if (score === 2) return '#f57c00';
-    if (score === 3) return '#1565c0';
-    return '#1a6fba';
-  }
-
-  computeAtomicColor(score: number): string {
-    if (score === 0) return '#1a1a0a';
-    if (score === 1) return '#6d3a10';
-    if (score === 2) return '#c06020';
-    if (score === 3) return '#e08030';
-    return '#f0a040';
-  }
-
-  computeEngageColor(score: number): string {
-    if (score === 0) return '#0a1a0a';
-    if (score === 1) return '#4a3a10';
-    if (score === 2) return '#906020';
-    if (score === 3) return '#c08030';
-    return '#f0a040';
-  }
-
-  computeCarColor(score: number): string {
-    if (score === 0) return '#0a0a1a';
-    if (score === 1) return '#0d2a4a';
-    if (score === 2) return '#1a4a7a';
-    if (score === 3) return '#2a6aaa';
-    return '#58a6ff';
-  }
-
-  computeCveColor(): string {
-    const score = this.cveScore;
-    if (score === 0) return '#1a2332';
-    if (score <= 2) return '#4a1a4a';
-    if (score <= 5) return '#7b2d8b';
-    if (score <= 10) return '#a855b5';
-    return '#d946ef';
-  }
-
-  computeDetectionColor(): string {
-    const score = this.detectionScore;
-    if (score === 0) return '#1a2332';
-    if (score <= 3) return '#0c2d2d';
-    if (score <= 8) return '#0d5e5e';
-    if (score <= 15) return '#0e8a7a';
-    return '#10b981';
+    return this.computeRelativeColor(score, max, '#eceff1', ['#ff7043', '#e53935', '#b71c1c', '#4a0000']);
   }
 
   private computeStatusColor(status: ImplStatus | null): string {
+    if (this.settingsService.current.colorblindSafe) {
+      return SAFE_STATUS[status ?? 'none'] ?? SAFE_STATUS['none'];
+    }
     switch (status) {
       case 'implemented': return '#4caf50';
       case 'in-progress': return '#ff9800';
@@ -435,143 +376,33 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
     }
   }
 
-  computeFrequencyColor(score: number): string {
-    if (score === 0) return '#1c2a38';
-    if (score <= 2) return '#1e3a5f';
-    if (score <= 5) return '#1565c0';
-    if (score <= 10) return '#0ea5e9';
-    return '#38bdf8';
-  }
-
   computeCriColor(score: number, max: number): string {
-    if (score === 0) return '#1a0a2e';
-    const ratio = max > 0 ? score / max : 0;
-    if (ratio >= 0.75) return '#6a1b9a';
-    if (ratio >= 0.5)  return '#8e24aa';
-    if (ratio >= 0.25) return '#ab47bc';
-    return '#ce93d8';
-  }
-
-  private computeSigmaColor(count: number): string {
-    if (count === 0) return '#0a1a1a';
-    if (count <= 3)  return '#0d4a3a';
-    if (count <= 8)  return '#0d7a5e';
-    if (count <= 15) return '#0ea87a';
-    return '#10b981';
-  }
-
-  private computeNistColor(count: number): string {
-    if (count === 0) return '#0d1b2a';
-    if (count <= 5)  return '#1a4a7a';
-    if (count <= 15) return '#1565c0';
-    if (count <= 30) return '#1976d2';
-    return '#42a5f5';
+    return this.computeRelativeColor(score, max, '#1a0a2e', ['#ce93d8', '#ab47bc', '#8e24aa', '#6a1b9a']);
   }
 
   private computeEpssColor(epss: number): string {
     // epss is 0–1 probability; 0 = no CVEs mapped
-    if (epss === 0)    return '#1a1a0a';
-    if (epss < 0.01)   return '#5c4a00';
-    if (epss < 0.05)   return '#c17900';
-    if (epss < 0.20)   return '#e65100';
-    return '#d32f2f';
+    if (epss === 0) return '#1a1a0a';
+    const ramp: [string, string, string, string] = this.settingsService.current.colorblindSafe
+      ? SAFE_SEQ
+      : ['#5c4a00', '#c17900', '#e65100', '#d32f2f'];
+    if (epss < 0.01) return ramp[0];
+    if (epss < 0.05) return ramp[1];
+    if (epss < 0.20) return ramp[2];
+    return ramp[3];
   }
 
-  private computeVerisColor(count: number): string {
-    if (count === 0) return '#1a0a0a';
-    if (count <= 2)  return '#5c1a1a';
-    if (count <= 5)  return '#a83232';
-    if (count <= 10) return '#d64e4e';
-    return '#f28b8b';
-  }
-
-  private computeElasticColor(count: number): string {
-    if (count === 0) return '#0a1a0a';
-    if (count <= 3)  return '#1a3a1a';
-    if (count <= 8)  return '#2a6a2a';
-    if (count <= 15) return '#3a9a3a';
-    return '#4caf50';
-  }
-
-  private computeIntelligenceColor(score: number, max: number): string {
-    if (score === 0) return '#0a1a2e';
-    if (score <= 2) return '#1a3a7a';
-    if (score <= 5) return '#5a2d8b';
-    if (score <= 10) return '#8b1a5a';
-    return '#d32f2f';
-  }
-
-  private computeSplunkColor(count: number): string {
-    if (count === 0) return '#1a0a0a';
-    if (count <= 3)  return '#4a2a0a';
-    if (count <= 8)  return '#7a4a1a';
-    if (count <= 15) return '#c06a20';
-    return '#ff9800';
-  }
-
-  private computeM365Color(count: number): string {
-    if (count === 0) return '#0a1a2e';
-    if (count <= 2)  return '#003a6e';
-    if (count <= 5)  return '#005a9e';
-    if (count <= 10) return '#0078d4';
-    return '#4ca6ff';
-  }
-
-  private computeMyExposureColor(score: number): string {
-    if (score === 0) return '#1a2332';
-    if (score === 1) return '#ff9800';
-    if (score <= 3)  return '#f44336';
-    if (score <= 6)  return '#d32f2f';
-    return '#b71c1c';
-  }
-
-  private computeWazuhColor(count: number): string {
-    if (count === 0) return '#0a1520';
-    if (count <= 1)  return '#0d3a5c';
-    if (count <= 3)  return '#1a6fa0';
-    if (count <= 5)  return '#2196c8';
-    return '#3aabe0';
-  }
-
-  /** CSA CCM: green gradient. */
-  private computeCsaCcmColor(count: number): string {
-    if (count === 0) return '#0a1a10';
-    if (count <= 2)  return '#1a4a2a';
-    if (count <= 5)  return '#2a7a3a';
-    if (count <= 10) return '#3aaa4a';
-    return '#4cce5a';
-  }
-
-  /** M365 Controls: Microsoft blue gradient. */
-  private computeM365ControlsColor(count: number): string {
-    if (count === 0) return '#0a1028';
-    if (count <= 2)  return '#0a3068';
-    if (count <= 5)  return '#0050a8';
-    if (count <= 10) return '#0070e8';
-    return '#40a0ff';
-  }
-
-  /** CVE Kill Chain: purple gradient (chain depth / complexity theme). */
-  private computeKillChainColor(count: number): string {
-    if (count === 0) return '#0e0a1a';
-    if (count <= 3)  return '#2d1a5e';
-    if (count <= 8)  return '#5a2d8b';
-    if (count <= 15) return '#7b3faa';
-    return '#9c5cc5';
-  }
-
-  /** PoC Exploits: orange-red gradient (weaponized/danger theme). */
-  private computePocColor(count: number): string {
-    if (count === 0) return '#1a0e0a';
-    if (count <= 2)  return '#5c2a0a';
-    if (count <= 5)  return '#a84a1a';
-    if (count <= 10) return '#d96a2a';
-    return '#ff8c3a';
-  }
-
-  /** Unified Risk Score: 0–100 composite. Low = red (poorly defended/targeted), high = green. */
+  /** Unified Risk Score: 0–100 composite. Low = poorly defended, high = strong. */
   computeUnifiedColor(score: number): string {
-    // Score 0–25 = very low: dark red
+    if (this.settingsService.current.colorblindSafe) {
+      // 6-stop viridis: monotonic luminance keeps low→high readable.
+      if (score <= 15) return '#440154';
+      if (score <= 30) return '#414487';
+      if (score <= 50) return '#2a788e';
+      if (score <= 65) return '#22a884';
+      if (score <= 80) return '#7ad151';
+      return '#fde725';
+    }
     if (score <= 15) return '#7f0000';
     if (score <= 30) return '#c62828';
     if (score <= 50) return '#e65100';

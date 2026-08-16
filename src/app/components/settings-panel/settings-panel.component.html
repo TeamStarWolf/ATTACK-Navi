@@ -290,6 +290,18 @@
                 <label class="checkbox-item">
                   <input
                     type="checkbox"
+                    [(ngModel)]="settings.colorblindSafe"
+                    (ngModelChange)="onDisplayChange()"
+                  />
+                  <div class="checkbox-info">
+                    <span class="checkbox-label">Colorblind-safe heatmaps</span>
+                    <span class="checkbox-desc">All heatmap modes use viridis (sequential) and Okabe-Ito (status) palettes — readable under red-green color vision deficiency and in grayscale</span>
+                  </div>
+                </label>
+
+                <label class="checkbox-item">
+                  <input
+                    type="checkbox"
                     [(ngModel)]="settings.showTechniqueIds"
                     (ngModelChange)="onDisplayChange()"
                   />
