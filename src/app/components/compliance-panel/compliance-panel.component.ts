@@ -550,8 +550,8 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
   }
 
   getStatusColor(status: ImplStatus | null): string {
-    if (!status) return '#3a5a74';
-    return this.statusColors[status] ?? '#3a5a74';
+    if (!status) return '#52525b';
+    return this.statusColors[status] ?? '#52525b';
   }
 
   getStatusLabel(status: ImplStatus | null): string {

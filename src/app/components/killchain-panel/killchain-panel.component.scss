@@ -98,7 +98,7 @@
 .pipeline-section {
   flex-shrink: 0;
   border-bottom: 1px solid rgb(255 255 255 / 6%);
-  background: #050c13;
+  background: var(--bg-base);
 }
 
 .pipeline-container {
@@ -132,12 +132,12 @@
   &:hover {
     transform: translateY(-2px);
     border-color: rgb(88 166 255 / 30%);
-    background: #0f2235;
+    background: var(--bg-panel-strong);
   }
 
   &.selected {
     border-color: var(--accent);
-    background: #0d2035;
+    background: var(--bg-panel-strong);
     transform: translateY(-2px);
   }
 }
@@ -261,7 +261,7 @@
   }
 
   &.row-selected {
-    background: #0d2035;
+    background: var(--bg-panel-strong);
 
     td { border-bottom-color: rgb(88 166 255 / 15%); }
   }

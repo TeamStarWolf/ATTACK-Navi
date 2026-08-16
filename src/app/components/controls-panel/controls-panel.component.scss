@@ -470,7 +470,7 @@
 
   &.implemented { border-left: 3px solid var(--success); }
   &.planned { border-left: 3px solid var(--accent); }
-  &:hover { border-color: #204060; }
+  &:hover { border-color: var(--border-default); }
 }
 
 .card-main {

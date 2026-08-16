@@ -227,7 +227,7 @@
 .btn-spinner {
   width: 14px;
   height: 14px;
-  border: 2px solid rgb(7 13 20 / 30%);
+  border: 2px solid rgb(0 0 0 / 30%);
   border-top-color: var(--bg-panel);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
@@ -434,7 +434,7 @@
   transition: background 0.1s;
 
   &:last-child { border-bottom: none; }
-  &:hover { background: #0f2035; }
+  &:hover { background: var(--bg-panel-strong); }
 
   td {
     padding: 10px 14px;

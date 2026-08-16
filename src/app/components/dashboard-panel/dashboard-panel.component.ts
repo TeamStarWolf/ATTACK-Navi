@@ -472,14 +472,14 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
     if (!this.stats) return [];
     const total = this.stats.totalMitigations || 1;
     const segments = [
-      { label: 'Implemented', count: this.stats.implementedCount, color: '#4ade80' },
-      { label: 'In Progress', count: this.stats.inProgressCount, color: '#fb923c' },
+      { label: 'Implemented', count: this.stats.implementedCount, color: 'var(--success)' },
+      { label: 'In Progress', count: this.stats.inProgressCount, color: 'var(--accent-warm)' },
       { label: 'Planned', count: this.stats.plannedCount, color: '#60a5fa' },
-      { label: 'Not Started', count: this.stats.notStartedCount, color: '#f87171' },
+      { label: 'Not Started', count: this.stats.notStartedCount, color: 'var(--danger)' },
       {
         label: 'Untracked',
         count: total - this.stats.implementedCount - this.stats.inProgressCount - this.stats.plannedCount - this.stats.notStartedCount,
-        color: '#4a6080',
+        color: 'var(--text-faint)',
       },
     ];
     let offset = 0;
@@ -551,12 +551,12 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
 
   get gradeColor(): string {
     switch (this.overallGrade) {
-      case 'A': return '#4ade80';
-      case 'B': return '#86efac';
-      case 'C': return '#facc15';
-      case 'D': return '#fb923c';
-      case 'F': return '#f87171';
-      default:  return '#4a6080';
+      case 'A': return 'var(--success)';
+      case 'B': return 'var(--success)';
+      case 'C': return 'var(--accent-warm)';
+      case 'D': return 'var(--accent-warm)';
+      case 'F': return 'var(--danger)';
+      default:  return 'var(--text-faint)';
     }
   }
 
@@ -571,20 +571,20 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
 
   get riskLevelColor(): string {
     switch (this.riskLevel) {
-      case 'critical': return '#f87171';
-      case 'high':     return '#fb923c';
-      case 'medium':   return '#facc15';
-      case 'low':      return '#4ade80';
-      default:         return '#4a6080';
+      case 'critical': return 'var(--danger)';
+      case 'high':     return 'var(--accent-warm)';
+      case 'medium':   return 'var(--accent-warm)';
+      case 'low':      return 'var(--success)';
+      default:         return 'var(--text-faint)';
     }
   }
 
   tacticBarColor(pct: number): string {
-    if (pct >= 70) return '#4ade80';
-    if (pct >= 50) return '#86efac';
-    if (pct >= 35) return '#facc15';
-    if (pct >= 20) return '#fb923c';
-    return '#f87171';
+    if (pct >= 70) return 'var(--success)';
+    if (pct >= 50) return 'var(--success)';
+    if (pct >= 35) return 'var(--accent-warm)';
+    if (pct >= 20) return 'var(--accent-warm)';
+    return 'var(--danger)';
   }
 
   trendSign(trend: number): string {

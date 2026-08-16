@@ -122,12 +122,12 @@
   width: 36px;
   height: 28px;
   border-radius: 4px;
-  background: #1a2e42;
-  border: 1px solid #243d55;
+  background: var(--bg-panel-strong);
+  border: 1px solid var(--border-default);
 }
 
 .hint-cell.highlight {
-  background: #264d73;
+  background: var(--bg-active);
   border-color: var(--accent);
   box-shadow: 0 0 12px rgb(88 166 255 / 35%);
   animation: pulse 1.5s ease infinite;
@@ -160,7 +160,7 @@
   gap: 10px;
   padding: 14px 16px;
   border-radius: 10px;
-  background: #0f2233;
+  background: var(--bg-panel-strong);
   border: 1px solid var(--border-subtle);
   color: var(--text-main);
   font-size: 13px;
@@ -171,7 +171,7 @@
 
   &:hover {
     border-color: var(--accent);
-    background: #132d45;
+    background: var(--bg-panel-strong);
     transform: translateY(-2px);
     box-shadow: 0 4px 16px rgb(88 166 255 / 12%);
   }
@@ -210,7 +210,7 @@
   }
 
   &:hover:not(.active) {
-    background: #2a4a66;
+    background: var(--border-default);
   }
 }
 
@@ -222,7 +222,7 @@
   gap: 6px;
   margin-top: 14px;
   font-size: 12px;
-  color: #4a6880;
+  color: var(--text-faint);
   cursor: pointer;
   user-select: none;
 
@@ -244,7 +244,7 @@
   border-radius: 6px;
   background: transparent;
   border: 1px solid transparent;
-  color: #4a6880;
+  color: var(--text-faint);
   font-size: 14px;
   cursor: pointer;
   transition: all 0.15s;

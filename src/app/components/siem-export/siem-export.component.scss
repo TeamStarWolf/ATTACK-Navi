@@ -143,9 +143,9 @@
   .platform-icon { font-size: 14px; }
 
   &:hover {
-    background: #0f1e2d;
+    background: var(--bg-panel-strong);
     color: var(--text-muted);
-    border-color: #254060;
+    border-color: var(--border-default);
   }
 
   &.active {
@@ -239,7 +239,7 @@
   gap: 8px;
   padding: 8px 12px;
   background: var(--bg-panel);
-  border: 1px solid #122030;
+  border: 1px solid var(--border-subtle);
   border-radius: 6px;
 }
 
@@ -290,8 +290,8 @@
 .code-preview {
   font-family: Consolas, Monaco, 'Fira Code', 'JetBrains Mono', monospace;
   font-size: 11px;
-  background: #020b13;
-  color: #a8d8a8;
+  background: var(--bg-base);
+  color: var(--success);
   padding: 14px 16px;
   border-radius: 6px;
   border: 1px solid rgb(255 255 255 / 6%);
@@ -333,7 +333,7 @@
 
   &:hover {
     color: var(--text-muted);
-    background: #0a1820;
+    background: var(--bg-panel-strong);
   }
 }
 
@@ -633,7 +633,7 @@
 }
 
 .library-card {
-  background: #060f18;
+  background: var(--bg-base);
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   padding: 12px 14px;
@@ -706,8 +706,8 @@
 .library-card-query {
   font-family: Consolas, Monaco, 'Fira Code', 'JetBrains Mono', monospace;
   font-size: 10px;
-  background: #020b13;
-  color: #a8d8a8;
+  background: var(--bg-base);
+  color: var(--success);
   padding: 10px 12px;
   border-radius: 5px;
   border: 1px solid rgb(255 255 255 / 6%);
