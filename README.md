@@ -11,7 +11,7 @@
   [![Tests](https://img.shields.io/badge/tests-652%20unit%20%2B%2029%20e2e-2ECC71?style=for-the-badge)](.github/workflows/deploy.yml)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
 
-  **[▶ Live Demo](https://teamstarwolf.github.io/ATTACK-Navi/)** &nbsp;·&nbsp; [Docs](docs/README.md) &nbsp;·&nbsp; [Architecture](ARCHITECTURE.md) &nbsp;·&nbsp; [Workflows](WORKFLOWS.md) &nbsp;·&nbsp; [Changelog](CHANGELOG.md) &nbsp;·&nbsp; [Security](SECURITY.md)
+  **[▶ Live Demo](https://teamstarwolf.github.io/ATTACK-Navi/)** &nbsp;·&nbsp; [Docs](docs/README.md) &nbsp;·&nbsp; [Architecture](ARCHITECTURE.md) &nbsp;·&nbsp; [Workflows](WORKFLOWS.md) &nbsp;·&nbsp; [Reference Library](#companion-reference-library) &nbsp;·&nbsp; [Changelog](CHANGELOG.md) &nbsp;·&nbsp; [Security](SECURITY.md)
 </div>
 
 ---
@@ -427,6 +427,22 @@ src/
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Development setup, Angular conventions, and extension patterns |
 | [SECURITY.md](SECURITY.md) | Vulnerability reporting guidance and deployment/security posture |
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community participation expectations |
+
+---
+
+## Companion Reference Library
+
+ATTACK-Navi is the interactive front end for the **[TeamStarWolf](https://github.com/TeamStarWolf/TeamStarWolf)** cybersecurity reference library — an open, threat-informed knowledge base that shares this project's ATT&CK-centric data model. When you want the written reference behind a cell in the matrix, these go deeper:
+
+| Reference | What it covers |
+|---|---|
+| [ATT&CK Technique Atlas](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/ATTACK_TECHNIQUE_ATLAS.md) · [Detail Pages](https://github.com/TeamStarWolf/TeamStarWolf/tree/main/techniques) | All 691 Enterprise techniques, each with mitigations, NIST controls, groups, software, and detection |
+| [Threat Group Profiles](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/THREAT_GROUP_PROFILES.md) · [Software](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/ATTACK_SOFTWARE_REFERENCE.md) · [Campaigns](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/ATTACK_CAMPAIGNS_REFERENCE.md) | 168 adversary groups, 784 software, and 52 campaigns, cross-referenced to techniques |
+| [Technique Detection Library](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/detections/TECHNIQUE_DETECTION_LIBRARY.md) | Multi-platform detection queries (Splunk, Elastic, Microsoft, Chronicle, CrowdStrike) keyed to techniques |
+| [Threat-Informed Defense](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/THREAT_INFORMED_DEFENSE_REFERENCE.md) · [Coverage data](https://github.com/TeamStarWolf/TeamStarWolf/tree/main/data) | The CVE → CWE → CAPEC → ATT&CK → D3FEND model and the NIST 800-53 ↔ ATT&CK coverage edge tables this app consumes |
+| [ICS](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/ICS_ATTACK_ATLAS.md) · [Mobile](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/MOBILE_ATTACK_ATLAS.md) atlases | The same treatment for the ICS and Mobile ATT&CK domains |
+
+Full index: **[TeamStarWolf reference library](https://teamstarwolf.github.io/TeamStarWolf/)**.
 
 ---
 
