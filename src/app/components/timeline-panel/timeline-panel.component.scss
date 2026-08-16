@@ -39,7 +39,7 @@
 
 .header-subtitle {
   font-size: 12px;
-  color: #4a6080;
+  color: var(--text-faint);
   white-space: nowrap;
 }
 
@@ -78,7 +78,7 @@
 .snapshot-form-title {
   font-size: 11px;
   font-weight: 600;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.8px;
   margin-bottom: 10px;
@@ -102,7 +102,7 @@
   outline: none;
   transition: border-color 0.15s;
 
-  &::placeholder { color: #3a5a74; }
+  &::placeholder { color: var(--text-faint); }
 
   &:focus { border-color: #58a6ff; }
 }
@@ -154,7 +154,7 @@
   font-family: inherit;
   margin-bottom: 8px;
 
-  &::placeholder { color: #3a5a74; }
+  &::placeholder { color: var(--text-faint); }
   &:focus { border-color: #58a6ff; }
 }
 
@@ -167,7 +167,7 @@
 
 .quick-label-hint {
   font-size: 10px;
-  color: #3a5a74;
+  color: var(--text-faint);
   flex-shrink: 0;
 }
 
@@ -176,7 +176,7 @@
   background: #0a1828;
   border: 1px solid #1a3448;
   border-radius: 12px;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 11px;
   cursor: pointer;
   transition: all 0.12s;
@@ -203,7 +203,7 @@
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -259,7 +259,7 @@
 .empty-title {
   font-size: 16px;
   font-weight: 600;
-  color: #4a6080;
+  color: var(--text-faint);
 }
 
 .empty-hint {
@@ -306,7 +306,7 @@
 
 .card-date {
   font-size: 11px;
-  color: #3a5a74;
+  color: var(--text-faint);
 }
 
 .card-label {
@@ -334,7 +334,7 @@
   justify-content: center;
   font-size: 14px;
   transition: background 0.12s;
-  color: #4a6080;
+  color: var(--text-faint);
 
   &:hover { background: #0f1f2e; }
 
@@ -405,7 +405,7 @@
 
 .card-sub {
   font-size: 11px;
-  color: #3a5a74;
+  color: var(--text-faint);
   margin-bottom: 8px;
 }
 
@@ -442,7 +442,7 @@
 
   &.delta-zero {
     background: rgb(74 96 128 / 12%);
-    color: #4a6080;
+    color: var(--text-faint);
   }
 }
 
@@ -462,7 +462,7 @@
 
 .tactic-mini-label {
   font-size: 10px;
-  color: #4a6080;
+  color: var(--text-faint);
   width: 80px;
   flex-shrink: 0;
   white-space: nowrap;
@@ -490,7 +490,7 @@
 
 .tactic-mini-pct {
   font-size: 10px;
-  color: #4a6080;
+  color: var(--text-faint);
   width: 28px;
   text-align: right;
   flex-shrink: 0;
@@ -561,7 +561,7 @@
   background: transparent;
   border: 1px solid #1a3448;
   border-radius: 6px;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 12px;
   cursor: pointer;
   transition: all 0.15s;
@@ -592,7 +592,7 @@
 .selector-label {
   font-size: 10px;
   font-weight: 600;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.7px;
 }
@@ -617,7 +617,7 @@
 
 .selector-vs {
   font-size: 18px;
-  color: #3a5a74;
+  color: var(--text-faint);
   flex-shrink: 0;
   padding-top: 18px;
 }
@@ -640,7 +640,7 @@
 .overall-label {
   font-size: 10px;
   font-weight: 600;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.6px;
   margin-bottom: 8px;
@@ -655,7 +655,7 @@
 .ov-a {
   font-size: 16px;
   font-weight: 700;
-  color: #4a6080;
+  color: var(--text-faint);
 }
 
 .ov-arrow {
@@ -673,7 +673,7 @@
   padding: 12px 16px 8px;
   font-size: 11px;
   font-weight: 600;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.8px;
 }
@@ -699,7 +699,7 @@
     padding: 8px 10px;
     font-size: 10px;
     font-weight: 600;
-    color: #3a5a74;
+    color: var(--text-faint);
     text-transform: uppercase;
     letter-spacing: 0.7px;
     border-bottom: 1px solid #1a3448;
@@ -776,7 +776,7 @@
 .trends-title {
   font-size: 12px;
   font-weight: 600;
-  color: #4a6080;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.8px;
   margin-bottom: 16px;
@@ -840,19 +840,19 @@
 
   &.delta-pos { background: rgb(74 222 128 / 12%); color: #4ade80; }
   &.delta-neg { background: rgb(248 113 113 / 12%); color: #f87171; }
-  &.delta-zero { color: #3a5a74; }
+  &.delta-zero { color: var(--text-faint); }
 }
 
 .bar-date-label {
   font-size: 9px;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-align: center;
   line-height: 1.2;
 }
 
 .bar-snap-label {
   font-size: 9px;
-  color: #4a6080;
+  color: var(--text-faint);
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
@@ -876,7 +876,7 @@
     padding: 8px 10px;
     font-size: 10px;
     font-weight: 600;
-    color: #3a5a74;
+    color: var(--text-faint);
     text-transform: uppercase;
     letter-spacing: 0.7px;
     border-bottom: 1px solid #1a3448;
@@ -906,7 +906,7 @@
 
 .snap-date-cell {
   font-size: 11px;
-  color: #4a6080;
+  color: var(--text-faint);
   white-space: nowrap;
 }
 
@@ -959,12 +959,12 @@
 
   &.delta-pos { color: #4ade80; }
   &.delta-neg { color: #f87171; }
-  &.delta-zero { color: #4a6080; }
+  &.delta-zero { color: var(--text-faint); }
 }
 
 .summary-label {
   font-size: 10px;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.6px;
 }

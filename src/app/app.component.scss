@@ -36,8 +36,8 @@
   position: relative;
   padding: 14px 14px 14px 0;
   background:
-    linear-gradient(180deg, rgb(255 255 255 / 1.5%), transparent 120px),
-    rgb(8 17 26 / 72%);
+    linear-gradient(180deg, var(--bg-soft), transparent 120px),
+    color-mix(in srgb, var(--bg-base) 72%, transparent);
 }
 
 .workspace-ribbon-actions {
@@ -49,7 +49,7 @@
 .ribbon-chip {
   border-radius: 999px;
   border: 1px solid var(--line-soft);
-  background: rgb(255 255 255 / 5%);
+  background: var(--bg-soft);
   color: var(--text-main);
   font-size: 11px;
   font-weight: 600;
@@ -69,7 +69,7 @@
   bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgb(19 42 58 / 92%);
+  background: color-mix(in srgb, var(--bg-panel-strong) 92%, transparent);
   color: var(--text-main);
   padding: 12px 20px;
   border-radius: 999px;
@@ -100,29 +100,12 @@
   to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
-/* ---- Light mode overrides ---- */
+/* Light mode: role tokens flip these surfaces automatically. The one
+   remaining fork hides the dark grid-texture overlay, which has no light
+   equivalent (it is literal white hairlines). */
 :host-context(body.light-mode) {
   &::before {
     opacity: 0;
-  }
-
-  .workspace-area {
-    background: #f1f5f9 !important;
-  }
-
-  .ribbon-chip {
-    background: #fff !important;
-    border-color: #e2e8f0 !important;
-    color: #475569 !important;
-    &:hover { background: #f1f5f9 !important; color: #1a1a2e !important; }
-  }
-
-  .toast-notification {
-    background: #fff !important;
-    color: #1a1a2e !important;
-    border-color: #e2e8f0 !important;
-    box-shadow: 0 4px 12px rgb(0 0 0 / 12%) !important;
-    backdrop-filter: none !important;
   }
 }
 

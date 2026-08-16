@@ -42,7 +42,7 @@
   border-radius: 6px;
   background: transparent;
   border: none;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 16px;
   line-height: 1;
   cursor: pointer;
@@ -84,7 +84,7 @@
   text-transform: uppercase;
   letter-spacing: 0.8px;
   margin-bottom: 4px;
-  color: #3a5a74;
+  color: var(--text-faint);
 }
 
 .a-label { color: #ff6b6b; }
@@ -144,7 +144,7 @@
 
 .stat-lbl {
   font-size: 11px;
-  color: #4a6080;
+  color: var(--text-faint);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -224,7 +224,7 @@
 }
 
 .chip-id {
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 10px;
   min-width: 48px;
   font-family: monospace;
@@ -275,14 +275,14 @@
 
 // Hint / empty messages
 .hint-msg {
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 13px;
   text-align: center;
   margin-top: 24px;
 }
 
 .empty-msg {
-  color: #3a5a74;
+  color: var(--text-faint);
   font-size: 11px;
   padding: 8px;
   display: block;

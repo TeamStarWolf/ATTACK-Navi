@@ -112,7 +112,7 @@
   border-radius: 6px;
   background: transparent;
   border: 1px solid #1a3448;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 11px;
   cursor: pointer;
   white-space: nowrap;
@@ -139,7 +139,7 @@
   border-radius: 6px;
   background: transparent;
   border: 1px solid #1a3448;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 11px;
   cursor: pointer;
   white-space: nowrap;
@@ -158,7 +158,7 @@
   border-radius: 6px;
   background: transparent;
   border: none;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 16px;
   cursor: pointer;
   display: flex;
@@ -187,7 +187,7 @@
 
 .meta-label {
   font-weight: 600;
-  color: #3a5a74;
+  color: var(--text-faint);
   margin-right: 6px;
 }
 
@@ -248,7 +248,7 @@
 .section-label {
   font-size: 10px;
   font-weight: 600;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.8px;
   margin-bottom: 7px;
@@ -258,7 +258,7 @@
 .section-heading-row {
   font-size: 10px;
   font-weight: 600;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.8px;
   padding: 10px 16px 6px;
@@ -285,7 +285,7 @@
 .meta-tag-label {
   font-size: 9px;
   font-weight: 700;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.6px;
 }
@@ -538,7 +538,7 @@
 .proc-id {
   font-size: 10px;
   font-weight: 700;
-  color: #3a5a74;
+  color: var(--text-faint);
   font-family: monospace;
 }
 
@@ -563,7 +563,7 @@
   background: rgb(255 255 255 / 3%);
   border: none;
   border-top: 1px solid #1a3448;
-  color: #3a5a74;
+  color: var(--text-faint);
   font-size: 11px;
   cursor: pointer;
   &:hover { background: rgb(255 255 255 / 6%); color: #7395b0; }
@@ -578,7 +578,7 @@
   .section-title {
     font-size: 10px;
     font-weight: 600;
-    color: #3a5a74;
+    color: var(--text-faint);
     margin: 0 0 10px;
     display: flex;
     align-items: center;
@@ -675,7 +675,7 @@
   background: #0a1828;
   line-height: 1.5;
   &:focus { border-color: #1a9fff; }
-  &::placeholder { color: #3a5a74; }
+  &::placeholder { color: var(--text-faint); }
 }
 
 // Threat actors section
@@ -687,7 +687,7 @@
   .section-title {
     font-size: 10px;
     font-weight: 600;
-    color: #3a5a74;
+    color: var(--text-faint);
     margin: 0 0 10px;
     display: flex;
     align-items: center;
@@ -726,7 +726,7 @@
   .section-title {
     font-size: 10px;
     font-weight: 600;
-    color: #3a5a74;
+    color: var(--text-faint);
     margin: 0 0 12px;
     display: flex;
     align-items: center;
@@ -803,7 +803,7 @@
 
 .no-mitigations {
   font-size: 12px;
-  color: #3a5a74;
+  color: var(--text-faint);
   font-style: italic;
 }
 
@@ -822,7 +822,7 @@
   border: 1px solid #1a3448;
   border-radius: 8px;
   background: #0a1828;
-  color: #3a5a74;
+  color: var(--text-faint);
   cursor: pointer;
   transition: all 0.15s;
   &:hover { border-color: #1a3448; color: #8aaac8; }
@@ -835,7 +835,7 @@
   background: none;
   border: 1px dashed #1a3448;
   border-radius: 5px;
-  color: #3a5a74;
+  color: var(--text-faint);
   font-size: 11px;
   padding: 5px 10px;
   cursor: pointer;
@@ -863,12 +863,12 @@
 .doc-label {
   font-size: 10px;
   font-weight: 700;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-.doc-hint { font-size: 10px; color: #3a5a74; }
+.doc-hint { font-size: 10px; color: var(--text-faint); }
 
 .doc-input, .doc-textarea {
   padding: 6px 9px;
@@ -880,7 +880,7 @@
   outline: none;
   background: #040a10;
   &:focus { border-color: #1a9fff; }
-  &::placeholder { color: #3a5a74; }
+  &::placeholder { color: var(--text-faint); }
 }
 
 .doc-textarea { resize: vertical; line-height: 1.5; }
@@ -928,7 +928,7 @@
   font-family: inherit;
   outline: none;
   &:focus { border-color: #1a9fff; }
-  &::placeholder { color: #3a5a74; }
+  &::placeholder { color: var(--text-faint); }
 }
 
 .mit-search-clear {
@@ -949,7 +949,7 @@
 
 .mit-no-results {
   font-size: 11px;
-  color: #3a5a74;
+  color: var(--text-faint);
   padding: 8px 0;
   text-align: center;
 }
@@ -1167,7 +1167,7 @@
   .section-title {
     font-size: 10px;
     font-weight: 600;
-    color: #3a5a74;
+    color: var(--text-faint);
     margin: 0 0 10px;
     display: flex;
     align-items: center;
@@ -1373,7 +1373,7 @@
   display: inline-block;
   margin-top: 6px;
   font-size: 10px;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-decoration: none;
   &:hover { color: #58a6ff; }
 }
@@ -1423,7 +1423,7 @@
 .atomic-platform {
   font-size: 8px;
   background: #0f1f2e;
-  color: #4a6080;
+  color: var(--text-faint);
   padding: 1px 4px;
   border-radius: 3px;
   font-weight: 600;
@@ -1431,7 +1431,7 @@
 
 .atomic-args {
   font-size: 10px;
-  color: #3a5a74;
+  color: var(--text-faint);
   font-style: italic;
   display: block;
   margin-top: 1px;
@@ -1458,7 +1458,7 @@
 
 .atomic-more-note {
   font-size: 10px;
-  color: #3a5a74;
+  color: var(--text-faint);
   padding: 6px 0 4px;
   font-style: italic;
   margin: 0;
@@ -1468,7 +1468,7 @@
 
 .atomic-live-hint {
   font-size: 11px;
-  color: #4a6080;
+  color: var(--text-faint);
   padding: 6px 0 8px;
   font-style: italic;
   margin: 0;
@@ -1527,7 +1527,7 @@
 .misp-copy-btn {
   background: none;
   border: none;
-  color: #4a6080;
+  color: var(--text-faint);
   cursor: pointer;
   font-size: 12px;
   padding: 0 2px;
@@ -1537,7 +1537,7 @@
 
 .misp-synonyms {
   font-size: 9px;
-  color: #3a5a74;
+  color: var(--text-faint);
   font-style: italic;
 }
 
@@ -1550,12 +1550,12 @@
   background: rgb(88 166 255 / 10%); border: 1px solid rgb(88 166 255 / 20%);
   color: #58a6ff; font-size: 10px; padding: 2px 7px; border-radius: 4px;
 }
-.tag-remove { background: none; border: none; color: #3a5a74; cursor: pointer; font-size: 9px; padding: 0 0 0 2px; &:hover { color: #f87171; } }
+.tag-remove { background: none; border: none; color: var(--text-faint); cursor: pointer; font-size: 9px; padding: 0 0 0 2px; &:hover { color: #f87171; } }
 .tag-presets { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 6px; }
 
 .preset-tag {
   font-size: 9px; background: rgb(88 166 255 / 7%); border: 1px solid rgb(88 166 255 / 15%);
-  color: #4a6080; padding: 2px 7px; border-radius: 4px; cursor: pointer;
+  color: var(--text-faint); padding: 2px 7px; border-radius: 4px; cursor: pointer;
   &:hover { color: #8aaac8; border-color: rgb(88 166 255 / 30%); }
   &.active { background: rgb(88 166 255 / 10%); border-color: rgb(88 166 255 / 25%); color: #58a6ff; }
 }
@@ -1564,7 +1564,7 @@
 .tag-input {
   flex: 1; background: #0a1828; border: 1px solid #1a3448; color: #c9d8e8;
   font-size: 11px; padding: 4px 8px; border-radius: 4px; outline: none;
-  &::placeholder { color: #3a5a74; }
+  &::placeholder { color: var(--text-faint); }
   &:focus { border-color: #1a9fff; }
 }
 
@@ -1699,7 +1699,7 @@
   font-style: italic;
 
   &.cve-rationale--inferred {
-    color: #4a6080;
+    color: var(--text-faint);
   }
 }
 
@@ -1740,7 +1740,7 @@
 .nist-family {
   font-size: 9px;
   font-weight: 600;
-  color: #3a5a74;
+  color: var(--text-faint);
   background: #0a1828;
   border: 1px solid #1a3448;
   border-radius: 3px;
@@ -1813,7 +1813,7 @@
 
 .ctrl-desc {
   font-size: 11px;
-  color: #4a6080;
+  color: var(--text-faint);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1863,7 +1863,7 @@
   .section-title {
     font-size: 10px;
     font-weight: 600;
-    color: #3a5a74;
+    color: var(--text-faint);
     margin: 0 0 10px;
     display: flex;
     align-items: center;
@@ -2189,7 +2189,7 @@
 .custom-mit-desc {
   margin: 0;
   font-size: 11px;
-  color: #4a6080;
+  color: var(--text-faint);
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
@@ -2204,7 +2204,7 @@
   .section-title {
     font-size: 10px;
     font-weight: 600;
-    color: #3a5a74;
+    color: var(--text-faint);
     margin: 0 0 8px;
     display: flex;
     align-items: center;
@@ -2233,7 +2233,7 @@
   box-sizing: border-box;
   transition: border-color 0.15s;
 
-  &::placeholder { color: #3a5a74; }
+  &::placeholder { color: var(--text-faint); }
 
   &:focus {
     outline: none;
@@ -2359,7 +2359,7 @@
   .section-title {
     font-size: 10px;
     font-weight: 600;
-    color: #3a5a74;
+    color: var(--text-faint);
     margin: 0 0 8px;
     display: flex;
     align-items: center;
@@ -2418,7 +2418,7 @@
 .sub-mits {
   font-size: 9px;
   font-weight: 700;
-  color: #3a5a74;
+  color: var(--text-faint);
   flex-shrink: 0;
   padding: 1px 5px;
   border-radius: 8px;
@@ -2442,7 +2442,7 @@
 .section-title {
   font-size: 10px;
   font-weight: 700;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.8px;
   margin: 0 0 8px;
@@ -2452,7 +2452,7 @@
   user-select: none;
 
   .section-icon { font-size: 12px; }
-  .toggle-arrow { margin-left: auto; font-size: 9px; color: #3a5a74; }
+  .toggle-arrow { margin-left: auto; font-size: 9px; color: var(--text-faint); }
 
   &:hover { color: #7395b0; }
 }
@@ -3332,7 +3332,7 @@
   background: transparent;
   border: 1px solid #1a3448;
   border-radius: 3px;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 10px;
   padding: 1px 6px;
   cursor: pointer;
@@ -3908,7 +3908,7 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #4a6080;
+  color: var(--text-faint);
   margin-bottom: 4px;
 }
 
@@ -3965,13 +3965,3 @@
   cursor: help;
 }
 
-:host-context(body.light-mode) .jump-index {
-  background: rgba(248, 250, 252, 0.97);
-  border-bottom-color: #e2e8f0;
-}
-
-:host-context(body.light-mode) .jump-chip {
-  background: #fff;
-  border-color: #e2e8f0;
-  color: #475569;
-}

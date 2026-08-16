@@ -44,7 +44,7 @@
 
 .header-subtitle {
   font-size: 12px;
-  color: #4a6080;
+  color: var(--text-faint);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -87,7 +87,7 @@
 .coverage-label {
   font-size: 11px;
   font-weight: 600;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.7px;
 }
@@ -269,7 +269,7 @@
 
 .no-plan-desc {
   font-size: 13px;
-  color: #4a6080;
+  color: var(--text-faint);
   max-width: 320px;
   line-height: 1.5;
 }
@@ -292,7 +292,7 @@
 
 .results-banner-sub {
   font-size: 12px;
-  color: #4a6080;
+  color: var(--text-faint);
   margin-top: 4px;
 
   strong { color: #58a6ff; }
@@ -309,7 +309,7 @@
 .progress-label {
   font-size: 10px;
   font-weight: 600;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.7px;
   margin-bottom: 10px;
@@ -408,7 +408,7 @@
       text-align: left;
       font-size: 10px;
       font-weight: 600;
-      color: #3a5a74;
+      color: var(--text-faint);
       text-transform: uppercase;
       letter-spacing: 0.7px;
       border-bottom: 1px solid #1a3448;

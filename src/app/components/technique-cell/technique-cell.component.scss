@@ -139,7 +139,6 @@
     box-shadow: inset 3px 0 0 rgb(0 0 0 / 28%), inset 0 1px 0 rgb(255 255 255 / 1.5%);
 
     .id {
-      opacity: 0.5;
       font-size: calc(var(--cell-id-font-size, 9px) * 0.9);
     }
   }
@@ -149,7 +148,9 @@
     white-space: nowrap;
     flex-shrink: 0;
     font-size: var(--cell-id-font-size, 9px);
-    opacity: 0.72;
+    /* Full opacity: technique IDs are content, and translucency defeated the
+       WCAG-computed cell text color (axe: T-ids at 2.4:1 on mid-tone heat
+       colors). Hierarchy vs the name comes from the smaller mono face. */
     letter-spacing: 0.04em;
     font-family: 'IBM Plex Mono', monospace;
   }
@@ -204,9 +205,14 @@
     margin-top: 1px;
   }
 
+  /* Badges overlay heatmap-colored cells (any hue, both themes), so they
+     are theme-NEUTRAL: a solid near-black pill + white text is ≥12:1 on
+     every cell color (a translucent pill measured as the raw cell color
+     under axe and fell to 4.1:1 on mid greens). */
   .badge {
-    background: rgb(7 16 24 / 34%);
-    border: 1px solid rgb(255 255 255 / 5%);
+    background: #2d2d2d;
+    color: #fff;
+    border: 1px solid rgb(255 255 255 / 25%);
     border-radius: 999px;
     padding: 1px 5px;
     font-size: 8px;
@@ -214,8 +220,9 @@
   }
 
   .exposure-badge {
-    background: rgb(255 180 84 / 16%);
-    border: 1px solid rgb(255 180 84 / 18%);
+    background: #c2570a;
+    color: #fff;
+    border: 1px solid rgb(255 255 255 / 22%);
     border-radius: 999px;
     padding: 1px 5px;
     font-size: 8px;
@@ -230,19 +237,3 @@
 .ann-green { background: #4ade80; }
 .ann-blue { background: #60a5fa; }
 
-/* ── Light mode overrides ── */
-:host-context(body.light-mode) {
-  .cell {
-    .badge {
-      background: #1e293b !important;
-      color: #ffffff !important;
-      border-color: rgba(0, 0, 0, 0.1) !important;
-    }
-
-    .exposure-badge {
-      background: #ea580c !important;
-      color: #ffffff !important;
-      border-color: rgba(0, 0, 0, 0.1) !important;
-    }
-  }
-}
