@@ -25,6 +25,7 @@ export const PANEL_ROUTE_MAP: Readonly<Partial<Record<string, string[]>>> = {
   'gap-analysis': ['/exposure', 'gap-analysis'],
   priority: ['/exposure', 'priority'],
   whatif: ['/exposure', 'what-if'],
+  ctem: ['/exposure', 'ctem'],
   // P1b: Dashboard workspace
   dashboard: ['/dashboard', 'overview'],
   analytics: ['/dashboard', 'analytics'],

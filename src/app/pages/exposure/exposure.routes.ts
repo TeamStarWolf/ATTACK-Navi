@@ -52,6 +52,12 @@ export const EXPOSURE_ROUTES: Routes = [
           import('../../components/whatif-panel/whatif-panel.component').then(c => c.WhatifPanelComponent),
         data: { tab: 'What-If', icon: 'sparkles' },
       },
+      {
+        path: 'ctem',
+        loadComponent: () =>
+          import('./ctem-page.component').then(c => c.CtemPageComponent),
+        data: { tab: 'CTEM', icon: 'compass' },
+      },
     ],
   },
 ];
