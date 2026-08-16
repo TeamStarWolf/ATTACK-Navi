@@ -32,6 +32,14 @@ export class UrlStateService {
     this.started = true;
 
     // Reader: apply the initial URL's query params (deep links, legacy links).
+    // The WRITER is only started afterwards — subscribing it immediately
+    // caused a boot race: urlRelevantState$ (BehaviorSubject-backed) emits
+    // once right away, and on a slow machine that write fired while the deep
+    // link's lazy route was still loading. `router.url` was still '/', so the
+    // write navigated to '/' and CANCELLED the in-flight deep-link
+    // navigation, bouncing the user to the matrix via the wildcard route.
+    // (Never reproduced locally — fast machines always won the race; CI's
+    // 2-core runners always lost it.)
     this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd), take(1))
       .subscribe(() => {
@@ -43,10 +51,18 @@ export class UrlStateService {
         if ([...params.keys()].length) {
           this.filterService.applyUrlState(params);
         }
+        this.startWriter();
       });
+  }
 
-    // Writer: serialize filter state into query params on every change.
+  /** Writer: serialize filter state into query params on every change. */
+  private startWriter(): void {
     this.filterService.urlRelevantState$.subscribe(() => {
+      // Never write over an in-flight navigation (e.g. a user click on a
+      // lazy route racing a filter debounce) — a cancelled navigation loses
+      // the user's destination. Skipped writes self-heal: lastWritten stays
+      // unset, so the next state emission re-serializes.
+      if (this.router.getCurrentNavigation() !== null) return;
       const params = this.filterService.serializeUrlState();
       const serialized = new URLSearchParams(params).toString();
       if (serialized === this.lastWritten) return;
