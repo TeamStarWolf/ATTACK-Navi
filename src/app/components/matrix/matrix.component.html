@@ -102,7 +102,9 @@
       <tr>
         @for (col of sortedColumns; track col.tactic.id) {
           @if (!isColumnHidden(col)) {
-          <td class="tactic-col" valign="top">
+          <td class="tactic-col" valign="top"
+              [attr.data-tactic]="col.tactic.name"
+              [attr.data-count]="col.techniques.length + ' techniques'">
             @for (tech of col.techniques; track tech.id) {
               @if (!isTechniqueHidden(tech)) {
               <div class="technique-group" [class.custom-technique]="isCustomTechnique(tech)">
