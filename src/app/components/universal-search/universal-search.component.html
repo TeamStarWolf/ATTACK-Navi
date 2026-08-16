@@ -58,7 +58,13 @@
           <div class="result-body">
             <div class="result-top">
               <span class="result-id" [style.color]="kindColor(r.kind)">{{ r.id }}</span>
-              <span class="result-name">{{ r.name }}</span>
+              <span class="result-name">
+                @if (r.nameMatch) {
+                  {{ r.name.slice(0, r.nameMatch[0]) }}<mark class="match-hl">{{ r.name.slice(r.nameMatch[0], r.nameMatch[1]) }}</mark>{{ r.name.slice(r.nameMatch[1]) }}
+                } @else {
+                  {{ r.name }}
+                }
+              </span>
               <span class="result-kind-label" [style.background]="kindColor(r.kind) + '22'" [style.color]="kindColor(r.kind)" [style.border-color]="kindColor(r.kind) + '44'">{{ kindLabels[r.kind] }}</span>
             </div>
             @if (r.description) {
