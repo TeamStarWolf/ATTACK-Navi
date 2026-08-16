@@ -32,7 +32,7 @@ jobs:
       # browser run on a constrained runner never blocks shipping docs/UI fixes.
       - run: npx ng test --no-watch --browsers=ChromeHeadless
       - run: npx ng build --base-href /ATTACK-Navi/
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: dist/mitre-mitigation-navigator/browser
 
