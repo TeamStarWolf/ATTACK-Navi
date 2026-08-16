@@ -19,15 +19,19 @@ export class ThemeService {
     return this.isLightSubject.value;
   }
 
-  /** Applies the persisted theme. Called once at startup. */
+  /**
+   * Applies the persisted theme. Called once at startup.
+   * Clean Professional (v0.10): LIGHT is the default for new users; a stored
+   * choice — either way — always wins.
+   */
   init(): void {
+    let stored: string | null = null;
     try {
-      if (localStorage.getItem(STORAGE_KEY) === 'light') {
-        this.setLight(true);
-      }
+      stored = localStorage.getItem(STORAGE_KEY);
     } catch {
       /* storage unavailable */
     }
+    this.setLight(stored !== 'dark');
   }
 
   toggle(): void {

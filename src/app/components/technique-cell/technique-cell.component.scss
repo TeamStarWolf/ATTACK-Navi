@@ -81,16 +81,17 @@
   align-items: flex-start;
   gap: 4px;
   padding: var(--cell-padding, 4px 6px);
-  margin-bottom: 2px;
-  border-radius: 10px;
+  margin-bottom: 3px;
+  /* Clean Professional: tighter radius, hairline edge, soft real shadow. */
+  border-radius: 8px;
   cursor: pointer;
   font-size: var(--cell-font-size, 11px);
   line-height: 1.3;
   min-height: var(--cell-min-height, 32px);
   position: relative;
   transition: box-shadow 0.12s, opacity 0.12s, transform 0.12s;
-  border: 1px solid rgb(255 255 255 / 3.5%);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 1.5%);
+  border: 1px solid rgb(0 0 0 / 14%);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 10%);
 
   &:focus-visible {
     outline: 2px solid var(--accent);
@@ -98,7 +99,7 @@
   }
 
   &:hover {
-    box-shadow: 0 0 0 1px rgb(255 255 255 / 18%);
+    box-shadow: 0 2px 8px rgb(0 0 0 / 22%);
     transform: translateY(-1px);
     z-index: 1;
   }
