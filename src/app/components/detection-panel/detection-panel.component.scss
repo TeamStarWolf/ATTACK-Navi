@@ -41,7 +41,7 @@
 
 .header-subtitle {
   font-size: 12px;
-  color: #4a6080;
+  color: var(--text-faint);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -53,7 +53,7 @@
   border-radius: 6px;
   background: rgb(255 255 255 / 6%);
   border: none;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 16px;
   cursor: pointer;
   display: flex;
@@ -139,7 +139,7 @@
 
 .bracket-label {
   font-size: 10px;
-  color: #4a6080;
+  color: var(--text-faint);
   white-space: nowrap;
 }
 
@@ -159,7 +159,7 @@
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -215,7 +215,7 @@
   outline: none;
   transition: border-color 0.15s;
 
-  &::placeholder { color: #3a5a74; }
+  &::placeholder { color: var(--text-faint); }
 
   &:focus {
     border-color: #58a6ff;
@@ -231,7 +231,7 @@
 
 .sort-label {
   font-size: 11px;
-  color: #3a5a74;
+  color: var(--text-faint);
   margin-right: 2px;
 }
 
@@ -240,7 +240,7 @@
   background: transparent;
   border: 1px solid #1a3448;
   border-radius: 5px;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 11px;
   cursor: pointer;
   transition: all 0.15s;
@@ -287,7 +287,7 @@
     padding: 10px 12px;
     font-size: 10px;
     font-weight: 600;
-    color: #3a5a74;
+    color: var(--text-faint);
     text-transform: uppercase;
     letter-spacing: 0.8px;
     border-bottom: 1px solid #1a3448;
@@ -355,7 +355,7 @@
 .empty-cell {
   text-align: center;
   padding: 32px;
-  color: #3a5a74;
+  color: var(--text-faint);
   font-style: italic;
 }
 
@@ -402,7 +402,7 @@
 .empty-state {
   padding: 48px 24px;
   text-align: center;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 13px;
   font-style: italic;
 }
@@ -460,7 +460,7 @@
 
 .gap-link {
   font-size: 11px;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-decoration: none;
   transition: color 0.15s;
 
@@ -489,7 +489,7 @@
 
 .gap-tactic {
   font-size: 10px;
-  color: #4a6080;
+  color: var(--text-faint);
   padding: 1px 6px;
   background: #0f1f2e;
   border-radius: 8px;
@@ -499,7 +499,7 @@
 .top-intro {
   padding: 10px 16px;
   font-size: 11px;
-  color: #3a5a74;
+  color: var(--text-faint);
   border-bottom: 1px solid #1a3448;
   background: #070d14;
 }
@@ -524,7 +524,7 @@
 .top-rank {
   font-size: 12px;
   font-weight: 700;
-  color: #3a5a74;
+  color: var(--text-faint);
   width: 28px;
   flex-shrink: 0;
   text-align: center;
@@ -560,7 +560,7 @@
 
 .top-tactic {
   font-size: 10px;
-  color: #4a6080;
+  color: var(--text-faint);
 }
 
 .top-sources {
@@ -651,7 +651,7 @@
 
 .tactic-chevron {
   font-size: 10px;
-  color: #3a5a74;
+  color: var(--text-faint);
   flex-shrink: 0;
   width: 12px;
 }
@@ -673,7 +673,7 @@
 
 .tactic-count {
   font-size: 11px;
-  color: #4a6080;
+  color: var(--text-faint);
 }
 
 .tactic-avg {

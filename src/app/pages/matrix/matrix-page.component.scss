@@ -18,7 +18,7 @@
   min-width: 0;
   border: 1px solid var(--line-soft);
   border-radius: 24px;
-  background: rgb(9 18 28 / 72%);
+  background: color-mix(in srgb, var(--bg-surface) 72%, transparent);
   box-shadow: var(--shadow-lg);
   backdrop-filter: blur(16px);
 }
@@ -28,8 +28,8 @@
   align-items: center;
   border-bottom: 1px solid var(--line-soft);
   background:
-    linear-gradient(180deg, rgb(255 255 255 / 2%), transparent),
-    rgb(11 23 34 / 82%);
+    linear-gradient(180deg, var(--bg-soft), transparent),
+    color-mix(in srgb, var(--bg-elevated) 82%, transparent);
   flex-shrink: 0;
   backdrop-filter: blur(12px);
   overflow: hidden;
@@ -69,7 +69,7 @@
   .loader-spinner {
     width: 44px;
     height: 44px;
-    border: 3px solid rgb(255 255 255 / 8%);
+    border: 3px solid var(--border-subtle);
     border-top-color: var(--accent);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
@@ -100,7 +100,7 @@
   bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgb(13 28 40 / 90%);
+  background: color-mix(in srgb, var(--bg-panel-strong) 90%, transparent);
   border: 1px solid var(--line-strong);
   border-radius: 18px;
   padding: 12px 18px;
@@ -130,7 +130,7 @@
     font-size: 11px;
     padding: 7px 12px;
     border-radius: 999px;
-    background: rgb(255 255 255 / 5%);
+    background: var(--bg-soft);
     border: 1px solid var(--line-soft);
     color: var(--text-main);
     cursor: pointer;
@@ -138,51 +138,9 @@
     transition: background 0.15s, border-color 0.15s, transform 0.15s;
 
     &:hover {
-      background: rgb(255 255 255 / 10%);
+      background: var(--bg-hover);
       border-color: var(--line-strong);
       transform: translateY(-1px);
-    }
-  }
-}
-
-/* ---- Light mode overrides (moved with the markup; burn down in P4) ---- */
-:host-context(body.light-mode) {
-  .matrix-region {
-    background: #fff !important;
-    border-color: #e2e8f0 !important;
-    box-shadow: 0 1px 3px rgb(0 0 0 / 6%) !important;
-    backdrop-filter: none !important;
-  }
-
-  .context-bar {
-    background: #f8f9fa !important;
-    border-bottom-color: #e2e8f0 !important;
-    backdrop-filter: none !important;
-
-    app-legend { border-right-color: #e2e8f0 !important; }
-  }
-
-  .bulk-action-bar {
-    background: #fff !important;
-    border-color: #e2e8f0 !important;
-    backdrop-filter: none !important;
-    box-shadow: 0 4px 12px rgb(0 0 0 / 10%) !important;
-
-    button {
-      background: #f1f5f9 !important;
-      border-color: #e2e8f0 !important;
-      color: #475569 !important;
-      &:hover { background: #e2e8f0 !important; color: #1a1a2e !important; }
-    }
-  }
-  .bulk-count { color: #2563eb !important; }
-
-  .state-screen {
-    color: #94a3b8 !important;
-
-    .loader-spinner {
-      border-color: rgb(0 0 0 / 8%) !important;
-      border-top-color: #2563eb !important;
     }
   }
 }
@@ -213,10 +171,10 @@
   display: block;
   width: 100%;
   padding: 3px 10px;
-  background: rgba(5, 13, 20, 0.5);
+  background: color-mix(in srgb, var(--bg-base) 50%, transparent);
   border: none;
-  border-bottom: 1px solid rgba(151, 185, 211, 0.08);
-  color: #4a6080;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-faint);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.05em;
@@ -225,10 +183,4 @@
   flex-shrink: 0;
 }
 
-.context-strip-toggle:hover { color: #8aaac8; }
-
-:host-context(body.light-mode) .context-strip-toggle {
-  background: #f8fafc;
-  border-bottom-color: #e2e8f0;
-  color: #64748b;
-}
+.context-strip-toggle:hover { color: var(--text-secondary); }

@@ -8,7 +8,7 @@
   [![Angular 19](https://img.shields.io/badge/Angular-19-DD0031?style=for-the-badge&logo=angular&logoColor=white)](https://angular.dev)
   [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
   [![Live on GitHub Pages](https://img.shields.io/badge/Live-GitHub%20Pages-0A66C2?style=for-the-badge&logo=github)](https://teamstarwolf.github.io/ATTACK-Navi/)
-  [![Tests](https://img.shields.io/badge/tests-652%20unit%20%2B%2029%20e2e-2ECC71?style=for-the-badge)](.github/workflows/deploy.yml)
+  [![Tests](https://img.shields.io/badge/tests-663%20unit%20%2B%2035%20e2e-2ECC71?style=for-the-badge)](.github/workflows/deploy.yml)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
 
   **[▶ Live Demo](https://teamstarwolf.github.io/ATTACK-Navi/)** &nbsp;·&nbsp; [Docs](docs/README.md) &nbsp;·&nbsp; [Architecture](ARCHITECTURE.md) &nbsp;·&nbsp; [Workflows](WORKFLOWS.md) &nbsp;·&nbsp; [Reference Library](#companion-reference-library) &nbsp;·&nbsp; [Changelog](CHANGELOG.md) &nbsp;·&nbsp; [Security](SECURITY.md)
@@ -235,8 +235,8 @@ Open [http://localhost:4200](http://localhost:4200).
 ### Test
 
 ```bash
-npx ng test --watch=false --browsers=ChromeHeadless   # 652 unit tests
-npx playwright test                                    # 29 end-to-end tests
+npx ng test --watch=false --browsers=ChromeHeadless   # 663 unit tests
+npx playwright test                                    # 35 e2e tests (29 functional + 6 visual)
 ```
 
 ### Production Build
@@ -367,8 +367,8 @@ Defined once in `src/app/models/shortcuts.ts` and rendered by the in-app help ov
 | RxJS | 7.8 | Reactive state management |
 | TypeScript | 5.7 | Type safety |
 | SCSS | — | Design tokens + component-scoped styling |
-| Karma / Jasmine | — | Unit testing (652 specs) |
-| Playwright | — | End-to-end testing (29 specs, gates every deploy) |
+| Karma / Jasmine | — | Unit testing (663 specs) |
+| Playwright | — | E2E + visual regression (35 specs, non-blocking CI workflow) |
 | xlsx-js-style | 1.2 | Excel workbook export |
 
 No UI component library, no state-management library, and no backend for the core app — just Angular, RxJS, and the design-token system.

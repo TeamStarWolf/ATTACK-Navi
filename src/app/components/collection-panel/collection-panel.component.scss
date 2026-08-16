@@ -39,7 +39,7 @@
 
 .header-subtitle {
   font-size: 12px;
-  color: #4a6080;
+  color: var(--text-faint);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -51,7 +51,7 @@
   border-radius: 6px;
   background: rgb(255 255 255 / 6%);
   border: none;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 16px;
   cursor: pointer;
   display: flex;
@@ -82,7 +82,7 @@
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -154,7 +154,7 @@
 
 .card-label {
   font-size: 11px;
-  color: #4a6080;
+  color: var(--text-faint);
   text-align: center;
   white-space: nowrap;
 }
@@ -181,7 +181,7 @@
   display: block;
   font-size: 11px;
   font-weight: 600;
-  color: #4a6080;
+  color: var(--text-faint);
   margin-bottom: 4px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -200,7 +200,7 @@
   transition: border-color 0.15s;
   box-sizing: border-box;
 
-  &::placeholder { color: #3a5a74; }
+  &::placeholder { color: var(--text-faint); }
   &:focus { border-color: #60a5fa; }
 }
 
@@ -218,7 +218,7 @@
   box-sizing: border-box;
   font-family: inherit;
 
-  &::placeholder { color: #3a5a74; }
+  &::placeholder { color: var(--text-faint); }
   &:focus { border-color: #60a5fa; }
 }
 
@@ -403,7 +403,7 @@
     padding: 10px;
     font-size: 10px;
     font-weight: 600;
-    color: #3a5a74;
+    color: var(--text-faint);
     text-transform: uppercase;
     letter-spacing: 0.8px;
     border-bottom: 1px solid rgb(255 255 255 / 6%);
@@ -550,7 +550,7 @@
 .empty-state {
   padding: 32px 24px;
   text-align: center;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 13px;
   font-style: italic;
 }

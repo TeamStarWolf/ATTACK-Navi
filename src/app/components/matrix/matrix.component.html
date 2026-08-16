@@ -62,7 +62,10 @@
       </div>
     </div>
   </div>
-<div class="matrix-wrapper" id="matrix-content" tabindex="0" role="grid" aria-label="ATT&CK technique matrix">
+<!-- role="region" (not "grid"): ARIA grids require a strict grid>row>gridcell
+     tree, which this layout (table > flowing columns > cells) can't honestly
+     provide — axe flagged all 887 cells. Cells are individual buttons. -->
+<div class="matrix-wrapper" id="matrix-content" tabindex="0" role="region" aria-label="ATT&CK technique matrix">
   @if (hiddenTacticCount > 0) {
     <div class="hidden-tactics-bar">
       <span>{{ hiddenTacticCount }} tactic{{ hiddenTacticCount !== 1 ? 's' : '' }} hidden</span>

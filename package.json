@@ -1,6 +1,6 @@
 {
   "name": "attack-navi",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "author": "TeamStarWolf",
   "homepage": "https://teamstarwolf.github.io/ATTACK-Navi/",
   "repository": {
@@ -59,6 +59,7 @@
     "@angular-devkit/build-angular": "^21.2.21",
     "@angular/cli": "^21.2.21",
     "@angular/compiler-cli": "^21.2.20",
+    "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.59.1",
     "@types/jasmine": "~5.1.0",
     "@types/tinycolor2": "^1.4.6",

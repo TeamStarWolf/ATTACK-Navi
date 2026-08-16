@@ -38,7 +38,7 @@
     overflow: hidden; margin-bottom: 4px;
   }
 
-  .tooltip-hint { font-size: 10px; color: #4a6080; font-style: italic; }
+  .tooltip-hint { font-size: 10px; color: var(--text-faint); font-style: italic; }
 }
 
 @keyframes fadeIn {
