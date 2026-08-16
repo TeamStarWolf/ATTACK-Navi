@@ -7,7 +7,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { Domain } from '../../models/domain';
@@ -22,7 +22,7 @@ export type SigmaExportMode = 'current' | 'implemented' | 'all' | 'custom';
 @Component({
   selector: 'app-sigma-export',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sigma-export.component.html',
   styleUrl: './sigma-export.component.scss',

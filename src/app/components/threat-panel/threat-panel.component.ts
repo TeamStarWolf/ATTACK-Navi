@@ -7,7 +7,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Subscription, combineLatest } from 'rxjs';
 import { ThreatGroup } from '../../models/group';
@@ -40,7 +40,7 @@ interface GapRow {
 @Component({
   selector: 'app-threat-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './threat-panel.component.html',
   styleUrl: './threat-panel.component.scss',

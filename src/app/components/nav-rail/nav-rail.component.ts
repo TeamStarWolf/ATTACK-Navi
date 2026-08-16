@@ -10,7 +10,7 @@ import {
   OnDestroy,
   ChangeDetectorRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { CveService } from '../../services/cve.service';
@@ -43,7 +43,7 @@ const WORKSPACES: WorkspaceNavItem[] = [
 @Component({
   selector: 'app-nav-rail',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, IconComponent],
+  imports: [RouterLink, RouterLinkActive, IconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './nav-rail.component.html',
   styleUrl: './nav-rail.component.scss',

@@ -6,7 +6,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { filter, take } from 'rxjs';
 import { DataService } from '../../services/data.service';
@@ -35,7 +35,7 @@ interface TacticGroup {
 @Component({
   selector: 'app-detection-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './detection-panel.component.html',
   styleUrl: './detection-panel.component.scss',
