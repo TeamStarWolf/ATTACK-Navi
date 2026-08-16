@@ -80,6 +80,13 @@
 .result-id { font-size: 10px; font-weight: 700; font-family: monospace; }
 .result-name { font-size: 12px; font-weight: 600; color: #cdd9e5; }
 
+.match-hl {
+  background: rgb(111 211 255 / 22%);
+  color: #9fe3ff;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
 .result-kind-label {
   font-size: 9px;
   margin-left: auto;

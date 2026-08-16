@@ -80,4 +80,23 @@ describe('UniversalSearchComponent', () => {
     component.selectResult({ kind: 'action', id: 'export-csv', name: '', score: 0 } as any);
     expect(exports.exportCsv).toHaveBeenCalled();
   });
+
+  it('records selections and boosts them in later searches (frecency)', () => {
+    localStorage.removeItem('palette-frecency-v1');
+    // Choose the export-csv action twice
+    component.selectResult({ kind: 'action', id: 'export-csv', name: 'Export coverage CSV', score: 0 } as any);
+    component.selectResult({ kind: 'action', id: 'export-csv', name: 'Export coverage CSV', score: 0 } as any);
+    const stored = JSON.parse(localStorage.getItem('palette-frecency-v1') ?? '{}');
+    expect(stored['action:export-csv'].count).toBe(2);
+    // Empty query surfaces it as a recent destination
+    (component as any).runSearch('');
+    expect(component.results.some(r => r.id === 'export-csv')).toBe(true);
+    localStorage.removeItem('palette-frecency-v1');
+  });
+
+  it('marks the matched range of the query within result names', () => {
+    (component as any).runSearch('gap');
+    const nav = component.results.find(r => r.kind === 'nav' && r.name === 'Gap Analysis');
+    expect(nav?.nameMatch).toEqual([0, 3]);
+  });
 });
