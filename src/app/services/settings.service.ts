@@ -2,6 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
+import { SAFE_COVERAGE } from '../models/safe-palette';
 
 export interface AppSettings {
   // Scoring weights (normalized to sum to 100)
@@ -22,6 +23,10 @@ export interface AppSettings {
   // Heatmap color theme
   heatmapColorTheme: 'default' | 'redgreen' | 'blueorange' | 'monochrome' | 'accessible';
 
+  // Colorblind-safe heatmaps: swap ALL heatmap ramps for viridis (sequential)
+  // and Okabe-Ito (categorical) — not just the coverage theme.
+  colorblindSafe: boolean;   // default false
+
   // Organization info for reports
   orgName: string;   // default ''
   orgLogo: string;   // base64 data URL, default ''
@@ -40,6 +45,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   showMitigationCount: true,
   showSubtechniqueCount: true,
   heatmapColorTheme: 'default',
+  colorblindSafe: false,
   orgName: '',
   orgLogo: '',
   attackVersion: '',
@@ -57,10 +63,14 @@ export class SettingsService {
     redgreen:   ['#dc2626', '#f97316', '#eab308', '#16a34a', '#15803d'],
     blueorange: ['#1d4ed8', '#2563eb', '#0ea5e9', '#f59e0b', '#d97706'],
     monochrome: ['#111827', '#374151', '#6b7280', '#9ca3af', '#e5e7eb'],
-    accessible: ['#cc0000', '#ff6600', '#ffcc00', '#006600', '#003300'],
+    // Viridis: monotonic-luminance, CVD-safe. (The previous 'accessible'
+    // values were a red→green ramp — the exact confusion axis for the most
+    // common color-vision deficiency — i.e. mislabeled.)
+    accessible: SAFE_COVERAGE,
   };
 
   getCoverageColors(): string[] {
+    if (this.current.colorblindSafe) return SAFE_COVERAGE;
     return this.COLOR_THEMES[this.current.heatmapColorTheme ?? 'default'];
   }
 
