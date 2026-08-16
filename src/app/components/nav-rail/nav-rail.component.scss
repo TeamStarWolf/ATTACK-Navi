@@ -1,99 +1,131 @@
 /* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
-   https://github.com/TeamStarWolf/ATTACK-Navi - MIT License */
-/* Token-driven: light mode re-points the tokens (no :host-context forks). */
+   https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
+
+   Clean Professional labeled sidebar (v0.10 makeover). Token-driven — light
+   mode re-points the tokens; no :host-context forks. */
 :host {
   display: flex;
   flex-direction: column;
-  width: 88px;
+  width: 210px;
   flex-shrink: 0;
-  background:
-    linear-gradient(180deg, var(--bg-soft), transparent),
-    color-mix(in srgb, var(--bg-base) 82%, transparent);
+  background: var(--bg-elevated);
   border-right: 1px solid var(--border-subtle);
   overflow: hidden;
-  backdrop-filter: blur(18px);
 }
 
 .nav-rail-inner {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 10px 0 8px;
-  align-items: center;
+  padding: 16px 12px 10px;
+}
+
+.rail-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 0 10px 8px;
 }
 
 .nav-list {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
+  gap: 2px;
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  width: 100%;
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--accent) 25%, transparent) transparent;
+  scrollbar-color: var(--border-default) transparent;
 }
 
 .nav-items-bottom {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 8px 0 4px;
+  gap: 2px;
+  padding-top: 8px;
   flex-shrink: 0;
-  width: 100%;
   border-top: 1px solid var(--border-subtle);
 }
 
 .nav-item {
   position: relative;
-  width: 72px;
-  min-height: 54px;
-  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 8px 10px;
+  border-radius: 8px;
   background: transparent;
   border: 1px solid transparent;
   cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  color: var(--text-faint);
-  transition: all 0.15s;
-  padding: 0;
-  flex-shrink: 0;
-  margin: 0 auto;
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  font-weight: 500;
   text-decoration: none;
+  transition: background 0.12s, color 0.12s;
+  width: 100%;
+  text-align: left;
+}
+
+.nav-icon {
+  display: flex;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.nav-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.nav-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-main);
+}
+
+.nav-item.active {
+  color: var(--text-main);
+  background: var(--bg-active);
+  font-weight: 600;
+  border-color: var(--border-subtle);
+}
+
+.nav-item.active .nav-icon {
+  color: var(--accent);
+}
+
+.nav-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .nav-badge {
-  position: absolute;
-  top: 2px;
-  right: 6px;
   min-width: 18px;
   height: 18px;
   border-radius: 9px;
-  background: #e53935;
+  background: var(--danger);
   color: #fff;
-  font-size: 9px;
+  font-size: 9.5px;
   font-weight: 700;
   line-height: 18px;
   text-align: center;
-  padding: 0 4px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  padding: 0 5px;
   pointer-events: none;
   animation: badge-pop 0.25s ease-out;
+  flex-shrink: 0;
 }
 
 .version-badge {
-  min-width: 10px !important;
-  width: 10px !important;
-  height: 10px !important;
+  min-width: 9px !important;
+  width: 9px !important;
+  height: 9px !important;
   padding: 0 !important;
   border-radius: 50% !important;
-  background: #2196F3 !important;
-  box-shadow: 0 0 6px rgba(33, 150, 243, 0.6);
+  background: var(--accent-blue) !important;
 }
 
 @keyframes badge-pop {
@@ -102,48 +134,12 @@
   100% { transform: scale(1); }
 }
 
-.nav-icon {
-  display: flex;
-  line-height: 1;
-}
-
-.nav-label {
-  font-size: 11px;
-  color: inherit;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  white-space: nowrap;
-  line-height: 1;
-  text-align: center;
-  max-width: 68px;
-}
-
-.nav-item:hover {
-  background: var(--bg-hover);
-  border-color: var(--border-subtle);
-  color: var(--text-primary);
-  transform: translateY(-1px);
-}
-
-.nav-item.active {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--accent) 14%, transparent),
-    color-mix(in srgb, var(--accent) 8%, transparent)
-  );
-  color: var(--accent);
-  border-color: color-mix(in srgb, var(--accent) 24%, transparent);
-  box-shadow:
-    inset 0 1px 0 var(--bg-hover),
-    0 0 0 1px color-mix(in srgb, var(--accent) 6%, transparent);
-}
-
 .help-btn {
   color: var(--text-faint);
 }
 
 .help-btn:hover {
-  color: var(--text-primary);
+  color: var(--text-main);
 }
 
 /* Mobile: collapse to horizontal bottom bar (all 10 items reachable) */
@@ -155,51 +151,52 @@
     right: 0;
     width: 100%;
     height: 56px;
-    z-index: 200;
-    flex-direction: row;
+    z-index: var(--z-rail);
     border-right: none;
-    border-top: 1px solid rgba(151, 185, 211, 0.12);
+    border-top: 1px solid var(--border-subtle);
   }
 
   .nav-rail-inner {
     flex-direction: row;
-    padding: 0;
-    height: 100%;
-    width: 100%;
+    align-items: center;
+    padding: 0 4px;
+    height: 56px;
   }
+
+  .rail-section-label { display: none; }
 
   .nav-list {
     flex-direction: row;
+    align-items: center;
+    gap: 0;
     overflow-x: auto;
     overflow-y: hidden;
-    gap: 0;
-    padding: 0 4px;
-    flex: 1;
-    scrollbar-width: none;
-  }
-
-  .nav-list::-webkit-scrollbar {
-    display: none;
   }
 
   .nav-items-bottom {
     flex-direction: row;
-    width: auto;
-    padding: 0 4px;
     border-top: none;
-    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 0;
   }
 
   .nav-item {
-    width: 52px;
-    min-width: 52px;
-    min-height: 48px;
-    margin: 0;
-    border-radius: 10px;
-    gap: 2px;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 62px;
+    padding: 6px 4px;
+    font-size: 9.5px;
+    border-radius: 8px;
   }
 
   .nav-label {
-    font-size: 8px;
+    flex: none;
+    max-width: 60px;
+    text-align: center;
+  }
+
+  .nav-badge {
+    position: absolute;
+    top: 2px;
+    right: 6px;
   }
 }

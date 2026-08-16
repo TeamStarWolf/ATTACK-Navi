@@ -139,14 +139,23 @@ test.describe('ATT&CK Navi', () => {
   test('theme toggle works', async ({ page }) => {
     await page.goto(BASE);
     await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
-    // Find and click theme toggle button
+    // Default-agnostic (light became the default in the v0.10 makeover):
+    // toggling flips the body class, toggling again restores it.
     const themeBtn = page.locator('.theme-btn');
     if (await themeBtn.count() > 0) {
+      const startedLight = await page.locator('body').evaluate(b => b.classList.contains('light-mode'));
       await themeBtn.click();
-      await expect(page.locator('body')).toHaveClass(/light-mode/);
-      // Toggle back
+      if (startedLight) {
+        await expect(page.locator('body')).not.toHaveClass(/light-mode/);
+      } else {
+        await expect(page.locator('body')).toHaveClass(/light-mode/);
+      }
       await themeBtn.click();
-      await expect(page.locator('body')).not.toHaveClass(/light-mode/);
+      if (startedLight) {
+        await expect(page.locator('body')).toHaveClass(/light-mode/);
+      } else {
+        await expect(page.locator('body')).not.toHaveClass(/light-mode/);
+      }
     }
   });
 

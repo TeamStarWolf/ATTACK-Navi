@@ -77,8 +77,10 @@
       <tr class="tactic-name-row">
         @for (col of sortedColumns; track col.tactic.id) {
           @if (!isColumnHidden(col)) {
+          <!-- Clean Professional: tactic identity is a colored top strip on a
+               neutral surface (was a full saturated header fill). -->
           <th class="tactic-header"
-              [style.background]="getTacticHeaderColor(col.tactic.shortname)"
+              [style.border-top-color]="getTacticHeaderColor(col.tactic.shortname)"
               (click)="onTacticHeaderClick(col, $event)">
             <div class="tactic-name-wrap">
               <span class="tactic-name-text">{{ col.tactic.name }}</span>

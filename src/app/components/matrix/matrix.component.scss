@@ -108,11 +108,16 @@
   }
 
   .tactic-header {
-    padding: 10px 7px 8px;
+    padding: 9px 7px 8px;
     text-align: center;
     min-width: var(--col-width, 140px);
     width: var(--col-width, 140px);
     border-right: 1px solid var(--line-soft);
+    /* Clean Professional: neutral surface; the tactic's color arrives as an
+       inline border-top-color (identity strip) from the template. */
+    background: var(--bg-panel-strong);
+    border-top: 3px solid transparent;
+    border-bottom: 1px solid var(--border-subtle);
     vertical-align: bottom;
     cursor: pointer;
     user-select: none;
@@ -191,23 +196,22 @@
       font-family: 'IBM Plex Mono', monospace;
     }
 
+    /* Headers are neutral surfaces now (tactic color = the top strip), so
+       header text uses theme tokens again — WCAG holds in both themes. */
     .tactic-count-badge {
       min-width: 22px;
       padding: 1px 6px;
       border-radius: 9px;
-      /* Theme-neutral over saturated tactic-header colors: a dark
-         translucent pill with near-white text passes WCAG on every hue
-         (the old 70%-white on 10%-white pill failed on 106 headers). */
-      background: rgb(0 0 0 / 35%);
-      color: rgb(255 255 255 / 95%);
+      background: var(--bg-active);
+      color: var(--text-main);
       font-weight: 700;
       letter-spacing: 0.3px;
     }
 
     .tactic-coverage-bar {
       width: 100%;
-      height: 5px;
-      background: rgb(255 255 255 / 6%);
+      height: 4px;
+      background: var(--bg-active);
       border-radius: 999px;
       margin-top: 6px;
       overflow: hidden;
@@ -222,9 +226,7 @@
     .tactic-pct {
       display: block;
       font-size: calc(8px * var(--mz, 1));
-      /* Theme-neutral: sits on saturated per-tactic header colors, where
-         the muted theme gray failed WCAG contrast (axe: 108 nodes). */
-      color: rgb(255 255 255 / 92%);
+      color: var(--text-muted);
       margin-top: 4px;
     }
   }
