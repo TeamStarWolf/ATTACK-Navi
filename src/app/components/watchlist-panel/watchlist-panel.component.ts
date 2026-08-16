@@ -7,7 +7,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Subscription, filter, take } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
@@ -18,7 +18,7 @@ import { DataService } from '../../services/data.service';
 @Component({
   selector: 'app-watchlist-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './watchlist-panel.component.html',
   styleUrl: './watchlist-panel.component.scss',

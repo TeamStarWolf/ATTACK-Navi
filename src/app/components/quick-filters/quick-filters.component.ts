@@ -7,7 +7,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Subscription, combineLatest } from 'rxjs';
 import { FilterService, HeatmapMode } from '../../services/filter.service';
 import { ImplementationService } from '../../services/implementation.service';
@@ -25,7 +25,7 @@ interface FilterPreset {
 @Component({
   selector: 'app-quick-filters',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './quick-filters.component.html',
   styleUrl: './quick-filters.component.scss',

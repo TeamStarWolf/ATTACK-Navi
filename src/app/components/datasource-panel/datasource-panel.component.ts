@@ -6,7 +6,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { filter, take } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
@@ -31,7 +31,7 @@ export interface FlatComponent {
 @Component({
   selector: 'app-datasource-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './datasource-panel.component.html',
   styleUrl: './datasource-panel.component.scss',

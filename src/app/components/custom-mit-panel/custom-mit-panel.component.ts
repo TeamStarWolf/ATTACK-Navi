@@ -7,7 +7,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { CustomMitigationService, CustomMitigation } from '../../services/custom-mitigation.service';
@@ -20,7 +20,7 @@ const DEFAULT_CATEGORIES = ['EDR', 'SIEM', 'Network', 'Email', 'IAM', 'Endpoint'
 @Component({
   selector: 'app-custom-mit-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './custom-mit-panel.component.html',
   styleUrl: './custom-mit-panel.component.scss',

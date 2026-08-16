@@ -7,7 +7,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Subscription, filter, take } from 'rxjs';
 import { DataService } from '../../services/data.service';
 import { Tactic } from '../../models/tactic';
@@ -27,7 +27,7 @@ export interface TacticStat {
 @Component({
   selector: 'app-killchain-panel',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './killchain-panel.component.html',
   styleUrl: './killchain-panel.component.scss',

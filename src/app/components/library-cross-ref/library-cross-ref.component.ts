@@ -11,7 +11,7 @@ import {
   OnDestroy,
   SimpleChanges,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Subscription } from 'rxjs';
 import { LibraryService, LibraryAsset } from '../../services/library.service';
 import { PanelNavService } from '../../services/panel-nav.service';
@@ -25,7 +25,7 @@ import { PanelNavService } from '../../services/panel-nav.service';
 @Component({
   selector: 'app-library-cross-ref',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="lcr">
