@@ -13,7 +13,7 @@ import {
   HostListener,
 } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { CommonModule } from '@angular/common';
+
 import tinycolor from 'tinycolor2';
 import { SAFE_SEQ, SAFE_STATUS, SAFE_CONTROLS } from '../../models/safe-palette';
 import { Technique } from '../../models/technique';
@@ -25,7 +25,7 @@ import { SettingsService } from '../../services/settings.service';
 @Component({
   selector: 'app-technique-cell',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div

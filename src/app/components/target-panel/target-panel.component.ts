@@ -6,7 +6,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { filter, take } from 'rxjs';
 import { DataService } from '../../services/data.service';
@@ -22,7 +22,7 @@ interface PlanMitigation {
 @Component({
   selector: 'app-target-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './target-panel.component.html',
   styleUrl: './target-panel.component.scss',

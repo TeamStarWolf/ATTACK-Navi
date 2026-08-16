@@ -7,7 +7,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { AttackSoftware } from '../../models/software';
@@ -17,7 +17,7 @@ import { DataService } from '../../services/data.service';
 @Component({
   selector: 'app-software-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './software-panel.component.html',
   styleUrl: './software-panel.component.scss',

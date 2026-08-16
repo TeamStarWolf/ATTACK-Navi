@@ -7,7 +7,7 @@ import {
   OnInit,
   OnDestroy,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Subscription } from 'rxjs';
 import { Tactic } from '../../models/tactic';
 import { Technique } from '../../models/technique';
@@ -24,7 +24,7 @@ export interface TacticSummaryData {
 @Component({
   selector: 'app-tactic-summary',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './tactic-summary.component.html',
   styleUrl: './tactic-summary.component.scss',

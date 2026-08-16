@@ -7,7 +7,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { CustomTechniqueService, CustomTechnique } from '../../services/custom-technique.service';
@@ -30,7 +30,7 @@ const ALL_PLATFORMS = [
 @Component({
   selector: 'app-collection-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './collection-panel.component.html',
   styleUrl: './collection-panel.component.scss',

@@ -7,7 +7,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { SettingsService, AppSettings, DEFAULT_SETTINGS } from '../../services/settings.service';
@@ -22,7 +22,7 @@ import { ImportSummary } from '../../services/stix-collection.service';
 @Component({
   selector: 'app-settings-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './settings-panel.component.html',
   styleUrl: './settings-panel.component.scss',
