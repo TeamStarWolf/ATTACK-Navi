@@ -4,6 +4,8 @@ import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRe
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { FilterService, HeatmapMode } from '../../services/filter.service';
+import { SettingsService } from '../../services/settings.service';
+import { SAFE_SEQ, SAFE_COVERAGE, SAFE_STATUS, SAFE_CONTROLS } from '../../models/safe-palette';
 
 interface LegendStop { color: string; label: string; }
 interface LegendConfig { label: string; stops: LegendStop[]; categorical?: boolean; }
@@ -347,12 +349,50 @@ export class LegendComponent implements OnInit, OnDestroy {
   heatmapMode: HeatmapMode = 'coverage';
 
   get config(): LegendConfig {
-    return MODE_CONFIGS[this.heatmapMode] ?? MODE_CONFIGS['coverage'];
+    const base = MODE_CONFIGS[this.heatmapMode] ?? MODE_CONFIGS['coverage'];
+    if (!this.settingsService.current.colorblindSafe) return base;
+    return this.toSafeConfig(base);
+  }
+
+  /**
+   * Mirror the cell renderer's colorblind-safe mode: sequential scales show
+   * the viridis ramp (first stop = the mode's zero color), categorical
+   * status/controls show Okabe-Ito.
+   */
+  private toSafeConfig(base: LegendConfig): LegendConfig {
+    if (this.heatmapMode === 'status') {
+      const order = ['none', 'not-started', 'in-progress', 'planned', 'implemented'];
+      return { ...base, stops: base.stops.map((s, i) => ({ ...s, color: SAFE_STATUS[order[i]] ?? s.color })) };
+    }
+    if (this.heatmapMode === 'controls') {
+      const order = ['none', 'planned', 'covered'];
+      return { ...base, stops: base.stops.map((s, i) => ({ ...s, color: SAFE_CONTROLS[order[i]] ?? s.color })) };
+    }
+    if (this.heatmapMode === 'coverage' || this.heatmapMode === 'unified') {
+      const ramp = this.heatmapMode === 'coverage'
+        ? SAFE_COVERAGE
+        : ['#440154', '#414487', '#2a788e', '#22a884', '#fde725'];
+      return { ...base, stops: base.stops.map((s, i) => ({ ...s, color: ramp[Math.min(i, ramp.length - 1)] })) };
+    }
+    // Relative modes: keep the zero stop, map the rest onto the viridis ramp.
+    const steps = base.stops.length - 1;
+    return {
+      ...base,
+      stops: base.stops.map((s, i) => {
+        if (i === 0) return s;
+        const rampIdx = Math.min(SAFE_SEQ.length - 1, Math.round(((i - 1) / Math.max(1, steps - 1)) * (SAFE_SEQ.length - 1)));
+        return { ...s, color: SAFE_SEQ[rampIdx] };
+      }),
+    };
   }
 
   private sub = new Subscription();
 
-  constructor(private filterService: FilterService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private filterService: FilterService,
+    private settingsService: SettingsService,
+    private cdr: ChangeDetectorRef,
+  ) {}
 
   ngOnInit(): void {
     this.sub.add(
@@ -360,6 +400,9 @@ export class LegendComponent implements OnInit, OnDestroy {
         this.heatmapMode = mode;
         this.cdr.markForCheck();
       }),
+    );
+    this.sub.add(
+      this.settingsService.settings$.subscribe(() => this.cdr.markForCheck()),
     );
   }
 
