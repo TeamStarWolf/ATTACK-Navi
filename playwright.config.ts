@@ -14,14 +14,17 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   webServer: {
-    // Dev server (both locally and in CI). It compiles lazy routes on first
-    // hit, so deep-link tests get generous CI timeouts (see ROUTE_TIMEOUT in
-    // the spec). We deliberately do NOT serve the production build here: that
-    // build registers the ngsw service worker, which intercepts the ATT&CK
-    // fetch below Playwright's page.route and breaks data interception under
-    // test. E2E is non-blocking (its own workflow), so the slower dev serve is
-    // an acceptable trade for reliable interception.
-    command: 'npx ng serve --port 4200',
+    // CI: statically serve a DEVELOPMENT build (the workflow runs
+    // `ng build -c development` first). The dev config sets
+    // `serviceWorker: false`, which is the key: the production ngsw worker
+    // intercepts the ATT&CK fetch below Playwright's page.route and breaks
+    // data interception, while `ng serve`'s per-route JIT compilation starved
+    // deep-link tests on the constrained runner. A prebuilt SW-free bundle
+    // avoids both failure modes.
+    // Locally: plain dev server.
+    command: process.env['CI']
+      ? 'npx http-server dist/mitre-mitigation-navigator/browser -p 4200 -s'
+      : 'npx ng serve --port 4200',
     port: 4200,
     // Locally a long-lived `ng serve` can go stale (dead HMR socket serving
     // an old bundle) — restart it when e2e results look impossible.

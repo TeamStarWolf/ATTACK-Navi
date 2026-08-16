@@ -61,6 +61,7 @@
               "outputHashing": "all"
             },
             "development": {
+              "serviceWorker": false,
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
