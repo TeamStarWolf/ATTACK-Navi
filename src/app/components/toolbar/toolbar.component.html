@@ -100,7 +100,7 @@
         <div class="views-menu" (click)="$event.stopPropagation()">
           <div class="views-menu-header">Saved Views</div>
           @if (views.length === 0) {
-            <div class="views-empty">No saved views yet. Use 💾 to save your current filter state.</div>
+            <div class="views-empty">No saved views yet. Use "Save view" to keep your current filter state.</div>
           }
           @for (v of views; track v.id) {
             <div class="view-item">
