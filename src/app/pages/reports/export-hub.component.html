@@ -23,5 +23,25 @@
         </div>
       </div>
     }
+
+    <div class="hub-section">
+      <h3 class="section-title">Full Workspace Backup</h3>
+      <div class="card-grid">
+        <button class="export-card" (click)="exportWorkspace()">
+          <span class="card-icon" aria-hidden="true">⬇</span>
+          <span class="card-text">
+            <span class="card-title">Export Workspace</span>
+            <span class="card-desc">Everything you've built — assessments, controls, snapshots, watchlist, tags, custom entities, saved views, preferences — as one portable JSON. API keys are never included.</span>
+          </span>
+        </button>
+        <button class="export-card" (click)="importWorkspace()">
+          <span class="card-icon" aria-hidden="true">⬆</span>
+          <span class="card-text">
+            <span class="card-title">Import Workspace</span>
+            <span class="card-desc">Restore a workspace bundle on this machine (replaces matching data; reloads to apply)</span>
+          </span>
+        </button>
+      </div>
+    </div>
   </div>
 </section>

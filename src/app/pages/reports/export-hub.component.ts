@@ -3,6 +3,7 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ExportActionsService } from '../../services/export-actions.service';
+import { WorkspaceBundleService } from '../../services/workspace-bundle.service';
 
 interface ExportCard {
   icon: string;
@@ -68,9 +69,39 @@ export class ExportHubComponent {
     },
   ];
 
-  constructor(protected exportActions: ExportActionsService) {}
+  constructor(
+    protected exportActions: ExportActionsService,
+    private workspaceBundle: WorkspaceBundleService,
+  ) {}
 
   run(card: ExportCard): void {
     card.action(this.exportActions);
+  }
+
+  exportWorkspace(): void {
+    this.workspaceBundle.downloadBundle();
+  }
+
+  importWorkspace(): void {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const applied = this.workspaceBundle.importBundle(ev.target?.result as string);
+          if (confirm(`Workspace restored (${applied} data sets). Reload now to apply everywhere?`)) {
+            window.location.reload();
+          }
+        } catch (err: any) {
+          alert(`Import failed: ${err?.message ?? err}`);
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
   }
 }
