@@ -198,6 +198,7 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
       enterprise: 'enterprise-attack-v2',
       ics: 'ics-attack-v1',
       mobile: 'mobile-attack-v1',
+      f3: 'f3-attack-v1',
     } as const;
     const cacheKey = cacheKeyByDomain[this.dataService.getCurrentAttackDomain()];
     const req = indexedDB.open('mitre-navigator-cache', 1);

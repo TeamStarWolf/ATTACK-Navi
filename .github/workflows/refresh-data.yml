@@ -33,6 +33,11 @@ jobs:
             # sanity: must be a STIX bundle with objects
             node -e "const b=require('./src/assets/data/${domain}-attack.json'); if(b.type!=='bundle'||!Array.isArray(b.objects)||b.objects.length<100){process.exit(1)}"
           done
+          # CTID F3 Fraud Framework (fourth domain)
+          curl -fsSL --retry 3 \
+            "https://raw.githubusercontent.com/center-for-threat-informed-defense/fight-fraud-framework/main/public/f3-stix.json" \
+            -o "src/assets/data/f3-attack.json"
+          node -e "const b=require('./src/assets/data/f3-attack.json'); if(b.type!=='bundle'||!Array.isArray(b.objects)||b.objects.length<50){process.exit(1)}"
 
       - name: Regenerate CVE→ATT&CK asset from CVE2CAPEC
         run: node scripts/build-cve-technique-map.mjs

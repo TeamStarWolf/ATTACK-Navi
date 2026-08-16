@@ -17,7 +17,7 @@ import { Campaign } from '../models/campaign';
 
 export type DataSourceMode = 'live' | 'bundled';
 
-export type AttackDomain = 'enterprise' | 'ics' | 'mobile';
+export type AttackDomain = 'enterprise' | 'ics' | 'mobile' | 'f3';
 
 const DOMAIN_CONFIG: Record<AttackDomain, { liveUrl: string; bundledUrl: string | null; idbKey: string; name: string }> = {
   enterprise: {
@@ -38,6 +38,15 @@ const DOMAIN_CONFIG: Record<AttackDomain, { liveUrl: string; bundledUrl: string 
     idbKey: 'mobile-attack-v1',
     name: 'Mobile ATT&CK',
   },
+  // CTID's F3 Fraud Framework (ctid.mitre.org/fraud) — ATT&CK-convention STIX
+  // (123 techniques incl. 49 subtechniques, 8 tactics, source_name mitre-f3).
+  // It ships no mitigations/groups, so coverage features are honestly empty.
+  f3: {
+    liveUrl: 'https://raw.githubusercontent.com/center-for-threat-informed-defense/fight-fraud-framework/main/public/f3-stix.json',
+    bundledUrl: 'assets/data/f3-attack.json',
+    idbKey: 'f3-attack-v1',
+    name: 'F3 Fraud Framework',
+  },
 };
 
 const IDB_DB = 'mitre-navigator-cache';
@@ -56,6 +65,10 @@ export const ATTACK_NAVIGATOR_DOMAIN_CONFIG: Record<AttackDomain, { navigatorDom
   mobile: {
     navigatorDomain: 'mobile-attack',
     defaultPlatforms: ['Android', 'iOS'],
+  },
+  f3: {
+    navigatorDomain: 'f3',
+    defaultPlatforms: [],
   },
 };
 
@@ -847,7 +860,9 @@ export class DataService {
 
   private extractAttackId(obj: any): string | null {
     for (const ref of obj.external_references ?? []) {
-      if (ref.source_name?.startsWith('mitre-attack') && ref.external_id) {
+      // 'mitre-' family: mitre-attack (Enterprise/ICS/Mobile) and mitre-f3
+      // (CTID Fraud Framework) both follow the ATT&CK STIX ref convention.
+      if (ref.source_name?.startsWith('mitre-') && ref.external_id) {
         return ref.external_id;
       }
     }
@@ -856,7 +871,7 @@ export class DataService {
 
   private extractUrl(obj: any): string {
     for (const ref of obj.external_references ?? []) {
-      if (ref.source_name?.startsWith('mitre-attack') && ref.url) {
+      if (ref.source_name?.startsWith('mitre-') && ref.url) {
         return ref.url;
       }
     }
