@@ -2,6 +2,54 @@
 
 All notable changes to ATTACK-Navi are documented here.
 
+## v0.9.0 — Instant Loading, Accessibility & Analyst Quality-of-Life (2026-08-16)
+
+### Performance & data freshness
+- **Bundled-first loading** — first visit paints instantly from the shipped
+  ATT&CK snapshot, then refreshes from MITRE live in the background. Errors
+  surface only if both sources fail.
+- **Monthly data-refresh automation** — a scheduled workflow regenerates the
+  three ATT&CK STIX snapshots and the CVE2CAPEC-derived CVE→ATT&CK asset
+  (271k+ CVEs) and opens a PR, so bundled data can no longer silently age.
+
+### Accessibility (WCAG 2.1 AA)
+- **Zero axe-core violations** across matrix, workspaces, intel, and export
+  hub in both themes (previously 900+ flagged nodes, criticals included).
+- **Light mode heatmap restored** — light theme had silently disabled all
+  heatmap colors for years, rendering every cell white. Cells now keep their
+  data colors in both themes, with per-cell text computed for WCAG contrast.
+- **Colorblind-safe heatmap mode** (Settings → Display) — viridis sequential
+  ramps + Okabe-Ito status colors across all 31 modes; the legend mirrors it.
+- Contrast fixes throughout: tactic headers, count badges, coverage pills,
+  hint text, version badge, active tabs, and the default coverage ramp's
+  dead-zone orange (where neither black nor white text could pass).
+- The matrix is a labeled region of button cells (the old role="grid"
+  declared 887 gridcells with no row structure).
+
+### Analyst quality-of-life
+- **Command palette learns** — frecency-ranked results, recent destinations
+  on empty open, and visible match highlighting.
+- **Full workspace export/import** — every data set you build (assessments,
+  controls, snapshots, watchlist, tags, custom entities, views, preferences)
+  as one portable JSON from the Export Hub. API keys are never included.
+- **Mobile matrix** — below 768px the grid becomes a stacked single-column
+  document with sticky tactic labels and touch-sized cells.
+- **Navigator layer round-trips** — exports carry exact per-mitigation
+  statuses and analyst notes in layer metadata; re-importing restores them
+  losslessly. Foreign layers' comments become notes without overwriting
+  existing ones.
+- Sidebar jump index scrolls smoothly (honoring reduced-motion preference).
+
+### Engineering
+- Visual regression suite (6 surfaces × both themes) via Playwright
+  screenshots; e2e runs green in CI (~7 min) against a SW-free static build.
+- Deep-link boot race fixed: the URL writer could cancel an in-flight lazy
+  navigation on slow devices, bouncing shared links to the matrix.
+- Design tokens power the nav rail, matrix chrome, palette trigger, legend,
+  export hub, and cell badges — light-mode forks deleted.
+- README screenshots re-captured from the current UI; docs aligned with the
+  router architecture end to end.
+
 ## v0.8.0 — Navigation Overhaul & Data Accuracy (2026-08-15)
 
 ### The big one: real navigation
