@@ -14,6 +14,7 @@ import { CustomMitigationService } from './custom-mitigation.service';
 import { TimelineService } from './timeline.service';
 import { BrowserFileService } from './browser-file.service';
 import { NavigatorLayerService } from './navigator-layer.service';
+import { AnnotationService } from './annotation.service';
 
 /**
  * All matrix/report export and import actions, extracted from AppComponent so
@@ -35,6 +36,7 @@ export class ExportActionsService {
   private readonly timelineService = inject(TimelineService);
   private readonly browserFileService = inject(BrowserFileService);
   private readonly navigatorLayerService = inject(NavigatorLayerService);
+  private readonly annotationService = inject(AnnotationService);
 
   private domain: Domain | null = null;
   private currentDomain: AttackDomain = 'enterprise';
@@ -208,8 +210,8 @@ export class ExportActionsService {
     const json = await this.browserFileService.pickTextFile('.json');
     if (!json) return;
     try {
-      const result = await this.navigatorLayerService.importLayer(json, this.domain, this.implService);
-      alert(`Layer "${result.layerName}" imported - ${result.appliedCount} technique annotations applied.`);
+      const result = await this.navigatorLayerService.importLayer(json, this.domain, this.implService, this.annotationService);
+      alert(`Layer "${result.layerName}" imported — ${result.appliedCount} techniques matched, ${result.statusesApplied} statuses and ${result.notesApplied} notes applied.`);
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Failed to import Navigator layer.');
     }
@@ -217,7 +219,7 @@ export class ExportActionsService {
 
   exportNavigatorLayer(): void {
     if (!this.domain) return;
-    this.navigatorLayerService.downloadLayer(this.domain, this.currentDomain, this.implService.getStatusMap(), this.browserFileService);
+    this.navigatorLayerService.downloadLayer(this.domain, this.currentDomain, this.implService.getStatusMap(), this.browserFileService, this.annotationService.all);
   }
 
   openInNavigator(): void {
