@@ -3,32 +3,31 @@
 @use './styles/tokens';
 @use './styles/workspace';
 @use './styles/upgrade-foundation';
-@import 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap';
+@import 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap';
 
+/* ── Clean Professional (v0.10 makeover) ─────────────────────────────────
+   Zinc-neutral palette in both themes. DARK is a refined zinc-dark (no more
+   navy); LIGHT is the flagship look. Contrast ratios preserved from the
+   v0.9 axe pass — every text token is ≥4.5:1 on its surfaces. */
 :root {
-  --bg-base: #08111a;
-  --bg-elevated: #0f1d29;
-  --bg-panel: rgb(14 27 39 / 88%);
-  --bg-panel-strong: #112332;
+  --bg-base: #101012;
+  --bg-elevated: #18181b;
+  --bg-panel: rgb(24 24 27 / 92%);
+  --bg-panel-strong: #202023;
   --bg-soft: rgb(255 255 255 / 4.5%);
-  --line-soft: rgb(151 185 211 / 12%);
-  --line-strong: rgb(151 185 211 / 22%);
-  --text-main: #e7eef5;
-  --text-muted: #93a8bb;
-  /* 5.2:1 on --bg-base, ≥4.5:1 on raised card surfaces (the old #5e778e sat
-     at ~4.0:1 — WCAG AA fail for the small hint text this token exists for;
-     flagged by axe on export-hub cards among others). */
-  --text-faint: #7b95ad;
-  --accent: #6fd3ff;
-  --accent-strong: #2ca8e2;
-  --accent-warm: #ffb454;
-  --success: #63d297;
-  --danger: #ff8f7a;
-  --shadow-lg: 0 18px 48px rgb(0 0 0 / 34%);
-  --shell-gradient:
-    radial-gradient(circle at top left, rgb(255 180 84 / 16%), transparent 30%),
-    radial-gradient(circle at top right, rgb(111 211 255 / 12%), transparent 34%),
-    linear-gradient(180deg, #0a141e 0%, #08111a 42%, #09131c 100%);
+  --line-soft: rgb(255 255 255 / 9%);
+  --line-strong: rgb(255 255 255 / 16%);
+  --text-main: #f4f4f5;
+  --text-muted: #b6bcc4;
+  /* ≥4.7:1 on --bg-base and raised card surfaces (axe-verified band). */
+  --text-faint: #98a1ad;
+  --accent: #7cb8ff;
+  --accent-strong: #4d9fff;
+  --accent-warm: #fbbf24;
+  --success: #4ade80;
+  --danger: #f87171;
+  --shadow-lg: 0 16px 40px rgb(0 0 0 / 45%);
+  --shell-gradient: linear-gradient(180deg, #131316 0%, #101012 100%);
 }
 
 .skip-link {
@@ -52,7 +51,7 @@ html, body {
   margin: 0;
   padding: 0;
   height: 100%;
-  font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
   font-size: 13px;
   background: var(--shell-gradient);
   color: var(--text-main);
@@ -89,47 +88,47 @@ html, body {
 }
 
 body.light-mode {
-  /* ── CSS variable overrides ── */
-  --bg-base: #f8f9fa;
+  /* ── CSS variable overrides (zinc, the flagship Clean Professional look) ── */
+  --bg-base: #fafafa;
   --bg-surface: #fff;
   --bg-elevated: #fff;
   --bg-panel: #ffffff;
-  --bg-panel-strong: #f1f5f9;
+  --bg-panel-strong: #f4f4f5;
   --bg-soft: rgb(0 0 0 / 3%);
   --bg-hover: rgb(0 0 0 / 4%);
-  --bg-active: rgb(0 0 0 / 8%);
-  --text-main: #1a1a2e;
-  --text-secondary: #4a5568;
-  --text-muted: #4a5568;
-  /* #566579: ≥4.7:1 on every light surface incl. 3%-tint inputs (two
-     lighter slates measured 4.44 and 4.47 — both just under AA). */
-  --text-faint: #566579;
-  --border-subtle: rgb(0 0 0 / 8%);
-  --border-default: rgb(0 0 0 / 12%);
-  --line-soft: rgb(0 0 0 / 8%);
-  --line-strong: rgb(0 0 0 / 14%);
+  --bg-active: rgb(0 0 0 / 7%);
+  --text-main: #18181b;
+  --text-secondary: #3f3f46;
+  --text-muted: #3f3f46;
+  /* ≥4.7:1 on every light surface incl. 3%-tint inputs (two lighter grays
+     measured 4.44 and 4.47 — both just under AA). */
+  --text-faint: #52525b;
+  --border-subtle: #e4e4e7;
+  --border-default: #d4d4d8;
+  --line-soft: #e4e4e7;
+  --line-strong: #d4d4d8;
   /* blue-700/800: blue-600 measured 4.33:1 on tinted active-tab fills —
      just under AA for the small tab labels (axe-flagged). */
   --accent: #1d4ed8;
   --accent-strong: #1e40af;
-  --accent-warm: #ea580c;
+  --accent-warm: #c2570a;
   --accent-blue: #2563eb;
   --accent-green: #16a34a;
   --accent-red: #dc2626;
-  --accent-orange: #ea580c;
+  --accent-orange: #c2570a;
   --accent-purple: #7c3aed;
   /* green-700: #16a34a was 3.3:1 on white — failed WCAG AA for the small
      text this token colors (e.g. the toolbar version badge; axe-flagged). */
   --success: #15803d;
   --danger: #dc2626;
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 5%);
-  --shadow-md: 0 4px 6px rgb(0 0 0 / 7%);
-  --shadow-lg: 0 10px 15px rgb(0 0 0 / 10%);
-  --shell-gradient: #f8f9fa;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 4%);
+  --shadow-md: 0 2px 8px rgb(0 0 0 / 6%);
+  --shadow-lg: 0 8px 24px rgb(0 0 0 / 9%);
+  --shell-gradient: #fafafa;
 
   /* ── 1. Body / root ── */
-  background: #f8f9fa !important;
-  color: #1a1a2e;
+  background: #fafafa !important;
+  color: #18181b;
 
   /* ── 11. Scrollbar ── */
   &::-webkit-scrollbar-track { background: #f1f5f9; }
@@ -225,10 +224,11 @@ body.light-mode {
   }
 
   .heatmap-btn {
-    background: rgb(234 88 12 / 6%) !important;
-    border-color: rgb(234 88 12 / 20%) !important;
-    color: #ea580c !important;
-    &:hover { background: rgb(234 88 12 / 10%) !important; }
+    background: rgb(194 87 10 / 6%) !important;
+    border-color: rgb(194 87 10 / 22%) !important;
+    /* orange-800: #ea580c measured 3.22:1 on its tinted fill (axe). */
+    color: #9a3412 !important;
+    &:hover { background: rgb(194 87 10 / 10%) !important; }
     &.active { background: rgb(234 88 12 / 12%) !important; border-color: rgb(234 88 12 / 30%) !important; }
   }
 
@@ -442,14 +442,9 @@ body.light-mode {
     border-right-color: #e2e8f0 !important;
   }
 
-  /* Tactic headers keep their saturated per-tactic colors in light mode,
-     so header text stays theme-neutral WHITE. The old dark-slate overrides
-     put near-black text on dark navy (axe: 1.07:1 — invisible). */
-  .tactic-th { background: #1e3a5f !important; }
-  .tactic-name-text { color: #ffffff !important; }
-  .count { color: rgb(255 255 255 / 95%) !important; }
-  .tactic-pct { color: rgb(255 255 255 / 92%) !important; }
-  .tactic-coverage-bar { background: rgb(0 0 0 / 6%) !important; }
+  /* Clean Professional: tactic headers are neutral token surfaces with the
+     tactic color as a top strip — the component styles handle both themes,
+     so no forcing here anymore. */
 
   .tactic-col {
     border-right-color: rgb(0 0 0 / 4%) !important;

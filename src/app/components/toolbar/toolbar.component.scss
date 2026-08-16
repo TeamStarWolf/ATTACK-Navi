@@ -5,13 +5,11 @@
   align-items: center;
   flex-wrap: nowrap;
   gap: 0;
-  height: 50px;
+  height: 54px;
   flex-shrink: 0;
-  background:
-    linear-gradient(180deg, rgb(255 255 255 / 3%), transparent),
-    rgb(8 18 27 / 88%);
-  border-bottom: 1px solid var(--line-soft);
-  box-shadow: 0 10px 30px rgb(0 0 0 / 22%);
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-subtle);
+  box-shadow: none;
   overflow: visible;
   padding: 0 10px;
   z-index: 101;
