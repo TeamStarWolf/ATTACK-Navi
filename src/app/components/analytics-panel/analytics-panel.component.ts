@@ -253,10 +253,11 @@ export class AnalyticsPanelComponent implements OnInit, OnDestroy {
     return this.implTotal > 0;
   }
 
+  // Theme tokens so the same scale reads correctly on light and dark surfaces.
   barColor(pct: number): string {
-    if (pct < 50) return '#d32f2f';
-    if (pct < 80) return '#f57c00';
-    return '#4caf50';
+    if (pct < 50) return 'var(--danger)';
+    if (pct < 80) return 'var(--accent-warm)';
+    return 'var(--success)';
   }
 
   implBarWidth(key: string): number {

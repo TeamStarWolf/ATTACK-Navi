@@ -249,7 +249,7 @@
   align-items: center;
   font-size: 0.82rem;
   transition: background 0.12s;
-  &:hover { background: #0f1923; }
+  &:hover { background: var(--bg-hover); }
   &.improved { background: rgb(63 185 80 / 4%); }
   &.declined { background: rgb(248 81 73 / 4%); }
   &:last-child { border-bottom: none; }

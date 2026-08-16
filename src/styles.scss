@@ -34,8 +34,8 @@
   position: absolute;
   top: -40px;
   left: 0;
-  background: #070d14;
-  color: #58a6ff;
+  background: var(--bg-base);
+  color: var(--accent);
   padding: 8px;
   z-index: 10000;
   text-decoration: none;
@@ -65,26 +65,26 @@ html, body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #08111a;
+  background: #101012;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #284257;
+  background: #3f3f46;
   border-radius: 4px;
-  border: 2px solid #08111a;
+  border: 2px solid #101012;
 
   &:hover {
-    background: #345c78;
+    background: #52525b;
   }
 }
 
 ::-webkit-scrollbar-corner {
-  background: #08111a;
+  background: #101012;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #284257 #08111a;
+  scrollbar-color: #3f3f46 #101012;
 }
 
 body.light-mode {
@@ -892,7 +892,7 @@ body.light-mode {
 }
 
 .panel-overlay {
-  background: rgb(3 10 16 / 62%) !important;
+  background: rgb(0 0 0 / 55%) !important;
   backdrop-filter: blur(6px);
 }
 
@@ -900,9 +900,7 @@ body.light-mode {
   /* Symmetric card chrome. (This rule once styled right-edge slide-in
      drawers — border-right:none, 24px 0 0 24px radius, left-cast shadow —
      but every panel is a routed page now, so the drawer geometry is gone.) */
-  background:
-    linear-gradient(180deg, rgb(255 255 255 / 2.5%), transparent 100px),
-    rgb(8 18 28 / 95%) !important;
+  background: var(--bg-elevated) !important;
   border: 1px solid var(--line-soft) !important;
   border-radius: 10px;
   box-shadow: var(--shadow-md);
@@ -911,9 +909,7 @@ body.light-mode {
 .panel-header,
 .tab-bar,
 .panel-footer {
-  background:
-    linear-gradient(180deg, rgb(255 255 255 / 2%), transparent),
-    rgb(8 18 28 / 90%) !important;
+  background: var(--bg-panel-strong) !important;
   border-color: var(--line-soft) !important;
 }
 
@@ -929,9 +925,7 @@ body.light-mode {
 }
 
 .panel-body {
-  background:
-    linear-gradient(180deg, rgb(255 255 255 / 1.5%), transparent 140px),
-    rgb(7 14 22 / 92%) !important;
+  background: var(--bg-panel) !important;
   padding: 16px 18px !important;
 }
 

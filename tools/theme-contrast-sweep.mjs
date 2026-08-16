@@ -48,8 +48,9 @@ for (const theme of ['dark', 'light']) {
           if (!m) continue;
           const [, rr, gg, bb] = m.map(Number);
           const lum = 0.299 * rr + 0.587 * gg + 0.114 * bb;
-          // navy: blue-dominant dark
-          if (lum < 90 && bb > rr + 18 && bb > gg + 12 && bb > 30) {
+          // navy: blue-dominant dark. The zinc palette keeps channels within
+          // a few points of each other, so even mild blue dominance is off-palette.
+          if (lum < 90 && bb > rr + 8 && bb > gg + 5 && bb > 25) {
             const key = `${bg} <${el.tagName.toLowerCase()}.${(el.className?.toString?.() ?? '').split(' ')[0]}>`;
             bad.set(key, (bad.get(key) ?? 0) + 1);
           }

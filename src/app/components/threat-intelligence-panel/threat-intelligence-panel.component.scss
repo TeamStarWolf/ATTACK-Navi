@@ -358,7 +358,7 @@
   &.score-none   { background: rgb(74 96 128 / 15%); color: var(--text-faint); }
   &.score-low    { background: rgb(88 166 255 / 15%); color: var(--accent); }
   &.score-medium { background: rgb(167 139 250 / 15%); color: #a78bfa; }
-  &.score-high   { background: rgb(248 113 113 / 15%); color: var(--danger); }
+  &.score-high   { background: rgb(248 113 113 / 10%); color: var(--danger); }
 }
 
 /* ── Source Badge ── */

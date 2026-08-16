@@ -449,7 +449,7 @@
   display: flex;
   gap: 8px;
   font-size: 11px;
-  color: #4a6070;
+  color: var(--text-muted);
 }
 
 .gap-tactic {
@@ -458,7 +458,7 @@
 }
 
 .gap-groups {
-  color: #6a8090;
+  color: var(--text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

@@ -103,7 +103,7 @@
 .cov-val { font-size: 18px; font-weight: 700; color: var(--text-main); &.green { color: var(--success); } &.red { color: var(--danger); } }
 .cov-lbl { font-size: 9px; color: var(--text-faint); text-transform: uppercase; }
 
-.group-desc { font-size: 11px; color: #5a7a9a; line-height: 1.5; margin-bottom: 12px; }
+.group-desc { font-size: 11px; color: var(--text-faint); line-height: 1.5; margin-bottom: 12px; }
 
 .breakdown-label {
   font-size: 10px; font-weight: 600; color: var(--text-faint); text-transform: uppercase;

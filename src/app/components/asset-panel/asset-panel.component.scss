@@ -129,7 +129,7 @@
 }
 
 .upload-hint {
-  color: #4a6070;
+  color: var(--text-muted);
   font-size: 11px;
   margin-top: 6px;
 }
@@ -270,7 +270,7 @@
   font-size: 12px;
 
   &::placeholder {
-    color: #4a6070;
+    color: var(--text-muted);
   }
 
   &:focus {
@@ -502,7 +502,7 @@
 
 .empty-hint {
   font-size: 12px;
-  color: #4a6070;
+  color: var(--text-muted);
 }
 
 // ── Responsive ────────────────────────────────────────

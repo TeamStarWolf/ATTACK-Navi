@@ -306,7 +306,7 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
     if (d > 0) parts.push(`#fbbf24 ${blockedEnd}deg ${detectedEnd}deg`);
     if (v > 0) parts.push(`#f97316 ${detectedEnd}deg ${vulnerableEnd}deg`);
     if (u > 0) parts.push(`#f87171 ${vulnerableEnd}deg 360deg`);
-    if (parts.length === 0) parts.push('#1a3448 0deg 360deg');
+    if (parts.length === 0) parts.push('#27272a 0deg 360deg');
 
     return `conic-gradient(${parts.join(', ')})`;
   }
@@ -494,7 +494,7 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
       case 'high':     return '#f97316';
       case 'medium':   return '#fbbf24';
       case 'low':      return '#4ade80';
-      default:         return '#4a6080';
+      default:         return 'var(--text-faint)';
     }
   }
 }

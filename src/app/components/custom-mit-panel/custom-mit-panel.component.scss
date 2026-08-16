@@ -105,7 +105,7 @@
   color: var(--text-faint);
 
   &:hover:not(:disabled) {
-    background: #0f1e2e;
+    background: var(--bg-panel-strong);
     color: var(--text-main);
   }
 }
@@ -256,7 +256,7 @@
   gap: 8px;
 
   &:hover {
-    border-color: #1a4a6b;
+    border-color: var(--border-default);
   }
 }
 
@@ -340,7 +340,7 @@
 .mit-desc {
   margin: 0;
   font-size: 12px;
-  color: #5a7a90;
+  color: var(--text-faint);
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
@@ -422,7 +422,7 @@
   display: block;
   font-size: 12px;
   font-weight: 600;
-  color: #5a7a90;
+  color: var(--text-faint);
   margin-bottom: 6px;
   letter-spacing: 0.3px;
   text-transform: uppercase;
@@ -446,7 +446,7 @@
 
 .tech-suggestions {
   background: var(--bg-panel-strong);
-  border: 1px solid #1a4a6b;
+  border: 1px solid var(--border-default);
   border-radius: 6px;
   overflow: hidden;
   max-height: 220px;
@@ -462,7 +462,7 @@
   text-align: left;
   background: transparent;
   border: none;
-  border-bottom: 1px solid #0f1e2e;
+  border-bottom: 1px solid var(--bg-panel-strong);
   cursor: pointer;
   color: var(--text-main);
 
@@ -471,7 +471,7 @@
   }
 
   &:hover {
-    background: #0f2035;
+    background: var(--bg-panel-strong);
   }
 }
 
@@ -545,5 +545,5 @@
   gap: 10px;
   margin-top: 24px;
   padding-top: 16px;
-  border-top: 1px solid #0f1e2e;
+  border-top: 1px solid var(--bg-panel-strong);
 }
