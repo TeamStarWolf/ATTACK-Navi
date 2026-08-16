@@ -1,8 +1,8 @@
 /* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
    https://github.com/TeamStarWolf/ATTACK-Navi - MIT License */
 .changelog-panel {
-  background: #0c1828;
-  border: 1px solid #1a3448;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
   border-radius: 10px;
   display: flex;
   flex-direction: column;
@@ -14,7 +14,7 @@
   align-items: flex-start;
   justify-content: space-between;
   padding: 20px 24px 16px;
-  border-bottom: 1px solid #1a3448;
+  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
@@ -33,14 +33,14 @@
 
 .panel-subtitle {
   font-size: 12px;
-  color: #4a6a84;
+  color: var(--text-faint);
   margin: 0;
 }
 
 .close-btn {
   background: transparent;
   border: none;
-  color: #4a6a84;
+  color: var(--text-faint);
   font-size: 18px;
   cursor: pointer;
   padding: 2px 6px;
@@ -59,7 +59,7 @@
   overflow-y: auto;
   padding: 20px 24px;
   scrollbar-width: thin;
-  scrollbar-color: #1a3448 transparent;
+  scrollbar-color: var(--border-subtle) transparent;
 }
 
 .loading-state {
@@ -73,8 +73,8 @@
 .spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid #1a3448;
-  border-top-color: #1a9fff;
+  border: 3px solid var(--border-subtle);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -85,7 +85,7 @@
 
 .loading-text {
   font-size: 13px;
-  color: #4a6a84;
+  color: var(--text-faint);
   margin: 0;
 }
 
@@ -105,7 +105,7 @@
 
 .fallback-link {
   font-size: 13px;
-  color: #1a9fff;
+  color: var(--accent);
   text-decoration: none;
 
   &:hover { text-decoration: underline; }
@@ -118,8 +118,8 @@
 }
 
 .release-card {
-  background: #0f1f30;
-  border: 1px solid #1a3448;
+  background: var(--bg-panel-strong);
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
   padding: 16px;
   display: flex;
@@ -143,17 +143,17 @@
 .release-tag {
   font-size: 15px;
   font-weight: 700;
-  color: #58a6ff;
+  color: var(--accent);
 }
 
 .release-date {
   font-size: 11px;
-  color: #4a6a84;
+  color: var(--text-faint);
 }
 
 .github-link {
   font-size: 11px;
-  color: #1a9fff;
+  color: var(--accent);
   text-decoration: none;
   white-space: nowrap;
   flex-shrink: 0;
@@ -163,8 +163,8 @@
 
 .expand-btn {
   background: transparent;
-  border: 1px solid #1a3448;
-  color: #4a6a84;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-faint);
   font-size: 11px;
   padding: 4px 10px;
   border-radius: 4px;
@@ -175,13 +175,13 @@
 
   &:hover {
     background: rgb(255 255 255 / 5%);
-    color: #8aaac8;
-    border-color: #2a4a64;
+    color: var(--text-muted);
+    border-color: var(--border-default);
   }
 }
 
 .release-body {
-  border-top: 1px solid #1a3448;
+  border-top: 1px solid var(--border-subtle);
   padding-top: 10px;
 }
 
@@ -189,28 +189,28 @@
   font-family: monospace;
   white-space: pre-wrap;
   font-size: 11px;
-  color: #8aaac8;
+  color: var(--text-muted);
   background: #060e18;
-  border: 1px solid #1a3448;
+  border: 1px solid var(--border-subtle);
   border-radius: 4px;
   padding: 12px;
   margin: 0;
   max-height: 320px;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: #1a3448 transparent;
+  scrollbar-color: var(--border-subtle) transparent;
   line-height: 1.5;
 }
 
 .panel-footer {
   padding: 14px 24px;
-  border-top: 1px solid #1a3448;
+  border-top: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
 .footer-link {
   font-size: 12px;
-  color: #1a9fff;
+  color: var(--accent);
   text-decoration: none;
 
   &:hover { text-decoration: underline; }

@@ -1617,7 +1617,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
       case 'sigma':
         return this.getRelativeHeatColor(this.getSigmaScore(tech), this.maxSigmaScore, '#0a1a1a', ['#0d4a3a', '#0d7a5e', '#0ea87a', '#10b981']);
       case 'nist':
-        return this.getRelativeHeatColor(this.getNistScore(tech), this.maxNistScore, '#0d1b2a', ['#1a4a7a', '#1565c0', '#1976d2', '#42a5f5']);
+        return this.getRelativeHeatColor(this.getNistScore(tech), this.maxNistScore, '#0d1b2a', ['#1a4a7a', '#1565c0', '#1976d2', 'var(--accent)']);
       case 'veris':
         return this.getRelativeHeatColor(this.getVerisScore(tech), this.maxVerisScore, '#1a0a0a', ['#5c1a1a', '#a83232', '#d64e4e', '#f28b8b']);
       case 'epss': {

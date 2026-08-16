@@ -1422,7 +1422,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     if (misp) signals.push({ icon: '🔴', label: 'MISP', value: '1 cluster', color: '#c0392b' });
 
     const nistCount = this.nistMappingService.getControlCount(id);
-    if (nistCount > 0) signals.push({ icon: '🏛', label: 'NIST', value: String(nistCount), color: '#42a5f5' });
+    if (nistCount > 0) signals.push({ icon: '🏛', label: 'NIST', value: String(nistCount), color: 'var(--accent)' });
 
     if (this.epssAvg !== null && this.epssAvg > 0) {
       signals.push({

@@ -111,16 +111,16 @@ body.light-mode {
      just under AA for the small tab labels (axe-flagged). */
   --accent: #1d4ed8;
   --accent-strong: #1e40af;
-  --accent-warm: #c2570a;
-  --accent-blue: #2563eb;
-  --accent-green: #16a34a;
-  --accent-red: #dc2626;
-  --accent-orange: #c2570a;
-  --accent-purple: #7c3aed;
-  /* green-700: #16a34a was 3.3:1 on white — failed WCAG AA for the small
-     text this token colors (e.g. the toolbar version badge; axe-flagged). */
-  --success: #15803d;
-  --danger: #dc2626;
+  /* One shade deeper than the tinted-chip threshold: the every-tab sweep
+     measured the previous values at 3.9-4.4:1 on their translucent fills. */
+  --accent-warm: #9a3412;
+  --accent-blue: #1d4ed8;
+  --accent-green: #15803d;
+  --accent-red: #b91c1c;
+  --accent-orange: #9a3412;
+  --accent-purple: #6d28d9;
+  --success: #166534;
+  --danger: #b91c1c;
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 4%);
   --shadow-md: 0 2px 8px rgb(0 0 0 / 6%);
   --shadow-lg: 0 8px 24px rgb(0 0 0 / 9%);
@@ -197,11 +197,11 @@ body.light-mode {
 
     option { background: #fff; color: #1a1a2e; }
 
-    &:focus { border-color: #2563eb !important; }
+    &:focus { border-color: #1d4ed8 !important; }
 
     &:has(option:checked:not([value=""])) {
-      color: #2563eb !important;
-      border-color: #2563eb !important;
+      color: #1d4ed8 !important;
+      border-color: #1d4ed8 !important;
     }
   }
 
@@ -235,14 +235,14 @@ body.light-mode {
   .export-btn {
     background: rgb(22 163 74 / 6%) !important;
     border-color: rgb(22 163 74 / 20%) !important;
-    color: #16a34a !important;
+    color: #166534 !important;
     &:hover { background: rgb(22 163 74 / 10%) !important; }
   }
 
   .navigator-btn, .save-view-btn, .views-menu-btn, .export-hub-btn {
     background: rgb(37 99 235 / 6%) !important;
     border-color: rgb(37 99 235 / 18%) !important;
-    color: #2563eb !important;
+    color: #1d4ed8 !important;
     &:hover { background: rgb(37 99 235 / 10%) !important; }
   }
 
@@ -262,12 +262,12 @@ body.light-mode {
 
   .scope-btn {
     color: #566579 !important; /* was #94a3b8 — 2.6:1 on white (axe) */
-    &:hover { border-color: #2563eb !important; color: #1d4ed8 !important; }
+    &:hover { border-color: #1d4ed8 !important; color: #1d4ed8 !important; }
 
     &.active {
       background: rgb(37 99 235 / 8%) !important;
       border-color: rgb(37 99 235 / 30%) !important;
-      color: #2563eb !important;
+      color: #1d4ed8 !important;
     }
   }
 
@@ -280,7 +280,7 @@ body.light-mode {
     &.active {
       background: rgb(37 99 235 / 8%) !important;
       border-color: rgb(37 99 235 / 30%) !important;
-      color: #2563eb !important;
+      color: #1d4ed8 !important;
     }
   }
 
@@ -294,7 +294,7 @@ body.light-mode {
       &:hover { background: #f1f5f9 !important; }
 
       .drop-id {
-        color: #2563eb !important;
+        color: #1d4ed8 !important;
         background: rgb(37 99 235 / 8%) !important;
       }
       .drop-name { color: #475569 !important; }
@@ -324,7 +324,7 @@ body.light-mode {
     &.active {
       background: rgb(37 99 235 / 8%) !important;
       border-color: rgb(37 99 235 / 30%) !important;
-      color: #2563eb !important;
+      color: #1d4ed8 !important;
     }
   }
 
@@ -357,21 +357,21 @@ body.light-mode {
     &.active {
       background: rgb(37 99 235 / 8%) !important;
       border-color: rgb(37 99 235 / 30%) !important;
-      color: #2563eb !important;
+      color: #1d4ed8 !important;
     }
   }
 
   .menu-action {
     color: #1a1a2e !important;
     &:hover { background: #f1f5f9 !important; }
-    &.active { background: rgb(37 99 235 / 6%) !important; color: #2563eb !important; }
+    &.active { background: rgb(37 99 235 / 6%) !important; color: #1d4ed8 !important; }
   }
 
   .save-input {
     background: #f8f9fa !important;
     border-color: #e2e8f0 !important;
     color: #1a1a2e !important;
-    &:focus { border-color: #2563eb !important; }
+    &:focus { border-color: #1d4ed8 !important; }
     &::placeholder { color: #94a3b8 !important; }
   }
 
@@ -393,7 +393,7 @@ body.light-mode {
       background: #f1f5f9 !important;
       color: #475569 !important;
       border-color: #e2e8f0 !important;
-      &.active { background: #2563eb !important; color: #fff !important; }
+      &.active { background: #1d4ed8 !important; color: #fff !important; }
     }
 
     .dropdown {
@@ -479,12 +479,12 @@ body.light-mode {
   .expand-btn {
     background: #f8f9fa !important;
     border-color: #e2e8f0 !important;
-    color: #94a3b8 !important;
+    color: #566579 !important; /* was #94a3b8 — 2.4:1 on #f8f9fa (axe) */
     &:hover { background: #f1f5f9 !important; color: #475569 !important; }
 
     &.expanded {
       background: rgb(37 99 235 / 6%) !important;
-      color: #2563eb !important;
+      color: #1d4ed8 !important;
       border-color: rgb(37 99 235 / 25%) !important;
     }
   }
@@ -510,7 +510,7 @@ body.light-mode {
     &:focus { border-color: #3b82f6 !important; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15) !important; }
     &::placeholder { color: #94a3b8 !important; }
   }
-  .search-count { color: #2563eb !important; }
+  .search-count { color: #1d4ed8 !important; }
 
   .search-filter-btn {
     background: #fff !important;
@@ -521,7 +521,7 @@ body.light-mode {
     &.active {
       background: rgb(37 99 235 / 6%) !important;
       border-color: rgb(37 99 235 / 30%) !important;
-      color: #2563eb !important;
+      color: #1d4ed8 !important;
     }
   }
   .search-clear { color: #94a3b8 !important; &:hover { color: #475569 !important; } }
@@ -580,9 +580,9 @@ body.light-mode {
     .bulk-count { color: #1a1a2e !important; }
 
     .bulk-btn {
-      &.impl { background: rgb(22 163 74 / 8%) !important; color: #16a34a !important; border-color: rgb(22 163 74 / 20%) !important; }
+      &.impl { background: rgb(22 163 74 / 8%) !important; color: #166534 !important; border-color: rgb(22 163 74 / 20%) !important; }
       &.prog { background: rgb(234 88 12 / 8%) !important; color: #ea580c !important; border-color: rgb(234 88 12 / 20%) !important; }
-      &.plan { background: rgb(37 99 235 / 8%) !important; color: #2563eb !important; border-color: rgb(37 99 235 / 20%) !important; }
+      &.plan { background: rgb(37 99 235 / 8%) !important; color: #1d4ed8 !important; border-color: rgb(37 99 235 / 20%) !important; }
       &.none { background: rgb(220 38 38 / 8%) !important; color: #dc2626 !important; border-color: rgb(220 38 38 / 20%) !important; }
       &.clear-impl { background: #f1f5f9 !important; color: #64748b !important; border-color: #e2e8f0 !important; }
       &.close-sel { background: rgb(220 38 38 / 6%) !important; color: #dc2626 !important; border-color: rgb(220 38 38 / 18%) !important; }
@@ -600,7 +600,7 @@ body.light-mode {
   .sidebar-header {
     background: #f8fafc !important;
     border-bottom: 1px solid #e2e8f0 !important;
-    .attack-id { color: #2563eb !important; }
+    .attack-id { color: #1d4ed8 !important; }
     .technique-name { color: #0f172a !important; }
   }
   .sidebar-body { background: #ffffff !important; }
@@ -611,7 +611,7 @@ body.light-mode {
     &:hover { background: #f1f5f9 !important; color: #1e293b !important; }
   }
   .description { color: #475569 !important; }
-  .desc-toggle { color: #2563eb !important; border-bottom-color: #e2e8f0 !important; &:hover { color: #1d4ed8 !important; } }
+  .desc-toggle { color: #1d4ed8 !important; border-bottom-color: #e2e8f0 !important; &:hover { color: #1d4ed8 !important; } }
   .description-wrap::after { background: linear-gradient(transparent, #ffffff) !important; }
   .meta-label { color: #64748b !important; }
   .meta-value { color: #1e293b !important; }
@@ -635,7 +635,7 @@ body.light-mode {
   .detection-toggle {
     background: rgb(37 99 235 / 6%) !important;
     border-color: rgb(37 99 235 / 18%) !important;
-    color: #2563eb !important;
+    color: #1d4ed8 !important;
     &:hover { background: rgb(37 99 235 / 10%) !important; }
   }
   .detection-text {
@@ -650,7 +650,7 @@ body.light-mode {
   }
 
   .mit-header {
-    .mit-id { color: #2563eb !important; }
+    .mit-id { color: #1d4ed8 !important; }
     .mit-name { color: #1a1a2e !important; }
   }
   .rel-description, .mit-description { color: #475569 !important; }
@@ -659,7 +659,7 @@ body.light-mode {
     background: #f8f9fa !important;
     color: #1a1a2e !important;
     border-color: #e2e8f0 !important;
-    &:focus { border-color: #2563eb !important; }
+    &:focus { border-color: #1d4ed8 !important; }
   }
 
   .group-chip, .sw-chip, .camp-chip {
@@ -667,7 +667,7 @@ body.light-mode {
     color: #1a1a2e !important;
     border-color: #e2e8f0 !important;
   }
-  .att-link { color: #2563eb !important; }
+  .att-link { color: #1d4ed8 !important; }
 
   .watchlist-btn {
     border-color: #e2e8f0 !important;
@@ -679,7 +679,7 @@ body.light-mode {
   .graph-btn {
     border-color: #e2e8f0 !important;
     color: #64748b !important;
-    &:hover { border-color: #2563eb !important; color: #2563eb !important; background: rgb(37 99 235 / 6%) !important; }
+    &:hover { border-color: #1d4ed8 !important; color: #1d4ed8 !important; background: rgb(37 99 235 / 6%) !important; }
   }
 
   /* ── 6. Panel overlays ── */
@@ -715,12 +715,12 @@ body.light-mode {
   .tab-btn {
     color: #64748b !important;
     &:hover:not(.active) { color: #1a1a2e !important; }
-    &.active { color: #2563eb !important; border-bottom-color: #2563eb !important; }
+    &.active { color: #1d4ed8 !important; border-bottom-color: #1d4ed8 !important; }
   }
 
   .tab-badge {
     background: rgb(37 99 235 / 8%) !important;
-    color: #2563eb !important;
+    color: #1d4ed8 !important;
     border-color: rgb(37 99 235 / 20%) !important;
   }
 
@@ -737,7 +737,7 @@ body.light-mode {
     &.selected { background: rgb(37 99 235 / 6%) !important; border-bottom-color: rgb(37 99 235 / 12%) !important; }
   }
 
-  .group-id, .campaign-id { color: #2563eb !important; }
+  .group-id, .campaign-id { color: #1d4ed8 !important; }
 
   /* ── 7. Buttons (general) ── */
   .clear-btn, .apply-btn, .clear-all-btn {
@@ -748,9 +748,9 @@ body.light-mode {
   }
 
   .apply-btn {
-    background: #2563eb !important;
+    background: #1d4ed8 !important;
     color: #fff !important;
-    border-color: #2563eb !important;
+    border-color: #1d4ed8 !important;
     &:hover { background: #1d4ed8 !important; }
   }
 
@@ -788,12 +788,12 @@ body.light-mode {
     box-shadow: 0 4px 16px rgb(0 0 0 / 12%) !important;
     backdrop-filter: none !important;
 
-    .tt-id { color: #2563eb !important; }
+    .tt-id { color: #1d4ed8 !important; }
     .tt-name { color: #1a1a2e !important; }
     .tt-meta { color: #64748b !important; }
     .tt-tactics { color: #94a3b8 !important; }
-    .tt-badge { background: rgb(22 163 74 / 8%) !important; color: #16a34a !important; }
-    .tt-sub-badge { background: rgb(37 99 235 / 8%) !important; color: #2563eb !important; }
+    .tt-badge { background: rgb(22 163 74 / 8%) !important; color: #166534 !important; }
+    .tt-sub-badge { background: rgb(37 99 235 / 8%) !important; color: #1d4ed8 !important; }
     .tt-exposure { background: rgb(234 88 12 / 8%) !important; color: #ea580c !important; }
   }
 
@@ -816,12 +816,12 @@ body.light-mode {
   /* ── Custom technique ── */
   .custom-technique {
     border-color: rgb(37 99 235 / 35%) !important;
-    &::after { color: #2563eb !important; }
+    &::after { color: #1d4ed8 !important; }
   }
 
   /* ── Spinner ── */
-  .spinner { border-color: rgb(0 0 0 / 8%) !important; border-top-color: #2563eb !important; }
-  .loader-spinner { border-color: rgb(0 0 0 / 8%) !important; border-top-color: #2563eb !important; }
+  .spinner { border-color: rgb(0 0 0 / 8%) !important; border-top-color: #1d4ed8 !important; }
+  .loader-spinner { border-color: rgb(0 0 0 / 8%) !important; border-top-color: #1d4ed8 !important; }
 
   .state-msg { color: #1a1a2e !important; }
   .state-hint { color: #64748b !important; }

@@ -3,7 +3,7 @@
 .gap-panel {
   width: 100%;
   max-width: 1200px;
-  background: #0d1b2a;
+  background: var(--bg-panel-strong);
   border-left: 1px solid rgba(151, 185, 211, 0.12);
   border-right: 1px solid rgba(151, 185, 211, 0.12);
   display: flex;
@@ -40,7 +40,7 @@
 
 .header-subtitle {
   font-size: 11px;
-  color: #6e8599;
+  color: var(--text-faint);
 }
 
 .header-actions {
@@ -95,7 +95,7 @@
   &.active {
     background: rgba(111, 211, 255, 0.15);
     border-color: rgba(111, 211, 255, 0.3);
-    color: #6fd3ff;
+    color: var(--accent);
   }
 }
 
@@ -107,7 +107,7 @@
 .btn-outline {
   background: transparent;
   border: 1px solid rgba(111, 211, 255, 0.25);
-  color: #6fd3ff;
+  color: var(--accent);
 
   &:hover {
     background: rgba(111, 211, 255, 0.08);
@@ -157,7 +157,7 @@
   input[type="checkbox"] {
     width: 16px;
     height: 16px;
-    accent-color: #6fd3ff;
+    accent-color: var(--accent);
   }
 }
 
@@ -184,7 +184,7 @@
   transition: border-color 0.15s;
 
   &::placeholder {
-    color: #506878;
+    color: var(--text-faint);
   }
 
   &:focus {
@@ -225,7 +225,7 @@
   input[type="checkbox"] {
     width: 14px;
     height: 14px;
-    accent-color: #6fd3ff;
+    accent-color: var(--accent);
     flex-shrink: 0;
   }
 }
@@ -236,13 +236,13 @@
 }
 
 .actor-id {
-  color: #506878;
+  color: var(--text-faint);
   font-size: 10px;
   font-family: monospace;
 }
 
 .actor-count {
-  color: #506878;
+  color: var(--text-faint);
   font-size: 10px;
   white-space: nowrap;
 }
@@ -250,7 +250,7 @@
 .selection-summary {
   padding: 8px 0;
   font-size: 12px;
-  color: #6e8599;
+  color: var(--text-faint);
 }
 
 .generate-btn {
@@ -378,7 +378,7 @@
 .gap-count {
   font-weight: 400;
   font-size: 11px;
-  color: #6e8599;
+  color: var(--text-faint);
   margin-left: 8px;
 }
 
@@ -506,7 +506,7 @@
 
 .coverage-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #2196f3, #6fd3ff);
+  background: linear-gradient(90deg, #2196f3, var(--accent));
   border-radius: 8px;
   transition: width 0.4s ease-out;
   min-width: 2px;
@@ -515,7 +515,7 @@
 .coverage-stat {
   width: 100px;
   font-size: 11px;
-  color: #6e8599;
+  color: var(--text-faint);
   text-align: right;
   flex-shrink: 0;
 }
@@ -533,7 +533,7 @@
 .tech-link {
   background: none;
   border: none;
-  color: #6fd3ff;
+  color: var(--accent);
   cursor: pointer;
   font-family: 'Consolas', 'Fira Mono', monospace;
   font-size: 12px;
@@ -575,12 +575,12 @@
 }
 
 .no-indicator {
-  color: #506878;
+  color: var(--text-faint);
 }
 
 .det-sources {
   font-size: 10px;
-  color: #6fd3ff;
+  color: var(--accent);
 }
 
 .show-more-btn {
@@ -610,11 +610,11 @@
     h2 { color: #1a1a2e; }
   }
 
-  .header-subtitle { color: #94a3b8; }
+  .header-subtitle { color: var(--text-faint); }
 
   .btn-close {
     border-color: #e2e8f0;
-    color: #64748b;
+    color: var(--text-faint);
     &:hover { background: #f1f5f9; color: #1a1a2e; }
   }
 
@@ -626,13 +626,13 @@
     &.active {
       background: rgba(37, 99, 235, 0.08);
       border-color: rgba(37, 99, 235, 0.2);
-      color: #2563eb;
+      color: var(--accent-blue);
     }
   }
 
   .btn-outline {
     border-color: rgba(37, 99, 235, 0.25);
-    color: #2563eb;
+    color: var(--accent-blue);
     background: transparent;
     &:hover { background: rgba(37, 99, 235, 0.04); }
   }
@@ -640,7 +640,7 @@
   .btn-primary {
     background: rgba(37, 99, 235, 0.1);
     border-color: rgba(37, 99, 235, 0.25);
-    color: #2563eb;
+    color: var(--accent-blue);
     &:hover { background: rgba(37, 99, 235, 0.15); }
   }
 
@@ -650,8 +650,8 @@
     background: #f8fafc;
     border-color: #e2e8f0;
     color: #1a1a2e;
-    &::placeholder { color: #94a3b8; }
-    &:focus { border-color: #2563eb; }
+    &::placeholder { color: var(--text-faint); }
+    &:focus { border-color: var(--accent-blue); }
   }
 
   .actor-list {
@@ -666,17 +666,17 @@
     &.selected { background: rgba(37, 99, 235, 0.04); color: #1a1a2e; }
   }
 
-  .actor-id, .actor-count { color: #94a3b8; }
-  .selection-summary { color: #94a3b8; }
+  .actor-id, .actor-count { color: var(--text-faint); }
+  .selection-summary { color: var(--text-faint); }
 
   .summary-card { border-color: #e2e8f0; }
   .card-blue { background: rgba(33, 150, 243, 0.06); }
   .card-green { background: rgba(76, 175, 80, 0.06); }
   .card-red { background: rgba(244, 67, 54, 0.06); }
-  .card-label { color: #64748b; }
+  .card-label { color: var(--text-faint); }
 
   .gap-table {
-    th { background: #f8fafc; color: #64748b; border-bottom-color: #e2e8f0; }
+    th { background: #f8fafc; color: var(--text-faint); border-bottom-color: #e2e8f0; }
     td { border-bottom-color: #f1f5f9; color: #334155; }
     tbody tr:hover { background: #f8fafc; }
   }
@@ -686,16 +686,16 @@
   .row-red   { background: rgba(244, 67, 54, 0.04); }
 
   .coverage-bar-track { background: #e2e8f0; }
-  .coverage-bar-fill { background: linear-gradient(90deg, #2563eb, #60a5fa); }
-  .coverage-label { color: #64748b; }
-  .coverage-stat { color: #94a3b8; }
+  .coverage-bar-fill { background: linear-gradient(90deg, var(--accent-blue), var(--accent)); }
+  .coverage-label { color: var(--text-faint); }
+  .coverage-stat { color: var(--text-faint); }
 
-  .tech-link { color: #2563eb; text-decoration-color: rgba(37, 99, 235, 0.3); &:hover { color: #1d4ed8; } }
-  .tech-name { color: #94a3b8; }
-  .rec-cell { color: #94a3b8; }
-  .det-sources { color: #2563eb; }
+  .tech-link { color: var(--accent-blue); text-decoration-color: rgba(37, 99, 235, 0.3); &:hover { color: #1d4ed8; } }
+  .tech-name { color: var(--text-faint); }
+  .rec-cell { color: var(--text-faint); }
+  .det-sources { color: var(--accent-blue); }
   .no-indicator { color: #cbd5e1; }
-  .gap-count { color: #94a3b8; }
+  .gap-count { color: var(--text-faint); }
 
   .export-footer { border-top-color: #e2e8f0; }
 }
@@ -750,7 +750,7 @@
   gap: 4px;
   background: rgba(78, 161, 255, 0.10);
   border: 1px solid rgba(78, 161, 255, 0.32);
-  color: #4ea1ff;
+  color: var(--accent);
   padding: 3px 9px;
   border-radius: 999px;
   font-size: 11px;
@@ -760,7 +760,7 @@
 
   &:hover {
     background: rgba(78, 161, 255, 0.20);
-    border-color: #4ea1ff;
+    border-color: var(--accent);
   }
 }
 

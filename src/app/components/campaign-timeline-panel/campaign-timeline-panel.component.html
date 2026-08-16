@@ -48,11 +48,10 @@
               class="gf-chip"
               [class.selected]="gf.selected"
               [style.border-color]="gf.color"
-              [style.color]="gf.selected ? gf.color : '#8b949e'"
               (click)="toggleGroupFilter(gf)"
               [title]="gf.name + ' (' + gf.count + ' campaigns)'"
             >
-              {{ gf.name }}
+              <span class="gf-dot" [style.background]="gf.color"></span>{{ gf.name }}
             </button>
           }
         </div>
@@ -84,7 +83,7 @@
         @for (bar of datedBars; track trackByBar($index, bar)) {
           <div class="timeline-row" [class.row-active]="bar.isActive">
             <div class="row-label" [title]="bar.campaign.name + ' — ' + bar.groupName">
-              <span class="row-name" [style.color]="bar.groupColor">{{ bar.campaign.name }}</span>
+              <span class="row-name">{{ bar.campaign.name }}</span>
               <span class="row-group">{{ bar.groupName }}</span>
             </div>
             <div class="row-track">
@@ -127,7 +126,6 @@
                 class="undated-chip"
                 [class.chip-selected]="bar.isActive"
                 [style.border-color]="bar.groupColor"
-                [style.color]="bar.isActive ? bar.groupColor : '#8b949e'"
                 (click)="toggleCampaign(bar)"
                 [title]="bar.campaign.name + ' — ' + bar.groupName + ' · ' + bar.techniqueCount + ' techniques'"
               >

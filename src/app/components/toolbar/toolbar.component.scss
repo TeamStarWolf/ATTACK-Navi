@@ -91,7 +91,7 @@
     font-size: 9px;
     font-weight: 800;
     letter-spacing: 0.12em;
-    color: var(--accent, #4ea1ff);
+    color: var(--accent, var(--accent));
     background: rgb(78 161 255 / 14%);
     border: 1px solid rgb(78 161 255 / 32%);
     padding: 2px 7px;
@@ -111,8 +111,8 @@
     left: 4px;
     z-index: 50;
     min-width: 320px;
-    background: var(--bg-elev, #161922);
-    border: 1px solid var(--border-subtle, #2a2f3d);
+    background: var(--bg-elev, var(--bg-panel-strong));
+    border: 1px solid var(--border-subtle, var(--border-subtle));
     border-radius: 10px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
     padding: 6px;
@@ -161,7 +161,7 @@
       margin-top: 1px;
     }
     .bm-check {
-      color: var(--accent, #4ea1ff);
+      color: var(--accent, var(--accent));
       font-size: 14px;
       font-weight: 700;
     }
@@ -356,7 +356,7 @@
   &.cve-hint-item {
     background: rgb(239 68 68 / 6%);
     border-bottom: 1px solid rgb(239 68 68 / 12%);
-    .drop-id { background: rgb(239 68 68 / 15%); color: #f87171; }
+    .drop-id { background: rgb(239 68 68 / 15%); color: var(--danger); }
     .drop-name { color: var(--text-main); font-style: italic; }
   }
 }
@@ -376,7 +376,7 @@
   outline: none;
 
   option {
-    background: #0c1828;
+    background: var(--bg-panel);
     color: var(--text-main);
   }
 
@@ -447,7 +447,7 @@
   outline: none;
 
   option {
-    background: #0c1828;
+    background: var(--bg-panel);
     color: var(--text-main);
   }
 
@@ -869,7 +869,7 @@
       background: #1d4ed8;
       color: white;
 
-      &:hover { background: #2563eb; }
+      &:hover { background: var(--accent-blue); }
       &:disabled { opacity: 0.4; cursor: default; }
     }
 

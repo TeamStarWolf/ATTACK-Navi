@@ -50,7 +50,7 @@ const KIND_COLORS: Record<GraphNode['kind'], string> = {
   mitigation:   '#3fb950',
   group:        '#f78166',
   software:     '#d2a8ff',
-  cve:          '#ffa657',
+  cve:          'var(--accent-warm)',
   campaign:     '#e3b341',
 };
 

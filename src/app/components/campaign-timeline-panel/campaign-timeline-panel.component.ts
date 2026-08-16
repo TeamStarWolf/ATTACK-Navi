@@ -37,8 +37,8 @@ interface GroupFilter {
 }
 
 const GROUP_COLORS = [
-  '#58a6ff', '#f78166', '#3fb950', '#d2a8ff', '#ffa657',
-  '#79c0ff', '#ff7b72', '#56d364', '#bc8cff', '#ffc680',
+  '#58a6ff', '#f78166', '#3fb950', '#d2a8ff', 'var(--accent-warm)',
+  '#79c0ff', 'var(--danger)', '#56d364', '#bc8cff', '#ffc680',
   '#a5d6ff', '#ffb3ae', '#7ee787', '#d0a9f5', '#ffd8a8',
 ];
 
@@ -151,7 +151,7 @@ export class CampaignTimelinePanelComponent implements OnInit, OnDestroy {
       const groupId = c.attributedGroupIds[0] ?? '';
       const group = allGroups.get(groupId);
       const groupName = group?.name ?? 'Unknown';
-      const color = this.groupColorMap.get(groupId) ?? '#8b949e';
+      const color = this.groupColorMap.get(groupId) ?? 'var(--text-muted)';
 
       // Track group counts for filters
       groupCounts.set(groupId, (groupCounts.get(groupId) ?? 0) + 1);
@@ -196,7 +196,7 @@ export class CampaignTimelinePanelComponent implements OnInit, OnDestroy {
         gfMap.set(gid, {
           id: gid,
           name: group?.name ?? 'Unknown',
-          color: this.groupColorMap.get(gid) ?? '#8b949e',
+          color: this.groupColorMap.get(gid) ?? 'var(--text-muted)',
           count: 0,
           selected: true,
         });

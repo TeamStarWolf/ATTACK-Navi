@@ -1,8 +1,8 @@
 /* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
    https://github.com/TeamStarWolf/ATTACK-Navi - MIT License */
 .custom-mit-panel {
-  background: #070d14;
-  border: 1px solid #1a3448;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
   border-radius: 10px;
   display: flex;
   flex-direction: column;
@@ -16,8 +16,8 @@
   justify-content: space-between;
   padding: 0 20px;
   height: 56px;
-  background: #040a10;
-  border-bottom: 1px solid #1a3448;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
@@ -35,7 +35,7 @@
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #c9d8e8;
+  color: var(--text-main);
 }
 
 .header-actions {
@@ -58,8 +58,8 @@
   justify-content: center;
 
   &:hover {
-    background: #1a3448;
-    color: #c9d8e8;
+    background: var(--border-subtle);
+    color: var(--text-main);
   }
 }
 
@@ -101,19 +101,19 @@
 
 .btn-ghost {
   background: transparent;
-  border-color: #1a3448;
-  color: #7395b0;
+  border-color: var(--border-subtle);
+  color: var(--text-faint);
 
   &:hover:not(:disabled) {
     background: #0f1e2e;
-    color: #c9d8e8;
+    color: var(--text-main);
   }
 }
 
 .btn-danger {
   background: transparent;
   border-color: #7f1d1d;
-  color: #f87171;
+  color: var(--danger);
 
   &:hover:not(:disabled) {
     background: #7f1d1d;
@@ -146,10 +146,10 @@
 .form-input,
 .form-select,
 .form-textarea {
-  background: #0d1a26;
-  border: 1px solid #1a3448;
+  background: var(--bg-panel-strong);
+  border: 1px solid var(--border-subtle);
   border-radius: 6px;
-  color: #c9d8e8;
+  color: var(--text-main);
   font-size: 13px;
   padding: 7px 10px;
   width: 100%;
@@ -158,7 +158,7 @@
   font-family: inherit;
 
   &::placeholder {
-    color: #2a4060;
+    color: var(--text-faint);
   }
 
   &:focus {
@@ -182,10 +182,10 @@
 }
 
 .category-filter {
-  background: #0d1a26;
-  border: 1px solid #1a3448;
+  background: var(--bg-panel-strong);
+  border: 1px solid var(--border-subtle);
   border-radius: 6px;
-  color: #c9d8e8;
+  color: var(--text-main);
   font-size: 13px;
   padding: 7px 10px;
   outline: none;
@@ -196,7 +196,7 @@
   }
 
   option {
-    background: #0d1a26;
+    background: var(--bg-panel-strong);
   }
 }
 
@@ -204,7 +204,7 @@
   cursor: pointer;
 
   option {
-    background: #0d1a26;
+    background: var(--bg-panel-strong);
   }
 }
 
@@ -228,7 +228,7 @@
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #7395b0;
+  color: var(--text-faint);
 }
 
 .empty-hint {
@@ -247,8 +247,8 @@
 }
 
 .mit-card {
-  background: #0d1a26;
-  border: 1px solid #1a3448;
+  background: var(--bg-panel-strong);
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
   padding: 14px 16px;
   display: flex;
@@ -271,7 +271,7 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
-  color: #58a6ff;
+  color: var(--accent);
   font-family: monospace;
   background: rgb(88 166 255 / 10%);
   padding: 2px 6px;
@@ -282,7 +282,7 @@
 .mit-name {
   font-size: 14px;
   font-weight: 600;
-  color: #c9d8e8;
+  color: var(--text-main);
   flex: 1;
   min-width: 0;
 }
@@ -315,7 +315,7 @@
   font-size: 11px;
   background: rgb(88 166 255 / 8%);
   border: 1px solid rgb(88 166 255 / 20%);
-  color: #58a6ff;
+  color: var(--accent);
   padding: 1px 6px;
   border-radius: 4px;
 }
@@ -362,11 +362,11 @@
 .cat-edr        { background: rgb(59 130 246 / 15%); color: #3b82f6; border: 1px solid rgb(59 130 246 / 30%); }
 .cat-siem       { background: rgb(139 92 246 / 15%); color: #8b5cf6; border: 1px solid rgb(139 92 246 / 30%); }
 .cat-network    { background: rgb(6 182 212 / 15%);  color: #06b6d4; border: 1px solid rgb(6 182 212 / 30%); }
-.cat-email      { background: rgb(245 158 11 / 15%); color: #f59e0b; border: 1px solid rgb(245 158 11 / 30%); }
+.cat-email      { background: rgb(245 158 11 / 15%); color: var(--accent-warm); border: 1px solid rgb(245 158 11 / 30%); }
 .cat-iam        { background: rgb(16 185 129 / 15%); color: #10b981; border: 1px solid rgb(16 185 129 / 30%); }
-.cat-endpoint   { background: rgb(249 115 22 / 15%); color: #f97316; border: 1px solid rgb(249 115 22 / 30%); }
+.cat-endpoint   { background: rgb(249 115 22 / 15%); color: var(--accent-warm); border: 1px solid rgb(249 115 22 / 30%); }
 .cat-identity   { background: rgb(16 185 129 / 15%); color: #10b981; border: 1px solid rgb(16 185 129 / 30%); }
-.cat-cloud      { background: rgb(100 116 139 / 15%); color: #64748b; border: 1px solid rgb(100 116 139 / 30%); }
+.cat-cloud      { background: rgb(100 116 139 / 15%); color: var(--text-faint); border: 1px solid rgb(100 116 139 / 30%); }
 .cat-custom     { background: rgb(107 114 128 / 15%); color: #9ca3af; border: 1px solid rgb(107 114 128 / 30%); }
 
 // ── Impl status badges ──────────────────────────────────
@@ -382,10 +382,10 @@
   flex-shrink: 0;
 }
 
-.impl-implemented  { background: rgb(74 222 128 / 15%); color: #4ade80; border: 1px solid rgb(74 222 128 / 30%); }
-.impl-in-progress  { background: rgb(96 165 250 / 15%); color: #60a5fa; border: 1px solid rgb(96 165 250 / 30%); }
-.impl-planned      { background: rgb(251 146 60 / 15%); color: #fb923c; border: 1px solid rgb(251 146 60 / 30%); }
-.impl-not-started  { background: rgb(248 113 113 / 15%); color: #f87171; border: 1px solid rgb(248 113 113 / 30%); }
+.impl-implemented  { background: rgb(74 222 128 / 15%); color: var(--success); border: 1px solid rgb(74 222 128 / 30%); }
+.impl-in-progress  { background: rgb(96 165 250 / 15%); color: var(--accent); border: 1px solid rgb(96 165 250 / 30%); }
+.impl-planned      { background: rgb(251 146 60 / 15%); color: var(--accent-warm); border: 1px solid rgb(251 146 60 / 30%); }
+.impl-not-started  { background: rgb(248 113 113 / 15%); color: var(--danger); border: 1px solid rgb(248 113 113 / 30%); }
 
 // ── List footer ─────────────────────────────────────────
 .list-footer {
@@ -411,7 +411,7 @@
   margin: 0 0 20px;
   font-size: 15px;
   font-weight: 600;
-  color: #c9d8e8;
+  color: var(--text-main);
 }
 
 .form-field {
@@ -429,7 +429,7 @@
 
   &.required::after {
     content: ' *';
-    color: #f87171;
+    color: var(--danger);
   }
 }
 
@@ -445,7 +445,7 @@
 }
 
 .tech-suggestions {
-  background: #0d1a26;
+  background: var(--bg-panel-strong);
   border: 1px solid #1a4a6b;
   border-radius: 6px;
   overflow: hidden;
@@ -464,7 +464,7 @@
   border: none;
   border-bottom: 1px solid #0f1e2e;
   cursor: pointer;
-  color: #c9d8e8;
+  color: var(--text-main);
 
   &:last-child {
     border-bottom: none;
@@ -479,7 +479,7 @@
   font-family: monospace;
   font-size: 12px;
   font-weight: 700;
-  color: #58a6ff;
+  color: var(--accent);
   flex-shrink: 0;
   width: 90px;
 }
@@ -497,8 +497,8 @@
   flex-wrap: wrap;
   gap: 6px;
   padding: 8px;
-  background: #070d14;
-  border: 1px solid #1a3448;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
   border-radius: 6px;
   min-height: 40px;
 }
@@ -511,7 +511,7 @@
   font-size: 12px;
   background: rgb(88 166 255 / 10%);
   border: 1px solid rgb(88 166 255 / 25%);
-  color: #58a6ff;
+  color: var(--accent);
   padding: 3px 8px;
   border-radius: 4px;
 }
@@ -528,14 +528,14 @@
   align-items: center;
 
   &:hover {
-    color: #f87171;
+    color: var(--danger);
   }
 }
 
 .no-techs-hint {
   margin: 0;
   font-size: 12px;
-  color: #2a4060;
+  color: var(--text-faint);
   font-style: italic;
 }
 
