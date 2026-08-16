@@ -50,7 +50,7 @@ $unknown: #f87171;
 
 .header-subtitle {
   font-size: 12px;
-  color: #4a6080;
+  color: var(--text-faint);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -62,7 +62,7 @@ $unknown: #f87171;
   border-radius: 6px;
   background: rgb(255 255 255 / 6%);
   border: none;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 16px;
   cursor: pointer;
   display: flex;
@@ -111,7 +111,7 @@ $unknown: #f87171;
 .selector-title {
   font-size: 10px;
   font-weight: 700;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.8px;
 }
@@ -148,7 +148,7 @@ $unknown: #f87171;
   align-items: center;
   gap: 8px;
   padding: 16px 14px;
-  color: #3a5a74;
+  color: var(--text-faint);
   font-size: 12px;
 }
 
@@ -208,13 +208,13 @@ $unknown: #f87171;
 
 .group-alias {
   font-size: 10px;
-  color: #4a6080;
+  color: var(--text-faint);
 }
 
 .no-groups {
   padding: 16px 8px;
   font-size: 12px;
-  color: #3a5a74;
+  color: var(--text-faint);
   font-style: italic;
   text-align: center;
 }
@@ -248,7 +248,7 @@ $unknown: #f87171;
 .empty-title {
   font-size: 16px;
   font-weight: 600;
-  color: #4a6080;
+  color: var(--text-faint);
 }
 
 .empty-desc {
@@ -285,7 +285,7 @@ $unknown: #f87171;
 
 .sim-sub {
   font-size: 12px;
-  color: #3a5a74;
+  color: var(--text-faint);
 }
 
 @keyframes spin {
@@ -334,7 +334,7 @@ $unknown: #f87171;
 
 .result-subtitle {
   font-size: 11px;
-  color: #3a5a74;
+  color: var(--text-faint);
   flex-shrink: 0;
 }
 
@@ -367,7 +367,7 @@ $unknown: #f87171;
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -473,7 +473,7 @@ $unknown: #f87171;
 
 .outcome-desc {
   font-size: 11px;
-  color: #4a6080;
+  color: var(--text-faint);
 }
 
 /* Score + Donut */
@@ -576,7 +576,7 @@ $unknown: #f87171;
 .score-title {
   font-size: 11px;
   font-weight: 600;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.8px;
   margin-bottom: 6px;
@@ -599,7 +599,7 @@ $unknown: #f87171;
 .score-max {
   font-size: 18px;
   font-weight: 400;
-  color: #3a5a74;
+  color: var(--text-faint);
 }
 
 .score-grade-label {
@@ -693,7 +693,7 @@ $unknown: #f87171;
   border-radius: 20px;
   border: 1px solid #1a3448;
   background: transparent;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
@@ -752,7 +752,7 @@ $unknown: #f87171;
     padding: 9px 12px;
     font-size: 10px;
     font-weight: 600;
-    color: #3a5a74;
+    color: var(--text-faint);
     text-transform: uppercase;
     letter-spacing: 0.7px;
     border-bottom: 1px solid #1a3448;
@@ -805,7 +805,7 @@ $unknown: #f87171;
 
 .tech-reasoning {
   font-size: 11px;
-  color: #4a6080;
+  color: var(--text-faint);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -853,13 +853,13 @@ $unknown: #f87171;
 
 .mit-impl  { color: #4ade80; font-weight: 700; }
 .mit-sep   { color: #2a4060; }
-.mit-total { color: #4a6080; }
+.mit-total { color: var(--text-faint); }
 .mit-zero  { color: #2a4060; }
 
 .empty-cell {
   text-align: center;
   padding: 32px;
-  color: #3a5a74;
+  color: var(--text-faint);
   font-style: italic;
 }
 
@@ -895,7 +895,7 @@ $unknown: #f87171;
 
 .plan-empty-desc {
   font-size: 13px;
-  color: #4a6080;
+  color: var(--text-faint);
   max-width: 340px;
   line-height: 1.5;
 }
@@ -963,7 +963,7 @@ $unknown: #f87171;
   justify-content: center;
   font-size: 11px;
   font-weight: 700;
-  color: #4a6080;
+  color: var(--text-faint);
   flex-shrink: 0;
 }
 
@@ -997,7 +997,7 @@ $unknown: #f87171;
 
 .plan-tactic {
   font-size: 10px;
-  color: #4a6080;
+  color: var(--text-faint);
   padding: 1px 6px;
   background: #0f1f2e;
   border-radius: 8px;
@@ -1013,7 +1013,7 @@ $unknown: #f87171;
 
 .plan-mits-avail {
   font-size: 11px;
-  color: #4a6080;
+  color: var(--text-faint);
 }
 
 .plan-actions {
@@ -1039,7 +1039,7 @@ $unknown: #f87171;
 
 .plan-mit-label {
   font-size: 9px;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -1072,7 +1072,7 @@ $unknown: #f87171;
 .plan-footer {
   padding: 14px 16px;
   font-size: 13px;
-  color: #4a6080;
+  color: var(--text-faint);
   background: #07101a;
   border-top: 1px solid #1a3448;
   margin-top: auto;
@@ -1171,7 +1171,7 @@ $unknown: #f87171;
   background: transparent;
   border: 1px solid #1a3448;
   border-radius: 6px;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 11px;
   cursor: pointer;
 
@@ -1265,7 +1265,7 @@ $unknown: #f87171;
   border-radius: 6px;
   border: 1px solid #1a3448;
   background: transparent;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 12px;
   cursor: pointer;
   white-space: nowrap;
@@ -1327,7 +1327,7 @@ $unknown: #f87171;
 .sim-summary-label {
   font-size: 10px;
   font-weight: 600;
-  color: #4a6080;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -1343,7 +1343,7 @@ $unknown: #f87171;
 .sim-section-title {
   font-size: 11px;
   font-weight: 600;
-  color: #4a6080;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.6px;
   margin-bottom: 10px;
@@ -1388,7 +1388,7 @@ $unknown: #f87171;
 .sim-tactic-pct {
   font-size: 10px;
   font-weight: 600;
-  color: #4a6080;
+  color: var(--text-faint);
   width: 36px;
   text-align: right;
   flex-shrink: 0;
@@ -1433,7 +1433,7 @@ $unknown: #f87171;
   justify-content: center;
   font-size: 10px;
   font-weight: 700;
-  color: #4a6080;
+  color: var(--text-faint);
   flex-shrink: 0;
 }
 
@@ -1463,7 +1463,7 @@ $unknown: #f87171;
 
 .sim-gap-meta {
   font-size: 10px;
-  color: #4a6080;
+  color: var(--text-faint);
 }
 
 .sim-gap-indicators {

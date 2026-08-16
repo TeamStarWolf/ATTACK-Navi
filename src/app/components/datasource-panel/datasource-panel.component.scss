@@ -37,7 +37,7 @@
 .header-subtitle {
   display: block;
   font-size: 11px;
-  color: #3a5a74;
+  color: var(--text-faint);
   margin-top: 2px;
 }
 
@@ -47,7 +47,7 @@
   border-radius: 6px;
   background: transparent;
   border: none;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 16px;
   cursor: pointer;
   display: flex;
@@ -84,7 +84,7 @@
 
 .coverage-lbl {
   font-size: 10px;
-  color: #4a6080;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -107,7 +107,7 @@
 .tab-btn {
   font-size: 11px;
   font-weight: 600;
-  color: #4a6080;
+  color: var(--text-faint);
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
@@ -173,7 +173,7 @@
   outline: none;
   box-sizing: border-box;
 
-  &::placeholder { color: #3a5a74; }
+  &::placeholder { color: var(--text-faint); }
   &:focus { border-color: #58a6ff; }
 }
 
@@ -182,7 +182,7 @@
   right: 6px;
   background: transparent;
   border: none;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 12px;
   cursor: pointer;
   padding: 2px 4px;
@@ -198,7 +198,7 @@
 
 .sort-label {
   font-size: 10px;
-  color: #3a5a74;
+  color: var(--text-faint);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -211,7 +211,7 @@
   border-radius: 10px;
   background: rgb(255 255 255 / 4%);
   border: 1px solid #1a3448;
-  color: #4a6080;
+  color: var(--text-faint);
   cursor: pointer;
   transition: all 0.12s;
 
@@ -241,7 +241,7 @@
   th {
     font-size: 9px;
     font-weight: 700;
-    color: #3a5a74;
+    color: var(--text-faint);
     text-transform: uppercase;
     letter-spacing: 0.7px;
     padding: 8px 14px;
@@ -286,7 +286,7 @@
 
 .expand-icon {
   font-size: 10px;
-  color: #4a6080;
+  color: var(--text-faint);
   flex-shrink: 0;
   transition: transform 0.15s;
 }
@@ -309,7 +309,7 @@
 
 .tech-badge {
   background: rgb(255 255 255 / 4%);
-  color: #4a6080;
+  color: var(--text-faint);
   border: 1px solid #1a3448;
 
   &.has-techs {
@@ -363,7 +363,7 @@
 
 .empty-row {
   text-align: center;
-  color: #3a5a74;
+  color: var(--text-faint);
   font-size: 12px;
   padding: 24px 0 !important;
   font-style: italic;
@@ -412,7 +412,7 @@
 .comp-source {
   display: block;
   font-size: 10px;
-  color: #4a6080;
+  color: var(--text-faint);
   margin-top: 1px;
 }
 
@@ -443,7 +443,7 @@
 
 .empty-state {
   text-align: center;
-  color: #3a5a74;
+  color: var(--text-faint);
   font-size: 12px;
   padding: 32px 0;
   font-style: italic;
@@ -457,7 +457,7 @@
   align-items: center;
   justify-content: center;
   padding: 48px 24px;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 13px;
   gap: 14px;
 }

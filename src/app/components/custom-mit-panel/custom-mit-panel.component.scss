@@ -50,7 +50,7 @@
   border-radius: 6px;
   background: transparent;
   border: none;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 16px;
   cursor: pointer;
   display: flex;
@@ -166,13 +166,13 @@
   }
 
   &[readonly] {
-    color: #4a6080;
+    color: var(--text-faint);
     cursor: default;
   }
 }
 
 .form-input-muted {
-  color: #3a5a74;
+  color: var(--text-faint);
   font-style: italic;
 }
 
@@ -234,7 +234,7 @@
 .empty-hint {
   margin: 0;
   font-size: 13px;
-  color: #3a5a74;
+  color: var(--text-faint);
   max-width: 400px;
   line-height: 1.5;
 }
@@ -305,7 +305,7 @@
 }
 
 .meta-label {
-  color: #3a5a74;
+  color: var(--text-faint);
   font-size: 11px;
   font-weight: 600;
 }
@@ -322,12 +322,12 @@
 
 .more-chip {
   font-size: 11px;
-  color: #4a6080;
+  color: var(--text-faint);
 }
 
 .no-techniques {
   font-size: 12px;
-  color: #3a5a74;
+  color: var(--text-faint);
   font-style: italic;
 }
 
@@ -391,14 +391,14 @@
 .list-footer {
   margin-top: 16px;
   font-size: 12px;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-align: right;
 }
 
 .no-results {
   padding: 24px;
   text-align: center;
-  color: #3a5a74;
+  color: var(--text-faint);
   font-size: 13px;
 }
 

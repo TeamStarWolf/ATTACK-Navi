@@ -1036,18 +1036,18 @@
   height: 30px;
   min-width: 220px;
   padding: 0 10px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-soft);
+  border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 12px;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
 }
 
 .palette-trigger:hover {
-  border-color: rgba(111, 211, 255, 0.35);
-  color: #8aaac8;
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  color: var(--text-secondary);
 }
 
 .palette-placeholder {
@@ -1059,22 +1059,10 @@
   font-family: inherit;
   font-size: 10px;
   padding: 1px 6px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--border-default);
   border-radius: 4px;
-  color: #4a6080;
-  background: rgba(255, 255, 255, 0.03);
-}
-
-:host-context(body.light-mode) .palette-trigger {
-  background: #fff;
-  border-color: #e2e8f0;
-  color: #64748b;
-}
-
-:host-context(body.light-mode) .palette-kbd {
-  border-color: #e2e8f0;
-  background: #f8fafc;
-  color: #64748b;
+  color: var(--text-faint);
+  background: var(--bg-soft);
 }
 
 /* === Mobile: single scrollable row instead of a 2.4-row wrap === */

@@ -41,7 +41,7 @@
 
 .header-subtitle {
   font-size: 12px;
-  color: #4a6080;
+  color: var(--text-faint);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -53,7 +53,7 @@
   border-radius: 6px;
   background: rgb(255 255 255 / 6%);
   border: none;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 16px;
   cursor: pointer;
   display: flex;
@@ -100,7 +100,7 @@
 .vs-badge {
   font-size: 11px;
   font-weight: 800;
-  color: #3a5a74;
+  color: var(--text-faint);
   letter-spacing: 1px;
   flex-shrink: 0;
   padding: 0 4px;
@@ -125,7 +125,7 @@
   box-sizing: border-box;
   transition: border-color 0.15s;
 
-  &::placeholder { color: #3a5a74; }
+  &::placeholder { color: var(--text-faint); }
 
   &:focus { border-color: #58a6ff; }
 }
@@ -180,7 +180,7 @@
   padding: 12px;
   text-align: center;
   font-size: 12px;
-  color: #3a5a74;
+  color: var(--text-faint);
   font-style: italic;
 }
 
@@ -234,7 +234,7 @@
   border-radius: 4px;
   background: transparent;
   border: none;
-  color: #3a5a74;
+  color: var(--text-faint);
   font-size: 12px;
   cursor: pointer;
   display: flex;
@@ -300,7 +300,7 @@
 
 .prompt-hint {
   font-size: 13px;
-  color: #4a6080;
+  color: var(--text-faint);
   max-width: 420px;
   line-height: 1.5;
   margin: 0;
@@ -354,7 +354,7 @@
 
 .stat-label {
   font-size: 10px;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -420,7 +420,7 @@
 
 .venn-caption {
   font-size: 9px;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -442,7 +442,7 @@
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
@@ -557,7 +557,7 @@
     padding: 10px 12px;
     font-size: 10px;
     font-weight: 600;
-    color: #3a5a74;
+    color: var(--text-faint);
     text-transform: uppercase;
     letter-spacing: 0.8px;
     border-bottom: 1px solid #1a3448;
@@ -633,7 +633,7 @@
   padding: 1px 6px;
   border-radius: 8px;
   background: #0f1f2e;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 9px;
   white-space: nowrap;
 }
@@ -664,7 +664,7 @@
 .empty-state {
   padding: 48px 24px;
   text-align: center;
-  color: #4a6080;
+  color: var(--text-faint);
   font-size: 13px;
   font-style: italic;
   flex: 1;
@@ -730,7 +730,7 @@
 .matrix-tactic-header {
   font-size: 9px;
   font-weight: 700;
-  color: #3a5a74;
+  color: var(--text-faint);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   text-align: center;
@@ -785,7 +785,7 @@
 .empty-matrix {
   padding: 48px 32px;
   text-align: center;
-  color: #3a5a74;
+  color: var(--text-faint);
   font-size: 13px;
   font-style: italic;
 }
