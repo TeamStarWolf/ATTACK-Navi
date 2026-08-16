@@ -33,7 +33,16 @@ interface SearchResult {
   url?: string;
   score: number;
   data?: any;
+  /** [start, end) ranges of the query match within `name`, for highlighting. */
+  nameMatch?: [number, number] | null;
 }
+
+/** Frecency store: how often + how recently each result was chosen. */
+interface FrecencyEntry { count: number; last: number; }
+const FRECENCY_KEY = 'palette-frecency-v1';
+const FRECENCY_MAX_ENTRIES = 200;
+/** Half-life of the recency boost: ~7 days. */
+const FRECENCY_HALF_LIFE_MS = 7 * 24 * 60 * 60 * 1000;
 
 @Component({
   selector: 'app-universal-search',
@@ -84,7 +93,13 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.subs.add(this.palette.open$.subscribe(open => {
       this.open = open;
-      if (!this.open) { this.query = ''; this.results = []; }
+      if (!this.open) {
+        this.query = '';
+        this.results = [];
+      } else {
+        // Freshly opened with an empty box: offer recent destinations.
+        this.runSearch('');
+      }
       this.cdr.markForCheck();
     }));
     this.subs.add(this.dataService.domain$.subscribe(d => { this.domain = d; }));
@@ -94,6 +109,104 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
   onInput(): void {
     this.activeResultIndex = -1;
     this.search$.next(this.query);
+  }
+
+  // ── Frecency (frequent + recent selections rank higher) ─────────────────
+
+  private frecency: Record<string, FrecencyEntry> = this.loadFrecency();
+
+  private loadFrecency(): Record<string, FrecencyEntry> {
+    try {
+      return JSON.parse(localStorage.getItem(FRECENCY_KEY) ?? '{}');
+    } catch {
+      return {};
+    }
+  }
+
+  private frecencyBoost(kind: ResultKind, id: string): number {
+    const entry = this.frecency[`${kind}:${id}`];
+    if (!entry) return 0;
+    // Up to +30 for a frequently used item, decaying with ~7-day half-life —
+    // enough to break ties and float favorites, never enough to beat an
+    // exact-match score (100).
+    const decay = Math.pow(2, -(Date.now() - entry.last) / FRECENCY_HALF_LIFE_MS);
+    return Math.min(30, entry.count * 6) * decay;
+  }
+
+  private recordUse(r: SearchResult): void {
+    const key = `${r.kind}:${r.id}`;
+    const entry = this.frecency[key] ?? { count: 0, last: 0 };
+    entry.count += 1;
+    entry.last = Date.now();
+    this.frecency[key] = entry;
+    const keys = Object.keys(this.frecency);
+    if (keys.length > FRECENCY_MAX_ENTRIES) {
+      // Evict the stalest, least-used entries.
+      keys
+        .sort((a, b) => (this.frecency[a].count - this.frecency[b].count) || (this.frecency[a].last - this.frecency[b].last))
+        .slice(0, keys.length - FRECENCY_MAX_ENTRIES)
+        .forEach(k => delete this.frecency[k]);
+    }
+    try {
+      localStorage.setItem(FRECENCY_KEY, JSON.stringify(this.frecency));
+    } catch { /* storage unavailable */ }
+  }
+
+  /** With an empty query, surface the user's most-frecent destinations. */
+  private buildRecentResults(): SearchResult[] {
+    const entries = Object.entries(this.frecency)
+      .sort((a, b) => (this.frecencyBoostFromEntry(b[1])) - (this.frecencyBoostFromEntry(a[1])))
+      .slice(0, 10);
+    const out: SearchResult[] = [];
+    for (const [key] of entries) {
+      const sep = key.indexOf(':');
+      const kind = key.slice(0, sep) as ResultKind;
+      const id = key.slice(sep + 1);
+      const resolved = this.resolveResult(kind, id);
+      if (resolved) out.push(resolved);
+    }
+    return out;
+  }
+
+  private frecencyBoostFromEntry(entry: FrecencyEntry): number {
+    const decay = Math.pow(2, -(Date.now() - entry.last) / FRECENCY_HALF_LIFE_MS);
+    return Math.min(30, entry.count * 6) * decay;
+  }
+
+  /** Rebuild a SearchResult for a frecency key (recent-items list). */
+  private resolveResult(kind: ResultKind, id: string): SearchResult | null {
+    if (kind === 'nav') {
+      const nav = NAV_COMMANDS.find(n => n.panelId === id);
+      return nav ? { kind, id, name: nav.label, description: `Go to ${nav.workspace}`, score: 0, data: nav } : null;
+    }
+    if (kind === 'action') {
+      const action = ACTION_COMMANDS.find(a => a.id === id);
+      return action ? { kind, id, name: action.label, description: action.description, score: 0, data: action } : null;
+    }
+    if (!this.domain) return null;
+    if (kind === 'technique') {
+      const t = this.domain.techniques.find(x => x.attackId === id);
+      return t ? { kind, id, name: t.name, description: t.description?.substring(0, 100), url: t.url, score: 0, data: t } : null;
+    }
+    if (kind === 'mitigation') {
+      const m = this.domain.mitigations.find(x => x.attackId === id);
+      return m ? { kind, id, name: m.name, description: m.description?.substring(0, 100), url: m.url, score: 0, data: m } : null;
+    }
+    if (kind === 'group') {
+      const g = this.domain.groups.find(x => x.attackId === id);
+      return g ? { kind, id, name: g.name, description: (g.aliases ?? []).join(', '), score: 0, data: g } : null;
+    }
+    if (kind === 'software') {
+      const s = this.domain.software.find(x => x.attackId === id);
+      return s ? { kind, id, name: s.name, description: s.description?.substring(0, 80), score: 0, data: s } : null;
+    }
+    return null; // other kinds aren't resolvable without a query
+  }
+
+  /** [start, end) of the query within name, for match highlighting. */
+  private matchRange(q: string, name: string): [number, number] | null {
+    const idx = name.toLowerCase().indexOf(q);
+    return idx >= 0 ? [idx, idx + q.length] : null;
   }
 
   /** Subsequence fuzzy match: checks if all chars of query appear in order in text */
@@ -141,7 +254,14 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
   }
 
   private runSearch(q: string): void {
-    if (!q || q.length < 2) { this.results = []; this.activeResultIndex = -1; this.cdr.markForCheck(); return; }
+    if (!q) {
+      // Empty palette: show the user's most-used destinations.
+      this.results = this.buildRecentResults();
+      this.activeResultIndex = -1;
+      this.cdr.markForCheck();
+      return;
+    }
+    if (q.length < 2) { this.results = []; this.activeResultIndex = -1; this.cdr.markForCheck(); return; }
     const ql = q.toLowerCase();
     const results: SearchResult[] = [];
 
@@ -231,7 +351,12 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
       results.push({ kind: 'cve', id: m.cveId, name: m.cveId, description: desc, url: `https://nvd.nist.gov/vuln/detail/${m.cveId}`, score: Math.max(score, 50), data: m });
     }
 
-    this.results = results.sort((a, b) => b.score - a.score).slice(0, 60);
+    // Frecency: recently/frequently chosen items float upward, then compute
+    // match-highlight ranges for what survives the cut.
+    this.results = results
+      .sort((a, b) => (b.score + this.frecencyBoost(b.kind, b.id)) - (a.score + this.frecencyBoost(a.kind, a.id)))
+      .slice(0, 60)
+      .map(r => ({ ...r, nameMatch: this.matchRange(ql, r.name) }));
     this.activeResultIndex = -1;
     this.cdr.markForCheck();
   }
@@ -258,6 +383,7 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
   }
 
   selectResult(r: SearchResult): void {
+    this.recordUse(r);
     if (r.kind === 'nav') {
       this.panelNav.open(r.id);
       this.close();
