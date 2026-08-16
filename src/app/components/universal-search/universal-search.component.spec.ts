@@ -83,6 +83,7 @@ describe('UniversalSearchComponent', () => {
 
   it('records selections and boosts them in later searches (frecency)', () => {
     localStorage.removeItem('palette-frecency-v1');
+    (component as any).frecency = {}; // reset the in-memory store too (loaded at construction)
     // Choose the export-csv action twice
     component.selectResult({ kind: 'action', id: 'export-csv', name: 'Export coverage CSV', score: 0 } as any);
     component.selectResult({ kind: 'action', id: 'export-csv', name: 'Export coverage CSV', score: 0 } as any);
