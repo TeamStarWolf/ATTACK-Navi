@@ -7,7 +7,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { DataService } from '../../services/data.service';
@@ -30,7 +30,7 @@ export type SiemExportTab = 'export' | 'library';
 @Component({
   selector: 'app-siem-export',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './siem-export.component.html',
   styleUrl: './siem-export.component.scss',

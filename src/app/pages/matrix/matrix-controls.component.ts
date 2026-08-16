@@ -7,7 +7,7 @@ import {
   OnDestroy,
   OnInit,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { Mitigation } from '../../models/mitigation';
@@ -28,7 +28,7 @@ import { PLATFORM_PILLS } from '../../components/toolbar/toolbar.component';
 @Component({
   selector: 'app-matrix-controls',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './matrix-controls.component.html',
   styleUrl: './matrix-controls.component.scss',

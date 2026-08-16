@@ -7,7 +7,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { Subscription, combineLatest } from 'rxjs';
 import { Mitigation } from '../../models/mitigation';
@@ -38,7 +38,7 @@ interface PriorityRow {
 @Component({
   selector: 'app-priority-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './priority-panel.component.html',
   styleUrl: './priority-panel.component.scss',

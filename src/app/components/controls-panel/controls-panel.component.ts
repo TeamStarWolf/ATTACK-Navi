@@ -7,7 +7,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { combineLatest, Subscription } from 'rxjs';
 import { SecurityControl, ControlFramework, ControlStatus, FRAMEWORK_TEMPLATES, FrameworkTemplate } from '../../models/security-control';
@@ -35,7 +35,7 @@ interface MitigationRow {
 @Component({
   selector: 'app-controls-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './controls-panel.component.html',
   styleUrl: './controls-panel.component.scss',
