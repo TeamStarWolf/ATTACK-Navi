@@ -55,9 +55,9 @@ describe('ToolbarComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should render domain buttons', () => {
+  it('should render domain buttons (Enterprise, ICS, Mobile, F3)', () => {
     const domainBtns = fixture.nativeElement.querySelectorAll('.domain-btn');
-    expect(domainBtns.length).toBe(3);
+    expect(domainBtns.length).toBe(4);
   });
 
   it('should emit domainChange when domain button clicked', () => {
