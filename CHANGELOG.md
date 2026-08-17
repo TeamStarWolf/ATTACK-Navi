@@ -2,6 +2,50 @@
 
 All notable changes to ATTACK-Navi are documented here.
 
+## v0.10.0 — Clean Professional Makeover, Fraud Domain & CTEM (2026-08-16)
+
+### The new look: Clean Professional
+- **Full UI makeover** — a light-first, zinc-neutral design system across every
+  workspace. Inter typography, a 210px labeled sidebar (icons + names, no more
+  guessing), a flat 54px toolbar, and crisp 8px-radius technique cells on a
+  clean matrix card.
+- **Light mode is now the default** for new users; your stored theme choice
+  still wins. Tactic identity moved from heavy colored headers to a subtle
+  3px color strip on neutral headers — the heatmap is the star, not the chrome.
+- **Navy purge** — four detox rounds (~2,400 hardcoded colors migrated to
+  design tokens) eliminated every remnant of the old navy/glass theme:
+  panel chrome, sidebar drawer, dashboard, tooltips, scrollbars, and the
+  glass-gradient utility layer are all flat token surfaces now.
+
+### Every tab verified readable, both themes
+- An automated review tool (`tools/theme-contrast-sweep.mjs`) loads all 46
+  routes in both themes and runs a leftover-navy detector plus an axe
+  color-contrast scan: **0 contrast failures across all 92 page/theme
+  combinations**.
+- Dozens of fixes along the way: white-alpha text invisible in light mode,
+  opacity-washed labels, dark-palette literals on white widgets, group colors
+  used as text (campaign chips now carry a color swatch instead), and
+  black-on-accent active tabs.
+
+### F3 Fraud Framework (4th domain)
+- CTID's **F3 Fraud Framework** joins Enterprise, ICS, and Mobile as a full
+  domain: 123 fraud techniques across 8 tactics, loaded live from the
+  Center for Threat-Informed Defense with a bundled snapshot fallback,
+  covered by the monthly data-refresh automation.
+
+### CTEM program board
+- New **Exposure → CTEM** page maps your live program data onto Gartner's
+  five Continuous Threat Exposure Management stages (Scoping, Discovery,
+  Prioritization, Validation, Mobilization) — every metric computed from
+  real services (assets, KEV exposure, CVE mappings, implementation
+  statuses, validation runs, snapshots) with deep links into the relevant
+  workspace. The stage framing is labeled as curated.
+
+### Engineering
+- **Angular 21** (from 19) — two major versions, zero regressions.
+- Theme/contrast sweep kept as a maintained tool; visual regression
+  baselines refreshed. 663 unit / 29 e2e / 6 visual tests green.
+
 ## v0.9.0 — Instant Loading, Accessibility & Analyst Quality-of-Life (2026-08-16)
 
 ### Performance & data freshness
