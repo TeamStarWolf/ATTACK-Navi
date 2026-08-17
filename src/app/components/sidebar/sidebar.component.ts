@@ -96,6 +96,22 @@ export class SidebarComponent implements OnInit, OnDestroy {
   open = false;
   isCustomTechnique = false;
   mitSearchText = '';
+
+  /**
+   * F3 fraud-domain origin of the selected technique. CTID marks techniques
+   * borrowed from ATT&CK with T-ids (their isAttack flag matches the T-prefix
+   * 1:1 in the published matrix data); fraud-native techniques carry F-ids.
+   */
+  get f3Origin(): 'native' | 'shared' | null {
+    if (!this.technique || this.dataService.getCurrentAttackDomain() !== 'f3') return null;
+    return this.technique.attackId.startsWith('T') ? 'shared' : 'native';
+  }
+
+  /** attack.mitre.org page for an F3 technique shared with ATT&CK (T1586.004 → /techniques/T1586/004/). */
+  get sharedAttackUrl(): string {
+    const id = this.technique?.attackId ?? '';
+    return 'https://attack.mitre.org/techniques/' + id.replace('.', '/') + '/';
+  }
   // showRelGraph, showDetection, showProcedures, showSubtechniques
   // now use isSectionCollapsed('relgraph'), etc. via collapsedSections Set
   descExpanded = false;

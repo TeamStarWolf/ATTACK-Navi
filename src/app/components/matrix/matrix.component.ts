@@ -1648,6 +1648,14 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
         return this.getRelativeHeatColor(this.getKillChainScore(tech), this.maxKillChainScore, '#0e0a1a', ['#2d1a5e', '#5a2d8b', '#7b3faa', '#9c5cc5']);
       case 'poc-exploits':
         return this.getRelativeHeatColor(this.getPocScore(tech), this.maxPocScore, '#1a0e0a', ['#5c2a0a', '#a84a1a', '#d96a2a', '#ff8c3a']);
+      case 'f3-origin': {
+        // Shared-with-ATT&CK (T-id) vs fraud-native (F-id); T-prefix = CTID's isAttack flag.
+        const shared = tech.attackId.startsWith('T');
+        if (this.settingsService.current.colorblindSafe) {
+          return shared ? '#0072b2' : '#cc79a7';
+        }
+        return shared ? '#1565c0' : '#6a1b9a';
+      }
       default:
         return '#1a2a3a';
     }
