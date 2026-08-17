@@ -68,6 +68,7 @@ export class AssessmentWizardComponent implements OnDestroy {
     { value: 'enterprise', label: 'Enterprise', desc: 'Windows, macOS, Linux, Cloud, Network — the most comprehensive ATT&CK matrix covering corporate IT environments.' },
     { value: 'ics', label: 'ICS', desc: 'Industrial Control Systems — covers SCADA, PLCs, and operational technology environments.' },
     { value: 'mobile', label: 'Mobile', desc: 'Android and iOS — techniques targeting mobile devices and applications.' },
+    { value: 'f3', label: 'F3 Fraud Framework', desc: 'CTID\'s Fight Financial Fraud framework — fraud techniques plus the ATT&CK techniques fraud actors reuse. CTID publishes no mitigation mappings yet, so coverage scoring relies on your own statuses.' },
   ];
 
   // Step 2 — Threat profile

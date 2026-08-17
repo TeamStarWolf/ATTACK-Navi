@@ -40,12 +40,13 @@
 .workspace-tabs {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--space-1);
   margin-left: var(--space-4);
-  overflow-x: auto;
-  scrollbar-width: none;
-
-  &::-webkit-scrollbar { display: none; }
+  /* Tabs must never hide: this bar once scrolled horizontally with the
+     scrollbar suppressed, which silently clipped Coverage's 8th tab at
+     ~1200px — wrap to a second row instead. */
+  min-width: 0;
 }
 
 .ws-tab {
