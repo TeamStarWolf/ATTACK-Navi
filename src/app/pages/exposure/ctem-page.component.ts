@@ -17,6 +17,10 @@ interface CtemStage {
   question: string;
   metrics: { label: string; value: string | number }[];
   links: { label: string; route: string[] }[];
+  /** Ranked drill-down rows (e.g. top KEV-exposed techniques). */
+  list?: { heading: string; rows: { primary: string; secondary: string; route: string[]; params?: Record<string, string> }[] };
+  /** Status distribution chips (e.g. validation outcomes). */
+  chips?: { label: string; count: number; cls: string }[];
 }
 
 /**
@@ -50,6 +54,9 @@ export class CtemPageComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    // KEV loads lazily; without this the Discovery/Prioritization numbers sit
+    // at 0 until the user happens to visit a KEV-loading page first.
+    this.cveService.loadKev();
     this.subs.add(
       combineLatest([
         this.dataService.domain$,
@@ -68,6 +75,42 @@ export class CtemPageComponent implements OnInit, OnDestroy {
         const lastRun = runs.length ? new Date(Math.max(...runs.map(r => +new Date(r.runDate ?? 0)))) : null;
         const lastSnap = snapshots.length ? snapshots[snapshots.length - 1] : null;
 
+        // Top techniques by CISA KEV exposure, resolved against the loaded domain.
+        const byAttackId = new Map((domain?.techniques ?? []).map(t => [t.attackId, t]));
+        const topKev = [...kevTechScores.entries()]
+          .filter(([id]) => byAttackId.has(id))
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5)
+          .map(([id, score]) => ({
+            primary: `${id} ${byAttackId.get(id)!.name}`,
+            secondary: `${score} KEV CVE${score === 1 ? '' : 's'}`,
+            route: ['/matrix'],
+            params: { tech: id },
+          }));
+
+        // Validation outcome distribution across recorded runs.
+        const valCounts = new Map<string, number>();
+        for (const r of runs) valCounts.set(r.status, (valCounts.get(r.status) ?? 0) + 1);
+        const valChips = [
+          { label: 'passed', cls: 'chip-pass' },
+          { label: 'partial', cls: 'chip-warn' },
+          { label: 'failed', cls: 'chip-fail' },
+          { label: 'no-telemetry', cls: 'chip-mute' },
+        ].filter(c => (valCounts.get(c.label) ?? 0) > 0)
+          .map(c => ({ ...c, count: valCounts.get(c.label)! }));
+
+        // Coverage trend: latest snapshot vs the one before it.
+        const prevSnap = snapshots.length >= 2 ? snapshots[snapshots.length - 2] : null;
+        const trend = lastSnap && prevSnap
+          ? `${prevSnap.coveragePct}% → ${lastSnap.coveragePct}%`
+          : lastSnap ? `${lastSnap.coveragePct}% (first snapshot)` : '—';
+
+        // F3 domain: native-vs-shared split. The T-prefix rule is CTID's own
+        // isAttack flag (verified 1:1 against their published matrix data).
+        const isF3 = this.dataService.getCurrentAttackDomain() === 'f3';
+        const f3Shared = isF3 ? (domain?.techniques ?? []).filter(t => t.attackId.startsWith('T')).length : 0;
+        const f3Native = isF3 ? (domain?.techniques ?? []).length - f3Shared : 0;
+
         this.stages = [
           {
             n: 1, name: 'Scoping',
@@ -77,6 +120,7 @@ export class CtemPageComponent implements OnInit, OnDestroy {
               { label: 'Techniques in scope', value: parents.length },
               { label: 'Platforms represented', value: platforms },
               { label: 'Assets inventoried', value: assets.length },
+              ...(isF3 ? [{ label: 'Fraud-native · shared with ATT&CK', value: `${f3Native} · ${f3Shared}` }] : []),
             ],
             links: [
               { label: 'Asset inventory', route: ['/coverage', 'assets'] },
@@ -104,6 +148,9 @@ export class CtemPageComponent implements OnInit, OnDestroy {
               { label: 'Mitigations not started', value: counts['not-started'] },
               { label: 'Mitigations in progress', value: counts['in-progress'] },
             ],
+            list: topKev.length
+              ? { heading: 'Top KEV-exposed techniques (CISA)', rows: topKev }
+              : undefined,
             links: [
               { label: 'Priority ranking', route: ['/exposure', 'priority'] },
               { label: 'Gap analysis', route: ['/exposure', 'gap-analysis'] },
@@ -116,6 +163,7 @@ export class CtemPageComponent implements OnInit, OnDestroy {
               { label: 'Validation runs recorded', value: runs.length },
               { label: 'Last validation', value: lastRun ? lastRun.toLocaleDateString() : 'never' },
             ],
+            chips: valChips.length ? valChips : undefined,
             links: [
               { label: 'Detection validation', route: ['/detect', 'validation'] },
               { label: 'Purple team planner', route: ['/detect', 'purple-team'] },
@@ -129,6 +177,7 @@ export class CtemPageComponent implements OnInit, OnDestroy {
               { label: 'Planned next', value: counts['planned'] },
               { label: 'Coverage snapshots', value: snapshots.length },
               { label: 'Last snapshot', value: lastSnap ? lastSnap.label : 'none yet' },
+              { label: 'Coverage trend', value: trend },
             ],
             links: [
               { label: 'Remediation roadmap', route: ['/library', 'roadmap'] },

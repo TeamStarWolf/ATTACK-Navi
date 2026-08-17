@@ -320,6 +320,14 @@ const MODE_CONFIGS: Record<HeatmapMode, LegendConfig> = {
       { color: '#ff8c3a', label: '11+' },
     ],
   },
+  'f3-origin': {
+    label: 'F3 Origin',
+    categorical: true,
+    stops: [
+      { color: '#1565c0', label: 'shared w/ ATT&CK' },
+      { color: '#6a1b9a', label: 'fraud-native' },
+    ],
+  },
 };
 
 @Component({
@@ -367,6 +375,11 @@ export class LegendComponent implements OnInit, OnDestroy {
     if (this.heatmapMode === 'controls') {
       const order = ['none', 'planned', 'covered'];
       return { ...base, stops: base.stops.map((s, i) => ({ ...s, color: SAFE_CONTROLS[order[i]] ?? s.color })) };
+    }
+    if (this.heatmapMode === 'f3-origin') {
+      // Okabe-Ito blue / reddish purple, mirroring the cell renderer.
+      const safe = ['#0072b2', '#cc79a7'];
+      return { ...base, stops: base.stops.map((s, i) => ({ ...s, color: safe[i] ?? s.color })) };
     }
     if (this.heatmapMode === 'coverage' || this.heatmapMode === 'unified') {
       const ramp = this.heatmapMode === 'coverage'
