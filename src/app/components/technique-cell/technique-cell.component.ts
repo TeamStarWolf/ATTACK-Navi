@@ -294,6 +294,8 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
       this.bgColor = this.computeRelativeColor(this.killChainScore, this.maxKillChainScore, '#0e0a1a', ['#2d1a5e', '#5a2d8b', '#7b3faa', '#9c5cc5']);
     } else if (this.heatmapMode === 'poc-exploits') {
       this.bgColor = this.computeRelativeColor(this.pocScore, this.maxPocScore, '#1a0e0a', ['#5c2a0a', '#a84a1a', '#d96a2a', '#ff8c3a']);
+    } else if (this.heatmapMode === 'f3-origin') {
+      this.bgColor = this.computeF3OriginColor();
     } else {
       this.bgColor = this.computeColor(this.technique.mitigationCount);
     }
@@ -361,6 +363,19 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
 
   private computeRiskColor(score: number, max: number): string {
     return this.computeRelativeColor(score, max, '#eceff1', ['#ff7043', '#e53935', '#b71c1c', '#4a0000']);
+  }
+
+  /**
+   * F3 domain origin: shared-with-ATT&CK (T-id) vs fraud-native (F-id).
+   * The T-prefix rule IS CTID's isAttack flag — verified 1:1 against their
+   * published matrix data (fight-fraud-framework f3-v1.1.json).
+   */
+  private computeF3OriginColor(): string {
+    const shared = this.technique.attackId.startsWith('T');
+    if (this.settingsService.current.colorblindSafe) {
+      return shared ? '#0072b2' : '#cc79a7'; // Okabe-Ito blue / reddish purple
+    }
+    return shared ? '#1565c0' : '#6a1b9a';
   }
 
   private computeStatusColor(status: ImplStatus | null): string {

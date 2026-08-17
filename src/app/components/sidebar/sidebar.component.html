@@ -56,6 +56,26 @@
           }
         </div>
 
+        @if (f3Origin === 'shared') {
+          <div class="f3-origin f3-shared">
+            <span class="f3-origin-badge">Shared with ATT&amp;CK</span>
+            <span class="f3-origin-text">
+              F3 includes this ATT&CK technique as fraud-relevant. Detection and intel sections
+              below (Sigma, Atomic, CVE, D3FEND…) key off the same {{ technique.attackId }} and apply here.
+            </span>
+            <a class="f3-origin-link" [href]="sharedAttackUrl" target="_blank" rel="noopener">View on attack.mitre.org ↗</a>
+          </div>
+        } @else if (f3Origin === 'native') {
+          <div class="f3-origin f3-native">
+            <span class="f3-origin-badge">Fraud-native</span>
+            <span class="f3-origin-text">
+              Defined by CTID's F3 framework ({{ technique.attackId }}). CTID does not yet publish
+              mitigation, group, or detection mappings for fraud-native techniques, so those
+              sections below are honestly empty.
+            </span>
+          </div>
+        }
+
         <div class="meta-row">
           @if (technique.platforms.length > 0) {
             <div class="meta-item">

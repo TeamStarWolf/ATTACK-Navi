@@ -176,6 +176,48 @@
   background: var(--bg-panel);
 }
 
+/* F3 fraud-domain origin banner (native F-id vs shared ATT&CK T-id) */
+.f3-origin {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-panel-strong);
+
+  &.f3-shared { border-left: 3px solid var(--accent); }
+  &.f3-native { border-left: 3px solid var(--accent-purple); }
+}
+
+.f3-origin-badge {
+  align-self: flex-start;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+
+  .f3-shared & { color: var(--accent); }
+  .f3-native & { color: var(--accent-purple); }
+}
+
+.f3-origin-text {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.f3-origin-link {
+  align-self: flex-start;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+
+  &:hover { text-decoration: underline; }
+}
+
 .meta-row {
   margin-bottom: 14px;
   display: flex;

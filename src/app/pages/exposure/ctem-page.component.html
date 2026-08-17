@@ -29,6 +29,24 @@
             </div>
           }
         </dl>
+        @if (stage.chips; as chips) {
+          <div class="stage-chips">
+            @for (c of chips; track c.label) {
+              <span class="val-chip" [class]="'val-chip ' + c.cls">{{ c.count }} {{ c.label }}</span>
+            }
+          </div>
+        }
+        @if (stage.list; as list) {
+          <div class="stage-list">
+            <div class="stage-list-heading">{{ list.heading }}</div>
+            @for (row of list.rows; track row.primary) {
+              <a class="stage-list-row" [routerLink]="row.route" [queryParams]="row.params ?? null">
+                <span class="row-primary">{{ row.primary }}</span>
+                <span class="row-secondary">{{ row.secondary }}</span>
+              </a>
+            }
+          </div>
+        }
         <div class="stage-links">
           @for (l of stage.links; track l.label) {
             <a class="stage-link" [routerLink]="l.route" queryParamsHandling="preserve">{{ l.label }} →</a>

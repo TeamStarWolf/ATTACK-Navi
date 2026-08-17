@@ -57,6 +57,7 @@ export const HEATMAP_MODES: readonly HeatmapModeDef[] = [
   { value: 'cri',           label: '🏦 CRI Profile',   short: 'CRI',       group: 'Frameworks' },
   { value: 'csa-ccm',       label: '☁ CSA CCM',       short: 'CSA CCM',   group: 'Frameworks' },
   { value: 'm365-controls', label: '🔷 M365 Controls', short: 'M365 Ctl',  group: 'Frameworks' },
+  { value: 'f3-origin',     label: '⚖ F3 Origin',     short: 'F3 Origin', group: 'Frameworks' },
 ] as const;
 
 export const HEATMAP_GROUPS = ['Coverage & Posture', 'Threat Landscape', 'Vulnerabilities', 'Detections', 'Frameworks'] as const;
