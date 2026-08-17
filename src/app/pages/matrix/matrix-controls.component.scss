@@ -15,9 +15,11 @@
   padding: 6px 10px;
   background: color-mix(in srgb, var(--bg-base) 60%, transparent);
   border-bottom: 1px solid var(--border-subtle);
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: thin;
+  /* Must stay overflow-visible: the heatmap dropdown is position:absolute
+     inside this bar, and overflow-x:auto was scissoring it to the bar's
+     height — the menu opened in the DOM but painted nothing. Narrow
+     viewports wrap to a second row instead of scrolling. */
+  flex-wrap: wrap;
 }
 
 .controls-divider {
@@ -179,15 +181,30 @@
   position: absolute;
   top: calc(100% + 4px);
   right: 0;
-  width: 420px;
-  max-height: 70vh;
+  /* Wide two-column layout: with 32 modes a single 420px column ran ~600px
+     tall and hid most options behind a near-invisible scroll on short
+     windows. Two columns keep everything on screen at once. */
+  width: 660px;
+  max-width: calc(100vw - 24px);
+  max-height: 85vh;
   overflow-y: auto;
   background: var(--bg-surface);
   border: 1px solid var(--border-default);
   border-radius: 10px;
   box-shadow: var(--shadow-lg);
   z-index: 300;
-  padding: 10px;
+  padding: 12px;
+}
+
+.heatmap-groups {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 18px;
+  align-items: start;
+
+  @media (width <= 720px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .views-menu-header {
@@ -201,7 +218,7 @@
 
 .heatmap-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 4px;
   margin-bottom: 6px;
 }

@@ -125,33 +125,39 @@
     </button>
     @if (showViewMenu) {
       <div class="views-menu view-panel" (click)="$event.stopPropagation()">
-        @for (group of heatmapGroups; track group) {
-          <div class="views-menu-header">{{ group }}</div>
-          <div class="heatmap-grid">
-            @for (m of modesForGroup(group); track m.value) {
-              <button class="heatmap-mode-btn" [class.active]="heatmapMode === m.value" (click)="setHeatmap(m.value)">
-                {{ m.label }}
+        <div class="heatmap-groups">
+          @for (group of heatmapGroups; track group) {
+            <div class="heatmap-group">
+              <div class="views-menu-header">{{ group }}</div>
+              <div class="heatmap-grid">
+                @for (m of modesForGroup(group); track m.value) {
+                  <button class="heatmap-mode-btn" [class.active]="heatmapMode === m.value" (click)="setHeatmap(m.value)">
+                    {{ m.label }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+          <div class="heatmap-group">
+            <div class="views-menu-header">Matrix</div>
+            <div class="view-actions">
+              <button class="menu-action" [class.active]="sortMode === 'coverage'" (click)="toggleSort()">
+                {{ sortMode === 'alpha' ? '↕ Sort by risk' : '↕ Sort A–Z' }}
               </button>
-            }
+              <button class="menu-action" [class.active]="dimUncovered" (click)="toggleDimUncovered()">
+                👁 {{ dimUncovered ? 'Show all' : 'Dim uncovered' }}
+              </button>
+              <button class="menu-action" (click)="onGapView(); showViewMenu = false">⚠ Gap view</button>
+              <button class="menu-action" [class.active]="multiSelectMode" (click)="onToggleMultiSelect(); showViewMenu = false">
+                ☑ {{ multiSelectMode ? 'Exit multi-select' : 'Multi-select' }}
+              </button>
+            </div>
+            <div class="views-menu-header" style="margin-top:8px">Subtechniques</div>
+            <div class="view-actions">
+              <button class="menu-action" (click)="onExpandAll(); showViewMenu = false">⊞ Expand all</button>
+              <button class="menu-action" (click)="onCollapseAll(); showViewMenu = false">⊟ Collapse all</button>
+            </div>
           </div>
-        }
-        <div class="views-menu-header" style="margin-top:8px">Matrix</div>
-        <div class="view-actions">
-          <button class="menu-action" [class.active]="sortMode === 'coverage'" (click)="toggleSort()">
-            {{ sortMode === 'alpha' ? '↕ Sort by risk' : '↕ Sort A–Z' }}
-          </button>
-          <button class="menu-action" [class.active]="dimUncovered" (click)="toggleDimUncovered()">
-            👁 {{ dimUncovered ? 'Show all' : 'Dim uncovered' }}
-          </button>
-          <button class="menu-action" (click)="onGapView(); showViewMenu = false">⚠ Gap view</button>
-          <button class="menu-action" [class.active]="multiSelectMode" (click)="onToggleMultiSelect(); showViewMenu = false">
-            ☑ {{ multiSelectMode ? 'Exit multi-select' : 'Multi-select' }}
-          </button>
-        </div>
-        <div class="views-menu-header" style="margin-top:8px">Subtechniques</div>
-        <div class="view-actions">
-          <button class="menu-action" (click)="onExpandAll(); showViewMenu = false">⊞ Expand all</button>
-          <button class="menu-action" (click)="onCollapseAll(); showViewMenu = false">⊟ Collapse all</button>
         </div>
       </div>
     }
