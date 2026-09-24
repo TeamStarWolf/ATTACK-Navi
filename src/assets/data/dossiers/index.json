@@ -1,0 +1,8 @@
+{
+  "generated": "2026-09-24",
+  "generator": "cve-dossier navi_dossier",
+  "count": 1,
+  "cves": [
+    "CVE-2021-44228"
+  ]
+}
