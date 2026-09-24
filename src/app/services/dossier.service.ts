@@ -161,6 +161,14 @@ export class DossierService {
     base.techniques = (raw.techniques ?? []).map(t => this.resolveTechnique(t));
     base.attackVersion = this.dataService.getCurrentDomain()?.attackVersion ?? raw.attackVersion;
 
+    // Sigma and Atomic counts come from services the generator cannot see, so the
+    // asset leaves them at zero. Fill them in rather than under-reporting coverage.
+    base.detection = (raw.detection ?? []).map(det => ({
+      ...det,
+      sigmaRuleCount: det.sigmaRuleCount || this.sigma.getRuleCount(det.techniqueId),
+      atomicTestCount: det.atomicTestCount || this.atomic.getTestCount(det.techniqueId),
+    }));
+
     const cveForSsvc = live ?? this.synthesizeCve(base);
     base.ssvc = this.ssvc.available ? this.ssvc.evaluate(this.withLiveKev(cveForSsvc), env) : null;
     if (!this.ssvc.available) {
