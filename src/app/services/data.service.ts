@@ -342,6 +342,10 @@ export class DataService {
     const campaignSoftwareRels: Array<{ campaignRef: string; softwareRef: string }> = [];
     // detects: detection-strategy → technique (v18) or data-component → technique (legacy)
     const detectsRels: Array<{ sourceRef: string; techniqueRef: string; description: string }> = [];
+    // revoked-by: retired technique → its replacement (ATT&CK restructures)
+    const revokedByRels: Array<{ sourceRef: string; targetRef: string }> = [];
+    const retiredStixToAttackId = new Map<string, string>();
+    const retiredNames = new Map<string, string>();
 
     for (const obj of bundle.objects ?? []) {
       // x-mitre-collection is never revoked — parse it before the revoked check
@@ -351,7 +355,22 @@ export class DataService {
         continue;
       }
 
-      if (obj.revoked || obj.x_mitre_deprecated) continue;
+      // Revoked techniques are excluded from the matrix, but their ids still appear in
+      // mapping data built against an earlier ATT&CK release. Keep just enough to
+      // translate those ids forward before dropping the object.
+      if (obj.revoked && obj.type === 'attack-pattern') {
+        const retiredId = this.extractAttackId(obj);
+        if (retiredId) {
+          retiredStixToAttackId.set(obj.id, retiredId);
+          retiredNames.set(retiredId, obj.name ?? '');
+        }
+      }
+
+      if (obj.revoked || obj.x_mitre_deprecated) {
+        // `revoked-by` edges are not themselves revoked, so they survive this filter;
+        // only the revoked technique objects above need rescuing here.
+        continue;
+      }
 
       switch (obj.type) {
         case 'x-mitre-matrix':
@@ -502,7 +521,9 @@ export class DataService {
         }
 
         case 'relationship':
-          if (obj.relationship_type === 'mitigates') {
+          if (obj.relationship_type === 'revoked-by') {
+            revokedByRels.push({ sourceRef: obj.source_ref, targetRef: obj.target_ref });
+          } else if (obj.relationship_type === 'mitigates') {
             mitigatesRels.push({
               sourceRef: obj.source_ref,
               targetRef: obj.target_ref,
@@ -815,6 +836,33 @@ export class DataService {
       dataComponentsByTechnique.set(key, unique);
     }
 
+    // ── Resolve retired technique ids to their replacements ──────────────────
+    // A revocation can chain across releases (A revoked by B, B later revoked by C),
+    // so each id is followed to the end of the chain rather than one hop.
+    const directSuccessor = new Map<string, string>();
+    for (const rel of revokedByRels) {
+      const from = retiredStixToAttackId.get(rel.sourceRef);
+      if (!from) continue;
+      const toLive = techniquesMap.get(rel.targetRef)?.attackId;
+      const to = toLive ?? retiredStixToAttackId.get(rel.targetRef);
+      if (to && to !== from) directSuccessor.set(from, to);
+    }
+
+    const liveAttackIds = new Set([...techniquesMap.values()].map((t) => t.attackId));
+    const supersededBy = new Map<string, string>();
+    for (const from of directSuccessor.keys()) {
+      const seen = new Set<string>([from]);
+      let cursor = from;
+      let next = directSuccessor.get(cursor);
+      while (next && !seen.has(next) && !liveAttackIds.has(next)) {
+        seen.add(next);
+        cursor = next;
+        next = directSuccessor.get(cursor);
+      }
+      // Only record a replacement that actually exists in this release.
+      if (next && liveAttackIds.has(next)) supersededBy.set(from, next);
+    }
+
     const techniques = [...techniquesMap.values()];
     const mitigations = [...mitigationsMap.values()].sort((a, b) =>
       a.attackId.localeCompare(b.attackId),
@@ -855,6 +903,8 @@ export class DataService {
       softwareByCampaign,
       campaignsByGroup,
       detectionNotesByTechnique,
+      supersededBy,
+      retiredNames,
     };
   }
 
