@@ -126,10 +126,15 @@ export class SsvcPanelComponent implements OnInit, OnDestroy {
   }
 
   select(cve: NvdCveItem): void {
-    this.selected = cve;
+    // Enrich at the point of selection. Worklist rows are already KEV-enriched, but
+    // activeCve$ hands over the raw cached record, and a record parsed before the KEV
+    // catalogue loaded carries isKev:false permanently. Evaluating that gives a weaker
+    // verdict — track* instead of act — which then persists until some unrelated event
+    // happens to trigger a recompute.
+    this.selected = this.withLiveKev(cve);
     this.overrides = {};
     this.selectedResult = this.tablesLoaded
-      ? this.ssvc.evaluate(cve, this.env)
+      ? this.ssvc.evaluate(this.selected, this.env)
       : null;
     this.cdr.markForCheck();
   }
