@@ -74,6 +74,7 @@ import { SentinelRulesService, SentinelRule } from '../../services/sentinel-rule
 
 import { LibraryCrossRefComponent } from '../library-cross-ref/library-cross-ref.component';
 import { ValidationStatusPillComponent } from '../validation-status-pill/validation-status-pill.component';
+import { ctidDatasetUrl } from '../../services/ctid-links';
 
 @Component({
   selector: 'app-sidebar',
@@ -84,6 +85,15 @@ import { ValidationStatusPillComponent } from '../validation-status-pill/validat
   styleUrl: './sidebar.component.scss',
 })
 export class SidebarComponent implements OnInit, OnDestroy {
+  /**
+   * CTID Mappings Explorer link for a framework's dataset. Attribution links used
+   * to point at the github.io root, which answers on `/` but 404s on every deeper
+   * path, so they could only ever reach the generic site.
+   */
+  ctidUrl(framework: string): string {
+    return ctidDatasetUrl(framework);
+  }
+
   technique: Technique | null = null;
   mitigations: MitigationRelationship[] = [];
   parentMitigations: MitigationRelationship[] = [];

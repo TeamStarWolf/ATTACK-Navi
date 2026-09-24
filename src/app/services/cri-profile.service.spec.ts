@@ -27,7 +27,11 @@ describe('CriProfileService', () => {
         expect(ctrls[0].id).toBe('PR.IR-01.05');
         expect(ctrls[0].function).toBe('PR');
         expect(ctrls[0].functionLabel).toBe('Protect');
-        expect(ctrls[0].url).toContain('mappings-explorer');
+        // The Mappings Explorer is served from ctid.mitre.org/mappings. The
+        // github.io/mappings-explorer host answers on its root but 404s on every
+        // deeper path, so a control link built on it never reached the control.
+        expect(ctrls[0].url).toContain('https://ctid.mitre.org/mappings/');
+        expect(ctrls[0].url).not.toContain('github.io');
         done();
       }
     });
