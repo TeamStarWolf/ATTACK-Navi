@@ -147,7 +147,7 @@ const RULE_TEMPLATES: Record<string, Omit<SuricataRule, 'sid' | 'attackId' | 'te
   ],
 };
 
-// ATT&CK ID â†’ SID number mapping
+// ATT&CK ID → SID number mapping
 function attackIdToSid(attackId: string): number {
   let hash = 0;
   for (let i = 0; i < attackId.length; i++) {
