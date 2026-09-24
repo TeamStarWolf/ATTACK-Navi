@@ -53,6 +53,12 @@ export const EXPOSURE_ROUTES: Routes = [
         data: { tab: 'SSVC', icon: 'scale' },
       },
       {
+        path: 'dossier',
+        loadComponent: () =>
+          import('../../components/dossier-panel/dossier-panel.component').then(c => c.DossierPanelComponent),
+        data: { tab: 'Dossier', icon: 'file-text' },
+      },
+      {
         path: 'what-if',
         loadComponent: () =>
           import('../../components/whatif-panel/whatif-panel.component').then(c => c.WhatifPanelComponent),
