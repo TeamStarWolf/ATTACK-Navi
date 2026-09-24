@@ -4,7 +4,11 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, catchError, of } from 'rxjs';
 
+import { ctidControlUrl } from './ctid-links';
+
 export interface M365Control {
+  /** CTID Mappings Explorer page for this capability. */
+  url?: string;
   controlId: string;      // capability_id e.g. "EID-CA-E3"
   description: string;    // capability_description
   group: string;          // "entra-id", "defender", "purview", etc.
@@ -56,6 +60,7 @@ export class M365ControlsService {
       const group = m.capability_group ?? '';
       const control: M365Control = {
         controlId: m.capability_id ?? '',
+        url: ctidControlUrl('m365', m.capability_id ?? ''),
         description: m.capability_description ?? '',
         group,
         scoreCategory: m.score_category ?? '',

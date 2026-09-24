@@ -30,7 +30,7 @@ export class CriProfileService {
     'https://raw.githubusercontent.com/center-for-threat-informed-defense/mappings-explorer/main/mappings/cri_profile/attack-16.1/cri_profile-v2.1/enterprise/cri_profile-v2.1_attack-16.1-enterprise.json';
 
   private static readonly EXPLORER_BASE =
-    'https://center-for-threat-informed-defense.github.io/mappings-explorer/external/cri_profile/attack-16.1/domain-enterprise/cri_profile-v2.1';
+    'https://ctid.mitre.org/mappings/external/cri_profile/attack-16.1/domain-enterprise/cri_profile-v2.1';
 
   private byTechniqueId = new Map<string, CriControl[]>();
 
