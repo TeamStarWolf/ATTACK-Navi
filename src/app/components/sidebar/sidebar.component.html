@@ -499,7 +499,7 @@
               </button>
             }
             <div class="nist-attribution">
-              <a href="https://center-for-threat-informed-defense.github.io/mappings-explorer/" target="_blank" rel="noopener">
+              <a [href]="ctidUrl('nist')" target="_blank" rel="noopener">
                 Source: CTID Mappings Explorer
               </a>
             </div>
@@ -555,7 +555,7 @@
               }
             </div>
             <div class="ctid-attribution">
-              <a href="https://center-for-threat-informed-defense.github.io/mappings-explorer/" target="_blank" rel="noopener">CTID Mappings Explorer</a>
+              <a [href]="ctidUrl('veris')" target="_blank" rel="noopener">CTID Mappings Explorer</a>
             </div>
             }
           </section>
@@ -585,7 +585,7 @@
                 </button>
               }
               <div class="ctid-attribution">
-                <a href="https://center-for-threat-informed-defense.github.io/mappings-explorer/" target="_blank" rel="noopener">CTID Mappings Explorer</a>
+                <a [href]="ctidUrl('csaCcm')" target="_blank" rel="noopener">CTID Mappings Explorer</a>
               </div>
             </div>
             }
@@ -604,7 +604,8 @@
             <div class="nist-controls-list">
               @for (ctrl of (showAllM365Controls ? m365Controls : m365Controls.slice(0, 6)); track ctrl.controlId + ctrl.scoreCategory) {
                 <div class="nist-item">
-                  <span class="nist-id">{{ ctrl.controlId }}</span>
+                  <a class="nist-id" [href]="ctrl.url" target="_blank" rel="noopener"
+                     [title]="'Open ' + ctrl.controlId + ' in the CTID Mappings Explorer'">{{ ctrl.controlId }}</a>
                   <span class="nist-family">{{ ctrl.group }}</span>
                   <span class="nist-desc">{{ ctrl.description }}</span>
                   <span class="ctrl-pill-badge score-{{ ctrl.scoreValue }}">{{ ctrl.scoreValue }}</span>
@@ -617,7 +618,7 @@
                 </button>
               }
               <div class="ctid-attribution">
-                <a href="https://center-for-threat-informed-defense.github.io/mappings-explorer/" target="_blank" rel="noopener">CTID Mappings Explorer</a>
+                <a [href]="ctidUrl('m365')" target="_blank" rel="noopener">CTID Mappings Explorer</a>
               </div>
             </div>
             }
