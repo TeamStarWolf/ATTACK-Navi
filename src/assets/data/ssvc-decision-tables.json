@@ -1,0 +1,535 @@
+{
+  "__meta": {
+    "source": "CERT/CC SSVC published decision tables (github.com/CERTCC/SSVC)",
+    "home": "https://certcc.github.io/SSVC/",
+    "generated": "2026-09-24",
+    "tables": [
+      {
+        "id": "cisa-coordinator",
+        "label": "CISA Coordinator SSVC v2.0.3",
+        "url": "https://raw.githubusercontent.com/CERTCC/SSVC/main/data/csv/cisa/cisa_coordinator_2_0_3.csv",
+        "rows": 36
+      },
+      {
+        "id": "bod-26-04",
+        "label": "CISA BOD 26-04 Remediation Timelines v1.0.0",
+        "url": "https://raw.githubusercontent.com/CERTCC/SSVC/main/data/csv/cisa/cisa_bod_26_04_1_0_0.csv",
+        "rows": 16
+      }
+    ],
+    "note": "Fetched verbatim from CERT/CC, not transcribed. Two decision points are environmental and cannot be derived from a CVE: Publicly Exposed and Mission and Well-Being Impact. The app supplies those as explicit assumptions."
+  },
+  "tables": {
+    "cisa-coordinator": {
+      "id": "cisa-coordinator",
+      "label": "CISA Coordinator SSVC v2.0.3",
+      "describes": "Prioritization outcome",
+      "url": "https://raw.githubusercontent.com/CERTCC/SSVC/main/data/csv/cisa/cisa_coordinator_2_0_3.csv",
+      "columns": [
+        "Exploitation v1.1.0",
+        "Automatable v2.0.0",
+        "Technical Impact v1.0.0",
+        "Mission and Well-Being Impact v1.0.0"
+      ],
+      "outcomeColumn": "CISA Levels v1.1.0 (cisa)",
+      "outcomes": [
+        "track",
+        "track*",
+        "attend",
+        "act"
+      ],
+      "rows": [
+        {
+          "key": [
+            "none",
+            "no",
+            "partial",
+            "low"
+          ],
+          "outcome": "track"
+        },
+        {
+          "key": [
+            "none",
+            "no",
+            "partial",
+            "medium"
+          ],
+          "outcome": "track"
+        },
+        {
+          "key": [
+            "none",
+            "no",
+            "partial",
+            "high"
+          ],
+          "outcome": "track"
+        },
+        {
+          "key": [
+            "none",
+            "no",
+            "total",
+            "low"
+          ],
+          "outcome": "track"
+        },
+        {
+          "key": [
+            "none",
+            "no",
+            "total",
+            "medium"
+          ],
+          "outcome": "track"
+        },
+        {
+          "key": [
+            "none",
+            "no",
+            "total",
+            "high"
+          ],
+          "outcome": "track*"
+        },
+        {
+          "key": [
+            "none",
+            "yes",
+            "partial",
+            "low"
+          ],
+          "outcome": "track"
+        },
+        {
+          "key": [
+            "none",
+            "yes",
+            "partial",
+            "medium"
+          ],
+          "outcome": "track"
+        },
+        {
+          "key": [
+            "none",
+            "yes",
+            "partial",
+            "high"
+          ],
+          "outcome": "attend"
+        },
+        {
+          "key": [
+            "none",
+            "yes",
+            "total",
+            "low"
+          ],
+          "outcome": "track"
+        },
+        {
+          "key": [
+            "none",
+            "yes",
+            "total",
+            "medium"
+          ],
+          "outcome": "track"
+        },
+        {
+          "key": [
+            "none",
+            "yes",
+            "total",
+            "high"
+          ],
+          "outcome": "attend"
+        },
+        {
+          "key": [
+            "public poc",
+            "no",
+            "partial",
+            "low"
+          ],
+          "outcome": "track"
+        },
+        {
+          "key": [
+            "public poc",
+            "no",
+            "partial",
+            "medium"
+          ],
+          "outcome": "track"
+        },
+        {
+          "key": [
+            "public poc",
+            "no",
+            "partial",
+            "high"
+          ],
+          "outcome": "track*"
+        },
+        {
+          "key": [
+            "public poc",
+            "no",
+            "total",
+            "low"
+          ],
+          "outcome": "track"
+        },
+        {
+          "key": [
+            "public poc",
+            "no",
+            "total",
+            "medium"
+          ],
+          "outcome": "track*"
+        },
+        {
+          "key": [
+            "public poc",
+            "no",
+            "total",
+            "high"
+          ],
+          "outcome": "attend"
+        },
+        {
+          "key": [
+            "public poc",
+            "yes",
+            "partial",
+            "low"
+          ],
+          "outcome": "track"
+        },
+        {
+          "key": [
+            "public poc",
+            "yes",
+            "partial",
+            "medium"
+          ],
+          "outcome": "track"
+        },
+        {
+          "key": [
+            "public poc",
+            "yes",
+            "partial",
+            "high"
+          ],
+          "outcome": "attend"
+        },
+        {
+          "key": [
+            "public poc",
+            "yes",
+            "total",
+            "low"
+          ],
+          "outcome": "track"
+        },
+        {
+          "key": [
+            "public poc",
+            "yes",
+            "total",
+            "medium"
+          ],
+          "outcome": "track*"
+        },
+        {
+          "key": [
+            "public poc",
+            "yes",
+            "total",
+            "high"
+          ],
+          "outcome": "attend"
+        },
+        {
+          "key": [
+            "active",
+            "no",
+            "partial",
+            "low"
+          ],
+          "outcome": "track"
+        },
+        {
+          "key": [
+            "active",
+            "no",
+            "partial",
+            "medium"
+          ],
+          "outcome": "track"
+        },
+        {
+          "key": [
+            "active",
+            "no",
+            "partial",
+            "high"
+          ],
+          "outcome": "attend"
+        },
+        {
+          "key": [
+            "active",
+            "no",
+            "total",
+            "low"
+          ],
+          "outcome": "track"
+        },
+        {
+          "key": [
+            "active",
+            "no",
+            "total",
+            "medium"
+          ],
+          "outcome": "attend"
+        },
+        {
+          "key": [
+            "active",
+            "no",
+            "total",
+            "high"
+          ],
+          "outcome": "act"
+        },
+        {
+          "key": [
+            "active",
+            "yes",
+            "partial",
+            "low"
+          ],
+          "outcome": "attend"
+        },
+        {
+          "key": [
+            "active",
+            "yes",
+            "partial",
+            "medium"
+          ],
+          "outcome": "attend"
+        },
+        {
+          "key": [
+            "active",
+            "yes",
+            "partial",
+            "high"
+          ],
+          "outcome": "act"
+        },
+        {
+          "key": [
+            "active",
+            "yes",
+            "total",
+            "low"
+          ],
+          "outcome": "attend"
+        },
+        {
+          "key": [
+            "active",
+            "yes",
+            "total",
+            "medium"
+          ],
+          "outcome": "act"
+        },
+        {
+          "key": [
+            "active",
+            "yes",
+            "total",
+            "high"
+          ],
+          "outcome": "act"
+        }
+      ]
+    },
+    "bod-26-04": {
+      "id": "bod-26-04",
+      "label": "CISA BOD 26-04 Remediation Timelines v1.0.0",
+      "describes": "Remediation timeline",
+      "url": "https://raw.githubusercontent.com/CERTCC/SSVC/main/data/csv/cisa/cisa_bod_26_04_1_0_0.csv",
+      "columns": [
+        "In KEV v1.0.0 (cisa)",
+        "Publicly Exposed v1.0.0 (cisa)",
+        "Automatable v2.0.0",
+        "Technical Impact v1.0.0"
+      ],
+      "outcomeColumn": "CISA BOD 26-04 Remediation Timelines v1.0.0 (cisa)",
+      "outcomes": [
+        "fix on system upgrade",
+        "14 days",
+        "60 days",
+        "3 days",
+        "3 days & forensic investigation"
+      ],
+      "rows": [
+        {
+          "key": [
+            "no",
+            "no",
+            "no",
+            "partial"
+          ],
+          "outcome": "fix on system upgrade"
+        },
+        {
+          "key": [
+            "yes",
+            "no",
+            "no",
+            "partial"
+          ],
+          "outcome": "14 days"
+        },
+        {
+          "key": [
+            "no",
+            "yes",
+            "no",
+            "partial"
+          ],
+          "outcome": "60 days"
+        },
+        {
+          "key": [
+            "no",
+            "no",
+            "yes",
+            "partial"
+          ],
+          "outcome": "60 days"
+        },
+        {
+          "key": [
+            "no",
+            "no",
+            "no",
+            "total"
+          ],
+          "outcome": "fix on system upgrade"
+        },
+        {
+          "key": [
+            "yes",
+            "yes",
+            "no",
+            "partial"
+          ],
+          "outcome": "14 days"
+        },
+        {
+          "key": [
+            "yes",
+            "no",
+            "yes",
+            "partial"
+          ],
+          "outcome": "14 days"
+        },
+        {
+          "key": [
+            "no",
+            "yes",
+            "yes",
+            "partial"
+          ],
+          "outcome": "14 days"
+        },
+        {
+          "key": [
+            "yes",
+            "no",
+            "no",
+            "total"
+          ],
+          "outcome": "14 days"
+        },
+        {
+          "key": [
+            "no",
+            "yes",
+            "no",
+            "total"
+          ],
+          "outcome": "14 days"
+        },
+        {
+          "key": [
+            "no",
+            "no",
+            "yes",
+            "total"
+          ],
+          "outcome": "60 days"
+        },
+        {
+          "key": [
+            "yes",
+            "yes",
+            "yes",
+            "partial"
+          ],
+          "outcome": "3 days"
+        },
+        {
+          "key": [
+            "yes",
+            "yes",
+            "no",
+            "total"
+          ],
+          "outcome": "3 days & forensic investigation"
+        },
+        {
+          "key": [
+            "yes",
+            "no",
+            "yes",
+            "total"
+          ],
+          "outcome": "3 days & forensic investigation"
+        },
+        {
+          "key": [
+            "no",
+            "yes",
+            "yes",
+            "total"
+          ],
+          "outcome": "3 days"
+        },
+        {
+          "key": [
+            "yes",
+            "yes",
+            "yes",
+            "total"
+          ],
+          "outcome": "3 days & forensic investigation"
+        }
+      ]
+    }
+  }
+}

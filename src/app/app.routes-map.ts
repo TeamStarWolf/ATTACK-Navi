@@ -24,6 +24,7 @@ export const PANEL_ROUTE_MAP: Readonly<Partial<Record<string, string[]>>> = {
   'technique-graph': ['/exposure', 'graph'],
   'gap-analysis': ['/exposure', 'gap-analysis'],
   priority: ['/exposure', 'priority'],
+  ssvc: ['/exposure', 'ssvc'],
   whatif: ['/exposure', 'what-if'],
   ctem: ['/exposure', 'ctem'],
   // P1b: Dashboard workspace
