@@ -26,6 +26,14 @@ import {
 
 type OverrideKey = 'exploitation' | 'automatable' | 'impact' | 'inKev' | 'exposed' | 'mission';
 
+/** SSVC coordinator outcomes to CSS classes. See actionClass. */
+const ACTION_CLASS: Readonly<Record<string, string>> = {
+  act: 'action-act',
+  attend: 'action-attend',
+  'track*': 'action-track-star',
+  track: 'action-track',
+};
+
 interface WorklistRow {
   cve: NvdCveItem;
   result: SsvcResult;
@@ -269,8 +277,14 @@ export class SsvcPanelComponent implements OnInit, OnDestroy {
 
   // ── display helpers ──────────────────────────────────────────────────────
 
+  /**
+   * Map an outcome to its class. Built from an explicit table rather than by editing
+   * the outcome string: "track*" is the only value needing translation, and deriving a
+   * class name from arbitrary text can only ever produce something malformed if the
+   * table upstream gains a value we do not know about.
+   */
   actionClass(action: string): string {
-    return 'action-' + (action || 'none').replace('*', '-star');
+    return ACTION_CLASS[(action || '').toLowerCase()] ?? 'action-none';
   }
 
   timelineClass(timeline: string): string {
