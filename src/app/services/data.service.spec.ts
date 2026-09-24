@@ -102,6 +102,51 @@ describe('DataService', () => {
       expect(campaignProc?.description).toBe('C1 procedure');
     });
 
+    describe('retired technique ids', () => {
+      // ATT&CK restructures retire ids that mapping datasets still reference; a
+      // one-hop translation is not enough because revocations chain across releases.
+      const revokedBundle = {
+        objects: [
+          { type: 'x-mitre-collection', x_mitre_version: '19.2', modified: '2026-01-01' },
+          { type: 'attack-pattern', id: 'attack-pattern--new', name: 'Disable or Modify Tools', external_references: ref('T1685'), kill_chain_phases: [{ phase_name: 'defense-evasion' }] },
+          { type: 'attack-pattern', id: 'attack-pattern--old', name: 'Impair Defenses', revoked: true, external_references: ref('T1562') },
+          // chained: T1550 -> T1562 -> T1685
+          { type: 'attack-pattern', id: 'attack-pattern--older', name: 'Ancient', revoked: true, external_references: ref('T1550') },
+          // dangling: revoked with no surviving replacement
+          { type: 'attack-pattern', id: 'attack-pattern--gone', name: 'Removed Outright', revoked: true, external_references: ref('T1999') },
+          { type: 'attack-pattern', id: 'attack-pattern--vanished', name: 'Also Gone', revoked: true, external_references: ref('T1998') },
+          { type: 'relationship', relationship_type: 'revoked-by', source_ref: 'attack-pattern--old', target_ref: 'attack-pattern--new' },
+          { type: 'relationship', relationship_type: 'revoked-by', source_ref: 'attack-pattern--older', target_ref: 'attack-pattern--old' },
+          { type: 'relationship', relationship_type: 'revoked-by', source_ref: 'attack-pattern--gone', target_ref: 'attack-pattern--vanished' },
+        ],
+      };
+
+      it('maps a retired id to its replacement', () => {
+        const domain = (service as any).parseBundle(revokedBundle);
+        expect(domain.supersededBy.get('T1562')).toBe('T1685');
+      });
+
+      it('follows a revocation chain to the surviving technique', () => {
+        const domain = (service as any).parseBundle(revokedBundle);
+        expect(domain.supersededBy.get('T1550')).toBe('T1685');
+      });
+
+      it('records no replacement when the chain ends in a retired technique', () => {
+        const domain = (service as any).parseBundle(revokedBundle);
+        expect(domain.supersededBy.has('T1999')).toBe(false);
+      });
+
+      it('keeps the names of retired techniques for labelling', () => {
+        const domain = (service as any).parseBundle(revokedBundle);
+        expect(domain.retiredNames.get('T1562')).toBe('Impair Defenses');
+      });
+
+      it('still excludes revoked techniques from the matrix', () => {
+        const domain = (service as any).parseBundle(revokedBundle);
+        expect(domain.techniques.map((t: any) => t.attackId)).toEqual(['T1685']);
+      });
+    });
+
     it('captures detection notes from detects relationships', () => {
       const domain = (service as any).parseBundle(bundle);
       const notes = domain.detectionNotesByTechnique.get('attack-pattern--t1') ?? [];
