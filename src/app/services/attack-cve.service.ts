@@ -2,9 +2,9 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import { retryWithBackoff } from '../utils/retry';
 
 export interface CveAttackMapping {
@@ -26,9 +26,22 @@ export class AttackCveService {
   private static readonly CSV_URL =
     'https://raw.githubusercontent.com/center-for-threat-informed-defense/attack_to_cve/master/Att%26ckToCveMappings.csv';
 
-  // CTID KEV→ATT&CK mapping (1,183 entries — all CISA KEV CVEs mapped to ATT&CK)
+  // CTID KEV→ATT&CK mapping. CTID publishes these under a dated directory per ATT&CK
+  // release (mappings/kev/attack-<ver>/kev-<MM.DD.YYYY>/), so a pinned path keeps
+  // serving an old snapshot indefinitely once a newer one lands — silently, because the
+  // old file stays where it is. The newest is discovered at load time and this pinned
+  // path is the fallback for when that lookup is unavailable.
   private static readonly KEV_CTID_URL =
     'https://raw.githubusercontent.com/center-for-threat-informed-defense/mappings-explorer/main/mappings/kev/attack-16.1/kev-07.28.2025/enterprise/kev-07.28.2025_attack-16.1-enterprise.json';
+
+  private static readonly KEV_CTID_API =
+    'https://api.github.com/repos/center-for-threat-informed-defense/mappings-explorer/contents/mappings/kev';
+
+  private static readonly RAW_BASE =
+    'https://raw.githubusercontent.com/center-for-threat-informed-defense/mappings-explorer/main';
+
+  /** Which KEV snapshot actually loaded, for display and debugging. */
+  private kevSourceUrl = AttackCveService.KEV_CTID_URL;
 
   private byTechniqueId = new Map<string, CveAttackMapping[]>();
   private byCveId = new Map<string, CveAttackMapping>();
@@ -47,15 +60,83 @@ export class AttackCveService {
     this.load();
   }
 
+  /** URL of the KEV snapshot that was actually used. */
+  getKevSourceUrl(): string {
+    return this.kevSourceUrl;
+  }
+
+  /**
+   * Resolve the newest KEV→ATT&CK snapshot, falling back to the pinned path.
+   *
+   * Directory names encode the ATT&CK version (attack-16.1) and the snapshot date
+   * (kev-07.28.2025), so "newest" means highest ATT&CK version, then latest date.
+   */
+  private resolveKevUrl(): Observable<string> {
+    const pinned = AttackCveService.KEV_CTID_URL;
+    const byName = (names: string[], prefix: string, key: (n: string) => (number | string)[]) =>
+      names.filter(n => n.startsWith(prefix)).sort((a, b) => {
+        const ka = key(a), kb = key(b);
+        for (let i = 0; i < Math.max(ka.length, kb.length); i++) {
+          if (ka[i] === kb[i]) continue;
+          return ka[i] > kb[i] ? 1 : -1;
+        }
+        return 0;
+      });
+
+    return this.http.get<{ name: string; type: string }[]>(AttackCveService.KEV_CTID_API).pipe(
+      switchMap(entries => {
+        const versions = byName(
+          (entries ?? []).filter(e => e.type === 'dir').map(e => e.name),
+          'attack-',
+          n => n.replace('attack-', '').split('.').map(Number),
+        );
+        const version = versions[versions.length - 1];
+        if (!version) return of(pinned);
+        return this.http
+          .get<{ name: string; type: string }[]>(`${AttackCveService.KEV_CTID_API}/${version}`)
+          .pipe(
+            map(snaps => {
+              const dates = byName(
+                (snaps ?? []).filter(e => e.type === 'dir').map(e => e.name),
+                'kev-',
+                n => {
+                  const [mm, dd, yyyy] = n.replace('kev-', '').split('.');
+                  return [Number(yyyy), Number(mm), Number(dd)];
+                },
+              );
+              const snap = dates[dates.length - 1];
+              if (!snap) return pinned;
+              return `${AttackCveService.RAW_BASE}/mappings/kev/${version}/${snap}` +
+                `/enterprise/${snap}_${version}-enterprise.json`;
+            }),
+          );
+      }),
+      // Rate limiting or an offline start must not cost us the mapping entirely.
+      catchError(() => of(pinned)),
+    );
+  }
+
   private load(): void {
     forkJoin({
       csv: this.http.get(AttackCveService.CSV_URL, { responseType: 'text' }).pipe(
         retryWithBackoff(),
         catchError(() => of('')),
       ),
-      kev: this.http.get<any>(AttackCveService.KEV_CTID_URL).pipe(
-        retryWithBackoff(),
-        catchError(() => of({ mapping_objects: [] })),
+      kev: this.resolveKevUrl().pipe(
+        switchMap(url => {
+          this.kevSourceUrl = url;
+          return this.http.get<any>(url).pipe(
+            retryWithBackoff(),
+            // A discovered path that does not serve is worse than the pinned one.
+            catchError(() =>
+              url === AttackCveService.KEV_CTID_URL
+                ? of({ mapping_objects: [] })
+                : this.http.get<any>(AttackCveService.KEV_CTID_URL).pipe(
+                    catchError(() => of({ mapping_objects: [] })),
+                  ),
+            ),
+          );
+        }),
       ),
     }).subscribe(({ csv, kev }) => {
       if (csv) this.parseAndIndexCsv(csv);
