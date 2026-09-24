@@ -1,0 +1,514 @@
+// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf - MIT License
+
+.ssvc-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1rem 1.25rem 2rem;
+  color: var(--text-main);
+}
+
+// ── head ────────────────────────────────────────────────────────────────────
+.panel-head {
+  h2 {
+    margin: 0 0 0.25rem;
+    font-size: 1.15rem;
+    font-weight: 600;
+  }
+
+  .sub {
+    margin: 0;
+    max-width: 68ch;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+}
+
+.hint {
+  display: block;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text-faint);
+}
+
+// ── notices ─────────────────────────────────────────────────────────────────
+.notice {
+  padding: 0.65rem 0.8rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-raised);
+  font-size: 0.82rem;
+  line-height: 1.5;
+
+  ul {
+    margin: 0.4rem 0 0;
+    padding-left: 1.1rem;
+  }
+
+  code {
+    font-size: 0.78rem;
+  }
+}
+
+.notice-warn {
+  border-left: 3px solid var(--accent-warm);
+}
+
+.notice-error {
+  border-left: 3px solid var(--danger);
+  color: var(--danger);
+}
+
+// ── environment bar ─────────────────────────────────────────────────────────
+.env-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  background: var(--bg-panel-strong);
+
+  .env-label {
+    flex: 1 1 22rem;
+
+    strong {
+      display: block;
+      margin-bottom: 0.2rem;
+      font-size: 0.85rem;
+    }
+  }
+
+  .env-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+}
+
+select,
+input[type='search'] {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  background: var(--bg-raised);
+  color: var(--text-main);
+  font-size: 0.82rem;
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+}
+
+// ── lookup ──────────────────────────────────────────────────────────────────
+.lookup {
+  display: flex;
+  gap: 0.5rem;
+
+  input[type='search'] {
+    flex: 1 1 auto;
+    max-width: 30rem;
+  }
+}
+
+.btn-primary {
+  padding: 0.35rem 0.9rem;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--accent);
+  color: var(--bg-panel);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+}
+
+.btn-link {
+  margin-left: 0.5rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 400;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+// ── selected CVE ────────────────────────────────────────────────────────────
+.detail {
+  padding: 0.9rem 1rem 1rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: var(--bg-panel-strong);
+
+  h3 {
+    margin: 0 0 0.3rem;
+    font-size: 1rem;
+    font-family: var(--font-mono, monospace);
+  }
+
+  h4 {
+    margin: 1.1rem 0 0.35rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .desc {
+    margin: 0;
+    max-width: 78ch;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+}
+
+.detail-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.verdicts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.verdict {
+  min-width: 11rem;
+  max-width: 17rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--border-subtle);
+  border-left-width: 3px;
+  border-radius: 5px;
+  background: var(--bg-raised);
+
+  .verdict-label {
+    display: block;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-faint);
+  }
+
+  strong {
+    display: block;
+    margin-top: 0.1rem;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .verdict-note {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.72rem;
+    line-height: 1.4;
+    color: var(--text-muted);
+  }
+}
+
+// Outcome colouring. Urgency increases toward danger; nothing is coloured green,
+// because "track" means not now, not safe.
+.action-act,
+.deadline-critical {
+  border-left-color: var(--danger);
+  strong { color: var(--danger); }
+}
+
+.action-attend,
+.deadline-high {
+  border-left-color: var(--accent-warm);
+  strong { color: var(--accent-warm); }
+}
+
+.action-track-star,
+.deadline-medium {
+  border-left-color: var(--accent);
+  strong { color: var(--accent); }
+}
+
+.action-track,
+.action-none,
+.deadline-low {
+  border-left-color: var(--border-default);
+  strong { color: var(--text-muted); }
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.7rem;
+}
+
+.fact {
+  padding: 0.15rem 0.45rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  background: var(--bg-raised);
+  font-size: 0.74rem;
+  color: var(--text-muted);
+
+  &.vector {
+    font-size: 0.7rem;
+    word-break: break-all;
+  }
+
+  &.kev {
+    border-color: var(--accent-warm);
+    color: var(--accent-warm);
+  }
+
+  &.ransomware {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+}
+
+// ── tables ──────────────────────────────────────────────────────────────────
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+
+  th,
+  td {
+    padding: 0.4rem 0.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-subtle);
+    vertical-align: top;
+  }
+
+  thead th {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-faint);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+}
+
+.points {
+  th[scope='row'] {
+    width: 14rem;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .basis {
+    font-size: 0.75rem;
+    line-height: 1.45;
+    color: var(--text-muted);
+  }
+}
+
+.kind-tag {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0 0.3rem;
+  border-radius: 3px;
+  background: var(--bg-raised);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-faint);
+  font-weight: 400;
+}
+
+.kind-environmental .kind-tag {
+  color: var(--accent);
+}
+
+.kind-override .kind-tag {
+  color: var(--accent-warm);
+}
+
+.kind-override th[scope='row'] {
+  color: var(--accent-warm);
+}
+
+.tables-cite {
+  margin: 0.9rem 0 0;
+  font-size: 0.75rem;
+  color: var(--text-faint);
+
+  a {
+    color: var(--accent);
+  }
+}
+
+// ── worklist ────────────────────────────────────────────────────────────────
+.worklist {
+  h3 {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin: 0 0 0.5rem;
+    font-size: 0.95rem;
+  }
+
+  .count {
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--text-faint);
+  }
+
+  .empty {
+    max-width: 72ch;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: var(--text-muted);
+  }
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.rows tbody tr {
+  cursor: pointer;
+
+  &:hover {
+    background: var(--bg-hover);
+  }
+
+  &.selected {
+    background: var(--bg-raised);
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
+}
+
+.rows {
+  .id {
+    font-family: var(--font-mono, monospace);
+    white-space: nowrap;
+  }
+
+  .num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .none {
+    color: var(--text-faint);
+  }
+}
+
+.provisional {
+  color: var(--accent-warm);
+  cursor: help;
+}
+
+.pill {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  background: var(--bg-raised);
+  font-size: 0.72rem;
+  white-space: nowrap;
+
+  &.action-act,
+  &.deadline-critical {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+
+  &.action-attend,
+  &.deadline-high {
+    border-color: var(--accent-warm);
+    color: var(--accent-warm);
+  }
+
+  &.action-track-star,
+  &.deadline-medium {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+}
+
+.sort {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--accent);
+  }
+}
+
+.techniques {
+  .tech {
+    display: inline-block;
+    margin: 0 0.2rem 0.2rem 0;
+    padding: 0.05rem 0.35rem;
+    border: 1px solid var(--border-subtle);
+    border-radius: 3px;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.7rem;
+    white-space: nowrap;
+  }
+
+  .exploit {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+
+  .primary {
+    border-color: var(--accent-warm);
+    color: var(--accent-warm);
+  }
+}
+
+// ── provenance ──────────────────────────────────────────────────────────────
+.provenance {
+  max-width: 84ch;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: var(--text-faint);
+
+  code {
+    font-size: 0.72rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .ssvc-panel {
+    padding: 0.75rem 0.85rem 1.5rem;
+  }
+
+  .points th[scope='row'] {
+    width: auto;
+    white-space: normal;
+  }
+}
