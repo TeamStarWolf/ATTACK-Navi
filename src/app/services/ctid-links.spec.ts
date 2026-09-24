@@ -14,8 +14,11 @@ describe('ctid-links', () => {
       ctidDatasetUrl(k),
       ctidControlUrl(k, 'X-1'),
     ]);
+    // Compare the parsed host: a substring check would also match a URL that merely
+    // contains the text somewhere, which is not the same claim.
+    const hosts = new Set(urls.map(u => new URL(u).host));
+    expect([...hosts]).toEqual(['ctid.mitre.org']);
     expect(urls.every(u => u.startsWith(CTID_BASE))).toBe(true);
-    expect(urls.some(u => u.includes('github.io'))).toBe(false);
   });
 
   it('falls back to the dataset page where no per-control page exists', () => {
