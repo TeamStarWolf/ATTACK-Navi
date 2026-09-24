@@ -63,6 +63,9 @@
     @if (error) {
       <div class="notice notice-error">{{ error }}</div>
     }
+    @if (notFound) {
+      <div class="notice notice-warn">{{ notFound }}</div>
+    }
 
     <!-- Selected CVE detail -->
     @if (selected && selectedResult) {

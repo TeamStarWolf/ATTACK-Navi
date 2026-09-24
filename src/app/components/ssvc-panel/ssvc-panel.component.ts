@@ -64,6 +64,10 @@ export class SsvcPanelComponent implements OnInit, OnDestroy {
   overrides: Partial<Record<OverrideKey, string>> = {};
 
   rows: WorklistRow[] = [];
+  /** CVE the user asked to assess, held until its record arrives from NVD. */
+  private pendingSelect: string | null = null;
+  /** Shown when a requested CVE never arrives, so the button is not silently inert. */
+  notFound: string | null = null;
   sortKey: 'deadline' | 'action' | 'epss' | 'cvss' | 'id' = 'deadline';
 
   actionMeaning = ACTION_MEANING;
@@ -103,6 +107,21 @@ export class SsvcPanelComponent implements OnInit, OnDestroy {
         if (cve) this.select(cve);
       }),
     );
+    this.subs.add(
+      this.cveService.searchResults$.subscribe(results => {
+        // A pending id that the search did not return must be dropped, or it would sit
+        // waiting and later latch onto an unrelated result.
+        if (!this.pendingSelect) return;
+        const wanted = this.pendingSelect;
+        if (results.some(r => r.id.toUpperCase() === wanted)) return;
+        if (results.length > 0 || !this.loading) {
+          this.pendingSelect = null;
+          this.notFound = `${wanted} was not returned by NVD. It may not exist yet, or ` +
+            'the lookup failed.';
+          this.cdr.markForCheck();
+        }
+      }),
+    );
     this.subs.add(this.cveService.loading$.subscribe(v => {
       this.loading = v;
       this.cdr.markForCheck();
@@ -119,9 +138,30 @@ export class SsvcPanelComponent implements OnInit, OnDestroy {
 
   // ── actions ──────────────────────────────────────────────────────────────
 
+  /**
+   * Assess a CVE.
+   *
+   * Fetching it is only half the job: without selecting it, the detail below keeps
+   * showing whatever was selected before, so the button appears to do nothing while
+   * quietly loading a different CVE's verdict. A record already in the cache is
+   * selected immediately; otherwise the id is held and picked up when NVD answers.
+   */
   search(): void {
     const q = this.query.trim();
     if (!q) return;
+
+    const id = q.toUpperCase();
+    const isCveId = /^CVE-\d{4}-\d{4,}$/.test(id);
+    this.pendingSelect = isCveId ? id : null;
+    this.notFound = null;
+
+    if (isCveId) {
+      const cached = this.cveService.getCachedCve(id);
+      if (cached) {
+        this.select(cached);
+        this.pendingSelect = null;
+      }
+    }
     this.cveService.searchCves(q);
   }
 
@@ -201,6 +241,14 @@ export class SsvcPanelComponent implements OnInit, OnDestroy {
       this.cdr.markForCheck();
       return;
     }
+    if (this.pendingSelect) {
+      const arrived = this.cveService.getCachedCve(this.pendingSelect);
+      if (arrived) {
+        this.pendingSelect = null;
+        this.select(arrived);
+      }
+    }
+
     const cves = this.cveService.getAllCachedCves().map(c => this.withLiveKev(c));
     this.rows = cves.map(cve => ({
       cve,
