@@ -44,7 +44,7 @@ export class CveService {
   /** Emits the number of new KEV entries since the user last viewed CVE panel (0 = none). */
   newKevCount$ = new BehaviorSubject<number>(0);
 
-  /** Emits true once KEV data AND the CTID ATT&CKâ†’CVE data are both loaded. */
+  /** Emits true once KEV data AND the CTID ATT&CK→CVE data are both loaded. */
   ctidKevReady$: Observable<boolean>;
 
   constructor(
@@ -95,8 +95,8 @@ export class CveService {
   }
 
   /**
-   * Builds techniqueâ†’count scores from CTID direct CVEâ†’ATT&CK mappings for a list of KEV CVE IDs.
-   * Returns a Map of techniqueAttackId â†’ number of KEV CVEs that map to it via CTID data.
+   * Builds technique→count scores from CTID direct CVE→ATT&CK mappings for a list of KEV CVE IDs.
+   * Returns a Map of techniqueAttackId → number of KEV CVEs that map to it via CTID data.
    */
   /** Reset the new-KEV notification badge (called when user views the CVE panel). */
   dismissKevBadge(): void {
