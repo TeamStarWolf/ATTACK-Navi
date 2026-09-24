@@ -193,12 +193,15 @@
             @if (d.countermeasures.length === 0) {
               <p class="empty">None returned.</p>
             } @else {
+              @if (d.source === 'asset') {
+                <p class="hint">Hover for the digital artifact each one consumes — the telemetry you need to be collecting.</p>
+              }
               @for (grp of countermeasuresByTactic; track grp.tactic) {
                 <div class="cm-tactic">
                   <span class="cm-tactic-name">{{ grp.tactic }}</span>
                   <div class="chip-row">
                     @for (cm of grp.items; track trackId($index, cm)) {
-                      <span class="plain-chip" [title]="cm.artifact || cm.name">
+                      <span class="plain-chip" [title]="cm.artifact || cm.definition || cm.name">
                         <span class="tech-id">{{ cm.id }}</span>
                         <span class="tech-name">{{ cm.name }}</span>
                       </span>

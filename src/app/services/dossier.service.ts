@@ -295,7 +295,11 @@ export class DossierService {
             id: cm.id,
             name: cm.name,
             tactic: cm.category,
-            artifact: cm.definition,
+            // Deliberately no `artifact`: D3fendTechnique.definition is prose, not the
+            // digital artifact the countermeasure consumes. Only the D3FEND
+            // offensive-to-defensive mapping carries that, and it reaches us through a
+            // generated asset.
+            definition: cm.definition,
             techniques: [tid],
           });
         }
