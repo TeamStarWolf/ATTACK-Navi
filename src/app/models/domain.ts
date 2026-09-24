@@ -50,4 +50,15 @@ export interface Domain {
   softwareByCampaign: Map<string, AttackSoftware[]>; // campaign STIX id → software it uses
   campaignsByGroup: Map<string, Campaign[]>;      // group STIX id → campaigns attributed to it
   detectionNotesByTechnique: Map<string, DetectionNote[]>; // technique STIX id → detection guidance
+  /**
+   * Retired ATT&CK ids → the id that replaced them, from MITRE's `revoked-by`
+   * relationships (e.g. ATT&CK v19 retired T1562 in favour of T1685).
+   *
+   * Mapping datasets are built against a fixed ATT&CK release, so anything mapped
+   * before a restructure carries ids that no longer exist. Without this, those ids
+   * silently fail to resolve and surface as bare identifiers.
+   */
+  supersededBy: Map<string, string>;
+  /** Retired ATT&CK ids → the name they had when retired, for labelling. */
+  retiredNames: Map<string, string>;
 }
