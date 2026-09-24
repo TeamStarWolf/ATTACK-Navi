@@ -1,0 +1,383 @@
+<!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf - MIT License -->
+<div class="dossier-panel">
+
+  <header class="panel-head">
+    <div>
+      <h2>CVE dossier</h2>
+      <p class="sub">
+        One vulnerability across every framework: what it is, what it is used to do,
+        what stops it, and how to find it.
+      </p>
+    </div>
+  </header>
+
+  <section class="lookup">
+    <input
+      type="search"
+      placeholder="CVE-2021-44228"
+      [(ngModel)]="query"
+      (keyup.enter)="submit()"
+      aria-label="CVE identifier" />
+    <button type="button" class="btn-primary" (click)="submit()" [disabled]="loading">
+      {{ loading ? 'Building…' : 'Build dossier' }}
+    </button>
+    <label class="env">
+      Publicly exposed
+      <select [(ngModel)]="env.exposed" (ngModelChange)="refreshVerdict()">
+        <option value="yes">yes</option>
+        <option value="no">no</option>
+      </select>
+    </label>
+    <label class="env">
+      Mission impact
+      <select [(ngModel)]="env.mission" (ngModelChange)="refreshVerdict()">
+        <option value="low">low</option>
+        <option value="medium">medium</option>
+        <option value="high">high</option>
+      </select>
+    </label>
+  </section>
+
+  @if (notice) {
+    <div class="notice">{{ notice }}</div>
+  }
+
+  @if (dossier; as d) {
+    <article class="dossier">
+
+      <!-- Verdict -->
+      <section class="verdict-row">
+        <div class="identity">
+          <h3>
+            {{ d.cveId }}
+            <span class="source-tag" [class.live]="d.source === 'live'">
+              {{ d.source === 'asset' ? 'generated dossier' : 'composed live' }}
+            </span>
+          </h3>
+          @if (d.description) {
+            <p class="desc">{{ d.description }}</p>
+          }
+          <div class="facts">
+            @if (d.cvssScore !== null) {
+              <span class="fact">CVSS {{ d.cvssScore }} {{ d.severity }}</span>
+            }
+            @if (d.epss !== null) {
+              <span class="fact">EPSS {{ d.epss | number: '1.5-5' }}</span>
+            }
+            <span class="fact" [class.kev]="d.isKev">KEV {{ d.isKev ? 'yes' : 'no' }}</span>
+            @if (d.kevDueDate) {
+              <span class="fact">CISA due {{ d.kevDueDate }}</span>
+            }
+            @if (d.kevRansomware) {
+              <span class="fact ransomware">known ransomware use</span>
+            }
+            @if (d.cvssVector) {
+              <code class="fact vector">{{ d.cvssVector }}</code>
+            }
+          </div>
+        </div>
+
+        @if (d.ssvc; as s) {
+          <div class="verdicts">
+            <div class="verdict" [class]="actionClass(s.action)">
+              <span class="verdict-label">SSVC decision</span>
+              <strong>{{ s.action || '—' }}</strong>
+              @if (actionMeaning[s.action]) {
+                <span class="verdict-note">{{ actionMeaning[s.action] }}</span>
+              }
+            </div>
+            <div class="verdict" [class]="timelineClass(s.timeline)">
+              <span class="verdict-label">BOD 26-04</span>
+              <strong>{{ s.timeline || '—' }}</strong>
+            </div>
+          </div>
+        }
+      </section>
+
+      <!-- Techniques, tiered -->
+      <section class="block">
+        <h4>What this CVE is used to do</h4>
+        @if (tierGroups.length === 0) {
+          <p class="empty">No ATT&CK techniques are mapped to this CVE.</p>
+        } @else {
+          <p class="hint">
+            {{ ctidCount }} technique(s) mapped to this CVE specifically;
+            the rest describe its weakness classes.
+            @if (retiredCount > 0) {
+              {{ retiredCount }} were mapped against an earlier ATT&CK release and are
+              shown as the technique that replaced them.
+            }
+          </p>
+          @for (g of tierGroups; track g.tier) {
+            <div class="tier" [class]="'tier-' + g.tier">
+              <div class="tier-head">
+                <span class="tier-name">{{ g.label }}</span>
+                <span class="tier-count">{{ g.items.length }}</span>
+              </div>
+              <p class="tier-blurb">{{ g.blurb }}</p>
+              <div class="chip-row">
+                @for (t of g.items; track trackTech($index, t)) {
+                  <a
+                    class="tech-chip"
+                    [class.retired]="t.supersedes"
+                    [class.unresolved]="t.unresolved"
+                    [href]="attackUrl(t.id)"
+                    target="_blank"
+                    rel="noopener"
+                    [title]="techniqueTitle(t)">
+                    <span class="tech-id">{{ t.id }}</span>
+                    <span class="tech-name">
+                      {{ t.name || (t.unresolved ? 'not in this ATT&CK release' : t.id) }}
+                    </span>
+                  </a>
+                }
+              </div>
+              @for (c of tierComments(g.items); track c.comment) {
+                <p class="tier-comment">
+                  <span class="comment-for">{{ c.ids.join(', ') }}</span>
+                  {{ c.comment }}
+                </p>
+              }
+            </div>
+          }
+        }
+      </section>
+
+      <!-- Root cause -->
+      @if (d.cwes.length > 0 || d.capecs.length > 0) {
+        <section class="block two-col">
+          <div>
+            <h4>Root cause</h4>
+            <div class="chip-row">
+              @for (c of d.cwes; track trackId($index, c)) {
+                <a class="plain-chip" [href]="c.url" target="_blank" rel="noopener">
+                  <span class="tech-id">{{ c.id }}</span>
+                  @if (c.name) { <span class="tech-name">{{ c.name }}</span> }
+                </a>
+              }
+            </div>
+          </div>
+          <div>
+            <h4>Attack patterns <span class="count">{{ d.capecs.length }}</span></h4>
+            <div class="chip-row scroll-cap">
+              @for (c of d.capecs; track trackId($index, c)) {
+                <a class="plain-chip" [href]="c.url" target="_blank" rel="noopener" [title]="c.detail || c.name">
+                  <span class="tech-id">{{ c.id }}</span>
+                  <span class="tech-name">{{ c.name }}</span>
+                </a>
+              }
+            </div>
+          </div>
+        </section>
+      }
+
+      <!-- Countermeasures -->
+      <section class="block">
+        <h4>Countermeasures</h4>
+        <div class="cm-grid">
+          <div class="cm-col">
+            <h5>ATT&CK mitigations <span class="count">{{ d.mitigations.length }}</span></h5>
+            @if (d.mitigations.length === 0) {
+              <p class="empty">None mapped.</p>
+            } @else {
+              <ul class="tight">
+                @for (m of d.mitigations; track trackId($index, m)) {
+                  <li>
+                    <a [href]="m.url" target="_blank" rel="noopener">{{ m.id }}</a>
+                    {{ m.name }}
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+
+          <div class="cm-col">
+            <h5>D3FEND <span class="count">{{ d.countermeasures.length }}</span></h5>
+            @if (d.countermeasures.length === 0) {
+              <p class="empty">None returned.</p>
+            } @else {
+              @if (d.source === 'asset') {
+                <p class="hint">Hover for the digital artifact each one consumes — the telemetry you need to be collecting.</p>
+              }
+              @for (grp of countermeasuresByTactic; track grp.tactic) {
+                <div class="cm-tactic">
+                  <span class="cm-tactic-name">{{ grp.tactic }}</span>
+                  <div class="chip-row">
+                    @for (cm of grp.items; track trackId($index, cm)) {
+                      <span class="plain-chip" [title]="cm.artifact || cm.definition || cm.name">
+                        <span class="tech-id">{{ cm.id }}</span>
+                        <span class="tech-name">{{ cm.name }}</span>
+                      </span>
+                    }
+                  </div>
+                </div>
+              }
+            }
+          </div>
+
+          <div class="cm-col">
+            <h5>MITRE Engage <span class="count">{{ d.engage.length }}</span></h5>
+            @if (d.engage.length === 0) {
+              <p class="empty">No engagement activities mapped.</p>
+            } @else {
+              <p class="hint">Observe, deceive or redirect rather than only block.</p>
+              <ul class="tight">
+                @for (a of d.engage; track trackId($index, a)) {
+                  <li [title]="a.detail || ''">
+                    <a [href]="a.url" target="_blank" rel="noopener">{{ a.id }}</a>
+                    {{ a.name }}
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+
+          <div class="cm-col">
+            <h5>NIST 800-53 <span class="count">{{ d.controls.length }}</span></h5>
+            @if (d.controls.length === 0) {
+              <p class="empty">No control mappings.</p>
+            } @else {
+              <div class="chip-row scroll-cap">
+                @for (c of d.controls; track c.control) {
+                  <span class="plain-chip" [title]="c.name">
+                    <span class="tech-id">{{ c.control }}</span>
+                    <span class="tech-name">{{ c.name }}</span>
+                  </span>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- Detection -->
+      <section class="block">
+        <h4>Detection</h4>
+        @if (d.detection.length === 0) {
+          <p class="empty">No detection guidance maps to these techniques.</p>
+        } @else {
+          @for (det of d.detection; track det.techniqueId) {
+            <div class="det">
+              <div class="det-head">
+                <strong>{{ det.techniqueId }}</strong> {{ det.techniqueName }}
+                <span class="det-counts">
+                  @if (det.sigmaRuleCount > 0) { <span>{{ det.sigmaRuleCount }} Sigma</span> }
+                  @if (det.atomicTestCount > 0) { <span>{{ det.atomicTestCount }} Atomic</span> }
+                </span>
+              </div>
+              @if (det.dataComponents.length > 0) {
+                <div class="chip-row">
+                  @for (dc of det.dataComponents; track dc) {
+                    <span class="mini">{{ dc }}</span>
+                  }
+                </div>
+              }
+              @for (n of det.notes; track n) {
+                <p class="det-note">{{ n }}</p>
+              }
+              @for (q of det.queries; track q.title) {
+                <div class="query">
+                  <div class="query-head">
+                    <strong>{{ q.platform }}</strong> {{ q.title }}
+                    @if (q.dataSource) { <span class="query-src">{{ q.dataSource }}</span> }
+                  </div>
+                  <pre>{{ q.query }}</pre>
+                </div>
+              }
+            </div>
+          }
+        }
+      </section>
+
+      <!-- Exploit evidence -->
+      <section class="block">
+        <h4>Exploit evidence</h4>
+        @if (!d.exploits.hasPoc && d.exploits.exploitDb.length === 0
+             && d.exploits.publicPocs.length === 0
+             && d.exploits.exploitTaggedRefs.length === 0) {
+          <p class="empty">No public exploit evidence found in the loaded sources.</p>
+        } @else {
+          @if (d.exploits.hasPoc) {
+            <p class="callout">
+              Proof-of-concept exploit available.
+              @if (d.exploits.pocUrl) {
+                <a [href]="d.exploits.pocUrl" target="_blank" rel="noopener">source</a>
+              }
+            </p>
+          }
+          @if (d.exploits.exploitDb.length > 0) {
+            <h5>Exploit-DB</h5>
+            <ul class="tight">
+              @for (e of d.exploits.exploitDb; track e.id) {
+                <li><a [href]="e.url" target="_blank" rel="noopener">{{ e.id }}</a> {{ e.title }}</li>
+              }
+            </ul>
+          }
+          @if (d.exploits.publicPocs.length > 0) {
+            <h5>Public proof-of-concept repositories</h5>
+            <p class="hint">A prioritization signal, not vetted code.</p>
+            <ul class="tight">
+              @for (p of d.exploits.publicPocs; track p.repo) {
+                <li><a [href]="p.url" target="_blank" rel="noopener">{{ p.repo }}</a></li>
+              }
+            </ul>
+          }
+          @if (d.exploits.exploitTaggedRefs.length > 0) {
+            <h5>NVD references tagged Exploit</h5>
+            <ul class="tight refs">
+              @for (r of d.exploits.exploitTaggedRefs; track r) {
+                <li><a [href]="r" target="_blank" rel="noopener">{{ r }}</a></li>
+              }
+            </ul>
+          }
+        }
+      </section>
+
+      <!-- Reporting -->
+      @if (d.articles.length > 0) {
+        <section class="block">
+          <h4>Reporting and analysis <span class="count">{{ d.articles.length }}</span></h4>
+          <p class="hint">Third-party publications. Useful for exploitation detail, not authoritative mappings.</p>
+          <ul class="tight articles">
+            @for (a of d.articles; track a.url) {
+              <li>
+                <a [href]="a.url" target="_blank" rel="noopener">{{ a.title }}</a>
+                <span class="art-src">{{ a.source }}@if (a.date) { · {{ a.date }} }</span>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+
+      <!-- Provenance -->
+      <footer class="provenance">
+        <strong>Provenance.</strong>
+        @if (d.source === 'asset') {
+          Pre-generated by cve-dossier and merged with the live KEV catalogue, EPSS and
+          the loaded ATT&CK release.
+        } @else {
+          Composed in the browser from the data currently loaded.
+        }
+        @if (d.attackVersion) { Techniques resolved against ATT&CK v{{ d.attackVersion }}. }
+        Mappings come from MITRE, CISA, FIRST and CTID; nothing here is generated by a
+        language model.
+
+        @if (d.warnings.length > 0) {
+          <div class="caveats">
+            <strong>Gaps and caveats</strong>
+            <ul>
+              @for (w of d.warnings; track w) {
+                <li>{{ w }}</li>
+              }
+            </ul>
+          </div>
+        }
+      </footer>
+    </article>
+  } @else if (!loading) {
+    <p class="empty intro">
+      Enter a CVE to build its dossier. A pre-generated file is used when one exists;
+      otherwise it is composed from the data already loaded in the app.
+    </p>
+  }
+</div>
