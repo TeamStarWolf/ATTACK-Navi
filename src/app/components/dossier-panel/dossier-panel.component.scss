@@ -540,3 +540,12 @@ ul.tight {
     padding: 0.75rem 0.85rem 1.5rem;
   }
 }
+
+// CTID's notes are per-technique and differ within a tier, so each one names the
+// techniques it actually applies to.
+.comment-for {
+  margin-right: 0.35rem;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  color: var(--accent);
+}

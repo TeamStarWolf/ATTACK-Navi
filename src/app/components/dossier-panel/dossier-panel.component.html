@@ -132,8 +132,11 @@
                   </a>
                 }
               </div>
-              @if (g.items[0].comment) {
-                <p class="tier-comment">{{ g.items[0].comment }}</p>
+              @for (c of tierComments(g.items); track c.comment) {
+                <p class="tier-comment">
+                  <span class="comment-for">{{ c.ids.join(', ') }}</span>
+                  {{ c.comment }}
+                </p>
               }
             </div>
           }

@@ -215,6 +215,25 @@ export class DossierPanelComponent implements OnInit, OnDestroy {
       .map(([tactic, items]) => ({ tactic, items }));
   }
 
+  /**
+   * CTID's analyst notes for a tier, grouped by note and attributed to the techniques
+   * that carry it. Notes are per-technique and genuinely differ within a tier, so
+   * showing one as if it described the whole group misattributes it.
+   */
+  tierComments(items: DossierTechnique[]): { comment: string; ids: string[] }[] {
+    const byComment = new Map<string, string[]>();
+    for (const t of items) {
+      if (!t.comment) continue;
+      const ids = byComment.get(t.comment);
+      if (ids) {
+        ids.push(t.id);
+      } else {
+        byComment.set(t.comment, [t.id]);
+      }
+    }
+    return [...byComment.entries()].map(([comment, ids]) => ({ comment, ids }));
+  }
+
   get retiredCount(): number {
     return this.dossier?.techniques.filter(t => t.supersedes).length ?? 0;
   }
