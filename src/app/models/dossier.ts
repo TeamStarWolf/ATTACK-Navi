@@ -57,8 +57,15 @@ export interface DossierCountermeasure {
   id: string;
   name: string;
   tactic: string;
-  /** The telemetry the countermeasure consumes — what you must be collecting. */
+  /**
+   * The digital artifact the countermeasure operates on — the telemetry you must be
+   * collecting for it to work. Only D3FEND's offensive-to-defensive mapping carries
+   * this, so it is present on generated assets and absent when composed live: the
+   * in-app D3FEND service exposes a definition, which is not the same thing.
+   */
   artifact?: string;
+  /** D3FEND's prose definition of the countermeasure. */
+  definition?: string;
   techniques: string[];
 }
 
