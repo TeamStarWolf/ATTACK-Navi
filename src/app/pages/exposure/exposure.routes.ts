@@ -47,6 +47,12 @@ export const EXPOSURE_ROUTES: Routes = [
         data: { tab: 'Priority', icon: 'arrow-up' },
       },
       {
+        path: 'ssvc',
+        loadComponent: () =>
+          import('../../components/ssvc-panel/ssvc-panel.component').then(c => c.SsvcPanelComponent),
+        data: { tab: 'SSVC', icon: 'scale' },
+      },
+      {
         path: 'what-if',
         loadComponent: () =>
           import('../../components/whatif-panel/whatif-panel.component').then(c => c.WhatifPanelComponent),
