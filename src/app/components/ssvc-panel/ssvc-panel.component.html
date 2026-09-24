@@ -1,0 +1,283 @@
+<!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf - MIT License -->
+<div class="ssvc-panel">
+
+  <header class="panel-head">
+    <div class="head-text">
+      <h2>SSVC prioritization</h2>
+      <p class="sub">
+        How urgently to act, and by when — from CERT/CC's published decision tables.
+        CVSS tells you how bad a vulnerability is; SSVC tells you what to do about it.
+      </p>
+    </div>
+  </header>
+
+  @if (!tablesLoaded) {
+    <div class="notice notice-warn">
+      SSVC decision tables could not be loaded from
+      <code>assets/data/ssvc-decision-tables.json</code>.
+      Regenerate them with <code>node scripts/build-ssvc-tables.mjs</code>.
+    </div>
+  } @else {
+
+    <!-- Environmental assumptions -->
+    <section class="env-bar">
+      <div class="env-label">
+        <strong>Your environment</strong>
+        <span class="hint">
+          Two decision points cannot be derived from a CVE. Set them for the asset you
+          are assessing — they change the outcome.
+        </span>
+      </div>
+      <div class="env-controls">
+        <label>
+          Publicly exposed
+          <select [(ngModel)]="env.exposed" (ngModelChange)="reevaluate()">
+            <option value="yes">yes</option>
+            <option value="no">no</option>
+          </select>
+        </label>
+        <label>
+          Mission &amp; well-being impact
+          <select [(ngModel)]="env.mission" (ngModelChange)="reevaluate()">
+            <option value="low">low</option>
+            <option value="medium">medium</option>
+            <option value="high">high</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <!-- Lookup -->
+    <section class="lookup">
+      <input
+        type="search"
+        placeholder="CVE-2021-44228, or keywords to search NVD"
+        [(ngModel)]="query"
+        (keyup.enter)="search()"
+        aria-label="CVE identifier or keyword search" />
+      <button type="button" class="btn-primary" (click)="search()" [disabled]="loading">
+        {{ loading ? 'Searching…' : 'Assess' }}
+      </button>
+    </section>
+
+    @if (error) {
+      <div class="notice notice-error">{{ error }}</div>
+    }
+
+    <!-- Selected CVE detail -->
+    @if (selected && selectedResult) {
+      <section class="detail">
+        <div class="detail-head">
+          <div>
+            <h3>{{ selected.id }}</h3>
+            <p class="desc">{{ selected.description }}</p>
+          </div>
+          <div class="verdicts">
+            <div class="verdict" [class]="actionClass(selectedResult.action)">
+              <span class="verdict-label">SSVC decision</span>
+              <strong>{{ selectedResult.action || '—' }}</strong>
+              @if (actionMeaning[selectedResult.action]) {
+                <span class="verdict-note">{{ actionMeaning[selectedResult.action] }}</span>
+              }
+            </div>
+            <div class="verdict" [class]="timelineClass(selectedResult.timeline)">
+              <span class="verdict-label">BOD 26-04 remediation</span>
+              <strong>{{ selectedResult.timeline || '—' }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="facts">
+          @if (selected.cvssScore !== null) {
+            <span class="fact">CVSS {{ selected.cvssScore }} {{ selected.severity }}</span>
+          }
+          @if (selected.cvssVector) {
+            <code class="fact vector">{{ selected.cvssVector }}</code>
+          }
+          @if (selected.epssScore !== null && selected.epssScore !== undefined) {
+            <span class="fact">EPSS {{ selected.epssScore | number: '1.5-5' }}</span>
+          }
+          <span class="fact" [class.kev]="selected.isKev">
+            KEV {{ selected.isKev ? 'yes' : 'no' }}
+          </span>
+          @if (selected.kevDueDate) {
+            <span class="fact">CISA due {{ selected.kevDueDate }}</span>
+          }
+          @if (selected.kevKnownRansomware) {
+            <span class="fact ransomware">known ransomware use</span>
+          }
+        </div>
+
+        <h4>
+          Decision points
+          @if (hasOverrides()) {
+            <button type="button" class="btn-link" (click)="clearOverrides()">
+              reset overrides
+            </button>
+          }
+        </h4>
+        <p class="hint">
+          Every value shows its basis. <em>Derived</em> points come from the CVE record;
+          Automatable and Technical Impact are proxied from the CVSS vector, not read
+          from a field. Change any of them to test a different judgement.
+        </p>
+
+        <table class="points">
+          <thead>
+            <tr>
+              <th scope="col">Decision point</th>
+              <th scope="col">Value</th>
+              <th scope="col">Basis</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of selectedResult.points; track trackPoint($index, p)) {
+              <tr [class]="pointClass(p)">
+                <th scope="row">
+                  {{ p.label }}
+                  <span class="kind-tag">{{ p.kind }}</span>
+                </th>
+                <td>
+                  @if (keyFor(p)) {
+                    <select
+                      [ngModel]="overrideFor(keyFor(p)!) || p.value"
+                      (ngModelChange)="setOverride(keyFor(p)!, $event)"
+                      [attr.aria-label]="p.label">
+                      @for (opt of p.options; track opt) {
+                        <option [value]="opt">{{ opt }}</option>
+                      }
+                    </select>
+                  } @else {
+                    <span>{{ p.value }}</span>
+                  }
+                </td>
+                <td class="basis">{{ p.basis }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+
+        @if (selectedResult.warnings.length > 0) {
+          <div class="notice notice-warn">
+            <strong>Caveats</strong>
+            <ul>
+              @for (w of selectedResult.warnings; track w) {
+                <li>{{ w }}</li>
+              }
+            </ul>
+          </div>
+        }
+
+        <p class="tables-cite">
+          Decided by
+          <a [href]="selectedResult.actionTable" target="_blank" rel="noopener">
+            CISA Coordinator v2.0.3
+          </a>
+          and
+          <a [href]="selectedResult.timelineTable" target="_blank" rel="noopener">
+            BOD 26-04 v1.0.0
+          </a>.
+        </p>
+      </section>
+    }
+
+    <!-- Worklist -->
+    <section class="worklist">
+      <h3>
+        Worklist
+        <span class="count">{{ rows.length }} CVE(s) loaded</span>
+      </h3>
+      @if (rows.length === 0) {
+        <p class="empty">
+          Assess a CVE above, or load CVEs from the CVE panel. SSVC needs a CVSS vector,
+          so this works from records already fetched from NVD rather than evaluating the
+          whole KEV catalogue with assumed values.
+        </p>
+      } @else {
+        @if (provisionalCount > 0) {
+          <div class="notice notice-warn">
+            {{ provisionalCount }} of {{ rows.length }} loaded CVE(s) have no published
+            CVSS vector. Their Automatable and Technical Impact values are conservative
+            defaults, so those outcomes are provisional.
+          </div>
+        }
+        <div class="table-scroll">
+          <table class="rows">
+            <thead>
+              <tr>
+                <th scope="col">
+                  <button type="button" class="sort" (click)="sortBy('id')">CVE</button>
+                </th>
+                <th scope="col">
+                  <button type="button" class="sort" (click)="sortBy('action')">Decision</button>
+                </th>
+                <th scope="col">
+                  <button type="button" class="sort" (click)="sortBy('deadline')">Remediate by</button>
+                </th>
+                <th scope="col">
+                  <button type="button" class="sort" (click)="sortBy('cvss')">CVSS</button>
+                </th>
+                <th scope="col">
+                  <button type="button" class="sort" (click)="sortBy('epss')">EPSS</button>
+                </th>
+                <th scope="col">KEV</th>
+                <th scope="col">CTID ATT&amp;CK</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of rows; track trackRow($index, row)) {
+                <tr
+                  [class.selected]="selected?.id === row.cve.id"
+                  (click)="select(row.cve)">
+                  <td class="id">{{ row.cve.id }}</td>
+                  <td>
+                    <span class="pill" [class]="actionClass(row.result.action)">
+                      {{ row.result.action || '—' }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="pill" [class]="timelineClass(row.result.timeline)">
+                      {{ row.result.timeline || '—' }}
+                    </span>
+                  </td>
+                  <td class="num">
+                    {{ row.cve.cvssScore ?? '—' }}
+                    @if (!row.cve.cvssVector) {
+                      <span class="provisional" title="No CVSS vector — outcome is provisional">*</span>
+                    }
+                  </td>
+                  <td class="num">
+                    {{ row.epss !== null ? (row.epss | number: '1.5-5') : '—' }}
+                  </td>
+                  <td>{{ row.cve.isKev ? 'yes' : '—' }}</td>
+                  <td class="techniques">
+                    @if (row.mapping) {
+                      @for (t of row.mapping.exploitationTechnique; track t) {
+                        <span class="tech exploit" title="CTID: exploitation technique">{{ t }}</span>
+                      }
+                      @for (t of row.mapping.primaryImpact; track t) {
+                        <span class="tech primary" title="CTID: primary impact">{{ t }}</span>
+                      }
+                    } @else {
+                      <span class="none">—</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    <!-- Provenance -->
+    <footer class="provenance">
+      <strong>Provenance.</strong>
+      {{ metaSource }}@if (metaGenerated) {, fetched {{ metaGenerated }}}.
+      {{ metaNote }}
+      The tables are loaded as data, not encoded in the app, so they can be audited
+      against CERT/CC and regenerated with
+      <code>node scripts/build-ssvc-tables.mjs</code>.
+    </footer>
+  }
+</div>
