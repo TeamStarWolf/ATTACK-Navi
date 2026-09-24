@@ -32,6 +32,14 @@ import {
   SsvcService,
 } from '../../services/ssvc.service';
 
+/** SSVC coordinator outcomes to CSS classes. See actionClass. */
+const ACTION_CLASS: Readonly<Record<string, string>> = {
+  act: 'action-act',
+  attend: 'action-attend',
+  'track*': 'action-track-star',
+  track: 'action-track',
+};
+
 interface TierGroup {
   tier: DossierTier;
   label: string;
@@ -242,8 +250,9 @@ export class DossierPanelComponent implements OnInit, OnDestroy {
     return this.dossier?.techniques.filter(t => t.tier !== 'weakness-class').length ?? 0;
   }
 
+  /** See SsvcPanelComponent.actionClass — an explicit table, not string surgery. */
   actionClass(action: string | undefined): string {
-    return 'action-' + (action || 'none').replace('*', '-star');
+    return ACTION_CLASS[(action || '').toLowerCase()] ?? 'action-none';
   }
 
   timelineClass(timeline: string | undefined): string {
@@ -267,6 +276,8 @@ export class DossierPanelComponent implements OnInit, OnDestroy {
   }
 
   attackUrl(id: string): string {
+    // ATT&CK ids carry at most one dot (T1562.001 -> T1562/001), so replacing the
+    // first is the whole job here, not an incomplete pass over a repeating pattern.
     return `https://attack.mitre.org/techniques/${id.replace('.', '/')}/`;
   }
 
