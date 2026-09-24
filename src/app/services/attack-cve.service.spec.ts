@@ -5,6 +5,23 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { AttackCveService } from './attack-cve.service';
 
+/**
+ * Match a request by its host, not by substring.
+ *
+ * `url.includes('api.github.com')` matches any URL that merely contains that text
+ * anywhere — including one whose real host is something else entirely. Comparing the
+ * parsed host is both accurate and what CodeQL's incomplete-url-substring rule asks for.
+ */
+function fromHost(host: string): (r: { url: string }) => boolean {
+  return r => {
+    try {
+      return new URL(r.url).host === host;
+    } catch {
+      return false;
+    }
+  };
+}
+
 describe('AttackCveService', () => {
   let service: AttackCveService;
 
@@ -72,18 +89,18 @@ describe('AttackCveService', () => {
       const svc = TestBed.inject(AttackCveService);
       const mock = TestBed.inject(HttpTestingController);
 
-      mock.expectOne(r => r.url.includes('attack_to_cve')).flush('');
+      mock.expectOne(r => new URL(r.url).pathname.includes('attack_to_cve')).flush('');
 
-      const api = mock.expectOne(r => r.url.includes('api.github.com'));
+      const api = mock.expectOne(fromHost('api.github.com'));
       if (opts.failApi) {
         api.flush('rate limited', { status: 403, statusText: 'Forbidden' });
       } else {
         api.flush(versions.map(name => ({ name, type: 'dir' })));
-        const sub = mock.expectOne(r => r.url.includes('api.github.com'));
+        const sub = mock.expectOne(fromHost('api.github.com'));
         sub.flush(snapshots.map(name => ({ name, type: 'dir' })));
       }
 
-      const data = mock.expectOne(r => r.url.includes('raw.githubusercontent.com'));
+      const data = mock.expectOne(fromHost('raw.githubusercontent.com'));
       const url = data.request.url;
       data.flush({ mapping_objects: [] });
       mock.verify();
@@ -125,15 +142,15 @@ describe('AttackCveService', () => {
       TestBed.inject(AttackCveService);
       const mock = TestBed.inject(HttpTestingController);
 
-      mock.expectOne(r => r.url.includes('attack_to_cve')).flush('');
-      mock.expectOne(r => r.url.includes('api.github.com'))
+      mock.expectOne(r => new URL(r.url).pathname.includes('attack_to_cve')).flush('');
+      mock.expectOne(fromHost('api.github.com'))
         .flush([{ name: 'attack-99.9', type: 'dir' }]);
-      mock.expectOne(r => r.url.includes('api.github.com'))
+      mock.expectOne(fromHost('api.github.com'))
         .flush([{ name: 'kev-01.01.2099', type: 'dir' }]);
 
       // retryWithBackoff makes 3 further attempts at 1s, 2s and 4s before giving up.
       const fail = () =>
-        mock.expectOne(r => r.url.includes('attack-99.9'))
+        mock.expectOne(r => new URL(r.url).pathname.includes('attack-99.9'))
           .flush('gone', { status: 404, statusText: 'Not Found' });
       fail();
       for (const delay of [1000, 2000, 4000]) {
@@ -142,7 +159,7 @@ describe('AttackCveService', () => {
       }
 
       // Only now does the pinned snapshot get its turn.
-      mock.expectOne(r => r.url.includes('kev-07.28.2025')).flush({ mapping_objects: [] });
+      mock.expectOne(r => new URL(r.url).pathname.includes('kev-07.28.2025')).flush({ mapping_objects: [] });
       mock.verify();
     }));
   });
