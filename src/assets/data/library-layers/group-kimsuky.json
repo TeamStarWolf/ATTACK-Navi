@@ -1,0 +1,808 @@
+{
+  "name": "TeamStarWolf - Threat Group: Kimsuky (G0094)",
+  "versions": {
+    "attack": "16",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "ATT&CK-documented techniques attributed to Kimsuky (G0094; aliases: Black Banshee, Velvet Chollima, Emerald Sleet, THALLIUM, APT43, TA427, Springtai). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+  "sorting": 3,
+  "layout": {
+    "layout": "side",
+    "showID": false,
+    "showName": true,
+    "showAggregateScores": true,
+    "countUnscored": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1003.001",
+      "tactic": "credential-access",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1005",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1007",
+      "tactic": "discovery",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1012",
+      "tactic": "discovery",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1016",
+      "tactic": "discovery",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1021.001",
+      "tactic": "lateral-movement",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1027",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1027.001",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1027.002",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1027.010",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1027.012",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1027.016",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1036.004",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1036.005",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1036.007",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1040",
+      "tactic": "credential-access",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1040",
+      "tactic": "discovery",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1041",
+      "tactic": "exfiltration",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1053.005",
+      "tactic": "execution",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1053.005",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1053.005",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1055",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1055",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1055.012",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1055.012",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1056.001",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1056.001",
+      "tactic": "credential-access",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1057",
+      "tactic": "discovery",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1059.001",
+      "tactic": "execution",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1059.003",
+      "tactic": "execution",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1059.005",
+      "tactic": "execution",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1059.006",
+      "tactic": "execution",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1059.007",
+      "tactic": "execution",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1070.004",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1070.006",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1071.001",
+      "tactic": "command-and-control",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1071.002",
+      "tactic": "command-and-control",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1071.003",
+      "tactic": "command-and-control",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1074.001",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1078.003",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1078.003",
+      "tactic": "initial-access",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1078.003",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1078.003",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1082",
+      "tactic": "discovery",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1083",
+      "tactic": "discovery",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1098.007",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1098.007",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1102.001",
+      "tactic": "command-and-control",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1102.002",
+      "tactic": "command-and-control",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1105",
+      "tactic": "command-and-control",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1111",
+      "tactic": "credential-access",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1112",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1112",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1113",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1114.002",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1114.003",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1133",
+      "tactic": "initial-access",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1133",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1136.001",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1140",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1176.001",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1185",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1190",
+      "tactic": "initial-access",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1204.001",
+      "tactic": "execution",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1204.002",
+      "tactic": "execution",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1205",
+      "tactic": "command-and-control",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1205",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1205",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1218.005",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1218.010",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1218.011",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1219.002",
+      "tactic": "command-and-control",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1505.003",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1518.001",
+      "tactic": "discovery",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1534",
+      "tactic": "lateral-movement",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1539",
+      "tactic": "credential-access",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1543.003",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1543.003",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1546.001",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1546.001",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1547.001",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1547.001",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1550.002",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1550.002",
+      "tactic": "lateral-movement",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1552.001",
+      "tactic": "credential-access",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1553.002",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1555.003",
+      "tactic": "credential-access",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1557",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1557",
+      "tactic": "credential-access",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1560.001",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1560.003",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1562.001",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1562.004",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1564.002",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1564.003",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1566",
+      "tactic": "initial-access",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1566.001",
+      "tactic": "initial-access",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1566.002",
+      "tactic": "initial-access",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1567.002",
+      "tactic": "exfiltration",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1583",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1583.001",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1583.004",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1583.006",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1584.001",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1585",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1585.001",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1585.002",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1586.002",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1587",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1587.001",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1588.002",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1588.003",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1588.005",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1589.002",
+      "tactic": "reconnaissance",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1589.003",
+      "tactic": "reconnaissance",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1591",
+      "tactic": "reconnaissance",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1593",
+      "tactic": "reconnaissance",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1593.001",
+      "tactic": "reconnaissance",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1593.002",
+      "tactic": "reconnaissance",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1594",
+      "tactic": "reconnaissance",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1596",
+      "tactic": "reconnaissance",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1598",
+      "tactic": "reconnaissance",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1598.003",
+      "tactic": "reconnaissance",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1608.001",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1620",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1656",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1657",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    },
+    {
+      "techniqueID": "T1680",
+      "tactic": "discovery",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Kimsuky (G0094)."
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#3b1f4a",
+      "#7b2fa0",
+      "#c026d3"
+    ],
+    "minValue": 0,
+    "maxValue": 100
+  },
+  "legendItems": [
+    {
+      "label": "Documented G0094 use",
+      "color": "#c026d3"
+    }
+  ],
+  "showTacticRowBackground": false,
+  "tacticRowBackground": "#4a205b",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}
