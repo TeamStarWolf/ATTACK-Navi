@@ -124,5 +124,35 @@
     "name": "TeamStarWolf - Threat Group: FIN7 (G0046)",
     "description": "ATT&CK-documented techniques attributed to FIN7 (G0046; aliases: GOLD NIAGARA, ITG14, Carbon Spider, ELBRUS, Sangria Tempest). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
     "blurb": "FIN7 (G0046) adversary emulation overlay: 67 MITRE-documented techniques. Sourced from MITRE's own group attribution, not a curated mapping."
+  },
+  {
+    "file": "group-turla.json",
+    "name": "TeamStarWolf - Threat Group: Turla (G0010)",
+    "description": "ATT&CK-documented techniques attributed to Turla (G0010; aliases: IRON HUNTER, Group 88, Waterbug, WhiteBear, Snake, Krypton, Venomous Bear, Secre). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+    "blurb": "Turla (G0010) adversary emulation overlay: 68 MITRE-documented techniques. Sourced from MITRE's own group attribution, not a curated mapping."
+  },
+  {
+    "file": "group-apt41.json",
+    "name": "TeamStarWolf - Threat Group: APT41 (G0096)",
+    "description": "ATT&CK-documented techniques attributed to APT41 (G0096; aliases: Wicked Panda, Brass Typhoon, BARIUM). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+    "blurb": "APT41 (G0096) adversary emulation overlay: 82 MITRE-documented techniques. Sourced from MITRE's own group attribution, not a curated mapping."
+  },
+  {
+    "file": "group-kimsuky.json",
+    "name": "TeamStarWolf - Threat Group: Kimsuky (G0094)",
+    "description": "ATT&CK-documented techniques attributed to Kimsuky (G0094; aliases: Black Banshee, Velvet Chollima, Emerald Sleet, THALLIUM, APT43, TA427, Springtai). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+    "blurb": "Kimsuky (G0094) adversary emulation overlay: 109 MITRE-documented techniques. Sourced from MITRE's own group attribution, not a curated mapping."
+  },
+  {
+    "file": "group-muddywater.json",
+    "name": "TeamStarWolf - Threat Group: MuddyWater (G0069)",
+    "description": "ATT&CK-documented techniques attributed to MuddyWater (G0069; aliases: Earth Vetala, MERCURY, Static Kitten, Seedworm, TEMP.Zagros, Mango Sandstorm, TA). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+    "blurb": "MuddyWater (G0069) adversary emulation overlay: 58 MITRE-documented techniques. Sourced from MITRE's own group attribution, not a curated mapping."
+  },
+  {
+    "file": "group-teamtnt.json",
+    "name": "TeamStarWolf - Threat Group: TeamTNT (G0139)",
+    "description": "ATT&CK-documented techniques attributed to TeamTNT (G0139). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+    "blurb": "TeamTNT (G0139) adversary emulation overlay: 56 MITRE-documented techniques. Sourced from MITRE's own group attribution, not a curated mapping."
   }
 ]
