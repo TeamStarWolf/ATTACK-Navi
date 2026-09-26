@@ -15,6 +15,14 @@ ATTACK-Navi is a **browser-based MITRE ATT&CK analyst workbench** — an Angular
 - Branch for meaningful work (`codex/` for Codex, `feat/`|`fix/`|`docs/` otherwise). Do **not** push, force-push, tag, or open PRs unless the user asks. Never commit secrets or machine state.
 - Prefer the repo's existing structure and style. Add dependencies only when necessary.
 
+## Publication Privacy
+
+- Repository visibility is not permission to publish personal information. These rules apply to public and private repos, commit messages, PRs, issues, logs, screenshots, generated data, and deployments.
+- Refer to the person coordinating this project as "the repository owner" or "the user", never by a real name or personal contact details.
+- Never commit personal cloud-storage links or object IDs, source-location crosswalks, local user-profile paths, signed download URLs, credentials, or account metadata. Use fictional examples and neutral source labels instead.
+- Keep private source locators and coordination transcripts outside Git. Preserve useful learning notes without reproducing personal storage metadata.
+- Review the staged content before every publication. A deletion commit does not purge existing history; coordinate any authorized history rewrite and do not merge or push the old history back afterward.
+
 ## Stack & conventions (match these exactly)
 
 - **Angular 21**, standalone components only (`standalone: true` with explicit `imports`), **hash routing** (`withHashLocation()`), `withComponentInputBinding()`.
