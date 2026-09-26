@@ -15,6 +15,7 @@ import { FilterService } from '../../services/filter.service';
 import { PanelNavService } from '../../services/panel-nav.service';
 import { DataService } from '../../services/data.service';
 import { AttackCveService } from '../../services/attack-cve.service';
+import { D3fendService } from '../../services/d3fend.service';
 import { Domain } from '../../models/domain';
 import { Technique } from '../../models/technique';
 
@@ -22,7 +23,7 @@ export interface GraphNode {
   id: string;
   label: string;
   sublabel?: string;
-  kind: 'technique' | 'subtechnique' | 'mitigation' | 'group' | 'software' | 'cve' | 'campaign' | 'parent';
+  kind: 'technique' | 'subtechnique' | 'mitigation' | 'group' | 'software' | 'cve' | 'campaign' | 'parent' | 'd3fend' | 'capec';
   x: number;
   y: number;
   pinned?: boolean;
@@ -52,6 +53,8 @@ const KIND_COLORS: Record<GraphNode['kind'], string> = {
   software:     '#d2a8ff',
   cve:          'var(--accent-warm)',
   campaign:     '#e3b341',
+  d3fend:       '#2f81f7',
+  capec:        '#db6d28',
 };
 
 const KIND_ICONS: Record<GraphNode['kind'], string> = {
@@ -63,6 +66,8 @@ const KIND_ICONS: Record<GraphNode['kind'], string> = {
   software:     '🛠',
   cve:          '🔴',
   campaign:     '📅',
+  d3fend:       '🧱',
+  capec:        '🎯',
 };
 
 @Component({
@@ -90,6 +95,8 @@ export class TechniqueGraphPanelComponent implements OnInit, OnDestroy {
   showSoftware = true;
   showCves = true;
   showCampaigns = true;
+  showD3fend = false;
+  showCapec = false;
   showSubtechniques = true;
 
   // Technique search
@@ -135,6 +142,7 @@ export class TechniqueGraphPanelComponent implements OnInit, OnDestroy {
     private filterService: FilterService,
     private dataService: DataService,
     private cveService: AttackCveService,
+    private d3fendService: D3fendService,
     private panelNav: PanelNavService,
     private cdr: ChangeDetectorRef,
   ) {}
@@ -350,6 +358,25 @@ export class TechniqueGraphPanelComponent implements OnInit, OnDestroy {
       }
     }
 
+    // D3FEND countermeasures
+    if (this.showD3fend) {
+      const cms = this.d3fendService.getCountermeasures(tech.attackId).slice(0, 6);
+      for (const cm of cms) {
+        const d3Id = `d3f-${cm.id}`;
+        rings.push({ kind: 'd3fend', items: [{ id: d3Id, label: cm.id, sublabel: cm.name.substring(0, 16) }] });
+        edges.push({ source: d3Id, target: tech.id, label: 'counters' });
+      }
+    }
+
+    // CAPEC attack patterns
+    if (this.showCapec) {
+      for (const capecId of (tech.capecIds ?? []).slice(0, 6)) {
+        const cId = `capec-${capecId}`;
+        rings.push({ kind: 'capec', items: [{ id: cId, label: capecId }] });
+        edges.push({ source: cId, target: tech.id, label: 'enables' });
+      }
+    }
+
     // Layout all nodes in a radial pattern
     const allRingItems = rings.map(r => ({ ...r.items[0], kind: r.kind }));
     const total = allRingItems.length;
@@ -480,6 +507,6 @@ export class TechniqueGraphPanelComponent implements OnInit, OnDestroy {
   trackByEdge(_: number, e: GraphEdge): string { return e.source + '-' + e.target; }
 
   get legendKinds(): Array<GraphNode['kind']> {
-    return ['technique', 'subtechnique', 'parent', 'mitigation', 'group', 'software', 'cve', 'campaign'];
+    return ['technique', 'subtechnique', 'parent', 'mitigation', 'group', 'software', 'cve', 'campaign', 'd3fend', 'capec'];
   }
 }
