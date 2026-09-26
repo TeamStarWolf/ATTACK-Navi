@@ -1,0 +1,260 @@
+{
+  "name": "TeamStarWolf - Phishing & Social Engineering",
+  "versions": {
+    "attack": "16",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Curated practitioner view of Phishing & Social Engineering behaviors, not an official MITRE mapping. Human-targeted initial access and follow-on: gathering, luring, delivering, and executing via deception, plus account and MFA abuse enabling the intrusion. Cross-tactic selection of Enterprise ATT&CK techniques; scores indicate curated membership tier (core vs supporting), not incident frequency. Every technique ID and tactic is validated against the workbench's bundled ATT&CK v16 data.",
+  "sorting": 3,
+  "layout": {
+    "layout": "side",
+    "showID": false,
+    "showName": true,
+    "showAggregateScores": true,
+    "countUnscored": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1598",
+      "tactic": "reconnaissance",
+      "score": 100,
+      "comment": "Curated Phishing & Social Engineering membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1598.001",
+      "tactic": "reconnaissance",
+      "score": 100,
+      "comment": "Curated Phishing & Social Engineering membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1598.002",
+      "tactic": "reconnaissance",
+      "score": 100,
+      "comment": "Curated Phishing & Social Engineering membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1598.003",
+      "tactic": "reconnaissance",
+      "score": 100,
+      "comment": "Curated Phishing & Social Engineering membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1598.004",
+      "tactic": "reconnaissance",
+      "score": 55,
+      "comment": "Curated Phishing & Social Engineering membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1589",
+      "tactic": "reconnaissance",
+      "score": 55,
+      "comment": "Curated Phishing & Social Engineering membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1589.002",
+      "tactic": "reconnaissance",
+      "score": 55,
+      "comment": "Curated Phishing & Social Engineering membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1589.003",
+      "tactic": "reconnaissance",
+      "score": 55,
+      "comment": "Curated Phishing & Social Engineering membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1591",
+      "tactic": "reconnaissance",
+      "score": 55,
+      "comment": "Curated Phishing & Social Engineering membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1585",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Curated Phishing & Social Engineering membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1585.002",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Curated Phishing & Social Engineering membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1585.001",
+      "tactic": "resource-development",
+      "score": 55,
+      "comment": "Curated Phishing & Social Engineering membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1586",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Curated Phishing & Social Engineering membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1586.002",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Curated Phishing & Social Engineering membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1586.001",
+      "tactic": "resource-development",
+      "score": 55,
+      "comment": "Curated Phishing & Social Engineering membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1583.001",
+      "tactic": "resource-development",
+      "score": 55,
+      "comment": "Curated Phishing & Social Engineering membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1584.001",
+      "tactic": "resource-development",
+      "score": 55,
+      "comment": "Curated Phishing & Social Engineering membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1566",
+      "tactic": "initial-access",
+      "score": 100,
+      "comment": "Curated Phishing & Social Engineering membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1566.001",
+      "tactic": "initial-access",
+      "score": 100,
+      "comment": "Curated Phishing & Social Engineering membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1566.002",
+      "tactic": "initial-access",
+      "score": 100,
+      "comment": "Curated Phishing & Social Engineering membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1566.003",
+      "tactic": "initial-access",
+      "score": 100,
+      "comment": "Curated Phishing & Social Engineering membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1566.004",
+      "tactic": "initial-access",
+      "score": 100,
+      "comment": "Curated Phishing & Social Engineering membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1078",
+      "tactic": "initial-access",
+      "score": 100,
+      "comment": "Curated Phishing & Social Engineering membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1078.004",
+      "tactic": "initial-access",
+      "score": 100,
+      "comment": "Curated Phishing & Social Engineering membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1078.002",
+      "tactic": "initial-access",
+      "score": 55,
+      "comment": "Curated Phishing & Social Engineering membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1204",
+      "tactic": "execution",
+      "score": 100,
+      "comment": "Curated Phishing & Social Engineering membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1204.001",
+      "tactic": "execution",
+      "score": 100,
+      "comment": "Curated Phishing & Social Engineering membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1204.002",
+      "tactic": "execution",
+      "score": 100,
+      "comment": "Curated Phishing & Social Engineering membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1204.003",
+      "tactic": "execution",
+      "score": 55,
+      "comment": "Curated Phishing & Social Engineering membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1534",
+      "tactic": "lateral-movement",
+      "score": 100,
+      "comment": "Curated Phishing & Social Engineering membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1621",
+      "tactic": "credential-access",
+      "score": 100,
+      "comment": "Curated Phishing & Social Engineering membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1557",
+      "tactic": "credential-access",
+      "score": 55,
+      "comment": "Curated Phishing & Social Engineering membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1111",
+      "tactic": "credential-access",
+      "score": 55,
+      "comment": "Curated Phishing & Social Engineering membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1556.006",
+      "tactic": "credential-access",
+      "score": 55,
+      "comment": "Curated Phishing & Social Engineering membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1656",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Curated Phishing & Social Engineering membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1098.005",
+      "tactic": "persistence",
+      "score": 55,
+      "comment": "Curated Phishing & Social Engineering membership (supporting). Practitioner view, not an official MITRE mapping."
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#1b2a4a",
+      "#2f6ab0",
+      "#38bdf8"
+    ],
+    "minValue": 0,
+    "maxValue": 100
+  },
+  "legendItems": [
+    {
+      "label": "Core",
+      "color": "#38bdf8"
+    },
+    {
+      "label": "Supporting",
+      "color": "#2f6ab0"
+    }
+  ],
+  "showTacticRowBackground": false,
+  "tacticRowBackground": "#205b8f",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}
