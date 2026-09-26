@@ -52,5 +52,11 @@
     "name": "TeamStarWolf - HTB Technique Frequency",
     "description": "Curated practitioner view, not an official MITRE mapping. Derived from Claude's supplied analysis of the user's own HTB writeups: derived technique metadata only, not reproduced content. The reported sample covers all 131 analyzed HTB machines and contains 131 distinct techniques. Sources: the supplied htb-technique-frequency-data.json aggregate and data/attack/technique_profiles.jsonl for ID and tactic validation. Scores normalize machine counts to the most frequent technique (105 machines), not to the sample size; 100 does not mean 100% of machines. This reflects HTB's teaching bias, not real-world enterprise prevalence. Counts were imported from the supplied aggregate, not independently re-audited against machine-level writeups.",
     "blurb": "Shows normalized technique counts from the supplied analysis of the user's own 131 HTB machines. This curated metadata view reflects HTB's teaching bias, not enterprise prevalence; source counts were not independently re-audited."
+  },
+  {
+    "file": "agentic-ai-swarm.json",
+    "name": "TeamStarWolf - Agentic AI Swarm Intrusion",
+    "description": "Curated practitioner view, not an official MITRE mapping. Enterprise ATT&CK technique frequency across a generalized, de-identified 8-phase agentic-AI-swarm intrusion (120 mapped events, 74 distinct techniques). Scores normalize event frequency to the most frequent technique, not to event count. Companion MITRE ATLAS (AI) coverage and the full kill-chain narrative live in AGENTIC_AI_ATTACK_REFERENCE.md in the TeamStarWolf library. Illustrative composite pattern, not an attribution of any specific incident.",
+    "blurb": "Enterprise ATT&CK frequency across a generalized agentic-AI-swarm kill chain: credential reuse, egress-relay C2, pipeline exploitation, and cluster takeover. A curated composite view; companion ATLAS/AI coverage is in the library reference."
   }
 ]
