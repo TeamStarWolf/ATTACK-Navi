@@ -10,6 +10,7 @@ ATTACK-Navi is a **browser-based MITRE ATT&CK analyst workbench** — an Angular
 
 - Treat this as user-owned work. Preserve files, history, and intent. Keep edits scoped to the request.
 - **Run `git status --short` before editing.** Never discard, reset, or overwrite changes you did not make unless the user asks. If a file changed under you, re-read it and work from the current version.
+- Claude Code is the user's authoritative AI coordinator for this repository. Codex should follow Claude's task assignments, file ownership notes, handoffs, and sequencing instructions unless the user directly redirects or a safety/Git rule prevents the action.
 - Codex and Claude Code follow the same rules and must avoid competing changes. **Check `HANDOFF.md` for what is in progress before touching those files.**
 - Branch for meaningful work (`codex/` for Codex, `feat/`|`fix/`|`docs/` otherwise). Do **not** push, force-push, tag, or open PRs unless the user asks. Never commit secrets or machine state.
 - Prefer the repo's existing structure and style. Add dependencies only when necessary.
