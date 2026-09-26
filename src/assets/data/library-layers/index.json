@@ -178,5 +178,17 @@
     "name": "TeamStarWolf - HTB Core Techniques (528, precise)",
     "description": "Curated practitioner view, not an official MITRE mapping. Precise-pattern frequency of 21 core adversary techniques across 528 content-verified Hack The Box walkthroughs (the full text-mined corpus), derived metadata only - no reproduced walkthrough content. Unlike the broader \"HTB Technique Frequency\" layer (249 machines, mixed careful+coarse tagging, 135 techniques), this layer uses ONE uniform precise-pattern pass over all 528 machines for a smaller high-confidence core, so scores here are directly comparable across techniques. Keyword/tag-derived: it can still miss behaviors and over-match, so treat counts as lower-bound text evidence. Scores normalize counts to the maximum (494 machines, T1046), not to sample size; 100 does not mean 100% prevalence. Technique IDs and tactic slugs are ATT&CK v19.2 (validate against a v19.2 enterprise bundle; none of the 21 use the renamed Stealth/Defense Impairment tactics). Provenance: 528-machine uniform mine, 2026-09-26.",
     "blurb": "Precise-pattern technique frequencies across 528 content-verified Hack The Box walkthroughs (21 core techniques). A uniform-method companion to the broader HTB layer; keyword-derived, not an official MITRE mapping."
+  },
+  {
+    "file": "htb-linux-techniques.json",
+    "name": "TeamStarWolf - HTB Linux Techniques (precise)",
+    "description": "Curated practitioner view, not an official MITRE mapping. Precise-pattern frequency of 19 core techniques across the 347 content-verified Linux Hack The Box walkthroughs (of 529 total). Keyword/tag-derived from walkthrough text; treat as lower-bound evidence. Scores normalize to the maximum (323 machines) within the Linux subset, not to sample size; 100 is not 100% prevalence. Technique IDs and tactic slugs are ATT&CK v19.2. Provenance: 529-machine uniform mine, 2026-09-26.",
+    "blurb": "Precise-pattern technique frequencies across the 347 content-verified Linux HTB walkthroughs (19 core techniques). Keyword-derived, not an official MITRE mapping."
+  },
+  {
+    "file": "htb-windows-techniques.json",
+    "name": "TeamStarWolf - HTB Windows Techniques (precise)",
+    "description": "Curated practitioner view, not an official MITRE mapping. Precise-pattern frequency of 19 core techniques across the 142 content-verified Windows Hack The Box walkthroughs (of 529 total). Keyword/tag-derived from walkthrough text; treat as lower-bound evidence. Scores normalize to the maximum (135 machines) within the Windows subset, not to sample size; 100 is not 100% prevalence. Technique IDs and tactic slugs are ATT&CK v19.2. Provenance: 529-machine uniform mine, 2026-09-26.",
+    "blurb": "Precise-pattern technique frequencies across the 142 content-verified Windows HTB walkthroughs (19 core techniques). Keyword-derived, not an official MITRE mapping."
   }
 ]
