@@ -1,0 +1,465 @@
+{
+  "name": "TeamStarWolf - Agentic AI Swarm Intrusion",
+  "versions": {
+    "attack": "16",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Curated practitioner view, not an official MITRE mapping. Enterprise ATT&CK technique frequency across a generalized, de-identified 8-phase agentic-AI-swarm intrusion (120 mapped events). Scores normalize event frequency to the most frequent technique, not to event count. Companion MITRE ATLAS (AI) coverage and the full kill-chain narrative are documented in AGENTIC_AI_ATTACK_REFERENCE.md in the TeamStarWolf library. This is an illustrative composite pattern, not an attribution of any specific incident.",
+  "sorting": 3,
+  "layout": {
+    "layout": "side",
+    "showID": false,
+    "showName": true,
+    "showAggregateScores": true,
+    "countUnscored": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1078",
+      "tactic": "initial-access",
+      "score": 100,
+      "comment": "Observed in 9 of 120 mapped events across phase(s) 1, 4, 5, 6 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1550.001",
+      "tactic": "credential-access",
+      "score": 89,
+      "comment": "Observed in 8 of 120 mapped events across phase(s) 3, 6, 7, 8 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1190",
+      "tactic": "initial-access",
+      "score": 78,
+      "comment": "Observed in 7 of 120 mapped events across phase(s) 4, 5, 8 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1105",
+      "tactic": "command-and-control",
+      "score": 56,
+      "comment": "Observed in 5 of 120 mapped events across phase(s) 4, 5, 6 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1213",
+      "tactic": "collection",
+      "score": 56,
+      "comment": "Observed in 5 of 120 mapped events across phase(s) 1, 5, 6, 7 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1552.001",
+      "tactic": "credential-access",
+      "score": 56,
+      "comment": "Observed in 5 of 120 mapped events across phase(s) 5, 6, 7, 8 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1552.007",
+      "tactic": "credential-access",
+      "score": 56,
+      "comment": "Observed in 5 of 120 mapped events across phase(s) 5, 6 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1567",
+      "score": 56,
+      "comment": "Observed in 5 of 120 mapped events across phase(s) 6, 7 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1046",
+      "tactic": "discovery",
+      "score": 44,
+      "comment": "Observed in 4 of 120 mapped events across phase(s) 1, 2, 3, 6 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1059.006",
+      "score": 44,
+      "comment": "Observed in 4 of 120 mapped events across phase(s) 5, 6 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1090.001",
+      "tactic": "command-and-control",
+      "score": 44,
+      "comment": "Observed in 4 of 120 mapped events across phase(s) 1, 4, 7 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1552.004",
+      "tactic": "credential-access",
+      "score": 44,
+      "comment": "Observed in 4 of 120 mapped events across phase(s) 6, 7, 8 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1606",
+      "tactic": "credential-access",
+      "score": 44,
+      "comment": "Observed in 4 of 120 mapped events across phase(s) 2, 6, 8 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1608.001",
+      "tactic": "resource-development",
+      "score": 44,
+      "comment": "Observed in 4 of 120 mapped events across phase(s) 4, 5, 8 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1610",
+      "score": 44,
+      "comment": "Observed in 4 of 120 mapped events across phase(s) 6, 8 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1611",
+      "tactic": "privilege-escalation",
+      "score": 44,
+      "comment": "Observed in 4 of 120 mapped events across phase(s) 6, 8 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1059.004",
+      "tactic": "execution",
+      "score": 33,
+      "comment": "Observed in 3 of 120 mapped events across phase(s) 4 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1090.002",
+      "tactic": "command-and-control",
+      "score": 33,
+      "comment": "Observed in 3 of 120 mapped events across phase(s) 1, 4 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1102.002",
+      "tactic": "command-and-control",
+      "score": 33,
+      "comment": "Observed in 3 of 120 mapped events across phase(s) 4, 5, 6 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1133",
+      "score": 33,
+      "comment": "Observed in 3 of 120 mapped events across phase(s) 7 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1195.002",
+      "tactic": "initial-access",
+      "score": 33,
+      "comment": "Observed in 3 of 120 mapped events across phase(s) 7, 8 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1213.003",
+      "tactic": "exfiltration",
+      "score": 33,
+      "comment": "Observed in 3 of 120 mapped events across phase(s) 7 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1528",
+      "score": 33,
+      "comment": "Observed in 3 of 120 mapped events across phase(s) 3, 6, 7 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1530",
+      "tactic": "collection",
+      "score": 33,
+      "comment": "Observed in 3 of 120 mapped events across phase(s) 6, 7 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1552.005",
+      "tactic": "credential-access",
+      "score": 33,
+      "comment": "Observed in 3 of 120 mapped events across phase(s) 5 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1589.001",
+      "tactic": "reconnaissance",
+      "score": 33,
+      "comment": "Observed in 3 of 120 mapped events across phase(s) 1, 4, 5 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1018",
+      "tactic": "discovery",
+      "score": 22,
+      "comment": "Observed in 2 of 120 mapped events across phase(s) 6 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1059",
+      "score": 22,
+      "comment": "Observed in 2 of 120 mapped events across phase(s) 2, 8 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1068",
+      "tactic": "privilege-escalation",
+      "score": 22,
+      "comment": "Observed in 2 of 120 mapped events across phase(s) 2, 8 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1069.003",
+      "tactic": "discovery",
+      "score": 22,
+      "comment": "Observed in 2 of 120 mapped events across phase(s) 5, 6 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1070",
+      "tactic": "defense-evasion",
+      "score": 22,
+      "comment": "Observed in 2 of 120 mapped events across phase(s) 8 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1078.004",
+      "tactic": "lateral-movement",
+      "score": 22,
+      "comment": "Observed in 2 of 120 mapped events across phase(s) 6, 8 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1082",
+      "tactic": "discovery",
+      "score": 22,
+      "comment": "Observed in 2 of 120 mapped events across phase(s) 4, 7 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1090.003",
+      "tactic": "command-and-control",
+      "score": 22,
+      "comment": "Observed in 2 of 120 mapped events across phase(s) 1, 4 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1136.001",
+      "tactic": "persistence",
+      "score": 22,
+      "comment": "Observed in 2 of 120 mapped events across phase(s) 2, 8 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1567.002",
+      "tactic": "exfiltration",
+      "score": 22,
+      "comment": "Observed in 2 of 120 mapped events across phase(s) 7 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1572",
+      "tactic": "exfiltration",
+      "score": 22,
+      "comment": "Observed in 2 of 120 mapped events across phase(s) 7 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1584.006",
+      "tactic": "resource-development",
+      "score": 22,
+      "comment": "Observed in 2 of 120 mapped events across phase(s) 1, 4 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1587.004",
+      "tactic": "resource-development",
+      "score": 22,
+      "comment": "Observed in 2 of 120 mapped events across phase(s) 5, 8 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1613",
+      "tactic": "discovery",
+      "score": 22,
+      "comment": "Observed in 2 of 120 mapped events across phase(s) 5, 6 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1687",
+      "tactic": "defense-evasion",
+      "score": 22,
+      "comment": "Observed in 2 of 120 mapped events across phase(s) 1 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1005",
+      "tactic": "collection",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 5 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1016",
+      "tactic": "discovery",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 4 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1016.001",
+      "tactic": "discovery",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 2 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1021",
+      "tactic": "lateral-movement",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 6 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1027.013",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 4 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1027.015",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 4 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1057",
+      "tactic": "discovery",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 4 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1069",
+      "tactic": "discovery",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 8 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1070.004",
+      "tactic": "defense-evasion",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 8 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1071.001",
+      "tactic": "command-and-control",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 4 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1071.004",
+      "tactic": "discovery",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 6 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1083",
+      "tactic": "discovery",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 4 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1087",
+      "tactic": "discovery",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 8 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1132.001",
+      "tactic": "command-and-control",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 4 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1211",
+      "tactic": "defense-evasion",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 3 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1489",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 8 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1499",
+      "tactic": "impact",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 2 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1505",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 2 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1518.001",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 4 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1525",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 8 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1526",
+      "tactic": "discovery",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 6 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1552",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 6 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1555.006",
+      "tactic": "credential-access",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 8 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1557",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 8 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1562.001",
+      "tactic": "defense-evasion",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 7 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1578",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 8 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1580",
+      "tactic": "discovery",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 6 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1585",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 5 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1588.005",
+      "tactic": "privilege-escalation",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 8 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1592",
+      "tactic": "reconnaissance",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 4 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1593",
+      "tactic": "reconnaissance",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 1 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1593.003",
+      "tactic": "reconnaissance",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 4 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    },
+    {
+      "techniqueID": "T1608.002",
+      "tactic": "resource-development",
+      "score": 11,
+      "comment": "Observed in 1 of 120 mapped events across phase(s) 3 of a generalized agentic-AI-swarm intrusion. Curated practitioner view; not an official MITRE mapping. Score normalizes event frequency to the most frequent technique (9 events), not to event count."
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#12122a",
+      "#1e3a5f",
+      "#2f6ab0",
+      "#38bdf8",
+      "#a78bfa"
+    ],
+    "minValue": 0,
+    "maxValue": 100
+  },
+  "legendItems": [],
+  "showTacticRowBackground": false,
+  "tacticRowBackground": "#205b8f",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}
