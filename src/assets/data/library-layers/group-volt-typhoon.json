@@ -1,12 +1,12 @@
 {
   "name": "TeamStarWolf - Threat Group: Volt Typhoon (G1017)",
   "versions": {
-    "attack": "16",
+    "attack": "19",
     "navigator": "4.9",
     "layer": "4.5"
   },
   "domain": "enterprise-attack",
-  "description": "ATT&CK-documented techniques attributed to Volt Typhoon (G1017; aliases: BRONZE SILHOUETTE, Vanguard Panda, DEV-0391, UNC3236, Voltzite, Insidious Taurus). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+  "description": "ATT&CK-documented techniques attributed to Volt Typhoon (G1017; aliases: BRONZE SILHOUETTE, Vanguard Panda, DEV-0391, UNC3236, Voltzite, Insidious Taurus). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v19.2 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
   "sorting": 3,
   "layout": {
     "layout": "side",
@@ -37,7 +37,7 @@
     },
     {
       "techniqueID": "T1006",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Volt Typhoon (G1017)."
     },
@@ -85,7 +85,7 @@
     },
     {
       "techniqueID": "T1027.002",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Volt Typhoon (G1017)."
     },
@@ -97,13 +97,13 @@
     },
     {
       "techniqueID": "T1036.005",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Volt Typhoon (G1017)."
     },
     {
       "techniqueID": "T1036.008",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Volt Typhoon (G1017)."
     },
@@ -186,20 +186,20 @@
       "comment": "Documented ATT&CK technique use by Volt Typhoon (G1017)."
     },
     {
-      "techniqueID": "T1070.001",
-      "tactic": "defense-evasion",
+      "techniqueID": "T1685.005",
+      "tactic": "defense-impairment",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Volt Typhoon (G1017)."
     },
     {
       "techniqueID": "T1070.004",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Volt Typhoon (G1017)."
     },
     {
       "techniqueID": "T1070.007",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Volt Typhoon (G1017)."
     },
@@ -217,7 +217,7 @@
     },
     {
       "techniqueID": "T1078",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Volt Typhoon (G1017)."
     },
@@ -241,7 +241,7 @@
     },
     {
       "techniqueID": "T1078.002",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Volt Typhoon (G1017)."
     },
@@ -307,7 +307,7 @@
     },
     {
       "techniqueID": "T1112",
-      "tactic": "defense-evasion",
+      "tactic": "defense-impairment",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Volt Typhoon (G1017)."
     },
@@ -349,7 +349,7 @@
     },
     {
       "techniqueID": "T1140",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Volt Typhoon (G1017)."
     },
@@ -367,13 +367,13 @@
     },
     {
       "techniqueID": "T1218",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Volt Typhoon (G1017)."
     },
     {
       "techniqueID": "T1497.001",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Volt Typhoon (G1017)."
     },

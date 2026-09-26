@@ -1,12 +1,12 @@
 {
   "name": "TeamStarWolf - Phishing & Social Engineering",
   "versions": {
-    "attack": "16",
+    "attack": "19",
     "navigator": "4.9",
     "layer": "4.5"
   },
   "domain": "enterprise-attack",
-  "description": "Curated practitioner view of Phishing & Social Engineering behaviors, not an official MITRE mapping. Human-targeted initial access and follow-on: gathering, luring, delivering, and executing via deception, plus account and MFA abuse enabling the intrusion. Cross-tactic selection of Enterprise ATT&CK techniques; scores indicate curated membership tier (core vs supporting), not incident frequency. Every technique ID and tactic is validated against the workbench's bundled ATT&CK v16 data.",
+  "description": "Curated practitioner view of Phishing & Social Engineering behaviors, not an official MITRE mapping. Human-targeted initial access and follow-on: gathering, luring, delivering, and executing via deception, plus account and MFA abuse enabling the intrusion. Cross-tactic selection of Enterprise ATT&CK techniques; scores indicate curated membership tier (core vs supporting), not incident frequency. Every technique ID and tactic is validated against the workbench's bundled ATT&CK v19.2 data.",
   "sorting": 3,
   "layout": {
     "layout": "side",
@@ -222,8 +222,8 @@
       "comment": "Curated Phishing & Social Engineering membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
-      "techniqueID": "T1656",
-      "tactic": "defense-evasion",
+      "techniqueID": "T1684.001",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Curated Phishing & Social Engineering membership (core). Practitioner view, not an official MITRE mapping."
     },

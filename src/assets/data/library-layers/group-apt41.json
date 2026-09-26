@@ -1,12 +1,12 @@
 {
   "name": "TeamStarWolf - Threat Group: APT41 (G0096)",
   "versions": {
-    "attack": "16",
+    "attack": "19",
     "navigator": "4.9",
     "layer": "4.5"
   },
   "domain": "enterprise-attack",
-  "description": "ATT&CK-documented techniques attributed to APT41 (G0096; aliases: Wicked Panda, Brass Typhoon, BARIUM). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+  "description": "ATT&CK-documented techniques attributed to APT41 (G0096; aliases: Wicked Panda, Brass Typhoon, BARIUM). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v19.2 data - MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
   "sorting": 3,
   "layout": {
     "layout": "side",
@@ -55,7 +55,7 @@
     },
     {
       "techniqueID": "T1014",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     },
@@ -85,13 +85,13 @@
     },
     {
       "techniqueID": "T1027",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     },
     {
       "techniqueID": "T1027.002",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     },
@@ -109,13 +109,13 @@
     },
     {
       "techniqueID": "T1036.004",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     },
     {
       "techniqueID": "T1036.005",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     },
@@ -169,7 +169,7 @@
     },
     {
       "techniqueID": "T1055",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     },
@@ -216,20 +216,20 @@
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     },
     {
-      "techniqueID": "T1070.001",
-      "tactic": "defense-evasion",
+      "techniqueID": "T1685.005",
+      "tactic": "defense-impairment",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     },
     {
       "techniqueID": "T1070.003",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     },
     {
       "techniqueID": "T1070.004",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     },
@@ -253,7 +253,7 @@
     },
     {
       "techniqueID": "T1078",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     },
@@ -343,7 +343,7 @@
     },
     {
       "techniqueID": "T1112",
-      "tactic": "defense-evasion",
+      "tactic": "defense-impairment",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     },
@@ -391,7 +391,7 @@
     },
     {
       "techniqueID": "T1197",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     },
@@ -415,25 +415,25 @@
     },
     {
       "techniqueID": "T1218.001",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     },
     {
       "techniqueID": "T1218.011",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     },
     {
       "techniqueID": "T1480.001",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     },
     {
       "techniqueID": "T1484.001",
-      "tactic": "defense-evasion",
+      "tactic": "defense-impairment",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     },
@@ -457,7 +457,7 @@
     },
     {
       "techniqueID": "T1542.003",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     },
@@ -505,19 +505,13 @@
     },
     {
       "techniqueID": "T1550.002",
-      "tactic": "defense-evasion",
-      "score": 100,
-      "comment": "Documented ATT&CK technique use by APT41 (G0096)."
-    },
-    {
-      "techniqueID": "T1550.002",
       "tactic": "lateral-movement",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     },
     {
       "techniqueID": "T1553.002",
-      "tactic": "defense-evasion",
+      "tactic": "defense-impairment",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     },
@@ -540,8 +534,8 @@
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     },
     {
-      "techniqueID": "T1562.006",
-      "tactic": "defense-evasion",
+      "techniqueID": "T1685",
+      "tactic": "defense-impairment",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     },
@@ -571,37 +565,25 @@
     },
     {
       "techniqueID": "T1574.001",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     },
     {
       "techniqueID": "T1574.001",
-      "tactic": "persistence",
-      "score": 100,
-      "comment": "Documented ATT&CK technique use by APT41 (G0096)."
-    },
-    {
-      "techniqueID": "T1574.001",
-      "tactic": "privilege-escalation",
+      "tactic": "execution",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     },
     {
       "techniqueID": "T1574.006",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     },
     {
       "techniqueID": "T1574.006",
-      "tactic": "persistence",
-      "score": 100,
-      "comment": "Documented ATT&CK technique use by APT41 (G0096)."
-    },
-    {
-      "techniqueID": "T1574.006",
-      "tactic": "privilege-escalation",
+      "tactic": "execution",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     },
@@ -631,13 +613,13 @@
     },
     {
       "techniqueID": "T1599",
-      "tactic": "defense-evasion",
+      "tactic": "defense-impairment",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     },
     {
-      "techniqueID": "T1656",
-      "tactic": "defense-evasion",
+      "techniqueID": "T1684.001",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT41 (G0096)."
     }

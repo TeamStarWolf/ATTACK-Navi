@@ -1,12 +1,12 @@
 {
   "name": "TeamStarWolf - Threat Group: Scattered Spider (G1015)",
   "versions": {
-    "attack": "16",
+    "attack": "19",
     "navigator": "4.9",
     "layer": "4.5"
   },
   "domain": "enterprise-attack",
-  "description": "ATT&CK-documented techniques attributed to Scattered Spider (G1015; aliases: Roasted 0ktapus, Octo Tempest, Storm-0875, UNC3944). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+  "description": "ATT&CK-documented techniques attributed to Scattered Spider (G1015; aliases: Roasted 0ktapus, Octo Tempest, Storm-0875, UNC3944). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v19.2 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
   "sorting": 3,
   "layout": {
     "layout": "side",
@@ -25,7 +25,7 @@
     },
     {
       "techniqueID": "T1006",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Scattered Spider (G1015)."
     },
@@ -97,7 +97,7 @@
     },
     {
       "techniqueID": "T1070.008",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Scattered Spider (G1015)."
     },
@@ -109,7 +109,7 @@
     },
     {
       "techniqueID": "T1078",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Scattered Spider (G1015)."
     },
@@ -133,7 +133,7 @@
     },
     {
       "techniqueID": "T1078.004",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Scattered Spider (G1015)."
     },
@@ -277,7 +277,7 @@
     },
     {
       "techniqueID": "T1484.002",
-      "tactic": "defense-evasion",
+      "tactic": "defense-impairment",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Scattered Spider (G1015)."
     },
@@ -343,7 +343,7 @@
     },
     {
       "techniqueID": "T1553.002",
-      "tactic": "defense-evasion",
+      "tactic": "defense-impairment",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Scattered Spider (G1015)."
     },
@@ -361,7 +361,7 @@
     },
     {
       "techniqueID": "T1556.006",
-      "tactic": "defense-evasion",
+      "tactic": "defense-impairment",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Scattered Spider (G1015)."
     },
@@ -379,7 +379,7 @@
     },
     {
       "techniqueID": "T1556.009",
-      "tactic": "defense-evasion",
+      "tactic": "defense-impairment",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Scattered Spider (G1015)."
     },
@@ -390,14 +390,14 @@
       "comment": "Documented ATT&CK technique use by Scattered Spider (G1015)."
     },
     {
-      "techniqueID": "T1562.001",
-      "tactic": "defense-evasion",
+      "techniqueID": "T1685",
+      "tactic": "defense-impairment",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Scattered Spider (G1015)."
     },
     {
       "techniqueID": "T1564.008",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Scattered Spider (G1015)."
     },
@@ -415,7 +415,7 @@
     },
     {
       "techniqueID": "T1578.002",
-      "tactic": "defense-evasion",
+      "tactic": "defense-impairment",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Scattered Spider (G1015)."
     },
@@ -480,8 +480,8 @@
       "comment": "Documented ATT&CK technique use by Scattered Spider (G1015)."
     },
     {
-      "techniqueID": "T1656",
-      "tactic": "defense-evasion",
+      "techniqueID": "T1684.001",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Scattered Spider (G1015)."
     },

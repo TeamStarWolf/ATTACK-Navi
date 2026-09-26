@@ -1,12 +1,12 @@
 {
   "name": "TeamStarWolf - Supply Chain & Trusted-Relationship Compromise",
   "versions": {
-    "attack": "16",
+    "attack": "19",
     "navigator": "4.9",
     "layer": "4.5"
   },
   "domain": "enterprise-attack",
-  "description": "Curated practitioner view of Supply Chain & Trusted-Relationship Compromise behaviors, not an official MITRE mapping. Intrusion through third parties, software/hardware supply chains, trusted relationships, and shared tooling rather than direct exploitation of the target. Cross-tactic selection of Enterprise ATT&CK techniques; scores indicate curated membership tier (core vs supporting), not incident frequency. Every technique ID and tactic is validated against the workbench's bundled ATT&CK v16 data.",
+  "description": "Curated practitioner view of Supply Chain & Trusted-Relationship Compromise behaviors, not an official MITRE mapping. Intrusion through third parties, software/hardware supply chains, trusted relationships, and shared tooling rather than direct exploitation of the target. Cross-tactic selection of Enterprise ATT&CK techniques; scores indicate curated membership tier (core vs supporting), not incident frequency. Every technique ID and tactic is validated against the workbench's bundled ATT&CK v19.2 data.",
   "sorting": 3,
   "layout": {
     "layout": "side",
@@ -127,49 +127,49 @@
     },
     {
       "techniqueID": "T1601",
-      "tactic": "defense-evasion",
+      "tactic": "defense-impairment",
       "score": 100,
       "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (core). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1601.001",
-      "tactic": "defense-evasion",
+      "tactic": "defense-impairment",
       "score": 55,
       "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1601.002",
-      "tactic": "defense-evasion",
+      "tactic": "defense-impairment",
       "score": 55,
       "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1553",
-      "tactic": "defense-evasion",
+      "tactic": "defense-impairment",
       "score": 100,
       "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (core). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1553.002",
-      "tactic": "defense-evasion",
+      "tactic": "defense-impairment",
       "score": 100,
       "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (core). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1553.006",
-      "tactic": "defense-evasion",
+      "tactic": "defense-impairment",
       "score": 55,
       "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1553.003",
-      "tactic": "defense-evasion",
+      "tactic": "defense-impairment",
       "score": 55,
       "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1612",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 55,
       "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (supporting). Practitioner view, not an official MITRE mapping."
     },
