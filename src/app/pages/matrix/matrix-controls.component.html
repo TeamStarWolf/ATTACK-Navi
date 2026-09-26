@@ -138,6 +138,21 @@
               </div>
             </div>
           }
+          @if (libraryLayers.length) {
+            <div class="heatmap-group">
+              <div class="views-menu-header">📚 Library Layers</div>
+              <div class="heatmap-grid">
+                @for (lyr of libraryLayers; track lyr.file) {
+                  <button class="heatmap-mode-btn"
+                          [class.active]="heatmapMode === 'library' && activeLibraryFile === lyr.file"
+                          [title]="lyr.blurb || lyr.description"
+                          (click)="pickLibraryLayer(lyr.file)">
+                    {{ layerLabel(lyr.name) }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
           <div class="heatmap-group">
             <div class="views-menu-header">Matrix</div>
             <div class="view-actions">

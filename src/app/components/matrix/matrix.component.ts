@@ -29,6 +29,7 @@ import { DocumentationService } from '../../services/documentation.service';
 import { D3fendService } from '../../services/d3fend.service';
 import { AtomicService } from '../../services/atomic.service';
 import { SigmaService } from '../../services/sigma.service';
+import { LibraryLayerService } from '../../services/library-layer.service';
 import { EngageService } from '../../services/engage.service';
 import { CARService } from '../../services/car.service';
 import { CriProfileService } from '../../services/cri-profile.service';
@@ -156,6 +157,9 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
   // Sigma rule scores: attackId -> rule count
   sigmaScoreMap = new Map<string, number>();
   maxSigmaScore = 1;
+  // Library layer coloring: max score of the active curated layer (per-cell
+  // scores come straight from LibraryLayerService, keyed by attackId).
+  maxLibraryScore = 1;
   // NIST 800-53 control counts: attackId -> control count
   nistScoreMap = new Map<string, number>();
   maxNistScore = 1;
@@ -265,6 +269,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     private d3fendService: D3fendService,
     private atomicService: AtomicService,
     private sigmaService: SigmaService,
+    private libraryLayerService: LibraryLayerService,
     private engageService: EngageService,
     private carService: CARService,
     private attackCveService: AttackCveService,
@@ -695,6 +700,13 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
             const total = Math.round(mitScore + detectScore + atomicScore + d3fendScore + kevScore);
             this.unifiedScoreMap.set(tech.attackId, total);
           }
+        } else if (mode === 'library' && this.domain) {
+          // Default to the first manifest layer if none picked yet, then color
+          // by the active layer's per-technique scores (via LibraryLayerService).
+          if (!this.libraryLayerService.activeFile && this.libraryLayerService.manifest.length) {
+            this.libraryLayerService.setActive(this.libraryLayerService.manifest[0].file);
+          }
+          this.maxLibraryScore = this.libraryLayerService.maxScore();
         } else if (mode === 'sigma' && this.domain) {
           this.softwareScores = new Map();
           this.maxSoftware = 1;
@@ -912,6 +924,15 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
         }
         if (loaded && (this.currentHeatmapMode === 'detection' || this.currentHeatmapMode === 'unified')) {
           this.filterService.setHeatmapMode(this.currentHeatmapMode);
+        }
+      }),
+    );
+
+    // Re-render the matrix when the active library layer loads or switches.
+    this.subs.add(
+      this.libraryLayerService.changed$.subscribe(() => {
+        if (this.currentHeatmapMode === 'library') {
+          this.filterService.setHeatmapMode('library');
         }
       }),
     );
@@ -1484,6 +1505,10 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     return this.sigmaScoreMap.get(t.attackId) ?? 0;
   }
 
+  getLibraryScore(t: Technique): number {
+    return this.libraryLayerService.getScore(t.attackId);
+  }
+
   getNistScore(t: Technique): number {
     return this.nistScoreMap.get(t.attackId) ?? 0;
   }
@@ -1614,6 +1639,8 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
           { limit: 80, color: '#38bdf8' },
           { limit: Number.POSITIVE_INFINITY, color: '#a78bfa' },
         ]);
+      case 'library':
+        return this.getRelativeHeatColor(this.getLibraryScore(tech), this.maxLibraryScore, '#12122a', ['#1e3a5f', '#2f6ab0', '#38bdf8', '#a78bfa']);
       case 'sigma':
         return this.getRelativeHeatColor(this.getSigmaScore(tech), this.maxSigmaScore, '#0a1a1a', ['#0d4a3a', '#0d7a5e', '#0ea87a', '#10b981']);
       case 'nist':
