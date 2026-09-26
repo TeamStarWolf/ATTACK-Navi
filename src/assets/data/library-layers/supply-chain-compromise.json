@@ -1,0 +1,260 @@
+{
+  "name": "TeamStarWolf - Supply Chain & Trusted-Relationship Compromise",
+  "versions": {
+    "attack": "16",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Curated practitioner view of Supply Chain & Trusted-Relationship Compromise behaviors, not an official MITRE mapping. Intrusion through third parties, software/hardware supply chains, trusted relationships, and shared tooling rather than direct exploitation of the target. Cross-tactic selection of Enterprise ATT&CK techniques; scores indicate curated membership tier (core vs supporting), not incident frequency. Every technique ID and tactic is validated against the workbench's bundled ATT&CK v16 data.",
+  "sorting": 3,
+  "layout": {
+    "layout": "side",
+    "showID": false,
+    "showName": true,
+    "showAggregateScores": true,
+    "countUnscored": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1195",
+      "tactic": "initial-access",
+      "score": 100,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1195.001",
+      "tactic": "initial-access",
+      "score": 100,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1195.002",
+      "tactic": "initial-access",
+      "score": 100,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1195.003",
+      "tactic": "initial-access",
+      "score": 100,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1199",
+      "tactic": "initial-access",
+      "score": 100,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1078",
+      "tactic": "initial-access",
+      "score": 100,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1078.004",
+      "tactic": "initial-access",
+      "score": 100,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1078.002",
+      "tactic": "initial-access",
+      "score": 55,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1554",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1505",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1505.003",
+      "tactic": "persistence",
+      "score": 55,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1505.001",
+      "tactic": "persistence",
+      "score": 55,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1505.002",
+      "tactic": "persistence",
+      "score": 55,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1505.004",
+      "tactic": "persistence",
+      "score": 55,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1525",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1176.002",
+      "tactic": "persistence",
+      "score": 55,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1072",
+      "tactic": "lateral-movement",
+      "score": 100,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1080",
+      "tactic": "lateral-movement",
+      "score": 100,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1601",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1601.001",
+      "tactic": "defense-evasion",
+      "score": 55,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1601.002",
+      "tactic": "defense-evasion",
+      "score": 55,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1553",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1553.002",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1553.006",
+      "tactic": "defense-evasion",
+      "score": 55,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1553.003",
+      "tactic": "defense-evasion",
+      "score": 55,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1612",
+      "tactic": "defense-evasion",
+      "score": 55,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1610",
+      "tactic": "execution",
+      "score": 55,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1204.003",
+      "tactic": "execution",
+      "score": 55,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1587.002",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1587",
+      "tactic": "resource-development",
+      "score": 55,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1587.003",
+      "tactic": "resource-development",
+      "score": 55,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1588.003",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1588.004",
+      "tactic": "resource-development",
+      "score": 55,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1608.001",
+      "tactic": "resource-development",
+      "score": 55,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1584",
+      "tactic": "resource-development",
+      "score": 55,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1586",
+      "tactic": "resource-development",
+      "score": 55,
+      "comment": "Curated Supply Chain & Trusted-Relationship Compromise membership (supporting). Practitioner view, not an official MITRE mapping."
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#1b2a4a",
+      "#2f6ab0",
+      "#38bdf8"
+    ],
+    "minValue": 0,
+    "maxValue": 100
+  },
+  "legendItems": [
+    {
+      "label": "Core",
+      "color": "#38bdf8"
+    },
+    {
+      "label": "Supporting",
+      "color": "#2f6ab0"
+    }
+  ],
+  "showTacticRowBackground": false,
+  "tacticRowBackground": "#205b8f",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}

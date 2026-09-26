@@ -58,5 +58,35 @@
     "name": "TeamStarWolf - Agentic AI Swarm Intrusion",
     "description": "Curated practitioner view, not an official MITRE mapping. Enterprise ATT&CK technique frequency across a generalized, de-identified 8-phase agentic-AI-swarm intrusion (120 mapped events, 74 distinct techniques). Scores normalize event frequency to the most frequent technique, not to event count. Companion MITRE ATLAS (AI) coverage and the full kill-chain narrative live in AGENTIC_AI_ATTACK_REFERENCE.md in the TeamStarWolf library. Illustrative composite pattern, not an attribution of any specific incident.",
     "blurb": "Enterprise ATT&CK frequency across a generalized agentic-AI-swarm kill chain: credential reuse, egress-relay C2, pipeline exploitation, and cluster takeover. A curated composite view; companion ATLAS/AI coverage is in the library reference."
+  },
+  {
+    "file": "living-off-the-land.json",
+    "name": "TeamStarWolf - Living-off-the-Land (LOTL)",
+    "description": "Curated practitioner view of Living-off-the-Land (LOTL) behaviors, not an official MITRE mapping. Abuse of built-in, signed, or legitimate system binaries, scripts, interpreters, and admin tooling to execute, persist, move, and exfiltrate while blending into normal activity. Cross-tactic selection of Enterprise ATT&CK techniques; scores indicate curated membership tier (core vs supporting), not incident frequency. Every technique ID and tactic is validated against the workbench's bundled ATT&CK v16 data.",
+    "blurb": "Living-off-the-Land (LOTL): a curated cross-tactic view. Abuse of built-in, signed, or legitimate system binaries, scripts, interpreters, and admin tooling to execute, persist, "
+  },
+  {
+    "file": "phishing-social-engineering.json",
+    "name": "TeamStarWolf - Phishing & Social Engineering",
+    "description": "Curated practitioner view of Phishing & Social Engineering behaviors, not an official MITRE mapping. Human-targeted initial access and follow-on: gathering, luring, delivering, and executing via deception, plus account and MFA abuse enabling the intrusion. Cross-tactic selection of Enterprise ATT&CK techniques; scores indicate curated membership tier (core vs supporting), not incident frequency. Every technique ID and tactic is validated against the workbench's bundled ATT&CK v16 data.",
+    "blurb": "Phishing & Social Engineering: a curated cross-tactic view. Human-targeted initial access and follow-on: gathering, luring, delivering, and executing via deception, plus account an"
+  },
+  {
+    "file": "supply-chain-compromise.json",
+    "name": "TeamStarWolf - Supply Chain & Trusted-Relationship Compromise",
+    "description": "Curated practitioner view of Supply Chain & Trusted-Relationship Compromise behaviors, not an official MITRE mapping. Intrusion through third parties, software/hardware supply chains, trusted relationships, and shared tooling rather than direct exploitation of the target. Cross-tactic selection of Enterprise ATT&CK techniques; scores indicate curated membership tier (core vs supporting), not incident frequency. Every technique ID and tactic is validated against the workbench's bundled ATT&CK v16 data.",
+    "blurb": "Supply Chain & Trusted-Relationship Compromise: a curated cross-tactic view. Intrusion through third parties, software/hardware supply chains, trusted relationships, and shared tooling rather than "
+  },
+  {
+    "file": "data-exfiltration.json",
+    "name": "TeamStarWolf - Data Collection & Exfiltration",
+    "description": "Curated practitioner view of Data Collection & Exfiltration behaviors, not an official MITRE mapping. Staging and moving data out: collection of local, network, cloud, and application data, packaging, and exfiltration over C2, alternative protocols, web services, or physical media. Cross-tactic selection of Enterprise ATT&CK techniques; scores indicate curated membership tier (core vs supporting), not incident frequency. Every technique ID and tactic is validated against the workbench's bundled ATT&CK v16 data.",
+    "blurb": "Data Collection & Exfiltration: a curated cross-tactic view. Staging and moving data out: collection of local, network, cloud, and application data, packaging, and exfiltration over"
+  },
+  {
+    "file": "credential-theft-abuse.json",
+    "name": "TeamStarWolf - Credential Theft & Abuse",
+    "description": "Curated practitioner view of Credential Theft & Abuse behaviors, not an official MITRE mapping. Obtaining and reusing credentials: dumping, cracking, harvesting from stores and files, protocol attacks, and using stolen material to authenticate. Cross-tactic selection of Enterprise ATT&CK techniques; scores indicate curated membership tier (core vs supporting), not incident frequency. Every technique ID and tactic is validated against the workbench's bundled ATT&CK v16 data.",
+    "blurb": "Credential Theft & Abuse: a curated cross-tactic view. Obtaining and reusing credentials: dumping, cracking, harvesting from stores and files, protocol attacks, and using stol"
   }
 ]
