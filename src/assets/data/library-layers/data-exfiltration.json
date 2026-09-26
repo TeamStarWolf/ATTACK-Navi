@@ -1,0 +1,326 @@
+{
+  "name": "TeamStarWolf - Data Collection & Exfiltration",
+  "versions": {
+    "attack": "16",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Curated practitioner view of Data Collection & Exfiltration behaviors, not an official MITRE mapping. Staging and moving data out: collection of local, network, cloud, and application data, packaging, and exfiltration over C2, alternative protocols, web services, or physical media. Cross-tactic selection of Enterprise ATT&CK techniques; scores indicate curated membership tier (core vs supporting), not incident frequency. Every technique ID and tactic is validated against the workbench's bundled ATT&CK v16 data.",
+  "sorting": 3,
+  "layout": {
+    "layout": "side",
+    "showID": false,
+    "showName": true,
+    "showAggregateScores": true,
+    "countUnscored": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1005",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Curated Data Collection & Exfiltration membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1039",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Curated Data Collection & Exfiltration membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1025",
+      "tactic": "collection",
+      "score": 55,
+      "comment": "Curated Data Collection & Exfiltration membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1530",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Curated Data Collection & Exfiltration membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1213",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Curated Data Collection & Exfiltration membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1213.001",
+      "tactic": "collection",
+      "score": 55,
+      "comment": "Curated Data Collection & Exfiltration membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1213.002",
+      "tactic": "collection",
+      "score": 55,
+      "comment": "Curated Data Collection & Exfiltration membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1213.003",
+      "tactic": "collection",
+      "score": 55,
+      "comment": "Curated Data Collection & Exfiltration membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1213.006",
+      "tactic": "collection",
+      "score": 55,
+      "comment": "Curated Data Collection & Exfiltration membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1114",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Curated Data Collection & Exfiltration membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1114.001",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Curated Data Collection & Exfiltration membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1114.002",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Curated Data Collection & Exfiltration membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1114.003",
+      "tactic": "collection",
+      "score": 55,
+      "comment": "Curated Data Collection & Exfiltration membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1113",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Curated Data Collection & Exfiltration membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1123",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Curated Data Collection & Exfiltration membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1125",
+      "tactic": "collection",
+      "score": 55,
+      "comment": "Curated Data Collection & Exfiltration membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1115",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Curated Data Collection & Exfiltration membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1119",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Curated Data Collection & Exfiltration membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1074",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Curated Data Collection & Exfiltration membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1074.001",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Curated Data Collection & Exfiltration membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1074.002",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Curated Data Collection & Exfiltration membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1560",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Curated Data Collection & Exfiltration membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1560.001",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Curated Data Collection & Exfiltration membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1560.002",
+      "tactic": "collection",
+      "score": 55,
+      "comment": "Curated Data Collection & Exfiltration membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1560.003",
+      "tactic": "collection",
+      "score": 55,
+      "comment": "Curated Data Collection & Exfiltration membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1602",
+      "tactic": "collection",
+      "score": 55,
+      "comment": "Curated Data Collection & Exfiltration membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1602.002",
+      "tactic": "collection",
+      "score": 55,
+      "comment": "Curated Data Collection & Exfiltration membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1071",
+      "tactic": "command-and-control",
+      "score": 55,
+      "comment": "Curated Data Collection & Exfiltration membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1071.001",
+      "tactic": "command-and-control",
+      "score": 55,
+      "comment": "Curated Data Collection & Exfiltration membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1102",
+      "tactic": "command-and-control",
+      "score": 55,
+      "comment": "Curated Data Collection & Exfiltration membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1041",
+      "tactic": "exfiltration",
+      "score": 100,
+      "comment": "Curated Data Collection & Exfiltration membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1048",
+      "tactic": "exfiltration",
+      "score": 100,
+      "comment": "Curated Data Collection & Exfiltration membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1048.001",
+      "tactic": "exfiltration",
+      "score": 55,
+      "comment": "Curated Data Collection & Exfiltration membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1048.002",
+      "tactic": "exfiltration",
+      "score": 55,
+      "comment": "Curated Data Collection & Exfiltration membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1048.003",
+      "tactic": "exfiltration",
+      "score": 55,
+      "comment": "Curated Data Collection & Exfiltration membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1567",
+      "tactic": "exfiltration",
+      "score": 100,
+      "comment": "Curated Data Collection & Exfiltration membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1567.002",
+      "tactic": "exfiltration",
+      "score": 100,
+      "comment": "Curated Data Collection & Exfiltration membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1567.001",
+      "tactic": "exfiltration",
+      "score": 55,
+      "comment": "Curated Data Collection & Exfiltration membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1567.004",
+      "tactic": "exfiltration",
+      "score": 55,
+      "comment": "Curated Data Collection & Exfiltration membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1052",
+      "tactic": "exfiltration",
+      "score": 100,
+      "comment": "Curated Data Collection & Exfiltration membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1052.001",
+      "tactic": "exfiltration",
+      "score": 100,
+      "comment": "Curated Data Collection & Exfiltration membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1030",
+      "tactic": "exfiltration",
+      "score": 100,
+      "comment": "Curated Data Collection & Exfiltration membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1029",
+      "tactic": "exfiltration",
+      "score": 100,
+      "comment": "Curated Data Collection & Exfiltration membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1020",
+      "tactic": "exfiltration",
+      "score": 100,
+      "comment": "Curated Data Collection & Exfiltration membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1020.001",
+      "tactic": "exfiltration",
+      "score": 55,
+      "comment": "Curated Data Collection & Exfiltration membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1011",
+      "tactic": "exfiltration",
+      "score": 55,
+      "comment": "Curated Data Collection & Exfiltration membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1011.001",
+      "tactic": "exfiltration",
+      "score": 55,
+      "comment": "Curated Data Collection & Exfiltration membership (supporting). Practitioner view, not an official MITRE mapping."
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#1b2a4a",
+      "#2f6ab0",
+      "#38bdf8"
+    ],
+    "minValue": 0,
+    "maxValue": 100
+  },
+  "legendItems": [
+    {
+      "label": "Core",
+      "color": "#38bdf8"
+    },
+    {
+      "label": "Supporting",
+      "color": "#2f6ab0"
+    }
+  ],
+  "showTacticRowBackground": false,
+  "tacticRowBackground": "#205b8f",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}
