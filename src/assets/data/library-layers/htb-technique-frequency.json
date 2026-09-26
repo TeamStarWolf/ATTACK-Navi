@@ -6,7 +6,7 @@
     "layer": "4.5"
   },
   "domain": "enterprise-attack",
-  "description": "Curated practitioner view, not an official MITRE mapping. Supplied aggregate of 249 analyzed HTB machines and 135 distinct techniques; derived metadata only, not reproduced walkthrough content. The original 131-machine cohort used a careful analysis pass; the additional 118 machines use coarser keyword-derived tagging over selected common techniques, which can miss rarer behaviors and produce false positives. These methods are not equally sensitive. Scores normalize counts to the maximum (209 machines), not to the sample size; 100 does not mean 100% of machines. This reflects HTB teaching and sample-selection bias, not real-world enterprise prevalence. Counts reconcile with supplied cohort metadata but were not independently re-audited against walkthroughs. IDs and tactic assignments are validated against the bundled ATT&CK v16 enterprise dataset.",
+  "description": "Curated practitioner view, not an official MITRE mapping. Technique frequency across 535 analyzed HackTheBox machines (131 carefully-analyzed originals + 404 recent machines whose techniques were keyword-derived from the user's own text writeups). Scores normalize to the most frequent technique (494); 100 does not mean 100% of machines. New-machine tagging is coarser, so rarer techniques are under-counted. Reflects HTB teaching bias, not enterprise prevalence.",
   "sorting": 3,
   "layout": {
     "layout": "side",
@@ -21,1127 +21,1061 @@
       "techniqueID": "T1046",
       "tactic": "discovery",
       "score": 100,
-      "comment": "Seen in 209 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 494 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1190",
       "tactic": "initial-access",
-      "score": 82,
-      "comment": "Seen in 172 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
-    },
-    {
-      "techniqueID": "T1078",
-      "tactic": "defense-evasion",
-      "score": 54,
-      "comment": "Seen in 113 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
-    },
-    {
-      "techniqueID": "T1078",
-      "tactic": "persistence",
-      "score": 54,
-      "comment": "Seen in 113 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
-    },
-    {
-      "techniqueID": "T1078",
-      "tactic": "privilege-escalation",
-      "score": 54,
-      "comment": "Seen in 113 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
-    },
-    {
-      "techniqueID": "T1078",
-      "tactic": "initial-access",
-      "score": 54,
-      "comment": "Seen in 113 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 65,
+      "comment": "Seen in 319 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1105",
       "tactic": "command-and-control",
-      "score": 47,
-      "comment": "Seen in 99 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 58,
+      "comment": "Seen in 286 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1110.002",
       "tactic": "credential-access",
-      "score": 47,
-      "comment": "Seen in 98 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
-    },
-    {
-      "techniqueID": "T1021.004",
-      "tactic": "lateral-movement",
-      "score": 44,
-      "comment": "Seen in 91 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
-    },
-    {
-      "techniqueID": "T1552.001",
-      "tactic": "credential-access",
-      "score": 35,
-      "comment": "Seen in 73 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
-    },
-    {
-      "techniqueID": "T1548.003",
-      "tactic": "privilege-escalation",
-      "score": 31,
-      "comment": "Seen in 64 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
-    },
-    {
-      "techniqueID": "T1548.003",
-      "tactic": "defense-evasion",
-      "score": 31,
-      "comment": "Seen in 64 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 51,
+      "comment": "Seen in 253 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1083",
       "tactic": "discovery",
-      "score": 30,
-      "comment": "Seen in 62 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 40,
+      "comment": "Seen in 196 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
-      "techniqueID": "T1059.004",
-      "tactic": "execution",
-      "score": 29,
-      "comment": "Seen in 60 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "techniqueID": "T1021.004",
+      "tactic": "lateral-movement",
+      "score": 38,
+      "comment": "Seen in 186 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
-      "techniqueID": "T1505.003",
-      "tactic": "persistence",
-      "score": 24,
-      "comment": "Seen in 51 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
-    },
-    {
-      "techniqueID": "T1548.001",
-      "tactic": "privilege-escalation",
-      "score": 24,
-      "comment": "Seen in 50 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
-    },
-    {
-      "techniqueID": "T1548.001",
+      "techniqueID": "T1078",
       "tactic": "defense-evasion",
-      "score": 24,
-      "comment": "Seen in 50 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 37,
+      "comment": "Seen in 183 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
-      "techniqueID": "T1068",
+      "techniqueID": "T1078",
+      "tactic": "persistence",
+      "score": 37,
+      "comment": "Seen in 183 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
+    },
+    {
+      "techniqueID": "T1078",
       "tactic": "privilege-escalation",
-      "score": 21,
-      "comment": "Seen in 43 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 37,
+      "comment": "Seen in 183 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
-      "techniqueID": "T1059.001",
-      "tactic": "execution",
-      "score": 17,
-      "comment": "Seen in 35 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "techniqueID": "T1078",
+      "tactic": "initial-access",
+      "score": 37,
+      "comment": "Seen in 183 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
+    },
+    {
+      "techniqueID": "T1552.001",
+      "tactic": "credential-access",
+      "score": 28,
+      "comment": "Seen in 139 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
+    },
+    {
+      "techniqueID": "T1548.003",
+      "tactic": "privilege-escalation",
+      "score": 26,
+      "comment": "Seen in 128 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
+    },
+    {
+      "techniqueID": "T1548.003",
+      "tactic": "defense-evasion",
+      "score": 26,
+      "comment": "Seen in 128 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1213",
       "tactic": "collection",
-      "score": 17,
-      "comment": "Seen in 35 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 25,
+      "comment": "Seen in 125 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
+    },
+    {
+      "techniqueID": "T1059.001",
+      "tactic": "execution",
+      "score": 23,
+      "comment": "Seen in 113 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
+    },
+    {
+      "techniqueID": "T1548.001",
+      "tactic": "privilege-escalation",
+      "score": 22,
+      "comment": "Seen in 107 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
+    },
+    {
+      "techniqueID": "T1548.001",
+      "tactic": "defense-evasion",
+      "score": 22,
+      "comment": "Seen in 107 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1572",
       "tactic": "command-and-control",
-      "score": 14,
-      "comment": "Seen in 30 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 20,
+      "comment": "Seen in 98 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
-      "techniqueID": "T1053.003",
-      "tactic": "execution",
-      "score": 12,
-      "comment": "Seen in 26 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
-    },
-    {
-      "techniqueID": "T1053.003",
+      "techniqueID": "T1505.003",
       "tactic": "persistence",
-      "score": 12,
-      "comment": "Seen in 26 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
-    },
-    {
-      "techniqueID": "T1053.003",
-      "tactic": "privilege-escalation",
-      "score": 12,
-      "comment": "Seen in 26 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
-    },
-    {
-      "techniqueID": "T1059",
-      "tactic": "execution",
-      "score": 11,
-      "comment": "Seen in 23 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
-    },
-    {
-      "techniqueID": "T1552.004",
-      "tactic": "credential-access",
-      "score": 10,
-      "comment": "Seen in 20 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
-    },
-    {
-      "techniqueID": "T1082",
-      "tactic": "discovery",
-      "score": 8,
-      "comment": "Seen in 17 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
-    },
-    {
-      "techniqueID": "T1059.006",
-      "tactic": "execution",
-      "score": 8,
-      "comment": "Seen in 17 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
-    },
-    {
-      "techniqueID": "T1140",
-      "tactic": "defense-evasion",
-      "score": 8,
-      "comment": "Seen in 17 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 19,
+      "comment": "Seen in 92 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1136",
       "tactic": "persistence",
-      "score": 7,
-      "comment": "Seen in 14 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 14,
+      "comment": "Seen in 71 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
-      "techniqueID": "T1021.002",
-      "tactic": "lateral-movement",
-      "score": 6,
-      "comment": "Seen in 12 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
-    },
-    {
-      "techniqueID": "T1110.001",
-      "tactic": "credential-access",
-      "score": 6,
-      "comment": "Seen in 12 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
-    },
-    {
-      "techniqueID": "T1595.003",
-      "tactic": "reconnaissance",
-      "score": 6,
-      "comment": "Seen in 12 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
-    },
-    {
-      "techniqueID": "T1057",
-      "tactic": "discovery",
-      "score": 5,
-      "comment": "Seen in 11 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
-    },
-    {
-      "techniqueID": "T1021.006",
-      "tactic": "lateral-movement",
-      "score": 4,
-      "comment": "Seen in 8 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
-    },
-    {
-      "techniqueID": "T1059.003",
+      "techniqueID": "T1059.004",
       "tactic": "execution",
-      "score": 4,
-      "comment": "Seen in 8 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 12,
+      "comment": "Seen in 60 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
-      "techniqueID": "T1098.004",
+      "techniqueID": "T1053.003",
+      "tactic": "execution",
+      "score": 12,
+      "comment": "Seen in 59 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
+    },
+    {
+      "techniqueID": "T1053.003",
       "tactic": "persistence",
-      "score": 3,
-      "comment": "Seen in 7 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 12,
+      "comment": "Seen in 59 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
-      "techniqueID": "T1098.004",
+      "techniqueID": "T1053.003",
       "tactic": "privilege-escalation",
-      "score": 3,
-      "comment": "Seen in 7 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 12,
+      "comment": "Seen in 59 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
-      "techniqueID": "T1110",
+      "techniqueID": "T1068",
+      "tactic": "privilege-escalation",
+      "score": 10,
+      "comment": "Seen in 49 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
+    },
+    {
+      "techniqueID": "T1003",
+      "tactic": "credential-access",
+      "score": 8,
+      "comment": "Seen in 39 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
+    },
+    {
+      "techniqueID": "T1021.001",
+      "tactic": "lateral-movement",
+      "score": 6,
+      "comment": "Seen in 31 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
+    },
+    {
+      "techniqueID": "T1574",
+      "tactic": "persistence",
+      "score": 5,
+      "comment": "Seen in 25 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
+    },
+    {
+      "techniqueID": "T1574",
+      "tactic": "privilege-escalation",
+      "score": 5,
+      "comment": "Seen in 25 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
+    },
+    {
+      "techniqueID": "T1574",
+      "tactic": "defense-evasion",
+      "score": 5,
+      "comment": "Seen in 25 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
+    },
+    {
+      "techniqueID": "T1059",
+      "tactic": "execution",
+      "score": 5,
+      "comment": "Seen in 23 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
+    },
+    {
+      "techniqueID": "T1552.004",
+      "tactic": "credential-access",
+      "score": 4,
+      "comment": "Seen in 20 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
+    },
+    {
+      "techniqueID": "T1082",
+      "tactic": "discovery",
+      "score": 3,
+      "comment": "Seen in 17 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
+    },
+    {
+      "techniqueID": "T1059.006",
+      "tactic": "execution",
+      "score": 3,
+      "comment": "Seen in 17 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
+    },
+    {
+      "techniqueID": "T1140",
+      "tactic": "defense-evasion",
+      "score": 3,
+      "comment": "Seen in 17 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
+    },
+    {
+      "techniqueID": "T1558.003",
       "tactic": "credential-access",
       "score": 3,
-      "comment": "Seen in 7 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 16 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1550.002",
       "tactic": "defense-evasion",
       "score": 3,
-      "comment": "Seen in 7 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 13 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1550.002",
       "tactic": "lateral-movement",
       "score": 3,
-      "comment": "Seen in 7 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 13 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1611",
       "tactic": "privilege-escalation",
       "score": 3,
-      "comment": "Seen in 7 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 13 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
-      "techniqueID": "T1574",
+      "techniqueID": "T1021.002",
+      "tactic": "lateral-movement",
+      "score": 2,
+      "comment": "Seen in 12 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
+    },
+    {
+      "techniqueID": "T1110.001",
+      "tactic": "credential-access",
+      "score": 2,
+      "comment": "Seen in 12 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
+    },
+    {
+      "techniqueID": "T1595.003",
+      "tactic": "reconnaissance",
+      "score": 2,
+      "comment": "Seen in 12 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
+    },
+    {
+      "techniqueID": "T1057",
+      "tactic": "discovery",
+      "score": 2,
+      "comment": "Seen in 11 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
+    },
+    {
+      "techniqueID": "T1021.006",
+      "tactic": "lateral-movement",
+      "score": 2,
+      "comment": "Seen in 8 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
+    },
+    {
+      "techniqueID": "T1059.003",
+      "tactic": "execution",
+      "score": 2,
+      "comment": "Seen in 8 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
+    },
+    {
+      "techniqueID": "T1098.004",
       "tactic": "persistence",
-      "score": 3,
-      "comment": "Seen in 7 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 1,
+      "comment": "Seen in 7 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
-      "techniqueID": "T1574",
+      "techniqueID": "T1098.004",
       "tactic": "privilege-escalation",
-      "score": 3,
-      "comment": "Seen in 7 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 1,
+      "comment": "Seen in 7 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
-      "techniqueID": "T1574",
-      "tactic": "defense-evasion",
-      "score": 3,
-      "comment": "Seen in 7 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "techniqueID": "T1110",
+      "tactic": "credential-access",
+      "score": 1,
+      "comment": "Seen in 7 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1135",
       "tactic": "discovery",
-      "score": 3,
-      "comment": "Seen in 6 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 1,
+      "comment": "Seen in 6 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1087",
       "tactic": "discovery",
-      "score": 3,
-      "comment": "Seen in 6 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 1,
+      "comment": "Seen in 6 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1027",
       "tactic": "defense-evasion",
-      "score": 3,
-      "comment": "Seen in 6 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 1,
+      "comment": "Seen in 6 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1187",
       "tactic": "credential-access",
-      "score": 2,
-      "comment": "Seen in 5 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 1,
+      "comment": "Seen in 5 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1595",
       "tactic": "reconnaissance",
-      "score": 2,
-      "comment": "Seen in 5 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 1,
+      "comment": "Seen in 5 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1003.008",
       "tactic": "credential-access",
-      "score": 2,
-      "comment": "Seen in 5 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
-    },
-    {
-      "techniqueID": "T1003",
-      "tactic": "credential-access",
-      "score": 2,
-      "comment": "Seen in 5 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
-    },
-    {
-      "techniqueID": "T1021.001",
-      "tactic": "lateral-movement",
-      "score": 2,
-      "comment": "Seen in 5 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 1,
+      "comment": "Seen in 5 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1027.003",
       "tactic": "defense-evasion",
-      "score": 2,
-      "comment": "Seen in 4 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 1,
+      "comment": "Seen in 4 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1136.001",
       "tactic": "persistence",
-      "score": 2,
-      "comment": "Seen in 4 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 1,
+      "comment": "Seen in 4 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1012",
       "tactic": "discovery",
-      "score": 2,
-      "comment": "Seen in 4 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 1,
+      "comment": "Seen in 4 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1078.001",
       "tactic": "defense-evasion",
-      "score": 2,
-      "comment": "Seen in 4 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 1,
+      "comment": "Seen in 4 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1078.001",
       "tactic": "persistence",
-      "score": 2,
-      "comment": "Seen in 4 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 1,
+      "comment": "Seen in 4 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1078.001",
       "tactic": "privilege-escalation",
-      "score": 2,
-      "comment": "Seen in 4 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 1,
+      "comment": "Seen in 4 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1078.001",
       "tactic": "initial-access",
-      "score": 2,
-      "comment": "Seen in 4 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 1,
+      "comment": "Seen in 4 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1204.002",
       "tactic": "execution",
-      "score": 2,
-      "comment": "Seen in 4 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 1,
+      "comment": "Seen in 4 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1564.004",
       "tactic": "defense-evasion",
-      "score": 2,
-      "comment": "Seen in 4 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 1,
+      "comment": "Seen in 4 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1555.005",
       "tactic": "credential-access",
-      "score": 2,
-      "comment": "Seen in 4 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 1,
+      "comment": "Seen in 4 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1055",
       "tactic": "defense-evasion",
-      "score": 2,
-      "comment": "Seen in 4 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 1,
+      "comment": "Seen in 4 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1055",
       "tactic": "privilege-escalation",
-      "score": 2,
-      "comment": "Seen in 4 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "score": 1,
+      "comment": "Seen in 4 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1550.004",
       "tactic": "defense-evasion",
       "score": 1,
-      "comment": "Seen in 3 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 3 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1550.004",
       "tactic": "lateral-movement",
       "score": 1,
-      "comment": "Seen in 3 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 3 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1210",
       "tactic": "lateral-movement",
       "score": 1,
-      "comment": "Seen in 3 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 3 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1574.007",
       "tactic": "persistence",
       "score": 1,
-      "comment": "Seen in 3 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 3 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1574.007",
       "tactic": "privilege-escalation",
       "score": 1,
-      "comment": "Seen in 3 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 3 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1574.007",
       "tactic": "defense-evasion",
       "score": 1,
-      "comment": "Seen in 3 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 3 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1090",
       "tactic": "command-and-control",
       "score": 1,
-      "comment": "Seen in 3 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 3 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1059.007",
       "tactic": "execution",
       "score": 1,
-      "comment": "Seen in 3 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 3 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1134.001",
       "tactic": "defense-evasion",
       "score": 1,
-      "comment": "Seen in 3 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 3 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1134.001",
       "tactic": "privilege-escalation",
       "score": 1,
-      "comment": "Seen in 3 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 3 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1552",
       "tactic": "credential-access",
       "score": 1,
-      "comment": "Seen in 3 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 3 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1040",
       "tactic": "credential-access",
       "score": 1,
-      "comment": "Seen in 3 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 3 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1040",
       "tactic": "discovery",
       "score": 1,
-      "comment": "Seen in 3 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 3 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1555.003",
       "tactic": "credential-access",
       "score": 1,
-      "comment": "Seen in 3 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 3 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1087.001",
       "tactic": "discovery",
       "score": 1,
-      "comment": "Seen in 3 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 3 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1552.002",
       "tactic": "credential-access",
       "score": 1,
-      "comment": "Seen in 3 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 3 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1098",
       "tactic": "persistence",
       "score": 1,
-      "comment": "Seen in 3 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 3 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1098",
       "tactic": "privilege-escalation",
       "score": 1,
-      "comment": "Seen in 3 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 3 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1027.010",
       "tactic": "defense-evasion",
       "score": 1,
-      "comment": "Seen in 3 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 3 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1090.001",
       "tactic": "command-and-control",
       "score": 1,
-      "comment": "Seen in 2 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 2 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1212",
       "tactic": "credential-access",
       "score": 1,
-      "comment": "Seen in 2 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 2 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1552.006",
       "tactic": "credential-access",
       "score": 1,
-      "comment": "Seen in 2 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 2 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1087.002",
       "tactic": "discovery",
       "score": 1,
-      "comment": "Seen in 2 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
-    },
-    {
-      "techniqueID": "T1558.003",
-      "tactic": "credential-access",
-      "score": 1,
-      "comment": "Seen in 2 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 2 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1047",
       "tactic": "execution",
       "score": 1,
-      "comment": "Seen in 2 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 2 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1569.002",
       "tactic": "execution",
       "score": 1,
-      "comment": "Seen in 2 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 2 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1059.005",
       "tactic": "execution",
       "score": 1,
-      "comment": "Seen in 2 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 2 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1114.002",
       "tactic": "collection",
       "score": 1,
-      "comment": "Seen in 2 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 2 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1016",
       "tactic": "discovery",
       "score": 1,
-      "comment": "Seen in 2 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 2 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1069.001",
       "tactic": "discovery",
       "score": 1,
-      "comment": "Seen in 2 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 2 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1049",
       "tactic": "discovery",
       "score": 1,
-      "comment": "Seen in 2 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 2 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1053.005",
       "tactic": "execution",
       "score": 1,
-      "comment": "Seen in 2 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 2 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1053.005",
       "tactic": "persistence",
       "score": 1,
-      "comment": "Seen in 2 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 2 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1053.005",
       "tactic": "privilege-escalation",
       "score": 1,
-      "comment": "Seen in 2 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 2 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1606.001",
       "tactic": "credential-access",
       "score": 1,
-      "comment": "Seen in 2 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 2 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1602.001",
       "tactic": "collection",
       "score": 1,
-      "comment": "Seen in 2 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 2 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1205.001",
       "tactic": "defense-evasion",
       "score": 1,
-      "comment": "Seen in 2 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 2 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1205.001",
       "tactic": "persistence",
       "score": 1,
-      "comment": "Seen in 2 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 2 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1205.001",
       "tactic": "command-and-control",
       "score": 1,
-      "comment": "Seen in 2 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 2 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1048",
       "tactic": "exfiltration",
       "score": 1,
-      "comment": "Seen in 2 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 2 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1003.001",
       "tactic": "credential-access",
       "score": 1,
-      "comment": "Seen in 2 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 2 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1518",
       "tactic": "discovery",
       "score": 1,
-      "comment": "Seen in 2 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 2 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1649",
       "tactic": "credential-access",
       "score": 1,
-      "comment": "Seen in 2 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 2 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1005",
       "tactic": "collection",
       "score": 1,
-      "comment": "Seen in 2 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 2 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1203",
       "tactic": "execution",
       "score": 1,
-      "comment": "Seen in 2 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 2 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1566.001",
       "tactic": "initial-access",
       "score": 1,
-      "comment": "Seen in 2 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 2 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1539",
       "tactic": "credential-access",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1021",
       "tactic": "lateral-movement",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1555.004",
       "tactic": "credential-access",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1557.001",
       "tactic": "credential-access",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1557.001",
       "tactic": "collection",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1003.006",
       "tactic": "credential-access",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1213.003",
       "tactic": "collection",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1574.006",
       "tactic": "persistence",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1574.006",
       "tactic": "privilege-escalation",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1574.006",
       "tactic": "defense-evasion",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1110.003",
       "tactic": "credential-access",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1557",
       "tactic": "credential-access",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1557",
       "tactic": "collection",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1548",
       "tactic": "privilege-escalation",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1548",
       "tactic": "defense-evasion",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1018",
       "tactic": "discovery",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1563.001",
       "tactic": "lateral-movement",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1114",
       "tactic": "collection",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1558",
       "tactic": "credential-access",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1550.003",
       "tactic": "defense-evasion",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1550.003",
       "tactic": "lateral-movement",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1033",
       "tactic": "discovery",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1613",
       "tactic": "discovery",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1610",
       "tactic": "defense-evasion",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1610",
       "tactic": "execution",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1590.002",
       "tactic": "reconnaissance",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1546.003",
       "tactic": "privilege-escalation",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1546.003",
       "tactic": "persistence",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1218.011",
       "tactic": "defense-evasion",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1562.001",
       "tactic": "defense-evasion",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1654",
       "tactic": "discovery",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1003.003",
       "tactic": "credential-access",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1095",
       "tactic": "command-and-control",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1021.005",
       "tactic": "lateral-movement",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1048.003",
       "tactic": "exfiltration",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1553.002",
       "tactic": "defense-evasion",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1218.007",
       "tactic": "defense-evasion",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1003.002",
       "tactic": "credential-access",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1056.003",
       "tactic": "collection",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1056.003",
       "tactic": "credential-access",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1563",
       "tactic": "lateral-movement",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1571",
       "tactic": "command-and-control",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1113",
       "tactic": "collection",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1006",
       "tactic": "defense-evasion",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1220",
       "tactic": "defense-evasion",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1213.002",
       "tactic": "collection",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1036",
       "tactic": "defense-evasion",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1587.001",
       "tactic": "resource-development",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1574.010",
       "tactic": "persistence",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1574.010",
       "tactic": "privilege-escalation",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1574.010",
       "tactic": "defense-evasion",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1218",
       "tactic": "defense-evasion",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1007",
       "tactic": "discovery",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1552.003",
       "tactic": "credential-access",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1127.001",
       "tactic": "defense-evasion",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1548.002",
       "tactic": "privilege-escalation",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1548.002",
       "tactic": "defense-evasion",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1574.001",
       "tactic": "persistence",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1574.001",
       "tactic": "privilege-escalation",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1574.001",
       "tactic": "defense-evasion",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1218.005",
       "tactic": "defense-evasion",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1069.002",
       "tactic": "discovery",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1570",
       "tactic": "lateral-movement",
       "score": 1,
-      "comment": "Seen in 1 of 249 analyzed HTB machines. Supplied mixed-method aggregate: 131-machine careful pass plus 118-machine keyword-derived tagging; not an independently verified observation for every machine. Tactics are bundled ATT&CK v16 display assignments, not separately measured frequencies; do not sum repeated tactic rows."
+      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     }
   ],
   "gradient": {
     "colors": [
-      "#f3f4f6",
-      "#16a34a"
+      "#12122a",
+      "#1e3a5f",
+      "#2f6ab0",
+      "#38bdf8",
+      "#a78bfa"
     ],
     "minValue": 0,
     "maxValue": 100
   },
-  "legendItems": [
-    {
-      "label": "100: maximum supplied count (209 of 249 machines), not 100% prevalence",
-      "color": "#16a34a"
-    }
-  ],
-  "metadata": [
-    {
-      "name": "source",
-      "value": "Supplied combined HTB aggregate; source documents and machine-level metadata are not included."
-    },
-    {
-      "name": "source_sha256",
-      "value": "FC72B9353CEF59FAA1B24D5B44DB77D3430833DE701A046916278BFA8372BB5B"
-    },
-    {
-      "name": "machines_analyzed",
-      "value": "249"
-    },
-    {
-      "name": "techniques_scored",
-      "value": "135"
-    },
-    {
-      "name": "technique_tactic_entries",
-      "value": "174"
-    },
-    {
-      "name": "max_machine_count",
-      "value": "209"
-    },
-    {
-      "name": "score_formula",
-      "value": "min(100, max(1, round(100 * count / 209)))"
-    },
-    {
-      "name": "score_meaning",
-      "value": "Relative supplied count normalized to the maximum; not percentage of machines, severity, enterprise prevalence, confidence, or control coverage."
-    },
-    {
-      "name": "counting_policy",
-      "value": "Counts reconcile with the original aggregate plus the additional per-machine tags. Parent and subtechnique counts remain separate supplied observations, not rolled up. Techniques overlap within machines; counts and scores are not additive."
-    },
-    {
-      "name": "tactic_policy",
-      "value": "Each technique is displayed under all of its bundled ATT&CK v16 tactics with the same count and score. This is display expansion, not evidence of behavior in every tactic. Do not sum repeated tactic rows."
-    },
-    {
-      "name": "limitations",
-      "value": "The original 131-machine cohort used a careful analysis pass; the additional 118 machines use coarser keyword-derived tagging over selected common techniques, which can miss rarer behaviors and produce false positives. These methods are not equally sensitive. HTB teaching and sample-selection bias limit generalization. Untagged behaviors are unmeasured, not confirmed absent. Writeups and machine identities across cohorts were not independently re-audited; validation checks supplied arithmetic and identifiers, not underlying behavioral evidence."
-    },
-    {
-      "name": "validation_source",
-      "value": "src/assets/data/enterprise-attack.json"
-    },
-    {
-      "name": "validation_source_sha256",
-      "value": "5B568AED4098FE85AC59464A75A9B52AE489C94FDB92C2A86F22580CAF493340"
-    },
-    {
-      "name": "generated_by",
-      "value": "Validated aggregate-to-Navigator data transformation"
-    }
-  ],
-  "links": [
-    {
-      "label": "Bundled technique ID and tactic validation source",
-      "url": "https://github.com/TeamStarWolf/ATTACK-Navi/blob/main/src/assets/data/enterprise-attack.json"
-    }
-  ],
+  "legendItems": [],
   "showTacticRowBackground": false,
-  "tacticRowBackground": "#dddddd",
+  "tacticRowBackground": "#205b8f",
   "selectTechniquesAcrossTactics": true,
   "selectSubtechniquesWithParent": false
 }
