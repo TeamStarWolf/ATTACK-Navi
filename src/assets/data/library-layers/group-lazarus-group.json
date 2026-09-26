@@ -1,0 +1,706 @@
+{
+  "name": "TeamStarWolf - Threat Group: Lazarus Group (G0032)",
+  "versions": {
+    "attack": "16",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "ATT&CK-documented techniques attributed to Lazarus Group (G0032; aliases: Labyrinth Chollima, HIDDEN COBRA, Guardians of Peace, ZINC, NICKEL ACADEMY, Diam). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+  "sorting": 3,
+  "layout": {
+    "layout": "side",
+    "showID": false,
+    "showName": true,
+    "showAggregateScores": true,
+    "countUnscored": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1001.003",
+      "tactic": "command-and-control",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1005",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1008",
+      "tactic": "command-and-control",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1010",
+      "tactic": "discovery",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1012",
+      "tactic": "discovery",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1016",
+      "tactic": "discovery",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1021.001",
+      "tactic": "lateral-movement",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1021.002",
+      "tactic": "lateral-movement",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1021.004",
+      "tactic": "lateral-movement",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1027.007",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1027.009",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1027.013",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1033",
+      "tactic": "discovery",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1036.003",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1036.004",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1036.005",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1041",
+      "tactic": "exfiltration",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1046",
+      "tactic": "discovery",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1047",
+      "tactic": "execution",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1048.003",
+      "tactic": "exfiltration",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1049",
+      "tactic": "discovery",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1053.005",
+      "tactic": "execution",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1053.005",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1053.005",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1055.001",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1055.001",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1056.001",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1056.001",
+      "tactic": "credential-access",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1057",
+      "tactic": "discovery",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1059.001",
+      "tactic": "execution",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1059.003",
+      "tactic": "execution",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1059.005",
+      "tactic": "execution",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1070",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1070.003",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1070.004",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1070.006",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1071.001",
+      "tactic": "command-and-control",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1074.001",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1078",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1078",
+      "tactic": "initial-access",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1078",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1078",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1082",
+      "tactic": "discovery",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1083",
+      "tactic": "discovery",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1090.001",
+      "tactic": "command-and-control",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1090.002",
+      "tactic": "command-and-control",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1098",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1098",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1102.002",
+      "tactic": "command-and-control",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1104",
+      "tactic": "command-and-control",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1105",
+      "tactic": "command-and-control",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1106",
+      "tactic": "execution",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1110.003",
+      "tactic": "credential-access",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1124",
+      "tactic": "discovery",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1132.001",
+      "tactic": "command-and-control",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1134.002",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1134.002",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1140",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1189",
+      "tactic": "initial-access",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1202",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1203",
+      "tactic": "execution",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1204.002",
+      "tactic": "execution",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1218",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1218.005",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1218.011",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1485",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1489",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1491.001",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1529",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1542.003",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1542.003",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1543.003",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1543.003",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1547.001",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1547.001",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1547.009",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1547.009",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1553.002",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1557.001",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1557.001",
+      "tactic": "credential-access",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1560",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1560.002",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1560.003",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1561.001",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1561.002",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1562.001",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1562.004",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1564.001",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1566.001",
+      "tactic": "initial-access",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1566.002",
+      "tactic": "initial-access",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1566.003",
+      "tactic": "initial-access",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1571",
+      "tactic": "command-and-control",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1573.001",
+      "tactic": "command-and-control",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1574.001",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1574.001",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1574.001",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1574.013",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1574.013",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1574.013",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1583.001",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1583.006",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1584.004",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1585.001",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1585.002",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1587.001",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1588.002",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1588.004",
+      "tactic": "resource-development",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1589.002",
+      "tactic": "reconnaissance",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1591",
+      "tactic": "reconnaissance",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1620",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    },
+    {
+      "techniqueID": "T1680",
+      "tactic": "discovery",
+      "score": 100,
+      "comment": "Documented ATT&CK technique use by Lazarus Group (G0032)."
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#3b1f4a",
+      "#7b2fa0",
+      "#c026d3"
+    ],
+    "minValue": 0,
+    "maxValue": 100
+  },
+  "legendItems": [
+    {
+      "label": "Documented G0032 use",
+      "color": "#c026d3"
+    }
+  ],
+  "showTacticRowBackground": false,
+  "tacticRowBackground": "#4a205b",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}
