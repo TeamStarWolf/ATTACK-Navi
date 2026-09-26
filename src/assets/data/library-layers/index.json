@@ -88,5 +88,41 @@
     "name": "TeamStarWolf - Credential Theft & Abuse",
     "description": "Curated practitioner view of Credential Theft & Abuse behaviors, not an official MITRE mapping. Obtaining and reusing credentials: dumping, cracking, harvesting from stores and files, protocol attacks, and using stolen material to authenticate. Cross-tactic selection of Enterprise ATT&CK techniques; scores indicate curated membership tier (core vs supporting), not incident frequency. Every technique ID and tactic is validated against the workbench's bundled ATT&CK v16 data.",
     "blurb": "Credential Theft & Abuse: a curated cross-tactic view. Obtaining and reusing credentials: dumping, cracking, harvesting from stores and files, protocol attacks, and using stol"
+  },
+  {
+    "file": "group-apt29.json",
+    "name": "TeamStarWolf - Threat Group: APT29 (G0016)",
+    "description": "ATT&CK-documented techniques attributed to APT29 (G0016; aliases: IRON RITUAL, IRON HEMLOCK, NobleBaron, Dark Halo, NOBELIUM, UNC2452, YTTRIUM, Th). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+    "blurb": "APT29 (G0016) adversary emulation overlay: 66 MITRE-documented techniques. Sourced from MITRE's own group attribution, not a curated mapping."
+  },
+  {
+    "file": "group-volt-typhoon.json",
+    "name": "TeamStarWolf - Threat Group: Volt Typhoon (G1017)",
+    "description": "ATT&CK-documented techniques attributed to Volt Typhoon (G1017; aliases: BRONZE SILHOUETTE, Vanguard Panda, DEV-0391, UNC3236, Voltzite, Insidious Taurus). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+    "blurb": "Volt Typhoon (G1017) adversary emulation overlay: 81 MITRE-documented techniques. Sourced from MITRE's own group attribution, not a curated mapping."
+  },
+  {
+    "file": "group-scattered-spider.json",
+    "name": "TeamStarWolf - Threat Group: Scattered Spider (G1015)",
+    "description": "ATT&CK-documented techniques attributed to Scattered Spider (G1015; aliases: Roasted 0ktapus, Octo Tempest, Storm-0875, UNC3944). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+    "blurb": "Scattered Spider (G1015) adversary emulation overlay: 64 MITRE-documented techniques. Sourced from MITRE's own group attribution, not a curated mapping."
+  },
+  {
+    "file": "group-lazarus-group.json",
+    "name": "TeamStarWolf - Threat Group: Lazarus Group (G0032)",
+    "description": "ATT&CK-documented techniques attributed to Lazarus Group (G0032; aliases: Labyrinth Chollima, HIDDEN COBRA, Guardians of Peace, ZINC, NICKEL ACADEMY, Diam). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+    "blurb": "Lazarus Group (G0032) adversary emulation overlay: 93 MITRE-documented techniques. Sourced from MITRE's own group attribution, not a curated mapping."
+  },
+  {
+    "file": "group-sandworm-team.json",
+    "name": "TeamStarWolf - Threat Group: Sandworm Team (G0034)",
+    "description": "ATT&CK-documented techniques attributed to Sandworm Team (G0034; aliases: ELECTRUM, Telebots, IRON VIKING, BlackEnergy (Group), Quedagh, Voodoo Bear, IRID). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+    "blurb": "Sandworm Team (G0034) adversary emulation overlay: 79 MITRE-documented techniques. Sourced from MITRE's own group attribution, not a curated mapping."
+  },
+  {
+    "file": "group-fin7.json",
+    "name": "TeamStarWolf - Threat Group: FIN7 (G0046)",
+    "description": "ATT&CK-documented techniques attributed to FIN7 (G0046; aliases: GOLD NIAGARA, ITG14, Carbon Spider, ELBRUS, Sangria Tempest). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+    "blurb": "FIN7 (G0046) adversary emulation overlay: 67 MITRE-documented techniques. Sourced from MITRE's own group attribution, not a curated mapping."
   }
 ]
