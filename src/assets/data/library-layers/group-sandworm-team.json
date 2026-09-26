@@ -1,12 +1,12 @@
 {
   "name": "TeamStarWolf - Threat Group: Sandworm Team (G0034)",
   "versions": {
-    "attack": "16",
+    "attack": "19",
     "navigator": "4.9",
     "layer": "4.5"
   },
   "domain": "enterprise-attack",
-  "description": "ATT&CK-documented techniques attributed to Sandworm Team (G0034; aliases: ELECTRUM, Telebots, IRON VIKING, BlackEnergy (Group), Quedagh, Voodoo Bear, IRID). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+  "description": "ATT&CK-documented techniques attributed to Sandworm Team (G0034; aliases: ELECTRUM, Telebots, IRON VIKING, BlackEnergy (Group), Quedagh, Voodoo Bear, IRID). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v19.2 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
   "sorting": 3,
   "layout": {
     "layout": "side",
@@ -49,13 +49,13 @@
     },
     {
       "techniqueID": "T1027",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Sandworm Team (G0034)."
     },
     {
       "techniqueID": "T1027.010",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Sandworm Team (G0034)."
     },
@@ -67,13 +67,13 @@
     },
     {
       "techniqueID": "T1036",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Sandworm Team (G0034)."
     },
     {
       "techniqueID": "T1036.005",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Sandworm Team (G0034)."
     },
@@ -151,7 +151,7 @@
     },
     {
       "techniqueID": "T1070.004",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Sandworm Team (G0034)."
     },
@@ -175,7 +175,7 @@
     },
     {
       "techniqueID": "T1078",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Sandworm Team (G0034)."
     },
@@ -199,7 +199,7 @@
     },
     {
       "techniqueID": "T1078.002",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Sandworm Team (G0034)."
     },
@@ -289,7 +289,7 @@
     },
     {
       "techniqueID": "T1140",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Sandworm Team (G0034)."
     },
@@ -343,7 +343,7 @@
     },
     {
       "techniqueID": "T1218.011",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by Sandworm Team (G0034)."
     },

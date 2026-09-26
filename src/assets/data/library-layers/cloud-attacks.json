@@ -1,7 +1,7 @@
 {
   "name": "TeamStarWolf - Cloud Attacks",
   "versions": {
-    "attack": "16",
+    "attack": "19",
     "navigator": "4.9",
     "layer": "4.5"
   },
@@ -31,7 +31,7 @@
     },
     {
       "techniqueID": "T1078",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Compromised valid credentials can grant access to cloud services. Sources: CLOUD_ATTACK_REFERENCE.md."
     },
@@ -55,7 +55,7 @@
     },
     {
       "techniqueID": "T1078.004",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Cloud account abuse supports unauthorized access and privilege use. Sources: CLOUD_ATTACK_REFERENCE.md."
     },
@@ -120,14 +120,8 @@
       "comment": "Abuse of elevation mechanisms is a cloud privilege-escalation theme in the reference. Sources: CLOUD_ATTACK_REFERENCE.md."
     },
     {
-      "techniqueID": "T1548",
-      "tactic": "defense-evasion",
-      "score": 100,
-      "comment": "Abuse of elevation mechanisms is a cloud privilege-escalation theme in the reference. Sources: CLOUD_ATTACK_REFERENCE.md."
-    },
-    {
-      "techniqueID": "T1562",
-      "tactic": "defense-evasion",
+      "techniqueID": "T1685",
+      "tactic": "defense-impairment",
       "score": 100,
       "comment": "Cloud audit logging and security controls can be disabled or modified. Sources: CLOUD_ATTACK_REFERENCE.md."
     },
@@ -172,12 +166,6 @@
       "tactic": "lateral-movement",
       "score": 100,
       "comment": "Remote services can support movement between accessible workloads. Sources: CLOUD_ATTACK_REFERENCE.md."
-    },
-    {
-      "techniqueID": "T1550",
-      "tactic": "defense-evasion",
-      "score": 100,
-      "comment": "Alternate authentication material can be reused for cloud access and movement. Sources: CLOUD_ATTACK_REFERENCE.md."
     },
     {
       "techniqueID": "T1550",
