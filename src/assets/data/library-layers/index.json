@@ -46,5 +46,11 @@
     "name": "TeamStarWolf - OWASP Top 10 (2021)",
     "description": "Curated practitioner view of the OWASP Top 10 (2021) themes used in SECURE_CODING_REFERENCE.md, not an official OWASP or MITRE mapping. The 2021 edition is intentional and is not a claim to represent the latest Top 10. Sources: that reference's A01-A10 sections and data/attack/technique_profiles.jsonl. Associations describe possible attacker behavior or defensive context, not equivalence between a weakness category and an ATT&CK technique. Scores indicate membership only.",
     "blurb": "Connects the library's OWASP Top 10 (2021) themes with relevant attacker behaviors. These curated associations are not an official OWASP or MITRE crosswalk."
+  },
+  {
+    "file": "htb-technique-frequency.json",
+    "name": "TeamStarWolf - HTB Technique Frequency",
+    "description": "Curated practitioner view, not an official MITRE mapping. Derived from Claude's supplied analysis of the user's own HTB writeups: derived technique metadata only, not reproduced content. The reported sample covers all 131 analyzed HTB machines and contains 131 distinct techniques. Sources: the supplied htb-technique-frequency-data.json aggregate and data/attack/technique_profiles.jsonl for ID and tactic validation. Scores normalize machine counts to the most frequent technique (105 machines), not to the sample size; 100 does not mean 100% of machines. This reflects HTB's teaching bias, not real-world enterprise prevalence. Counts were imported from the supplied aggregate, not independently re-audited against machine-level writeups.",
+    "blurb": "Shows normalized technique counts from the supplied analysis of the user's own 131 HTB machines. This curated metadata view reflects HTB's teaching bias, not enterprise prevalence; source counts were not independently re-audited."
   }
 ]
