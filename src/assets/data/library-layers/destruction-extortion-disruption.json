@@ -1,0 +1,278 @@
+{
+  "name": "TeamStarWolf - Impact: Destruction, Extortion & Disruption",
+  "versions": {
+    "attack": "16",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Curated practitioner view, not an official MITRE mapping. Scores are membership tiers (core=100, supporting=55), not severity, confidence, incident frequency, or a coverage guarantee. Technique IDs and tactic assignments are checked against official Enterprise ATT&CK 16.1 and the bundled 18.1 dataset; the layer retains v16-compatible tactic slugs. Core rows describe selected Enterprise impact behaviors; supporting rows describe access, preparation, collection and exfiltration that can precede destructive or extortion scenarios. Extortion is a scenario objective, not a standalone Enterprise ATT&CK technique or tactic. No actor attribution, mandatory attack sequence, or ICS coverage is implied. This is a planning view, not an instruction to execute destructive actions.",
+  "sorting": 3,
+  "layout": {
+    "layout": "side",
+    "showID": false,
+    "showName": true,
+    "showAggregateScores": true,
+    "countUnscored": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1485",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Data Destruction. Core: Destroying business data can interrupt operations without involving encryption."
+    },
+    {
+      "techniqueID": "T1486",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Data Encrypted for Impact. Core: Encrypting data can deny availability and create pressure in an extortion scenario."
+    },
+    {
+      "techniqueID": "T1490",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Inhibit System Recovery. Core: Disabling or damaging recovery mechanisms can prolong an outage and complicate restoration."
+    },
+    {
+      "techniqueID": "T1489",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Service Stop. Core: Stopping services can interrupt operations or remove obstacles to subsequent impact."
+    },
+    {
+      "techniqueID": "T1531",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Account Access Removal. Core: Removing legitimate account access can prevent operators from administering affected systems."
+    },
+    {
+      "techniqueID": "T1561.001",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Disk Content Wipe. Core: Wiping disk contents can irreversibly destroy data; use discussion or synthetic evidence in training."
+    },
+    {
+      "techniqueID": "T1561.002",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Disk Structure Wipe. Core: Damaging disk structures can prevent boot or data access; use discussion or synthetic evidence in training."
+    },
+    {
+      "techniqueID": "T1499",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Endpoint Denial of Service. Core: Exhausting or exploiting endpoint resources can deny service; inclusion does not imply every sub-technique is modeled."
+    },
+    {
+      "techniqueID": "T1498",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Network Denial of Service. Core: Network denial of service can make a service unreachable; this is an outcome family, not a measured incident rate."
+    },
+    {
+      "techniqueID": "T1491.001",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Internal Defacement. Core: Internal defacement can replace information visible to staff and interfere with trusted workflows."
+    },
+    {
+      "techniqueID": "T1491.002",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "External Defacement. Core: External defacement can alter public-facing content and damage trust."
+    },
+    {
+      "techniqueID": "T1529",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "System Shutdown/Reboot. Core: Unauthorized shutdown or reboot can interrupt service and impede recovery work."
+    },
+    {
+      "techniqueID": "T1495",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Firmware Corruption. Core: Firmware corruption can render equipment unusable; retain as a discussion-only scenario in a home lab."
+    },
+    {
+      "techniqueID": "T1565.001",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Stored Data Manipulation. Core: Stored-record manipulation can undermine integrity even when systems remain available."
+    },
+    {
+      "techniqueID": "T1565.002",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Transmitted Data Manipulation. Core: Changing data in transit can corrupt decisions based on exchanged information."
+    },
+    {
+      "techniqueID": "T1565.003",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Runtime Data Manipulation. Core: Runtime manipulation can alter results while an application is processing data."
+    },
+    {
+      "techniqueID": "T1078",
+      "tactic": "defense-evasion",
+      "score": 55,
+      "comment": "Valid Accounts. Supporting: Abused accounts can provide access needed for later destructive actions; impact is not inevitable."
+    },
+    {
+      "techniqueID": "T1078",
+      "tactic": "persistence",
+      "score": 55,
+      "comment": "Valid Accounts. Supporting: Abused accounts can provide access needed for later destructive actions; impact is not inevitable."
+    },
+    {
+      "techniqueID": "T1078",
+      "tactic": "privilege-escalation",
+      "score": 55,
+      "comment": "Valid Accounts. Supporting: Abused accounts can provide access needed for later destructive actions; impact is not inevitable."
+    },
+    {
+      "techniqueID": "T1078",
+      "tactic": "initial-access",
+      "score": 55,
+      "comment": "Valid Accounts. Supporting: Abused accounts can provide access needed for later destructive actions; impact is not inevitable."
+    },
+    {
+      "techniqueID": "T1059.004",
+      "tactic": "execution",
+      "score": 55,
+      "comment": "Unix Shell. Supporting: Unix-shell execution can orchestrate later actions on Linux or macOS; it is one possible execution path."
+    },
+    {
+      "techniqueID": "T1562.001",
+      "tactic": "defense-evasion",
+      "score": 55,
+      "comment": "Disable or Modify Tools. Supporting: Impairing security tools can reduce detection before impact."
+    },
+    {
+      "techniqueID": "T1484.001",
+      "tactic": "defense-evasion",
+      "score": 55,
+      "comment": "Group Policy Modification. Supporting: Abused Group Policy changes can distribute harmful configuration through a Windows domain."
+    },
+    {
+      "techniqueID": "T1484.001",
+      "tactic": "privilege-escalation",
+      "score": 55,
+      "comment": "Group Policy Modification. Supporting: Abused Group Policy changes can distribute harmful configuration through a Windows domain."
+    },
+    {
+      "techniqueID": "T1005",
+      "tactic": "collection",
+      "score": 55,
+      "comment": "Data from Local System. Supporting: Collecting local data can support theft-based extortion without requiring encryption."
+    },
+    {
+      "techniqueID": "T1074.001",
+      "tactic": "collection",
+      "score": 55,
+      "comment": "Local Data Staging. Supporting: Staging data can prepare it for theft before an extortion demand."
+    },
+    {
+      "techniqueID": "T1560.001",
+      "tactic": "collection",
+      "score": 55,
+      "comment": "Archive via Utility. Supporting: Packaging collected data can prepare it for transfer; archiving is not itself impact."
+    },
+    {
+      "techniqueID": "T1567.002",
+      "tactic": "exfiltration",
+      "score": 55,
+      "comment": "Exfiltration to Cloud Storage. Supporting: Unapproved cloud-storage uploads can export data later used as extortion leverage."
+    },
+    {
+      "techniqueID": "T1041",
+      "tactic": "exfiltration",
+      "score": 55,
+      "comment": "Exfiltration Over C2 Channel. Supporting: Data can leave over an existing command-and-control channel before impact occurs."
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#1b2a4a",
+      "#2f6ab0",
+      "#38bdf8"
+    ],
+    "minValue": 0,
+    "maxValue": 100
+  },
+  "legendItems": [
+    {
+      "label": "100: Core (curated membership)",
+      "color": "#38bdf8"
+    },
+    {
+      "label": "55: Supporting (curated membership)",
+      "color": "#2f6ab0"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "selection_rule",
+      "value": "Core: selected Enterprise availability and integrity impacts, including encryption, wiping, recovery inhibition, disruption and defacement. Supporting: access and preparation plus collection/exfiltration that can support extortion. Tier is relevance to this lens, not severity."
+    },
+    {
+      "name": "techniques_scored",
+      "value": "25"
+    },
+    {
+      "name": "technique_tactic_entries",
+      "value": "29"
+    },
+    {
+      "name": "core_techniques",
+      "value": "16"
+    },
+    {
+      "name": "supporting_techniques",
+      "value": "9"
+    },
+    {
+      "name": "score_meaning",
+      "value": "100=core; 55=supporting. Membership only, not severity, prevalence, confidence, or measured defensive coverage."
+    },
+    {
+      "name": "tactic_policy",
+      "value": "Display each selected technique under all of its official 16.1 tactics, verified to match the bundled snapshot. Display expansion does not assert a scenario uses every tactic or requires every step. The app may translate retired IDs for its newer live matrix."
+    },
+    {
+      "name": "validation_source",
+      "value": "Official Enterprise ATT&CK 16.1 and src/assets/data/enterprise-attack.json (collection version 18.1). The bundled file is not v16; both snapshots retain defense-evasion."
+    },
+    {
+      "name": "baseline_sha256",
+      "value": "8423d8dac3fc2feb825bb07d26e5f5d905e08a88f6fe4652cc20834cbe982813"
+    },
+    {
+      "name": "bundled_sha256_lf",
+      "value": "f857d8f78f2f0c0b7db321a711a39fba98546c1e3076a657684850c83d0962fb"
+    },
+    {
+      "name": "reference_context",
+      "value": "RANSOMWARE_DEFENSE_REFERENCE.md; selection and rationale are practitioner interpretation, not an official mapping."
+    }
+  ],
+  "links": [
+    {
+      "label": "Official Enterprise ATT&CK 16.1 snapshot",
+      "url": "https://github.com/mitre-attack/attack-stix-data/blob/master/enterprise-attack/enterprise-attack-16.1.json"
+    },
+    {
+      "label": "Bundled validation snapshot",
+      "url": "https://github.com/TeamStarWolf/ATTACK-Navi/blob/207209f/src/assets/data/enterprise-attack.json"
+    },
+    {
+      "label": "RANSOMWARE_DEFENSE_REFERENCE.md",
+      "url": "https://github.com/TeamStarWolf/TeamStarWolf/blob/a697aeeef1f3532392e4f1bf2123c885c015a452/RANSOMWARE_DEFENSE_REFERENCE.md"
+    }
+  ],
+  "showTacticRowBackground": false,
+  "tacticRowBackground": "#205b8f",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}
