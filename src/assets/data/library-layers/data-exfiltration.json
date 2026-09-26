@@ -1,12 +1,12 @@
 {
   "name": "TeamStarWolf - Data Collection & Exfiltration",
   "versions": {
-    "attack": "16",
+    "attack": "19",
     "navigator": "4.9",
     "layer": "4.5"
   },
   "domain": "enterprise-attack",
-  "description": "Curated practitioner view of Data Collection & Exfiltration behaviors, not an official MITRE mapping. Staging and moving data out: collection of local, network, cloud, and application data, packaging, and exfiltration over C2, alternative protocols, web services, or physical media. Cross-tactic selection of Enterprise ATT&CK techniques; scores indicate curated membership tier (core vs supporting), not incident frequency. Every technique ID and tactic is validated against the workbench's bundled ATT&CK v16 data.",
+  "description": "Curated practitioner view of Data Collection & Exfiltration behaviors, not an official MITRE mapping. Staging and moving data out: collection of local, network, cloud, and application data, packaging, and exfiltration over C2, alternative protocols, web services, or physical media. Cross-tactic selection of Enterprise ATT&CK techniques; scores indicate curated membership tier (core vs supporting), not incident frequency. Every technique ID and tactic is validated against the workbench's bundled ATT&CK v19.2 data.",
   "sorting": 3,
   "layout": {
     "layout": "side",

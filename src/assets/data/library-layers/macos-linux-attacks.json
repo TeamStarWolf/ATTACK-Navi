@@ -1,12 +1,12 @@
 {
   "name": "TeamStarWolf - macOS & Linux Attacks",
   "versions": {
-    "attack": "16",
+    "attack": "19",
     "navigator": "4.9",
     "layer": "4.5"
   },
   "domain": "enterprise-attack",
-  "description": "Curated practitioner view, not an official MITRE mapping. Scores are membership tiers (core=100, supporting=55), not severity, confidence, incident frequency, or a coverage guarantee. Technique IDs and tactic assignments are checked against official Enterprise ATT&CK 16.1 and the bundled 18.1 dataset; the layer retains v16-compatible tactic slugs. Selected Unix execution, persistence, credential access, privilege abuse, remote access, and follow-on behavior. A technique need only apply to one of macOS or Linux, not both; per-row platform metadata narrows its scope. The selection is not a complete operating-system matrix.",
+  "description": "Curated practitioner view, not an official MITRE mapping. Scores are membership tiers (core=100, supporting=55), not severity, confidence, incident frequency, or a coverage guarantee. Technique IDs and tactic assignments are validated against the bundled Enterprise ATT&CK 19.2 dataset, with official 16.1 retained as the original provenance baseline; tactic slugs follow 19.2. Selected Unix execution, persistence, credential access, privilege abuse, remote access, and follow-on behavior. A technique need only apply to one of macOS or Linux, not both; per-row platform metadata narrows its scope. The selection is not a complete operating-system matrix.",
   "sorting": 3,
   "layout": {
     "layout": "side",
@@ -121,7 +121,7 @@
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
+          "value": "macOS, Linux"
         }
       ]
     },
@@ -133,7 +133,7 @@
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
+          "value": "macOS, Linux"
         }
       ]
     },
@@ -145,7 +145,7 @@
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
+          "value": "macOS, Linux"
         }
       ]
     },
@@ -187,25 +187,25 @@
     },
     {
       "techniqueID": "T1546.004",
-      "tactic": "privilege-escalation",
-      "score": 100,
-      "comment": "Unix Shell Configuration Modification. Core: Shell startup configuration can execute unwanted commands when a Unix session begins.",
-      "metadata": [
-        {
-          "name": "platform_scope",
-          "value": "Linux, macOS"
-        }
-      ]
-    },
-    {
-      "techniqueID": "T1546.004",
       "tactic": "persistence",
       "score": 100,
       "comment": "Unix Shell Configuration Modification. Core: Shell startup configuration can execute unwanted commands when a Unix session begins.",
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
+          "value": "macOS, Linux"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1546.004",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Unix Shell Configuration Modification. Core: Shell startup configuration can execute unwanted commands when a Unix session begins.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "macOS, Linux"
         }
       ]
     },
@@ -235,7 +235,7 @@
     },
     {
       "techniqueID": "T1647",
-      "tactic": "defense-evasion",
+      "tactic": "defense-impairment",
       "score": 100,
       "comment": "Plist File Modification. Core: macOS property-list changes can redirect application or service behavior for persistence.",
       "metadata": [
@@ -253,7 +253,7 @@
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
+          "value": "macOS, Linux"
         }
       ]
     },
@@ -265,7 +265,7 @@
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
+          "value": "macOS, Linux"
         }
       ]
     },
@@ -277,19 +277,7 @@
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
-        }
-      ]
-    },
-    {
-      "techniqueID": "T1548.001",
-      "tactic": "defense-evasion",
-      "score": 100,
-      "comment": "Setuid and Setgid. Core: Abuse of setuid or setgid behavior can cross Unix privilege boundaries.",
-      "metadata": [
-        {
-          "name": "platform_scope",
-          "value": "Linux, macOS"
+          "value": "macOS, Linux"
         }
       ]
     },
@@ -301,31 +289,7 @@
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
-        }
-      ]
-    },
-    {
-      "techniqueID": "T1548.003",
-      "tactic": "defense-evasion",
-      "score": 100,
-      "comment": "Sudo and Sudo Caching. Core: Sudo policy or cached authorization can be abused to run commands with elevated privileges.",
-      "metadata": [
-        {
-          "name": "platform_scope",
-          "value": "Linux, macOS"
-        }
-      ]
-    },
-    {
-      "techniqueID": "T1548.006",
-      "tactic": "defense-evasion",
-      "score": 100,
-      "comment": "TCC Manipulation. Core: Manipulating macOS privacy-consent controls can bypass access restrictions on protected resources.",
-      "metadata": [
-        {
-          "name": "platform_scope",
-          "value": "macOS"
+          "value": "macOS, Linux"
         }
       ]
     },
@@ -373,13 +337,13 @@
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
+          "value": "macOS, Linux"
         }
       ]
     },
     {
       "techniqueID": "T1553.001",
-      "tactic": "defense-evasion",
+      "tactic": "defense-impairment",
       "score": 100,
       "comment": "Gatekeeper Bypass. Core: Bypassing Gatekeeper weakens macOS execution-trust checks.",
       "metadata": [
@@ -391,7 +355,7 @@
     },
     {
       "techniqueID": "T1222.002",
-      "tactic": "defense-evasion",
+      "tactic": "defense-impairment",
       "score": 100,
       "comment": "Linux and Mac File and Directory Permissions Modification. Core: Unix permission changes can make files accessible or executable outside their intended access model.",
       "metadata": [
@@ -409,31 +373,31 @@
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
+          "value": "macOS, Linux"
         }
       ]
     },
     {
-      "techniqueID": "T1070.002",
-      "tactic": "defense-evasion",
+      "techniqueID": "T1685.006",
+      "tactic": "defense-impairment",
       "score": 100,
       "comment": "Clear Linux or Mac System Logs. Core: Clearing Linux or macOS system logs can remove evidence of an intrusion.",
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
+          "value": "macOS, Linux"
         }
       ]
     },
     {
       "techniqueID": "T1070.003",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Clear Command History. Core: Clearing command history can conceal interactive activity on a Unix host.",
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
+          "value": "macOS, Linux"
         }
       ]
     },
@@ -445,43 +409,7 @@
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
-        }
-      ]
-    },
-    {
-      "techniqueID": "T1078.003",
-      "tactic": "defense-evasion",
-      "score": 55,
-      "comment": "Local Accounts. Supporting: Abused local accounts can supply a foothold or continued access without new malware.",
-      "metadata": [
-        {
-          "name": "platform_scope",
-          "value": "Linux, macOS"
-        }
-      ]
-    },
-    {
-      "techniqueID": "T1078.003",
-      "tactic": "persistence",
-      "score": 55,
-      "comment": "Local Accounts. Supporting: Abused local accounts can supply a foothold or continued access without new malware.",
-      "metadata": [
-        {
-          "name": "platform_scope",
-          "value": "Linux, macOS"
-        }
-      ]
-    },
-    {
-      "techniqueID": "T1078.003",
-      "tactic": "privilege-escalation",
-      "score": 55,
-      "comment": "Local Accounts. Supporting: Abused local accounts can supply a foothold or continued access without new malware.",
-      "metadata": [
-        {
-          "name": "platform_scope",
-          "value": "Linux, macOS"
+          "value": "macOS, Linux"
         }
       ]
     },
@@ -493,7 +421,43 @@
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
+          "value": "macOS, Linux"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1078.003",
+      "tactic": "persistence",
+      "score": 55,
+      "comment": "Local Accounts. Supporting: Abused local accounts can supply a foothold or continued access without new malware.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "macOS, Linux"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1078.003",
+      "tactic": "privilege-escalation",
+      "score": 55,
+      "comment": "Local Accounts. Supporting: Abused local accounts can supply a foothold or continued access without new malware.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "macOS, Linux"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1078.003",
+      "tactic": "stealth",
+      "score": 55,
+      "comment": "Local Accounts. Supporting: Abused local accounts can supply a foothold or continued access without new malware.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "macOS, Linux"
         }
       ]
     },
@@ -505,7 +469,7 @@
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
+          "value": "macOS, Linux"
         }
       ]
     },
@@ -517,7 +481,7 @@
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
+          "value": "macOS, Linux"
         }
       ]
     },
@@ -529,13 +493,13 @@
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
+          "value": "macOS, Linux"
         }
       ]
     },
     {
-      "techniqueID": "T1562.001",
-      "tactic": "defense-evasion",
+      "techniqueID": "T1685",
+      "tactic": "defense-impairment",
       "score": 55,
       "comment": "Disable or Modify Tools. Supporting: Disabling host security tools can reduce visibility before further activity.",
       "metadata": [
@@ -553,7 +517,7 @@
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
+          "value": "macOS, Linux"
         }
       ]
     },
@@ -565,7 +529,7 @@
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
+          "value": "macOS, Linux"
         }
       ]
     },
@@ -577,7 +541,7 @@
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
+          "value": "macOS, Linux"
         }
       ]
     },
@@ -589,7 +553,7 @@
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
+          "value": "macOS, Linux"
         }
       ]
     },
@@ -601,7 +565,7 @@
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
+          "value": "macOS, Linux"
         }
       ]
     },
@@ -613,7 +577,7 @@
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
+          "value": "macOS, Linux"
         }
       ]
     },
@@ -625,7 +589,7 @@
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
+          "value": "macOS, Linux"
         }
       ]
     },
@@ -637,7 +601,7 @@
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
+          "value": "macOS, Linux"
         }
       ]
     },
@@ -649,7 +613,7 @@
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
+          "value": "macOS, Linux"
         }
       ]
     },
@@ -661,7 +625,7 @@
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
+          "value": "macOS, Linux"
         }
       ]
     },
@@ -673,7 +637,7 @@
       "metadata": [
         {
           "name": "platform_scope",
-          "value": "Linux, macOS"
+          "value": "macOS, Linux"
         }
       ]
     }
@@ -708,7 +672,7 @@
     },
     {
       "name": "technique_tactic_entries",
-      "value": "55"
+      "value": "52"
     },
     {
       "name": "core_techniques",
@@ -724,11 +688,11 @@
     },
     {
       "name": "tactic_policy",
-      "value": "Display each selected technique under all of its official 16.1 tactics, verified to match the bundled snapshot. Display expansion does not assert a scenario uses every tactic or requires every step. The app may translate retired IDs for its newer live matrix."
+      "value": "Display each selected technique under all of its official 19.2 tactics, verified to match the bundled snapshot. Display expansion does not assert a scenario uses every tactic or requires every step. The app may translate retired IDs for its newer live matrix."
     },
     {
       "name": "validation_source",
-      "value": "Official Enterprise ATT&CK 16.1 and src/assets/data/enterprise-attack.json (collection version 18.1). The bundled file is not v16; both snapshots retain defense-evasion."
+      "value": "Official Enterprise ATT&CK 16.1 (original provenance baseline) and src/assets/data/enterprise-attack.json (collection version 19.2). v19 replaced the Defense Evasion tactic with Stealth and Defense Impairment, and retired the T1562 family in favour of T1685/T1686; technique IDs and tactic slugs follow the bundled 19.2 dataset."
     },
     {
       "name": "baseline_sha256",
@@ -736,7 +700,7 @@
     },
     {
       "name": "bundled_sha256_lf",
-      "value": "f857d8f78f2f0c0b7db321a711a39fba98546c1e3076a657684850c83d0962fb"
+      "value": "dc1639caa5501d720e280cf1cbd8fbe009884a0c9b3e6e9ed9d0c25166c3d8f4"
     },
     {
       "name": "reference_context",
@@ -750,7 +714,7 @@
     },
     {
       "label": "Bundled validation snapshot",
-      "url": "https://github.com/TeamStarWolf/ATTACK-Navi/blob/207209f/src/assets/data/enterprise-attack.json"
+      "url": "https://github.com/TeamStarWolf/ATTACK-Navi/blob/main/src/assets/data/enterprise-attack.json"
     },
     {
       "label": "MACOS_SECURITY_REFERENCE.md",

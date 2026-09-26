@@ -1,12 +1,12 @@
 {
   "name": "TeamStarWolf - Threat Group: MuddyWater (G0069)",
   "versions": {
-    "attack": "16",
+    "attack": "19",
     "navigator": "4.9",
     "layer": "4.5"
   },
   "domain": "enterprise-attack",
-  "description": "ATT&CK-documented techniques attributed to MuddyWater (G0069; aliases: Earth Vetala, MERCURY, Static Kitten, Seedworm, TEMP.Zagros, Mango Sandstorm, TA). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+  "description": "ATT&CK-documented techniques attributed to MuddyWater (G0069; aliases: Earth Vetala, MERCURY, Static Kitten, Seedworm, TEMP.Zagros, Mango Sandstorm, TA). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v19.2 data - MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
   "sorting": 3,
   "layout": {
     "layout": "side",
@@ -43,19 +43,19 @@
     },
     {
       "techniqueID": "T1027.003",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by MuddyWater (G0069)."
     },
     {
       "techniqueID": "T1027.004",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by MuddyWater (G0069)."
     },
     {
       "techniqueID": "T1027.010",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by MuddyWater (G0069)."
     },
@@ -67,7 +67,7 @@
     },
     {
       "techniqueID": "T1036.005",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by MuddyWater (G0069)."
     },
@@ -217,7 +217,7 @@
     },
     {
       "techniqueID": "T1140",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by MuddyWater (G0069)."
     },
@@ -253,19 +253,19 @@
     },
     {
       "techniqueID": "T1218.003",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by MuddyWater (G0069)."
     },
     {
       "techniqueID": "T1218.005",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by MuddyWater (G0069)."
     },
     {
       "techniqueID": "T1218.011",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by MuddyWater (G0069)."
     },
@@ -296,12 +296,6 @@
     {
       "techniqueID": "T1547.001",
       "tactic": "privilege-escalation",
-      "score": 100,
-      "comment": "Documented ATT&CK technique use by MuddyWater (G0069)."
-    },
-    {
-      "techniqueID": "T1548.002",
-      "tactic": "defense-evasion",
       "score": 100,
       "comment": "Documented ATT&CK technique use by MuddyWater (G0069)."
     },
@@ -348,8 +342,8 @@
       "comment": "Documented ATT&CK technique use by MuddyWater (G0069)."
     },
     {
-      "techniqueID": "T1562.001",
-      "tactic": "defense-evasion",
+      "techniqueID": "T1685",
+      "tactic": "defense-impairment",
       "score": 100,
       "comment": "Documented ATT&CK technique use by MuddyWater (G0069)."
     },
@@ -373,19 +367,13 @@
     },
     {
       "techniqueID": "T1574.001",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by MuddyWater (G0069)."
     },
     {
       "techniqueID": "T1574.001",
-      "tactic": "persistence",
-      "score": 100,
-      "comment": "Documented ATT&CK technique use by MuddyWater (G0069)."
-    },
-    {
-      "techniqueID": "T1574.001",
-      "tactic": "privilege-escalation",
+      "tactic": "execution",
       "score": 100,
       "comment": "Documented ATT&CK technique use by MuddyWater (G0069)."
     },
