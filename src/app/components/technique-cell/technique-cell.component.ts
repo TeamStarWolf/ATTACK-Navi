@@ -145,7 +145,7 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
   @Input() exposureScore = 0;
   @Input() softwareScore = 0;
   @Input() campaignScore = 0;
-  @Input() heatmapMode: HeatmapMode = 'coverage';
+  @Input() heatmapMode: HeatmapMode = 'unified';
   @Input() implStatus: ImplStatus | null = null;
   @Input() maxExposure = 1;
   @Input() maxSoftware = 1;
@@ -418,11 +418,13 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
       if (score <= 80) return '#7ad151';
       return '#fde725';
     }
-    if (score <= 15) return '#7f0000';
-    if (score <= 30) return '#c62828';
-    if (score <= 50) return '#e65100';
-    if (score <= 65) return '#f9a825';
-    if (score <= 80) return '#558b2f';
-    return '#1b5e20';
+    // ATT&CK-brand ramp: dim navy (thinly covered / exposed) -> sky -> violet
+    // (strongly covered). Higher unified score = better posture = brighter.
+    if (score <= 15) return '#0e1b30';
+    if (score <= 30) return '#143a5c';
+    if (score <= 50) return '#1f6aa8';
+    if (score <= 65) return '#2f95d8';
+    if (score <= 80) return '#38bdf8';
+    return '#a78bfa';
   }
 }

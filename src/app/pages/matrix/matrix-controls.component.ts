@@ -70,7 +70,7 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
 
   // View menu
   showViewMenu = false;
-  heatmapMode: import('../../services/filter.service').HeatmapMode = 'coverage';
+  heatmapMode: import('../../services/filter.service').HeatmapMode = 'unified';
   sortMode: SortMode = 'alpha';
   dimUncovered = false;
   multiSelectMode = false;
