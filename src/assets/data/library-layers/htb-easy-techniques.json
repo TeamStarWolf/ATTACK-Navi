@@ -1,0 +1,195 @@
+{
+ "name": "TeamStarWolf - HTB Easy Techniques (precise)",
+ "versions": {
+  "attack": "19",
+  "navigator": "4.9",
+  "layer": "4.5"
+ },
+ "domain": "enterprise-attack",
+ "description": "Curated practitioner view, not an official MITRE mapping. Precise-pattern technique frequency across the 109 content-verified Easy-rated Hack The Box walkthroughs (of 529). Keyword/tag-derived from walkthrough text; lower-bound evidence. Scores normalize to the maximum (109 machines) within the Easy subset; 100 is not 100% prevalence. ATT&CK v19.2 IDs/tactics. Compare across the Easy/Medium/Hard/Insane layers to see how technique mix shifts with difficulty. Provenance: 529-machine uniform mine, 2026-09-26.",
+ "sorting": 3,
+ "layout": {
+  "layout": "side",
+  "showID": false,
+  "showName": true,
+  "showAggregateScores": true,
+  "countUnscored": false
+ },
+ "hideDisabled": false,
+ "techniques": [
+  {
+   "techniqueID": "T1046",
+   "tactic": "discovery",
+   "score": 100,
+   "comment": "Network Service Discovery. Seen in 109 of 109 content-verified Easy-rated HTB machines (100.0%). Uniform precise-pattern mining; keyword/tag-derived, not an official MITRE mapping. Tactic is a single primary v19.2 display slug."
+  },
+  {
+   "techniqueID": "T1190",
+   "tactic": "initial-access",
+   "score": 60,
+   "comment": "Exploit Public-Facing Application. Seen in 65 of 109 content-verified Easy-rated HTB machines (59.6%). Uniform precise-pattern mining; keyword/tag-derived, not an official MITRE mapping. Tactic is a single primary v19.2 display slug."
+  },
+  {
+   "techniqueID": "T1105",
+   "tactic": "command-and-control",
+   "score": 49,
+   "comment": "Ingress Tool Transfer. Seen in 53 of 109 content-verified Easy-rated HTB machines (48.6%). Uniform precise-pattern mining; keyword/tag-derived, not an official MITRE mapping. Tactic is a single primary v19.2 display slug."
+  },
+  {
+   "techniqueID": "T1110.002",
+   "tactic": "credential-access",
+   "score": 42,
+   "comment": "Brute Force: Password Cracking. Seen in 46 of 109 content-verified Easy-rated HTB machines (42.2%). Uniform precise-pattern mining; keyword/tag-derived, not an official MITRE mapping. Tactic is a single primary v19.2 display slug."
+  },
+  {
+   "techniqueID": "T1548.003",
+   "tactic": "privilege-escalation",
+   "score": 32,
+   "comment": "Abuse Elevation Control Mechanism: Sudo and Sudo Caching. Seen in 35 of 109 content-verified Easy-rated HTB machines (32.1%). Uniform precise-pattern mining; keyword/tag-derived, not an official MITRE mapping. Tactic is a single primary v19.2 display slug."
+  },
+  {
+   "techniqueID": "T1213",
+   "tactic": "collection",
+   "score": 29,
+   "comment": "Data from Information Repositories. Seen in 32 of 109 content-verified Easy-rated HTB machines (29.4%). Uniform precise-pattern mining; keyword/tag-derived, not an official MITRE mapping. Tactic is a single primary v19.2 display slug."
+  },
+  {
+   "techniqueID": "T1083",
+   "tactic": "discovery",
+   "score": 28,
+   "comment": "File and Directory Discovery. Seen in 30 of 109 content-verified Easy-rated HTB machines (27.5%). Uniform precise-pattern mining; keyword/tag-derived, not an official MITRE mapping. Tactic is a single primary v19.2 display slug."
+  },
+  {
+   "techniqueID": "T1021.004",
+   "tactic": "lateral-movement",
+   "score": 26,
+   "comment": "Remote Services: SSH. Seen in 28 of 109 content-verified Easy-rated HTB machines (25.7%). Uniform precise-pattern mining; keyword/tag-derived, not an official MITRE mapping. Tactic is a single primary v19.2 display slug."
+  },
+  {
+   "techniqueID": "T1548.001",
+   "tactic": "privilege-escalation",
+   "score": 20,
+   "comment": "Abuse Elevation Control Mechanism: Setuid and Setgid. Seen in 22 of 109 content-verified Easy-rated HTB machines (20.2%). Uniform precise-pattern mining; keyword/tag-derived, not an official MITRE mapping. Tactic is a single primary v19.2 display slug."
+  },
+  {
+   "techniqueID": "T1572",
+   "tactic": "command-and-control",
+   "score": 15,
+   "comment": "Protocol Tunneling. Seen in 16 of 109 content-verified Easy-rated HTB machines (14.7%). Uniform precise-pattern mining; keyword/tag-derived, not an official MITRE mapping. Tactic is a single primary v19.2 display slug."
+  },
+  {
+   "techniqueID": "T1053.003",
+   "tactic": "execution",
+   "score": 10,
+   "comment": "Scheduled Task/Job: Cron. Seen in 11 of 109 content-verified Easy-rated HTB machines (10.1%). Uniform precise-pattern mining; keyword/tag-derived, not an official MITRE mapping. Tactic is a single primary v19.2 display slug."
+  },
+  {
+   "techniqueID": "T1059.001",
+   "tactic": "execution",
+   "score": 10,
+   "comment": "Command and Scripting Interpreter: PowerShell. Seen in 11 of 109 content-verified Easy-rated HTB machines (10.1%). Uniform precise-pattern mining; keyword/tag-derived, not an official MITRE mapping. Tactic is a single primary v19.2 display slug."
+  },
+  {
+   "techniqueID": "T1552.001",
+   "tactic": "credential-access",
+   "score": 10,
+   "comment": "Unsecured Credentials: Credentials In Files. Seen in 11 of 109 content-verified Easy-rated HTB machines (10.1%). Uniform precise-pattern mining; keyword/tag-derived, not an official MITRE mapping. Tactic is a single primary v19.2 display slug."
+  },
+  {
+   "techniqueID": "T1505.003",
+   "tactic": "persistence",
+   "score": 6,
+   "comment": "Server Software Component: Web Shell. Seen in 7 of 109 content-verified Easy-rated HTB machines (6.4%). Uniform precise-pattern mining; keyword/tag-derived, not an official MITRE mapping. Tactic is a single primary v19.2 display slug."
+  },
+  {
+   "techniqueID": "T1021.001",
+   "tactic": "lateral-movement",
+   "score": 6,
+   "comment": "Remote Services: Remote Desktop Protocol. Seen in 6 of 109 content-verified Easy-rated HTB machines (5.5%). Uniform precise-pattern mining; keyword/tag-derived, not an official MITRE mapping. Tactic is a single primary v19.2 display slug."
+  },
+  {
+   "techniqueID": "T1078",
+   "tactic": "persistence",
+   "score": 5,
+   "comment": "Valid Accounts. Seen in 5 of 109 content-verified Easy-rated HTB machines (4.6%). Uniform precise-pattern mining; keyword/tag-derived, not an official MITRE mapping. Tactic is a single primary v19.2 display slug."
+  },
+  {
+   "techniqueID": "T1003",
+   "tactic": "credential-access",
+   "score": 4,
+   "comment": "OS Credential Dumping. Seen in 4 of 109 content-verified Easy-rated HTB machines (3.7%). Uniform precise-pattern mining; keyword/tag-derived, not an official MITRE mapping. Tactic is a single primary v19.2 display slug."
+  },
+  {
+   "techniqueID": "T1574",
+   "tactic": "execution",
+   "score": 3,
+   "comment": "Hijack Execution Flow. Seen in 3 of 109 content-verified Easy-rated HTB machines (2.8%). Uniform precise-pattern mining; keyword/tag-derived, not an official MITRE mapping. Tactic is a single primary v19.2 display slug."
+  },
+  {
+   "techniqueID": "T1068",
+   "tactic": "privilege-escalation",
+   "score": 2,
+   "comment": "Exploitation for Privilege Escalation. Seen in 2 of 109 content-verified Easy-rated HTB machines (1.8%). Uniform precise-pattern mining; keyword/tag-derived, not an official MITRE mapping. Tactic is a single primary v19.2 display slug."
+  },
+  {
+   "techniqueID": "T1611",
+   "tactic": "privilege-escalation",
+   "score": 2,
+   "comment": "Escape to Host. Seen in 2 of 109 content-verified Easy-rated HTB machines (1.8%). Uniform precise-pattern mining; keyword/tag-derived, not an official MITRE mapping. Tactic is a single primary v19.2 display slug."
+  }
+ ],
+ "gradient": {
+  "colors": [
+   "#f3f4f6",
+   "#57ad34"
+  ],
+  "minValue": 0,
+  "maxValue": 100
+ },
+ "legendItems": [
+  {
+   "label": "100: max count (109 of 109 Easy machines), not 100% prevalence",
+   "color": "#57ad34"
+  }
+ ],
+ "metadata": [
+  {
+   "name": "source",
+   "value": "529-machine uniform precise-pattern HTB aggregate, Easy subset."
+  },
+  {
+   "name": "source_counts_sha256",
+   "value": "F51D701B04062C0D83D31AB6415FE676D65003F4AF8BD67416376B8F64A6EB5F"
+  },
+  {
+   "name": "machines_analyzed",
+   "value": "109"
+  },
+  {
+   "name": "techniques_scored",
+   "value": "20"
+  },
+  {
+   "name": "difficulty_filter",
+   "value": "Easy"
+  },
+  {
+   "name": "attack_version",
+   "value": "v19.2 (verified current 2026-09-26)"
+  },
+  {
+   "name": "generated",
+   "value": "2026-09-26"
+  }
+ ],
+ "showTacticRowBackground": false,
+ "tacticRowBackground": "#dddddd",
+ "selectTechniquesAcrossTactics": true,
+ "selectSubtechniquesWithParent": false,
+ "links": [
+  {
+   "label": "Bundled technique ID and tactic validation source",
+   "url": "https://github.com/TeamStarWolf/ATTACK-Navi/blob/main/src/assets/data/enterprise-attack.json"
+  }
+ ]
+}
