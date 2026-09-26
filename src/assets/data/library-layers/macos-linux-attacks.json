@@ -1,0 +1,768 @@
+{
+  "name": "TeamStarWolf - macOS & Linux Attacks",
+  "versions": {
+    "attack": "16",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Curated practitioner view, not an official MITRE mapping. Scores are membership tiers (core=100, supporting=55), not severity, confidence, incident frequency, or a coverage guarantee. Technique IDs and tactic assignments are checked against official Enterprise ATT&CK 16.1 and the bundled 18.1 dataset; the layer retains v16-compatible tactic slugs. Selected Unix execution, persistence, credential access, privilege abuse, remote access, and follow-on behavior. A technique need only apply to one of macOS or Linux, not both; per-row platform metadata narrows its scope. The selection is not a complete operating-system matrix.",
+  "sorting": 3,
+  "layout": {
+    "layout": "side",
+    "showID": false,
+    "showName": true,
+    "showAggregateScores": true,
+    "countUnscored": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1059.004",
+      "tactic": "execution",
+      "score": 100,
+      "comment": "Unix Shell. Core: Unix shells provide execution on Linux and macOS; correlate interpreter activity with user and process context.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "macOS, Linux"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1059.002",
+      "tactic": "execution",
+      "score": 100,
+      "comment": "AppleScript. Core: AppleScript can automate macOS applications during intrusion; automation alone is not malicious.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1543.001",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Launch Agent. Core: Launch agents can arrange recurring execution in macOS user sessions.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1543.001",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Launch Agent. Core: Launch agents can arrange recurring execution in macOS user sessions.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1543.002",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Systemd Service. Core: Linux systemd service changes can establish persistent execution with the service account's privileges.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1543.002",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Systemd Service. Core: Linux systemd service changes can establish persistent execution with the service account's privileges.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1543.004",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Launch Daemon. Core: Launch daemons can establish privileged background execution on macOS.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1543.004",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Launch Daemon. Core: Launch daemons can establish privileged background execution on macOS.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1053.003",
+      "tactic": "execution",
+      "score": 100,
+      "comment": "Cron. Core: Cron entries can schedule repeated execution on Unix hosts.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1053.003",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Cron. Core: Cron entries can schedule repeated execution on Unix hosts.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1053.003",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Cron. Core: Cron entries can schedule repeated execution on Unix hosts.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1053.006",
+      "tactic": "execution",
+      "score": 100,
+      "comment": "Systemd Timers. Core: Linux systemd timers can schedule execution and re-entry.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1053.006",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Systemd Timers. Core: Linux systemd timers can schedule execution and re-entry.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1053.006",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Systemd Timers. Core: Linux systemd timers can schedule execution and re-entry.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1546.004",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Unix Shell Configuration Modification. Core: Shell startup configuration can execute unwanted commands when a Unix session begins.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1546.004",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Unix Shell Configuration Modification. Core: Shell startup configuration can execute unwanted commands when a Unix session begins.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1547.015",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "Login Items. Core: macOS login items can establish execution when a user signs in.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1547.015",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Login Items. Core: macOS login items can establish execution when a user signs in.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1647",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Plist File Modification. Core: macOS property-list changes can redirect application or service behavior for persistence.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1098.004",
+      "tactic": "persistence",
+      "score": 100,
+      "comment": "SSH Authorized Keys. Core: Unauthorized SSH keys can preserve access under an existing Unix account.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1098.004",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "SSH Authorized Keys. Core: Unauthorized SSH keys can preserve access under an existing Unix account.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1548.001",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Setuid and Setgid. Core: Abuse of setuid or setgid behavior can cross Unix privilege boundaries.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1548.001",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Setuid and Setgid. Core: Abuse of setuid or setgid behavior can cross Unix privilege boundaries.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1548.003",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "Sudo and Sudo Caching. Core: Sudo policy or cached authorization can be abused to run commands with elevated privileges.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1548.003",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Sudo and Sudo Caching. Core: Sudo policy or cached authorization can be abused to run commands with elevated privileges.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1548.006",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "TCC Manipulation. Core: Manipulating macOS privacy-consent controls can bypass access restrictions on protected resources.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1548.006",
+      "tactic": "privilege-escalation",
+      "score": 100,
+      "comment": "TCC Manipulation. Core: Manipulating macOS privacy-consent controls can bypass access restrictions on protected resources.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1555.001",
+      "tactic": "credential-access",
+      "score": 100,
+      "comment": "Keychain. Core: macOS Keychain access can expose credentials; evaluate caller identity and authorization.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1003.008",
+      "tactic": "credential-access",
+      "score": 100,
+      "comment": "/etc/passwd and /etc/shadow. Core: Linux password-database access can expose password hashes for subsequent credential attacks.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1552.004",
+      "tactic": "credential-access",
+      "score": 100,
+      "comment": "Private Keys. Core: Exposed private keys can enable access to Unix hosts or other services.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1553.001",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Gatekeeper Bypass. Core: Bypassing Gatekeeper weakens macOS execution-trust checks.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1222.002",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Linux and Mac File and Directory Permissions Modification. Core: Unix permission changes can make files accessible or executable outside their intended access model.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "macOS, Linux"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1021.004",
+      "tactic": "lateral-movement",
+      "score": 100,
+      "comment": "SSH. Core: SSH can carry authenticated movement between systems; normal administration needs a baseline.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1070.002",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Clear Linux or Mac System Logs. Core: Clearing Linux or macOS system logs can remove evidence of an intrusion.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1070.003",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Clear Command History. Core: Clearing command history can conceal interactive activity on a Unix host.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1190",
+      "tactic": "initial-access",
+      "score": 55,
+      "comment": "Exploit Public-Facing Application. Supporting: A vulnerable exposed application can provide entry to a Linux or macOS system.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1078.003",
+      "tactic": "defense-evasion",
+      "score": 55,
+      "comment": "Local Accounts. Supporting: Abused local accounts can supply a foothold or continued access without new malware.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1078.003",
+      "tactic": "persistence",
+      "score": 55,
+      "comment": "Local Accounts. Supporting: Abused local accounts can supply a foothold or continued access without new malware.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1078.003",
+      "tactic": "privilege-escalation",
+      "score": 55,
+      "comment": "Local Accounts. Supporting: Abused local accounts can supply a foothold or continued access without new malware.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1078.003",
+      "tactic": "initial-access",
+      "score": 55,
+      "comment": "Local Accounts. Supporting: Abused local accounts can supply a foothold or continued access without new malware.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1204.002",
+      "tactic": "execution",
+      "score": 55,
+      "comment": "Malicious File. Supporting: A user may execute an untrusted file; assess provenance and subsequent behavior.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1068",
+      "tactic": "privilege-escalation",
+      "score": 55,
+      "comment": "Exploitation for Privilege Escalation. Supporting: A local software vulnerability can enable privilege escalation beyond the compromised account.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1552.001",
+      "tactic": "credential-access",
+      "score": 55,
+      "comment": "Credentials In Files. Supporting: Configuration and other local files may expose reusable credentials.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1562.001",
+      "tactic": "defense-evasion",
+      "score": 55,
+      "comment": "Disable or Modify Tools. Supporting: Disabling host security tools can reduce visibility before further activity.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "macOS, Linux"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1082",
+      "tactic": "discovery",
+      "score": 55,
+      "comment": "System Information Discovery. Supporting: System inventory can help an intruder choose compatible tooling and targets.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1083",
+      "tactic": "discovery",
+      "score": 55,
+      "comment": "File and Directory Discovery. Supporting: File enumeration can identify configuration, credentials, or data worth collecting.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1057",
+      "tactic": "discovery",
+      "score": 55,
+      "comment": "Process Discovery. Supporting: Process enumeration can reveal running applications and defensive services.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1016",
+      "tactic": "discovery",
+      "score": 55,
+      "comment": "System Network Configuration Discovery. Supporting: Network configuration can reveal local connectivity and possible next systems.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1087.001",
+      "tactic": "discovery",
+      "score": 55,
+      "comment": "Local Account. Supporting: Local account discovery can identify useful identities and privilege boundaries.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1005",
+      "tactic": "collection",
+      "score": 55,
+      "comment": "Data from Local System. Supporting: Local files can become collection targets after access is obtained.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1105",
+      "tactic": "command-and-control",
+      "score": 55,
+      "comment": "Ingress Tool Transfer. Supporting: Transferring tools onto a host can support follow-on execution.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1071.001",
+      "tactic": "command-and-control",
+      "score": 55,
+      "comment": "Web Protocols. Supporting: Web protocols may carry command-and-control traffic; protocol use alone is not evidence of compromise.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1041",
+      "tactic": "exfiltration",
+      "score": 55,
+      "comment": "Exfiltration Over C2 Channel. Supporting: An established command-and-control channel may also carry stolen data.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1486",
+      "tactic": "impact",
+      "score": 55,
+      "comment": "Data Encrypted for Impact. Supporting: Encryption can deny access to data on compromised Linux or macOS systems.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1496",
+      "tactic": "impact",
+      "score": 55,
+      "comment": "Resource Hijacking. Supporting: Unauthorized resource use can consume Unix-host compute or increase operating costs.",
+      "metadata": [
+        {
+          "name": "platform_scope",
+          "value": "Linux, macOS"
+        }
+      ]
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#1b2a4a",
+      "#2f6ab0",
+      "#38bdf8"
+    ],
+    "minValue": 0,
+    "maxValue": 100
+  },
+  "legendItems": [
+    {
+      "label": "100: Core (curated membership)",
+      "color": "#38bdf8"
+    },
+    {
+      "label": "55: Supporting (curated membership)",
+      "color": "#2f6ab0"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "selection_rule",
+      "value": "Core: platform-focused execution, persistence, trust-control abuse, credentials and SSH behaviors. Supporting: selected cross-platform intrusion behaviors relevant to Linux or macOS. Library hardening guidance supplies context, not an official hardening-to-ATT&CK crosswalk."
+    },
+    {
+      "name": "techniques_scored",
+      "value": "39"
+    },
+    {
+      "name": "technique_tactic_entries",
+      "value": "55"
+    },
+    {
+      "name": "core_techniques",
+      "value": "22"
+    },
+    {
+      "name": "supporting_techniques",
+      "value": "17"
+    },
+    {
+      "name": "score_meaning",
+      "value": "100=core; 55=supporting. Membership only, not severity, prevalence, confidence, or measured defensive coverage."
+    },
+    {
+      "name": "tactic_policy",
+      "value": "Display each selected technique under all of its official 16.1 tactics, verified to match the bundled snapshot. Display expansion does not assert a scenario uses every tactic or requires every step. The app may translate retired IDs for its newer live matrix."
+    },
+    {
+      "name": "validation_source",
+      "value": "Official Enterprise ATT&CK 16.1 and src/assets/data/enterprise-attack.json (collection version 18.1). The bundled file is not v16; both snapshots retain defense-evasion."
+    },
+    {
+      "name": "baseline_sha256",
+      "value": "8423d8dac3fc2feb825bb07d26e5f5d905e08a88f6fe4652cc20834cbe982813"
+    },
+    {
+      "name": "bundled_sha256_lf",
+      "value": "f857d8f78f2f0c0b7db321a711a39fba98546c1e3076a657684850c83d0962fb"
+    },
+    {
+      "name": "reference_context",
+      "value": "MACOS_SECURITY_REFERENCE.md; LINUX_HARDENING_REFERENCE.md; selection and rationale are practitioner interpretation, not an official mapping."
+    }
+  ],
+  "links": [
+    {
+      "label": "Official Enterprise ATT&CK 16.1 snapshot",
+      "url": "https://github.com/mitre-attack/attack-stix-data/blob/master/enterprise-attack/enterprise-attack-16.1.json"
+    },
+    {
+      "label": "Bundled validation snapshot",
+      "url": "https://github.com/TeamStarWolf/ATTACK-Navi/blob/207209f/src/assets/data/enterprise-attack.json"
+    },
+    {
+      "label": "MACOS_SECURITY_REFERENCE.md",
+      "url": "https://github.com/TeamStarWolf/TeamStarWolf/blob/a697aeeef1f3532392e4f1bf2123c885c015a452/MACOS_SECURITY_REFERENCE.md"
+    },
+    {
+      "label": "LINUX_HARDENING_REFERENCE.md",
+      "url": "https://github.com/TeamStarWolf/TeamStarWolf/blob/a697aeeef1f3532392e4f1bf2123c885c015a452/LINUX_HARDENING_REFERENCE.md"
+    }
+  ],
+  "showTacticRowBackground": false,
+  "tacticRowBackground": "#205b8f",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}
