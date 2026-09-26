@@ -154,5 +154,23 @@
     "name": "TeamStarWolf - Threat Group: TeamTNT (G0139)",
     "description": "ATT&CK-documented techniques attributed to TeamTNT (G0139). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
     "blurb": "TeamTNT (G0139) adversary emulation overlay: 56 MITRE-documented techniques. Sourced from MITRE's own group attribution, not a curated mapping."
+  },
+  {
+    "file": "macos-linux-attacks.json",
+    "name": "TeamStarWolf - macOS & Linux Attacks",
+    "description": "Curated practitioner view, not an official MITRE mapping. Scores are membership tiers (core=100, supporting=55), not severity, confidence, incident frequency, or a coverage guarantee. Technique IDs and tactic assignments are checked against official Enterprise ATT&CK 16.1 and the bundled 18.1 dataset; the layer retains v16-compatible tactic slugs. Selected Unix execution, persistence, credential access, privilege abuse, remote access, and follow-on behavior. A technique need only apply to one of macOS or Linux, not both; per-row platform metadata narrows its scope. The selection is not a complete operating-system matrix.",
+    "blurb": "Unix and macOS execution, persistence, credential abuse, SSH movement, and follow-on behaviors. Core and supporting tiers are curated priorities, not frequency or tested coverage."
+  },
+  {
+    "file": "insider-threat.json",
+    "name": "TeamStarWolf - Insider Threat",
+    "description": "Curated practitioner view, not an official MITRE mapping. Scores are membership tiers (core=100, supporting=55), not severity, confidence, incident frequency, or a coverage guarantee. Technique IDs and tactic assignments are checked against official Enterprise ATT&CK 16.1 and the bundled 18.1 dataset; the layer retains v16-compatible tactic slugs. Selected abuse of granted access, information collection, unauthorized export, record manipulation, and sabotage. This is an independent selection informed by the library's insider-risk reference, not a reproduction of CTID's case dataset or its frequency rankings. A behavior match is not proof of malicious intent or insider identity; use authorization, business context, and privacy-aware review.",
+    "blurb": "Abuse of granted access, data collection and export, fraud-related record changes, and sabotage. Behavior-based review only: these scores neither identify a malicious insider nor reproduce CTID case frequencies."
+  },
+  {
+    "file": "destruction-extortion-disruption.json",
+    "name": "TeamStarWolf - Impact: Destruction, Extortion & Disruption",
+    "description": "Curated practitioner view, not an official MITRE mapping. Scores are membership tiers (core=100, supporting=55), not severity, confidence, incident frequency, or a coverage guarantee. Technique IDs and tactic assignments are checked against official Enterprise ATT&CK 16.1 and the bundled 18.1 dataset; the layer retains v16-compatible tactic slugs. Core rows describe selected Enterprise impact behaviors; supporting rows describe access, preparation, collection and exfiltration that can precede destructive or extortion scenarios. Extortion is a scenario objective, not a standalone Enterprise ATT&CK technique or tactic. No actor attribution, mandatory attack sequence, or ICS coverage is implied. This is a planning view, not an instruction to execute destructive actions.",
+    "blurb": "Destruction, encryption, recovery inhibition, denial of service, defacement, and data-integrity attacks, with supporting theft and preparation behaviors. Curated planning context, not a destructive runbook."
   }
 ]
