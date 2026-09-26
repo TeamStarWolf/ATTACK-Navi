@@ -16,6 +16,7 @@ import { FilterService, SearchScope, SortMode } from '../../services/filter.serv
 import { DataService } from '../../services/data.service';
 import { MatrixControlService } from '../../services/matrix-control.service';
 import { AttackCveService } from '../../services/attack-cve.service';
+import { LibraryLayerService, LibraryLayerMeta } from '../../services/library-layer.service';
 import { HEATMAP_MODES, HEATMAP_GROUPS, heatmapShortLabel } from '../../models/heatmap-modes';
 import { PLATFORM_PILLS } from '../../components/toolbar/toolbar.component';
 
@@ -71,6 +72,8 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
   // View menu
   showViewMenu = false;
   heatmapMode: import('../../services/filter.service').HeatmapMode = 'unified';
+  libraryLayers: LibraryLayerMeta[] = [];
+  activeLibraryFile: string | null = null;
   sortMode: SortMode = 'alpha';
   dimUncovered = false;
   multiSelectMode = false;
@@ -83,6 +86,7 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
     private dataService: DataService,
     private matrixControl: MatrixControlService,
     private attackCveService: AttackCveService,
+    private libraryLayerService: LibraryLayerService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -111,6 +115,8 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
     this.subs.add(this.filterService.activeDataSource$.subscribe((ds) => { this.selectedDataSource = ds ?? ''; this.cdr.markForCheck(); }));
     this.subs.add(this.filterService.implStatusFilter$.subscribe((s) => { this.implStatusFilter = s ?? ''; this.cdr.markForCheck(); }));
     this.subs.add(this.filterService.heatmapMode$.subscribe((m) => { this.heatmapMode = m; this.cdr.markForCheck(); }));
+    this.subs.add(this.libraryLayerService.manifest$.subscribe((list) => { this.libraryLayers = list; this.cdr.markForCheck(); }));
+    this.subs.add(this.libraryLayerService.activeFile$.subscribe((f) => { this.activeLibraryFile = f; this.cdr.markForCheck(); }));
     this.subs.add(this.filterService.sortMode$.subscribe((m) => { this.sortMode = m; this.cdr.markForCheck(); }));
     this.subs.add(this.filterService.dimUncovered$.subscribe((v) => { this.dimUncovered = v; this.cdr.markForCheck(); }));
     this.subs.add(this.filterService.activeThreatGroupIds$.subscribe((ids) => { this.activeThreatGroupCount = ids.size; this.cdr.markForCheck(); }));
@@ -235,6 +241,18 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
   setHeatmap(mode: import('../../services/filter.service').HeatmapMode): void {
     this.filterService.setHeatmapMode(mode);
     this.showViewMenu = false;
+  }
+
+  /** Select a curated library layer and switch the matrix to color by it. */
+  pickLibraryLayer(file: string): void {
+    this.libraryLayerService.setActive(file);
+    this.filterService.setHeatmapMode('library');
+    this.showViewMenu = false;
+  }
+
+  /** Display name for a layer, without the "TeamStarWolf - " prefix. */
+  layerLabel(name: string): string {
+    return name.replace(/^TeamStarWolf\s*[-–]\s*/, '');
   }
 
   toggleSort(): void { this.filterService.setSortMode(this.sortMode === 'alpha' ? 'coverage' : 'alpha'); }

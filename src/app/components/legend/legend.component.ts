@@ -170,6 +170,16 @@ const MODE_CONFIGS: Record<HeatmapMode, LegendConfig> = {
       { color: '#6a1b9a', label: 'max' },
     ],
   },
+  library: {
+    label: 'Library Layer',
+    stops: [
+      { color: '#12122a', label: 'not in layer' },
+      { color: '#1e3a5f', label: 'low' },
+      { color: '#2f6ab0', label: 'mid' },
+      { color: '#38bdf8', label: 'high' },
+      { color: '#a78bfa', label: 'core' },
+    ],
+  },
   unified: {
     label: 'Unified Coverage',
     stops: [
