@@ -190,5 +190,29 @@
     "name": "TeamStarWolf - HTB Windows Techniques (precise)",
     "description": "Curated practitioner view, not an official MITRE mapping. Precise-pattern frequency of 19 core techniques across the 142 content-verified Windows Hack The Box walkthroughs (of 529 total). Keyword/tag-derived from walkthrough text; treat as lower-bound evidence. Scores normalize to the maximum (135 machines) within the Windows subset, not to sample size; 100 is not 100% prevalence. Technique IDs and tactic slugs are ATT&CK v19.2. Provenance: 529-machine uniform mine, 2026-09-26.",
     "blurb": "Precise-pattern technique frequencies across the 142 content-verified Windows HTB walkthroughs (19 core techniques). Keyword-derived, not an official MITRE mapping."
+  },
+  {
+    "file": "htb-easy-techniques.json",
+    "name": "TeamStarWolf - HTB Easy Techniques (precise)",
+    "description": "Curated practitioner view, not an official MITRE mapping. Precise-pattern technique frequency across the 109 content-verified Easy-rated Hack The Box walkthroughs (of 529). Keyword/tag-derived from walkthrough text; lower-bound evidence. Scores normalize to the maximum (109 machines) within the Easy subset; 100 is not 100% prevalence. ATT&CK v19.2 IDs/tactics. Compare across the Easy/Medium/Hard/Insane layers to see how technique mix shifts with difficulty. Provenance: 529-machine uniform mine, 2026-09-26.",
+    "blurb": "Precise-pattern technique frequencies across the 109 content-verified Easy-rated HTB walkthroughs (20 techniques). Keyword-derived, not an official MITRE mapping."
+  },
+  {
+    "file": "htb-medium-techniques.json",
+    "name": "TeamStarWolf - HTB Medium Techniques (precise)",
+    "description": "Curated practitioner view, not an official MITRE mapping. Precise-pattern technique frequency across the 125 content-verified Medium-rated Hack The Box walkthroughs (of 529). Keyword/tag-derived from walkthrough text; lower-bound evidence. Scores normalize to the maximum (125 machines) within the Medium subset; 100 is not 100% prevalence. ATT&CK v19.2 IDs/tactics. Compare across the Easy/Medium/Hard/Insane layers to see how technique mix shifts with difficulty. Provenance: 529-machine uniform mine, 2026-09-26.",
+    "blurb": "Precise-pattern technique frequencies across the 125 content-verified Medium-rated HTB walkthroughs (21 techniques). Keyword-derived, not an official MITRE mapping."
+  },
+  {
+    "file": "htb-hard-techniques.json",
+    "name": "TeamStarWolf - HTB Hard Techniques (precise)",
+    "description": "Curated practitioner view, not an official MITRE mapping. Precise-pattern technique frequency across the 82 content-verified Hard-rated Hack The Box walkthroughs (of 529). Keyword/tag-derived from walkthrough text; lower-bound evidence. Scores normalize to the maximum (82 machines) within the Hard subset; 100 is not 100% prevalence. ATT&CK v19.2 IDs/tactics. Compare across the Easy/Medium/Hard/Insane layers to see how technique mix shifts with difficulty. Provenance: 529-machine uniform mine, 2026-09-26.",
+    "blurb": "Precise-pattern technique frequencies across the 82 content-verified Hard-rated HTB walkthroughs (21 techniques). Keyword-derived, not an official MITRE mapping."
+  },
+  {
+    "file": "htb-insane-techniques.json",
+    "name": "TeamStarWolf - HTB Insane Techniques (precise)",
+    "description": "Curated practitioner view, not an official MITRE mapping. Precise-pattern technique frequency across the 56 content-verified Insane-rated Hack The Box walkthroughs (of 529). Keyword/tag-derived from walkthrough text; lower-bound evidence. Scores normalize to the maximum (54 machines) within the Insane subset; 100 is not 100% prevalence. ATT&CK v19.2 IDs/tactics. Compare across the Easy/Medium/Hard/Insane layers to see how technique mix shifts with difficulty. Provenance: 529-machine uniform mine, 2026-09-26.",
+    "blurb": "Precise-pattern technique frequencies across the 56 content-verified Insane-rated HTB walkthroughs (21 techniques). Keyword-derived, not an official MITRE mapping."
   }
 ]
