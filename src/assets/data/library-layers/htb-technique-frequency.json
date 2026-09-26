@@ -1,0 +1,1123 @@
+{
+  "name": "TeamStarWolf - HTB Technique Frequency",
+  "versions": {
+    "attack": "16",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Curated practitioner view, not an official MITRE mapping. Derived from Claude's supplied analysis of the user's own HTB writeups: derived technique metadata only, not reproduced content. The reported sample covers all 131 analyzed HTB machines and contains 131 distinct techniques. Sources: the supplied htb-technique-frequency-data.json aggregate and data/attack/technique_profiles.jsonl for ID and tactic validation. Scores normalize machine counts to the most frequent technique (105 machines), not to the sample size; 100 does not mean 100% of machines. This reflects HTB's teaching bias, not real-world enterprise prevalence. Counts were imported from the supplied aggregate, not independently re-audited against machine-level writeups.",
+  "sorting": 3,
+  "layout": {
+    "layout": "side",
+    "showID": false,
+    "showName": true,
+    "showAggregateScores": true,
+    "countUnscored": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1190",
+      "tactic": "initial-access",
+      "score": 100,
+      "comment": "Seen in 105 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1078",
+      "tactic": "defense-evasion",
+      "score": 94,
+      "comment": "Seen in 99 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1078",
+      "tactic": "persistence",
+      "score": 94,
+      "comment": "Seen in 99 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1078",
+      "tactic": "privilege-escalation",
+      "score": 94,
+      "comment": "Seen in 99 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1078",
+      "tactic": "initial-access",
+      "score": 94,
+      "comment": "Seen in 99 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1046",
+      "tactic": "discovery",
+      "score": 87,
+      "comment": "Seen in 91 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1021.004",
+      "tactic": "lateral-movement",
+      "score": 57,
+      "comment": "Seen in 60 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1059.004",
+      "tactic": "execution",
+      "score": 57,
+      "comment": "Seen in 60 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1552.001",
+      "tactic": "credential-access",
+      "score": 55,
+      "comment": "Seen in 58 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1110.002",
+      "tactic": "credential-access",
+      "score": 43,
+      "comment": "Seen in 45 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1068",
+      "tactic": "privilege-escalation",
+      "score": 38,
+      "comment": "Seen in 40 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1505.003",
+      "tactic": "persistence",
+      "score": 38,
+      "comment": "Seen in 40 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1105",
+      "tactic": "command-and-control",
+      "score": 32,
+      "comment": "Seen in 34 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1548.001",
+      "tactic": "privilege-escalation",
+      "score": 26,
+      "comment": "Seen in 27 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1548.001",
+      "tactic": "defense-evasion",
+      "score": 26,
+      "comment": "Seen in 27 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1059",
+      "tactic": "execution",
+      "score": 22,
+      "comment": "Seen in 23 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1548.003",
+      "tactic": "privilege-escalation",
+      "score": 22,
+      "comment": "Seen in 23 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1548.003",
+      "tactic": "defense-evasion",
+      "score": 22,
+      "comment": "Seen in 23 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1059.001",
+      "tactic": "execution",
+      "score": 21,
+      "comment": "Seen in 22 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1552.004",
+      "tactic": "credential-access",
+      "score": 19,
+      "comment": "Seen in 20 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1082",
+      "tactic": "discovery",
+      "score": 16,
+      "comment": "Seen in 17 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1083",
+      "tactic": "discovery",
+      "score": 16,
+      "comment": "Seen in 17 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1059.006",
+      "tactic": "execution",
+      "score": 16,
+      "comment": "Seen in 17 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1140",
+      "tactic": "defense-evasion",
+      "score": 16,
+      "comment": "Seen in 17 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1053.003",
+      "tactic": "execution",
+      "score": 14,
+      "comment": "Seen in 15 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1053.003",
+      "tactic": "persistence",
+      "score": 14,
+      "comment": "Seen in 15 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1053.003",
+      "tactic": "privilege-escalation",
+      "score": 14,
+      "comment": "Seen in 15 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1572",
+      "tactic": "command-and-control",
+      "score": 12,
+      "comment": "Seen in 13 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1021.002",
+      "tactic": "lateral-movement",
+      "score": 11,
+      "comment": "Seen in 12 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1110.001",
+      "tactic": "credential-access",
+      "score": 11,
+      "comment": "Seen in 12 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1595.003",
+      "tactic": "reconnaissance",
+      "score": 11,
+      "comment": "Seen in 12 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1057",
+      "tactic": "discovery",
+      "score": 10,
+      "comment": "Seen in 11 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1021.006",
+      "tactic": "lateral-movement",
+      "score": 8,
+      "comment": "Seen in 8 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1059.003",
+      "tactic": "execution",
+      "score": 8,
+      "comment": "Seen in 8 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1098.004",
+      "tactic": "persistence",
+      "score": 7,
+      "comment": "Seen in 7 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1098.004",
+      "tactic": "privilege-escalation",
+      "score": 7,
+      "comment": "Seen in 7 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1110",
+      "tactic": "credential-access",
+      "score": 7,
+      "comment": "Seen in 7 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1135",
+      "tactic": "discovery",
+      "score": 6,
+      "comment": "Seen in 6 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1087",
+      "tactic": "discovery",
+      "score": 6,
+      "comment": "Seen in 6 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1027",
+      "tactic": "defense-evasion",
+      "score": 6,
+      "comment": "Seen in 6 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1187",
+      "tactic": "credential-access",
+      "score": 5,
+      "comment": "Seen in 5 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1595",
+      "tactic": "reconnaissance",
+      "score": 5,
+      "comment": "Seen in 5 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1003.008",
+      "tactic": "credential-access",
+      "score": 5,
+      "comment": "Seen in 5 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1550.002",
+      "tactic": "defense-evasion",
+      "score": 4,
+      "comment": "Seen in 4 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1550.002",
+      "tactic": "lateral-movement",
+      "score": 4,
+      "comment": "Seen in 4 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1027.003",
+      "tactic": "defense-evasion",
+      "score": 4,
+      "comment": "Seen in 4 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1136.001",
+      "tactic": "persistence",
+      "score": 4,
+      "comment": "Seen in 4 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1012",
+      "tactic": "discovery",
+      "score": 4,
+      "comment": "Seen in 4 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1078.001",
+      "tactic": "defense-evasion",
+      "score": 4,
+      "comment": "Seen in 4 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1078.001",
+      "tactic": "persistence",
+      "score": 4,
+      "comment": "Seen in 4 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1078.001",
+      "tactic": "privilege-escalation",
+      "score": 4,
+      "comment": "Seen in 4 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1078.001",
+      "tactic": "initial-access",
+      "score": 4,
+      "comment": "Seen in 4 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1204.002",
+      "tactic": "execution",
+      "score": 4,
+      "comment": "Seen in 4 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1564.004",
+      "tactic": "defense-evasion",
+      "score": 4,
+      "comment": "Seen in 4 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1611",
+      "tactic": "privilege-escalation",
+      "score": 4,
+      "comment": "Seen in 4 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1555.005",
+      "tactic": "credential-access",
+      "score": 4,
+      "comment": "Seen in 4 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1055",
+      "tactic": "defense-evasion",
+      "score": 4,
+      "comment": "Seen in 4 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1055",
+      "tactic": "privilege-escalation",
+      "score": 4,
+      "comment": "Seen in 4 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1550.004",
+      "tactic": "defense-evasion",
+      "score": 3,
+      "comment": "Seen in 3 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1550.004",
+      "tactic": "lateral-movement",
+      "score": 3,
+      "comment": "Seen in 3 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1210",
+      "tactic": "lateral-movement",
+      "score": 3,
+      "comment": "Seen in 3 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1574.007",
+      "tactic": "persistence",
+      "score": 3,
+      "comment": "Seen in 3 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1574.007",
+      "tactic": "privilege-escalation",
+      "score": 3,
+      "comment": "Seen in 3 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1574.007",
+      "tactic": "defense-evasion",
+      "score": 3,
+      "comment": "Seen in 3 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1090",
+      "tactic": "command-and-control",
+      "score": 3,
+      "comment": "Seen in 3 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1059.007",
+      "tactic": "execution",
+      "score": 3,
+      "comment": "Seen in 3 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1134.001",
+      "tactic": "defense-evasion",
+      "score": 3,
+      "comment": "Seen in 3 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1134.001",
+      "tactic": "privilege-escalation",
+      "score": 3,
+      "comment": "Seen in 3 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1552",
+      "tactic": "credential-access",
+      "score": 3,
+      "comment": "Seen in 3 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1040",
+      "tactic": "credential-access",
+      "score": 3,
+      "comment": "Seen in 3 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1040",
+      "tactic": "discovery",
+      "score": 3,
+      "comment": "Seen in 3 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1555.003",
+      "tactic": "credential-access",
+      "score": 3,
+      "comment": "Seen in 3 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1087.001",
+      "tactic": "discovery",
+      "score": 3,
+      "comment": "Seen in 3 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1552.002",
+      "tactic": "credential-access",
+      "score": 3,
+      "comment": "Seen in 3 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1098",
+      "tactic": "persistence",
+      "score": 3,
+      "comment": "Seen in 3 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1098",
+      "tactic": "privilege-escalation",
+      "score": 3,
+      "comment": "Seen in 3 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1027.010",
+      "tactic": "defense-evasion",
+      "score": 3,
+      "comment": "Seen in 3 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1090.001",
+      "tactic": "command-and-control",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1212",
+      "tactic": "credential-access",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1552.006",
+      "tactic": "credential-access",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1087.002",
+      "tactic": "discovery",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1558.003",
+      "tactic": "credential-access",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1047",
+      "tactic": "execution",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1569.002",
+      "tactic": "execution",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1059.005",
+      "tactic": "execution",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1114.002",
+      "tactic": "collection",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1016",
+      "tactic": "discovery",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1069.001",
+      "tactic": "discovery",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1049",
+      "tactic": "discovery",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1053.005",
+      "tactic": "execution",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1053.005",
+      "tactic": "persistence",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1053.005",
+      "tactic": "privilege-escalation",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1574",
+      "tactic": "persistence",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1574",
+      "tactic": "privilege-escalation",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1574",
+      "tactic": "defense-evasion",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1606.001",
+      "tactic": "credential-access",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1602.001",
+      "tactic": "collection",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1205.001",
+      "tactic": "defense-evasion",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1205.001",
+      "tactic": "persistence",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1205.001",
+      "tactic": "command-and-control",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1048",
+      "tactic": "exfiltration",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1003.001",
+      "tactic": "credential-access",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1518",
+      "tactic": "discovery",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1649",
+      "tactic": "credential-access",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1005",
+      "tactic": "collection",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1203",
+      "tactic": "execution",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1566.001",
+      "tactic": "initial-access",
+      "score": 2,
+      "comment": "Seen in 2 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1539",
+      "tactic": "credential-access",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1021",
+      "tactic": "lateral-movement",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1555.004",
+      "tactic": "credential-access",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1557.001",
+      "tactic": "credential-access",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1557.001",
+      "tactic": "collection",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1003.006",
+      "tactic": "credential-access",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1213.003",
+      "tactic": "collection",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1574.006",
+      "tactic": "persistence",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1574.006",
+      "tactic": "privilege-escalation",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1574.006",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1110.003",
+      "tactic": "credential-access",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1557",
+      "tactic": "credential-access",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1557",
+      "tactic": "collection",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1548",
+      "tactic": "privilege-escalation",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1548",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1018",
+      "tactic": "discovery",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1563.001",
+      "tactic": "lateral-movement",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1114",
+      "tactic": "collection",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1558",
+      "tactic": "credential-access",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1550.003",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1550.003",
+      "tactic": "lateral-movement",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1033",
+      "tactic": "discovery",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1613",
+      "tactic": "discovery",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1610",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1610",
+      "tactic": "execution",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1590.002",
+      "tactic": "reconnaissance",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1546.003",
+      "tactic": "privilege-escalation",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1546.003",
+      "tactic": "persistence",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1218.011",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1562.001",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1654",
+      "tactic": "discovery",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1003.003",
+      "tactic": "credential-access",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1095",
+      "tactic": "command-and-control",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1021.005",
+      "tactic": "lateral-movement",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1048.003",
+      "tactic": "exfiltration",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1553.002",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1218.007",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1003.002",
+      "tactic": "credential-access",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1056.003",
+      "tactic": "collection",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1056.003",
+      "tactic": "credential-access",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1563",
+      "tactic": "lateral-movement",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1571",
+      "tactic": "command-and-control",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1113",
+      "tactic": "collection",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1006",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1220",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1213.002",
+      "tactic": "collection",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1036",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1587.001",
+      "tactic": "resource-development",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1574.010",
+      "tactic": "persistence",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1574.010",
+      "tactic": "privilege-escalation",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1574.010",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1218",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1007",
+      "tactic": "discovery",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1552.003",
+      "tactic": "credential-access",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1127.001",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1548.002",
+      "tactic": "privilege-escalation",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1548.002",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1574.001",
+      "tactic": "persistence",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1574.001",
+      "tactic": "privilege-escalation",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1574.001",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1218.005",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1069.002",
+      "tactic": "discovery",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    },
+    {
+      "techniqueID": "T1570",
+      "tactic": "lateral-movement",
+      "score": 1,
+      "comment": "Seen in 1 of 131 analyzed HTB machines. Source: Claude-provided aggregate of the user's own writeups; machine-level evidence was not independently re-audited for this layer. Tactics are display assignments from the local ATT&CK profile, not separately measured frequencies."
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#f3f4f6",
+      "#16a34a"
+    ],
+    "minValue": 0,
+    "maxValue": 100
+  },
+  "legendItems": [
+    {
+      "label": "100: maximum observed count (105 of 131 machines), not 100% prevalence",
+      "color": "#16a34a"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "source",
+      "value": "htb-technique-frequency-data.json (supplied aggregate; private source retained outside this repository)"
+    },
+    {
+      "name": "source_sha256",
+      "value": "A7074AF05B3BED4540CD8F0DD7641CFED95407ABD33FDACB28CCEFAA6E57F4AA"
+    },
+    {
+      "name": "machines_analyzed",
+      "value": "131"
+    },
+    {
+      "name": "techniques_scored",
+      "value": "131"
+    },
+    {
+      "name": "technique_tactic_entries",
+      "value": "170"
+    },
+    {
+      "name": "max_machine_count",
+      "value": "105"
+    },
+    {
+      "name": "score_formula",
+      "value": "min(100, max(1, round(100 * count / 105)))"
+    },
+    {
+      "name": "score_meaning",
+      "value": "Relative frequency within the supplied HTB aggregate, normalized to the maximum count; not percentage of machines, severity, enterprise prevalence, confidence, or control coverage."
+    },
+    {
+      "name": "counting_policy",
+      "value": "Source count = number of machines demonstrating each listed technique. Parent and subtechnique counts are preserved as separate supplied observations, not rolled up or summed. Techniques may overlap within a machine; scores and counts are not additive."
+    },
+    {
+      "name": "tactic_policy",
+      "value": "Each selected technique is shown under all tactics in data/attack/technique_profiles.jsonl with the same count and score. This is display expansion, not evidence that the behavior occurred in every tactic. Do not sum repeated tactic rows."
+    },
+    {
+      "name": "limitations",
+      "value": "HTB's teaching bias and the user's selected collection limit generalization. Missing techniques are unscored, not measured zeroes. The aggregate provides no per-machine attribution, so layer validation checks identifiers and arithmetic, not the underlying writeup analysis."
+    },
+    {
+      "name": "validation_source",
+      "value": "data/attack/technique_profiles.jsonl"
+    },
+    {
+      "name": "validation_source_sha256",
+      "value": "2B4C11279E4E4D0AAE633794016BC14F2DE09ED37E98CFB883CFB070377A0C0C"
+    },
+    {
+      "name": "generated_by",
+      "value": "Codex Task 3 per Claude Code handoff (full 131-machine dataset update)"
+    }
+  ],
+  "links": [
+    {
+      "label": "Technique ID and tactic validation source",
+      "url": "https://github.com/TeamStarWolf/TeamStarWolf/blob/main/data/attack/technique_profiles.jsonl"
+    }
+  ],
+  "showTacticRowBackground": false,
+  "tacticRowBackground": "#dddddd",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}
