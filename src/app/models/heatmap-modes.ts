@@ -21,7 +21,7 @@ export const HEATMAP_MODES: readonly HeatmapModeDef[] = [
   { value: 'coverage',  label: '🛡 Coverage',       short: 'Coverage',    group: 'Coverage & Posture' },
   { value: 'status',    label: '✅ Status',          short: 'Status',      group: 'Coverage & Posture' },
   { value: 'controls',  label: '🔒 Controls',        short: 'Controls',    group: 'Coverage & Posture' },
-  { value: 'unified',   label: '🎯 Unified Risk',    short: 'Unified',     group: 'Coverage & Posture' },
+  { value: 'unified',   label: '🎯 Unified Coverage', short: 'Unified',     group: 'Coverage & Posture' },
   { value: 'frequency', label: '📊 Frequency',       short: 'Frequency',   group: 'Coverage & Posture' },
 
   // Threat Landscape

@@ -40,7 +40,7 @@ export class FilterService {
   private activeSoftwareIdsSubject = new BehaviorSubject<Set<string>>(new Set());
   private activeCampaignIdsSubject = new BehaviorSubject<Set<string>>(new Set());
   private activeDataSourceSubject = new BehaviorSubject<string | null>(null);
-  private heatmapModeSubject = new BehaviorSubject<HeatmapMode>('coverage');
+  private heatmapModeSubject = new BehaviorSubject<HeatmapMode>('unified');
   private implStatusFilterSubject = new BehaviorSubject<string | null>(null);
   private searchFilterModeSubject = new BehaviorSubject<boolean>(false);
   searchFilterMode$: Observable<boolean> = this.searchFilterModeSubject.asObservable();
@@ -302,7 +302,7 @@ export class FilterService {
     const ds = this.activeDataSourceSubject.value;
     if (ds) params['ds'] = ds;
     const heat = this.heatmapModeSubject.value;
-    if (heat !== 'coverage') params['heat'] = heat;
+    if (heat !== 'unified') params['heat'] = heat;
     const impl = this.implStatusFilterSubject.value;
     if (impl) params['impl'] = impl;
     const scope = this.searchScopeSubject.value;
@@ -495,7 +495,7 @@ export class FilterService {
     this.activeSoftwareIdsSubject.next(new Set());
     this.activeCampaignIdsSubject.next(new Set());
     this.activeDataSourceSubject.next(null);
-    this.heatmapModeSubject.next('coverage');
+    this.heatmapModeSubject.next('unified');
     this.implStatusFilterSubject.next(null);
     this.searchFilterModeSubject.next(false);
     this.cveTechniqueIdsSubject.next(new Set());

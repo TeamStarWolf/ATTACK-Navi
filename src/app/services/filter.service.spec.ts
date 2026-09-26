@@ -35,7 +35,7 @@ describe('FilterService', () => {
 
     service.clearAll();
 
-    expect(service.getStateSnapshot().heatmapMode).toBe('coverage');
+    expect(service.getStateSnapshot().heatmapMode).toBe('unified');
     expect(service.getStateSnapshot().hiddenTacticIds).toEqual([]);
     expect(service.getTechniqueSearch()).toBe('');
 
