@@ -171,13 +171,13 @@ const MODE_CONFIGS: Record<HeatmapMode, LegendConfig> = {
     ],
   },
   unified: {
-    label: 'Unified Risk',
+    label: 'Unified Coverage',
     stops: [
-      { color: '#7f0000', label: 'critical' },
-      { color: '#c62828', label: 'high' },
-      { color: '#f9a825', label: 'medium' },
-      { color: '#558b2f', label: 'good' },
-      { color: '#1b5e20', label: 'strong' },
+      { color: '#0e1b30', label: 'exposed' },
+      { color: '#143a5c', label: 'thin' },
+      { color: '#1f6aa8', label: 'partial' },
+      { color: '#38bdf8', label: 'covered' },
+      { color: '#a78bfa', label: 'strong' },
     ],
   },
   sigma: {
@@ -354,7 +354,7 @@ const MODE_CONFIGS: Record<HeatmapMode, LegendConfig> = {
   styleUrl: './legend.component.scss',
 })
 export class LegendComponent implements OnInit, OnDestroy {
-  heatmapMode: HeatmapMode = 'coverage';
+  heatmapMode: HeatmapMode = 'unified';
 
   get config(): LegendConfig {
     const base = MODE_CONFIGS[this.heatmapMode] ?? MODE_CONFIGS['coverage'];

@@ -115,7 +115,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
   maxCampaign = 1;
   riskScores = new Map<string, number>();
   maxRisk = 1;
-  heatmapMode: HeatmapMode = 'coverage';
+  heatmapMode: HeatmapMode = 'unified';
   implStatusFilter: string | null = null;
   searchFilterMode = false;
   // per-technique "best" impl status (for status heatmap mode)
@@ -196,7 +196,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
   pocScoreMap = new Map<string, number>();
   maxPocScore = 1;
   // Track current heatmap mode for loaded$ re-trigger
-  private currentHeatmapMode: HeatmapMode = 'coverage';
+  private currentHeatmapMode: HeatmapMode = 'unified';
   // Annotation map: techniqueId (attackId) -> annotation
   annotationMap = new Map<string, TechniqueAnnotation>();
 
@@ -1606,13 +1606,13 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
       case 'cri':
         return this.getRelativeHeatColor(this.getCriScore(tech), this.maxCriScore, '#1a0a2e', ['#ce93d8', '#ab47bc', '#8e24aa', '#6a1b9a']);
       case 'unified':
-        return this.getThresholdHeatColor(this.getUnifiedScore(tech), '#7f0000', [
-          { limit: 15, color: '#7f0000' },
-          { limit: 30, color: '#c62828' },
-          { limit: 50, color: '#e65100' },
-          { limit: 65, color: '#f9a825' },
-          { limit: 80, color: '#558b2f' },
-          { limit: Number.POSITIVE_INFINITY, color: '#1b5e20' },
+        return this.getThresholdHeatColor(this.getUnifiedScore(tech), '#0e1b30', [
+          { limit: 15, color: '#0e1b30' },
+          { limit: 30, color: '#143a5c' },
+          { limit: 50, color: '#1f6aa8' },
+          { limit: 65, color: '#2f95d8' },
+          { limit: 80, color: '#38bdf8' },
+          { limit: Number.POSITIVE_INFINITY, color: '#a78bfa' },
         ]);
       case 'sigma':
         return this.getRelativeHeatColor(this.getSigmaScore(tech), this.maxSigmaScore, '#0a1a1a', ['#0d4a3a', '#0d7a5e', '#0ea87a', '#10b981']);
