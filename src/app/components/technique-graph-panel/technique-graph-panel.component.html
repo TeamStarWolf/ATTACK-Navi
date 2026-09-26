@@ -74,6 +74,12 @@
         <button class="tog-btn" [class.active]="showCampaigns" (click)="showCampaigns=!showCampaigns; rebuildWithOptions()">
           📅 Campaigns
         </button>
+        <button class="tog-btn" [class.active]="showD3fend" (click)="showD3fend=!showD3fend; rebuildWithOptions()">
+          🧱 D3FEND
+        </button>
+        <button class="tog-btn" [class.active]="showCapec" (click)="showCapec=!showCapec; rebuildWithOptions()">
+          🎯 CAPEC
+        </button>
         <button class="tog-btn" [class.active]="showSubtechniques" (click)="showSubtechniques=!showSubtechniques; rebuildWithOptions()">
           ↳ Sub-techniques
         </button>
