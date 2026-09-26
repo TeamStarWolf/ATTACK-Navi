@@ -175,6 +175,8 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
   @Input() unifiedScore = 0;
   @Input() sigmaScore = 0;
   @Input() maxSigmaScore = 1;
+  @Input() libraryScore = 0;
+  @Input() maxLibraryScore = 1;
   @Input() nistScore = 0;
   @Input() maxNistScore = 1;
   @Input() verisScore = 0;
@@ -264,6 +266,8 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
       this.bgColor = this.computeRelativeColor(this.frequencyScore, this.maxFrequencyScore, '#1c2a38', ['#1e3a5f', '#1565c0', '#0ea5e9', '#38bdf8']);
     } else if (this.heatmapMode === 'cri') {
       this.bgColor = this.computeCriColor(this.criScore, this.maxCriScore);
+    } else if (this.heatmapMode === 'library') {
+      this.bgColor = this.computeRelativeColor(this.libraryScore, this.maxLibraryScore, '#12122a', ['#1e3a5f', '#2f6ab0', '#38bdf8', '#a78bfa']);
     } else if (this.heatmapMode === 'unified') {
       this.bgColor = this.computeUnifiedColor(this.unifiedScore);
     } else if (this.heatmapMode === 'sigma') {
