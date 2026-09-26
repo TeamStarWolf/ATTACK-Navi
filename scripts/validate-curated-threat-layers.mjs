@@ -39,8 +39,8 @@ function tacticsOf(technique) {
     .sort();
 }
 
-const snapshots = [{ name: 'bundled 18.1', techniques: techniquesById(bundled) }];
-assert.equal(bundled.objects.find(object => object.type === 'x-mitre-collection')?.x_mitre_version, '18.1',
+const snapshots = [{ name: 'bundled 19.2', techniques: techniquesById(bundled) }];
+assert.equal(bundled.objects.find(object => object.type === 'x-mitre-collection')?.x_mitre_version, '19.2',
   'Bundled snapshot changed; revalidate the layer provenance');
 if (args.includes('--verify-baseline')) {
   const response = await fetch(baselineUrl, { signal: AbortSignal.timeout(60000) });
@@ -65,12 +65,12 @@ for (const file of files) {
   assert(entry, `${file}: missing manifest entry`);
   assert.equal(entry.description, layer.description, `${file}: description drift`);
   assert(entry.blurb?.length > 40 && entry.blurb.length < 300, `${file}: missing or oversized blurb`);
-  assert.deepEqual(layer.versions, { attack: '16', navigator: '4.9', layer: '4.5' });
+  assert.deepEqual(layer.versions, { attack: '19', navigator: '4.9', layer: '4.5' });
   assert.equal(layer.domain, 'enterprise-attack');
   assert.equal(layer.selectSubtechniquesWithParent, false);
   assert.match(layer.description, /not an official MITRE mapping/);
   assert.match(layer.description, /coverage guarantee/);
-  assert.match(layer.description, /16\.1.*18\.1/);
+  assert.match(layer.description, /16\.1.*19\.2/);
   assert.equal(layer.gradient.minValue, 0);
   assert.equal(layer.gradient.maxValue, 100);
   assert.deepEqual(layer.legendItems.map(item => item.label), [

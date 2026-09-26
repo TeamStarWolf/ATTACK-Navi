@@ -1,12 +1,12 @@
 {
   "name": "TeamStarWolf - Threat Group: APT29 (G0016)",
   "versions": {
-    "attack": "16",
+    "attack": "19",
     "navigator": "4.9",
     "layer": "4.5"
   },
   "domain": "enterprise-attack",
-  "description": "ATT&CK-documented techniques attributed to APT29 (G0016; aliases: IRON RITUAL, IRON HEMLOCK, NobleBaron, Dark Halo, NOBELIUM, UNC2452, YTTRIUM, Th). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+  "description": "ATT&CK-documented techniques attributed to APT29 (G0016; aliases: IRON RITUAL, IRON HEMLOCK, NobleBaron, Dark Halo, NOBELIUM, UNC2452, YTTRIUM, Th). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v19.2 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
   "sorting": 3,
   "layout": {
     "layout": "side",
@@ -49,25 +49,25 @@
     },
     {
       "techniqueID": "T1027.001",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT29 (G0016)."
     },
     {
       "techniqueID": "T1027.002",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT29 (G0016)."
     },
     {
       "techniqueID": "T1027.006",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT29 (G0016)."
     },
     {
       "techniqueID": "T1036.005",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT29 (G0016)."
     },
@@ -145,19 +145,19 @@
     },
     {
       "techniqueID": "T1070.004",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT29 (G0016)."
     },
     {
       "techniqueID": "T1070.006",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT29 (G0016)."
     },
     {
       "techniqueID": "T1078",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT29 (G0016)."
     },
@@ -181,7 +181,7 @@
     },
     {
       "techniqueID": "T1078.003",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT29 (G0016)."
     },
@@ -205,7 +205,7 @@
     },
     {
       "techniqueID": "T1078.004",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT29 (G0016)."
     },
@@ -349,7 +349,7 @@
     },
     {
       "techniqueID": "T1218.005",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT29 (G0016)."
     },
@@ -403,19 +403,7 @@
     },
     {
       "techniqueID": "T1548.002",
-      "tactic": "defense-evasion",
-      "score": 100,
-      "comment": "Documented ATT&CK technique use by APT29 (G0016)."
-    },
-    {
-      "techniqueID": "T1548.002",
       "tactic": "privilege-escalation",
-      "score": 100,
-      "comment": "Documented ATT&CK technique use by APT29 (G0016)."
-    },
-    {
-      "techniqueID": "T1550.003",
-      "tactic": "defense-evasion",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT29 (G0016)."
     },
@@ -427,7 +415,7 @@
     },
     {
       "techniqueID": "T1553.005",
-      "tactic": "defense-evasion",
+      "tactic": "defense-impairment",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT29 (G0016)."
     },
@@ -439,7 +427,7 @@
     },
     {
       "techniqueID": "T1556.007",
-      "tactic": "defense-evasion",
+      "tactic": "defense-impairment",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT29 (G0016)."
     },
@@ -450,8 +438,8 @@
       "comment": "Documented ATT&CK technique use by APT29 (G0016)."
     },
     {
-      "techniqueID": "T1562.008",
-      "tactic": "defense-evasion",
+      "techniqueID": "T1685.002",
+      "tactic": "defense-impairment",
       "score": 100,
       "comment": "Documented ATT&CK technique use by APT29 (G0016)."
     },

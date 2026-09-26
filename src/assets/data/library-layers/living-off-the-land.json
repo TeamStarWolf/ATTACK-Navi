@@ -1,12 +1,12 @@
 {
   "name": "TeamStarWolf - Living-off-the-Land (LOTL)",
   "versions": {
-    "attack": "16",
+    "attack": "19",
     "navigator": "4.9",
     "layer": "4.5"
   },
   "domain": "enterprise-attack",
-  "description": "Curated practitioner view of Living-off-the-Land (LOTL) behaviors, not an official MITRE mapping. Abuse of built-in, signed, or legitimate system binaries, scripts, interpreters, and admin tooling to execute, persist, move, and exfiltrate while blending into normal activity. Cross-tactic selection of Enterprise ATT&CK techniques; scores indicate curated membership tier (core vs supporting), not incident frequency. Every technique ID and tactic is validated against the workbench's bundled ATT&CK v16 data.",
+  "description": "Curated practitioner view of Living-off-the-Land (LOTL) behaviors, not an official MITRE mapping. Abuse of built-in, signed, or legitimate system binaries, scripts, interpreters, and admin tooling to execute, persist, move, and exfiltrate while blending into normal activity. Cross-tactic selection of Enterprise ATT&CK techniques; scores indicate curated membership tier (core vs supporting), not incident frequency. Every technique ID and tactic is validated against the workbench's bundled ATT&CK v19.2 data.",
   "sorting": 3,
   "layout": {
     "layout": "side",
@@ -97,115 +97,115 @@
     },
     {
       "techniqueID": "T1218",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Curated Living-off-the-Land (LOTL) membership (core). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1218.005",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Curated Living-off-the-Land (LOTL) membership (core). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1218.010",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Curated Living-off-the-Land (LOTL) membership (core). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1218.011",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Curated Living-off-the-Land (LOTL) membership (core). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1218.007",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 55,
       "comment": "Curated Living-off-the-Land (LOTL) membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1218.001",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 55,
       "comment": "Curated Living-off-the-Land (LOTL) membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1218.002",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 55,
       "comment": "Curated Living-off-the-Land (LOTL) membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1218.003",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 55,
       "comment": "Curated Living-off-the-Land (LOTL) membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1218.004",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 55,
       "comment": "Curated Living-off-the-Land (LOTL) membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1218.008",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 55,
       "comment": "Curated Living-off-the-Land (LOTL) membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1216",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 55,
       "comment": "Curated Living-off-the-Land (LOTL) membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1216.001",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 55,
       "comment": "Curated Living-off-the-Land (LOTL) membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1127",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 55,
       "comment": "Curated Living-off-the-Land (LOTL) membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1127.001",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 55,
       "comment": "Curated Living-off-the-Land (LOTL) membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1220",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 55,
       "comment": "Curated Living-off-the-Land (LOTL) membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1197",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 55,
       "comment": "Curated Living-off-the-Land (LOTL) membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1202",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 55,
       "comment": "Curated Living-off-the-Land (LOTL) membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1140",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 55,
       "comment": "Curated Living-off-the-Land (LOTL) membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1620",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 55,
       "comment": "Curated Living-off-the-Land (LOTL) membership (supporting). Practitioner view, not an official MITRE mapping."
     },
@@ -241,61 +241,61 @@
     },
     {
       "techniqueID": "T1078",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Curated Living-off-the-Land (LOTL) membership (core). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1078.002",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 55,
       "comment": "Curated Living-off-the-Land (LOTL) membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1036",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Curated Living-off-the-Land (LOTL) membership (core). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1036.003",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Curated Living-off-the-Land (LOTL) membership (core). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1036.005",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 55,
       "comment": "Curated Living-off-the-Land (LOTL) membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1070",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Curated Living-off-the-Land (LOTL) membership (core). Practitioner view, not an official MITRE mapping."
     },
     {
-      "techniqueID": "T1070.001",
-      "tactic": "defense-evasion",
+      "techniqueID": "T1685.005",
+      "tactic": "defense-impairment",
       "score": 100,
       "comment": "Curated Living-off-the-Land (LOTL) membership (core). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1070.003",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 55,
       "comment": "Curated Living-off-the-Land (LOTL) membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1070.004",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 55,
       "comment": "Curated Living-off-the-Land (LOTL) membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1112",
-      "tactic": "defense-evasion",
+      "tactic": "defense-impairment",
       "score": 55,
       "comment": "Curated Living-off-the-Land (LOTL) membership (supporting). Practitioner view, not an official MITRE mapping."
     },

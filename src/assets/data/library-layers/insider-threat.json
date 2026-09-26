@@ -1,12 +1,12 @@
 {
   "name": "TeamStarWolf - Insider Threat",
   "versions": {
-    "attack": "16",
+    "attack": "19",
     "navigator": "4.9",
     "layer": "4.5"
   },
   "domain": "enterprise-attack",
-  "description": "Curated practitioner view, not an official MITRE mapping. Scores are membership tiers (core=100, supporting=55), not severity, confidence, incident frequency, or a coverage guarantee. Technique IDs and tactic assignments are checked against official Enterprise ATT&CK 16.1 and the bundled 18.1 dataset; the layer retains v16-compatible tactic slugs. Selected abuse of granted access, information collection, unauthorized export, record manipulation, and sabotage. This is an independent selection informed by the library's insider-risk reference, not a reproduction of CTID's case dataset or its frequency rankings. A behavior match is not proof of malicious intent or insider identity; use authorization, business context, and privacy-aware review.",
+  "description": "Curated practitioner view, not an official MITRE mapping. Scores are membership tiers (core=100, supporting=55), not severity, confidence, incident frequency, or a coverage guarantee. Technique IDs and tactic assignments are validated against the bundled Enterprise ATT&CK 19.2 dataset, with official 16.1 retained as the original provenance baseline; tactic slugs follow 19.2. Selected abuse of granted access, information collection, unauthorized export, record manipulation, and sabotage. This is an independent selection informed by the library's insider-risk reference, not a reproduction of CTID's case dataset or its frequency rankings. A behavior match is not proof of malicious intent or insider identity; use authorization, business context, and privacy-aware review.",
   "sorting": 3,
   "layout": {
     "layout": "side",
@@ -19,7 +19,7 @@
   "techniques": [
     {
       "techniqueID": "T1078",
-      "tactic": "defense-evasion",
+      "tactic": "initial-access",
       "score": 100,
       "comment": "Valid Accounts. Core: Existing account access can be misused; displaying all ATT&CK tactics does not imply the insider had to obtain initial access."
     },
@@ -37,7 +37,7 @@
     },
     {
       "techniqueID": "T1078",
-      "tactic": "initial-access",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Valid Accounts. Core: Existing account access can be misused; displaying all ATT&CK tactics does not imply the insider had to obtain initial access."
     },
@@ -151,13 +151,13 @@
     },
     {
       "techniqueID": "T1070.004",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 55,
       "comment": "File Deletion. Supporting: Deleting artifacts can conceal earlier activity; unlike data destruction, this row models evidence removal."
     },
     {
-      "techniqueID": "T1562.001",
-      "tactic": "defense-evasion",
+      "techniqueID": "T1685",
+      "tactic": "defense-impairment",
       "score": 55,
       "comment": "Disable or Modify Tools. Supporting: A privileged user can impair monitoring to conceal activity; planned maintenance must be distinguished."
     },
@@ -226,11 +226,11 @@
     },
     {
       "name": "tactic_policy",
-      "value": "Display each selected technique under all of its official 16.1 tactics, verified to match the bundled snapshot. Display expansion does not assert a scenario uses every tactic or requires every step. The app may translate retired IDs for its newer live matrix."
+      "value": "Display each selected technique under all of its official 19.2 tactics, verified to match the bundled snapshot. Display expansion does not assert a scenario uses every tactic or requires every step. The app may translate retired IDs for its newer live matrix."
     },
     {
       "name": "validation_source",
-      "value": "Official Enterprise ATT&CK 16.1 and src/assets/data/enterprise-attack.json (collection version 18.1). The bundled file is not v16; both snapshots retain defense-evasion."
+      "value": "Official Enterprise ATT&CK 16.1 (original provenance baseline) and src/assets/data/enterprise-attack.json (collection version 19.2). v19 replaced the Defense Evasion tactic with Stealth and Defense Impairment, and retired the T1562 family in favour of T1685/T1686; technique IDs and tactic slugs follow the bundled 19.2 dataset."
     },
     {
       "name": "baseline_sha256",
@@ -238,7 +238,7 @@
     },
     {
       "name": "bundled_sha256_lf",
-      "value": "f857d8f78f2f0c0b7db321a711a39fba98546c1e3076a657684850c83d0962fb"
+      "value": "dc1639caa5501d720e280cf1cbd8fbe009884a0c9b3e6e9ed9d0c25166c3d8f4"
     },
     {
       "name": "reference_context",
@@ -252,7 +252,7 @@
     },
     {
       "label": "Bundled validation snapshot",
-      "url": "https://github.com/TeamStarWolf/ATTACK-Navi/blob/207209f/src/assets/data/enterprise-attack.json"
+      "url": "https://github.com/TeamStarWolf/ATTACK-Navi/blob/main/src/assets/data/enterprise-attack.json"
     },
     {
       "label": "INSIDER_THREAT_REFERENCE.md",
