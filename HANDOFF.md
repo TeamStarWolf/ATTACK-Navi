@@ -9,8 +9,16 @@ _Last updated: 2026-09-26._
 Three-phase effort so the app opens on a repo-wide view and lets you traverse everything the TeamStarWolf library holds, ATT&CK-centered.
 
 - **Phase 1 — new default layer. ✅ MERGED (PR #57).** The matrix now defaults to the `unified` composite ("Unified Coverage") instead of mitigation-only `coverage`, recolored to an ATT&CK-brand navy → sky → violet ramp. `?heat=coverage` links still work; `coverage` stays in the menu.
-- **Phase 2 — named library layers. 🚧 IN PROGRESS (Claude Code).** Adding selectable layers sourced from the library: Web Application Attacks, CWE weakness-classes, CAPEC families, and per-domain sets (cloud, Active Directory, ransomware TTPs, container/K8s, OWASP Top 10). **If you are Codex: do not edit the heatmap-mode / layer files right now** (`models/heatmap-modes.ts`, `services/filter.service.ts`, `components/matrix/*`, `components/technique-cell/*`, `components/legend/*`) to avoid collision — pick other work or ask.
-- **Phase 3 — full relationship traversal. ⏳ NOT STARTED.** Extend `components/technique-graph-panel` so any node re-centers, and add control / D3FEND / CVE / CWE / CAPEC edges (CTID-Mappings-Explorer style). Needs new reverse indexes for controls/CVE/CWE/CAPEC/D3FEND in `Domain`.
+- **Phase 2 — named library layers. ✅ MERGED (PR #59).** A `library` heatmap mode + "📚 Library Layers" picker colors the matrix by 8 curated layers (Web Application Attacks, CWE weakness-classes, CAPEC families, cloud, Active Directory, ransomware TTPs, container/K8s, OWASP Top 10), authored by Codex in the library repo and vendored to `src/assets/data/library-layers/`. `LibraryLayerService` loads the manifest + per-layer scores; navy→sky→violet ramp.
+- **Phase 3 — full relationship traversal. 🚧 IN PROGRESS (Claude Code).** Extend `components/technique-graph-panel` so any node re-centers, and add control / D3FEND / CVE / CWE / CAPEC edges (CTID-Mappings-Explorer style). Needs new reverse indexes for controls/CVE/CWE/CAPEC/D3FEND in `Domain`. **Codex: stay off `components/technique-graph-panel/*` and `models/domain.ts` while this is active.**
+- **HTB Technique Frequency layer — ⏳ QUEUED (Claude Code).** Analyze the HackTheBox writeups (Google Drive; Claude-only access) to score techniques by real-world practice frequency; hand Codex the aggregated counts to format as a 9th library layer.
+
+## Claude/Codex coordination
+
+- Chris designated Claude Code as the authoritative AI coordinator for this repo.
+- Codex should use this handoff to understand Claude's current work, then wait for a Claude/user assignment before taking implementation work.
+- Codex can help Claude by preparing repo-state summaries, checking status, running verification, reviewing tests, or taking non-overlapping tasks Claude explicitly leaves open.
+- Until Claude or Chris redirects, Codex should not edit the Phase 2/Phase 3 active files named above.
 
 ## Repo state
 
