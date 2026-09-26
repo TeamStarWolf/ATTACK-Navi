@@ -2,6 +2,20 @@
 
 All notable changes to ATTACK-Navi are documented here.
 
+## Unreleased
+
+### Changed
+- **New default heatmap: Unified Coverage.** The matrix now opens on the
+  repo-wide `unified` composite (mitigation coverage + Sigma/CAR detection +
+  Atomic validation + D3FEND + KEV exposure) instead of mitigation-only
+  `coverage`, so the first thing you see is how richly each ATT&CK technique is
+  covered across the whole library. Existing `?heat=coverage` links still work,
+  and `coverage` remains selectable in the heatmap menu.
+- **Recolored Unified Coverage** off the red→amber→green risk ramp onto an
+  ATT&CK-brand navy → sky → violet ramp (dim = thinly covered/exposed, bright =
+  strongly covered), across the cell renderer, minimap, and legend; relabeled
+  "Unified Risk" → "Unified Coverage." Colorblind-safe viridis mode unchanged.
+
 ## v0.10.0 — Clean Professional Makeover, Fraud Domain & CTEM (2026-08-16)
 
 ### The new look: Clean Professional
