@@ -6,7 +6,7 @@
     "layer": "4.5"
   },
   "domain": "enterprise-attack",
-  "description": "Curated practitioner view, not an official MITRE mapping. Scores are membership tiers (core=100, supporting=55), not severity, confidence, incident frequency, or a coverage guarantee. Technique IDs and tactic assignments are checked against official Enterprise ATT&CK 16.1 and the bundled 18.1 dataset; the layer retains v16-compatible tactic slugs. Selected abuse of granted access, information collection, unauthorized export, record manipulation, and sabotage. This is an independent selection informed by the library's insider-risk reference, not a reproduction of CTID's case dataset or its frequency rankings. A behavior match is not proof of malicious intent or insider identity; use authorization, business context, and privacy-aware review.",
+  "description": "Curated practitioner view of Insider Threat behaviors, not an official MITRE mapping. Malicious or negligent insider behaviors: abuse of legitimate access to collect, stage, and exfiltrate data or sabotage. Cross-tactic selection; scores indicate curated membership tier (core vs supporting). Every ID/tactic validated against the bundled ATT&CK v16 data.",
   "sorting": 3,
   "layout": {
     "layout": "side",
@@ -21,163 +21,295 @@
       "techniqueID": "T1078",
       "tactic": "defense-evasion",
       "score": 100,
-      "comment": "Valid Accounts. Core: Existing account access can be misused; displaying all ATT&CK tactics does not imply the insider had to obtain initial access."
+      "comment": "Curated Insider Threat membership (core). Practitioner view, not an official MITRE mapping."
     },
     {
-      "techniqueID": "T1078",
-      "tactic": "persistence",
-      "score": 100,
-      "comment": "Valid Accounts. Core: Existing account access can be misused; displaying all ATT&CK tactics does not imply the insider had to obtain initial access."
+      "techniqueID": "T1078.002",
+      "tactic": "defense-evasion",
+      "score": 55,
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
-      "techniqueID": "T1078",
-      "tactic": "privilege-escalation",
-      "score": 100,
-      "comment": "Valid Accounts. Core: Existing account access can be misused; displaying all ATT&CK tactics does not imply the insider had to obtain initial access."
-    },
-    {
-      "techniqueID": "T1078",
-      "tactic": "initial-access",
-      "score": 100,
-      "comment": "Valid Accounts. Core: Existing account access can be misused; displaying all ATT&CK tactics does not imply the insider had to obtain initial access."
+      "techniqueID": "T1078.004",
+      "tactic": "defense-evasion",
+      "score": 55,
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1098",
       "tactic": "persistence",
       "score": 100,
-      "comment": "Account Manipulation. Core: Changing accounts or delegated permissions can extend access beyond the approved role."
-    },
-    {
-      "techniqueID": "T1098",
-      "tactic": "privilege-escalation",
-      "score": 100,
-      "comment": "Account Manipulation. Core: Changing accounts or delegated permissions can extend access beyond the approved role."
-    },
-    {
-      "techniqueID": "T1136",
-      "tactic": "persistence",
-      "score": 100,
-      "comment": "Create Account. Core: Creating accounts outside the approved lifecycle can preserve access or support fraudulent activity."
-    },
-    {
-      "techniqueID": "T1213",
-      "tactic": "collection",
-      "score": 100,
-      "comment": "Data from Information Repositories. Core: Information repositories can supply sensitive records within an insider's legitimate reach."
+      "comment": "Curated Insider Threat membership (core). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1005",
       "tactic": "collection",
       "score": 100,
-      "comment": "Data from Local System. Core: Local data can be collected for an unauthorized purpose even when ordinary read access is permitted."
+      "comment": "Curated Insider Threat membership (core). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1039",
       "tactic": "collection",
       "score": 100,
-      "comment": "Data from Network Shared Drive. Core: Shared drives can enable bulk collection across documents available to a role."
+      "comment": "Curated Insider Threat membership (core). Practitioner view, not an official MITRE mapping."
     },
     {
-      "techniqueID": "T1074.001",
+      "techniqueID": "T1213",
       "tactic": "collection",
       "score": 100,
-      "comment": "Local Data Staging. Core: Local staging can consolidate data before an unauthorized transfer."
+      "comment": "Curated Insider Threat membership (core). Practitioner view, not an official MITRE mapping."
     },
     {
-      "techniqueID": "T1560.001",
-      "tactic": "collection",
-      "score": 100,
-      "comment": "Archive via Utility. Core: Archive utilities can package collected data; compression alone is not an insider-risk finding."
-    },
-    {
-      "techniqueID": "T1052.001",
-      "tactic": "exfiltration",
-      "score": 100,
-      "comment": "Exfiltration over USB. Core: USB storage can carry data out of an environment without a network transfer."
-    },
-    {
-      "techniqueID": "T1565.001",
-      "tactic": "impact",
-      "score": 100,
-      "comment": "Stored Data Manipulation. Core: Unauthorized changes to stored business records can support fraud or undermine integrity."
-    },
-    {
-      "techniqueID": "T1485",
-      "tactic": "impact",
-      "score": 100,
-      "comment": "Data Destruction. Core: Destruction of data within an account's reach can cause sabotage; distinguish it from approved retention workflows."
-    },
-    {
-      "techniqueID": "T1083",
-      "tactic": "discovery",
-      "score": 55,
-      "comment": "File and Directory Discovery. Supporting: Directory browsing can help locate information outside the task's business need."
-    },
-    {
-      "techniqueID": "T1113",
+      "techniqueID": "T1213.003",
       "tactic": "collection",
       "score": 55,
-      "comment": "Screen Capture. Supporting: Screen capture can collect information that ordinary file-export controls do not cover."
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1213.001",
+      "tactic": "collection",
+      "score": 55,
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1213.002",
+      "tactic": "collection",
+      "score": 55,
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1213.006",
+      "tactic": "collection",
+      "score": 55,
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1530",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Curated Insider Threat membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1025",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Curated Insider Threat membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1114",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Curated Insider Threat membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1114.001",
+      "tactic": "collection",
+      "score": 55,
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1114.002",
       "tactic": "collection",
       "score": 55,
-      "comment": "Remote Email Collection. Supporting: Mailbox access can expose communications for unauthorized collection."
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1114.003",
       "tactic": "collection",
       "score": 55,
-      "comment": "Email Forwarding Rule. Supporting: Unauthorized forwarding rules can sustain email collection; this technique is classified as collection, not exfiltration."
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
-      "techniqueID": "T1530",
+      "techniqueID": "T1113",
       "tactic": "collection",
       "score": 55,
-      "comment": "Data from Cloud Storage. Supporting: Granted cloud-storage access can expose business data to unauthorized collection."
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1115",
+      "tactic": "collection",
+      "score": 55,
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1074",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Curated Insider Threat membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1074.001",
+      "tactic": "collection",
+      "score": 55,
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1074.002",
+      "tactic": "collection",
+      "score": 55,
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1560",
+      "tactic": "collection",
+      "score": 100,
+      "comment": "Curated Insider Threat membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1560.001",
+      "tactic": "collection",
+      "score": 55,
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1119",
+      "tactic": "collection",
+      "score": 55,
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1567",
+      "tactic": "exfiltration",
+      "score": 100,
+      "comment": "Curated Insider Threat membership (core). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1567.002",
       "tactic": "exfiltration",
+      "score": 100,
+      "comment": "Curated Insider Threat membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1567.001",
+      "tactic": "exfiltration",
+      "score": 100,
+      "comment": "Curated Insider Threat membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1052",
+      "tactic": "exfiltration",
+      "score": 100,
+      "comment": "Curated Insider Threat membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1052.001",
+      "tactic": "exfiltration",
       "score": 55,
-      "comment": "Exfiltration to Cloud Storage. Supporting: Uploads to an unapproved cloud-storage destination can export collected data."
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1537",
       "tactic": "exfiltration",
-      "score": 55,
-      "comment": "Transfer Data to Cloud Account. Supporting: Cloud-native sharing or copying to another account can move data outside its intended boundary."
+      "score": 100,
+      "comment": "Curated Insider Threat membership (core). Practitioner view, not an official MITRE mapping."
     },
     {
-      "techniqueID": "T1070.004",
-      "tactic": "defense-evasion",
+      "techniqueID": "T1048",
+      "tactic": "exfiltration",
       "score": 55,
-      "comment": "File Deletion. Supporting: Deleting artifacts can conceal earlier activity; unlike data destruction, this row models evidence removal."
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
-      "techniqueID": "T1562.001",
+      "techniqueID": "T1030",
+      "tactic": "exfiltration",
+      "score": 55,
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1070",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Curated Insider Threat membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1070.001",
       "tactic": "defense-evasion",
       "score": 55,
-      "comment": "Disable or Modify Tools. Supporting: A privileged user can impair monitoring to conceal activity; planned maintenance must be distinguished."
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1562",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Curated Insider Threat membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1562.008",
+      "tactic": "defense-evasion",
+      "score": 55,
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1555",
+      "tactic": "credential-access",
+      "score": 55,
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1555.003",
+      "tactic": "credential-access",
+      "score": 55,
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1552",
+      "tactic": "credential-access",
+      "score": 55,
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1552.001",
+      "tactic": "credential-access",
+      "score": 55,
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1552.004",
+      "tactic": "credential-access",
+      "score": 55,
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1485",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Curated Insider Threat membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1565",
+      "tactic": "impact",
+      "score": 55,
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1490",
+      "tactic": "impact",
+      "score": 55,
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1489",
       "tactic": "impact",
       "score": 55,
-      "comment": "Service Stop. Supporting: Unauthorized service stops can disrupt operations using otherwise legitimate administration."
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1531",
       "tactic": "impact",
       "score": 55,
-      "comment": "Account Access Removal. Supporting: Removing account access can lock legitimate operators out of their systems."
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
     },
     {
       "techniqueID": "T1486",
       "tactic": "impact",
       "score": 55,
-      "comment": "Data Encrypted for Impact. Supporting: A privileged insider could encrypt accessible data for impact; this is a scenario extension, not a CTID case-frequency claim."
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1561",
+      "tactic": "impact",
+      "score": 55,
+      "comment": "Curated Insider Threat membership (supporting). Practitioner view, not an official MITRE mapping."
     }
   ],
   "gradient": {
@@ -191,72 +323,12 @@
   },
   "legendItems": [
     {
-      "label": "100: Core (curated membership)",
+      "label": "Core",
       "color": "#38bdf8"
     },
     {
-      "label": "55: Supporting (curated membership)",
+      "label": "Supporting",
       "color": "#2f6ab0"
-    }
-  ],
-  "metadata": [
-    {
-      "name": "selection_rule",
-      "value": "Core: account abuse, role-accessible collection, staging, USB export, stored-record manipulation and data destruction. Supporting: selected discovery, additional collection/export channels, concealment and availability effects. Parent techniques do not imply that every sub-technique is selected."
-    },
-    {
-      "name": "techniques_scored",
-      "value": "23"
-    },
-    {
-      "name": "technique_tactic_entries",
-      "value": "27"
-    },
-    {
-      "name": "core_techniques",
-      "value": "11"
-    },
-    {
-      "name": "supporting_techniques",
-      "value": "12"
-    },
-    {
-      "name": "score_meaning",
-      "value": "100=core; 55=supporting. Membership only, not severity, prevalence, confidence, or measured defensive coverage."
-    },
-    {
-      "name": "tactic_policy",
-      "value": "Display each selected technique under all of its official 16.1 tactics, verified to match the bundled snapshot. Display expansion does not assert a scenario uses every tactic or requires every step. The app may translate retired IDs for its newer live matrix."
-    },
-    {
-      "name": "validation_source",
-      "value": "Official Enterprise ATT&CK 16.1 and src/assets/data/enterprise-attack.json (collection version 18.1). The bundled file is not v16; both snapshots retain defense-evasion."
-    },
-    {
-      "name": "baseline_sha256",
-      "value": "8423d8dac3fc2feb825bb07d26e5f5d905e08a88f6fe4652cc20834cbe982813"
-    },
-    {
-      "name": "bundled_sha256_lf",
-      "value": "f857d8f78f2f0c0b7db321a711a39fba98546c1e3076a657684850c83d0962fb"
-    },
-    {
-      "name": "reference_context",
-      "value": "INSIDER_THREAT_REFERENCE.md; selection and rationale are practitioner interpretation, not an official mapping."
-    }
-  ],
-  "links": [
-    {
-      "label": "Official Enterprise ATT&CK 16.1 snapshot",
-      "url": "https://github.com/mitre-attack/attack-stix-data/blob/master/enterprise-attack/enterprise-attack-16.1.json"
-    },
-    {
-      "label": "Bundled validation snapshot",
-      "url": "https://github.com/TeamStarWolf/ATTACK-Navi/blob/207209f/src/assets/data/enterprise-attack.json"
-    },
-    {
-      "label": "INSIDER_THREAT_REFERENCE.md",
-      "url": "https://github.com/TeamStarWolf/TeamStarWolf/blob/a697aeeef1f3532392e4f1bf2123c885c015a452/INSIDER_THREAT_REFERENCE.md"
     }
   ],
   "showTacticRowBackground": false,

@@ -172,5 +172,11 @@
     "name": "TeamStarWolf - Impact: Destruction, Extortion & Disruption",
     "description": "Curated practitioner view, not an official MITRE mapping. Scores are membership tiers (core=100, supporting=55), not severity, confidence, incident frequency, or a coverage guarantee. Technique IDs and tactic assignments are checked against official Enterprise ATT&CK 16.1 and the bundled 18.1 dataset; the layer retains v16-compatible tactic slugs. Core rows describe selected Enterprise impact behaviors; supporting rows describe access, preparation, collection and exfiltration that can precede destructive or extortion scenarios. Extortion is a scenario objective, not a standalone Enterprise ATT&CK technique or tactic. No actor attribution, mandatory attack sequence, or ICS coverage is implied. This is a planning view, not an instruction to execute destructive actions.",
     "blurb": "Destruction, encryption, recovery inhibition, denial of service, defacement, and data-integrity attacks, with supporting theft and preparation behaviors. Curated planning context, not a destructive runbook."
+  },
+  {
+    "file": "impact-destruction.json",
+    "name": "TeamStarWolf - Impact: Destruction, Extortion & Disruption",
+    "description": "Curated practitioner view of Impact: Destruction, Extortion & Disruption behaviors, not an official MITRE mapping. Techniques that damage availability or integrity: encryption for impact, wiping, defacement, denial of service, resource hijacking. Cross-tactic selection; scores indicate curated membership tier (core vs supporting). Every ID/tactic validated against the bundled ATT&CK v16 data.",
+    "blurb": "Impact: Destruction, Extortion & Disruption: a curated cross-tactic view (38 techniques). Techniques that damage availability or integrity: encryption for impact, wiping, defacement, denial "
   }
 ]

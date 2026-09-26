@@ -1,0 +1,272 @@
+{
+  "name": "TeamStarWolf - Impact: Destruction, Extortion & Disruption",
+  "versions": {
+    "attack": "16",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Curated practitioner view of Impact: Destruction, Extortion & Disruption behaviors, not an official MITRE mapping. Techniques that damage availability or integrity: encryption for impact, wiping, defacement, denial of service, resource hijacking. Cross-tactic selection; scores indicate curated membership tier (core vs supporting). Every ID/tactic validated against the bundled ATT&CK v16 data.",
+  "sorting": 3,
+  "layout": {
+    "layout": "side",
+    "showID": false,
+    "showName": true,
+    "showAggregateScores": true,
+    "countUnscored": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1486",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1485",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1485.001",
+      "tactic": "impact",
+      "score": 55,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1561",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1561.001",
+      "tactic": "impact",
+      "score": 55,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1561.002",
+      "tactic": "impact",
+      "score": 55,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1491",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1491.001",
+      "tactic": "impact",
+      "score": 55,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1491.002",
+      "tactic": "impact",
+      "score": 55,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1499",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1499.001",
+      "tactic": "impact",
+      "score": 55,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1499.002",
+      "tactic": "impact",
+      "score": 55,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1499.003",
+      "tactic": "impact",
+      "score": 55,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1499.004",
+      "tactic": "impact",
+      "score": 55,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1498",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1498.001",
+      "tactic": "impact",
+      "score": 55,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1498.002",
+      "tactic": "impact",
+      "score": 55,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1489",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1490",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1496",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1496.001",
+      "tactic": "impact",
+      "score": 55,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1496.002",
+      "tactic": "impact",
+      "score": 55,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1496.003",
+      "tactic": "impact",
+      "score": 55,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1496.004",
+      "tactic": "impact",
+      "score": 55,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1531",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1495",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1565",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1565.001",
+      "tactic": "impact",
+      "score": 55,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1565.002",
+      "tactic": "impact",
+      "score": 55,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1565.003",
+      "tactic": "impact",
+      "score": 55,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1529",
+      "tactic": "impact",
+      "score": 55,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1667",
+      "tactic": "impact",
+      "score": 55,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1657",
+      "tactic": "impact",
+      "score": 100,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (core). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1059",
+      "tactic": "execution",
+      "score": 55,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1204.002",
+      "tactic": "execution",
+      "score": 55,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1562.001",
+      "tactic": "defense-evasion",
+      "score": 55,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1070.004",
+      "tactic": "defense-evasion",
+      "score": 55,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (supporting). Practitioner view, not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1222",
+      "tactic": "defense-evasion",
+      "score": 55,
+      "comment": "Curated Impact: Destruction, Extortion & Disruption membership (supporting). Practitioner view, not an official MITRE mapping."
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#1b2a4a",
+      "#2f6ab0",
+      "#38bdf8"
+    ],
+    "minValue": 0,
+    "maxValue": 100
+  },
+  "legendItems": [
+    {
+      "label": "Core",
+      "color": "#38bdf8"
+    },
+    {
+      "label": "Supporting",
+      "color": "#2f6ab0"
+    }
+  ],
+  "showTacticRowBackground": false,
+  "tacticRowBackground": "#205b8f",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}
