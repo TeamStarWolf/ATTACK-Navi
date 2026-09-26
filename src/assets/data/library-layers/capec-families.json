@@ -1,7 +1,7 @@
 {
   "name": "TeamStarWolf - CAPEC Families",
   "versions": {
-    "attack": "16",
+    "attack": "19",
     "navigator": "4.9",
     "layer": "4.5"
   },
@@ -19,13 +19,13 @@
   "techniques": [
     {
       "techniqueID": "T1036.003",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Rename Legitimate Utilities: explicitly associated with these Meta-abstraction patterns in data/weaknesses/capec.jsonl: CAPEC-165 (File Manipulation). The family selection is curated; no descendant mapping is inferred."
     },
     {
       "techniqueID": "T1078",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Valid Accounts: explicitly associated with these Meta-abstraction patterns in data/weaknesses/capec.jsonl: CAPEC-560 (Use of Known Domain Credentials). The family selection is curated; no descendant mapping is inferred."
     },
@@ -55,7 +55,7 @@
     },
     {
       "techniqueID": "T1134",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Access Token Manipulation: explicitly associated with these Meta-abstraction patterns in data/weaknesses/capec.jsonl: CAPEC-21 (Exploitation of Trusted Identifiers). The family selection is curated; no descendant mapping is inferred."
     },
@@ -134,12 +134,6 @@
     {
       "techniqueID": "T1548",
       "tactic": "privilege-escalation",
-      "score": 100,
-      "comment": "Abuse Elevation Control Mechanism: explicitly associated with these Meta-abstraction patterns in data/weaknesses/capec.jsonl: CAPEC-114 (Authentication Abuse); CAPEC-115 (Authentication Bypass); CAPEC-122 (Privilege Abuse); CAPEC-233 (Privilege Escalation). The family selection is curated; no descendant mapping is inferred."
-    },
-    {
-      "techniqueID": "T1548",
-      "tactic": "defense-evasion",
       "score": 100,
       "comment": "Abuse Elevation Control Mechanism: explicitly associated with these Meta-abstraction patterns in data/weaknesses/capec.jsonl: CAPEC-114 (Authentication Abuse); CAPEC-115 (Authentication Bypass); CAPEC-122 (Privilege Abuse); CAPEC-233 (Privilege Escalation). The family selection is curated; no descendant mapping is inferred."
     },

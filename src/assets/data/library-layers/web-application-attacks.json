@@ -1,7 +1,7 @@
 {
   "name": "TeamStarWolf - Web Application Attacks",
   "versions": {
-    "attack": "16",
+    "attack": "19",
     "navigator": "4.9",
     "layer": "4.5"
   },
@@ -205,7 +205,7 @@
     },
     {
       "techniqueID": "T1070",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 54,
       "comment": "Indicator Removal is included for logging and monitoring failures, log tampering concerns, and missing audit trails in web and API environments."
     }

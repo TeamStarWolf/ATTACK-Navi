@@ -62,115 +62,121 @@
   {
     "file": "living-off-the-land.json",
     "name": "TeamStarWolf - Living-off-the-Land (LOTL)",
-    "description": "Curated practitioner view of Living-off-the-Land (LOTL) behaviors, not an official MITRE mapping. Abuse of built-in, signed, or legitimate system binaries, scripts, interpreters, and admin tooling to execute, persist, move, and exfiltrate while blending into normal activity. Cross-tactic selection of Enterprise ATT&CK techniques; scores indicate curated membership tier (core vs supporting), not incident frequency. Every technique ID and tactic is validated against the workbench's bundled ATT&CK v16 data.",
+    "description": "Curated practitioner view of Living-off-the-Land (LOTL) behaviors, not an official MITRE mapping. Abuse of built-in, signed, or legitimate system binaries, scripts, interpreters, and admin tooling to execute, persist, move, and exfiltrate while blending into normal activity. Cross-tactic selection of Enterprise ATT&CK techniques; scores indicate curated membership tier (core vs supporting), not incident frequency. Every technique ID and tactic is validated against the workbench's bundled ATT&CK v19.2 data.",
     "blurb": "Living-off-the-Land (LOTL): a curated cross-tactic view. Abuse of built-in, signed, or legitimate system binaries, scripts, interpreters, and admin tooling to execute, persist, "
   },
   {
     "file": "phishing-social-engineering.json",
     "name": "TeamStarWolf - Phishing & Social Engineering",
-    "description": "Curated practitioner view of Phishing & Social Engineering behaviors, not an official MITRE mapping. Human-targeted initial access and follow-on: gathering, luring, delivering, and executing via deception, plus account and MFA abuse enabling the intrusion. Cross-tactic selection of Enterprise ATT&CK techniques; scores indicate curated membership tier (core vs supporting), not incident frequency. Every technique ID and tactic is validated against the workbench's bundled ATT&CK v16 data.",
+    "description": "Curated practitioner view of Phishing & Social Engineering behaviors, not an official MITRE mapping. Human-targeted initial access and follow-on: gathering, luring, delivering, and executing via deception, plus account and MFA abuse enabling the intrusion. Cross-tactic selection of Enterprise ATT&CK techniques; scores indicate curated membership tier (core vs supporting), not incident frequency. Every technique ID and tactic is validated against the workbench's bundled ATT&CK v19.2 data.",
     "blurb": "Phishing & Social Engineering: a curated cross-tactic view. Human-targeted initial access and follow-on: gathering, luring, delivering, and executing via deception, plus account an"
   },
   {
     "file": "supply-chain-compromise.json",
     "name": "TeamStarWolf - Supply Chain & Trusted-Relationship Compromise",
-    "description": "Curated practitioner view of Supply Chain & Trusted-Relationship Compromise behaviors, not an official MITRE mapping. Intrusion through third parties, software/hardware supply chains, trusted relationships, and shared tooling rather than direct exploitation of the target. Cross-tactic selection of Enterprise ATT&CK techniques; scores indicate curated membership tier (core vs supporting), not incident frequency. Every technique ID and tactic is validated against the workbench's bundled ATT&CK v16 data.",
+    "description": "Curated practitioner view of Supply Chain & Trusted-Relationship Compromise behaviors, not an official MITRE mapping. Intrusion through third parties, software/hardware supply chains, trusted relationships, and shared tooling rather than direct exploitation of the target. Cross-tactic selection of Enterprise ATT&CK techniques; scores indicate curated membership tier (core vs supporting), not incident frequency. Every technique ID and tactic is validated against the workbench's bundled ATT&CK v19.2 data.",
     "blurb": "Supply Chain & Trusted-Relationship Compromise: a curated cross-tactic view. Intrusion through third parties, software/hardware supply chains, trusted relationships, and shared tooling rather than "
   },
   {
     "file": "data-exfiltration.json",
     "name": "TeamStarWolf - Data Collection & Exfiltration",
-    "description": "Curated practitioner view of Data Collection & Exfiltration behaviors, not an official MITRE mapping. Staging and moving data out: collection of local, network, cloud, and application data, packaging, and exfiltration over C2, alternative protocols, web services, or physical media. Cross-tactic selection of Enterprise ATT&CK techniques; scores indicate curated membership tier (core vs supporting), not incident frequency. Every technique ID and tactic is validated against the workbench's bundled ATT&CK v16 data.",
+    "description": "Curated practitioner view of Data Collection & Exfiltration behaviors, not an official MITRE mapping. Staging and moving data out: collection of local, network, cloud, and application data, packaging, and exfiltration over C2, alternative protocols, web services, or physical media. Cross-tactic selection of Enterprise ATT&CK techniques; scores indicate curated membership tier (core vs supporting), not incident frequency. Every technique ID and tactic is validated against the workbench's bundled ATT&CK v19.2 data.",
     "blurb": "Data Collection & Exfiltration: a curated cross-tactic view. Staging and moving data out: collection of local, network, cloud, and application data, packaging, and exfiltration over"
   },
   {
     "file": "credential-theft-abuse.json",
     "name": "TeamStarWolf - Credential Theft & Abuse",
-    "description": "Curated practitioner view of Credential Theft & Abuse behaviors, not an official MITRE mapping. Obtaining and reusing credentials: dumping, cracking, harvesting from stores and files, protocol attacks, and using stolen material to authenticate. Cross-tactic selection of Enterprise ATT&CK techniques; scores indicate curated membership tier (core vs supporting), not incident frequency. Every technique ID and tactic is validated against the workbench's bundled ATT&CK v16 data.",
+    "description": "Curated practitioner view of Credential Theft & Abuse behaviors, not an official MITRE mapping. Obtaining and reusing credentials: dumping, cracking, harvesting from stores and files, protocol attacks, and using stolen material to authenticate. Cross-tactic selection of Enterprise ATT&CK techniques; scores indicate curated membership tier (core vs supporting), not incident frequency. Every technique ID and tactic is validated against the workbench's bundled ATT&CK v19.2 data.",
     "blurb": "Credential Theft & Abuse: a curated cross-tactic view. Obtaining and reusing credentials: dumping, cracking, harvesting from stores and files, protocol attacks, and using stol"
   },
   {
     "file": "group-apt29.json",
     "name": "TeamStarWolf - Threat Group: APT29 (G0016)",
-    "description": "ATT&CK-documented techniques attributed to APT29 (G0016; aliases: IRON RITUAL, IRON HEMLOCK, NobleBaron, Dark Halo, NOBELIUM, UNC2452, YTTRIUM, Th). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+    "description": "ATT&CK-documented techniques attributed to APT29 (G0016; aliases: IRON RITUAL, IRON HEMLOCK, NobleBaron, Dark Halo, NOBELIUM, UNC2452, YTTRIUM, Th). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v19.2 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
     "blurb": "APT29 (G0016) adversary emulation overlay: 66 MITRE-documented techniques. Sourced from MITRE's own group attribution, not a curated mapping."
   },
   {
     "file": "group-volt-typhoon.json",
     "name": "TeamStarWolf - Threat Group: Volt Typhoon (G1017)",
-    "description": "ATT&CK-documented techniques attributed to Volt Typhoon (G1017; aliases: BRONZE SILHOUETTE, Vanguard Panda, DEV-0391, UNC3236, Voltzite, Insidious Taurus). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+    "description": "ATT&CK-documented techniques attributed to Volt Typhoon (G1017; aliases: BRONZE SILHOUETTE, Vanguard Panda, DEV-0391, UNC3236, Voltzite, Insidious Taurus). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v19.2 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
     "blurb": "Volt Typhoon (G1017) adversary emulation overlay: 81 MITRE-documented techniques. Sourced from MITRE's own group attribution, not a curated mapping."
   },
   {
     "file": "group-scattered-spider.json",
     "name": "TeamStarWolf - Threat Group: Scattered Spider (G1015)",
-    "description": "ATT&CK-documented techniques attributed to Scattered Spider (G1015; aliases: Roasted 0ktapus, Octo Tempest, Storm-0875, UNC3944). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+    "description": "ATT&CK-documented techniques attributed to Scattered Spider (G1015; aliases: Roasted 0ktapus, Octo Tempest, Storm-0875, UNC3944). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v19.2 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
     "blurb": "Scattered Spider (G1015) adversary emulation overlay: 64 MITRE-documented techniques. Sourced from MITRE's own group attribution, not a curated mapping."
   },
   {
     "file": "group-lazarus-group.json",
     "name": "TeamStarWolf - Threat Group: Lazarus Group (G0032)",
-    "description": "ATT&CK-documented techniques attributed to Lazarus Group (G0032; aliases: Labyrinth Chollima, HIDDEN COBRA, Guardians of Peace, ZINC, NICKEL ACADEMY, Diam). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+    "description": "ATT&CK-documented techniques attributed to Lazarus Group (G0032; aliases: Labyrinth Chollima, HIDDEN COBRA, Guardians of Peace, ZINC, NICKEL ACADEMY, Diam). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v19.2 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
     "blurb": "Lazarus Group (G0032) adversary emulation overlay: 93 MITRE-documented techniques. Sourced from MITRE's own group attribution, not a curated mapping."
   },
   {
     "file": "group-sandworm-team.json",
     "name": "TeamStarWolf - Threat Group: Sandworm Team (G0034)",
-    "description": "ATT&CK-documented techniques attributed to Sandworm Team (G0034; aliases: ELECTRUM, Telebots, IRON VIKING, BlackEnergy (Group), Quedagh, Voodoo Bear, IRID). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+    "description": "ATT&CK-documented techniques attributed to Sandworm Team (G0034; aliases: ELECTRUM, Telebots, IRON VIKING, BlackEnergy (Group), Quedagh, Voodoo Bear, IRID). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v19.2 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
     "blurb": "Sandworm Team (G0034) adversary emulation overlay: 79 MITRE-documented techniques. Sourced from MITRE's own group attribution, not a curated mapping."
   },
   {
     "file": "group-fin7.json",
     "name": "TeamStarWolf - Threat Group: FIN7 (G0046)",
-    "description": "ATT&CK-documented techniques attributed to FIN7 (G0046; aliases: GOLD NIAGARA, ITG14, Carbon Spider, ELBRUS, Sangria Tempest). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+    "description": "ATT&CK-documented techniques attributed to FIN7 (G0046; aliases: GOLD NIAGARA, ITG14, Carbon Spider, ELBRUS, Sangria Tempest). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v19.2 data - this is MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
     "blurb": "FIN7 (G0046) adversary emulation overlay: 67 MITRE-documented techniques. Sourced from MITRE's own group attribution, not a curated mapping."
   },
   {
     "file": "group-turla.json",
     "name": "TeamStarWolf - Threat Group: Turla (G0010)",
-    "description": "ATT&CK-documented techniques attributed to Turla (G0010; aliases: IRON HUNTER, Group 88, Waterbug, WhiteBear, Snake, Krypton, Venomous Bear, Secre). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+    "description": "ATT&CK-documented techniques attributed to Turla (G0010; aliases: IRON HUNTER, Group 88, Waterbug, WhiteBear, Snake, Krypton, Venomous Bear, Secre). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v19.2 data - MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
     "blurb": "Turla (G0010) adversary emulation overlay: 68 MITRE-documented techniques. Sourced from MITRE's own group attribution, not a curated mapping."
   },
   {
     "file": "group-apt41.json",
     "name": "TeamStarWolf - Threat Group: APT41 (G0096)",
-    "description": "ATT&CK-documented techniques attributed to APT41 (G0096; aliases: Wicked Panda, Brass Typhoon, BARIUM). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+    "description": "ATT&CK-documented techniques attributed to APT41 (G0096; aliases: Wicked Panda, Brass Typhoon, BARIUM). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v19.2 data - MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
     "blurb": "APT41 (G0096) adversary emulation overlay: 82 MITRE-documented techniques. Sourced from MITRE's own group attribution, not a curated mapping."
   },
   {
     "file": "group-kimsuky.json",
     "name": "TeamStarWolf - Threat Group: Kimsuky (G0094)",
-    "description": "ATT&CK-documented techniques attributed to Kimsuky (G0094; aliases: Black Banshee, Velvet Chollima, Emerald Sleet, THALLIUM, APT43, TA427, Springtai). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+    "description": "ATT&CK-documented techniques attributed to Kimsuky (G0094; aliases: Black Banshee, Velvet Chollima, Emerald Sleet, THALLIUM, APT43, TA427, Springtai). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v19.2 data - MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
     "blurb": "Kimsuky (G0094) adversary emulation overlay: 109 MITRE-documented techniques. Sourced from MITRE's own group attribution, not a curated mapping."
   },
   {
     "file": "group-muddywater.json",
     "name": "TeamStarWolf - Threat Group: MuddyWater (G0069)",
-    "description": "ATT&CK-documented techniques attributed to MuddyWater (G0069; aliases: Earth Vetala, MERCURY, Static Kitten, Seedworm, TEMP.Zagros, Mango Sandstorm, TA). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+    "description": "ATT&CK-documented techniques attributed to MuddyWater (G0069; aliases: Earth Vetala, MERCURY, Static Kitten, Seedworm, TEMP.Zagros, Mango Sandstorm, TA). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v19.2 data - MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
     "blurb": "MuddyWater (G0069) adversary emulation overlay: 58 MITRE-documented techniques. Sourced from MITRE's own group attribution, not a curated mapping."
   },
   {
     "file": "group-teamtnt.json",
     "name": "TeamStarWolf - Threat Group: TeamTNT (G0139)",
-    "description": "ATT&CK-documented techniques attributed to TeamTNT (G0139). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v16 data - MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
+    "description": "ATT&CK-documented techniques attributed to TeamTNT (G0139). Sourced directly from MITRE's intrusion-set to technique 'uses' relationships in the bundled ATT&CK v19.2 data - MITRE's own attribution, not a curated TeamStarWolf mapping. Every row is documented group use (score 100). Absence of a technique does not mean the group cannot use it; it means MITRE has not documented it.",
     "blurb": "TeamTNT (G0139) adversary emulation overlay: 56 MITRE-documented techniques. Sourced from MITRE's own group attribution, not a curated mapping."
   },
   {
     "file": "macos-linux-attacks.json",
     "name": "TeamStarWolf - macOS & Linux Attacks",
-    "description": "Curated practitioner view, not an official MITRE mapping. Scores are membership tiers (core=100, supporting=55), not severity, confidence, incident frequency, or a coverage guarantee. Technique IDs and tactic assignments are checked against official Enterprise ATT&CK 16.1 and the bundled 18.1 dataset; the layer retains v16-compatible tactic slugs. Selected Unix execution, persistence, credential access, privilege abuse, remote access, and follow-on behavior. A technique need only apply to one of macOS or Linux, not both; per-row platform metadata narrows its scope. The selection is not a complete operating-system matrix.",
+    "description": "Curated practitioner view, not an official MITRE mapping. Scores are membership tiers (core=100, supporting=55), not severity, confidence, incident frequency, or a coverage guarantee. Technique IDs and tactic assignments are validated against the bundled Enterprise ATT&CK 19.2 dataset, with official 16.1 retained as the original provenance baseline; tactic slugs follow 19.2. Selected Unix execution, persistence, credential access, privilege abuse, remote access, and follow-on behavior. A technique need only apply to one of macOS or Linux, not both; per-row platform metadata narrows its scope. The selection is not a complete operating-system matrix.",
     "blurb": "Unix and macOS execution, persistence, credential abuse, SSH movement, and follow-on behaviors. Core and supporting tiers are curated priorities, not frequency or tested coverage."
   },
   {
     "file": "insider-threat.json",
     "name": "TeamStarWolf - Insider Threat",
-    "description": "Curated practitioner view, not an official MITRE mapping. Scores are membership tiers (core=100, supporting=55), not severity, confidence, incident frequency, or a coverage guarantee. Technique IDs and tactic assignments are checked against official Enterprise ATT&CK 16.1 and the bundled 18.1 dataset; the layer retains v16-compatible tactic slugs. Selected abuse of granted access, information collection, unauthorized export, record manipulation, and sabotage. This is an independent selection informed by the library's insider-risk reference, not a reproduction of CTID's case dataset or its frequency rankings. A behavior match is not proof of malicious intent or insider identity; use authorization, business context, and privacy-aware review.",
+    "description": "Curated practitioner view, not an official MITRE mapping. Scores are membership tiers (core=100, supporting=55), not severity, confidence, incident frequency, or a coverage guarantee. Technique IDs and tactic assignments are validated against the bundled Enterprise ATT&CK 19.2 dataset, with official 16.1 retained as the original provenance baseline; tactic slugs follow 19.2. Selected abuse of granted access, information collection, unauthorized export, record manipulation, and sabotage. This is an independent selection informed by the library's insider-risk reference, not a reproduction of CTID's case dataset or its frequency rankings. A behavior match is not proof of malicious intent or insider identity; use authorization, business context, and privacy-aware review.",
     "blurb": "Abuse of granted access, data collection and export, fraud-related record changes, and sabotage. Behavior-based review only: these scores neither identify a malicious insider nor reproduce CTID case frequencies."
   },
   {
     "file": "destruction-extortion-disruption.json",
     "name": "TeamStarWolf - Impact: Destruction, Extortion & Disruption",
-    "description": "Curated practitioner view, not an official MITRE mapping. Scores are membership tiers (core=100, supporting=55), not severity, confidence, incident frequency, or a coverage guarantee. Technique IDs and tactic assignments are checked against official Enterprise ATT&CK 16.1 and the bundled 18.1 dataset; the layer retains v16-compatible tactic slugs. Core rows describe selected Enterprise impact behaviors; supporting rows describe access, preparation, collection and exfiltration that can precede destructive or extortion scenarios. Extortion is a scenario objective, not a standalone Enterprise ATT&CK technique or tactic. No actor attribution, mandatory attack sequence, or ICS coverage is implied. This is a planning view, not an instruction to execute destructive actions.",
+    "description": "Curated practitioner view, not an official MITRE mapping. Scores are membership tiers (core=100, supporting=55), not severity, confidence, incident frequency, or a coverage guarantee. Technique IDs and tactic assignments are validated against the bundled Enterprise ATT&CK 19.2 dataset, with official 16.1 retained as the original provenance baseline; tactic slugs follow 19.2. Core rows describe selected Enterprise impact behaviors; supporting rows describe access, preparation, collection and exfiltration that can precede destructive or extortion scenarios. Extortion is a scenario objective, not a standalone Enterprise ATT&CK technique or tactic. No actor attribution, mandatory attack sequence, or ICS coverage is implied. This is a planning view, not an instruction to execute destructive actions.",
     "blurb": "Destruction, encryption, recovery inhibition, denial of service, defacement, and data-integrity attacks, with supporting theft and preparation behaviors. Curated planning context, not a destructive runbook."
+  },
+  {
+    "file": "htb-core-techniques-528.json",
+    "name": "TeamStarWolf - HTB Core Techniques (528, precise)",
+    "description": "Curated practitioner view, not an official MITRE mapping. Precise-pattern frequency of 21 core adversary techniques across 528 content-verified Hack The Box walkthroughs (the full text-mined corpus), derived metadata only - no reproduced walkthrough content. Unlike the broader \"HTB Technique Frequency\" layer (249 machines, mixed careful+coarse tagging, 135 techniques), this layer uses ONE uniform precise-pattern pass over all 528 machines for a smaller high-confidence core, so scores here are directly comparable across techniques. Keyword/tag-derived: it can still miss behaviors and over-match, so treat counts as lower-bound text evidence. Scores normalize counts to the maximum (494 machines, T1046), not to sample size; 100 does not mean 100% prevalence. Technique IDs and tactic slugs are ATT&CK v19.2 (validate against a v19.2 enterprise bundle; none of the 21 use the renamed Stealth/Defense Impairment tactics). Provenance: 528-machine uniform mine, 2026-09-26.",
+    "blurb": "Precise-pattern technique frequencies across 528 content-verified Hack The Box walkthroughs (21 core techniques). A uniform-method companion to the broader HTB layer; keyword-derived, not an official MITRE mapping."
   }
 ]
