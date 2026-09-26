@@ -1,7 +1,7 @@
 {
   "name": "TeamStarWolf - HTB Technique Frequency",
   "versions": {
-    "attack": "16",
+    "attack": "19",
     "navigator": "4.9",
     "layer": "4.5"
   },
@@ -55,7 +55,7 @@
     },
     {
       "techniqueID": "T1078",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 37,
       "comment": "Seen in 183 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
@@ -90,12 +90,6 @@
       "comment": "Seen in 128 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
-      "techniqueID": "T1548.003",
-      "tactic": "defense-evasion",
-      "score": 26,
-      "comment": "Seen in 128 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
-    },
-    {
       "techniqueID": "T1213",
       "tactic": "collection",
       "score": 25,
@@ -110,12 +104,6 @@
     {
       "techniqueID": "T1548.001",
       "tactic": "privilege-escalation",
-      "score": 22,
-      "comment": "Seen in 107 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
-    },
-    {
-      "techniqueID": "T1548.001",
-      "tactic": "defense-evasion",
       "score": 22,
       "comment": "Seen in 107 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
@@ -181,19 +169,13 @@
     },
     {
       "techniqueID": "T1574",
-      "tactic": "persistence",
+      "tactic": "execution",
       "score": 5,
       "comment": "Seen in 25 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1574",
-      "tactic": "privilege-escalation",
-      "score": 5,
-      "comment": "Seen in 25 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
-    },
-    {
-      "techniqueID": "T1574",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 5,
       "comment": "Seen in 25 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
@@ -223,7 +205,7 @@
     },
     {
       "techniqueID": "T1140",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 3,
       "comment": "Seen in 17 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
@@ -232,12 +214,6 @@
       "tactic": "credential-access",
       "score": 3,
       "comment": "Seen in 16 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
-    },
-    {
-      "techniqueID": "T1550.002",
-      "tactic": "defense-evasion",
-      "score": 3,
-      "comment": "Seen in 13 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1550.002",
@@ -319,7 +295,7 @@
     },
     {
       "techniqueID": "T1027",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 1,
       "comment": "Seen in 6 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
@@ -343,7 +319,7 @@
     },
     {
       "techniqueID": "T1027.003",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 1,
       "comment": "Seen in 4 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
@@ -361,7 +337,7 @@
     },
     {
       "techniqueID": "T1078.001",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 1,
       "comment": "Seen in 4 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
@@ -391,7 +367,7 @@
     },
     {
       "techniqueID": "T1564.004",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 1,
       "comment": "Seen in 4 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
@@ -403,7 +379,7 @@
     },
     {
       "techniqueID": "T1055",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 1,
       "comment": "Seen in 4 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
@@ -412,12 +388,6 @@
       "tactic": "privilege-escalation",
       "score": 1,
       "comment": "Seen in 4 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
-    },
-    {
-      "techniqueID": "T1550.004",
-      "tactic": "defense-evasion",
-      "score": 1,
-      "comment": "Seen in 3 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1550.004",
@@ -433,19 +403,13 @@
     },
     {
       "techniqueID": "T1574.007",
-      "tactic": "persistence",
+      "tactic": "execution",
       "score": 1,
       "comment": "Seen in 3 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1574.007",
-      "tactic": "privilege-escalation",
-      "score": 1,
-      "comment": "Seen in 3 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
-    },
-    {
-      "techniqueID": "T1574.007",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 1,
       "comment": "Seen in 3 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
@@ -463,7 +427,7 @@
     },
     {
       "techniqueID": "T1134.001",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 1,
       "comment": "Seen in 3 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
@@ -523,7 +487,7 @@
     },
     {
       "techniqueID": "T1027.010",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 1,
       "comment": "Seen in 3 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
@@ -625,7 +589,7 @@
     },
     {
       "techniqueID": "T1205.001",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 1,
       "comment": "Seen in 2 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
@@ -727,19 +691,13 @@
     },
     {
       "techniqueID": "T1574.006",
-      "tactic": "persistence",
+      "tactic": "execution",
       "score": 1,
       "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1574.006",
-      "tactic": "privilege-escalation",
-      "score": 1,
-      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
-    },
-    {
-      "techniqueID": "T1574.006",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 1,
       "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
@@ -764,12 +722,6 @@
     {
       "techniqueID": "T1548",
       "tactic": "privilege-escalation",
-      "score": 1,
-      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
-    },
-    {
-      "techniqueID": "T1548",
-      "tactic": "defense-evasion",
       "score": 1,
       "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
@@ -799,12 +751,6 @@
     },
     {
       "techniqueID": "T1550.003",
-      "tactic": "defense-evasion",
-      "score": 1,
-      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
-    },
-    {
-      "techniqueID": "T1550.003",
       "tactic": "lateral-movement",
       "score": 1,
       "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
@@ -818,12 +764,6 @@
     {
       "techniqueID": "T1613",
       "tactic": "discovery",
-      "score": 1,
-      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
-    },
-    {
-      "techniqueID": "T1610",
-      "tactic": "defense-evasion",
       "score": 1,
       "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
@@ -853,13 +793,13 @@
     },
     {
       "techniqueID": "T1218.011",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 1,
       "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
-      "techniqueID": "T1562.001",
-      "tactic": "defense-evasion",
+      "techniqueID": "T1685",
+      "tactic": "defense-impairment",
       "score": 1,
       "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
@@ -895,13 +835,13 @@
     },
     {
       "techniqueID": "T1553.002",
-      "tactic": "defense-evasion",
+      "tactic": "defense-impairment",
       "score": 1,
       "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1218.007",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 1,
       "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
@@ -943,13 +883,13 @@
     },
     {
       "techniqueID": "T1006",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 1,
       "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1220",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 1,
       "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
@@ -961,7 +901,7 @@
     },
     {
       "techniqueID": "T1036",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 1,
       "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
@@ -973,25 +913,19 @@
     },
     {
       "techniqueID": "T1574.010",
-      "tactic": "persistence",
+      "tactic": "execution",
       "score": 1,
       "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1574.010",
-      "tactic": "privilege-escalation",
-      "score": 1,
-      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
-    },
-    {
-      "techniqueID": "T1574.010",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 1,
       "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1218",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 1,
       "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
@@ -1009,7 +943,7 @@
     },
     {
       "techniqueID": "T1127.001",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 1,
       "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
@@ -1020,32 +954,20 @@
       "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
-      "techniqueID": "T1548.002",
-      "tactic": "defense-evasion",
+      "techniqueID": "T1574.001",
+      "tactic": "execution",
       "score": 1,
       "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1574.001",
-      "tactic": "persistence",
-      "score": 1,
-      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
-    },
-    {
-      "techniqueID": "T1574.001",
-      "tactic": "privilege-escalation",
-      "score": 1,
-      "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
-    },
-    {
-      "techniqueID": "T1574.001",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 1,
       "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },
     {
       "techniqueID": "T1218.005",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 1,
       "comment": "Seen in 1 of 535 analyzed HTB machines. Combined corpus: 131 carefully-analyzed originals + 404 recent machines (keyword-derived from text writeups, so rarer techniques on new machines are under-counted). Curated practitioner view, not an official MITRE mapping; reflects HTB teaching bias."
     },

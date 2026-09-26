@@ -1,0 +1,201 @@
+{
+ "name": "TeamStarWolf - HTB Core Techniques (528, precise)",
+ "versions": {
+  "attack": "19",
+  "navigator": "4.9",
+  "layer": "4.5"
+ },
+ "domain": "enterprise-attack",
+ "description": "Curated practitioner view, not an official MITRE mapping. Precise-pattern frequency of 21 core adversary techniques across 528 content-verified Hack The Box walkthroughs (the full text-mined corpus), derived metadata only - no reproduced walkthrough content. Unlike the broader \"HTB Technique Frequency\" layer (249 machines, mixed careful+coarse tagging, 135 techniques), this layer uses ONE uniform precise-pattern pass over all 528 machines for a smaller high-confidence core, so scores here are directly comparable across techniques. Keyword/tag-derived: it can still miss behaviors and over-match, so treat counts as lower-bound text evidence. Scores normalize counts to the maximum (494 machines, T1046), not to sample size; 100 does not mean 100% prevalence. Technique IDs and tactic slugs are ATT&CK v19.2 (validate against a v19.2 enterprise bundle; none of the 21 use the renamed Stealth/Defense Impairment tactics). Provenance: 528-machine uniform mine, 2026-09-26.",
+ "sorting": 3,
+ "layout": {
+  "layout": "side",
+  "showID": false,
+  "showName": true,
+  "showAggregateScores": true,
+  "countUnscored": false
+ },
+ "hideDisabled": false,
+ "techniques": [
+  {
+   "techniqueID": "T1046",
+   "tactic": "discovery",
+   "score": 100,
+   "comment": "Network Service Discovery. Seen in 494 of 528 content-verified HTB machines (93.6%). Uniform precise-pattern mining over the full 528-machine text corpus; keyword/tag-derived, not an official MITRE mapping and not an independently confirmed observation per machine. Tactic is a single primary display assignment (ATT&CK v19.2 slug), not a separately measured per-tactic frequency."
+  },
+  {
+   "techniqueID": "T1190",
+   "tactic": "initial-access",
+   "score": 47,
+   "comment": "Exploit Public-Facing Application. Seen in 232 of 528 content-verified HTB machines (43.9%). Uniform precise-pattern mining over the full 528-machine text corpus; keyword/tag-derived, not an official MITRE mapping and not an independently confirmed observation per machine. Tactic is a single primary display assignment (ATT&CK v19.2 slug), not a separately measured per-tactic frequency."
+  },
+  {
+   "techniqueID": "T1105",
+   "tactic": "command-and-control",
+   "score": 47,
+   "comment": "Ingress Tool Transfer. Seen in 230 of 528 content-verified HTB machines (43.6%). Uniform precise-pattern mining over the full 528-machine text corpus; keyword/tag-derived, not an official MITRE mapping and not an independently confirmed observation per machine. Tactic is a single primary display assignment (ATT&CK v19.2 slug), not a separately measured per-tactic frequency."
+  },
+  {
+   "techniqueID": "T1110.002",
+   "tactic": "credential-access",
+   "score": 46,
+   "comment": "Brute Force: Password Cracking. Seen in 227 of 528 content-verified HTB machines (43.0%). Uniform precise-pattern mining over the full 528-machine text corpus; keyword/tag-derived, not an official MITRE mapping and not an independently confirmed observation per machine. Tactic is a single primary display assignment (ATT&CK v19.2 slug), not a separately measured per-tactic frequency."
+  },
+  {
+   "techniqueID": "T1083",
+   "tactic": "discovery",
+   "score": 30,
+   "comment": "File and Directory Discovery. Seen in 148 of 528 content-verified HTB machines (28.0%). Uniform precise-pattern mining over the full 528-machine text corpus; keyword/tag-derived, not an official MITRE mapping and not an independently confirmed observation per machine. Tactic is a single primary display assignment (ATT&CK v19.2 slug), not a separately measured per-tactic frequency."
+  },
+  {
+   "techniqueID": "T1021.004",
+   "tactic": "lateral-movement",
+   "score": 26,
+   "comment": "Remote Services: SSH. Seen in 129 of 528 content-verified HTB machines (24.4%). Uniform precise-pattern mining over the full 528-machine text corpus; keyword/tag-derived, not an official MITRE mapping and not an independently confirmed observation per machine. Tactic is a single primary display assignment (ATT&CK v19.2 slug), not a separately measured per-tactic frequency."
+  },
+  {
+   "techniqueID": "T1213",
+   "tactic": "collection",
+   "score": 25,
+   "comment": "Data from Information Repositories. Seen in 124 of 528 content-verified HTB machines (23.5%). Uniform precise-pattern mining over the full 528-machine text corpus; keyword/tag-derived, not an official MITRE mapping and not an independently confirmed observation per machine. Tactic is a single primary display assignment (ATT&CK v19.2 slug), not a separately measured per-tactic frequency."
+  },
+  {
+   "techniqueID": "T1548.003",
+   "tactic": "privilege-escalation",
+   "score": 20,
+   "comment": "Abuse Elevation Control Mechanism: Sudo and Sudo Caching. Seen in 99 of 528 content-verified HTB machines (18.8%). Uniform precise-pattern mining over the full 528-machine text corpus; keyword/tag-derived, not an official MITRE mapping and not an independently confirmed observation per machine. Tactic is a single primary display assignment (ATT&CK v19.2 slug), not a separately measured per-tactic frequency."
+  },
+  {
+   "techniqueID": "T1059.001",
+   "tactic": "execution",
+   "score": 20,
+   "comment": "Command and Scripting Interpreter: PowerShell. Seen in 97 of 528 content-verified HTB machines (18.4%). Uniform precise-pattern mining over the full 528-machine text corpus; keyword/tag-derived, not an official MITRE mapping and not an independently confirmed observation per machine. Tactic is a single primary display assignment (ATT&CK v19.2 slug), not a separately measured per-tactic frequency."
+  },
+  {
+   "techniqueID": "T1572",
+   "tactic": "command-and-control",
+   "score": 19,
+   "comment": "Protocol Tunneling. Seen in 94 of 528 content-verified HTB machines (17.8%). Uniform precise-pattern mining over the full 528-machine text corpus; keyword/tag-derived, not an official MITRE mapping and not an independently confirmed observation per machine. Tactic is a single primary display assignment (ATT&CK v19.2 slug), not a separately measured per-tactic frequency."
+  },
+  {
+   "techniqueID": "T1548.001",
+   "tactic": "privilege-escalation",
+   "score": 18,
+   "comment": "Abuse Elevation Control Mechanism: Setuid and Setgid. Seen in 91 of 528 content-verified HTB machines (17.2%). Uniform precise-pattern mining over the full 528-machine text corpus; keyword/tag-derived, not an official MITRE mapping and not an independently confirmed observation per machine. Tactic is a single primary display assignment (ATT&CK v19.2 slug), not a separately measured per-tactic frequency."
+  },
+  {
+   "techniqueID": "T1552.001",
+   "tactic": "credential-access",
+   "score": 14,
+   "comment": "Unsecured Credentials: Credentials In Files. Seen in 68 of 528 content-verified HTB machines (12.9%). Uniform precise-pattern mining over the full 528-machine text corpus; keyword/tag-derived, not an official MITRE mapping and not an independently confirmed observation per machine. Tactic is a single primary display assignment (ATT&CK v19.2 slug), not a separately measured per-tactic frequency."
+  },
+  {
+   "techniqueID": "T1078",
+   "tactic": "persistence",
+   "score": 12,
+   "comment": "Valid Accounts. Seen in 58 of 528 content-verified HTB machines (11.0%). Uniform precise-pattern mining over the full 528-machine text corpus; keyword/tag-derived, not an official MITRE mapping and not an independently confirmed observation per machine. Tactic is a single primary display assignment (ATT&CK v19.2 slug), not a separately measured per-tactic frequency."
+  },
+  {
+   "techniqueID": "T1053.003",
+   "tactic": "execution",
+   "score": 11,
+   "comment": "Scheduled Task/Job: Cron. Seen in 55 of 528 content-verified HTB machines (10.4%). Uniform precise-pattern mining over the full 528-machine text corpus; keyword/tag-derived, not an official MITRE mapping and not an independently confirmed observation per machine. Tactic is a single primary display assignment (ATT&CK v19.2 slug), not a separately measured per-tactic frequency."
+  },
+  {
+   "techniqueID": "T1505.003",
+   "tactic": "persistence",
+   "score": 10,
+   "comment": "Server Software Component: Web Shell. Seen in 51 of 528 content-verified HTB machines (9.7%). Uniform precise-pattern mining over the full 528-machine text corpus; keyword/tag-derived, not an official MITRE mapping and not an independently confirmed observation per machine. Tactic is a single primary display assignment (ATT&CK v19.2 slug), not a separately measured per-tactic frequency."
+  },
+  {
+   "techniqueID": "T1003",
+   "tactic": "credential-access",
+   "score": 8,
+   "comment": "OS Credential Dumping. Seen in 41 of 528 content-verified HTB machines (7.8%). Uniform precise-pattern mining over the full 528-machine text corpus; keyword/tag-derived, not an official MITRE mapping and not an independently confirmed observation per machine. Tactic is a single primary display assignment (ATT&CK v19.2 slug), not a separately measured per-tactic frequency."
+  },
+  {
+   "techniqueID": "T1021.001",
+   "tactic": "lateral-movement",
+   "score": 6,
+   "comment": "Remote Services: Remote Desktop Protocol. Seen in 31 of 528 content-verified HTB machines (5.9%). Uniform precise-pattern mining over the full 528-machine text corpus; keyword/tag-derived, not an official MITRE mapping and not an independently confirmed observation per machine. Tactic is a single primary display assignment (ATT&CK v19.2 slug), not a separately measured per-tactic frequency."
+  },
+  {
+   "techniqueID": "T1558.003",
+   "tactic": "credential-access",
+   "score": 3,
+   "comment": "Steal or Forge Kerberos Tickets: Kerberoasting. Seen in 16 of 528 content-verified HTB machines (3.0%). Uniform precise-pattern mining over the full 528-machine text corpus; keyword/tag-derived, not an official MITRE mapping and not an independently confirmed observation per machine. Tactic is a single primary display assignment (ATT&CK v19.2 slug), not a separately measured per-tactic frequency."
+  },
+  {
+   "techniqueID": "T1574",
+   "tactic": "execution",
+   "score": 3,
+   "comment": "Hijack Execution Flow. Seen in 13 of 528 content-verified HTB machines (2.5%). Uniform precise-pattern mining over the full 528-machine text corpus; keyword/tag-derived, not an official MITRE mapping and not an independently confirmed observation per machine. Tactic is a single primary display assignment (ATT&CK v19.2 slug), not a separately measured per-tactic frequency."
+  },
+  {
+   "techniqueID": "T1068",
+   "tactic": "privilege-escalation",
+   "score": 2,
+   "comment": "Exploitation for Privilege Escalation. Seen in 8 of 528 content-verified HTB machines (1.5%). Uniform precise-pattern mining over the full 528-machine text corpus; keyword/tag-derived, not an official MITRE mapping and not an independently confirmed observation per machine. Tactic is a single primary display assignment (ATT&CK v19.2 slug), not a separately measured per-tactic frequency."
+  },
+  {
+   "techniqueID": "T1611",
+   "tactic": "privilege-escalation",
+   "score": 1,
+   "comment": "Escape to Host. Seen in 7 of 528 content-verified HTB machines (1.3%). Uniform precise-pattern mining over the full 528-machine text corpus; keyword/tag-derived, not an official MITRE mapping and not an independently confirmed observation per machine. Tactic is a single primary display assignment (ATT&CK v19.2 slug), not a separately measured per-tactic frequency."
+  }
+ ],
+ "gradient": {
+  "colors": [
+   "#f3f4f6",
+   "#16a34a"
+  ],
+  "minValue": 0,
+  "maxValue": 100
+ },
+ "legendItems": [
+  {
+   "label": "100: maximum count (494 of 528 machines), not 100% prevalence",
+   "color": "#16a34a"
+  }
+ ],
+ "metadata": [
+  {
+   "name": "source",
+   "value": "528-machine uniform precise-pattern HTB aggregate; source documents and machine-level metadata are not included."
+  },
+  {
+   "name": "source_counts_sha256",
+   "value": "E221307DD51EFF55522D64E09C85ED80214A200B33A821701EC2051037514DC4"
+  },
+  {
+   "name": "machines_analyzed",
+   "value": "528"
+  },
+  {
+   "name": "techniques_scored",
+   "value": "21"
+  },
+  {
+   "name": "method",
+   "value": "single uniform precise-pattern pass over full text corpus (contrast: broad layer uses mixed careful+keyword tagging)"
+  },
+  {
+   "name": "attack_version",
+   "value": "v19.2 (verified current 2026-09-26); IDs/tactics validate against a v19.2 enterprise bundle"
+  },
+  {
+   "name": "generated",
+   "value": "2026-09-26"
+  }
+ ],
+ "showTacticRowBackground": false,
+ "tacticRowBackground": "#dddddd",
+ "selectTechniquesAcrossTactics": true,
+ "selectSubtechniquesWithParent": false,
+ "links": [
+  {
+   "label": "Bundled technique ID and tactic validation source",
+   "url": "https://github.com/TeamStarWolf/ATTACK-Navi/blob/main/src/assets/data/enterprise-attack.json"
+  }
+ ]
+}
