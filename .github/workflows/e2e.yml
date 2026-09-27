@@ -23,7 +23,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: rm -f package-lock.json && npm install
+      - run: npm ci
       - run: npx playwright install --with-deps chromium
       # Build a DEVELOPMENT bundle (serviceWorker: false — ngsw would intercept
       # the ATT&CK fetch below Playwright's page.route) and serve it statically;
