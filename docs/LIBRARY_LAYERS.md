@@ -1,7 +1,9 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf - MIT License -->
 # Library Layers Guide
 
-**Library layers** are curated MITRE ATT&CK Navigator overlays bundled with ATTACK-Navi. Select one from the **Library Layers** picker in the matrix controls and the workbench colors each technique cell by that layer's score, letting you see a theme, a data-driven frequency, or a specific adversary's documented behavior projected onto the ATT&CK matrix. This build ships **26 layers**.
+**Library layers** are curated MITRE ATT&CK Navigator overlays bundled with ATTACK-Navi. Select one from the **Library Layers** picker in the matrix controls and the workbench colors each technique cell by that layer's score, letting you see a theme, a data-driven frequency, or a specific adversary's documented behavior projected onto the ATT&CK matrix. This build ships **36 layers**.
+
+Counts below are distinct technique IDs in each layer, not technique/tactic rows or machine counts. The inventory is checked against the [bundled manifest](../src/assets/data/library-layers/index.json); the layers target the bundled Enterprise ATT&CK v19.2 snapshot.
 
 ## How to use them
 
@@ -15,7 +17,7 @@
 | Layer type | Score meaning | Source |
 |---|---|---|
 | Curated theme / weakness | Membership tier (core = 100, supporting = 55) or membership-only | TeamStarWolf reference library + validated against bundled ATT&CK data. **Not** an official MITRE mapping. |
-| HTB Technique Frequency | Normalized machine count (100 = most frequent technique) | Analysis of the owner's own HTB writeups (technique metadata only). Reflects HTB teaching bias, not enterprise prevalence. |
+| HTB frequency views | Normalized machine count (100 = most frequent technique within that layer) | Derived technique metadata only; broad, core, OS, and difficulty views have different cohorts/methods. Reflects HTB teaching bias, not enterprise prevalence. |
 | Agentic AI Swarm | Event frequency across a de-identified 8-phase intrusion | Illustrative composite pattern; ATT&CK x ATLAS. Not an attribution of any specific incident. |
 | Threat Group emulation | 100 = MITRE-documented use | Generated directly from MITRE's `intrusion-set --uses--> technique` relationships. **MITRE's own attribution.** |
 
@@ -35,12 +37,15 @@
 | Cloud Attacks | 23 | Covers selected cloud intrusion behaviors, from account and token abuse to data theft and destructive impact |
 | Active Directory | 28 | Covers domain reconnaissance, credential theft, Kerberos and NTLM abuse, certificate attacks, and remote access |
 | Container and Kubernetes Attacks | 9 | Covers container deployment, image abuse, host escape, workload discovery, and unauthorized compute use |
+| macOS & Linux Attacks | 39 | Selected Unix/macOS behaviors; a technique may apply to either platform, not necessarily both. Per-row platform metadata narrows scope |
 
 ## Campaign & Behavior (curated)
 
 | Layer | Techniques | Notes |
 |---|---|---|
 | Ransomware TTPs | 14 | Follows common ransomware intrusion themes through access, credential theft, movement, exfiltration, encryption, and recovery inhibition |
+| Insider Threat | 23 | Curated abuse of granted access, collection, export, and sabotage; behavior matches do not establish malicious intent |
+| Impact: Destruction, Extortion & Disruption | 25 | Enterprise impact behaviors with supporting theft/preparation; a planning view, not a destructive execution runbook |
 
 ## Cross-Tactic Technique Themes (curated)
 
@@ -54,9 +59,20 @@
 
 ## Frequency Analysis
 
-| Layer | Techniques | Notes |
-|---|---|---|
-| HTB Technique Frequency | 131 | Shows normalized technique counts from the supplied analysis of the user's own 131 HTB machines |
+| Layer | Techniques | Machine cohort | Normalization maximum |
+|---|---|---|---|
+| [HTB Technique Frequency](../src/assets/data/library-layers/htb-technique-frequency.json) | 135 | 535: 131 careful originals + 404 keyword-derived additions | 494 machines |
+| [HTB Core Techniques (528, precise)](../src/assets/data/library-layers/htb-core-techniques-528.json) | 21 | 528, one uniform precise-pattern pass | 494 machines |
+| [HTB Linux Techniques](../src/assets/data/library-layers/htb-linux-techniques.json) | 19 | 347 Linux records from the 529-machine content cohort | 323 machines |
+| [HTB Windows Techniques](../src/assets/data/library-layers/htb-windows-techniques.json) | 19 | 142 Windows records from the 529-machine content cohort | 135 machines |
+| [HTB Easy Techniques](../src/assets/data/library-layers/htb-easy-techniques.json) | 20 | 109 Easy records from the 529-machine content cohort | 109 machines |
+| [HTB Medium Techniques](../src/assets/data/library-layers/htb-medium-techniques.json) | 21 | 125 Medium records from the 529-machine content cohort | 125 machines |
+| [HTB Hard Techniques](../src/assets/data/library-layers/htb-hard-techniques.json) | 21 | 82 Hard records from the 529-machine content cohort | 82 machines |
+| [HTB Insane Techniques](../src/assets/data/library-layers/htb-insane-techniques.json) | 21 | 56 Insane records from the 529-machine content cohort | 54 machines |
+
+These are text-derived training signals, not executed attack validation or enterprise prevalence estimates. Scores normalize to the most frequent technique **inside each layer**, not the cohort size: 100 is not a prevalence percentage. Compare technique mix and supporting counts, not raw normalized scores across layers. OS and difficulty subsets do not exhaust the 529-machine content cohort; inventory-only distributions use a different denominator and must not be substituted here.
+
+The broad layer's current manifest describes 535 machines. The core layer's description still contains a stale comparison to an older 249-machine broad snapshot; this guide uses the current broad artifact, while preserving the separate 528-machine core provenance. Dataset/registry reconciliation is a separate data task, not an implicit refresh in this documentation change.
 
 ## AI & Emerging Threats
 
@@ -89,9 +105,12 @@
 
 ## Adding a new layer
 
-Layers are **data-only**. To add one:
+Layers are **data-only** at runtime. The approved program architecture makes the companion library the canonical source for all layers; migration of workbench-only layers and the vendoring script is planned, not yet implemented in this checkout. Do not create a competing canonical source while that migration is coordinated.
+
+The current workbench ingestion contract is:
 
 1. Drop a MITRE Navigator v4.5 layer JSON into `src/assets/data/library-layers/` (`domain: enterprise-attack`, a `techniques[]` array of `{ techniqueID, tactic, score, comment }`).
 2. Append an entry to `index.json` with `file`, `name`, `description`, and `blurb`.
-3. Ensure every `techniqueID` resolves in the bundled `enterprise-attack.json`. No component or test changes are needed - the picker enumerates the manifest at runtime.
+3. Ensure every `techniqueID` and tactic resolves in the bundled `enterprise-attack.json`; preserve cohort, method, version, and normalization metadata. No component change is needed just to list the layer: the picker enumerates the manifest at runtime.
+4. Run `node scripts/validate-curated-threat-layers.mjs` and the relevant tests. Reconcile this guide with all manifest entries, counting unique IDs rather than tactic-expanded rows. Keep deterministic generators alongside their outputs in the canonical source; do not commit private source material or locators.
 
