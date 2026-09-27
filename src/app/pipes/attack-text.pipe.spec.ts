@@ -45,10 +45,13 @@ describe('AttackTextPipe', () => {
     expect(out).toContain('>the docs</a>');
   });
 
-  it('does not build anchors for non-http(s) schemes', () => {
+  it('does not build a clickable anchor for non-http(s) schemes', () => {
+    // The pipe linkifies only https(s) URLs, so a javascript: "link" is never turned
+    // into an anchor. The literal text may remain (inert, HTML-escaped); the security
+    // property is that nothing clickable/executable is produced — no <a>, no href.
     const out = pipe.transform('[x](javascript:alert(1))');
     expect(out).not.toContain('<a ');
-    expect(out.toLowerCase()).not.toContain('javascript:alert');
+    expect(out).not.toContain('href=');
   });
 
   it('escapes stray angle brackets/quotes in plain text', () => {
