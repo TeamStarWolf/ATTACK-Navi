@@ -25,14 +25,13 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      # lock file has @angular-devkit@21.x — delete and regenerate from package.json
-      - run: rm -f package-lock.json && npm install
+      - run: npm ci
       # Unit tests gate the deploy (fast + reliable). End-to-end tests run in a
       # separate, non-blocking workflow (.github/workflows/e2e.yml) so a flaky
       # browser run on a constrained runner never blocks shipping docs/UI fixes.
       - run: npx ng test --no-watch --browsers=ChromeHeadless
       - run: npx ng build --base-href /ATTACK-Navi/
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: dist/mitre-mitigation-navigator/browser
 
@@ -44,4 +43,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
