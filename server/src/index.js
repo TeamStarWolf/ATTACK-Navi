@@ -4,7 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 const app = express();
 const port = Number(process.env.PORT) || 8787;

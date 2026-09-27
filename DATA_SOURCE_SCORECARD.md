@@ -7,11 +7,16 @@ This scorecard captures the current state of the app's cyber data sources and ma
 Status meanings:
 
 - `wired`
-  - the source is visible in current product workflows
+  - the source is visible in current product workflows; this does not prove a live connection or validated detection coverage
 - `partial`
   - the source exists in code, but the UI or live data pipeline is incomplete
 - `missing`
   - no meaningful integration was found in the current project
+
+**Targeted code review: 2026-09-26.** The MISP, OpenCTI, Zeek, and Suricata rows below
+were traced through services, UI callers, and routes. Other source rows are retained from
+the earlier scorecard, not newly certified by this review. No private CTI server or network
+sensor was connected during this review.
 
 ## Summary
 
@@ -19,8 +24,8 @@ The project already has a stronger enrichment foundation than it first appears t
 
 - make `Sigma` truly live and authoritative
 - strengthen `CVE/CWE/CPE` into clearer product and exposure workflows
-- add live CTI via `MISP` or `OpenCTI`
-- add open telemetry-backed detection context such as `Zeek` and `Suricata`
+- validate and complete the existing configurable `MISP` and `OpenCTI` connectors
+- validate existing `Zeek` and `Suricata` exports, then add measured telemetry-backed detection context
 - refresh static mappings like `D3FEND` with a healthier ingestion path
 
 ## Scorecard
@@ -40,10 +45,27 @@ The project already has a stronger enrichment foundation than it first appears t
 | `CAR` | `wired` | [car.service.ts](src/app/services/car.service.ts) and sidebar/matrix usage | Sidebar, matrix/detection context | Keep improving visibility and recommendation quality |
 | `Engage` | `wired` | [engage.service.ts](src/app/services/engage.service.ts) and sidebar usage | Sidebar, planning-style context | Better connect Engage recommendations to next-action UX |
 | `Controls / NIST / CIS / Cloud controls / VERIS / CRI` | `wired` | Dedicated services and active sidebar usage | Sidebar, compliance and planning flows | Better cross-source synthesis instead of separate buckets |
-| `MISP` | `missing` | No obvious integration found | None found | Add ATT&CK-tagged event/intel enrichment |
-| `OpenCTI` | `missing` | No obvious integration found | None found | Add relationship-rich CTI and provenance |
-| `Zeek` | `missing` | No obvious integration found | None found | Add open telemetry-backed coverage and observability guidance |
-| `Suricata` | `missing` | No obvious integration found | None found | Add network detection coverage and ATT&CK-linked rule context |
+| `MISP` | `wired` Galaxy reference data; `partial` live-server workflow | [misp.service.ts](src/app/services/misp.service.ts) loads public Galaxy clusters and implements direct/proxy connection tests, event/attribute queries, and event creation | Technique sidebar tags, matrix intelligence scoring, dashboard counts, Intel Feeds reference/template views, Settings connection controls | Wire live event/attribute results into the UI and validate against an authorized server; Galaxy counts are not live event coverage |
+| `OpenCTI` | `wired` configurable indicator UI; live compatibility unverified | [opencti.service.ts](src/app/services/opencti.service.ts) implements direct/proxy GraphQL configuration and indicator/actor queries; [sidebar caller](src/app/components/sidebar/sidebar.component.ts) requests indicators | Settings connection controls, technique sidebar indicators, dashboard connection status, Intel Feeds query path | Verify GraphQL schema/filter compatibility and error handling against a supported server; complete actor/relationship workflows and provenance |
+| `Zeek` | `wired` script export; telemetry ingestion `missing` | [zeek.service.ts](src/app/services/zeek.service.ts) contains curated script templates and generic TODO fallbacks; [SIEM export](src/app/components/siem-export/siem-export.component.ts) calls its generator | Detection > SIEM (`#/detect/siem`), Zeek export option | Syntax/load checks with Zeek, controlled PCAP replay and negative controls, version/provenance tracking, then sensor-result ingestion; generated files are not observed detections |
+| `Suricata` | `wired` rule export; telemetry ingestion `missing` | [suricata.service.ts](src/app/services/suricata.service.ts) contains curated rules and generic network fallbacks; [SIEM export](src/app/components/siem-export/siem-export.component.ts) calls its generator | Detection > SIEM (`#/detect/siem`), Suricata export option | Validate emitted rule syntax and unique SIDs, tune generic fallbacks, test positive/negative traffic, then ingest sensor evidence; export counts are not validated coverage |
+
+## Integration Boundaries
+
+- The static app does not deploy MISP, OpenCTI, Zeek, or Suricata. Connection controls
+  and generated artifacts are implemented capabilities, not proof that those services run.
+- MISP's `getEventsForTechnique()` / `getAttributesForTechnique()` are service methods
+  without current component callers. The Intel MISP view generates an event template;
+  it must not be described as a live event browser.
+- Direct CTI mode keeps supplied secrets in browser memory. The optional
+  [proxy](server/README.md) keeps upstream secrets server-side but does not itself implement
+  caller authentication. Keep it behind an authenticated, restricted boundary; CORS alone
+  does not authorize clients. No deployment or permission change is implied by this scorecard.
+- Zeek's generic fallback contains a TODO rather than a complete analytic. Suricata's
+  generic network fallback is broad. Neither should count as technique-specific validated
+  detection until tested with representative traffic and negative controls.
+- Unit tests and mocked proxy checks establish code behavior, not compatibility with a real
+  CTI instance or detection-engine acceptance. Record those results separately.
 
 ## Strongest Current Areas
 
@@ -56,15 +78,16 @@ The project already has a stronger enrichment foundation than it first appears t
 
 - detection coverage is not yet backed by a clearly authoritative open-source ingestion layer
 - environment-aware product relevance is still weak
-- live threat intel integration is absent
+- live CTI connectors exist, but their deployment/schema compatibility and full UI workflows need validation
+- network exports lack measured sensor evidence and engine-level validation
 - some mapped sources are functional but static rather than refreshable
 
 ## Recommended Next Build Order
 
 1. Make `Sigma` real
 2. Strengthen `CVE/CWE/CPE` into a more operational exposure workflow
-3. Add `MISP` or `OpenCTI`
-4. Add `Zeek` and `Suricata`
+3. Validate and finish existing `MISP` and `OpenCTI` workflows
+4. Validate `Zeek` and `Suricata` exports before adding sensor-result ingestion
 5. Refresh or deepen `D3FEND`
 
 ## Recommended Product Framing
@@ -73,9 +96,9 @@ The cleanest model for the app is:
 
 - `ATT&CK` for behavior and navigation
 - `CVE/CWE/CPE` for exposure and relevance
-- `Sigma/Zeek/Suricata/YARA` for detection coverage
+- `Sigma/Zeek/Suricata/YARA` for candidate detection content, with validated coverage reported separately
 - `Atomic` for validation
-- `MISP/OpenCTI` for live intel context
+- `MISP/OpenCTI` for reference/configurable intel context, live only when connected and verified
 - `D3FEND` and controls mappings for defensive action
 
 That keeps the product matrix-first while turning it into a more operational workspace.
