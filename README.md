@@ -5,10 +5,10 @@
 
   **A browser-based MITRE ATT&CK® analyst workbench — navigate the matrix, correlate threat intelligence, map exposure, measure detection coverage, and generate review-ready reports, all in one place.**
 
-  [![Angular 19](https://img.shields.io/badge/Angular-19-DD0031?style=for-the-badge&logo=angular&logoColor=white)](https://angular.dev)
-  [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+  [![Angular 21.2.x](https://img.shields.io/badge/Angular-21.2.x-DD0031?style=for-the-badge&logo=angular&logoColor=white)](https://angular.dev)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
   [![Live on GitHub Pages](https://img.shields.io/badge/Live-GitHub%20Pages-0A66C2?style=for-the-badge&logo=github)](https://teamstarwolf.github.io/ATTACK-Navi/)
-  [![Tests](https://img.shields.io/badge/tests-663%20unit%20%2B%2035%20e2e-2ECC71?style=for-the-badge)](.github/workflows/deploy.yml)
+  [![Tests](https://img.shields.io/badge/tests-714%20unit%20%2B%2035%20e2e-2ECC71?style=for-the-badge)](.github/workflows/deploy.yml)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
 
   **[▶ Live Demo](https://teamstarwolf.github.io/ATTACK-Navi/)** &nbsp;·&nbsp; [Docs](docs/README.md) &nbsp;·&nbsp; [Architecture](ARCHITECTURE.md) &nbsp;·&nbsp; [Workflows](WORKFLOWS.md) &nbsp;·&nbsp; [Reference Library](#companion-reference-library) &nbsp;·&nbsp; [Changelog](CHANGELOG.md) &nbsp;·&nbsp; [Security](SECURITY.md)
@@ -28,9 +28,10 @@ It runs entirely in the browser as a static single-page app with **no backend re
 
 | | |
 |---|---|
-| **Domains** | Enterprise (835 techniques + subtechniques), ICS, and Mobile |
+| **Domains** | Enterprise (v19.2 bundled snapshot; live data may advance), ICS, and Mobile |
 | **Workspaces** | 9 routed, lazy-loaded areas with bookmarkable URLs |
-| **Heatmap modes** | 31, grouped into Coverage, Threat Landscape, Vulnerabilities, Detections, and Frameworks |
+| **Heatmap modes** | 33, grouped into Coverage, Threat Landscape, Vulnerabilities, Detections, and Frameworks |
+| **Library layers** | 36 bundled overlays; distinct from heatmap modes, with per-layer score and cohort provenance |
 | **Sidebar enrichment** | 48 sections per technique, from CVEs to detection rules to threat actors |
 | **Data sources** | 30+ live integrations plus user-configurable MISP / OpenCTI |
 | **Command palette** | `Ctrl+K` — search entities or jump to any of 46 destinations by name |
@@ -85,23 +86,25 @@ Everything lives in nine workspaces on the left rail. Each has its own URL and a
 - Sort by risk score, dim uncovered techniques, gap-view mode
 - Matrix chrome (legend, quick filters, stats, data health) collapses into one context strip
 
-### 31 Heatmap Visualization Modes
+### 33 Heatmap Visualization Modes
 
 Defined in a single source of truth (`src/app/models/heatmap-modes.ts`) and presented in a grouped picker:
 
 | Group | Modes |
 |-------|-------|
-| **Coverage & Posture** | Coverage, Status, Controls, Unified Risk, Frequency |
+| **Coverage & Posture** | Coverage, Status, Controls, Unified Coverage, Library Layer, Frequency |
 | **Threat Landscape** | Risk, Exposure, Software, Campaign, Intelligence, My Exposure |
 | **Vulnerabilities** | KEV, CVE, EPSS Probability, CVE Kill Chain, PoC Exploits |
 | **Detections** | Detection, Sigma, Elastic, Splunk, Wazuh, M365 Defender, CAR, Atomic |
-| **Frameworks** | D3FEND, Engage, NIST 800-53, VERIS, CRI Profile, CSA CCM, M365 Controls |
+| **Frameworks** | D3FEND, Engage, NIST 800-53, VERIS, CRI Profile, CSA CCM, M365 Controls, F3 Origin |
+
+The Library Layer mode selects among [36 bundled overlays](docs/LIBRARY_LAYERS.md), including eight HTB frequency views with separate cohorts and normalization. Those overlays are not additional heatmap modes.
 
 ### Threat Intelligence Platform (TIP)
 - Unified panel combining MISP Galaxy, OpenCTI indicators, and ATT&CK threat groups
 - Four tabs: Intel Overview, Indicators (IOCs), Threat Actors, MISP Events
 - Per-technique intelligence scoring across all sources
-- Live MISP server connection with attribute/event queries
+- MISP server connection and attribute/event query methods; live event/attribute UI wiring remains incomplete
 - OpenCTI GraphQL integration for STIX/YARA/Sigma indicators
 
 ### Vulnerability & Exposure Analysis
@@ -219,14 +222,14 @@ Fabricated or unverifiable mappings inherited from earlier prototypes were audit
 ## Getting Started
 
 ### Prerequisites
-- Node.js 20+ and npm
+- Node.js `^20.19.0`, `^22.12.0`, or `>=24.0.0` and npm, matching the locked Angular package requirements
 
 ### Install & Run
 
 ```bash
 git clone https://github.com/TeamStarWolf/ATTACK-Navi.git
 cd ATTACK-Navi
-npm install
+npm ci
 npx ng serve
 ```
 
@@ -235,9 +238,11 @@ Open [http://localhost:4200](http://localhost:4200).
 ### Test
 
 ```bash
-npx ng test --watch=false --browsers=ChromeHeadless   # 663 unit tests
+npx ng test --watch=false --browsers=ChromeHeadless   # 714 unit tests
 npx playwright test                                    # 35 e2e tests (29 functional + 6 visual)
 ```
+
+The six visual tests are intentionally skipped in CI because screenshot baselines are platform-specific. The post-merge run for PR #76 passed 29 functional tests and skipped those six; this is not a claim that visual baselines were validated in CI.
 
 ### Production Build
 
@@ -267,7 +272,7 @@ The repository includes a GitHub Actions workflow (`.github/workflows/deploy.yml
 
 ## Architecture
 
-The application follows a reactive state management pattern using Angular 19 standalone components with OnPush change detection, and hash-based routing (GitHub Pages friendly) with per-workspace lazy loading.
+The application follows a reactive state management pattern using Angular 21.2.x standalone components with OnPush change detection, and hash-based routing (GitHub Pages friendly) with per-workspace lazy loading.
 
 ```
 AppComponent (shell)
@@ -307,7 +312,7 @@ Navigation uses the Angular Router with **hash routing** (GitHub Pages friendly)
 
 ### Heatmap Modes (single source of truth)
 
-All 31 heatmap modes are declared once in `src/app/models/heatmap-modes.ts` (value, label, short name, and group). The picker, the trigger button, and mode cycling all read from that list, so adding a mode is a one-line edit.
+All 33 heatmap modes are declared once in `src/app/models/heatmap-modes.ts` (value, label, short name, and group). The picker, the trigger button, and mode cycling read that list. A new mode also needs scoring, cell colors, legend entries, type updates, and tests; follow the checklist in [AGENTS.md](AGENTS.md).
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) and [docs/HEATMAPS.md](docs/HEATMAPS.md) for the full walkthrough.
 
@@ -322,7 +327,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) and [docs/HEATMAPS.md](docs/HEATMAPS.md) 
 3. Enter your MISP server URL, API key, and organization ID
 4. Click **Test & Save**
 
-Once connected, the TIP panel's MISP Events tab shows live event data, and the sidebar displays MISP attributes for selected techniques.
+The public MISP Galaxy data is wired into the UI. Live server test/query methods exist, but the event and attribute fetch methods are not yet connected to component callers; saving a connection does not establish end-to-end live MISP event rendering. See [DATA_SOURCE_SCORECARD.md](DATA_SOURCE_SCORECARD.md).
 
 ### OpenCTI (optional)
 
@@ -331,7 +336,7 @@ Once connected, the TIP panel's MISP Events tab shows live event data, and the s
 3. Enter your OpenCTI URL and API token
 4. Click **Test & Save**
 
-Once connected, the sidebar shows OpenCTI indicators (STIX, YARA, Sigma patterns) and the TIP panel merges OpenCTI threat actors with ATT&CK groups.
+Configured OpenCTI indicators can feed the sidebar and TIP panel. Compatibility with a particular OpenCTI schema/deployment requires verification; the existence of service queries alone is not evidence of every advertised integration flow. See [DATA_SOURCE_SCORECARD.md](DATA_SOURCE_SCORECARD.md).
 
 ### NVD API Key (optional)
 
@@ -363,11 +368,11 @@ Defined once in `src/app/models/shortcuts.ts` and rendered by the in-app help ov
 
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| Angular | 19.2 | UI framework (standalone components, OnPush, Router) |
+| Angular | 21.2.x (locked at 21.2.24) | UI framework (standalone components, OnPush, Router) |
 | RxJS | 7.8 | Reactive state management |
-| TypeScript | 5.7 | Type safety |
+| TypeScript | 5.9.3 | Type safety |
 | SCSS | — | Design tokens + component-scoped styling |
-| Karma / Jasmine | — | Unit testing (663 specs) |
+| Karma / Jasmine | — | Unit testing (714 specs) |
 | Playwright | — | E2E + visual regression (35 specs, non-blocking CI workflow) |
 | xlsx-js-style | 1.2 | Excel workbook export |
 
