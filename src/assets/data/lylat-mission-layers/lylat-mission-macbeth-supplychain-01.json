@@ -1,0 +1,109 @@
+{
+  "name": "Lylat Mission — MACBETH-SUPPLYCHAIN-01",
+  "versions": {
+    "attack": "19",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "The Forever Train — a poisoned build on Macbeth, and stopping it before delivery  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1195.002",
+      "tactic": "initial-access",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "MACBETH-SUPPLYCHAIN-01 planned coverage: Compromise Software Supply Chain",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1554",
+      "tactic": "persistence",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "MACBETH-SUPPLYCHAIN-01 planned coverage: Compromise Host Software Binary",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1072",
+      "tactic": "execution",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "MACBETH-SUPPLYCHAIN-01 planned coverage: Software Deployment Tools",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1027",
+      "tactic": "defense-evasion",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "MACBETH-SUPPLYCHAIN-01 planned coverage: Obfuscated Files or Information",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1078",
+      "tactic": "defense-evasion",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "MACBETH-SUPPLYCHAIN-01 planned coverage: Valid Accounts",
+      "showSubtechniques": false
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffe8d6",
+      "#c1121f"
+    ],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "Planned mission coverage (draft - not a validated detection)",
+      "color": "#fca311"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "mission",
+      "value": "MACBETH-SUPPLYCHAIN-01"
+    },
+    {
+      "name": "planet",
+      "value": "Macbeth (CI/CD factory; MACBETH-CI01 / the Forever Train pipeline)"
+    },
+    {
+      "name": "disciplines",
+      "value": "supply-chain-security, devsecops, detection-engineering"
+    },
+    {
+      "name": "training_route",
+      "value": "macbeth-ot-range"
+    },
+    {
+      "name": "status",
+      "value": "planned / draft-ai-authored (execution_verified:false)"
+    },
+    {
+      "name": "attack_matrix",
+      "value": "enterprise-attack"
+    },
+    {
+      "name": "generated_by",
+      "value": "Tools/gen_navigator_layers.py (deterministic, from mission front-matter)"
+    }
+  ],
+  "links": [],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#2b2b3a",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}

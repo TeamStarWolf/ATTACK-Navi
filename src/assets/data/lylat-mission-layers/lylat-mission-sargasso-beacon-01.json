@@ -1,0 +1,117 @@
+{
+  "name": "Lylat Mission — SARGASSO-BEACON-01",
+  "versions": {
+    "attack": "19",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Hideout Beacon — Star Wolf's C2 discipline from Sargasso, and the beacon analysis that unravels it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1583.001",
+      "tactic": "resource-development",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SARGASSO-BEACON-01 planned coverage: Domains",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1071.001",
+      "tactic": "command-and-control",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SARGASSO-BEACON-01 planned coverage: Web Protocols",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1573.002",
+      "tactic": "command-and-control",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SARGASSO-BEACON-01 planned coverage: Asymmetric Cryptography",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1571",
+      "tactic": "command-and-control",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SARGASSO-BEACON-01 planned coverage: Non-Standard Port",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1105",
+      "tactic": "command-and-control",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SARGASSO-BEACON-01 planned coverage: Ingress Tool Transfer",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1090",
+      "tactic": "command-and-control",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SARGASSO-BEACON-01 planned coverage: Proxy",
+      "showSubtechniques": false
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffe8d6",
+      "#c1121f"
+    ],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "Planned mission coverage (draft - not a validated detection)",
+      "color": "#fca311"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "mission",
+      "value": "SARGASSO-BEACON-01"
+    },
+    {
+      "name": "planet",
+      "value": "Sargasso (Star Wolf hideout; C2 against Corneria hosts)"
+    },
+    {
+      "name": "disciplines",
+      "value": "red-teaming, penetration-testing, network-security"
+    },
+    {
+      "name": "training_route",
+      "value": "wolfen-host-range"
+    },
+    {
+      "name": "status",
+      "value": "planned / draft-ai-authored (execution_verified:false)"
+    },
+    {
+      "name": "attack_matrix",
+      "value": "enterprise-attack"
+    },
+    {
+      "name": "generated_by",
+      "value": "Tools/gen_navigator_layers.py (deterministic, from mission front-matter)"
+    }
+  ],
+  "links": [],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#2b2b3a",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}

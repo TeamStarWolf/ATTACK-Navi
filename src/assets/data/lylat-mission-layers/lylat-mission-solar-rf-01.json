@@ -1,0 +1,109 @@
+{
+  "name": "Lylat Mission — SOLAR-RF-01",
+  "versions": {
+    "attack": "19",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Vulcain's Signal — RF interception and jamming over Solar, and the comms resilience that survives it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1040",
+      "tactic": "credential-access",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SOLAR-RF-01 planned coverage: Network Sniffing",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1557",
+      "tactic": "credential-access",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SOLAR-RF-01 planned coverage: Adversary-in-the-Middle",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1565.002",
+      "tactic": "impact",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SOLAR-RF-01 planned coverage: Transmitted Data Manipulation",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1011",
+      "tactic": "exfiltration",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SOLAR-RF-01 planned coverage: Exfiltration Over Other Network Medium",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1498",
+      "tactic": "impact",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SOLAR-RF-01 planned coverage: Network Denial of Service",
+      "showSubtechniques": false
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffe8d6",
+      "#c1121f"
+    ],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "Planned mission coverage (draft - not a validated detection)",
+      "color": "#fca311"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "mission",
+      "value": "SOLAR-RF-01"
+    },
+    {
+      "name": "planet",
+      "value": "Solar (the molten planet; Arwing RF comms links under Vulcain's interference)"
+    },
+    {
+      "name": "disciplines",
+      "value": "radio-frequency-security, security-operations"
+    },
+    {
+      "name": "training_route",
+      "value": "solar-rf-range"
+    },
+    {
+      "name": "status",
+      "value": "planned / draft-ai-authored (execution_verified:false)"
+    },
+    {
+      "name": "attack_matrix",
+      "value": "enterprise-attack"
+    },
+    {
+      "name": "generated_by",
+      "value": "Tools/gen_navigator_layers.py (deterministic, from mission front-matter)"
+    }
+  ],
+  "links": [],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#2b2b3a",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}

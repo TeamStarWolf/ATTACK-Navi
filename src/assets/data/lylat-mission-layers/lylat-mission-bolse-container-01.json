@@ -1,0 +1,109 @@
+{
+  "name": "Lylat Mission — BOLSE-CONTAINER-01",
+  "versions": {
+    "attack": "19",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Orbital Containers — a Kubernetes breakout on the Bolse station, and the admission control that stops it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1613",
+      "tactic": "discovery",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "BOLSE-CONTAINER-01 planned coverage: Container and Resource Discovery",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1610",
+      "tactic": "defense-evasion",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "BOLSE-CONTAINER-01 planned coverage: Deploy Container",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1609",
+      "tactic": "execution",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "BOLSE-CONTAINER-01 planned coverage: Container Administration Command",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1552.007",
+      "tactic": "credential-access",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "BOLSE-CONTAINER-01 planned coverage: Container API",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1611",
+      "tactic": "privilege-escalation",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "BOLSE-CONTAINER-01 planned coverage: Escape to Host",
+      "showSubtechniques": false
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffe8d6",
+      "#c1121f"
+    ],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "Planned mission coverage (draft - not a validated detection)",
+      "color": "#fca311"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "mission",
+      "value": "BOLSE-CONTAINER-01"
+    },
+    {
+      "name": "planet",
+      "value": "Bolse (the orbital station's container platform; the Bolse reactors as a K8s cluster)"
+    },
+    {
+      "name": "disciplines",
+      "value": "container-kubernetes-security, cloud-security"
+    },
+    {
+      "name": "training_route",
+      "value": "bolse-cloud-range"
+    },
+    {
+      "name": "status",
+      "value": "planned / draft-ai-authored (execution_verified:false)"
+    },
+    {
+      "name": "attack_matrix",
+      "value": "enterprise-attack"
+    },
+    {
+      "name": "generated_by",
+      "value": "Tools/gen_navigator_layers.py (deterministic, from mission front-matter)"
+    }
+  ],
+  "links": [],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#2b2b3a",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}

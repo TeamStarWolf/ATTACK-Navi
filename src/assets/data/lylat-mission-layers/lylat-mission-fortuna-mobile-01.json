@@ -1,0 +1,165 @@
+{
+  "name": "Lylat Mission — FORTUNA-MOBILE-01",
+  "versions": {
+    "attack": "19",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "mobile-attack",
+  "description": "Signal Lost — a pilot's field device turned against the fleet, and the mobile defenses that catch it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1660",
+      "tactic": "initial-access",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "FORTUNA-MOBILE-01 planned coverage: Phishing",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1655",
+      "tactic": "defense-evasion",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "FORTUNA-MOBILE-01 planned coverage: Masquerading",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1406",
+      "tactic": "defense-evasion",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "FORTUNA-MOBILE-01 planned coverage: Obfuscated Files or Information",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1541",
+      "tactic": "defense-evasion",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "FORTUNA-MOBILE-01 planned coverage: Foreground Persistence",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1624.001",
+      "tactic": "persistence",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "FORTUNA-MOBILE-01 planned coverage: Broadcast Receivers",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1533",
+      "tactic": "collection",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "FORTUNA-MOBILE-01 planned coverage: Data from Local System",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1409",
+      "tactic": "collection",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "FORTUNA-MOBILE-01 planned coverage: Stored Application Data",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1636.003",
+      "tactic": "collection",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "FORTUNA-MOBILE-01 planned coverage: Contact List",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1430",
+      "tactic": "collection",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "FORTUNA-MOBILE-01 planned coverage: Location Tracking",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1417.001",
+      "tactic": "collection",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "FORTUNA-MOBILE-01 planned coverage: Keylogging",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1437.001",
+      "tactic": "command-and-control",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "FORTUNA-MOBILE-01 planned coverage: Web Protocols",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1521.001",
+      "tactic": "command-and-control",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "FORTUNA-MOBILE-01 planned coverage: Symmetric Cryptography",
+      "showSubtechniques": true
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffe8d6",
+      "#c1121f"
+    ],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "Planned mission coverage (draft - not a validated detection)",
+      "color": "#fca311"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "mission",
+      "value": "FORTUNA-MOBILE-01"
+    },
+    {
+      "name": "planet",
+      "value": "Fortuna (field comms operation; the target is the Star Fox pilot's mobile device)"
+    },
+    {
+      "name": "disciplines",
+      "value": "mobile-security, detection-engineering, incident-response"
+    },
+    {
+      "name": "training_route",
+      "value": "fortuna-mobile-range"
+    },
+    {
+      "name": "status",
+      "value": "planned / draft-ai-authored (execution_verified:false)"
+    },
+    {
+      "name": "attack_matrix",
+      "value": "mobile-attack"
+    },
+    {
+      "name": "generated_by",
+      "value": "Tools/gen_navigator_layers.py (deterministic, from mission front-matter)"
+    }
+  ],
+  "links": [],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#2b2b3a",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}

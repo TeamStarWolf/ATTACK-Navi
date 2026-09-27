@@ -1,0 +1,247 @@
+[
+  {
+    "file": "lylat-mission-aparoid-ransomware-01.json",
+    "name": "Lylat Mission — APAROID-RANSOMWARE-01",
+    "domain": "enterprise-attack",
+    "description": "Assimilation — an Aparoid wiper loose in the fleet, and the recovery that beats it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission APAROID-RANSOMWARE-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-aquas-data-01.json",
+    "name": "Lylat Mission — AQUAS-DATA-01",
+    "domain": "enterprise-attack",
+    "description": "Blue Marine Depths — quiet data-store abuse on Aquas, and the forensic chain that surfaces it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission AQUAS-DATA-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-bolse-cloud-01.json",
+    "name": "Lylat Mission — BOLSE-CLOUD-01",
+    "domain": "enterprise-attack",
+    "description": "Orbital Gate — taking the Bolse cloud, and the cloud-security controls that close it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission BOLSE-CLOUD-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-bolse-container-01.json",
+    "name": "Lylat Mission — BOLSE-CONTAINER-01",
+    "domain": "enterprise-attack",
+    "description": "Orbital Containers — a Kubernetes breakout on the Bolse station, and the admission control that stops it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission BOLSE-CONTAINER-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-bolse-gateway-01.json",
+    "name": "Lylat Mission — BOLSE-GATEWAY-01",
+    "domain": "enterprise-attack",
+    "description": "Shield Reactors — bypassing (and validating) Bolse's layered defenses, one control at a time  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission BOLSE-GATEWAY-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-corneria-cadet-01.json",
+    "name": "Lylat Mission — CORNERIA-CADET-01",
+    "domain": "enterprise-attack",
+    "description": "Granga's Mech — a cadet's first sortie, from scan to shell on the range that teaches the fundamentals  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission CORNERIA-CADET-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-corneria-ghost-01.json",
+    "name": "Lylat Mission — CORNERIA-GHOST-01",
+    "domain": "enterprise-attack",
+    "description": "Ghost of James McCloud — the decoy that can't be wrong, and detection with zero false positives  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission CORNERIA-GHOST-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-corneria-grc-01.json",
+    "name": "Lylat Mission — CORNERIA-GRC-01",
+    "domain": "enterprise-attack",
+    "description": "General Pepper's Authorization — forged approvals, a tampered audit trail, and the governance that quantifies the risk  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission CORNERIA-GRC-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-corneria-ledger-01.json",
+    "name": "Lylat Mission — CORNERIA-LEDGER-01",
+    "domain": "enterprise-attack",
+    "description": "The Cornerian Credit Ledger — a smart-contract flaw and key theft on the credit chain, and the web3 controls that hold  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission CORNERIA-LEDGER-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-corneria-oauth-01.json",
+    "name": "Lylat Mission — CORNERIA-OAUTH-01",
+    "domain": "enterprise-attack",
+    "description": "A Rose By Any Other Name — Panther's AiTM and OAuth abuse, and behavioural detection that catches the velocity  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission CORNERIA-OAUTH-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-corneria-svcabuse-01.json",
+    "name": "Lylat Mission — CORNERIA-SVCABUSE-01",
+    "domain": "enterprise-attack",
+    "description": "Service Account Misuse — Kerberoasting and ticket abuse on the Great Fox domain, and the identity hardening that ends it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission CORNERIA-SVCABUSE-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-corneria-workstation-01.json",
+    "name": "Lylat Mission — CORNERIA-WORKSTATION-01",
+    "domain": "enterprise-attack",
+    "description": "Leon in the Workstation — living off the land on Corneria, and the telemetry that still sees it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission CORNERIA-WORKSTATION-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-fichina-discovery-01.json",
+    "name": "Lylat Mission — FICHINA-DISCOVERY-01",
+    "domain": "enterprise-attack",
+    "description": "Cold Trail — quiet reconnaissance on a frozen legacy host, and the detection that thaws it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission FICHINA-DISCOVERY-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-fortuna-mobile-01.json",
+    "name": "Lylat Mission — FORTUNA-MOBILE-01",
+    "domain": "mobile-attack",
+    "description": "Signal Lost — a pilot's field device turned against the fleet, and the mobile defenses that catch it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission FORTUNA-MOBILE-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-greatfox-infiltration-01.json",
+    "name": "Lylat Mission — GREATFOX-INFILTRATION-01",
+    "domain": "enterprise-attack",
+    "description": "Talons on the Great Fox — end-to-end intrusion and the detection story that stops it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission GREATFOX-INFILTRATION-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-katina-phish-01.json",
+    "name": "Lylat Mission — KATINA-PHISH-01",
+    "domain": "enterprise-attack",
+    "description": "Pigma's Fake Login — a cloned Katina portal, and catching a known-good account doing something new  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission KATINA-PHISH-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-katina-webapp-01.json",
+    "name": "Lylat Mission — KATINA-WEBAPP-01",
+    "domain": "enterprise-attack",
+    "description": "Saucerer Pressure — a web foothold on Katina, and the app owner who knows what's normal  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission KATINA-WEBAPP-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-macbeth-scada-01.json",
+    "name": "Lylat Mission — MACBETH-SCADA-01",
+    "domain": "ics-attack",
+    "description": "Rust and Rails — sabotage in the Macbeth ore works, and the OT defense that holds the line  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission MACBETH-SCADA-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-macbeth-supplychain-01.json",
+    "name": "Lylat Mission — MACBETH-SUPPLYCHAIN-01",
+    "domain": "enterprise-attack",
+    "description": "The Forever Train — a poisoned build on Macbeth, and stopping it before delivery  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission MACBETH-SUPPLYCHAIN-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-sargasso-beacon-01.json",
+    "name": "Lylat Mission — SARGASSO-BEACON-01",
+    "domain": "enterprise-attack",
+    "description": "Hideout Beacon — Star Wolf's C2 discipline from Sargasso, and the beacon analysis that unravels it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission SARGASSO-BEACON-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-sauria-iot-01.json",
+    "name": "Lylat Mission — SAURIA-IOT-01",
+    "domain": "enterprise-attack",
+    "description": "Tricky's Collar — an IoT/firmware compromise on Sauria, and the device integrity that catches it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission SAURIA-IOT-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-sauria-krazoa-01.json",
+    "name": "Lylat Mission — SAURIA-KRAZOA-01",
+    "domain": "enterprise-attack",
+    "description": "The Krazoa Vault — chasing secrets and private keys across Sauria, and the key hygiene that locks them down  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission SAURIA-KRAZOA-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-sauria-scales-01.json",
+    "name": "Lylat Mission — SAURIA-SCALES-01",
+    "domain": "enterprise-attack",
+    "description": "SharpClaw Assault — rogue hardware and malicious media on Sauria, and the physical-layer defenses  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission SAURIA-SCALES-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-sectorx-spyborg-01.json",
+    "name": "Lylat Mission — SECTORX-SPYBORG-01",
+    "domain": "enterprise-attack",
+    "description": "Spyborg — rogue automation on a broken Sector X base, and reverse-engineering what it really does  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission SECTORX-SPYBORG-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-sectorz-ambush-01.json",
+    "name": "Lylat Mission — SECTORZ-AMBUSH-01",
+    "domain": "enterprise-attack",
+    "description": "The Great Fox Ambush — an alert flood as cover, and staying operational while you hunt the real signal  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission SECTORZ-AMBUSH-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-slippy-vulnmgmt-01.json",
+    "name": "Lylat Mission — SLIPPY-VULNMGMT-01",
+    "domain": "enterprise-attack",
+    "description": "Slippy's Scanner — scan to triage to remediation to threat model, the vulnerability-management loop that actually closes  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission SLIPPY-VULNMGMT-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-solar-rf-01.json",
+    "name": "Lylat Mission — SOLAR-RF-01",
+    "domain": "enterprise-attack",
+    "description": "Vulcain's Signal — RF interception and jamming over Solar, and the comms resilience that survives it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission SOLAR-RF-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-venom-aicortex-01.json",
+    "name": "Lylat Mission — VENOM-AICORTEX-01",
+    "domain": "enterprise-attack",
+    "description": "Ghost in the Cortex — subverting Andross's AI brain, and the AI-security controls that stop it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission VENOM-AICORTEX-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-venom-andross-01.json",
+    "name": "Lylat Mission — VENOM-ANDROSS-01",
+    "domain": "enterprise-attack",
+    "description": "The Brain Revealed — connecting a long campaign to Andross, and the intelligence report that proves it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission VENOM-ANDROSS-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-venomii-research-01.json",
+    "name": "Lylat Mission — VENOMII-RESEARCH-01",
+    "domain": "enterprise-attack",
+    "description": "Wolfen II Research Bay — vulnerability research and exploit development in a sealed lab, and the release gate that reviews it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission VENOMII-RESEARCH-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-mission-zoness-legacy-01.json",
+    "name": "Lylat Mission — ZONESS-LEGACY-01",
+    "domain": "enterprise-attack",
+    "description": "The Sarumarine Channel — quiet movement through a legacy service, and the intel that beats the SIEM to it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+    "blurb": "Planned ATT&CK coverage for Lylat mission ZONESS-LEGACY-01. Draft/training, not a validated detection."
+  },
+  {
+    "file": "lylat-coverage-atlas.json",
+    "name": "Lylat Coverage — ATLAS (AI/ML)",
+    "domain": "enterprise-attack",
+    "description": "Training-coverage density across 1 Lylat ATLAS (AI/ML) missions: score = number of missions that map each technique. Planned coverage only (draft, execution_verified:false) - NOT detection or validated coverage. Not an official MITRE mapping.",
+    "blurb": "Planned coverage density across the Lylat ATLAS (AI/ML) missions (score = # missions mapping the technique). Not detection."
+  },
+  {
+    "file": "lylat-coverage-enterprise.json",
+    "name": "Lylat Coverage — Enterprise",
+    "domain": "enterprise-attack",
+    "description": "Training-coverage density across 28 Lylat Enterprise missions: score = number of missions that map each technique. Planned coverage only (draft, execution_verified:false) - NOT detection or validated coverage. Not an official MITRE mapping.",
+    "blurb": "Planned coverage density across the Lylat Enterprise missions (score = # missions mapping the technique). Not detection."
+  },
+  {
+    "file": "lylat-coverage-ics.json",
+    "name": "Lylat Coverage — ICS/OT",
+    "domain": "ics-attack",
+    "description": "Training-coverage density across 1 Lylat ICS/OT missions: score = number of missions that map each technique. Planned coverage only (draft, execution_verified:false) - NOT detection or validated coverage. Not an official MITRE mapping.",
+    "blurb": "Planned coverage density across the Lylat ICS/OT missions (score = # missions mapping the technique). Not detection."
+  },
+  {
+    "file": "lylat-coverage-mobile.json",
+    "name": "Lylat Coverage — Mobile",
+    "domain": "mobile-attack",
+    "description": "Training-coverage density across 1 Lylat Mobile missions: score = number of missions that map each technique. Planned coverage only (draft, execution_verified:false) - NOT detection or validated coverage. Not an official MITRE mapping.",
+    "blurb": "Planned coverage density across the Lylat Mobile missions (score = # missions mapping the technique). Not detection."
+  }
+]

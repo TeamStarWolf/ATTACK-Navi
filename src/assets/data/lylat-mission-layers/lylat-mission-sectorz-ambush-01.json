@@ -1,0 +1,109 @@
+{
+  "name": "Lylat Mission — SECTORZ-AMBUSH-01",
+  "versions": {
+    "attack": "19",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "The Great Fox Ambush — an alert flood as cover, and staying operational while you hunt the real signal  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1498",
+      "tactic": "impact",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SECTORZ-AMBUSH-01 planned coverage: Network Denial of Service",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1499",
+      "tactic": "impact",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SECTORZ-AMBUSH-01 planned coverage: Endpoint Denial of Service",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1078",
+      "tactic": "defense-evasion",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SECTORZ-AMBUSH-01 planned coverage: Valid Accounts",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1550.002",
+      "tactic": "defense-evasion",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SECTORZ-AMBUSH-01 planned coverage: Pass the Hash",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1021.006",
+      "tactic": "lateral-movement",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SECTORZ-AMBUSH-01 planned coverage: Windows Remote Management",
+      "showSubtechniques": true
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffe8d6",
+      "#c1121f"
+    ],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "Planned mission coverage (draft - not a validated detection)",
+      "color": "#fca311"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "mission",
+      "value": "SECTORZ-AMBUSH-01"
+    },
+    {
+      "name": "planet",
+      "value": "Sector Z (Great Fox core services under an alert flood)"
+    },
+    {
+      "name": "disciplines",
+      "value": "threat-hunting, siem-soar, security-operations"
+    },
+    {
+      "name": "training_route",
+      "value": "rob64-watch"
+    },
+    {
+      "name": "status",
+      "value": "planned / draft-ai-authored (execution_verified:false)"
+    },
+    {
+      "name": "attack_matrix",
+      "value": "enterprise-attack"
+    },
+    {
+      "name": "generated_by",
+      "value": "Tools/gen_navigator_layers.py (deterministic, from mission front-matter)"
+    }
+  ],
+  "links": [],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#2b2b3a",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}

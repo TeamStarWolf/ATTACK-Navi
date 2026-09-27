@@ -1,0 +1,109 @@
+{
+  "name": "Lylat Mission — AQUAS-DATA-01",
+  "versions": {
+    "attack": "19",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Blue Marine Depths — quiet data-store abuse on Aquas, and the forensic chain that surfaces it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1078",
+      "tactic": "defense-evasion",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "AQUAS-DATA-01 planned coverage: Valid Accounts",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1213",
+      "tactic": "collection",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "AQUAS-DATA-01 planned coverage: Data from Information Repositories",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1039",
+      "tactic": "collection",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "AQUAS-DATA-01 planned coverage: Data from Network Shared Drive",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1005",
+      "tactic": "collection",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "AQUAS-DATA-01 planned coverage: Data from Local System",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1119",
+      "tactic": "collection",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "AQUAS-DATA-01 planned coverage: Automated Collection",
+      "showSubtechniques": false
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffe8d6",
+      "#c1121f"
+    ],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "Planned mission coverage (draft - not a validated detection)",
+      "color": "#fca311"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "mission",
+      "value": "AQUAS-DATA-01"
+    },
+    {
+      "name": "planet",
+      "value": "Aquas (database + packet evidence; AQUAS-SQL01 / BMARINE-PCAP01)"
+    },
+    {
+      "name": "disciplines",
+      "value": "digital-forensics, data-security, privacy-engineering"
+    },
+    {
+      "name": "training_route",
+      "value": "slippy-analysis"
+    },
+    {
+      "name": "status",
+      "value": "planned / draft-ai-authored (execution_verified:false)"
+    },
+    {
+      "name": "attack_matrix",
+      "value": "enterprise-attack"
+    },
+    {
+      "name": "generated_by",
+      "value": "Tools/gen_navigator_layers.py (deterministic, from mission front-matter)"
+    }
+  ],
+  "links": [],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#2b2b3a",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}

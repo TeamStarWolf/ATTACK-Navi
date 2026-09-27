@@ -1,0 +1,157 @@
+{
+  "name": "Lylat Mission — MACBETH-SCADA-01",
+  "versions": {
+    "attack": "19",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "ics-attack",
+  "description": "Rust and Rails — sabotage in the Macbeth ore works, and the OT defense that holds the line  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T0819",
+      "tactic": "initial-access",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "MACBETH-SCADA-01 planned coverage: Exploit Public-Facing Application",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T0886",
+      "tactic": "initial-access",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "MACBETH-SCADA-01 planned coverage: Remote Services",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T0859",
+      "tactic": "persistence",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "MACBETH-SCADA-01 planned coverage: Valid Accounts",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T0855",
+      "tactic": "impair-process-control",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "MACBETH-SCADA-01 planned coverage: Unauthorized Command Message",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T0836",
+      "tactic": "impair-process-control",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "MACBETH-SCADA-01 planned coverage: Modify Parameter",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T0806",
+      "tactic": "impair-process-control",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "MACBETH-SCADA-01 planned coverage: Brute Force I/O",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T0835",
+      "tactic": "inhibit-response-function",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "MACBETH-SCADA-01 planned coverage: Manipulate I/O Image",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T0881",
+      "tactic": "inhibit-response-function",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "MACBETH-SCADA-01 planned coverage: Service Stop",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T0816",
+      "tactic": "inhibit-response-function",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "MACBETH-SCADA-01 planned coverage: Device Restart/Shutdown",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T0826",
+      "tactic": "impact",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "MACBETH-SCADA-01 planned coverage: Loss of Availability",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T0837",
+      "tactic": "impact",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "MACBETH-SCADA-01 planned coverage: Loss of Protection",
+      "showSubtechniques": false
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffe8d6",
+      "#c1121f"
+    ],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "Planned mission coverage (draft - not a validated detection)",
+      "color": "#fca311"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "mission",
+      "value": "MACBETH-SCADA-01"
+    },
+    {
+      "name": "planet",
+      "value": "Macbeth (ore-processing plant + rail SCADA)"
+    },
+    {
+      "name": "disciplines",
+      "value": "ics-ot-security, detection-engineering, incident-response"
+    },
+    {
+      "name": "training_route",
+      "value": "macbeth-ot-range"
+    },
+    {
+      "name": "status",
+      "value": "planned / draft-ai-authored (execution_verified:false)"
+    },
+    {
+      "name": "attack_matrix",
+      "value": "ics-attack"
+    },
+    {
+      "name": "generated_by",
+      "value": "Tools/gen_navigator_layers.py (deterministic, from mission front-matter)"
+    }
+  ],
+  "links": [],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#2b2b3a",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}

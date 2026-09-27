@@ -1,0 +1,109 @@
+{
+  "name": "Lylat Mission — CORNERIA-LEDGER-01",
+  "versions": {
+    "attack": "19",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "The Cornerian Credit Ledger — a smart-contract flaw and key theft on the credit chain, and the web3 controls that hold  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1190",
+      "tactic": "initial-access",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "CORNERIA-LEDGER-01 planned coverage: Exploit Public-Facing Application",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1552.001",
+      "tactic": "credential-access",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "CORNERIA-LEDGER-01 planned coverage: Credentials In Files",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1078",
+      "tactic": "defense-evasion",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "CORNERIA-LEDGER-01 planned coverage: Valid Accounts",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1565.001",
+      "tactic": "impact",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "CORNERIA-LEDGER-01 planned coverage: Stored Data Manipulation",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1213",
+      "tactic": "collection",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "CORNERIA-LEDGER-01 planned coverage: Data from Information Repositories",
+      "showSubtechniques": false
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffe8d6",
+      "#c1121f"
+    ],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "Planned mission coverage (draft - not a validated detection)",
+      "color": "#fca311"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "mission",
+      "value": "CORNERIA-LEDGER-01"
+    },
+    {
+      "name": "planet",
+      "value": "Corneria (the Cornerian credit ledger; a blockchain settlement layer + its smart contracts)"
+    },
+    {
+      "name": "disciplines",
+      "value": "blockchain-web3-security"
+    },
+    {
+      "name": "training_route",
+      "value": "katina-web-range"
+    },
+    {
+      "name": "status",
+      "value": "planned / draft-ai-authored (execution_verified:false)"
+    },
+    {
+      "name": "attack_matrix",
+      "value": "enterprise-attack"
+    },
+    {
+      "name": "generated_by",
+      "value": "Tools/gen_navigator_layers.py (deterministic, from mission front-matter)"
+    }
+  ],
+  "links": [],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#2b2b3a",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}
