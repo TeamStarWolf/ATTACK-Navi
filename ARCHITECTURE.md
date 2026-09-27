@@ -18,14 +18,14 @@
 
 ## 1. Overview
 
-The MITRE ATT&CK Navi is a single-page Angular 19 application that visualizes
+The MITRE ATT&CK Navi is a single-page Angular 21.2.x application that visualizes
 the full ATT&CK matrix, overlays mitigation coverage data, and integrates 40+ external threat
 intelligence, detection, vulnerability, and compliance data sources into a unified analyst
 workspace.
 
 Key technical characteristics:
 
-- **Angular 19 standalone components** -- every component uses `standalone: true`; there are no
+- **Angular 21.2.x standalone components** -- every component uses `standalone: true`; there are no
   NgModules.
 - **Angular Router with hash routing** -- 9 lazily loaded workspaces; every destination has a
   bookmarkable `#/workspace/tab` URL (see the v0.8.0 note above).
@@ -37,8 +37,17 @@ Key technical characteristics:
   on `<body>` flips to the light theme.  Theme choice persists in `localStorage`
   (owned by `ThemeService`).
 
-The application ships as a static SPA with no backend.  All data is fetched client-side from
-public GitHub-hosted STIX bundles, CTID mapping files, and vendor-published Navigator layers.
+The application ships as a static SPA; ordinary reference-data workflows require no backend.
+It loads public STIX bundles, CTID mappings, vendor-published Navigator layers, and bundled
+reference assets. An optional [integration proxy](server/README.md) supports user-configured
+MISP and OpenCTI deployments with upstream secrets held server-side. The proxy is not part
+of the GitHub Pages deployment and needs separate access controls; CORS is not authentication.
+
+Use [package.json](package.json) for declared dependency ranges and
+[package-lock.json](package-lock.json) for exact resolved versions. The Angular 21.2.x
+toolchain uses TypeScript 5.9.x; check the official
+[Angular compatibility table](https://angular.dev/reference/versions) before changing Node.js
+or TypeScript. CI installs the committed dependency graph with `npm ci`.
 
 ---
 
@@ -570,11 +579,22 @@ No HTTP fetching is required.  They provide synchronous lookup methods (e.g.
 
 ### Pattern D: External API Integration
 
-Used by: `OpenCtiService`, `MispService`, `EpssService`, `CveService`.
+`OpenCtiService` and the live-server portion of `MispService` use user-configured endpoints.
+The Settings UI calls each service's `saveConfig()`, `testConnection()`, `getConfig()`, and
+`clearConfig()` methods. Each service persists non-secret endpoint/mode configuration in
+localStorage, retains direct-mode tokens only in memory, and exposes `connected$` state.
+Proxy mode calls `server/` with upstream credentials supplied through server environment
+variables; neither mode proves that a deployment is configured or its queries were validated
+against the operator's server version.
 
-These services require user-configured API credentials (URL + token).  Configuration is stored
-in `SettingsService`.  They expose `connect()` / `disconnect()` methods and a `connected`
-boolean.  Queries are made on demand (not on construction).
+MISP Galaxy reference clusters load independently of a private MISP server connection.
+OpenCTI indicator queries are wired into the technique sidebar. MISP live event/attribute
+query methods exist, but the current Intel UI primarily uses Galaxy data and event-template
+export. See [the integration scorecard](DATA_SOURCE_SCORECARD.md) for these boundaries.
+
+`EpssService` uses FIRST's public API without credentials. `CveService` queries NVD and CISA
+KEV sources; its NVD bulk-fetch path accepts an optional API key. These are not the same
+configuration or connection lifecycle as MISP/OpenCTI.
 
 ---
 
