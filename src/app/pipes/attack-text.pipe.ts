@@ -26,8 +26,11 @@ export class AttackTextPipe implements PipeTransform {
     if (typeof DOMParser !== 'undefined') {
       plain = new DOMParser().parseFromString(text, 'text/html').body.textContent ?? '';
     } else {
-      // Non-DOM fallback (SSR/tests without a DOM): strip tag-like sequences.
-      plain = text.replace(/<[^>]*>/g, '');
+      // No DOM (SSR / non-browser): keep the raw text and let the full HTML-escape
+      // below neutralize any markup completely. We deliberately do NOT regex-strip
+      // tags here — a single-pass /<[^>]*>/ replace is incomplete (e.g. "<scr<script>ipt>"
+      // collapses to "<script>") and escaping is the complete, correct sanitizer.
+      plain = text;
     }
 
     // 2. Remove ATT&CK citation markers: (Citation: XYZ)
