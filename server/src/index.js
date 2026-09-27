@@ -16,7 +16,10 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+    // CORS is a browser mechanism and cannot authenticate non-browser callers;
+    // caller authentication is enforced by requireProxyToken below, not by CORS.
+    // A configured-but-empty allowlist FAILS CLOSED (deny) rather than allow-all.
+    if (!origin || (allowedOrigins.length > 0 && allowedOrigins.includes(origin))) {
       callback(null, true);
     } else {
       callback(new Error('Origin not allowed by proxy CORS policy.'));
@@ -24,6 +27,33 @@ app.use(cors({
   },
 }));
 app.use(express.json({ limit: '5mb' }));
+
+// ── Caller authentication ─────────────────────────────────────────────────────
+// The proxy forwards the operator's OpenCTI/MISP credentials upstream, so it must
+// not rely on CORS (which cannot restrain non-browser clients) for authorization.
+// When PROXY_AUTH_TOKEN is configured, every /api/* route except /api/health
+// requires it (Authorization: Bearer <token> or X-Proxy-Key: <token>), checked
+// BEFORE any upstream fetch. When it is unset the proxy logs a warning and relies
+// on network isolation only (docker-compose binds it to 127.0.0.1) — set the token
+// whenever the proxy is reachable beyond localhost.
+const proxyAuthToken = (process.env.PROXY_AUTH_TOKEN || '').trim();
+if (!proxyAuthToken) {
+  console.warn(
+    '[attack-nav proxy] PROXY_AUTH_TOKEN is not set — caller authentication is disabled. ' +
+    'Rely on localhost-only binding, or set PROXY_AUTH_TOKEN before exposing the proxy.'
+  );
+}
+
+function requireProxyToken(req, res, next) {
+  if (!proxyAuthToken) return next(); // enforce only when configured
+  const header = req.headers['authorization'];
+  const bearer = typeof header === 'string' && header.startsWith('Bearer ')
+    ? header.slice(7).trim()
+    : '';
+  const provided = bearer || (typeof req.headers['x-proxy-key'] === 'string' ? req.headers['x-proxy-key'].trim() : '');
+  if (provided && provided === proxyAuthToken) return next();
+  return res.status(401).json({ error: 'Proxy authentication required.' });
+}
 
 // ── Validation helpers ──────────────────────────────────────────────────────
 
@@ -53,11 +83,14 @@ function validateUpstreamUrl(configuredUrl, requestedPath) {
   return full.toString();
 }
 
-// ── Health ───────────────────────────────────────────────────────────────────
+// ── Health (unauthenticated) ──────────────────────────────────────────────────
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'attack-nav-proxy' });
 });
+
+// All remaining /api/* routes require the proxy token (when configured).
+app.use('/api', requireProxyToken);
 
 // ── OpenCTI Proxy ────────────────────────────────────────────────────────────
 
@@ -100,13 +133,14 @@ app.post('/api/opencti/graphql', async (req, res) => {
   }
 });
 
-// ── MISP Proxy ───────────────────────────────────────────────────────────────
+// ── MISP Proxy (READ-ONLY) ─────────────────────────────────────────────────────
+// Deliberately excludes write endpoints (e.g. events/add): the workbench only reads
+// threat intel, and forwarding writes with the operator's key is unnecessary risk.
 
 const MISP_ALLOWED_ENDPOINTS = [
   'servers/getVersion',
   'attributes/restSearch',
   'events/restSearch',
-  'events/add',
   'events/view',
 ];
 
@@ -119,7 +153,7 @@ const mispProxy = async (req, res) => {
 
   const endpoint = String(req.params[0] || '').replace(/^\/+/, '');
 
-  // Allowlist check — only permit known MISP API endpoints
+  // Allowlist check — only permit known, read-only MISP API endpoints
   const isAllowed = MISP_ALLOWED_ENDPOINTS.some((allowed) =>
     endpoint === allowed || endpoint.startsWith(allowed + '/')
   );

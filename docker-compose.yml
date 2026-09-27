@@ -9,8 +9,12 @@ services:
     build:
       context: ./server
       dockerfile: Dockerfile
+    # Bind to loopback only: the proxy forwards the operator's OpenCTI/MISP
+    # credentials, so it must not be reachable from the network by default.
+    # Reach it from the SPA/browser on the same host, or front it with an
+    # authenticating reverse proxy if remote access is required.
     ports:
-      - "8787:8787"
+      - "127.0.0.1:8787:8787"
     env_file:
       - server/.env
     restart: unless-stopped
