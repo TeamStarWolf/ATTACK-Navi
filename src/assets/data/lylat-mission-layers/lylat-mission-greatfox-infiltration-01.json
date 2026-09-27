@@ -1,0 +1,173 @@
+{
+  "name": "Lylat Mission — GREATFOX-INFILTRATION-01",
+  "versions": {
+    "attack": "19",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Talons on the Great Fox — end-to-end intrusion and the detection story that stops it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1595",
+      "tactic": "reconnaissance",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "GREATFOX-INFILTRATION-01 planned coverage: Active Scanning",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1590",
+      "tactic": "reconnaissance",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "GREATFOX-INFILTRATION-01 planned coverage: Gather Victim Network Information",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1190",
+      "tactic": "initial-access",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "GREATFOX-INFILTRATION-01 planned coverage: Exploit Public-Facing Application",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1552.001",
+      "tactic": "credential-access",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "GREATFOX-INFILTRATION-01 planned coverage: Credentials In Files",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1078",
+      "tactic": "defense-evasion",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "GREATFOX-INFILTRATION-01 planned coverage: Valid Accounts",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1558.003",
+      "tactic": "credential-access",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "GREATFOX-INFILTRATION-01 planned coverage: Kerberoasting",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1649",
+      "tactic": "credential-access",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "GREATFOX-INFILTRATION-01 planned coverage: Steal or Forge Authentication Certificates",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1550.002",
+      "tactic": "defense-evasion",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "GREATFOX-INFILTRATION-01 planned coverage: Pass the Hash",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1021.002",
+      "tactic": "lateral-movement",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "GREATFOX-INFILTRATION-01 planned coverage: SMB/Windows Admin Shares",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1021.006",
+      "tactic": "lateral-movement",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "GREATFOX-INFILTRATION-01 planned coverage: Windows Remote Management",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1005",
+      "tactic": "collection",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "GREATFOX-INFILTRATION-01 planned coverage: Data from Local System",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1039",
+      "tactic": "collection",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "GREATFOX-INFILTRATION-01 planned coverage: Data from Network Shared Drive",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1567",
+      "tactic": "exfiltration",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "GREATFOX-INFILTRATION-01 planned coverage: Exfiltration Over Web Service",
+      "showSubtechniques": false
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffe8d6",
+      "#c1121f"
+    ],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "Planned mission coverage (draft - not a validated detection)",
+      "color": "#fca311"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "mission",
+      "value": "GREATFOX-INFILTRATION-01"
+    },
+    {
+      "name": "planet",
+      "value": "Great Fox (GREATFOX.LOCAL domain; entry via the Corneria DMZ)"
+    },
+    {
+      "name": "disciplines",
+      "value": "application-security, active-directory, identity-access-management, detection-engineering, incident-response"
+    },
+    {
+      "name": "training_route",
+      "value": "wolfen-host-range"
+    },
+    {
+      "name": "status",
+      "value": "planned / draft-ai-authored (execution_verified:false)"
+    },
+    {
+      "name": "attack_matrix",
+      "value": "enterprise-attack"
+    },
+    {
+      "name": "generated_by",
+      "value": "Tools/gen_navigator_layers.py (deterministic, from mission front-matter)"
+    }
+  ],
+  "links": [],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#2b2b3a",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}

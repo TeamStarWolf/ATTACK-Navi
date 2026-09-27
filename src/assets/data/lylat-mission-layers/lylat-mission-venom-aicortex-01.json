@@ -1,0 +1,141 @@
+{
+  "name": "Lylat Mission — VENOM-AICORTEX-01",
+  "versions": {
+    "attack": "19",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Ghost in the Cortex — subverting Andross's AI brain, and the AI-security controls that stop it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "AML.T0014",
+      "tactic": "discovery",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "VENOM-AICORTEX-01 planned coverage: Discover AI Model Family",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "AML.T0040",
+      "tactic": "ai-model-access",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "VENOM-AICORTEX-01 planned coverage: AI Model Inference API Access",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "AML.T0051",
+      "tactic": "execution",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "VENOM-AICORTEX-01 planned coverage: LLM Prompt Injection",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "AML.T0054",
+      "tactic": "privilege-escalation",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "VENOM-AICORTEX-01 planned coverage: LLM Jailbreak",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "AML.T0070",
+      "tactic": "persistence",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "VENOM-AICORTEX-01 planned coverage: RAG Poisoning",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "AML.T0080",
+      "tactic": "persistence",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "VENOM-AICORTEX-01 planned coverage: AI Agent Context Poisoning",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "AML.T0056",
+      "tactic": "exfiltration",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "VENOM-AICORTEX-01 planned coverage: Extract LLM System Prompt",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "AML.T0086",
+      "tactic": "exfiltration",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "VENOM-AICORTEX-01 planned coverage: Exfiltration via AI Agent Tool Invocation",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "AML.T0031",
+      "tactic": "impact",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "VENOM-AICORTEX-01 planned coverage: Erode AI Model Integrity",
+      "showSubtechniques": true
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffe8d6",
+      "#c1121f"
+    ],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "Planned mission coverage (draft - not a validated detection)",
+      "color": "#fca311"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "mission",
+      "value": "VENOM-AICORTEX-01"
+    },
+    {
+      "name": "planet",
+      "value": "Venom (Andross's AI command cortex / agentic LLM stack)"
+    },
+    {
+      "name": "disciplines",
+      "value": "ai-ml-security, ai-llm-security, adversarial-ai-attacks, detection-engineering, incident-response"
+    },
+    {
+      "name": "training_route",
+      "value": "venom-ai-range"
+    },
+    {
+      "name": "status",
+      "value": "planned / draft-ai-authored (execution_verified:false)"
+    },
+    {
+      "name": "attack_matrix",
+      "value": "ATLAS (load in the MITRE ATLAS Navigator)"
+    },
+    {
+      "name": "generated_by",
+      "value": "Tools/gen_navigator_layers.py (deterministic, from mission front-matter)"
+    }
+  ],
+  "links": [],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#2b2b3a",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}

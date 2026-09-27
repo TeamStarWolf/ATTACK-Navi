@@ -1,0 +1,929 @@
+{
+  "name": "Lylat Coverage — Enterprise",
+  "versions": {
+    "attack": "19",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Training-coverage density across 28 Lylat Enterprise missions: score = number of missions that map each technique. Planned coverage only (draft, execution_verified:false) - NOT detection or validated coverage. Not an official MITRE mapping.",
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1005",
+      "tactic": "collection",
+      "score": 3,
+      "enabled": true,
+      "comment": "Data from Local System - mapped by 3 mission(s): AQUAS-DATA-01, GREATFOX-INFILTRATION-01, SAURIA-SCALES-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1011",
+      "tactic": "exfiltration",
+      "score": 1,
+      "enabled": true,
+      "comment": "Exfiltration Over Other Network Medium - mapped by 1 mission(s): SOLAR-RF-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1016",
+      "tactic": "discovery",
+      "score": 1,
+      "enabled": true,
+      "comment": "System Network Configuration Discovery - mapped by 1 mission(s): FICHINA-DISCOVERY-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1018",
+      "tactic": "discovery",
+      "score": 1,
+      "enabled": true,
+      "comment": "Remote System Discovery - mapped by 1 mission(s): FICHINA-DISCOVERY-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1021",
+      "tactic": "lateral-movement",
+      "score": 1,
+      "enabled": true,
+      "comment": "Remote Services - mapped by 1 mission(s): BOLSE-GATEWAY-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1021.002",
+      "tactic": "lateral-movement",
+      "score": 1,
+      "enabled": true,
+      "comment": "SMB/Windows Admin Shares - mapped by 1 mission(s): GREATFOX-INFILTRATION-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1021.006",
+      "tactic": "lateral-movement",
+      "score": 2,
+      "enabled": true,
+      "comment": "Windows Remote Management - mapped by 2 mission(s): GREATFOX-INFILTRATION-01, SECTORZ-AMBUSH-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1027",
+      "tactic": "defense-evasion",
+      "score": 3,
+      "enabled": true,
+      "comment": "Obfuscated Files or Information - mapped by 3 mission(s): CORNERIA-WORKSTATION-01, MACBETH-SUPPLYCHAIN-01, SECTORX-SPYBORG-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1039",
+      "tactic": "collection",
+      "score": 2,
+      "enabled": true,
+      "comment": "Data from Network Shared Drive - mapped by 2 mission(s): AQUAS-DATA-01, GREATFOX-INFILTRATION-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1040",
+      "tactic": "credential-access",
+      "score": 2,
+      "enabled": true,
+      "comment": "Network Sniffing - mapped by 2 mission(s): SAURIA-IOT-01, SOLAR-RF-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1041",
+      "tactic": "exfiltration",
+      "score": 1,
+      "enabled": true,
+      "comment": "Exfiltration Over C2 Channel - mapped by 1 mission(s): ZONESS-LEGACY-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1046",
+      "tactic": "discovery",
+      "score": 3,
+      "enabled": true,
+      "comment": "Network Service Discovery - mapped by 3 mission(s): CORNERIA-CADET-01, FICHINA-DISCOVERY-01, SLIPPY-VULNMGMT-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1053.005",
+      "tactic": "execution",
+      "score": 2,
+      "enabled": true,
+      "comment": "Scheduled Task - mapped by 2 mission(s): APAROID-RANSOMWARE-01, SECTORX-SPYBORG-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1055",
+      "tactic": "defense-evasion",
+      "score": 2,
+      "enabled": true,
+      "comment": "Process Injection - mapped by 2 mission(s): SECTORX-SPYBORG-01, VENOMII-RESEARCH-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1056.003",
+      "tactic": "collection",
+      "score": 1,
+      "enabled": true,
+      "comment": "Web Portal Capture - mapped by 1 mission(s): KATINA-PHISH-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1057",
+      "tactic": "discovery",
+      "score": 2,
+      "enabled": true,
+      "comment": "Process Discovery - mapped by 2 mission(s): CORNERIA-WORKSTATION-01, FICHINA-DISCOVERY-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1059",
+      "tactic": "execution",
+      "score": 3,
+      "enabled": true,
+      "comment": "Command and Scripting Interpreter - mapped by 3 mission(s): APAROID-RANSOMWARE-01, CORNERIA-CADET-01, KATINA-WEBAPP-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1059.001",
+      "tactic": "execution",
+      "score": 2,
+      "enabled": true,
+      "comment": "PowerShell - mapped by 2 mission(s): CORNERIA-WORKSTATION-01, SECTORX-SPYBORG-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1068",
+      "tactic": "privilege-escalation",
+      "score": 1,
+      "enabled": true,
+      "comment": "Exploitation for Privilege Escalation - mapped by 1 mission(s): SLIPPY-VULNMGMT-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1070.001",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "enabled": true,
+      "comment": "Clear Windows Event Logs - mapped by 1 mission(s): CORNERIA-GRC-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1070.004",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "enabled": true,
+      "comment": "File Deletion - mapped by 1 mission(s): CORNERIA-WORKSTATION-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1071",
+      "tactic": "command-and-control",
+      "score": 1,
+      "enabled": true,
+      "comment": "Application Layer Protocol - mapped by 1 mission(s): VENOM-ANDROSS-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1071.001",
+      "tactic": "command-and-control",
+      "score": 2,
+      "enabled": true,
+      "comment": "Web Protocols - mapped by 2 mission(s): APAROID-RANSOMWARE-01, SARGASSO-BEACON-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1072",
+      "tactic": "execution",
+      "score": 1,
+      "enabled": true,
+      "comment": "Software Deployment Tools - mapped by 1 mission(s): MACBETH-SUPPLYCHAIN-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1074.001",
+      "tactic": "collection",
+      "score": 1,
+      "enabled": true,
+      "comment": "Local Data Staging - mapped by 1 mission(s): FICHINA-DISCOVERY-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1078",
+      "tactic": "defense-evasion",
+      "score": 14,
+      "enabled": true,
+      "comment": "Valid Accounts - mapped by 14 mission(s): AQUAS-DATA-01, BOLSE-GATEWAY-01, CORNERIA-CADET-01, CORNERIA-GHOST-01, CORNERIA-GRC-01, CORNERIA-LEDGER-01, CORNERIA-OAUTH-01, GREATFOX-INFILTRATION-01, KATINA-PHISH-01, MACBETH-SUPPLYCHAIN-01, SAURIA-IOT-01, SAURIA-KRAZOA-01, SAURIA-SCALES-01, SECTORZ-AMBUSH-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1078.002",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "enabled": true,
+      "comment": "Domain Accounts - mapped by 1 mission(s): CORNERIA-SVCABUSE-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1078.004",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "enabled": true,
+      "comment": "Cloud Accounts - mapped by 1 mission(s): BOLSE-CLOUD-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1082",
+      "tactic": "discovery",
+      "score": 1,
+      "enabled": true,
+      "comment": "System Information Discovery - mapped by 1 mission(s): FICHINA-DISCOVERY-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1083",
+      "tactic": "discovery",
+      "score": 2,
+      "enabled": true,
+      "comment": "File and Directory Discovery - mapped by 2 mission(s): FICHINA-DISCOVERY-01, KATINA-WEBAPP-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1087",
+      "tactic": "discovery",
+      "score": 2,
+      "enabled": true,
+      "comment": "Account Discovery - mapped by 2 mission(s): CORNERIA-WORKSTATION-01, FICHINA-DISCOVERY-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1087.002",
+      "tactic": "discovery",
+      "score": 1,
+      "enabled": true,
+      "comment": "Domain Account - mapped by 1 mission(s): CORNERIA-GHOST-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1090",
+      "tactic": "command-and-control",
+      "score": 3,
+      "enabled": true,
+      "comment": "Proxy - mapped by 3 mission(s): APAROID-RANSOMWARE-01, SARGASSO-BEACON-01, VENOM-ANDROSS-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1091",
+      "tactic": "lateral-movement",
+      "score": 1,
+      "enabled": true,
+      "comment": "Replication Through Removable Media - mapped by 1 mission(s): SAURIA-SCALES-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1098",
+      "tactic": "persistence",
+      "score": 2,
+      "enabled": true,
+      "comment": "Account Manipulation - mapped by 2 mission(s): CORNERIA-GRC-01, CORNERIA-SVCABUSE-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1098.001",
+      "tactic": "persistence",
+      "score": 1,
+      "enabled": true,
+      "comment": "Additional Cloud Credentials - mapped by 1 mission(s): BOLSE-CLOUD-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1098.003",
+      "tactic": "persistence",
+      "score": 1,
+      "enabled": true,
+      "comment": "Additional Cloud Roles - mapped by 1 mission(s): BOLSE-CLOUD-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1105",
+      "tactic": "command-and-control",
+      "score": 3,
+      "enabled": true,
+      "comment": "Ingress Tool Transfer - mapped by 3 mission(s): APAROID-RANSOMWARE-01, SARGASSO-BEACON-01, ZONESS-LEGACY-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1110",
+      "tactic": "credential-access",
+      "score": 2,
+      "enabled": true,
+      "comment": "Brute Force - mapped by 2 mission(s): CORNERIA-CADET-01, CORNERIA-GHOST-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1113",
+      "tactic": "collection",
+      "score": 1,
+      "enabled": true,
+      "comment": "Screen Capture - mapped by 1 mission(s): FICHINA-DISCOVERY-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1119",
+      "tactic": "collection",
+      "score": 2,
+      "enabled": true,
+      "comment": "Automated Collection - mapped by 2 mission(s): AQUAS-DATA-01, FICHINA-DISCOVERY-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1133",
+      "tactic": "persistence",
+      "score": 1,
+      "enabled": true,
+      "comment": "External Remote Services - mapped by 1 mission(s): BOLSE-GATEWAY-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1135",
+      "tactic": "discovery",
+      "score": 1,
+      "enabled": true,
+      "comment": "Network Share Discovery - mapped by 1 mission(s): FICHINA-DISCOVERY-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1190",
+      "tactic": "initial-access",
+      "score": 7,
+      "enabled": true,
+      "comment": "Exploit Public-Facing Application - mapped by 7 mission(s): BOLSE-CLOUD-01, BOLSE-GATEWAY-01, CORNERIA-LEDGER-01, GREATFOX-INFILTRATION-01, KATINA-WEBAPP-01, SAURIA-SCALES-01, SLIPPY-VULNMGMT-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1195.002",
+      "tactic": "initial-access",
+      "score": 1,
+      "enabled": true,
+      "comment": "Compromise Software Supply Chain - mapped by 1 mission(s): MACBETH-SUPPLYCHAIN-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1200",
+      "tactic": "initial-access",
+      "score": 2,
+      "enabled": true,
+      "comment": "Hardware Additions - mapped by 2 mission(s): SAURIA-IOT-01, SAURIA-SCALES-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1203",
+      "tactic": "execution",
+      "score": 1,
+      "enabled": true,
+      "comment": "Exploitation for Client Execution - mapped by 1 mission(s): VENOMII-RESEARCH-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1204.001",
+      "tactic": "execution",
+      "score": 1,
+      "enabled": true,
+      "comment": "Malicious Link - mapped by 1 mission(s): KATINA-PHISH-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1204.002",
+      "tactic": "execution",
+      "score": 1,
+      "enabled": true,
+      "comment": "Malicious File - mapped by 1 mission(s): APAROID-RANSOMWARE-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1207",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "enabled": true,
+      "comment": "Rogue Domain Controller - mapped by 1 mission(s): CORNERIA-SVCABUSE-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1210",
+      "tactic": "lateral-movement",
+      "score": 1,
+      "enabled": true,
+      "comment": "Exploitation of Remote Services - mapped by 1 mission(s): SLIPPY-VULNMGMT-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1213",
+      "tactic": "collection",
+      "score": 3,
+      "enabled": true,
+      "comment": "Data from Information Repositories - mapped by 3 mission(s): AQUAS-DATA-01, CORNERIA-LEDGER-01, SAURIA-KRAZOA-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1218",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "enabled": true,
+      "comment": "System Binary Proxy Execution - mapped by 1 mission(s): CORNERIA-WORKSTATION-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1486",
+      "tactic": "impact",
+      "score": 1,
+      "enabled": true,
+      "comment": "Data Encrypted for Impact - mapped by 1 mission(s): APAROID-RANSOMWARE-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1489",
+      "tactic": "impact",
+      "score": 1,
+      "enabled": true,
+      "comment": "Service Stop - mapped by 1 mission(s): APAROID-RANSOMWARE-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1490",
+      "tactic": "impact",
+      "score": 1,
+      "enabled": true,
+      "comment": "Inhibit System Recovery - mapped by 1 mission(s): APAROID-RANSOMWARE-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1495",
+      "tactic": "impact",
+      "score": 1,
+      "enabled": true,
+      "comment": "Firmware Corruption - mapped by 1 mission(s): SAURIA-IOT-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1498",
+      "tactic": "impact",
+      "score": 2,
+      "enabled": true,
+      "comment": "Network Denial of Service - mapped by 2 mission(s): SECTORZ-AMBUSH-01, SOLAR-RF-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1499",
+      "tactic": "impact",
+      "score": 1,
+      "enabled": true,
+      "comment": "Endpoint Denial of Service - mapped by 1 mission(s): SECTORZ-AMBUSH-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1505.003",
+      "tactic": "persistence",
+      "score": 1,
+      "enabled": true,
+      "comment": "Web Shell - mapped by 1 mission(s): KATINA-WEBAPP-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1526",
+      "tactic": "discovery",
+      "score": 1,
+      "enabled": true,
+      "comment": "Cloud Service Discovery - mapped by 1 mission(s): BOLSE-CLOUD-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1528",
+      "tactic": "credential-access",
+      "score": 2,
+      "enabled": true,
+      "comment": "Steal Application Access Token - mapped by 2 mission(s): BOLSE-CLOUD-01, CORNERIA-OAUTH-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1529",
+      "tactic": "impact",
+      "score": 1,
+      "enabled": true,
+      "comment": "System Shutdown/Reboot - mapped by 1 mission(s): APAROID-RANSOMWARE-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1530",
+      "tactic": "collection",
+      "score": 2,
+      "enabled": true,
+      "comment": "Data from Cloud Storage - mapped by 2 mission(s): BOLSE-CLOUD-01, SAURIA-KRAZOA-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1537",
+      "tactic": "exfiltration",
+      "score": 1,
+      "enabled": true,
+      "comment": "Transfer Data to Cloud Account - mapped by 1 mission(s): BOLSE-CLOUD-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1542.001",
+      "tactic": "persistence",
+      "score": 1,
+      "enabled": true,
+      "comment": "System Firmware - mapped by 1 mission(s): SAURIA-IOT-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1543.003",
+      "tactic": "persistence",
+      "score": 1,
+      "enabled": true,
+      "comment": "Windows Service - mapped by 1 mission(s): SECTORX-SPYBORG-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1550",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "enabled": true,
+      "comment": "Use Alternate Authentication Material - mapped by 1 mission(s): CORNERIA-GRC-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1550.001",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "enabled": true,
+      "comment": "Application Access Token - mapped by 1 mission(s): CORNERIA-OAUTH-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1550.002",
+      "tactic": "defense-evasion",
+      "score": 2,
+      "enabled": true,
+      "comment": "Pass the Hash - mapped by 2 mission(s): GREATFOX-INFILTRATION-01, SECTORZ-AMBUSH-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1550.003",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "enabled": true,
+      "comment": "Pass the Ticket - mapped by 1 mission(s): CORNERIA-SVCABUSE-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1552.001",
+      "tactic": "credential-access",
+      "score": 4,
+      "enabled": true,
+      "comment": "Credentials In Files - mapped by 4 mission(s): CORNERIA-LEDGER-01, GREATFOX-INFILTRATION-01, KATINA-WEBAPP-01, SAURIA-KRAZOA-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1552.004",
+      "tactic": "credential-access",
+      "score": 1,
+      "enabled": true,
+      "comment": "Private Keys - mapped by 1 mission(s): SAURIA-KRAZOA-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1552.005",
+      "tactic": "credential-access",
+      "score": 1,
+      "enabled": true,
+      "comment": "Cloud Instance Metadata API - mapped by 1 mission(s): BOLSE-CLOUD-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1552.007",
+      "tactic": "credential-access",
+      "score": 1,
+      "enabled": true,
+      "comment": "Container API - mapped by 1 mission(s): BOLSE-CONTAINER-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1554",
+      "tactic": "persistence",
+      "score": 1,
+      "enabled": true,
+      "comment": "Compromise Host Software Binary - mapped by 1 mission(s): MACBETH-SUPPLYCHAIN-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1557",
+      "tactic": "credential-access",
+      "score": 1,
+      "enabled": true,
+      "comment": "Adversary-in-the-Middle - mapped by 1 mission(s): SOLAR-RF-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1558.003",
+      "tactic": "credential-access",
+      "score": 2,
+      "enabled": true,
+      "comment": "Kerberoasting - mapped by 2 mission(s): CORNERIA-SVCABUSE-01, GREATFOX-INFILTRATION-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1560.001",
+      "tactic": "collection",
+      "score": 1,
+      "enabled": true,
+      "comment": "Archive via Utility - mapped by 1 mission(s): FICHINA-DISCOVERY-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1562.002",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "enabled": true,
+      "comment": "Disable Windows Event Logging - mapped by 1 mission(s): CORNERIA-GRC-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1565.001",
+      "tactic": "impact",
+      "score": 1,
+      "enabled": true,
+      "comment": "Stored Data Manipulation - mapped by 1 mission(s): CORNERIA-LEDGER-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1565.002",
+      "tactic": "impact",
+      "score": 1,
+      "enabled": true,
+      "comment": "Transmitted Data Manipulation - mapped by 1 mission(s): SOLAR-RF-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1566.002",
+      "tactic": "initial-access",
+      "score": 2,
+      "enabled": true,
+      "comment": "Spearphishing Link - mapped by 2 mission(s): CORNERIA-OAUTH-01, KATINA-PHISH-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1567",
+      "tactic": "exfiltration",
+      "score": 1,
+      "enabled": true,
+      "comment": "Exfiltration Over Web Service - mapped by 1 mission(s): GREATFOX-INFILTRATION-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1568",
+      "tactic": "command-and-control",
+      "score": 1,
+      "enabled": true,
+      "comment": "Dynamic Resolution - mapped by 1 mission(s): VENOM-ANDROSS-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1570",
+      "tactic": "lateral-movement",
+      "score": 1,
+      "enabled": true,
+      "comment": "Lateral Tool Transfer - mapped by 1 mission(s): APAROID-RANSOMWARE-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1571",
+      "tactic": "command-and-control",
+      "score": 2,
+      "enabled": true,
+      "comment": "Non-Standard Port - mapped by 2 mission(s): SARGASSO-BEACON-01, ZONESS-LEGACY-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1572",
+      "tactic": "command-and-control",
+      "score": 1,
+      "enabled": true,
+      "comment": "Protocol Tunneling - mapped by 1 mission(s): BOLSE-GATEWAY-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1573.002",
+      "tactic": "command-and-control",
+      "score": 2,
+      "enabled": true,
+      "comment": "Asymmetric Cryptography - mapped by 2 mission(s): APAROID-RANSOMWARE-01, SARGASSO-BEACON-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1580",
+      "tactic": "discovery",
+      "score": 1,
+      "enabled": true,
+      "comment": "Cloud Infrastructure Discovery - mapped by 1 mission(s): BOLSE-CLOUD-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1583.001",
+      "tactic": "resource-development",
+      "score": 2,
+      "enabled": true,
+      "comment": "Domains - mapped by 2 mission(s): SARGASSO-BEACON-01, VENOM-ANDROSS-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1587.004",
+      "tactic": "resource-development",
+      "score": 1,
+      "enabled": true,
+      "comment": "Exploits - mapped by 1 mission(s): VENOMII-RESEARCH-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1588.005",
+      "tactic": "resource-development",
+      "score": 1,
+      "enabled": true,
+      "comment": "Exploits - mapped by 1 mission(s): VENOMII-RESEARCH-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1589",
+      "tactic": "reconnaissance",
+      "score": 2,
+      "enabled": true,
+      "comment": "Gather Victim Identity Information - mapped by 2 mission(s): CORNERIA-GHOST-01, ZONESS-LEGACY-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1590",
+      "tactic": "reconnaissance",
+      "score": 2,
+      "enabled": true,
+      "comment": "Gather Victim Network Information - mapped by 2 mission(s): GREATFOX-INFILTRATION-01, ZONESS-LEGACY-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1595",
+      "tactic": "reconnaissance",
+      "score": 2,
+      "enabled": true,
+      "comment": "Active Scanning - mapped by 2 mission(s): CORNERIA-CADET-01, GREATFOX-INFILTRATION-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1595.002",
+      "tactic": "reconnaissance",
+      "score": 1,
+      "enabled": true,
+      "comment": "Vulnerability Scanning - mapped by 1 mission(s): SLIPPY-VULNMGMT-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1598.003",
+      "tactic": "reconnaissance",
+      "score": 1,
+      "enabled": true,
+      "comment": "Spearphishing Link - mapped by 1 mission(s): KATINA-PHISH-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1609",
+      "tactic": "execution",
+      "score": 1,
+      "enabled": true,
+      "comment": "Container Administration Command - mapped by 1 mission(s): BOLSE-CONTAINER-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1610",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "enabled": true,
+      "comment": "Deploy Container - mapped by 1 mission(s): BOLSE-CONTAINER-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1611",
+      "tactic": "privilege-escalation",
+      "score": 1,
+      "enabled": true,
+      "comment": "Escape to Host - mapped by 1 mission(s): BOLSE-CONTAINER-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1613",
+      "tactic": "discovery",
+      "score": 1,
+      "enabled": true,
+      "comment": "Container and Resource Discovery - mapped by 1 mission(s): BOLSE-CONTAINER-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1619",
+      "tactic": "discovery",
+      "score": 1,
+      "enabled": true,
+      "comment": "Cloud Storage Object Discovery - mapped by 1 mission(s): BOLSE-CLOUD-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1620",
+      "tactic": "defense-evasion",
+      "score": 2,
+      "enabled": true,
+      "comment": "Reflective Code Loading - mapped by 2 mission(s): VENOM-ANDROSS-01, VENOMII-RESEARCH-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1621",
+      "tactic": "credential-access",
+      "score": 1,
+      "enabled": true,
+      "comment": "Multi-Factor Authentication Request Generation - mapped by 1 mission(s): CORNERIA-OAUTH-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1649",
+      "tactic": "credential-access",
+      "score": 1,
+      "enabled": true,
+      "comment": "Steal or Forge Authentication Certificates - mapped by 1 mission(s): GREATFOX-INFILTRATION-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1651",
+      "tactic": "execution",
+      "score": 1,
+      "enabled": true,
+      "comment": "Cloud Administration Command - mapped by 1 mission(s): BOLSE-CLOUD-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1656",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "enabled": true,
+      "comment": "Impersonation - mapped by 1 mission(s): CORNERIA-GHOST-01",
+      "showSubtechniques": false
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffe8d6",
+      "#c1121f"
+    ],
+    "minValue": 0,
+    "maxValue": 14
+  },
+  "legendItems": [
+    {
+      "label": "1 mission (planned)",
+      "color": "#ffe8d6"
+    },
+    {
+      "label": "14 missions (planned)",
+      "color": "#c1121f"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "scope",
+      "value": "28 Enterprise missions"
+    },
+    {
+      "name": "scoring",
+      "value": "# missions mapping the technique (planned coverage density)"
+    },
+    {
+      "name": "status",
+      "value": "planned / draft - NOT a detection or validated-coverage claim"
+    },
+    {
+      "name": "attack_matrix",
+      "value": "enterprise-attack"
+    },
+    {
+      "name": "generated_by",
+      "value": "Tools/gen_navigator_layers.py (deterministic, from mission front-matter)"
+    }
+  ],
+  "links": [],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#2b2b3a",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}

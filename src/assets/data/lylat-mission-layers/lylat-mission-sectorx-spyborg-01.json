@@ -1,0 +1,109 @@
+{
+  "name": "Lylat Mission — SECTORX-SPYBORG-01",
+  "versions": {
+    "attack": "19",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Spyborg — rogue automation on a broken Sector X base, and reverse-engineering what it really does  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1053.005",
+      "tactic": "execution",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SECTORX-SPYBORG-01 planned coverage: Scheduled Task",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1543.003",
+      "tactic": "persistence",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SECTORX-SPYBORG-01 planned coverage: Windows Service",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1055",
+      "tactic": "defense-evasion",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SECTORX-SPYBORG-01 planned coverage: Process Injection",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1027",
+      "tactic": "defense-evasion",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SECTORX-SPYBORG-01 planned coverage: Obfuscated Files or Information",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1059.001",
+      "tactic": "execution",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SECTORX-SPYBORG-01 planned coverage: PowerShell",
+      "showSubtechniques": true
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffe8d6",
+      "#c1121f"
+    ],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "Planned mission coverage (draft - not a validated detection)",
+      "color": "#fca311"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "mission",
+      "value": "SECTORX-SPYBORG-01"
+    },
+    {
+      "name": "planet",
+      "value": "Sector X (destroyed research base; broken automation / rogue process)"
+    },
+    {
+      "name": "disciplines",
+      "value": "reverse-engineering, malware-analysis, detection-engineering"
+    },
+    {
+      "name": "training_route",
+      "value": "slippy-analysis"
+    },
+    {
+      "name": "status",
+      "value": "planned / draft-ai-authored (execution_verified:false)"
+    },
+    {
+      "name": "attack_matrix",
+      "value": "enterprise-attack"
+    },
+    {
+      "name": "generated_by",
+      "value": "Tools/gen_navigator_layers.py (deterministic, from mission front-matter)"
+    }
+  ],
+  "links": [],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#2b2b3a",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}
