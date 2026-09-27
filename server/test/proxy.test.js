@@ -144,3 +144,71 @@ test('proxy handles configured requests after dependency updates', { timeout: 30
     assert.equal(requests.length, before);
   });
 });
+
+test('proxy token gate: /api/* requires PROXY_AUTH_TOKEN when configured; health stays exempt', { timeout: 30000 }, async t => {
+  const directory = await mkdtemp(join(resolve(tmpdir()), 'attack-navi-proxy-auth-'));
+  let child;
+  let output = '';
+  t.after(async () => {
+    if (child && child.exitCode === null && child.signalCode === null) {
+      const exited = once(child, 'exit');
+      child.kill();
+      await exited;
+    }
+    await rm(directory, { recursive: true, force: true });
+  });
+
+  const reservation = createServer();
+  await new Promise(resolveListen => reservation.listen(0, '127.0.0.1', resolveListen));
+  const port = reservation.address().port;
+  await new Promise(resolveClose => reservation.close(resolveClose));
+  await writeFile(join(directory, '.env'), [
+    'ALLOWED_ORIGINS="http://localhost:4200"',
+    'PROXY_AUTH_TOKEN=synthetic-proxy-secret',
+  ].join('\n'));
+  child = spawn(process.execPath, [fileURLToPath(new URL('../src/index.js', import.meta.url))], {
+    cwd: directory,
+    env: { PORT: String(port), ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}) },
+    windowsHide: true,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  child.stdout.on('data', data => { output += data; });
+  child.stderr.on('data', data => { output += data; });
+  const base = `http://127.0.0.1:${port}`;
+  let ready = false;
+  const deadline = Date.now() + 10000;
+  while (Date.now() < deadline && child.exitCode === null) {
+    try {
+      const response = await fetch(`${base}/api/health`, { signal: AbortSignal.timeout(500) });
+      ready = response.ok;
+      await response.arrayBuffer();
+      if (ready) break;
+    } catch { /* still starting */ }
+    await new Promise(resolveWait => setTimeout(resolveWait, 25));
+  }
+  assert(ready, 'Proxy did not become ready');
+
+  await t.test('health is reachable without the proxy token', async () => {
+    const response = await fetch(`${base}/api/health`);
+    assert.equal(response.status, 200);
+    await response.arrayBuffer();
+  });
+
+  await t.test('protected route without the token is rejected 401 before any upstream call', async () => {
+    const response = await fetch(`${base}/api/opencti/graphql`, {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ query: '{ __typename }' }),
+    });
+    assert.equal(response.status, 401);
+    await response.arrayBuffer();
+  });
+
+  await t.test('correct token passes the gate (then 500: upstream not configured)', async () => {
+    const response = await fetch(`${base}/api/opencti/graphql`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: 'Bearer synthetic-proxy-secret' },
+      body: JSON.stringify({ query: '{ __typename }' }),
+    });
+    assert.equal(response.status, 500);
+    await response.arrayBuffer();
+  });
+});
