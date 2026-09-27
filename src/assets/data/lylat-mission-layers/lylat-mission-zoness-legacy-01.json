@@ -1,0 +1,109 @@
+{
+  "name": "Lylat Mission — ZONESS-LEGACY-01",
+  "versions": {
+    "attack": "19",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "The Sarumarine Channel — quiet movement through a legacy service, and the intel that beats the SIEM to it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1590",
+      "tactic": "reconnaissance",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "ZONESS-LEGACY-01 planned coverage: Gather Victim Network Information",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1589",
+      "tactic": "reconnaissance",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "ZONESS-LEGACY-01 planned coverage: Gather Victim Identity Information",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1571",
+      "tactic": "command-and-control",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "ZONESS-LEGACY-01 planned coverage: Non-Standard Port",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1105",
+      "tactic": "command-and-control",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "ZONESS-LEGACY-01 planned coverage: Ingress Tool Transfer",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1041",
+      "tactic": "exfiltration",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "ZONESS-LEGACY-01 planned coverage: Exfiltration Over C2 Channel",
+      "showSubtechniques": false
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffe8d6",
+      "#c1121f"
+    ],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "Planned mission coverage (draft - not a validated detection)",
+      "color": "#fca311"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "mission",
+      "value": "ZONESS-LEGACY-01"
+    },
+    {
+      "name": "planet",
+      "value": "Zoness (polluted legacy external services; Katt Monroe's intel lane)"
+    },
+    {
+      "name": "disciplines",
+      "value": "threat-intelligence, osint, network-security"
+    },
+    {
+      "name": "training_route",
+      "value": "katt-investigation"
+    },
+    {
+      "name": "status",
+      "value": "planned / draft-ai-authored (execution_verified:false)"
+    },
+    {
+      "name": "attack_matrix",
+      "value": "enterprise-attack"
+    },
+    {
+      "name": "generated_by",
+      "value": "Tools/gen_navigator_layers.py (deterministic, from mission front-matter)"
+    }
+  ],
+  "links": [],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#2b2b3a",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}

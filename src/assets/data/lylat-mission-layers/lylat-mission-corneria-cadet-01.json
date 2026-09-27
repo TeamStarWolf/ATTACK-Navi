@@ -1,0 +1,109 @@
+{
+  "name": "Lylat Mission — CORNERIA-CADET-01",
+  "versions": {
+    "attack": "19",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Granga's Mech — a cadet's first sortie, from scan to shell on the range that teaches the fundamentals  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1595",
+      "tactic": "reconnaissance",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "CORNERIA-CADET-01 planned coverage: Active Scanning",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1046",
+      "tactic": "discovery",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "CORNERIA-CADET-01 planned coverage: Network Service Discovery",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1110",
+      "tactic": "credential-access",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "CORNERIA-CADET-01 planned coverage: Brute Force",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1078",
+      "tactic": "defense-evasion",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "CORNERIA-CADET-01 planned coverage: Valid Accounts",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1059",
+      "tactic": "execution",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "CORNERIA-CADET-01 planned coverage: Command and Scripting Interpreter",
+      "showSubtechniques": false
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffe8d6",
+      "#c1121f"
+    ],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "Planned mission coverage (draft - not a validated detection)",
+      "color": "#fca311"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "mission",
+      "value": "CORNERIA-CADET-01"
+    },
+    {
+      "name": "planet",
+      "value": "Corneria (the flight-school range; Granga's mech as the intro target)"
+    },
+    {
+      "name": "disciplines",
+      "value": "hacker-hobbies, security-awareness, offensive-security"
+    },
+    {
+      "name": "training_route",
+      "value": "corneria-flight-school"
+    },
+    {
+      "name": "status",
+      "value": "planned / draft-ai-authored (execution_verified:false)"
+    },
+    {
+      "name": "attack_matrix",
+      "value": "enterprise-attack"
+    },
+    {
+      "name": "generated_by",
+      "value": "Tools/gen_navigator_layers.py (deterministic, from mission front-matter)"
+    }
+  ],
+  "links": [],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#2b2b3a",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}

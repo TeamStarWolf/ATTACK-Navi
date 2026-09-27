@@ -1,0 +1,109 @@
+{
+  "name": "Lylat Mission — CORNERIA-GRC-01",
+  "versions": {
+    "attack": "19",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "General Pepper's Authorization — forged approvals, a tampered audit trail, and the governance that quantifies the risk  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1078",
+      "tactic": "defense-evasion",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "CORNERIA-GRC-01 planned coverage: Valid Accounts",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1550",
+      "tactic": "defense-evasion",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "CORNERIA-GRC-01 planned coverage: Use Alternate Authentication Material",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1098",
+      "tactic": "persistence",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "CORNERIA-GRC-01 planned coverage: Account Manipulation",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1562.002",
+      "tactic": "defense-evasion",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "CORNERIA-GRC-01 planned coverage: Disable Windows Event Logging",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1070.001",
+      "tactic": "defense-evasion",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "CORNERIA-GRC-01 planned coverage: Clear Windows Event Logs",
+      "showSubtechniques": true
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffe8d6",
+      "#c1121f"
+    ],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "Planned mission coverage (draft - not a validated detection)",
+      "color": "#fca311"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "mission",
+      "value": "CORNERIA-GRC-01"
+    },
+    {
+      "name": "planet",
+      "value": "Corneria (HQ governance layer; General Pepper's authorization + audit systems)"
+    },
+    {
+      "name": "disciplines",
+      "value": "governance-risk-compliance, cyber-risk-quantification, security-architecture"
+    },
+    {
+      "name": "training_route",
+      "value": "great-fox-design"
+    },
+    {
+      "name": "status",
+      "value": "planned / draft-ai-authored (execution_verified:false)"
+    },
+    {
+      "name": "attack_matrix",
+      "value": "enterprise-attack"
+    },
+    {
+      "name": "generated_by",
+      "value": "Tools/gen_navigator_layers.py (deterministic, from mission front-matter)"
+    }
+  ],
+  "links": [],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#2b2b3a",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}

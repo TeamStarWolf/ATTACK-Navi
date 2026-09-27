@@ -1,0 +1,667 @@
+{
+  "name": "TeamStarWolf - Lylat Mission Coverage",
+  "versions": {
+    "attack": "19",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Curated practitioner view, not an official MITRE mapping. Enterprise ATT&CK technique coverage across the 28 enterprise Lylat Labs training missions: score normalizes each technique's mission count to the most-mapped technique (14); 100 does not mean full coverage. Planned/training coverage only — the missions are execution_verified:false, so this is NOT a detection or validated-coverage result. ICS/OT, Mobile, and ATLAS mission coverage is vendored separately (they need their own matrices). No coverage guarantee. Provenance spans ATT&CK 16.1 -> 19.2 as bundled.",
+  "sorting": 3,
+  "layout": {
+    "layout": "side",
+    "showID": false,
+    "showName": true,
+    "showAggregateScores": true,
+    "countUnscored": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1005",
+      "tactic": "collection",
+      "score": 21,
+      "comment": "Mapped by 3 of 28 Lylat enterprise missions (mapped by 3 mission(s): AQUAS-DATA-01, GREATFOX-INFILTRATION-01, SAURIA-SCALES-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1011",
+      "tactic": "exfiltration",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): SOLAR-RF-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1016",
+      "tactic": "discovery",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): FICHINA-DISCOVERY-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1018",
+      "tactic": "discovery",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): FICHINA-DISCOVERY-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1021",
+      "tactic": "lateral-movement",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): BOLSE-GATEWAY-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1021.002",
+      "tactic": "lateral-movement",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): GREATFOX-INFILTRATION-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1021.006",
+      "tactic": "lateral-movement",
+      "score": 14,
+      "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): GREATFOX-INFILTRATION-01, SECTORZ-AMBUSH-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1027",
+      "tactic": "defense-evasion",
+      "score": 21,
+      "comment": "Mapped by 3 of 28 Lylat enterprise missions (mapped by 3 mission(s): CORNERIA-WORKSTATION-01, MACBETH-SUPPLYCHAIN-01, SECTORX-SPYBORG-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1039",
+      "tactic": "collection",
+      "score": 14,
+      "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): AQUAS-DATA-01, GREATFOX-INFILTRATION-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1040",
+      "tactic": "credential-access",
+      "score": 14,
+      "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): SAURIA-IOT-01, SOLAR-RF-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1041",
+      "tactic": "exfiltration",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): ZONESS-LEGACY-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1046",
+      "tactic": "discovery",
+      "score": 21,
+      "comment": "Mapped by 3 of 28 Lylat enterprise missions (mapped by 3 mission(s): CORNERIA-CADET-01, FICHINA-DISCOVERY-01, SLIPPY-VULNMGMT-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1053.005",
+      "tactic": "execution",
+      "score": 14,
+      "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): APAROID-RANSOMWARE-01, SECTORX-SPYBORG-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1055",
+      "tactic": "defense-evasion",
+      "score": 14,
+      "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): SECTORX-SPYBORG-01, VENOMII-RESEARCH-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1056.003",
+      "tactic": "collection",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): KATINA-PHISH-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1057",
+      "tactic": "discovery",
+      "score": 14,
+      "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): CORNERIA-WORKSTATION-01, FICHINA-DISCOVERY-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1059",
+      "tactic": "execution",
+      "score": 21,
+      "comment": "Mapped by 3 of 28 Lylat enterprise missions (mapped by 3 mission(s): APAROID-RANSOMWARE-01, CORNERIA-CADET-01, KATINA-WEBAPP-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1059.001",
+      "tactic": "execution",
+      "score": 14,
+      "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): CORNERIA-WORKSTATION-01, SECTORX-SPYBORG-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1068",
+      "tactic": "privilege-escalation",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): SLIPPY-VULNMGMT-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1070.004",
+      "tactic": "defense-evasion",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): CORNERIA-WORKSTATION-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1071",
+      "tactic": "command-and-control",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): VENOM-ANDROSS-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1071.001",
+      "tactic": "command-and-control",
+      "score": 14,
+      "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): APAROID-RANSOMWARE-01, SARGASSO-BEACON-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1072",
+      "tactic": "execution",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): MACBETH-SUPPLYCHAIN-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1074.001",
+      "tactic": "collection",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): FICHINA-DISCOVERY-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1078",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "comment": "Mapped by 14 of 28 Lylat enterprise missions (mapped by 14 mission(s): AQUAS-DATA-01, BOLSE-GATEWAY-01, CORNERIA-CADET-01, CORNERIA-GHOST-01, CORNERIA-GRC-01, CORNERIA-LEDGER-01, CORNERIA-OAUTH-01, GREATFOX-INFILTRATION-01, KATINA-PHISH-01, MACBETH-SUPPLYCHAIN-01, SAURIA-IOT-01, SAURIA-KRAZOA-01, SAURIA-SCALES-01, SECTORZ-AMBUSH-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1078.002",
+      "tactic": "defense-evasion",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): CORNERIA-SVCABUSE-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1078.004",
+      "tactic": "defense-evasion",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): BOLSE-CLOUD-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1082",
+      "tactic": "discovery",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): FICHINA-DISCOVERY-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1083",
+      "tactic": "discovery",
+      "score": 14,
+      "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): FICHINA-DISCOVERY-01, KATINA-WEBAPP-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1087",
+      "tactic": "discovery",
+      "score": 14,
+      "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): CORNERIA-WORKSTATION-01, FICHINA-DISCOVERY-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1087.002",
+      "tactic": "discovery",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): CORNERIA-GHOST-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1090",
+      "tactic": "command-and-control",
+      "score": 21,
+      "comment": "Mapped by 3 of 28 Lylat enterprise missions (mapped by 3 mission(s): APAROID-RANSOMWARE-01, SARGASSO-BEACON-01, VENOM-ANDROSS-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1091",
+      "tactic": "lateral-movement",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): SAURIA-SCALES-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1098",
+      "tactic": "persistence",
+      "score": 14,
+      "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): CORNERIA-GRC-01, CORNERIA-SVCABUSE-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1098.001",
+      "tactic": "persistence",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): BOLSE-CLOUD-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1098.003",
+      "tactic": "persistence",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): BOLSE-CLOUD-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1105",
+      "tactic": "command-and-control",
+      "score": 21,
+      "comment": "Mapped by 3 of 28 Lylat enterprise missions (mapped by 3 mission(s): APAROID-RANSOMWARE-01, SARGASSO-BEACON-01, ZONESS-LEGACY-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1110",
+      "tactic": "credential-access",
+      "score": 14,
+      "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): CORNERIA-CADET-01, CORNERIA-GHOST-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1113",
+      "tactic": "collection",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): FICHINA-DISCOVERY-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1119",
+      "tactic": "collection",
+      "score": 14,
+      "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): AQUAS-DATA-01, FICHINA-DISCOVERY-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1133",
+      "tactic": "persistence",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): BOLSE-GATEWAY-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1135",
+      "tactic": "discovery",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): FICHINA-DISCOVERY-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1190",
+      "tactic": "initial-access",
+      "score": 50,
+      "comment": "Mapped by 7 of 28 Lylat enterprise missions (mapped by 7 mission(s): BOLSE-CLOUD-01, BOLSE-GATEWAY-01, CORNERIA-LEDGER-01, GREATFOX-INFILTRATION-01, KATINA-WEBAPP-01, SAURIA-SCALES-01, SLIPPY-VULNMGMT-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1195.002",
+      "tactic": "initial-access",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): MACBETH-SUPPLYCHAIN-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1200",
+      "tactic": "initial-access",
+      "score": 14,
+      "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): SAURIA-IOT-01, SAURIA-SCALES-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1203",
+      "tactic": "execution",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): VENOMII-RESEARCH-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1204.001",
+      "tactic": "execution",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): KATINA-PHISH-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1204.002",
+      "tactic": "execution",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): APAROID-RANSOMWARE-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1207",
+      "tactic": "defense-evasion",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): CORNERIA-SVCABUSE-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1210",
+      "tactic": "lateral-movement",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): SLIPPY-VULNMGMT-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1213",
+      "tactic": "collection",
+      "score": 21,
+      "comment": "Mapped by 3 of 28 Lylat enterprise missions (mapped by 3 mission(s): AQUAS-DATA-01, CORNERIA-LEDGER-01, SAURIA-KRAZOA-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1218",
+      "tactic": "defense-evasion",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): CORNERIA-WORKSTATION-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1486",
+      "tactic": "impact",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): APAROID-RANSOMWARE-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1489",
+      "tactic": "impact",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): APAROID-RANSOMWARE-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1490",
+      "tactic": "impact",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): APAROID-RANSOMWARE-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1495",
+      "tactic": "impact",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): SAURIA-IOT-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1498",
+      "tactic": "impact",
+      "score": 14,
+      "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): SECTORZ-AMBUSH-01, SOLAR-RF-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1499",
+      "tactic": "impact",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): SECTORZ-AMBUSH-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1505.003",
+      "tactic": "persistence",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): KATINA-WEBAPP-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1526",
+      "tactic": "discovery",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): BOLSE-CLOUD-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1528",
+      "tactic": "credential-access",
+      "score": 14,
+      "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): BOLSE-CLOUD-01, CORNERIA-OAUTH-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1529",
+      "tactic": "impact",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): APAROID-RANSOMWARE-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1530",
+      "tactic": "collection",
+      "score": 14,
+      "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): BOLSE-CLOUD-01, SAURIA-KRAZOA-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1537",
+      "tactic": "exfiltration",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): BOLSE-CLOUD-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1542.001",
+      "tactic": "persistence",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): SAURIA-IOT-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1543.003",
+      "tactic": "persistence",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): SECTORX-SPYBORG-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1550",
+      "tactic": "defense-evasion",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): CORNERIA-GRC-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1550.001",
+      "tactic": "defense-evasion",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): CORNERIA-OAUTH-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1550.002",
+      "tactic": "defense-evasion",
+      "score": 14,
+      "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): GREATFOX-INFILTRATION-01, SECTORZ-AMBUSH-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1550.003",
+      "tactic": "defense-evasion",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): CORNERIA-SVCABUSE-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1552.001",
+      "tactic": "credential-access",
+      "score": 29,
+      "comment": "Mapped by 4 of 28 Lylat enterprise missions (mapped by 4 mission(s): CORNERIA-LEDGER-01, GREATFOX-INFILTRATION-01, KATINA-WEBAPP-01, SAURIA-KRAZOA-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1552.004",
+      "tactic": "credential-access",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): SAURIA-KRAZOA-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1552.005",
+      "tactic": "credential-access",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): BOLSE-CLOUD-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1552.007",
+      "tactic": "credential-access",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): BOLSE-CONTAINER-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1554",
+      "tactic": "persistence",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): MACBETH-SUPPLYCHAIN-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1557",
+      "tactic": "credential-access",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): SOLAR-RF-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1558.003",
+      "tactic": "credential-access",
+      "score": 14,
+      "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): CORNERIA-SVCABUSE-01, GREATFOX-INFILTRATION-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1560.001",
+      "tactic": "collection",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): FICHINA-DISCOVERY-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1565.001",
+      "tactic": "impact",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): CORNERIA-LEDGER-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1565.002",
+      "tactic": "impact",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): SOLAR-RF-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1566.002",
+      "tactic": "initial-access",
+      "score": 14,
+      "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): CORNERIA-OAUTH-01, KATINA-PHISH-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1567",
+      "tactic": "exfiltration",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): GREATFOX-INFILTRATION-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1568",
+      "tactic": "command-and-control",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): VENOM-ANDROSS-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1570",
+      "tactic": "lateral-movement",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): APAROID-RANSOMWARE-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1571",
+      "tactic": "command-and-control",
+      "score": 14,
+      "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): SARGASSO-BEACON-01, ZONESS-LEGACY-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1572",
+      "tactic": "command-and-control",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): BOLSE-GATEWAY-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1573.002",
+      "tactic": "command-and-control",
+      "score": 14,
+      "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): APAROID-RANSOMWARE-01, SARGASSO-BEACON-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1580",
+      "tactic": "discovery",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): BOLSE-CLOUD-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1583.001",
+      "tactic": "resource-development",
+      "score": 14,
+      "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): SARGASSO-BEACON-01, VENOM-ANDROSS-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1587.004",
+      "tactic": "resource-development",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): VENOMII-RESEARCH-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1588.005",
+      "tactic": "resource-development",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): VENOMII-RESEARCH-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1589",
+      "tactic": "reconnaissance",
+      "score": 14,
+      "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): CORNERIA-GHOST-01, ZONESS-LEGACY-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1590",
+      "tactic": "reconnaissance",
+      "score": 14,
+      "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): GREATFOX-INFILTRATION-01, ZONESS-LEGACY-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1595",
+      "tactic": "reconnaissance",
+      "score": 14,
+      "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): CORNERIA-CADET-01, GREATFOX-INFILTRATION-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1595.002",
+      "tactic": "reconnaissance",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): SLIPPY-VULNMGMT-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1598.003",
+      "tactic": "reconnaissance",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): KATINA-PHISH-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1609",
+      "tactic": "execution",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): BOLSE-CONTAINER-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1610",
+      "tactic": "defense-evasion",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): BOLSE-CONTAINER-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1611",
+      "tactic": "privilege-escalation",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): BOLSE-CONTAINER-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1613",
+      "tactic": "discovery",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): BOLSE-CONTAINER-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1619",
+      "tactic": "discovery",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): BOLSE-CLOUD-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1620",
+      "tactic": "defense-evasion",
+      "score": 14,
+      "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): VENOM-ANDROSS-01, VENOMII-RESEARCH-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1621",
+      "tactic": "credential-access",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): CORNERIA-OAUTH-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1649",
+      "tactic": "credential-access",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): GREATFOX-INFILTRATION-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1651",
+      "tactic": "execution",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): BOLSE-CLOUD-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#12122a",
+      "#1e3a5f",
+      "#2f6ab0",
+      "#38bdf8",
+      "#a78bfa"
+    ],
+    "minValue": 0,
+    "maxValue": 100
+  },
+  "legendItems": [],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#2b2b3a",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}

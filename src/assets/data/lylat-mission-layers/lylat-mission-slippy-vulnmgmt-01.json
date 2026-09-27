@@ -1,0 +1,109 @@
+{
+  "name": "Lylat Mission — SLIPPY-VULNMGMT-01",
+  "versions": {
+    "attack": "19",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Slippy's Scanner — scan to triage to remediation to threat model, the vulnerability-management loop that actually closes  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1595.002",
+      "tactic": "reconnaissance",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SLIPPY-VULNMGMT-01 planned coverage: Vulnerability Scanning",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1046",
+      "tactic": "discovery",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SLIPPY-VULNMGMT-01 planned coverage: Network Service Discovery",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1190",
+      "tactic": "initial-access",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SLIPPY-VULNMGMT-01 planned coverage: Exploit Public-Facing Application",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1210",
+      "tactic": "lateral-movement",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SLIPPY-VULNMGMT-01 planned coverage: Exploitation of Remote Services",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1068",
+      "tactic": "privilege-escalation",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SLIPPY-VULNMGMT-01 planned coverage: Exploitation for Privilege Escalation",
+      "showSubtechniques": false
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffe8d6",
+      "#c1121f"
+    ],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "Planned mission coverage (draft - not a validated detection)",
+      "color": "#fca311"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "mission",
+      "value": "SLIPPY-VULNMGMT-01"
+    },
+    {
+      "name": "planet",
+      "value": "Corneria (the Great Fox maintenance bay; Slippy's vulnerability-management lane)"
+    },
+    {
+      "name": "disciplines",
+      "value": "vulnerability-management, threat-modeling, security-operations"
+    },
+    {
+      "name": "training_route",
+      "value": "slippy-analysis"
+    },
+    {
+      "name": "status",
+      "value": "planned / draft-ai-authored (execution_verified:false)"
+    },
+    {
+      "name": "attack_matrix",
+      "value": "enterprise-attack"
+    },
+    {
+      "name": "generated_by",
+      "value": "Tools/gen_navigator_layers.py (deterministic, from mission front-matter)"
+    }
+  ],
+  "links": [],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#2b2b3a",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}

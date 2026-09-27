@@ -80,6 +80,20 @@ The broad layer's current manifest describes 535 machines. The core layer's desc
 |---|---|---|
 | Agentic AI Swarm Intrusion | 74 | Enterprise ATT&CK frequency across a generalized agentic-AI-swarm kill chain: credential reuse, egress-relay C2, pipeline exploitation, and cluster takeover |
 
+## Lylat Training Range (mission coverage)
+
+Coverage from the [Lylat Labs](https://github.com/TeamStarWolf/Lylat-Labs) themed training missions. **Planned/training coverage only** — the missions are `execution_verified: false`, so these layers show which techniques each mission is *designed to exercise*, **not** a validated detection or coverage result. Not an official MITRE mapping.
+
+**Curated overlay (in the picker):**
+
+| Layer | Techniques | Notes |
+|---|---|---|
+| TeamStarWolf - Lylat Mission Coverage | 105 | Enterprise ATT&CK techniques across the 28 enterprise Lylat missions, scored by how many missions map each (normalized to the most-mapped technique). Planned/training coverage, not detection. Excludes 3 IDs the missions cite that are revoked in the bundled 19.2 snapshot (T1070.001/T1562.002/T1656 — a library data-currency item, tracked separately). |
+
+**Per-mission + per-domain layers (vendored, one-click importable):** all 35 individual layers (31 per-mission + 4 per-domain coverage) are served from `src/assets/data/lylat-mission-layers/` (see its `index.json`). Load any one through the matrix controls' **Import Layer** action (or your instance's load-from-file/URL) — e.g. `assets/data/lylat-mission-layers/lylat-mission-katina-phish-01.json`. This keeps the curated picker uncluttered while making every mission's coverage available in the instance.
+
+**Domain note:** the enterprise per-mission layers, the enterprise per-domain coverage layer, and the curated aggregate above render in the standard **enterprise-attack** matrix (bundled 19.2). The **ICS/OT**, **Mobile**, and **ATLAS** mission layers are vendored too but render only where the matching matrix is available (the ATLAS layer needs the MITRE **ATLAS Navigator**; ICS/Mobile need their ATT&CK matrices) — they will not resolve against the bundled enterprise matrix.
+
 ## Adversary Emulation - Threat Groups (MITRE attribution)
 
 | Layer | Techniques | Notes |

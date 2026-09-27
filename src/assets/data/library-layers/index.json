@@ -214,5 +214,11 @@
     "name": "TeamStarWolf - HTB Insane Techniques (precise)",
     "description": "Curated practitioner view, not an official MITRE mapping. Precise-pattern technique frequency across the 56 content-verified Insane-rated Hack The Box walkthroughs (of 529). Keyword/tag-derived from walkthrough text; lower-bound evidence. Scores normalize to the maximum (54 machines) within the Insane subset; 100 is not 100% prevalence. ATT&CK v19.2 IDs/tactics. Compare across the Easy/Medium/Hard/Insane layers to see how technique mix shifts with difficulty. Provenance: 529-machine uniform mine, 2026-09-26.",
     "blurb": "Precise-pattern technique frequencies across the 56 content-verified Insane-rated HTB walkthroughs (21 techniques). Keyword-derived, not an official MITRE mapping."
+  },
+  {
+    "file": "lylat-mission-coverage.json",
+    "name": "TeamStarWolf - Lylat Mission Coverage",
+    "description": "Curated practitioner view, not an official MITRE mapping. Enterprise ATT&CK technique coverage across the 28 enterprise Lylat Labs training missions: score normalizes each technique's mission count to the most-mapped technique (14); 100 does not mean full coverage. Planned/training coverage only — the missions are execution_verified:false, so this is NOT a detection or validated-coverage result. ICS/OT, Mobile, and ATLAS mission coverage is vendored separately (they need their own matrices). No coverage guarantee. Provenance spans ATT&CK 16.1 -> 19.2 as bundled.",
+    "blurb": "Enterprise ATT&CK techniques across the 28 Lylat enterprise training missions, scored by how many missions map each. A curated planned/training view — not detection, not an official MITRE mapping."
   }
 ]

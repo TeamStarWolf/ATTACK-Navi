@@ -1,0 +1,117 @@
+{
+  "name": "Lylat Mission — CORNERIA-WORKSTATION-01",
+  "versions": {
+    "attack": "19",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Leon in the Workstation — living off the land on Corneria, and the telemetry that still sees it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1059.001",
+      "tactic": "execution",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "CORNERIA-WORKSTATION-01 planned coverage: PowerShell",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1027",
+      "tactic": "defense-evasion",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "CORNERIA-WORKSTATION-01 planned coverage: Obfuscated Files or Information",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1218",
+      "tactic": "defense-evasion",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "CORNERIA-WORKSTATION-01 planned coverage: System Binary Proxy Execution",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1057",
+      "tactic": "discovery",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "CORNERIA-WORKSTATION-01 planned coverage: Process Discovery",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1087",
+      "tactic": "discovery",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "CORNERIA-WORKSTATION-01 planned coverage: Account Discovery",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1070.004",
+      "tactic": "defense-evasion",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "CORNERIA-WORKSTATION-01 planned coverage: File Deletion",
+      "showSubtechniques": true
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffe8d6",
+      "#c1121f"
+    ],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "Planned mission coverage (draft - not a validated detection)",
+      "color": "#fca311"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "mission",
+      "value": "CORNERIA-WORKSTATION-01"
+    },
+    {
+      "name": "planet",
+      "value": "Corneria (user workstation CORNERIA-WIN01)"
+    },
+    {
+      "name": "disciplines",
+      "value": "offensive-security, security-operations, detection-engineering"
+    },
+    {
+      "name": "training_route",
+      "value": "wolfen-host-range"
+    },
+    {
+      "name": "status",
+      "value": "planned / draft-ai-authored (execution_verified:false)"
+    },
+    {
+      "name": "attack_matrix",
+      "value": "enterprise-attack"
+    },
+    {
+      "name": "generated_by",
+      "value": "Tools/gen_navigator_layers.py (deterministic, from mission front-matter)"
+    }
+  ],
+  "links": [],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#2b2b3a",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}

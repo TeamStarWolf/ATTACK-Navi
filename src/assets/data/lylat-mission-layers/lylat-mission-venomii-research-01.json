@@ -1,0 +1,109 @@
+{
+  "name": "Lylat Mission — VENOMII-RESEARCH-01",
+  "versions": {
+    "attack": "19",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Wolfen II Research Bay — vulnerability research and exploit development in a sealed lab, and the release gate that reviews it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1588.005",
+      "tactic": "resource-development",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "VENOMII-RESEARCH-01 planned coverage: Exploits",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1587.004",
+      "tactic": "resource-development",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "VENOMII-RESEARCH-01 planned coverage: Exploits",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1203",
+      "tactic": "execution",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "VENOMII-RESEARCH-01 planned coverage: Exploitation for Client Execution",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1055",
+      "tactic": "defense-evasion",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "VENOMII-RESEARCH-01 planned coverage: Process Injection",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1620",
+      "tactic": "defense-evasion",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "VENOMII-RESEARCH-01 planned coverage: Reflective Code Loading",
+      "showSubtechniques": false
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffe8d6",
+      "#c1121f"
+    ],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "Planned mission coverage (draft - not a validated detection)",
+      "color": "#fca311"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "mission",
+      "value": "VENOMII-RESEARCH-01"
+    },
+    {
+      "name": "planet",
+      "value": "Venom II (Andross's sealed research bay; the Wolfen II weapons-development program)"
+    },
+    {
+      "name": "disciplines",
+      "value": "exploit-development, reverse-engineering"
+    },
+    {
+      "name": "training_route",
+      "value": "venom-research-range"
+    },
+    {
+      "name": "status",
+      "value": "planned / draft-ai-authored (execution_verified:false)"
+    },
+    {
+      "name": "attack_matrix",
+      "value": "enterprise-attack"
+    },
+    {
+      "name": "generated_by",
+      "value": "Tools/gen_navigator_layers.py (deterministic, from mission front-matter)"
+    }
+  ],
+  "links": [],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#2b2b3a",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}

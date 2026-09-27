@@ -1,0 +1,165 @@
+{
+  "name": "Lylat Mission — BOLSE-CLOUD-01",
+  "versions": {
+    "attack": "19",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Orbital Gate — taking the Bolse cloud, and the cloud-security controls that close it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1190",
+      "tactic": "initial-access",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "BOLSE-CLOUD-01 planned coverage: Exploit Public-Facing Application",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1078.004",
+      "tactic": "defense-evasion",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "BOLSE-CLOUD-01 planned coverage: Cloud Accounts",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1552.005",
+      "tactic": "credential-access",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "BOLSE-CLOUD-01 planned coverage: Cloud Instance Metadata API",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1528",
+      "tactic": "credential-access",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "BOLSE-CLOUD-01 planned coverage: Steal Application Access Token",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1580",
+      "tactic": "discovery",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "BOLSE-CLOUD-01 planned coverage: Cloud Infrastructure Discovery",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1526",
+      "tactic": "discovery",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "BOLSE-CLOUD-01 planned coverage: Cloud Service Discovery",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1619",
+      "tactic": "discovery",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "BOLSE-CLOUD-01 planned coverage: Cloud Storage Object Discovery",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1098.001",
+      "tactic": "persistence",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "BOLSE-CLOUD-01 planned coverage: Additional Cloud Credentials",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1098.003",
+      "tactic": "persistence",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "BOLSE-CLOUD-01 planned coverage: Additional Cloud Roles",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1651",
+      "tactic": "execution",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "BOLSE-CLOUD-01 planned coverage: Cloud Administration Command",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1530",
+      "tactic": "collection",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "BOLSE-CLOUD-01 planned coverage: Data from Cloud Storage",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1537",
+      "tactic": "exfiltration",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "BOLSE-CLOUD-01 planned coverage: Transfer Data to Cloud Account",
+      "showSubtechniques": false
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffe8d6",
+      "#c1121f"
+    ],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "Planned mission coverage (draft - not a validated detection)",
+      "color": "#fca311"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "mission",
+      "value": "BOLSE-CLOUD-01"
+    },
+    {
+      "name": "planet",
+      "value": "Bolse (orbital defense station modeled as cloud infrastructure)"
+    },
+    {
+      "name": "disciplines",
+      "value": "cloud-security, identity-access-management, detection-engineering, incident-response"
+    },
+    {
+      "name": "training_route",
+      "value": "bolse-cloud-range"
+    },
+    {
+      "name": "status",
+      "value": "planned / draft-ai-authored (execution_verified:false)"
+    },
+    {
+      "name": "attack_matrix",
+      "value": "enterprise-attack"
+    },
+    {
+      "name": "generated_by",
+      "value": "Tools/gen_navigator_layers.py (deterministic, from mission front-matter)"
+    }
+  ],
+  "links": [],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#2b2b3a",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}

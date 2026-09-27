@@ -1,0 +1,109 @@
+{
+  "name": "Lylat Mission — VENOM-ANDROSS-01",
+  "versions": {
+    "attack": "19",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "The Brain Revealed — connecting a long campaign to Andross, and the intelligence report that proves it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1583.001",
+      "tactic": "resource-development",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "VENOM-ANDROSS-01 planned coverage: Domains",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1071",
+      "tactic": "command-and-control",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "VENOM-ANDROSS-01 planned coverage: Application Layer Protocol",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1090",
+      "tactic": "command-and-control",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "VENOM-ANDROSS-01 planned coverage: Proxy",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1568",
+      "tactic": "command-and-control",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "VENOM-ANDROSS-01 planned coverage: Dynamic Resolution",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1620",
+      "tactic": "defense-evasion",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "VENOM-ANDROSS-01 planned coverage: Reflective Code Loading",
+      "showSubtechniques": false
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffe8d6",
+      "#c1121f"
+    ],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "Planned mission coverage (draft - not a validated detection)",
+      "color": "#fca311"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "mission",
+      "value": "VENOM-ANDROSS-01"
+    },
+    {
+      "name": "planet",
+      "value": "Venom (Andross capstone; VENOM-SANDBOX01 — isolated adversary range)"
+    },
+    {
+      "name": "disciplines",
+      "value": "threat-intelligence, red-teaming, security-operations"
+    },
+    {
+      "name": "training_route",
+      "value": "wolfen-host-range"
+    },
+    {
+      "name": "status",
+      "value": "planned / draft-ai-authored (execution_verified:false)"
+    },
+    {
+      "name": "attack_matrix",
+      "value": "enterprise-attack"
+    },
+    {
+      "name": "generated_by",
+      "value": "Tools/gen_navigator_layers.py (deterministic, from mission front-matter)"
+    }
+  ],
+  "links": [],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#2b2b3a",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}

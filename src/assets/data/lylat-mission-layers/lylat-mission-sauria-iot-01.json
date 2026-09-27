@@ -1,0 +1,109 @@
+{
+  "name": "Lylat Mission — SAURIA-IOT-01",
+  "versions": {
+    "attack": "19",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Tricky's Collar — an IoT/firmware compromise on Sauria, and the device integrity that catches it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1078",
+      "tactic": "defense-evasion",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SAURIA-IOT-01 planned coverage: Valid Accounts",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1200",
+      "tactic": "initial-access",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SAURIA-IOT-01 planned coverage: Hardware Additions",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1542.001",
+      "tactic": "persistence",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SAURIA-IOT-01 planned coverage: System Firmware",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1495",
+      "tactic": "impact",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SAURIA-IOT-01 planned coverage: Firmware Corruption",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1040",
+      "tactic": "credential-access",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "SAURIA-IOT-01 planned coverage: Network Sniffing",
+      "showSubtechniques": false
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffe8d6",
+      "#c1121f"
+    ],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "Planned mission coverage (draft - not a validated detection)",
+      "color": "#fca311"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "mission",
+      "value": "SAURIA-IOT-01"
+    },
+    {
+      "name": "planet",
+      "value": "Sauria (Dinosaur Planet; the field IoT/sensor mesh and Tricky's telemetry collar)"
+    },
+    {
+      "name": "disciplines",
+      "value": "iot-security, hardware-security"
+    },
+    {
+      "name": "training_route",
+      "value": "sauria-iot-range"
+    },
+    {
+      "name": "status",
+      "value": "planned / draft-ai-authored (execution_verified:false)"
+    },
+    {
+      "name": "attack_matrix",
+      "value": "enterprise-attack"
+    },
+    {
+      "name": "generated_by",
+      "value": "Tools/gen_navigator_layers.py (deterministic, from mission front-matter)"
+    }
+  ],
+  "links": [],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#2b2b3a",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}

@@ -1,0 +1,161 @@
+{
+  "name": "Lylat Coverage — Mobile",
+  "versions": {
+    "attack": "19",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "mobile-attack",
+  "description": "Training-coverage density across 1 Lylat Mobile missions: score = number of missions that map each technique. Planned coverage only (draft, execution_verified:false) - NOT detection or validated coverage. Not an official MITRE mapping.",
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1406",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "enabled": true,
+      "comment": "Obfuscated Files or Information - mapped by 1 mission(s): FORTUNA-MOBILE-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1409",
+      "tactic": "collection",
+      "score": 1,
+      "enabled": true,
+      "comment": "Stored Application Data - mapped by 1 mission(s): FORTUNA-MOBILE-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1417.001",
+      "tactic": "collection",
+      "score": 1,
+      "enabled": true,
+      "comment": "Keylogging - mapped by 1 mission(s): FORTUNA-MOBILE-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1430",
+      "tactic": "collection",
+      "score": 1,
+      "enabled": true,
+      "comment": "Location Tracking - mapped by 1 mission(s): FORTUNA-MOBILE-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1437.001",
+      "tactic": "command-and-control",
+      "score": 1,
+      "enabled": true,
+      "comment": "Web Protocols - mapped by 1 mission(s): FORTUNA-MOBILE-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1521.001",
+      "tactic": "command-and-control",
+      "score": 1,
+      "enabled": true,
+      "comment": "Symmetric Cryptography - mapped by 1 mission(s): FORTUNA-MOBILE-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1533",
+      "tactic": "collection",
+      "score": 1,
+      "enabled": true,
+      "comment": "Data from Local System - mapped by 1 mission(s): FORTUNA-MOBILE-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1541",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "enabled": true,
+      "comment": "Foreground Persistence - mapped by 1 mission(s): FORTUNA-MOBILE-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1624.001",
+      "tactic": "persistence",
+      "score": 1,
+      "enabled": true,
+      "comment": "Broadcast Receivers - mapped by 1 mission(s): FORTUNA-MOBILE-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1636.003",
+      "tactic": "collection",
+      "score": 1,
+      "enabled": true,
+      "comment": "Contact List - mapped by 1 mission(s): FORTUNA-MOBILE-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1655",
+      "tactic": "defense-evasion",
+      "score": 1,
+      "enabled": true,
+      "comment": "Masquerading - mapped by 1 mission(s): FORTUNA-MOBILE-01",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1660",
+      "tactic": "initial-access",
+      "score": 1,
+      "enabled": true,
+      "comment": "Phishing - mapped by 1 mission(s): FORTUNA-MOBILE-01",
+      "showSubtechniques": false
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffe8d6",
+      "#c1121f"
+    ],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "1 mission (planned)",
+      "color": "#ffe8d6"
+    },
+    {
+      "label": "1 missions (planned)",
+      "color": "#c1121f"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "scope",
+      "value": "1 Mobile missions"
+    },
+    {
+      "name": "scoring",
+      "value": "# missions mapping the technique (planned coverage density)"
+    },
+    {
+      "name": "status",
+      "value": "planned / draft - NOT a detection or validated-coverage claim"
+    },
+    {
+      "name": "attack_matrix",
+      "value": "mobile-attack"
+    },
+    {
+      "name": "generated_by",
+      "value": "Tools/gen_navigator_layers.py (deterministic, from mission front-matter)"
+    }
+  ],
+  "links": [],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#2b2b3a",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}

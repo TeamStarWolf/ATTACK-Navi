@@ -1,0 +1,109 @@
+{
+  "name": "Lylat Mission — KATINA-WEBAPP-01",
+  "versions": {
+    "attack": "19",
+    "navigator": "4.9",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Saucerer Pressure — a web foothold on Katina, and the app owner who knows what's normal  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": false
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1190",
+      "tactic": "initial-access",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "KATINA-WEBAPP-01 planned coverage: Exploit Public-Facing Application",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1505.003",
+      "tactic": "persistence",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "KATINA-WEBAPP-01 planned coverage: Web Shell",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1059",
+      "tactic": "execution",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "KATINA-WEBAPP-01 planned coverage: Command and Scripting Interpreter",
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1552.001",
+      "tactic": "credential-access",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "KATINA-WEBAPP-01 planned coverage: Credentials In Files",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1083",
+      "tactic": "discovery",
+      "color": "#fca311",
+      "enabled": true,
+      "comment": "KATINA-WEBAPP-01 planned coverage: File and Directory Discovery",
+      "showSubtechniques": false
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#ffe8d6",
+      "#c1121f"
+    ],
+    "minValue": 0,
+    "maxValue": 1
+  },
+  "legendItems": [
+    {
+      "label": "Planned mission coverage (draft - not a validated detection)",
+      "color": "#fca311"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "mission",
+      "value": "KATINA-WEBAPP-01"
+    },
+    {
+      "name": "planet",
+      "value": "Katina (public app KATINA-WEB01)"
+    },
+    {
+      "name": "disciplines",
+      "value": "application-security, bug-bounty, detection-engineering"
+    },
+    {
+      "name": "training_route",
+      "value": "katina-web-range"
+    },
+    {
+      "name": "status",
+      "value": "planned / draft-ai-authored (execution_verified:false)"
+    },
+    {
+      "name": "attack_matrix",
+      "value": "enterprise-attack"
+    },
+    {
+      "name": "generated_by",
+      "value": "Tools/gen_navigator_layers.py (deterministic, from mission front-matter)"
+    }
+  ],
+  "links": [],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#2b2b3a",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}
