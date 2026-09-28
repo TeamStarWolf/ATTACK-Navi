@@ -22,6 +22,8 @@ export interface ExploitationClass {
 export interface AnchorData {
   exploitationClasses: Record<string, ExploitationClass>;
   genericCwes: string[];
+  /** Post-exploitation techniques never derivable from a CWE — dropped from the low-confidence tier. */
+  suppressTechniques?: string[];
   rceKeywords?: string[];
   rceTechniques?: string[];
   remoteAccessApplianceKeywords: string[];
@@ -95,6 +97,8 @@ export function correctCveTechniques(
   }
 
   for (const t of high) low.delete(t);
+  // Drop adversary post-exploitation techniques that a CWE can't imply (fan-out artifacts).
+  for (const t of anchor.suppressTechniques || []) low.delete(t);
   const highArr = [...high].sort();
   const lowArr = [...low].sort();
   // A confident exploitation anchor SUPERSEDES the noisy CAPEC fan-out: when we know how the
