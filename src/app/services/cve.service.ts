@@ -7,6 +7,7 @@ import { map } from 'rxjs/operators';
 import { NvdCveItem, KevEntry } from '../models/cve';
 import { AttackCveService } from './attack-cve.service';
 import { CapecService } from './capec.service';
+import { correctCveTechniques, AnchorData, CorrectionResult } from './cwe-attack-anchor';
 import { retryWithBackoff } from '../utils/retry';
 
 
@@ -22,6 +23,8 @@ export class CveService {
 
   private searchSub?: Subscription;
   private kevLoading = false;
+  /** CWE->ATT&CK exploitation anchor (assets/data/cwe-exploitation-anchor.json); null until loaded. */
+  private anchorData: AnchorData | null = null;
 
   private searchResultsSubject = new BehaviorSubject<NvdCveItem[]>([]);
   private activeCveSubject = new BehaviorSubject<NvdCveItem | null>(null);
@@ -56,6 +59,11 @@ export class CveService {
       this.kevLoadedSubject,
       this.attackCveService.loaded$,
     ]).pipe(map(([kevLoaded, ctidLoaded]) => kevLoaded && ctidLoaded));
+
+    // Load the CWE->ATT&CK exploitation anchor (corrects the generic CWE->CAPEC fan-out).
+    this.http.get<AnchorData>('assets/data/cwe-exploitation-anchor.json')
+      .pipe(catchError(() => of(null)))
+      .subscribe(d => { this.anchorData = d; });
 
     this.attackCveService.loaded$.subscribe(loaded => {
       if (loaded && this.kevMapSubject.value.size > 0) {
@@ -224,14 +232,23 @@ export class CveService {
    * (Replaces a generated 733-entry static table whose entries were ~3.5%
    * confirmable against this chain.)
    */
-  mapCwesToAttackIds(cwes: string[]): string[] {
-    const attackIds = new Set<string>();
-    for (const cwe of cwes) {
-      for (const capec of this.capecService.getCapecForCwe(cwe)) {
-        for (const id of capec.attackIds) attackIds.add(id);
-      }
+  mapCwesToAttackIds(cwes: string[], ctx?: { text?: string }): string[] {
+    return this.correctTechniques(cwes, ctx).all;
+  }
+
+  /**
+   * Full CWE->ATT&CK correction (high-confidence exploitation anchor + low-confidence
+   * CAPEC-derived supplement, generic-CWE fan-out suppressed). See cwe-attack-anchor.ts.
+   */
+  correctTechniques(cwes: string[], ctx?: { text?: string }): CorrectionResult {
+    const capecDerivedFor = (cwe: string): string[] =>
+      this.capecService.getCapecForCwe(cwe).flatMap(c => c.attackIds);
+    if (!this.anchorData) {
+      // Anchor asset not yet loaded — fall back to the raw CAPEC chain (previous behavior).
+      const low = [...new Set((cwes ?? []).flatMap(capecDerivedFor))].sort();
+      return { high: [], low, all: low };
     }
-    return [...attackIds].sort();
+    return correctCveTechniques(cwes, capecDerivedFor, this.anchorData, ctx);
   }
 
   /** Reverse-lookup via the CAPEC chain: CWEs published as related to a technique. */
@@ -360,12 +377,14 @@ export class CveService {
       }
     }
 
-    const mappedAttackIds = this.mapCwesToAttackIds(cwes);
+    const description = cve.descriptions?.find((d: any) => d.lang === 'en')?.value ?? '';
+    const correction = this.correctTechniques(cwes, { text: `${description} ${cpes.join(' ')}` });
+    const mappedAttackIds = correction.all;
     const kevEntry = this.kevMapSubject.value.get(cve.id);
 
     return {
       id: cve.id,
-      description: cve.descriptions?.find((d: any) => d.lang === 'en')?.value ?? '',
+      description,
       cvssScore: cvssData?.baseScore ?? null,
       cvssVector: cvssData?.vectorString ?? null,
       severity: (cvssData?.baseSeverity ?? 'UNKNOWN') as NvdCveItem['severity'],
@@ -375,6 +394,7 @@ export class CveService {
       lastModified: cve.lastModified ?? '',
       references: (cve.references ?? []).slice(0, 10).map((r: any) => ({ url: r.url, tags: r.tags ?? [] })),
       mappedAttackIds,
+      mappedAttackTiers: { high: correction.high, low: correction.low },
       isKev: !!kevEntry,
       kevDateAdded: kevEntry?.dateAdded,
       kevDueDate: kevEntry?.dueDate,
