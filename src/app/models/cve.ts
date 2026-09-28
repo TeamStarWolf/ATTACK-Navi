@@ -12,7 +12,9 @@ export interface NvdCveItem {
   lastModified: string;
   references: { url: string; tags: string[] }[];
   // Enriched
-  mappedAttackIds: string[];     // ['T1059', 'T1190'] — from CWE mapping
+  mappedAttackIds: string[];     // ['T1190', 'T1059'] — corrected CWE->ATT&CK mapping (anchor-first)
+  /** Confidence tiers for mappedAttackIds: high = exploitation-nature anchor, low = CAPEC-derived. */
+  mappedAttackTiers?: { high: string[]; low: string[] };
   isKev: boolean;
   kevDateAdded?: string;
   kevDueDate?: string;
