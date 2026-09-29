@@ -25,6 +25,34 @@
     }
 
     <div class="hub-section">
+      <h3 class="section-title">Saved Layers</h3>
+      @if (savedLayers$ | async; as layers) {
+        @if (layers.length) {
+          <ul class="saved-layer-list">
+            @for (layer of layers; track layer.id) {
+              <li class="saved-layer-row" [class.active]="(activeLayer$ | async)?.id === layer.id">
+                <div class="sl-info">
+                  <span class="sl-name">{{ layer.name }}</span>
+                  <span class="sl-meta">{{ layer.domain | uppercase }} · {{ layer.techniqueCount }} techniques · {{ layer.sourceFormat }}</span>
+                </div>
+                <div class="sl-actions">
+                  @if ((activeLayer$ | async)?.id === layer.id) {
+                    <button class="sl-btn sl-btn--ghost" (click)="clearActiveLayer()">Unload</button>
+                  } @else {
+                    <button class="sl-btn" (click)="loadLayer(layer.id)">Load</button>
+                  }
+                  <button class="sl-btn sl-btn--danger" (click)="deleteLayer(layer.id, layer.name)">Delete</button>
+                </div>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="saved-layer-empty">No saved layers yet. Use “Import Navigator Layer” above to convert and save one.</p>
+        }
+      }
+    </div>
+
+    <div class="hub-section">
       <h3 class="section-title">Full Workspace Backup</h3>
       <div class="card-grid">
         <button class="export-card" (click)="exportWorkspace()">

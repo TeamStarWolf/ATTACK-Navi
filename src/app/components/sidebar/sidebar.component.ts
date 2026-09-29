@@ -43,6 +43,8 @@ import { CweService } from '../../services/cwe.service';
 import { SettingsService } from '../../services/settings.service';
 import { CustomMitigationService, CustomMitigation } from '../../services/custom-mitigation.service';
 import { AnnotationService, TechniqueAnnotation } from '../../services/annotation.service';
+import { UserLayerService } from '../../services/user-layer.service';
+import { AttackNaviLayer, UserLayerTechnique } from '../../models/user-layer';
 import { WatchlistService } from '../../services/watchlist.service';
 import { MispService, MispGalaxyCluster, MispTag } from '../../services/misp.service';
 import { SigmaService, SigmaRuleDetail } from '../../services/sigma.service';
@@ -229,6 +231,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   /** Grouped jump index — the 48 sections organized by theme (D12/P4). */
   readonly sectionIndex: ReadonlyArray<{ label: string; sections: ReadonlyArray<{ id: string; label: string }> }> = [
     { label: 'Technique', sections: [
+      { id: 'imported-layer', label: 'Imported Layer' },
       { id: 'annotation', label: 'Annotations' }, { id: 'subtechniques', label: 'Subtechniques' },
       { id: 'detection', label: 'Detection' }, { id: 'datasources', label: 'Data Sources' },
       { id: 'datacomponents', label: 'Data Components' }, { id: 'procedures', label: 'Procedures' },
@@ -330,7 +333,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       'bloodhound', 'c2', 'ioc-feed', 'azure-identity', 'offensive-tools',
       'wazuh-xdr', 'threat-hunting', 'csa-ccm', 'm365-controls',
       'kill-chain', 'poc-exploits', 'evtx-samples', 'sentinel-rules',
-      'anthropic-skills', 'threathunter-playbook',
+      'anthropic-skills', 'threathunter-playbook', 'imported-layer',
     ];
     for (const s of sections) this.collapsedSections.add(s);
     this.cdr.markForCheck();
@@ -507,6 +510,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   // Annotation state
   annotation: TechniqueAnnotation | undefined = undefined;
+
+  /** Active user-imported layer, and its entry for the selected technique. */
+  activeUserLayer: AttackNaviLayer | null = null;
+  userLayerEntry: UserLayerTechnique | null = null;
   annotationNote = '';
   annotationColor = 'default';
   annotationPinned = false;
@@ -581,6 +588,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     private threatHunterPlaybookService: ThreatHunterPlaybookService,
     private evtxSamplesService: EvtxSamplesService,
     private sentinelRulesService: SentinelRulesService,
+    private userLayerService: UserLayerService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -681,6 +689,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
         this.presetTags = this.taggingService.presetTags;
         const ann = tech ? this.annotationService.getAnnotation(tech.attackId) : undefined;
         this.annotation = ann;
+        // Imported-layer data for this technique (comment/score/color/metadata/links).
+        this.userLayerEntry = tech ? this.userLayerService.getEntry(tech.attackId) : null;
         this.annotationNote = ann?.note ?? '';
         this.annotationColor = ann?.color ?? 'default';
         this.annotationPinned = ann?.isPinned ?? false;
@@ -1025,6 +1035,16 @@ export class SidebarComponent implements OnInit, OnDestroy {
           this.customMitigations = this.customMitigationService.getForTechnique(this.technique.attackId);
           this.cdr.markForCheck();
         }
+      }),
+    );
+
+    // Refresh imported-layer data when a user layer is applied, switched or cleared.
+    this.subs.add(
+      this.userLayerService.activeLayer$.subscribe((layer) => {
+        this.activeUserLayer = layer;
+        this.userLayerEntry = this.technique ? this.userLayerService.getEntry(this.technique.attackId) : null;
+        if (this.activeUserLayer && this.userLayerEntry) this.collapsedSections.delete('imported-layer');
+        this.cdr.markForCheck();
       }),
     );
 
