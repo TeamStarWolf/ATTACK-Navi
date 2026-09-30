@@ -16,6 +16,7 @@ import { Subscription } from 'rxjs';
 import { CveService } from '../../services/cve.service';
 import { DataService } from '../../services/data.service';
 import { IconComponent } from '../../shared/icons/icon.component';
+import { ViewpointSelectorComponent } from '../viewpoint-selector/viewpoint-selector.component';
 
 interface WorkspaceNavItem {
   /** Workspace root path — routerLinkActive matches any child tab. */
@@ -44,7 +45,7 @@ const WORKSPACES: WorkspaceNavItem[] = [
 @Component({
   selector: 'app-nav-rail',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, IconComponent],
+  imports: [RouterLink, RouterLinkActive, IconComponent, ViewpointSelectorComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './nav-rail.component.html',
   styleUrl: './nav-rail.component.scss',

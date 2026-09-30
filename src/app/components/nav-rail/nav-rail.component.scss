@@ -20,6 +20,12 @@
   padding: 16px 12px 10px;
 }
 
+.rail-viewpoint {
+  display: block;
+  flex-shrink: 0;
+  margin-bottom: 12px;
+}
+
 .rail-section-label {
   font-size: 11px;
   font-weight: 600;
@@ -164,6 +170,13 @@
   }
 
   .rail-section-label { display: none; }
+
+  .rail-viewpoint {
+    margin-bottom: 0;
+    margin-right: 4px;
+    min-width: 96px;
+    align-self: center;
+  }
 
   .nav-list {
     flex-direction: row;

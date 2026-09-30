@@ -1,0 +1,54 @@
+<!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+     https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
+<div class="viewpoint-selector">
+  <button
+    type="button"
+    class="vp-trigger"
+    [class.open]="open"
+    aria-haspopup="menu"
+    [attr.aria-expanded]="open"
+    aria-controls="vp-menu"
+    [attr.aria-label]="'Viewpoint: ' + current.label + '. Change viewpoint'"
+    [title]="'Viewpoint: ' + current.label"
+    (click)="toggle()"
+  >
+    <app-icon class="vp-icon" [name]="current.icon" [size]="18" aria-hidden="true" />
+    <span class="vp-text">
+      <span class="vp-eyebrow">Viewpoint</span>
+      <span class="vp-current">{{ current.short }}</span>
+    </span>
+    <app-icon class="vp-caret" name="chevron-down" [size]="14" aria-hidden="true" />
+  </button>
+
+  @if (open) {
+    <div
+      id="vp-menu"
+      class="vp-menu"
+      role="menu"
+      aria-label="Viewpoints"
+      (keydown)="onMenuKeydown($event)"
+    >
+      <div class="vp-menu-header" aria-hidden="true">Viewpoint</div>
+      @for (vp of viewpoints; track vp.id) {
+        <button
+          #optionBtn
+          type="button"
+          class="vp-option"
+          [class.active]="isActive(vp.id)"
+          role="menuitemradio"
+          [attr.aria-checked]="isActive(vp.id)"
+          (click)="select(vp.id)"
+        >
+          <app-icon class="vp-option-icon" [name]="vp.icon" [size]="18" aria-hidden="true" />
+          <span class="vp-option-text">
+            <span class="vp-option-label">{{ vp.label }}</span>
+            <span class="vp-option-tagline">{{ vp.tagline }}</span>
+          </span>
+          @if (isActive(vp.id)) {
+            <app-icon class="vp-option-check" name="check" [size]="16" aria-hidden="true" />
+          }
+        </button>
+      }
+    </div>
+  }
+</div>
