@@ -13,6 +13,8 @@ import { Subscription } from 'rxjs';
 import { AttackSoftware } from '../../models/software';
 import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
+import { PanelNavService } from '../../services/panel-nav.service';
+import { GraphFocusService } from '../../services/graph-focus.service';
 
 @Component({
   selector: 'app-software-panel',
@@ -34,6 +36,8 @@ export class SoftwarePanelComponent implements OnInit, OnDestroy {
   constructor(
     private filterService: FilterService,
     private dataService: DataService,
+    private panelNav: PanelNavService,
+    private graphFocus: GraphFocusService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -71,6 +75,12 @@ export class SoftwarePanelComponent implements OnInit, OnDestroy {
 
   toggleSoftware(sw: AttackSoftware): void {
     this.filterService.toggleSoftware(sw.id);
+  }
+
+  /** Pivot to the relationship graph centered on this software. */
+  viewInGraph(sw: AttackSoftware): void {
+    this.graphFocus.focusNode('software', sw.id);
+    this.panelNav.open('technique-graph');
   }
 
   isActive(sw: AttackSoftware): boolean {

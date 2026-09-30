@@ -85,6 +85,7 @@
             <div class="row-label" [title]="bar.campaign.name + ' — ' + bar.groupName">
               <span class="row-name">{{ bar.campaign.name }}</span>
               <span class="row-group">{{ bar.groupName }}</span>
+              <button class="ctp-graph-btn" (click)="viewInGraph(bar)" title="View in relationship graph">🕸️</button>
             </div>
             <div class="row-track">
               <div
@@ -130,6 +131,7 @@
                 [title]="bar.campaign.name + ' — ' + bar.groupName + ' · ' + bar.techniqueCount + ' techniques'"
               >
                 {{ bar.campaign.name }}
+                <button class="ctp-graph-btn" (click)="$event.stopPropagation(); viewInGraph(bar)" title="View in relationship graph">🕸️</button>
               </div>
             }
           </div>

@@ -7,8 +7,8 @@
       <div class="tgp-title-row">
         <span class="tgp-icon">🕸️</span>
         <h2 class="tgp-title">
-          @if (technique) {
-            Relationship Graph — {{ technique.attackId }}: {{ technique.name }}
+          @if (focus) {
+            Relationship Graph — {{ focusTitle }}
           } @else {
             Technique Relationship Graph
           }
@@ -44,6 +44,13 @@
             </div>
           }
         </div>
+
+        <!-- Focus back-stack control -->
+        @if (focusHistory.length) {
+          <div class="tgp-focus-controls">
+            <button class="tgp-zoom-btn tgp-back-btn" (click)="goBack()" title="Back to previous focus">← Back</button>
+          </div>
+        }
 
         <!-- Zoom controls -->
         <div class="tgp-zoom-controls">
@@ -88,7 +95,7 @@
 
     <!-- Graph body -->
     <div class="tgp-body">
-      @if (!technique) {
+      @if (!focus) {
         <div class="tgp-empty">
           <div class="empty-icon">🕸️</div>
           <p>Select a technique on the matrix to visualize its relationships.</p>
@@ -96,7 +103,7 @@
       } @else if (nodes.length <= 1) {
         <div class="tgp-empty">
           <div class="empty-icon">🔍</div>
-          <p>No related data found for {{ technique.attackId }} with current display options.</p>
+          <p>No related data found for {{ focusCenterLabel }} with current display options.</p>
         </div>
       } @else {
         <svg
@@ -147,11 +154,11 @@
               class="tgp-node"
               [attr.transform]="'translate(' + node.x + ',' + node.y + ')'"
               (mousedown)="onNodeMouseDown($event, node)"
-              (click)="onNodeClick(node)"
+              (click)="onNodeClick($event, node)"
               (mouseenter)="onNodeHover(node)"
               (mouseleave)="onNodeLeave()"
-              [class.node-center]="node.kind === 'technique' && node.pinned"
-              [class.clickable]="node.kind === 'technique' || node.kind === 'subtechnique' || node.kind === 'parent' || node.kind === 'group'"
+              [class.node-center]="node.pinned"
+              [class.clickable]="node.kind !== 'cve' && node.kind !== 'd3fend' && node.kind !== 'capec'"
             >
               <!-- Node circle -->
               <circle
@@ -212,10 +219,13 @@
             <span class="tt-sub">{{ hoveredNode.sublabel }}</span>
           }
           @if (hoveredNode.kind === 'technique' || hoveredNode.kind === 'subtechnique' || hoveredNode.kind === 'parent') {
-            <span class="tt-hint">Click to select</span>
+            <span class="tt-hint">Click to center &amp; select</span>
           }
           @if (hoveredNode.kind === 'group') {
-            <span class="tt-hint">Click to filter by group</span>
+            <span class="tt-hint">Click to center · Ctrl-click to filter</span>
+          }
+          @if (hoveredNode.kind === 'software' || hoveredNode.kind === 'campaign' || hoveredNode.kind === 'mitigation') {
+            <span class="tt-hint">Click to center</span>
           }
           <span class="tt-drag">Drag to reposition</span>
         </div>

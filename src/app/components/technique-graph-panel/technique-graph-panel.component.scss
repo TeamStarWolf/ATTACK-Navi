@@ -163,6 +163,25 @@
   }
 }
 
+/* Focus back-stack control */
+.tgp-focus-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  background: var(--bg-panel-strong);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  padding: 3px 6px;
+}
+
+.tgp-back-btn {
+  width: auto;
+  padding: 0 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
 /* Zoom controls */
 .tgp-zoom-controls {
   display: flex;
