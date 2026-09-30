@@ -13,6 +13,7 @@ import { Domain } from '../../models/domain';
 import { DataService } from '../../services/data.service';
 import { ImplementationService, ImplStatus, IMPL_STATUS_LABELS } from '../../services/implementation.service';
 import { DocumentationService, MitigationDoc } from '../../services/documentation.service';
+import { ReportConfigService, ReportSection } from '../../services/report-config.service';
 
 interface TacticReport {
   name: string;
@@ -69,16 +70,30 @@ export class ReportPanelComponent implements OnInit, OnDestroy {
   statusLabels = IMPL_STATUS_LABELS;
   readonly implStatusKeys: ImplStatus[] = ['implemented', 'in-progress', 'planned', 'not-started'];
 
+  // Report Builder config (section visibility + order) — drives this on-screen
+  // preview AND the exported HTML report.
+  allSections: ReportSection[] = [];
+  configOpen = false;
+
   private subs = new Subscription();
 
   constructor(
     private dataService: DataService,
     private implService: ImplementationService,
     private docService: DocumentationService,
+    private reportConfig: ReportConfigService,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
+    // Keep the drawer + preview in sync with the saved report config.
+    this.subs.add(
+      this.reportConfig.config$.subscribe(config => {
+        this.allSections = [...config.sections].sort((a, b) => a.order - b.order);
+        this.cdr.markForCheck();
+      }),
+    );
+
     this.subs.add(
       combineLatest([
         this.dataService.domain$,
@@ -192,6 +207,42 @@ export class ReportPanelComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subs.unsubscribe();
+  }
+
+  // ─── Report Builder config ──────────────────────────────────────────────
+  toggleConfig(): void {
+    this.configOpen = !this.configOpen;
+    this.cdr.markForCheck();
+  }
+
+  toggleSection(id: string): void {
+    this.reportConfig.toggleSection(id);
+    this.cdr.markForCheck();
+  }
+
+  moveSection(id: string, direction: 'up' | 'down'): void {
+    this.reportConfig.moveSection(id, direction);
+    this.cdr.markForCheck();
+  }
+
+  resetSections(): void {
+    this.reportConfig.resetDefaults();
+    this.cdr.markForCheck();
+  }
+
+  isSectionVisible(id: string): boolean {
+    const section = this.allSections.find(s => s.id === id);
+    // Unknown ids default to visible (forward-compatible with new sections).
+    return section ? section.visible : true;
+  }
+
+  sectionOrder(id: string): number {
+    const section = this.allSections.find(s => s.id === id);
+    return section ? section.order : 0;
+  }
+
+  orderedSections(): ReportSection[] {
+    return this.allSections.filter(s => s.visible);
   }
 
   print(): void {
