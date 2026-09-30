@@ -17,8 +17,9 @@ import { DataService } from '../../services/data.service';
 import { MatrixControlService } from '../../services/matrix-control.service';
 import { AttackCveService } from '../../services/attack-cve.service';
 import { LibraryLayerService, LibraryLayerMeta } from '../../services/library-layer.service';
-import { HEATMAP_MODES, HEATMAP_GROUPS, heatmapShortLabel } from '../../models/heatmap-modes';
+import { HEATMAP_MODES, HEATMAP_GROUPS, HeatmapModeDef, heatmapShortLabel } from '../../models/heatmap-modes';
 import { PLATFORM_PILLS } from '../../components/toolbar/toolbar.component';
+import { Viewpoint, ViewpointService } from '../../services/viewpoint.service';
 
 /**
  * Matrix-scoped controls row: technique + mitigation search, platform /
@@ -70,6 +71,8 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
 
   // View menu
   showViewMenu = false;
+  /** Active viewpoint — drives the pinned "featured lenses" group in the menu. */
+  currentViewpoint: Viewpoint | null = null;
   heatmapMode: import('../../services/filter.service').HeatmapMode = 'unified';
   libraryLayers: LibraryLayerMeta[] = [];
   activeLibraryFile: string | null = null;
@@ -86,6 +89,7 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
     private matrixControl: MatrixControlService,
     private attackCveService: AttackCveService,
     private libraryLayerService: LibraryLayerService,
+    private viewpointService: ViewpointService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -120,6 +124,7 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
     this.subs.add(this.filterService.dimUncovered$.subscribe((v) => { this.dimUncovered = v; this.cdr.markForCheck(); }));
     this.subs.add(this.filterService.activeThreatGroupIds$.subscribe((ids) => { this.activeThreatGroupCount = ids.size; this.cdr.markForCheck(); }));
     this.subs.add(this.matrixControl.multiSelectMode$.subscribe((v) => { this.multiSelectMode = v; this.cdr.markForCheck(); }));
+    this.subs.add(this.viewpointService.viewpoint$.subscribe((vp) => { this.currentViewpoint = vp; this.cdr.markForCheck(); }));
   }
 
   ngOnDestroy(): void { this.subs.unsubscribe(); }
@@ -128,6 +133,20 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
 
   modesForGroup(group: string) {
     return this.heatmapModes.filter(m => m.group === group);
+  }
+
+  /** True when a non-neutral viewpoint is active (analyst = today's default). */
+  get hasFeaturedLenses(): boolean {
+    return !!this.currentViewpoint && this.currentViewpoint.id !== 'analyst';
+  }
+
+  /** The active viewpoint's featured lenses as full mode defs, in order. */
+  get featuredModeDefs(): HeatmapModeDef[] {
+    const vp = this.currentViewpoint;
+    if (!vp) return [];
+    return vp.featuredLenses
+      .map((v) => this.heatmapModes.find((m) => m.value === v))
+      .filter((m): m is HeatmapModeDef => !!m);
   }
 
   // ── Technique search ────────────────────────────────────────
