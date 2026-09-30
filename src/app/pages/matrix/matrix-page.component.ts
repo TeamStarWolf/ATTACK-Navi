@@ -22,8 +22,6 @@ import { MatrixControlsComponent } from './matrix-controls.component';
 import { LegendComponent } from '../../components/legend/legend.component';
 import { QuickFiltersComponent } from '../../components/quick-filters/quick-filters.component';
 import { FilterChipsComponent } from '../../components/filter-chips/filter-chips.component';
-import { StatsBarComponent } from '../../components/stats-bar/stats-bar.component';
-import { DataHealthComponent } from '../../components/data-health/data-health.component';
 import {
   TacticSummaryComponent,
   TacticSummaryData,
@@ -31,8 +29,9 @@ import {
 
 /**
  * The matrix home page: ATT&CK grid plus its context chrome (legend, quick
- * filters, filter chips, stats, data health), the tactic-summary popover, and
- * the multi-select bulk-action bar. Extracted from the pre-router AppComponent.
+ * filters, filter chips), the tactic-summary popover, and the multi-select
+ * bulk-action bar. Coverage stats and data-source health live on the Status
+ * workspace (/status). Extracted from the pre-router AppComponent.
  * Routed with data.reuse=true — the component is detached, not destroyed, when
  * navigating to another workspace.
  */
@@ -47,8 +46,6 @@ import {
     LegendComponent,
     QuickFiltersComponent,
     FilterChipsComponent,
-    StatsBarComponent,
-    DataHealthComponent,
     TacticSummaryComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -113,16 +110,6 @@ export class MatrixPageComponent implements OnInit {
       domain: this.domain,
     };
     this.tacticSummary?.show(data, event.event);
-  }
-
-  scrollToTactic(shortname: string): void {
-    const headers = document.querySelectorAll('.tactic-header');
-    for (const h of Array.from(headers)) {
-      if (h.textContent?.toLowerCase().includes(shortname.toLowerCase().replace(/-/g, ' '))) {
-        h.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
-        break;
-      }
-    }
   }
 
   focusTechniqueSearch(): void {

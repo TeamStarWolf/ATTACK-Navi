@@ -38,6 +38,7 @@ const WORKSPACES: WorkspaceNavItem[] = [
   { route: '/coverage', icon: 'shield-check', label: 'Coverage' },
   { route: '/library', icon: 'layers', label: 'Library' },
   { route: '/reports', icon: 'file-text', label: 'Reports' },
+  { route: '/status', icon: 'monitor', label: 'Status' },
 ];
 
 @Component({
