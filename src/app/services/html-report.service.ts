@@ -334,9 +334,14 @@ export class HtmlReportService {
 </div>
 
 <div class="container">
-
-  <!-- ── 1. EXECUTIVE SUMMARY ──────────────────────────────────────────────── -->
-  ${isVisible('exec-summary') ? `
+${(() => {
+  // Build each section's HTML keyed by id, then emit only the VISIBLE ones in
+  // the config's order — so the exported report honors the Report Builder's
+  // reorder, matching the on-screen preview and Print/Save-PDF (which reorder
+  // via CSS `order`). Data-gated sections (impl-status, recommended-mits)
+  // collapse to '' when there is no implementation data.
+  const sectionHtml: Record<string, string> = {
+    'exec-summary': `
   <div class="section">
     <div class="section-title">Executive Summary</div>
     <div class="coverage-ring-wrap" style="margin-bottom:24px">
@@ -373,26 +378,20 @@ export class HtmlReportService {
         <div class="stat-label">Total Mitigations</div>
       </div>
     </div>
-  </div>` : ''}
-
-  <!-- ── 2. COVERAGE BY TACTIC ─────────────────────────────────────────────── -->
-  ${isVisible('coverage-by-tactic') ? `
+  </div>`,
+    'coverage-by-tactic': `
   <div class="section">
     <div class="section-title">Coverage by Tactic</div>
     <div class="section-subtitle">Sorted by coverage percentage (highest first). Shows parent techniques only.</div>
     ${tacticRows}
-  </div>` : ''}
-
-  ${hasImplData && isVisible('impl-status') ? `
-  <!-- ── 3. IMPLEMENTATION STATUS SUMMARY ──────────────────────────────────── -->
+  </div>`,
+    'impl-status': hasImplData ? `
   <div class="section">
     <div class="section-title">Implementation Status Summary</div>
     <div class="section-subtitle">Breakdown of ${totalTracked} tracked mitigations by implementation status.</div>
     ${implSummaryCards}
-  </div>` : ''}
-
-  <!-- ── 4. TOP 10 COVERAGE GAPS ────────────────────────────────────────────── -->
-  ${isVisible('exposure-gaps') ? `
+  </div>` : '',
+    'exposure-gaps': `
   <div class="section">
     <div class="section-title">Top 10 Coverage Gaps</div>
     <div class="section-subtitle">Techniques with zero mitigations mapped, prioritized by threat group adoption.</div>
@@ -408,10 +407,8 @@ export class HtmlReportService {
       </thead>
       <tbody>${gapRows}</tbody>
     </table>` : '<p style="color:#718096;font-size:14px;margin:0">No coverage gaps — all techniques have at least one mitigation mapped.</p>'}
-  </div>` : ''}
-
-  <!-- ── 5. TOP 10 BEST COVERED TECHNIQUES ────────────────────────────────── -->
-  ${isVisible('control-docs') ? `
+  </div>`,
+    'control-docs': `
   <div class="section">
     <div class="section-title">Top 10 Best Covered Techniques</div>
     <div class="section-subtitle">Techniques with the most mitigations mapped, sorted by mitigation count.</div>
@@ -426,10 +423,8 @@ export class HtmlReportService {
       </thead>
       <tbody>${bestRows}</tbody>
     </table>
-  </div>` : ''}
-
-  ${hasImplData && isVisible('recommended-mits') ? `
-  <!-- ── 6. MITIGATION IMPLEMENTATION PROGRESS ─────────────────────────────── -->
+  </div>`,
+    'recommended-mits': hasImplData ? `
   <div class="section">
     <div class="section-title">Mitigation Implementation Progress</div>
     <div class="section-subtitle">All tracked mitigations grouped by implementation status. Sorted by technique coverage count.</div>
@@ -444,8 +439,14 @@ export class HtmlReportService {
       </thead>
       <tbody>${mitTableRows}</tbody>
     </table>
-  </div>` : ''}
-
+  </div>` : '',
+  };
+  return [...config.sections]
+    .filter((s) => s.visible && sectionHtml[s.id])
+    .sort((a, b) => a.order - b.order)
+    .map((s) => sectionHtml[s.id])
+    .join('\n');
+})()}
 </div>
 
 <!-- ── FOOTER ─────────────────────────────────────────────────────────────── -->
