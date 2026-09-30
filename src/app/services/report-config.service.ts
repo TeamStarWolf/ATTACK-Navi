@@ -16,8 +16,12 @@ export interface ReportConfig {
 
 const STORAGE_KEY = 'mitre-nav-report-config-v1';
 
-// Section ids EXACTLY match the six <section>s the Report Builder renders
-// (report-panel.component.html) and the six sections the HTML exporter emits.
+// Section ids match the six <section>s the Report Builder renders
+// (report-panel.component.html). The HTML exporter gates + orders its own six
+// sections by these ids too, though two map to differently-titled export
+// sections (control-docs → "Top 10 Best Covered Techniques", recommended-mits →
+// "Mitigation Implementation Progress") — an approximate mapping documented on
+// the PR; exec-summary / coverage-by-tactic / impl-status / exposure-gaps align.
 const DEFAULT_SECTIONS: ReportSection[] = [
   { id: 'exec-summary',       label: 'Executive Summary',               visible: true, order: 0 },
   { id: 'impl-status',        label: 'Implementation Status Breakdown', visible: true, order: 1 },
