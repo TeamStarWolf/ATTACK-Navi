@@ -9,13 +9,19 @@
     </div>
 
     <div class="popup-body">
-      <!-- Coverage bar -->
+      <!-- Coverage bar (cross-framework enrichment) -->
       <div class="stat-row">
         <span class="stat-label">Coverage</span>
         <span class="stat-value">{{ coverageStats.covered }} / {{ coverageStats.total }} ({{ coverageStats.pct }}%)</span>
       </div>
       <div class="coverage-bar">
         <div class="coverage-fill" [style.width.%]="coverageStats.pct"></div>
+      </div>
+
+      <!-- Mitigation-only coverage, shown explicitly as one framework -->
+      <div class="stat-row">
+        <span class="stat-label">Mitigations</span>
+        <span class="stat-value">{{ mitigationStats.covered }} / {{ mitigationStats.total }} ({{ mitigationStats.pct }}%)</span>
       </div>
 
       <!-- Technique count -->
@@ -42,7 +48,7 @@
         </div>
       }
 
-      <!-- Top 3 most covered techniques -->
+      <!-- Top 3 most-enriched techniques (breadth of framework signals) -->
       @if (topCovered.length > 0) {
         <div class="top-techniques">
           <div class="section-label">Best Covered</div>
@@ -50,7 +56,7 @@
             <div class="tech-row">
               <span class="tech-id">{{ t.attackId }}</span>
               <span class="tech-name">{{ t.name }}</span>
-              <span class="mit-count">{{ t.mitigationCount }}M</span>
+              <span class="mit-count" [title]="t.signalCount + ' framework signals · ' + t.mitigationCount + ' mitigations'">{{ t.signalCount }}× · {{ t.mitigationCount }}M</span>
             </div>
           }
         </div>
@@ -59,7 +65,7 @@
       <!-- Uncovered count -->
       @if (uncoveredCount > 0) {
         <div class="uncovered-warning">
-          &#x26A0;&#xFE0F; {{ uncoveredCount }} technique{{ uncoveredCount !== 1 ? 's' : '' }} with no mitigations
+          &#x26A0;&#xFE0F; {{ uncoveredCount }} technique{{ uncoveredCount !== 1 ? 's' : '' }} with no enrichment
         </div>
       }
     </div>

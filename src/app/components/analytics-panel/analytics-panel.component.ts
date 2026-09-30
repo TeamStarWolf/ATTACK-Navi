@@ -16,6 +16,7 @@ import { ImplementationService } from '../../services/implementation.service';
 import { CveService } from '../../services/cve.service';
 import { SigmaService } from '../../services/sigma.service';
 import { NistMappingService } from '../../services/nist-mapping.service';
+import { EnrichmentService } from '../../services/enrichment.service';
 import { Domain } from '../../models/domain';
 
 interface TacticStat {
@@ -59,9 +60,11 @@ export class AnalyticsPanelComponent implements OnInit, OnDestroy {
   implSummary: Record<string, number> = {};
   topGaps: TopGap[] = [];
   topMitigations: TopMitigation[] = [];
-  coveragePct = 0;
+  coveragePct = 0;         // enrichment coverage (≥1 cross-framework signal)
   totalTechs = 0;
-  coveredTechs = 0;
+  coveredTechs = 0;        // enriched techniques
+  mitigatedTechs = 0;      // techniques with ≥1 mitigation (one framework)
+  mitigationPct = 0;
   kevExposureCount = 0;
   kevScores: Map<string, number> = new Map();
   sigmaTotal = 0;
@@ -79,6 +82,7 @@ export class AnalyticsPanelComponent implements OnInit, OnDestroy {
     private cveService: CveService,
     private sigmaService: SigmaService,
     private nistMappingService: NistMappingService,
+    private enrichment: EnrichmentService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -117,9 +121,14 @@ export class AnalyticsPanelComponent implements OnInit, OnDestroy {
     // Only parent techniques (not sub-techniques)
     const parentTechs = this.domain.techniques.filter(t => !t.isSubtechnique);
     this.totalTechs = parentTechs.length;
-    this.coveredTechs = parentTechs.filter(t => t.mitigationCount > 0).length;
+    // "Coverage" = cross-framework enrichment; mitigation is tracked separately.
+    this.coveredTechs = parentTechs.filter(t => this.enrichment.isEnriched(t, this.domain)).length;
     this.coveragePct = this.totalTechs > 0
       ? Math.round(100 * this.coveredTechs / this.totalTechs)
+      : 0;
+    this.mitigatedTechs = parentTechs.filter(t => t.mitigationCount > 0).length;
+    this.mitigationPct = this.totalTechs > 0
+      ? Math.round(100 * this.mitigatedTechs / this.totalTechs)
       : 0;
 
     // Sigma coverage
@@ -143,10 +152,10 @@ export class AnalyticsPanelComponent implements OnInit, OnDestroy {
     // Impl summary
     this.implSummary = this.implService.summarize();
 
-    // Tactic stats
+    // Tactic stats — coverage (and the posture radar it feeds) is enrichment-based.
     this.tacticStats = this.domain.tacticColumns.map(col => {
       const total = col.techniques.length;
-      const covered = col.techniques.filter(t => t.mitigationCount > 0).length;
+      const covered = col.techniques.filter(t => this.enrichment.isEnriched(t, this.domain)).length;
       const avgRisk = col.techniques.reduce((sum, t) => {
         const g = (this.domain!.groupsByTechnique.get(t.id) ?? []).length;
         return sum + g * (1 + 1 / (t.mitigationCount + 1));

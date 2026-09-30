@@ -4,21 +4,21 @@
   <div class="stat-group primary">
     <div class="big-stat">
       <span class="big-num">{{ coveragePct }}%</span>
-      <span class="big-label">Theoretical</span>
+      <span class="big-label">Coverage</span>
     </div>
     <div class="coverage-bar-wrap">
-      <div class="coverage-bar" title="{{ coveredTechniques }}/{{ totalTechniques }} have ≥1 mitigation">
+      <div class="coverage-bar" title="{{ coveredTechniques }}/{{ totalTechniques }} techniques enriched across ≥1 framework">
         <div class="coverage-fill" [style.width.%]="coveragePct"></div>
       </div>
       @if (implementedCount > 0) {
-        <div class="coverage-bar impl-bar" [title]="implementedCount + '/' + totalTechniques + ' covered by implemented mitigations'">
+        <div class="coverage-bar impl-bar" [title]="implementedCount + '/' + totalTechniques + ' techniques covered by implemented mitigations'">
           <div class="coverage-fill impl-fill" [style.width.%]="implementedPct"></div>
         </div>
       }
       <span class="coverage-sub">
-        {{ coveredTechniques }}/{{ totalTechniques }} mapped
+        {{ coveredTechniques }}/{{ totalTechniques }} enriched
         @if (implementedCount > 0) {
-          · <span class="impl-sub">{{ implementedCount }} implemented</span>
+          · <span class="impl-sub">{{ implementedCount }} mitigations implemented</span>
         }
       </span>
     </div>
