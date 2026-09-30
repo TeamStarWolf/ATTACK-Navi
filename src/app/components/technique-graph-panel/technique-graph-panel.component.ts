@@ -658,7 +658,12 @@ export class TechniqueGraphPanelComponent implements OnInit, OnDestroy {
 
   /** Short identifier for the currently focused center (empty-state message). */
   get focusCenterLabel(): string {
-    return this.technique?.attackId ?? this.nodes.find(n => n.pinned)?.label ?? '';
+    // Guard like focusTitle: when focused on a non-technique entity, name the
+    // pinned center, not the stale last-selected technique.
+    if (this.technique && this.isTechniqueFocus(this.focus)) {
+      return this.technique.attackId;
+    }
+    return this.nodes.find(n => n.pinned)?.label ?? '';
   }
 
   rebuildWithOptions(): void { if (this.focus) this.buildFor(this.focus); }
