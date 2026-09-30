@@ -336,6 +336,95 @@
                 </label>
               </div>
             </div>
+
+            <div class="form-group">
+              <div class="form-label">Cell Display</div>
+              <div class="checkbox-list">
+                <label class="checkbox-item">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="settings.cellDisplay.exposureBadge"
+                    (ngModelChange)="onDisplayChange()"
+                  />
+                  <div class="checkbox-info">
+                    <span class="checkbox-label">Show exposure (groups) badge</span>
+                    <span class="checkbox-desc">👥 count of threat actor groups using each technique</span>
+                  </div>
+                </label>
+
+                <label class="checkbox-item">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="settings.cellDisplay.softwareBadge"
+                    (ngModelChange)="onDisplayChange()"
+                  />
+                  <div class="checkbox-info">
+                    <span class="checkbox-label">Show software badge</span>
+                    <span class="checkbox-desc">🛠 count of software/malware using each technique</span>
+                  </div>
+                </label>
+
+                <label class="checkbox-item">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="settings.cellDisplay.campaignBadge"
+                    (ngModelChange)="onDisplayChange()"
+                  />
+                  <div class="checkbox-info">
+                    <span class="checkbox-label">Show campaign badge</span>
+                    <span class="checkbox-desc">🎯 count of campaigns using each technique</span>
+                  </div>
+                </label>
+
+                <label class="checkbox-item">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="settings.cellDisplay.metricBadge"
+                    (ngModelChange)="onDisplayChange()"
+                  />
+                  <div class="checkbox-info">
+                    <span class="checkbox-label">Show heatmap metric badge</span>
+                    <span class="checkbox-desc">Mode-specific count shown only in its heatmap (D3FEND 🛡, Atomic ⚛, CRI 🏦)</span>
+                  </div>
+                </label>
+
+                <label class="checkbox-item">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="settings.cellDisplay.noteDot"
+                    (ngModelChange)="onDisplayChange()"
+                  />
+                  <div class="checkbox-info">
+                    <span class="checkbox-label">Show analyst note marker</span>
+                    <span class="checkbox-desc">📝 indicator when a technique has analyst notes</span>
+                  </div>
+                </label>
+
+                <label class="checkbox-item">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="settings.cellDisplay.annotationDot"
+                    (ngModelChange)="onDisplayChange()"
+                  />
+                  <div class="checkbox-info">
+                    <span class="checkbox-label">Show annotation dot</span>
+                    <span class="checkbox-desc">Colored dot when a technique is annotated</span>
+                  </div>
+                </label>
+
+                <label class="checkbox-item">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="settings.cellDisplay.watchIndicator"
+                    (ngModelChange)="onDisplayChange()"
+                  />
+                  <div class="checkbox-info">
+                    <span class="checkbox-label">Show watchlist marker</span>
+                    <span class="checkbox-desc">🔖 indicator when a technique is on the watchlist</span>
+                  </div>
+                </label>
+              </div>
+            </div>
           </div>
         }
 
