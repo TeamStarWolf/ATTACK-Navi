@@ -37,12 +37,13 @@ export class QuickFiltersComponent implements OnInit, OnDestroy {
   activePreset: string | null = null;
 
   readonly presets: FilterPreset[] = [
+    // Threat / vulnerability / detection lenses lead.
     {
-      id: 'no-mitigation',
-      label: 'No Mitigation',
-      icon: '🚨',
-      description: 'Highlight techniques with zero mitigations mapped',
-      heatmapMode: 'coverage',
+      id: 'apt-focus',
+      label: 'APT Focus',
+      icon: '👥',
+      description: 'Highlight techniques used by the most threat actors',
+      heatmapMode: 'exposure',
     },
     {
       id: 'kev-exposed',
@@ -52,18 +53,11 @@ export class QuickFiltersComponent implements OnInit, OnDestroy {
       heatmapMode: 'kev',
     },
     {
-      id: 'not-implemented',
-      label: 'Not Implemented',
-      icon: '❌',
-      description: 'Show techniques whose mitigations are not started',
-      heatmapMode: 'status',
-    },
-    {
-      id: 'apt-focus',
-      label: 'APT Focus',
-      icon: '👥',
-      description: 'Highlight techniques used by the most threat actors',
-      heatmapMode: 'exposure',
+      id: 'cve-exposure',
+      label: 'CVE Exposure',
+      icon: '💀',
+      description: 'Highlight techniques with known CVE exploitation paths',
+      heatmapMode: 'cve',
     },
     {
       id: 'no-detection',
@@ -72,12 +66,20 @@ export class QuickFiltersComponent implements OnInit, OnDestroy {
       description: 'Show techniques with no CAR/Atomic/D3FEND detection coverage',
       heatmapMode: 'detection',
     },
+    // Mitigation-gap lenses come last.
     {
-      id: 'cve-exposure',
-      label: 'CVE Exposure',
-      icon: '💀',
-      description: 'Highlight techniques with known CVE exploitation paths',
-      heatmapMode: 'cve',
+      id: 'no-mitigation',
+      label: 'No Countermeasure',
+      icon: '🚨',
+      description: 'Highlight techniques with zero mitigations mapped',
+      heatmapMode: 'coverage',
+    },
+    {
+      id: 'not-implemented',
+      label: 'Not Implemented',
+      icon: '❌',
+      description: 'Show techniques whose mitigations are not started',
+      heatmapMode: 'status',
     },
   ];
 
@@ -148,7 +150,7 @@ export class QuickFiltersComponent implements OnInit, OnDestroy {
 
   clearPreset(): void {
     this.activePreset = null;
-    this.filterService.setHeatmapMode('coverage');
+    this.filterService.setHeatmapMode('unified');
     this.filterService.setImplStatusFilter(null);
     this.cdr.markForCheck();
   }
