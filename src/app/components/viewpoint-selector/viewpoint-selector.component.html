@@ -27,6 +27,7 @@
       role="menu"
       aria-label="Viewpoints"
       (keydown)="onMenuKeydown($event)"
+      (focusout)="onMenuFocusOut($event)"
     >
       <div class="vp-menu-header" aria-hidden="true">Viewpoint</div>
       @for (vp of viewpoints; track vp.id) {
@@ -37,6 +38,7 @@
           [class.active]="isActive(vp.id)"
           role="menuitemradio"
           [attr.aria-checked]="isActive(vp.id)"
+          [attr.tabindex]="isActive(vp.id) ? 0 : -1"
           (click)="select(vp.id)"
         >
           <app-icon class="vp-option-icon" [name]="vp.icon" [size]="18" aria-hidden="true" />

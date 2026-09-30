@@ -106,6 +106,18 @@ export class ViewpointSelectorComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Close the menu when focus leaves it entirely (Tab / Shift+Tab out of the
+   * popover), so it never floats open behind the page — matches the ARIA menu
+   * pattern. Focus moving to the trigger (still inside the host) keeps it open.
+   */
+  onMenuFocusOut(event: FocusEvent): void {
+    const next = event.relatedTarget as Node | null;
+    if (this.open && (!next || !this.host.nativeElement.contains(next))) {
+      this.close();
+    }
+  }
+
   @HostListener('document:keydown.escape')
   onEscape(): void {
     this.close(true);
