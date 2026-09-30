@@ -160,6 +160,9 @@
     z-index: var(--z-rail);
     border-right: none;
     border-top: 1px solid var(--border-subtle);
+    /* Let the viewpoint popover (which opens upward on mobile) escape the
+       56px bar instead of being clipped by the base :host overflow:hidden. */
+    overflow: visible;
   }
 
   .nav-rail-inner {
