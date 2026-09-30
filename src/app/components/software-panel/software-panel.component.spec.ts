@@ -5,6 +5,7 @@ import { BehaviorSubject } from 'rxjs';
 import { SoftwarePanelComponent } from './software-panel.component';
 import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
+import { PanelNavService } from '../../services/panel-nav.service';
 
 describe('SoftwarePanelComponent', () => {
   let component: SoftwarePanelComponent;
@@ -20,6 +21,7 @@ describe('SoftwarePanelComponent', () => {
             setActivePanel: jasmine.createSpy('setActivePanel'),
         }},
         { provide: DataService, useValue: { domain$: new BehaviorSubject(null) }},
+        { provide: PanelNavService, useValue: { open: jasmine.createSpy('open') }},
       ],
     });
     fixture = TestBed.createComponent(SoftwarePanelComponent);

@@ -7,6 +7,7 @@ import { Subscription } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
 import { PanelNavService } from '../../services/panel-nav.service';
 import { DataService } from '../../services/data.service';
+import { GraphFocusService } from '../../services/graph-focus.service';
 import { ImplementationService } from '../../services/implementation.service';
 import { ThreatGroup } from '../../models/group';
 import { AttackSoftware } from '../../models/software';
@@ -48,6 +49,7 @@ export class ActorProfilePanelComponent implements OnInit, OnDestroy {
     private filterService: FilterService,
     private panelNav: PanelNavService,
     private dataService: DataService,
+    private graphFocus: GraphFocusService,
     private implService: ImplementationService,
     private cdr: ChangeDetectorRef,
   ) {}
@@ -121,6 +123,12 @@ export class ActorProfilePanelComponent implements OnInit, OnDestroy {
     this.filterService.toggleThreatGroup(group.id);
     // Show the applied group filter on the matrix.
     this.panelNav.open('matrix');
+  }
+
+  /** Pivot to the relationship graph centered on this group. */
+  viewInGraph(group: ThreatGroup): void {
+    this.graphFocus.focusNode('group', group.id);
+    this.panelNav.open('technique-graph');
   }
 
   selectTechnique(tech: Technique): void {
