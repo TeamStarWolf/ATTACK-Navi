@@ -39,7 +39,7 @@ export interface AppSettings {
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  scoringWeights: { mitigations: 40, car: 20, atomic: 15, d3fend: 15, nist: 10 },
+  scoringWeights: { mitigations: 20, car: 20, atomic: 20, d3fend: 20, nist: 20 },
   matrixCellSize: 'normal',
   showTechniqueIds: true,
   showMitigationCount: true,
