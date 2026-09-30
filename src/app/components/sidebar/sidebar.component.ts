@@ -390,7 +390,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
   computeCompleteness(): void {
     if (!this.technique) { this.completenessScore = 0; return; }
     let score = 0;
-    if (this.mitigations.length > 0 || this.parentMitigations.length > 0) score += 15;
+    if (this.mitigations.length > 0 || this.parentMitigations.length > 0) score += 10;
+    if (this.procedures?.length) score += 10;
+    if (this.technique?.detectionText) score += 10;
     if (this.cveExposures.length > 0) score += 10;
     if (this.nistControls.length > 0) score += 10;
     if (this.d3fendMeasures.length > 0) score += 10;
@@ -588,7 +590,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
     // Start dense: everything collapsed except the core technique profile.
     // The jump index and the expand-relevant button open the rest on demand.
     this.collapseAll();
-    for (const core of ['annotation', 'subtechniques', 'detection', 'datasources', 'mitigations']) {
+    // Lead with ATT&CK-core enrichment; mitigations is one framework among many,
+    // no longer singled out as the only open enrichment section.
+    for (const core of ['annotation', 'subtechniques', 'detection', 'datasources', 'procedures']) {
       this.collapsedSections.delete(core);
     }
 
@@ -687,8 +691,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
         this.mitSearchText = '';
         this.collapsedSections.add('relgraph');
         this._relGraphData = null;
-        this.collapsedSections.add('detection');
-        this.collapsedSections.add('procedures');
+        // Keep ATT&CK-core (detection, procedures) open across selections;
+        // collapse mitigations by default like the other framework sections.
+        this.collapsedSections.add('mitigations');
         this.collapsedSections.add('subtechniques');
         this.descExpanded = false;
         this.procedureLimit = 5;
