@@ -1,11 +1,11 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-<section class="page-panel page-panel--full dashboard-overlay" aria-label="Security Posture Dashboard">
+<section class="page-panel page-panel--full dashboard-overlay" aria-label="Threat-Informed Defense Dashboard">
 
     <!-- Header -->
     <div class="dashboard-header">
       <div class="header-left">
-        <span class="header-title">Security Posture Dashboard</span>
+        <span class="header-title">Threat-Informed Defense Dashboard</span>
         <span class="header-date upgrade-mono">{{ currentDate }}</span>
         @if (stats) {
           <span class="risk-badge upgrade-mono" [style.color]="riskLevelColor" [style.border-color]="riskLevelColor">
@@ -54,7 +54,7 @@
     @if (loading || !stats) {
       <div class="loading-state">
         <div class="loader-spinner"></div>
-        <p>Computing security posture metrics...</p>
+        <p>Computing dashboard metrics...</p>
       </div>
     } @else {
 
