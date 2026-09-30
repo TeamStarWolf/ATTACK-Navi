@@ -56,35 +56,8 @@
     }
   </div>
 
-  <!-- Mitigation filter -->
-  <div class="search-wrap">
-    <div class="search-field" [class.active]="activeMitigations.length > 0">
-      <span class="search-icon">🔍</span>
-      <input
-        type="text"
-        [placeholder]="activeMitigations.length > 0 ? 'Add mitigation…' : 'Filter by mitigation…'"
-        [(ngModel)]="mitigationSearchText"
-        (input)="onMitigationSearchInput()"
-        (blur)="closeDropdown()"
-        (focus)="onMitigationSearchInput()"
-        class="search-input"
-        autocomplete="off"
-      />
-      @if (mitigationSearchText) {
-        <button class="clear-btn" (click)="mitigationSearchText=''; onMitigationSearchInput()" title="Clear">✕</button>
-      }
-    </div>
-    @if (showDropdown) {
-      <ul class="dropdown">
-        @for (m of filteredMitigations; track m.id) {
-          <li class="dropdown-item" (mousedown)="selectMitigation(m)">
-            <span class="drop-id">{{ m.attackId }}</span>
-            <span class="drop-name">{{ m.name }}</span>
-          </li>
-        }
-      </ul>
-    }
-  </div>
+  <!-- Mitigation filter removed from the matrix homepage (kept the app ATT&CK/framework-centric,
+       not mitigation-centric). Mitigation-based filtering still lives in the Coverage workspace. -->
 
   <div class="controls-divider"></div>
 
