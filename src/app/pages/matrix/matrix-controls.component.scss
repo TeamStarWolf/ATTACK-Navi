@@ -263,6 +263,44 @@
   &.active { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
 }
 
+/* ── Featured lenses (pinned per viewpoint) ── */
+.featured-lenses {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.featured-header {
+  color: var(--accent);
+}
+
+.featured-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 4px;
+}
+
+.featured-lens-btn {
+  padding: 6px 8px;
+  background: color-mix(in srgb, var(--accent) 6%, var(--bg-soft));
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &:hover { color: var(--text-primary); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+  &.active {
+    color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+  }
+}
+
 /* ── Platform pill row ── */
 .platform-filter-row {
   display: flex;
