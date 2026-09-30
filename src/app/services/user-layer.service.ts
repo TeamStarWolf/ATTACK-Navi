@@ -238,9 +238,11 @@ export class UserLayerService {
     return this.activeIndex.get(attackId) ?? null;
   }
 
-  /** Per-technique score for the `library` heatmap mode (0 when absent/unscored). */
+  /** Per-technique score for the `library` heatmap mode (0 when absent, disabled, or unscored). */
   getScore(attackId: string): number {
-    return this.activeIndex.get(attackId)?.score ?? 0;
+    const entry = this.activeIndex.get(attackId);
+    if (!entry || !entry.enabled) return 0;
+    return entry.score ?? 0;
   }
 
   /** Largest score in the active layer (for relative coloring). */
@@ -263,6 +265,17 @@ export class UserLayerService {
     }
     if (entry.score === null) return null;
     return this.interpolateGradient(entry.score, layer.gradient);
+  }
+
+  /**
+   * Validate an untrusted per-technique color string from an imported layer and
+   * return a safe hex value (or '' when absent/invalid) — never the raw string.
+   * Used by the sidebar swatch so a hostile layer cannot inject CSS (e.g. a
+   * `url()` tracking beacon) through a style binding. Mirrors the guard in
+   * getGradientColor().
+   */
+  safeColor(value: string | null | undefined): string {
+    return value && tinycolor(value).isValid() ? tinycolor(value).toHexString() : '';
   }
 
   /** Linear interpolation of a score across the gradient's color stops. */
@@ -290,7 +303,7 @@ export class UserLayerService {
   /** Applies an in-memory layer object as active (no persistence read). */
   applyActive(layer: AttackNaviLayer): void {
     this.activeIndex = new Map(layer.techniques.map(t => [t.techniqueID, t]));
-    const scores = layer.techniques.map(t => t.score ?? 0);
+    const scores = layer.techniques.filter(t => t.enabled).map(t => t.score ?? 0);
     this.activeMaxScore = scores.length ? Math.max(1, ...scores) : 1;
     this.activeLayerSubject.next(layer);
     this.changedSubject.next(true);
@@ -318,9 +331,10 @@ export class UserLayerService {
     const db = await this.openIDB();
     await new Promise<void>((res, rej) => {
       const tx = db.transaction(IDB_STORE, 'readwrite');
-      const req = tx.objectStore(IDB_STORE).put(layer);
-      req.onsuccess = () => res();
-      req.onerror = () => rej(req.error);
+      tx.objectStore(IDB_STORE).put(layer);
+      tx.oncomplete = () => res();
+      tx.onerror = () => rej(tx.error);
+      tx.onabort = () => rej(tx.error);
     });
     await this.refreshList();
   }
@@ -343,9 +357,10 @@ export class UserLayerService {
     const db = await this.openIDB();
     await new Promise<void>((res, rej) => {
       const tx = db.transaction(IDB_STORE, 'readwrite');
-      const req = tx.objectStore(IDB_STORE).delete(id);
-      req.onsuccess = () => res();
-      req.onerror = () => rej(req.error);
+      tx.objectStore(IDB_STORE).delete(id);
+      tx.oncomplete = () => res();
+      tx.onerror = () => rej(tx.error);
+      tx.onabort = () => rej(tx.error);
     });
     if (this.activeLayer?.id === id) this.clearActive();
     await this.refreshList();

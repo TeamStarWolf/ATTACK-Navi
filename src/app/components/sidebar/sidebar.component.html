@@ -282,7 +282,7 @@
                   }
                   @if (userLayerEntry.color) {
                     <span class="il-badge il-color" title="Layer cell color">
-                      <span class="il-swatch" [style.background]="userLayerEntry.color"></span>{{ userLayerEntry.color }}
+                      <span class="il-swatch" [style.background]="swatchColor(userLayerEntry.color)"></span>{{ userLayerEntry.color }}
                     </span>
                   }
                   @if (!userLayerEntry.enabled) {

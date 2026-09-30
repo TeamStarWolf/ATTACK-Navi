@@ -121,4 +121,34 @@ describe('UserLayerService', () => {
     expect(service.getScore('T1059')).toBe(75);
     expect(service.maxScore()).toBe(75);
   });
+
+  it('does not score disabled techniques and excludes them from the max', () => {
+    const json = JSON.stringify({
+      domain: 'enterprise-attack',
+      gradient: { colors: ['#ff0000', '#00ff00'], minValue: 0, maxValue: 100 },
+      techniques: [
+        { techniqueID: 'T1059', score: 40, enabled: true },
+        { techniqueID: 'T1071', score: 90, enabled: false }, // disabled but carries a score
+      ],
+    });
+    const { layer } = service.convert(json);
+    service.applyActive(layer);
+    // A disabled-but-scored technique contributes no heatmap score or color…
+    expect(service.getScore('T1071')).toBe(0);
+    expect(service.getGradientColor('T1071')).toBeNull();
+    // …and does not inflate the relative-coloring max.
+    expect(service.maxScore()).toBe(40);
+    // The enabled technique is unaffected.
+    expect(service.getScore('T1059')).toBe(40);
+  });
+
+  it('safeColor validates untrusted layer colors and rejects CSS injection', () => {
+    expect(service.safeColor('#3572b0')).toBe('#3572b0');
+    expect(service.safeColor('red')).toBe('#ff0000');
+    // A hostile "color" that is really a CSS url() beacon is dropped, not passed through.
+    expect(service.safeColor('url(https://attacker.example/beacon.png)')).toBe('');
+    expect(service.safeColor('notacolor')).toBe('');
+    expect(service.safeColor('')).toBe('');
+    expect(service.safeColor(null)).toBe('');
+  });
 });

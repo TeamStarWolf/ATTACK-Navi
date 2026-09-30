@@ -514,6 +514,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
   /** Active user-imported layer, and its entry for the selected technique. */
   activeUserLayer: AttackNaviLayer | null = null;
   userLayerEntry: UserLayerTechnique | null = null;
+
+  /** Safe CSS background for the imported-layer swatch: validates the untrusted
+   *  per-technique color so a hostile layer can't inject CSS via the style bind. */
+  swatchColor(value: string | null | undefined): string {
+    return this.userLayerService.safeColor(value);
+  }
   annotationNote = '';
   annotationColor = 'default';
   annotationPinned = false;
