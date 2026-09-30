@@ -305,8 +305,11 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
       const tacticStats = domain.tacticColumns
         .map(col => {
           const parents = col.techniques.filter(t => !t.isSubtechnique);
+          // Enrichment-based coverage (≥1 framework), matching the dashboard
+          // headline + stats-bar/analytics/tactic-summary — NOT mitigation-only,
+          // so the Tactic Breakdown bars and Radar agree with the Coverage stat.
           const covered = parents.filter(
-            t => (domain.mitigationsByTechnique.get(t.id)?.length ?? 0) > 0,
+            t => this.enrichment.isEnriched(t, domain),
           ).length;
           const total = parents.length;
           const pct = total > 0 ? Math.round((covered / total) * 100) : 0;
@@ -354,7 +357,7 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
       const frac = (n: number) => (totalTechniques > 0 ? n / totalTechniques : 0);
       const postureScore = Math.round(100 * (
         0.20 * frac(et.mitigation) +
-        0.20 * frac(withAnyDetection) +
+        0.20 * frac(et.detection) +        // Sigma+CAR analytics only; D3FEND is its own term below (no double-count, atomic excluded)
         0.20 * frac(et.control) +
         0.15 * frac(et.d3fend) +
         0.15 * (1 - frac(kevExposedGapCount)) +
