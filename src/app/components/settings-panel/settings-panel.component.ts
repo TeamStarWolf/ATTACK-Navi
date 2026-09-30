@@ -28,7 +28,7 @@ import { ImportSummary } from '../../services/stix-collection.service';
   styleUrl: './settings-panel.component.scss',
 })
 export class SettingsPanelComponent implements OnInit, OnDestroy {
-  settings: AppSettings = { ...DEFAULT_SETTINGS, scoringWeights: { ...DEFAULT_SETTINGS.scoringWeights } };
+  settings: AppSettings = { ...DEFAULT_SETTINGS, scoringWeights: { ...DEFAULT_SETTINGS.scoringWeights }, cellDisplay: { ...DEFAULT_SETTINGS.cellDisplay } };
   activeTab: 'scoring' | 'display' | 'organization' | 'data' | 'integrations' = 'scoring';
 
   readonly themes = [
@@ -88,7 +88,7 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
   csvImportError = '';
 
   private subs = new Subscription();
-  private savedSettings: AppSettings = { ...DEFAULT_SETTINGS, scoringWeights: { ...DEFAULT_SETTINGS.scoringWeights } };
+  private savedSettings: AppSettings = { ...DEFAULT_SETTINGS, scoringWeights: { ...DEFAULT_SETTINGS.scoringWeights }, cellDisplay: { ...DEFAULT_SETTINGS.cellDisplay } };
 
   constructor(
     readonly settingsService: SettingsService,
@@ -108,7 +108,7 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
 
     this.subs.add(
       this.settingsService.settings$.subscribe(s => {
-        this.savedSettings = { ...s, scoringWeights: { ...s.scoringWeights } };
+        this.savedSettings = { ...s, scoringWeights: { ...s.scoringWeights }, cellDisplay: { ...s.cellDisplay } };
         this.cdr.markForCheck();
       }),
     );
@@ -186,7 +186,7 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
 
   private reloadSettings(): void {
     const s = this.settingsService.current;
-    this.settings = { ...s, scoringWeights: { ...s.scoringWeights } };
+    this.settings = { ...s, scoringWeights: { ...s.scoringWeights }, cellDisplay: { ...s.cellDisplay } };
   }
 
   private refreshDataInfo(): void {
@@ -251,6 +251,13 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
       s.showTechniqueIds !== saved.showTechniqueIds ||
       s.showMitigationCount !== saved.showMitigationCount ||
       s.showSubtechniqueCount !== saved.showSubtechniqueCount ||
+      s.cellDisplay.exposureBadge !== saved.cellDisplay.exposureBadge ||
+      s.cellDisplay.softwareBadge !== saved.cellDisplay.softwareBadge ||
+      s.cellDisplay.campaignBadge !== saved.cellDisplay.campaignBadge ||
+      s.cellDisplay.metricBadge !== saved.cellDisplay.metricBadge ||
+      s.cellDisplay.noteDot !== saved.cellDisplay.noteDot ||
+      s.cellDisplay.annotationDot !== saved.cellDisplay.annotationDot ||
+      s.cellDisplay.watchIndicator !== saved.cellDisplay.watchIndicator ||
       s.heatmapColorTheme !== saved.heatmapColorTheme ||
       s.orgName !== saved.orgName
     );
