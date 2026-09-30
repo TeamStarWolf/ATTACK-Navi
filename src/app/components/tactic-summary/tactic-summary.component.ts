@@ -12,6 +12,7 @@ import { Subscription } from 'rxjs';
 import { Tactic } from '../../models/tactic';
 import { Technique } from '../../models/technique';
 import { ImplementationService, ImplStatus } from '../../services/implementation.service';
+import { EnrichmentService } from '../../services/enrichment.service';
 import { Domain } from '../../models/domain';
 
 export interface TacticSummaryData {
@@ -39,6 +40,7 @@ export class TacticSummaryComponent implements OnInit, OnDestroy {
 
   constructor(
     private implService: ImplementationService,
+    private enrichment: EnrichmentService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -88,22 +90,33 @@ export class TacticSummaryComponent implements OnInit, OnDestroy {
     this.position = { top, left };
   }
 
+  /** Enrichment coverage: techniques with ≥1 cross-framework signal. */
   get coverageStats(): { covered: number; total: number; pct: number } {
+    if (!this.data) return { covered: 0, total: 0, pct: 0 };
+    const total = this.data.parentTechniques.length;
+    const covered = this.data.parentTechniques.filter((t) => this.enrichment.isEnriched(t, this.data!.domain)).length;
+    return { covered, total, pct: total > 0 ? Math.round((covered / total) * 100) : 0 };
+  }
+
+  /** Mitigation-only coverage, kept as an explicit secondary line. */
+  get mitigationStats(): { covered: number; total: number; pct: number } {
     if (!this.data) return { covered: 0, total: 0, pct: 0 };
     const total = this.data.parentTechniques.length;
     const covered = this.data.parentTechniques.filter((t) => t.mitigationCount > 0).length;
     return { covered, total, pct: total > 0 ? Math.round((covered / total) * 100) : 0 };
   }
 
-  get topCovered(): Array<Technique & { mitigationCount: number }> {
+  /** Best-covered techniques ranked by BREADTH of enrichment (signal families). */
+  get topCovered(): Array<Technique & { signalCount: number }> {
     return [...(this.data?.parentTechniques ?? [])]
-      .filter((t) => t.mitigationCount > 0)
-      .sort((a, b) => b.mitigationCount - a.mitigationCount)
-      .slice(0, 3) as Array<Technique & { mitigationCount: number }>;
+      .map((t) => ({ ...t, signalCount: this.enrichment.signalCount(t, this.data!.domain) }))
+      .filter((t) => t.signalCount > 0)
+      .sort((a, b) => b.signalCount - a.signalCount || b.mitigationCount - a.mitigationCount)
+      .slice(0, 3);
   }
 
   get uncoveredCount(): number {
-    return (this.data?.parentTechniques ?? []).filter((t) => t.mitigationCount === 0).length;
+    return (this.data?.parentTechniques ?? []).filter((t) => !this.enrichment.isEnriched(t, this.data!.domain)).length;
   }
 
   get implStats(): { implemented: number; inProgress: number; planned: number; notStarted: number } {

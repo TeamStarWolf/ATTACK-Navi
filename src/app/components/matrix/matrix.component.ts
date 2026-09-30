@@ -54,6 +54,7 @@ import { CsaCcmService } from '../../services/csa-ccm.service';
 import { M365ControlsService } from '../../services/m365-controls.service';
 import { Cve2CapecService } from '../../services/cve2capec.service';
 import { PocExploitService } from '../../services/poc-exploit.service';
+import { EnrichmentService } from '../../services/enrichment.service';
 
 @Component({
   selector: 'app-matrix',
@@ -292,6 +293,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     private m365ControlsService: M365ControlsService,
     private cve2capecService: Cve2CapecService,
     private pocExploitService: PocExploitService,
+    private enrichment: EnrichmentService,
     private cdr: ChangeDetectorRef,
     private el: ElementRef,
     private matrixControl: MatrixControlService,
@@ -680,24 +682,38 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
           this.maxRisk = 1;
           this.sigmaScoreMap = new Map();
           this.unifiedScoreMap = new Map();
+          // Unified cross-framework posture — mitigation is at most co-equal, and
+          // controls + threat-intel (previously missing) now contribute. Weights:
+          //   mitigation ......... 15   detection (Sigma+CAR) .. 20
+          //   controls ........... 15   D3FEND ................. 10
+          //   atomic ............. 10   threat-intel ........... 10
+          //   KEV/exposure (inv) . 20                     total = 100
           for (const tech of this.domain.techniques) {
-            // Mitigation coverage (weight 30): 4+ mitigations = full score
-            const mitScore = Math.min(tech.mitigationCount / 4, 1) * 30;
-            // Detection (weight 20): sigma + CAR rules presence
+            // Mitigation (weight 15): 4+ mitigations = full score
+            const mitScore = Math.min(tech.mitigationCount / 4, 1) * 15;
+            // Detection (weight 20): Sigma + CAR rules presence
             const sigmaCount  = this.sigmaService.getRuleCount(tech.attackId);
             const carCount    = this.carService.getLiveCount(tech.attackId);
             const detectScore = Math.min((sigmaCount + carCount) / 5, 1) * 20;
-            // Atomic test validation (weight 15)
-            const atomicCount = this.atomicService.getTestCount(tech.attackId);
-            const atomicScore = Math.min(atomicCount / 3, 1) * 15;
+            // Control-framework mappings (weight 15): NIST/CRI/CIS/CSA/M365
+            const controlCount = this.enrichment.controlCount(tech.attackId);
+            const controlScore = Math.min(controlCount / 4, 1) * 15;
             // D3FEND countermeasures (weight 10)
             const d3fendCount = this.d3fendService.getCountermeasures(tech.attackId).length;
             const d3fendScore = Math.min(d3fendCount / 2, 1) * 10;
-            // KEV exposure INVERTED (weight 25): more KEV CVEs = lower score = higher risk
+            // Atomic test validation (weight 10)
+            const atomicCount = this.atomicService.getTestCount(tech.attackId);
+            const atomicScore = Math.min(atomicCount / 3, 1) * 10;
+            // Threat-intel linkage (weight 10): groups + software + campaigns
+            const threatCount = this.enrichment.threatIntelCount(tech, this.domain);
+            const threatScore = Math.min(threatCount / 4, 1) * 10;
+            // KEV exposure INVERTED (weight 20): more KEV CVEs = lower score = higher risk
             const kevCount = this.kevScores.get(tech.attackId) ?? 0;
-            const kevPenalty = Math.min(kevCount * 5, 25);
-            const kevScore = 25 - kevPenalty;
-            const total = Math.round(mitScore + detectScore + atomicScore + d3fendScore + kevScore);
+            const kevPenalty = Math.min(kevCount * 5, 20);
+            const kevScore = 20 - kevPenalty;
+            const total = Math.round(
+              mitScore + detectScore + controlScore + d3fendScore + atomicScore + threatScore + kevScore,
+            );
             this.unifiedScoreMap.set(tech.attackId, total);
           }
         } else if (mode === 'library' && this.domain) {
@@ -1246,7 +1262,13 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
           .map(ct => this.customTechToTechnique(ct));
         techniques = [...techniques, ...customForTactic];
         if (this.sortMode === 'coverage') {
-          techniques.sort((a, b) => a.mitigationCount - b.mitigationCount || a.attackId.localeCompare(b.attackId));
+          // "Sort by risk": highest multi-signal risk first (threat pressure +
+          // KEV exposure, doubled when wholly undefended), not fewest mitigations.
+          techniques.sort((a, b) => {
+            const ra = this.enrichment.riskScore(a, this.domain, this.kevScores.get(a.attackId) ?? 0);
+            const rb = this.enrichment.riskScore(b, this.domain, this.kevScores.get(b.attackId) ?? 0);
+            return rb - ra || a.attackId.localeCompare(b.attackId);
+          });
         }
         return { ...col, techniques };
       });
@@ -1697,7 +1719,9 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
       if (!techMatches && !subMatches) return true;
     }
     if (this.hasDataSourceFilter && this.dataSourceIds && !this.dataSourceIds.has(t.id) && !t.subtechniques.some((s) => this.dataSourceIds!.has(s.id))) return true;
-    if (this.dimUncovered && t.mitigationCount === 0) return true;
+    // "Dim uncovered" = dim techniques with NO enrichment of any kind (no
+    // cross-framework signal), not merely those lacking a mitigation.
+    if (this.dimUncovered && !this.enrichment.isEnriched(t, this.domain)) return true;
     if (this.hasTechniqueSearch) {
       if (this.matchedIds.has(t.id)) return false;
       if (t.subtechniques.some((s) => this.matchedIds.has(s.id))) return false;
@@ -1765,7 +1789,8 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     const techs = src?.techniques ?? [];
     const total = techs.length;
     if (!total) return 0;
-    return Math.round((techs.filter((t) => t.mitigationCount > 0).length / total) * 100);
+    // Enrichment coverage (≥1 cross-framework signal), not mitigation-only.
+    return Math.round((techs.filter((t) => this.enrichment.isEnriched(t, this.domain)).length / total) * 100);
   }
 
   trackByTacticId(_: number, col: TacticColumn): string { return col.tactic.id; }

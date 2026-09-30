@@ -7,6 +7,7 @@ import { Domain } from '../../models/domain';
 import { ImplementationService } from '../../services/implementation.service';
 import { TimelineService } from '../../services/timeline.service';
 import { PanelNavService } from '../../services/panel-nav.service';
+import { EnrichmentService } from '../../services/enrichment.service';
 
 interface TacticStat {
   name: string;
@@ -46,6 +47,7 @@ export class StatsBarComponent implements OnInit, OnChanges, OnDestroy {
     private cdr: ChangeDetectorRef,
     private timelineService: TimelineService,
     private panelNav: PanelNavService,
+    private enrichment: EnrichmentService,
   ) {}
 
   ngOnInit(): void {
@@ -126,7 +128,9 @@ export class StatsBarComponent implements OnInit, OnChanges, OnDestroy {
       ? this.domain.techniques
       : this.domain.techniques.filter((t) => !t.isSubtechnique);
     this.totalTechniques = parentTechs.length;
-    this.coveredTechniques = parentTechs.filter((t) => t.mitigationCount > 0).length;
+    // "Coverage" = cross-framework enrichment (≥1 defensive/framework signal),
+    // not "≥1 mitigation" — so no single framework owns the headline.
+    this.coveredTechniques = parentTechs.filter((t) => this.enrichment.isEnriched(t, this.domain)).length;
     this.coveragePct = this.totalTechniques > 0 ? Math.round((this.coveredTechniques / this.totalTechniques) * 100) : 0;
     this.totalMitigations = this.domain.mitigations.length;
 
@@ -150,7 +154,7 @@ export class StatsBarComponent implements OnInit, OnChanges, OnDestroy {
 
     this.tacticStats = this.domain.tacticColumns.map((col) => {
       const total = col.techniques.length;
-      const covered = col.techniques.filter((t) => t.mitigationCount > 0).length;
+      const covered = col.techniques.filter((t) => this.enrichment.isEnriched(t, this.domain)).length;
       return {
         name: col.tactic.name,
         shortname: col.tactic.shortname,

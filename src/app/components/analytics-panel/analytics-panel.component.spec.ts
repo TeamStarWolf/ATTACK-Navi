@@ -11,6 +11,7 @@ import { ImplementationService } from '../../services/implementation.service';
 import { CveService } from '../../services/cve.service';
 import { SigmaService } from '../../services/sigma.service';
 import { NistMappingService } from '../../services/nist-mapping.service';
+import { EnrichmentService } from '../../services/enrichment.service';
 
 describe('AnalyticsPanelComponent', () => {
   let component: AnalyticsPanelComponent;
@@ -31,6 +32,7 @@ describe('AnalyticsPanelComponent', () => {
         { provide: CveService, useValue: { kev$: new BehaviorSubject([]), kevTechScores$: new BehaviorSubject(new Map()), getCachedCves: () => [] } },
         { provide: SigmaService, useValue: { getRuleCount: () => 0 } },
         { provide: NistMappingService, useValue: { loaded$: new BehaviorSubject(true), getControlsForTechnique: () => [] } },
+        { provide: EnrichmentService, useValue: { isEnriched: () => false } },
       ],
     });
     fixture = TestBed.createComponent(AnalyticsPanelComponent);

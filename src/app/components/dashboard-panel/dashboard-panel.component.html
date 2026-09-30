@@ -79,15 +79,34 @@
                     </div>
                     <div class="mini-stat">
                       <div class="mini-stat-value" style="color: var(--success)">{{ stats.coveredTechniques }}</div>
-                      <div class="mini-stat-label">Covered</div>
+                      <div class="mini-stat-label">Enriched</div>
                     </div>
-                    <div class="mini-stat">
+                    <div class="mini-stat" title="Techniques with ≥1 cross-framework signal (any of: mitigation, detection, atomic test, D3FEND, control mapping, threat-intel, CVE/KEV)">
                       <div class="mini-stat-value" [style.color]="gradeColor">{{ stats.coveragePct }}%</div>
                       <div class="mini-stat-label">Coverage</div>
                     </div>
                     <div class="mini-stat">
                       <div class="mini-stat-value" style="color: var(--accent-purple)">{{ stats.avgMitigations }}</div>
                       <div class="mini-stat-label">Avg Mitigations</div>
+                    </div>
+                  </div>
+                  <!-- Per-framework coverage: mitigation is one of several, not the headline. -->
+                  <div class="stat-cards-row">
+                    <div class="mini-stat" title="Techniques with ≥1 ATT&CK mitigation">
+                      <div class="mini-stat-value" style="color: var(--accent-warm)">{{ stats.mitigationCoveragePct }}%</div>
+                      <div class="mini-stat-label">Mitigation coverage</div>
+                    </div>
+                    <div class="mini-stat" title="Techniques with ≥1 detection (CAR / Atomic / D3FEND)">
+                      <div class="mini-stat-value" style="color: #60a5fa">{{ stats.detectionCoveragePct }}%</div>
+                      <div class="mini-stat-label">Detection coverage</div>
+                    </div>
+                    <div class="mini-stat" title="Techniques with ≥1 control-framework mapping (NIST / CRI / CIS / CSA / M365)">
+                      <div class="mini-stat-value" style="color: var(--accent)">{{ stats.controlCoveragePct }}%</div>
+                      <div class="mini-stat-label">Control coverage</div>
+                    </div>
+                    <div class="mini-stat" title="Composite defensive posture — mitigation is one weighted input among detection, controls, D3FEND, KEV exposure and threat pressure">
+                      <div class="mini-stat-value" [style.color]="gradeColor">{{ stats.postureScore }}</div>
+                      <div class="mini-stat-label">Posture score</div>
                     </div>
                   </div>
                   @if (stats.hasTrendData) {
