@@ -265,6 +265,52 @@
           </div>
         }
 
+        <!-- Imported (user-uploaded) Navigator layer data for this technique -->
+        @if (activeUserLayer && userLayerEntry) {
+          <section class="detail-section imported-layer-section upgrade-section-block">
+            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-imported-layer" [attr.aria-expanded]="!isSectionCollapsed('imported-layer')" (click)="toggleSection('imported-layer')">
+              <span class="section-chevron">{{ isSectionCollapsed('imported-layer') ? '▸' : '▾' }}</span>
+              <span class="section-icon">🗂</span> Imported Layer
+              <span class="section-count has-note">●</span>
+            </h4>
+            @if (!isSectionCollapsed('imported-layer')) {
+              <div class="imported-layer-body">
+                <div class="il-source">From <strong>{{ activeUserLayer.name }}</strong></div>
+                <div class="il-badges">
+                  @if (userLayerEntry.score !== null) {
+                    <span class="il-badge il-score" title="Layer score">Score: {{ userLayerEntry.score }}</span>
+                  }
+                  @if (userLayerEntry.color) {
+                    <span class="il-badge il-color" title="Layer cell color">
+                      <span class="il-swatch" [style.background]="swatchColor(userLayerEntry.color)"></span>{{ userLayerEntry.color }}
+                    </span>
+                  }
+                  @if (!userLayerEntry.enabled) {
+                    <span class="il-badge il-disabled" title="Disabled in the source layer">Disabled</span>
+                  }
+                </div>
+                @if (userLayerEntry.comment) {
+                  <div class="il-comment">{{ userLayerEntry.comment }}</div>
+                }
+                @if (userLayerEntry.metadata.length) {
+                  <dl class="il-metadata">
+                    @for (m of userLayerEntry.metadata; track m.name) {
+                      <div class="il-meta-row"><dt>{{ m.name }}</dt><dd>{{ m.value }}</dd></div>
+                    }
+                  </dl>
+                }
+                @if (userLayerEntry.links.length) {
+                  <ul class="il-links">
+                    @for (lnk of userLayerEntry.links; track lnk.url) {
+                      <li><a [href]="lnk.url" target="_blank" rel="noopener noreferrer">{{ lnk.label || lnk.url }}</a></li>
+                    }
+                  </ul>
+                }
+              </div>
+            }
+          </section>
+        }
+
         <!-- Technique Note/Annotation -->
         <section class="detail-section annotation-section upgrade-section-block">
           <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-annotation" [attr.aria-expanded]="!isSectionCollapsed('annotation')" (click)="toggleSection('annotation')">
