@@ -16,6 +16,7 @@ import { PanelNavService } from '../../services/panel-nav.service';
 import { DataService } from '../../services/data.service';
 import { AttackCveService } from '../../services/attack-cve.service';
 import { D3fendService } from '../../services/d3fend.service';
+import { GraphFocusService, GraphFocus, GraphFocusKind } from '../../services/graph-focus.service';
 import { Domain } from '../../models/domain';
 import { Technique } from '../../models/technique';
 
@@ -23,10 +24,18 @@ export interface GraphNode {
   id: string;
   label: string;
   sublabel?: string;
-  kind: 'technique' | 'subtechnique' | 'mitigation' | 'group' | 'software' | 'cve' | 'campaign' | 'parent' | 'd3fend' | 'capec';
+  kind: GraphFocusKind;
   x: number;
   y: number;
   pinned?: boolean;
+}
+
+/** One neighbour node awaiting radial placement around the focused center. */
+interface RingItem {
+  id: string;
+  label: string;
+  sublabel?: string;
+  kind: GraphFocusKind;
 }
 
 export interface GraphEdge {
@@ -81,6 +90,11 @@ const KIND_ICONS: Record<GraphNode['kind'], string> = {
 export class TechniqueGraphPanelComponent implements OnInit, OnDestroy {
   domain: Domain | null = null;
   technique: Technique | null = null;
+
+  /** The entity the graph is currently centered on (technique or otherwise). */
+  focus: GraphFocus | null = null;
+  /** Back-stack of previous focuses, newest last. */
+  focusHistory: GraphFocus[] = [];
 
   nodes: GraphNode[] = [];
   edges: GraphEdge[] = [];
@@ -144,6 +158,7 @@ export class TechniqueGraphPanelComponent implements OnInit, OnDestroy {
     private cveService: AttackCveService,
     private d3fendService: D3fendService,
     private panelNav: PanelNavService,
+    private graphFocus: GraphFocusService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -151,23 +166,54 @@ export class TechniqueGraphPanelComponent implements OnInit, OnDestroy {
     this.subs.add(
       this.dataService.domain$.subscribe(d => {
         this.domain = d;
-        if (d && this.technique) this.build();
+        if (d) {
+          if (this.focus) {
+            this.buildFor(this.focus);
+          } else if (this.technique) {
+            this.focus = { kind: 'technique', id: this.technique.id };
+            this.buildFor(this.focus);
+          }
+        }
         this.cdr.markForCheck();
       }),
     );
     this.subs.add(
       this.filterService.selectedTechnique$.subscribe(t => {
         this.technique = t;
-        if (this.domain && t) this.build();
+        // GUARD: an external technique selection (matrix / sidebar / search)
+        // only re-centers the graph when it isn't already focused on a
+        // non-technique entity — otherwise it would clobber a group/software/
+        // campaign/mitigation focus the user navigated to in the graph.
+        if (t && this.isTechniqueFocus(this.focus)) {
+          this.focus = { kind: 'technique', id: t.id };
+          if (this.domain) this.buildFor(this.focus);
+        }
         this.cdr.markForCheck();
       }),
     );
     this.subs.add(
       this.cveService.loaded$.subscribe(loaded => {
-        if (loaded && this.technique) this.build();
+        if (loaded && this.focus) this.buildFor(this.focus);
         this.cdr.markForCheck();
       }),
     );
+    // Pivot channel: an entity panel (or anything else) requests a center.
+    // Subscribed last so a pending pivot takes precedence over the current
+    // technique selection on (re)creation of the panel.
+    this.subs.add(
+      this.graphFocus.focus$.subscribe(f => {
+        if (!f) return;
+        this.centerOnFocus(f);
+      }),
+    );
+  }
+
+  /** True when a focus is null or one of the technique-family kinds. */
+  private isTechniqueFocus(focus: GraphFocus | null): boolean {
+    return focus === null
+      || focus.kind === 'technique'
+      || focus.kind === 'subtechnique'
+      || focus.kind === 'parent';
   }
 
   ngOnDestroy(): void { this.subs.unsubscribe(); }
@@ -193,8 +239,13 @@ export class TechniqueGraphPanelComponent implements OnInit, OnDestroy {
     this.searchQuery = '';
     this.searchResults = [];
     this.showSearchDropdown = false;
+    // An in-graph search pick is an explicit re-center: pre-set the focus to a
+    // technique so the selectedTechnique$ guard passes even when the graph was
+    // centered on a non-technique, and remember the prior focus for Back.
+    if (this.focus && this.focus.id !== tech.id) this.focusHistory.push(this.focus);
+    this.focus = { kind: 'technique', id: tech.id };
     this.filterService.selectTechnique(tech);
-    // build() will fire via subscription
+    // build() fires via the selectedTechnique$ subscription
   }
 
   closeSearchDropdown(): void {
@@ -253,19 +304,10 @@ export class TechniqueGraphPanelComponent implements OnInit, OnDestroy {
     const domain = this.domain;
     const tech = this.technique;
 
-    const nodes: GraphNode[] = [];
     const edges: GraphEdge[] = [];
-    const nodeIds = new Set<string>();
-
-    const addNode = (node: GraphNode) => {
-      if (!nodeIds.has(node.id)) {
-        nodes.push(node);
-        nodeIds.add(node.id);
-      }
-    };
 
     // Center: selected technique
-    addNode({
+    const center: GraphNode = {
       id: tech.id,
       label: tech.attackId,
       sublabel: tech.name.length > 20 ? tech.name.substring(0, 18) + '…' : tech.name,
@@ -273,7 +315,7 @@ export class TechniqueGraphPanelComponent implements OnInit, OnDestroy {
       x: this.CENTER_X,
       y: this.CENTER_Y,
       pinned: true,
-    });
+    };
 
     const rings: { kind: GraphNode['kind']; items: Array<{ id: string; label: string; sublabel?: string }> }[] = [];
 
@@ -377,18 +419,165 @@ export class TechniqueGraphPanelComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Layout all nodes in a radial pattern
-    const allRingItems = rings.map(r => ({ ...r.items[0], kind: r.kind }));
-    const total = allRingItems.length;
-    const angleStep = total > 0 ? (2 * Math.PI) / total : 0;
+    // Lay the accumulated rings out radially around the center.
+    const allRingItems: RingItem[] = rings.map(r => ({ ...r.items[0], kind: r.kind }));
+    this.applyRadialLayout(center, allRingItems, edges);
+  }
 
-    // Use two rings for large counts
+  // ── Focus dispatch + non-technique builders ──────────────────────────────
+
+  /** Rebuild the graph centered on the given focus (dispatches by kind). */
+  buildFor(focus: GraphFocus): void {
+    if (!this.domain) return;
+    switch (focus.kind) {
+      case 'technique':
+      case 'subtechnique':
+      case 'parent':
+        this.technique = this.domain.techniques.find(t => t.id === focus.id) ?? null;
+        this.build();
+        break;
+      case 'group': this.buildGroup(focus.id); break;
+      case 'software': this.buildSoftware(focus.id); break;
+      case 'campaign': this.buildCampaign(focus.id); break;
+      case 'mitigation': this.buildMitigation(focus.id); break;
+      default:
+        // cve / d3fend / capec have no reverse index — leaf only.
+        break;
+    }
+    this.cdr.markForCheck();
+  }
+
+  /** Center on a threat group: its techniques, software toolkit, and campaigns. */
+  private buildGroup(groupId: string): void {
+    if (!this.domain) return;
+    const group = this.domain.groups.find(g => g.id === groupId);
+    if (!group) return;
+
+    const edges: GraphEdge[] = [];
+    const rings: RingItem[] = [];
+    const center: GraphNode = {
+      id: group.id, label: group.attackId, sublabel: this.trunc(group.name),
+      kind: 'group', x: this.CENTER_X, y: this.CENTER_Y, pinned: true,
+    };
+
+    for (const t of this.dataService.getTechniquesForGroup(group.id).slice(0, 8)) {
+      rings.push({ id: t.id, label: t.attackId, sublabel: t.name.substring(0, 14), kind: 'technique' });
+      edges.push({ source: group.id, target: t.id, label: 'uses' });
+    }
+    if (this.showSoftware) {
+      for (const s of this.dataService.getSoftwareForGroup(group.id).slice(0, 5)) {
+        rings.push({ id: s.id, label: s.attackId, sublabel: s.name.substring(0, 14), kind: 'software' });
+        edges.push({ source: group.id, target: s.id, label: 'uses' });
+      }
+    }
+    if (this.showCampaigns) {
+      for (const c of this.dataService.getCampaignsForGroup(group.id).slice(0, 5)) {
+        rings.push({ id: c.id, label: c.attackId, sublabel: c.name.substring(0, 14), kind: 'campaign' });
+        edges.push({ source: c.id, target: group.id, label: 'attributed-to' });
+      }
+    }
+    this.applyRadialLayout(center, rings, edges);
+  }
+
+  /** Center on a piece of software: techniques it uses + groups wielding it. */
+  private buildSoftware(softwareId: string): void {
+    if (!this.domain) return;
+    const sw = this.domain.software.find(s => s.id === softwareId);
+    if (!sw) return;
+
+    const edges: GraphEdge[] = [];
+    const rings: RingItem[] = [];
+    const center: GraphNode = {
+      id: sw.id, label: sw.attackId, sublabel: this.trunc(sw.name),
+      kind: 'software', x: this.CENTER_X, y: this.CENTER_Y, pinned: true,
+    };
+
+    for (const t of this.dataService.getTechniquesForSoftware(sw.id).slice(0, 8)) {
+      rings.push({ id: t.id, label: t.attackId, sublabel: t.name.substring(0, 14), kind: 'technique' });
+      edges.push({ source: sw.id, target: t.id, label: 'uses' });
+    }
+    if (this.showGroups) {
+      for (const g of this.dataService.getGroupsForSoftware(sw.id).slice(0, 6)) {
+        rings.push({ id: g.id, label: g.attackId, sublabel: g.name.substring(0, 14), kind: 'group' });
+        edges.push({ source: g.id, target: sw.id, label: 'uses' });
+      }
+    }
+    this.applyRadialLayout(center, rings, edges);
+  }
+
+  /** Center on a campaign: its techniques, software, and attributed groups. */
+  private buildCampaign(campaignId: string): void {
+    if (!this.domain) return;
+    const domain = this.domain;
+    const campaign = domain.campaigns.find(c => c.id === campaignId);
+    if (!campaign) return;
+
+    const edges: GraphEdge[] = [];
+    const rings: RingItem[] = [];
+    const center: GraphNode = {
+      id: campaign.id, label: campaign.attackId, sublabel: this.trunc(campaign.name),
+      kind: 'campaign', x: this.CENTER_X, y: this.CENTER_Y, pinned: true,
+    };
+
+    for (const t of this.dataService.getTechniquesForCampaign(campaign.id).slice(0, 8)) {
+      rings.push({ id: t.id, label: t.attackId, sublabel: t.name.substring(0, 14), kind: 'technique' });
+      edges.push({ source: campaign.id, target: t.id, label: 'uses' });
+    }
+    if (this.showSoftware) {
+      for (const s of this.dataService.getSoftwareForCampaign(campaign.id).slice(0, 5)) {
+        rings.push({ id: s.id, label: s.attackId, sublabel: s.name.substring(0, 14), kind: 'software' });
+        edges.push({ source: campaign.id, target: s.id, label: 'uses' });
+      }
+    }
+    if (this.showGroups) {
+      for (const gid of campaign.attributedGroupIds.slice(0, 5)) {
+        const g = domain.groups.find(gr => gr.id === gid);
+        if (!g) continue;
+        rings.push({ id: g.id, label: g.attackId, sublabel: g.name.substring(0, 14), kind: 'group' });
+        edges.push({ source: campaign.id, target: g.id, label: 'attributed-to' });
+      }
+    }
+    this.applyRadialLayout(center, rings, edges);
+  }
+
+  /** Center on a mitigation: the techniques it mitigates. */
+  private buildMitigation(mitigationId: string): void {
+    if (!this.domain) return;
+    const mit = this.domain.mitigations.find(m => m.id === mitigationId);
+    if (!mit) return;
+
+    const edges: GraphEdge[] = [];
+    const rings: RingItem[] = [];
+    const center: GraphNode = {
+      id: mit.id, label: mit.attackId, sublabel: this.trunc(mit.name),
+      kind: 'mitigation', x: this.CENTER_X, y: this.CENTER_Y, pinned: true,
+    };
+    for (const t of this.dataService.getTechniquesForMitigation(mit.id).slice(0, 10)) {
+      rings.push({ id: t.id, label: t.attackId, sublabel: t.name.substring(0, 14), kind: 'technique' });
+      edges.push({ source: mit.id, target: t.id, label: 'mitigates' });
+    }
+    this.applyRadialLayout(center, rings, edges);
+  }
+
+  /** Place the center node plus its neighbour rings radially; sets nodes/edges. */
+  private applyRadialLayout(center: GraphNode, ringItems: RingItem[], edges: GraphEdge[]): void {
+    const nodes: GraphNode[] = [];
+    const nodeIds = new Set<string>();
+    const addNode = (node: GraphNode) => {
+      if (!nodeIds.has(node.id)) {
+        nodes.push(node);
+        nodeIds.add(node.id);
+      }
+    };
+    addNode(center);
+
+    const total = ringItems.length;
     const innerCount = Math.min(total, 8);
     const outerStart = innerCount;
     const innerRadius = 160;
     const outerRadius = 270;
 
-    allRingItems.forEach((item, i) => {
+    ringItems.forEach((item, i) => {
       let radius: number;
       let angle: number;
       if (i < innerCount) {
@@ -400,7 +589,6 @@ export class TechniqueGraphPanelComponent implements OnInit, OnDestroy {
         angle = (outerIdx / outerTotal) * 2 * Math.PI - Math.PI / 2;
         radius = outerRadius;
       }
-
       addNode({
         id: item.id,
         label: item.label,
@@ -416,7 +604,69 @@ export class TechniqueGraphPanelComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  rebuildWithOptions(): void { this.build(); }
+  private trunc(s: string, n = 18): string {
+    return s.length > n ? s.substring(0, n) + '…' : s;
+  }
+
+  // ── Focus navigation (center / pivot / back) ─────────────────────────────
+
+  /** Re-center on a clicked neighbour node, remembering the prior focus. */
+  centerOnNode(node: GraphNode): void {
+    if (this.focus && this.focus.id === node.id) return;
+    if (this.focus) this.focusHistory.push(this.focus);
+    this.focus = { kind: node.kind, id: node.id };
+    if (this.isTechniqueFocus(this.focus)) {
+      this.technique = this.domain?.techniques.find(t => t.id === node.id) ?? null;
+    }
+    this.buildFor(this.focus);
+    this.cdr.markForCheck();
+  }
+
+  /** Center in response to an external pivot request (GraphFocusService). */
+  private centerOnFocus(focus: GraphFocus): void {
+    const sameTarget = this.focus && this.focus.id === focus.id && this.focus.kind === focus.kind;
+    if (!sameTarget && this.focus) this.focusHistory.push(this.focus);
+    this.focus = focus;
+    if (this.isTechniqueFocus(focus)) {
+      this.technique = this.domain?.techniques.find(t => t.id === focus.id) ?? null;
+    }
+    if (this.domain) this.buildFor(focus);
+    this.cdr.markForCheck();
+  }
+
+  /** Return to the previous focus on the back-stack. */
+  goBack(): void {
+    const prev = this.focusHistory.pop();
+    if (!prev) return;
+    this.focus = prev;
+    if (this.isTechniqueFocus(prev)) {
+      this.technique = this.domain?.techniques.find(t => t.id === prev.id) ?? null;
+    }
+    this.buildFor(prev);
+    this.cdr.markForCheck();
+  }
+
+  /** Human label for the currently focused center, for the header title. */
+  get focusTitle(): string {
+    if (this.technique && this.isTechniqueFocus(this.focus)) {
+      return `${this.technique.attackId}: ${this.technique.name}`;
+    }
+    const center = this.nodes.find(n => n.pinned);
+    if (center) return center.sublabel ? `${center.label}: ${center.sublabel}` : center.label;
+    return '';
+  }
+
+  /** Short identifier for the currently focused center (empty-state message). */
+  get focusCenterLabel(): string {
+    // Guard like focusTitle: when focused on a non-technique entity, name the
+    // pinned center, not the stale last-selected technique.
+    if (this.technique && this.isTechniqueFocus(this.focus)) {
+      return this.technique.attackId;
+    }
+    return this.nodes.find(n => n.pinned)?.label ?? '';
+  }
+
+  rebuildWithOptions(): void { if (this.focus) this.buildFor(this.focus); }
 
   getNode(id: string): GraphNode | undefined {
     return this.nodes.find(n => n.id === id);
@@ -488,16 +738,39 @@ export class TechniqueGraphPanelComponent implements OnInit, OnDestroy {
     this.isPanning = false;
   }
 
-  onNodeClick(node: GraphNode): void {
+  onNodeClick(event: MouseEvent, node: GraphNode): void {
     if (this.drag.active) return;
-    if (node.kind === 'technique' || node.kind === 'subtechnique' || node.kind === 'parent') {
-      const tech = this.domain?.techniques.find(t => t.id === node.id);
-      if (tech) this.filterService.selectTechnique(tech);
-    }
-    if (node.kind === 'group') {
+
+    // Secondary control (preserves the pre-existing group behavior): Ctrl/Cmd-
+    // click a group node to toggle it as a matrix filter and open the Threat
+    // Groups panel, instead of re-centering the graph on it.
+    if (node.kind === 'group' && (event.ctrlKey || event.metaKey)) {
       this.filterService.toggleThreatGroup(node.id);
       this.panelNav.open('threats');
+      return;
     }
+
+    if (node.kind === 'technique' || node.kind === 'subtechnique' || node.kind === 'parent') {
+      const tech = this.domain?.techniques.find(t => t.id === node.id);
+      if (tech) {
+        // Explicit in-graph navigation: pre-set focus so the guard passes,
+        // remember the prior focus for Back, and keep sidebar/matrix synced.
+        if (this.focus && this.focus.id !== tech.id) this.focusHistory.push(this.focus);
+        this.focus = { kind: 'technique', id: tech.id };
+        this.technique = tech;
+        this.filterService.selectTechnique(tech);
+        this.buildFor(this.focus);
+        this.cdr.markForCheck();
+      }
+      return;
+    }
+
+    // Centerable non-technique nodes re-center the graph (reverse index).
+    if (node.kind === 'group' || node.kind === 'software' || node.kind === 'campaign' || node.kind === 'mitigation') {
+      this.centerOnNode(node);
+      return;
+    }
+    // cve / d3fend / capec remain inert leaves (no reverse index).
   }
 
   onNodeHover(node: GraphNode): void { this.hoveredNode = node; this.cdr.markForCheck(); }

@@ -12,6 +12,8 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
+import { PanelNavService } from '../../services/panel-nav.service';
+import { GraphFocusService } from '../../services/graph-focus.service';
 import { Domain } from '../../models/domain';
 import { Campaign } from '../../models/campaign';
 import { ThreatGroup } from '../../models/group';
@@ -84,6 +86,8 @@ export class CampaignTimelinePanelComponent implements OnInit, OnDestroy {
   constructor(
     private filterService: FilterService,
     private dataService: DataService,
+    private panelNav: PanelNavService,
+    private graphFocus: GraphFocusService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -277,6 +281,12 @@ export class CampaignTimelinePanelComponent implements OnInit, OnDestroy {
     if (!bar.isActive) {
       this.filterService.setHeatmapMode('campaign');
     }
+  }
+
+  /** Pivot to the relationship graph centered on this campaign. */
+  viewInGraph(bar: CampaignBar): void {
+    this.graphFocus.focusNode('campaign', bar.campaign.id);
+    this.panelNav.open('technique-graph');
   }
 
   selectAll(): void {

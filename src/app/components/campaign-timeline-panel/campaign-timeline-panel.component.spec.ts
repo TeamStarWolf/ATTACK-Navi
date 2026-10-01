@@ -5,6 +5,7 @@ import { BehaviorSubject } from 'rxjs';
 import { CampaignTimelinePanelComponent } from './campaign-timeline-panel.component';
 import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
+import { PanelNavService } from '../../services/panel-nav.service';
 
 describe('CampaignTimelinePanelComponent', () => {
   let component: CampaignTimelinePanelComponent;
@@ -20,6 +21,7 @@ describe('CampaignTimelinePanelComponent', () => {
             setActivePanel: jasmine.createSpy(),
         }},
         { provide: DataService, useValue: { domain$: new BehaviorSubject(null) }},
+        { provide: PanelNavService, useValue: { open: jasmine.createSpy('open') }},
       ],
     });
     fixture = TestBed.createComponent(CampaignTimelinePanelComponent);
