@@ -1784,15 +1784,6 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     return 'none';
   }
 
-  tacticCoverage(col: TacticColumn): number {
-    const src = this.domain.tacticColumns.find((c) => c.tactic.id === col.tactic.id);
-    const techs = src?.techniques ?? [];
-    const total = techs.length;
-    if (!total) return 0;
-    // Enrichment coverage (≥1 cross-framework signal), not mitigation-only.
-    return Math.round((techs.filter((t) => this.enrichment.isEnriched(t, this.domain)).length / total) * 100);
-  }
-
   trackByTacticId(_: number, col: TacticColumn): string { return col.tactic.id; }
   trackByTechniqueId(_: number, tech: Technique): string { return tech.id; }
 
