@@ -263,6 +263,20 @@
   overflow: hidden;
 }
 
+.ctp-graph-btn {
+  background: none;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  padding: 0 5px;
+  margin-left: 6px;
+  font-size: 0.7rem;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: all 0.12s;
+
+  &:hover { background: var(--border-subtle); border-color: var(--accent); }
+}
+
 .row-name {
   display: block;
   font-size: 0.8rem;

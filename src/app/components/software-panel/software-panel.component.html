@@ -74,6 +74,11 @@
                 </span>
                 <span class="sw-name">{{ sw.name }}</span>
                 <span class="tech-badge" [title]="techniqueCount(sw) + ' techniques'">{{ techniqueCount(sw) }}</span>
+                <button
+                  class="sw-graph-btn"
+                  (click)="$event.stopPropagation(); viewInGraph(sw)"
+                  title="View in relationship graph"
+                >🕸️</button>
               </div>
               @if (sw.aliases.length > 0) {
                 <div class="sw-aliases">{{ sw.aliases.join(', ') }}</div>

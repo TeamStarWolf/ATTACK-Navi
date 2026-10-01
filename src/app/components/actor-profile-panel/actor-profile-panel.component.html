@@ -99,6 +99,7 @@
 
             <div class="profile-actions upgrade-action-strip">
               <button class="action-btn primary" (click)="filterByGroup(selectedProfile.group)">→ Highlight in Matrix</button>
+              <button class="action-btn" (click)="viewInGraph(selectedProfile.group)">🕸️ View in Graph</button>
               <a [href]="'https://attack.mitre.org/groups/' + selectedProfile.group.attackId" target="_blank" rel="noopener" class="action-btn">ATT&amp;CK ↗</a>
             </div>
           </div>
