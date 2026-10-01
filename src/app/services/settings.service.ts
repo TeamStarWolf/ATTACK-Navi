@@ -19,6 +19,7 @@ export interface AppSettings {
   showTechniqueIds: boolean;     // default true
   showMitigationCount: boolean;  // default true
   showSubtechniqueCount: boolean;// default true
+  expandSectionsByDefault: boolean; // default true — collapsible panel sections start expanded
 
   // Heatmap color theme
   heatmapColorTheme: 'default' | 'redgreen' | 'blueorange' | 'monochrome' | 'accessible';
@@ -44,6 +45,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   showTechniqueIds: true,
   showMitigationCount: true,
   showSubtechniqueCount: true,
+  expandSectionsByDefault: true,
   heatmapColorTheme: 'default',
   colorblindSafe: false,
   orgName: '',

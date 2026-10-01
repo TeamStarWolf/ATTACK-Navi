@@ -10,6 +10,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { filter, take } from 'rxjs';
 import { DataService } from '../../services/data.service';
+import { SettingsService } from '../../services/settings.service';
 import { CARService } from '../../services/car.service';
 import { AtomicService } from '../../services/atomic.service';
 import { D3fendService } from '../../services/d3fend.service';
@@ -52,6 +53,7 @@ export class DetectionPanelComponent implements OnInit {
     private atomicService: AtomicService,
     private d3fendService: D3fendService,
     private cdr: ChangeDetectorRef,
+    private settingsService: SettingsService,
   ) {}
 
   ngOnInit(): void {
@@ -131,7 +133,7 @@ export class DetectionPanelComponent implements OnInit {
       const avgScore = rows.length
         ? Math.round((rows.reduce((s, r) => s + r.score, 0) / rows.length) * 10) / 10
         : 0;
-      return { tactic, rows: rows.sort((a, b) => b.score - a.score), avgScore, expanded: false };
+      return { tactic, rows: rows.sort((a, b) => b.score - a.score), avgScore, expanded: this.settingsService.current.expandSectionsByDefault };
     }).sort((a, b) => b.avgScore - a.avgScore);
   }
 

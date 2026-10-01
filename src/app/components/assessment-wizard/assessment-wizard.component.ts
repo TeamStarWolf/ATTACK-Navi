@@ -12,6 +12,7 @@ import { Subscription, combineLatest, filter, take } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
 import { PanelNavService } from '../../services/panel-nav.service';
 import { DataService, AttackDomain } from '../../services/data.service';
+import { SettingsService } from '../../services/settings.service';
 import { ImplementationService, ImplStatus } from '../../services/implementation.service';
 import { CveService } from '../../services/cve.service';
 import { EpssService, EpssScore } from '../../services/epss.service';
@@ -108,6 +109,7 @@ export class AssessmentWizardComponent implements OnDestroy {
     private cveService: CveService,
     private epssService: EpssService,
     private cdr: ChangeDetectorRef,
+    private settingsService: SettingsService,
   ) {}
 
   ngOnDestroy(): void {
@@ -307,7 +309,7 @@ export class AssessmentWizardComponent implements OnDestroy {
         tacticName: s.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
         tacticShortname: s,
         techniques: tacticMap.get(s)!,
-        expanded: false,
+        expanded: this.settingsService.current.expandSectionsByDefault,
       }));
 
     this.totalTechniques = this.tacticAssessments.reduce((sum, ta) => sum + ta.techniques.length, 0);

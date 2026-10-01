@@ -314,6 +314,18 @@
                 <label class="checkbox-item">
                   <input
                     type="checkbox"
+                    [(ngModel)]="settings.expandSectionsByDefault"
+                    (ngModelChange)="onDisplayChange()"
+                  />
+                  <div class="checkbox-info">
+                    <span class="checkbox-label">Expand sections by default</span>
+                    <span class="checkbox-desc">Collapsible groups (Detect, Data Sources, Assessment) start expanded instead of collapsed</span>
+                  </div>
+                </label>
+
+                <label class="checkbox-item">
+                  <input
+                    type="checkbox"
                     [(ngModel)]="settings.showMitigationCount"
                     (ngModelChange)="onDisplayChange()"
                   />
