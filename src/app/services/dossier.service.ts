@@ -8,23 +8,33 @@ import {
   CveDossier,
   DossierArticle,
   DossierControl,
+  DossierControlFramework,
   DossierCountermeasure,
   DossierDetection,
   DossierExploits,
+  DossierF3,
   DossierNamed,
   DossierTechnique,
+  DossierThreatActors,
   DossierTier,
 } from '../models/dossier';
 import { NvdCveItem } from '../models/cve';
 import { AtomicService } from './atomic.service';
 import { AttackCveService } from './attack-cve.service';
 import { CapecService } from './capec.service';
+import { CARService } from './car.service';
+import { CisControlsService } from './cis-controls.service';
+import { CriProfileService } from './cri-profile.service';
+import { CsaCcmService } from './csa-ccm.service';
 import { Cve2CapecService } from './cve2capec.service';
 import { CveService } from './cve.service';
+import { CweService } from './cwe.service';
 import { D3fendService } from './d3fend.service';
 import { DataService } from './data.service';
 import { EngageService } from './engage.service';
 import { EpssService } from './epss.service';
+import { F3FraudService } from './f3-fraud.service';
+import { M365ControlsService } from './m365-controls.service';
 import { NistMappingService } from './nist-mapping.service';
 import { PocExploitService } from './poc-exploit.service';
 import { SigmaService } from './sigma.service';
@@ -63,6 +73,13 @@ export class DossierService {
     private poc: PocExploitService,
     private sigma: SigmaService,
     private atomic: AtomicService,
+    private car: CARService,
+    private cri: CriProfileService,
+    private cis: CisControlsService,
+    private csa: CsaCcmService,
+    private m365: M365ControlsService,
+    private cwe: CweService,
+    private f3: F3FraudService,
   ) {
     this.http
       .get<{ cves?: string[] }>(`${ASSET_DIR}/index.json`)
@@ -70,6 +87,9 @@ export class DossierService {
       .subscribe(idx => {
         this.assetIndex = new Set((idx?.cves ?? []).map(c => c.toUpperCase()));
       });
+    // The F3 overlap bundle is separate from the Enterprise domain; start it early so it
+    // is usually ready by the time a dossier is opened.
+    this.f3.ensureLoaded();
   }
 
   /** True when a pre-generated dossier is known to exist for this CVE. */
@@ -161,13 +181,23 @@ export class DossierService {
     base.techniques = (raw.techniques ?? []).map(t => this.resolveTechnique(t));
     base.attackVersion = this.dataService.getCurrentDomain()?.attackVersion ?? raw.attackVersion;
 
-    // Sigma and Atomic counts come from services the generator cannot see, so the
+    // Sigma, Atomic and CAR counts come from services the generator cannot see, so the
     // asset leaves them at zero. Fill them in rather than under-reporting coverage.
     base.detection = (raw.detection ?? []).map(det => ({
       ...det,
       sigmaRuleCount: det.sigmaRuleCount || this.sigma.getRuleCount(det.techniqueId),
       atomicTestCount: det.atomicTestCount || this.atomic.getTestCount(det.techniqueId),
+      carAnalyticCount: det.carAnalyticCount || this.car.getAnalytics(det.techniqueId).length,
     }));
+
+    // Cross-framework enrichment the generator does not carry: control frameworks beyond
+    // NIST, ATT&CK threat-actor usage, F3 overlap, and CWE names. All derive from the
+    // resolved technique ids / CWEs, so they work for an asset exactly as for live.
+    const assetTechIds = base.techniques.map(t => t.id);
+    base.cwes = (raw.cwes ?? []).map(c => (c.name ? c : this.namedCwe(c.id)));
+    base.controlFrameworks = this.collectControlFrameworks(assetTechIds);
+    base.threatActors = this.collectThreatActors(assetTechIds);
+    base.f3 = this.collectF3(assetTechIds);
 
     const cveForSsvc = live ?? this.synthesizeCve(base);
     base.ssvc = this.ssvc.available ? this.ssvc.evaluate(this.withLiveKev(cveForSsvc), env) : null;
@@ -255,14 +285,17 @@ export class DossierService {
     }
 
     const cwes = [...new Set([...enriched.cwes, ...(chain?.cwes ?? [])])];
-    d.cwes = cwes.map(c => ({ id: c, name: '', url: this.cweUrl(c) }));
+    d.cwes = cwes.map(c => this.namedCwe(c));
 
     const techniqueIds = d.techniques.map(t => t.id);
     d.capecs = this.collectCapecs(cwes, techniqueIds);
     d.countermeasures = this.collectCountermeasures(techniqueIds);
     d.engage = this.collectEngage(techniqueIds);
     d.controls = this.collectControls(techniqueIds);
+    d.controlFrameworks = this.collectControlFrameworks(techniqueIds);
     d.mitigations = this.collectMitigations(techniqueIds);
+    d.threatActors = this.collectThreatActors(techniqueIds);
+    d.f3 = this.collectF3(techniqueIds);
     d.detection = this.collectDetection(d.techniques);
     d.exploits = this.collectExploits(enriched);
     d.attackVersion = this.dataService.getCurrentDomain()?.attackVersion;
@@ -348,6 +381,173 @@ export class DossierService {
     return [...byId.values()].sort((a, b) => a.control.localeCompare(b.control));
   }
 
+  /**
+   * Every control framework the app maps to ATT&CK, aggregated across the techniques and
+   * de-duped within each framework. NIST, CRI and the CTID capability-group frameworks
+   * (CIS, CSA CCM, Microsoft 365) each keyed by their own identifier scheme, so they stay
+   * as separate lists. A framework with no hits is dropped, not shown empty.
+   */
+  private collectControlFrameworks(techniqueIds: string[]): DossierControlFramework[] {
+    const dedupe = (
+      rows: { id: string; name: string; url?: string; detail?: string }[],
+    ): DossierNamed[] => {
+      const byId = new Map<string, DossierNamed>();
+      for (const r of rows) {
+        if (!byId.has(r.id)) byId.set(r.id, { id: r.id, name: r.name, url: r.url, detail: r.detail });
+      }
+      return [...byId.values()].sort((a, b) => a.id.localeCompare(b.id));
+    };
+
+    const nist = dedupe(
+      techniqueIds.flatMap(tid =>
+        this.nist.getControlsForTechnique(tid).map(c => ({
+          id: c.id,
+          name: c.description,
+          detail: c.family,
+        })),
+      ),
+    );
+    const cri = dedupe(
+      techniqueIds.flatMap(tid =>
+        this.cri.getControlsForTechnique(tid).map(c => ({
+          id: c.id,
+          name: c.description,
+          url: c.url,
+          detail: c.functionLabel,
+        })),
+      ),
+    );
+    const cis = dedupe(
+      techniqueIds.flatMap(tid =>
+        this.cis.getControlsForTechnique(tid).map(c => ({
+          id: c.id,
+          name: c.description,
+          detail: [c.group, c.mappingType].filter(Boolean).join(' · '),
+        })),
+      ),
+    );
+    const csa = dedupe(
+      techniqueIds.flatMap(tid =>
+        this.csa.getControlsForTechnique(tid).map(c => ({
+          id: c.controlId,
+          name: c.description,
+          detail: [c.scoreCategory, c.scoreValue].filter(Boolean).join(' · '),
+        })),
+      ),
+    );
+    const m365 = dedupe(
+      techniqueIds.flatMap(tid =>
+        this.m365.getControlsForTechnique(tid).map(c => ({
+          id: c.controlId,
+          name: c.description,
+          url: c.url,
+          detail: [c.group, c.scoreCategory, c.scoreValue].filter(Boolean).join(' · '),
+        })),
+      ),
+    );
+
+    return [
+      { framework: 'NIST 800-53', source: 'CTID / NIST', items: nist },
+      { framework: 'CRI Profile', source: 'Cyber Risk Institute', items: cri },
+      { framework: 'CIS Controls', source: 'CTID / CIS', items: cis },
+      { framework: 'CSA CCM', source: 'CTID / Cloud Security Alliance', items: csa },
+      { framework: 'Microsoft 365', source: 'CTID / Microsoft', items: m365 },
+    ].filter(f => f.items.length > 0);
+  }
+
+  /**
+   * ATT&CK groups, software and campaigns known to use these techniques. The `*ByTechnique`
+   * maps are keyed by STIX id, so each attackId is resolved to its technique first.
+   */
+  private collectThreatActors(techniqueIds: string[]): DossierThreatActors {
+    const domain = this.dataService.getCurrentDomain();
+    if (!domain) return { groups: [], software: [], campaigns: [] };
+
+    const groups = new Map<string, DossierNamed>();
+    const software = new Map<string, DossierNamed>();
+    const campaigns = new Map<string, DossierNamed>();
+
+    for (const attackId of techniqueIds) {
+      const technique = domain.techniques.find(t => t.attackId === attackId);
+      if (!technique) continue;
+      for (const g of this.dataService.getGroupsForTechnique(technique.id)) {
+        if (!groups.has(g.attackId)) {
+          groups.set(g.attackId, { id: g.attackId, name: g.name, url: g.url });
+        }
+      }
+      for (const s of this.dataService.getSoftwareForTechnique(technique.id)) {
+        if (!software.has(s.attackId)) {
+          software.set(s.attackId, { id: s.attackId, name: s.name, url: s.url });
+        }
+      }
+      for (const c of this.dataService.getCampaignsForTechnique(technique.id)) {
+        if (!campaigns.has(c.attackId)) {
+          campaigns.set(c.attackId, { id: c.attackId, name: c.name, url: c.url });
+        }
+      }
+    }
+
+    const byId = (a: DossierNamed, b: DossierNamed) => a.id.localeCompare(b.id);
+    return {
+      groups: [...groups.values()].sort(byId),
+      software: [...software.values()].sort(byId),
+      campaigns: [...campaigns.values()].sort(byId),
+    };
+  }
+
+  /** The techniques of this CVE that also carry a CTID F3 Fraud Framework interpretation. */
+  private collectF3(techniqueIds: string[]): DossierF3 {
+    const seen = new Map<string, { id: string; name: string; url: string }>();
+    for (const tid of techniqueIds) {
+      const overlap = this.f3.getOverlap(tid);
+      if (overlap && !seen.has(overlap.id)) seen.set(overlap.id, overlap);
+    }
+    return { techniques: [...seen.values()].sort((a, b) => a.id.localeCompare(b.id)) };
+  }
+
+  /**
+   * Recompute only the F3 overlap. The F3 bundle is loaded separately from the Enterprise
+   * domain and can arrive after a dossier is assembled; the panel calls this when it does,
+   * rather than refetching everything.
+   */
+  recomputeF3(dossier: CveDossier): CveDossier {
+    return { ...dossier, f3: this.collectF3(dossier.techniques.map(t => t.id)) };
+  }
+
+  /**
+   * Re-derive the sections that depend on the ATT&CK domain / cross-framework services,
+   * for when those arrive after the dossier was first assembled (a deep link can open an
+   * asset before the ATT&CK bundle has finished parsing). The new cross-framework sections
+   * are always refreshed; for a live dossier the classic domain-derived sections are too.
+   * An asset's baked-in mitigations/CAPEC/D3FEND/detection are left intact.
+   */
+  recomputeEnrichment(dossier: CveDossier): CveDossier {
+    const techniqueIds = (dossier.techniques ?? []).map(t => t.id);
+    const cwes = dossier.cwes ?? [];
+    const base: CveDossier = {
+      ...dossier,
+      cwes: cwes.map(c => (c.name ? c : this.namedCwe(c.id))),
+      controlFrameworks: this.collectControlFrameworks(techniqueIds),
+      threatActors: this.collectThreatActors(techniqueIds),
+      f3: this.collectF3(techniqueIds),
+    };
+    if (dossier.source !== 'live') return base;
+    const cweIds = cwes.map(c => c.id);
+    return {
+      ...base,
+      capecs: this.collectCapecs(cweIds, techniqueIds),
+      countermeasures: this.collectCountermeasures(techniqueIds),
+      engage: this.collectEngage(techniqueIds),
+      controls: this.collectControls(techniqueIds),
+      mitigations: this.collectMitigations(techniqueIds),
+      detection: this.collectDetection(dossier.techniques),
+    };
+  }
+
+  private namedCwe(cweId: string): DossierNamed {
+    return { id: cweId, name: this.cwe.getInfo(cweId)?.name ?? '', url: this.cweUrl(cweId) };
+  }
+
   private collectMitigations(techniqueIds: string[]): DossierNamed[] {
     const domain = this.dataService.getCurrentDomain();
     if (!domain) return [];
@@ -377,7 +577,8 @@ export class DossierService {
       const notes = technique ? (domain?.detectionNotesByTechnique.get(technique.id) ?? []) : [];
       const sigmaCount = this.sigma.getRuleCount(t.id);
       const atomicCount = this.atomic.getTestCount(t.id);
-      if (notes.length === 0 && sigmaCount === 0 && atomicCount === 0) continue;
+      const carCount = this.car.getAnalytics(t.id).length;
+      if (notes.length === 0 && sigmaCount === 0 && atomicCount === 0 && carCount === 0) continue;
       out.push({
         techniqueId: t.id,
         techniqueName: t.name || t.id,
@@ -385,6 +586,7 @@ export class DossierService {
         dataComponents: [...new Set(notes.map(n => n.dataComponentName).filter(Boolean))],
         sigmaRuleCount: sigmaCount,
         atomicTestCount: atomicCount,
+        carAnalyticCount: carCount,
         queries: [],
       });
     }
@@ -501,6 +703,7 @@ export class DossierService {
       epssPercentile: null,
       isKev: false,
       ssvc: null,
+      cisaSsvc: null,
       cwes: [],
       capecs: [],
       techniques: [],
@@ -508,6 +711,9 @@ export class DossierService {
       countermeasures: [],
       engage: [],
       controls: [],
+      controlFrameworks: [],
+      threatActors: { groups: [], software: [], campaigns: [] },
+      f3: { techniques: [] },
       detection: [],
       exploits: {
         hasPoc: false,
