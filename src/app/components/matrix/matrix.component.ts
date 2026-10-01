@@ -30,6 +30,7 @@ import { D3fendService } from '../../services/d3fend.service';
 import { AtomicService } from '../../services/atomic.service';
 import { SigmaService } from '../../services/sigma.service';
 import { LibraryLayerService } from '../../services/library-layer.service';
+import { UserLayerService } from '../../services/user-layer.service';
 import { EngageService } from '../../services/engage.service';
 import { CARService } from '../../services/car.service';
 import { CriProfileService } from '../../services/cri-profile.service';
@@ -294,6 +295,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     private cve2capecService: Cve2CapecService,
     private pocExploitService: PocExploitService,
     private enrichment: EnrichmentService,
+    private userLayerService: UserLayerService,
     private cdr: ChangeDetectorRef,
     private el: ElementRef,
     private matrixControl: MatrixControlService,
@@ -717,12 +719,17 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
             this.unifiedScoreMap.set(tech.attackId, total);
           }
         } else if (mode === 'library' && this.domain) {
-          // Default to the first manifest layer if none picked yet, then color
-          // by the active layer's per-technique scores (via LibraryLayerService).
-          if (!this.libraryLayerService.activeFile && this.libraryLayerService.manifest.length) {
-            this.libraryLayerService.setActive(this.libraryLayerService.manifest[0].file);
+          // A user-imported layer takes precedence: color by its own per-technique
+          // scores/gradient. Otherwise fall back to the curated library layers,
+          // defaulting to the first manifest layer if none is picked yet.
+          if (this.userLayerService.activeLayer) {
+            this.maxLibraryScore = this.userLayerService.maxScore();
+          } else {
+            if (!this.libraryLayerService.activeFile && this.libraryLayerService.manifest.length) {
+              this.libraryLayerService.setActive(this.libraryLayerService.manifest[0].file);
+            }
+            this.maxLibraryScore = this.libraryLayerService.maxScore();
           }
-          this.maxLibraryScore = this.libraryLayerService.maxScore();
         } else if (mode === 'sigma' && this.domain) {
           this.softwareScores = new Map();
           this.maxSoftware = 1;
@@ -947,6 +954,15 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     // Re-render the matrix when the active library layer loads or switches.
     this.subs.add(
       this.libraryLayerService.changed$.subscribe(() => {
+        if (this.currentHeatmapMode === 'library') {
+          this.filterService.setHeatmapMode('library');
+        }
+      }),
+    );
+
+    // Re-render when a user-imported layer is applied, switched or cleared.
+    this.subs.add(
+      this.userLayerService.changed$.subscribe(() => {
         if (this.currentHeatmapMode === 'library') {
           this.filterService.setHeatmapMode('library');
         }
@@ -1528,7 +1544,19 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   getLibraryScore(t: Technique): number {
-    return this.libraryLayerService.getScore(t.attackId);
+    return this.userLayerService.activeLayer
+      ? this.userLayerService.getScore(t.attackId)
+      : this.libraryLayerService.getScore(t.attackId);
+  }
+
+  /**
+   * When a user-imported layer is active, its own gradient/explicit-color for a
+   * technique overrides the fixed `library` ramp (null = use the ramp).
+   */
+  getLibraryColorOverride(t: Technique): string | null {
+    return this.userLayerService.activeLayer
+      ? this.userLayerService.getGradientColor(t.attackId)
+      : null;
   }
 
   getNistScore(t: Technique): number {
@@ -1662,7 +1690,8 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
           { limit: Number.POSITIVE_INFINITY, color: '#a78bfa' },
         ]);
       case 'library':
-        return this.getRelativeHeatColor(this.getLibraryScore(tech), this.maxLibraryScore, '#12122a', ['#1e3a5f', '#2f6ab0', '#38bdf8', '#a78bfa']);
+        return this.getLibraryColorOverride(tech)
+          ?? this.getRelativeHeatColor(this.getLibraryScore(tech), this.maxLibraryScore, '#12122a', ['#1e3a5f', '#2f6ab0', '#38bdf8', '#a78bfa']);
       case 'sigma':
         return this.getRelativeHeatColor(this.getSigmaScore(tech), this.maxSigmaScore, '#0a1a1a', ['#0d4a3a', '#0d7a5e', '#0ea87a', '#10b981']);
       case 'nist':

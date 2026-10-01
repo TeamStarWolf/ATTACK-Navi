@@ -4001,3 +4001,23 @@
   cursor: help;
 }
 
+
+/* Imported (user-uploaded) Navigator layer data for the selected technique */
+.imported-layer-section {
+  .imported-layer-body { display: flex; flex-direction: column; gap: 8px; padding-top: 4px; font-size: 12px; }
+  .il-source { opacity: 0.8; }
+  .il-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+  .il-badge {
+    display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; white-space: nowrap;
+    border-radius: 10px; background: rgba(120, 160, 255, 0.14); border: 1px solid rgba(120, 160, 255, 0.3);
+  }
+  .il-swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid rgba(255, 255, 255, 0.35); }
+  .il-disabled { background: rgba(255, 120, 120, 0.14); border-color: rgba(255, 120, 120, 0.3); }
+  .il-comment { white-space: pre-wrap; line-height: 1.4; padding: 6px 8px; border-radius: 6px; background: rgba(255, 255, 255, 0.05); }
+  .il-metadata { margin: 0; display: flex; flex-direction: column; gap: 4px; }
+  .il-meta-row { display: flex; gap: 8px; }
+  .il-meta-row dt { font-weight: 600; opacity: 0.75; min-width: 90px; }
+  .il-meta-row dd { margin: 0; word-break: break-word; }
+  .il-links { margin: 0; padding-left: 16px; display: flex; flex-direction: column; gap: 3px; }
+  .il-links a { word-break: break-all; }
+}
