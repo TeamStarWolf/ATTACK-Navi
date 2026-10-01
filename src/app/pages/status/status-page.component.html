@@ -23,6 +23,13 @@
     }
   </section>
 
+  @if (domain) {
+    <section class="status-section">
+      <h2 class="status-section-title">Coverage by Framework</h2>
+      <app-coverage-breakdown [domain]="domain" />
+    </section>
+  }
+
   <section class="status-section">
     <h2 class="status-section-title">Data Sources &amp; Integrations</h2>
     <app-data-health />

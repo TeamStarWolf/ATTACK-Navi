@@ -14,6 +14,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DataService } from '../../services/data.service';
 import { Domain } from '../../models/domain';
 import { StatsBarComponent } from '../../components/stats-bar/stats-bar.component';
+import { CoverageBreakdownComponent } from '../../components/coverage-breakdown/coverage-breakdown.component';
 import { DataHealthComponent } from '../../components/data-health/data-health.component';
 
 /**
@@ -24,7 +25,7 @@ import { DataHealthComponent } from '../../components/data-health/data-health.co
 @Component({
   selector: 'app-status-page',
   standalone: true,
-  imports: [CommonModule, StatsBarComponent, DataHealthComponent],
+  imports: [CommonModule, StatsBarComponent, CoverageBreakdownComponent, DataHealthComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './status-page.component.html',
   styleUrl: './status-page.component.scss',

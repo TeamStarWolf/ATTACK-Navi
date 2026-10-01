@@ -109,6 +109,60 @@ select {
   }
 }
 
+// ── export ──────────────────────────────────────────────────────────────────
+.export-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: var(--bg-panel-strong);
+}
+
+.export-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+}
+
+.export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.btn-ghost {
+  padding: 0.3rem 0.65rem;
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  background: var(--bg-raised);
+  color: var(--text-main);
+  font-size: 0.78rem;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+}
+
+.export-state {
+  font-size: 0.75rem;
+  color: var(--accent);
+
+  &.fail {
+    color: var(--accent-warm);
+  }
+}
+
 // ── verdict ─────────────────────────────────────────────────────────────────
 .verdict-row {
   display: flex;

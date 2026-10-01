@@ -1,0 +1,49 @@
+<!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+     https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
+<div class="cov-breakdown">
+  <div class="cov-heads">
+    <div class="cov-head">
+      <div class="cov-head-pct enriched">{{ enrichedPct }}%</div>
+      <div class="cov-head-body">
+        <div class="cov-head-label">Enriched</div>
+        <div class="cov-head-sub">{{ enrichedCount }}/{{ total }} techniques carry ≥1 framework signal</div>
+      </div>
+    </div>
+    <div class="cov-head">
+      <div class="cov-head-pct defended">{{ defendedPct }}%</div>
+      <div class="cov-head-body">
+        <div class="cov-head-label">Defended</div>
+        <div class="cov-head-sub">{{ defendedCount }}/{{ total }} have a mitigation, detection, control or D3FEND</div>
+      </div>
+    </div>
+  </div>
+
+  <p class="cov-note">
+    <strong>Enriched</strong> is the cross-framework context assembled in the workbench &mdash; reference
+    availability, not deployed defense. <strong>Defended</strong> counts techniques with at least one
+    mitigating or detecting control mapped. Neither asserts that a control is live in your environment.
+  </p>
+
+  <div class="cov-rows">
+    @for (row of rows; track row.label) {
+      <div class="cov-row" [class.defensive]="row.defensive">
+        <div class="cov-row-head">
+          <span class="cov-row-label">{{ row.label }}</span>
+          <span class="cov-row-hint">{{ row.hint }}</span>
+        </div>
+        <div class="cov-row-bar">
+          <div class="cov-row-fill" [style.width.%]="row.pct"></div>
+        </div>
+        <div class="cov-row-val">
+          <strong>{{ row.count }}</strong><span class="cov-row-total">/{{ total }}</span>
+          <span class="cov-row-pct">{{ row.pct }}%</span>
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="cov-legend">
+    <span class="cov-legend-item"><span class="dot defensive"></span> contributes to Defended</span>
+    <span class="cov-legend-item"><span class="dot context"></span> context / validation only</span>
+  </div>
+</div>

@@ -1,6 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { SsvcResult } from '../services/ssvc.service';
+import { CisaSsvcAssessment } from '../services/cisa-ssvc.service';
 
 /**
  * A single CVE assembled across every framework the app knows about.
@@ -53,6 +54,40 @@ export interface DossierControl {
   techniques: string[];
 }
 
+/**
+ * One security-control framework's mappings for this CVE's techniques, aggregated and
+ * de-duped across them. Each framework (NIST 800-53, CRI Profile, CIS Controls, CSA CCM,
+ * Microsoft 365) has its own identifier scheme and grouping, so they are kept as separate
+ * lists rather than flattened into one.
+ */
+export interface DossierControlFramework {
+  /** Display name, e.g. "NIST 800-53", "CRI Profile", "CIS Controls". */
+  framework: string;
+  /** Short attribution/source note shown under the framework heading. */
+  source: string;
+  items: DossierNamed[];
+}
+
+/**
+ * ATT&CK groups, software and campaigns observed using this CVE's techniques. Derived
+ * from the loaded ATT&CK release's `uses` relationships, aggregated across the techniques
+ * and de-duped. This is "who is known to use these techniques", not "who exploited this
+ * exact CVE" — an intel lead, not attribution.
+ */
+export interface DossierThreatActors {
+  groups: DossierNamed[];
+  software: DossierNamed[];
+  campaigns: DossierNamed[];
+}
+
+/**
+ * Overlap between this CVE's ATT&CK techniques and CTID's F3 Fraud Framework: the
+ * techniques that also carry a fraud interpretation. Empty for most CVEs.
+ */
+export interface DossierF3 {
+  techniques: { id: string; name: string; url: string }[];
+}
+
 export interface DossierCountermeasure {
   id: string;
   name: string;
@@ -76,6 +111,8 @@ export interface DossierDetection {
   dataComponents: string[];
   sigmaRuleCount: number;
   atomicTestCount: number;
+  /** MITRE CAR analytics mapped to this technique. */
+  carAnalyticCount: number;
   /** Runnable hunt queries, asset-only. */
   queries: { platform: string; title: string; query: string; dataSource?: string }[];
 }
@@ -116,7 +153,11 @@ export interface CveDossier {
   kevVendorProject?: string;
   kevProduct?: string;
 
+  /** The app's own SSVC calculator result (proxies inputs from CVSS + KEV). */
   ssvc: SsvcResult | null;
+  /** CISA's authoritative *published* SSVC decision (Act/Attend/Track), when CISA has
+   *  scored it. Fetched from the CVE 5.0 record's ADP container; null when unavailable. */
+  cisaSsvc: CisaSsvcAssessment | null;
 
   cwes: DossierNamed[];
   capecs: DossierNamed[];
@@ -124,7 +165,12 @@ export interface CveDossier {
   mitigations: DossierNamed[];
   countermeasures: DossierCountermeasure[];
   engage: DossierNamed[];
+  /** NIST 800-53 controls (kept for generated-asset back-compat). */
   controls: DossierControl[];
+  /** Every control framework aggregated across the techniques, including NIST. */
+  controlFrameworks: DossierControlFramework[];
+  threatActors: DossierThreatActors;
+  f3: DossierF3;
   detection: DossierDetection[];
   exploits: DossierExploits;
   articles: DossierArticle[];

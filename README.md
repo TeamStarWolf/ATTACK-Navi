@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="screenshots/attack-navi-live.png" width="100%" alt="ATTACK-Navi matrix overview">
+  <img src="screenshots/b97e7877-c86a-40ea-a0ab-1f92a01dc056.png" width="100%" alt="ATTACK-Navi">
 
   # ATTACK-Navi
 
