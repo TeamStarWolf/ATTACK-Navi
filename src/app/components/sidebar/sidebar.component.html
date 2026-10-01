@@ -202,9 +202,6 @@
           <div class="score-breakdown">
             <div class="score-title">Coverage Score <span class="score-grade" [style.color]="coverageColor">{{ coverageGrade }}</span></div>
             <div class="score-items">
-              <span class="score-item" [class.active]="mitigations.length > 0">
-                🛡️ {{ mitigations.length }} Mitigations
-              </span>
               <span class="score-item" [class.active]="carAnalytics.length > 0">
                 🔍 {{ carAnalytics.length }} CAR
               </span>
@@ -213,6 +210,9 @@
               </span>
               <span class="score-item" [class.active]="d3fendMeasures.length > 0">
                 🔰 {{ d3fendMeasures.length }} D3FEND
+              </span>
+              <span class="score-item" [class.active]="mitigations.length > 0">
+                🛡️ {{ mitigations.length }} Mitigations
               </span>
               <span class="score-item" [class.active]="nistControls.length > 0">
                 📋 {{ nistControls.length }} NIST

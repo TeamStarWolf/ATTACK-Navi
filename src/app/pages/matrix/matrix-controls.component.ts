@@ -50,10 +50,9 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
   searchScope: SearchScope = 'name';
   searchFilterMode = false;
 
-  // Mitigation search
-  mitigationSearchText = '';
-  filteredMitigations: Mitigation[] = [];
-  showDropdown = false;
+  // Active mitigation filters (applied via sidebar relationship navigation)
+  // still drive hasActiveFilters + the Clear button; the toolbar's own
+  // "Filter by mitigation" search input was removed.
   activeMitigations: Mitigation[] = [];
 
   // Filters
@@ -173,36 +172,6 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
   toggleSearchScope(): void { this.filterService.toggleSearchScope(); }
   toggleSearchFilterMode(): void { this.filterService.toggleSearchFilterMode(); }
 
-  // ── Mitigation search ───────────────────────────────────────
-  onMitigationSearchInput(): void {
-    const q = this.mitigationSearchText.toLowerCase().trim();
-    if (!q) {
-      this.filteredMitigations = [];
-      this.showDropdown = false;
-      return;
-    }
-    const selectedIds = new Set(this.activeMitigations.map((m) => m.id));
-    this.filteredMitigations = this.mitigations
-      .filter((m) => !selectedIds.has(m.id) && (
-        m.attackId.toLowerCase().includes(q) ||
-        m.name.toLowerCase().includes(q) ||
-        m.description.toLowerCase().includes(q)
-      ))
-      .slice(0, 50);
-    this.showDropdown = this.filteredMitigations.length > 0;
-  }
-
-  selectMitigation(m: Mitigation): void {
-    this.mitigationSearchText = '';
-    this.filteredMitigations = [];
-    this.showDropdown = false;
-    this.filterService.addMitigationFilter(m);
-  }
-
-  closeDropdown(): void {
-    setTimeout(() => { this.showDropdown = false; this.cdr.markForCheck(); }, 150);
-  }
-
   // ── Filters ─────────────────────────────────────────────────
   togglePlatformRow(): void {
     this.showPlatformRow = !this.showPlatformRow;
@@ -221,10 +190,7 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
   }
 
   clearAll(): void {
-    this.mitigationSearchText = '';
-    this.filteredMitigations = [];
     this.filteredTechniques = [];
-    this.showDropdown = false;
     this.showTechniqueDropdown = false;
     this.implStatusFilter = '';
     this.selectedDataSource = '';

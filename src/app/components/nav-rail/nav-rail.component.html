@@ -1,25 +1,47 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
 <nav class="nav-rail-inner" role="navigation" aria-label="Main navigation">
-  <div class="rail-section-label" aria-hidden="true">Workspaces</div>
   <div class="nav-list">
-    @for (ws of workspaces; track ws.route) {
-      <a
-        class="nav-item"
-        [routerLink]="ws.route"
-        routerLinkActive="active"
-        queryParamsHandling="preserve"
-        [title]="ws.label"
-        [attr.aria-label]="ws.label"
-      >
-        <app-icon class="nav-icon" [name]="ws.icon" [size]="20" aria-hidden="true" />
-        <span class="nav-label">{{ ws.label }}</span>
-        @if (ws.route === '/exposure' && newKevCount > 0) {
-          <span class="nav-badge" [attr.aria-label]="newKevCount + ' new KEV entries'">+{{ newKevCount }}</span>
+    @for (section of sections; track section.key; let si = $index) {
+      <div class="nav-section">
+        <div class="rail-section-label" aria-hidden="true">{{ section.label }}</div>
+        @for (ws of section.items; track ws.route; let ii = $index) {
+          <a
+            class="nav-item"
+            [class.drag-over]="overKey === si + ':' + ii && !isDragging(si, ii)"
+            [class.dragging]="isDragging(si, ii)"
+            [routerLink]="ws.route"
+            routerLinkActive="active"
+            queryParamsHandling="preserve"
+            [title]="ws.label + ' — drag to reorder within ' + section.label"
+            [attr.aria-label]="ws.label"
+            draggable="true"
+            (dragstart)="onDragStart(si, ii, $event)"
+            (dragover)="onDragOver(si, ii, $event)"
+            (drop)="onDrop(si, ii, $event)"
+            (dragend)="onDragEnd()"
+          >
+            <span class="nav-grip" aria-hidden="true" title="Drag to reorder">
+              <app-icon name="grip-vertical" [size]="14" />
+            </span>
+            <app-icon class="nav-icon" [name]="ws.icon" [size]="20" aria-hidden="true" />
+            <span class="nav-label">{{ ws.label }}</span>
+            @if (ws.route === '/exposure' && newKevCount > 0) {
+              <span class="nav-badge" [attr.aria-label]="newKevCount + ' new KEV entries'">+{{ newKevCount }}</span>
+            }
+          </a>
         }
-      </a>
+      </div>
     }
   </div>
+
+  @if (isCustomOrder) {
+    <button class="rail-reset" type="button" (click)="resetOrder()" title="Restore the default workspace order">
+      <app-icon name="refresh-cw" [size]="13" aria-hidden="true" />
+      <span>Reset order</span>
+    </button>
+  }
+
   <div class="nav-items-bottom">
     <button
       class="nav-item help-btn"

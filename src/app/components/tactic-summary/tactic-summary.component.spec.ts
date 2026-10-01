@@ -4,6 +4,7 @@ import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
 import { TacticSummaryComponent } from './tactic-summary.component';
 import { ImplementationService } from '../../services/implementation.service';
+import { EnrichmentService } from '../../services/enrichment.service';
 
 describe('TacticSummaryComponent', () => {
   let component: TacticSummaryComponent;
@@ -15,6 +16,10 @@ describe('TacticSummaryComponent', () => {
       providers: [
         { provide: ImplementationService, useValue: {
             status$: new BehaviorSubject(new Map()),
+        }},
+        { provide: EnrichmentService, useValue: {
+            isEnriched: () => false,
+            signalCount: () => 0,
         }},
       ],
     });

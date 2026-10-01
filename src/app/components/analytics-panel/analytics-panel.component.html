@@ -16,19 +16,20 @@
 
         <!-- Row 1: Key metrics -->
         <div class="metrics-row">
-          <!-- Coverage Donut -->
+          <!-- Coverage Donut (cross-framework enrichment) -->
           <div class="stat-card donut-card upgrade-section-block">
             <div class="donut" [style]="'--pct:' + coveragePct">
               <span class="donut-value">{{ coveragePct }}%</span>
             </div>
             <div class="stat-label">Overall Coverage</div>
+            <div class="stat-sub">enriched across ≥1 framework</div>
           </div>
 
           <!-- Technique counts -->
           <div class="stat-card upgrade-section-block">
             <div class="stat-big">{{ coveredTechs }} <span class="stat-denom">/ {{ totalTechs }}</span></div>
             <div class="stat-label">Techniques Covered</div>
-            <div class="stat-sub">{{ totalTechs - coveredTechs }} unmitigated</div>
+            <div class="stat-sub">{{ totalTechs - coveredTechs }} with no signal · {{ mitigationPct }}% mitigated</div>
           </div>
 
           <!-- KEV Exposure -->

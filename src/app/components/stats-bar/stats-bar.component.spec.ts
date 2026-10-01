@@ -6,6 +6,7 @@ import { StatsBarComponent } from './stats-bar.component';
 import { ImplementationService } from '../../services/implementation.service';
 import { TimelineService } from '../../services/timeline.service';
 import { FilterService } from '../../services/filter.service';
+import { EnrichmentService } from '../../services/enrichment.service';
 import { Domain } from '../../models/domain';
 
 describe('StatsBarComponent', () => {
@@ -19,6 +20,7 @@ describe('StatsBarComponent', () => {
         { provide: ImplementationService, useValue: { status$: new BehaviorSubject(new Map()) }},
         { provide: TimelineService, useValue: { snapshots$: new BehaviorSubject([]), takeSnapshot: jasmine.createSpy() } },
         { provide: FilterService, useValue: { setActivePanel: jasmine.createSpy() } },
+        { provide: EnrichmentService, useValue: { isEnriched: () => false } },
       ],
     });
     fixture = TestBed.createComponent(StatsBarComponent);

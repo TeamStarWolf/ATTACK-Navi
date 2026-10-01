@@ -43,8 +43,8 @@ describe('NavRailComponent', () => {
 
   it('renders one item per workspace plus Help and Settings', () => {
     const items = fixture.nativeElement.querySelectorAll('.nav-item');
-    // 8 workspaces + Help + Settings
-    expect(items.length).toBe(10);
+    // 9 workspaces + Help + Settings
+    expect(items.length).toBe(11);
   });
 
   it('workspace items are router links with the workspace root path', () => {
@@ -58,6 +58,7 @@ describe('NavRailComponent', () => {
     expect(hrefs).toContain('/library');
     expect(hrefs).toContain('/reports');
     expect(hrefs).toContain('/dashboard');
+    expect(hrefs).toContain('/status');
   });
 
   it('labels are human words, not shouty abbreviations', () => {
@@ -66,13 +67,13 @@ describe('NavRailComponent', () => {
     );
     expect(labels).toEqual([
       'Matrix', 'Dashboard', 'Intel', 'Detect', 'Exposure', 'Coverage',
-      'Library', 'Reports', 'Help', 'Settings',
+      'Library', 'Reports', 'Status', 'Help', 'Settings',
     ]);
   });
 
   it('renders SVG icons (no emoji glyphs)', () => {
     const icons = fixture.nativeElement.querySelectorAll('.nav-item app-icon svg');
-    expect(icons.length).toBe(10);
+    expect(icons.length).toBe(11);
   });
 
   it('shows the KEV badge on Exposure when newKevCount > 0', () => {

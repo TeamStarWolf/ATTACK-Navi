@@ -3,21 +3,16 @@
 <div class="matrix-region">
   <app-matrix-controls />
 
-  <!-- Collapsible context strip: legend, quick filters, stats, data health -->
+  <!-- Collapsible context strip: legend + quick filters. Coverage stats and
+       data-source health now live on the Status workspace (/status). -->
   <button class="context-strip-toggle" (click)="toggleContextStrip()" [attr.aria-expanded]="contextStripOpen">
-    {{ contextStripOpen ? '▴ Hide context' : '▾ Legend · quick filters · stats' }}
+    {{ contextStripOpen ? '▴ Hide context' : '▾ Legend · quick filters' }}
   </button>
   @if (contextStripOpen) {
     <div class="context-bar">
       <app-legend />
       <app-quick-filters />
     </div>
-    @if (domain) {
-      <div class="stats-health-row">
-        <app-stats-bar [domain]="domain" (tacticClicked)="scrollToTactic($event)" />
-        <app-data-health />
-      </div>
-    }
   }
   <app-filter-chips />
 
