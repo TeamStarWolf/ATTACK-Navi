@@ -98,6 +98,18 @@
     </button>
     @if (showViewMenu) {
       <div class="views-menu view-panel" (click)="$event.stopPropagation()">
+        @if (hasFeaturedLenses && currentViewpoint) {
+          <div class="featured-lenses" role="group" [attr.aria-label]="'Featured lenses for ' + currentViewpoint.label">
+            <div class="views-menu-header featured-header">★ For {{ currentViewpoint.label }}</div>
+            <div class="featured-grid">
+              @for (mode of featuredModeDefs; track mode.value) {
+                <button class="featured-lens-btn" [class.active]="heatmapMode === mode.value" (click)="setHeatmap(mode.value)">
+                  {{ mode.label }}
+                </button>
+              }
+            </div>
+          </div>
+        }
         <div class="heatmap-groups">
           @for (group of heatmapGroups; track group) {
             <div class="heatmap-group">

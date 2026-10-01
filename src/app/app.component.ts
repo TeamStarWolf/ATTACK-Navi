@@ -7,6 +7,7 @@ import { RouterOutlet } from '@angular/router';
 import { DataService, AttackDomain } from './services/data.service';
 import { Domain } from './models/domain';
 import { FilterService } from './services/filter.service';
+import { ViewpointService } from './services/viewpoint.service';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
 import { ToolbarComponent } from './components/toolbar/toolbar.component';
 import { GapViewComponent } from './components/gap-view/gap-view.component';
@@ -35,6 +36,7 @@ export class AppComponent implements OnInit {
   domain: Domain | null = null;
   private matrixControl = inject(MatrixControlService);
   private hotkeys = inject(HotkeysService);
+  private viewpoint = inject(ViewpointService);
   protected helpOverlay = inject(HelpOverlayService);
   showToast = false;
   toastMessage = '';
@@ -55,6 +57,9 @@ export class AppComponent implements OnInit {
     this.matrixControl.gapViewRequests$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.gapViewRef?.show());
+    // Restore the saved viewpoint's lens before the URL writer starts, and let
+    // it defer to an explicit `heat` deep link (handled inside restore()).
+    this.viewpoint.restore();
     this.urlStateService.init();
     this.themeService.init();
     this.hotkeys.init();
