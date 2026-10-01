@@ -24,26 +24,38 @@ interface WorkspaceNavItem {
   label: string;
 }
 
+interface NavSection {
+  key: string;
+  label: string;
+  items: WorkspaceNavItem[];
+}
+
+/** All workspaces, keyed by route (the reconciliation catalog). */
+const CATALOG: Record<string, WorkspaceNavItem> = {
+  '/matrix':    { route: '/matrix',    icon: 'grid',             label: 'Matrix' },
+  '/exposure':  { route: '/exposure',  icon: 'shield-alert',     label: 'Exposure' },
+  '/intel':     { route: '/intel',     icon: 'users',            label: 'Intel' },
+  '/detect':    { route: '/detect',    icon: 'radar',            label: 'Detect' },
+  '/coverage':  { route: '/coverage',  icon: 'shield-check',     label: 'Coverage' },
+  '/dashboard': { route: '/dashboard', icon: 'layout-dashboard', label: 'Dashboard' },
+  '/reports':   { route: '/reports',   icon: 'file-text',        label: 'Reports' },
+  '/library':   { route: '/library',   icon: 'layers',           label: 'Library' },
+  '/status':    { route: '/status',    icon: 'monitor',          label: 'Status' },
+};
+
 /**
- * Canonical workspace catalog in the default order. The default leads with a
- * Vulnerability-Intelligence / IR / Threat workflow: the Matrix canvas, then
- * Exposure (CVE/KEV/risk), Intel (adversaries), Detect (IR), then posture and
- * reporting. Users can reorder the rail by dragging; the order persists per
- * browser (NAVRAIL_ORDER_KEY) and "Reset order" restores this default.
+ * Workspaces organized from a Vulnerability-Intelligence / IR / Threat
+ * perspective. Section membership is fixed (the VI/IR/Threat structure); order
+ * WITHIN a section is user-customizable by dragging, persisted per browser
+ * (NAVRAIL_ORDER_KEY). "Reset order" restores these defaults.
  */
-const CATALOG: WorkspaceNavItem[] = [
-  { route: '/matrix', icon: 'grid', label: 'Matrix' },
-  { route: '/exposure', icon: 'shield-alert', label: 'Exposure' },
-  { route: '/intel', icon: 'users', label: 'Intel' },
-  { route: '/detect', icon: 'radar', label: 'Detect' },
-  { route: '/coverage', icon: 'shield-check', label: 'Coverage' },
-  { route: '/dashboard', icon: 'layout-dashboard', label: 'Dashboard' },
-  { route: '/reports', icon: 'file-text', label: 'Reports' },
-  { route: '/library', icon: 'layers', label: 'Library' },
-  { route: '/status', icon: 'monitor', label: 'Status' },
+const SECTION_DEFS: { key: string; label: string; routes: string[] }[] = [
+  { key: 'threat',    label: 'Threat & Exposure', routes: ['/matrix', '/exposure', '/intel'] },
+  { key: 'respond',   label: 'Response',          routes: ['/detect', '/coverage'] },
+  { key: 'reference', label: 'Reference',         routes: ['/dashboard', '/reports', '/library', '/status'] },
 ];
 
-const NAVRAIL_ORDER_KEY = 'navrail-order-v1';
+const NAVRAIL_ORDER_KEY = 'navrail-sections-v1';
 
 @Component({
   selector: 'app-nav-rail',
@@ -57,12 +69,13 @@ export class NavRailComponent implements OnInit, OnDestroy {
   /** Opens the keyboard-help overlay (hosted by AppComponent). */
   @Output() helpClick = new EventEmitter<void>();
 
-  /** The live (possibly user-reordered) workspace list. */
-  workspaces: WorkspaceNavItem[] = this.loadOrder();
+  /** The live (possibly user-reordered) sections. */
+  sections: NavSection[] = this.loadSections();
 
-  /** Index being dragged / hovered over, for the reorder affordance. */
+  /** Drag state: which section + item is being dragged, and the hover target. */
+  dragSection: number | null = null;
   dragIndex: number | null = null;
-  overIndex: number | null = null;
+  overKey: string | null = null; // `${sectionIndex}:${itemIndex}`
 
   newKevCount = 0;
   newVersionAvailable = false;
@@ -93,46 +106,54 @@ export class NavRailComponent implements OnInit, OnDestroy {
   }
 
   onSettingsClick(): void {
-    // Clear the version dot immediately; the persistent stamp happens in
-    // ChangelogPanelComponent.ngOnInit when the changelog tab is visited.
     this.newVersionAvailable = false;
   }
 
-  // --- reorder (native HTML5 drag; click still navigates) --------------------
+  // --- reorder (native HTML5 drag; click still navigates; within-section only) ---
 
   get isCustomOrder(): boolean {
-    return this.workspaces.some((w, i) => w.route !== CATALOG[i]?.route);
+    return this.sections.some((sec, i) => {
+      const def = SECTION_DEFS[i];
+      return !def || sec.items.length !== def.routes.length ||
+        sec.items.some((it, j) => it.route !== def.routes[j]);
+    });
   }
 
-  onDragStart(index: number, event: DragEvent): void {
-    this.dragIndex = index;
+  isDragging(si: number, ii: number): boolean {
+    return this.dragSection === si && this.dragIndex === ii;
+  }
+
+  onDragStart(si: number, ii: number, event: DragEvent): void {
+    this.dragSection = si;
+    this.dragIndex = ii;
     if (event.dataTransfer) {
       event.dataTransfer.effectAllowed = 'move';
-      // Required for Firefox to initiate the drag.
-      event.dataTransfer.setData('text/plain', this.workspaces[index].route);
+      event.dataTransfer.setData('text/plain', this.sections[si].items[ii].route);
     }
   }
 
-  onDragOver(index: number, event: DragEvent): void {
-    event.preventDefault(); // allow drop
+  onDragOver(si: number, ii: number, event: DragEvent): void {
+    if (si !== this.dragSection) return; // reorder only within the same section
+    event.preventDefault();
     if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
-    if (this.overIndex !== index) {
-      this.overIndex = index;
+    const key = si + ':' + ii;
+    if (this.overKey !== key) {
+      this.overKey = key;
       this.cdr.markForCheck();
     }
   }
 
-  onDrop(index: number, event: DragEvent): void {
-    event.preventDefault();
-    const from = this.dragIndex;
-    if (from === null || from === index) {
+  onDrop(si: number, ii: number, event: DragEvent): void {
+    if (si !== this.dragSection || this.dragIndex === null || this.dragIndex === ii) {
       this.clearDrag();
       return;
     }
-    const next = this.workspaces.slice();
-    const [moved] = next.splice(from, 1);
-    next.splice(index, 0, moved);
-    this.workspaces = next;
+    event.preventDefault();
+    const items = this.sections[si].items.slice();
+    const [moved] = items.splice(this.dragIndex, 1);
+    items.splice(ii, 0, moved);
+    this.sections[si] = { ...this.sections[si], items };
+    this.sections = this.sections.slice();
     this.saveOrder();
     this.clearDrag();
   }
@@ -142,7 +163,11 @@ export class NavRailComponent implements OnInit, OnDestroy {
   }
 
   resetOrder(): void {
-    this.workspaces = CATALOG.slice();
+    this.sections = SECTION_DEFS.map(def => ({
+      key: def.key,
+      label: def.label,
+      items: def.routes.map(r => CATALOG[r]).filter(Boolean),
+    }));
     try {
       localStorage.removeItem(NAVRAIL_ORDER_KEY);
     } catch {
@@ -152,47 +177,49 @@ export class NavRailComponent implements OnInit, OnDestroy {
   }
 
   private clearDrag(): void {
+    this.dragSection = null;
     this.dragIndex = null;
-    this.overIndex = null;
+    this.overKey = null;
     this.cdr.markForCheck();
   }
 
-  /** Persist the current order as a list of routes. */
+  /** Persist each section's route order. */
   private saveOrder(): void {
     try {
-      localStorage.setItem(NAVRAIL_ORDER_KEY, JSON.stringify(this.workspaces.map(w => w.route)));
+      const payload: Record<string, string[]> = {};
+      for (const sec of this.sections) payload[sec.key] = sec.items.map(i => i.route);
+      localStorage.setItem(NAVRAIL_ORDER_KEY, JSON.stringify(payload));
     } catch {
       /* storage unavailable (private mode / blocked) — order stays in-memory */
     }
   }
 
   /**
-   * Load the saved route order and reconcile it with the catalog: keep known
-   * routes in the saved order, drop unknown ones, and append any workspaces the
-   * saved order predates (so new workspaces always appear). Falls back to the
-   * default order on any error or empty/absent storage.
+   * Build the sections from the fixed defs, applying any saved per-section order.
+   * A saved route is honored only if it still belongs to that section (membership
+   * is fixed); routes the save predates are appended; unknown routes dropped.
    */
-  private loadOrder(): WorkspaceNavItem[] {
-    let saved: string[] = [];
+  private loadSections(): NavSection[] {
+    let saved: Record<string, string[]> = {};
     try {
-      saved = JSON.parse(localStorage.getItem(NAVRAIL_ORDER_KEY) ?? '[]');
+      saved = JSON.parse(localStorage.getItem(NAVRAIL_ORDER_KEY) ?? '{}') || {};
     } catch {
-      saved = [];
+      saved = {};
     }
-    if (!Array.isArray(saved) || saved.length === 0) return CATALOG.slice();
-    const byRoute = new Map(CATALOG.map(w => [w.route, w]));
-    const ordered: WorkspaceNavItem[] = [];
-    const seen = new Set<string>();
-    for (const route of saved) {
-      const item = byRoute.get(route);
-      if (item && !seen.has(route)) {
-        ordered.push(item);
-        seen.add(route);
+    return SECTION_DEFS.map(def => {
+      const allowed = new Set(def.routes);
+      const savedOrder: string[] = Array.isArray(saved[def.key]) ? saved[def.key] : [];
+      const ordered: string[] = [];
+      const seen = new Set<string>();
+      for (const r of savedOrder) {
+        if (allowed.has(r) && !seen.has(r)) { ordered.push(r); seen.add(r); }
       }
-    }
-    for (const item of CATALOG) {
-      if (!seen.has(item.route)) ordered.push(item);
-    }
-    return ordered;
+      for (const r of def.routes) if (!seen.has(r)) ordered.push(r);
+      return {
+        key: def.key,
+        label: def.label,
+        items: ordered.map(r => CATALOG[r]).filter(Boolean),
+      };
+    });
   }
 }
