@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="screenshots/e8eb3616-2eed-4669-bf3f-71dd2479b745.png" width="100%" alt="ATTACK-Navi">
+  <img src="screenshots/b97e7877-c86a-40ea-a0ab-1f92a01dc056.png" width="100%" alt="ATTACK-Navi">
 
   # ATTACK-Navi
 
