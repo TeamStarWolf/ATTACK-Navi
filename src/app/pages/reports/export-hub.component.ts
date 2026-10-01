@@ -1,9 +1,11 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
 
 import { ExportActionsService } from '../../services/export-actions.service';
 import { WorkspaceBundleService } from '../../services/workspace-bundle.service';
+import { UserLayerService } from '../../services/user-layer.service';
 
 interface ExportCard {
   icon: string;
@@ -26,12 +28,14 @@ interface ExportSection {
 @Component({
   selector: 'app-export-hub',
   standalone: true,
-  imports: [],
+  imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './export-hub.component.html',
   styleUrl: './export-hub.component.scss',
 })
 export class ExportHubComponent {
+  private readonly userLayerService = inject(UserLayerService);
+
   readonly sections: ExportSection[] = [
     {
       title: 'Coverage Data',
@@ -57,7 +61,7 @@ export class ExportHubComponent {
       cards: [
         { icon: '⬇', title: 'Export Navigator Layer', desc: 'Layer JSON for the official MITRE Navigator', action: s => s.exportNavigatorLayer() },
         { icon: '🧭', title: 'Open in Navigator', desc: 'Launch mitre-attack.github.io with this layer', action: s => s.openInNavigator() },
-        { icon: '⬆', title: 'Import Navigator Layer', desc: 'Apply scores/colors from a layer file', action: s => s.importNavigatorLayer() },
+        { icon: '⬆', title: 'Import Navigator Layer', desc: 'Convert a MITRE Navigator layer, save it, and color the matrix by it', action: s => s.importNavigatorLayer() },
       ],
     },
     {
@@ -69,6 +73,10 @@ export class ExportHubComponent {
     },
   ];
 
+  /** Saved user layers (imported Navigator layers) and the active one. */
+  readonly savedLayers$ = this.userLayerService.layers$;
+  readonly activeLayer$ = this.userLayerService.activeLayer$;
+
   constructor(
     protected exportActions: ExportActionsService,
     private workspaceBundle: WorkspaceBundleService,
@@ -76,6 +84,20 @@ export class ExportHubComponent {
 
   run(card: ExportCard): void {
     card.action(this.exportActions);
+  }
+
+  loadLayer(id: string): void {
+    void this.exportActions.loadSavedLayer(id);
+  }
+
+  deleteLayer(id: string, name: string): void {
+    if (confirm(`Delete saved layer "${name}"? This cannot be undone.`)) {
+      void this.exportActions.deleteSavedLayer(id);
+    }
+  }
+
+  clearActiveLayer(): void {
+    this.exportActions.clearActiveLayer();
   }
 
   exportWorkspace(): void {

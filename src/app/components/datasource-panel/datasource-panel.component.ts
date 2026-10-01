@@ -12,6 +12,7 @@ import { filter, take } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
 import { PanelNavService } from '../../services/panel-nav.service';
 import { DataService } from '../../services/data.service';
+import { SettingsService } from '../../services/settings.service';
 import { MitreDataComponent } from '../../models/datasource';
 
 export interface DataSourceRow {
@@ -48,6 +49,7 @@ export class DatasourcePanelComponent implements OnInit {
     private dataService: DataService,
     private panelNav: PanelNavService,
     private cdr: ChangeDetectorRef,
+    private settingsService: SettingsService,
   ) {}
 
   ngOnInit(): void {
@@ -76,7 +78,7 @@ export class DatasourcePanelComponent implements OnInit {
         components,
         techniqueCount: techIds.size,
         techIds: [...techIds],
-        expanded: false,
+        expanded: this.settingsService.current.expandSectionsByDefault,
       }));
 
       // Build flat component list with per-component technique counts

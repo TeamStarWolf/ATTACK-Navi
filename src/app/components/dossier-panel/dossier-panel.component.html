@@ -77,10 +77,24 @@
           </div>
         </div>
 
-        @if (d.ssvc; as s) {
-          <div class="verdicts">
+        <div class="verdicts">
+          <!-- CISA's authoritative published SSVC decision. -->
+          <div class="verdict" [class]="actionClass((d.cisaSsvc?.decision || '').toLowerCase())">
+            <span class="verdict-label">SSVC · CISA published</span>
+            <strong>{{ d.cisaSsvc?.decision || '—' }}</strong>
+            @if (d.cisaSsvc; as c) {
+              <span class="verdict-note" [title]="cisaSsvc.tooltip(c)">
+                Exploitation {{ c.exploitation }} · Automatable {{ c.automatable }} ·
+                {{ c.technicalImpact }} impact
+                @if (c.decisionRange.length > 1) { · range {{ c.decisionRange.join('→') }} }
+              </span>
+            } @else {
+              <span class="verdict-note">CISA has not published an SSVC decision for this CVE.</span>
+            }
+          </div>
+          @if (d.ssvc; as s) {
             <div class="verdict" [class]="actionClass(s.action)">
-              <span class="verdict-label">SSVC decision</span>
+              <span class="verdict-label">SSVC · computed</span>
               <strong>{{ s.action || '—' }}</strong>
               @if (actionMeaning[s.action]) {
                 <span class="verdict-note">{{ actionMeaning[s.action] }}</span>
@@ -90,7 +104,25 @@
               <span class="verdict-label">BOD 26-04</span>
               <strong>{{ s.timeline || '—' }}</strong>
             </div>
-          </div>
+          }
+        </div>
+      </section>
+
+      <!-- Export -->
+      <section class="export-bar">
+        <span class="export-label">Export dossier</span>
+        <div class="export-actions">
+          <button type="button" class="btn-ghost" (click)="copyMarkdown()">Copy Markdown</button>
+          <button type="button" class="btn-ghost" (click)="downloadMarkdown()">Download .md</button>
+          <button type="button" class="btn-ghost" (click)="copyJson()">Copy JSON</button>
+          <button type="button" class="btn-ghost" (click)="downloadJson()">Download .json</button>
+        </div>
+        @switch (exportState) {
+          @case ('md-copied') { <span class="export-state" role="status">Markdown copied.</span> }
+          @case ('json-copied') { <span class="export-state" role="status">JSON copied.</span> }
+          @case ('md-saved') { <span class="export-state" role="status">Markdown downloaded.</span> }
+          @case ('json-saved') { <span class="export-state" role="status">JSON downloaded.</span> }
+          @case ('copy-failed') { <span class="export-state fail" role="status">Clipboard unavailable — use Download.</span> }
         }
       </section>
 
@@ -232,22 +264,123 @@
             }
           </div>
 
-          <div class="cm-col">
-            <h5>NIST 800-53 <span class="count">{{ d.controls.length }}</span></h5>
-            @if (d.controls.length === 0) {
-              <p class="empty">No control mappings.</p>
-            } @else {
-              <div class="chip-row scroll-cap">
-                @for (c of d.controls; track c.control) {
-                  <span class="plain-chip" [title]="c.name">
-                    <span class="tech-id">{{ c.control }}</span>
-                    <span class="tech-name">{{ c.name }}</span>
-                  </span>
-                }
+        </div>
+      </section>
+
+      <!-- Security controls (every framework the app maps to ATT&CK) -->
+      <section class="block">
+        <h4>Security controls</h4>
+        @if (d.controlFrameworks.length === 0) {
+          <p class="empty">No control framework maps to these techniques.</p>
+        } @else {
+          <p class="hint">
+            Controls across frameworks that mitigate or detect these techniques, aggregated
+            and de-duped. Counts are per framework.
+          </p>
+          <div class="cm-grid">
+            @for (fw of d.controlFrameworks; track fw.framework) {
+              <div class="cm-col">
+                <h5>{{ fw.framework }} <span class="count">{{ fw.items.length }}</span></h5>
+                <div class="chip-row scroll-cap">
+                  @for (c of fw.items; track trackId($index, c)) {
+                    @if (c.url) {
+                      <a class="plain-chip" [href]="c.url" target="_blank" rel="noopener" [title]="c.name + (c.detail ? ' — ' + c.detail : '')">
+                        <span class="tech-id">{{ c.id }}</span>
+                        <span class="tech-name">{{ c.name }}</span>
+                      </a>
+                    } @else {
+                      <span class="plain-chip" [title]="c.name + (c.detail ? ' — ' + c.detail : '')">
+                        <span class="tech-id">{{ c.id }}</span>
+                        <span class="tech-name">{{ c.name }}</span>
+                      </span>
+                    }
+                  }
+                </div>
               </div>
             }
           </div>
-        </div>
+        }
+      </section>
+
+      <!-- Threat actors -->
+      <section class="block">
+        <h4>Threat actors using these techniques</h4>
+        @if (!hasThreatActors) {
+          <p class="empty">No ATT&CK groups, software or campaigns map to these techniques.</p>
+        } @else {
+          <p class="hint">
+            Who is known to use these techniques per ATT&CK — an intel lead, not attribution
+            to this exact CVE.
+          </p>
+          <div class="cm-grid">
+            <div class="cm-col">
+              <h5>Groups <span class="count">{{ d.threatActors.groups.length }}</span></h5>
+              @if (d.threatActors.groups.length === 0) {
+                <p class="empty">None.</p>
+              } @else {
+                <div class="chip-row scroll-cap">
+                  @for (g of d.threatActors.groups; track trackId($index, g)) {
+                    <a class="plain-chip" [href]="g.url" target="_blank" rel="noopener" [title]="g.name">
+                      <span class="tech-id">{{ g.id }}</span>
+                      <span class="tech-name">{{ g.name }}</span>
+                    </a>
+                  }
+                </div>
+              }
+            </div>
+            <div class="cm-col">
+              <h5>Software <span class="count">{{ d.threatActors.software.length }}</span></h5>
+              @if (d.threatActors.software.length === 0) {
+                <p class="empty">None.</p>
+              } @else {
+                <div class="chip-row scroll-cap">
+                  @for (s of d.threatActors.software; track trackId($index, s)) {
+                    <a class="plain-chip" [href]="s.url" target="_blank" rel="noopener" [title]="s.name">
+                      <span class="tech-id">{{ s.id }}</span>
+                      <span class="tech-name">{{ s.name }}</span>
+                    </a>
+                  }
+                </div>
+              }
+            </div>
+            <div class="cm-col">
+              <h5>Campaigns <span class="count">{{ d.threatActors.campaigns.length }}</span></h5>
+              @if (d.threatActors.campaigns.length === 0) {
+                <p class="empty">None.</p>
+              } @else {
+                <div class="chip-row scroll-cap">
+                  @for (c of d.threatActors.campaigns; track trackId($index, c)) {
+                    <a class="plain-chip" [href]="c.url" target="_blank" rel="noopener" [title]="c.name">
+                      <span class="tech-id">{{ c.id }}</span>
+                      <span class="tech-name">{{ c.name }}</span>
+                    </a>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </section>
+
+      <!-- F3 Fraud overlap -->
+      <section class="block">
+        <h4>F3 Fraud Framework overlap <span class="count">{{ d.f3.techniques.length }}</span></h4>
+        @if (d.f3.techniques.length === 0) {
+          <p class="empty">None of these techniques carries a CTID F3 Fraud interpretation.</p>
+        } @else {
+          <p class="hint">
+            Techniques of this CVE that also appear in CTID's F3 Fraud Framework — a fraud
+            angle on the same behaviour.
+          </p>
+          <div class="chip-row">
+            @for (t of d.f3.techniques; track trackId($index, t)) {
+              <a class="plain-chip" [href]="t.url" target="_blank" rel="noopener" [title]="t.name">
+                <span class="tech-id">{{ t.id }}</span>
+                <span class="tech-name">{{ t.name }}</span>
+              </a>
+            }
+          </div>
+        }
       </section>
 
       <!-- Detection -->
@@ -263,6 +396,7 @@
                 <span class="det-counts">
                   @if (det.sigmaRuleCount > 0) { <span>{{ det.sigmaRuleCount }} Sigma</span> }
                   @if (det.atomicTestCount > 0) { <span>{{ det.atomicTestCount }} Atomic</span> }
+                  @if (det.carAnalyticCount > 0) { <span>{{ det.carAnalyticCount }} CAR</span> }
                 </span>
               </div>
               @if (det.dataComponents.length > 0) {
@@ -359,8 +493,12 @@
           Composed in the browser from the data currently loaded.
         }
         @if (d.attackVersion) { Techniques resolved against ATT&CK v{{ d.attackVersion }}. }
-        Mappings come from MITRE, CISA, FIRST and CTID; nothing here is generated by a
-        language model.
+        Sources: MITRE ATT&CK, D3FEND, CAPEC, CWE and Engage; CISA KEV and published SSVC;
+        FIRST EPSS; and CTID (CVE&#8594;ATT&CK, the NIST/CRI/CIS/CSA/M365 control-framework
+        mappings, and the F3 Fraud Framework). Mappings include inferred links — the
+        "weakness-class" techniques are derived from this CVE's CWEs via CAPEC and describe
+        the weakness class, not this CVE specifically; confidence is shown by tier. Nothing
+        here is generated by a language model.
 
         @if (d.warnings.length > 0) {
           <div class="caveats">

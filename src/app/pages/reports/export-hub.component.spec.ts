@@ -29,11 +29,11 @@ describe('ExportHubComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('renders 16 export cards across 5 sections (incl. workspace backup)', () => {
+  it('renders 16 export cards across 6 sections (incl. saved layers + workspace backup)', () => {
     const cards = fixture.nativeElement.querySelectorAll('.export-card');
     expect(cards.length).toBe(16);
     const sections = fixture.nativeElement.querySelectorAll('.hub-section');
-    expect(sections.length).toBe(5);
+    expect(sections.length).toBe(6);
   });
 
   it('clicking a card invokes its export action', () => {

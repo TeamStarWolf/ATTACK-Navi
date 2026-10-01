@@ -177,6 +177,8 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
   @Input() maxSigmaScore = 1;
   @Input() libraryScore = 0;
   @Input() maxLibraryScore = 1;
+  /** When set (user-imported layer active), overrides the `library` ramp with the layer's own color. */
+  @Input() libraryColorOverride: string | null = null;
   @Input() nistScore = 0;
   @Input() maxNistScore = 1;
   @Input() verisScore = 0;
@@ -267,7 +269,8 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
     } else if (this.heatmapMode === 'cri') {
       this.bgColor = this.computeCriColor(this.criScore, this.maxCriScore);
     } else if (this.heatmapMode === 'library') {
-      this.bgColor = this.computeRelativeColor(this.libraryScore, this.maxLibraryScore, '#12122a', ['#1e3a5f', '#2f6ab0', '#38bdf8', '#a78bfa']);
+      this.bgColor = this.libraryColorOverride
+        ?? this.computeRelativeColor(this.libraryScore, this.maxLibraryScore, '#12122a', ['#1e3a5f', '#2f6ab0', '#38bdf8', '#a78bfa']);
     } else if (this.heatmapMode === 'unified') {
       this.bgColor = this.computeUnifiedColor(this.unifiedScore);
     } else if (this.heatmapMode === 'sigma') {

@@ -90,14 +90,6 @@
               </span>
             </div>
             <span class="count tactic-count-badge">{{ col.techniques.length }}</span>
-            <div class="tactic-coverage-bar" [title]="tacticCoverage(col) + '% covered (≥1 framework)'">
-              <div
-                class="tactic-coverage-fill"
-                [style.width.%]="tacticCoverage(col)"
-                [style.background]="tacticCoverage(col) >= 80 ? '#4caf50' : tacticCoverage(col) >= 50 ? '#ffd54f' : '#ff9800'"
-              ></div>
-            </div>
-            <span class="tactic-pct">{{ tacticCoverage(col) }}% covered</span>
           </th>
           }
         }
@@ -176,6 +168,7 @@
                         [maxSigmaScore]="maxSigmaScore"
                         [libraryScore]="getLibraryScore(tech)"
                         [maxLibraryScore]="maxLibraryScore"
+                        [libraryColorOverride]="getLibraryColorOverride(tech)"
                         [nistScore]="getNistScore(tech)"
                         [maxNistScore]="maxNistScore"
                         [verisScore]="getVerisScore(tech)"
@@ -268,6 +261,7 @@
                             [maxSigmaScore]="maxSigmaScore"
                             [libraryScore]="getLibraryScore(sub)"
                             [maxLibraryScore]="maxLibraryScore"
+                            [libraryColorOverride]="getLibraryColorOverride(sub)"
                             [nistScore]="getNistScore(sub)"
                             [maxNistScore]="maxNistScore"
                             [verisScore]="getVerisScore(sub)"
@@ -360,6 +354,7 @@
                       [maxSigmaScore]="maxSigmaScore"
                       [libraryScore]="getLibraryScore(tech)"
                       [maxLibraryScore]="maxLibraryScore"
+                      [libraryColorOverride]="getLibraryColorOverride(tech)"
                       [nistScore]="getNistScore(tech)"
                       [maxNistScore]="maxNistScore"
                       [verisScore]="getVerisScore(tech)"
