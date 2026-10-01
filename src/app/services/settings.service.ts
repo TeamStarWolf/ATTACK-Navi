@@ -37,6 +37,16 @@ export interface AppSettings {
 
   // API integrations
   nvdApiKey: string;   // default ''
+
+  // Per-cell display toggles: choose which fields/badges render inside each
+  // matrix technique cell. Every flag defaults true so cells look identical
+  // to today (no visual regression). Personal preference — deliberately NOT
+  // wired into shareable URL state.
+  cellDisplay: {
+    exposureBadge: boolean; softwareBadge: boolean; campaignBadge: boolean;
+    metricBadge: boolean;   // the mode-gated d3fend/atomic/cri badge
+    noteDot: boolean; annotationDot: boolean; watchIndicator: boolean;
+  };
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -52,6 +62,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
   orgLogo: '',
   attackVersion: '',
   nvdApiKey: '',
+  cellDisplay: {
+    exposureBadge: true, softwareBadge: true, campaignBadge: true,
+    metricBadge: true,
+    noteDot: true, annotationDot: true, watchIndicator: true,
+  },
 };
 
 @Injectable({ providedIn: 'root' })
@@ -147,6 +162,10 @@ export class SettingsService {
         scoringWeights: {
           ...DEFAULT_SETTINGS.scoringWeights,
           ...(parsed.scoringWeights ?? {}),
+        },
+        cellDisplay: {
+          ...DEFAULT_SETTINGS.cellDisplay,
+          ...(parsed.cellDisplay ?? {}),
         },
       };
     } catch {

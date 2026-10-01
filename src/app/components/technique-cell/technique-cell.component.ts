@@ -59,42 +59,42 @@ import { SettingsService } from '../../services/settings.service';
           [title]="'Status: ' + implStatus"
         ></span>
       }
-      @if (hasNote) {
+      @if (hasNote && showNoteDot) {
         <span class="note-dot" title="Has analyst notes">📝</span>
       }
-      @if (annotation) {
+      @if (annotation && showAnnotationDot) {
         <div class="annotation-dot" [class]="'ann-' + annotation.color" [title]="annotation.note"></div>
       }
-      @if (isWatched) {
+      @if (isWatched && showWatchIndicator) {
         <div class="watch-indicator" title="On watchlist">🔖</div>
       }
       <div class="badge-row">
-        @if (exposureScore > 0) {
+        @if (exposureScore > 0 && showExposureBadge) {
           <span class="exposure-badge" [title]="exposureScore + ' threat actor(s) use this technique'">
             👥{{ exposureScore }}
           </span>
         }
-        @if (softwareScore > 0) {
+        @if (softwareScore > 0 && showSoftwareBadge) {
           <span class="software-badge" [title]="softwareScore + ' software/malware use this technique'">
             🛠{{ softwareScore }}
           </span>
         }
-        @if (campaignScore > 0) {
+        @if (campaignScore > 0 && showCampaignBadge) {
           <span class="campaign-badge" [title]="campaignScore + ' campaign(s) use this technique'">
             🎯{{ campaignScore }}
           </span>
         }
-        @if (heatmapMode === 'd3fend') {
+        @if (heatmapMode === 'd3fend' && showMetricBadge) {
           <span class="d3fend-badge" [title]="d3fendScore + ' D3FEND countermeasure(s)'">
             🛡{{ d3fendScore }}
           </span>
         }
-        @if (heatmapMode === 'atomic' && atomicScore > 0) {
+        @if (heatmapMode === 'atomic' && atomicScore > 0 && showMetricBadge) {
           <span class="atomic-badge" [title]="atomicScore + ' Atomic Red Team test(s)'">
             ⚛{{ atomicScore }}
           </span>
         }
-        @if (heatmapMode === 'cri' && criScore > 0) {
+        @if (heatmapMode === 'cri' && criScore > 0 && showMetricBadge) {
           <span class="cri-hm-badge" [title]="criScore + ' CRI Profile control(s)'">
             🏦{{ criScore }}
           </span>
@@ -213,6 +213,17 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
   @Input() hasActiveSearch = false;
   @Input() isWatched = false;
 
+  // Per-cell display toggles, sourced from SettingsService.cellDisplay inside
+  // the existing settings$ subscription (NOT @Inputs — matrix.component stays
+  // untouched). Default true so cells render identically to today.
+  showExposureBadge = true;
+  showSoftwareBadge = true;
+  showCampaignBadge = true;
+  showMetricBadge = true;
+  showNoteDot = true;
+  showAnnotationDot = true;
+  showWatchIndicator = true;
+
   @Output() selected = new EventEmitter<Technique>();
 
   bgColor = '#ffffff';
@@ -227,7 +238,17 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
   constructor(private cdr: ChangeDetectorRef, private settingsService: SettingsService) {}
 
   ngOnInit(): void {
-    this.settingsSub = this.settingsService.settings$.subscribe(() => {
+    this.settingsSub = this.settingsService.settings$.subscribe((s) => {
+      const cd = s.cellDisplay;
+      if (cd) {
+        this.showExposureBadge = cd.exposureBadge;
+        this.showSoftwareBadge = cd.softwareBadge;
+        this.showCampaignBadge = cd.campaignBadge;
+        this.showMetricBadge = cd.metricBadge;
+        this.showNoteDot = cd.noteDot;
+        this.showAnnotationDot = cd.annotationDot;
+        this.showWatchIndicator = cd.watchIndicator;
+      }
       this.ngOnChanges();
       this.cdr.markForCheck();
     });

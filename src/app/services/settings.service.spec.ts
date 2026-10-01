@@ -78,4 +78,68 @@ describe('SettingsService', () => {
       expect(() => service.setNvdApiKey('')).not.toThrow();
     });
   });
+
+  describe('cellDisplay', () => {
+    it('defaults every flag to true', () => {
+      const cd = service.current.cellDisplay;
+      expect(cd).toBeTruthy();
+      expect(cd.exposureBadge).toBe(true);
+      expect(cd.softwareBadge).toBe(true);
+      expect(cd.campaignBadge).toBe(true);
+      expect(cd.metricBadge).toBe(true);
+      expect(cd.noteDot).toBe(true);
+      expect(cd.annotationDot).toBe(true);
+      expect(cd.watchIndicator).toBe(true);
+    });
+
+    it('backfills all-true cellDisplay defaults for an old saved blob lacking it', () => {
+      // Simulate a settings blob persisted before the cellDisplay feature existed.
+      const oldBlob = { matrixCellSize: 'large', showTechniqueIds: false };
+      localStorage.setItem('mitre-nav-settings-v1', JSON.stringify(oldBlob));
+
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({});
+      const fresh = TestBed.inject(SettingsService);
+
+      const cd = fresh.current.cellDisplay;
+      expect(cd.exposureBadge).toBe(true);
+      expect(cd.softwareBadge).toBe(true);
+      expect(cd.campaignBadge).toBe(true);
+      expect(cd.metricBadge).toBe(true);
+      expect(cd.noteDot).toBe(true);
+      expect(cd.annotationDot).toBe(true);
+      expect(cd.watchIndicator).toBe(true);
+      // Pre-existing fields from the old blob are preserved.
+      expect(fresh.current.matrixCellSize).toBe('large');
+      expect(fresh.current.showTechniqueIds).toBe(false);
+    });
+
+    it('preserves a partial cellDisplay from a saved blob and fills the rest', () => {
+      const blob = { cellDisplay: { exposureBadge: false } };
+      localStorage.setItem('mitre-nav-settings-v1', JSON.stringify(blob));
+
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({});
+      const fresh = TestBed.inject(SettingsService);
+
+      const cd = fresh.current.cellDisplay;
+      expect(cd.exposureBadge).toBe(false);   // honored from the saved blob
+      expect(cd.softwareBadge).toBe(true);    // backfilled default
+      expect(cd.watchIndicator).toBe(true);   // backfilled default
+    });
+
+    it('persists cellDisplay edits across re-instantiation', () => {
+      service.update({
+        cellDisplay: {
+          ...service.current.cellDisplay,
+          campaignBadge: false,
+        },
+      });
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({});
+      const fresh = TestBed.inject(SettingsService);
+      expect(fresh.current.cellDisplay.campaignBadge).toBe(false);
+      expect(fresh.current.cellDisplay.exposureBadge).toBe(true);
+    });
+  });
 });
