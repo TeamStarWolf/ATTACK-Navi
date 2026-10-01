@@ -1,14 +1,21 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Domain } from '../models/domain';
 import { ImplStatus } from './implementation.service';
+import { ReportConfig, DEFAULT_REPORT_CONFIG } from './report-config.service';
+import { SettingsService } from './settings.service';
 
 @Injectable({ providedIn: 'root' })
 export class HtmlReportService {
+  private readonly settings = inject(SettingsService);
 
-  generateAndOpen(domain: Domain, implStatusMap: Map<string, ImplStatus>): void {
-    const html = this.buildHtml(domain, implStatusMap);
+  generateAndOpen(
+    domain: Domain,
+    implStatusMap: Map<string, ImplStatus>,
+    config: ReportConfig = DEFAULT_REPORT_CONFIG,
+  ): void {
+    const html = this.buildHtml(domain, implStatusMap, config);
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     window.open(url, '_blank');
@@ -18,7 +25,19 @@ export class HtmlReportService {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  private buildHtml(domain: Domain, implStatusMap: Map<string, ImplStatus>): string {
+  private buildHtml(
+    domain: Domain,
+    implStatusMap: Map<string, ImplStatus>,
+    config: ReportConfig = DEFAULT_REPORT_CONFIG,
+  ): string {
+    // Section visibility gate — an unknown id defaults to visible (forward-compatible).
+    const isVisible = (id: string): boolean => {
+      const section = config.sections.find(s => s.id === id);
+      return section ? section.visible : true;
+    };
+
+    // Organization identity for the report header (Settings → Reports).
+    const orgName = this.settings.current.orgName?.trim() || 'Security Team';
     // ── Core data computation ──────────────────────────────────────────────────
     const allTechs = domain.techniques;
     const parentTechs = allTechs.filter(t => !t.isSubtechnique);
@@ -307,7 +326,7 @@ export class HtmlReportService {
       <div class="header-subtitle">MITRE ATT&amp;CK&#174; Enterprise Matrix &mdash; v${this.esc(domain.attackVersion)}</div>
     </div>
     <div class="header-meta">
-      <div><strong>Organization:</strong> Security Team</div>
+      <div><strong>Organization:</strong> ${this.esc(orgName)}</div>
       <div><strong>Domain:</strong> ${this.esc(domain.name)}</div>
       <div><strong>Generated:</strong> ${generatedDate}</div>
     </div>
@@ -315,8 +334,14 @@ export class HtmlReportService {
 </div>
 
 <div class="container">
-
-  <!-- ── 1. EXECUTIVE SUMMARY ──────────────────────────────────────────────── -->
+${(() => {
+  // Build each section's HTML keyed by id, then emit only the VISIBLE ones in
+  // the config's order — so the exported report honors the Report Builder's
+  // reorder, matching the on-screen preview and Print/Save-PDF (which reorder
+  // via CSS `order`). Data-gated sections (impl-status, recommended-mits)
+  // collapse to '' when there is no implementation data.
+  const sectionHtml: Record<string, string> = {
+    'exec-summary': `
   <div class="section">
     <div class="section-title">Executive Summary</div>
     <div class="coverage-ring-wrap" style="margin-bottom:24px">
@@ -353,24 +378,20 @@ export class HtmlReportService {
         <div class="stat-label">Total Mitigations</div>
       </div>
     </div>
-  </div>
-
-  <!-- ── 2. COVERAGE BY TACTIC ─────────────────────────────────────────────── -->
+  </div>`,
+    'coverage-by-tactic': `
   <div class="section">
     <div class="section-title">Coverage by Tactic</div>
     <div class="section-subtitle">Sorted by coverage percentage (highest first). Shows parent techniques only.</div>
     ${tacticRows}
-  </div>
-
-  ${hasImplData ? `
-  <!-- ── 3. IMPLEMENTATION STATUS SUMMARY ──────────────────────────────────── -->
+  </div>`,
+    'impl-status': hasImplData ? `
   <div class="section">
     <div class="section-title">Implementation Status Summary</div>
     <div class="section-subtitle">Breakdown of ${totalTracked} tracked mitigations by implementation status.</div>
     ${implSummaryCards}
-  </div>` : ''}
-
-  <!-- ── 4. TOP 10 COVERAGE GAPS ────────────────────────────────────────────── -->
+  </div>` : '',
+    'exposure-gaps': `
   <div class="section">
     <div class="section-title">Top 10 Coverage Gaps</div>
     <div class="section-subtitle">Techniques with zero mitigations mapped, prioritized by threat group adoption.</div>
@@ -386,9 +407,8 @@ export class HtmlReportService {
       </thead>
       <tbody>${gapRows}</tbody>
     </table>` : '<p style="color:#718096;font-size:14px;margin:0">No coverage gaps — all techniques have at least one mitigation mapped.</p>'}
-  </div>
-
-  <!-- ── 5. TOP 10 BEST COVERED TECHNIQUES ────────────────────────────────── -->
+  </div>`,
+    'control-docs': `
   <div class="section">
     <div class="section-title">Top 10 Best Covered Techniques</div>
     <div class="section-subtitle">Techniques with the most mitigations mapped, sorted by mitigation count.</div>
@@ -403,10 +423,8 @@ export class HtmlReportService {
       </thead>
       <tbody>${bestRows}</tbody>
     </table>
-  </div>
-
-  ${hasImplData ? `
-  <!-- ── 6. MITIGATION IMPLEMENTATION PROGRESS ─────────────────────────────── -->
+  </div>`,
+    'recommended-mits': hasImplData ? `
   <div class="section">
     <div class="section-title">Mitigation Implementation Progress</div>
     <div class="section-subtitle">All tracked mitigations grouped by implementation status. Sorted by technique coverage count.</div>
@@ -421,8 +439,14 @@ export class HtmlReportService {
       </thead>
       <tbody>${mitTableRows}</tbody>
     </table>
-  </div>` : ''}
-
+  </div>` : '',
+  };
+  return [...config.sections]
+    .filter((s) => s.visible && sectionHtml[s.id])
+    .sort((a, b) => a.order - b.order)
+    .map((s) => sectionHtml[s.id])
+    .join('\n');
+})()}
 </div>
 
 <!-- ── FOOTER ─────────────────────────────────────────────────────────────── -->

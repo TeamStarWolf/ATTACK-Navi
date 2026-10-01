@@ -6,12 +6,15 @@ import { ReportPanelComponent } from './report-panel.component';
 import { DataService } from '../../services/data.service';
 import { ImplementationService } from '../../services/implementation.service';
 import { DocumentationService } from '../../services/documentation.service';
+import { ReportConfigService } from '../../services/report-config.service';
 
 describe('ReportPanelComponent', () => {
   let component: ReportPanelComponent;
   let fixture: ComponentFixture<ReportPanelComponent>;
 
   beforeEach(() => {
+    localStorage.removeItem('mitre-nav-report-config-v1');
+
     TestBed.configureTestingModule({
       imports: [ReportPanelComponent],
       providers: [
@@ -22,11 +25,16 @@ describe('ReportPanelComponent', () => {
             getMitDoc: () => ({ notes: '', owner: '', dueDate: '', controlRefs: '', evidenceUrl: '' }),
             getTechNote: () => '',
         }},
+        ReportConfigService,
       ],
     });
     fixture = TestBed.createComponent(ReportPanelComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    localStorage.removeItem('mitre-nav-report-config-v1');
   });
 
   it('is created', () => {
