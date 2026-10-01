@@ -8,6 +8,7 @@ import { ImplementationService } from './implementation.service';
 import { DocumentationService } from './documentation.service';
 import { MatrixExportService } from './matrix-export.service';
 import { HtmlReportService } from './html-report.service';
+import { ReportConfigService } from './report-config.service';
 import { PdfReportService } from './pdf-report.service';
 import { XlsxExportService } from './xlsx-export.service';
 import { CustomMitigationService } from './custom-mitigation.service';
@@ -31,6 +32,7 @@ export class ExportActionsService {
   private readonly docService = inject(DocumentationService);
   private readonly matrixExport = inject(MatrixExportService);
   private readonly htmlReportService = inject(HtmlReportService);
+  private readonly reportConfig = inject(ReportConfigService);
   private readonly pdfReportService = inject(PdfReportService);
   private readonly xlsxExport = inject(XlsxExportService);
   private readonly customMitService = inject(CustomMitigationService);
@@ -173,7 +175,7 @@ export class ExportActionsService {
 
   exportHtmlCoverageReport(): void {
     if (!this.domain) return;
-    this.htmlReportService.generateAndOpen(this.domain, this.implService.getStatusMap());
+    this.htmlReportService.generateAndOpen(this.domain, this.implService.getStatusMap(), this.reportConfig.current);
   }
 
   exportPdf(): void {

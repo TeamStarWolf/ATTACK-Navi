@@ -79,14 +79,161 @@
   }
 }
 
+.report-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .report-content {
   flex: 1;
+  min-width: 0;
   overflow-y: auto;
   padding: 24px 32px;
   background: var(--bg-panel);
+  // Flex column so section [style.order] reorders the live preview in place.
+  display: flex;
+  flex-direction: column;
+}
+
+// Config drawer (left-hand) — mirrors dashboard-panel's config-item markup.
+.config-toggle {
+  padding: 4px 10px;
+  background: var(--bg-panel-strong);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+  border-radius: 5px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+
+  .cfg-icon { font-size: 12px; }
+
+  &:hover { color: var(--text-main); }
+
+  &.active {
+    background: rgb(88 166 255 / 12%);
+    border-color: rgb(88 166 255 / 30%);
+    color: var(--accent);
+  }
+}
+
+.report-config-drawer {
+  width: 260px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border-subtle);
+  background: var(--bg-raised);
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.config-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.config-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-main);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.config-reset-btn {
+  font-size: 11px;
+  color: var(--accent);
+  background: rgb(88 166 255 / 8%);
+  border: 1px solid rgb(88 166 255 / 20%);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover {
+    background: rgb(88 166 255 / 16%);
+    border-color: rgb(88 166 255 / 35%);
+  }
+}
+
+.config-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.config-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--bg-panel-strong);
+  border: 1px solid var(--border-subtle);
+  transition: background 0.15s;
+
+  &:hover { background: var(--bg-hover); }
+
+  &.config-item-hidden { opacity: 0.5; }
+}
+
+.config-label {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.config-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.config-move-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-faint);
+  font-size: 9px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: var(--bg-hover);
+    color: var(--text-main);
+  }
+}
+
+.config-toggle-btn {
+  min-width: 36px;
+  height: 22px;
+  border-radius: 5px;
+  background: rgb(248 113 113 / 15%);
+  border: 1px solid rgb(248 113 113 / 25%);
+  color: var(--danger);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+
+  &.toggled-on {
+    background: rgb(74 222 128 / 15%);
+    border-color: rgb(74 222 128 / 30%);
+    color: var(--success);
+  }
 }
 
 .report-header {
+  order: -1;
   margin-bottom: 24px;
   padding-bottom: 16px;
   border-bottom: 2px solid var(--border-subtle);
@@ -329,6 +476,9 @@
 @media print {
   .report-toolbar { display: none !important; }
   .modal-overlay { display: none !important; }
+  .report-config-drawer { display: none !important; }
+
+  .report-body { display: block; overflow: visible; }
 
   .report-modal {
     position: static;
