@@ -73,7 +73,7 @@ export class XlsxExportService {
     }
 
     const rows: any[][] = [
-      ['ATT&CK Mitigation Coverage Report', '', '', '', ''],
+      ['ATT&CK Coverage Report', '', '', '', ''],
       [`Generated: ${new Date().toLocaleString()}`, '', '', '', ''],
       [],
       ['EXECUTIVE SUMMARY', '', '', '', ''],

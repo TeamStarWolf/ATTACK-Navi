@@ -18,7 +18,7 @@ export interface HeatmapModeDef {
  */
 export const HEATMAP_MODES: readonly HeatmapModeDef[] = [
   // Coverage & Posture
-  { value: 'coverage',  label: '🛡 Coverage',       short: 'Coverage',    group: 'Coverage & Posture' },
+  { value: 'coverage',  label: '🛡 Mitigations',     short: 'Mitigations', group: 'Coverage & Posture' },
   { value: 'status',    label: '✅ Status',          short: 'Status',      group: 'Coverage & Posture' },
   { value: 'controls',  label: '🔒 Controls',        short: 'Controls',    group: 'Coverage & Posture' },
   { value: 'unified',   label: '🎯 Unified Coverage', short: 'Unified',     group: 'Coverage & Posture' },
@@ -61,7 +61,7 @@ export const HEATMAP_MODES: readonly HeatmapModeDef[] = [
   { value: 'f3-origin',     label: '⚖ F3 Origin',     short: 'F3 Origin', group: 'Frameworks' },
 ] as const;
 
-export const HEATMAP_GROUPS = ['Coverage & Posture', 'Threat Landscape', 'Vulnerabilities', 'Detections', 'Frameworks'] as const;
+export const HEATMAP_GROUPS = ['Threat Landscape', 'Vulnerabilities', 'Detections', 'Frameworks', 'Coverage & Posture'] as const;
 
 export function heatmapShortLabel(mode: HeatmapMode): string {
   return HEATMAP_MODES.find(m => m.value === mode)?.short ?? mode;

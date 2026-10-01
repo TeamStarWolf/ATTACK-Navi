@@ -29,14 +29,22 @@ import { MispService } from '../../services/misp.service';
 import { OpenCtiService } from '../../services/opencti.service';
 import { XlsxExportService } from '../../services/xlsx-export.service';
 import { CustomMitigationService } from '../../services/custom-mitigation.service';
+import { EnrichmentService } from '../../services/enrichment.service';
 import { KevEntry } from '../../models/cve';
 
 export interface DashboardStats {
-  // Coverage
+  // Coverage (enrichment = ≥1 cross-framework signal)
   totalTechniques: number;
   coveredTechniques: number;
   coveragePct: number;
   uncoveredCount: number;
+
+  // Per-framework coverage (so no single framework is the headline)
+  mitigationCoveragePct: number;
+  controlCoveragePct: number;
+
+  // Composite defensive posture (0–100): mitigation is ONE weighted input
+  postureScore: number;
 
   // Implementation
   implementedCount: number;
@@ -154,6 +162,7 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
     private openctiService: OpenCtiService,
     private xlsxExportService: XlsxExportService,
     private customMitService: CustomMitigationService,
+    private enrichment: EnrichmentService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -204,13 +213,20 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
     this.dataService.domain$.pipe(filter(Boolean), take(1)).subscribe(domain => {
       const parentTechs = domain.techniques.filter(t => !t.isSubtechnique);
       const totalTechniques = parentTechs.length;
-      const coveredTechniques = parentTechs.filter(
-        t => (domain.mitigationsByTechnique.get(t.id)?.length ?? 0) > 0,
-      ).length;
+      // Cross-framework enrichment counts in a single pass — "coverage" here means
+      // ≥1 defensive/framework signal, with per-framework counts kept alongside.
+      const et = this.enrichment.totals(parentTechs, domain);
+      const coveredTechniques = et.enriched;
       const coveragePct = totalTechniques > 0
         ? Math.round((coveredTechniques / totalTechniques) * 100)
         : 0;
       const uncoveredCount = totalTechniques - coveredTechniques;
+      const mitigationCoveragePct = totalTechniques > 0
+        ? Math.round((et.mitigation / totalTechniques) * 100)
+        : 0;
+      const controlCoveragePct = totalTechniques > 0
+        ? Math.round((et.control / totalTechniques) * 100)
+        : 0;
 
       // Implementation counts
       const implSummary = this.implService.summarize();
@@ -240,13 +256,20 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
         ? Math.round((withAnyDetection / totalTechniques) * 100)
         : 0;
 
-      // Risk: techniques with no mitigation and at least 1 threat group
+      // Critical risk: threat-relevant (≥1 group) techniques with NO defensive
+      // signal of ANY kind — no mitigation AND no detection AND no control AND
+      // no D3FEND countermeasure (atomic tests / CVE links don't count as defense).
       const criticalRiskTechs = parentTechs.filter(t => {
-        const hasMit = (domain.mitigationsByTechnique.get(t.id)?.length ?? 0) > 0;
         const hasGroup = (domain.groupsByTechnique.get(t.id)?.length ?? 0) > 0;
-        return !hasMit && hasGroup;
+        return hasGroup && !this.enrichment.hasDefensiveSignal(t, domain);
       });
       const criticalRiskCount = criticalRiskTechs.length;
+
+      // KEV-exposed gaps: KEV-mapped techniques that are wholly undefended.
+      const kevExposedGapCount = parentTechs.filter(t => {
+        const hasKev = this.attackCveService.getKevCvesForTechnique(t.attackId).length > 0;
+        return hasKev && !this.enrichment.hasDefensiveSignal(t, domain);
+      }).length;
 
       // Top 10 risk techniques sorted by threat group count (expanded for gap widget)
       const topRiskTechniques = [...criticalRiskTechs]
@@ -282,8 +305,11 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
       const tacticStats = domain.tacticColumns
         .map(col => {
           const parents = col.techniques.filter(t => !t.isSubtechnique);
+          // Enrichment-based coverage (≥1 framework), matching the dashboard
+          // headline + stats-bar/analytics/tactic-summary — NOT mitigation-only,
+          // so the Tactic Breakdown bars and Radar agree with the Coverage stat.
           const covered = parents.filter(
-            t => (domain.mitigationsByTechnique.get(t.id)?.length ?? 0) > 0,
+            t => this.enrichment.isEnriched(t, domain),
           ).length;
           const total = parents.length;
           const pct = total > 0 ? Math.round((covered / total) * 100) : 0;
@@ -319,11 +345,33 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
       // Recent KEV entries (most recent 5 by dateAdded)
       const recentKevEntries = this.getRecentKevEntries();
 
+      // Composite defensive posture (0–100). Mitigation is ONE weighted input
+      // among detection, controls, D3FEND, KEV exposure (inverted) and threat
+      // pressure (inverted) — so the grade no longer tracks mitigation alone.
+      //   mitigation coverage       0.20
+      //   detection coverage        0.20
+      //   control coverage          0.20
+      //   D3FEND coverage           0.15
+      //   KEV exposure (inverted)   0.15
+      //   threat pressure (inverted)0.10
+      const frac = (n: number) => (totalTechniques > 0 ? n / totalTechniques : 0);
+      const postureScore = Math.round(100 * (
+        0.20 * frac(et.mitigation) +
+        0.20 * frac(et.detection) +        // Sigma+CAR analytics only; D3FEND is its own term below (no double-count, atomic excluded)
+        0.20 * frac(et.control) +
+        0.15 * frac(et.d3fend) +
+        0.15 * (1 - frac(kevExposedGapCount)) +
+        0.10 * (1 - frac(criticalRiskCount))
+      ));
+
       this.stats = {
         totalTechniques,
         coveredTechniques,
         coveragePct,
         uncoveredCount,
+        mitigationCoveragePct,
+        controlCoveragePct,
+        postureScore,
         implementedCount,
         inProgressCount,
         plannedCount,
@@ -541,11 +589,12 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
 
   // ─── Display helpers (preserved from original) ─────────────────────────
   get overallGrade(): string {
-    const pct = this.stats?.coveragePct ?? 0;
-    if (pct >= 80) return 'A';
-    if (pct >= 65) return 'B';
-    if (pct >= 50) return 'C';
-    if (pct >= 35) return 'D';
+    // Grade the composite defensive posture, not mitigation coverage alone.
+    const score = this.stats?.postureScore ?? 0;
+    if (score >= 80) return 'A';
+    if (score >= 65) return 'B';
+    if (score >= 50) return 'C';
+    if (score >= 35) return 'D';
     return 'F';
   }
 
@@ -561,11 +610,13 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
   }
 
   get riskLevel(): 'critical' | 'high' | 'medium' | 'low' {
-    const pct = this.stats?.coveragePct ?? 0;
+    // Risk follows the composite posture and the count of wholly-undefended,
+    // threat-relevant techniques — not mitigation coverage alone.
+    const score = this.stats?.postureScore ?? 0;
     const crit = this.stats?.criticalRiskCount ?? 0;
-    if (pct < 35 || crit > 50) return 'critical';
-    if (pct < 50 || crit > 25) return 'high';
-    if (pct < 65 || crit > 10) return 'medium';
+    if (score < 35 || crit > 50) return 'critical';
+    if (score < 50 || crit > 25) return 'high';
+    if (score < 65 || crit > 10) return 'medium';
     return 'low';
   }
 

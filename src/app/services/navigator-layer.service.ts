@@ -113,7 +113,7 @@ export class NavigatorLayerService {
     });
 
     return {
-      name: `${domain.name} Mitigation Coverage`,
+      name: `${domain.name} Coverage`,
       versions: { attack: domain.attackVersion || '', navigator: '4.9', layer: '4.5' },
       domain: metadata.navigatorDomain,
       description: `Exported from ATT&CK Navi (${domain.name})`,

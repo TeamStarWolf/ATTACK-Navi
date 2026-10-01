@@ -71,6 +71,8 @@ describe('MatrixControlsComponent', () => {
   });
 
   it('trigger label uses the short name from heatmap-modes', () => {
-    expect(component.heatmapShort).toBe('Coverage');
+    // The 'coverage' key now surfaces as "Mitigations" (mitigation is one lens,
+    // not the app's headline); the key itself is unchanged.
+    expect(component.heatmapShort).toBe('Mitigations');
   });
 });

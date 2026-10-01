@@ -1,0 +1,37 @@
+<!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+     https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
+<div class="status-region">
+  <header class="status-head">
+    <h1 class="status-title">Integration Health</h1>
+    <p class="status-sub">
+      Data-source connections and at-a-glance coverage for the active ATT&amp;CK domain.
+      The matrix keeps its legend; the numbers and source health live here.
+    </p>
+  </header>
+
+  <section class="status-section">
+    <h2 class="status-section-title">Coverage</h2>
+    @if (loading && !domain) {
+      <div class="status-loading">
+        <span class="loader-spinner" aria-hidden="true"></span>
+        <span>Loading ATT&amp;CK data…</span>
+      </div>
+    } @else if (domain) {
+      <app-stats-bar [domain]="domain" (tacticClicked)="onTacticClick($event)" />
+    } @else {
+      <p class="status-empty">No domain loaded yet.</p>
+    }
+  </section>
+
+  @if (domain) {
+    <section class="status-section">
+      <h2 class="status-section-title">Coverage by Framework</h2>
+      <app-coverage-breakdown [domain]="domain" />
+    </section>
+  }
+
+  <section class="status-section">
+    <h2 class="status-section-title">Data Sources &amp; Integrations</h2>
+    <app-data-health />
+  </section>
+</div>

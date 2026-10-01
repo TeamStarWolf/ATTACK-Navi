@@ -45,6 +45,12 @@ export const routes: Routes = [
     loadChildren: () => import('./pages/reports/reports.routes').then((m) => m.REPORTS_ROUTES),
   },
   {
+    path: 'status',
+    loadComponent: () =>
+      import('./pages/status/status-page.component').then((c) => c.StatusPageComponent),
+    data: { title: 'Status', icon: 'monitor' },
+  },
+  {
     path: 'settings',
     loadChildren: () => import('./pages/settings/settings.routes').then((m) => m.SETTINGS_ROUTES),
   },

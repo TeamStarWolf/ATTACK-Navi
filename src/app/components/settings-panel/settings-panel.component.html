@@ -314,6 +314,18 @@
                 <label class="checkbox-item">
                   <input
                     type="checkbox"
+                    [(ngModel)]="settings.expandSectionsByDefault"
+                    (ngModelChange)="onDisplayChange()"
+                  />
+                  <div class="checkbox-info">
+                    <span class="checkbox-label">Expand sections by default</span>
+                    <span class="checkbox-desc">Collapsible groups (Detect, Data Sources, Assessment) start expanded instead of collapsed</span>
+                  </div>
+                </label>
+
+                <label class="checkbox-item">
+                  <input
+                    type="checkbox"
                     [(ngModel)]="settings.showMitigationCount"
                     (ngModelChange)="onDisplayChange()"
                   />
@@ -373,7 +385,7 @@
                 <div class="report-preview-box">
                   <div class="report-preview-header">
                     <div class="report-preview-org">{{ settings.orgName }}</div>
-                    <div class="report-preview-title">ATT&amp;CK Mitigation Coverage Report</div>
+                    <div class="report-preview-title">ATT&amp;CK Coverage Report</div>
                     <div class="report-preview-date">Generated {{ today }}</div>
                   </div>
                 </div>
