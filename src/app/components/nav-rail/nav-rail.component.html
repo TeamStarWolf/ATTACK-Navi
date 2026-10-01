@@ -1,6 +1,7 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
 <nav class="nav-rail-inner" role="navigation" aria-label="Main navigation">
+  <app-viewpoint-selector class="rail-viewpoint" />
   <div class="nav-list">
     @for (section of sections; track section.key; let si = $index) {
       <div class="nav-section">

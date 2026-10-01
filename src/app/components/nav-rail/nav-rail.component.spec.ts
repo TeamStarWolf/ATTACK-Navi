@@ -41,6 +41,14 @@ describe('NavRailComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  it('renders the viewpoint selector at the top of the rail', () => {
+    const selector = fixture.nativeElement.querySelector('app-viewpoint-selector');
+    expect(selector).toBeTruthy();
+    // It sits above the Workspaces section label, not among the nav items.
+    expect(fixture.nativeElement.querySelector('.rail-viewpoint')).toBeTruthy();
+    expect(selector.querySelector('.nav-item')).toBeFalsy();
+  });
+
   it('renders one item per workspace plus Help and Settings', () => {
     const items = fixture.nativeElement.querySelectorAll('.nav-item');
     // 9 workspaces + Help + Settings

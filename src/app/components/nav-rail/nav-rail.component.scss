@@ -20,6 +20,12 @@
   padding: 16px 12px 10px;
 }
 
+.rail-viewpoint {
+  display: block;
+  flex-shrink: 0;
+  margin-bottom: 12px;
+}
+
 .rail-section-label {
   font-size: 11px;
   font-weight: 600;
@@ -214,6 +220,9 @@
     z-index: var(--z-rail);
     border-right: none;
     border-top: 1px solid var(--border-subtle);
+    /* Let the viewpoint popover (which opens upward on mobile) escape the
+       56px bar instead of being clipped by the base :host overflow:hidden. */
+    overflow: visible;
   }
 
   .nav-rail-inner {
@@ -224,6 +233,13 @@
   }
 
   .rail-section-label { display: none; }
+
+  .rail-viewpoint {
+    margin-bottom: 0;
+    margin-right: 4px;
+    min-width: 96px;
+    align-self: center;
+  }
 
   .nav-list {
     flex-direction: row;
