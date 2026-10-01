@@ -15,6 +15,7 @@ import { TimelineService } from './timeline.service';
 import { BrowserFileService } from './browser-file.service';
 import { NavigatorLayerService } from './navigator-layer.service';
 import { AnnotationService } from './annotation.service';
+import { UserLayerService } from './user-layer.service';
 
 /**
  * All matrix/report export and import actions, extracted from AppComponent so
@@ -37,6 +38,7 @@ export class ExportActionsService {
   private readonly browserFileService = inject(BrowserFileService);
   private readonly navigatorLayerService = inject(NavigatorLayerService);
   private readonly annotationService = inject(AnnotationService);
+  private readonly userLayerService = inject(UserLayerService);
 
   private domain: Domain | null = null;
   private currentDomain: AttackDomain = 'enterprise';
@@ -205,16 +207,94 @@ export class ExportActionsService {
     }
   }
 
+  /**
+   * Uploads a standard MITRE ATT&CK Navigator layer, converts it into the
+   * internal {@link import('../models/user-layer').AttackNaviLayer} model
+   * (preserving score/color/comment/metadata/links + layer gradient/legend/
+   * filters/domain), saves it to the user's layers (IndexedDB), makes it the
+   * active layer, and colors the matrix by it. Honors the layer's own domain,
+   * and still applies the round-trip statuses/notes when the domain matches.
+   */
   async importNavigatorLayer(): Promise<void> {
-    if (!this.domain) return;
     const json = await this.browserFileService.pickTextFile('.json');
     if (!json) return;
+
+    let converted;
     try {
-      const result = await this.navigatorLayerService.importLayer(json, this.domain, this.implService, this.annotationService);
-      alert(`Layer "${result.layerName}" imported — ${result.appliedCount} techniques matched, ${result.statusesApplied} statuses and ${result.notesApplied} notes applied.`);
+      converted = this.userLayerService.convert(json);
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Failed to import Navigator layer.');
+      return;
     }
+    const { layer, warnings } = converted;
+
+    // Honor the layer's declared domain — the old import silently matched
+    // against whatever domain happened to be loaded.
+    let domainSwitched = false;
+    if (layer.domain !== this.currentDomain) {
+      const switch$ = confirm(
+        `This layer targets ${layer.domain.toUpperCase()} ATT&CK, but ${this.currentDomain.toUpperCase()} is loaded.\n\n` +
+        `Switch to ${layer.domain.toUpperCase()} so it applies correctly?`,
+      );
+      if (switch$) {
+        this.dataService.switchDomain(layer.domain);
+        domainSwitched = true;
+      } else {
+        warnings.push(`Kept ${this.currentDomain.toUpperCase()} — techniques from a different domain will not match.`);
+      }
+    }
+
+    try {
+      await this.userLayerService.saveLayer(layer);
+      this.userLayerService.applyActive(layer);
+    } catch {
+      this.userLayerService.applyActive(layer);
+      warnings.push('Layer converted and applied, but could not be saved to this browser.');
+    }
+    this.filterService.setHeatmapMode('library');
+
+    // Statuses/notes match techniqueIDs against the loaded domain, so only run
+    // that when we did NOT trigger an async domain reload.
+    let statusesApplied = 0;
+    let notesApplied = 0;
+    if (!domainSwitched && this.domain) {
+      try {
+        const applied = await this.navigatorLayerService.importLayer(
+          json, this.domain, this.implService, this.annotationService,
+        );
+        statusesApplied = applied.statusesApplied;
+        notesApplied = applied.notesApplied;
+      } catch { /* rich layer already saved+applied; status mapping is best-effort */ }
+    }
+
+    const summary = domainSwitched
+      ? `Switched to ${layer.domain.toUpperCase()} ATT&CK and colored the matrix by this layer.`
+      : `${statusesApplied} statuses and ${notesApplied} notes applied; matrix colored by this layer.`;
+    alert([`Layer "${layer.name}" imported and saved (${layer.techniques.length} techniques).`, summary, ...warnings].join('\n'));
+  }
+
+  /** Loads a previously saved user layer and colors the matrix by it. */
+  async loadSavedLayer(id: string): Promise<void> {
+    const layer = await this.userLayerService.setActive(id);
+    if (!layer) {
+      alert('Saved layer could not be found.');
+      return;
+    }
+    if (layer.domain !== this.currentDomain
+        && confirm(`This layer targets ${layer.domain.toUpperCase()} ATT&CK. Switch domain to view it correctly?`)) {
+      this.dataService.switchDomain(layer.domain);
+    }
+    this.filterService.setHeatmapMode('library');
+  }
+
+  /** Permanently removes a saved user layer from this browser. */
+  async deleteSavedLayer(id: string): Promise<void> {
+    await this.userLayerService.deleteLayer(id);
+  }
+
+  /** Stops applying the active user layer (matrix/sidebar revert to defaults). */
+  clearActiveLayer(): void {
+    this.userLayerService.clearActive();
   }
 
   exportNavigatorLayer(): void {

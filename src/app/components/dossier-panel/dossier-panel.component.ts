@@ -23,8 +23,12 @@ import {
   TIER_ORDER,
 } from '../../models/dossier';
 import { CveService } from '../../services/cve.service';
+import { DataService } from '../../services/data.service';
 import { DossierService } from '../../services/dossier.service';
+import { dossierToJson, dossierToMarkdown } from '../../services/dossier-export';
 import { EpssService } from '../../services/epss.service';
+import { CisaSsvcService } from '../../services/cisa-ssvc.service';
+import { F3FraudService } from '../../services/f3-fraud.service';
 import {
   ACTION_MEANING,
   DEFAULT_ENVIRONMENT,
@@ -66,6 +70,9 @@ export class DossierPanelComponent implements OnInit, OnDestroy {
   actionMeaning = ACTION_MEANING;
   tierLabel = TIER_LABEL;
 
+  /** Transient "Copied" / "Downloaded" confirmation for the export buttons. */
+  exportState: '' | 'md-copied' | 'json-copied' | 'md-saved' | 'json-saved' | 'copy-failed' = '';
+
   private subs = new Subscription();
 
   constructor(
@@ -73,6 +80,9 @@ export class DossierPanelComponent implements OnInit, OnDestroy {
     private cveService: CveService,
     private epssService: EpssService,
     private ssvc: SsvcService,
+    public cisaSsvc: CisaSsvcService,
+    private f3: F3FraudService,
+    private dataService: DataService,
     private route: ActivatedRoute,
     private router: Router,
     private cdr: ChangeDetectorRef,
@@ -81,6 +91,8 @@ export class DossierPanelComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // Exploitation and In KEV both hinge on KEV membership.
     this.cveService.loadKev();
+    // The F3 overlap bundle loads separately from the Enterprise domain.
+    this.f3.ensureLoaded();
 
     // ?cve=… lets the CVE panel hand off to this view.
     this.subs.add(
@@ -97,6 +109,26 @@ export class DossierPanelComponent implements OnInit, OnDestroy {
     // stale one on screen.
     this.subs.add(this.cveService.kevLoaded$.subscribe(() => this.refreshVerdict()));
     this.subs.add(this.ssvc.loaded$.subscribe(() => this.refreshVerdict()));
+    // F3 can land after assembly; fold its overlap in without refetching everything.
+    this.subs.add(
+      this.f3.loaded$.subscribe(loaded => {
+        if (loaded && this.dossier) {
+          this.dossier = this.dossierService.recomputeF3(this.dossier);
+          this.cdr.markForCheck();
+        }
+      }),
+    );
+    // A deep link can open an asset dossier before the ATT&CK bundle finishes parsing,
+    // which leaves the domain-derived sections (threat actors, and for a live dossier the
+    // mitigations/CAPEC/etc.) empty. Re-derive them once the domain is available.
+    this.subs.add(
+      this.dataService.domain$.subscribe(domain => {
+        if (domain && this.dossier) {
+          this.dossier = this.dossierService.recomputeEnrichment(this.dossier);
+          this.cdr.markForCheck();
+        }
+      }),
+    );
   }
 
   ngOnDestroy(): void {
@@ -122,6 +154,7 @@ export class DossierPanelComponent implements OnInit, OnDestroy {
 
   private open(id: string): void {
     this.notice = null;
+    this.exportState = '';
     this.loading = true;
     this.cdr.markForCheck();
 
@@ -136,6 +169,29 @@ export class DossierPanelComponent implements OnInit, OnDestroy {
           this.fetchThenReload(id);
         }
         this.ensureEpss(id);
+        this.fetchCisa(id);
+      }),
+    );
+  }
+
+  /**
+   * Retrieve CISA's authoritative *published* SSVC decision (separate from the computed
+   * calculator) and merge it onto the dossier. Guarded: on any failure the field stays
+   * null and the view says CISA has not published one.
+   */
+  private fetchCisa(id: string): void {
+    const cached = this.cisaSsvc.getSsvc(id);
+    if (cached && this.dossier?.cveId === id) {
+      this.dossier = { ...this.dossier, cisaSsvc: cached };
+      this.cdr.markForCheck();
+      return;
+    }
+    this.subs.add(
+      this.cisaSsvc.fetchSsvc(id).subscribe(assessment => {
+        if (this.dossier?.cveId === id) {
+          this.dossier = { ...this.dossier, cisaSsvc: assessment };
+          this.cdr.markForCheck();
+        }
       }),
     );
   }
@@ -156,6 +212,7 @@ export class DossierPanelComponent implements OnInit, OnDestroy {
         this.dossierService.load(id, this.env).subscribe(d => {
           this.dossier = d;
           this.cdr.markForCheck();
+          this.fetchCisa(id);
         }),
       );
     });
@@ -279,6 +336,78 @@ export class DossierPanelComponent implements OnInit, OnDestroy {
     // ATT&CK ids carry at most one dot (T1562.001 -> T1562/001), so replacing the
     // first is the whole job here, not an incomplete pass over a repeating pattern.
     return `https://attack.mitre.org/techniques/${id.replace('.', '/')}/`;
+  }
+
+  /** True when the dossier has any ATT&CK group/software/campaign usage. */
+  get hasThreatActors(): boolean {
+    const a = this.dossier?.threatActors;
+    return !!a && (a.groups.length > 0 || a.software.length > 0 || a.campaigns.length > 0);
+  }
+
+  // ── export ─────────────────────────────────────────────────────────────────
+
+  private get markdown(): string {
+    return this.dossier ? dossierToMarkdown(this.dossier) : '';
+  }
+
+  private get json(): string {
+    return this.dossier ? dossierToJson(this.dossier) : '';
+  }
+
+  copyMarkdown(): void {
+    this.copy(this.markdown, 'md-copied');
+  }
+
+  copyJson(): void {
+    this.copy(this.json, 'json-copied');
+  }
+
+  downloadMarkdown(): void {
+    if (!this.dossier) return;
+    this.download(this.markdown, `${this.dossier.cveId}-dossier.md`, 'text/markdown');
+    this.flash('md-saved');
+  }
+
+  downloadJson(): void {
+    if (!this.dossier) return;
+    this.download(this.json, `${this.dossier.cveId}-dossier.json`, 'application/json');
+    this.flash('json-saved');
+  }
+
+  private copy(text: string, ok: typeof this.exportState): void {
+    if (!text) return;
+    const clip = typeof navigator !== 'undefined' ? navigator.clipboard : undefined;
+    if (clip?.writeText) {
+      clip.writeText(text).then(
+        () => this.flash(ok),
+        () => this.flash('copy-failed'),
+      );
+    } else {
+      this.flash('copy-failed');
+    }
+  }
+
+  private download(text: string, filename: string, type: string): void {
+    try {
+      const blob = new Blob([text], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      this.flash('copy-failed');
+    }
+  }
+
+  private flash(state: typeof this.exportState): void {
+    this.exportState = state;
+    this.cdr.markForCheck();
+    setTimeout(() => {
+      this.exportState = '';
+      this.cdr.markForCheck();
+    }, 2200);
   }
 
   trackTech = (_: number, t: DossierTechnique) => t.id;
