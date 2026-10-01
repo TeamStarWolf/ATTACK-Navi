@@ -3,15 +3,25 @@
 <nav class="nav-rail-inner" role="navigation" aria-label="Main navigation">
   <div class="rail-section-label" aria-hidden="true">Workspaces</div>
   <div class="nav-list">
-    @for (ws of workspaces; track ws.route) {
+    @for (ws of workspaces; track ws.route; let i = $index) {
       <a
         class="nav-item"
+        [class.drag-over]="overIndex === i && dragIndex !== i"
+        [class.dragging]="dragIndex === i"
         [routerLink]="ws.route"
         routerLinkActive="active"
         queryParamsHandling="preserve"
-        [title]="ws.label"
+        [title]="ws.label + ' — drag to reorder'"
         [attr.aria-label]="ws.label"
+        draggable="true"
+        (dragstart)="onDragStart(i, $event)"
+        (dragover)="onDragOver(i, $event)"
+        (drop)="onDrop(i, $event)"
+        (dragend)="onDragEnd()"
       >
+        <span class="nav-grip" aria-hidden="true" title="Drag to reorder">
+          <app-icon name="grip-vertical" [size]="14" />
+        </span>
         <app-icon class="nav-icon" [name]="ws.icon" [size]="20" aria-hidden="true" />
         <span class="nav-label">{{ ws.label }}</span>
         @if (ws.route === '/exposure' && newKevCount > 0) {
@@ -20,6 +30,14 @@
       </a>
     }
   </div>
+
+  @if (isCustomOrder) {
+    <button class="rail-reset" type="button" (click)="resetOrder()" title="Restore the default workspace order">
+      <app-icon name="refresh-cw" [size]="13" aria-hidden="true" />
+      <span>Reset order</span>
+    </button>
+  }
+
   <div class="nav-items-bottom">
     <button
       class="nav-item help-btn"
