@@ -2,7 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter, Router } from '@angular/router';
 import { ValidationStatusPillComponent } from './validation-status-pill.component';
@@ -22,7 +22,7 @@ describe('ValidationStatusPillComponent', () => {
     TestBed.configureTestingModule({
       imports: [ValidationStatusPillComponent],
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         provideRouter([]),
         { provide: ValidationService, useValue: validation },

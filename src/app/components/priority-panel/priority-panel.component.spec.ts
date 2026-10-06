@@ -2,7 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { PriorityPanelComponent } from './priority-panel.component';
@@ -23,7 +23,7 @@ describe('PriorityPanelComponent', () => {
     TestBed.configureTestingModule({
       imports: [PriorityPanelComponent],
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         provideRouter([]),
         { provide: FilterService, useValue: {

@@ -1,7 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
@@ -24,7 +24,7 @@ describe('NavRailComponent', () => {
     await TestBed.configureTestingModule({
       imports: [NavRailComponent],
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         provideRouter([]),
         { provide: CveService, useValue: mockCveService },
@@ -73,15 +73,20 @@ describe('NavRailComponent', () => {
     const labels = [...fixture.nativeElement.querySelectorAll('.nav-label')].map(
       (el: any) => el.textContent.trim(),
     );
+    // Grouped rail order: Threat & Exposure, then Response, then Reference, then Help/Settings.
     expect(labels).toEqual([
-      'Matrix', 'Dashboard', 'Intel', 'Detect', 'Exposure', 'Coverage',
-      'Library', 'Reports', 'Status', 'Help', 'Settings',
+      'Matrix', 'Exposure', 'Intel', 'Detect', 'Coverage',
+      'Dashboard', 'Reports', 'Library', 'Status', 'Help', 'Settings',
     ]);
   });
 
   it('renders SVG icons (no emoji glyphs)', () => {
-    const icons = fixture.nativeElement.querySelectorAll('.nav-item app-icon svg');
-    expect(icons.length).toBe(11);
+    // Every icon host in the rail (drag grips + workspace icons + Help/Settings)
+    // must render an inline SVG — i.e. no emoji/text glyphs.
+    const iconHosts = fixture.nativeElement.querySelectorAll('.nav-item app-icon');
+    const svgs = fixture.nativeElement.querySelectorAll('.nav-item app-icon svg');
+    expect(iconHosts.length).toBeGreaterThan(0);
+    expect(svgs.length).toBe(iconHosts.length);
   });
 
   it('shows the KEV badge on Exposure when newKevCount > 0', () => {

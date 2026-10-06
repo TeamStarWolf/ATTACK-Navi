@@ -2,7 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { AnalyticsPanelComponent } from './analytics-panel.component';
 import { FilterService } from '../../services/filter.service';
@@ -21,7 +21,7 @@ describe('AnalyticsPanelComponent', () => {
     TestBed.configureTestingModule({
       imports: [AnalyticsPanelComponent],
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         { provide: FilterService, useValue: {
             activePanel$: new BehaviorSubject<string | null>(null),

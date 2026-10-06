@@ -1,7 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import {
   RouteReuseStrategy,
   TitleStrategy,
@@ -16,7 +16,7 @@ import { AppRouteReuseStrategy } from './services/route-reuse.strategy';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
-    provideHttpClient(),
+    provideHttpClient(withXhr()),
     // Hash routing: GitHub Pages serves only index.html, and the relative
     // <base href="./"> breaks path-based deep links — the hash keeps every
     // real HTTP request at the app root. Filter state lives in query params

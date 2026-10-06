@@ -1,7 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Router, provideRouter } from '@angular/router';
 import { LibraryCrossRefComponent } from './library-cross-ref.component';
@@ -15,7 +15,7 @@ describe('LibraryCrossRefComponent', () => {
     TestBed.configureTestingModule({
       imports: [LibraryCrossRefComponent],
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         provideRouter([]),
         { provide: LibraryService, useValue: {

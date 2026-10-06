@@ -1,7 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { of } from 'rxjs';
 import { CollectionPanelComponent } from './collection-panel.component';
@@ -53,7 +53,7 @@ describe('CollectionPanelComponent', () => {
     await TestBed.configureTestingModule({
       imports: [CollectionPanelComponent],
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         { provide: CustomTechniqueService, useValue: mockCustomTechniqueService },
         { provide: CustomGroupService, useValue: mockCustomGroupService },
