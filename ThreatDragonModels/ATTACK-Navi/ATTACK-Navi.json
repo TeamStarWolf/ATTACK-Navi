@@ -1,0 +1,3828 @@
+{
+  "version": "2.3.0",
+  "summary": {
+    "title": "ATTACK-Navi",
+    "owner": "TeamStarWolf",
+    "description": "STRIDE threat model of ATTACK-Navi, a browser-based MITRE ATT&CK workbench served as a static site, with an optional proxy that holds OpenCTI and MISP credentials. Elements, flows and threats were derived from the code on main; each threat's description cites the relevant files.",
+    "id": 0
+  },
+  "detail": {
+    "contributors": [],
+    "diagrams": [
+      {
+        "id": 0,
+        "title": "ATTACK-Navi data flow",
+        "diagramType": "STRIDE",
+        "placeholder": "New STRIDE diagram description",
+        "thumbnail": "./public/content/images/thumbnail.stride.jpg",
+        "version": "2.4.0",
+        "cells": [
+          {
+            "position": {
+              "x": 40,
+              "y": 120
+            },
+            "size": {
+              "width": 160,
+              "height": 70
+            },
+            "attrs": {
+              "text": {
+                "text": "Analyst (browser user)"
+              },
+              "body": {
+                "stroke": "#333333",
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "actor",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "53407f47-00ab-4fb6-8d4c-d1e077465c67"
+                },
+                {
+                  "group": "right",
+                  "id": "884df7bf-e6d7-4b90-a22e-f2d88e054fa9"
+                },
+                {
+                  "group": "bottom",
+                  "id": "670677e3-0614-4287-96e1-c2f4e44a770f"
+                },
+                {
+                  "group": "left",
+                  "id": "6ae7417b-48ce-4882-8997-566d016b0ada"
+                }
+              ]
+            },
+            "id": "dfc6247a-b4a4-4e64-9cc3-c5edd536543d",
+            "zIndex": 2,
+            "data": {
+              "type": "tm.Actor",
+              "name": "Analyst (browser user)",
+              "description": "Person using the workbench. Types integration credentials (MISP API key, OpenCTI token, TAXII username and password, NVD API key), imports layer, STIX and workspace files, and opens share links whose #import= fragment carries a base64 STIX bundle. Every integration URL and credential is entered here, and no scheme or host is validated: saveConfig only trims a trailing slash.",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": true,
+              "providesAuthentication": false,
+              "threats": [
+                {
+                  "id": "7b5901c3-3b79-4f60-919a-916d7d234372",
+                  "title": "Share-link #import= bundle silently overwrites the analyst's existing technique notes",
+                  "status": "Open",
+                  "severity": "Low",
+                  "type": "Tampering",
+                  "description": "A share link carries a base64 STIX bundle in #import=. The collection panel parses it on load and shows a confirm dialog with object counts only. On confirm, importCollection records attackIds even for skipped attack-patterns. Each STIX note whose object_refs resolve to one of those IDs is written with annotationSvc.setAnnotation, which replaces the existing note for that technique. A link that looks harmless ('1 technique, 1 note') can therefore overwrite real analyst notes on techniques such as T1059 with attacker-chosen text. The Navigator-layer importer explicitly avoids this ('imports never clobber existing analyst work'); this importer does not. Evidence: src/app/services/stix-collection.service.ts:186-192 (skipped IDs still mapped), :282-296 (setAnnotation on mapped IDs), :336-365 (hash parse); src/app/services/annotation.service.ts:24-37 (map.set replaces); src/app/components/collection-panel/collection-panel.component.ts:162-181; src/app/components/collection-panel/collection-panel.component.html:326-341; src/app/services/navigator-layer.service.ts:157",
+                  "mitigation": "Do not overwrite existing annotations on import: merge or skip, as navigator-layer.service does. Show in the confirm dialog which technique IDs and notes will change. Treat imported notes as custom-entity notes rather than notes on built-in ATT&CK IDs.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 14,
+                  "score": ""
+                }
+              ]
+            }
+          },
+          {
+            "position": {
+              "x": 260,
+              "y": 70
+            },
+            "size": {
+              "width": 480,
+              "height": 510
+            },
+            "attrs": {
+              "label": {
+                "text": "Analyst browser origin sandbox"
+              }
+            },
+            "visible": true,
+            "shape": "trust-boundary-box",
+            "id": "f455a1f4-ee7a-499b-8796-8ff6289040e4",
+            "zIndex": -1,
+            "data": {
+              "type": "tm.BoundaryBox",
+              "name": "Analyst browser origin sandbox",
+              "description": "Everything that runs in, or is stored for, the SPA's origin: the Angular app, the service worker, localStorage, sessionStorage, IndexedDB and Cache Storage. On GitHub Pages the origin is https://teamstarwolf.github.io, which every TeamStarWolf project page shares, and no CSP is served there. Self-hosted, it is the nginx origin with a strict CSP (nginx.conf:23). Any script running in the origin can read all of these stores.",
+              "isTrustBoundary": true,
+              "hasOpenThreats": false
+            }
+          },
+          {
+            "position": {
+              "x": 310,
+              "y": 100
+            },
+            "size": {
+              "width": 120,
+              "height": 120
+            },
+            "attrs": {
+              "text": {
+                "text": "Angular SPA (browser)"
+              },
+              "body": {
+                "stroke": "#333333",
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "process",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "9ed31747-ed78-4e91-88d4-58264e5d2454"
+                },
+                {
+                  "group": "right",
+                  "id": "d4f8e430-2721-43e6-809e-09d95f4ed228"
+                },
+                {
+                  "group": "bottom",
+                  "id": "63f1e332-00b5-4b40-92ec-b348fe966629"
+                },
+                {
+                  "group": "left",
+                  "id": "e6dfb616-7870-4c95-93b9-6b3ab7c5d0b8"
+                }
+              ]
+            },
+            "id": "3a62e8f0-7204-49ce-81ac-d022dfb0606b",
+            "zIndex": 3,
+            "data": {
+              "type": "tm.Process",
+              "name": "Angular SPA (browser)",
+              "description": "The Angular 22 workbench running in the analyst's browser tab, with hash routing and an XHR HttpClient. No HTTP interceptor is registered, so no header is added globally, and the proxy token is never sent. The SPA parses STIX from upstream, from TAXII, from file imports and from #import= links. ATT&CK description text is rendered through the attackText pipe, which reduces input to plain text with DOMParser, HTML-escapes it, and binds through [innerHTML] under Angular's sanitizer with no trust bypass. The only bypassSecurityTrustHtml call left is for static icon SVGs.",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "handlesCardPayment": false,
+              "handlesGoodsOrServices": false,
+              "isWebApplication": true,
+              "privilegeLevel": "",
+              "threats": [
+                {
+                  "id": "ee1ebc4e-ae19-4f6d-b194-3392f6744650",
+                  "title": "Stored/DOM XSS from upstream or imported description text rendered with [innerHTML]",
+                  "status": "Mitigated",
+                  "severity": "Medium",
+                  "type": "Elevation of privilege",
+                  "description": "The sidebar binds technique, detection, procedure, relationship and mitigation descriptions with [innerHTML]. These come from live upstream STIX, TAXII collections, share links, and custom or imported entities. A trust bypass in this path would give script execution in a credential-holding origin. Evidence: src/app/pipes/attack-text.pipe.ts:9-17, :20-56; src/app/components/sidebar/sidebar.component.html:112, :389, :422, :449, :1744, :1753; src/app/shared/icons/icon.component.ts:41-50",
+                  "mitigation": "AttackTextPipe reduces input to text with DOMParser and HTML-escapes everything. It then re-adds only anchors it builds itself from [label](https?://...) markdown, with a URL character class that excludes quotes, angle brackets and whitespace. It returns a plain string and no longer calls bypassSecurityTrustHtml, so Angular's sanitizer still runs on binding. The only remaining bypassSecurityTrustHtml call is in IconComponent, on compile-time constant SVG from the icon registry, with unknown names mapped to a fallback.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 9,
+                  "score": ""
+                }
+              ]
+            }
+          },
+          {
+            "position": {
+              "x": 310,
+              "y": 250
+            },
+            "size": {
+              "width": 120,
+              "height": 120
+            },
+            "attrs": {
+              "text": {
+                "text": "Angular service worker (ngsw)"
+              },
+              "body": {
+                "stroke": "#333333",
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "process",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "cf51870d-3939-4bf9-9870-4c66dc54d8ba"
+                },
+                {
+                  "group": "right",
+                  "id": "af3832a1-3855-4c75-a02c-55c772a9ba7c"
+                },
+                {
+                  "group": "bottom",
+                  "id": "250ecc11-3107-4415-a780-309040d4110e"
+                },
+                {
+                  "group": "left",
+                  "id": "d1f0ef42-20a2-4e6d-b677-bd8041227271"
+                }
+              ]
+            },
+            "id": "cac12f55-0d46-4be9-b0bc-43cb54bb8dfc",
+            "zIndex": 4,
+            "data": {
+              "type": "tm.Process",
+              "name": "Angular service worker (ngsw)",
+              "description": "PWA service worker, registered only in production builds and scoped to the base href. Stale registrations at other scopes are removed. It intercepts same-origin and listed cross-origin GETs and serves them with a freshness strategy. When the network takes longer than 10-15 s it returns cached upstream STIX, mapping content and NVD/EPSS responses, up to 6-24 h old.",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": true,
+              "handlesCardPayment": false,
+              "handlesGoodsOrServices": false,
+              "isWebApplication": false,
+              "privilegeLevel": "",
+              "threats": [
+                {
+                  "id": "34672289-e25e-4a5f-9f03-03db9a255620",
+                  "title": "Service worker serves cached app-shell code without re-verifying hashes, so one cache write gives persistent code execution",
+                  "status": "Open",
+                  "severity": "Medium",
+                  "type": "Tampering",
+                  "description": "ngsw-config.json prefetches index.html and the main and polyfills bundles into Cache Storage. The Angular worker checks content against the ngsw.json hash only when it fetches from the network. Once a hashed URL is in the cache, the cached response is returned without any check. Any same-origin script can overwrite the ngsw:/ATTACK-Navi/ app-shell cache entry for main-*.js with its own code, and that code then runs on every later visit, including offline, until the next app version is deployed. The script could come from a sibling github.io site, a one-time XSS, or the report-link XSS described below. This turns a transient compromise into a persistent one in an origin that handles OpenCTI, MISP and TAXII credentials. Evidence: ngsw-config.json:5-10 (app-shell prefetch); node_modules/@angular/service-worker/ngsw-worker.js:426-434 (cached hashed response returned as-is), :562-578 (hash checked only on network fetch); src/main.ts:46-48 (registration)",
+                  "mitigation": "Remove the shared-origin exposure (dedicated origin). Ship a strict CSP so one-time injection is harder. Consider an app-level integrity check that compares loaded bundle hashes against a server-fetched ngsw.json, or skip the service worker on the shared-origin Pages deployment. Document an 'Unregister SW and clear site data' recovery step.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 5,
+                  "score": ""
+                }
+              ]
+            }
+          },
+          {
+            "position": {
+              "x": 290,
+              "y": 420
+            },
+            "size": {
+              "width": 160,
+              "height": 70
+            },
+            "attrs": {
+              "text": {
+                "text": "Browser localStorage"
+              },
+              "topLine": {
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              },
+              "bottomLine": {
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "store",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "cac214c5-2763-45e3-85c8-59786e9996a9"
+                },
+                {
+                  "group": "right",
+                  "id": "04e414cc-caff-4cd2-8beb-32d413d4167b"
+                },
+                {
+                  "group": "bottom",
+                  "id": "607ec1f1-bd4a-4eea-9c4f-860acd114467"
+                },
+                {
+                  "group": "left",
+                  "id": "4098c5ce-766c-4abe-9a43-5e3564416960"
+                }
+              ]
+            },
+            "id": "28e35ebf-329a-4197-9d44-05f1eca389d3",
+            "zIndex": 5,
+            "data": {
+              "type": "tm.Store",
+              "name": "Browser localStorage",
+              "description": "Plaintext per-origin persistent storage, about 36 setItem call sites. Holds settings (with the NVD key stripped), org name and base64 logo, layers, annotations, tags, watchlists, and integration config: MISP and OpenCTI URL, mode and proxyUrl, plus the TAXII server list with usernames (passwords stripped). On the shared github.io origin, any script running there can read it, and so can any XSS.",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": true,
+              "isALog": false,
+              "isEncrypted": false,
+              "isSigned": false,
+              "storesCredentials": false,
+              "storesInventory": false,
+              "threats": [
+                {
+                  "id": "092cad7e-bae0-4c89-9e54-b528b23792ea",
+                  "title": "Shared teamstarwolf.github.io origin exposes all browser storage to sibling Pages sites",
+                  "status": "Open",
+                  "severity": "Medium",
+                  "type": "Information disclosure",
+                  "description": "The app is published at https://teamstarwolf.github.io/ATTACK-Navi/. localStorage, sessionStorage, IndexedDB and Cache Storage are scoped to the origin, not the path, so every other Pages project under teamstarwolf.github.io can read and write them, as can an XSS in any of those projects. Exposed data: asset inventory, emulation plans, implementation status, MISP/OpenCTI server and proxy URLs, TAXII server URLs and usernames, the STIX cache, and user layers. sessionStorage, which holds the NVD key, also carries over when the same tab navigates to a sibling path. The app itself shows the cross-app reach: on every load, main.ts unregisters every service worker on the origin whose scope is not ATTACK-Navi's base path, which removes other TeamStarWolf PWAs' offline support. Evidence: package.json:5 (homepage teamstarwolf.github.io/ATTACK-Navi/); .github/workflows/deploy.yml:33; src/main.ts:24-37 (unregisters all other registrations), :40-50; src/app/services/asset-inventory.service.ts:534; src/app/services/emulation-plan.service.ts:407; src/app/services/misp.service.ts:148-153; src/app/services/opencti.service.ts:159-163; src/app/services/taxii.service.ts:198-202; src/app/services/data.service.ts:52-53; src/app/services/user-layer.service.ts:18-19,393; src/app/services/settings.service.ts:183",
+                  "mitigation": "Serve the hosted app from a dedicated origin, such as a custom domain via a CNAME in public/, or a separate github.io account used only for this site. Limit cleanupStaleServiceWorkers to registrations whose script URL is this app's ngsw-worker.js. Consider encrypting sensitive work product at rest, with a key held in memory only.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 4,
+                  "score": ""
+                },
+                {
+                  "id": "191d14f9-a76c-4bea-a7f6-ff26197823b1",
+                  "title": "Integration credentials persisted to localStorage or leaked through workspace bundles",
+                  "status": "Mitigated",
+                  "severity": "Medium",
+                  "type": "Information disclosure",
+                  "description": "The analyst enters an OpenCTI token, a MISP API key, TAXII passwords and an NVD key in Settings. If any of these were written to localStorage, or included in the shareable workspace export, they would end up on disk and in files handed to teammates. Evidence: src/app/services/misp.service.ts:116-134, :147-153; src/app/services/opencti.service.ts:129-146, :158-163; src/app/services/taxii.service.ts:198-203; src/app/services/settings.service.ts:150-174, :176-187; src/app/services/workspace-bundle.service.ts:15-18, :23-54 (taxii key at :46), :94-101, :115-124",
+                  "mitigation": "MISP and OpenCTI save only the URL, mode and proxy URL, and set apiKey and token to '' on load. TAXII strips the password before saving. The NVD key is removed from the localStorage settings and kept in sessionStorage. The workspace bundle allowlist excludes misp_config and opencti_config, strips nvdApiKey on both export and import, and rejects keys that are not on the allowlist. Remaining exposure: server URLs, TAXII usernames and proxy URLs are still stored in plaintext and exported (mitre-nav-taxii-v1), and the NVD key still reaches disk through the service-worker cache.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 10,
+                  "score": ""
+                }
+              ]
+            }
+          },
+          {
+            "position": {
+              "x": 510,
+              "y": 120
+            },
+            "size": {
+              "width": 160,
+              "height": 70
+            },
+            "attrs": {
+              "text": {
+                "text": "Browser sessionStorage"
+              },
+              "topLine": {
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              },
+              "bottomLine": {
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "store",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "ec98b82e-0c55-4272-a98b-371c86e3c087"
+                },
+                {
+                  "group": "right",
+                  "id": "93d3a999-09ce-41d1-8090-f2c3a7b307d4"
+                },
+                {
+                  "group": "bottom",
+                  "id": "48bf6e35-b0d3-440b-824b-04cfb8f2e32d"
+                },
+                {
+                  "group": "left",
+                  "id": "dfdc8a7f-6d35-4f9e-b8d2-c54a59d37953"
+                }
+              ]
+            },
+            "id": "e7062d15-a33c-4578-a7c1-c605b98ac3da",
+            "zIndex": 6,
+            "data": {
+              "type": "tm.Store",
+              "name": "Browser sessionStorage",
+              "description": "Tab-session storage that holds the NVD API key under 'mitre-nav-settings-v1-key'. It survives a reload but not closing the tab or browser, and any script on the origin can read it.",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isALog": false,
+              "isEncrypted": false,
+              "isSigned": false,
+              "storesCredentials": true,
+              "storesInventory": false,
+              "threats": []
+            }
+          },
+          {
+            "position": {
+              "x": 510,
+              "y": 270
+            },
+            "size": {
+              "width": 160,
+              "height": 70
+            },
+            "attrs": {
+              "text": {
+                "text": "IndexedDB (STIX cache + user layers)"
+              },
+              "topLine": {
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              },
+              "bottomLine": {
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "store",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "08fd20dc-d501-4bec-8c4e-dd3e091e7ddb"
+                },
+                {
+                  "group": "right",
+                  "id": "98d28e12-f492-482a-aed8-700bc8ba2121"
+                },
+                {
+                  "group": "bottom",
+                  "id": "a5201043-b7ce-4857-bbba-ad59dd14ca34"
+                },
+                {
+                  "group": "left",
+                  "id": "3f01a55a-2968-4247-9db1-ee398145f923"
+                }
+              ]
+            },
+            "id": "8bbe37d9-bdb6-4e65-8aad-1d5249299f88",
+            "zIndex": 7,
+            "data": {
+              "type": "tm.Store",
+              "name": "IndexedDB (STIX cache + user layers)",
+              "description": "Two databases. 'mitre-navigator-cache/stix-bundles' holds raw upstream STIX bundles with a timestamp; within the 24 h TTL they are re-parsed and trusted on load, with no signature or hash check. 'attack-navi-user-layers/layers' holds the analyst's saved layers.",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isALog": false,
+              "isEncrypted": false,
+              "isSigned": false,
+              "storesCredentials": false,
+              "storesInventory": false,
+              "threats": []
+            }
+          },
+          {
+            "position": {
+              "x": 510,
+              "y": 420
+            },
+            "size": {
+              "width": 160,
+              "height": 70
+            },
+            "attrs": {
+              "text": {
+                "text": "Service-worker Cache Storage"
+              },
+              "topLine": {
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              },
+              "bottomLine": {
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "store",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "835af244-e8ee-406b-853f-f9bbb7267d95"
+                },
+                {
+                  "group": "right",
+                  "id": "6ef089bc-93d7-4a32-9eea-4f84a3ddbec1"
+                },
+                {
+                  "group": "bottom",
+                  "id": "7f4b81f9-2efe-44dd-9c57-37f87027ed2c"
+                },
+                {
+                  "group": "left",
+                  "id": "5bd620ad-52a1-417c-b210-09398e6d122d"
+                }
+              ]
+            },
+            "id": "8c5cc038-dd49-4cba-97f9-81f028e60184",
+            "zIndex": 8,
+            "data": {
+              "type": "tm.Store",
+              "name": "Service-worker Cache Storage",
+              "description": "Cache Storage managed by ngsw. It holds the prefetched app shell and lazy JS and assets, plus freshness dataGroups: mitre-attack STIX (24 h, 10 entries), external content from CTID, Red Canary, Sigma, Elastic, Splunk, MISP and mitre/cti (12 h, 20 entries), and api.first.org and NVD responses (6 h, 50 entries). The NVD key travels in a header rather than the URL, so the cached data is response bodies only.",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": true,
+              "isALog": false,
+              "isEncrypted": false,
+              "isSigned": false,
+              "storesCredentials": false,
+              "storesInventory": false,
+              "threats": [
+                {
+                  "id": "e4c3c3f7-7463-41a5-9b36-4a79b11fe56f",
+                  "title": "NVD API key is written to disk in the service-worker cache, contrary to the sessionStorage design",
+                  "status": "Open",
+                  "severity": "Low",
+                  "type": "Information disclosure",
+                  "description": "SettingsService keeps the NVD key out of localStorage. Its comment says the key lives in sessionStorage and 'never persists to disk'. However, CveService sends the key as an 'apiKey' request header to services.nvd.nist.gov. That host is in the ngsw 'apis' data group, and the Angular worker stores responses with cache.put(req, res.clone()). That call keeps the original Request, with its header list, in persistent Cache Storage. The key can then outlive the browser session, and any same-origin script can read it from the cache through caches.open(...).keys(). Evidence: src/app/services/settings.service.ts:176-187 (comment at :178-179); src/app/services/cve.service.ts:276, :291-292; ngsw-config.json:58-66; node_modules/@angular/service-worker/ngsw-worker.js:1029-1040 (cache.put(req, ...))",
+                  "mitigation": "Remove services.nvd.nist.gov from the ngsw 'apis' data group, or send NVD requests with the ngsw-bypass header so the worker does not cache them. Clear the existing ngsw:*:data:apis caches when the key changes or is removed.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 12,
+                  "score": ""
+                }
+              ]
+            }
+          },
+          {
+            "position": {
+              "x": 800,
+              "y": 70
+            },
+            "size": {
+              "width": 480,
+              "height": 510
+            },
+            "attrs": {
+              "label": {
+                "text": "Operator host / user's local network"
+              }
+            },
+            "visible": true,
+            "shape": "trust-boundary-box",
+            "id": "026a8fee-4004-4b9f-925c-806870eeaada",
+            "zIndex": -1,
+            "data": {
+              "type": "tm.BoundaryBox",
+              "name": "Operator host / user's local network",
+              "description": "The analyst's or operator's machine and LAN, where the optional Express proxy and its server/.env secrets live. docker-compose publishes the proxy on 127.0.0.1:8787 only (docker-compose.yml:16-17). `npm run proxy:start` binds all interfaces (server/src/index.js:195), and with PROXY_AUTH_TOKEN unset, which proxy mode requires because the SPA never sends it, network isolation is the only control (README.md:203). User MISP, OpenCTI and TAXII servers may also sit on this network.",
+              "isTrustBoundary": true,
+              "hasOpenThreats": false
+            }
+          },
+          {
+            "position": {
+              "x": 850,
+              "y": 100
+            },
+            "size": {
+              "width": 120,
+              "height": 120
+            },
+            "attrs": {
+              "text": {
+                "text": "Optional Express credential proxy"
+              },
+              "body": {
+                "stroke": "#333333",
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "process",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "e552f1b8-7b96-4f85-a013-a7b122cbd0e7"
+                },
+                {
+                  "group": "right",
+                  "id": "4755f10e-4df7-48aa-96cd-a008e8c7f5bf"
+                },
+                {
+                  "group": "bottom",
+                  "id": "225d7529-f2a9-4c58-8725-8d87358454a3"
+                },
+                {
+                  "group": "left",
+                  "id": "81d76d95-df64-45e3-88fc-d8d94d1ea301"
+                }
+              ]
+            },
+            "id": "e4fd8235-d40d-48e4-bcd7-16b97056d55a",
+            "zIndex": 9,
+            "data": {
+              "type": "tm.Process",
+              "name": "Optional Express credential proxy",
+              "description": "A Node/Express service on port 8787 that holds the OpenCTI and MISP secrets so the browser never sees them. It enforces a CORS origin allowlist (requests with no Origin header are allowed) and, only if PROXY_AUTH_TOKEN is set, a bearer or X-Proxy-Key check on /api/* except /api/health. The SPA never sends that token, so proxy mode works only with authentication disabled. app.listen(port) has no host argument and binds all interfaces under `npm run proxy:start`; docker-compose limits it to 127.0.0.1. Upstream paths are pinned to the configured origin. Responses are relayed verbatim with the upstream Content-Type.",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": true,
+              "handlesCardPayment": false,
+              "handlesGoodsOrServices": false,
+              "isWebApplication": false,
+              "privilegeLevel": "",
+              "threats": [
+                {
+                  "id": "239383cb-611f-4177-a6e5-36ce72f2b9b8",
+                  "title": "The proxy's token check can't be used with the SPA, and `npm start` listens on all interfaces, so the proxy is open to the LAN by default",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Spoofing",
+                  "description": "Caller authentication only runs when PROXY_AUTH_TOKEN is set (requireProxyToken returns next() otherwise). The shipped `.env.example` leaves it empty. The SPA's proxy mode never sends `Authorization` or `X-Proxy-Key`, so an operator who sets the token breaks the app. In practice the token stays empty. `app.listen(port)` passes no host, so `npm run proxy:start` binds every interface, while the startup log and the code comment say it is localhost-only. Any host on the same network can then call POST /api/opencti/graphql and GET/POST /api/misp/* with no Origin header, which CORS lets through. Each call carries the operator's OPENCTI_TOKEN or MISP_API_KEY upstream. Evidence: server/src/index.js:39-48 (token optional, bypass when unset); server/src/index.js:54 (plain === compare); server/src/index.js:22 (requests with no Origin header are allowed); server/src/index.js:195-196 (listen without host; log claims localhost); server/.env.example:8 (PROXY_AUTH_TOKEN empty); src/app/services/opencti.service.ts:346-347 and src/app/services/misp.service.ts:307-311 (proxy mode sends no auth header); README.md:203 (says the web app works only while PROXY_AUTH_TOKEN is empty and that `npm run proxy:start` listens on all interfaces)",
+                  "mitigation": "docker-compose publishes the proxy on 127.0.0.1 only (docker-compose.yml:62-63), but this does not cover `npm start` or Helm. Recommended: bind to 127.0.0.1 by default (`app.listen(port, process.env.HOST || '127.0.0.1')`). Add a proxy-token field to the SPA settings and send it as `X-Proxy-Key` from opencti.service.ts and misp.service.ts. Refuse to start without PROXY_AUTH_TOKEN unless HOST is loopback. Compare tokens with crypto.timingSafeEqual instead of `===`.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 1,
+                  "score": ""
+                },
+                {
+                  "id": "d8df9d6f-b685-4abc-9bd3-f07b4d08b357",
+                  "title": "The OpenCTI route forwards any GraphQL query, including mutations, with the operator's token",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Elevation of privilege",
+                  "description": "MISP gets a read-only endpoint allowlist, but /api/opencti/graphql only checks that `query` is a string and `variables` is an object. It then forwards both under `Authorization: Bearer ${OPENCTI_TOKEN}`. Any caller that gets past the weak gate (an unauthenticated LAN host, a script on an allowed CORS origin, or an XSS in the SPA) can run arbitrary mutations as the token's OpenCTI user. That includes deleting or editing intel, importing bundles, and managing users or connectors if the token is privileged. The SPA itself sends a write mutation (stixObjectOrStixRelationshipImport), so the proxy is not read-only by design. Evidence: server/src/index.js:97-124 (query and variables forwarded without filtering); compare server/src/index.js:136-162 (MISP read-only allowlist); src/app/services/opencti.service.ts:287-292 (SPA sends the ImportStix mutation); src/app/services/opencti.service.ts:342-344 (proxy-mode GraphQL endpoint)",
+                  "mitigation": "Allowlist operations on the server: accept only named operations or persisted query hashes that the SPA actually uses. Reject `mutation` documents except an explicitly enabled import operation behind a separate flag. Document that OPENCTI_TOKEN should belong to a least-privileged, read-mostly OpenCTI user.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 2,
+                  "score": ""
+                },
+                {
+                  "id": "1ced7e5e-4ea1-4776-8416-8d2565c4585b",
+                  "title": "The sample CORS allowlist trusts teamstarwolf.github.io, an origin shared by every Pages site in the org",
+                  "status": "Open",
+                  "severity": "Medium",
+                  "type": "Spoofing",
+                  "description": "Because the SPA cannot send the proxy token, CORS is the only control on what browser code may drive the proxy. `server/.env.example` puts `https://teamstarwolf.github.io` in ALLOWED_ORIGINS. On GitHub Pages that origin covers every project site under the TeamStarWolf org, not just /ATTACK-Navi/. So any script served from another org repo's Pages site, or any script compromise of the hosted SPA (a malicious dependency or tampered bundled data), can call the analyst's local proxy and read the responses. That includes the OpenCTI mutation path. Evidence: server/.env.example:2 (ALLOWED_ORIGINS includes https://teamstarwolf.github.io); server/src/index.js:13-28 (origin-only allowlist); README.md:203 (copied .env also allows the hosted site); package.json:5 (homepage on the shared teamstarwolf.github.io origin)",
+                  "mitigation": "The code default is `http://localhost:4200` (server/src/index.js:15), and an empty list fails closed (server/src/index.js:21-22). Recommended: drop the github.io entry from `.env.example` or comment it out with a warning. Prefer self-hosting the SPA on a dedicated origin. Pair CORS with a per-user proxy token that the SPA sends.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 7,
+                  "score": ""
+                },
+                {
+                  "id": "ac3cd11c-a05f-4b62-9173-1bf0e4b1ccde",
+                  "title": "DNS rebinding can read MISP events through a loopback-bound proxy",
+                  "status": "Open",
+                  "severity": "Medium",
+                  "type": "Information disclosure",
+                  "description": "The proxy never checks the Host header, and it treats requests with no Origin header as allowed. A malicious site can rebind its hostname to 127.0.0.1 and then make same-origin GET requests to http://<attacker-host>:8787/api/misp/events/view/<id> or servers/getVersion. Browsers send no Origin on same-origin GETs, so CORS allows the request. With PROXY_AUTH_TOKEN empty (as the SPA requires), the proxy adds the MISP API key and returns the event JSON to the attacker's page. The page can enumerate event IDs. POSTs, including OpenCTI, carry an Origin header and are refused. The 127.0.0.1 publish in docker-compose does not stop this, because the victim's own browser makes the requests. Evidence: server/src/index.js:22 (`!origin` allowed); server/src/index.js:47-48 (no auth when the token is unset); server/src/index.js:140-145, 154-159, 170-182 (GET events/view/* forwarded with the MISP key, response returned verbatim); server/src/index.js:190 (GET route); no Host validation anywhere in server/src/index.js",
+                  "mitigation": "Reject any request whose Host header is not in an allowlist (e.g. localhost:8787, 127.0.0.1:8787). Require a custom header on every /api route so every cross-origin call needs a preflight. Make PROXY_AUTH_TOKEN usable from the SPA so it can be required.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 8,
+                  "score": ""
+                },
+                {
+                  "id": "98cf0c21-554b-4b59-b74c-dd0fa6ec32c7",
+                  "title": "Upstream URL building blocks SSRF, path traversal and MISP write endpoints",
+                  "status": "Mitigated",
+                  "severity": "Medium",
+                  "type": "Tampering",
+                  "description": "A caller could try to steer the credentialed fetch to another host, add `..` segments, or reach MISP write endpoints such as events/add or users/add while the operator's key is attached. Evidence: server/src/index.js:61-84 (validateUpstreamUrl); server/src/index.js:104 (fixed 'graphql' path); server/src/index.js:140-162 (MISP allowlist and 403); server/src/index.js:154 (only params[0] used); src/app/services/misp.service.ts:295 (SPA's events/add, blocked by the proxy); server/test/proxy.test.js:111,124 (tests)",
+                  "mitigation": "`validateUpstreamUrl` takes the upstream origin from env only. It strips leading slashes, rejects `..` and `//`, limits the path to `[\\w\\-./]`, and checks that the resolved origin equals the configured origin. Query strings are not forwarded, because only req.params[0] is used. MISP paths must match a four-entry read-only allowlist, so the SPA's own /events/add call gets a 403. Express URL-decodes params before these checks, so encoded `%2e%2e` is still caught. Tests cover the allowlist rejection and forwarding only to the configured upstream.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 11,
+                  "score": ""
+                },
+                {
+                  "id": "8d1996ef-2e31-43e6-9151-f29424ff0aec",
+                  "title": "Error paths return stack traces and raw fetch errors",
+                  "status": "Open",
+                  "severity": "Low",
+                  "type": "Information disclosure",
+                  "description": "A rejected CORS origin calls `callback(new Error(...))`, and malformed JSON makes express.json throw. Both fall through to Express's default finalhandler, which returns `err.stack` whenever NODE_ENV is not 'production'. Neither the proxy Dockerfile nor docker-compose sets NODE_ENV. A disallowed caller therefore gets a 500 response with server file paths and dependency versions. The upstream catch blocks also return `error.message` from fetch. The 403 response echoes the requested endpoint, though as JSON. Evidence: server/src/index.js:25 (CORS Error passed to next); server/src/index.js:29 (express.json); server/src/index.js:129-132, 183-186 (error.message returned); server/src/index.js:161 (endpoint echoed); server/Dockerfile:1-7 (no NODE_ENV); node_modules/finalhandler/index.js:171-176 (err.stack when env !== 'production')",
+                  "mitigation": "Set NODE_ENV=production in server/Dockerfile. Add a final Express error handler that returns a generic JSON error and logs details on the server side. For CORS denials, use `callback(null, false)` instead of an Error.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 15,
+                  "score": ""
+                },
+                {
+                  "id": "b1a0e001-25ac-4ed2-a5ee-7e764e2e58c7",
+                  "title": "No audit log of who used the operator's credentials",
+                  "status": "Open",
+                  "severity": "Low",
+                  "type": "Repudiation",
+                  "description": "Every upstream action is attributed, in OpenCTI and MISP, to the single operator token held by the proxy. The proxy logs only a startup line and the missing-token warning. It records no client IP, origin, route, GraphQL operation name, or status per request. If a LAN client, a rebinding page or an allowed origin runs mutations or bulk-reads MISP, nobody can say which caller did it. Evidence: server/src/index.js:41-44 and 195-197 (the only logging); server/src/index.js:115-128 and 169-182 (upstream calls with no logging)",
+                  "mitigation": "Add per-request structured logging (timestamp, remote address, Origin, Host, route, GraphQL operationName or a hash of the query, upstream status). Never log tokens or request bodies. Consider shipping logs off the host.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 16,
+                  "score": ""
+                },
+                {
+                  "id": "4e858c10-a156-4a0e-aa42-214bc96d7596",
+                  "title": "No rate limits, upstream timeouts or response-size caps",
+                  "status": "Open",
+                  "severity": "Low",
+                  "type": "Denial of service",
+                  "description": "The proxy accepts JSON bodies up to 5 MB and forwards them. Upstream `fetch` calls have no AbortSignal or timeout, and `upstream.text()` buffers the whole upstream response in memory with no size cap. There is no rate limiting or concurrency limit. A caller can tie up sockets with slow upstreams, exhaust proxy memory with large MISP restSearch results, or hammer OpenCTI with expensive GraphQL queries under the operator's identity. Evidence: server/src/index.js:29 (5 MB body limit); server/src/index.js:116-128 and 170-182 (fetch without timeout; full .text() buffering)",
+                  "mitigation": "Add `signal: AbortSignal.timeout(...)` to the upstream fetches. Cap the streamed response size. Lower the JSON limit to what the SPA needs. Add express-rate-limit or a reverse-proxy rate limit. Consider GraphQL depth or complexity limits.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 17,
+                  "score": ""
+                }
+              ]
+            }
+          },
+          {
+            "position": {
+              "x": 830,
+              "y": 270
+            },
+            "size": {
+              "width": 160,
+              "height": 70
+            },
+            "attrs": {
+              "text": {
+                "text": "server/.env secrets file"
+              },
+              "topLine": {
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              },
+              "bottomLine": {
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "store",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "f380f89b-bbdf-4587-a78b-b10c752fdbeb"
+                },
+                {
+                  "group": "right",
+                  "id": "b9410a8c-6a49-48cb-8eae-76dd9dc24c04"
+                },
+                {
+                  "group": "bottom",
+                  "id": "0b5807b0-33fd-477a-bd0a-ecd538d8cc04"
+                },
+                {
+                  "group": "left",
+                  "id": "92cf5b6d-078e-4968-acb4-afba26939e58"
+                }
+              ]
+            },
+            "id": "8f1366c7-2212-4e4e-b28d-c8bbec549170",
+            "zIndex": 10,
+            "data": {
+              "type": "tm.Store",
+              "name": "server/.env secrets file",
+              "description": "Plaintext dotenv file on the operator's host that holds OPENCTI_URL/TOKEN, MISP_URL/API_KEY, PROXY_AUTH_TOKEN and ALLOWED_ORIGINS. It is gitignored and loaded at runtime through env_file. The root .dockerignore does not exclude it, so the root image's `COPY . .` build stage receives it in the build context; the final nginx stage copies only dist.",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": true,
+              "isALog": false,
+              "isEncrypted": false,
+              "isSigned": false,
+              "storesCredentials": true,
+              "storesInventory": false,
+              "threats": [
+                {
+                  "id": "6e64f1c8-ee6a-4c6e-ba9f-56264f365ad3",
+                  "title": "Integration secrets sit in plaintext env and Helm values, and the upstream URL scheme is not enforced",
+                  "status": "Open",
+                  "severity": "Low",
+                  "type": "Information disclosure",
+                  "description": "OPENCTI_TOKEN and MISP_API_KEY live in plaintext in server/.env, and docker-compose loads them into container env, where `docker inspect` shows them. The root `.dockerignore` does not exclude `server/.env`, and the root Dockerfile build stage runs `COPY . .`, so the secrets land in the app's build-stage layer and build cache. The final nginx stage copies only dist. The Helm chart and docs/HELM.md tell users to put OPENCTI_TOKEN and MISP_API_KEY in values.yaml, which ends up in Helm release secrets and often in git. No template reads those values, so the secrets go nowhere useful. `validateUpstreamUrl` also never checks for https, so a mistaken `http://` OPENCTI_URL or MISP_URL sends the bearer token or API key in cleartext. Node's default TLS verification is not overridden anywhere. Evidence: server/.env.example:10-15; docker-compose.yml:64-65 (env_file); .dockerignore:1-7 (no server/.env); Dockerfile:9 (COPY . .); Dockerfile:14 (final stage copies dist only); helm/attack-nav/values.yaml:30-39; docs/HELM.md:93-102; server/src/index.js:61-84 (no protocol check); .gitignore:52",
+                  "mitigation": "`.gitignore` excludes server/.env (.gitignore:52), and no .env is committed. Recommended: add `server/.env` and `**/.env` to the root `.dockerignore`. Have the chart take credentials from a Kubernetes Secret via secretKeyRef or envFrom, and remove plaintext token values. Reject non-https upstream URLs unless an explicit opt-in is set.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 18,
+                  "score": ""
+                }
+              ]
+            }
+          },
+          {
+            "position": {
+              "x": 830,
+              "y": 420
+            },
+            "size": {
+              "width": 160,
+              "height": 70
+            },
+            "attrs": {
+              "text": {
+                "text": "User's MISP server"
+              },
+              "body": {
+                "stroke": "#333333",
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "actor",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "4428c738-f10f-44be-a792-cc2b0097037d"
+                },
+                {
+                  "group": "right",
+                  "id": "61c86b12-a7f5-41b8-9444-4864f9dae81a"
+                },
+                {
+                  "group": "bottom",
+                  "id": "6abce735-bd64-42cb-9469-3d8b3287b5dc"
+                },
+                {
+                  "group": "left",
+                  "id": "dc6dd653-ad7a-46a9-811c-712ba8f0a2b6"
+                }
+              ]
+            },
+            "id": "af1de776-f7b9-43fe-9de6-8991984101c0",
+            "zIndex": 11,
+            "data": {
+              "type": "tm.Actor",
+              "name": "User's MISP server",
+              "description": "Operator-owned MISP instance. The browser reaches it directly with the raw API key in the Authorization header, or the proxy reaches it with MISP_API_KEY. In direct mode the SPA can also POST /events/add, which writes to MISP. The proxy blocks that endpoint with its read-only allowlist.",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "providesAuthentication": false,
+              "threats": []
+            }
+          },
+          {
+            "position": {
+              "x": 1050,
+              "y": 120
+            },
+            "size": {
+              "width": 160,
+              "height": 70
+            },
+            "attrs": {
+              "text": {
+                "text": "User's OpenCTI server"
+              },
+              "body": {
+                "stroke": "#333333",
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "actor",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "857f6459-2b9d-4740-8015-bc78feb2dbfd"
+                },
+                {
+                  "group": "right",
+                  "id": "a30da09c-8140-419e-a0ad-50ab9e9ffced"
+                },
+                {
+                  "group": "bottom",
+                  "id": "3eeee27d-8de5-419c-a7e1-1b526a234632"
+                },
+                {
+                  "group": "left",
+                  "id": "3171c853-a8d9-43ef-874a-802614cba4d6"
+                }
+              ]
+            },
+            "id": "9fd33191-c5aa-4c54-aa62-3f5bb9d65428",
+            "zIndex": 12,
+            "data": {
+              "type": "tm.Actor",
+              "name": "User's OpenCTI server",
+              "description": "Operator-owned OpenCTI GraphQL API. The browser reaches it directly with 'Authorization: Bearer <token>', or the proxy reaches it with OPENCTI_TOKEN. In both modes the client chooses the GraphQL query text and the proxy forwards it unchanged, so whatever the token permits, including mutations, is reachable.",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": true,
+              "providesAuthentication": false,
+              "threats": [
+                {
+                  "id": "c190529d-4edb-4412-b926-e745dc323c17",
+                  "title": "CSV export of threat-intel indicators allows formula injection from OpenCTI and MISP content",
+                  "status": "Open",
+                  "severity": "Low",
+                  "type": "Tampering",
+                  "description": "exportIndicatorCsv writes OpenCTI indicator pattern and pattern_type values, and MISP galaxy cluster values, into CSV cells. Values only have their quotes doubled, and the type field is placed inside quotes without escaping. There is no handling of a leading = + - @ or tab/CR. Indicator content is often taken from external feeds and can be written by an adversary. A crafted pattern or pattern_type can break out of the cell or run as a spreadsheet formula (DDE or HYPERLINK exfiltration) when the analyst opens threat-intel-indicators.csv in Excel or Sheets. Evidence: src/app/components/threat-intelligence-panel/threat-intelligence-panel.component.ts:174-181 (MISP values), :186-195 (OpenCTI pattern/patternType), :211-217 (unescaped r.type, no formula neutralisation); src/app/services/opencti.service.ts:236-237",
+                  "mitigation": "Use a single CSV helper that quotes every field, doubles embedded quotes, and prefixes cells that start with = + - @ \\t or \\r with a single quote. Apply it to all CSV exports, including the asset, gap and roadmap exports.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 13,
+                  "score": ""
+                }
+              ]
+            }
+          },
+          {
+            "position": {
+              "x": 1050,
+              "y": 270
+            },
+            "size": {
+              "width": 160,
+              "height": 70
+            },
+            "attrs": {
+              "text": {
+                "text": "User's TAXII 2.1 servers"
+              },
+              "body": {
+                "stroke": "#333333",
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "actor",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "e6163a97-2ee4-42e5-863e-43b6f3e13f92"
+                },
+                {
+                  "group": "right",
+                  "id": "319a4d91-4132-428c-98c8-d950f4885a6a"
+                },
+                {
+                  "group": "bottom",
+                  "id": "e545776c-635a-4a3a-8f43-8d6979054f6b"
+                },
+                {
+                  "group": "left",
+                  "id": "eb4c2629-9718-4348-863d-8063a7ff40f2"
+                }
+              ]
+            },
+            "id": "64e3ee6e-bed3-46f9-aa92-30b4937c4fb4",
+            "zIndex": 13,
+            "data": {
+              "type": "tm.Actor",
+              "name": "User's TAXII 2.1 servers",
+              "description": "Operator-configured TAXII 2.1 servers. The SPA does discovery at <url>/taxii2/, then calls whichever api_roots the server returns, sending the same HTTP Basic credentials there. A server-supplied api_root on another host therefore receives the analyst's Basic credentials. Fetched collection bundles are imported into the local STIX collection.",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "providesAuthentication": false,
+              "threats": []
+            }
+          },
+          {
+            "position": {
+              "x": 1340,
+              "y": 70
+            },
+            "size": {
+              "width": 260,
+              "height": 510
+            },
+            "attrs": {
+              "label": {
+                "text": "Static hosting tier"
+              }
+            },
+            "visible": true,
+            "shape": "trust-boundary-box",
+            "id": "92708b0b-a089-41e6-bee9-e1c602837ea7",
+            "zIndex": -1,
+            "data": {
+              "type": "tm.BoundaryBox",
+              "name": "Static hosting tier",
+              "description": "Where the built SPA and bundled data are served: GitHub Pages, built by GitHub Actions (.github/workflows/deploy.yml), or the nginx Docker image deployed through docker-compose or the Helm chart (Dockerfile:12-17, helm/attack-nav/templates/deployment.yaml). Bundled data enters through the PR-reviewed monthly refresh workflow (.github/workflows/refresh-data.yml).",
+              "isTrustBoundary": true,
+              "hasOpenThreats": false
+            }
+          },
+          {
+            "position": {
+              "x": 1390,
+              "y": 100
+            },
+            "size": {
+              "width": 120,
+              "height": 120
+            },
+            "attrs": {
+              "text": {
+                "text": "nginx static server (Docker / Helm)"
+              },
+              "body": {
+                "stroke": "#333333",
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "process",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "29d36663-fb3d-403d-a357-e170c16ceaf0"
+                },
+                {
+                  "group": "right",
+                  "id": "2b063f5d-062e-4985-8866-e7893638983e"
+                },
+                {
+                  "group": "bottom",
+                  "id": "3a696172-e769-4c4d-9789-5a47caa6da9a"
+                },
+                {
+                  "group": "left",
+                  "id": "425aa83f-94ed-48be-8ea4-6680430ead84"
+                }
+              ]
+            },
+            "id": "413e15e0-445b-4f1f-b669-1177599b293a",
+            "zIndex": 14,
+            "data": {
+              "type": "tm.Process",
+              "name": "nginx static server (Docker / Helm)",
+              "description": "Self-hosted alternative: nginx:alpine serving the production build on port 80 with an SPA fallback and security headers. Its CSP connect-src allows only 'self' and a fixed set of public hosts. It does not allow user MISP, OpenCTI or TAXII hosts or http://localhost:8787, so under nginx both direct and proxy integrations are blocked by CSP. docker-compose publishes it as 8080:80 on all interfaces. The Helm chart runs only this container: the values.yaml proxy block (with plaintext token fields) is never rendered, and TLS is left to an optional Ingress.",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": true,
+              "handlesCardPayment": false,
+              "handlesGoodsOrServices": false,
+              "isWebApplication": true,
+              "privilegeLevel": "",
+              "threats": [
+                {
+                  "id": "bbe062b9-f78b-4e3d-97d6-68abba8c0170",
+                  "title": "The Helm chart and Dockerfiles run mutable, unpublished images as root with no securityContext",
+                  "status": "Open",
+                  "severity": "Low",
+                  "type": "Tampering",
+                  "description": "The chart's default image ghcr.io/teamstarwolf/attack-nav:latest, and the proxy image, are not published by any workflow here: docker.yml builds and smoke-tests but never pushes, with contents: read only. Users therefore pull whatever was last pushed by hand to that namespace, under a mutable `latest` tag with `pullPolicy: IfNotPresent`. Nodes may keep running different, unverifiable builds. The base images are unpinned (`nginx:alpine`) or end-of-life (`node:20-alpine` for the proxy; Node 20 reached EOL in April 2026, and proxy CI still tests on Node 20). Dependabot has no docker ecosystem entry. The Deployment sets no securityContext (runAsNonRoot, readOnlyRootFilesystem, allowPrivilegeEscalation: false, dropped capabilities), so nginx runs as root, and the proxy Dockerfile has no USER. The `proxy` values block is read by no template, even though docs/HELM.md describes a sidecar. Evidence: helm/attack-nav/values.yaml:3-6 and 30-34 (latest tags, IfNotPresent); helm/attack-nav/templates/deployment.yaml:16-33 (no securityContext; no proxy container); .github/workflows/docker.yml:22-23,34-35 (build only, no push); Dockerfile:13; server/Dockerfile:1-7 (node:20-alpine, no USER); .github/workflows/proxy-tests.yml:27 (Node 20); .github/dependabot.yml:1-23 (no docker ecosystem); README.md:226 (says the images are unpublished and the proxy block unused); docs/HELM.md:88-111 (sidecar described)",
+                  "mitigation": "Publish signed images from CI with provenance (e.g. a docker/build-push-action pinned to a SHA, cosign or attestations). Reference images by version tag plus digest. Pin base images by digest, move the proxy to node:24-alpine with `USER node`, and add a `docker` ecosystem to dependabot.yml. Add a pod and container securityContext (nginx-unprivileged on 8080, readOnlyRootFilesystem). Either implement the proxy template using Secret references or remove the values block and the docs claim.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 20,
+                  "score": ""
+                }
+              ]
+            }
+          },
+          {
+            "position": {
+              "x": 1370,
+              "y": 270
+            },
+            "size": {
+              "width": 160,
+              "height": 70
+            },
+            "attrs": {
+              "text": {
+                "text": "Bundled static assets (dist / src/assets/data)"
+              },
+              "topLine": {
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              },
+              "bottomLine": {
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "store",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "83483fc7-176a-49d2-9441-bfba25a5e487"
+                },
+                {
+                  "group": "right",
+                  "id": "2a4c868c-8718-45e3-af61-be0b0a77daf3"
+                },
+                {
+                  "group": "bottom",
+                  "id": "691ae59d-62fe-49d0-81b1-86dc638fae02"
+                },
+                {
+                  "group": "left",
+                  "id": "84a1f249-de20-4d0c-a5a6-77c5812f01ac"
+                }
+              ]
+            },
+            "id": "8d387f4f-8c8f-4de0-9b16-37109b682c72",
+            "zIndex": 15,
+            "data": {
+              "type": "tm.Store",
+              "name": "Bundled static assets (dist / src/assets/data)",
+              "description": "The build output: app JS and CSS, plus bundled ATT&CK enterprise, ICS and mobile and CTID F3 STIX snapshots and mapping JSON, served same-origin from Pages or nginx. Used for first paint and as a fallback when the live fetch fails. A scheduled CI workflow refreshes the snapshots monthly with curl from raw.githubusercontent.com, does a shape check, and opens a PR for human review before deploy.",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": true,
+              "isALog": false,
+              "isEncrypted": false,
+              "isSigned": false,
+              "storesCredentials": false,
+              "storesInventory": false,
+              "threats": [
+                {
+                  "id": "acfd92dc-0dac-4b95-9b71-d117d5050253",
+                  "title": "The monthly data refresh pulls unpinned upstream branches into a PR that cannot be reviewed and gets no CI",
+                  "status": "Open",
+                  "severity": "Low",
+                  "type": "Tampering",
+                  "description": "refresh-data.yml downloads ATT&CK STIX from the mitre-attack/attack-stix-data `master` branch, the CTID F3 bundle from `main`, and CVE2CAPEC data from Galeax/CVE2CAPEC `main`. It checks no commit pin, hash or signature, only a structural check (type=bundle and an object count). The resulting PR rewrites src/assets/data/enterprise-attack.json (about 53 MB) and other JSON that no reviewer can read meaningfully. The PR is opened with GITHUB_TOKEN, which does not trigger pull_request workflows, and no workflow runs unit tests on PRs anyway. So the PR body's claim that 'CI (unit tests + build) validates the parse' is false. Once merged, deploy.yml ships the data to every user. A compromised or mistaken upstream commit can silently change technique, mitigation or CVE mappings that analysts rely on. Markup-based XSS is limited because AttackTextPipe reduces descriptions to plain text. Evidence: .github/workflows/refresh-data.yml:12-14 (workflow-level write permissions); .github/workflows/refresh-data.yml:29-40 (unpinned master/main downloads with shape-only checks); .github/workflows/refresh-data.yml:42-43 and scripts/build-cve-technique-map.mjs:21,71 (Galeax main fetch); .github/workflows/refresh-data.yml:47 and 62-69 (GITHUB_TOKEN PR; false CI claim); README.md:211 (no workflow runs unit tests on PRs); .github/workflows/deploy.yml:4-5,33-36 (merge to main deploys); src/app/pipes/attack-text.pipe.ts:5-16 (rendering limits XSS)",
+                  "mitigation": "Pin each source to a release tag or commit SHA and verify checksums. Produce a human-readable semantic diff (objects added, removed or changed, and their IDs) in the PR body. Open the PR with a GitHub App or PAT token so CI runs, and add an `ng test` and build job on pull_request. Scope `contents: write` to the final step's job.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 19,
+                  "score": ""
+                }
+              ]
+            }
+          },
+          {
+            "position": {
+              "x": 1370,
+              "y": 420
+            },
+            "size": {
+              "width": 160,
+              "height": 70
+            },
+            "attrs": {
+              "text": {
+                "text": "GitHub Pages host"
+              },
+              "body": {
+                "stroke": "#333333",
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "actor",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "3b2f3890-232f-45e1-bb2c-7592690e9749"
+                },
+                {
+                  "group": "right",
+                  "id": "5a06034a-b13e-48f3-bb63-2a528b172bba"
+                },
+                {
+                  "group": "bottom",
+                  "id": "f78976b9-1f88-43d9-8235-3a65a343ef30"
+                },
+                {
+                  "group": "left",
+                  "id": "a1c28dbf-76b4-4a75-b3a7-8ea9d692d041"
+                }
+              ]
+            },
+            "id": "18b225d7-c5be-4640-a2a3-f5d17d75dfd8",
+            "zIndex": 16,
+            "data": {
+              "type": "tm.Actor",
+              "name": "GitHub Pages host",
+              "description": "Default public hosting (https://teamstarwolf.github.io/ATTACK-Navi/). CI builds the SPA and deploy-pages publishes it. Pages cannot set response headers and index.html has no CSP meta tag, so the hosted site runs with no Content-Security-Policy. The origin https://teamstarwolf.github.io is shared by every TeamStarWolf project page, and the proxy's example CORS allowlist trusts it.",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": true,
+              "providesAuthentication": false,
+              "threats": [
+                {
+                  "id": "a299efac-d252-46c9-b081-d16ddd3402b5",
+                  "title": "GitHub Pages deployment ships without any CSP, Trusted Types or framing protection",
+                  "status": "Open",
+                  "severity": "Medium",
+                  "type": "Information disclosure",
+                  "description": "The hosted build (deploy.yml builds with --base-href /ATTACK-Navi/ and uploads dist to Pages) serves src/index.html, which has no <meta http-equiv=\"Content-Security-Policy\">. GitHub Pages cannot set response headers, so the only CSP in the repo (nginx.conf) never reaches Pages users. There is also no require-trusted-types-for and no framing control. If any script injection succeeds on the hosted site, nothing limits it. It can read the in-memory OpenCTI token and MISP key used in direct mode, TAXII Basic credentials, the NVD key in sessionStorage, and all localStorage and IndexedDB work product, and it can send them to any origin. The page also pulls a third-party stylesheet from fonts.googleapis.com without SRI. Google Fonts are also loaded from fonts.googleapis.com without Subresource Integrity. Evidence: src/index.html:1-19 (no CSP meta; Google Fonts link at :7-8); .github/workflows/deploy.yml:33-36; nginx.conf:23 (CSP exists only for the nginx image); README.md:222; src/index.html:1-19 (no CSP meta; line 8 Google Fonts stylesheet); angular.json:45,61 (service worker and hashing configured, no CSP option); .github/workflows/deploy.yml:33-36,45-46 (dist deployed to Pages as-is); nginx.conf:40 (the CSP exists only for the nginx deployment); README.md:182-183 (tokens kept in browser memory in direct mode)",
+                  "mitigation": "Add a meta CSP to src/index.html: default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; a connect-src allowlist covering only the upstream hosts actually fetched; require-trusted-types-for 'script'. frame-ancestors cannot be set by meta, so document that the Pages site can be framed, or use the nginx/Helm deployment for credentialed use. The attackText pipe (attack-text.pipe.ts:18-56) reduces the injection surface, but it is not a CSP.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 3,
+                  "score": ""
+                },
+                {
+                  "id": "7fd8a802-f9d1-42bb-86c6-1999363613fb",
+                  "title": "The Pages build job has deploy permissions while running npm install, and first-party actions use mutable tags",
+                  "status": "Open",
+                  "severity": "Low",
+                  "type": "Elevation of privilege",
+                  "description": "deploy.yml grants `pages: write` and `id-token: write` at workflow level, so the build job gets them too. That job runs `npm ci` (install scripts from roughly 500 packages), Karma tests and the Angular build, then uploads the artifact that deploy-pages publishes as-is. A malicious dependency in that job can already alter the shipped bundle, and also holds OIDC and Pages-write scope it does not need. The deploy runs on every push to main and daily on a schedule. First-party actions (actions/checkout@v7, setup-node@v7, upload-pages-artifact@v5, deploy-pages@v5) are pinned to mutable major tags. e2e.yml uses v6 tags. Evidence: .github/workflows/deploy.yml:10-13 (workflow-level pages and id-token write); .github/workflows/deploy.yml:20-36 (build job runs npm ci, tests, build, upload); .github/workflows/deploy.yml:38-46 (deploy job); .github/workflows/deploy.yml:4-8 (push, daily schedule, dispatch); .github/workflows/e2e.yml:26-27; .github/workflows/osv-scanner.yml:35,44 (SHA pins)",
+                  "mitigation": "Partial: the only third-party actions (google/osv-scanner-action reusable workflows) are pinned to commit SHAs (osv-scanner.yml:35,44). Dependabot updates github-actions (dependabot.yml:18-23). The other workflows use contents: read (docker.yml:22-23, e2e.yml:18-19, proxy-tests.yml:16-17). Recommended: move `pages: write` and `id-token: write` to the deploy job only and give the build job `contents: read`. Pin first-party actions to SHAs too. Use `npm ci --ignore-scripts` where the build allows it.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 21,
+                  "score": ""
+                }
+              ]
+            }
+          },
+          {
+            "position": {
+              "x": 1660,
+              "y": 70
+            },
+            "size": {
+              "width": 260,
+              "height": 360
+            },
+            "attrs": {
+              "label": {
+                "text": "Public internet"
+              }
+            },
+            "visible": true,
+            "shape": "trust-boundary-box",
+            "id": "19127938-0aa7-4036-84e1-18eddf66ad9c",
+            "zIndex": -1,
+            "data": {
+              "type": "tm.BoundaryBox",
+              "name": "Public internet",
+              "description": "Untrusted transport and third-party publishers: raw.githubusercontent.com, api.github.com, gitlab.com, Google Fonts, NVD, FIRST, CISA, and any MISP, OpenCTI or TAXII server exposed publicly. Content crossing this boundary is parsed by the SPA, cached in IndexedDB and the SW cache, and trusted without signatures.",
+              "isTrustBoundary": true,
+              "hasOpenThreats": false
+            }
+          },
+          {
+            "position": {
+              "x": 1690,
+              "y": 120
+            },
+            "size": {
+              "width": 160,
+              "height": 70
+            },
+            "attrs": {
+              "text": {
+                "text": "Upstream data publishers"
+              },
+              "body": {
+                "stroke": "#333333",
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "actor",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "5d23331b-18e1-4700-b70c-d37c26296cc9"
+                },
+                {
+                  "group": "right",
+                  "id": "a400b379-b56a-4f31-ab2a-d1c2351343cc"
+                },
+                {
+                  "group": "bottom",
+                  "id": "89cd93fd-79e9-48fe-afd2-b0e0eeb25fbd"
+                },
+                {
+                  "group": "left",
+                  "id": "39134472-7972-4eee-bcff-f9d856ffd6f0"
+                }
+              ]
+            },
+            "id": "218e7995-6fbe-4d5d-b258-9ef5963705d1",
+            "zIndex": 17,
+            "data": {
+              "type": "tm.Actor",
+              "name": "Upstream data publishers",
+              "description": "Public content hosts the SPA fetches at runtime with no integrity check beyond JSON parsing: MITRE ATT&CK STIX and CTID F3 on raw.githubusercontent.com, the MISP galaxy, CTID/Sigma/Elastic/Splunk/Red Canary content, api.github.com tree listings, the ExploitDB CSV on gitlab.com, the ATT&CK releases API, and Google Fonts.",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": true,
+              "providesAuthentication": false,
+              "threats": [
+                {
+                  "id": "ea9986b3-d1a2-40a2-acc9-348491e6be32",
+                  "title": "Live ATT&CK and community data come from mutable branches with no integrity check, and are cached as authoritative",
+                  "status": "Open",
+                  "severity": "Medium",
+                  "type": "Tampering",
+                  "description": "The default data mode is 'live'. The ATT&CK and F3 STIX bundles are fetched from the moving master/main branches of raw.githubusercontent.com. Each bundle is saved to IndexedDB for 24 hours and to the service worker's attack-stix data group, and it replaces the bundled snapshot. That snapshot is the only data that gets human review, through the refresh-data PR. There is no hash, signature or schema check on the live payload. About 30 other runtime sources also track mutable branches, including personal repositories: mukul975/Anthropic-Cybersecurity-Skills, mdecrevoisier/SIGMA-detection-rules (rule content analysts copy into SIEMs), and stamparm/ipsum (IOC blocklist). A compromised or force-pushed upstream, or a poisoned cache, can quietly change coverage scores, detections, mitigations and URLs. The STIX data also feeds the report link sink described below. Evidence: src/app/services/data.service.ts:22-50 (master/main liveUrls), :80 (mode='live'), :254-259 (live fetch -> saveToIDB, no validation), :297 (24h TTL), :305-311; ngsw-config.json:30-38; .github/workflows/refresh-data.yml:26-40,45-69; src/app/services/anthropic-skills.service.ts:18-19,40; src/app/services/sigma.service.ts:174,274; src/app/services/ioc-feed.service.ts:37",
+                  "mitigation": "Pin live URLs to release tags or commit SHAs and check a SHA-256 published alongside the build. Alternatively, make the reviewed bundled snapshot the default and treat live mode as opt-in, with a visible freshness and source indicator. Validate STIX shape and URL schemes before caching to IndexedDB. For community and personal sources, show provenance in the UI and allow them to be disabled.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 6,
+                  "score": ""
+                }
+              ]
+            }
+          },
+          {
+            "position": {
+              "x": 1690,
+              "y": 270
+            },
+            "size": {
+              "width": 160,
+              "height": 70
+            },
+            "attrs": {
+              "text": {
+                "text": "Vulnerability APIs (NVD / FIRST EPSS / CISA KEV)"
+              },
+              "body": {
+                "stroke": "#333333",
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "actor",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "8b5ce009-762f-4f82-a16e-0212d7153ee3"
+                },
+                {
+                  "group": "right",
+                  "id": "60fd6d46-6369-4d53-b748-3a79751b751e"
+                },
+                {
+                  "group": "bottom",
+                  "id": "477b4bcc-ebcc-4fd1-a8ce-8dcd7ca62640"
+                },
+                {
+                  "group": "left",
+                  "id": "b0dc5ce0-4c5c-40ef-9b68-fb26fde7b556"
+                }
+              ]
+            },
+            "id": "66854717-e206-4411-be11-c0cd374fe2de",
+            "zIndex": 18,
+            "data": {
+              "type": "tm.Actor",
+              "name": "Vulnerability APIs (NVD / FIRST EPSS / CISA KEV)",
+              "description": "Public vulnerability-intelligence APIs. The NVD CVE 2.0 API is queried by CWE and keyword, with the analyst's NVD key sent in an 'apiKey' header when one is set. The FIRST EPSS API is batch-queried by CVE id. The CISA KEV feed comes from the cisagov GitHub mirror, with www.cisa.gov as fallback.",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "providesAuthentication": false,
+              "threats": []
+            }
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 19,
+            "labels": [
+              {
+                "markup": [
+                  {
+                    "tagName": "ellipse",
+                    "selector": "labelBody"
+                  },
+                  {
+                    "tagName": "text",
+                    "selector": "labelText"
+                  }
+                ],
+                "attrs": {
+                  "labelText": {
+                    "text": "UI input: credentials, integration URLs, file imports, #import= share links, import-from-URL",
+                    "textAnchor": "middle",
+                    "textVerticalAnchor": "middle"
+                  },
+                  "labelBody": {
+                    "ref": "labelText",
+                    "refRx": "50%",
+                    "refRy": "60%",
+                    "fill": "#fff",
+                    "strokeWidth": 0
+                  }
+                },
+                "position": {
+                  "distance": 0.5,
+                  "args": {
+                    "keepGradient": true,
+                    "ensureLegibility": true
+                  }
+                }
+              }
+            ],
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "UI input: credentials, integration URLs, file imports, #import= share links, import-from-URL",
+              "description": "src/app/services/misp.service.ts:136-143; src/app/services/taxii.service.ts:10-17; src/app/services/browser-file.service.ts:34-37; src/app/services/stix-collection.service.ts:307-309, :325-339; src/app/components/collection-panel/collection-panel.component.ts:212-219",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "protocol": "In-browser DOM events / File API / URL hash",
+              "threats": []
+            },
+            "id": "b2473ad8-80d0-4fe8-9fa6-20671c0ce41f",
+            "source": {
+              "cell": "dfc6247a-b4a4-4e64-9cc3-c5edd536543d",
+              "port": "884df7bf-e6d7-4b90-a22e-f2d88e054fa9"
+            },
+            "target": {
+              "cell": "3a62e8f0-7204-49ce-81ac-d022dfb0606b",
+              "port": "e6dfb616-7870-4c95-93b9-6b3ab7c5d0b8"
+            },
+            "vertices": []
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 20,
+            "labels": [
+              {
+                "markup": [
+                  {
+                    "tagName": "ellipse",
+                    "selector": "labelBody"
+                  },
+                  {
+                    "tagName": "text",
+                    "selector": "labelText"
+                  }
+                ],
+                "attrs": {
+                  "labelText": {
+                    "text": "App shell, JS chunks and bundled data from GitHub Pages (no CSP header or meta)",
+                    "textAnchor": "middle",
+                    "textVerticalAnchor": "middle"
+                  },
+                  "labelBody": {
+                    "ref": "labelText",
+                    "refRx": "50%",
+                    "refRy": "60%",
+                    "fill": "#fff",
+                    "strokeWidth": 0
+                  }
+                },
+                "position": {
+                  "distance": 0.5,
+                  "args": {
+                    "keepGradient": true,
+                    "ensureLegibility": true
+                  }
+                }
+              }
+            ],
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "App shell, JS chunks and bundled data from GitHub Pages (no CSP header or meta)",
+              "description": ".github/workflows/deploy.yml:33-46; src/index.html:1-19 (no CSP meta); src/app/app.config.ts:20-24",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": true,
+              "isPublicNetwork": true,
+              "protocol": "HTTPS",
+              "threats": []
+            },
+            "id": "cf714512-c633-4295-a50f-7d6441b479da",
+            "source": {
+              "cell": "18b225d7-c5be-4640-a2a3-f5d17d75dfd8",
+              "port": "a1c28dbf-76b4-4a75-b3a7-8ea9d692d041"
+            },
+            "target": {
+              "cell": "3a62e8f0-7204-49ce-81ac-d022dfb0606b",
+              "port": "d4f8e430-2721-43e6-809e-09d95f4ed228"
+            },
+            "vertices": []
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 21,
+            "labels": [
+              {
+                "markup": [
+                  {
+                    "tagName": "ellipse",
+                    "selector": "labelBody"
+                  },
+                  {
+                    "tagName": "text",
+                    "selector": "labelText"
+                  }
+                ],
+                "attrs": {
+                  "labelText": {
+                    "text": "Self-hosted app shell plus security headers and CSP",
+                    "textAnchor": "middle",
+                    "textVerticalAnchor": "middle"
+                  },
+                  "labelBody": {
+                    "ref": "labelText",
+                    "refRx": "50%",
+                    "refRy": "60%",
+                    "fill": "#fff",
+                    "strokeWidth": 0
+                  }
+                },
+                "position": {
+                  "distance": 0.5,
+                  "args": {
+                    "keepGradient": true,
+                    "ensureLegibility": true
+                  }
+                }
+              }
+            ],
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "Self-hosted app shell plus security headers and CSP",
+              "description": "nginx.conf:1-29 (CSP :23); docker-compose.yml:4-5 (8080:80 on all interfaces); helm/attack-nav/values.yaml:12-20 (tls: [])",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "protocol": "HTTP :80 (TLS only via optional Ingress)",
+              "threats": []
+            },
+            "id": "0c275c61-9e7c-4ec0-9916-21a1a1cb5bd7",
+            "source": {
+              "cell": "413e15e0-445b-4f1f-b669-1177599b293a",
+              "port": "425aa83f-94ed-48be-8ea4-6680430ead84"
+            },
+            "target": {
+              "cell": "3a62e8f0-7204-49ce-81ac-d022dfb0606b",
+              "port": "d4f8e430-2721-43e6-809e-09d95f4ed228"
+            },
+            "vertices": []
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 22,
+            "labels": [
+              {
+                "markup": [
+                  {
+                    "tagName": "ellipse",
+                    "selector": "labelBody"
+                  },
+                  {
+                    "tagName": "text",
+                    "selector": "labelText"
+                  }
+                ],
+                "attrs": {
+                  "labelText": {
+                    "text": "Bundled ATT&CK/F3 STIX snapshots and mapping JSON (same-origin GET; bundled-first, then live)",
+                    "textAnchor": "middle",
+                    "textVerticalAnchor": "middle"
+                  },
+                  "labelBody": {
+                    "ref": "labelText",
+                    "refRx": "50%",
+                    "refRy": "60%",
+                    "fill": "#fff",
+                    "strokeWidth": 0
+                  }
+                },
+                "position": {
+                  "distance": 0.5,
+                  "args": {
+                    "keepGradient": true,
+                    "ensureLegibility": true
+                  }
+                }
+              }
+            ],
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "Bundled ATT&CK/F3 STIX snapshots and mapping JSON (same-origin GET; bundled-first, then live)",
+              "description": "src/app/services/data.service.ts:244-260 (bundled-first then live), :270-273 (loadBundled GET bundledUrl); src/app/services/cve.service.ts:64",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": true,
+              "isPublicNetwork": true,
+              "protocol": "HTTPS (Pages) / HTTP (nginx) same-origin GET",
+              "threats": []
+            },
+            "id": "a0cafb35-8a28-438e-bfa7-ff23d8f8dbd9",
+            "source": {
+              "cell": "8d387f4f-8c8f-4de0-9b16-37109b682c72",
+              "port": "84a1f249-de20-4d0c-a5a6-77c5812f01ac"
+            },
+            "target": {
+              "cell": "3a62e8f0-7204-49ce-81ac-d022dfb0606b",
+              "port": "d4f8e430-2721-43e6-809e-09d95f4ed228"
+            },
+            "vertices": []
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 23,
+            "labels": [
+              {
+                "markup": [
+                  {
+                    "tagName": "ellipse",
+                    "selector": "labelBody"
+                  },
+                  {
+                    "tagName": "text",
+                    "selector": "labelText"
+                  }
+                ],
+                "attrs": {
+                  "labelText": {
+                    "text": "Live STIX bundles, MISP galaxy, detection and mapping content, GitHub tree listings (no integrity check)",
+                    "textAnchor": "middle",
+                    "textVerticalAnchor": "middle"
+                  },
+                  "labelBody": {
+                    "ref": "labelText",
+                    "refRx": "50%",
+                    "refRy": "60%",
+                    "fill": "#fff",
+                    "strokeWidth": 0
+                  }
+                },
+                "position": {
+                  "distance": 0.5,
+                  "args": {
+                    "keepGradient": true,
+                    "ensureLegibility": true
+                  }
+                }
+              }
+            ],
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "Live STIX bundles, MISP galaxy, detection and mapping content, GitHub tree listings (no integrity check)",
+              "description": "src/app/services/data.service.ts:254-256 (live GET then saveToIDB); src/app/services/misp.service.ts:79-80, :324; src/app/services/elastic.service.ts:39; src/app/services/exploitdb.service.ts:23; nginx.conf:23 (connect-src)",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": true,
+              "isPublicNetwork": true,
+              "protocol": "HTTPS GET (XHR, CORS)",
+              "threats": []
+            },
+            "id": "18f5b07d-12c9-49f9-9437-15b2ecb3acb1",
+            "source": {
+              "cell": "218e7995-6fbe-4d5d-b258-9ef5963705d1",
+              "port": "39134472-7972-4eee-bcff-f9d856ffd6f0"
+            },
+            "target": {
+              "cell": "3a62e8f0-7204-49ce-81ac-d022dfb0606b",
+              "port": "d4f8e430-2721-43e6-809e-09d95f4ed228"
+            },
+            "vertices": []
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 24,
+            "labels": [
+              {
+                "markup": [
+                  {
+                    "tagName": "ellipse",
+                    "selector": "labelBody"
+                  },
+                  {
+                    "tagName": "text",
+                    "selector": "labelText"
+                  }
+                ],
+                "attrs": {
+                  "labelText": {
+                    "text": "NVD CVE queries with optional 'apiKey' header; EPSS batch lookups; CISA KEV feed",
+                    "textAnchor": "middle",
+                    "textVerticalAnchor": "middle"
+                  },
+                  "labelBody": {
+                    "ref": "labelText",
+                    "refRx": "50%",
+                    "refRy": "60%",
+                    "fill": "#fff",
+                    "strokeWidth": 0
+                  }
+                },
+                "position": {
+                  "distance": 0.5,
+                  "args": {
+                    "keepGradient": true,
+                    "ensureLegibility": true
+                  }
+                }
+              }
+            ],
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "NVD CVE queries with optional 'apiKey' header; EPSS batch lookups; CISA KEV feed",
+              "description": "src/app/services/cve.service.ts:16, :21-22, :79-81, :187, :276, :291-292; src/app/services/epss.service.ts:17, :38",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": true,
+              "isPublicNetwork": true,
+              "protocol": "HTTPS GET",
+              "threats": []
+            },
+            "id": "15bba640-393f-402d-802d-26b261effaf6",
+            "source": {
+              "cell": "3a62e8f0-7204-49ce-81ac-d022dfb0606b",
+              "port": "d4f8e430-2721-43e6-809e-09d95f4ed228"
+            },
+            "target": {
+              "cell": "66854717-e206-4411-be11-c0cd374fe2de",
+              "port": "b0dc5ce0-4c5c-40ef-9b68-fb26fde7b556"
+            },
+            "vertices": []
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 25,
+            "labels": [
+              {
+                "markup": [
+                  {
+                    "tagName": "ellipse",
+                    "selector": "labelBody"
+                  },
+                  {
+                    "tagName": "text",
+                    "selector": "labelText"
+                  }
+                ],
+                "attrs": {
+                  "labelText": {
+                    "text": "Direct mode: MISP REST with raw API key in Authorization header (includes /events/add write)",
+                    "textAnchor": "middle",
+                    "textVerticalAnchor": "middle"
+                  },
+                  "labelBody": {
+                    "ref": "labelText",
+                    "refRx": "50%",
+                    "refRy": "60%",
+                    "fill": "#fff",
+                    "strokeWidth": 0
+                  }
+                },
+                "position": {
+                  "distance": 0.5,
+                  "args": {
+                    "keepGradient": true,
+                    "ensureLegibility": true
+                  }
+                }
+              }
+            ],
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "Direct mode: MISP REST with raw API key in Authorization header (includes /events/add write)",
+              "description": "src/app/services/misp.service.ts:138 (url only trailing-slash trimmed), :295, :303-320 (Authorization: apiKey); nginx.conf:23 (blocked by CSP when nginx-hosted)",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": false,
+              "isPublicNetwork": true,
+              "protocol": "HTTP(S) cross-origin XHR; scheme not validated",
+              "threats": []
+            },
+            "id": "9aacbee9-b75b-4885-938e-9bd4d39596fc",
+            "source": {
+              "cell": "3a62e8f0-7204-49ce-81ac-d022dfb0606b",
+              "port": "d4f8e430-2721-43e6-809e-09d95f4ed228"
+            },
+            "target": {
+              "cell": "af1de776-f7b9-43fe-9de6-8991984101c0",
+              "port": "dc6dd653-ad7a-46a9-811c-712ba8f0a2b6"
+            },
+            "vertices": []
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 26,
+            "labels": [
+              {
+                "markup": [
+                  {
+                    "tagName": "ellipse",
+                    "selector": "labelBody"
+                  },
+                  {
+                    "tagName": "text",
+                    "selector": "labelText"
+                  }
+                ],
+                "attrs": {
+                  "labelText": {
+                    "text": "Direct mode: OpenCTI GraphQL POST with Bearer token",
+                    "textAnchor": "middle",
+                    "textVerticalAnchor": "middle"
+                  },
+                  "labelBody": {
+                    "ref": "labelText",
+                    "refRx": "50%",
+                    "refRy": "60%",
+                    "fill": "#fff",
+                    "strokeWidth": 0
+                  }
+                },
+                "position": {
+                  "distance": 0.5,
+                  "args": {
+                    "keepGradient": true,
+                    "ensureLegibility": true
+                  }
+                }
+              }
+            ],
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "Direct mode: OpenCTI GraphQL POST with Bearer token",
+              "description": "src/app/services/opencti.service.ts:150-151 (url only trailing-slash trimmed), :343-353 (Authorization: Bearer token)",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": false,
+              "isPublicNetwork": true,
+              "protocol": "HTTP(S) cross-origin XHR POST; scheme not validated",
+              "threats": []
+            },
+            "id": "89f1d40a-0e59-4850-a13c-3c038ca49a4b",
+            "source": {
+              "cell": "3a62e8f0-7204-49ce-81ac-d022dfb0606b",
+              "port": "d4f8e430-2721-43e6-809e-09d95f4ed228"
+            },
+            "target": {
+              "cell": "9fd33191-c5aa-4c54-aa62-3f5bb9d65428",
+              "port": "3171c853-a8d9-43ef-874a-802614cba4d6"
+            },
+            "vertices": []
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 27,
+            "labels": [
+              {
+                "markup": [
+                  {
+                    "tagName": "ellipse",
+                    "selector": "labelBody"
+                  },
+                  {
+                    "tagName": "text",
+                    "selector": "labelText"
+                  }
+                ],
+                "attrs": {
+                  "labelText": {
+                    "text": "TAXII 2.1 discovery, collections, objects with HTTP Basic credentials (sent to server-supplied api_roots)",
+                    "textAnchor": "middle",
+                    "textVerticalAnchor": "middle"
+                  },
+                  "labelBody": {
+                    "ref": "labelText",
+                    "refRx": "50%",
+                    "refRy": "60%",
+                    "fill": "#fff",
+                    "strokeWidth": 0
+                  }
+                },
+                "position": {
+                  "distance": 0.5,
+                  "args": {
+                    "keepGradient": true,
+                    "ensureLegibility": true
+                  }
+                }
+              }
+            ],
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "TAXII 2.1 discovery, collections, objects with HTTP Basic credentials (sent to server-supplied api_roots)",
+              "description": "src/app/services/taxii.service.ts:114-122 (api_roots from response), :127-152, :170-176 (Basic auth header)",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": false,
+              "isPublicNetwork": true,
+              "protocol": "HTTP(S) GET, Accept application/taxii+json;version=2.1",
+              "threats": []
+            },
+            "id": "ae516222-399d-4e4a-9e1a-26719777ffe4",
+            "source": {
+              "cell": "3a62e8f0-7204-49ce-81ac-d022dfb0606b",
+              "port": "d4f8e430-2721-43e6-809e-09d95f4ed228"
+            },
+            "target": {
+              "cell": "64e3ee6e-bed3-46f9-aa92-30b4937c4fb4",
+              "port": "eb4c2629-9718-4348-863d-8063a7ff40f2"
+            },
+            "vertices": []
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 28,
+            "labels": [
+              {
+                "markup": [
+                  {
+                    "tagName": "ellipse",
+                    "selector": "labelBody"
+                  },
+                  {
+                    "tagName": "text",
+                    "selector": "labelText"
+                  }
+                ],
+                "attrs": {
+                  "labelText": {
+                    "text": "Proxy mode: GraphQL and MISP REST without credentials or proxy token",
+                    "textAnchor": "middle",
+                    "textVerticalAnchor": "middle"
+                  },
+                  "labelBody": {
+                    "ref": "labelText",
+                    "refRx": "50%",
+                    "refRy": "60%",
+                    "fill": "#fff",
+                    "strokeWidth": 0
+                  }
+                },
+                "position": {
+                  "distance": 0.5,
+                  "args": {
+                    "keepGradient": true,
+                    "ensureLegibility": true
+                  }
+                }
+              }
+            ],
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "Proxy mode: GraphQL and MISP REST without credentials or proxy token",
+              "description": "src/app/services/misp.service.ts:303-310 (proxy URL, no Authorization); src/app/services/opencti.service.ts:343-345; server/src/index.js:17-28 (CORS), :39-56 (token check only if set); README.md:203",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "protocol": "HTTP to localhost:8787 (CORS-checked)",
+              "threats": []
+            },
+            "id": "b1ec1ef6-9f2c-479b-a44e-1cd7a97044b5",
+            "source": {
+              "cell": "3a62e8f0-7204-49ce-81ac-d022dfb0606b",
+              "port": "d4f8e430-2721-43e6-809e-09d95f4ed228"
+            },
+            "target": {
+              "cell": "e4fd8235-d40d-48e4-bcd7-16b97056d55a",
+              "port": "81d76d95-df64-45e3-88fc-d8d94d1ea301"
+            },
+            "vertices": []
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 29,
+            "labels": [
+              {
+                "markup": [
+                  {
+                    "tagName": "ellipse",
+                    "selector": "labelBody"
+                  },
+                  {
+                    "tagName": "text",
+                    "selector": "labelText"
+                  }
+                ],
+                "attrs": {
+                  "labelText": {
+                    "text": "Secrets loaded at startup (OPENCTI_TOKEN, MISP_API_KEY, PROXY_AUTH_TOKEN, ALLOWED_ORIGINS)",
+                    "textAnchor": "middle",
+                    "textVerticalAnchor": "middle"
+                  },
+                  "labelBody": {
+                    "ref": "labelText",
+                    "refRx": "50%",
+                    "refRy": "60%",
+                    "fill": "#fff",
+                    "strokeWidth": 0
+                  }
+                },
+                "position": {
+                  "distance": 0.5,
+                  "args": {
+                    "keepGradient": true,
+                    "ensureLegibility": true
+                  }
+                }
+              }
+            ],
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "Secrets loaded at startup (OPENCTI_TOKEN, MISP_API_KEY, PROXY_AUTH_TOKEN, ALLOWED_ORIGINS)",
+              "description": "server/src/index.js:7, :13-15, :39, :98-99, :148-149; docker-compose.yml:18-19; server/.env.example:1-15",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "protocol": "Local file read (dotenv / docker env_file)",
+              "threats": []
+            },
+            "id": "5fccf555-722d-482f-9bf4-acb739d10f3f",
+            "source": {
+              "cell": "8f1366c7-2212-4e4e-b28d-c8bbec549170",
+              "port": "f380f89b-bbdf-4587-a78b-b10c752fdbeb"
+            },
+            "target": {
+              "cell": "e4fd8235-d40d-48e4-bcd7-16b97056d55a",
+              "port": "225d7529-f2a9-4c58-8725-8d87358454a3"
+            },
+            "vertices": []
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 30,
+            "labels": [
+              {
+                "markup": [
+                  {
+                    "tagName": "ellipse",
+                    "selector": "labelBody"
+                  },
+                  {
+                    "tagName": "text",
+                    "selector": "labelText"
+                  }
+                ],
+                "attrs": {
+                  "labelText": {
+                    "text": "Forwarded client-chosen GraphQL query with Bearer OPENCTI_TOKEN; response relayed verbatim",
+                    "textAnchor": "middle",
+                    "textVerticalAnchor": "middle"
+                  },
+                  "labelBody": {
+                    "ref": "labelText",
+                    "refRx": "50%",
+                    "refRy": "60%",
+                    "fill": "#fff",
+                    "strokeWidth": 0
+                  }
+                },
+                "position": {
+                  "distance": 0.5,
+                  "args": {
+                    "keepGradient": true,
+                    "ensureLegibility": true
+                  }
+                }
+              }
+            ],
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "Forwarded client-chosen GraphQL query with Bearer OPENCTI_TOKEN; response relayed verbatim",
+              "description": "server/src/index.js:97-128, :61-84 (validateUpstreamUrl)",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": true,
+              "isPublicNetwork": true,
+              "protocol": "HTTPS POST (Node fetch), origin pinned to OPENCTI_URL",
+              "threats": []
+            },
+            "id": "0f0c9da9-e80f-49ec-a082-b08a6a10916a",
+            "source": {
+              "cell": "e4fd8235-d40d-48e4-bcd7-16b97056d55a",
+              "port": "4755f10e-4df7-48aa-96cd-a008e8c7f5bf"
+            },
+            "target": {
+              "cell": "9fd33191-c5aa-4c54-aa62-3f5bb9d65428",
+              "port": "3171c853-a8d9-43ef-874a-802614cba4d6"
+            },
+            "vertices": []
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 31,
+            "labels": [
+              {
+                "markup": [
+                  {
+                    "tagName": "ellipse",
+                    "selector": "labelBody"
+                  },
+                  {
+                    "tagName": "text",
+                    "selector": "labelText"
+                  }
+                ],
+                "attrs": {
+                  "labelText": {
+                    "text": "Allowlisted read-only MISP endpoints with MISP_API_KEY; POST body forwarded",
+                    "textAnchor": "middle",
+                    "textVerticalAnchor": "middle"
+                  },
+                  "labelBody": {
+                    "ref": "labelText",
+                    "refRx": "50%",
+                    "refRy": "60%",
+                    "fill": "#fff",
+                    "strokeWidth": 0
+                  }
+                },
+                "position": {
+                  "distance": 0.5,
+                  "args": {
+                    "keepGradient": true,
+                    "ensureLegibility": true
+                  }
+                }
+              }
+            ],
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "Allowlisted read-only MISP endpoints with MISP_API_KEY; POST body forwarded",
+              "description": "server/src/index.js:140-145 (allowlist), :147-191 (Authorization: apiKey, body forwarded, verbatim relay)",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": true,
+              "isPublicNetwork": true,
+              "protocol": "HTTPS GET/POST (Node fetch), origin pinned to MISP_URL",
+              "threats": []
+            },
+            "id": "8a3cecf9-2570-4de3-bf40-11818376b3ea",
+            "source": {
+              "cell": "e4fd8235-d40d-48e4-bcd7-16b97056d55a",
+              "port": "225d7529-f2a9-4c58-8725-8d87358454a3"
+            },
+            "target": {
+              "cell": "af1de776-f7b9-43fe-9de6-8991984101c0",
+              "port": "4428c738-f10f-44be-a792-cc2b0097037d"
+            },
+            "vertices": []
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 32,
+            "labels": [
+              {
+                "markup": [
+                  {
+                    "tagName": "ellipse",
+                    "selector": "labelBody"
+                  },
+                  {
+                    "tagName": "text",
+                    "selector": "labelText"
+                  }
+                ],
+                "attrs": {
+                  "labelText": {
+                    "text": "Persist settings, layers, annotations, integration URL/mode/proxyUrl, TAXII usernames (secrets stripped)",
+                    "textAnchor": "middle",
+                    "textVerticalAnchor": "middle"
+                  },
+                  "labelBody": {
+                    "ref": "labelText",
+                    "refRx": "50%",
+                    "refRy": "60%",
+                    "fill": "#fff",
+                    "strokeWidth": 0
+                  }
+                },
+                "position": {
+                  "distance": 0.5,
+                  "args": {
+                    "keepGradient": true,
+                    "ensureLegibility": true
+                  }
+                }
+              }
+            ],
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "Persist settings, layers, annotations, integration URL/mode/proxyUrl, TAXII usernames (secrets stripped)",
+              "description": "src/app/services/settings.service.ts:176-181; src/app/services/misp.service.ts:116-130, :147-153; src/app/services/opencti.service.ts:159-163; src/app/services/taxii.service.ts:187-202",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "protocol": "Web Storage API",
+              "threats": []
+            },
+            "id": "3b7a8753-2d77-4ef0-8118-8439933dde45",
+            "source": {
+              "cell": "3a62e8f0-7204-49ce-81ac-d022dfb0606b",
+              "port": "63f1e332-00b5-4b40-92ec-b348fe966629"
+            },
+            "target": {
+              "cell": "28e35ebf-329a-4197-9d44-05f1eca389d3",
+              "port": "cac214c5-2763-45e3-85c8-59786e9996a9"
+            },
+            "vertices": []
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 33,
+            "labels": [
+              {
+                "markup": [
+                  {
+                    "tagName": "ellipse",
+                    "selector": "labelBody"
+                  },
+                  {
+                    "tagName": "text",
+                    "selector": "labelText"
+                  }
+                ],
+                "attrs": {
+                  "labelText": {
+                    "text": "Persist NVD API key for the tab session",
+                    "textAnchor": "middle",
+                    "textVerticalAnchor": "middle"
+                  },
+                  "labelBody": {
+                    "ref": "labelText",
+                    "refRx": "50%",
+                    "refRy": "60%",
+                    "fill": "#fff",
+                    "strokeWidth": 0
+                  }
+                },
+                "position": {
+                  "distance": 0.5,
+                  "args": {
+                    "keepGradient": true,
+                    "ensureLegibility": true
+                  }
+                }
+              }
+            ],
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "Persist NVD API key for the tab session",
+              "description": "src/app/services/settings.service.ts:153-161, :182-185",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "protocol": "Web Storage API",
+              "threats": []
+            },
+            "id": "9f2d5f3d-6ee5-4e4c-bfa1-24f73800e35b",
+            "source": {
+              "cell": "3a62e8f0-7204-49ce-81ac-d022dfb0606b",
+              "port": "d4f8e430-2721-43e6-809e-09d95f4ed228"
+            },
+            "target": {
+              "cell": "e7062d15-a33c-4578-a7c1-c605b98ac3da",
+              "port": "dfdc8a7f-6d35-4f9e-b8d2-c54a59d37953"
+            },
+            "vertices": []
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 34,
+            "labels": [
+              {
+                "markup": [
+                  {
+                    "tagName": "ellipse",
+                    "selector": "labelBody"
+                  },
+                  {
+                    "tagName": "text",
+                    "selector": "labelText"
+                  }
+                ],
+                "attrs": {
+                  "labelText": {
+                    "text": "Cache raw STIX bundles (24 h TTL, re-parsed without integrity check) and save user layers",
+                    "textAnchor": "middle",
+                    "textVerticalAnchor": "middle"
+                  },
+                  "labelBody": {
+                    "ref": "labelText",
+                    "refRx": "50%",
+                    "refRy": "60%",
+                    "fill": "#fff",
+                    "strokeWidth": 0
+                  }
+                },
+                "position": {
+                  "distance": 0.5,
+                  "args": {
+                    "keepGradient": true,
+                    "ensureLegibility": true
+                  }
+                }
+              }
+            ],
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "Cache raw STIX bundles (24 h TTL, re-parsed without integrity check) and save user layers",
+              "description": "src/app/services/data.service.ts:52-54, :239-240, :256, :280, :297, :310; src/app/services/user-layer.service.ts:331-334, :393-397",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "protocol": "IndexedDB API",
+              "threats": []
+            },
+            "id": "c56d88ba-a192-45b8-97c3-c9c8b985948f",
+            "source": {
+              "cell": "3a62e8f0-7204-49ce-81ac-d022dfb0606b",
+              "port": "d4f8e430-2721-43e6-809e-09d95f4ed228"
+            },
+            "target": {
+              "cell": "8bbe37d9-bdb6-4e65-8aad-1d5249299f88",
+              "port": "3f01a55a-2968-4247-9db1-ee398145f923"
+            },
+            "vertices": []
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 35,
+            "labels": [
+              {
+                "markup": [
+                  {
+                    "tagName": "ellipse",
+                    "selector": "labelBody"
+                  },
+                  {
+                    "tagName": "text",
+                    "selector": "labelText"
+                  }
+                ],
+                "attrs": {
+                  "labelText": {
+                    "text": "Store app shell and freshness-cached upstream, CTID and NVD/EPSS responses",
+                    "textAnchor": "middle",
+                    "textVerticalAnchor": "middle"
+                  },
+                  "labelBody": {
+                    "ref": "labelText",
+                    "refRx": "50%",
+                    "refRy": "60%",
+                    "fill": "#fff",
+                    "strokeWidth": 0
+                  }
+                },
+                "position": {
+                  "distance": 0.5,
+                  "args": {
+                    "keepGradient": true,
+                    "ensureLegibility": true
+                  }
+                }
+              }
+            ],
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "Store app shell and freshness-cached upstream, CTID and NVD/EPSS responses",
+              "description": "ngsw-config.json:4-28, :29-67",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "protocol": "Cache Storage API",
+              "threats": []
+            },
+            "id": "ee564471-9ffa-4836-8815-528195b5039e",
+            "source": {
+              "cell": "cac12f55-0d46-4be9-b0bc-43cb54bb8dfc",
+              "port": "af3832a1-3855-4c75-a02c-55c772a9ba7c"
+            },
+            "target": {
+              "cell": "8c5cc038-dd49-4cba-97f9-81f028e60184",
+              "port": "5bd620ad-52a1-417c-b210-09398e6d122d"
+            },
+            "vertices": []
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 36,
+            "labels": [
+              {
+                "markup": [
+                  {
+                    "tagName": "ellipse",
+                    "selector": "labelBody"
+                  },
+                  {
+                    "tagName": "text",
+                    "selector": "labelText"
+                  }
+                ],
+                "attrs": {
+                  "labelText": {
+                    "text": "Serve intercepted fetches from cache (offline, or after a 10-15 s network timeout)",
+                    "textAnchor": "middle",
+                    "textVerticalAnchor": "middle"
+                  },
+                  "labelBody": {
+                    "ref": "labelText",
+                    "refRx": "50%",
+                    "refRy": "60%",
+                    "fill": "#fff",
+                    "strokeWidth": 0
+                  }
+                },
+                "position": {
+                  "distance": 0.5,
+                  "args": {
+                    "keepGradient": true,
+                    "ensureLegibility": true
+                  }
+                }
+              }
+            ],
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "Serve intercepted fetches from cache (offline, or after a 10-15 s network timeout)",
+              "description": "src/main.ts:39-50; ngsw-config.json:33-38, :51-56, :62-66 (freshness, timeout)",
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "protocol": "Service Worker fetch interception",
+              "threats": []
+            },
+            "id": "efa1f147-5fdf-42b8-9715-4b4846d50b89",
+            "source": {
+              "cell": "cac12f55-0d46-4be9-b0bc-43cb54bb8dfc",
+              "port": "cf51870d-3939-4bf9-9870-4c66dc54d8ba"
+            },
+            "target": {
+              "cell": "3a62e8f0-7204-49ce-81ac-d022dfb0606b",
+              "port": "63f1e332-00b5-4b40-92ec-b348fe966629"
+            },
+            "vertices": []
+          }
+        ]
+      }
+    ],
+    "diagramTop": 1,
+    "reviewer": "",
+    "threatTop": 21
+  }
+}

@@ -309,6 +309,7 @@ For the written background on a technique, group or detection, these are useful 
 | [docs/HELM.md](docs/HELM.md) | Helm chart |
 | [OPEN_SOURCE_INTEGRATIONS.md](OPEN_SOURCE_INTEGRATIONS.md) | Candidate open-source integrations |
 | [AGENTS.md](AGENTS.md) | Conventions for coding agents, including the heatmap mode checklist |
+| [ThreatDragonModels/ATTACK-Navi/ATTACK-Navi.json](ThreatDragonModels/ATTACK-Navi/ATTACK-Navi.json) | STRIDE threat model of the app and proxy, in OWASP Threat Dragon format |
 | [CHANGELOG.md](CHANGELOG.md) | Release notes |
 
 ## Contributing and security
