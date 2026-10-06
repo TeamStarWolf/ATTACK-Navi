@@ -2,7 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed } from '@angular/core/testing';
 import { BehaviorSubject, of } from 'rxjs';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { SidebarComponent } from './sidebar.component';
 import { FilterService } from '../../services/filter.service';
@@ -20,7 +20,7 @@ describe('SidebarComponent', () => {
     TestBed.configureTestingModule({
       imports: [SidebarComponent],
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         { provide: FilterService, useValue: {
             selectedTechnique$: noopBNull(),

@@ -1,7 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { BehaviorSubject, of } from 'rxjs';
 import { DataHealthComponent } from './data-health.component';
@@ -74,7 +74,7 @@ describe('DataHealthComponent', () => {
     await TestBed.configureTestingModule({
       imports: [DataHealthComponent],
       providers: [
-        provideHttpClient(),
+        provideHttpClient(withXhr()),
         provideHttpClientTesting(),
         { provide: AtomicService, useValue: mocks['atomic'] },
         { provide: SigmaService, useValue: mocks['sigma'] },

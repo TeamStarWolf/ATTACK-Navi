@@ -726,7 +726,7 @@
                     @if (c.cweIds.length > 0) {
                       <span class="capec-cwe-pills">
                         @for (cweId of c.cweIds.slice(0, 3); track cweId) {
-                          <a class="cwe-pill" [href]="cweService.getUrl(cweId)" target="_blank" rel="noopener" [title]="cweService.getInfo(cweId)?.name">
+                          <a class="cwe-pill" [href]="cweService.getUrl(cweId)" target="_blank" rel="noopener" [title]="$safeNavigationMigration(cweService.getInfo(cweId)?.name)">
                             {{ cweId }}@if (cweService.getInfo(cweId)?.name) { <span class="cwe-pill-name">{{ cweService.getInfo(cweId)!.name }}</span> }
                           </a>
                         }

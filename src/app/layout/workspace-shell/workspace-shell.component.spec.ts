@@ -1,11 +1,12 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Route, provideRouter } from '@angular/router';
 import { WorkspaceShellComponent } from './workspace-shell.component';
 
-@Component({ standalone: true, template: '' })
+@Component({ standalone: true, changeDetection: ChangeDetectionStrategy.Eager,
+ template: '' })
 class StubTabComponent {}
 
 function makeRouteConfig(): Route {
