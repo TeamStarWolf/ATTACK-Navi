@@ -1,10 +1,10 @@
 # Stage 1: Build
-FROM node:20-alpine AS build
+# Node 24 (alpine) — Angular 22's CLI requires Node >=22.22.3 / >=24.15.0 / >=26.
+FROM node:24-alpine AS build
 WORKDIR /app
 COPY package*.json ./
-# Reproducible install from the committed lockfile. The Angular 21 peer-dependency
-# conflicts that previously forced a lockfile delete were reconciled in #76, so a
-# clean `npm ci` now succeeds and the scanned dependency set matches what ships.
+# Reproducible install from the committed lockfile: a clean `npm ci` succeeds and
+# the scanned dependency set matches what ships.
 RUN npm ci
 COPY . .
 RUN npx ng build --configuration production --base-href /
