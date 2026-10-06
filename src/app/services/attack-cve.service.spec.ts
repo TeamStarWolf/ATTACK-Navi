@@ -1,7 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { AttackCveService } from './attack-cve.service';
 
@@ -27,7 +27,7 @@ describe('AttackCveService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(withXhr()), provideHttpClientTesting()],
     });
     service = TestBed.inject(AttackCveService);
   });
@@ -84,7 +84,7 @@ describe('AttackCveService', () => {
     ): { url: string } {
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
-        providers: [provideHttpClient(), provideHttpClientTesting()],
+        providers: [provideHttpClient(withXhr()), provideHttpClientTesting()],
       });
       const svc = TestBed.inject(AttackCveService);
       const mock = TestBed.inject(HttpTestingController);
@@ -137,7 +137,7 @@ describe('AttackCveService', () => {
     it('falls back to the pinned snapshot when a discovered path does not serve', fakeAsync(() => {
       TestBed.resetTestingModule();
       TestBed.configureTestingModule({
-        providers: [provideHttpClient(), provideHttpClientTesting()],
+        providers: [provideHttpClient(withXhr()), provideHttpClientTesting()],
       });
       TestBed.inject(AttackCveService);
       const mock = TestBed.inject(HttpTestingController);

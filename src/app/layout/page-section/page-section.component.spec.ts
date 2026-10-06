@@ -1,12 +1,13 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { PageSectionComponent } from './page-section.component';
 
 @Component({
   standalone: true,
   imports: [PageSectionComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <app-page-section [title]="title" icon="info">
       <button section-actions class="test-action">Act</button>
