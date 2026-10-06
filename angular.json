@@ -76,7 +76,8 @@
               "buildTarget": "mitre-mitigation-navigator:build:production"
             },
             "development": {
-              "buildTarget": "mitre-mitigation-navigator:build:development"
+              "buildTarget": "mitre-mitigation-navigator:build:development",
+              "prebundle": false
             }
           },
           "defaultConfiguration": "development"
