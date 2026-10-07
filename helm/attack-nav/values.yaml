@@ -1,9 +1,22 @@
 replicaCount: 1
 
 image:
+  # No workflow in this repository publishes an image. Build one from the root
+  # Dockerfile, push it to a registry you control, and point repository/tag at
+  # it (see docs/HELM.md, "Build and push the image"). The default repository is
+  # only the name the project would use; nothing is published there.
   repository: ghcr.io/teamstarwolf/attack-nav
   pullPolicy: IfNotPresent
-  tag: "latest"
+  # Defaults to the chart's appVersion (the package.json version) when empty.
+  # Tag the image you push with that version, or set this to the tag you used.
+  # Avoid a mutable "latest" tag: with pullPolicy IfNotPresent an upgrade would
+  # never re-pull it.
+  tag: ""
+
+# Port nginx listens on inside the container. The root Dockerfile builds on
+# nginxinc/nginx-unprivileged, which listens on 8080 as the unprivileged user
+# 101 so the pod can run as non-root.
+containerPort: 8080
 
 service:
   type: ClusterIP
@@ -27,13 +40,23 @@ resources:
     cpu: 100m
     memory: 64Mi
 
-proxy:
-  enabled: false
-  image:
-    repository: ghcr.io/teamstarwolf/attack-nav-proxy
-    tag: "latest"
-  env:
-    OPENCTI_URL: ""
-    OPENCTI_TOKEN: ""
-    MISP_URL: ""
-    MISP_API_KEY: ""
+# Pod-level security context. nginx-unprivileged runs as uid/gid 101 (nginx).
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 101
+  runAsGroup: 101
+  seccompProfile:
+    type: RuntimeDefault
+
+# Container-level security context. The root filesystem is read-only; nginx's
+# pid file and temp paths live under /tmp, which is mounted as an emptyDir.
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# The chart deploys the static app only. The optional credentials proxy in
+# server/ has no Kubernetes template here; run it with docker-compose.yml or
+# deploy it separately and point the app's proxy URL at it (see server/README.md).

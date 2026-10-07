@@ -1,14 +1,14 @@
 # ATTACK-Navi Helm Chart
 
-Deploy ATTACK-Navi to a Kubernetes cluster using the included Helm chart.
+Deploy ATTACK-Navi to a Kubernetes cluster using the included Helm chart. The chart deploys the static app (nginx serving the production build) and nothing else.
 
 ## Chart Overview
 
 | Field | Value |
 |---|---|
 | Chart name | `attack-nav` |
-| Chart version | `1.0.0` |
-| App version | `1.0.0` |
+| Chart version | `1.1.0` |
+| App version | `0.10.0` (tracks `version` in `package.json`; also the default image tag) |
 | Type | Application |
 | Location | `helm/attack-nav/` |
 
@@ -17,13 +17,31 @@ Deploy ATTACK-Navi to a Kubernetes cluster using the included Helm chart.
 - Kubernetes 1.21+
 - Helm 3.x
 - `kubectl` configured to your target cluster
+- A container registry you can push to
 
-## Quick Start
+## 1. Build and push the image
+
+No workflow in this repository publishes a container image. `.github/workflows/docker.yml` builds the image and smoke-tests it on pull requests and pushes to `main`, but it never pushes to a registry, so the chart's default `ghcr.io/teamstarwolf/attack-nav` repository holds no image and a bare `helm install` ends in `ImagePullBackOff`. Build the image from the root `Dockerfile` and push it somewhere you control first:
 
 ```bash
-# From the repo root — install into the 'attack-navi' namespace
-helm install attack-navi ./helm/attack-nav   --namespace attack-navi   --create-namespace
+# From the repo root. Tag with the app version so the chart's default tag matches.
+docker build -t registry.example.com/attack-nav:0.10.0 .
+docker push registry.example.com/attack-nav:0.10.0
 ```
+
+The image is built on `nginxinc/nginx-unprivileged`: nginx listens on port 8080 and runs as the unprivileged user 101, which is what the chart's security context expects.
+
+## 2. Install
+
+```bash
+# From the repo root - install into the 'attack-navi' namespace
+helm install attack-navi ./helm/attack-nav \
+  --namespace attack-navi --create-namespace \
+  --set image.repository=registry.example.com/attack-nav \
+  --set image.tag=0.10.0
+```
+
+`image.tag` can be left unset when the tag you pushed equals the chart's `appVersion`.
 
 ## Configuration
 
@@ -34,11 +52,14 @@ All configurable values are in `helm/attack-nav/values.yaml`.
 | Parameter | Default | Description |
 |---|---|---|
 | `replicaCount` | `1` | Number of app pod replicas |
-| `image.repository` | `ghcr.io/teamstarwolf/attack-nav` | Container image repository |
-| `image.tag` | `latest` | Container image tag |
+| `image.repository` | `ghcr.io/teamstarwolf/attack-nav` | Container image repository. Not published by this repository; override it with your own. |
+| `image.tag` | `""` (falls back to `appVersion`, `0.10.0`) | Container image tag. Use an immutable tag; with `pullPolicy: IfNotPresent` a mutable `latest` would never be re-pulled on upgrade. |
 | `image.pullPolicy` | `IfNotPresent` | Kubernetes image pull policy |
+| `containerPort` | `8080` | Port nginx listens on inside the container (the unprivileged image uses 8080) |
 | `service.type` | `ClusterIP` | Kubernetes service type |
-| `service.port` | `80` | Service port |
+| `service.port` | `80` | Service port, forwarded to `containerPort` |
+| `podSecurityContext` | `runAsNonRoot: true`, uid/gid `101`, `seccompProfile: RuntimeDefault` | Pod security context |
+| `securityContext` | `allowPrivilegeEscalation: false`, `readOnlyRootFilesystem: true`, `capabilities.drop: [ALL]` | Container security context. `/tmp` is an `emptyDir` so nginx can write its pid file and temp buffers. |
 
 ### Ingress
 
@@ -61,7 +82,9 @@ ingress:
 ```
 
 ```bash
-helm install attack-navi ./helm/attack-nav   --namespace attack-navi   --create-namespace   -f values-prod.yaml
+helm install attack-navi ./helm/attack-nav \
+  --namespace attack-navi --create-namespace \
+  -f values-prod.yaml
 ```
 
 ### Resources
@@ -73,7 +96,7 @@ Default resource requests and limits:
 | Request | `100m` | `64Mi` |
 | Limit | `200m` | `128Mi` |
 
-Increase these for heavier use (large ATT&CK datasets, many concurrent users):
+Increase these for heavier use (many concurrent users). Example override:
 
 ```yaml
 resources:
@@ -85,38 +108,31 @@ resources:
     memory: 128Mi
 ```
 
-### Backend Proxy (Optional)
+### Backend proxy
 
-The chart includes an optional backend proxy sidecar for integrating private threat intelligence platforms.
+The chart does not deploy the optional credentials proxy in `server/`, and it has no values for OpenCTI or MISP tokens; never put integration secrets in `values.yaml`. To use the proxy with a Kubernetes deployment, run it separately (for example from `server/Dockerfile` with its configuration in a Kubernetes Secret) and enter its URL in the app's Settings > Integrations. `docker-compose.yml` at the repo root runs the app and the proxy together for single-host setups; see [server/README.md](../server/README.md).
 
-```yaml
-proxy:
-  enabled: true
-  image:
-    repository: ghcr.io/teamstarwolf/attack-nav-proxy
-    tag: "latest"
-  env:
-    OPENCTI_URL: "https://opencti.internal"
-    OPENCTI_TOKEN: "your-token-here"
-    MISP_URL: "https://misp.internal"
-    MISP_API_KEY: "your-api-key-here"
-```
-
-> **Security note:** Store API keys in a Kubernetes Secret and reference them via `envFrom` rather than embedding values directly. The `env` fields shown above are convenience placeholders.
+The nginx `Content-Security-Policy` baked into the image (`nginx.conf`) lists the origins the app may call. Add your proxy origin to `connect-src` and rebuild the image if the proxy lives on a different origin than the app.
 
 ## Templates
 
 | Template | Description |
 |---|---|
-| `deployment.yaml` | Main app deployment with optional proxy sidecar |
-| `service.yaml` | ClusterIP service exposing port 80 |
+| `deployment.yaml` | App deployment: one nginx container, non-root security context, probes on the `http` port |
+| `service.yaml` | ClusterIP service exposing `service.port`, targeting the container's `http` port |
 | `ingress.yaml` | Optional ingress (disabled by default) |
 
 ## Upgrading
 
+Push a new image tag, then upgrade to it:
+
 ```bash
-helm upgrade attack-navi ./helm/attack-nav   --namespace attack-navi   --reuse-values   --set image.tag=v0.6.0
+helm upgrade attack-navi ./helm/attack-nav \
+  --namespace attack-navi --reuse-values \
+  --set image.tag=<tag-you-pushed>
 ```
+
+Bump `appVersion` in `Chart.yaml` when `package.json`'s version changes so the default tag stays in step.
 
 ## Uninstalling
 
@@ -124,17 +140,13 @@ helm upgrade attack-navi ./helm/attack-nav   --namespace attack-navi   --reuse-v
 helm uninstall attack-navi --namespace attack-navi
 ```
 
-## Building the Container Image
-
-The chart references `ghcr.io/teamstarwolf/attack-nav`. To build and push:
+## Validating the chart
 
 ```bash
-# Build
-docker build -t ghcr.io/teamstarwolf/attack-nav:latest .
-
-# Push (requires GitHub Packages token)
-docker push ghcr.io/teamstarwolf/attack-nav:latest
+helm lint ./helm/attack-nav
+helm template attack-navi ./helm/attack-nav --set image.tag=0.10.0
 ```
 
-> The Docker setup is not yet in CI. Building and pushing the container image is currently a manual step.
-> See the open tech-debt item in [ROADMAP.md](../ROADMAP.md).
+## CI status
+
+`.github/workflows/docker.yml` builds the image and checks that the container serves `/` and runs as a non-root user, on pull requests and pushes to `main`. It does not log in to a registry or push the image. Publishing images (and signing them) is a deliberate owner decision that has not been made; until then, building and pushing is the manual step 1 above.

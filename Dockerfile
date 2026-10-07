@@ -9,9 +9,9 @@ RUN npm ci
 COPY . .
 RUN npx ng build --configuration production --base-href /
 
-# Stage 2: Serve with nginx
-FROM nginx:alpine
+# Stage 2: Serve with nginx as the unprivileged user 101 on port 8080 (not root on 80)
+FROM nginxinc/nginx-unprivileged:alpine
 COPY --from=build /app/dist/mitre-mitigation-navigator/browser /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
+EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
