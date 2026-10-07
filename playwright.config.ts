@@ -15,7 +15,7 @@ export default defineConfig({
   // real intermittent failure. Locally a failure is a failure.
   retries: CI ? 1 : 0,
   reporter: CI
-    ? [['list'], ['json', { outputFile: 'playwright-report/results.json' }], ['html', { open: 'never' }]]
+    ? [['list'], ['json', { outputFile: 'test-results/results.json' }], ['html', { open: 'never' }]]
     : 'list',
   use: {
     baseURL: 'http://localhost:4200',
