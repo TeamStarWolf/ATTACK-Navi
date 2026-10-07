@@ -35,6 +35,11 @@
                 "input": "src/assets",
                 "output": "assets"
               },
+              {
+                "glob": "THIRD_PARTY_NOTICES.md",
+                "input": ".",
+                "output": "assets"
+              },
               "src/manifest.webmanifest"
             ],
             "styles": [
