@@ -7,10 +7,10 @@
 // fail the run, but a retried pass is a flaky test, and a flaky test must be
 // visible in the workflow rather than reported as green.
 //
-//   node e2e/check-flaky.mjs [playwright-report/results.json]
+//   node e2e/check-flaky.mjs [test-results/results.json]
 import { readFileSync } from 'node:fs';
 
-const reportPath = process.argv[2] ?? 'playwright-report/results.json';
+const reportPath = process.argv[2] ?? 'test-results/results.json';
 
 let report;
 try {

@@ -68,7 +68,7 @@ jobs:
       # A test that only passed on its retry is flaky, not green: surface it.
       - name: Fail on flaky tests
         if: ${{ !cancelled() }}
-        run: node e2e/check-flaky.mjs playwright-report/results.json
+        run: node e2e/check-flaky.mjs test-results/results.json
       # Keep the report on every completed run (pass or fail) so a green run
       # can still be inspected. `failure()` is false when the job is cancelled
       # by timeout-minutes; only a cancelled run has nothing to upload.
