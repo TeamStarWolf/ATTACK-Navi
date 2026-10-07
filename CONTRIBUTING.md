@@ -23,10 +23,12 @@ Thanks for your interest in contributing! This document describes how to set up 
 
 | Tool | Version | Notes |
 |------|---------|-------|
-| Node.js | 20+ | LTS recommended |
-| npm | 9+ | Comes with Node.js 20 |
-| Angular CLI | 19.x | Installed as a dev dependency |
+| Node.js | `^22.22.3 \|\| ^24.15.0 \|\| >=26.0.0` | The engine range of the locked Angular CLI; CI and the Dockerfile use Node 24. Node 20 is rejected by the CLI. |
+| npm | 10+ | Comes with Node.js 22 and 24 |
+| Angular CLI | 22.x | Installed as a dev dependency; the exact version is in `package-lock.json` |
 | Git | 2.x+ | For version control |
+
+The README's [Getting started](../README.md#getting-started) section is the version of record if this table and the README ever disagree.
 
 ### Install Dependencies
 
@@ -91,7 +93,7 @@ src/
 
 ## 2. Code Conventions
 
-### Angular 19 Standalone Components
+### Angular 22 Standalone Components
 
 All components use the standalone pattern. There are no NgModules.
 
@@ -361,7 +363,7 @@ Update the tooltip to show your mode's value when hovering over a cell.
 ## 5. Adding a New Page (Workspace Tab)
 
 Since v0.8.0 the app uses the Angular Router: destinations are **lazy-loaded routed pages**, each a
-tab inside one of the nine workspaces. There is no overlay/`ActivePanel` system anymore.
+tab inside one of the ten workspaces. There is no overlay/`ActivePanel` system anymore.
 
 ### Step 1: Create the Component
 

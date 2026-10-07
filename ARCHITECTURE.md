@@ -2,9 +2,9 @@
 
 > **v0.8.0 routing migration (2026-08-15).** The application adopted the Angular
 > Router: the 44 always-mounted overlay panels described in older sections of
-> this document are now lazily loaded routed pages organized into 9 workspaces
+> this document are now lazily loaded routed pages organized into workspaces
 > (`/matrix`, `/dashboard`, `/intel`, `/detect`, `/exposure`, `/coverage`,
-> `/library`, `/reports`, `/settings`) using hash routing
+> `/library`, `/reports`, `/settings`, later joined by `/status`) using hash routing
 > (`provideRouter(routes, withHashLocation())`). The `ActivePanel` union,
 > `FilterService.activePanel$`, `togglePanel`, and `ViewModeService` no longer
 > exist — navigation goes through `PanelNavService` (legacy panel id → route via
@@ -18,16 +18,16 @@
 
 ## 1. Overview
 
-The MITRE ATT&CK Navi is a single-page Angular 21.2.x application that visualizes
+The MITRE ATT&CK Navi is a single-page Angular 22.2.x application that visualizes
 the full ATT&CK matrix, overlays mitigation coverage data, and integrates 40+ external threat
 intelligence, detection, vulnerability, and compliance data sources into a unified analyst
 workspace.
 
 Key technical characteristics:
 
-- **Angular 21.2.x standalone components** -- every component uses `standalone: true`; there are no
+- **Angular 22.2.x standalone components** -- every component uses `standalone: true`; there are no
   NgModules.
-- **Angular Router with hash routing** -- 9 lazily loaded workspaces; every destination has a
+- **Angular Router with hash routing** -- 10 lazily loaded workspaces; every destination has a
   bookmarkable `#/workspace/tab` URL (see the v0.8.0 note above).
 - **OnPush change detection** -- all components set `changeDetection: ChangeDetectionStrategy.OnPush`
   and call `ChangeDetectorRef.markForCheck()` explicitly when async state arrives.
@@ -44,8 +44,8 @@ MISP and OpenCTI deployments with upstream secrets held server-side. The proxy i
 of the GitHub Pages deployment and needs separate access controls; CORS is not authentication.
 
 Use [package.json](package.json) for declared dependency ranges and
-[package-lock.json](package-lock.json) for exact resolved versions. The Angular 21.2.x
-toolchain uses TypeScript 5.9.x; check the official
+[package-lock.json](package-lock.json) for exact resolved versions. The Angular 22.2.x
+toolchain uses TypeScript 6.0.x and requires Node `^22.22.3 || ^24.15.0 || >=26.0.0`; check the official
 [Angular compatibility table](https://angular.dev/reference/versions) before changing Node.js
 or TypeScript. CI installs the committed dependency graph with `npm ci`.
 

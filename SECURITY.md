@@ -42,7 +42,9 @@ ATTACK-Navi is primarily a client-side Angular application with optional integra
 
 ## Current Controls
 
-- GitHub Actions security workflows for CodeQL, OSV-Scanner, and dependency review
+- CodeQL code scanning through GitHub's default setup (configured in the repository's security settings, weekly schedule, JavaScript/TypeScript and Actions; there is no CodeQL workflow file in `.github/workflows`)
+- GitHub Actions workflows for OSV-Scanner and dependency review (`.github/workflows/osv-scanner.yml`, `dependency-review.yml`)
+- Dependabot alerts and version updates (`.github/dependabot.yml`; alerts are enabled in the repository settings, not by a file in the tree)
 - optional backend proxy support for integrations that should not expose secrets to browser clients
 - documentation for workflows, architecture, and data-source trust boundaries
 - lockfile-based dependency management with regular updates

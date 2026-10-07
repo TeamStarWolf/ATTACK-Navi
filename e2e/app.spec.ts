@@ -4,10 +4,11 @@ import { test, expect } from '@playwright/test';
 
 const BASE = 'http://localhost:4200';
 
-// CI runs against `ng serve`, which JIT-compiles each lazy route the first
-// time it is hit. On the constrained CI runner that cold compile can take
-// tens of seconds, so deep-link assertions (which land directly on a cold
-// route) get a much longer budget there than locally.
+// Locally the suite runs against `ng serve`, which JIT-compiles each lazy
+// route the first time it is hit. In CI (.github/workflows/e2e.yml) it runs
+// against a static DEVELOPMENT build served by http-server, so there is no
+// per-route compile; the larger CI budget below covers the slower runner and
+// the first load of the 40 MB bundled STIX asset on a cold route.
 const ROUTE_TIMEOUT = process.env['CI'] ? 60000 : 15000;
 
 test.describe('ATT&CK Navi', () => {

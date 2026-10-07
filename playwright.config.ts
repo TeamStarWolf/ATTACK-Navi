@@ -4,8 +4,9 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
-  // CI's `ng serve` JIT-compiles lazy routes on first hit; give each test a
-  // much larger envelope there so a cold deep-link compile doesn't time out.
+  // CI serves a prebuilt development bundle (see webServer below), so there is
+  // no per-route JIT compile there; the larger CI envelope covers the slower
+  // shared runner and cold loads of the bundled STIX asset.
   timeout: process.env['CI'] ? 120000 : 30000,
   retries: 1,
   use: {
