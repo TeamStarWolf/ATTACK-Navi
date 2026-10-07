@@ -36,7 +36,7 @@ jobs:
 
       - name: Smoke-test - container starts and serves
         run: |
-          docker run -d --name attack-navi-test -p 8080:80 attack-navi:ci
+          docker run -d --name attack-navi-test -p 8080:8080 attack-navi:ci
           # Wait up to 15s for nginx to become ready
           for i in $(seq 1 15); do
             if curl -sf http://localhost:8080/ > /dev/null 2>&1; then
@@ -49,6 +49,14 @@ jobs:
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/)
           echo "HTTP status: $STATUS"
           [ "$STATUS" = "200" ] || (echo "Expected 200, got $STATUS" && exit 1)
+
+      - name: Smoke-test - nginx runs as a non-root user
+        run: |
+          # The image is built on nginxinc/nginx-unprivileged so the Helm chart can
+          # enforce runAsNonRoot. Fail if the container's main process is root.
+          UID_IN_CONTAINER=$(docker exec attack-navi-test id -u)
+          echo "container uid: $UID_IN_CONTAINER"
+          [ "$UID_IN_CONTAINER" != "0" ] || (echo "nginx is running as root" && exit 1)
 
       - name: Dump container logs on failure
         if: failure()

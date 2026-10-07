@@ -217,13 +217,13 @@ cp server/.env.example server/.env
 docker compose up --build
 ```
 
-nginx serves the app at <http://localhost:8080>, and the proxy is published on 127.0.0.1:8787. Compose requires `server/.env` to exist even if you do not use the proxy. To run only the app, use `docker build -t attack-navi .` and `docker run -p 8080:80 attack-navi`.
+nginx serves the app at <http://localhost:8080>, and the proxy is published on 127.0.0.1:8787. Compose requires `server/.env` to exist even if you do not use the proxy. To run only the app, use `docker build -t attack-navi .` and `docker run -p 8080:8080 attack-navi`. The image is built on `nginxinc/nginx-unprivileged`, so nginx listens on port 8080 inside the container and runs as the unprivileged user 101 rather than root.
 
 The image is built on `node:24-alpine` with base href `/`. `nginx.conf` sets a Content-Security-Policy whose `connect-src` allows the site itself plus `raw.githubusercontent.com`, `api.github.com`, `gitlab.com`, `api.first.org`, `services.nvd.nist.gov` and `www.cisa.gov`. Requests to `d3fend.mitre.org`, `cveawg.mitre.org` and any MISP, OpenCTI, TAXII or proxy origin are blocked until you add them there. To use the proxy from the app on port 8080, add `http://localhost:8787` to `connect-src` and add `http://localhost:8080` to `ALLOWED_ORIGINS` in `server/.env`.
 
 ### Kubernetes
 
-[docs/HELM.md](docs/HELM.md) describes the chart in `helm/attack-nav/`. Its default image, `ghcr.io/teamstarwolf/attack-nav:latest`, is not published by any workflow in this repository, so build and push your own image and set `image.repository` and `image.tag`. `values.yaml` also has a `proxy` block (off by default, with an equally unpublished `ghcr.io/teamstarwolf/attack-nav-proxy:latest` image), but no template reads it, so the chart deploys only the app even though docs/HELM.md describes a proxy sidecar.
+[docs/HELM.md](docs/HELM.md) describes the chart in `helm/attack-nav/`. No workflow in this repository publishes an image, so build and push your own from the `Dockerfile` and set `image.repository` and `image.tag` (the tag defaults to the chart's `appVersion`, which tracks `package.json`). The chart deploys only the app: it runs nginx as a non-root user with a read-only root filesystem, and it has no template or values for the proxy, so run the proxy separately if you need it.
 
 ## Architecture
 
