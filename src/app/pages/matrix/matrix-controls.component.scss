@@ -263,6 +263,25 @@
   &.active { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
 }
 
+/* ── Library layer list state + the imported layer that outranks it ── */
+.library-status {
+  font-size: 11px;
+  color: var(--text-faint);
+  padding: 4px 2px 6px;
+}
+
+.user-layer-name {
+  padding: 6px 10px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &.active { color: var(--accent); }
+}
+
 /* ── Featured lenses (pinned per viewpoint) ── */
 .featured-lenses {
   margin-bottom: 12px;

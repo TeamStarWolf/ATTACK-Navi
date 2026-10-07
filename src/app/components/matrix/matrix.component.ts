@@ -720,14 +720,15 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
           }
         } else if (mode === 'library' && this.domain) {
           // A user-imported layer takes precedence: color by its own per-technique
-          // scores/gradient. Otherwise fall back to the curated library layers,
-          // defaulting to the first manifest layer if none is picked yet.
+          // scores/gradient (picking a curated layer from the View menu unloads it,
+          // and the menu shows which one is active). Otherwise fall back to the
+          // curated library layers, defaulting to the first manifest layer if none
+          // is picked yet - including when the manifest has not arrived, in which
+          // case the service selects it on arrival and changed$ re-renders.
           if (this.userLayerService.activeLayer) {
             this.maxLibraryScore = this.userLayerService.maxScore();
           } else {
-            if (!this.libraryLayerService.activeFile && this.libraryLayerService.manifest.length) {
-              this.libraryLayerService.setActive(this.libraryLayerService.manifest[0].file);
-            }
+            this.libraryLayerService.ensureActive();
             this.maxLibraryScore = this.libraryLayerService.maxScore();
           }
         } else if (mode === 'sigma' && this.domain) {
