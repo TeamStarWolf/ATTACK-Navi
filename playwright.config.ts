@@ -20,10 +20,12 @@ export default defineConfig({
     // intercepts the ATT&CK fetch below Playwright's page.route and breaks
     // data interception, while `ng serve`'s per-route JIT compilation starved
     // deep-link tests on the constrained runner. A prebuilt SW-free bundle
-    // avoids both failure modes.
+    // avoids both failure modes. http-server is a pinned devDependency, so
+    // `npx --no` resolves the locked copy from node_modules and fails fast
+    // instead of fetching whatever the registry serves as latest at run time.
     // Locally: plain dev server.
     command: process.env['CI']
-      ? 'npx http-server dist/mitre-mitigation-navigator/browser -p 4200 -s'
+      ? 'npx --no http-server dist/mitre-mitigation-navigator/browser -p 4200 -s'
       : 'npx ng serve --port 4200',
     port: 4200,
     // Locally a long-lived `ng serve` can go stale (dead HMR socket serving
