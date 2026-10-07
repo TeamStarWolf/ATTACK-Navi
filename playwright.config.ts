@@ -6,8 +6,9 @@ const CI = !!process.env['CI'];
 
 export default defineConfig({
   testDir: './e2e',
-  // CI serves a cold static build on a constrained runner; give each test a
-  // much larger envelope there so a cold deep-link chunk load doesn't time out.
+  // CI serves a prebuilt development bundle (see webServer below), so there is
+  // no per-route JIT compile there; the larger CI envelope covers the slower
+  // shared runner and cold loads of the bundled STIX asset.
   timeout: CI ? 120000 : 30000,
   // One retry on CI absorbs a genuinely slow runner, but a test that only
   // passes on retry is reported as `flaky` in the JSON report and

@@ -1,26 +1,24 @@
-# Starred Project Integration Analysis
+# Open-Source Project Integration Analysis
 
-> Analysis of 30 starred GitHub repositories + 200+ additional repos from 18 authors/orgs, mapped to ATTACK-Navi integration opportunities.
-> Generated: April 2026
+> A survey of candidate open-source security projects (about 200 public repositories from 18 authors and organizations), mapped to ATTACK-Navi integration opportunities.
+> Generated: April 2026. Candidate rankings and star counts are as of that date; the "Implemented" section is corrected against `main`.
 
 ---
 
 ## Overview
 
-TeamStarWolf has 30 starred repositories across cybersecurity domains. We investigated all repos by every author/org behind those stars — totaling 200+ public repos across 18 GitHub accounts. This document ranks all discovered integration candidates.
+This document ranks integration candidates found by surveying the public repositories of a set of security tool authors and organizations. It is a planning aid, not a status board: check `main` (the heatmap-mode list in `src/app/models/heatmap-modes.ts`, the services under `src/app/services/`, and `CHANGELOG.md`) before treating any item as shipped.
 
 ---
 
-## P0 — Implemented
+## P0 — Implemented on `main`
 
-These integrations are **already built and deployed** on the `claude/analyze-starred-projects-ogveP` branch:
+| Integration | Source Repo | Stars (Apr 2026) | What It Does | Where on `main` |
+|---|---|---|---|---|
+| **CVE2CAPEC Kill Chain** | `Galeax/CVE2CAPEC` | 286 | Full CVE→CWE→CAPEC→ATT&CK→D3FEND chain per technique. | `kill-chain` heatmap mode in `src/app/models/heatmap-modes.ts`; Kill Chain panel; `CHANGELOG.md` |
+| **PoC Exploit Enrichment** | `trickest/cve` | 7,675 | Flags techniques with public proof-of-concept exploits. | `poc-exploits` heatmap mode in `src/app/models/heatmap-modes.ts`; PoC Exploits sidebar section; `CHANGELOG.md` |
 
-| Integration | Source Repo | Stars | What It Does |
-|---|---|---|---|
-| **CVE2CAPEC Kill Chain** | `Galeax/CVE2CAPEC` | 286 | Full CVE→CWE→CAPEC→ATT&CK→D3FEND chain per technique. New `kill-chain` heatmap mode + sidebar section. |
-| **PoC Exploit Enrichment** | `trickest/cve` | 7,675 | Flags techniques with public proof-of-concept exploits. New `poc-exploits` heatmap mode + sidebar section. |
-
-**Files added/modified:** 12 files, 551 lines — 2 new services, wired into all 7 standard touchpoints.
+Both shipped through pull requests to `main`; the original agent working branch no longer exists and is not a reference.
 
 ---
 

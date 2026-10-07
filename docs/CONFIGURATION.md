@@ -420,21 +420,23 @@ https://example.com/attack-nav/#mit=M1036,M1038&dim=1
 
 ### GitHub Pages (Included Workflow)
 
-The repository includes a GitHub Actions workflow at `.github/workflows/deploy.yml` that automatically deploys to GitHub Pages on every push to `main`.
+The repository includes a GitHub Actions workflow at `.github/workflows/deploy.yml` that deploys to GitHub Pages on every push to `main`, on a daily schedule, and on manual dispatch.
 
 **Workflow summary:**
 1. Checks out the repository
 2. Sets up Node.js 24 with npm cache
 3. Runs `npm ci` to install dependencies
-4. Builds with `npx ng build --base-href /attack-nav/`
-5. Uploads the `dist/mitre-mitigation-navigator/browser` directory as a Pages artifact
-6. Deploys to the `github-pages` environment
+4. Runs the unit suite (`npx ng test --no-watch --browsers=ChromeHeadless`); a failing suite blocks the deploy
+5. Builds with `npx ng build --base-href /ATTACK-Navi/`
+6. Uploads the `dist/mitre-mitigation-navigator/browser` directory as a Pages artifact
+7. Deploys to the `github-pages` environment
 
-**To enable:**
+**To enable in a fork:**
 1. Go to your repository's Settings > Pages.
 2. Under "Source", select **GitHub Actions**.
-3. Push to `main` to trigger the first deployment.
-4. The site will be available at `https://<username>.github.io/attack-nav/`.
+3. Set `--base-href` in `deploy.yml` to `/<your-repository-name>/`, matching the repository name exactly. GitHub Pages paths are case-sensitive: a repository named `ATTACK-Navi` is served at `/ATTACK-Navi/`, and a build made for a different path 404s on every asset.
+4. Push to `main` to trigger the first deployment.
+5. The site will be available at `https://<owner>.github.io/<your-repository-name>/`.
 
 ### Custom Domain
 
@@ -502,10 +504,10 @@ The repository's [`Dockerfile`](../Dockerfile) is the containerized deployment: 
 
 | Setting | Value | Notes |
 |---------|-------|-------|
-| `--base-href` | Deployment path | `/attack-nav/` for GitHub Pages, `/` for root |
+| `--base-href` | Deployment path | `/<repository-name>/` for GitHub Pages (`/ATTACK-Navi/` here, case-sensitive), `/` for root |
 | Build output | `dist/mitre-mitigation-navigator/browser` | Static files ready to serve |
-| Node.js | ^22.22.3, ^24.15.0 or >=26.0.0 | Required by Angular 22 (`engines` in `package.json`); Node 20 is end-of-life |
-| npm | 10+ | Comes with Node.js 22/24 |
+| Node.js | `^22.22.3 \|\| ^24.15.0 \|\| >=26.0.0` | Required by Angular 22 (`engines` in `package.json`); CI and the Dockerfile use Node 24. Node 20 is end-of-life |
+| npm | 10+ | Comes with Node.js 22 and 24 |
 
 ### Environment Requirements
 

@@ -4,11 +4,11 @@ import { test, expect, Page } from '@playwright/test';
 
 const BASE = 'http://localhost:4200';
 
-// CI serves a static DEVELOPMENT build through http-server (see
-// playwright.config.ts), so a deep link's first hit still has to download that
-// lazy route's chunk and boot the app on a constrained runner. Deep-link
-// assertions (which land directly on a cold route) get a much longer budget
-// there than locally, where `ng serve` is warm.
+// Locally the suite runs against `ng serve`, which JIT-compiles each lazy
+// route the first time it is hit. In CI (.github/workflows/e2e.yml) it runs
+// against a static DEVELOPMENT build served by http-server, so there is no
+// per-route compile; the larger CI budget below covers the slower runner and
+// the first load of the 40 MB bundled STIX asset on a cold route.
 const ROUTE_TIMEOUT = process.env['CI'] ? 60000 : 15000;
 
 // The four ATT&CK bundles the app revalidates from MITRE's STIX repo, each

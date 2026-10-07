@@ -91,7 +91,7 @@ These components form the application frame and are always visible.
 |----------|-------|
 | **Selector** | `app-toolbar` |
 | **File** | `src/app/components/toolbar/toolbar.component.ts` |
-| **Purpose** | Top-of-page toolbar providing technique search, mitigation dropdown filter, platform pills, heatmap mode picker (24 modes), sort/dim toggles, saved views, and a comprehensive export menu (CSV, XLSX, PNG, HTML report, Navigator layer, implementation plan). |
+| **Purpose** | Top-of-page toolbar providing technique search, mitigation dropdown filter, platform pills, heatmap mode picker (every mode in `HEATMAP_MODES`), sort/dim toggles, saved views, and a comprehensive export menu (CSV, XLSX, PNG, HTML report, Navigator layer, implementation plan). |
 | **Inputs** | `mitigations: Mitigation[]`, `techniques: Technique[]`, `isLightMode: boolean`, `currentDomain: AttackDomain`, `multiSelectMode: boolean`, `activePlatforms: Set<string>` |
 | **Outputs** | `domainChange`, `expandAll`, `collapseAll`, `toggleMultiSelect`, `exportCsv`, `exportTacticCsv`, `exportImplPlan`, `exportState`, `importState`, `exportNavigatorLayer`, `importNavigatorLayer`, `openNavigator`, `exportFullReport`, `exportMatrixPng`, `exportHtmlReport`, `exportXlsx`, `showGapView`, `toggleDark`, `copyShareLink` |
 
@@ -131,7 +131,7 @@ Components that render the ATT&CK matrix grid and its supporting UI.
 |----------|-------|
 | **Selector** | `app-matrix` |
 | **File** | `src/app/components/matrix/matrix.component.ts` |
-| **Purpose** | Core matrix renderer. Subscribes to all FilterService observables, computes per-technique heatmap scores for all 24 modes, manages sorted columns, zoom (0.5x--1.5x), minimap overlay, column visibility, and keyboard-based cell navigation (arrow keys, Enter, Escape). Passes score data down to each TechniqueCellComponent. |
+| **Purpose** | Core matrix renderer. Subscribes to all FilterService observables, computes per-technique heatmap scores for every mode in `HEATMAP_MODES`, manages sorted columns, zoom (0.5x--1.5x), minimap overlay, column visibility, and keyboard-based cell navigation (arrow keys, Enter, Escape). Passes score data down to each TechniqueCellComponent. |
 | **Inputs** | `domain: Domain` |
 | **Outputs** | `focusSearch: EventEmitter<void>`, `tacticClicked: EventEmitter<{ tactic, techniques, event }>` |
 
