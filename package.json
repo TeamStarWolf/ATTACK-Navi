@@ -56,7 +56,7 @@
     "vite": "^7.3.6"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^22.2.1",
+    "@angular/build": "^22.2.1",
     "@angular/cli": "^22.2.1",
     "@angular/compiler-cli": "^22.2.1",
     "@axe-core/playwright": "^4.13.0",
