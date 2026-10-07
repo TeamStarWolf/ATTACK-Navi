@@ -1,0 +1,19 @@
+{
+  "name": "E2E Coverage",
+  "versions": { "attack": "19", "navigator": "5.1.0", "layer": "4.5" },
+  "domain": "enterprise-attack",
+  "description": "Small MITRE ATT&CK Navigator v4.5 layer used by the Playwright upload test.",
+  "filters": { "platforms": ["Windows", "Linux"] },
+  "sorting": 0,
+  "layout": { "layout": "side", "showID": true, "showName": true },
+  "hideDisabled": false,
+  "gradient": { "colors": ["#ff6666", "#ffe766", "#8ec843"], "minValue": 0, "maxValue": 100 },
+  "legendItems": [{ "label": "Observed", "color": "#8ec843" }],
+  "metadata": [{ "name": "source", "value": "e2e" }],
+  "links": [],
+  "techniques": [
+    { "techniqueID": "T1059", "tactic": "execution", "score": 90, "color": "", "comment": "Seen in the lab", "enabled": true, "metadata": [], "links": [], "showSubtechniques": false },
+    { "techniqueID": "T1190", "tactic": "initial-access", "score": 60, "color": "", "comment": "", "enabled": true, "metadata": [], "links": [], "showSubtechniques": false },
+    { "techniqueID": "T1566", "tactic": "initial-access", "score": 30, "color": "#abcdef", "comment": "", "enabled": true, "metadata": [], "links": [], "showSubtechniques": false }
+  ]
+}

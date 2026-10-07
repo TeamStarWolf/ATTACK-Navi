@@ -62,8 +62,15 @@ describe('F3FraudService', () => {
   it('only fetches once', () => {
     service.ensureLoaded();
     service.ensureLoaded();
-    httpMock.expectOne('assets/data/f3-attack.json').flush(BUNDLE);
-    httpMock.verify(); // no second request
+    const inFlight = httpMock.match('assets/data/f3-attack.json');
+    expect(inFlight.length).toBe(1);
+    inFlight[0].flush(BUNDLE);
+
+    // Nor does a call after the bundle has landed re-request it.
+    service.ensureLoaded();
+    expect(httpMock.match('assets/data/f3-attack.json').length).toBe(0);
+    expect(service.loaded).toBe(true);
+    expect(service.overlapCount).toBe(1);
   });
 
   it('never throws on a failed load — overlap set is just empty', () => {
