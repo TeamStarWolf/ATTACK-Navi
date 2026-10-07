@@ -23,9 +23,9 @@ Thanks for your interest in contributing! This document describes how to set up 
 
 | Tool | Version | Notes |
 |------|---------|-------|
-| Node.js | 20+ | LTS recommended |
-| npm | 9+ | Comes with Node.js 20 |
-| Angular CLI | 19.x | Installed as a dev dependency |
+| Node.js | ^22.22.3, ^24.15.0 or >=26.0.0 | The engine range of the locked Angular 22 packages (`engines` in `package.json`); Node 20 is end-of-life |
+| npm | 10+ | Comes with Node.js 22/24 |
+| Angular CLI | 22.x | Installed as a dev dependency |
 | Git | 2.x+ | For version control |
 
 ### Install Dependencies

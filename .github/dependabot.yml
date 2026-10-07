@@ -21,3 +21,18 @@ updates:
       interval: "weekly"
     labels:
       - "dependencies"
+
+  # Base images (node:24-alpine build stage, nginx:alpine, the proxy's node:24-alpine)
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+
+  - package-ecosystem: "docker"
+    directory: "/server"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
