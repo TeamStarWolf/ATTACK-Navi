@@ -9,8 +9,8 @@ RUN npm ci
 COPY . .
 RUN npx ng build --configuration production --base-href /
 
-# Stage 2: Serve with nginx
-FROM nginx:alpine
+# Stage 2: Serve with nginx as the unprivileged user 101 on port 8080 (not root on 80)
+FROM nginxinc/nginx-unprivileged:alpine
 COPY --from=build /app/dist/mitre-mitigation-navigator/browser /usr/share/nginx/html
 # Site config and security-header snippet are envsubst templates: the nginx image's
 # entrypoint renders them into /etc/nginx/conf.d at container start, replacing the
@@ -24,5 +24,5 @@ COPY nginx-security-headers.conf /etc/nginx/templates/security-headers.inc.templ
 ENV PROXY_UPSTREAM=http://proxy:8787 \
     NGINX_RESOLVER=127.0.0.11 \
     CSP_EXTRA_CONNECT_SRC=""
-EXPOSE 80
+EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
