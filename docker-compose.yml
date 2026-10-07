@@ -3,6 +3,14 @@ services:
     build: .
     ports:
       - "8080:80"
+    environment:
+      # Rendered into the nginx config at start (see nginx.conf). The browser reaches
+      # the proxy same-origin at http://localhost:8080/api/, so no proxy origin is
+      # needed in the CSP. Put direct-mode OpenCTI/MISP/TAXII origins (space
+      # separated) in CSP_EXTRA_CONNECT_SRC, e.g. in a .env file next to this file.
+      PROXY_UPSTREAM: http://proxy:8787
+      NGINX_RESOLVER: 127.0.0.11
+      CSP_EXTRA_CONNECT_SRC: ${CSP_EXTRA_CONNECT_SRC:-}
     restart: unless-stopped
 
   proxy:
@@ -11,10 +19,22 @@ services:
       dockerfile: Dockerfile
     # Bind to loopback only: the proxy forwards the operator's OpenCTI/MISP
     # credentials, so it must not be reachable from the network by default.
-    # Reach it from the SPA/browser on the same host, or front it with an
-    # authenticating reverse proxy if remote access is required.
+    # The app container reaches it on the compose network (nginx /api/ route);
+    # the host can also reach it directly on 127.0.0.1:8787.
     ports:
       - "127.0.0.1:8787:8787"
     env_file:
-      - server/.env
+      # Credentials, PROXY_AUTH_TOKEN and any other proxy settings. Optional: the
+      # stack starts without it (copy server/.env.example to server/.env to use
+      # the proxy), the proxy just has nothing configured to forward to.
+      - path: server/.env
+        required: false
+    environment:
+      # These two are set here, not in server/.env, because they describe this
+      # compose stack: the page origin the browser sends (override with
+      # APP_ORIGIN=... if you publish the app on another host/port) and the name
+      # nginx uses to reach the proxy (its Host header). They override the same
+      # keys in server/.env.
+      ALLOWED_ORIGINS: ${APP_ORIGIN:-http://localhost:8080}
+      ALLOWED_HOSTS: proxy
     restart: unless-stopped

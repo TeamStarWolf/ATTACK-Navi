@@ -208,18 +208,18 @@ The proxy is a small Express app. It exposes `GET /api/health`, `POST /api/openc
 
 `.github/workflows/deploy.yml` runs on pushes to `main`, daily at 06:17 UTC, and on manual dispatch. It runs `npm ci`, the unit tests, and `ng build --base-href /ATTACK-Navi/`, then publishes `dist/mitre-mitigation-navigator/browser`. The Playwright suite runs separately in `e2e.yml` on pushes to `main` that change `src/`, `e2e/`, `playwright.config.ts` or `package.json`, and does not block the deploy.
 
-No workflow runs the unit tests on pull requests. Pull requests get the Docker build and smoke test when they touch `src/`, the Dockerfile, `nginx.conf` or the package files, the proxy tests when `server/` changes, and OSV-Scanner and dependency review.
+No workflow runs the unit tests on pull requests. Pull requests get the Docker build and smoke test when they touch `src/`, the Dockerfile, `nginx.conf`, `nginx-security-headers.conf`, `docker-compose.yml` or the package files, the proxy tests when `server/` changes, and OSV-Scanner and dependency review.
 
 ### Docker
 
 ```bash
-cp server/.env.example server/.env
+cp server/.env.example server/.env    # optional: proxy credentials and PROXY_AUTH_TOKEN
 docker compose up --build
 ```
 
-nginx serves the app at <http://localhost:8080>, and the proxy is published on 127.0.0.1:8787. Compose requires `server/.env` to exist even if you do not use the proxy. To run only the app, use `docker build -t attack-navi .` and `docker run -p 8080:80 attack-navi`.
+nginx serves the app at <http://localhost:8080>. The proxy runs beside it and is reached same-origin through nginx at `http://localhost:8080/api/` (and from the host on 127.0.0.1:8787), so in Settings enter `http://localhost:8080` as the proxy URL. `server/.env` is optional: without it the stack still starts and the proxy simply has nothing configured to forward to. `docker-compose.yml` sets the proxy's `ALLOWED_ORIGINS` to the page origin (`APP_ORIGIN=...` overrides it) and `ALLOWED_HOSTS=proxy`; everything else the proxy reads comes from `server/.env`. To run only the app, use `docker build -t attack-navi .` and `docker run -p 8080:80 attack-navi`.
 
-The image is built on `node:24-alpine` with base href `/`. `nginx.conf` sets a Content-Security-Policy whose `connect-src` allows the site itself plus `raw.githubusercontent.com`, `api.github.com`, `gitlab.com`, `api.first.org`, `services.nvd.nist.gov` and `www.cisa.gov`. Requests to `d3fend.mitre.org`, `cveawg.mitre.org` and any MISP, OpenCTI, TAXII or proxy origin are blocked until you add them there. To use the proxy from the app on port 8080, add `http://localhost:8787` to `connect-src` and add `http://localhost:8080` to `ALLOWED_ORIGINS` in `server/.env`.
+The image is built on `node:24-alpine` with base href `/`. `nginx.conf` and `nginx-security-headers.conf` are rendered by the nginx image at container start: the security headers (CSP, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`) are one snippet included in the server block and in every location that adds a header of its own, so static assets carry them too. The CSP `connect-src` allows the site itself plus `raw.githubusercontent.com`, `api.github.com`, `gitlab.com`, `api.first.org`, `services.nvd.nist.gov`, `www.cisa.gov`, `d3fend.mitre.org` and `cveawg.mitre.org`; `scripts/check-csp-connect-src.mjs` keeps that list honest against `src/app/services` and the Docker workflow runs it against the served header. For direct-mode OpenCTI, MISP or TAXII servers, or a proxy on another origin, set `CSP_EXTRA_CONNECT_SRC` (space-separated origins) on the `app` service; `PROXY_UPSTREAM` and `NGINX_RESOLVER` point the `/api/` route elsewhere.
 
 ### Kubernetes
 

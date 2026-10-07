@@ -6,17 +6,27 @@ on:
     paths:
       - 'Dockerfile'
       - 'nginx.conf'
+      - 'nginx-security-headers.conf'
+      - 'docker-compose.yml'
+      - 'scripts/check-csp-connect-src.mjs'
       - 'src/**'
       - 'package*.json'
       - 'angular.json'
       - 'tsconfig*.json'
+      - '.github/workflows/docker.yml'
   pull_request:
     branches: [main]
     paths:
       - 'Dockerfile'
       - 'nginx.conf'
+      - 'nginx-security-headers.conf'
+      - 'docker-compose.yml'
+      - 'scripts/check-csp-connect-src.mjs'
       - 'src/**'
       - 'package*.json'
+      - 'angular.json'
+      - 'tsconfig*.json'
+      - '.github/workflows/docker.yml'
   workflow_dispatch:
 
 permissions:
@@ -30,6 +40,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+
+      - name: Static check - shipped CSP allows every runtime origin
+        run: node scripts/check-csp-connect-src.mjs nginx-security-headers.conf
 
       - name: Build Docker image
         run: docker build -t attack-navi:ci .
@@ -50,6 +63,32 @@ jobs:
           echo "HTTP status: $STATUS"
           [ "$STATUS" = "200" ] || (echo "Expected 200, got $STATUS" && exit 1)
 
+      - name: Smoke-test - security headers on the page and on a static asset
+        run: |
+          set -e
+          curl -sI http://localhost:8080/ | tr -d '\r' > page-headers.txt
+          echo "--- / headers"; cat page-headers.txt
+          CSP=$(grep -i '^content-security-policy:' page-headers.txt | cut -d' ' -f2-)
+          [ -n "$CSP" ] || (echo "No Content-Security-Policy on /" && exit 1)
+          node scripts/check-csp-connect-src.mjs --header "$CSP"
+          case "$CSP" in *'${CSP_EXTRA_CONNECT_SRC}'*) echo "envsubst did not render the CSP template"; exit 1;; esac
+          # The asset location declares its own add_header, which would drop every
+          # server-level header unless the snippet is included there too.
+          ASSET=$(curl -s http://localhost:8080/ | grep -oE '(main|polyfills|chunk)-[A-Za-z0-9]+\.js' | head -1)
+          [ -n "$ASSET" ] || (echo "No hashed JS asset referenced by index.html" && exit 1)
+          curl -sI "http://localhost:8080/$ASSET" | tr -d '\r' > asset-headers.txt
+          echo "--- /$ASSET headers"; cat asset-headers.txt
+          grep -qi '^HTTP/.* 200' asset-headers.txt
+          grep -qi '^x-content-type-options: nosniff' asset-headers.txt
+          grep -qi '^content-security-policy:' asset-headers.txt
+          grep -qi '^x-frame-options:' asset-headers.txt
+          grep -qi '^referrer-policy:' asset-headers.txt
+          grep -qi '^cache-control: public, immutable' asset-headers.txt
+          # The same-origin proxy route exists (upstream absent in app-only mode -> 502, not 404)
+          API=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/api/health)
+          echo "/api/health without a proxy: $API"
+          [ "$API" = "502" ] || (echo "Expected 502 from the proxy route without a proxy, got $API" && exit 1)
+
       - name: Dump container logs on failure
         if: failure()
         run: docker logs attack-navi-test || true
@@ -57,3 +96,26 @@ jobs:
       - name: Stop test container
         if: always()
         run: docker rm -f attack-navi-test || true
+
+      - name: Smoke-test - docker compose stack (app + proxy, no server/.env)
+        run: |
+          set -e
+          docker compose up -d --build
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8080/api/health > /dev/null 2>&1; then
+              echo "proxy reachable through nginx after ${i}s"
+              break
+            fi
+            sleep 1
+          done
+          BODY=$(curl -s http://localhost:8080/api/health)
+          echo "/api/health via nginx: $BODY"
+          echo "$BODY" | grep -q '"service":"attack-nav-proxy"'
+
+      - name: Dump compose logs on failure
+        if: failure()
+        run: docker compose logs || true
+
+      - name: Stop compose stack
+        if: always()
+        run: docker compose down -v --remove-orphans || true
