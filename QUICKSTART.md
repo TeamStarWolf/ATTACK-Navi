@@ -177,9 +177,10 @@ To install on your device: look for the "Install" prompt in your browser's addre
 
 ### Docker
 ```bash
-docker-compose up -d
+cp server/.env.example server/.env    # optional: credentials + PROXY_AUTH_TOKEN for the proxy
+docker compose up -d --build
 ```
-Opens on http://localhost:8080 (app) and http://localhost:8787 (proxy).
+Opens on http://localhost:8080. The optional credentials proxy is reached through the app at http://localhost:8080/api/ (and from the host on 127.0.0.1:8787); the stack starts without `server/.env`, the proxy just has nothing to forward to until you fill it in.
 
 ### Kubernetes
 ```bash

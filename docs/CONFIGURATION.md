@@ -457,62 +457,46 @@ npx ng build --base-href /
 
 The build output is in `dist/mitre-mitigation-navigator/browser/`.
 
-**Nginx configuration example:**
+**Nginx configuration:** use the two files the Docker image ships rather than a copy that drifts:
 
-```nginx
-server {
-    listen 80;
-    server_name attack-nav.example.com;
+- [`nginx.conf`](../nginx.conf) -- the site config (SPA fallback, same-origin `/api/` route to the credentials proxy, asset caching, gzip).
+- [`nginx-security-headers.conf`](../nginx-security-headers.conf) -- the security headers (`Content-Security-Policy`, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`) as one snippet.
 
-    root /var/www/attack-nav;
-    index index.html;
+Two things in them are deliberate and worth keeping when you adapt them:
 
-    # SPA fallback: serve index.html for all routes
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
+1. The security headers are *included* in the `server` block **and again in every `location` that declares an `add_header` of its own** (the asset-cache location, the `/api/` route). nginx inherits `add_header` only into blocks that add nothing themselves, so a lone `add_header Cache-Control` inside the asset location silently strips the CSP and `nosniff` from every JS/CSS/font response.
+2. `script-src` is `'self'` -- no `'unsafe-inline'`. The app needs none, and the Docker workflow fails if it is added.
 
-    # Cache static assets aggressively
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff2?)$ {
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-    }
+The files are envsubst templates: replace `${PROXY_UPSTREAM}`, `${NGINX_RESOLVER}` and `${CSP_EXTRA_CONNECT_SRC}` by hand (or drop the `/api/` location) when you use them outside the image. Put the snippet where the `include` directive points, e.g. `/etc/nginx/conf.d/security-headers.inc`.
 
-    # Security headers
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://raw.githubusercontent.com https://services.nvd.nist.gov https://api.first.org;" always;
+**CSP `connect-src` origins the app fetches at runtime** (the full list; `scripts/check-csp-connect-src.mjs` verifies it against `src/app/services` and the Docker smoke test verifies the served header):
 
-    # Gzip compression
-    gzip on;
-    gzip_types text/plain text/css application/json application/javascript text/xml application/xml;
-}
-```
+| Origin | Used for |
+|--------|----------|
+| `'self'` | bundled snapshots and the `/api/` proxy route |
+| `https://raw.githubusercontent.com` | ATT&CK STIX bundles, MITRE Engage, CAPEC, Sigma, Atomic Red Team, KEV mirror and other GitHub-hosted data |
+| `https://api.github.com` | GitHub API listings (Elastic, Splunk, changelog) |
+| `https://gitlab.com` | Exploit-DB index |
+| `https://api.first.org` | EPSS scores |
+| `https://services.nvd.nist.gov` | NVD CVE lookups |
+| `https://www.cisa.gov` | CISA KEV catalog |
+| `https://d3fend.mitre.org` | D3FEND technique mappings |
+| `https://cveawg.mitre.org` | CVE Services record (CISA SSVC decisions) |
+| your MISP, OpenCTI and TAXII origins | direct mode only; in proxy mode the browser talks to `/api/` on the app origin |
 
-**Key CSP connect-src domains:**
-- `https://raw.githubusercontent.com` -- ATT&CK STIX bundle fetches
-- `https://services.nvd.nist.gov` -- NVD CVE lookups
-- `https://api.first.org` -- EPSS score lookups
-- Your MISP and OpenCTI instance URLs (if configured)
+Note that the GitHub Pages deployment serves no CSP at all (Pages sets no headers), so the policy above applies to the nginx/Docker/Helm deployments only.
 
 ### Docker
 
-A basic Dockerfile for a containerized deployment:
+The repository's [`Dockerfile`](../Dockerfile) is the containerized deployment: a `node:24-alpine` build stage runs `npm ci` and `ng build --configuration production --base-href /`, and an `nginx:alpine` stage serves `dist/mitre-mitigation-navigator/browser` with the two nginx files above installed as templates under `/etc/nginx/templates/`. The image accepts three environment variables, all with defaults:
 
-```dockerfile
-FROM node:20-slim AS build
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
-COPY . .
-RUN npx ng build --base-href /
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `PROXY_UPSTREAM` | `http://proxy:8787` | where `/api/` is forwarded (the compose `proxy` service) |
+| `NGINX_RESOLVER` | `127.0.0.11` | DNS used to resolve it per request (Docker's embedded DNS; set your cluster DNS on Kubernetes) |
+| `CSP_EXTRA_CONNECT_SRC` | empty | extra `connect-src` origins, space separated (direct-mode OpenCTI/MISP/TAXII, or a proxy on another origin) |
 
-FROM nginx:alpine
-COPY --from=build /app/dist/mitre-mitigation-navigator/browser /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
-```
+[`docker-compose.yml`](../docker-compose.yml) runs the app on port 8080 together with the credentials proxy (`server/`), sets the proxy's `ALLOWED_ORIGINS` to the page origin and `ALLOWED_HOSTS=proxy`, and reads credentials and `PROXY_AUTH_TOKEN` from the optional `server/.env`. See the README's Docker section for the quick start.
 
 ### Build Configuration
 
