@@ -12,7 +12,7 @@ import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import {
   LibraryService, LibraryAsset, LibraryData, AssetType,
-  ATTACK_TACTIC_ORDER, tacticLabel,
+  ATTACK_TACTIC_ORDER, tacticLabel, assetMatchesTactic,
 } from '../../services/library.service';
 
 type LibraryTab = 'explore' | 'coverage' | 'vendors' | 'lookup';
@@ -209,7 +209,7 @@ export class LibraryWorkbenchComponent implements OnInit, OnDestroy {
         if (a.category) cats.add(a.category);
       }
       if (this.categoryFilter && a.category !== this.categoryFilter) return false;
-      if (this.tacticFilter && !(a.attack_tactics ?? []).includes(this.tacticFilter)) return false;
+      if (this.tacticFilter && !assetMatchesTactic(a, this.tacticFilter)) return false;
       if (!q) return true;
       return (
         a.title.toLowerCase().includes(q) ||

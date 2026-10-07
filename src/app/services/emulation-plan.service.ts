@@ -8,10 +8,24 @@ import { ElasticService } from './elastic.service';
 import { SplunkContentService } from './splunk-content.service';
 import { Domain } from '../models/domain';
 import { Technique } from '../models/technique';
+import {
+  ENTERPRISE_TACTIC_ORDER,
+  resolveTacticEntry,
+  tacticDisplayName,
+  tacticIndex,
+  tacticLabel,
+  tacticOrderFor,
+} from './attack-tactics';
 
 export interface EmulationStep {
   order: number;
+  /** Display name of the kill-chain phase (the loaded domain's tactic name). */
   phase: string;
+  /**
+   * Tactic shortname the phase was derived from. Optional because plans saved
+   * before this field existed carry only the display name.
+   */
+  tactic?: string;
   techniqueId: string;
   techniqueName: string;
   objective: string;
@@ -34,50 +48,22 @@ export interface EmulationPlan {
   totalSteps: number;
 }
 
-// Canonical MITRE ATT&CK kill chain phase order
-const TACTIC_ORDER: string[] = [
-  'reconnaissance',
-  'resource-development',
-  'initial-access',
-  'execution',
-  'persistence',
-  'privilege-escalation',
-  'defense-evasion',
-  'credential-access',
-  'discovery',
-  'lateral-movement',
-  'collection',
-  'command-and-control',
-  'exfiltration',
-  'impact',
-];
-
-const TACTIC_DISPLAY: Record<string, string> = {
-  'reconnaissance': 'Reconnaissance',
-  'resource-development': 'Resource Development',
-  'initial-access': 'Initial Access',
-  'execution': 'Execution',
-  'persistence': 'Persistence',
-  'privilege-escalation': 'Privilege Escalation',
-  'defense-evasion': 'Defense Evasion',
-  'credential-access': 'Credential Access',
-  'discovery': 'Discovery',
-  'lateral-movement': 'Lateral Movement',
-  'collection': 'Collection',
-  'command-and-control': 'Command and Control',
-  'exfiltration': 'Exfiltration',
-  'impact': 'Impact',
-};
+// Kill-chain order and phase display names come from the loaded Domain
+// (tacticOrderFor / tacticDisplayName), so the plan follows whichever bundle
+// is loaded (Enterprise v19 stealth + defense-impairment, Mobile 18.1
+// defense-evasion, ICS evasion). The hand-written templates below are keyed
+// on the Enterprise v19 slugs and resolved through tactic aliases.
 
 // Map tactic shortnames to objective templates
-const OBJECTIVE_TEMPLATES: Record<string, string> = {
+export const OBJECTIVE_TEMPLATES: Record<string, string> = {
   'reconnaissance': 'Gather information about target via',
   'resource-development': 'Establish infrastructure or acquire tools for',
   'initial-access': 'Gain initial foothold via',
   'execution': 'Execute malicious code using',
   'persistence': 'Establish persistence via',
   'privilege-escalation': 'Escalate privileges using',
-  'defense-evasion': 'Evade defenses via',
+  'stealth': 'Hide from defenses via',
+  'defense-impairment': 'Disable or degrade defenses via',
   'credential-access': 'Harvest credentials via',
   'discovery': 'Discover environment details using',
   'lateral-movement': 'Move laterally via',
@@ -85,17 +71,27 @@ const OBJECTIVE_TEMPLATES: Record<string, string> = {
   'command-and-control': 'Establish C2 channel via',
   'exfiltration': 'Exfiltrate data via',
   'impact': 'Achieve impact objective using',
+  // ATT&CK for ICS
+  'inhibit-response-function': 'Inhibit safety or protection response via',
+  'impair-process-control': 'Manipulate the physical process via',
+  // ATT&CK for Mobile
+  'network-effects': 'Intercept or manipulate device network traffic via',
+  'remote-service-effects': 'Abuse remote device-management services via',
+  // CTID Fraud Framework (F3)
+  'positioning': 'Stage accounts, identities or instruments for fraud via',
+  'monetization': 'Extract value from the fraud scheme via',
 };
 
 // Map tactic to success criteria templates
-const SUCCESS_CRITERIA: Record<string, string> = {
+export const SUCCESS_CRITERIA: Record<string, string> = {
   'reconnaissance': 'Target information gathered and validated',
   'resource-development': 'Infrastructure and tooling operational',
   'initial-access': 'Initial shell or access obtained on target',
   'execution': 'Payload executed successfully on target host',
   'persistence': 'Persistence mechanism survives reboot verification',
   'privilege-escalation': 'Elevated privileges confirmed (SYSTEM/root/admin)',
-  'defense-evasion': 'Security tooling bypassed — no alerts generated',
+  'stealth': 'Activity not surfaced by EDR/AV — no alerts generated',
+  'defense-impairment': 'Security tooling or logging confirmed disabled/degraded',
   'credential-access': 'Valid credentials extracted and verified',
   'discovery': 'Network/system enumeration data collected',
   'lateral-movement': 'Access established on additional host(s)',
@@ -103,7 +99,37 @@ const SUCCESS_CRITERIA: Record<string, string> = {
   'command-and-control': 'Stable C2 callback confirmed',
   'exfiltration': 'Data transfer to external destination confirmed',
   'impact': 'Target impact achieved (disruption/destruction/encryption)',
+  // ATT&CK for ICS
+  'inhibit-response-function': 'Safety/protection function confirmed suppressed in the test range',
+  'impair-process-control': 'Process setpoint or control logic change observed in the test range',
+  // ATT&CK for Mobile
+  'network-effects': 'Device traffic intercepted or redirected in the test environment',
+  'remote-service-effects': 'Remote-service action executed against the test device',
+  // CTID Fraud Framework (F3)
+  'positioning': 'Fraud staging artefacts created in the test environment',
+  'monetization': 'Test value transfer completed and detected',
 };
+
+/**
+ * Caldera adversary-profile phase numbers (initial-access=1, execution=2, ...).
+ * Derived from the Enterprise v19 order with reconnaissance and resource
+ * development folded into phase 1; domain-specific tactics are slotted where
+ * they sit in their own matrices.
+ */
+const CALDERA_PHASES: Record<string, number> = (() => {
+  const phases: Record<string, number> = {};
+  for (let i = 0; i < ENTERPRISE_TACTIC_ORDER.length; i++) {
+    phases[ENTERPRISE_TACTIC_ORDER[i]] = Math.max(1, i - 1);
+  }
+  const impact = phases['impact'];
+  phases['inhibit-response-function'] = impact - 1;
+  phases['impair-process-control'] = impact - 1;
+  phases['network-effects'] = phases['command-and-control'];
+  phases['remote-service-effects'] = phases['command-and-control'];
+  phases['positioning'] = phases['execution'];
+  phases['monetization'] = impact;
+  return phases;
+})();
 
 // Map data sources to log source names
 const DATASOURCE_LOG_MAP: Record<string, string> = {
@@ -170,8 +196,9 @@ export class EmulationPlanService {
     // 1. Get all techniques used by this actor
     const techniques = domain.techniquesByGroup?.get(actorId) ?? [];
 
-    // 2. Sort by kill chain phase order
-    const sortedTechniques = this.sortByKillChain(techniques);
+    // 2. Sort by the loaded domain's kill chain phase order
+    const killChain = tacticOrderFor(domain);
+    const sortedTechniques = this.sortByKillChain(techniques, killChain);
 
     // 3. Generate steps
     const steps: EmulationStep[] = [];
@@ -179,15 +206,15 @@ export class EmulationPlanService {
 
     for (let i = 0; i < sortedTechniques.length; i++) {
       const tech = sortedTechniques[i];
-      const tactic = this.getPrimaryTactic(tech);
-      const phase = TACTIC_DISPLAY[tactic] || tactic;
+      const tactic = this.getPrimaryTactic(tech, killChain);
+      const phase = tacticDisplayName(domain, tactic);
 
       // Track phase transitions for prerequisites
       if (!previousPhases.includes(phase)) {
         previousPhases.push(phase);
       }
 
-      const step = this.buildStep(i + 1, tech, tactic, phase, previousPhases, domain);
+      const step = this.buildStep(i + 1, tech, tactic, phase, previousPhases, domain, killChain);
       steps.push(step);
     }
 
@@ -265,31 +292,10 @@ export class EmulationPlanService {
    * Groups steps by tactic phase number (initial-access=1, execution=2, etc.).
    */
   exportCalderaProfile(plan: EmulationPlan): void {
-    const phaseMap: Record<string, number> = {
-      'reconnaissance': 1,
-      'resource-development': 1,
-      'initial-access': 1,
-      'execution': 2,
-      'persistence': 3,
-      'privilege-escalation': 4,
-      'defense-evasion': 5,
-      'credential-access': 6,
-      'discovery': 7,
-      'lateral-movement': 8,
-      'collection': 9,
-      'command-and-control': 10,
-      'exfiltration': 11,
-      'impact': 12,
-    };
-
     // Group steps by phase number
     const phases = new Map<number, EmulationStep[]>();
     for (const step of plan.steps) {
-      // Derive tactic shortname from phase display name
-      const tacticKey = Object.entries(TACTIC_DISPLAY).find(
-        ([, display]) => display === step.phase,
-      )?.[0] ?? 'execution';
-      const phaseNum = phaseMap[tacticKey] ?? 2;
+      const phaseNum = this.calderaPhase(step);
       if (!phases.has(phaseNum)) phases.set(phaseNum, []);
       phases.get(phaseNum)!.push(step);
     }
@@ -425,12 +431,29 @@ export class EmulationPlanService {
 
   // ── Private helpers ─────────────────────────────────────────────────────
 
-  private sortByKillChain(techniques: Technique[]): Technique[] {
+  /**
+   * Caldera phase number for a step. Prefers the recorded tactic shortname;
+   * plans saved before `tactic` existed are matched on the phase display name.
+   */
+  private calderaPhase(step: EmulationStep): number {
+    const tactic = step.tactic ?? this.tacticFromPhaseName(step.phase);
+    return resolveTacticEntry(CALDERA_PHASES, tactic)?.value ?? CALDERA_PHASES['execution'];
+  }
+
+  private tacticFromPhaseName(phase: string): string {
+    const wanted = phase.trim().toLowerCase();
+    for (const slug of [...ENTERPRISE_TACTIC_ORDER, ...Object.keys(CALDERA_PHASES), 'defense-evasion', 'evasion']) {
+      if (tacticLabel(slug).toLowerCase() === wanted) return slug;
+    }
+    return 'execution';
+  }
+
+  private sortByKillChain(techniques: Technique[], killChain: readonly string[]): Technique[] {
     return [...techniques].sort((a, b) => {
-      const tacticA = this.getPrimaryTactic(a);
-      const tacticB = this.getPrimaryTactic(b);
-      const orderA = TACTIC_ORDER.indexOf(tacticA);
-      const orderB = TACTIC_ORDER.indexOf(tacticB);
+      const tacticA = this.getPrimaryTactic(a, killChain);
+      const tacticB = this.getPrimaryTactic(b, killChain);
+      const orderA = tacticIndex(killChain, tacticA);
+      const orderB = tacticIndex(killChain, tacticB);
       const idxA = orderA >= 0 ? orderA : 999;
       const idxB = orderB >= 0 ? orderB : 999;
       if (idxA !== idxB) return idxA - idxB;
@@ -438,15 +461,15 @@ export class EmulationPlanService {
     });
   }
 
-  private getPrimaryTactic(tech: Technique): string {
+  private getPrimaryTactic(tech: Technique, killChain: readonly string[]): string {
     if (!tech.tacticShortnames || tech.tacticShortnames.length === 0) return 'unknown';
     // Return the earliest tactic in kill chain order
     let earliest = tech.tacticShortnames[0];
-    let earliestIdx = TACTIC_ORDER.indexOf(earliest);
+    let earliestIdx = tacticIndex(killChain, earliest);
     if (earliestIdx < 0) earliestIdx = 999;
 
     for (const tactic of tech.tacticShortnames) {
-      const idx = TACTIC_ORDER.indexOf(tactic);
+      const idx = tacticIndex(killChain, tactic);
       if (idx >= 0 && idx < earliestIdx) {
         earliest = tactic;
         earliestIdx = idx;
@@ -462,13 +485,14 @@ export class EmulationPlanService {
     phase: string,
     previousPhases: string[],
     domain: Domain,
+    killChain: readonly string[],
   ): EmulationStep {
     const objective = this.generateObjective(tech, tactic);
     const invokeCommand = this.atomicService.generateInvokeCommand(tech.attackId);
     const expectedDetection = this.getExpectedDetection(tech);
     const expectedLogSource = this.getExpectedLogSource(tech);
-    const prerequisites = this.inferPrerequisites(tech, tactic, previousPhases, order);
-    const successCriteria = SUCCESS_CRITERIA[tactic] || 'Technique execution verified';
+    const prerequisites = this.inferPrerequisites(tech, tactic, previousPhases, order, domain, killChain);
+    const successCriteria = resolveTacticEntry(SUCCESS_CRITERIA, tactic)?.value ?? 'Technique execution verified';
 
     // Find an atomic test ID if available
     const tests = this.atomicService.getTests(tech.attackId);
@@ -477,6 +501,7 @@ export class EmulationPlanService {
     return {
       order,
       phase,
+      tactic,
       techniqueId: tech.attackId,
       techniqueName: tech.name,
       objective,
@@ -490,7 +515,7 @@ export class EmulationPlanService {
   }
 
   private generateObjective(tech: Technique, tactic: string): string {
-    const template = OBJECTIVE_TEMPLATES[tactic] || 'Execute';
+    const template = resolveTacticEntry(OBJECTIVE_TEMPLATES, tactic)?.value ?? 'Execute';
     return `${template} ${tech.name} (${tech.attackId})`;
   }
 
@@ -547,6 +572,8 @@ export class EmulationPlanService {
     tactic: string,
     previousPhases: string[],
     order: number,
+    domain: Domain,
+    killChain: readonly string[],
   ): string[] {
     const prereqs: string[] = [];
 
@@ -557,9 +584,9 @@ export class EmulationPlanService {
     }
 
     // Phase-based prerequisites
-    const tacticIdx = TACTIC_ORDER.indexOf(tactic);
+    const tacticIdx = tacticIndex(killChain, tactic);
     if (tacticIdx > 0) {
-      const prevPhase = TACTIC_DISPLAY[TACTIC_ORDER[tacticIdx - 1]];
+      const prevPhase = tacticDisplayName(domain, killChain[tacticIdx - 1]);
       if (prevPhase && previousPhases.includes(prevPhase)) {
         prereqs.push(`${prevPhase} phase completed`);
       }
