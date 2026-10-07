@@ -42,19 +42,19 @@
     },
     {
       "techniqueID": "T1078",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "color": "#fca311",
       "enabled": true,
       "comment": "CORNERIA-GHOST-01 planned coverage: Valid Accounts",
       "showSubtechniques": false
     },
     {
-      "techniqueID": "T1656",
-      "tactic": "defense-evasion",
+      "techniqueID": "T1684.001",
+      "tactic": "stealth",
       "color": "#fca311",
       "enabled": true,
       "comment": "CORNERIA-GHOST-01 planned coverage: Impersonation",
-      "showSubtechniques": false
+      "showSubtechniques": true
     }
   ],
   "gradient": {

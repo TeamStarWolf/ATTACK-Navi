@@ -1,7 +1,7 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf - MIT License -->
 # Library Layers Guide
 
-**Library layers** are curated MITRE ATT&CK Navigator overlays bundled with ATTACK-Navi. Select one from the **Library Layers** picker in the matrix controls and the workbench colors each technique cell by that layer's score, letting you see a theme, a data-driven frequency, or a specific adversary's documented behavior projected onto the ATT&CK matrix. This build ships **36 layers**.
+**Library layers** are curated MITRE ATT&CK Navigator overlays bundled with ATTACK-Navi. Select one from the **Library Layers** picker in the matrix controls and the workbench colors each technique cell by that layer's score, letting you see a theme, a data-driven frequency, or a specific adversary's documented behavior projected onto the ATT&CK matrix. This build ships **37 layers**.
 
 Counts below are distinct technique IDs in each layer, not technique/tactic rows or machine counts. The inventory is checked against the [bundled manifest](../src/assets/data/library-layers/index.json); the layers target the bundled Enterprise ATT&CK v19.2 snapshot.
 
@@ -82,17 +82,19 @@ The broad layer's current manifest describes 535 machines. The core layer's desc
 
 ## Lylat Training Range (mission coverage)
 
-Coverage from the [Lylat Labs](https://github.com/TeamStarWolf/Lylat-Labs) themed training missions. **Planned/training coverage only** — the missions are `execution_verified: false`, so these layers show which techniques each mission is *designed to exercise*, **not** a validated detection or coverage result. Not an official MITRE mapping.
+Coverage from the Lylat Labs themed training missions (a companion training-range repository that is not published; its generated layers are vendored here). **Planned/training coverage only** — the missions are `execution_verified: false`, so these layers show which techniques each mission is *designed to exercise*, **not** a validated detection or coverage result. Not an official MITRE mapping.
 
 **Curated overlay (in the picker):**
 
 | Layer | Techniques | Notes |
 |---|---|---|
-| TeamStarWolf - Lylat Mission Coverage | 105 | Enterprise ATT&CK techniques across the 28 enterprise Lylat missions, scored by how many missions map each (normalized to the most-mapped technique). Planned/training coverage, not detection. Excludes 3 IDs the missions cite that are revoked in the bundled 19.2 snapshot (T1070.001/T1562.002/T1656 — a library data-currency item, tracked separately). |
+| TeamStarWolf - Lylat Mission Coverage | 108 | Enterprise ATT&CK techniques across the 28 enterprise Lylat missions, scored by how many missions map each (normalized to the most-mapped technique). Planned/training coverage, not detection. Technique ids and tactic slugs are resolved against the bundled 19.2 snapshot (retired ids follow ATT&CK's revoked-by chain, e.g. T1070.001 -> T1685.005; pre-v19 `defense-evasion` rows become `stealth` / `defense-impairment`). |
 
 **Per-mission + per-domain layers (vendored, one-click importable):** all 35 individual layers (31 per-mission + 4 per-domain coverage) are served from `src/assets/data/lylat-mission-layers/` (see its `index.json`). Load any one through the matrix controls' **Import Layer** action (or your instance's load-from-file/URL) — e.g. `assets/data/lylat-mission-layers/lylat-mission-katina-phish-01.json`. This keeps the curated picker uncluttered while making every mission's coverage available in the instance.
 
-**Domain note:** the enterprise per-mission layers, the enterprise per-domain coverage layer, and the curated aggregate above render in the standard **enterprise-attack** matrix (bundled 19.2). The **ICS/OT**, **Mobile**, and **ATLAS** mission layers are vendored too but render only where the matching matrix is available (the ATLAS layer needs the MITRE **ATLAS Navigator**; ICS/Mobile need their ATT&CK matrices) — they will not resolve against the bundled enterprise matrix.
+**Keeping them current:** the mission layers are generated upstream from mission front-matter written against earlier ATT&CK releases. `node scripts/normalize-lylat-layers.mjs` resolves every vendored row against the bundled snapshots (revoked-by successors, tactics from `kill_chain_phases`) and regenerates the per-domain coverage layers and the picker layer from the per-mission layers; `--check` reports drift without writing. Run it after every ATT&CK data refresh or re-vendoring, then `node scripts/validate-curated-threat-layers.mjs`, which fails on any unresolved id or tactic.
+
+**Domain note:** the enterprise per-mission layers, the enterprise per-domain coverage layer, and the curated aggregate above render in the standard **enterprise-attack** matrix (bundled 19.2). The **ICS/OT** and **Mobile** mission layers render in the app's ICS and Mobile domains (bundled 19.2 as well); the **ATLAS** layer needs the MITRE **ATLAS Navigator** and will not resolve against any bundled matrix.
 
 ## Adversary Emulation - Threat Groups (MITRE attribution)
 
@@ -126,5 +128,5 @@ The current workbench ingestion contract is:
 1. Drop a MITRE Navigator v4.5 layer JSON into `src/assets/data/library-layers/` (`domain: enterprise-attack`, a `techniques[]` array of `{ techniqueID, tactic, score, comment }`).
 2. Append an entry to `index.json` with `file`, `name`, `description`, and `blurb`.
 3. Ensure every `techniqueID` and tactic resolves in the bundled `enterprise-attack.json`; preserve cohort, method, version, and normalization metadata. No component change is needed just to list the layer: the picker enumerates the manifest at runtime.
-4. Run `node scripts/validate-curated-threat-layers.mjs` and the relevant tests. Reconcile this guide with all manifest entries, counting unique IDs rather than tactic-expanded rows. Keep deterministic generators alongside their outputs in the canonical source; do not commit private source material or locators.
+4. Run `node scripts/validate-curated-threat-layers.mjs` (it checks every manifest layer and the vendored Lylat layers against the bundled snapshots, and the layer counts in this guide) and the relevant tests. Reconcile this guide with all manifest entries, counting unique IDs rather than tactic-expanded rows. Keep deterministic generators alongside their outputs in the canonical source; do not commit private source material or locators.
 

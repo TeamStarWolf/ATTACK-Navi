@@ -50,7 +50,7 @@
     },
     {
       "techniqueID": "T1620",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "color": "#fca311",
       "enabled": true,
       "comment": "VENOM-ANDROSS-01 planned coverage: Reflective Code Loading",

@@ -5,10 +5,12 @@
 
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 
 const root = new URL('../', import.meta.url);
-const layerRoot = new URL('src/assets/data/library-layers/', root);
+const dataRoot = new URL('src/assets/data/', root);
+const layerRoot = new URL('library-layers/', dataRoot);
+const missionRoot = new URL('lylat-mission-layers/', dataRoot);
 const files = [
   'macos-linux-attacks.json',
   'insider-threat.json',
@@ -18,8 +20,9 @@ const baselineUrl = 'https://raw.githubusercontent.com/mitre-attack/attack-stix-
 const baselineHash = '8423d8dac3fc2feb825bb07d26e5f5d905e08a88f6fe4652cc20834cbe982813';
 const sha256 = text => createHash('sha256').update(text).digest('hex');
 const readJson = url => JSON.parse(readFileSync(url, 'utf8'));
-// Git checkout settings vary by platform; fingerprint the bundled JSON with LF endings.
-const bundledText = readFileSync(new URL('src/assets/data/enterprise-attack.json', root), 'utf8').replace(/\r\n/g, '\n');
+// Git checkout settings vary by platform; read text with LF endings.
+const readText = url => readFileSync(url, 'utf8').replace(/\r\n/g, '\n');
+const bundledText = readText(new URL('enterprise-attack.json', dataRoot));
 const bundled = JSON.parse(bundledText);
 const manifest = readJson(new URL('index.json', layerRoot));
 const args = process.argv.slice(2);
@@ -32,15 +35,20 @@ function techniquesById(bundle) {
     .filter(([id]) => id));
 }
 
+// Kill-chain names are per domain: mitre-attack, mitre-ics-attack, mitre-mobile-attack.
 function tacticsOf(technique) {
   return technique.kill_chain_phases
-    .filter(phase => phase.kill_chain_name === 'mitre-attack')
+    .filter(phase => /^mitre-(ics-|mobile-)?attack$/.test(phase.kill_chain_name))
     .map(phase => phase.phase_name)
     .sort();
 }
 
+function collectionVersion(bundle) {
+  return bundle.objects.find(object => object.type === 'x-mitre-collection')?.x_mitre_version;
+}
+
 const snapshots = [{ name: 'bundled 19.2', techniques: techniquesById(bundled) }];
-assert.equal(bundled.objects.find(object => object.type === 'x-mitre-collection')?.x_mitre_version, '19.2',
+assert.equal(collectionVersion(bundled), '19.2',
   'Bundled snapshot changed; revalidate the layer provenance');
 if (args.includes('--verify-baseline')) {
   const response = await fetch(baselineUrl, { signal: AbortSignal.timeout(60000) });
@@ -48,8 +56,34 @@ if (args.includes('--verify-baseline')) {
   const text = await response.text();
   assert.equal(sha256(text), baselineHash, 'Official baseline bytes changed; review before accepting');
   const baseline = JSON.parse(text);
-  assert.equal(baseline.objects.find(object => object.type === 'x-mitre-collection')?.x_mitre_version, '16.1');
+  assert.equal(collectionVersion(baseline), '16.1');
   snapshots.push({ name: 'official 16.1', techniques: techniquesById(baseline) });
+}
+
+// The three bundled ATT&CK domains must move together: ICS and Mobile were once left at
+// 18.1 after Enterprise was bumped to 19.2, so the ICS matrix showed retired techniques.
+const domainBundles = {
+  'enterprise-attack': bundled,
+  'ics-attack': readJson(new URL('ics-attack.json', dataRoot)),
+  'mobile-attack': readJson(new URL('mobile-attack.json', dataRoot)),
+};
+const bundledVersions = Object.fromEntries(Object.entries(domainBundles).map(([domain, bundle]) => [domain, collectionVersion(bundle)]));
+assert.equal(new Set(Object.values(bundledVersions)).size, 1,
+  `Bundled ATT&CK domains disagree on x_mitre_version: ${JSON.stringify(bundledVersions)}`);
+const f3Version = collectionVersion(readJson(new URL('f3-attack.json', dataRoot)));
+assert(f3Version, 'Bundled F3 snapshot has no x-mitre-collection version');
+
+// README's data-source table must state the versions that are really bundled.
+const readme = readText(new URL('README.md', root));
+for (const [label, version] of [
+  ['Enterprise ATT&CK', bundledVersions['enterprise-attack']],
+  ['ICS ATT&CK', bundledVersions['ics-attack']],
+  ['Mobile ATT&CK', bundledVersions['mobile-attack']],
+  ['CTID F3 Fraud Framework', f3Version],
+]) {
+  const row = readme.split('\n').find(line => line.startsWith(`| ${label} |`));
+  assert(row, `README.md: no data-source row for ${label}`);
+  assert(row.endsWith(`| v${version} |`), `README.md: ${label} row says "${row}" but the bundled snapshot is v${version}`);
 }
 
 assert.equal(new Set(manifest.map(entry => entry.file)).size, manifest.length, 'Duplicate manifest file');
@@ -57,6 +91,52 @@ assert.equal(new Set(manifest.map(entry => entry.name)).size, manifest.length, '
 for (const entry of manifest) {
   assert.match(entry.file, /^[a-z0-9-]+\.json$/, 'Unexpected manifest path');
   assert.equal(readJson(new URL(entry.file, layerRoot)).name, entry.name, `${entry.file}: name drift`);
+}
+
+// Headline layer counts in the docs must match the manifest.
+for (const [doc, pattern] of [
+  ['docs/LIBRARY_LAYERS.md', /This build ships \*\*(\d+) layers\*\*/],
+  ['docs/README.md', /The (\d+) bundled ATT&CK overlays/],
+]) {
+  const match = readText(new URL(doc, root)).match(pattern);
+  assert(match, `${doc}: layer-count sentence not found`);
+  assert.equal(Number(match[1]), manifest.length, `${doc}: says ${match[1]} layers, manifest has ${manifest.length}`);
+}
+
+// Every manifest layer must resolve against the bundled enterprise snapshot: live
+// technique ids, and a tactic slug (when present) that the technique really has.
+function assertRowsResolve(file, rows, techniques, snapshotName) {
+  let unresolvedTactics = 0;
+  for (const row of rows) {
+    if (row.techniqueID.startsWith('AML.')) continue; // ATLAS ids have no bundled matrix
+    const technique = techniques.get(row.techniqueID);
+    assert(technique, `${file}: ${row.techniqueID} missing, revoked or deprecated in ${snapshotName}`);
+    if (!row.tactic) { unresolvedTactics += 1; continue; }
+    assert(tacticsOf(technique).includes(row.tactic),
+      `${file}: ${row.techniqueID} has no tactic '${row.tactic}' in ${snapshotName} (has ${tacticsOf(technique).join(', ')})`);
+  }
+  return unresolvedTactics;
+}
+for (const entry of manifest) {
+  const layer = readJson(new URL(entry.file, layerRoot));
+  assertRowsResolve(entry.file, layer.techniques, snapshots[0].techniques, snapshots[0].name);
+}
+
+// The vendored Lylat mission layers resolve against their own domain's bundled snapshot
+// (ATLAS rows excepted). scripts/normalize-lylat-layers.mjs rewrites them when ATT&CK
+// retires an id or renames a tactic.
+const missionManifest = readJson(new URL('index.json', missionRoot));
+const missionFiles = readdirSync(missionRoot).filter(file => file !== 'index.json').sort();
+assert.deepEqual(missionManifest.map(entry => entry.file).sort(), missionFiles, 'lylat-mission-layers/index.json: file list drift');
+const domainTechniques = Object.fromEntries(Object.entries(domainBundles).map(([domain, bundle]) => [domain, techniquesById(bundle)]));
+let missionRows = 0;
+for (const entry of missionManifest) {
+  const layer = readJson(new URL(entry.file, missionRoot));
+  assert.equal(layer.name, entry.name, `${entry.file}: name drift`);
+  assert.equal(layer.domain, entry.domain, `${entry.file}: domain drift`);
+  assert(domainTechniques[layer.domain], `${entry.file}: unknown domain ${layer.domain}`);
+  assertRowsResolve(entry.file, layer.techniques, domainTechniques[layer.domain], `bundled ${layer.domain} ${bundledVersions[layer.domain]}`);
+  missionRows += layer.techniques.length;
 }
 
 for (const file of files) {
@@ -131,4 +211,6 @@ for (const file of files) {
   }
   console.log(`PASS ${file}: ${byId.size} techniques, ${pairs.size} rows, ${core} core / ${supporting} supporting`);
 }
-console.log(`PASS ${manifest.length} manifest entries; checked ${snapshots.map(snapshot => snapshot.name).join(' + ')}`);
+console.log(`PASS bundled ATT&CK ${bundledVersions['enterprise-attack']} (enterprise/ics/mobile) + F3 ${f3Version}; README data table matches`);
+console.log(`PASS ${manifest.length} manifest entries resolve against ${snapshots[0].name}; ${missionManifest.length} Lylat mission layers (${missionRows} rows) resolve against their domains`);
+console.log(`PASS checked ${snapshots.map(snapshot => snapshot.name).join(' + ')}`);
