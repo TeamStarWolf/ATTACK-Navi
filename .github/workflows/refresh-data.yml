@@ -4,67 +4,219 @@ name: Refresh Bundled Data
 # instant first paint (bundled-first loading) and the CVE2CAPEC asset backs
 # CVE→ATT&CK mappings. Both are point-in-time copies that would silently age;
 # this workflow regenerates them monthly and opens a PR for review.
+#
+# Two jobs on purpose: `refresh` downloads, gates and validates with a
+# read-only token (npm ci runs lifecycle scripts of hundreds of packages and
+# must not hold a write token); only `open-pr` holds contents/pull-requests
+# write, and it never installs anything.
 on:
   schedule:
     - cron: '43 5 3 * *'   # 05:43 UTC on the 3rd of each month (off-minute)
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   refresh:
+    name: Download, gate and validate
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    outputs:
+      changed: ${{ steps.diff.outputs.changed }}
+      attack_sha: ${{ steps.upstream.outputs.attack_sha }}
+      f3_sha: ${{ steps.upstream.outputs.f3_sha }}
+      versions: ${{ steps.gate.outputs.versions }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 20
+          node-version: 24
+          cache: npm
 
-      - name: Download latest ATT&CK STIX snapshots
-        run: |
-          set -euo pipefail
-          for domain in enterprise ics mobile; do
-            curl -fsSL --retry 3 \
-              "https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/${domain}-attack/${domain}-attack.json" \
-              -o "src/assets/data/${domain}-attack.json"
-            # sanity: must be a STIX bundle with objects
-            node -e "const b=require('./src/assets/data/${domain}-attack.json'); if(b.type!=='bundle'||!Array.isArray(b.objects)||b.objects.length<100){process.exit(1)}"
-          done
-          # CTID F3 Fraud Framework (fourth domain)
-          curl -fsSL --retry 3 \
-            "https://raw.githubusercontent.com/center-for-threat-informed-defense/fight-fraud-framework/main/public/f3-stix.json" \
-            -o "src/assets/data/f3-attack.json"
-          node -e "const b=require('./src/assets/data/f3-attack.json'); if(b.type!=='bundle'||!Array.isArray(b.objects)||b.objects.length<50){process.exit(1)}"
-
-      - name: Regenerate CVE→ATT&CK asset from CVE2CAPEC
-        run: node scripts/build-cve-technique-map.mjs
-
-      - name: Open PR if anything changed
+      # Pin each upstream to the commit it is at right now, so every file in
+      # this run comes from one revision and the PR records which one.
+      - name: Resolve upstream commits
+        id: upstream
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          ATTACK_SHA=$(gh api repos/mitre-attack/attack-stix-data/commits/master --jq .sha)
+          F3_SHA=$(gh api repos/center-for-threat-informed-defense/fight-fraud-framework/commits/main --jq .sha)
+          [[ "$ATTACK_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::could not resolve attack-stix-data master"; exit 1; }
+          [[ "$F3_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::could not resolve fight-fraud-framework main"; exit 1; }
+          echo "attack_sha=$ATTACK_SHA" >> "$GITHUB_OUTPUT"
+          echo "f3_sha=$F3_SHA" >> "$GITHUB_OUTPUT"
+          echo "attack-stix-data@$ATTACK_SHA, fight-fraud-framework@$F3_SHA"
+
+      - name: Download ATT&CK STIX snapshots and F3 at the resolved commits
+        env:
+          ATTACK_SHA: ${{ steps.upstream.outputs.attack_sha }}
+          F3_SHA: ${{ steps.upstream.outputs.f3_sha }}
+        run: |
+          set -euo pipefail
+          for domain in enterprise ics mobile; do
+            curl -fsSL --retry 3 \
+              "https://raw.githubusercontent.com/mitre-attack/attack-stix-data/${ATTACK_SHA}/${domain}-attack/${domain}-attack.json" \
+              -o "src/assets/data/${domain}-attack.json"
+          done
+          # CTID F3 Fraud Framework (fourth domain)
+          curl -fsSL --retry 3 \
+            "https://raw.githubusercontent.com/center-for-threat-informed-defense/fight-fraud-framework/${F3_SHA}/public/f3-stix.json" \
+            -o "src/assets/data/f3-attack.json"
+
+      # Shape, object floor, no version downgrade, one ATT&CK version across
+      # enterprise/ics/mobile. Writes the version table to the job summary.
+      - name: Gate downloaded bundles against the committed ones
+        id: gate
+        run: node scripts/check-refreshed-bundles.mjs
+
+      - name: Regenerate CVE→ATT&CK asset from CVE2CAPEC
+        run: node scripts/build-cve-technique-map.mjs
+
+      # The three curated library layers record the bundled Enterprise version
+      # and its SHA-256; rewrite that provenance to the new snapshot and then
+      # validate every technique/tactic pair against it. A retired technique
+      # fails here and has to be curated by hand before the data can ship.
+      - name: Validate curated layers against the refreshed bundle
+        run: node scripts/validate-curated-threat-layers.mjs --update-bundled-metadata
+
+      - name: Detect changes
+        id: diff
+        run: |
+          set -euo pipefail
           if git diff --quiet -- src/assets/data; then
-            echo "Bundled data already current — nothing to do."
-            exit 0
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Bundled data already current — nothing to do." | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            git diff --stat -- src/assets/data | tee -a "$GITHUB_STEP_SUMMARY"
           fi
-          BRANCH="data-refresh/$(date +%Y-%m)"
+
+      # The PR this workflow opens is created with the workflow token, and
+      # GitHub does not run pull_request workflows for such PRs, so the unit
+      # suite and the production build run HERE, against the refreshed data,
+      # and the PR body cites this run as the evidence.
+      - name: Install dependencies
+        if: steps.diff.outputs.changed == 'true'
+        run: npm ci
+      - name: Unit tests against the refreshed bundles
+        if: steps.diff.outputs.changed == 'true'
+        run: npx ng test --no-watch --browsers=ChromeHeadless
+      - name: Production build against the refreshed bundles
+        if: steps.diff.outputs.changed == 'true'
+        run: npx ng build --configuration production
+
+      - name: Package the changed data files
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          git diff --name-only -- src/assets/data > changed-files.txt
+          tar -czf refreshed-data.tgz -T changed-files.txt
+          wc -l changed-files.txt
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: steps.diff.outputs.changed == 'true'
+        with:
+          name: refreshed-data
+          path: refreshed-data.tgz
+          retention-days: 7
+          if-no-files-found: error
+
+  open-pr:
+    name: Push branch and open the review PR
+    needs: refresh
+    if: needs.refresh.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: refreshed-data
+      - name: Apply the validated data
+        run: |
+          set -euo pipefail
+          tar -xzf refreshed-data.tgz
+          rm -f refreshed-data.tgz
+          git status --short -- src/assets/data
+          git diff --quiet -- src/assets/data && { echo "::error::artifact contained no changes"; exit 1; }
+
+      - name: Push branch and open or update the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ATTACK_SHA: ${{ needs.refresh.outputs.attack_sha }}
+          F3_SHA: ${{ needs.refresh.outputs.f3_sha }}
+          VERSIONS: ${{ needs.refresh.outputs.versions }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          MONTH="$(date +%Y-%m)"
+          BRANCH="data-refresh/${MONTH}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -B "$BRANCH"
           git add src/assets/data
-          git commit -m "chore(data): monthly bundled-data refresh ($(date +%Y-%m))" \
-            -m "Automated refresh of the bundled ATT&CK STIX snapshots (enterprise/ics/mobile) and the CVE2CAPEC-derived cve-technique-map asset. Generated by .github/workflows/refresh-data.yml."
+          git commit -m "chore(data): monthly bundled-data refresh (${MONTH})" \
+            -m "Automated refresh of the bundled ATT&CK STIX snapshots (enterprise/ics/mobile), the F3 bundle and the CVE2CAPEC-derived cve-technique-map asset; curated-layer provenance rewritten to the new snapshot." \
+            -m "Sources: mitre-attack/attack-stix-data@${ATTACK_SHA}, center-for-threat-informed-defense/fight-fraud-framework@${F3_SHA}. Generated by .github/workflows/refresh-data.yml (${RUN_URL})."
           git push -f origin "$BRANCH"
-          gh pr create --fill --base main --head "$BRANCH" \
-            --title "chore(data): monthly bundled-data refresh ($(date +%Y-%m))" \
-            --body "Automated monthly refresh of bundled data assets:
 
-          - ATT&CK STIX snapshots (enterprise / ics / mobile) from mitre-attack/attack-stix-data
-          - \`cve-technique-map.json\` regenerated from the Galeax/CVE2CAPEC pipeline
+          TABLE=$(node -e '
+            const v = JSON.parse(process.env.VERSIONS);
+            const rows = Object.entries(v).map(([k, r]) => `| ${k} | ${r.committed} | ${r.downloaded} | ${r.objects} |`);
+            console.log(["| Bundle | Committed | Downloaded | Objects |", "| --- | --- | --- | --- |", ...rows].join("\n"));
+          ')
+          # Keep the body lines flush with the block indent: Markdown treats
+          # four or more leading spaces as a code block.
+          cat > pr-body.md <<EOF
+          Automated monthly refresh of bundled data assets.
 
-          CI (unit tests + build) validates the parse. Merge to ship; the deploy workflow takes it live." \
-            || echo "PR already exists for $BRANCH"
+          ${TABLE}
+
+          Sources, pinned to the commit used for this run:
+          - mitre-attack/attack-stix-data @ \`${ATTACK_SHA}\`
+          - center-for-threat-informed-defense/fight-fraud-framework @ \`${F3_SHA}\`
+          - \`cve-technique-map.json\` regenerated from the Galeax/CVE2CAPEC pipeline (scripts/build-cve-technique-map.mjs)
+
+          What ran before this PR was opened, in ${RUN_URL}:
+          - bundle gate (STIX shape, object floor, no version downgrade, one ATT&CK version across domains)
+          - \`validate-curated-threat-layers.mjs --update-bundled-metadata\` (curated layers revalidated against the new snapshot)
+          - \`npm ci\`, \`ng test\` (full unit suite) and \`ng build --configuration production\` against the refreshed data
+
+          This PR was opened with the workflow token, so GitHub does not run pull_request workflows on it. To get the CI check on the PR itself, run \`gh workflow run ci.yml --ref ${BRANCH}\` or close and reopen the PR. Merge to ship; the deploy workflow takes it live.
+          EOF
+
+          EXISTING=$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING" ]; then
+            gh pr edit "$EXISTING" --body-file pr-body.md
+            echo "Updated existing PR #${EXISTING} for ${BRANCH}" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          COMPARE_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/main...${BRANCH}?expand=1"
+          if ! OUTPUT=$(gh pr create --base main --head "$BRANCH" \
+                --title "chore(data): monthly bundled-data refresh (${MONTH})" \
+                --body-file pr-body.md 2>&1); then
+            echo "$OUTPUT"
+            {
+              echo "## Refreshed data is pushed to \`${BRANCH}\` but the pull request could not be opened"
+              echo
+              echo '```'
+              echo "$OUTPUT"
+              echo '```'
+              echo
+              echo "If the error says GitHub Actions is not permitted to create or approve pull requests, a repository owner must turn on **Settings -> Actions -> General -> Workflow permissions -> \"Allow GitHub Actions to create and approve pull requests\"**, then re-run this workflow."
+              echo
+              echo "Until then, open the PR by hand from ${COMPARE_URL}"
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::gh pr create failed; see the job summary for the repository setting that must be enabled."
+            exit 1
+          fi
+          echo "$OUTPUT"
+          echo "Opened ${OUTPUT} for ${BRANCH}" | tee -a "$GITHUB_STEP_SUMMARY"
