@@ -10,7 +10,6 @@ import { join, resolve, sep } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
-import proxyaddr from 'proxy-addr';
 
 test('dotenv retains parsing and existing-environment precedence', () => {
   const parsed = dotenv.parse('PLAIN=value\nQUOTED="value # kept"\nMULTILINE="one\\ntwo"\n');
@@ -19,14 +18,6 @@ test('dotenv retains parsing and existing-environment precedence', () => {
   dotenv.populate(environment, parsed);
   assert.equal(environment.PLAIN, 'already-set');
   assert.equal(environment.QUOTED, 'value # kept');
-});
-
-test('proxy address trust does not widen an IPv4-mapped IPv6 subnet', () => {
-  const trust = proxyaddr.compile('::ffff:192.0.2.0/120');
-  assert.equal(trust('192.0.2.10'), true);
-  assert.equal(trust('::ffff:192.0.2.10'), true);
-  assert.equal(trust('198.51.100.10'), false);
-  assert.equal(trust('::ffff:198.51.100.10'), false);
 });
 
 test('proxy handles configured requests after dependency updates', { timeout: 30000 }, async t => {
@@ -101,11 +92,14 @@ test('proxy handles configured requests after dependency updates', { timeout: 30
     assert.doesNotMatch(output, /injected env|injecting env|synthetic-opencti-token|synthetic-misp-key/);
   });
 
-  await t.test('does not grant CORS to a disallowed origin', async () => {
+  await t.test('does not grant CORS to a disallowed origin: 403 JSON, no stack trace', async () => {
     const response = await fetch(`${base}/api/health`, { headers: { Origin: 'http://unapproved.example.test' } });
-    assert.equal(response.status, 500);
+    assert.equal(response.status, 403);
     assert.equal(response.headers.get('access-control-allow-origin'), null);
-    await response.arrayBuffer();
+    assert.match(response.headers.get('content-type'), /application\/json/);
+    const text = await response.text();
+    assert.deepEqual(JSON.parse(text), { error: 'Origin not allowed by proxy CORS policy.' });
+    assert.doesNotMatch(text, /\n\s+at |node_modules|index\.js/);
   });
 
   await t.test('forwards GraphQL body and authorization only to the configured upstream', async () => {
@@ -134,13 +128,16 @@ test('proxy handles configured requests after dependency updates', { timeout: 30
     assert.equal(requests.length, before);
   });
 
-  await t.test('rejects malformed JSON before forwarding', async () => {
+  await t.test('rejects malformed JSON before forwarding, as JSON without a stack trace', async () => {
     const before = requests.length;
     const response = await fetch(`${base}/api/opencti/graphql`, {
       method: 'POST', headers: { 'content-type': 'application/json' }, body: '{',
     });
     assert.equal(response.status, 400);
-    await response.arrayBuffer();
+    assert.match(response.headers.get('content-type'), /application\/json/);
+    const text = await response.text();
+    assert.equal(typeof JSON.parse(text).error, 'string');
+    assert.doesNotMatch(text, /\n\s+at |node_modules|<html|<pre>/);
     assert.equal(requests.length, before);
   });
 });

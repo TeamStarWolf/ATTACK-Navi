@@ -22,7 +22,11 @@ app.use(cors({
     if (!origin || (allowedOrigins.length > 0 && allowedOrigins.includes(origin))) {
       callback(null, true);
     } else {
-      callback(new Error('Origin not allowed by proxy CORS policy.'));
+      // Carry an HTTP status so the error handler below answers 403 JSON instead of
+      // Express's default 500 (which outside NODE_ENV=production includes the stack).
+      const denied = new Error('Origin not allowed by proxy CORS policy.');
+      denied.status = 403;
+      callback(denied);
     }
   },
 }));
@@ -189,6 +193,20 @@ const mispProxy = async (req, res) => {
 
 app.get('/api/misp/*', mispProxy);
 app.post('/api/misp/*', mispProxy);
+
+// ── Error handler ────────────────────────────────────────────────────────────
+// Every error (CORS denial, body-parser 400/413, anything thrown) is answered as
+// generic JSON: the status the error carries (or 500) and, for client errors
+// only, its message. Never the stack, never file paths or dependency versions —
+// Express's default handler prints those whenever NODE_ENV is not "production".
+app.use((error, _req, res, _next) => {
+  const status = Number(error?.status ?? error?.statusCode) || 500;
+  if (status >= 500) console.error('[attack-nav proxy]', error);
+  const message = status < 500 && error instanceof Error && error.message
+    ? error.message
+    : 'Proxy request failed.';
+  res.status(status).json({ error: message });
+});
 
 // ── Start ────────────────────────────────────────────────────────────────────
 
