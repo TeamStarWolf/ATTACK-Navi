@@ -3,6 +3,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
+import { tacticAliases } from './attack-tactics';
 
 export interface SiemQuery {
   platform: 'splunk' | 'elastic' | 'microsoft' | 'chronicle' | 'crowdstrike';
@@ -38,8 +39,11 @@ const PLATFORM_LABELS: Record<string, string> = {
 };
 
 /**
- * Tactic-based query templates. Each template uses `{{TECHNIQUE}}` and
- * `{{TECHNIQUE_NAME}}` placeholders that are substituted at runtime.
+ * Tactic-based query templates. Each template uses `{{TECHNIQUE}}`,
+ * `{{TECHNIQUE_NAME}}` and `{{TACTIC}}` placeholders that are substituted at
+ * runtime; `{{TACTIC}}` becomes the tactic shortname of the loaded domain
+ * (e.g. `stealth` or `defense-impairment` for Enterprise v19), never a
+ * literal from the template's own key.
  */
 const TACTIC_TEMPLATES: TacticTemplate[] = [
   // ── Initial Access ─────────────────────────────────────────────────────────
@@ -270,9 +274,11 @@ const TACTIC_TEMPLATES: TacticTemplate[] = [
     },
   },
 
-  // ── Defense Evasion ────────────────────────────────────────────────────────
+  // ── Stealth / Defense Impairment (pre-v19: Defense Evasion) ────────────────
+  // Keyed on the v19 `stealth` slug; `defense-impairment`, the Mobile 18.1
+  // `defense-evasion` and the ICS `evasion` slugs resolve here via aliases.
   {
-    tactic: 'defense-evasion',
+    tactic: 'stealth',
     title: 'Process Injection, Timestomping & Log Clearing',
     description: 'Detect process injection (CreateRemoteThread), file timestamp manipulation, and security log clearing.',
     dataSource: 'Sysmon EID 8 (CreateRemoteThread), EID 2 (FileCreateTime), Security EID 1102',
@@ -288,7 +294,7 @@ const TACTIC_TEMPLATES: TacticTemplate[] = [
         '    true(), "Unknown")',
         '| where NOT match(SourceImage, "(?i)(defender|sysmon|splunk|antivirus)")',
         '| stats count by Computer, evasion_type, SourceImage, TargetImage, User',
-        '| eval technique="{{TECHNIQUE}}", tactic="defense-evasion"',
+        '| eval technique="{{TECHNIQUE}}", tactic="{{TACTIC}}"',
         '| sort -count',
       ].join('\n'),
       elastic: [
@@ -304,7 +310,7 @@ const TACTIC_TEMPLATES: TacticTemplate[] = [
         '        ActionType == "SecurityLogCleared" or',
         '        ActionType == "TimestampChanged"',
         '| project Timestamp, DeviceName, ActionType, FileName, InitiatingProcessFileName, ProcessCommandLine',
-        '| extend Technique = "{{TECHNIQUE}}", Tactic = "defense-evasion"',
+        '| extend Technique = "{{TECHNIQUE}}", Tactic = "{{TACTIC}}"',
       ].join('\n'),
       chronicle: [
         '// {{TECHNIQUE}} — Defense Evasion Detection',
@@ -851,12 +857,14 @@ const TACTIC_TEMPLATES: TacticTemplate[] = [
  * Many ATT&CK tactics use hyphenated shortnames that match our template keys directly.
  */
 function matchTactic(tacticShortname: string): string | null {
-  const direct = TACTIC_TEMPLATES.find(t => t.tactic === tacticShortname);
-  if (direct) return direct.tactic;
-  // Fuzzy fallback
   const normalized = tacticShortname.toLowerCase().replace(/[\s_]/g, '-');
-  const fuzzy = TACTIC_TEMPLATES.find(t => t.tactic === normalized);
-  return fuzzy ? fuzzy.tactic : null;
+  // Direct match first, then any alias (v19 stealth/defense-impairment,
+  // Mobile defense-evasion and ICS evasion share one template).
+  for (const candidate of tacticAliases(normalized)) {
+    const hit = TACTIC_TEMPLATES.find(t => t.tactic === candidate);
+    if (hit) return hit.tactic;
+  }
+  return null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -921,6 +929,9 @@ export class SiemQueryService {
     if (!template) return [];
 
     const safeTechId = attackId.replace(/\./g, '_');
+    // Tag the query with the tactic the caller asked for (the loaded domain's
+    // slug), not the template's key, so v19 exports never carry a retired slug.
+    const tacticTag = tactic.toLowerCase().replace(/[\s_]/g, '-') || matched;
 
     return this.platforms.map(platform => ({
       platform,
@@ -928,7 +939,8 @@ export class SiemQueryService {
       query: template.platforms[platform]
         .replace(/\{\{TECHNIQUE\}\}/g, attackId)
         .replace(/\{\{TECHNIQUE_NAME\}\}/g, attackId)
-        .replace(/\{\{TECHNIQUE_SAFE\}\}/g, safeTechId),
+        .replace(/\{\{TECHNIQUE_SAFE\}\}/g, safeTechId)
+        .replace(/\{\{TACTIC\}\}/g, tacticTag),
       title: `${template.title} (${attackId})`,
       description: template.description,
       dataSource: template.dataSource,

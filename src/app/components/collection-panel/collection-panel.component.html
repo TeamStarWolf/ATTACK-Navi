@@ -211,7 +211,7 @@
                         [checked]="newTechTactics.has(tactic)"
                         (change)="toggleNewTactic(tactic)"
                       />
-                      <span>{{ tactic }}</span>
+                      <span [title]="tactic">{{ tacticName(tactic) }}</span>
                     </label>
                   }
                 </div>
@@ -269,7 +269,7 @@
                               @for (t of allTactics; track t) {
                                 <label class="inline-cb">
                                   <input type="checkbox" [checked]="editTactics.has(t)" (change)="toggleEditTactic(t)" />
-                                  <span>{{ t }}</span>
+                                  <span [title]="t">{{ tacticName(t) }}</span>
                                 </label>
                               }
                             </div>
