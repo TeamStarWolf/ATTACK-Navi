@@ -36,8 +36,15 @@ jobs:
       # both prior CI failure modes: SW interception and ng-serve JIT stalls.
       - run: npx ng build --configuration development
       - run: npx playwright test
+      # A test that only passed on its retry is flaky, not green: surface it.
+      - name: Fail on flaky tests
+        if: ${{ !cancelled() }}
+        run: node e2e/check-flaky.mjs test-results/results.json
+      # `failure()` is false when the job is cancelled by timeout-minutes, which
+      # is exactly the hung-server case whose traces matter most; `!cancelled()`
+      # uploads on failure AND on timeout, and on success (cheap, 7-day TTL).
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: ${{ !cancelled() }}
         with:
           name: playwright-report
           path: |
