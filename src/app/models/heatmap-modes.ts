@@ -1,6 +1,8 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { HeatmapMode } from '../services/filter.service';
+// Type-only: FilterService imports HEATMAP_MODES from here to validate URL params,
+// so this must not become a runtime import cycle.
+import type { HeatmapMode } from '../services/filter.service';
 
 export interface HeatmapModeDef {
   value: HeatmapMode;

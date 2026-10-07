@@ -6,10 +6,25 @@ import { Technique } from '../models/technique';
 import { Mitigation } from '../models/mitigation';
 import { Domain } from '../models/domain';
 import { DataService } from './data.service';
+import { HEATMAP_MODES } from '../models/heatmap-modes';
 
 export type SortMode = 'alpha' | 'coverage';
 export type HeatmapMode = 'coverage' | 'exposure' | 'status' | 'controls' | 'software' | 'campaign' | 'risk' | 'kev' | 'd3fend' | 'atomic' | 'engage' | 'car' | 'cve' | 'detection' | 'frequency' | 'cri' | 'unified' | 'library' | 'sigma' | 'nist' | 'veris' | 'epss' | 'elastic' | 'splunk' | 'intelligence' | 'm365' | 'my-exposure' | 'wazuh' | 'csa-ccm' | 'm365-controls' | 'kill-chain' | 'poc-exploits' | 'f3-origin';
 export type SearchScope = 'name' | 'full';
+export const SEARCH_SCOPES: readonly SearchScope[] = ['name', 'full'];
+/** Mitigation implementation statuses the `impl` filter (and URL param) may take. */
+export const IMPL_STATUSES = ['implemented', 'in-progress', 'planned', 'not-started'] as const;
+export type ImplStatus = (typeof IMPL_STATUSES)[number];
+
+export function isHeatmapMode(value: string | null | undefined): value is HeatmapMode {
+  return !!value && HEATMAP_MODES.some(m => m.value === value);
+}
+export function isSearchScope(value: string | null | undefined): value is SearchScope {
+  return !!value && (SEARCH_SCOPES as readonly string[]).includes(value);
+}
+export function isImplStatus(value: string | null | undefined): value is ImplStatus {
+  return !!value && (IMPL_STATUSES as readonly string[]).includes(value);
+}
 
 export interface FilterStateSnapshot {
   heatmapMode: HeatmapMode;
@@ -234,12 +249,16 @@ export class FilterService {
       if (params.get('sfm') === '1') this.searchFilterModeSubject.next(true);
       const ds = params.get('ds');
       if (ds) this.activeDataSourceSubject.next(ds);
-      const heat = params.get('heat') as HeatmapMode | null;
-      if (heat) this.heatmapModeSubject.next(heat);
+      // A share link can carry a mistyped or retired value. An unknown mode would
+      // paint every cell the default colour under the wrong legend and never fire the
+      // mode's loaders, so each enumerated param is validated and otherwise ignored;
+      // the next URL write then serializes only the valid state.
+      const heat = params.get('heat');
+      if (isHeatmapMode(heat)) this.heatmapModeSubject.next(heat);
       const impl = params.get('impl');
-      if (impl) this.implStatusFilterSubject.next(impl);
-      const scope = params.get('scope') as SearchScope | null;
-      if (scope) this.searchScopeSubject.next(scope);
+      if (isImplStatus(impl)) this.implStatusFilterSubject.next(impl);
+      const scope = params.get('scope');
+      if (isSearchScope(scope)) this.searchScopeSubject.next(scope);
       const tsearch = params.get('tsearch') ?? '';
       if (tsearch) this.techniqueSearchSubject.next(tsearch);
 
