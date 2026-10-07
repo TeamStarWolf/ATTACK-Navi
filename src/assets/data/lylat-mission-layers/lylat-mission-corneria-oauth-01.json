@@ -42,7 +42,7 @@
     },
     {
       "techniqueID": "T1550.001",
-      "tactic": "defense-evasion",
+      "tactic": "lateral-movement",
       "color": "#fca311",
       "enabled": true,
       "comment": "CORNERIA-OAUTH-01 planned coverage: Application Access Token",
@@ -50,7 +50,7 @@
     },
     {
       "techniqueID": "T1078",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "color": "#fca311",
       "enabled": true,
       "comment": "CORNERIA-OAUTH-01 planned coverage: Valid Accounts",

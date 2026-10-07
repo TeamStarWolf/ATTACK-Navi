@@ -5,6 +5,22 @@ All notable changes to ATTACK-Navi are documented here.
 ## Unreleased
 
 ### Changed
+- **Bundled ICS and Mobile ATT&CK moved to v19.2**, matching the Enterprise
+  snapshot (release files from `mitre-attack/attack-stix-data`), and the bundled
+  CTID F3 snapshot moved to 1.2. ICS 19.2 adds 23 techniques (the T0843/T0846/T0873
+  sub-techniques and the T1691-T1695 families) and retires 9 (T0803, T0804, T0805,
+  T0812, T0839, T0855, T0856, T0857, T0891); Mobile 19.2 is a label-only change.
+  `scripts/validate-curated-threat-layers.mjs` and a unit spec now assert that the
+  three ATT&CK domains ship one release and that README's data table matches.
+- **Lylat mission layers resolved against ATT&CK 19.2.** The new
+  `scripts/normalize-lylat-layers.mjs` follows retired ids through the STIX
+  revoked-by chain (T1070.001 -> T1685.005, T1562.002 -> T1685.001,
+  T1656 -> T1684.001, T0855 -> T1692.001), derives tactic slugs from
+  `kill_chain_phases` (pre-v19 `defense-evasion` -> `stealth` / `defense-impairment`),
+  and regenerates the per-domain coverage layers and the Lylat Mission Coverage
+  picker layer (now 108 techniques). The validator checks every manifest and
+  vendored layer against the bundled snapshots, and the library-layer counts in
+  the docs now match the 37-entry manifest.
 - **New default heatmap: Unified Coverage.** The matrix now opens on the
   repo-wide `unified` composite (mitigation coverage + Sigma/CAR detection +
   Atomic validation + D3FEND + KEV exposure) instead of mitigation-only

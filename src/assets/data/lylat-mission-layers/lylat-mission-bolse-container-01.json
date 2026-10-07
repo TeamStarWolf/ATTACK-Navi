@@ -26,7 +26,7 @@
     },
     {
       "techniqueID": "T1610",
-      "tactic": "defense-evasion",
+      "tactic": "execution",
       "color": "#fca311",
       "enabled": true,
       "comment": "BOLSE-CONTAINER-01 planned coverage: Deploy Container",

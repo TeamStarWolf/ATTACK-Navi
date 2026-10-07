@@ -34,7 +34,7 @@
     },
     {
       "techniqueID": "T1078",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "color": "#fca311",
       "enabled": true,
       "comment": "SECTORZ-AMBUSH-01 planned coverage: Valid Accounts",
@@ -42,7 +42,7 @@
     },
     {
       "techniqueID": "T1550.002",
-      "tactic": "defense-evasion",
+      "tactic": "lateral-movement",
       "color": "#fca311",
       "enabled": true,
       "comment": "SECTORZ-AMBUSH-01 planned coverage: Pass the Hash",

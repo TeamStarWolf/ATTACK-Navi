@@ -61,7 +61,7 @@
     },
     {
       "techniqueID": "T1027",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 21,
       "comment": "Mapped by 3 of 28 Lylat enterprise missions (mapped by 3 mission(s): CORNERIA-WORKSTATION-01, MACBETH-SUPPLYCHAIN-01, SECTORX-SPYBORG-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
     },
@@ -97,7 +97,7 @@
     },
     {
       "techniqueID": "T1055",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 14,
       "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): SECTORX-SPYBORG-01, VENOMII-RESEARCH-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
     },
@@ -133,7 +133,7 @@
     },
     {
       "techniqueID": "T1070.004",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 7,
       "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): CORNERIA-WORKSTATION-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
     },
@@ -163,19 +163,19 @@
     },
     {
       "techniqueID": "T1078",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 100,
       "comment": "Mapped by 14 of 28 Lylat enterprise missions (mapped by 14 mission(s): AQUAS-DATA-01, BOLSE-GATEWAY-01, CORNERIA-CADET-01, CORNERIA-GHOST-01, CORNERIA-GRC-01, CORNERIA-LEDGER-01, CORNERIA-OAUTH-01, GREATFOX-INFILTRATION-01, KATINA-PHISH-01, MACBETH-SUPPLYCHAIN-01, SAURIA-IOT-01, SAURIA-KRAZOA-01, SAURIA-SCALES-01, SECTORZ-AMBUSH-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
     },
     {
       "techniqueID": "T1078.002",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 7,
       "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): CORNERIA-SVCABUSE-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
     },
     {
       "techniqueID": "T1078.004",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 7,
       "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): BOLSE-CLOUD-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
     },
@@ -307,7 +307,7 @@
     },
     {
       "techniqueID": "T1207",
-      "tactic": "defense-evasion",
+      "tactic": "defense-impairment",
       "score": 7,
       "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): CORNERIA-SVCABUSE-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
     },
@@ -325,7 +325,7 @@
     },
     {
       "techniqueID": "T1218",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 7,
       "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): CORNERIA-WORKSTATION-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
     },
@@ -415,25 +415,25 @@
     },
     {
       "techniqueID": "T1550",
-      "tactic": "defense-evasion",
+      "tactic": "lateral-movement",
       "score": 7,
       "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): CORNERIA-GRC-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
     },
     {
       "techniqueID": "T1550.001",
-      "tactic": "defense-evasion",
+      "tactic": "lateral-movement",
       "score": 7,
       "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): CORNERIA-OAUTH-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
     },
     {
       "techniqueID": "T1550.002",
-      "tactic": "defense-evasion",
+      "tactic": "lateral-movement",
       "score": 14,
       "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): GREATFOX-INFILTRATION-01, SECTORZ-AMBUSH-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
     },
     {
       "techniqueID": "T1550.003",
-      "tactic": "defense-evasion",
+      "tactic": "lateral-movement",
       "score": 7,
       "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): CORNERIA-SVCABUSE-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
     },
@@ -601,7 +601,7 @@
     },
     {
       "techniqueID": "T1610",
-      "tactic": "defense-evasion",
+      "tactic": "execution",
       "score": 7,
       "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): BOLSE-CONTAINER-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
     },
@@ -625,7 +625,7 @@
     },
     {
       "techniqueID": "T1620",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 14,
       "comment": "Mapped by 2 of 28 Lylat enterprise missions (mapped by 2 mission(s): VENOM-ANDROSS-01, VENOMII-RESEARCH-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
     },
@@ -646,6 +646,24 @@
       "tactic": "execution",
       "score": 7,
       "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): BOLSE-CLOUD-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1684.001",
+      "tactic": "stealth",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): CORNERIA-GHOST-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1685.001",
+      "tactic": "defense-impairment",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): CORNERIA-GRC-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
+    },
+    {
+      "techniqueID": "T1685.005",
+      "tactic": "defense-impairment",
+      "score": 7,
+      "comment": "Mapped by 1 of 28 Lylat enterprise missions (mapped by 1 mission(s): CORNERIA-GRC-01). Planned/training coverage (missions are execution_verified:false) — NOT a validated detection. Not an official MITRE mapping."
     }
   ],
   "gradient": {
