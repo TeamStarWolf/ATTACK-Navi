@@ -23,11 +23,74 @@ interface NavigatorTechniqueEntry {
   metadata: NavigatorMetadata[];
 }
 
+/** One mitigation status that comment-keyword detection derived for a foreign layer. */
+export interface DerivedStatus {
+  /** ATT&CK id of the technique whose comment drove the detection. */
+  techniqueId: string;
+  /** Mitigation STIX id (ImplementationService key). */
+  mitigationId: string;
+  mitigationAttackId: string;
+  status: ImplStatus;
+  /** The comment the status was read from (for the preview). */
+  comment: string;
+}
+
+export interface LayerImportOptions {
+  /**
+   * Foreign layers (no `attack-navi:*` metadata) can only GUESS statuses from
+   * free-text comments, and a guess sets EVERY mitigation of that technique.
+   * Off by default — comments become notes only. Callers should preview with
+   * `dryRun` and ask before turning this on.
+   */
+  deriveStatusesFromComments?: boolean;
+  /** Compute the result without writing any status or note. */
+  dryRun?: boolean;
+}
+
 export interface LayerImportResult {
   layerName: string;
-  appliedCount: number;
+  /** Distinct technique ids in the layer (Navigator repeats a technique once per tactic). */
+  techniqueIdCount: number;
+  /**
+   * Distinct ids that resolved to a live technique in the loaded domain,
+   * directly or through a retired-id replacement.
+   */
+  resolvedCount: number;
+  /** Retired ids resolved through `Domain.supersededBy`, e.g. T1070.001 -> T1685.005. */
+  remapped: Array<{ from: string; to: string }>;
+  /** Ids that match nothing in the loaded domain (other domain, typo, or retired with no replacement). */
+  unresolvedIds: string[];
   statusesApplied: number;
   notesApplied: number;
+  /**
+   * Statuses keyword detection derived from foreign-layer comments. Populated
+   * whenever a match exists, even when not applied (opted out or dryRun), so
+   * the caller can show a preview.
+   */
+  derivedStatuses: DerivedStatus[];
+}
+
+/**
+ * A status keyword preceded by a negation ("not implemented", "never planned",
+ * "isn't in progress", "not yet implemented") is NOT that status. Word
+ * boundaries already exclude "unimplemented" / "unplanned".
+ */
+const NOT_NEGATED = String.raw`(?<!\b(?:not|never|no|isn'?t|wasn'?t|cannot|can'?t|won'?t|partially|partly)\s+)(?<!\bnot\s+yet\s+)`;
+const STATUS_PATTERNS: Array<{ status: ImplStatus; re: RegExp }> = [
+  { status: 'implemented', re: new RegExp(NOT_NEGATED + String.raw`\bimplemented\b`, 'i') },
+  { status: 'in-progress', re: new RegExp(NOT_NEGATED + String.raw`\bin[\s-]+progress\b`, 'i') },
+  { status: 'planned', re: new RegExp(NOT_NEGATED + String.raw`\bplanned\b`, 'i') },
+];
+
+/**
+ * Reads an implementation status out of a free-text Navigator comment, or null
+ * when no anchored, non-negated status keyword is present.
+ */
+export function detectStatusKeyword(comment: string): ImplStatus | null {
+  for (const { status, re } of STATUS_PATTERNS) {
+    if (re.test(comment)) return status;
+  }
+  return null;
 }
 
 interface NavigatorLayer {
@@ -152,15 +215,21 @@ export class NavigatorLayerService {
    * Imports a Navigator layer with round-trip fidelity:
    * - ATTACK-Navi layers restore EXACT per-mitigation statuses and analyst
    *   notes from `attack-navi:*` metadata entries.
-   * - Foreign layers fall back to comment-keyword status detection, and their
-   *   comments become analyst notes — but only on techniques that don't
-   *   already have a note (imports never clobber existing analyst work).
+   * - Foreign layers' comments become analyst notes — but only on techniques
+   *   that don't already have a note (imports never clobber existing analyst
+   *   work). Deriving mitigation statuses from those comments is a guess, so
+   *   it is reported in `derivedStatuses` and only written when the caller
+   *   opts in with `deriveStatusesFromComments` (disabled entries never count).
+   * - Technique ids are matched against the loaded domain, following retired
+   *   ids through `Domain.supersededBy`; what did and did not resolve is
+   *   reported so the caller never claims more than was applied.
    */
   async importLayer(
     json: string,
     domain: Domain,
     implService: ImplementationService,
     annotationService?: AnnotationService,
+    options: LayerImportOptions = {},
   ): Promise<LayerImportResult> {
     let parsed: unknown;
     try {
@@ -181,15 +250,49 @@ export class NavigatorLayerService {
       }
     }
 
+    // One of our own exports carries exact data in `attack-navi:*` metadata;
+    // its comments ("Status: planned", "3 mitigation(s)") are display text,
+    // not analyst notes, and must not be guessed at or imported as notes.
+    const layerHeader = parsed as { description?: unknown };
+    const ownLayer = (typeof layerHeader.description === 'string' && layerHeader.description.startsWith('Exported from ATT&CK Navi'))
+      || techniques.some(e => e.metadata.some(m => m.name.startsWith('attack-navi:')));
+
     // Mitigation ATT&CK id → STIX id, for exact status restore.
     const mitByAttackId = new Map((domain.mitigations ?? []).map(m => [m.attackId, m.id]));
 
+    // Live id → the retired ids it replaced (reverse of Domain.supersededBy),
+    // so a layer written against an older ATT&CK release still lands.
+    const retiredByLive = new Map<string, string[]>();
+    for (const [retired, live] of domain.supersededBy ?? new Map<string, string>()) {
+      const list = retiredByLive.get(live) ?? [];
+      list.push(retired);
+      retiredByLive.set(live, list);
+    }
+
+    const write = !options.dryRun;
+    const deriveStatuses = options.deriveStatusesFromComments === true;
     let statusesApplied = 0;
     let notesApplied = 0;
+    const derivedStatuses: DerivedStatus[] = [];
+    const resolvedIds = new Set<string>();
+    const remapped: Array<{ from: string; to: string }> = [];
     const validStatuses = new Set<ImplStatus>(['implemented', 'in-progress', 'planned', 'not-started']);
 
     for (const tech of domain.techniques) {
-      const entry = layerMap.get(tech.attackId);
+      let entry = layerMap.get(tech.attackId);
+      if (entry) {
+        resolvedIds.add(tech.attackId);
+      } else {
+        for (const retired of retiredByLive.get(tech.attackId) ?? []) {
+          const candidate = layerMap.get(retired);
+          if (candidate) {
+            entry = candidate;
+            resolvedIds.add(retired);
+            remapped.push({ from: retired, to: tech.attackId });
+            break;
+          }
+        }
+      }
       if (!entry) continue;
 
       const meta = new Map(entry.metadata.map(m => [m.name, m.value]));
@@ -203,24 +306,28 @@ export class NavigatorLayerService {
           const mitId = mitByAttackId.get(pair.slice(0, eq));
           const status = pair.slice(eq + 1) as ImplStatus;
           if (mitId && validStatuses.has(status)) {
-            implService.setStatus(mitId, status);
+            if (write) implService.setStatus(mitId, status);
             statusesApplied++;
           }
         }
-      } else {
-        // 2) Foreign layers: keyword fallback on the comment.
-        const comment = entry.comment.toLowerCase();
-        const rels = domain.mitigationsByTechnique.get(tech.id) ?? [];
-        for (const rel of rels) {
-          if (comment.includes('implemented')) {
-            implService.setStatus(rel.mitigation.id, 'implemented');
-            statusesApplied++;
-          } else if (comment.includes('progress')) {
-            implService.setStatus(rel.mitigation.id, 'in-progress');
-            statusesApplied++;
-          } else if (comment.includes('planned')) {
-            implService.setStatus(rel.mitigation.id, 'planned');
-            statusesApplied++;
+      } else if (!ownLayer && entry.enabled) {
+        // 2) Foreign layers: an anchored, non-negated status keyword in the
+        //    comment. A disabled row is hidden in Navigator, so it says
+        //    nothing about the analyst's controls.
+        const status = detectStatusKeyword(entry.comment);
+        if (status) {
+          for (const rel of domain.mitigationsByTechnique.get(tech.id) ?? []) {
+            derivedStatuses.push({
+              techniqueId: tech.attackId,
+              mitigationId: rel.mitigation.id,
+              mitigationAttackId: rel.mitigation.attackId,
+              status,
+              comment: entry.comment.trim(),
+            });
+            if (deriveStatuses) {
+              if (write) implService.setStatus(rel.mitigation.id, status);
+              statusesApplied++;
+            }
           }
         }
       }
@@ -231,21 +338,34 @@ export class NavigatorLayerService {
         const exactNote = meta.get('attack-navi:note');
         const existing = annotationService.getAnnotation(tech.attackId)?.note ?? '';
         if (exactNote && exactNote !== existing) {
-          annotationService.setAnnotation(tech.attackId, exactNote);
+          if (write) annotationService.setAnnotation(tech.attackId, exactNote);
           notesApplied++;
-        } else if (!exactNote && entry.comment.trim() && !existing) {
-          annotationService.setAnnotation(tech.attackId, entry.comment.trim());
+        } else if (!ownLayer && !exactNote && entry.comment.trim() && !existing) {
+          if (write) annotationService.setAnnotation(tech.attackId, entry.comment.trim());
           notesApplied++;
         }
       }
     }
 
+    // A retired id whose replacement also appears directly in the layer was
+    // superseded by that direct entry; it still resolves, nothing is lost.
+    const liveIds = new Set(domain.techniques.map(t => t.attackId));
+    const unresolvedIds = [...layerMap.keys()].filter((id) => {
+      if (resolvedIds.has(id)) return false;
+      const replacement = domain.supersededBy?.get(id);
+      return !(replacement && liveIds.has(replacement));
+    });
+
     const layer = parsed as { name?: unknown };
     return {
       layerName: typeof layer.name === 'string' ? layer.name : 'unnamed',
-      appliedCount: layerMap.size,
+      techniqueIdCount: layerMap.size,
+      resolvedCount: layerMap.size - unresolvedIds.length,
+      remapped,
+      unresolvedIds,
       statusesApplied,
       notesApplied,
+      derivedStatuses,
     };
   }
 

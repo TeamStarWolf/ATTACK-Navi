@@ -14,6 +14,14 @@ export interface ImportSummary {
   mitigations: number;
   notes: number;
   skipped: number;
+  /**
+   * Imported notes that target a technique the analyst has already annotated
+   * differently. The existing note is kept — an import never overwrites
+   * analyst work — and the imported text is dropped.
+   */
+  notesKept: number;
+  /** Technique ids of those kept notes, so a confirm dialog can name them. */
+  noteConflicts: string[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -158,7 +166,7 @@ export class StixCollectionService {
     if (objects.length > this.STIX_IMPORT_LIMIT) {
       throw new Error(`STIX bundle contains ${objects.length} objects, exceeding the ${this.STIX_IMPORT_LIMIT}-object import limit.`);
     }
-    const summary: ImportSummary = { techniques: 0, groups: 0, mitigations: 0, notes: 0, skipped: 0 };
+    const summary: ImportSummary = this.emptySummary();
 
     // Index existing custom technique attackIds for dedup
     const existingAttackIds = new Set(this.techniqueSvc.getAll().map(t => t.attackId));
@@ -180,10 +188,7 @@ export class StixCollectionService {
     // Import attack-patterns → CustomTechnique
     for (const obj of objects) {
       if (obj.type !== 'attack-pattern') continue;
-      const extRef = (obj.external_references ?? []).find(
-        (r: any) => r.source_name === 'mitre-attack'
-      );
-      const attackId = extRef?.external_id ?? obj.name ?? '';
+      const attackId = this.attackIdOf(obj);
       if (!attackId || existingAttackIds.has(attackId)) {
         summary.skipped++;
         // Still record for relationship mapping even if skipped
@@ -279,27 +284,83 @@ export class StixCollectionService {
       }
     }
 
-    // Import notes → Annotations
+    // Import notes → Annotations. An existing analyst note is never replaced
+    // (same rule as the Navigator-layer import): the conflict is reported.
     for (const obj of objects) {
       if (obj.type !== 'note') continue;
       const content = obj.content ?? '';
       if (!content) continue;
-      // Find the first object_ref that resolves to an attackId
-      const refs: string[] = obj.object_refs ?? [];
-      let targetAttackId: string | undefined;
-      for (const ref of refs) {
-        targetAttackId = stixToAttackId.get(ref);
-        if (targetAttackId) break;
-      }
-      if (targetAttackId) {
-        this.annotationSvc.setAnnotation(targetAttackId, content);
-        summary.notes++;
-      } else {
+      const targetAttackId = this.noteTarget(obj, stixToAttackId);
+      if (!targetAttackId) {
         summary.skipped++;
+        continue;
       }
+      const existing = this.annotationSvc.getAnnotation(targetAttackId)?.note ?? '';
+      if (existing) {
+        summary.notesKept++;
+        if (existing !== content) summary.noteConflicts.push(targetAttackId);
+        continue;
+      }
+      this.annotationSvc.setAnnotation(targetAttackId, content);
+      summary.notes++;
     }
 
     return summary;
+  }
+
+  /**
+   * Counts what a bundle would import WITHOUT writing anything — including
+   * which of its notes would collide with the analyst's existing notes — so a
+   * confirm dialog can show more than object counts.
+   */
+  summarizeBundle(bundle: Record<string, any>): ImportSummary {
+    const objects: any[] = bundle['objects'] ?? [];
+    const summary = this.emptySummary();
+    // STIX id → attackId for every attack-pattern in the bundle (new or not).
+    const stixToAttackId = new Map<string, string>();
+    for (const obj of objects) {
+      if (obj.type !== 'attack-pattern') continue;
+      const attackId = this.attackIdOf(obj);
+      if (obj.id && attackId) stixToAttackId.set(obj.id, attackId);
+    }
+    for (const obj of objects) {
+      switch (obj.type) {
+        case 'attack-pattern': summary.techniques++; break;
+        case 'intrusion-set': summary.groups++; break;
+        case 'course-of-action': summary.mitigations++; break;
+        case 'note': {
+          summary.notes++;
+          const content = obj.content ?? '';
+          const target = content ? this.noteTarget(obj, stixToAttackId) : undefined;
+          const existing = target ? this.annotationSvc.getAnnotation(target)?.note ?? '' : '';
+          if (target && existing) {
+            summary.notesKept++;
+            if (existing !== content) summary.noteConflicts.push(target);
+          }
+          break;
+        }
+      }
+    }
+    return summary;
+  }
+
+  private emptySummary(): ImportSummary {
+    return { techniques: 0, groups: 0, mitigations: 0, notes: 0, skipped: 0, notesKept: 0, noteConflicts: [] };
+  }
+
+  /** The ATT&CK id an attack-pattern carries (external_id, else its name). */
+  private attackIdOf(obj: any): string {
+    const extRef = (obj.external_references ?? []).find((r: any) => r.source_name === 'mitre-attack');
+    return extRef?.external_id ?? obj.name ?? '';
+  }
+
+  /** The first object_ref of a note that resolves to a technique attackId. */
+  private noteTarget(note: any, stixToAttackId: Map<string, string>): string | undefined {
+    for (const ref of (note.object_refs ?? []) as string[]) {
+      const attackId = stixToAttackId.get(ref);
+      if (attackId) return attackId;
+    }
+    return undefined;
   }
 
   // ─── Import from URL ──────────────────────────────────────────────────────
@@ -350,15 +411,7 @@ export class StixCollectionService {
       const bundle = JSON.parse(json);
       if (!bundle || bundle.type !== 'bundle') return null;
       // Build preview summary without importing
-      const objects: any[] = bundle.objects ?? [];
-      const summary: ImportSummary = {
-        techniques: objects.filter(o => o.type === 'attack-pattern').length,
-        groups: objects.filter(o => o.type === 'intrusion-set').length,
-        mitigations: objects.filter(o => o.type === 'course-of-action').length,
-        notes: objects.filter(o => o.type === 'note').length,
-        skipped: 0,
-      };
-      return { bundle, summary };
+      return { bundle, summary: this.summarizeBundle(bundle) };
     } catch {
       return null;
     }
