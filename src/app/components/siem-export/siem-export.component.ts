@@ -16,6 +16,7 @@ import { SuricataService, SuricataRule } from '../../services/suricata.service';
 import { ZeekService, ZeekScript } from '../../services/zeek.service';
 import { SiemQueryService, SiemQuery } from '../../services/siem-query.service';
 import { Technique } from '../../models/technique';
+import { Domain } from '../../models/domain';
 
 export type SiemPlatform = 'splunk' | 'sentinel' | 'elastic' | 'suricata' | 'zeek';
 export type SiemExportMode = 'all' | 'by-technique' | 'by-tactic';
@@ -64,6 +65,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
   private subs = new Subscription();
   private allAnalytics: CarAnalytic[] = [];
   private tactics: string[] = [];
+  private domain: Domain | null = null;
 
   constructor(
     private dataService: DataService,
@@ -86,7 +88,8 @@ export class SiemExportComponent implements OnInit, OnDestroy {
     this.allAnalytics = this.carService.getAll();
     this.analyticsEntries = this.allAnalytics.map(a => ({ analytic: a, included: true }));
 
-    const domain = (this.dataService as any)['domainSubject']?.value;
+    const domain = this.dataService.getCurrentDomain();
+    this.domain = domain;
     if (domain) {
       this.techniques = domain.techniques;
       const tacticSet = new Set<string>();
@@ -311,6 +314,25 @@ export class SiemExportComponent implements OnInit, OnDestroy {
     return lines.join('\n');
   }
 
+  /**
+   * ATT&CK tactic slug to tag an exported analytic with. Taken from the loaded
+   * domain's technique (first tactic of the technique, then of its parent) so
+   * the export follows the bundle's vocabulary (Enterprise v19 `stealth` /
+   * `defense-impairment`, Mobile 18.1 `defense-evasion`); `fallback` is the
+   * pre-v19 slug used only when the technique is not in the loaded domain.
+   */
+  tacticTagFor(techId: string, fallback: string): string {
+    if (!techId) return fallback;
+    const tech = this.findTechnique(techId) ?? this.findTechnique(techId.split('.')[0]);
+    return tech?.tacticShortnames?.[0] || fallback;
+  }
+
+  /** Technique by ATT&CK id, following the bundle's revoked-by chain for retired ids. */
+  private findTechnique(attackId: string): Technique | undefined {
+    const liveId = this.domain?.supersededBy.get(attackId) ?? attackId;
+    return this.techniques.find(t => t.attackId === liveId);
+  }
+
   private getSplunkQuery(analytic: CarAnalytic): string {
     const techId = analytic.attackIds[0] ?? '';
 
@@ -343,7 +365,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
         `| rename TargetImage as target_process, SourceImage as source_process`,
         `| where NOT match(source_process, "(?i)(antivirus|defender|splunk|sysmon)")`,
         `| stats count by _time, Computer, source_process, target_process, StartModule`,
-        `| eval technique="${techId}", analytic="${analytic.id}", tactic="defense-evasion"`,
+        `| eval technique="${techId}", analytic="${analytic.id}", tactic="${this.tacticTagFor(techId, 'defense-evasion')}"`,
         `| sort -_time`,
       ].join('\n');
     }
@@ -434,7 +456,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
         `index=* sourcetype=XmlWinEventLog:Microsoft-Windows-Sysmon/Operational EventCode=13`,
         `| search TargetObject IN ("*SafeDllSearchMode*", "*AppCertDlls*", "*AppInit_DLLs*")`,
         `| stats count by _time, Computer, User, TargetObject, Details`,
-        `| eval technique="${techId}", analytic="${analytic.id}", tactic="defense-evasion"`,
+        `| eval technique="${techId}", analytic="${analytic.id}", tactic="${this.tacticTagFor(techId, 'defense-evasion')}"`,
         `| sort -_time`,
       ].join('\n');
     }
@@ -445,7 +467,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
         `index=* sourcetype=WinEventLog:Security EventCode=4688 NewProcessName="*bitsadmin.exe"`,
         `| search CommandLine IN ("*/transfer*", "*/addfile*", "*/SetNotifyCmdLine*")`,
         `| stats count by _time, Computer, SubjectUserName, CommandLine`,
-        `| eval technique="${techId}", analytic="${analytic.id}", tactic="defense-evasion"`,
+        `| eval technique="${techId}", analytic="${analytic.id}", tactic="${this.tacticTagFor(techId, 'defense-evasion')}"`,
         `| sort -_time`,
       ].join('\n');
     }
@@ -514,7 +536,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
         `index=* sourcetype=WinEventLog:Security EventCode=4688 NewProcessName="*powershell.exe"`,
         `| search CommandLine IN ("*Set-MpPreference*", "*Disable-WindowsOptionalFeature*", "*netsh advfirewall*", "*sc stop*", "*MpCmdRun*")`,
         `| stats count by _time, Computer, SubjectUserName, CommandLine`,
-        `| eval technique="${techId}", analytic="${analytic.id}", tactic="defense-evasion"`,
+        `| eval technique="${techId}", analytic="${analytic.id}", tactic="${this.tacticTagFor(techId, 'defense-evasion')}"`,
         `| sort -_time`,
       ].join('\n');
     }

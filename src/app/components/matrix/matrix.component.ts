@@ -21,6 +21,7 @@ import { Domain, TacticColumn } from '../../models/domain';
 import { Tactic } from '../../models/tactic';
 import { Technique } from '../../models/technique';
 import { FilterService, SortMode, HeatmapMode } from '../../services/filter.service';
+import { resolveTacticEntry, techniqueBelongsToColumn } from '../../services/attack-tactics';
 import { MatrixControlService } from '../../services/matrix-control.service';
 import { ImplementationService, ImplStatus } from '../../services/implementation.service';
 import { CveService } from '../../services/cve.service';
@@ -56,6 +57,37 @@ import { M365ControlsService } from '../../services/m365-controls.service';
 import { Cve2CapecService } from '../../services/cve2capec.service';
 import { PocExploitService } from '../../services/poc-exploit.service';
 import { EnrichmentService } from '../../services/enrichment.service';
+
+/**
+ * Tactic header colours keyed by shortname. Enterprise v19 split
+ * defense-evasion into stealth + defense-impairment; the legacy key stays for
+ * the Mobile 18.1 bundle, ICS/Mobile/F3-only tactics have their own entries,
+ * and lookups resolve through tactic aliases (see attack-tactics.ts).
+ */
+export const TACTIC_HEADER_COLORS: Record<string, string> = {
+  'reconnaissance': '#1a1a2e',
+  'resource-development': '#16213e',
+  'initial-access': '#0f3460',
+  'execution': '#533483',
+  'persistence': '#2d6a4f',
+  'privilege-escalation': '#1b4332',
+  'stealth': '#6b2737',
+  'defense-impairment': '#4a1d3a',
+  'defense-evasion': '#6b2737',
+  'credential-access': '#7b2d00',
+  'discovery': '#3d405b',
+  'lateral-movement': '#2c3e50',
+  'collection': '#1a535c',
+  'command-and-control': '#1a4a4a',
+  'exfiltration': '#5a4200',
+  'impact': '#5a1a1a',
+  'inhibit-response-function': '#8b0000',
+  'impair-process-control': '#6b2737',
+  'network-effects': '#1f3b4d',
+  'remote-service-effects': '#2b3a55',
+  'positioning': '#3b2f5c',
+  'monetization': '#5a3a00',
+};
 
 @Component({
   selector: 'app-matrix',
@@ -236,28 +268,11 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
   // Show/hide technique names
   showTechniqueNames = true;
 
-  // Tactic header colors keyed by shortname
-  readonly TACTIC_COLORS: Record<string, string> = {
-    'reconnaissance': '#1a1a2e',
-    'resource-development': '#16213e',
-    'initial-access': '#0f3460',
-    'execution': '#533483',
-    'persistence': '#2d6a4f',
-    'privilege-escalation': '#1b4332',
-    'defense-evasion': '#6b2737',
-    'credential-access': '#7b2d00',
-    'discovery': '#3d405b',
-    'lateral-movement': '#2c3e50',
-    'collection': '#1a535c',
-    'command-and-control': '#1a4a4a',
-    'exfiltration': '#5a4200',
-    'impact': '#5a1a1a',
-    'inhibit-response-function': '#8b0000',
-    'impair-process-control': '#6b2737',
-  };
+  // Tactic header colors keyed by shortname (see TACTIC_HEADER_COLORS).
+  readonly TACTIC_COLORS: Record<string, string> = TACTIC_HEADER_COLORS;
 
   getTacticHeaderColor(shortname: string): string {
-    return this.TACTIC_COLORS[shortname] ?? '#07101a';
+    return resolveTacticEntry(this.TACTIC_COLORS, shortname)?.value ?? '#07101a';
   }
 
   private subs = new Subscription();
@@ -1261,6 +1276,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
 
   private rebuildSortedColumns(): void {
     if (!this.domain) return;
+    const domainShortnames = new Set(this.domain.tactics.map((t) => t.shortname));
     this.sortedColumns = this.domain.tacticColumns
       .filter((col) => !this.hiddenTacticIds.has(col.tactic.id))
       .map((col) => {
@@ -1271,10 +1287,12 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
         if (this.hasDataSourceFilter && this.dataSourceIds) {
           techniques = techniques.filter((t) => this.dataSourceIds!.has(t.id) || t.subtechniques.some((s) => this.dataSourceIds!.has(s.id)));
         }
-        // Append custom techniques for this tactic
+        // Append custom techniques for this tactic. A custom technique saved
+        // under a slug this domain no longer has (e.g. `defense-evasion`
+        // before the v19 split) is placed through its aliases.
         const tacticShortname = col.tactic.shortname;
         const customForTactic = this.customTechniques
-          .filter(ct => ct.tacticShortnames.includes(tacticShortname))
+          .filter(ct => techniqueBelongsToColumn(ct.tacticShortnames, tacticShortname, domainShortnames))
           .map(ct => this.customTechToTechnique(ct));
         techniques = [...techniques, ...customForTactic];
         if (this.sortMode === 'coverage') {
