@@ -37,4 +37,6 @@ services:
       # keys in server/.env.
       ALLOWED_ORIGINS: ${APP_ORIGIN:-http://localhost:8080}
       ALLOWED_HOSTS: proxy
+      # compose environment overrides env_file: the container must bind all interfaces for the nginx /api/ route
+      HOST: 0.0.0.0
     restart: unless-stopped
