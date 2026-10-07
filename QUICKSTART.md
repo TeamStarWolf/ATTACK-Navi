@@ -6,8 +6,8 @@ Open the app: **https://teamstarwolf.github.io/ATTACK-Navi/**
 
 The matrix loads automatically with Enterprise ATT&CK data. No login required.
 
-> **Finding things:** the left rail holds nine workspaces (Matrix, Dashboard, Intel, Detect,
-> Exposure, Coverage, Library, Reports, Settings), each with a tab bar. The quickest way anywhere
+> **Finding things:** the left rail holds ten workspaces (Matrix, Dashboard, Intel, Detect,
+> Exposure, Coverage, Library, Reports, Status, Settings), each with a tab bar. The quickest way anywhere
 > is **`Ctrl+K`** — type a destination name and press Enter. Every destination also has its own
 > URL, so you can bookmark it. Press **`?`** for the full shortcut list.
 
@@ -188,6 +188,6 @@ helm install attack-nav helm/attack-nav/
 
 ### Manual
 ```bash
-npm install && npx ng build
+npm ci && npx ng build
 # Serve dist/mitre-mitigation-navigator/browser/ with any static server
 ```
