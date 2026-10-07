@@ -2,7 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 
-import { Subscription, of } from 'rxjs';
+import { Observable, Subscription, of } from 'rxjs';
 import { AtomicService } from '../../services/atomic.service';
 import { SigmaService } from '../../services/sigma.service';
 import { AttackCveService } from '../../services/attack-cve.service';
@@ -29,7 +29,7 @@ import { SentinelRulesService } from '../../services/sentinel-rules.service';
 import { AnthropicSkillsService } from '../../services/anthropic-skills.service';
 import { ThreatHunterPlaybookService } from '../../services/threathunter-playbook.service';
 
-interface HealthEntry { name: string; status: 'loading' | 'loaded' | 'failed'; }
+interface HealthEntry { name: string; status: 'loading' | 'loaded' | 'failed'; detail?: string; }
 
 const LAST_REFRESHED_KEY = 'data-health-last-refreshed';
 
@@ -46,7 +46,7 @@ const LAST_REFRESHED_KEY = 'data-health-last-refreshed';
           [class.dot-loaded]="entry.status === 'loaded'"
           [class.dot-loading]="entry.status === 'loading'"
           [class.dot-failed]="entry.status === 'failed'"
-          [title]="entry.name + ': ' + entry.status"
+          [title]="entry.name + ': ' + entry.status + (entry.detail ? ' - ' + entry.detail : '')"
         ></span>
       }
       @if (lastRefreshedLabel) {
@@ -140,7 +140,9 @@ export class DataHealthComponent implements OnInit, OnDestroy {
       this.updateLabel();
     }
 
-    const sources: { name: string; loaded$: any }[] = [
+    // `failed$` (optional) emits a reason when a fetch has definitively failed; the dot
+    // turns red rather than pulsing "loading" forever.
+    const sources: { name: string; loaded$: any; failed$?: Observable<string | null> }[] = [
       { name: 'Atomic Red Team', loaded$: this.atomicService.loaded$ },
       { name: 'Sigma Rules', loaded$: this.sigmaService.loaded$ },
       { name: 'ATT&CK CVE', loaded$: this.attackCveService.loaded$ },
@@ -157,7 +159,7 @@ export class DataHealthComponent implements OnInit, OnDestroy {
       { name: 'ExploitDB', loaded$: this.exploitdbService.loaded$ },
       { name: 'Nuclei Templates', loaded$: this.nucleiService.loaded$ },
       { name: 'EPSS', loaded$: of(true) },
-      { name: 'CISA KEV', loaded$: this.cveService.kevLoaded$ },
+      { name: 'CISA KEV', loaded$: this.cveService.kevLoaded$, failed$: this.cveService.kevError$ },
       { name: 'NVD Bulk', loaded$: this.nvdBulkService.loaded$ },
       { name: 'CVE2CAPEC', loaded$: this.cve2capecService.loaded$ },
       { name: 'PoC Exploits', loaded$: this.pocExploitService.loaded$ },
@@ -172,11 +174,24 @@ export class DataHealthComponent implements OnInit, OnDestroy {
     sources.forEach((src, i) => {
       this.subs.add(
         src.loaded$.subscribe((loaded: boolean) => {
+          // A failed source stays red until its own failed$ clears (a retry started).
+          if (!loaded && this.entries[i].status === 'failed') return;
           this.entries[i] = { name: src.name, status: loaded ? 'loaded' : 'loading' };
           if (loaded) this.markRefreshed();
           this.cdr.markForCheck();
         }),
       );
+      if (src.failed$) {
+        this.subs.add(
+          src.failed$.subscribe(reason => {
+            if (this.entries[i].status === 'loaded') return;
+            this.entries[i] = reason
+              ? { name: src.name, status: 'failed', detail: reason }
+              : { name: src.name, status: 'loading' };
+            this.cdr.markForCheck();
+          }),
+        );
+      }
     });
 
     // Also listen to DataService domain fetches

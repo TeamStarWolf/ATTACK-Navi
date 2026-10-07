@@ -2,7 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, Subscription, of, combineLatest, catchError, timeout } from 'rxjs';
+import { BehaviorSubject, Observable, Subscription, of, combineLatest, catchError, defer, throwError, timeout } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { NvdCveItem, KevEntry } from '../models/cve';
 import { AttackCveService } from './attack-cve.service';
@@ -32,7 +32,10 @@ export class CveService {
   private errorSubject = new BehaviorSubject<string | null>(null);
   private kevMapSubject = new BehaviorSubject<Map<string, KevEntry>>(new Map());
   private nvdCacheSubject = new BehaviorSubject<Map<string, NvdCveItem>>(new Map());
+  /** True only once a KEV catalogue has genuinely been parsed — never on a failed fetch. */
   private kevLoadedSubject = new BehaviorSubject<boolean>(false);
+  /** Why the last KEV load attempt failed; null while loading or after a successful load. */
+  private kevErrorSubject = new BehaviorSubject<string | null>(null);
   // Map of attackId -> number of KEV CVEs mapped to it
   private kevTechScoresSubject = new BehaviorSubject<Map<string, number>>(new Map());
 
@@ -42,7 +45,22 @@ export class CveService {
   error$: Observable<string | null> = this.errorSubject.asObservable();
   nvdCache$: Observable<Map<string, NvdCveItem>> = this.nvdCacheSubject.asObservable();
   kevLoaded$: Observable<boolean> = this.kevLoadedSubject.asObservable();
+  kevError$: Observable<string | null> = this.kevErrorSubject.asObservable();
   kevTechScores$: Observable<Map<string, number>> = this.kevTechScoresSubject.asObservable();
+
+  /**
+   * True when the KEV catalogue on hand is real. Consumers that would otherwise treat
+   * "not in the catalogue" as "not exploited" must check this first: an empty map after a
+   * failed fetch says nothing about any CVE.
+   */
+  get kevAvailable(): boolean {
+    return this.kevLoadedSubject.value;
+  }
+
+  /** The last KEV load failure, or null. */
+  get kevError(): string | null {
+    return this.kevErrorSubject.value;
+  }
 
   /** Emits the number of new KEV entries since the user last viewed CVE panel (0 = none). */
   newKevCount$ = new BehaviorSubject<number>(0);
@@ -72,34 +90,55 @@ export class CveService {
     });
   }
 
+  /**
+   * Load the CISA KEV catalogue. A failed fetch (offline, CORS-blocked, timed out, or a
+   * body with no entries) is reported on `kevError$` and leaves `kevLoaded$` false, so
+   * the next `loadKev()` call retries rather than treating an empty map as the catalogue.
+   */
   loadKev(): void {
     if (this.kevLoadedSubject.value || this.kevLoading) return;
     this.kevLoading = true;
+    this.kevErrorSubject.next(null);
     // GitHub mirror first (CORS-safe), direct CISA feed as fallback.
     this.http.get<any>(this.KEV_URL).pipe(
       timeout(10000),
       catchError(() => this.http.get<any>(this.KEV_FALLBACK_URL).pipe(timeout(8000))),
-      catchError(() => of({ vulnerabilities: [] }))
-    ).subscribe((data: any) => {
-      const vulns: KevEntry[] = data.vulnerabilities ?? [];
-      const map = new Map<string, KevEntry>();
-      for (const v of vulns) {
-        map.set(v.cveID, v);
-      }
-      this.kevMapSubject.next(map);
-      this.kevLoading = false;
-      this.kevLoadedSubject.next(true);
+    ).subscribe({
+      next: (data: any) => {
+        const vulns: KevEntry[] | undefined = Array.isArray(data?.vulnerabilities)
+          ? data.vulnerabilities
+          : undefined;
+        if (!vulns || vulns.length === 0) {
+          // A 200 with no catalogue in it is a failure, not a catalogue of zero CVEs.
+          this.failKev('the response carried no KEV entries');
+          return;
+        }
+        const map = new Map<string, KevEntry>();
+        for (const v of vulns) {
+          map.set(v.cveID, v);
+        }
+        this.kevMapSubject.next(map);
+        this.kevLoading = false;
+        this.kevErrorSubject.next(null);
+        this.kevLoadedSubject.next(true);
 
-      // Track new KEV entries for notification badge
-      const currentCount = vulns.length;
-      const previousCount = parseInt(localStorage.getItem('mitre-nav-last-kev-count') ?? '0', 10);
-      if (previousCount > 0 && currentCount > previousCount) {
-        this.newKevCount$.next(currentCount - previousCount);
-      }
-      localStorage.setItem('mitre-nav-last-kev-count', String(currentCount));
+        // Track new KEV entries for notification badge
+        const currentCount = vulns.length;
+        const previousCount = parseInt(localStorage.getItem('mitre-nav-last-kev-count') ?? '0', 10);
+        if (previousCount > 0 && currentCount > previousCount) {
+          this.newKevCount$.next(currentCount - previousCount);
+        }
+        localStorage.setItem('mitre-nav-last-kev-count', String(currentCount));
 
-      this.computeKevTechScores(vulns);
+        this.computeKevTechScores(vulns);
+      },
+      error: (err: any) => this.failKev(err?.message ?? 'network error'),
     });
+  }
+
+  private failKev(reason: string): void {
+    this.kevLoading = false;
+    this.kevErrorSubject.next(`CISA KEV catalog could not be loaded: ${reason}`);
   }
 
   /**
@@ -184,19 +223,43 @@ export class CveService {
       ? `cveId=${encodeURIComponent(query.trim().toUpperCase())}`
       : `keywordSearch=${encodeURIComponent(query.trim())}&resultsPerPage=20`;
 
-    this.searchSub = this.http.get<any>(`${this.NVD_API}?${params}`).pipe(
-      catchError(err => {
-        this.errorSubject.next('NVD API error: ' + (err.message ?? 'network error'));
+    this.searchSub = this.requestNvd(params).subscribe({
+      next: items => {
         this.loadingSubject.next(false);
-        return of(null);
-      })
-    ).subscribe((data: any) => {
-      this.loadingSubject.next(false);
-      if (!data) return;
-      const items = (data.vulnerabilities ?? []).map((v: any) => this.parseNvdItem(v.cve));
-      this.cacheNvdItems(items);
-      this.searchResultsSubject.next(items);
+        this.searchResultsSubject.next(items);
+      },
+      // error$ is already set by requestNvd; only the spinner is left to clear.
+      error: () => this.loadingSubject.next(false),
     });
+  }
+
+  /**
+   * Fetch one CVE record from NVD and cache it. Emits the record, or null when NVD has
+   * no such CVE (rejected, reserved, or not yet published). A failed request (403/429
+   * without an API key, network) errors the observable *and* is mirrored on `error$`,
+   * so a caller waiting on the cache is never left hanging.
+   */
+  fetchCve(cveId: string): Observable<NvdCveItem | null> {
+    const id = cveId.trim().toUpperCase();
+    return defer(() => {
+      this.errorSubject.next(null);
+      return this.requestNvd(`cveId=${encodeURIComponent(id)}`);
+    }).pipe(map(items => items.find(i => i.id.toUpperCase() === id) ?? null));
+  }
+
+  /** One NVD query: parse and cache the records, surfacing HTTP failures on error$ before rethrowing. */
+  private requestNvd(params: string): Observable<NvdCveItem[]> {
+    return this.http.get<any>(`${this.NVD_API}?${params}`).pipe(
+      map((data: any) => {
+        const items: NvdCveItem[] = (data?.vulnerabilities ?? []).map((v: any) => this.parseNvdItem(v.cve));
+        this.cacheNvdItems(items);
+        return items;
+      }),
+      catchError(err => {
+        this.errorSubject.next('NVD API error: ' + (err?.message ?? 'network error'));
+        return throwError(() => err);
+      }),
+    );
   }
 
   selectCve(cve: NvdCveItem | null): void {

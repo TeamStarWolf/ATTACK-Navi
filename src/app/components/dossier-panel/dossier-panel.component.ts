@@ -11,7 +11,7 @@ import {
 import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subscription, TimeoutError, timeout } from 'rxjs';
 
 import {
   CveDossier,
@@ -44,6 +44,9 @@ const ACTION_CLASS: Readonly<Record<string, string>> = {
   track: 'action-track',
 };
 
+/** Upper bound on one NVD lookup; the public API is slow without a key but not this slow. */
+const NVD_FETCH_TIMEOUT_MS = 20000;
+
 interface TierGroup {
   tier: DossierTier;
   label: string;
@@ -75,6 +78,19 @@ export class DossierPanelComponent implements OnInit, OnDestroy {
 
   private subs = new Subscription();
 
+  /**
+   * The CVE the panel is currently showing or building. Every asynchronous result is
+   * checked against it, so a slow response for an earlier CVE cannot land on top of a
+   * later one.
+   */
+  private requested: string | null = null;
+  // Per-request subscriptions. Each open() replaces (and cancels) the previous set
+  // instead of accumulating them in `subs` until destroy.
+  private loadSub?: Subscription;
+  private fetchSub?: Subscription;
+  private cisaSub?: Subscription;
+  private epssSub?: Subscription;
+
   constructor(
     private dossierService: DossierService,
     private cveService: CveService,
@@ -98,7 +114,7 @@ export class DossierPanelComponent implements OnInit, OnDestroy {
     this.subs.add(
       this.route.queryParamMap.subscribe(params => {
         const cve = params.get('cve');
-        if (cve && cve.toUpperCase() !== this.dossier?.cveId) {
+        if (cve && cve.toUpperCase() !== this.requested) {
           this.query = cve.toUpperCase();
           this.open(this.query);
         }
@@ -106,8 +122,10 @@ export class DossierPanelComponent implements OnInit, OnDestroy {
     );
 
     // A late KEV or SSVC load changes the verdict, so recompute rather than leave a
-    // stale one on screen.
+    // stale one on screen. A failed KEV load also recomputes: that attaches the
+    // "catalog unavailable" warning so the KEV flag on screen is not mistaken for CISA's.
     this.subs.add(this.cveService.kevLoaded$.subscribe(() => this.refreshVerdict()));
+    this.subs.add(this.cveService.kevError$.subscribe(() => this.refreshVerdict()));
     this.subs.add(this.ssvc.loaded$.subscribe(() => this.refreshVerdict()));
     // F3 can land after assembly; fold its overlap in without refetching everything.
     this.subs.add(
@@ -133,6 +151,15 @@ export class DossierPanelComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subs.unsubscribe();
+    this.cancelRequest();
+  }
+
+  private cancelRequest(): void {
+    this.loadSub?.unsubscribe();
+    this.fetchSub?.unsubscribe();
+    this.cisaSub?.unsubscribe();
+    this.epssSub?.unsubscribe();
+    this.loadSub = this.fetchSub = this.cisaSub = this.epssSub = undefined;
   }
 
   // ── actions ──────────────────────────────────────────────────────────────
@@ -153,25 +180,33 @@ export class DossierPanelComponent implements OnInit, OnDestroy {
   }
 
   private open(id: string): void {
+    // A new request supersedes everything in flight for the previous one.
+    this.cancelRequest();
+    this.requested = id;
+    this.searching = false;
     this.notice = null;
     this.exportState = '';
     this.loading = true;
     this.cdr.markForCheck();
 
-    this.subs.add(
-      this.dossierService.load(id, this.env).subscribe(d => {
-        this.dossier = d;
-        this.loading = false;
-        this.cdr.markForCheck();
+    this.loadSub = this.dossierService.load(id, this.env).subscribe(d => {
+      if (!this.isCurrent(id)) return;
+      this.dossier = d;
+      this.loading = false;
+      this.cdr.markForCheck();
 
-        // The live path needs an NVD record; fetch it once, then rebuild.
-        if (d.source === 'live' && !this.cveService.getCachedCve(id) && !this.searching) {
-          this.fetchThenReload(id);
-        }
-        this.ensureEpss(id);
-        this.fetchCisa(id);
-      }),
-    );
+      // The live path needs an NVD record; fetch it once, then rebuild.
+      if (d.source === 'live' && !this.cveService.getCachedCve(id)) {
+        this.fetchThenReload(id);
+      }
+      this.ensureEpss(id);
+      this.fetchCisa(id);
+    });
+  }
+
+  /** True while `id` is still the CVE this panel is showing or building. */
+  private isCurrent(id: string): boolean {
+    return this.requested === id;
   }
 
   /**
@@ -186,47 +221,69 @@ export class DossierPanelComponent implements OnInit, OnDestroy {
       this.cdr.markForCheck();
       return;
     }
-    this.subs.add(
-      this.cisaSsvc.fetchSsvc(id).subscribe(assessment => {
-        if (this.dossier?.cveId === id) {
-          this.dossier = { ...this.dossier, cisaSsvc: assessment };
-          this.cdr.markForCheck();
-        }
-      }),
-    );
+    this.cisaSub?.unsubscribe();
+    this.cisaSub = this.cisaSsvc.fetchSsvc(id).subscribe(assessment => {
+      if (this.isCurrent(id) && this.dossier?.cveId === id) {
+        this.dossier = { ...this.dossier, cisaSsvc: assessment };
+        this.cdr.markForCheck();
+      }
+    });
   }
 
-  /** Pull the CVE from NVD, then rebuild the dossier now that the record exists. */
+  /**
+   * Pull the CVE from NVD, then rebuild the dossier now that the record exists.
+   *
+   * `searching` must clear on every outcome — success, "NVD has no such CVE", an HTTP
+   * failure (403/429 without an API key is routine), or a hung request — or the panel
+   * would never fetch again. A failure is told to the reader instead of being shown as
+   * the generic "search it on the CVE tab first" warning.
+   */
   private fetchThenReload(id: string): void {
     this.searching = true;
     this.notice = `${id} was not loaded yet — fetching it from NVD…`;
     this.cdr.markForCheck();
-    this.cveService.searchCves(id);
 
-    const sub = this.cveService.nvdCache$.subscribe(cache => {
-      if (!cache.has(id)) return;
-      sub.unsubscribe();
-      this.searching = false;
-      this.notice = null;
-      this.subs.add(
-        this.dossierService.load(id, this.env).subscribe(d => {
-          this.dossier = d;
+    this.fetchSub?.unsubscribe();
+    this.fetchSub = this.cveService
+      .fetchCve(id)
+      .pipe(timeout(NVD_FETCH_TIMEOUT_MS))
+      .subscribe({
+        next: item => {
+          this.searching = false;
+          if (!this.isCurrent(id)) return;
+          if (!item) {
+            this.notice = `NVD has no record for ${id}, so the dossier is built from the data already loaded.`;
+            this.cdr.markForCheck();
+            return;
+          }
+          this.notice = null;
+          this.loadSub?.unsubscribe();
+          this.loadSub = this.dossierService.load(id, this.env).subscribe(d => {
+            if (!this.isCurrent(id)) return;
+            this.dossier = d;
+            this.cdr.markForCheck();
+            this.fetchCisa(id);
+          });
+        },
+        error: err => {
+          this.searching = false;
+          if (!this.isCurrent(id)) return;
+          const reason = err instanceof TimeoutError ? 'the request timed out' : (err?.message ?? 'network error');
+          this.notice = `NVD lookup for ${id} failed (${reason}). The dossier is built from the data already loaded; try again later.`;
           this.cdr.markForCheck();
-          this.fetchCisa(id);
-        }),
-      );
-    });
-    this.subs.add(sub);
+        },
+      });
   }
 
   private ensureEpss(id: string): void {
     if (this.epssService.getScore(id)) return;
-    this.subs.add(
-      this.epssService.fetchScores([id]).subscribe({
-        next: () => this.refreshVerdict(),
-        error: () => undefined,
-      }),
-    );
+    this.epssSub?.unsubscribe();
+    this.epssSub = this.epssService.fetchScores([id]).subscribe({
+      next: () => {
+        if (this.isCurrent(id)) this.refreshVerdict();
+      },
+      error: () => undefined,
+    });
   }
 
   /** Recompute the SSVC verdict without refetching everything. */
