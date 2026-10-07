@@ -41,12 +41,12 @@
       "showSubtechniques": false
     },
     {
-      "techniqueID": "T0855",
+      "techniqueID": "T1692.001",
       "tactic": "impair-process-control",
       "color": "#fca311",
       "enabled": true,
-      "comment": "MACBETH-SCADA-01 planned coverage: Unauthorized Command Message",
-      "showSubtechniques": false
+      "comment": "MACBETH-SCADA-01 planned coverage: Command Message",
+      "showSubtechniques": true
     },
     {
       "techniqueID": "T0836",

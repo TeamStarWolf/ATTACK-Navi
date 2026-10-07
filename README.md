@@ -73,9 +73,9 @@ The toolbar switches between four domains. Each has a live source and a bundled 
 | Domain | Live source | Bundled snapshot |
 | :-- | :-- | :-- |
 | Enterprise ATT&CK | `mitre-attack/attack-stix-data` | v19.2 |
-| ICS ATT&CK | `mitre-attack/attack-stix-data` | v18.1 |
-| Mobile ATT&CK | `mitre-attack/attack-stix-data` | v18.1 |
-| CTID F3 Fraud Framework | `center-for-threat-informed-defense/fight-fraud-framework` | v1.1 |
+| ICS ATT&CK | `mitre-attack/attack-stix-data` | v19.2 |
+| Mobile ATT&CK | `mitre-attack/attack-stix-data` | v19.2 |
+| CTID F3 Fraud Framework | `center-for-threat-informed-defense/fight-fraud-framework` | v1.2 |
 
 In the default live mode, the app uses a copy cached in IndexedDB if it is less than 24 hours old. Otherwise it renders the bundled snapshot first, fetches the live STIX bundle in the background and switches to it when it arrives. It reports an error only if both fail. A toolbar toggle switches to bundled-only mode. F3 has no mitigations or groups, so coverage views are empty for that domain.
 

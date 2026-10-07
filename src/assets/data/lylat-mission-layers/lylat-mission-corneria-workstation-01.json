@@ -26,7 +26,7 @@
     },
     {
       "techniqueID": "T1027",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "color": "#fca311",
       "enabled": true,
       "comment": "CORNERIA-WORKSTATION-01 planned coverage: Obfuscated Files or Information",
@@ -34,7 +34,7 @@
     },
     {
       "techniqueID": "T1218",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "color": "#fca311",
       "enabled": true,
       "comment": "CORNERIA-WORKSTATION-01 planned coverage: System Binary Proxy Execution",
@@ -58,7 +58,7 @@
     },
     {
       "techniqueID": "T1070.004",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "color": "#fca311",
       "enabled": true,
       "comment": "CORNERIA-WORKSTATION-01 planned coverage: File Deletion",

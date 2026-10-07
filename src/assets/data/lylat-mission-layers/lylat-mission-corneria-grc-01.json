@@ -18,7 +18,7 @@
   "techniques": [
     {
       "techniqueID": "T1078",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "color": "#fca311",
       "enabled": true,
       "comment": "CORNERIA-GRC-01 planned coverage: Valid Accounts",
@@ -26,7 +26,7 @@
     },
     {
       "techniqueID": "T1550",
-      "tactic": "defense-evasion",
+      "tactic": "lateral-movement",
       "color": "#fca311",
       "enabled": true,
       "comment": "CORNERIA-GRC-01 planned coverage: Use Alternate Authentication Material",
@@ -41,16 +41,16 @@
       "showSubtechniques": false
     },
     {
-      "techniqueID": "T1562.002",
-      "tactic": "defense-evasion",
+      "techniqueID": "T1685.001",
+      "tactic": "defense-impairment",
       "color": "#fca311",
       "enabled": true,
-      "comment": "CORNERIA-GRC-01 planned coverage: Disable Windows Event Logging",
+      "comment": "CORNERIA-GRC-01 planned coverage: Disable or Modify Windows Event Log",
       "showSubtechniques": true
     },
     {
-      "techniqueID": "T1070.001",
-      "tactic": "defense-evasion",
+      "techniqueID": "T1685.005",
+      "tactic": "defense-impairment",
       "color": "#fca311",
       "enabled": true,
       "comment": "CORNERIA-GRC-01 planned coverage: Clear Windows Event Logs",
