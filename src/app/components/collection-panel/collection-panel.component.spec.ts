@@ -46,7 +46,7 @@ describe('CollectionPanelComponent', () => {
 
     const mockStixCollectionService = jasmine.createSpyObj(
       'StixCollectionService',
-      ['exportCollection', 'parseBundle', 'importBundle', 'fetchAndParseUrl', 'parseImportFromHash']
+      ['exportCollection', 'importCollection', 'summarizeBundle', 'importFromUrl', 'parseImportFromHash', 'clearImportHash']
     );
     mockStixCollectionService.parseImportFromHash.and.returnValue(null);
 
@@ -112,6 +112,27 @@ describe('CollectionPanelComponent', () => {
     const formTitle = fixture.nativeElement.querySelector('.section-title');
     expect(formTitle).toBeTruthy();
     expect(formTitle.textContent.trim()).toBe('New Technique');
+  });
+
+  it('names the analyst notes a shared-link import would have overwritten, before and after import', () => {
+    const stix = TestBed.inject(StixCollectionService) as jasmine.SpyObj<StixCollectionService>;
+    const summary = { techniques: 1, groups: 0, mitigations: 0, notes: 2, skipped: 0, notesKept: 1, noteConflicts: ['T1059'] };
+    stix.parseImportFromHash.and.returnValue({ bundle: { type: 'bundle', objects: [] }, summary });
+    stix.importCollection.and.returnValue(summary);
+
+    component.checkUrlImport();
+    fixture.detectChanges();
+    const dialog = fixture.nativeElement.querySelector('.import-dialog');
+    expect(dialog).toBeTruthy();
+    // The dialog says WHICH existing note the import would touch, not just counts.
+    expect(dialog.querySelector('.import-note-conflicts').textContent).toContain('T1059');
+    expect(dialog.textContent).toContain('Your notes are kept');
+
+    component.confirmUrlImport();
+    expect(stix.importCollection).toHaveBeenCalledWith(jasmine.objectContaining({ type: 'bundle' }));
+    expect(stix.clearImportHash).toHaveBeenCalled();
+    expect(component.importMessage).toContain('1 existing note(s) kept');
+    expect(component.importMessage).toContain('T1059');
   });
 
   it('should switch tabs when tab buttons are clicked', () => {

@@ -904,7 +904,7 @@
 
               @if (taxiiImportResult) {
                 <div class="integration-status connected" style="margin-top: 8px;">
-                  <span>Imported: {{ taxiiImportResult.techniques }} techniques, {{ taxiiImportResult.groups }} groups, {{ taxiiImportResult.mitigations }} mitigations, {{ taxiiImportResult.notes }} notes ({{ taxiiImportResult.skipped }} skipped)</span>
+                  <span>Imported: {{ taxiiImportResult.techniques }} techniques, {{ taxiiImportResult.groups }} groups, {{ taxiiImportResult.mitigations }} mitigations, {{ taxiiImportResult.notes }} notes ({{ taxiiImportResult.skipped }} skipped@if (taxiiImportResult.notesKept) {, {{ taxiiImportResult.notesKept }} existing note(s) kept})</span>
                 </div>
               }
 

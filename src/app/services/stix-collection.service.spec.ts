@@ -273,5 +273,95 @@ describe('StixCollectionService', () => {
       const summary = service.importCollection({ type: 'bundle', id: 'bundle--none' });
       expect(summary.techniques).toBe(0);
     });
+
+    // --- notes never overwrite the analyst's own annotations ---
+
+    function noteBundle(content: string): Record<string, any> {
+      return makeBundle([
+        {
+          type: 'attack-pattern',
+          id: 'attack-pattern--note-target',
+          name: 'Noted Tech',
+          external_references: [{ source_name: 'mitre-attack', external_id: 'T9400' }],
+        },
+        { type: 'note', id: 'note--1', content, object_refs: ['attack-pattern--note-target'] },
+      ]);
+    }
+
+    it('writes an imported note where the analyst has none', () => {
+      const summary = service.importCollection(noteBundle('vendor note'));
+      expect(summary.notes).toBe(1);
+      expect(summary.notesKept).toBe(0);
+      expect(annotationSvc.getAnnotation('T9400')?.note).toBe('vendor note');
+    });
+
+    it('keeps the analyst note and reports the conflict when a shared bundle targets an annotated technique', () => {
+      annotationSvc.setAnnotation('T9400', 'My precious analysis', 'red', true);
+      // The technique already exists too (the share-link scenario: skipped but still mapped).
+      service.importCollection(noteBundle('first import'));
+
+      const summary = service.importCollection(noteBundle('attacker text'));
+
+      expect(annotationSvc.getAnnotation('T9400')?.note).toBe('My precious analysis');
+      expect(annotationSvc.getAnnotation('T9400')?.color).toBe('red');
+      expect(summary.notes).toBe(0);
+      expect(summary.notesKept).toBe(1);
+      expect(summary.noteConflicts).toEqual(['T9400']);
+    });
+
+    it('does not count an identical note as a conflict, and does not rewrite it', () => {
+      annotationSvc.setAnnotation('T9400', 'same text', 'blue');
+      const summary = service.importCollection(noteBundle('same text'));
+      expect(summary.notesKept).toBe(1);
+      expect(summary.noteConflicts).toEqual([]);
+      expect(annotationSvc.getAnnotation('T9400')?.color).toBe('blue');
+    });
+  });
+
+  describe('summarizeBundle', () => {
+    it('previews counts and note conflicts without writing anything', () => {
+      annotationSvc.setAnnotation('T9500', 'keep me');
+      const bundle = {
+        type: 'bundle',
+        objects: [
+          { type: 'attack-pattern', id: 'ap--1', name: 'A', external_references: [{ source_name: 'mitre-attack', external_id: 'T9500' }] },
+          { type: 'attack-pattern', id: 'ap--2', name: 'B', external_references: [{ source_name: 'mitre-attack', external_id: 'T9501' }] },
+          { type: 'intrusion-set', id: 'is--1', name: 'G' },
+          { type: 'note', id: 'n--1', content: 'overwrite attempt', object_refs: ['ap--1'] },
+          { type: 'note', id: 'n--2', content: 'fresh', object_refs: ['ap--2'] },
+        ],
+      };
+      const summary = service.summarizeBundle(bundle);
+      expect(summary.techniques).toBe(2);
+      expect(summary.groups).toBe(1);
+      expect(summary.notes).toBe(2);
+      expect(summary.notesKept).toBe(1);
+      expect(summary.noteConflicts).toEqual(['T9500']);
+      // Preview only: nothing was created or annotated.
+      expect(techniqueSvc.getAll().length).toBe(0);
+      expect(annotationSvc.getAnnotation('T9500')?.note).toBe('keep me');
+      expect(annotationSvc.getAnnotation('T9501')).toBeUndefined();
+    });
+
+    it('is what the share-link hash preview reports', () => {
+      annotationSvc.setAnnotation('T9600', 'mine');
+      const bundle = {
+        type: 'bundle',
+        objects: [
+          { type: 'attack-pattern', id: 'ap--x', name: 'X', external_references: [{ source_name: 'mitre-attack', external_id: 'T9600' }] },
+          { type: 'note', id: 'n--x', content: 'theirs', object_refs: ['ap--x'] },
+        ],
+      };
+      const encoded = encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(bundle)))));
+      const original = window.location.hash;
+      history.replaceState(null, '', `#import=${encoded}`);
+      try {
+        const parsed = service.parseImportFromHash();
+        expect(parsed?.summary.noteConflicts).toEqual(['T9600']);
+        expect(annotationSvc.getAnnotation('T9600')?.note).toBe('mine');
+      } finally {
+        history.replaceState(null, '', window.location.pathname + window.location.search + original);
+      }
+    });
   });
 });

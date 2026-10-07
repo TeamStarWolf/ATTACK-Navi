@@ -1,8 +1,9 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf - MIT License
-import { Injectable } from '@angular/core';
+import { Injectable, InjectionToken, inject } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import tinycolor from 'tinycolor2';
 import { AttackDomain } from './data.service';
+import { Domain } from '../models/domain';
 import {
   AttackNaviLayer,
   AttackNaviLayerMeta,
@@ -17,6 +18,24 @@ import {
 /** Own IndexedDB store for saved user layers (separate from the STIX cache DB). */
 const IDB_DB = 'attack-navi-user-layers';
 const IDB_STORE = 'layers';
+
+/**
+ * Overrides the IndexedDB database name (specs provide a unique name per
+ * test so persistence specs are isolated and order-independent).
+ */
+export const USER_LAYER_DB_NAME = new InjectionToken<string>('USER_LAYER_DB_NAME');
+
+/** How a layer's technique ids line up with the loaded ATT&CK domain. */
+export interface LayerResolution {
+  /** Distinct technique ids in the layer. */
+  total: number;
+  /** Ids present in the domain as-is. */
+  resolved: number;
+  /** Retired ids that resolve to a live replacement through `Domain.supersededBy`. */
+  remapped: Array<{ from: string; to: string }>;
+  /** Ids the domain cannot place at all — they will never color a cell. */
+  unresolved: string[];
+}
 
 /** Guard rails so a hostile/huge upload can't hang or blow out storage. */
 const MAX_JSON_BYTES = 20 * 1024 * 1024; // 20 MB of raw JSON text
@@ -58,6 +77,8 @@ export class UserLayerService {
   private activeIndex = new Map<string, UserLayerTechnique>();
   private activeMaxScore = 1;
 
+  private readonly dbName = inject(USER_LAYER_DB_NAME, { optional: true }) ?? IDB_DB;
+
   constructor() {
     void this.refreshList();
   }
@@ -77,8 +98,13 @@ export class UserLayerService {
    * internal model. Supports the current format (v4.5) and tolerates v4.x/v3
    * variants (single `version` string, `mitre-*` domains, missing gradient/
    * links). Throws with a friendly message on malformed or oversized input.
+   *
+   * When the loaded domain is given, the layer's technique ids are checked
+   * against it (following retired ids through `Domain.supersededBy`) and ids
+   * that cannot be placed are reported as warnings — a layer that colors
+   * nothing must say so instead of importing silently.
    */
-  convert(json: string): LayerConversionResult {
+  convert(json: string, loadedDomain?: Domain | null): LayerConversionResult {
     if (typeof json !== 'string' || !json.trim()) {
       throw new Error('Empty layer file.');
     }
@@ -133,7 +159,48 @@ export class UserLayerService {
       importedAt: new Date().toISOString(),
       sourceFormat,
     };
+    if (loadedDomain) {
+      const warning = this.resolutionWarning(this.resolve(layer, loadedDomain), loadedDomain);
+      if (warning) warnings.push(warning);
+    }
     return { layer, warnings };
+  }
+
+  /**
+   * Lines the layer's technique ids up with the loaded domain: present as-is,
+   * retired-but-replaced (via `Domain.supersededBy`), or unresolvable.
+   */
+  resolve(layer: AttackNaviLayer, domain: Domain): LayerResolution {
+    const live = new Set(domain.techniques.map(t => t.attackId));
+    const superseded = domain.supersededBy ?? new Map<string, string>();
+    const ids = new Set(layer.techniques.map(t => t.techniqueID));
+    const result: LayerResolution = { total: ids.size, resolved: 0, remapped: [], unresolved: [] };
+    for (const id of ids) {
+      if (live.has(id)) {
+        result.resolved++;
+        continue;
+      }
+      const replacement = superseded.get(id);
+      if (replacement && live.has(replacement)) {
+        result.remapped.push({ from: id, to: replacement });
+      } else {
+        result.unresolved.push(id);
+      }
+    }
+    return result;
+  }
+
+  /** A user-facing warning for a resolution with unresolved ids, or null when every id resolved. */
+  resolutionWarning(resolution: LayerResolution, domain: Domain): string | null {
+    const { total, unresolved } = resolution;
+    if (total === 0 || unresolved.length === 0) return null;
+    const release = `${domain.name} v${domain.attackVersion || '?'}`;
+    const sample = unresolved.slice(0, 5).join(', ') + (unresolved.length > 5 ? `, … (+${unresolved.length - 5} more)` : '');
+    if (unresolved.length === total) {
+      return `None of this layer's ${total} technique ids exist in ${release} (${sample}) — it will color no cells here. ` +
+        'It was written for a different matrix (for example ATLAS) or a different ATT&CK release.';
+    }
+    return `${unresolved.length} of ${total} technique ids do not exist in ${release} and will not color any cell: ${sample}.`;
   }
 
   private convertTechniques(rows: unknown[]): UserLayerTechnique[] {
@@ -294,15 +361,28 @@ export class UserLayerService {
   // ── Activation ───────────────────────────────────────────────────────────────
 
   /** Loads a saved layer by id and makes it the active layer. */
-  async setActive(id: string): Promise<AttackNaviLayer | null> {
+  async setActive(id: string, domain?: Domain | null): Promise<AttackNaviLayer | null> {
     const layer = await this.getLayer(id);
-    if (layer) this.applyActive(layer);
+    if (layer) this.applyActive(layer, domain);
     return layer;
   }
 
-  /** Applies an in-memory layer object as active (no persistence read). */
-  applyActive(layer: AttackNaviLayer): void {
-    this.activeIndex = new Map(layer.techniques.map(t => [t.techniqueID, t]));
+  /**
+   * Applies an in-memory layer object as active (no persistence read). With
+   * the loaded `domain`, an entry keyed by a retired id (e.g. T1070.001) is
+   * also indexed under its live replacement (T1685.005) so the matrix cell and
+   * sidebar that exist in this release pick it up; a direct entry for the
+   * replacement always wins.
+   */
+  applyActive(layer: AttackNaviLayer, domain?: Domain | null): void {
+    const index = new Map(layer.techniques.map(t => [t.techniqueID, t]));
+    if (domain?.supersededBy) {
+      for (const t of layer.techniques) {
+        const replacement = domain.supersededBy.get(t.techniqueID);
+        if (replacement && !index.has(replacement)) index.set(replacement, t);
+      }
+    }
+    this.activeIndex = index;
     const scores = layer.techniques.filter(t => t.enabled).map(t => t.score ?? 0);
     this.activeMaxScore = scores.length ? Math.max(1, ...scores) : 1;
     this.activeLayerSubject.next(layer);
@@ -319,49 +399,21 @@ export class UserLayerService {
 
   // ── Persistence (IndexedDB CRUD) ─────────────────────────────────────────────
 
-  /** Convert + persist + activate in one step. Returns the conversion result. */
-  async importAndSave(json: string): Promise<LayerConversionResult> {
-    const result = this.convert(json);
-    await this.saveLayer(result.layer);
-    this.applyActive(result.layer);
-    return result;
-  }
-
   async saveLayer(layer: AttackNaviLayer): Promise<void> {
-    const db = await this.openIDB();
-    await new Promise<void>((res, rej) => {
-      const tx = db.transaction(IDB_STORE, 'readwrite');
-      tx.objectStore(IDB_STORE).put(layer);
-      tx.oncomplete = () => res();
-      tx.onerror = () => rej(tx.error);
-      tx.onabort = () => rej(tx.error);
-    });
+    await this.withStore('readwrite', store => { store.put(layer); });
     await this.refreshList();
   }
 
   async getLayer(id: string): Promise<AttackNaviLayer | null> {
     try {
-      const db = await this.openIDB();
-      return await new Promise((res, rej) => {
-        const tx = db.transaction(IDB_STORE, 'readonly');
-        const req = tx.objectStore(IDB_STORE).get(id);
-        req.onsuccess = () => res((req.result as AttackNaviLayer) ?? null);
-        req.onerror = () => rej(req.error);
-      });
+      return (await this.withStore<AttackNaviLayer>('readonly', store => store.get(id))) ?? null;
     } catch {
       return null;
     }
   }
 
   async deleteLayer(id: string): Promise<void> {
-    const db = await this.openIDB();
-    await new Promise<void>((res, rej) => {
-      const tx = db.transaction(IDB_STORE, 'readwrite');
-      tx.objectStore(IDB_STORE).delete(id);
-      tx.oncomplete = () => res();
-      tx.onerror = () => rej(tx.error);
-      tx.onabort = () => rej(tx.error);
-    });
+    await this.withStore('readwrite', store => { store.delete(id); });
     if (this.activeLayer?.id === id) this.clearActive();
     await this.refreshList();
   }
@@ -375,22 +427,42 @@ export class UserLayerService {
 
   private async listMetas(): Promise<AttackNaviLayerMeta[]> {
     try {
-      const db = await this.openIDB();
-      const layers: AttackNaviLayer[] = await new Promise((res, rej) => {
-        const tx = db.transaction(IDB_STORE, 'readonly');
-        const req = tx.objectStore(IDB_STORE).getAll();
-        req.onsuccess = () => res((req.result as AttackNaviLayer[]) ?? []);
-        req.onerror = () => rej(req.error);
-      });
+      const layers = (await this.withStore<AttackNaviLayer[]>('readonly', store => store.getAll())) ?? [];
       return layers.map(toLayerMeta);
     } catch {
       return [];
     }
   }
 
+  /**
+   * Runs one transaction against the layers store and closes the connection
+   * when it settles (a connection left open blocks `deleteDatabase` and any
+   * future schema upgrade). Resolves with the request's result, if `run`
+   * returned a request.
+   */
+  private async withStore<T>(
+    mode: IDBTransactionMode,
+    run: (store: IDBObjectStore) => IDBRequest<T> | void,
+  ): Promise<T | undefined> {
+    const db = await this.openIDB();
+    try {
+      return await new Promise<T | undefined>((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE, mode);
+        const req = run(tx.objectStore(IDB_STORE));
+        let result: T | undefined;
+        if (req) req.onsuccess = () => { result = req.result; };
+        tx.oncomplete = () => resolve(result);
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error);
+      });
+    } finally {
+      db.close();
+    }
+  }
+
   private openIDB(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
-      const req = indexedDB.open(IDB_DB, 1);
+      const req = indexedDB.open(this.dbName, 1);
       req.onupgradeneeded = () => {
         const db = req.result;
         if (!db.objectStoreNames.contains(IDB_STORE)) {
