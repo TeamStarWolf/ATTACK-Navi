@@ -79,6 +79,34 @@ describe('SettingsService', () => {
     });
   });
 
+  describe('setProxyToken', () => {
+    it('keeps the proxy access token in sessionStorage only, trimmed, and restores it on reload', () => {
+      service.setProxyToken('  proxy-secret  ');
+      expect(service.current.proxyToken).toBe('proxy-secret');
+      expect(localStorage.getItem('mitre-nav-settings-v1')).not.toContain('proxy-secret');
+      expect(sessionStorage.getItem('mitre-nav-settings-v1-proxy-token')).toBe('proxy-secret');
+
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({});
+      const fresh = TestBed.inject(SettingsService);
+      expect(fresh.current.proxyToken).toBe('proxy-secret');
+    });
+
+    it('clears the stored token when set to empty and ignores a token smuggled into localStorage', () => {
+      service.setProxyToken('proxy-secret');
+      service.setProxyToken('');
+      expect(service.current.proxyToken).toBe('');
+      expect(sessionStorage.getItem('mitre-nav-settings-v1-proxy-token')).toBeNull();
+
+      localStorage.setItem('mitre-nav-settings-v1', JSON.stringify({ proxyToken: 'persisted-secret', matrixCellSize: 'large' }));
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({});
+      const fresh = TestBed.inject(SettingsService);
+      expect(fresh.current.proxyToken).toBe('');
+      expect(fresh.current.matrixCellSize).toBe('large');
+    });
+  });
+
   describe('cellDisplay', () => {
     it('defaults every flag to true', () => {
       const cd = service.current.cellDisplay;

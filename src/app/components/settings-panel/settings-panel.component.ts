@@ -49,6 +49,7 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
 
   // Integrations tab state
   nvdApiKey = '';
+  proxyToken = '';
   openCtiUrl = '';
   openCtiToken = '';
   openCtiMode: 'direct' | 'proxy' = 'direct';
@@ -405,6 +406,7 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
 
   private loadIntegrationsState(): void {
     this.nvdApiKey = this.settingsService.current.nvdApiKey ?? '';
+    this.proxyToken = this.settingsService.current.proxyToken ?? '';
     const ctiConfig = this.openCtiService.getConfig();
     this.openCtiUrl = ctiConfig.url;
     this.openCtiToken = ctiConfig.token;
@@ -426,6 +428,13 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
 
   saveNvdApiKey(): void {
     this.settingsService.setNvdApiKey(this.nvdApiKey);
+  }
+
+  /** Proxy access token: sent as X-Proxy-Key on proxy-mode OpenCTI/MISP calls. */
+  saveProxyToken(): void {
+    this.settingsService.setProxyToken(this.proxyToken);
+    this.proxyToken = this.settingsService.current.proxyToken;
+    this.cdr.markForCheck();
   }
 
   testOpenCti(): void {
