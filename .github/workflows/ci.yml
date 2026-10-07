@@ -1,0 +1,43 @@
+name: CI
+
+# Pull-request gate. deploy.yml runs the unit suite only after a merge, so
+# this is the one place a pull request gets `ng test` before it lands.
+# docker.yml already builds the production bundle on PRs that touch src/,
+# but its path filter skips config-only changes, so the production build
+# runs here too. There is deliberately NO path filter: a required status
+# check that is skipped by a filter blocks the merge instead of passing.
+on:
+  pull_request:
+    branches: [main]
+  merge_group:
+    branches: [main]
+  push:
+    branches: [main]
+  # Run against any ref by hand, e.g. `gh workflow run ci.yml --ref data-refresh/2026-11`.
+  # A pull request opened with the workflow token (refresh-data.yml) does not
+  # trigger pull_request workflows, so this is how that PR gets its check.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  unit:
+    name: Unit tests, curated-layer validation, production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Curated library layers must still match the bundled Enterprise snapshot.
+      - run: npm run validate:layers
+      - run: npx ng test --no-watch --browsers=ChromeHeadless
+      - run: npx ng build --configuration production
