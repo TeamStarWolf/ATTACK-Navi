@@ -139,8 +139,10 @@ describe('AttackCveService', () => {
       TestBed.configureTestingModule({
         providers: [provideHttpClient(withXhr()), provideHttpClientTesting()],
       });
-      TestBed.inject(AttackCveService);
+      const service = TestBed.inject(AttackCveService);
       const mock = TestBed.inject(HttpTestingController);
+      let loaded = false;
+      service.loaded$.subscribe(v => (loaded = v));
 
       mock.expectOne(r => new URL(r.url).pathname.includes('attack_to_cve')).flush('');
       mock.expectOne(fromHost('api.github.com'))
@@ -159,8 +161,19 @@ describe('AttackCveService', () => {
       }
 
       // Only now does the pinned snapshot get its turn.
-      mock.expectOne(r => new URL(r.url).pathname.includes('kev-07.28.2025')).flush({ mapping_objects: [] });
+      expect(loaded).toBeFalse();
+      const pinned = mock.expectOne(r => new URL(r.url).pathname.includes('kev-07.28.2025'));
+      expect(pinned.request.url).not.toContain('attack-99.9');
+      pinned.flush({
+        mapping_objects: [
+          { capability_id: 'CVE-2024-0001', attack_object_id: 'T1190', mapping_type: 'exploitation_technique' },
+        ],
+      });
       mock.verify();
+
+      // The pinned snapshot's data is what got indexed.
+      expect(loaded).toBeTrue();
+      expect(service.getCvesForTechnique('T1190').map(m => m.cveId)).toEqual(['CVE-2024-0001']);
     }));
   });
 });
