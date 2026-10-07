@@ -36,6 +36,7 @@ describe('DataHealthComponent', () => {
   let fixture: ComponentFixture<DataHealthComponent>;
 
   const loadedSubjects: Record<string, BehaviorSubject<boolean>> = {};
+  let kevError$: BehaviorSubject<string | null>;
 
   // Services that expose loaded$ (used in the component's sources array)
   const loadedServiceNames = [
@@ -62,10 +63,11 @@ describe('DataHealthComponent', () => {
     // EpssService is injected but sources use of(true) inline - provide minimal mock
     const mockEpssService = {};
 
-    // CveService exposes kevLoaded$ (not loaded$)
+    // CveService exposes kevLoaded$ (not loaded$) plus kevError$ for a failed fetch
     const mockCveKevLoaded$ = new BehaviorSubject<boolean>(false);
     loadedSubjects['cveKev'] = mockCveKevLoaded$;
-    const mockCveService = { kevLoaded$: mockCveKevLoaded$ };
+    kevError$ = new BehaviorSubject<string | null>(null);
+    const mockCveService = { kevLoaded$: mockCveKevLoaded$, kevError$ };
 
     const mockDataService = {
       lastFetched$: of(null),
@@ -132,6 +134,26 @@ describe('DataHealthComponent', () => {
     expect(loadedDots.length).toBe(2);
     const loadingDots = fixture.nativeElement.querySelectorAll('.dot-loading');
     expect(loadingDots.length).toBe(22);
+  });
+
+  it('marks CISA KEV failed when the fetch fails, and loaded once a retry succeeds', () => {
+    kevError$.next('CISA KEV catalog could not be loaded: network error');
+    fixture.detectChanges();
+    const failed = fixture.nativeElement.querySelector('.dot-failed');
+    expect(failed).toBeTruthy();
+    expect(failed.getAttribute('title')).toContain('CISA KEV: failed');
+    expect(failed.getAttribute('title')).toContain('network error');
+    // A failed source is red, not pulsing yellow: a kevLoaded$ re-emission of false
+    // (BehaviorSubject replay) must not demote it back to "loading".
+    loadedSubjects['cveKev'].next(false);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.dot-failed').length).toBe(1);
+
+    kevError$.next(null);
+    loadedSubjects['cveKev'].next(true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.dot-failed').length).toBe(0);
+    expect(fixture.nativeElement.querySelectorAll('.dot-loaded').length).toBe(2);
   });
 
   it('should show refresh button', () => {

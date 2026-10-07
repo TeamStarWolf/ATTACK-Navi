@@ -41,6 +41,8 @@ import { SigmaService } from './sigma.service';
 import { DEFAULT_ENVIRONMENT, SsvcEnvironment, SsvcService } from './ssvc.service';
 
 const ASSET_DIR = 'assets/data/dossiers';
+/** Leading text of the warning carried while the KEV catalogue could not be loaded. */
+const KEV_UNAVAILABLE_PREFIX = 'The CISA KEV catalog could not be loaded;';
 
 /**
  * Assembles one CVE across every framework the app knows about.
@@ -134,6 +136,7 @@ export class DossierService {
     const entry = this.cveService.getKevEntry(dossier.cveId);
     return {
       ...dossier,
+      warnings: this.withKevWarning(dossier.warnings, dossier),
       isKev: cve.isKev,
       kevDateAdded: entry?.dateAdded ?? dossier.kevDateAdded,
       kevDueDate: entry?.dueDate ?? dossier.kevDueDate,
@@ -167,7 +170,9 @@ export class DossierService {
       cveId: id,
       source: 'asset',
       epss: epssScore,
-      isKev: kevEntry ? true : (raw.isKev ?? false),
+      // Same rule as withLiveKev, so the badge and the verdict never disagree: a loaded
+      // catalogue is authoritative either way; an unavailable one leaves the asset's flag.
+      isKev: kevEntry ? true : this.cveService.kevAvailable ? false : (raw.isKev ?? false),
       kevDateAdded: kevEntry?.dateAdded ?? raw.kevDateAdded,
       kevDueDate: kevEntry?.dueDate ?? raw.kevDueDate,
       kevRansomware: kevEntry
@@ -210,7 +215,24 @@ export class DossierService {
           'dossier rather than a live record. Search it on the CVE tab to refresh.',
       );
     }
+    base.warnings = this.withKevWarning(base.warnings, base);
     return base;
+  }
+
+  /**
+   * The warning shown while the KEV catalogue is unavailable, so a reader knows the
+   * KEV flag (and the verdict built on it) comes from the dossier, not from CISA.
+   * Maintained as a single entry: removed once the catalogue loads, added once it fails.
+   */
+  private withKevWarning(warnings: string[], d: CveDossier): string[] {
+    const kept = warnings.filter(w => !w.startsWith(KEV_UNAVAILABLE_PREFIX));
+    const error = this.cveService.kevError;
+    if (this.cveService.kevAvailable || !error) return kept;
+    const dated = d.source === 'asset' && d.generated
+      ? `the generated dossier dated ${d.generated.slice(0, 10)}`
+      : 'the record on hand';
+    kept.push(`${KEV_UNAVAILABLE_PREFIX} KEV status is taken from ${dated}. (${error})`);
+    return kept;
   }
 
   // ── live path ────────────────────────────────────────────────────────────
@@ -305,6 +327,7 @@ export class DossierService {
         'rows and hunt queries come from a generated dossier; generate one for this CVE ' +
         'to include them.',
     );
+    d.warnings = this.withKevWarning(d.warnings, d);
     return d;
   }
 
@@ -647,10 +670,17 @@ export class DossierService {
    * Read KEV membership from the catalogue rather than the cached record. A record
    * parsed before KEV finished loading keeps isKev false forever, which silently
    * downgrades the SSVC outcome.
+   *
+   * The converse matters just as much: "not in the catalogue" only means "not exploited"
+   * when the catalogue actually loaded. After a failed fetch the map is empty, and
+   * clearing isKev on that evidence would strip KEV from a generated asset and drop its
+   * verdict from act to track. So isKev is only ever cleared when the catalogue is real.
    */
   private withLiveKev(cve: NvdCveItem): NvdCveItem {
     const entry = this.cveService.getKevEntry(cve.id);
-    if (!entry) return cve.isKev ? { ...cve, isKev: false } : cve;
+    if (!entry) {
+      return cve.isKev && this.cveService.kevAvailable ? { ...cve, isKev: false } : cve;
+    }
     return {
       ...cve,
       isKev: true,

@@ -93,6 +93,9 @@ describe('DossierService', () => {
       getKevEntry: (id: string) => (id === 'CVE-2021-44228' ? KEV_ENTRY : undefined),
       loadKev: () => undefined,
       kevLoaded$: { subscribe: () => ({ unsubscribe: () => undefined }) },
+      // A genuinely loaded catalogue, unless a test says otherwise.
+      kevAvailable: true,
+      kevError: null as string | null,
     };
 
     TestBed.configureTestingModule({
@@ -220,6 +223,62 @@ describe('DossierService', () => {
 
     expect(result?.isKev).toBe(true);
     expect(result?.kevRansomware).toBe(true);
+  });
+
+  describe('when the KEV catalogue is unavailable', () => {
+    const KEV_FAILURE = 'CISA KEV catalog could not be loaded: network error';
+
+    beforeEach(() => {
+      cveStub.getKevEntry = () => undefined;
+      cveStub.kevAvailable = false;
+      cveStub.kevError = KEV_FAILURE;
+    });
+
+    it("keeps a generated asset's KEV flag and verdict, and says why", () => {
+      // The failure mode this guards: an empty map after a failed fetch used to read as
+      // "not in KEV", stripping the flag from the asset and dropping act to track.
+      let result: CveDossier | undefined;
+      service.load('CVE-2021-44228').subscribe(d => (result = d));
+      httpMock
+        .expectOne('assets/data/dossiers/CVE-2021-44228.json')
+        .flush({ ...assetPayload(), generated: '2026-09-01T00:00:00.000Z' });
+
+      expect(result?.isKev).toBe(true);
+      expect(result?.ssvc?.action).toBe('act');
+      const warning = result?.warnings.find(w => w.includes('KEV catalog could not be loaded'));
+      expect(warning).toContain('generated dossier dated 2026-09-01');
+      expect(warning).toContain(KEV_FAILURE);
+    });
+
+    it('reevaluate keeps the flag while the catalogue is missing and drops the warning once it loads', () => {
+      let result: CveDossier | undefined;
+      service.load('CVE-2021-44228').subscribe(d => (result = d));
+      httpMock.expectOne('assets/data/dossiers/CVE-2021-44228.json').flush(assetPayload());
+
+      const still = service.reevaluate(result!, { exposed: 'yes', mission: 'medium' });
+      expect(still.isKev).toBe(true);
+      expect(still.ssvc?.action).toBe('act');
+      expect(still.warnings.filter(w => w.includes('KEV catalog could not be loaded')).length).toBe(1);
+
+      // The catalogue arrives and genuinely lacks the CVE: now, and only now, it is cleared.
+      cveStub.kevAvailable = true;
+      cveStub.kevError = null;
+      const loaded = service.reevaluate(still, { exposed: 'yes', mission: 'medium' });
+      expect(loaded.isKev).toBe(false);
+      expect(loaded.ssvc?.action).toBe('track');
+      expect(loaded.warnings.some(w => w.includes('KEV catalog could not be loaded'))).toBe(false);
+    });
+  });
+
+  it('clears an asset KEV flag the loaded catalogue does not confirm', () => {
+    cveStub.getKevEntry = () => undefined;
+    let result: CveDossier | undefined;
+    service.load('CVE-2021-44228').subscribe(d => (result = d));
+    httpMock.expectOne('assets/data/dossiers/CVE-2021-44228.json').flush(assetPayload());
+
+    expect(result?.isKev).toBe(false);
+    expect(result?.ssvc?.action).toBe('track');
+    expect(result?.warnings.some(w => w.includes('KEV catalog could not be loaded'))).toBe(false);
   });
 
   it('aggregates cross-framework enrichment and de-dupes across techniques', () => {
