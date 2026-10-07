@@ -1,5 +1,8 @@
 name: Docker Build
 
+# The push and pull_request path lists must stay identical: a PR that only
+# changes build configuration (angular.json, tsconfig*) once merged with no
+# Docker build because the PR list was shorter than the push list.
 on:
   push:
     branches: [main]
@@ -7,16 +10,22 @@ on:
       - 'Dockerfile'
       - 'nginx.conf'
       - 'src/**'
+      - 'public/**'
       - 'package*.json'
       - 'angular.json'
       - 'tsconfig*.json'
+      - '.github/workflows/docker.yml'
   pull_request:
     branches: [main]
     paths:
       - 'Dockerfile'
       - 'nginx.conf'
       - 'src/**'
+      - 'public/**'
       - 'package*.json'
+      - 'angular.json'
+      - 'tsconfig*.json'
+      - '.github/workflows/docker.yml'
   workflow_dispatch:
 
 permissions:
@@ -29,7 +38,7 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Build Docker image
         run: docker build -t attack-navi:ci .
