@@ -191,7 +191,7 @@
   {
     "file": "lylat-mission-venom-aicortex-01.json",
     "name": "Lylat Mission — VENOM-AICORTEX-01",
-    "domain": "enterprise-attack",
+    "domain": "atlas",
     "description": "Ghost in the Cortex — subverting Andross's AI brain, and the AI-security controls that stop it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
     "blurb": "Planned ATT&CK coverage for Lylat mission VENOM-AICORTEX-01. Draft/training, not a validated detection."
   },
@@ -219,7 +219,7 @@
   {
     "file": "lylat-coverage-atlas.json",
     "name": "Lylat Coverage — ATLAS (AI/ML)",
-    "domain": "enterprise-attack",
+    "domain": "atlas",
     "description": "Training-coverage density across 1 Lylat ATLAS (AI/ML) missions: score = number of missions that map each technique. Planned coverage only (draft, execution_verified:false) - NOT detection or validated coverage. Not an official MITRE mapping.",
     "blurb": "Planned coverage density across the Lylat ATLAS (AI/ML) missions (score = # missions mapping the technique). Not detection."
   },

@@ -172,7 +172,7 @@ export class CollectionPanelComponent implements OnInit, OnDestroy {
     if (!this.importDialogBundle) return;
     const summary = this.stixCollectionService.importCollection(this.importDialogBundle);
     this.stixCollectionService.clearImportHash();
-    this.importMessage = `Imported: ${summary.techniques} techniques, ${summary.groups} groups, ${summary.mitigations} mitigations, ${summary.notes} notes. ${summary.skipped} skipped.`;
+    this.importMessage = this.describeImport(summary);
     this.showImportDialog = false;
     this.importDialogBundle = null;
     this.importDialogSummary = null;
@@ -218,7 +218,7 @@ export class CollectionPanelComponent implements OnInit, OnDestroy {
     this.importMessage = '';
     this.cdr.markForCheck();
     this.stixCollectionService.importFromUrl(url).then(summary => {
-      this.importMessage = `Imported: ${summary.techniques} techniques, ${summary.groups} groups, ${summary.mitigations} mitigations, ${summary.notes} notes. ${summary.skipped} skipped.`;
+      this.importMessage = this.describeImport(summary);
       this.importPreview = null;
       this.importPendingBundle = null;
       this.importFetching = false;
@@ -232,12 +232,7 @@ export class CollectionPanelComponent implements OnInit, OnDestroy {
   }
 
   private previewBundle(bundle: Record<string, any>): void {
-    const objects: any[] = bundle['objects'] ?? [];
-    const techniques = objects.filter(o => o.type === 'attack-pattern').length;
-    const groups = objects.filter(o => o.type === 'intrusion-set').length;
-    const mitigations = objects.filter(o => o.type === 'course-of-action').length;
-    const notes = objects.filter(o => o.type === 'note').length;
-    this.importPreview = { techniques, groups, mitigations, notes, skipped: 0 };
+    this.importPreview = this.stixCollectionService.summarizeBundle(bundle);
     this.importPendingBundle = bundle;
     this.importError = '';
     this.importMessage = '';
@@ -247,11 +242,22 @@ export class CollectionPanelComponent implements OnInit, OnDestroy {
   importBundle(): void {
     if (!this.importPendingBundle) return;
     const summary = this.stixCollectionService.importCollection(this.importPendingBundle);
-    this.importMessage = `Imported: ${summary.techniques} techniques, ${summary.groups} groups, ${summary.mitigations} mitigations, ${summary.notes} notes. ${summary.skipped} skipped.`;
+    this.importMessage = this.describeImport(summary);
     this.importPreview = null;
     this.importPendingBundle = null;
     this.refreshCounts();
     this.cdr.markForCheck();
+  }
+
+  /** One-line result of an import, naming any existing notes that were kept. */
+  private describeImport(summary: ImportSummary): string {
+    let message = `Imported: ${summary.techniques} techniques, ${summary.groups} groups, ${summary.mitigations} mitigations, ${summary.notes} notes. ${summary.skipped} skipped.`;
+    if (summary.notesKept > 0) {
+      message += ` ${summary.notesKept} existing note(s) kept`;
+      if (summary.noteConflicts.length) message += ` (imported text ignored for ${summary.noteConflicts.join(', ')})`;
+      message += '.';
+    }
+    return message;
   }
 
   // ─── Tab 3: Custom Techniques ─────────────────────────────────────────────
