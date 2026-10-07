@@ -8,7 +8,7 @@ const BASE = 'http://localhost:4200';
 // route the first time it is hit. In CI (.github/workflows/e2e.yml) it runs
 // against a static DEVELOPMENT build served by http-server, so there is no
 // per-route compile; the larger CI budget below covers the slower runner and
-// the first load of the 40 MB bundled STIX asset on a cold route.
+// the first load of the ~54 MB bundled STIX asset on a cold route.
 const ROUTE_TIMEOUT = process.env['CI'] ? 60000 : 15000;
 
 test.describe('ATT&CK Navi', () => {

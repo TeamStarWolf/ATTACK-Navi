@@ -28,7 +28,7 @@ Thanks for your interest in contributing! This document describes how to set up 
 | Angular CLI | 22.x | Installed as a dev dependency; the exact version is in `package-lock.json` |
 | Git | 2.x+ | For version control |
 
-The README's [Getting started](../README.md#getting-started) section is the version of record if this table and the README ever disagree.
+The README's [Getting started](README.md#getting-started) section is the version of record if this table and the README ever disagree.
 
 ### Install Dependencies
 

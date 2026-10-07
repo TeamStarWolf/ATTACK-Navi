@@ -188,6 +188,6 @@ helm install attack-nav helm/attack-nav/
 
 ### Manual
 ```bash
-npm install && npx ng build
+npm ci && npx ng build
 # Serve dist/mitre-mitigation-navigator/browser/ with any static server
 ```

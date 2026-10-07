@@ -25,7 +25,7 @@ Three-phase effort so the app opens on a repo-wide view and lets you traverse ev
 ## Repo state
 
 - Verified main: `5831e2d`, with 33 heatmap modes and 36 library layers, on Angular 22.2 / TypeScript 6.0. Remote: `github.com/TeamStarWolf/ATTACK-Navi`. Recheck live branch state before acting.
-- Unit suite: **843 tests passed** at the verified baseline (`npx ng test --watch=false --browsers=ChromeHeadless`). Quote the count Karma prints for the commit you verified rather than this number. The Playwright suite runs in its own non-blocking workflow and has not completed a green run since the Angular 22 upgrade; treat its state as unknown until a run on Node 24 is seen. The proxy suite (`npm test --prefix server`) reports its own count.
+- Unit suite: **843 tests passed** at the verified baseline (`npx ng test --watch=false --browsers=ChromeHeadless`). Quote the count Karma prints for the commit you verified rather than this number. The Playwright suite runs in its own non-blocking workflow and completed its first green run on Node 24 / Angular 22 on 2026-10-07 (workflow_dispatch run 37553849248 on main, 29 passed / 6 visual tests skipped by design); it has no pull_request trigger until PR-Q (#119) lands. The proxy suite (`npm test --prefix server`) reports its own count.
 - OSV: `.github/workflows/osv-scanner.yml` now declares `actions: read`, so the permission problem recorded earlier is fixed. The scan itself still fails to execute because both jobs pass a `--skip-git` flag that osv-scanner v2 removed, and the PR job reports green with no results; the repair is a separate PR. Do not describe an unexecuted scanner as green.
 
 ## How to pick up work
