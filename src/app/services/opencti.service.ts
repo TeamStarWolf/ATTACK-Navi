@@ -4,6 +4,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
+import { SettingsService } from './settings.service';
+import { proxyRequestHeaders } from './proxy-headers';
 
 export interface OpenCtiConfig {
   url: string;       // e.g. https://demo.opencti.io
@@ -120,7 +122,7 @@ export class OpenCtiService {
   private indicatorCache = new Map<string, OpenCtiIndicator[]>();
   private actorCache = new Map<string, OpenCtiThreatActor[]>();
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private settings: SettingsService) {
     this.loadConfigFromStorage();
   }
 
@@ -343,8 +345,11 @@ export class OpenCtiService {
     const endpoint = this.config.mode === 'proxy'
       ? `${this.config.proxyUrl}/api/opencti/graphql`
       : `${this.config.url}/graphql`;
+    // Proxy mode: the proxy authenticates the caller with X-Proxy-Key (Settings >
+    // Integrations > Proxy access token) and requires X-Requested-With; the
+    // OpenCTI token itself never leaves the server.
     const headers = this.config.mode === 'proxy'
-      ? new HttpHeaders({ 'Content-Type': 'application/json' })
+      ? new HttpHeaders({ 'Content-Type': 'application/json', ...proxyRequestHeaders(this.settings.current.proxyToken) })
       : new HttpHeaders({
           'Authorization': `Bearer ${this.config.token}`,
           'Content-Type': 'application/json',

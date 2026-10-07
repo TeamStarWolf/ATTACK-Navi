@@ -639,6 +639,34 @@
 
             <div class="data-section-divider"></div>
 
+            <!-- Credentials proxy access token -->
+            <div class="form-group">
+              <div class="form-label">Proxy access token</div>
+              <div class="integration-row">
+                <input
+                  class="form-input integration-input"
+                  type="password"
+                  placeholder="PROXY_AUTH_TOKEN from server/.env"
+                  [(ngModel)]="proxyToken"
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+                <button class="btn-action btn-refresh" (click)="saveProxyToken()">Save</button>
+              </div>
+              <span class="form-hint">
+                Used by the "Secure backend proxy" mode below. Set <code>PROXY_AUTH_TOKEN</code> in the proxy's
+                <code>server/.env</code> and paste the same value here; it is sent as <code>X-Proxy-Key</code>,
+                kept only for this browser session and never written to disk.
+              </span>
+              @if (settingsService.current.proxyToken) {
+                <div class="integration-status connected">
+                  <span>✓ Proxy token saved for this session</span>
+                </div>
+              }
+            </div>
+
+            <div class="data-section-divider"></div>
+
             <!-- OpenCTI -->
             <div class="form-group">
               <div class="form-label">OpenCTI</div>
