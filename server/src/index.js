@@ -103,8 +103,9 @@ function requireProxyToken(req, res, next) {
 // loopback-bound proxy as a same-origin request, so CORS never applies. Only the
 // hostnames the proxy is legitimately addressed by are accepted; everything else
 // is answered 421 before any upstream call. Ports are ignored on purpose: the
-// hostname is what rebinding controls. Add reverse-proxy / container names with
-// ALLOWED_HOSTS (comma-separated), e.g. ALLOWED_HOSTS=proxy for docker-compose.
+// hostname is what rebinding controls. ALLOWED_HOSTS is a comma-separated list
+// of extra browser-facing hostnames; localhost, 127.0.0.1 and ::1 are always
+// allowed. docker-compose sets it from APP_HOST and nginx forwards the browser's Host.
 const configuredHosts = (process.env.ALLOWED_HOSTS || '')
   .split(',').map((h) => h.trim().toLowerCase()).filter(Boolean);
 const allowedHosts = new Set(['localhost', '127.0.0.1', '::1', ...configuredHosts]);
