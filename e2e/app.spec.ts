@@ -27,6 +27,16 @@ const ATTACK_FIXTURES: Array<[url: string, file: string]> = [
   ],
 ];
 
+// The enrichment source behind the sidebar's signal pills. Every other
+// enrichment host is blocked, so the pills come from this bundled fixture
+// (a Navigator layer of Sigma rule counts in SigmaHQ's own format) instead of
+// the live SigmaHQ coverage layer.
+const SIGMA_COVERAGE_URL =
+  'https://raw.githubusercontent.com/SigmaHQ/sigma/master/other/sigma_attack_nav_coverage.json';
+const ENRICHMENT_FIXTURES: Array<[url: string, file: string]> = [
+  [SIGMA_COVERAGE_URL, 'e2e/fixtures/sigma-coverage.json'],
+];
+
 const isAppOrigin = (url: URL) =>
   (url.hostname === 'localhost' || url.hostname === '127.0.0.1') && url.port === '4200';
 
@@ -41,7 +51,7 @@ const isAppOrigin = (url: URL) =>
  */
 async function hermetic(page: Page): Promise<void> {
   await page.route(url => !isAppOrigin(url), route => route.abort('blockedbyclient'));
-  for (const [url, file] of ATTACK_FIXTURES) {
+  for (const [url, file] of [...ATTACK_FIXTURES, ...ENRICHMENT_FIXTURES]) {
     await page.route(url, route => route.fulfill({ path: file, contentType: 'application/json' }));
   }
 }
@@ -244,11 +254,20 @@ test.describe('ATT&CK Navi', () => {
   });
 
   test('sidebar shows signal pills', async ({ page }) => {
+    // Signals are computed when a technique is selected, so the (routed) Sigma
+    // coverage layer must have been served before the click. The listener is
+    // registered before navigation because the fetch starts at app boot.
+    const sigmaServed = page.waitForResponse(SIGMA_COVERAGE_URL);
     await page.goto(BASE);
-    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
-    await page.locator('.cell').first().click();
+    await sigmaServed;
+    // T1059 carries a rule count in e2e/fixtures/sigma-coverage.json (12 on
+    // the parent + 7 on T1059.001, rolled up to 19 by SigmaService).
+    const cell = page.locator('.cell', { hasText: 'T1059' }).first();
+    await cell.waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+    await cell.click();
     await expect(page.locator('.sidebar.open')).toBeVisible({ timeout: 5000 });
     await expect(page.locator('.signal-pill').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.signal-pill', { hasText: 'Sigma' })).toContainText('19');
   });
 
   test('sidebar shows completeness score', async ({ page }) => {
@@ -377,6 +396,9 @@ test.describe('ATT&CK Navi', () => {
     await page.locator('.cell', { hasText: 'T1059' }).first().click();
     await expect(page.locator('.sidebar.open')).toBeVisible({ timeout: 5000 });
     await expect(page.locator('#sb-sec-imported-layer')).toBeVisible({ timeout: 5000 });
+    // SidebarComponent.ngOnInit collapses this section by default; expand it
+    // so the layer's own entry (score badge) is rendered.
+    await page.locator('#sb-sec-imported-layer').click();
     await expect(page.locator('.imported-layer-section')).toContainText('Score: 90');
   });
 });
