@@ -231,7 +231,9 @@ export class DossierService {
     const dated = d.source === 'asset' && d.generated
       ? `the generated dossier dated ${d.generated.slice(0, 10)}`
       : 'the record on hand';
-    kept.push(`${KEV_UNAVAILABLE_PREFIX} KEV status is taken from ${dated}. (${error})`);
+    // The service's error repeats the prefix; keep only its reason so the text is not said twice.
+    const reason = error.replace(/^CISA KEV catalog could not be loaded:\s*/, '');
+    kept.push(`${KEV_UNAVAILABLE_PREFIX} KEV status is taken from ${dated}. (${reason})`);
     return kept;
   }
 

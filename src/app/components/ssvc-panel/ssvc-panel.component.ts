@@ -146,6 +146,11 @@ export class SsvcPanelComponent implements OnInit, OnDestroy {
 
   // ── actions ──────────────────────────────────────────────────────────────
 
+  /** Try the KEV feeds again after a failed load (a no-op once the catalogue is in). */
+  retryKev(): void {
+    this.cveService.loadKev();
+  }
+
   /**
    * Assess a CVE.
    *
@@ -154,11 +159,6 @@ export class SsvcPanelComponent implements OnInit, OnDestroy {
    * quietly loading a different CVE's verdict. A record already in the cache is
    * selected immediately; otherwise the id is held and picked up when NVD answers.
    */
-  /** Try the KEV feeds again after a failed load (a no-op once the catalogue is in). */
-  retryKev(): void {
-    this.cveService.loadKev();
-  }
-
   search(): void {
     const q = this.query.trim();
     if (!q) return;

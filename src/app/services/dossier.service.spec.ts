@@ -247,7 +247,8 @@ describe('DossierService', () => {
       expect(result?.ssvc?.action).toBe('act');
       const warning = result?.warnings.find(w => w.includes('KEV catalog could not be loaded'));
       expect(warning).toContain('generated dossier dated 2026-09-01');
-      expect(warning).toContain(KEV_FAILURE);
+      expect(warning).toContain('(network error)');
+      expect(warning?.split('could not be loaded').length).toBe(2);
     });
 
     it('reevaluate keeps the flag while the catalogue is missing and drops the warning once it loads', () => {
