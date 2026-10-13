@@ -32,11 +32,14 @@ services:
     environment:
       # These two are set here, not in server/.env, because they describe this
       # compose stack: the page origin the browser sends (override with
-      # APP_ORIGIN=... if you publish the app on another host/port) and the name
-      # nginx uses to reach the proxy (its Host header). They override the same
-      # keys in server/.env.
+      # APP_ORIGIN=... if you publish the app on another host/port) and the extra
+      # Host names the browser may use. nginx forwards the browser's Host to the
+      # proxy, and localhost, 127.0.0.1 and ::1 are always allowed, so the default
+      # (empty) admits only loopback; set APP_HOST=<hostname or LAN IP> (comma
+      # separated for several) next to APP_ORIGIN for a LAN or hostname deployment.
+      # They override the same keys in server/.env.
       ALLOWED_ORIGINS: ${APP_ORIGIN:-http://localhost:8080}
-      ALLOWED_HOSTS: proxy
+      ALLOWED_HOSTS: ${APP_HOST:-}
       # compose environment overrides env_file: the container must bind all interfaces for the nginx /api/ route
       HOST: 0.0.0.0
     restart: unless-stopped

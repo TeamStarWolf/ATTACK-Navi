@@ -496,7 +496,7 @@ The repository's [`Dockerfile`](../Dockerfile) is the containerized deployment: 
 | `NGINX_RESOLVER` | `127.0.0.11` | DNS used to resolve it per request (Docker's embedded DNS; set your cluster DNS on Kubernetes) |
 | `CSP_EXTRA_CONNECT_SRC` | empty | extra `connect-src` origins, space separated (direct-mode OpenCTI/MISP/TAXII, or a proxy on another origin) |
 
-[`docker-compose.yml`](../docker-compose.yml) runs the app on port 8080 together with the credentials proxy (`server/`), sets the proxy's `ALLOWED_ORIGINS` to the page origin and `ALLOWED_HOSTS=proxy`, and reads credentials and `PROXY_AUTH_TOKEN` from the optional `server/.env`. See the README's Docker section for the quick start.
+[`docker-compose.yml`](../docker-compose.yml) runs the app on port 8080 together with the credentials proxy (`server/`), sets the proxy's `ALLOWED_ORIGINS` to the page origin (`APP_ORIGIN`) and `ALLOWED_HOSTS` to `APP_HOST` (empty by default; nginx forwards the browser's `Host`, and loopback names are always allowed), and reads credentials and `PROXY_AUTH_TOKEN` from the optional `server/.env`. See the README's Docker section for the quick start.
 
 ### Build Configuration
 
