@@ -6,6 +6,7 @@
 import { Injectable } from '@angular/core';
 import { Domain } from '../models/domain';
 import { ImplementationService, ImplStatus } from './implementation.service';
+import { csvRow } from '../utils/csv';
 
 export interface ComplianceControl {
   controlId: string;
@@ -195,7 +196,7 @@ export class ComplianceMapperService {
       const techIds = fw.map[controlId] ?? [];
       const status = this.getControlStatus(controlId, framework, domain);
       const statusLabel = status ?? 'Unknown';
-      rows.push(`"${controlId}","${description}","${techIds.join('; ')}","${statusLabel}"`);
+      rows.push(csvRow([controlId, description, techIds.join('; '), statusLabel]));
     }
     return rows.join('\n');
   }

@@ -14,6 +14,7 @@ import { FilterService } from '../../services/filter.service';
 import { PanelNavService } from '../../services/panel-nav.service';
 import { TaggingService } from '../../services/tagging.service';
 import { DataService } from '../../services/data.service';
+import { csvRow } from '../../utils/csv';
 
 export interface TagStat {
   tag: string;
@@ -202,7 +203,7 @@ export class TagsPanelComponent implements OnInit, OnDestroy {
         const tech = this.techniqueMap.get(id);
         const attackId = tech?.attackId ?? id;
         const name = tech?.name ?? '';
-        rows.push(`"${stat.tag}","${attackId}","${name.replace(/"/g, '""')}"`);
+        rows.push(csvRow([stat.tag, attackId, name]));
       }
     }
     const blob = new Blob([rows.join('\n')], { type: 'text/csv' });

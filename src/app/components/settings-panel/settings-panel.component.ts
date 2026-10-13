@@ -18,6 +18,7 @@ import { OpenCtiService } from '../../services/opencti.service';
 import { MispService } from '../../services/misp.service';
 import { TaxiiService, TaxiiServerConfig, TaxiiCollection } from '../../services/taxii.service';
 import { ImportSummary } from '../../services/stix-collection.service';
+import { csvRow } from '../../utils/csv';
 
 @Component({
   selector: 'app-settings-panel',
@@ -377,12 +378,12 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
     for (const mit of domain.mitigations) {
       const techniques = domain.techniquesByMitigation.get(mit.id) ?? [];
       const status = statusMap.get(mit.id) ?? 'not-tracked';
-      rows.push([
+      rows.push(csvRow([
         mit.attackId,
-        `"${mit.name.replace(/"/g, '""')}"`,
+        mit.name,
         status,
         techniques.length,
-      ].join(','));
+      ]));
     }
     const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
     const a = document.createElement('a');

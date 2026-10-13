@@ -159,6 +159,81 @@ describe('DataService', () => {
       });
     });
 
+    describe('object url scheme check', () => {
+      // The url that reaches [href] bindings and the generated HTML report is
+      // taken from the STIX external reference, so a tampered bundle must not
+      // be able to smuggle an executable scheme through it.
+      const withUrl = (id: string, url: unknown, source = 'mitre-attack') =>
+        [{ source_name: source, external_id: id, url }];
+      const parse = (objects: any[]) => (service as any).parseBundle({
+        objects: [{ type: 'x-mitre-collection', x_mitre_version: '19.2', modified: '2026-01-01' }, ...objects],
+      });
+
+      it('keeps an https ATT&CK url verbatim', () => {
+        const domain = parse([
+          { type: 'attack-pattern', id: 'attack-pattern--t1', name: 'T', external_references: withUrl('T1059', 'https://attack.mitre.org/techniques/T1059'), kill_chain_phases: [{ phase_name: 'execution' }] },
+        ]);
+        expect(domain.techniques[0].url).toBe('https://attack.mitre.org/techniques/T1059');
+      });
+
+      it('replaces a javascript: url with the canonical attack.mitre.org technique page', () => {
+        const domain = parse([
+          { type: 'attack-pattern', id: 'attack-pattern--t1', name: 'T', external_references: withUrl('T1059.001', 'javascript:alert(1)'), kill_chain_phases: [{ phase_name: 'execution' }] },
+        ]);
+        expect(domain.techniques[0].url).toBe('https://attack.mitre.org/techniques/T1059/001');
+      });
+
+      it('replaces data: and relative urls, and fills in a missing url', () => {
+        const domain = parse([
+          { type: 'course-of-action', id: 'course-of-action--m1', name: 'M', external_references: withUrl('M1047', 'data:text/html,<script>alert(1)</script>') },
+          { type: 'intrusion-set', id: 'intrusion-set--g1', name: 'G', external_references: withUrl('G0016', '/groups/G0016') },
+          { type: 'malware', id: 'malware--s1', name: 'S', external_references: withUrl('S0002', undefined) },
+          { type: 'campaign', id: 'campaign--c1', name: 'C', external_references: withUrl('C0001', 'javascript:void(0)') },
+          { type: 'x-mitre-tactic', id: 'x-mitre-tactic--ta1', name: 'Execution', x_mitre_shortname: 'execution', external_references: withUrl('TA0002', 'vbscript:msgbox(1)') },
+        ]);
+        expect(domain.mitigations[0].url).toBe('https://attack.mitre.org/mitigations/M1047');
+        expect(domain.groups[0].url).toBe('https://attack.mitre.org/groups/G0016');
+        expect(domain.software[0].url).toBe('https://attack.mitre.org/software/S0002');
+        expect(domain.campaigns[0].url).toBe('https://attack.mitre.org/campaigns/C0001');
+        expect(domain.tactics[0].url).toBe('https://attack.mitre.org/tactics/TA0002');
+      });
+
+      it('treats the legacy mitre-ics-attack / mitre-mobile-attack source names as ATT&CK', () => {
+        const domain = parse([
+          { type: 'attack-pattern', id: 'attack-pattern--i1', name: 'I', external_references: withUrl('T0850', 'javascript:alert(1)', 'mitre-ics-attack'), kill_chain_phases: [{ phase_name: 'execution' }] },
+          { type: 'attack-pattern', id: 'attack-pattern--m1', name: 'M', external_references: withUrl('T1425', 'javascript:alert(1)', 'mitre-mobile-attack'), kill_chain_phases: [{ phase_name: 'execution' }] },
+        ]);
+        expect(domain.techniques.map((t: { url: string }) => t.url).sort()).toEqual([
+          'https://attack.mitre.org/techniques/T0850',
+          'https://attack.mitre.org/techniques/T1425',
+        ]);
+      });
+
+      it('leaves the url empty rather than unsafe when there is no usable id', () => {
+        const domain = parse([
+          { type: 'attack-pattern', id: 'attack-pattern--x1', name: 'X', external_references: withUrl('not an id', 'javascript:alert(1)'), kill_chain_phases: [{ phase_name: 'execution' }] },
+        ]);
+        expect(domain.techniques[0].url).toBe('');
+      });
+
+      it('uses the CTID fraud site for an F3 technique with a bad url', () => {
+        const domain = parse([
+          { type: 'attack-pattern', id: 'attack-pattern--f1', name: 'F', external_references: withUrl('F1002.001', 'javascript:alert(1)', 'mitre-f3'), kill_chain_phases: [{ phase_name: 'fraud' }] },
+        ]);
+        expect(domain.techniques[0].url).toBe('https://ctid.mitre.org/fraud/techniques/F1002.001');
+      });
+
+      it('never emits a non-http(s) scheme for any object', () => {
+        const domain = parse([
+          { type: 'attack-pattern', id: 'attack-pattern--t1', name: 'T', external_references: withUrl('T1059', 'JavaScript:alert(1)'), kill_chain_phases: [{ phase_name: 'execution' }] },
+          { type: 'attack-pattern', id: 'attack-pattern--t2', name: 'T2', external_references: withUrl('T1003', ' javascript:alert(1)'), kill_chain_phases: [{ phase_name: 'execution' }] },
+        ]);
+        for (const t of domain.techniques) {
+          expect(t.url.startsWith('https://')).withContext(t.attackId).toBeTrue();
+        }
+      });
+    });
+
     it('captures detection notes from detects relationships', () => {
       const domain = (service as any).parseBundle(bundle);
       const notes = domain.detectionNotesByTechnique.get('attack-pattern--t1') ?? [];

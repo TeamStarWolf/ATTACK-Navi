@@ -15,6 +15,7 @@ import { CveService } from './cve.service';
 import { EpssService } from './epss.service';
 import { ExploitdbService } from './exploitdb.service';
 import { ImplementationService } from './implementation.service';
+import { csvRow } from '../utils/csv';
 
 // ─── Interfaces ────────────────────────────────────────────────────────────────
 
@@ -402,25 +403,25 @@ export class GapAnalysisService {
 
     // Gap rows
     for (const gap of result.prioritizedGaps) {
-      rows.push([
+      rows.push(csvRow([
         gap.technique.attackId,
-        `"${gap.technique.name.replace(/"/g, '""')}"`,
-        `"${gap.tactic.replace(/"/g, '""')}"`,
+        gap.technique.name,
+        gap.tactic,
         gap.priority,
-        gap.usedByGroups.length.toString(),
-        gap.kevCount.toString(),
+        gap.usedByGroups.length,
+        gap.kevCount,
         gap.hasExploit ? 'Yes' : 'No',
-        `"${gap.detectionSources.join('; ')}"`,
-        `"${gap.recommendation.replace(/"/g, '""')}"`,
-      ].join(','));
+        gap.detectionSources.join('; '),
+        gap.recommendation,
+      ]));
     }
 
     // Summary section
     rows.push('');
     rows.push('--- Summary ---');
-    rows.push(`Generated,${result.generatedAt}`);
-    rows.push(`Domain,${result.domain}`);
-    rows.push(`Selected Actors,"${result.selectedActors.join('; ')}"`);
+    rows.push(csvRow(['Generated', result.generatedAt]));
+    rows.push(csvRow(['Domain', result.domain]));
+    rows.push(csvRow(['Selected Actors', result.selectedActors.join('; ')]));
     rows.push(`Total Techniques,${result.summary.totalTechniques}`);
     rows.push(`Mitigated,${result.summary.mitigated}`);
     rows.push(`Detected,${result.summary.detected}`);

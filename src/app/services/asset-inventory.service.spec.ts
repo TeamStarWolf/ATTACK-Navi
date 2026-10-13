@@ -71,5 +71,23 @@ describe('AssetInventoryService', () => {
       expect(csv).toContain('hostname');
       expect(csv).toContain('web-01');
     });
+
+    it('quotes and formula-neutralises every cell', () => {
+      service.addAsset({ hostname: '=HYPERLINK("http://x/","y")', os: 'linux', software: ['a "b"'], tags: ['@t'] });
+      const row = service.exportCsv().split('\n')[1];
+      expect(row).toBe(`"'=HYPERLINK(""http://x/"",""y"")","linux","a ""b""","'@t","medium"`);
+    });
+
+    it('round-trips its own export through importCsv without adding apostrophes', () => {
+      service.addAsset({ hostname: '-db01', os: 'say "hi", ok', software: ['nginx', 'openssl'], tags: ['=prod'], criticality: 'high' });
+      const csv = service.exportCsv();
+      service.clearAll();
+      const [asset] = service.importCsv(csv);
+      expect(asset.hostname).toBe('-db01');
+      expect(asset.os).toBe('say "hi", ok');
+      expect(asset.software).toEqual(['nginx', 'openssl']);
+      expect(asset.tags).toEqual(['=prod']);
+      expect(asset.criticality).toBe('high');
+    });
   });
 });

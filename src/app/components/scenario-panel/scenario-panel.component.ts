@@ -20,6 +20,7 @@ import { ThreatSimulationService, SimulationResult as ThreatSimResult, Simulatio
 import { EmulationPlanService } from '../../services/emulation-plan.service';
 import { ThreatGroup } from '../../models/group';
 import { Technique } from '../../models/technique';
+import { csvRow } from '../../utils/csv';
 
 export type TechniqueOutcome = 'blocked' | 'detected' | 'vulnerable' | 'unknown';
 
@@ -463,15 +464,15 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
       'Priority,ATT&CK ID,Technique Name,Tactic,KEV Count,Has Exploit,EPSS Avg',
     ];
     for (const gap of result.gaps) {
-      rows.push([
+      rows.push(csvRow([
         gap.priority.toUpperCase(),
         gap.technique.attackId,
-        `"${gap.technique.name.replace(/"/g, '""')}"`,
+        gap.technique.name,
         gap.tactic,
         gap.kevCount,
         gap.hasExploit ? 'Yes' : 'No',
         gap.epssAvg !== null ? gap.epssAvg.toFixed(4) : '',
-      ].join(','));
+      ]));
     }
     const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
     const a = document.createElement('a');
