@@ -2,6 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed } from '@angular/core/testing';
 import { EventLoggingService } from './event-logging.service';
+import { AttackIdResolverService } from './attack-id-resolver.service';
 
 describe('EventLoggingService', () => {
   let service: EventLoggingService;
@@ -32,6 +33,21 @@ describe('EventLoggingService', () => {
 
     it('returns 0 for unknown technique', () => {
       expect(service.getConfigCount('T9999')).toBe(0);
+    });
+  });
+
+  describe('retired technique ids', () => {
+    it('serves event-log-clearing guidance under v19 T1685.005', () => {
+      expect(service.getLoggingConfig('T1685.005').map(c => c.eventId)).toEqual(['1102']);
+    });
+
+    it('translates table keys through the loaded release and merges collisions', () => {
+      const before = service.getLoggingConfig('T1059.001').length + service.getLoggingConfig('T1110').length;
+      // Simulate a release that folds T1059.001 into T1110 (both are table keys).
+      TestBed.inject(AttackIdResolverService).setSupersededBy(new Map([['T1059.001', 'T1110']]));
+      expect(service.getLoggingConfig('T1110').length).toBe(before);
+      expect(service.getAllMappedTechniques()).not.toContain('T1059.001');
+      expect(service.generateScript(['T1110'])).toContain('ScriptBlockLogging');
     });
   });
 

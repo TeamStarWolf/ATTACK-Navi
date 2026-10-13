@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, Subscription, EMPTY, concat, from, of, throwError } from 'rxjs';
 import { catchError, switchMap, tap, throwIfEmpty } from 'rxjs/operators';
 import { retryWithBackoff } from '../utils/retry';
+import { AttackIdResolverService } from './attack-id-resolver.service';
 import { Domain, TacticColumn, DetectionNote } from '../models/domain';
 import { Tactic } from '../models/tactic';
 import { Technique } from '../models/technique';
@@ -98,7 +99,23 @@ export class DataService {
   loading$: Observable<boolean> = this.loadingSubject.asObservable();
   error$: Observable<string | null> = this.errorSubject.asObservable();
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private attackIdResolver: AttackIdResolverService,
+  ) {
+    // Keep the shared resolver in step with whichever domain is on screen, so
+    // lookup tables keyed by retired ids translate against the same release.
+    this.domainSubject.subscribe((domain) => this.attackIdResolver.setSupersededBy(domain?.supersededBy));
+  }
+
+  /**
+   * The live technique id for `attackId` in the loaded domain: the id that
+   * replaced it when ATT&CK retired it (following the full `revoked-by` chain,
+   * see Domain.supersededBy), otherwise `attackId` unchanged.
+   */
+  resolveAttackId(attackId: string): string {
+    return this.attackIdResolver.resolve(attackId);
+  }
 
   setDataSourceMode(mode: DataSourceMode): void {
     this.mode = mode;

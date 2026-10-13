@@ -20,8 +20,9 @@ export interface D3fendTechnique {
 // (loadOntologyIndex / per-technique fetch below) replaces these entries the
 // moment it responds, and live data always takes precedence. Treat any entry
 // rendered from this seed as unverified until confirmed at d3fend.mitre.org.
+// ATT&CK ids are v19.2 (attack-id-currency.spec.ts fails when a refresh retires one).
 // ─────────────────────────────────────────────────────────────────────────────
-const D3FEND_MAPPING: D3fendTechnique[] = [
+export const D3FEND_MAPPING: D3fendTechnique[] = [
   // --- Original 30 entries (with category added) ---
   { id: 'D3-PSA', name: 'Process Spawn Analysis', category: 'Detect', definition: 'Analyzing process spawn events to detect anomalous parent-child relationships.', url: 'https://d3fend.mitre.org/technique/d3f:ProcessSpawnAnalysis', attackIds: ['T1059', 'T1055', 'T1078', 'T1053'] },
   { id: 'D3-NTF', name: 'Network Traffic Filtering', category: 'Isolate', definition: 'Restricting network traffic based on policies and rules.', url: 'https://d3fend.mitre.org/technique/d3f:NetworkTrafficFiltering', attackIds: ['T1021', 'T1071', 'T1041', 'T1095', 'T1572'] },
@@ -41,7 +42,7 @@ const D3FEND_MAPPING: D3fendTechnique[] = [
   { id: 'D3-BA', name: 'Behavioral Analysis', category: 'Detect', definition: 'Detecting anomalous behavior through endpoint behavioral monitoring.', url: 'https://d3fend.mitre.org/technique/d3f:BehavioralAnalysis', attackIds: ['T1059', 'T1055', 'T1071', 'T1048', 'T1041'] },
   { id: 'D3-FA', name: 'File Analysis', category: 'Detect', definition: 'Monitoring and analyzing file system operations.', url: 'https://d3fend.mitre.org/technique/d3f:FileAnalysis', attackIds: ['T1005', 'T1083', 'T1560', 'T1070.004'] },
   { id: 'D3-FR', name: 'File Removal', category: 'Evict', definition: 'Removing malicious or unauthorized files.', url: 'https://d3fend.mitre.org/technique/d3f:FileRemoval', attackIds: ['T1074', 'T1560', 'T1105'] },
-  { id: 'D3-PLA', name: 'Platform Logging', category: 'Detect', definition: 'Collecting logs from operating system and platform components.', url: 'https://d3fend.mitre.org/technique/d3f:PlatformLogging', attackIds: ['T1070', 'T1562.002', 'T1562.006'] },
+  { id: 'D3-PLA', name: 'Platform Logging', category: 'Detect', definition: 'Collecting logs from operating system and platform components.', url: 'https://d3fend.mitre.org/technique/d3f:PlatformLogging', attackIds: ['T1070', 'T1685.001', 'T1685'] },
   { id: 'D3-CE', name: 'Credential Encryption', category: 'Harden', definition: 'Encrypting credentials stored on the endpoint.', url: 'https://d3fend.mitre.org/technique/d3f:CredentialEncryption', attackIds: ['T1003', 'T1552', 'T1555'] },
   { id: 'D3-MFA', name: 'Multi-factor Authentication', category: 'Harden', definition: 'Requiring multiple authentication factors to verify identity.', url: 'https://d3fend.mitre.org/technique/d3f:Multi-factorAuthentication', attackIds: ['T1078', 'T1556', 'T1110', 'T1621'] },
   { id: 'D3-SPP', name: 'Sender Policy Framework', category: 'Harden', definition: 'Validating sender identity to prevent email spoofing.', url: 'https://d3fend.mitre.org/technique/d3f:SenderPolicyFramework', attackIds: ['T1566', 'T1598', 'T1534'] },
@@ -50,7 +51,7 @@ const D3FEND_MAPPING: D3fendTechnique[] = [
   { id: 'D3-PMAD', name: 'Passive Physical Link Analysis', category: 'Detect', definition: 'Monitoring physical network links for anomalous activity.', url: 'https://d3fend.mitre.org/technique/d3f:PassivePhysicalLinkAnalysis', attackIds: ['T1040', 'T1557'] },
   { id: 'D3-ANET', name: 'Authentication Network Traffic Analysis', category: 'Detect', definition: 'Analyzing network authentication traffic to detect abnormal patterns.', url: 'https://d3fend.mitre.org/technique/d3f:AuthenticationNetworkTrafficAnalysis', attackIds: ['T1078', 'T1556', 'T1110'] },
   { id: 'D3-ISVA', name: 'Inbound Session Volume Analysis', category: 'Detect', definition: 'Monitoring and limiting inbound session volumes.', url: 'https://d3fend.mitre.org/technique/d3f:InboundSessionVolumeAnalysis', attackIds: ['T1190', 'T1499'] },
-  { id: 'D3-SCH', name: 'Script Execution Analysis', category: 'Detect', definition: 'Analyzing script execution contexts and behaviors.', url: 'https://d3fend.mitre.org/technique/d3f:ScriptExecutionAnalysis', attackIds: ['T1059', 'T1064', 'T1203'] },
+  { id: 'D3-SCH', name: 'Script Execution Analysis', category: 'Detect', definition: 'Analyzing script execution contexts and behaviors.', url: 'https://d3fend.mitre.org/technique/d3f:ScriptExecutionAnalysis', attackIds: ['T1059', 'T1203'] },
   { id: 'D3-DNSD', name: 'DNS Denylisting', category: 'Harden', definition: 'Blocking resolution of known-malicious domains.', url: 'https://d3fend.mitre.org/technique/d3f:DNSDenylisting', attackIds: ['T1071.004', 'T1568', 'T1048'] },
   { id: 'D3-SYSM', name: 'System Call Analysis', category: 'Detect', definition: 'Monitoring system calls for anomalous behavior.', url: 'https://d3fend.mitre.org/technique/d3f:SystemCallAnalysis', attackIds: ['T1055', 'T1106', 'T1203', 'T1059'] },
 
@@ -60,7 +61,7 @@ const D3FEND_MAPPING: D3fendTechnique[] = [
   { id: 'D3-EHB', name: 'Email Hardening', category: 'Harden', definition: 'Implementing DMARC, DKIM, SPF and content filtering on email systems.', url: 'https://d3fend.mitre.org/technique/d3f:MessageHardening', attackIds: ['T1566', 'T1534', 'T1598'] },
   { id: 'D3-PH', name: 'Patch Management', category: 'Harden', definition: 'Applying security patches and updates in a timely manner.', url: 'https://d3fend.mitre.org/technique/d3f:PatchManagement', attackIds: ['T1190', 'T1203', 'T1068'] },
   { id: 'D3-MPR', name: 'Memory Protection', category: 'Harden', definition: 'Protecting process memory using DEP/NX, ASLR, and stack canaries.', url: 'https://d3fend.mitre.org/technique/d3f:MemoryBoundaryTracking', attackIds: ['T1055', 'T1203', 'T1068'] },
-  { id: 'D3-ILA', name: 'Immutable Log Record', category: 'Harden', definition: 'Protecting log integrity using write-once or append-only storage.', url: 'https://d3fend.mitre.org/technique/d3f:ImmutableLogRecord', attackIds: ['T1070', 'T1562.002', 'T1562.006'] },
+  { id: 'D3-ILA', name: 'Immutable Log Record', category: 'Harden', definition: 'Protecting log integrity using write-once or append-only storage.', url: 'https://d3fend.mitre.org/technique/d3f:ImmutableLogRecord', attackIds: ['T1070', 'T1685.001', 'T1685'] },
   { id: 'D3-SAML', name: 'Strong Authentication', category: 'Harden', definition: 'Enforcing strong authentication mechanisms including certificate-based auth.', url: 'https://d3fend.mitre.org/technique/d3f:StrongPasswordPolicy', attackIds: ['T1110', 'T1078', 'T1556'] },
   { id: 'D3-ACH', name: 'Account Credential Hardening', category: 'Harden', definition: 'Applying password policies, rotation, and protection to service accounts.', url: 'https://d3fend.mitre.org/technique/d3f:AccountCredentialHardening', attackIds: ['T1098', 'T1136', 'T1078'] },
   { id: 'D3-BI', name: 'Boot Integrity', category: 'Harden', definition: 'Ensuring boot process integrity via Secure Boot and TPM measurements.', url: 'https://d3fend.mitre.org/technique/d3f:BootRecordIntegrity', attackIds: ['T1542', 'T1547', 'T1553'] },
@@ -77,7 +78,7 @@ const D3FEND_MAPPING: D3fendTechnique[] = [
   { id: 'D3-URL', name: 'URL Analysis', category: 'Detect', definition: 'Analyzing URLs in messages and documents for malicious indicators.', url: 'https://d3fend.mitre.org/technique/d3f:URLAnalysis', attackIds: ['T1566', 'T1204', 'T1598', 'T1071.001'] },
   { id: 'D3-ATH', name: 'Attachment Analysis', category: 'Detect', definition: 'Analyzing email and message attachments for malicious content.', url: 'https://d3fend.mitre.org/technique/d3f:AttachmentAnalysis', attackIds: ['T1566', 'T1204.002'] },
   { id: 'D3-MA', name: 'Memory Analysis', category: 'Detect', definition: 'Analyzing process memory for malicious code or artifacts.', url: 'https://d3fend.mitre.org/technique/d3f:MemoryAnalysis', attackIds: ['T1055', 'T1003.001', 'T1620', 'T1027'] },
-  { id: 'D3-LFA', name: 'Log File Analysis', category: 'Detect', definition: 'Analyzing log files for indicators of compromise and anomalous activity.', url: 'https://d3fend.mitre.org/technique/d3f:LogFileAnalysis', attackIds: ['T1070', 'T1562', 'T1562.002'] },
+  { id: 'D3-LFA', name: 'Log File Analysis', category: 'Detect', definition: 'Analyzing log files for indicators of compromise and anomalous activity.', url: 'https://d3fend.mitre.org/technique/d3f:LogFileAnalysis', attackIds: ['T1070', 'T1685', 'T1685.001'] },
   { id: 'D3-JT', name: 'Job Analysis', category: 'Detect', definition: 'Monitoring scheduled jobs and tasks for unauthorized modifications.', url: 'https://d3fend.mitre.org/technique/d3f:JobFunctionAccessPatternAnalysis', attackIds: ['T1053', 'T1543', 'T1547'] },
   { id: 'D3-TBI', name: 'TLS Inspection', category: 'Detect', definition: 'Decrypting and inspecting TLS traffic for malicious content.', url: 'https://d3fend.mitre.org/technique/d3f:TLSInspection', attackIds: ['T1573', 'T1071', 'T1095'] },
   { id: 'D3-CHA', name: 'Certificate Analysis', category: 'Detect', definition: 'Analyzing TLS/SSL certificates for anomalies or known-bad issuers.', url: 'https://d3fend.mitre.org/technique/d3f:CertificateAnalysis', attackIds: ['T1573', 'T1583.003', 'T1553'] },

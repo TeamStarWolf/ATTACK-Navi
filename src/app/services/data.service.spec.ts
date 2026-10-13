@@ -141,6 +141,18 @@ describe('DataService', () => {
         expect(domain.retiredNames.get('T1562')).toBe('Impair Defenses');
       });
 
+      it('resolveAttackId translates through the domain on screen', fakeAsync(() => {
+        const domain = (service as any).parseBundle(revokedBundle);
+        spyOn<any>(service, 'loadBundled').and.returnValue(of(domain));
+        expect(service.resolveAttackId('T1550')).toBe('T1550');
+        service.setDataSourceMode('bundled');
+        service.loadDomain();
+        tick();
+        expect(service.resolveAttackId('T1550')).toBe('T1685');
+        expect(service.resolveAttackId('T1685')).toBe('T1685');
+        expect(service.resolveAttackId('T1999')).toBe('T1999');
+      }));
+
       it('still excludes revoked techniques from the matrix', () => {
         const domain = (service as any).parseBundle(revokedBundle);
         expect(domain.techniques.map((t: any) => t.attackId)).toEqual(['T1685']);
