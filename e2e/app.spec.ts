@@ -363,7 +363,9 @@ test.describe('ATT&CK Navi', () => {
 
   test('uploading a Navigator layer saves it and colors the matrix by it', async ({ page }) => {
     // importNavigatorLayer() reports through window.alert (and window.confirm
-    // on a domain mismatch); an unanswered dialog would hang the flow.
+    // on a domain mismatch, plus the opt-in confirm before comment-derived
+    // statuses are written); an unanswered dialog would hang the flow. The
+    // handler accepts every dialog type, so alert and both confirms say yes.
     const dialogs: string[] = [];
     page.on('dialog', dialog => {
       dialogs.push(dialog.message());
@@ -385,7 +387,7 @@ test.describe('ATT&CK Navi', () => {
     const saved = page.locator('.saved-layer-list .sl-name', { hasText: 'E2E Coverage' });
     await expect(saved).toHaveCount(1, { timeout: 15000 });
     await expect(page.locator('.saved-layer-row.active .sl-name')).toHaveText('E2E Coverage');
-    expect(dialogs.some(m => m.includes('"E2E Coverage" imported and saved (3 techniques)'))).toBeTruthy();
+    expect(dialogs.some(m => m.includes('"E2E Coverage" imported and saved (3 technique entries)'))).toBeTruthy();
 
     // The matrix is now in the library heatmap mode, driven by the upload.
     await page.locator('.nav-item', { hasText: 'Matrix' }).click();
