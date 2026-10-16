@@ -1,0 +1,11 @@
+{
+  "name": "Sigma rule coverage (e2e fixture)",
+  "versions": { "attack": "19", "navigator": "5.1.0", "layer": "4.5" },
+  "domain": "enterprise-attack",
+  "description": "Small stand-in for SigmaHQ's sigma_attack_nav_coverage.json, served by the hermetic Playwright route.",
+  "techniques": [
+    { "techniqueID": "T1059", "score": 12 },
+    { "techniqueID": "T1059.001", "score": 7 },
+    { "techniqueID": "T1566", "score": 4 }
+  ]
+}
