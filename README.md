@@ -79,7 +79,7 @@ The toolbar switches between four domains. Each has a live source and a bundled 
 
 In the default live mode, the app uses a copy cached in IndexedDB if it is less than 24 hours old. Otherwise it renders the bundled snapshot first, fetches the live STIX bundle in the background and switches to it when it arrives. It reports an error only if both fail. A toolbar toggle switches to bundled-only mode. F3 has no mitigations or groups, so coverage views are empty for that domain.
 
-The `refresh-data.yml` workflow runs monthly, regenerates the four snapshots and the CVE map described below, and opens a `data-refresh/YYYY-MM` pull request.
+The `refresh-data.yml` workflow runs monthly, downloads the four snapshots from a pinned upstream commit, refuses a version downgrade or a mismatched ATT&CK version across domains, regenerates the CVE map described below, revalidates the curated library layers, runs the unit suite and a production build against the refreshed data, and then opens a `data-refresh/YYYY-MM` pull request. Opening that pull request needs the repository setting "Allow GitHub Actions to create and approve pull requests"; without it the workflow pushes the branch and fails with that instruction in its job summary.
 
 Many mapping datasets are pinned to older ATT&CK releases: most CTID Mappings Explorer files to ATT&CK 16.1, and CSA CCM to 17.1. Exposure > CVE and the CVE dossiers translate mapped technique IDs to the loaded release through ATT&CK's revoked-by relationships, and flag IDs that have no replacement instead of dropping them. The control mappings (NIST 800-53, AWS, Azure, GCP, CRI Profile, VERIS, CSA CCM and M365) are matched on the technique IDs as published and are not translated, so their mappings to retired techniques such as the T1562 family do not appear on the replacement techniques.
 
@@ -208,7 +208,7 @@ The proxy is a small Express app. It exposes `GET /api/health`, `POST /api/openc
 
 `.github/workflows/deploy.yml` runs on pushes to `main`, daily at 06:17 UTC, and on manual dispatch. It runs `npm ci`, the unit tests, and `ng build --base-href /ATTACK-Navi/`, then publishes `dist/mitre-mitigation-navigator/browser`. The Playwright suite runs separately in `e2e.yml` on pushes to `main` that change `src/`, `e2e/`, `playwright.config.ts` or `package.json`, and does not block the deploy.
 
-No workflow runs the unit tests on pull requests. Pull requests get the Docker build and smoke test when they touch `src/`, the Dockerfile, `nginx.conf` or the package files, the proxy tests when `server/` changes, and OSV-Scanner and dependency review.
+`.github/workflows/ci.yml` runs on every pull request and push to `main` (no path filter, so it can be a required check): `npm ci`, `npm run validate:layers`, the unit tests and a production build on Node 24. Pull requests also get the Docker build and smoke test when they touch `src/`, the Dockerfile, `nginx.conf` or the package files, the proxy tests when `server/` changes, and OSV-Scanner and dependency review. None of these checks is required by the `main` ruleset yet, so a red check does not block a merge until an owner adds them as required status checks.
 
 ### Docker
 
