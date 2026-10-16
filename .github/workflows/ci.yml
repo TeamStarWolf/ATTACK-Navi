@@ -36,6 +36,9 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      # Trust-boundary verifier for refresh-data.yml's artifact; its tests
+      # build real malicious archives with tar (no dependencies needed).
+      - run: node --test scripts/ci/verify-data-archive.test.mjs
       - run: npm ci
       # Curated library layers must still match the bundled Enterprise snapshot.
       - run: npm run validate:layers
