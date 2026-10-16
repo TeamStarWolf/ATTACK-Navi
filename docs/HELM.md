@@ -121,6 +121,8 @@ FROM registry.example.com/attack-nav:0.10.0
 ENV CSP_EXTRA_CONNECT_SRC="https://navi-proxy.example.com"
 ```
 
+The `/api/` defaults are the docker-compose ones and do not work in a cluster: the chart does not deploy the proxy (see above), so there is no `proxy` host for `/api/` to reach, and `127.0.0.11` is Docker's embedded DNS, which a Kubernetes pod does not have. To use the same-origin `/api/` route with a proxy you run in the cluster, set `PROXY_UPSTREAM` (the proxy's in-cluster URL) and `NGINX_RESOLVER` (your cluster DNS, as [CONFIGURATION.md](CONFIGURATION.md#docker) notes) in the same derived image. Through that route the proxy shares the app's origin and needs no `CSP_EXTRA_CONNECT_SRC` entry.
+
 Build and push that under its own tag and point `image.tag` at it. The proxy, in turn, must list the app's origin in its `ALLOWED_ORIGINS` (see [server/README.md](../server/README.md)).
 
 ## Templates
