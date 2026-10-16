@@ -101,7 +101,9 @@ export class DataService {
 
   constructor(
     private http: HttpClient,
-    private attackIdResolver: AttackIdResolverService,
+    // DI always supplies the root resolver; the default only serves callers
+    // that construct the parser directly (e.g. the lens test harness).
+    private attackIdResolver: AttackIdResolverService = new AttackIdResolverService(),
   ) {
     // Keep the shared resolver in step with whichever domain is on screen, so
     // lookup tables keyed by retired ids translate against the same release.
