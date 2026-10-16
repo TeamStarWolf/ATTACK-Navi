@@ -101,6 +101,46 @@ describe('SiemQueryService', () => {
     expect(tactics.length).toBeGreaterThanOrEqual(10);
   });
 
+  describe('ATT&CK v19 tactic slugs', () => {
+    it('resolves stealth and defense-impairment to the former defense-evasion template', () => {
+      const stealth = service.getQueriesForTechnique('T1036', 'stealth');
+      const impair = service.getQueriesForTechnique('T1685', 'defense-impairment');
+      expect(stealth.length).toBe(5);
+      expect(impair.length).toBe(5);
+      expect(stealth[0].title).toContain('Process Injection, Timestomping & Log Clearing');
+      expect(impair[0].title).toContain('Process Injection, Timestomping & Log Clearing');
+    });
+
+    it('tags generated SPL/KQL with the requested tactic, never the retired slug', () => {
+      const stealth = service.getQueriesForTechnique('T1036', 'stealth');
+      const splunk = stealth.find(q => q.platform === 'splunk')!;
+      const sentinel = stealth.find(q => q.platform === 'microsoft')!;
+      expect(splunk.query).toContain('tactic="stealth"');
+      expect(sentinel.query).toContain('Tactic = "stealth"');
+      expect(splunk.query).not.toContain('defense-evasion');
+      expect(sentinel.query).not.toContain('defense-evasion');
+      expect(splunk.query).not.toContain('{{TACTIC}}');
+
+      const impair = service.getQueriesForTechnique('T1685', 'defense-impairment');
+      expect(impair.find(q => q.platform === 'splunk')!.query).toContain('tactic="defense-impairment"');
+    });
+
+    it('keeps the legacy slug for the Mobile 18.1 bundle and resolves ICS evasion', () => {
+      const mobile = service.getQueriesForTechnique('T1406', 'defense-evasion');
+      expect(mobile.length).toBe(5);
+      expect(mobile.find(q => q.platform === 'splunk')!.query).toContain('tactic="defense-evasion"');
+      expect(service.getQueriesForTechnique('T0849', 'evasion').length).toBe(5);
+    });
+
+    it('no template leaves a {{TACTIC}} placeholder unsubstituted', () => {
+      for (const tactic of service.getAvailableTactics()) {
+        for (const q of service.getQueriesForTechnique('T0000', tactic)) {
+          expect(q.query).withContext(`${tactic} ${q.platform}`).not.toContain('{{TACTIC}}');
+        }
+      }
+    });
+  });
+
   it('getAllQueriesForTechnique deduplicates across multiple tactics', () => {
     const queries = service.getAllQueriesForTechnique('T1003.001', ['credential-access', 'discovery']);
     // Curated queries take precedence — same titles, no duplicates

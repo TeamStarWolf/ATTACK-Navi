@@ -3,6 +3,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, shareReplay, map, catchError, of } from 'rxjs';
+import { ENTERPRISE_TACTIC_ORDER, tacticAliases, tacticLabel } from './attack-tactics';
 
 export type AssetType = 'tool' | 'channel' | 'x-account' | 'book' | 'field-note';
 
@@ -41,17 +42,33 @@ const EMPTY: LibraryData = {
   assets: [],
 };
 
-/** Canonical ATT&CK tactic ordering for UI display. */
-export const ATTACK_TACTIC_ORDER: string[] = [
-  'reconnaissance', 'resource-development', 'initial-access', 'execution',
-  'persistence', 'privilege-escalation', 'defense-evasion', 'credential-access',
-  'discovery', 'lateral-movement', 'collection', 'command-and-control',
-  'exfiltration', 'impact',
-];
+/** Canonical (Enterprise v19) ATT&CK tactic ordering for UI display. */
+export const ATTACK_TACTIC_ORDER: string[] = [...ENTERPRISE_TACTIC_ORDER];
 
-export function tacticLabel(slug: string): string {
-  // "credential-access" -> "Credential Access"
-  return slug.split('-').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
+export { tacticLabel };
+
+/** True when an asset's tactic tags cover `slug` directly or through an alias. */
+export function assetMatchesTactic(asset: Pick<LibraryAsset, 'attack_tactics'>, slug: string): boolean {
+  const tags = asset.attack_tactics;
+  if (!tags || tags.length === 0) return false;
+  return tacticAliases(slug).some(s => tags.includes(s));
+}
+
+/**
+ * library.json is produced by an external generator that still tags assets
+ * with the pre-v19 `defense-evasion` slug. Fill in counts for every current
+ * tactic that the generator did not emit, counting assets through the alias
+ * map, so the Coverage tab and tactic chips reflect the v19 matrix without
+ * waiting for the generator to catch up.
+ */
+export function normalizeLibraryData(data: LibraryData): LibraryData {
+  const assets = data.assets ?? [];
+  const tactic_counts: Record<string, number> = { ...(data.tactic_counts ?? {}) };
+  for (const slug of ENTERPRISE_TACTIC_ORDER) {
+    if (tactic_counts[slug] !== undefined) continue;
+    tactic_counts[slug] = assets.filter(a => assetMatchesTactic(a, slug)).length;
+  }
+  return { ...data, assets, tactic_counts };
 }
 
 /**
@@ -69,7 +86,8 @@ export class LibraryService {
   readonly library$: Observable<LibraryData> = this.http
     .get<LibraryData>('assets/library.json')
     .pipe(
-      map(data => {
+      map(raw => {
+        const data = normalizeLibraryData(raw);
         this.loaded.next(true);
         this.cached = data;
         return data;
@@ -95,10 +113,14 @@ export class LibraryService {
   // Used by ATT&CK Workbench panels to surface Library assets relevant to a
   // selected technique, tactic, or freeform query.
 
-  /** All assets tagged with the given ATT&CK tactic slug. */
+  /**
+   * All assets tagged with the given ATT&CK tactic slug. Resolves through
+   * tactic aliases so a v19 `stealth` lookup finds assets the generator
+   * tagged `defense-evasion`, and vice versa for the Mobile bundle.
+   */
   getAssetsForTactic(slug: string): LibraryAsset[] {
     if (!slug) return [];
-    return this.cached.assets.filter(a => a.attack_tactics?.includes(slug));
+    return this.cached.assets.filter(a => assetMatchesTactic(a, slug));
   }
 
   /**
@@ -108,7 +130,8 @@ export class LibraryService {
   getAssetsForTechnique(attackId: string, name: string, tacticSlugs: string[]): LibraryAsset[] {
     const idLower = (attackId ?? '').toLowerCase().trim();
     const nameLower = (name ?? '').toLowerCase().trim();
-    const tactics = new Set(tacticSlugs ?? []);
+    // Expand through aliases so v19 technique tactics match legacy asset tags.
+    const tactics = new Set((tacticSlugs ?? []).flatMap(s => tacticAliases(s)));
 
     // No signal to score against → return empty
     if (!idLower && !nameLower && tactics.size === 0) return [];

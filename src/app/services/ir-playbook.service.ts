@@ -9,6 +9,7 @@ import { Domain } from '../models/domain';
 import { SigmaService } from './sigma.service';
 import { ElasticService } from './elastic.service';
 import { AtomicService } from './atomic.service';
+import { resolveTacticEntry } from './attack-tactics';
 
 export interface PlaybookStep {
   phase: 'identify' | 'contain' | 'eradicate' | 'recover' | 'lessons';
@@ -31,15 +32,20 @@ export interface IRPlaybook {
   relatedTechniques: string[];
 }
 
-const TACTIC_ORDER = [
-  'reconnaissance', 'resource-development', 'initial-access', 'execution',
-  'persistence', 'privilege-escalation', 'defense-evasion', 'credential-access',
-  'discovery', 'lateral-movement', 'collection', 'command-and-control',
-  'exfiltration', 'impact',
-];
-
-// Response patterns by tactic
-const TACTIC_RESPONSES: Record<string, { contain: string[]; eradicate: string[]; recover: string[] }> = {
+// Response patterns by tactic shortname. Keyed on the Enterprise v19 slugs;
+// lookups go through resolveTacticEntry so the Mobile 18.1 `defense-evasion`
+// and ICS `evasion` slugs resolve to the `stealth` entry.
+export const TACTIC_RESPONSES: Record<string, { contain: string[]; eradicate: string[]; recover: string[] }> = {
+  'reconnaissance': {
+    contain: ['Block scanning source IPs at the perimeter', 'Rate-limit or geo-block the probing ranges', 'Alert on follow-on access attempts from the same sources'],
+    eradicate: ['Remove exposed services and banners that leak version information', 'Take down leaked documents or credentials found in open sources', 'Close unnecessary external ports'],
+    recover: ['Reduce the external attack surface', 'Monitor dark-web and paste sites for organization mentions', 'Review public DNS, WHOIS and certificate exposure'],
+  },
+  'resource-development': {
+    contain: ['Block known adversary infrastructure (domains, IPs, certificates)', 'Report lookalike domains and malicious accounts to registrars/providers', 'Add infrastructure indicators to threat-intel blocklists'],
+    eradicate: ['Request takedown of lookalike domains and hosted payloads', 'Revoke compromised certificates or accounts used for staging', 'Remove adversary tooling discovered on owned infrastructure'],
+    recover: ['Monitor certificate transparency and domain registrations for brand abuse', 'Share infrastructure indicators with ISACs/partners', 'Harden external accounts against takeover'],
+  },
   'initial-access': {
     contain: ['Block source IP/domain at perimeter firewall', 'Quarantine affected endpoint', 'Disable compromised user account'],
     eradicate: ['Remove malicious email/attachment', 'Patch exploited vulnerability', 'Update email filtering rules'],
@@ -60,10 +66,52 @@ const TACTIC_RESPONSES: Record<string, { contain: string[]; eradicate: string[];
     eradicate: ['Patch vulnerable service', 'Remove exploit artifacts', 'Reset service account credentials'],
     recover: ['Audit all privileged accounts', 'Implement least privilege', 'Enable PAM/PIM monitoring'],
   },
-  'defense-evasion': {
-    contain: ['Re-enable disabled security tools', 'Restore tampered logs', 'Block evasion tool hashes'],
-    eradicate: ['Remove rootkits/packers', 'Restore security configurations', 'Re-enable logging'],
-    recover: ['Validate security tool integrity', 'Verify log completeness', 'Update detection rules for evasion variant'],
+  // v19 split of the former defense-evasion tactic: stealth = hiding from
+  // defenses (masquerading, obfuscation, injection, rootkits).
+  'stealth': {
+    contain: ['Block evasion tool hashes', 'Isolate hosts running masquerading or injected processes', 'Quarantine obfuscated payloads'],
+    eradicate: ['Remove rootkits/packers', 'Terminate injected and masquerading processes', 'Remove obfuscated scripts and loaders'],
+    recover: ['Validate binary and process integrity', 'Update detection rules for evasion variant', 'Deploy script block and image-load logging'],
+  },
+  // v19 split of the former defense-evasion tactic: defense-impairment =
+  // disabling, degrading or blinding defenses (tools, logging, firewalls).
+  'defense-impairment': {
+    contain: ['Re-enable disabled security tools', 'Restore tampered logs', 'Restore firewall and audit policy'],
+    eradicate: ['Restore security configurations', 'Re-enable logging', 'Remove persistence that disables defenses'],
+    recover: ['Validate security tool integrity', 'Verify log completeness', 'Add tamper-protection alerts for security tooling'],
+  },
+  // ICS-only tactics (ATT&CK for ICS)
+  'inhibit-response-function': {
+    contain: ['Switch affected safety/protection systems to manual control', 'Isolate the engineering workstation from the control network', 'Preserve controller state before any change'],
+    eradicate: ['Restore safety instrumented system logic from known-good project files', 'Remove unauthorized firmware or logic changes', 'Reset blocked or suppressed alarms'],
+    recover: ['Verify safety and protection functions end to end', 'Re-enable alarm reporting and historian collection', 'Review ICS change-management records'],
+  },
+  'impair-process-control': {
+    contain: ['Return the process to a safe operating state', 'Block unauthorized writes to controllers at the network boundary', 'Disconnect compromised HMIs from the control network'],
+    eradicate: ['Restore controller setpoints and logic from validated backups', 'Remove rogue control messages or modified parameters', 'Patch or replace compromised field devices'],
+    recover: ['Validate process variables against physical measurements', 'Audit all controller writes during the incident window', 'Implement write protection on controllers'],
+  },
+  // Mobile-only tactics (ATT&CK for Mobile)
+  'network-effects': {
+    contain: ['Move affected devices off the compromised network or carrier segment', 'Block malicious cell or Wi-Fi access points', 'Disable vulnerable radio protocols where possible'],
+    eradicate: ['Remove rogue base station or access point', 'Reset network configuration profiles on affected devices', 'Rotate credentials exposed in transit'],
+    recover: ['Enforce certificate pinning and encrypted transport', 'Monitor for anomalous network attachment events', 'Update mobile threat defense policy'],
+  },
+  'remote-service-effects': {
+    contain: ['Revoke sessions on the affected cloud or MDM service', 'Suspend compromised device-management accounts', 'Block remote wipe or locate actions pending review'],
+    eradicate: ['Reset credentials for the remote service account', 'Remove unauthorized device registrations', 'Audit and revert remote configuration changes'],
+    recover: ['Enable MFA on all device-management and cloud accounts', 'Alert on remote service actions from new locations', 'Review MDM audit logs'],
+  },
+  // CTID Fraud Framework (F3) tactics
+  'positioning': {
+    contain: ['Freeze accounts showing fraud staging activity', 'Block mule or drop accounts identified in staging', 'Add fraud rules for the observed positioning pattern'],
+    eradicate: ['Close fraudulent accounts and linked identities', 'Remove unauthorized payees and devices', 'Revoke tokens issued during the positioning window'],
+    recover: ['Review customer onboarding and KYC controls', 'Tune fraud scoring for the observed pattern', 'Share indicators with fraud intelligence partners'],
+  },
+  'monetization': {
+    contain: ['Hold or reverse pending fraudulent transfers', 'Block destination accounts and payment instruments', 'Freeze affected customer accounts'],
+    eradicate: ['Recall funds through the payment network where possible', 'Close mule accounts and cancel compromised cards', 'Remove unauthorized beneficiaries'],
+    recover: ['Reimburse affected customers per policy', 'File required fraud and regulatory reports', 'Add velocity and beneficiary controls for the observed scheme'],
   },
   'credential-access': {
     contain: ['Force password reset for affected accounts', 'Disable NTLM where possible', 'Revoke active sessions'],
@@ -130,7 +178,7 @@ export class IRPlaybookService {
 
   generatePlaybook(technique: Technique, domain: Domain): IRPlaybook {
     const tactic = technique.tacticShortnames?.[0] || 'execution';
-    const responses = TACTIC_RESPONSES[tactic] || TACTIC_RESPONSES['execution'];
+    const responses = resolveTacticEntry(TACTIC_RESPONSES, tactic)?.value ?? TACTIC_RESPONSES['execution'];
     const severity = this.computeSeverity(technique, domain);
     const dataSources = technique.dataSources || [];
     const logSources = this.mapToLogSources(dataSources);

@@ -15,13 +15,9 @@ import { CustomGroupService } from '../../services/custom-group.service';
 import { CustomMitigationService } from '../../services/custom-mitigation.service';
 import { AnnotationService } from '../../services/annotation.service';
 import { StixCollectionService, ImportSummary } from '../../services/stix-collection.service';
-
-const ALL_TACTICS = [
-  'reconnaissance', 'resource-development', 'initial-access', 'execution',
-  'persistence', 'privilege-escalation', 'defense-evasion', 'credential-access',
-  'discovery', 'lateral-movement', 'collection', 'command-and-control',
-  'exfiltration', 'impact',
-];
+import { DataService } from '../../services/data.service';
+import { Domain } from '../../models/domain';
+import { tacticDisplayName, tacticOrderFor } from '../../services/attack-tactics';
 
 const ALL_PLATFORMS = [
   'Windows', 'Linux', 'macOS', 'Cloud', 'Containers', 'Network', 'IaaS', 'SaaS',
@@ -62,8 +58,14 @@ export class CollectionPanelComponent implements OnInit, OnDestroy {
   importFetching = false;
 
   // Tab 3 — Custom Techniques
-  readonly allTactics = ALL_TACTICS;
+  /**
+   * Tactic picker options: the loaded domain's tactic shortnames in matrix
+   * order (Enterprise v19 falls back to the static list until a domain loads),
+   * so a custom technique can only be placed in a column that exists.
+   */
+  allTactics: string[] = tacticOrderFor(null);
   readonly allPlatforms = ALL_PLATFORMS;
+  private domain: Domain | null = null;
   techniques: CustomTechnique[] = [];
   newTechName = '';
   newTechAttackId = '';
@@ -84,6 +86,7 @@ export class CollectionPanelComponent implements OnInit, OnDestroy {
     private customMitigationService: CustomMitigationService,
     private annotationService: AnnotationService,
     private stixCollectionService: StixCollectionService,
+    private dataService: DataService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -92,6 +95,14 @@ export class CollectionPanelComponent implements OnInit, OnDestroy {
     // Offer to import a shared collection when the URL carries an
     // `import=` payload (share links land on this page via the hash shim).
     this.checkUrlImport();
+
+    this.subs.add(
+      this.dataService.domain$.subscribe(domain => {
+        this.domain = domain;
+        this.allTactics = tacticOrderFor(domain);
+        this.cdr.markForCheck();
+      }),
+    );
 
     this.subs.add(
       this.customTechniqueService.techniques$.subscribe(t => {
@@ -340,6 +351,11 @@ export class CollectionPanelComponent implements OnInit, OnDestroy {
 
   tacticDisplay(shortnames: string[]): string {
     return shortnames.join(', ');
+  }
+
+  /** Human-readable tactic name from the loaded domain (falls back to a title-cased slug). */
+  tacticName(shortname: string): string {
+    return tacticDisplayName(this.domain, shortname);
   }
 
   platformDisplay(platforms: string[]): string {

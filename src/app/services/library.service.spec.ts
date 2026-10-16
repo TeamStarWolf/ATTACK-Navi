@@ -8,6 +8,8 @@ import {
   LibraryData,
   ATTACK_TACTIC_ORDER,
   tacticLabel,
+  assetMatchesTactic,
+  normalizeLibraryData,
 } from './library.service';
 
 const STUB_LIBRARY: LibraryData = {
@@ -195,10 +197,57 @@ describe('LibraryService', () => {
   });
 
   describe('ATTACK_TACTIC_ORDER constant', () => {
-    it('contains all 14 ATT&CK tactics in canonical order', () => {
-      expect(ATTACK_TACTIC_ORDER.length).toBe(14);
+    it('contains all 15 Enterprise v19 tactics in canonical order', () => {
+      expect(ATTACK_TACTIC_ORDER.length).toBe(15);
       expect(ATTACK_TACTIC_ORDER[0]).toBe('reconnaissance');
       expect(ATTACK_TACTIC_ORDER[ATTACK_TACTIC_ORDER.length - 1]).toBe('impact');
+      expect(ATTACK_TACTIC_ORDER).not.toContain('defense-evasion');
+      const privesc = ATTACK_TACTIC_ORDER.indexOf('privilege-escalation');
+      expect(ATTACK_TACTIC_ORDER.slice(privesc + 1, privesc + 4)).toEqual(['stealth', 'defense-impairment', 'credential-access']);
+    });
+  });
+
+  describe('legacy defense-evasion asset tags (pre-v19 generator)', () => {
+    const legacyAsset = { attack_tactics: ['defense-evasion'] };
+
+    it('assetMatchesTactic finds a defense-evasion asset for the v19 stealth and defense-impairment slugs', () => {
+      expect(assetMatchesTactic(legacyAsset, 'stealth')).toBeTrue();
+      expect(assetMatchesTactic(legacyAsset, 'defense-impairment')).toBeTrue();
+      expect(assetMatchesTactic(legacyAsset, 'defense-evasion')).toBeTrue();
+      expect(assetMatchesTactic(legacyAsset, 'execution')).toBeFalse();
+      expect(assetMatchesTactic({ attack_tactics: undefined }, 'stealth')).toBeFalse();
+    });
+
+    it('normalizeLibraryData fills v19 tactic counts from aliased asset tags without touching the generator counts', () => {
+      const data: LibraryData = {
+        ...STUB_LIBRARY,
+        tactic_counts: { 'defense-evasion': 1 },
+        assets: [{ ...STUB_LIBRARY.assets[0], attack_tactics: ['defense-evasion'] }],
+      };
+      const normalized = normalizeLibraryData(data);
+      expect(normalized.tactic_counts['defense-evasion']).toBe(1);
+      expect(normalized.tactic_counts['stealth']).toBe(1);
+      expect(normalized.tactic_counts['defense-impairment']).toBe(1);
+      expect(normalized.tactic_counts['execution']).toBe(0);
+      // input untouched
+      expect(data.tactic_counts['stealth']).toBeUndefined();
+    });
+
+    it('getAssetsForTactic and getAssetsForTechnique resolve v19 slugs against legacy tags', () => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [provideHttpClient(withXhr()), provideHttpClientTesting()],
+      });
+      const svc = TestBed.inject(LibraryService);
+      const mock = TestBed.inject(HttpTestingController);
+      mock.expectOne('assets/library.json').flush({
+        ...STUB_LIBRARY,
+        assets: [{ ...STUB_LIBRARY.assets[0], id: 'tool:legacy/evasion', attack_tactics: ['defense-evasion'] }],
+      });
+      expect(svc.getAssetsForTactic('stealth').map(a => a.id)).toEqual(['tool:legacy/evasion']);
+      expect(svc.getAssetsForTactic('defense-impairment').map(a => a.id)).toEqual(['tool:legacy/evasion']);
+      expect(svc.getAssetsForTechnique('T1036', 'Masquerading', ['stealth']).map(a => a.id)).toContain('tool:legacy/evasion');
+      mock.verify();
     });
   });
 });
