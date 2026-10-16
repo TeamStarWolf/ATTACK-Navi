@@ -1,6 +1,6 @@
 # Credentials proxy image. Node 24 (Active LTS until 2028-04-30); Node 20 reached
 # end-of-life on 2026-04-30 and must not run a service that holds live tokens.
-FROM node:24-alpine
+FROM node:25-alpine
 WORKDIR /app
 # Express hides stack traces and enables its production code paths only when
 # NODE_ENV is "production"; the proxy's own JSON error handler relies on it too.
