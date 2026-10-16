@@ -4,4 +4,11 @@ dist
 .claude
 .vs
 .git
-server/node_modules
+# The app image never needs the proxy; excluding it keeps server/.env (operator
+# OpenCTI/MISP credentials) out of the `COPY . .` build stage and its cache.
+server
+# Belt and braces for any other dotenv file anywhere in the tree.
+.env
+.env.*
+**/.env
+**/.env.*

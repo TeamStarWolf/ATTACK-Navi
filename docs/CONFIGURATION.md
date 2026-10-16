@@ -424,7 +424,7 @@ The repository includes a GitHub Actions workflow at `.github/workflows/deploy.y
 
 **Workflow summary:**
 1. Checks out the repository
-2. Sets up Node.js 20 with npm cache
+2. Sets up Node.js 24 with npm cache
 3. Runs `npm ci` to install dependencies
 4. Builds with `npx ng build --base-href /attack-nav/`
 5. Uploads the `dist/mitre-mitigation-navigator/browser` directory as a Pages artifact
@@ -520,8 +520,8 @@ EXPOSE 80
 |---------|-------|-------|
 | `--base-href` | Deployment path | `/attack-nav/` for GitHub Pages, `/` for root |
 | Build output | `dist/mitre-mitigation-navigator/browser` | Static files ready to serve |
-| Node.js | 20+ | Required by Angular 19 |
-| npm | 9+ | Comes with Node.js 20 |
+| Node.js | ^22.22.3, ^24.15.0 or >=26.0.0 | Required by Angular 22 (`engines` in `package.json`); Node 20 is end-of-life |
+| npm | 10+ | Comes with Node.js 22/24 |
 
 ### Environment Requirements
 

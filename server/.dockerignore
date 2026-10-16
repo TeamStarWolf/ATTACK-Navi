@@ -1,0 +1,8 @@
+# Build context for the proxy image (docker-compose builds with context ./server).
+# Keep operator secrets and host-installed modules out of the context entirely.
+node_modules
+.env
+.env.*
+!.env.example
+test
+npm-debug.log*
