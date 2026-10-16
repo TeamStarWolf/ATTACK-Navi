@@ -2,7 +2,7 @@ services:
   app:
     build: .
     ports:
-      - "8080:80"
+      - "8080:8080"
     environment:
       # Rendered into the nginx config at start (see nginx.conf). The browser reaches
       # the proxy same-origin at http://localhost:8080/api/, so no proxy origin is
