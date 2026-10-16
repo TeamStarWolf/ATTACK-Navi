@@ -67,7 +67,7 @@
     "@angular/cli": "^22.2.1",
     "@angular/compiler-cli": "^22.2.1",
     "@axe-core/playwright": "^4.13.0",
-    "@playwright/test": "^1.63.0",
+    "@playwright/test": "^1.64.0",
     "@types/jasmine": "~5.1.0",
     "@types/tinycolor2": "^1.4.6",
     "http-server": "~14.1.1",
