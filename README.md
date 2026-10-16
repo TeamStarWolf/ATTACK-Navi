@@ -8,7 +8,7 @@ A build is published to GitHub Pages at <https://teamstarwolf.github.io/ATTACK-N
 
 ## Screenshots
 
-Captured on 2026-08-15 with `scripts/capture-screenshots.mjs`, in the dark theme. They predate the Status workspace, the grouped nav rail, and the toolbar rename from "ATT&CK NAV" to "ATT&CK Navi".
+Captured on 2026-08-15 with `scripts/capture-screenshots.mjs`, in the dark theme. They predate the Status workspace, the grouped nav rail, the Unified Coverage default heatmap, and the toolbar rename from "ATT&CK NAV" to "ATT&CK Navi". The two images below are the current ones; `screenshots/attack-navi-live.png` is the uncropped matrix capture from the same run. The repository does not keep a social-preview image: set one in the repository's Settings > Social preview from a fresh capture, since the previous copy advertised an old Angular version and mode count.
 
 ![Matrix with the technique sidebar open for T1590](screenshots/live2.png)
 
@@ -314,7 +314,7 @@ For the written background on a technique, group or detection, these are useful 
 
 ## Contributing and security
 
-Contributions are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) covers code conventions and how to add a service, a heatmap mode, a workspace tab or a sidebar section; its setup section is older than this README, so use the requirements in [Getting started](#getting-started). Please follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+Contributions are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) covers code conventions and how to add a service, a heatmap mode, a workspace tab or a sidebar section; if its setup table and [Getting started](#getting-started) ever disagree, this README is the version of record. Please follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 Report vulnerabilities privately, as described in [SECURITY.md](SECURITY.md), rather than in a public issue.
 
