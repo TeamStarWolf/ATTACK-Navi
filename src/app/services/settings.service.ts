@@ -37,6 +37,9 @@ export interface AppSettings {
 
   // API integrations
   nvdApiKey: string;   // default ''
+  // Credentials-proxy access token (server/ PROXY_AUTH_TOKEN). Sent as X-Proxy-Key
+  // on every proxy-mode OpenCTI/MISP request. Session-only like the NVD key.
+  proxyToken: string;  // default ''
 
   // Per-cell display toggles: choose which fields/badges render inside each
   // matrix technique cell. Every flag defaults true so cells look identical
@@ -62,6 +65,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   orgLogo: '',
   attackVersion: '',
   nvdApiKey: '',
+  proxyToken: '',
   cellDisplay: {
     exposureBadge: true, softwareBadge: true, campaignBadge: true,
     metricBadge: true,
@@ -113,6 +117,10 @@ export class SettingsService {
     this.update({ nvdApiKey: key });
   }
 
+  setProxyToken(token: string): void {
+    this.update({ proxyToken: token.trim() });
+  }
+
   updateWeights(weights: Partial<AppSettings['scoringWeights']>): void {
     const merged: AppSettings['scoringWeights'] = {
       ...this.settingsSubject.value.scoringWeights,
@@ -149,16 +157,17 @@ export class SettingsService {
   private load(): AppSettings {
     try {
       const raw = localStorage.getItem(this.STORAGE_KEY);
+      const sessionKey = sessionStorage.getItem(this.STORAGE_KEY + '-key') ?? '';
+      const sessionProxyToken = sessionStorage.getItem(this.STORAGE_KEY + '-proxy-token') ?? '';
       if (!raw) {
-        const sessionKey = sessionStorage.getItem(this.STORAGE_KEY + '-key') ?? '';
-        return { ...DEFAULT_SETTINGS, nvdApiKey: sessionKey };
+        return { ...DEFAULT_SETTINGS, nvdApiKey: sessionKey, proxyToken: sessionProxyToken };
       }
       const parsed = JSON.parse(raw) as Partial<AppSettings>;
-      const sessionKey = sessionStorage.getItem(this.STORAGE_KEY + '-key') ?? '';
       return {
         ...DEFAULT_SETTINGS,
         ...parsed,
-        nvdApiKey: sessionKey, // Always sourced from sessionStorage
+        nvdApiKey: sessionKey,          // Always sourced from sessionStorage
+        proxyToken: sessionProxyToken,  // Always sourced from sessionStorage
         scoringWeights: {
           ...DEFAULT_SETTINGS.scoringWeights,
           ...(parsed.scoringWeights ?? {}),
@@ -175,14 +184,19 @@ export class SettingsService {
 
   private save(s: AppSettings): void {
     try {
-      // Strip sensitive credentials from localStorage; persist key in sessionStorage
+      // Strip sensitive credentials from localStorage; persist them in sessionStorage
       // (survives page refresh but not browser restart, and never persists to disk)
-      const { nvdApiKey, ...safe } = s;
+      const { nvdApiKey, proxyToken, ...safe } = s;
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(safe));
       if (nvdApiKey) {
         sessionStorage.setItem(this.STORAGE_KEY + '-key', nvdApiKey);
       } else {
         sessionStorage.removeItem(this.STORAGE_KEY + '-key');
+      }
+      if (proxyToken) {
+        sessionStorage.setItem(this.STORAGE_KEY + '-proxy-token', proxyToken);
+      } else {
+        sessionStorage.removeItem(this.STORAGE_KEY + '-proxy-token');
       }
     } catch { /* quota exceeded — silently ignore */ }
   }
