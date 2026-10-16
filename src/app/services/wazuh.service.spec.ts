@@ -2,6 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed } from '@angular/core/testing';
 import { WazuhService } from './wazuh.service';
+import { AttackIdResolverService } from './attack-id-resolver.service';
 
 describe('WazuhService', () => {
   let service: WazuhService;
@@ -51,6 +52,19 @@ describe('WazuhService', () => {
 
     it('returns empty for unknown technique', () => {
       expect(service.getRulesForTechnique('T9999')).toEqual([]);
+    });
+  });
+
+  describe('retired technique ids', () => {
+    it('counts rule 61050 (Defender disabled) for v19 T1685', () => {
+      expect(service.getRulesForTechnique('T1685').map(r => r.ruleId)).toContain('61050');
+    });
+
+    it('re-keys the index when the loaded release retires a table id', () => {
+      expect(service.getRulesForTechnique('T1999').length).toBe(0);
+      TestBed.inject(AttackIdResolverService).setSupersededBy(new Map([['T1610', 'T1999']]));
+      expect(service.getRulesForTechnique('T1999').map(r => r.ruleId)).toEqual(['87900']);
+      expect(service.getRulesForTechnique('T1610').map(r => r.ruleId)).toEqual(['87900']);
     });
   });
 

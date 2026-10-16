@@ -3,8 +3,9 @@
 // PROVENANCE: curated heuristic content, hand-maintained in this repo -- not
 // derived from an authoritative upstream dataset. Technique associations are
 // editorial suggestions, not MITRE-published relationships.
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Technique } from '../models/technique';
+import { AttackIdResolverService } from './attack-id-resolver.service';
 
 export interface YaraPattern {
   attackId: string;
@@ -24,7 +25,8 @@ export interface YaraRule {
   yaml: string;
 }
 
-// ATT&CK technique → YARA detection patterns
+// ATT&CK technique → YARA detection patterns. Keys are ATT&CK v19.2 ids; a key
+// that a later release retires is still matched through AttackIdResolverService.
 const YARA_PATTERNS: YaraPattern[] = [
   { attackId: 'T1059.001', strings: ['$ps1 = "powershell" nocase wide ascii', '$enc = "-EncodedCommand" nocase', '$nop = "-NonInteractive" nocase', '$bypass = "-ExecutionPolicy Bypass" nocase', '$iex = "IEX" nocase', '$webclient = "New-Object Net.WebClient" nocase', '$download = "DownloadString" nocase'], conditions: ['2 of ($ps1, $enc, $nop, $bypass) or ($iex and $webclient) or ($download and $webclient)'], meta: { description: 'Detects suspicious PowerShell execution patterns', reference: 'https://attack.mitre.org/techniques/T1059/001/' } },
   { attackId: 'T1059.003', strings: ['$cmd = "cmd.exe" nocase wide ascii', '$c = "/c " nocase', '$k = "/k " nocase', '$hidden = "/q" nocase', '$pipe = "2>&1" ascii', '$env = "%COMSPEC%" nocase'], conditions: ['$cmd and ($c or $k) and ($hidden or $pipe or $env)'], meta: { description: 'Detects suspicious cmd.exe execution', reference: 'https://attack.mitre.org/techniques/T1059/003/' } },
@@ -36,8 +38,8 @@ const YARA_PATTERNS: YaraPattern[] = [
   { attackId: 'T1218.011', strings: ['$rdll1 = "rundll32" nocase wide ascii', '$js = "javascript:" nocase', '$shell = "shell32.dll" nocase', '$control = "control_rundll" nocase', '$url = "url.dll,FileProtocolHandler" nocase'], conditions: ['$rdll1 and ($js or $shell or $control or $url)'], meta: { description: 'Detects suspicious Rundll32 execution', reference: 'https://attack.mitre.org/techniques/T1218/011/' } },
   { attackId: 'T1218.005', strings: ['$mshta1 = "mshta" nocase wide ascii', '$vbs = ".vbs" nocase', '$hta = ".hta" nocase', '$js2 = ".js" nocase', '$http2 = "http://" nocase', '$https = "https://" nocase'], conditions: ['$mshta1 and ($vbs or $hta or $js2 or $http2 or $https)'], meta: { description: 'Detects MSHTA proxy execution', reference: 'https://attack.mitre.org/techniques/T1218/005/' } },
   { attackId: 'T1547.001', strings: ['$run1 = "Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Run" nocase wide', '$run2 = "HKCU\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Run" nocase', '$run3 = "HKLM\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Run" nocase', '$startup = "\\\\Startup\\\\" nocase wide'], conditions: ['any of them'], meta: { description: 'Detects Run key or Startup folder persistence', reference: 'https://attack.mitre.org/techniques/T1547/001/' } },
-  { attackId: 'T1070.001', strings: ['$wevt = "wevtutil" nocase wide ascii', '$clear = "cl " nocase', '$clearlog = "clear-eventlog" nocase', '$remove = "Remove-EventLog" nocase', '$fsutil = "fsutil usn deletejournal" nocase'], conditions: ['any of them'], meta: { description: 'Detects Windows event log clearing', reference: 'https://attack.mitre.org/techniques/T1070/001/' } },
-  { attackId: 'T1562.001', strings: ['$av1 = "Set-MpPreference" nocase', '$av2 = "DisableRealtimeMonitoring" nocase', '$av3 = "DisableAntiSpyware" nocase', '$sc1 = "sc stop" nocase wide ascii', '$sc2 = "WinDefend" nocase', '$tamper = "TamperProtection" nocase'], conditions: ['($av1 and ($av2 or $av3)) or ($sc1 and $sc2) or $tamper'], meta: { description: 'Detects Windows Defender tampering', reference: 'https://attack.mitre.org/techniques/T1562/001/' } },
+  { attackId: 'T1685.005', strings: ['$wevt = "wevtutil" nocase wide ascii', '$clear = "cl " nocase', '$clearlog = "clear-eventlog" nocase', '$remove = "Remove-EventLog" nocase', '$fsutil = "fsutil usn deletejournal" nocase'], conditions: ['any of them'], meta: { description: 'Detects Windows event log clearing', reference: 'https://attack.mitre.org/techniques/T1685/005/' } },
+  { attackId: 'T1685', strings: ['$av1 = "Set-MpPreference" nocase', '$av2 = "DisableRealtimeMonitoring" nocase', '$av3 = "DisableAntiSpyware" nocase', '$sc1 = "sc stop" nocase wide ascii', '$sc2 = "WinDefend" nocase', '$tamper = "TamperProtection" nocase'], conditions: ['($av1 and ($av2 or $av3)) or ($sc1 and $sc2) or $tamper'], meta: { description: 'Detects Windows Defender tampering', reference: 'https://attack.mitre.org/techniques/T1685/' } },
   { attackId: 'T1490', strings: ['$bcd1 = "bcdedit" nocase wide ascii', '$bcd2 = "recoveryenabled No" nocase', '$shadow1 = "vssadmin delete shadows" nocase', '$shadow2 = "wmic shadowcopy delete" nocase', '$shadow3 = "Get-WmiObject Win32_ShadowCopy" nocase', '$wbadmin = "wbadmin delete catalog" nocase'], conditions: ['any of them'], meta: { description: 'Detects ransomware backup/recovery deletion patterns', reference: 'https://attack.mitre.org/techniques/T1490/' } },
   { attackId: 'T1566.001', strings: ['$macro1 = "AutoOpen" ascii', '$macro2 = "Document_Open" ascii', '$macro3 = "Auto_Open" ascii', '$shell1 = "Shell(" ascii', '$shell2 = "WScript.Shell" ascii', '$download2 = "URLDownloadToFile" ascii', '$createobj = "CreateObject" ascii'], conditions: ['($macro1 or $macro2 or $macro3) and ($shell1 or $shell2 or $download2 or $createobj)'], meta: { description: 'Detects malicious Office macro patterns', reference: 'https://attack.mitre.org/techniques/T1566/001/' } },
   { attackId: 'T1053.005', strings: ['$scht1 = "schtasks" nocase wide ascii', '$create = "/create" nocase', '$sc2 = "/sc" nocase', '$tr = "/tr" nocase', '$xml = "SchTasks.exe" nocase', '$onstart = "ONSTART" nocase', '$system_sched = "\\\\Windows\\\\System32\\\\Tasks\\\\" nocase wide'], conditions: ['($scht1 and $create and ($sc2 or $tr)) or $system_sched'], meta: { description: 'Detects scheduled task creation for persistence', reference: 'https://attack.mitre.org/techniques/T1053/005/' } },
@@ -52,21 +54,36 @@ const YARA_PATTERNS: YaraPattern[] = [
 
 @Injectable({ providedIn: 'root' })
 export class YaraService {
+  private resolver = inject(AttackIdResolverService);
   private patternMap = new Map<string, YaraPattern>();
+  private indexedVersion = -1;
 
-  constructor() {
+  /**
+   * Pattern index keyed by the LIVE id of each table key, rebuilt whenever the
+   * loaded ATT&CK release changes, so a key that the release retired still
+   * reaches the technique that replaced it.
+   */
+  private index(): Map<string, YaraPattern> {
+    if (this.indexedVersion === this.resolver.version) return this.patternMap;
+    const map = new Map<string, YaraPattern>();
     for (const p of YARA_PATTERNS) {
-      this.patternMap.set(p.attackId, p);
+      const id = this.resolver.resolve(p.attackId);
+      map.set(id, p);
       // Also map parent if subtechnique
-      const parent = p.attackId.includes('.') ? p.attackId.split('.')[0] : null;
-      if (parent && !this.patternMap.has(parent)) {
-        this.patternMap.set(parent, p);
+      const parent = id.includes('.') ? id.split('.')[0] : null;
+      if (parent && !map.has(parent)) {
+        map.set(parent, p);
       }
     }
+    this.patternMap = map;
+    this.indexedVersion = this.resolver.version;
+    return map;
   }
 
   getPattern(attackId: string): YaraPattern | null {
-    return this.patternMap.get(attackId) ?? this.patternMap.get(attackId.split('.')[0]) ?? null;
+    const map = this.index();
+    const id = this.resolver.resolve(attackId);
+    return map.get(id) ?? map.get(id.split('.')[0]) ?? null;
   }
 
   hasPattern(attackId: string): boolean {
