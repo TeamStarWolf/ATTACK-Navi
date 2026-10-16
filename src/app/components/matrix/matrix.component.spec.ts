@@ -155,6 +155,7 @@ class LibraryLayerStub {
   getScore(attackId: string): number { return this.scores.get(attackId) ?? 0; }
   maxScore(): number { return 40; }
   activeMeta(): LibraryLayerMeta | undefined { return this.manifest.find(m => m.file === this.activeFile); }
+  ensureActive(): void { if (!this.activeFile && this.manifest.length) this.setActive(this.manifest[0].file); }
 }
 
 class UserLayerStub {

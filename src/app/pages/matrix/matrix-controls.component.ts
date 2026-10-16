@@ -17,6 +17,8 @@ import { DataService } from '../../services/data.service';
 import { MatrixControlService } from '../../services/matrix-control.service';
 import { AttackCveService } from '../../services/attack-cve.service';
 import { LibraryLayerService, LibraryLayerMeta } from '../../services/library-layer.service';
+import { UserLayerService } from '../../services/user-layer.service';
+import { AttackNaviLayer } from '../../models/user-layer';
 import { HEATMAP_MODES, HEATMAP_GROUPS, HeatmapModeDef, heatmapShortLabel } from '../../models/heatmap-modes';
 import { PLATFORM_PILLS } from '../../components/toolbar/toolbar.component';
 import { Viewpoint, ViewpointService } from '../../services/viewpoint.service';
@@ -75,7 +77,15 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
   currentViewpoint: Viewpoint | null = null;
   heatmapMode: import('../../services/filter.service').HeatmapMode = 'unified';
   libraryLayers: LibraryLayerMeta[] = [];
+  /** False until the library manifest request settles - the menu says "loading" rather than showing nothing. */
+  libraryManifestLoaded = false;
   activeLibraryFile: string | null = null;
+  /**
+   * The imported (user) Navigator layer the matrix is colouring by, if any. It
+   * takes precedence over every curated layer, so the menu must show it and
+   * offer to unload it - otherwise picking a curated layer looks broken.
+   */
+  activeUserLayer: AttackNaviLayer | null = null;
   sortMode: SortMode = 'alpha';
   dimUncovered = false;
   multiSelectMode = false;
@@ -89,6 +99,7 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
     private matrixControl: MatrixControlService,
     private attackCveService: AttackCveService,
     private libraryLayerService: LibraryLayerService,
+    private userLayerService: UserLayerService,
     private viewpointService: ViewpointService,
     private cdr: ChangeDetectorRef,
   ) {}
@@ -119,7 +130,9 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
     this.subs.add(this.filterService.implStatusFilter$.subscribe((s) => { this.implStatusFilter = s ?? ''; this.cdr.markForCheck(); }));
     this.subs.add(this.filterService.heatmapMode$.subscribe((m) => { this.heatmapMode = m; this.cdr.markForCheck(); }));
     this.subs.add(this.libraryLayerService.manifest$.subscribe((list) => { this.libraryLayers = list; this.cdr.markForCheck(); }));
+    this.subs.add(this.libraryLayerService.manifestLoaded$.subscribe((v) => { this.libraryManifestLoaded = v; this.cdr.markForCheck(); }));
     this.subs.add(this.libraryLayerService.activeFile$.subscribe((f) => { this.activeLibraryFile = f; this.cdr.markForCheck(); }));
+    this.subs.add(this.userLayerService.activeLayer$.subscribe((l) => { this.activeUserLayer = l; this.cdr.markForCheck(); }));
     this.subs.add(this.filterService.sortMode$.subscribe((m) => { this.sortMode = m; this.cdr.markForCheck(); }));
     this.subs.add(this.filterService.dimUncovered$.subscribe((v) => { this.dimUncovered = v; this.cdr.markForCheck(); }));
     this.subs.add(this.filterService.activeThreatGroupIds$.subscribe((ids) => { this.activeThreatGroupCount = ids.size; this.cdr.markForCheck(); }));
@@ -228,11 +241,21 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
     this.showViewMenu = false;
   }
 
-  /** Select a curated library layer and switch the matrix to color by it. */
+  /**
+   * Select a curated library layer and switch the matrix to color by it. An
+   * imported user layer would otherwise silently keep winning (the matrix
+   * prefers it), so picking a curated layer unloads it: the last choice shows.
+   */
   pickLibraryLayer(file: string): void {
+    if (this.userLayerService.activeLayer) this.userLayerService.clearActive();
     this.libraryLayerService.setActive(file);
     this.filterService.setHeatmapMode('library');
     this.showViewMenu = false;
+  }
+
+  /** Unload the imported layer; the matrix falls back to the curated layer, if one is picked. */
+  unloadUserLayer(): void {
+    this.userLayerService.clearActive();
   }
 
   /** Display name for a layer, without the "TeamStarWolf - " prefix. */

@@ -123,19 +123,43 @@
               </div>
             </div>
           }
+          @if (activeUserLayer) {
+            <div class="heatmap-group user-layer-group">
+              <div class="views-menu-header">🗂 Imported Layer</div>
+              <div class="view-actions">
+                <span class="user-layer-name" [class.active]="heatmapMode === 'library'" [title]="activeUserLayer.description">
+                  {{ activeUserLayer.name }}
+                </span>
+                <button class="menu-action user-layer-unload" (click)="unloadUserLayer()"
+                        title="Stop colouring the matrix by this imported layer">
+                  ✕ Unload
+                </button>
+              </div>
+            </div>
+          }
           @if (libraryLayers.length) {
             <div class="heatmap-group">
               <div class="views-menu-header">📚 Library Layers</div>
               <div class="heatmap-grid">
                 @for (lyr of libraryLayers; track lyr.file) {
                   <button class="heatmap-mode-btn"
-                          [class.active]="heatmapMode === 'library' && activeLibraryFile === lyr.file"
+                          [class.active]="heatmapMode === 'library' && !activeUserLayer && activeLibraryFile === lyr.file"
                           [title]="lyr.blurb || lyr.description"
                           (click)="pickLibraryLayer(lyr.file)">
                     {{ layerLabel(lyr.name) }}
                   </button>
                 }
               </div>
+            </div>
+          } @else if (!libraryManifestLoaded) {
+            <div class="heatmap-group">
+              <div class="views-menu-header">📚 Library Layers</div>
+              <div class="library-status">Loading the library layer list…</div>
+            </div>
+          } @else {
+            <div class="heatmap-group">
+              <div class="views-menu-header">📚 Library Layers</div>
+              <div class="library-status">No library layers are available (index.json did not load).</div>
             </div>
           }
           <div class="heatmap-group">
