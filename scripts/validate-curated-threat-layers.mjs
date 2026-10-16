@@ -1,11 +1,16 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-// Run offline with node scripts/validate-curated-threat-layers.mjs.
+// Run offline with node scripts/validate-curated-threat-layers.mjs (npm run validate:layers).
 // Add --verify-baseline to also fetch and verify the official 16.1 snapshot.
+// Add --update-bundled-metadata after replacing src/assets/data/enterprise-attack.json
+// (the monthly refresh workflow does this): the three curated layers' recorded
+// bundled version and bundled_sha256_lf are rewritten to the new snapshot and
+// the layers are then validated against it, so a retired technique or a moved
+// tactic still fails the run and has to be curated by hand.
 
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 
 const root = new URL('../', import.meta.url);
 const layerRoot = new URL('src/assets/data/library-layers/', root);
@@ -23,7 +28,10 @@ const bundledText = readFileSync(new URL('src/assets/data/enterprise-attack.json
 const bundled = JSON.parse(bundledText);
 const manifest = readJson(new URL('index.json', layerRoot));
 const args = process.argv.slice(2);
-assert(args.every(arg => arg === '--verify-baseline'), 'Unknown argument');
+const knownArgs = ['--verify-baseline', '--update-bundled-metadata'];
+assert(args.every(arg => knownArgs.includes(arg)), `Unknown argument; expected one of ${knownArgs.join(', ')}`);
+const updateBundledMetadata = args.includes('--update-bundled-metadata');
+const escapeRegExp = text => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 function techniquesById(bundle) {
   return new Map(bundle.objects
@@ -39,9 +47,15 @@ function tacticsOf(technique) {
     .sort();
 }
 
-const snapshots = [{ name: 'bundled 19.2', techniques: techniquesById(bundled) }];
-assert.equal(bundled.objects.find(object => object.type === 'x-mitre-collection')?.x_mitre_version, '19.2',
-  'Bundled snapshot changed; revalidate the layer provenance');
+// The bundled version is read from the snapshot itself; each curated layer must
+// record the same version in its description and metadata, so a refreshed
+// bundle fails validation until the layers are revalidated (or rewritten with
+// --update-bundled-metadata) against it.
+const bundledVersion = bundled.objects.find(object => object.type === 'x-mitre-collection')?.x_mitre_version;
+assert.match(bundledVersion ?? '', /^\d+\.\d+$/, 'Bundled snapshot has no x-mitre-collection version');
+const bundledHash = sha256(bundledText);
+const bundledVersionPattern = new RegExp(`\\b${escapeRegExp(bundledVersion)}\\b`);
+const snapshots = [{ name: `bundled ${bundledVersion}`, techniques: techniquesById(bundled) }];
 if (args.includes('--verify-baseline')) {
   const response = await fetch(baselineUrl, { signal: AbortSignal.timeout(60000) });
   assert(response.ok, `Official baseline HTTP ${response.status}`);
@@ -59,18 +73,41 @@ for (const entry of manifest) {
   assert.equal(readJson(new URL(entry.file, layerRoot)).name, entry.name, `${entry.file}: name drift`);
 }
 
+// Rewrites the version the layer records for the bundled snapshot (description,
+// tactic_policy, validation_source, versions.attack) and its bundled_sha256_lf.
+// Only those fields carry the version; technique rows are never touched.
+function refreshBundledMetadata(layer, entry, file) {
+  const recorded = layer.description.match(/bundled Enterprise ATT&CK (\d+\.\d+) dataset/)?.[1];
+  assert(recorded, `${file}: description does not record the bundled version`);
+  const swap = text => text.replace(new RegExp(`\\b${escapeRegExp(recorded)}\\b`, 'g'), bundledVersion);
+  layer.description = swap(layer.description);
+  entry.description = layer.description;
+  layer.versions.attack = bundledVersion.split('.')[0];
+  for (const item of layer.metadata) {
+    if (item.name === 'bundled_sha256_lf') item.value = bundledHash;
+    if (item.name === 'tactic_policy' || item.name === 'validation_source') item.value = swap(item.value);
+  }
+  writeFileSync(new URL(file, layerRoot), `${JSON.stringify(layer, null, 2)}\n`);
+  console.log(`UPDATED ${file}: bundled ${recorded} -> ${bundledVersion}, bundled_sha256_lf ${bundledHash.slice(0, 12)}...`);
+}
+
 for (const file of files) {
   const layer = readJson(new URL(file, layerRoot));
   const entry = manifest.find(item => item.file === file);
   assert(entry, `${file}: missing manifest entry`);
+  if (updateBundledMetadata) refreshBundledMetadata(layer, entry, file);
   assert.equal(entry.description, layer.description, `${file}: description drift`);
   assert(entry.blurb?.length > 40 && entry.blurb.length < 300, `${file}: missing or oversized blurb`);
-  assert.deepEqual(layer.versions, { attack: '19', navigator: '4.9', layer: '4.5' });
+  assert.deepEqual(layer.versions, { attack: bundledVersion.split('.')[0], navigator: '4.9', layer: '4.5' },
+    `${file}: versions.attack must match the bundled major version`);
   assert.equal(layer.domain, 'enterprise-attack');
   assert.equal(layer.selectSubtechniquesWithParent, false);
   assert.match(layer.description, /not an official MITRE mapping/);
   assert.match(layer.description, /coverage guarantee/);
-  assert.match(layer.description, /16\.1.*19\.2/);
+  assert.match(layer.description, new RegExp(`16\\.1.*\\b${escapeRegExp(bundledVersion)}\\b`),
+    `${file}: description must cite the official 16.1 baseline and the bundled ${bundledVersion} snapshot; bundled snapshot changed, revalidate the layer provenance`);
+  assert.match(layer.description, new RegExp(`bundled Enterprise ATT&CK ${escapeRegExp(bundledVersion)} dataset`),
+    `${file}: description records a different bundled version than the snapshot (${bundledVersion})`);
   assert.equal(layer.gradient.minValue, 0);
   assert.equal(layer.gradient.maxValue, 100);
   assert.deepEqual(layer.legendItems.map(item => item.label), [
@@ -80,7 +117,11 @@ for (const file of files) {
   const metadata = new Map(layer.metadata.map(item => [item.name, item.value]));
   assert.equal(metadata.size, layer.metadata.length, `${file}: duplicate metadata`);
   assert.equal(metadata.get('baseline_sha256'), baselineHash);
-  assert.equal(metadata.get('bundled_sha256_lf'), sha256(bundledText));
+  assert.equal(metadata.get('bundled_sha256_lf'), bundledHash,
+    `${file}: bundled_sha256_lf does not match src/assets/data/enterprise-attack.json; run with --update-bundled-metadata after a refresh`);
+  for (const name of ['tactic_policy', 'validation_source']) {
+    assert.match(metadata.get(name) ?? '', bundledVersionPattern, `${file}: ${name} must cite the bundled ${bundledVersion} snapshot`);
+  }
   const pairs = new Set();
   const byId = new Map();
   for (const row of layer.techniques) {
@@ -130,5 +171,8 @@ for (const file of files) {
     assert(!url.username && !url.password && !url.search, `${file}: unexpected URL metadata`);
   }
   console.log(`PASS ${file}: ${byId.size} techniques, ${pairs.size} rows, ${core} core / ${supporting} supporting`);
+}
+if (updateBundledMetadata) {
+  writeFileSync(new URL('index.json', layerRoot), `${JSON.stringify(manifest, null, 2)}\n`);
 }
 console.log(`PASS ${manifest.length} manifest entries; checked ${snapshots.map(snapshot => snapshot.name).join(' + ')}`);
