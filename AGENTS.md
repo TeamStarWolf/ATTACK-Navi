@@ -4,7 +4,7 @@ Canonical instructions for any AI coding agent (Codex, Claude Code, or other) wo
 
 ## What this is
 
-ATTACK-Navi is a **browser-based MITRE ATT&CK analyst workbench** — an Angular single-page app, static (no backend), deployed to GitHub Pages. It renders the ATT&CK matrix and colors it by ~32 "heatmap modes" (coverage, detection, vulnerability, framework-mapping, threat-landscape lenses), with nine routed workspaces (Matrix, Dashboard, Intel, Detect, Exposure, Coverage, Library, Reports, Settings). It is the front-end companion to the **TeamStarWolf reference library** (`github.com/TeamStarWolf/TeamStarWolf`), whose datasets it consumes.
+ATTACK-Navi is a **browser-based MITRE ATT&CK analyst workbench** — an Angular single-page app, static (no backend), deployed to GitHub Pages. It renders the ATT&CK matrix and colors it by 33 "heatmap modes" (coverage, detection, vulnerability, framework-mapping, threat-landscape lenses; `HEATMAP_MODES` in `src/app/models/heatmap-modes.ts` is the count of record), with ten routed workspaces (Matrix, Status, Dashboard, Intel, Detect, Exposure, Coverage, Library, Reports, Settings). It is the front-end companion to the **TeamStarWolf reference library** (`github.com/TeamStarWolf/TeamStarWolf`), whose datasets it consumes.
 
 ## Collaboration rules (all agents)
 
@@ -25,7 +25,7 @@ ATTACK-Navi is a **browser-based MITRE ATT&CK analyst workbench** — an Angular
 
 ## Stack & conventions (match these exactly)
 
-- **Angular 21**, standalone components only (`standalone: true` with explicit `imports`), **hash routing** (`withHashLocation()`), `withComponentInputBinding()`.
+- **Angular 22** (the exact version is in `package.json` / `package-lock.json`; do not hand-edit versions), standalone components only (`standalone: true` with explicit `imports`), **hash routing** (`withHashLocation()`), `withComponentInputBinding()`.
 - **`ChangeDetectionStrategy.OnPush` everywhere** — call `ChangeDetectorRef.markForCheck()` inside every subscription that updates view state.
 - State services are `@Injectable({ providedIn: 'root' })` exposing `BehaviorSubject`-backed `xxx$` observables; consumers `combineLatest` and unsubscribe in `ngOnDestroy`.
 - Templates use the new control flow: `@if` / `@for` / `@switch` (not `*ngIf`/`*ngFor`).
@@ -35,13 +35,16 @@ ATTACK-Navi is a **browser-based MITRE ATT&CK analyst workbench** — an Angular
 ## Build, run, verify
 
 ```bash
-npm install
+npm ci               # install from the committed lockfile (never `npm install`, which rewrites it)
 npm start            # ng serve — dev server (default :4200)
 npx tsc --noEmit -p tsconfig.app.json          # fast typecheck
-npx ng test --watch=false --browsers=ChromeHeadless   # unit suite (~710 tests, must stay green)
+npx ng test --watch=false --browsers=ChromeHeadless   # unit suite (the full count Karma prints must stay green)
 npm run build        # production build
 npm run e2e          # Playwright e2e (in /e2e); test:visual for visual snapshots
+node scripts/validate-threat-model-citations.mjs      # after editing the STRIDE model: every file:line citation must resolve
 ```
+
+Node must satisfy the engine range of the locked Angular CLI (`^22.22.3 || ^24.15.0 || >=26.0.0`); CI and the Dockerfile use Node 24.
 
 Always run the typecheck and the unit suite after changes and report the result. A new mode/page/service ships with a co-located `*.spec.ts`.
 
