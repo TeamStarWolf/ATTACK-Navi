@@ -8,16 +8,20 @@
 // single `expect` is reported as a FAILURE instead of a warning. Two specs in
 // this repo passed for months that way (an `if (undefinedField)` guard and an
 // HTTP request that was never flushed), so the gate now refuses them.
+//
+// The test target uses the `@angular/build:karma` builder, which registers its
+// own Karma integration; this file therefore lists only the plain Karma
+// framework and plugins (no `@angular-devkit/build-angular` framework or
+// plugin, which this project no longer depends on).
 module.exports = function (config) {
   config.set({
     basePath: '',
-    frameworks: ['jasmine', '@angular-devkit/build-angular'],
+    frameworks: ['jasmine'],
     plugins: [
       require('karma-jasmine'),
       require('karma-chrome-launcher'),
       require('karma-jasmine-html-reporter'),
       require('karma-coverage'),
-      require('@angular-devkit/build-angular/plugins/karma'),
     ],
     client: {
       jasmine: {
