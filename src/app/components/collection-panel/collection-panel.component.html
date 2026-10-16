@@ -149,6 +149,12 @@
                   <span class="preview-item">{{ importPreview.mitigations }} mitigations</span>
                   <span class="preview-item">{{ importPreview.notes }} notes</span>
                 </div>
+                @if (importPreview.noteConflicts.length) {
+                  <p class="import-note-conflicts">
+                    {{ importPreview.noteConflicts.length }} note(s) target techniques you have already annotated
+                    ({{ importPreview.noteConflicts.join(', ') }}). Your notes are kept; the imported text is ignored.
+                  </p>
+                }
                 <button class="action-btn primary" (click)="importBundle()">
                   Import Collection
                 </button>
@@ -336,6 +342,12 @@
         <span class="preview-item">{{ importDialogSummary.mitigations }} mitigations</span>
         <span class="preview-item">{{ importDialogSummary.notes }} notes</span>
       </div>
+      @if (importDialogSummary.noteConflicts.length) {
+        <p class="import-note-conflicts">
+          {{ importDialogSummary.noteConflicts.length }} note(s) target techniques you have already annotated
+          ({{ importDialogSummary.noteConflicts.join(', ') }}). Your notes are kept; the imported text is ignored.
+        </p>
+      }
       <div class="button-row import-dialog-actions">
         <button class="action-btn primary" (click)="confirmUrlImport()">Import</button>
         <button class="action-btn secondary" (click)="dismissUrlImport()">Dismiss</button>

@@ -160,12 +160,24 @@ for (const entry of manifest) {
 const missionManifest = readJson(new URL('index.json', missionRoot));
 const missionFiles = readdirSync(missionRoot).filter(file => file !== 'index.json').sort();
 assert.deepEqual(missionManifest.map(entry => entry.file).sort(), missionFiles, 'lylat-mission-layers/index.json: file list drift');
+// Accepted mission-layer domains = the bundled ATT&CK domains plus the read-only ATLAS domain.
+const readOnlyDomains = new Set(['atlas']);
 const domainTechniques = Object.fromEntries(Object.entries(domainBundles).map(([domain, bundle]) => [domain, techniquesById(bundle)]));
 let missionRows = 0;
 for (const entry of missionManifest) {
   const layer = readJson(new URL(entry.file, missionRoot));
   assert.equal(layer.name, entry.name, `${entry.file}: name drift`);
   assert.equal(layer.domain, entry.domain, `${entry.file}: domain drift`);
+  // ATLAS is a read-only domain (product plan): there is no bundled ATLAS matrix to resolve
+  // against, so an 'atlas' mission layer is accepted only if every row is an AML.* id.
+  if (readOnlyDomains.has(layer.domain)) {
+    for (const row of layer.techniques) {
+      assert(row.techniqueID.startsWith('AML.'), `${entry.file}: ${row.techniqueID} is not an ATLAS id in an ${layer.domain} layer`);
+    }
+    missionRows += layer.techniques.length;
+    continue;
+  }
+
   assert(domainTechniques[layer.domain], `${entry.file}: unknown domain ${layer.domain}`);
   assertRowsResolve(entry.file, layer.techniques, domainTechniques[layer.domain], `bundled ${layer.domain} ${bundledVersions[layer.domain]}`);
   missionRows += layer.techniques.length;

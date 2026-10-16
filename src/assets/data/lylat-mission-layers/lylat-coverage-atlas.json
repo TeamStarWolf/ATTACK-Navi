@@ -5,7 +5,7 @@
     "navigator": "4.9",
     "layer": "4.5"
   },
-  "domain": "enterprise-attack",
+  "domain": "atlas",
   "description": "Training-coverage density across 1 Lylat ATLAS (AI/ML) missions: score = number of missions that map each technique. Planned coverage only (draft, execution_verified:false) - NOT detection or validated coverage. Not an official MITRE mapping.",
   "sorting": 0,
   "layout": {
