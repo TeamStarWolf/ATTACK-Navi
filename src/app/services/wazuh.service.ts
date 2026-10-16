@@ -3,7 +3,8 @@
 // PROVENANCE: curated heuristic content, hand-maintained in this repo -- not
 // derived from an authoritative upstream dataset. Technique associations are
 // editorial suggestions, not MITRE-published relationships.
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { AttackIdResolverService } from './attack-id-resolver.service';
 
 export interface WazuhRule {
   ruleGroup: string;
@@ -13,6 +14,8 @@ export interface WazuhRule {
   level: number;
 }
 
+// Technique ids are ATT&CK v19.2; an id that a later release retires is still
+// matched through AttackIdResolverService.
 const WAZUH_RULES: WazuhRule[] = [
   // Authentication
   { ruleGroup: 'authentication_failed', ruleId: '5710', techniqueIds: ['T1110', 'T1078'], description: 'Multiple authentication failures', level: 10 },
@@ -27,7 +30,7 @@ const WAZUH_RULES: WazuhRule[] = [
   { ruleGroup: 'windows_audit', ruleId: '60100', techniqueIds: ['T1059', 'T1059.001'], description: 'PowerShell execution audit', level: 6 },
   { ruleGroup: 'windows_process', ruleId: '61100', techniqueIds: ['T1059', 'T1204.002'], description: 'Suspicious process creation', level: 8 },
   { ruleGroup: 'windows_registry', ruleId: '61600', techniqueIds: ['T1547.001', 'T1112'], description: 'Registry modification', level: 6 },
-  { ruleGroup: 'windows_defender', ruleId: '61050', techniqueIds: ['T1562.001'], description: 'Windows Defender disabled', level: 12 },
+  { ruleGroup: 'windows_defender', ruleId: '61050', techniqueIds: ['T1685'], description: 'Windows Defender disabled', level: 12 },
   { ruleGroup: 'windows_account', ruleId: '60140', techniqueIds: ['T1136', 'T1098'], description: 'Account creation or modification', level: 8 },
   { ruleGroup: 'windows_logon', ruleId: '60106', techniqueIds: ['T1078', 'T1021.001'], description: 'Remote logon detected', level: 4 },
   // Network
@@ -48,24 +51,31 @@ const WAZUH_RULES: WazuhRule[] = [
 
 @Injectable({ providedIn: 'root' })
 export class WazuhService {
+  private resolver = inject(AttackIdResolverService);
   private byTechnique = new Map<string, WazuhRule[]>();
+  private indexedVersion = -1;
 
-  constructor() {
-    this.buildIndex();
-  }
-
-  private buildIndex(): void {
+  /**
+   * Rule index keyed by the LIVE id of each technique id in the table, rebuilt
+   * whenever the loaded ATT&CK release changes.
+   */
+  private index(): Map<string, WazuhRule[]> {
+    if (this.indexedVersion === this.resolver.version) return this.byTechnique;
+    const map = new Map<string, WazuhRule[]>();
     for (const rule of WAZUH_RULES) {
-      for (const tid of rule.techniqueIds) {
-        const list = this.byTechnique.get(tid) ?? [];
+      for (const tid of new Set(rule.techniqueIds.map((t) => this.resolver.resolve(t)))) {
+        const list = map.get(tid) ?? [];
         list.push(rule);
-        this.byTechnique.set(tid, list);
+        map.set(tid, list);
       }
     }
+    this.byTechnique = map;
+    this.indexedVersion = this.resolver.version;
+    return map;
   }
 
   getRulesForTechnique(attackId: string): WazuhRule[] {
-    return this.byTechnique.get(attackId) ?? [];
+    return this.index().get(this.resolver.resolve(attackId)) ?? [];
   }
 
   getAllRules(): WazuhRule[] {

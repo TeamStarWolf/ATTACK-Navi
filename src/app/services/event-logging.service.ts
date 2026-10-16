@@ -3,7 +3,8 @@
 // PROVENANCE: curated heuristic content, hand-maintained in this repo -- not
 // derived from an authoritative upstream dataset. Technique associations are
 // editorial suggestions, not MITRE-published relationships.
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { AttackIdResolverService } from './attack-id-resolver.service';
 
 export interface LogConfig {
   source: string;
@@ -15,8 +16,10 @@ export interface LogConfig {
 /**
  * Maps ATT&CK techniques to recommended Windows event log configurations.
  * Based on patterns from blackhillsinfosec/EventLogging and Microsoft security baselines.
+ * Keys are ATT&CK v19.2 ids; a key that a later release retires is still matched
+ * through AttackIdResolverService.
  */
-const TECHNIQUE_TO_LOGGING: Record<string, LogConfig[]> = {
+export const TECHNIQUE_TO_LOGGING: Record<string, LogConfig[]> = {
   'T1059.001': [{
     source: 'PowerShell ScriptBlock Logging',
     eventId: '4104',
@@ -158,7 +161,7 @@ const TECHNIQUE_TO_LOGGING: Record<string, LogConfig[]> = {
     command: 'auditpol /set /subcategory:"Registry" /success:enable /failure:enable',
     description: 'Audits registry key and value modifications',
   }],
-  'T1070.001': [{
+  'T1685.005': [{
     source: 'Event Log Clearing Detection',
     eventId: '1102',
     command: 'auditpol /set /subcategory:"Audit Policy Change" /success:enable /failure:enable',
@@ -186,16 +189,37 @@ const TECHNIQUE_TO_LOGGING: Record<string, LogConfig[]> = {
 
 @Injectable({ providedIn: 'root' })
 export class EventLoggingService {
+  private resolver = inject(AttackIdResolverService);
+  private byTechnique = new Map<string, LogConfig[]>();
+  private indexedVersion = -1;
+
+  /**
+   * Config index keyed by the LIVE id of each table key, rebuilt whenever the
+   * loaded ATT&CK release changes. Two keys that resolve to the same technique
+   * have their configs merged.
+   */
+  private index(): Map<string, LogConfig[]> {
+    if (this.indexedVersion === this.resolver.version) return this.byTechnique;
+    const map = new Map<string, LogConfig[]>();
+    for (const [key, configs] of Object.entries(TECHNIQUE_TO_LOGGING)) {
+      const id = this.resolver.resolve(key);
+      map.set(id, [...(map.get(id) ?? []), ...configs]);
+    }
+    this.byTechnique = map;
+    this.indexedVersion = this.resolver.version;
+    return map;
+  }
+
   getLoggingConfig(attackId: string): LogConfig[] {
-    return TECHNIQUE_TO_LOGGING[attackId] ?? [];
+    return this.index().get(this.resolver.resolve(attackId)) ?? [];
   }
 
   getAllMappedTechniques(): string[] {
-    return Object.keys(TECHNIQUE_TO_LOGGING);
+    return [...this.index().keys()];
   }
 
   getConfigCount(attackId: string): number {
-    return (TECHNIQUE_TO_LOGGING[attackId] ?? []).length;
+    return this.getLoggingConfig(attackId).length;
   }
 
   generateScript(attackIds: string[]): string {
@@ -212,8 +236,8 @@ export class EventLoggingService {
     commands.push('');
 
     for (const attackId of attackIds) {
-      const configs = TECHNIQUE_TO_LOGGING[attackId];
-      if (!configs) continue;
+      const configs = this.getLoggingConfig(attackId);
+      if (!configs.length) continue;
 
       commands.push(`# â”€â”€ ${attackId} â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ï¿½ï¿½ï¿½â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€`);
       for (const config of configs) {
