@@ -1,8 +1,12 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 //
-// Inline SVG icon registry. Icon shapes adapted from Lucide (https://lucide.dev),
-// ISC License. Each entry is the inner markup of a 24x24 viewBox SVG rendered
+// Inline SVG icon registry. Icon shapes adapted from Lucide (https://lucide.dev)
+// under the ISC License: Copyright (c) 2026 Lucide Icons and Contributors.
+// Lucide icons derived from Feather are Copyright (c) 2013-present Cole Bemis
+// (MIT License). Both license texts are reproduced in THIRD_PARTY_NOTICES.md
+// at the repository root (shipped as assets/THIRD_PARTY_NOTICES.md).
+// Each entry is the inner markup of a 24x24 viewBox SVG rendered
 // with stroke="currentColor", fill="none", stroke-width 2, round caps/joins.
 // This replaces the legacy emoji icon system (see UPGRADE_FOUNDATION.md).
 
