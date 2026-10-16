@@ -320,6 +320,6 @@ Report vulnerabilities privately, as described in [SECURITY.md](SECURITY.md), ra
 
 ## License
 
-The application code in this repository is released under the [MIT License](LICENSE).
+The application code in this repository is released under the [MIT License](LICENSE). That license does not cover the third-party content the repository redistributes: the ATT&CK, CWE, F3, CERT/CC SSVC and NVD-derived data under `src/assets/data`, the D3FEND and CAR seeds in the services, and the Lucide icon shapes in `src/app/shared/icons/icon-registry.ts` are governed by the licenses and terms collected in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), which also ships with every build as `assets/THIRD_PARTY_NOTICES.md` (linked from Settings > Data). Licenses of the npm packages compiled into the bundle are written by the production build to `dist/mitre-mitigation-navigator/3rdpartylicenses.txt`, one level above the `browser/` directory that the Pages deploy and the Docker image publish, so that file is not served by either; it ships with the repository's build output only.
 
-MITRE ATT&CK® is a registered trademark of The MITRE Corporation. This project is not affiliated with or endorsed by MITRE. Third-party data sources, APIs and upstream content remain subject to their own licenses and terms.
+© 2026 The MITRE Corporation. The ATT&CK data in this repository is reproduced and distributed with the permission of The MITRE Corporation. MITRE ATT&CK® is a registered trademark of The MITRE Corporation. This project is not affiliated with or endorsed by MITRE. This product uses the NVD API but is not endorsed or certified by the NVD. Data fetched at runtime from other sources remains subject to those sources' own licenses and terms.

@@ -115,4 +115,49 @@ describe('SettingsPanelComponent', () => {
     expect(component.mitigationCount).toBe(3);
     expect(settingsService.current.attackVersion).toBe('19.2');
   });
+
+  describe('third-party notices (Data tab)', () => {
+    // Reuses the suite-level TestBed set up above (its DataService stub and
+    // service stubs); a second configureTestingModule here would throw because
+    // the outer beforeEach has already instantiated the module.
+
+    // The component is OnPush, so the tab is chosen before the first change
+    // detection pass rather than flipped on a rendered fixture.
+    function render(tab: SettingsPanelComponent['activeTab']): ComponentFixture<SettingsPanelComponent> {
+      const fixture = TestBed.createComponent(SettingsPanelComponent);
+      fixture.componentInstance.activeTab = tab;
+      fixture.detectChanges();
+      return fixture;
+    }
+
+    it('links to the shipped notices file with a relative URL that works under any base href', () => {
+      const fixture = render('data');
+      const link = fixture.nativeElement.querySelector('a.third-party-notices-link') as HTMLAnchorElement;
+      expect(link).toBeTruthy();
+      // Relative to the document base (`<base href="./">`), so it resolves on
+      // GitHub Pages (/ATTACK-Navi/assets/...) and in the Docker image (/assets/...).
+      expect(link.getAttribute('href')).toBe('assets/THIRD_PARTY_NOTICES.md');
+      expect(link.getAttribute('target')).toBe('_blank');
+      expect(link.getAttribute('rel')).toContain('noopener');
+    });
+
+    it('shows the MITRE ATT&CK redistribution statement that the ATT&CK license requires', () => {
+      const fixture = render('data');
+      const text = (fixture.nativeElement.querySelector('.third-party-notice--mitre') as HTMLElement).textContent ?? '';
+      expect(text).toContain('© 2026 The MITRE Corporation');
+      expect(text).toContain('reproduced and distributed with the permission of The MITRE Corporation');
+    });
+
+    it('shows the NVD API attribution notice that the NVD terms of use ask for', () => {
+      const fixture = render('data');
+      const text = (fixture.nativeElement.querySelector('.third-party-notice--nvd') as HTMLElement).textContent ?? '';
+      expect(text).toContain('This product uses the NVD API but is not endorsed or certified by the NVD.');
+    });
+
+    it('keeps the notices on the Data tab only', () => {
+      const fixture = render('scoring');
+      expect(fixture.nativeElement.querySelector('a.third-party-notices-link')).toBeNull();
+      expect(fixture.nativeElement.querySelector('.third-party-notice--mitre')).toBeNull();
+    });
+  });
 });
