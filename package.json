@@ -53,7 +53,8 @@
     "serialize-javascript": "^7.0.5",
     "lodash": "^4.17.21",
     "follow-redirects": ">=1.15.12",
-    "vite": "^7.3.6"
+    "vite": "^7.3.6",
+    "source-map-js": "^1.2.2"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^22.2.1",
