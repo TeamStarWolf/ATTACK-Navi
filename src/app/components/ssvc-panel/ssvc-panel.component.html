@@ -63,6 +63,12 @@
     @if (error) {
       <div class="notice notice-error">{{ error }}</div>
     }
+    @if (kevError) {
+      <div class="notice notice-warn">
+        {{ kevError }} "In KEV" is unverified for every CVE below until it loads.
+        <button type="button" class="btn-link" (click)="retryKev()">Retry</button>
+      </div>
+    }
     @if (notFound) {
       <div class="notice notice-warn">{{ notFound }}</div>
     }
