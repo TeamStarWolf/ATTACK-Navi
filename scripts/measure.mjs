@@ -29,6 +29,7 @@
 //          --window S (boot measurement cap in seconds after navigation; default 120)
 //          --no-lenses, --no-routes (skip the attribution passes; --no-routes also skips the sidebar)
 //          --chrome <path> (Chrome executable; default: Playwright channel 'chrome')
+//          --from <results.json> --md <file> (re-render the markdown from a saved run; no browser)
 //          --url <base> (measure a deployed copy instead of the local build, e.g. the
 //                        GitHub Pages site; bundle sizes still come from the local dist)
 //          --headed
@@ -62,10 +63,10 @@ const opt = (name, fallback) => {
   const i = argv.indexOf(name);
   return i >= 0 && argv[i + 1] !== undefined ? argv[i + 1] : fallback;
 };
-const known = new Set(['--skip-build', '--no-lenses', '--no-routes', '--headed', '--runs', '--window', '--md', '--out', '--chrome', '--url']);
+const known = new Set(['--skip-build', '--no-lenses', '--no-routes', '--headed', '--runs', '--window', '--md', '--out', '--chrome', '--url', '--from']);
 for (const [i, a] of argv.entries()) {
   if (a.startsWith('--') && !known.has(a)) throw new Error(`Unknown option ${a}`);
-  if (!a.startsWith('--') && !['--runs', '--window', '--md', '--out', '--chrome', '--url'].includes(argv[i - 1])) {
+  if (!a.startsWith('--') && !['--runs', '--window', '--md', '--out', '--chrome', '--url', '--from'].includes(argv[i - 1])) {
     throw new Error(`Unexpected argument ${a}`);
   }
 }
@@ -93,8 +94,9 @@ function build() {
   const r = spawnSync('npx', ['ng', 'build', '--stats-json'], { cwd: ROOT, stdio: 'inherit', shell: process.platform === 'win32' });
   if (r.status !== 0) throw new Error(`ng build failed with exit code ${r.status}`);
 }
-if (!flag('--skip-build') && !REMOTE) build();
-for (const f of [join(BROWSER_DIR, 'index.html'), join(BROWSER_DIR, 'ngsw.json'), STATS]) {
+const FROM = opt('--from', null);
+if (!flag('--skip-build') && !REMOTE && !FROM) build();
+for (const f of FROM ? [] : [join(BROWSER_DIR, 'index.html'), join(BROWSER_DIR, 'ngsw.json'), STATS]) {
   if (!existsSync(f)) throw new Error(`${f} is missing: run without --skip-build (needs a production build with --stats-json)`);
 }
 
@@ -230,6 +232,7 @@ async function instrument(page, { disableCache }) {
   });
   const done = (req, failed) => {
     state.inflight.delete(req);
+    state.lastStart = Date.now();
     if (req.__m && failed) req.__m.failed = true;
   };
   page.on('requestfinished', (req) => done(req, false));
@@ -253,10 +256,13 @@ async function instrument(page, { disableCache }) {
   return { cdp, state, bytes };
 }
 
+/** Network idle: nothing started since `since` still in flight and no request started or finished for quietMs; capped at capMs. */
 async function waitQuiet(state, since, capMs, quietMs = QUIET_MS) {
   const deadline = since + capMs;
   while (Date.now() < deadline) {
-    if (Date.now() - state.lastStart >= quietMs && Date.now() - since >= quietMs) return { quiet: true, ms: Date.now() - since };
+    const busy = [...state.inflight].some((req) => (req.__m?.t ?? 0) >= since);
+    const idle = !busy && Date.now() - state.lastStart >= quietMs;
+    if (idle && Date.now() - since >= quietMs) return { quiet: true, ms: Date.now() - since };
     await delay(250);
   }
   return { quiet: false, ms: Date.now() - since };
@@ -418,7 +424,7 @@ async function lensPass(page, inst) {
     if (!error && !shown.endsWith(m.short)) error = `View button shows "${shown}" after the click`;
     const reqs = inst.state.requests.slice(first);
     const gh = reqs.filter((r) => r.host === 'api.github.com');
-    out.push({ lens: m.value, label: m.label, apiGithub: gh.length, apiGithubUrls: gh.map((r) => r.url.replace('https://api.github.com', '')), thirdParty: reqs.filter((r) => r.host !== new URL(page.url()).host).length, error });
+    out.push({ lens: m.value, label: m.label, apiGithub: gh.length, apiGithubStatus: gh.map((r) => r.status ?? (r.failed ? 'failed' : 'pending')), apiGithubUrls: gh.map((r) => r.url.replace('https://api.github.com', '')), thirdParty: reqs.filter((r) => r.host !== new URL(page.url()).host).length, error });
   }
   return out;
 }
@@ -547,7 +553,7 @@ function markdown(r) {
   p('- Served: the production build (`ng build --stats-json`, service worker on) from a local static server on 127.0.0.1 with gzip and `max-age=600`, like GitHub Pages. Third-party data is fetched live from the internet, so third-party timings depend on the network at the time of the run.');
   p('- **Cold** = fresh Chrome profile, service workers blocked, HTTP cache disabled through CDP: a true first visit, onboarding modal on top.');
   p('- **Warm** = fresh Chrome profile with the service worker allowed; one priming load (onboarding dismissed, worker installed, IndexedDB filled), then a second load in a new tab is measured: the walkthrough\'s "warm revisit".');
-  p(`- Boot window: from navigation until no new request has started for ${QUIET_MS / 1000} s, capped at ${WINDOW_MS / 1000} s. Requests and bytes are those started or received inside the window; slow third-party downloads still running at the cap are counted as requests but only their bytes received so far.`);
+  p(`- Boot window: from navigation until the network is idle (nothing in flight and no request started or finished for ${QUIET_MS / 1000} s), capped at ${WINDOW_MS / 1000} s. Requests and bytes are those started or received inside the window; downloads still running at the cap are counted as requests but only their bytes received so far. Lens, sidebar and route steps use the same rule with 3 s, capped at 45-60 s.`);
   p('- JS heap is read from CDP after the boot window and once the main thread has had no long task for 3 s; the figure after a forced GC is the retained heap.');
   p('- api.github.com calls are counted when the request is issued, whatever GitHub answers; the unauthenticated limit is 60 per hour per IP, so repeated runs see 403s (status counts below).');
   p();
@@ -563,7 +569,7 @@ function markdown(r) {
   p(`| Requests in boot window (third-party) | ${c.requests.total} (${c.requests.thirdParty}) | ${w.requests.total} (${w.requests.thirdParty}); ${w.requests.servedByServiceWorker} served by the service worker |`);
   p(`| api.github.com calls on boot | ${c.requests.apiGithub.count} | ${w.requests.apiGithub.count} |`);
   p(`| Decoded bytes in boot window | ${mb(c.decodedBytes)} | ${mb(w.decodedBytes)} |`);
-  p(`| Bytes on the wire in boot window | ${mb(c.encodedBytes)} | ${mb(w.encodedBytes)} |`);
+  p(`| Bytes on the wire in boot window (page-level; responses handed over by the service worker count 0) | ${mb(c.encodedBytes)} | ${mb(w.encodedBytes)} |`);
   p(`| Requests still in flight at window end | ${c.inflightAtEnd} | ${w.inflightAtEnd} |`);
   p(`| Boot window length | ${fmtMs(c.windowMs)}${c.windowQuiet ? '' : ' (cap)'} | ${fmtMs(w.windowMs)}${w.windowQuiet ? '' : ' (cap)'} |`);
   p(`| Long tasks during boot (longest) | ${c.longTasks} (${fmtMs(c.maxLongTaskMs)}) | ${w.longTasks} (${fmtMs(w.maxLongTaskMs)}) |`);
@@ -571,7 +577,13 @@ function markdown(r) {
   p(`| Tab stops on /matrix (inside the matrix) | ${r.cold.tabStops.total} (${r.cold.tabStops.inMatrix}) | ${r.warm.tabStops.total} (${r.warm.tabStops.inMatrix}) |`);
   if (r.runs > 1) {
     p();
-    p(`Spread over ${r.runs} runs (min to max): cold FCP ${r.spread.coldFcp}, cold first cell ${r.spread.coldCell}; warm FCP ${r.spread.warmFcp}, warm first cell ${r.spread.warmCell}.`);
+    p(`Timings are medians over ${r.runs} runs; counts, bytes and heap are from cold run ${r.representativeRun.cold} and warm run ${r.representativeRun.warm} (the first whose boot api.github.com calls all answered 200). Every run:`);
+    p();
+    p('| Run | FCP | First cell | Longest task | api.github.com on boot (status) | Third-party requests | Decoded | Heap after GC |');
+    p('|---|---|---|---|---|---|---|---|');
+    for (const k of ['cold', 'warm']) {
+      r.allRuns[k].forEach((x, i) => p(`| ${k} ${i + 1} | ${fmtMs(x.fcpMs)} | ${fmtMs(x.firstCellFrameMs)} | ${fmtMs(x.maxLongTaskMs)} | ${x.requests.apiGithub.count} (${Object.entries(x.requests.apiGithub.status).map(([s, n]) => `${s} x${n}`).join(', ')}) | ${x.requests.thirdParty} | ${mb(x.decodedBytes)} | ${mb(x.heap.usedAfterGcBytes)} |`));
+    }
   }
   p();
   p('The cold first-cell time above is the **Phase 3 baseline** for "Cold first matrix cells" (plan 6.5), replacing the ~6.3 s figure that was observed with a warm service worker.');
@@ -579,6 +591,8 @@ function markdown(r) {
   p('## Against the walkthrough (2026-10-13, live GitHub Pages)');
   p();
   p('Acceptance: one command reproduces the walkthrough\'s warm numbers within 15%.');
+  p();
+  p('The walkthrough figures come from one manual session in the desktop app\'s built-in browser against GitHub Pages, with the heap read during the session; they are not lab conditions. Where this table says "no", the lab figure above is the baseline from now on. `--url https://teamstarwolf.github.io/ATTACK-Navi/` measures the deployed site with the same harness.');
   p();
   p('| Walkthrough figure | Walkthrough | This run | Delta | Within 15% |');
   p('|---|---|---|---|---|');
@@ -637,9 +651,9 @@ function markdown(r) {
   if (r.cold.lenses) {
     p('Per lens, on the cold page after boot, switched through the View menu in registry order. Counts are incremental: a loader already started at boot or by an earlier lens is not counted again.');
     p();
-    p('| # | Lens | api.github.com calls | Other third-party requests | Calls |');
+    p('| # | Lens | api.github.com calls | Other third-party requests | Calls (status) |');
     p('|---|---|---|---|---|');
-    r.cold.lenses.forEach((l, i) => p(`| ${i + 1} | ${l.lens} | ${l.apiGithub} | ${l.thirdParty - l.apiGithub} | ${l.error ? `switch failed: ${l.error}` : l.apiGithubUrls.map((u) => `\`${u}\``).join('<br>')} |`));
+    r.cold.lenses.forEach((l, i) => p(`| ${i + 1} | ${l.lens} | ${l.apiGithub} | ${l.thirdParty - l.apiGithub} | ${l.error ? `switch failed: ${l.error}` : l.apiGithubUrls.map((u, j) => `\`${u}\` (${l.apiGithubStatus?.[j] ?? '?'})`).join('<br>')} |`));
     p();
     p(`Lenses switched: ${r.cold.lenses.filter((l) => !l.error).length} of ${r.cold.lenses.length}. api.github.com calls triggered by lenses: ${r.cold.lenses.reduce((a, l) => a + l.apiGithub, 0)}.`);
     p();
@@ -682,6 +696,12 @@ function markdown(r) {
 }
 
 // ── main ─────────────────────────────────────────────────────────────────────
+if (FROM) {
+  if (!MD) throw new Error('--from needs --md <file>');
+  writeFileSync(resolve(ROOT, MD), markdown(JSON.parse(readFileSync(FROM, 'utf8'))) + '\n');
+  log(`markdown re-rendered from ${FROM} to ${MD}`);
+  process.exit(0);
+}
 const server = REMOTE ? null : await startServer();
 const base = REMOTE ?? `http://127.0.0.1:${server.address().port}`;
 log(REMOTE ? `measuring deployed copy at ${base}` : `serving ${BROWSER_DIR} at ${base}`);
@@ -700,8 +720,13 @@ try {
     const v = runs.map((x) => x.load[key]).filter((x) => x !== null);
     return `${fmtMs(Math.min(...v))} to ${fmtMs(Math.max(...v))}`;
   };
-  const cold = colds[0];
-  const warm = warms[0];
+  // Counts, bytes and heap come from the first run whose boot api.github.com calls all
+  // answered 200 (a rate-limited run skips chained calls); timings are medians over all runs.
+  const clean = (runs) => Math.max(0, runs.findIndex((x) => Object.keys(x.load.requests.apiGithub.status).every((k) => k === '200')));
+  const coldRep = clean(colds);
+  const warmRep = clean(warms);
+  const cold = { ...colds[0], load: { ...colds[coldRep].load } };
+  const warm = { ...warms[warmRep], load: { ...warms[warmRep].load } };
   for (const k of ['fcpMs', 'dclMs', 'firstCellDomMs', 'firstCellFrameMs']) {
     cold.load[k] = pickMedian(colds, k);
     warm.load[k] = pickMedian(warms, k);
@@ -713,6 +738,7 @@ try {
     commit,
     browser: cold.load.browserVersion,
     runs: RUNS,
+    representativeRun: { cold: coldRep + 1, warm: warmRep + 1 },
     bundle,
     cold,
     warm,
