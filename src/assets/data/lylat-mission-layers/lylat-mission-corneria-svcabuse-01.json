@@ -26,7 +26,7 @@
     },
     {
       "techniqueID": "T1078.002",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "color": "#fca311",
       "enabled": true,
       "comment": "CORNERIA-SVCABUSE-01 planned coverage: Domain Accounts",
@@ -42,7 +42,7 @@
     },
     {
       "techniqueID": "T1550.003",
-      "tactic": "defense-evasion",
+      "tactic": "lateral-movement",
       "color": "#fca311",
       "enabled": true,
       "comment": "CORNERIA-SVCABUSE-01 planned coverage: Pass the Ticket",
@@ -50,7 +50,7 @@
     },
     {
       "techniqueID": "T1207",
-      "tactic": "defense-evasion",
+      "tactic": "defense-impairment",
       "color": "#fca311",
       "enabled": true,
       "comment": "CORNERIA-SVCABUSE-01 planned coverage: Rogue Domain Controller",

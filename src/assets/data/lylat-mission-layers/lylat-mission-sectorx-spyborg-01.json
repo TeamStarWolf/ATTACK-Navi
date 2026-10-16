@@ -34,7 +34,7 @@
     },
     {
       "techniqueID": "T1055",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "color": "#fca311",
       "enabled": true,
       "comment": "SECTORX-SPYBORG-01 planned coverage: Process Injection",
@@ -42,7 +42,7 @@
     },
     {
       "techniqueID": "T1027",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "color": "#fca311",
       "enabled": true,
       "comment": "SECTORX-SPYBORG-01 planned coverage: Obfuscated Files or Information",

@@ -26,7 +26,7 @@
     },
     {
       "techniqueID": "T1078.004",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "color": "#fca311",
       "enabled": true,
       "comment": "BOLSE-CLOUD-01 planned coverage: Cloud Accounts",
