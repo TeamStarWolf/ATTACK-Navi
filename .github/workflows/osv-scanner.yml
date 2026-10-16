@@ -30,21 +30,26 @@ permissions:
   contents: read
 
 jobs:
+  # Both jobs are pinned to the SAME osv-scanner-action commit so Dependabot
+  # bumps them together. osv-scanner v2 removed the `--skip-git` flag (git-root
+  # scanning is now opt-in via `--include-git-root`); passing it made the
+  # scanner exit 127 before writing any results, which failed every push run
+  # and let the PR scan report "no new vulnerabilities" with zero packages
+  # scanned. Keep scan-args to flags that exist in the pinned version.
+  # Vulnerability ignores live in osv-scanner.toml next to package-lock.json.
   scan-scheduled:
     if: ${{ github.event_name == 'push' || github.event_name == 'schedule' }}
     uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@a345acffa64b0eaede81a3d9aae6141214d9c8fc" # v2.6.0
     with:
-      # Example of specifying custom arguments
       scan-args: |-
         -r
-        --skip-git
         ./
   scan-pr:
     if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
-    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@9a498708959aeaef5ef730655706c5a1df1edbc2" # v2.3.8
+    # v2.6.0 adds a "Check that both scans completed" step, so a scanner
+    # error on either side fails the job instead of passing as a clean diff.
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@a345acffa64b0eaede81a3d9aae6141214d9c8fc" # v2.6.0
     with:
-      # Example of specifying custom arguments
       scan-args: |-
         -r
-        --skip-git
         ./
