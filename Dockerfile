@@ -1,6 +1,6 @@
 # Stage 1: Build
 # Node 24 (alpine) — Angular 22's CLI requires Node >=22.22.3 / >=24.15.0 / >=26.
-FROM node:24-alpine AS build
+FROM node:25-alpine AS build
 WORKDIR /app
 COPY package*.json ./
 # Reproducible install from the committed lockfile: a clean `npm ci` succeeds and
