@@ -73,14 +73,6 @@
       "showSubtechniques": false
     },
     {
-      "techniqueID": "T0855",
-      "tactic": "impair-process-control",
-      "score": 1,
-      "enabled": true,
-      "comment": "Unauthorized Command Message - mapped by 1 mission(s): MACBETH-SCADA-01",
-      "showSubtechniques": false
-    },
-    {
       "techniqueID": "T0859",
       "tactic": "persistence",
       "score": 1,
@@ -103,6 +95,14 @@
       "enabled": true,
       "comment": "Remote Services - mapped by 1 mission(s): MACBETH-SCADA-01",
       "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1692.001",
+      "tactic": "impair-process-control",
+      "score": 1,
+      "enabled": true,
+      "comment": "Command Message - mapped by 1 mission(s): MACBETH-SCADA-01",
+      "showSubtechniques": true
     }
   ],
   "gradient": {

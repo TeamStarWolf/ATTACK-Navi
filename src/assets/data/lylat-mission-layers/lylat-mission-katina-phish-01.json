@@ -50,7 +50,7 @@
     },
     {
       "techniqueID": "T1078",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "color": "#fca311",
       "enabled": true,
       "comment": "KATINA-PHISH-01 planned coverage: Valid Accounts",

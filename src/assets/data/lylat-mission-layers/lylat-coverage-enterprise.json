@@ -74,7 +74,7 @@
     },
     {
       "techniqueID": "T1027",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 3,
       "enabled": true,
       "comment": "Obfuscated Files or Information - mapped by 3 mission(s): CORNERIA-WORKSTATION-01, MACBETH-SUPPLYCHAIN-01, SECTORX-SPYBORG-01",
@@ -122,7 +122,7 @@
     },
     {
       "techniqueID": "T1055",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 2,
       "enabled": true,
       "comment": "Process Injection - mapped by 2 mission(s): SECTORX-SPYBORG-01, VENOMII-RESEARCH-01",
@@ -169,16 +169,8 @@
       "showSubtechniques": false
     },
     {
-      "techniqueID": "T1070.001",
-      "tactic": "defense-evasion",
-      "score": 1,
-      "enabled": true,
-      "comment": "Clear Windows Event Logs - mapped by 1 mission(s): CORNERIA-GRC-01",
-      "showSubtechniques": true
-    },
-    {
       "techniqueID": "T1070.004",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 1,
       "enabled": true,
       "comment": "File Deletion - mapped by 1 mission(s): CORNERIA-WORKSTATION-01",
@@ -218,7 +210,7 @@
     },
     {
       "techniqueID": "T1078",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 14,
       "enabled": true,
       "comment": "Valid Accounts - mapped by 14 mission(s): AQUAS-DATA-01, BOLSE-GATEWAY-01, CORNERIA-CADET-01, CORNERIA-GHOST-01, CORNERIA-GRC-01, CORNERIA-LEDGER-01, CORNERIA-OAUTH-01, GREATFOX-INFILTRATION-01, KATINA-PHISH-01, MACBETH-SUPPLYCHAIN-01, SAURIA-IOT-01, SAURIA-KRAZOA-01, SAURIA-SCALES-01, SECTORZ-AMBUSH-01",
@@ -226,7 +218,7 @@
     },
     {
       "techniqueID": "T1078.002",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 1,
       "enabled": true,
       "comment": "Domain Accounts - mapped by 1 mission(s): CORNERIA-SVCABUSE-01",
@@ -234,7 +226,7 @@
     },
     {
       "techniqueID": "T1078.004",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 1,
       "enabled": true,
       "comment": "Cloud Accounts - mapped by 1 mission(s): BOLSE-CLOUD-01",
@@ -410,7 +402,7 @@
     },
     {
       "techniqueID": "T1207",
-      "tactic": "defense-evasion",
+      "tactic": "defense-impairment",
       "score": 1,
       "enabled": true,
       "comment": "Rogue Domain Controller - mapped by 1 mission(s): CORNERIA-SVCABUSE-01",
@@ -434,7 +426,7 @@
     },
     {
       "techniqueID": "T1218",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 1,
       "enabled": true,
       "comment": "System Binary Proxy Execution - mapped by 1 mission(s): CORNERIA-WORKSTATION-01",
@@ -554,7 +546,7 @@
     },
     {
       "techniqueID": "T1550",
-      "tactic": "defense-evasion",
+      "tactic": "lateral-movement",
       "score": 1,
       "enabled": true,
       "comment": "Use Alternate Authentication Material - mapped by 1 mission(s): CORNERIA-GRC-01",
@@ -562,7 +554,7 @@
     },
     {
       "techniqueID": "T1550.001",
-      "tactic": "defense-evasion",
+      "tactic": "lateral-movement",
       "score": 1,
       "enabled": true,
       "comment": "Application Access Token - mapped by 1 mission(s): CORNERIA-OAUTH-01",
@@ -570,7 +562,7 @@
     },
     {
       "techniqueID": "T1550.002",
-      "tactic": "defense-evasion",
+      "tactic": "lateral-movement",
       "score": 2,
       "enabled": true,
       "comment": "Pass the Hash - mapped by 2 mission(s): GREATFOX-INFILTRATION-01, SECTORZ-AMBUSH-01",
@@ -578,7 +570,7 @@
     },
     {
       "techniqueID": "T1550.003",
-      "tactic": "defense-evasion",
+      "tactic": "lateral-movement",
       "score": 1,
       "enabled": true,
       "comment": "Pass the Ticket - mapped by 1 mission(s): CORNERIA-SVCABUSE-01",
@@ -646,14 +638,6 @@
       "score": 1,
       "enabled": true,
       "comment": "Archive via Utility - mapped by 1 mission(s): FICHINA-DISCOVERY-01",
-      "showSubtechniques": true
-    },
-    {
-      "techniqueID": "T1562.002",
-      "tactic": "defense-evasion",
-      "score": 1,
-      "enabled": true,
-      "comment": "Disable Windows Event Logging - mapped by 1 mission(s): CORNERIA-GRC-01",
       "showSubtechniques": true
     },
     {
@@ -810,7 +794,7 @@
     },
     {
       "techniqueID": "T1610",
-      "tactic": "defense-evasion",
+      "tactic": "execution",
       "score": 1,
       "enabled": true,
       "comment": "Deploy Container - mapped by 1 mission(s): BOLSE-CONTAINER-01",
@@ -842,7 +826,7 @@
     },
     {
       "techniqueID": "T1620",
-      "tactic": "defense-evasion",
+      "tactic": "stealth",
       "score": 2,
       "enabled": true,
       "comment": "Reflective Code Loading - mapped by 2 mission(s): VENOM-ANDROSS-01, VENOMII-RESEARCH-01",
@@ -873,12 +857,28 @@
       "showSubtechniques": false
     },
     {
-      "techniqueID": "T1656",
-      "tactic": "defense-evasion",
+      "techniqueID": "T1684.001",
+      "tactic": "stealth",
       "score": 1,
       "enabled": true,
       "comment": "Impersonation - mapped by 1 mission(s): CORNERIA-GHOST-01",
-      "showSubtechniques": false
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1685.001",
+      "tactic": "defense-impairment",
+      "score": 1,
+      "enabled": true,
+      "comment": "Disable or Modify Windows Event Log - mapped by 1 mission(s): CORNERIA-GRC-01",
+      "showSubtechniques": true
+    },
+    {
+      "techniqueID": "T1685.005",
+      "tactic": "defense-impairment",
+      "score": 1,
+      "enabled": true,
+      "comment": "Clear Windows Event Logs - mapped by 1 mission(s): CORNERIA-GRC-01",
+      "showSubtechniques": true
     }
   ],
   "gradient": {
