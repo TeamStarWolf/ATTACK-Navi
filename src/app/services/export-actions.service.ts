@@ -14,7 +14,7 @@ import { XlsxExportService } from './xlsx-export.service';
 import { CustomMitigationService } from './custom-mitigation.service';
 import { TimelineService } from './timeline.service';
 import { BrowserFileService } from './browser-file.service';
-import { NavigatorLayerService } from './navigator-layer.service';
+import { DerivedStatus, NavigatorLayerService } from './navigator-layer.service';
 import { AnnotationService } from './annotation.service';
 import { UserLayerService } from './user-layer.service';
 
@@ -246,43 +246,97 @@ export class ExportActionsService {
       }
     }
 
+    // Technique ids only mean something against the loaded domain, so the
+    // resolution check and the status/note import run only when we did NOT
+    // trigger an async domain reload.
+    const checkDomain = !domainSwitched ? this.domain : null;
+    if (checkDomain) {
+      const warning = this.userLayerService.resolutionWarning(
+        this.userLayerService.resolve(layer, checkDomain), checkDomain,
+      );
+      if (warning) warnings.push(warning);
+    }
+
     try {
       await this.userLayerService.saveLayer(layer);
-      this.userLayerService.applyActive(layer);
+      this.userLayerService.applyActive(layer, checkDomain);
     } catch {
-      this.userLayerService.applyActive(layer);
+      this.userLayerService.applyActive(layer, checkDomain);
       warnings.push('Layer converted and applied, but could not be saved to this browser.');
     }
     this.filterService.setHeatmapMode('library');
 
-    // Statuses/notes match techniqueIDs against the loaded domain, so only run
-    // that when we did NOT trigger an async domain reload.
-    let statusesApplied = 0;
-    let notesApplied = 0;
-    if (!domainSwitched && this.domain) {
+    const lines: string[] = [];
+    if (checkDomain) {
       try {
-        const applied = await this.navigatorLayerService.importLayer(
-          json, this.domain, this.implService, this.annotationService,
+        // Preview first: a foreign layer's comments can only GUESS mitigation
+        // statuses, so they are written only after the analyst sees exactly
+        // what would change and says yes. Notes never need the opt-in (they
+        // only land on techniques without a note).
+        const preview = await this.navigatorLayerService.importLayer(
+          json, checkDomain, this.implService, this.annotationService,
+          { dryRun: true, deriveStatusesFromComments: true },
         );
-        statusesApplied = applied.statusesApplied;
-        notesApplied = applied.notesApplied;
-      } catch { /* rich layer already saved+applied; status mapping is best-effort */ }
+        const derive = preview.derivedStatuses.length > 0
+          && confirm(this.describeDerivedStatuses(preview.derivedStatuses));
+        const applied = await this.navigatorLayerService.importLayer(
+          json, checkDomain, this.implService, this.annotationService,
+          { deriveStatusesFromComments: derive },
+        );
+        const release = `${checkDomain.name} v${checkDomain.attackVersion || '?'}`;
+        lines.push(`${applied.resolvedCount} of ${applied.techniqueIdCount} technique ids resolved in ${release}.`);
+        if (applied.remapped.length) {
+          const sample = applied.remapped.slice(0, 3).map(r => `${r.from} -> ${r.to}`).join(', ');
+          lines.push(`${applied.remapped.length} retired id(s) mapped to their replacement (${sample}${applied.remapped.length > 3 ? ', …' : ''}).`);
+        }
+        lines.push(`${applied.statusesApplied} statuses and ${applied.notesApplied} notes applied; matrix colored by this layer.`);
+        if (preview.derivedStatuses.length && !derive) {
+          lines.push('Comment-derived statuses were not applied (comments kept as notes only).');
+        }
+      } catch (error) {
+        warnings.push(`Statuses and notes were not applied: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    } else if (domainSwitched) {
+      lines.push(`Switched to ${layer.domain.toUpperCase()} ATT&CK and colored the matrix by this layer.`);
+    } else {
+      warnings.push('Statuses and notes were not applied: no ATT&CK domain is loaded yet.');
     }
 
-    const summary = domainSwitched
-      ? `Switched to ${layer.domain.toUpperCase()} ATT&CK and colored the matrix by this layer.`
-      : `${statusesApplied} statuses and ${notesApplied} notes applied; matrix colored by this layer.`;
-    alert([`Layer "${layer.name}" imported and saved (${layer.techniques.length} techniques).`, summary, ...warnings].join('\n'));
+    alert([`Layer "${layer.name}" imported and saved (${layer.techniques.length} technique entries).`, ...lines, ...warnings].join('\n'));
+  }
+
+  /** The confirm text shown before comment-derived statuses are written. */
+  private describeDerivedStatuses(derived: DerivedStatus[]): string {
+    const byTechnique = new Map<string, DerivedStatus[]>();
+    for (const d of derived) {
+      const list = byTechnique.get(d.techniqueId) ?? [];
+      list.push(d);
+      byTechnique.set(d.techniqueId, list);
+    }
+    const sample = [...byTechnique.entries()].slice(0, 8).map(([techniqueId, list]) =>
+      `  ${techniqueId}: ${list.length} mitigation(s) -> ${list[0].status}  ("${list[0].comment.slice(0, 60)}")`);
+    const more = byTechnique.size > 8 ? [`  … and ${byTechnique.size - 8} more technique(s)`] : [];
+    return [
+      'This layer has no ATTACK-Navi status metadata, so statuses can only be guessed from its comments.',
+      `Set ${derived.length} mitigation status(es) on ${byTechnique.size} technique(s) from comment keywords?`,
+      ...sample,
+      ...more,
+      '',
+      'OK applies them to your implementation tracking. Cancel keeps the comments as notes only.',
+    ].join('\n');
   }
 
   /** Loads a previously saved user layer and colors the matrix by it. */
   async loadSavedLayer(id: string): Promise<void> {
-    const layer = await this.userLayerService.setActive(id);
+    const layer = await this.userLayerService.getLayer(id);
     if (!layer) {
       alert('Saved layer could not be found.');
       return;
     }
-    if (layer.domain !== this.currentDomain
+    // Retired-id aliasing only makes sense against the domain the layer targets.
+    const sameDomain = layer.domain === this.currentDomain;
+    this.userLayerService.applyActive(layer, sameDomain ? this.domain : null);
+    if (!sameDomain
         && confirm(`This layer targets ${layer.domain.toUpperCase()} ATT&CK. Switch domain to view it correctly?`)) {
       this.dataService.switchDomain(layer.domain);
     }

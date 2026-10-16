@@ -5,7 +5,7 @@
     "navigator": "4.9",
     "layer": "4.5"
   },
-  "domain": "enterprise-attack",
+  "domain": "atlas",
   "description": "Ghost in the Cortex — subverting Andross's AI brain, and the AI-security controls that stop it  -  Planned/mapped ATT&CK coverage for a Lylat Labs training mission. Draft, execution_verified:false - this is NOT a validated detection or live-coverage result. Colour marks which techniques the mission is designed to exercise. Not an official MITRE mapping.",
   "sorting": 0,
   "layout": {
