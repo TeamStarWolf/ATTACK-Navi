@@ -1,8 +1,6 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideHttpClient, withXhr } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { BehaviorSubject } from 'rxjs';
 
 import { SettingsPanelComponent } from './settings-panel.component';
@@ -119,24 +117,9 @@ describe('SettingsPanelComponent', () => {
   });
 
   describe('third-party notices (Data tab)', () => {
-    beforeEach(async () => {
-      await TestBed.configureTestingModule({
-        imports: [SettingsPanelComponent],
-        providers: [
-          provideHttpClient(withXhr()),
-          provideHttpClientTesting(),
-          {
-            provide: DataService,
-            useValue: {
-              domain$: new BehaviorSubject(null),
-              getCurrentAttackDomain: () => 'enterprise',
-              getCurrentDomain: () => null,
-              forceRefresh: () => Promise.resolve(),
-            },
-          },
-        ],
-      }).compileComponents();
-    });
+    // Reuses the suite-level TestBed set up above (its DataService stub and
+    // service stubs); a second configureTestingModule here would throw because
+    // the outer beforeEach has already instantiated the module.
 
     // The component is OnPush, so the tab is chosen before the first change
     // detection pass rather than flipped on a rendered fixture.
