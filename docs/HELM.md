@@ -112,7 +112,16 @@ resources:
 
 The chart does not deploy the optional credentials proxy in `server/`, and it has no values for OpenCTI or MISP tokens; never put integration secrets in `values.yaml`. To use the proxy with a Kubernetes deployment, run it separately (for example from `server/Dockerfile` with its configuration in a Kubernetes Secret) and enter its URL in the app's Settings > Integrations. `docker-compose.yml` at the repo root runs the app and the proxy together for single-host setups; see [server/README.md](../server/README.md).
 
-The nginx `Content-Security-Policy` baked into the image (`nginx.conf`) lists the origins the app may call. Add your proxy origin to `connect-src` and rebuild the image if the proxy lives on a different origin than the app.
+The image's `Content-Security-Policy` lives in `nginx-security-headers.conf`, which the Dockerfile installs under `/etc/nginx/templates/` and the nginx entrypoint renders into `/etc/nginx/conf.d` when the container starts. Origins are not added by editing `nginx.conf`: `connect-src` appends whatever the `CSP_EXTRA_CONNECT_SRC` environment variable holds (space-separated origins, empty by default; see [CONFIGURATION.md](CONFIGURATION.md#docker)). A proxy on a different origin than the app, and any OpenCTI, MISP or TAXII server used in direct mode, must be listed there.
+
+The chart cannot pass that variable yet: `values.yaml` has no environment values and `templates/deployment.yaml` gives the container no `env`, so there is nothing for `--set` to reach. The same holds for `PROXY_UPSTREAM` and `NGINX_RESOLVER`, so in a chart deployment the same-origin `/api/` route keeps the image defaults (`http://proxy:8787`, resolved through `127.0.0.11`, Docker's embedded DNS). Until the chart gains a way to set container environment, put the value in the image you push, for example with a two-line Dockerfile on top of the image from step 1:
+
+```dockerfile
+FROM registry.example.com/attack-nav:0.10.0
+ENV CSP_EXTRA_CONNECT_SRC="https://navi-proxy.example.com"
+```
+
+Build and push that under its own tag and point `image.tag` at it. The proxy, in turn, must list the app's origin in its `ALLOWED_ORIGINS` (see [server/README.md](../server/README.md)).
 
 ## Templates
 
