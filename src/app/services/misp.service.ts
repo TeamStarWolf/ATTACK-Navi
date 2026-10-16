@@ -4,6 +4,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
+import { SettingsService } from './settings.service';
+import { proxyRequestHeaders } from './proxy-headers';
 
 export interface MispGalaxyCluster {
   uuid: string;
@@ -106,7 +108,7 @@ export class MispService {
   private attributeCache = new Map<string, MispAttribute[]>();
   private eventCache = new Map<string, MispEvent[]>();
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private settings: SettingsService) {
     this.load();
     this.loadConfigFromStorage();
   }
@@ -304,10 +306,13 @@ export class MispService {
     const url = this.serverConfig.mode === 'proxy'
       ? `${this.serverConfig.proxyUrl}/api/misp${endpoint}`
       : `${this.serverConfig.url}${endpoint}`;
+    // Proxy mode: X-Proxy-Key authenticates the caller to the credentials proxy and
+    // X-Requested-With is required by it; the MISP key stays on the server.
     const headers = this.serverConfig.mode === 'proxy'
       ? new HttpHeaders({
           'Accept': 'application/json',
           'Content-Type': 'application/json',
+          ...proxyRequestHeaders(this.settings.current.proxyToken),
         })
       : new HttpHeaders({
           'Authorization': this.serverConfig.apiKey,
