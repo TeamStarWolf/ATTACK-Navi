@@ -25,6 +25,22 @@ export class HtmlReportService {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  /**
+   * An href value for the report: only http(s) URLs are emitted. The report
+   * is a blob: document on the app's origin, so a `javascript:` URL carried in
+   * STIX data would otherwise become a clickable same-origin script link
+   * (esc() only escapes HTML metacharacters, not URL schemes).
+   */
+  private safeHref(url: string): string {
+    try {
+      const protocol = new URL(url).protocol;
+      if (protocol === 'https:' || protocol === 'http:') return this.esc(url);
+    } catch {
+      // relative or malformed — fall through to the inert anchor
+    }
+    return '#';
+  }
+
   private buildHtml(
     domain: Domain,
     implStatusMap: Map<string, ImplStatus>,
@@ -164,7 +180,7 @@ export class HtmlReportService {
       const groupCount = (domain.groupsByTechnique.get(t.id) ?? []).length;
       const tactics = t.tacticShortnames.map(s => s.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())).join(', ');
       return `<tr>
-        <td><a href="${this.esc(t.url)}" target="_blank">${this.esc(t.attackId)}</a></td>
+        <td><a href="${this.safeHref(t.url)}" target="_blank" rel="noopener">${this.esc(t.attackId)}</a></td>
         <td>${this.esc(t.name)}</td>
         <td>${this.esc(tactics)}</td>
         <td>${groupCount > 0 ? `<span class="badge badge-red">${groupCount} groups</span>` : '—'}</td>
@@ -174,7 +190,7 @@ export class HtmlReportService {
     // ── Best covered table rows ────────────────────────────────────────────────
     const bestRows = bestCovered.map(t => `
       <tr>
-        <td><a href="${this.esc(t.url)}" target="_blank">${this.esc(t.attackId)}</a></td>
+        <td><a href="${this.safeHref(t.url)}" target="_blank" rel="noopener">${this.esc(t.attackId)}</a></td>
         <td>${this.esc(t.name)}</td>
         <td><span class="badge badge-blue">${t.mitigationCount}</span></td>
         <td>${implBadge(t.id)}</td>
@@ -238,6 +254,7 @@ export class HtmlReportService {
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="script-src 'none'; object-src 'none'; base-uri 'none'" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ATT&amp;CK Coverage Report — ${generatedDate}</title>
   <style>

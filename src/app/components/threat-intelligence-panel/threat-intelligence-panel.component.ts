@@ -15,6 +15,7 @@ import { DataService } from '../../services/data.service';
 import { MispService, MispGalaxyCluster } from '../../services/misp.service';
 import { OpenCtiService, OpenCtiIndicator } from '../../services/opencti.service';
 import { Domain } from '../../models/domain';
+import { csvRow } from '../../utils/csv';
 
 export interface IntelRow {
   attackId: string;
@@ -211,8 +212,10 @@ export class ThreatIntelligencePanelComponent implements OnInit, OnDestroy {
   exportIndicatorCsv(): void {
     if (this.indicatorRows.length === 0) return;
     const header = 'Source,Type,Value,Confidence,Last Updated';
+    // Indicator content comes from external CTI feeds, so every cell is
+    // quoted and formula-neutralised before it can reach a spreadsheet.
     const lines = this.indicatorRows.map(r =>
-      `${r.source},"${r.type}","${r.value.replace(/"/g, '""')}",${r.confidence},"${r.lastUpdated}"`
+      csvRow([r.source, r.type, r.value, r.confidence, r.lastUpdated])
     );
     const csv = [header, ...lines].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });

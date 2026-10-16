@@ -938,12 +938,59 @@ export class DataService {
     return null;
   }
 
+  /**
+   * The object's own ATT&CK / F3 page URL from its `mitre-*` external
+   * reference, accepted only when it is an http(s) URL. Anything else (a
+   * `javascript:` or `data:` scheme in a tampered bundle, a relative path,
+   * a missing url) falls back to the canonical page built from the ATT&CK id,
+   * so the URL that reaches `[href]` bindings and the generated HTML report
+   * is never an executable scheme.
+   */
   private extractUrl(obj: any): string {
+    let fallback = '';
     for (const ref of obj.external_references ?? []) {
-      if (ref.source_name?.startsWith('mitre-') && ref.url) {
+      if (!ref.source_name?.startsWith('mitre-')) continue;
+      if (typeof ref.url === 'string' && DataService.isHttpUrl(ref.url)) {
         return ref.url;
       }
+      if (!fallback) fallback = DataService.canonicalUrl(ref.source_name, obj.type, ref.external_id);
     }
-    return '';
+    return fallback;
+  }
+
+  private static isHttpUrl(url: string): boolean {
+    try {
+      const protocol = new URL(url).protocol;
+      return protocol === 'https:' || protocol === 'http:';
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Canonical public page for a STIX object, keyed on its source and type:
+   * attack.mitre.org for `mitre-attack` (and the legacy `mitre-ics-attack` /
+   * `mitre-mobile-attack` names still carried by some deprecated objects),
+   * ctid.mitre.org/fraud for `mitre-f3`. Same URL shapes as the bundled data.
+   * Returns '' when the id is missing or the type has no public page.
+   */
+  private static canonicalUrl(sourceName: string, stixType: string, attackId: unknown): string {
+    if (typeof attackId !== 'string' || !/^[A-Z]+\d+(\.\d+)?$/.test(attackId)) return '';
+    if (sourceName === 'mitre-f3') {
+      if (stixType === 'attack-pattern') return `https://ctid.mitre.org/fraud/techniques/${attackId}`;
+      if (stixType === 'x-mitre-tactic') return `https://ctid.mitre.org/fraud/tactics/${attackId}`;
+      return '';
+    }
+    if (sourceName !== 'mitre-attack' && sourceName !== 'mitre-ics-attack' && sourceName !== 'mitre-mobile-attack') return '';
+    switch (stixType) {
+      case 'attack-pattern': return `https://attack.mitre.org/techniques/${attackId.replace('.', '/')}`;
+      case 'x-mitre-tactic': return `https://attack.mitre.org/tactics/${attackId}`;
+      case 'course-of-action': return `https://attack.mitre.org/mitigations/${attackId}`;
+      case 'intrusion-set': return `https://attack.mitre.org/groups/${attackId}`;
+      case 'tool':
+      case 'malware': return `https://attack.mitre.org/software/${attackId}`;
+      case 'campaign': return `https://attack.mitre.org/campaigns/${attackId}`;
+      default: return '';
+    }
   }
 }

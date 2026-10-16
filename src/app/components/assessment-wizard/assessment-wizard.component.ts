@@ -19,6 +19,7 @@ import { EpssService, EpssScore } from '../../services/epss.service';
 import { Domain } from '../../models/domain';
 import { Technique } from '../../models/technique';
 import { ThreatGroup } from '../../models/group';
+import { csvRow } from '../../utils/csv';
 
 interface TacticAssessment {
   tacticName: string;
@@ -438,13 +439,13 @@ export class AssessmentWizardComponent implements OnDestroy {
     const rows: string[] = ['Technique ID,Technique Name,Status,Actor Count,KEV'];
     for (const ta of this.tacticAssessments) {
       for (const tech of ta.techniques) {
-        rows.push([
+        rows.push(csvRow([
           tech.attackId,
-          `"${tech.name.replace(/"/g, '""')}"`,
+          tech.name,
           tech.status ?? 'unrated',
           tech.actorCount,
           tech.kevCount,
-        ].join(','));
+        ]));
       }
     }
     const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
