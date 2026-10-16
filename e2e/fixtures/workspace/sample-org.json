@@ -1,0 +1,66 @@
+{
+  "schema": "attack-navi-e2e-sample-org/0",
+  "name": "Sample Org (e2e fixture)",
+  "synthetic": true,
+  "note": "Synthetic data for the eight acceptance journeys (plan Appendix C). No real organisation, host, person or detection deployment is described. Nothing here is loaded into the app yet: the journeys that need it are pending, and each one wires its slice in when it turns on. This file later becomes the in-app sample org.",
+  "assets": [
+    {
+      "id": "fw-edge-01",
+      "name": "Edge firewall (GlobalProtect gateway)",
+      "vendor": "Palo Alto Networks",
+      "product": "PAN-OS",
+      "version": "11.1.0",
+      "cves": ["CVE-2024-3400"]
+    },
+    {
+      "id": "dc-01",
+      "name": "Domain controller",
+      "vendor": "Microsoft",
+      "product": "Windows Server",
+      "version": "2022",
+      "cves": []
+    },
+    {
+      "id": "ws-fin-07",
+      "name": "Finance workstation",
+      "vendor": "Microsoft",
+      "product": "Windows",
+      "version": "11 23H2",
+      "cves": []
+    }
+  ],
+  "vmJourney": {
+    "cve": "CVE-2024-3400",
+    "affectedAssetIds": ["fw-edge-01"]
+  },
+  "rangeContract": {
+    "mission": "CORNERIA-ROOT-01",
+    "rows": [
+      { "mission_id": "CORNERIA-ROOT-01", "technique_id": "T1558.003", "result": "validated", "detection": "wazuh:100821", "run_at": "2026-10-01T14:00:00Z" },
+      { "mission_id": "CORNERIA-ROOT-01", "technique_id": "T1558.003", "result": "validated", "detection": "wazuh:100821", "run_at": "2026-10-02T14:00:00Z" },
+      { "mission_id": "CORNERIA-ROOT-01", "technique_id": "T1087.002", "result": "validated", "detection": "wazuh:100810", "run_at": "2026-10-01T13:40:00Z" },
+      { "mission_id": "CORNERIA-ROOT-01", "technique_id": "T1078.002", "result": "validated", "detection": "wazuh:100812", "run_at": "2026-10-01T13:52:00Z" },
+      { "mission_id": "CORNERIA-ROOT-01", "technique_id": "T1059.001", "result": "validated", "detection": "wazuh:100830", "run_at": "2026-10-01T14:10:00Z" },
+      { "mission_id": "CORNERIA-ROOT-01", "technique_id": "T1059.001", "result": "validated", "detection": "wazuh:100831", "run_at": "2026-10-02T14:10:00Z" },
+      { "mission_id": "CORNERIA-ROOT-01", "technique_id": "T1003.001", "result": "validated", "detection": "wazuh:100840", "run_at": "2026-10-01T14:25:00Z" },
+      { "mission_id": "CORNERIA-ROOT-01", "technique_id": "T1021.002", "result": "validated", "detection": "wazuh:100850", "run_at": "2026-10-01T14:40:00Z" }
+    ]
+  },
+  "ctiReport": {
+    "title": "Synthetic intrusion report (e2e fixture)",
+    "text": "The intrusion began with spearphishing emails that carried a malicious Word attachment. Once opened, the document launched encoded PowerShell commands to stage the next payload. The operators created a scheduled task so the loader ran again at every logon. They then dumped LSASS process memory to recover credentials. Finally, the collected archives were exfiltrated over the existing command and control channel.",
+    "expected": [
+      { "technique_id": "T1566.001", "sentence": "The intrusion began with spearphishing emails that carried a malicious Word attachment." },
+      { "technique_id": "T1059.001", "sentence": "Once opened, the document launched encoded PowerShell commands to stage the next payload." },
+      { "technique_id": "T1053.005", "sentence": "The operators created a scheduled task so the loader ran again at every logon." },
+      { "technique_id": "T1003.001", "sentence": "They then dumped LSASS process memory to recover credentials." },
+      { "technique_id": "T1041", "sentence": "Finally, the collected archives were exfiltrated over the existing command and control channel." }
+    ]
+  },
+  "share": {
+    "hash": "/matrix?lens=posture&tech=T1059.001&dom=enterprise&v=20.0"
+  },
+  "honesty": {
+    "forbiddenStrings": ["covered", "defended", "LOW RISK"]
+  }
+}
