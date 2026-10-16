@@ -13,6 +13,7 @@ import { Technique } from '../../models/technique';
 import { Domain } from '../../models/domain';
 import { DataService } from '../../services/data.service';
 import { FilterService } from '../../services/filter.service';
+import { csvRow } from '../../utils/csv';
 
 interface GapGroup {
   tacticName: string;
@@ -261,13 +262,13 @@ export class GapViewComponent implements OnInit, OnDestroy {
     for (const group of this.groups) {
       for (const t of group.techniques) {
         const groupCount = this.domain.groupsByTechnique.get(t.id)?.length ?? 0;
-        rows.push([
+        rows.push(csvRow([
           t.attackId,
-          `"${t.name.replace(/"/g, '""')}"`,
-          `"${t.tacticShortnames.join('; ')}"`,
-          `"${t.platforms.join('; ')}"`,
+          t.name,
+          t.tacticShortnames.join('; '),
+          t.platforms.join('; '),
           groupCount,
-        ].join(','));
+        ]));
       }
     }
     const blob = new Blob([rows.join('\n')], { type: 'text/csv' });

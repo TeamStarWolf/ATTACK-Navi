@@ -14,6 +14,7 @@ import { DataService } from '../../services/data.service';
 import { ImplementationService, ImplStatus, IMPL_STATUS_LABELS } from '../../services/implementation.service';
 import { DocumentationService, MitigationDoc } from '../../services/documentation.service';
 import { ReportConfigService, ReportSection } from '../../services/report-config.service';
+import { csvRow } from '../../utils/csv';
 
 interface TacticReport {
   name: string;
@@ -257,15 +258,15 @@ export class ReportPanelComponent implements OnInit, OnDestroy {
     for (const t of this.domain.techniques.filter((t) => !t.isSubtechnique)) {
       const mitCount = this.domain.mitigationsByTechnique.get(t.id)?.length ?? 0;
       const groupCount = this.domain.groupsByTechnique.get(t.id)?.length ?? 0;
-      rows.push([
+      rows.push(csvRow([
         t.attackId,
-        `"${t.name.replace(/"/g, '""')}"`,
-        `"${t.tacticShortnames.join('; ')}"`,
-        `"${t.platforms.join('; ')}"`,
+        t.name,
+        t.tacticShortnames.join('; '),
+        t.platforms.join('; '),
         mitCount,
         groupCount,
         mitCount > 0 ? 'Yes' : 'No',
-      ].join(','));
+      ]));
     }
     const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
     const a = document.createElement('a');

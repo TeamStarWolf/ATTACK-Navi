@@ -5,6 +5,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { AttackCveService } from './attack-cve.service';
 import { CveService } from './cve.service';
 import { EpssService } from './epss.service';
+import { csvRow, csvUnneutralise } from '../utils/csv';
 
 export interface Asset {
   id: string;
@@ -185,7 +186,8 @@ export class AssetInventoryService {
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
-      const cols = this.parseCsvLine(line);
+      // Cells this app exported may carry csvCell's leading ' on formula-like text.
+      const cols = this.parseCsvLine(line).map(c => csvUnneutralise(c.trim()));
 
       const hostname = cols[hostnameIdx]?.trim() ?? '';
       if (!hostname) continue;
@@ -215,7 +217,7 @@ export class AssetInventoryService {
     for (const a of assets) {
       const sw = a.software.join(';');
       const tg = a.tags.join(';');
-      lines.push(`"${a.hostname}","${a.os}","${sw}","${tg}","${a.criticality}"`);
+      lines.push(csvRow([a.hostname, a.os, sw, tg, a.criticality]));
     }
     return lines.join('\n');
   }

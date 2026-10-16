@@ -14,6 +14,7 @@ import { FilterService } from '../../services/filter.service';
 import { PanelNavService } from '../../services/panel-nav.service';
 import { WatchlistService, WatchlistEntry } from '../../services/watchlist.service';
 import { DataService } from '../../services/data.service';
+import { csvRow } from '../../utils/csv';
 
 @Component({
   selector: 'app-watchlist-panel',
@@ -149,13 +150,13 @@ export class WatchlistPanelComponent implements OnInit, OnDestroy {
   exportCsv(): void {
     const rows = ['ATT&CK ID,Name,Priority,Added,Note'];
     for (const e of this.entries) {
-      rows.push([
+      rows.push(csvRow([
         e.techniqueId,
-        `"${e.name.replace(/"/g, '""')}"`,
+        e.name,
         e.priority,
         this.formatDate(e.addedAt),
-        `"${e.note.replace(/"/g, '""')}"`,
-      ].join(','));
+        e.note,
+      ]));
     }
     const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
     const a = document.createElement('a');

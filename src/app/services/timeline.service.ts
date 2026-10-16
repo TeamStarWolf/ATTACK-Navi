@@ -4,6 +4,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { Domain } from '../models/domain';
 import { ImplStatus } from './implementation.service';
+import { csvRow } from '../utils/csv';
 
 export interface CoverageSnapshot {
   id: string;
@@ -159,9 +160,9 @@ export class TimelineService {
     if (!snapshots.length) return;
 
     const header = 'ID,Label,Date,Total Techniques,Covered Techniques,Coverage %,Implemented,In Progress,Planned,Not Started,Notes';
-    const rows = snapshots.map(s => [
+    const rows = snapshots.map(s => csvRow([
       s.id,
-      `"${s.label.replace(/"/g, '""')}"`,
+      s.label,
       s.createdAt,
       s.totalTechniques,
       s.coveredTechniques,
@@ -170,8 +171,8 @@ export class TimelineService {
       s.implCounts.inProgress,
       s.implCounts.planned,
       s.implCounts.notStarted,
-      `"${s.notes.replace(/"/g, '""')}"`,
-    ].join(','));
+      s.notes,
+    ]));
 
     const csv = [header, ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });

@@ -10,6 +10,7 @@ import { AttackCveService } from '../../services/attack-cve.service';
 import { Mitigation } from '../../models/mitigation';
 import { Domain } from '../../models/domain';
 import { Technique } from '../../models/technique';
+import { csvRow } from '../../utils/csv';
 
 interface AutoRoadmapPhase {
   quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4';
@@ -178,7 +179,7 @@ export class RoadmapPanelComponent implements OnInit, OnDestroy {
         item.tacticsCovered.join('; '),
       ])
     ];
-    const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+    const csv = rows.map(r => csvRow(r)).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

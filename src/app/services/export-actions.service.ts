@@ -17,6 +17,7 @@ import { BrowserFileService } from './browser-file.service';
 import { DerivedStatus, NavigatorLayerService } from './navigator-layer.service';
 import { AnnotationService } from './annotation.service';
 import { UserLayerService } from './user-layer.service';
+import { csvRow } from '../utils/csv';
 
 /**
  * All matrix/report export and import actions, extracted from AppComponent so
@@ -55,15 +56,15 @@ export class ExportActionsService {
     const rows: string[] = ['Technique ID,Technique Name,Tactics,Platforms,Mitigation Count,Mitigation IDs,Mitigation Names'];
     for (const tech of this.domain.techniques.filter((t) => !t.isSubtechnique)) {
       const rels = this.domain.mitigationsByTechnique.get(tech.id) ?? [];
-      rows.push([
+      rows.push(csvRow([
         tech.attackId,
-        `"${tech.name.replace(/"/g, '""')}"`,
-        `"${tech.tacticShortnames.join('; ')}"`,
-        `"${tech.platforms.join('; ')}"`,
+        tech.name,
+        tech.tacticShortnames.join('; '),
+        tech.platforms.join('; '),
         rels.length,
-        `"${rels.map((r) => r.mitigation.attackId).join('; ')}"`,
-        `"${rels.map((r) => r.mitigation.name.replace(/"/g, '""')).join('; ')}"`,
-      ].join(','));
+        rels.map((r) => r.mitigation.attackId).join('; '),
+        rels.map((r) => r.mitigation.name).join('; '),
+      ]));
     }
     this.downloadCsv(rows.join('\n'), 'attack-mitigation-coverage.csv');
   }
@@ -76,13 +77,13 @@ export class ExportActionsService {
       const covered = parents.filter((t) => t.mitigationCount > 0);
       const uncoveredIds = parents.filter((t) => t.mitigationCount === 0).map((t) => t.attackId).join('; ');
       const pct = parents.length ? Math.round((covered.length / parents.length) * 100) : 0;
-      rows.push([
-        `"${col.tactic.name}"`,
+      rows.push(csvRow([
+        col.tactic.name,
         parents.length,
         covered.length,
         `${pct}%`,
-        `"${uncoveredIds}"`,
-      ].join(','));
+        uncoveredIds,
+      ]));
     }
     this.downloadCsv(rows.join('\n'), 'attack-tactic-coverage.csv');
   }
@@ -102,18 +103,18 @@ export class ExportActionsService {
       const unique = techniques.filter((t) => (techMitCount.get(t.id) ?? 0) === 1).length;
       const doc = this.docService.getMitDoc(mit.id);
       const status = statusMap.get(mit.id) ?? 'not-tracked';
-      rows.push([
+      rows.push(csvRow([
         mit.attackId,
-        `"${mit.name.replace(/"/g, '""')}"`,
+        mit.name,
         status,
-        `"${doc.owner.replace(/"/g, '""')}"`,
+        doc.owner,
         doc.dueDate,
-        `"${doc.controlRefs.replace(/"/g, '""')}"`,
-        `"${doc.evidenceUrl.replace(/"/g, '""')}"`,
+        doc.controlRefs,
+        doc.evidenceUrl,
         techniques.length,
         unique,
-        `"${doc.notes.replace(/"/g, '""')}"`,
-      ].join(','));
+        doc.notes,
+      ]));
     }
     this.downloadCsv(rows.join('\n'), 'mitigation-implementation-plan.csv');
   }
@@ -131,32 +132,31 @@ export class ExportActionsService {
       const threatGroupCount = (this.domain.groupsByTechnique.get(tech.id) ?? []).length;
       const totalMitCount = rels.length;
       const techId = tech.attackId;
-      const techName = `"${tech.name.replace(/"/g, '""')}"`;
-      const tactics = `"${tech.tacticShortnames.join('|')}"`;
-      const platforms = `"${tech.platforms.join('|')}"`;
-      const analystNoteCell = `"${analystNote.replace(/"/g, '""')}"`;
+      const techName = tech.name;
+      const tactics = tech.tacticShortnames.join('|');
+      const platforms = tech.platforms.join('|');
       if (rels.length === 0) {
-        rows.push([
+        rows.push(csvRow([
           techId, techName, tactics, platforms,
           '', '', '', '', '', '', '', '',
-          analystNoteCell, totalMitCount, threatGroupCount,
-        ].join(','));
+          analystNote, totalMitCount, threatGroupCount,
+        ]));
       } else {
         for (const rel of rels) {
           const doc = this.docService.getMitDoc(rel.mitigation.id);
           const status = statusMap.get(rel.mitigation.id) ?? 'not-tracked';
-          rows.push([
+          rows.push(csvRow([
             techId, techName, tactics, platforms,
             rel.mitigation.attackId,
-            `"${rel.mitigation.name.replace(/"/g, '""')}"`,
+            rel.mitigation.name,
             status,
-            `"${doc.owner.replace(/"/g, '""')}"`,
+            doc.owner,
             doc.dueDate,
-            `"${doc.controlRefs.replace(/"/g, '""')}"`,
-            `"${doc.evidenceUrl.replace(/"/g, '""')}"`,
-            `"${doc.notes.replace(/"/g, '""')}"`,
-            analystNoteCell, totalMitCount, threatGroupCount,
-          ].join(','));
+            doc.controlRefs,
+            doc.evidenceUrl,
+            doc.notes,
+            analystNote, totalMitCount, threatGroupCount,
+          ]));
         }
       }
     }
