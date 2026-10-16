@@ -58,8 +58,11 @@ jobs:
           # writable /tmp (pid file, temp buffers) and /etc/nginx/conf.d (where the
           # entrypoint renders the nginx templates), no capabilities, no privilege
           # escalation. Every check below then runs against the hardened container.
+          # runc mounts a tmpfs owned by root with the mode of the image directory
+          # it covers, which uid 101 cannot write to; a Kubernetes emptyDir is
+          # 0777, so mode=0777 reproduces the chart's volume.
           docker run -d --name attack-navi-test -p 8080:8080 \
-            --read-only --tmpfs /tmp --tmpfs /etc/nginx/conf.d \
+            --read-only --tmpfs /tmp --tmpfs /etc/nginx/conf.d:mode=0777 \
             --cap-drop ALL --security-opt no-new-privileges \
             attack-navi:ci
           # Wait up to 15s for nginx to become ready
