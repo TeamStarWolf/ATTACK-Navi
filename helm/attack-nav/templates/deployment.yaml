@@ -38,10 +38,18 @@ spec:
               port: http
             initialDelaySeconds: 3
           volumeMounts:
-            # nginx-unprivileged writes its pid file and temp buffers under /tmp;
-            # everything else stays read-only.
+            # nginx-unprivileged writes its pid file and temp buffers under /tmp.
             - name: tmp
               mountPath: /tmp
+            # The image's entrypoint (20-envsubst-on-templates.sh) renders
+            # /etc/nginx/templates/*.template into /etc/nginx/conf.d at start. On a
+            # read-only root filesystem it would skip that step and nginx would
+            # serve the stock default.conf: no security headers, no SPA fallback
+            # and no /api/ route. Everything else stays read-only.
+            - name: nginx-conf-d
+              mountPath: /etc/nginx/conf.d
       volumes:
         - name: tmp
+          emptyDir: {}
+        - name: nginx-conf-d
           emptyDir: {}

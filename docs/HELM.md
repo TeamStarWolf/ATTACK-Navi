@@ -59,7 +59,7 @@ All configurable values are in `helm/attack-nav/values.yaml`.
 | `service.type` | `ClusterIP` | Kubernetes service type |
 | `service.port` | `80` | Service port, forwarded to `containerPort` |
 | `podSecurityContext` | `runAsNonRoot: true`, uid/gid `101`, `seccompProfile: RuntimeDefault` | Pod security context |
-| `securityContext` | `allowPrivilegeEscalation: false`, `readOnlyRootFilesystem: true`, `capabilities.drop: [ALL]` | Container security context. `/tmp` is an `emptyDir` so nginx can write its pid file and temp buffers. |
+| `securityContext` | `allowPrivilegeEscalation: false`, `readOnlyRootFilesystem: true`, `capabilities.drop: [ALL]` | Container security context. `/tmp` is an `emptyDir` so nginx can write its pid file and temp buffers. `/etc/nginx/conf.d` is a second `emptyDir` so the image's entrypoint can render the site config and security-header snippet from their templates at start; without it nginx would fall back to the stock config with no security headers, SPA fallback or `/api/` route. |
 
 ### Ingress
 
@@ -149,4 +149,4 @@ helm template attack-navi ./helm/attack-nav --set image.tag=0.10.0
 
 ## CI status
 
-`.github/workflows/docker.yml` builds the image and checks that the container serves `/` and runs as a non-root user, on pull requests and pushes to `main`. It does not log in to a registry or push the image. Publishing images (and signing them) is a deliberate owner decision that has not been made; until then, building and pushing is the manual step 1 above.
+`.github/workflows/docker.yml` builds the image and, running it with the chart's read-only root filesystem (`--read-only` plus tmpfs at `/tmp` and `/etc/nginx/conf.d`), checks that it serves `/`, deep links and the security headers from the rendered config and runs as a non-root user, on pull requests and pushes to `main`. It does not log in to a registry or push the image. Publishing images (and signing them) is a deliberate owner decision that has not been made; until then, building and pushing is the manual step 1 above.

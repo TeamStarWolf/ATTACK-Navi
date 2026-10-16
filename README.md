@@ -223,7 +223,7 @@ The image is built on `node:24-alpine` with base href `/`. `nginx.conf` and `ngi
 
 ### Kubernetes
 
-[docs/HELM.md](docs/HELM.md) describes the chart in `helm/attack-nav/`. No workflow in this repository publishes an image, so build and push your own from the `Dockerfile` and set `image.repository` and `image.tag` (the tag defaults to the chart's `appVersion`, which tracks `package.json`). The chart deploys only the app: it runs nginx as a non-root user with a read-only root filesystem, and it has no template or values for the proxy, so run the proxy separately if you need it.
+[docs/HELM.md](docs/HELM.md) describes the chart in `helm/attack-nav/`. No workflow in this repository publishes an image, so build and push your own from the `Dockerfile` and set `image.repository` and `image.tag` (the tag defaults to the chart's `appVersion`, which tracks `package.json`). The chart deploys only the app: it runs nginx as a non-root user with a read-only root filesystem (only `/tmp` and `/etc/nginx/conf.d`, where the entrypoint renders the nginx config at start, are writable `emptyDir` volumes), and it has no template or values for the proxy, so run the proxy separately if you need it.
 
 ## Architecture
 
