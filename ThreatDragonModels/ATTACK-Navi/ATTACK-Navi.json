@@ -133,7 +133,7 @@
               "threats": [
                 {
                   "id": "7b5901c3-3b79-4f60-919a-916d7d234372",
-                  "title": "Share-link #import= bundle silently overwrites the analyst's existing technique notes",
+                  "title": "Share-link #import= bundle can attach attacker-written notes to built-in ATT&CK techniques",
                   "status": "Open",
                   "severity": "Low",
                   "type": "Tampering",
@@ -281,7 +281,7 @@
             "data": {
               "type": "tm.Process",
               "name": "Angular SPA (browser)",
-              "description": "The Angular 22 workbench running in the analyst's browser tab, with hash routing and an XHR HttpClient. No HTTP interceptor is registered, so no header is added globally, and the proxy token is never sent. The SPA parses STIX from upstream, from TAXII, from file imports and from #import= links. ATT&CK description text is rendered through the attackText pipe, which reduces input to plain text with DOMParser, HTML-escapes it, and binds through [innerHTML] under Angular's sanitizer with no trust bypass. The only bypassSecurityTrustHtml call left is for static icon SVGs.",
+              "description": "The Angular 22 workbench running in the analyst's browser tab, with hash routing and an XHR HttpClient. No HTTP interceptor is registered (src/app/app.config.ts:19), so no header is added globally; proxy-mode OpenCTI and MISP calls add X-Requested-With and, when the analyst has entered one, the proxy access token as X-Proxy-Key (src/app/services/proxy-headers.ts:15-19). The SPA parses STIX from upstream, from TAXII, from file imports and from #import= links. ATT&CK description text is rendered through the attackText pipe, which reduces input to plain text with DOMParser, HTML-escapes it, and binds through [innerHTML] under Angular's sanitizer with no trust bypass. The only bypassSecurityTrustHtml call left is for static icon SVGs.",
               "outOfScope": false,
               "reasonOutOfScope": "",
               "hasOpenThreats": false,
@@ -429,7 +429,7 @@
                   "status": "Open",
                   "severity": "Medium",
                   "type": "Tampering",
-                  "description": "ngsw-config.json prefetches index.html and the main and polyfills bundles into Cache Storage. The Angular worker checks content against the ngsw.json hash only when it fetches from the network. Once a hashed URL is in the cache, the cached response is returned without any check. Any same-origin script can overwrite the ngsw:/ATTACK-Navi/ app-shell cache entry for main-*.js with its own code, and that code then runs on every later visit, including offline, until the next app version is deployed. The script could come from a sibling github.io site, a one-time XSS, or the report-link XSS described below. This turns a transient compromise into a persistent one in an origin that handles OpenCTI, MISP and TAXII credentials. Evidence: ngsw-config.json:5-10 (app-shell prefetch); node_modules/@angular/service-worker/ngsw-worker.js:426-434 (@angular/service-worker 22.2.1 per package-lock.json) (cached hashed response returned as-is), :562-578 (hash checked only on network fetch); src/main.ts:46-48 (registration)",
+                  "description": "ngsw-config.json prefetches index.html and the main and polyfills bundles into Cache Storage. The Angular worker checks content against the ngsw.json hash only when it fetches from the network. Once a hashed URL is in the cache, the cached response is returned without any check. Any same-origin script can overwrite the ngsw:/ATTACK-Navi/ app-shell cache entry for main-*.js with its own code, and that code then runs on every later visit, including offline, until the next app version is deployed. The script could come from a sibling github.io site or a one-time XSS. A `javascript:` reference URL in STIX data is not such a source on main (#132): DataService keeps only http(s) reference URLs and falls back to the canonical ATT&CK page (src/app/services/data.service.ts:949-968), and the HTML report emits only http(s) hrefs (src/app/services/html-report.service.ts:34-42). This turns a transient compromise into a persistent one in an origin that handles OpenCTI, MISP and TAXII credentials. Evidence: ngsw-config.json:5-10 (app-shell prefetch); node_modules/@angular/service-worker/ngsw-worker.js:426-434 (@angular/service-worker 22.2.1 per package-lock.json) (cached hashed response returned as-is), :562-578 (hash checked only on network fetch); src/main.ts:46-48 (registration)",
                   "mitigation": "Remove the shared-origin exposure (dedicated origin). Ship a strict CSP so one-time injection is harder. Consider an app-level integrity check that compares loaded bundle hashes against a server-fetched ngsw.json, or skip the service worker on the shared-origin Pages deployment. Document an 'Unregister SW and clear site data' recovery step.",
                   "modelType": "STRIDE",
                   "new": false,
@@ -550,7 +550,7 @@
             "data": {
               "type": "tm.Store",
               "name": "Browser localStorage",
-              "description": "Plaintext per-origin persistent storage, about 36 setItem call sites. Holds settings (with the NVD key stripped), org name and base64 logo, layers, annotations, tags, watchlists, and integration config: MISP and OpenCTI URL, mode and proxyUrl, plus the TAXII server list with usernames (passwords stripped). On the shared github.io origin, any script running there can read it, and so can any XSS.",
+              "description": "Plaintext per-origin persistent storage, 37 localStorage.setItem call sites outside the specs. Holds settings (with the NVD key stripped), org name and base64 logo, layers, annotations, tags, watchlists, and integration config: MISP and OpenCTI URL, mode and proxyUrl, plus the TAXII server list with usernames (passwords stripped). On the shared github.io origin, any script running there can read it, and so can any XSS.",
               "outOfScope": false,
               "reasonOutOfScope": "",
               "hasOpenThreats": true,
@@ -580,7 +580,7 @@
                   "severity": "Medium",
                   "type": "Information disclosure",
                   "description": "The analyst enters an OpenCTI token, a MISP API key, TAXII passwords and an NVD key in Settings, and on main (#114) a proxy access token. If any of these were written to localStorage, or included in the shareable workspace export, they would end up on disk and in files handed to teammates. Evidence: src/app/services/misp.service.ts:118-136, :149-155; src/app/services/opencti.service.ts:131-148, :160-165; src/app/services/taxii.service.ts:198-203; src/app/services/settings.service.ts:158-183, :185-201; src/app/services/workspace-bundle.service.ts:15-18, :23-54 (taxii key at :46), :94-101, :115-124",
-                  "mitigation": "MISP and OpenCTI save only the URL, mode and proxy URL, and set apiKey and token to '' on load. TAXII strips the password before saving. The NVD key is removed from the localStorage settings and kept in sessionStorage. The proxy access token is handled the same way (stripped from the localStorage settings and kept in sessionStorage only, as README.md documents), so like the NVD key it is readable by any same-origin script. The workspace bundle allowlist excludes misp_config and opencti_config, strips nvdApiKey on both export and import, and rejects keys that are not on the allowlist. Remaining exposure: server URLs, TAXII usernames and proxy URLs are still stored in plaintext and exported (mitre-nav-taxii-v1), and the NVD key still reaches disk through the service-worker cache.",
+                  "mitigation": "MISP and OpenCTI save only the URL, mode and proxy URL, and set apiKey and token to '' on load. TAXII strips the password before saving. The NVD key is removed from the localStorage settings and kept in sessionStorage. The proxy access token is handled the same way (stripped from the localStorage settings and kept in sessionStorage only, src/app/services/settings.service.ts:189-200, as README.md:201 documents), so like the NVD key it is readable by any same-origin script. The workspace bundle allowlist excludes misp_config and opencti_config, strips nvdApiKey on both export and import, and rejects keys that are not on the allowlist. Outside this threat: server URLs, TAXII usernames and proxy URLs are identifiers rather than secrets, and are still stored in plaintext and exported (mitre-nav-taxii-v1, src/app/services/workspace-bundle.service.ts:46); the NVD key's separate path to disk through the service-worker cache is tracked as e4c3c3f7.",
                   "modelType": "STRIDE",
                   "new": false,
                   "number": 10,
@@ -700,7 +700,7 @@
             "data": {
               "type": "tm.Store",
               "name": "Browser sessionStorage",
-              "description": "Tab-session storage that holds the NVD API key under 'mitre-nav-settings-v1-key'. It survives a reload but not closing the tab or browser, and any script on the origin can read it.",
+              "description": "Tab-session storage that holds the NVD API key under 'mitre-nav-settings-v1-key' and the proxy access token under 'mitre-nav-settings-v1-proxy-token' (src/app/services/settings.service.ts:189-200). It survives a reload but not closing the tab or browser, and any script on the origin can read it.",
               "outOfScope": false,
               "reasonOutOfScope": "",
               "hasOpenThreats": false,
@@ -1106,7 +1106,7 @@
             "data": {
               "type": "tm.Process",
               "name": "Optional Express credential proxy",
-              "description": "A Node/Express service on port 8787 that holds the OpenCTI and MISP secrets so the browser never sees them. It enforces a CORS origin allowlist (requests with no Origin header are allowed) and, only if PROXY_AUTH_TOKEN is set, a bearer or X-Proxy-Key check on /api/* except /api/health. The SPA never sends that token, so proxy mode works only with authentication disabled. app.listen(port) has no host argument and binds all interfaces under `npm run proxy:start`; docker-compose limits it to 127.0.0.1. Upstream paths are pinned to the configured origin. Responses are relayed verbatim with the upstream Content-Type.",
+              "description": "A Node/Express service on port 8787 that holds the OpenCTI and MISP secrets so the browser never sees them. It binds 127.0.0.1 unless HOST is set (server/src/index.js:18, :407-409); docker-compose sets HOST=0.0.0.0 in the container, publishes it on 127.0.0.1:8787 and puts it behind nginx's same-origin /api/ route (docker-compose.yml:24-25, :44). Before any upstream call, every /api/* route except /api/health checks the Host name against loopback names plus ALLOWED_HOSTS, then checks PROXY_AUTH_TOKEN (Bearer or X-Proxy-Key) when it is set, or answers 503 on a non-loopback bind without it, then requires X-Requested-With (server/src/index.js:306). The SPA sends the token when the analyst enters it. CORS admits an origin allowlist, and requests with no Origin header are allowed (server/src/index.js:27-47). OpenCTI GraphQL is forwarded only for allowlisted root fields, MISP only for a read-only endpoint allowlist, and upstream paths are pinned to the configured origin. Responses are relayed with the upstream status and Content-Type, bounded by a timeout and a size cap (server/src/index.js:177-196).",
               "outOfScope": false,
               "reasonOutOfScope": "",
               "hasOpenThreats": true,
@@ -1117,12 +1117,12 @@
               "threats": [
                 {
                   "id": "239383cb-611f-4177-a6e5-36ce72f2b9b8",
-                  "title": "The proxy's token check can't be used with the SPA, and `npm start` listens on all interfaces, so the proxy is open to the LAN by default",
-                  "status": "Open",
+                  "title": "Unauthenticated callers on the network can use the proxy's OpenCTI and MISP credentials",
+                  "status": "Mitigated",
                   "severity": "High",
                   "type": "Spoofing",
                   "description": "At the 5831e2d baseline: Caller authentication only runs when PROXY_AUTH_TOKEN is set (requireProxyToken returns next() otherwise). The shipped `.env.example` leaves it empty. The SPA's proxy mode never sends `Authorization` or `X-Proxy-Key`, so an operator who sets the token breaks the app. In practice the token stays empty. `app.listen(port)` passes no host, so `npm run proxy:start` binds every interface, while the startup log and the code comment say it is localhost-only. Any host on the same network can then call POST /api/opencti/graphql and GET/POST /api/misp/* with no Origin header, which CORS lets through. Each call carries the operator's OPENCTI_TOKEN or MISP_API_KEY upstream. On main (#114) the proxy binds 127.0.0.1 unless HOST is set, answers 503 on every route except /api/health when HOST is not loopback and PROXY_AUTH_TOKEN is unset, compares the token in constant time, and the SPA sends it as X-Proxy-Key; with the token unset on a loopback bind, any local process can still call the proxy. Evidence on main: server/src/index.js:89-103 (token enforced when set; when unset, served only on a loopback bind, 503 otherwise); server/src/index.js:81-87 (timingSafeEqual compare); server/src/index.js:37 (requests with no Origin header are still allowed by CORS); server/src/index.js:407-409 (listen on HOST, which defaults to 127.0.0.1 at :18; the log prints the real bind address); server/.env.example:26 (PROXY_AUTH_TOKEN still empty by default); src/app/services/opencti.service.ts:351-352 and src/app/services/misp.service.ts:311-316 (proxy mode sends X-Requested-With and, when set, X-Proxy-Key); README.md:201-203 (proxy access token field in Settings, loopback bind, fail-closed non-loopback HOST)",
-                  "mitigation": "docker-compose publishes the proxy on 127.0.0.1:8787 only (docker-compose.yml:24-25), and the browser also reaches it same-origin through the app's nginx /api/ route on 8080 (all interfaces); because the compose proxy binds 0.0.0.0 (:43-44) it answers 503 on every route except /api/health until PROXY_AUTH_TOKEN is set, and its Host allowlist admits only loopback names unless APP_HOST is set (:41-42). Implemented on main (#114): the default bind is 127.0.0.1 (`app.listen(port, host)` with HOST defaulting to loopback); Settings > Integrations has a \"Proxy access token\" field whose value opencti.service.ts and misp.service.ts send as `X-Proxy-Key`, kept in sessionStorage only like the NVD key; a non-loopback HOST without PROXY_AUTH_TOKEN starts but refuses every route except /api/health with 503, rather than refusing to start; tokens are compared with crypto.timingSafeEqual. Remaining: the token stays optional on a loopback bind, so set it whenever other local users or processes are not trusted.",
+                  "mitigation": "docker-compose publishes the proxy on 127.0.0.1:8787 only (docker-compose.yml:24-25), and the browser also reaches it same-origin through the app's nginx /api/ route on 8080 (all interfaces); because the compose proxy binds 0.0.0.0 (:43-44) it answers 503 on every route except /api/health until PROXY_AUTH_TOKEN is set, and its Host allowlist admits only loopback names unless APP_HOST is set (:41-42). Implemented on main (#114): the default bind is 127.0.0.1 (`app.listen(port, host)` with HOST defaulting to loopback, server/src/index.js:18, :407-409); Settings > Integrations has a \"Proxy access token\" field whose value opencti.service.ts and misp.service.ts send as `X-Proxy-Key` (src/app/services/proxy-headers.ts:15-19), kept in sessionStorage only like the NVD key (src/app/services/settings.service.ts:189-200); a non-loopback HOST without PROXY_AUTH_TOKEN starts but refuses every route except /api/health with 503, rather than refusing to start (server/src/index.js:66-73, :89-94); tokens are compared with crypto.timingSafeEqual (server/src/index.js:81-87). Accepted rather than open: with the token unset on a loopback bind, any process on the same host can call the proxy. That is the documented single-user default: the proxy prints a warning at start (server/src/index.js:74-78), server/.env.example:21-26 says to leave the token unset only for isolated localhost use and to set it whenever the proxy is reachable beyond 127.0.0.1, and a browser page on that host is still held off by the Host allowlist, the X-Requested-With requirement and CORS (server/src/index.js:113-145, :306; threats ac3cd11c and 1ced7e5e).",
                   "modelType": "STRIDE",
                   "new": false,
                   "number": 1,
@@ -1130,12 +1130,12 @@
                 },
                 {
                   "id": "d8df9d6f-b685-4abc-9bd3-f07b4d08b357",
-                  "title": "The OpenCTI route forwards any GraphQL query, including mutations, with the operator's token",
-                  "status": "Open",
+                  "title": "A proxy caller can run arbitrary OpenCTI GraphQL, including mutations, with the operator's token",
+                  "status": "Mitigated",
                   "severity": "High",
                   "type": "Elevation of privilege",
                   "description": "At the 5831e2d baseline: MISP gets a read-only endpoint allowlist, but /api/opencti/graphql only checks that `query` is a string and `variables` is an object. It then forwards both under `Authorization: Bearer ${OPENCTI_TOKEN}`. Any caller that gets past the weak gate (an unauthenticated LAN host, a script on an allowed CORS origin, or an XSS in the SPA) can run arbitrary mutations as the token's OpenCTI user. That includes deleting or editing intel, importing bundles, and managing users or connectors if the token is privileged. The SPA itself sends a write mutation (stixObjectOrStixRelationshipImport), so the proxy is not read-only by design. On main (#114) the route parses each document and forwards only read queries on allowlisted root fields; mutations are refused unless OPENCTI_ALLOW_IMPORT=true, which admits only the SPA's ImportStix, and subscriptions are always refused. Evidence on main: server/src/index.js:310-342 (document checked by checkOpenCtiDocument, :255-296, before forwarding); compare server/src/index.js:344-370 (MISP read-only allowlist); src/app/services/opencti.service.ts:289-294 (SPA sends the ImportStix mutation); src/app/services/opencti.service.ts:344-346 (proxy-mode GraphQL endpoint)",
-                  "mitigation": "Implemented on main (#114): the server allowlists operations by root field (about, indicators and threatActors, extendable with OPENCTI_ALLOWED_QUERY_FIELDS) rather than by operation name or persisted query hash, rejects `mutation` documents except the SPA's ImportStix behind the separate OPENCTI_ALLOW_IMPORT flag, and server/.env.example says OPENCTI_TOKEN should belong to a least-privileged, read-mostly OpenCTI user.",
+                  "mitigation": "Implemented on main (#114): before forwarding, the route parses the document with graphql's parser (checkOpenCtiDocument, server/src/index.js:255-296, applied at :328-331) and allowlists operations by root field (about, indicators and threatActors, extendable with OPENCTI_ALLOWED_QUERY_FIELDS, server/src/index.js:241-246) rather than by operation name or persisted query hash; root-level fragments are refused (:272-276); `mutation` documents are refused except the SPA's ImportStix selecting only stixObjectOrStixRelationshipImport, behind the separate OPENCTI_ALLOW_IMPORT flag (:247-249, :281-288), which server/.env.example:36 leaves false; subscriptions are always refused (:278-280). server/.env.example:28-33 says OPENCTI_TOKEN should belong to a least-privileged, read-mostly OpenCTI user.",
                   "modelType": "STRIDE",
                   "new": false,
                   "number": 2,
@@ -1143,12 +1143,12 @@
                 },
                 {
                   "id": "1ced7e5e-4ea1-4776-8416-8d2565c4585b",
-                  "title": "The sample CORS allowlist trusts teamstarwolf.github.io, an origin shared by every Pages site in the org",
-                  "status": "Open",
+                  "title": "A shared origin such as teamstarwolf.github.io in the proxy's CORS allowlist lets every Pages site in the org drive the proxy",
+                  "status": "Mitigated",
                   "severity": "Medium",
                   "type": "Spoofing",
                   "description": "At the 5831e2d baseline: Because the SPA cannot send the proxy token, CORS is the only control on what browser code may drive the proxy. `server/.env.example` puts `https://teamstarwolf.github.io` in ALLOWED_ORIGINS. On GitHub Pages that origin covers every project site under the TeamStarWolf org, not just /ATTACK-Navi/. So any script served from another org repo's Pages site, or any script compromise of the hosted SPA (a malicious dependency or tampered bundled data), can call the analyst's local proxy and read the responses. That includes the OpenCTI mutation path. On main (#114) server/.env.example lists only http://localhost:4200 and warns against origins the operator does not run, and the SPA can send the proxy token. Evidence on main: server/.env.example:9-12 (ALLOWED_ORIGINS is http://localhost:4200 only); server/src/index.js:27-47 (origin-only allowlist); README.md:203 (add your own deployment origin, never a shared one); package.json:5 (homepage on the shared teamstarwolf.github.io origin)",
-                  "mitigation": "The code default is `http://localhost:4200` (server/src/index.js:30), and an empty list fails closed (server/src/index.js:36-37). Implemented on main (#114): the github.io entry is gone from `.env.example`, which now warns against listing origins the operator does not run, and the SPA sends PROXY_AUTH_TOKEN as X-Proxy-Key when the operator enters it (one token per proxy, not per user). Remaining: prefer self-hosting the SPA on a dedicated origin.",
+                  "mitigation": "The code default is `http://localhost:4200` (server/src/index.js:30), and an empty list fails closed (server/src/index.js:36-37). Implemented on main (#114): the github.io entry is gone from `.env.example`, which now lists only http://localhost:4200 and warns against listing origins the operator does not run (server/.env.example:9-12); README.md:203 says to add your own deployment origin, never a shared one; and the SPA sends PROXY_AUTH_TOKEN as X-Proxy-Key when the operator enters it (src/app/services/proxy-headers.ts:15-19; one token per proxy, not per user), so the token can be required. Using the hosted Pages app with the proxy would mean listing the shared origin, which README.md:203 rules out; the shared-origin exposure of the hosted app itself is tracked as 092cad7e.",
                   "modelType": "STRIDE",
                   "new": false,
                   "number": 7,
@@ -1157,11 +1157,11 @@
                 {
                   "id": "ac3cd11c-a05f-4b62-9173-1bf0e4b1ccde",
                   "title": "DNS rebinding can read MISP events through a loopback-bound proxy",
-                  "status": "Open",
+                  "status": "Mitigated",
                   "severity": "Medium",
                   "type": "Information disclosure",
                   "description": "At the 5831e2d baseline: The proxy never checks the Host header, and it treats requests with no Origin header as allowed. A malicious site can rebind its hostname to 127.0.0.1 and then make same-origin GET requests to http://<attacker-host>:8787/api/misp/events/view/<id> or servers/getVersion. Browsers send no Origin on same-origin GETs, so CORS allows the request. With PROXY_AUTH_TOKEN empty (as the SPA requires), the proxy adds the MISP API key and returns the event JSON to the attacker's page. The page can enumerate event IDs. POSTs, including OpenCTI, carry an Origin header and are refused. The 127.0.0.1 publish in docker-compose does not stop this, because the victim's own browser makes the requests. On main (#114) every /api route except /api/health first checks the Host name against localhost, 127.0.0.1, ::1 and ALLOWED_HOSTS (421 otherwise) and requires the X-Requested-With header, so a rebound page is refused before any upstream call. Evidence on main: server/src/index.js:37 (`!origin` still allowed by CORS); server/src/index.js:95 (no token check when the token is unset); server/src/index.js:348-353, 362-370, 377-385 (GET events/view/* forwarded with the MISP key, response relayed); server/src/index.js:388 (GET route); Host validation in requireAllowedHost (:113-133) and the X-Requested-With requirement in requireClientHeader (:140-145), both applied to /api at :306 of server/src/index.js",
-                  "mitigation": "Implemented on main (#114): a request whose Host name is not localhost, 127.0.0.1, ::1 or listed in ALLOWED_HOSTS gets 421 (ports are ignored); every /api route except /api/health requires X-Requested-With, so every cross-origin call needs a preflight; PROXY_AUTH_TOKEN is usable from the SPA (X-Proxy-Key), so it can be required.",
+                  "mitigation": "Implemented on main (#114): a request whose Host name is not localhost, 127.0.0.1, ::1 or listed in ALLOWED_HOSTS gets 421, with ports ignored (requireAllowedHost, server/src/index.js:113-133), and a rebound page's Host is the attacker's own name, so it is refused there; every /api route except /api/health requires X-Requested-With, so every cross-origin call needs a preflight (requireClientHeader, server/src/index.js:140-145); both run before the MISP key is attached to any upstream call (server/src/index.js:306). docker-compose sets ALLOWED_HOSTS from APP_HOST, empty by default (docker-compose.yml:41-42). PROXY_AUTH_TOKEN is usable from the SPA (X-Proxy-Key, src/app/services/proxy-headers.ts:15-19), so it can be required as well.",
                   "modelType": "STRIDE",
                   "new": false,
                   "number": 8,
@@ -1182,7 +1182,7 @@
                 },
                 {
                   "id": "8d1996ef-2e31-43e6-9151-f29424ff0aec",
-                  "title": "Error paths return stack traces and raw fetch errors",
+                  "title": "Proxy error responses disclose upstream fetch error text and the requested endpoint",
                   "status": "Open",
                   "severity": "Low",
                   "type": "Information disclosure",
@@ -1199,7 +1199,7 @@
                   "status": "Open",
                   "severity": "Low",
                   "type": "Repudiation",
-                  "description": "Every upstream action is attributed, in OpenCTI and MISP, to the single operator token held by the proxy. The proxy logs only a startup line, the missing-token or fail-closed warning, and 5xx errors. It records no client IP, origin, route, GraphQL operation name, or status per request. If a LAN client, a rebinding page or an allowed origin runs mutations or bulk-reads MISP, nobody can say which caller did it. Evidence: server/src/index.js:69-79, 398 and 407-409 (the only logging); server/src/index.js:177-196, 333-341 and 377-385 (upstream calls with no logging)",
+                  "description": "Every upstream action is attributed, in OpenCTI and MISP, to the single operator token held by the proxy. The proxy logs only a startup line, the missing-token or fail-closed warning, and 5xx errors. It records no client IP, origin, route, GraphQL operation name, or status per request. If a caller that gets through (a holder of the proxy token, a local process on a loopback bind with no token, or a script on an allowed origin) bulk-reads MISP or OpenCTI, or runs the ImportStix mutation where OPENCTI_ALLOW_IMPORT is on, nobody can say which caller did it. Evidence: server/src/index.js:69-79, 398 and 407-409 (the only logging); server/src/index.js:177-196, 333-341 and 377-385 (upstream calls with no logging)",
                   "mitigation": "Add per-request structured logging (timestamp, remote address, Origin, Host, route, GraphQL operationName or a hash of the query, upstream status). Never log tokens or request bodies. Consider shipping logs off the host.",
                   "modelType": "STRIDE",
                   "new": false,
@@ -1208,7 +1208,7 @@
                 },
                 {
                   "id": "4e858c10-a156-4a0e-aa42-214bc96d7596",
-                  "title": "No rate limits, upstream timeouts or response-size caps",
+                  "title": "The proxy has no rate or concurrency limit on credentialed upstream calls",
                   "status": "Open",
                   "severity": "Low",
                   "type": "Denial of service",
@@ -1333,7 +1333,7 @@
             "data": {
               "type": "tm.Store",
               "name": "server/.env secrets file",
-              "description": "Plaintext dotenv file on the operator's host that holds OPENCTI_URL/TOKEN, MISP_URL/API_KEY, PROXY_AUTH_TOKEN and ALLOWED_ORIGINS. It is gitignored and loaded at runtime through env_file. The root .dockerignore does not exclude it, so the root image's `COPY . .` build stage receives it in the build context; the final nginx stage copies only dist.",
+              "description": "Plaintext dotenv file on the operator's host that holds OPENCTI_URL/TOKEN, MISP_URL/API_KEY, PROXY_AUTH_TOKEN and ALLOWED_ORIGINS. It is gitignored and loaded at runtime through env_file. The root .dockerignore excludes server/ and every .env file (.dockerignore:7-14), so the root image's `COPY . .` build stage (Dockerfile:9) does not receive it, and server/.dockerignore keeps .env out of the proxy image's build context; the final nginx stage copies only dist (Dockerfile:14).",
               "outOfScope": false,
               "reasonOutOfScope": "",
               "hasOpenThreats": true,
@@ -1345,7 +1345,7 @@
               "threats": [
                 {
                   "id": "6e64f1c8-ee6a-4c6e-ba9f-56264f365ad3",
-                  "title": "Integration secrets sit in plaintext env and Helm values, and the upstream URL scheme is not enforced",
+                  "title": "Integration secrets sit in plaintext env, and the upstream URL scheme is not enforced",
                   "status": "Open",
                   "severity": "Low",
                   "type": "Information disclosure",
@@ -1583,20 +1583,20 @@
             "data": {
               "type": "tm.Actor",
               "name": "User's OpenCTI server",
-              "description": "Operator-owned OpenCTI GraphQL API. The browser reaches it directly with 'Authorization: Bearer <token>', or the proxy reaches it with OPENCTI_TOKEN. In both modes the client chooses the GraphQL query text and the proxy forwards it unchanged, so whatever the token permits, including mutations, is reachable.",
+              "description": "Operator-owned OpenCTI GraphQL API. The browser reaches it directly with 'Authorization: Bearer <token>', or the proxy reaches it with OPENCTI_TOKEN. In direct mode the SPA chooses the GraphQL text, so whatever the token permits, including mutations, is reachable. In proxy mode the proxy forwards only read queries on allowlisted root fields, plus the SPA's ImportStix mutation when OPENCTI_ALLOW_IMPORT=true (server/src/index.js:255-296).",
               "outOfScope": false,
               "reasonOutOfScope": "",
-              "hasOpenThreats": true,
+              "hasOpenThreats": false,
               "providesAuthentication": false,
               "threats": [
                 {
                   "id": "c190529d-4edb-4412-b926-e745dc323c17",
                   "title": "CSV export of threat-intel indicators allows formula injection from OpenCTI and MISP content",
-                  "status": "Open",
+                  "status": "Mitigated",
                   "severity": "Low",
                   "type": "Tampering",
                   "description": "At the 5831e2d baseline: exportIndicatorCsv writes OpenCTI indicator pattern and pattern_type values, and MISP galaxy cluster values, into CSV cells. Values only have their quotes doubled, and the type field is placed inside quotes without escaping. There is no handling of a leading = + - @ or tab/CR. Indicator content is often taken from external feeds and can be written by an adversary. A crafted pattern or pattern_type can break out of the cell or run as a spreadsheet formula (DDE or HYPERLINK exfiltration) when the analyst opens threat-intel-indicators.csv in Excel or Sheets. On main (#132) every row goes through the shared csvRow helper in src/app/utils/csv.ts, which quotes each field, doubles embedded quotes and prefixes a leading = + - @ tab or CR with a single quote. Evidence on main: src/app/components/threat-intelligence-panel/threat-intelligence-panel.component.ts:175-182 (MISP values), :187-196 (OpenCTI pattern/patternType), :212-220 (exportIndicatorCsv writes each row with csvRow); src/app/services/opencti.service.ts:238-239",
-                  "mitigation": "Implemented on main (#132): a single CSV helper (csvCell/csvRow in src/app/utils/csv.ts) quotes every field, doubles embedded quotes, and prefixes cells that start with = + - @ \\t or \\r with a single quote. The indicator export and the asset, gap and roadmap exports use it.",
+                  "mitigation": "Implemented on main (#132): a single CSV helper (csvCell/csvRow) quotes every field, doubles embedded quotes, and prefixes cells that start with = + - @ \\t or \\r with a single quote (src/app/utils/csv.ts:9, :26-37). exportIndicatorCsv writes every row through csvRow (src/app/components/threat-intelligence-panel/threat-intelligence-panel.component.ts:212-220), as do the asset, gap and roadmap exports (src/app/services/asset-inventory.service.ts:220; src/app/components/gap-view/gap-view.component.ts:265; src/app/components/roadmap-panel/roadmap-panel.component.ts:182).",
                   "modelType": "STRIDE",
                   "new": false,
                   "number": 13,
@@ -1855,7 +1855,7 @@
             "data": {
               "type": "tm.Process",
               "name": "nginx static server (Docker / Helm)",
-              "description": "Self-hosted alternative: nginx:alpine serving the production build on port 80 with an SPA fallback and security headers. Its CSP connect-src allows only 'self' and a fixed set of public hosts. It does not allow user MISP, OpenCTI or TAXII hosts or http://localhost:8787, so under nginx both direct and proxy integrations are blocked by CSP. docker-compose publishes it as 8080:80 on all interfaces. The Helm chart runs only this container: the values.yaml proxy block (with plaintext token fields) is never rendered, and TLS is left to an optional Ingress.",
+              "description": "Self-hosted alternative: nginxinc/nginx-unprivileged serving the production build on port 8080 as the unprivileged user 101 (Dockerfile:12-14, :27), with an SPA fallback, security headers and a same-origin /api/ route to the optional proxy (nginx.conf:10-45). nginx.conf and nginx-security-headers.conf are templates that the image's entrypoint renders into /etc/nginx/conf.d at container start (Dockerfile:15-19). The CSP connect-src allows 'self', a fixed set of public hosts and whatever CSP_EXTRA_CONNECT_SRC adds (nginx-security-headers.conf:14), so proxy mode through /api/ works under the CSP, while direct-mode MISP, OpenCTI or TAXII hosts must be added through CSP_EXTRA_CONNECT_SRC. docker-compose publishes it as 8080:8080 on all interfaces (docker-compose.yml:4-5). The Helm chart runs only this container, as non-root with a read-only root filesystem and emptyDir volumes at /tmp and /etc/nginx/conf.d (helm/attack-nav/values.yaml:43-58; helm/attack-nav/templates/deployment.yaml:16-24, :40-55). It has no proxy values or template (helm/attack-nav/values.yaml:60-62), so its /api/ route has no upstream, and TLS is left to an optional Ingress (helm/attack-nav/values.yaml:25-33).",
               "outOfScope": false,
               "reasonOutOfScope": "",
               "hasOpenThreats": true,
@@ -1866,7 +1866,7 @@
               "threats": [
                 {
                   "id": "bbe062b9-f78b-4e3d-97d6-68abba8c0170",
-                  "title": "The Helm chart and Dockerfiles run mutable, unpublished images as root with no securityContext",
+                  "title": "The Helm chart points at an image no workflow publishes, and images and base images are referenced by mutable tags",
                   "status": "Open",
                   "severity": "Low",
                   "type": "Tampering",
@@ -2003,7 +2003,7 @@
               "threats": [
                 {
                   "id": "acfd92dc-0dac-4b95-9b71-d117d5050253",
-                  "title": "The monthly data refresh pulls unpinned upstream branches into a PR that cannot be reviewed and gets no CI",
+                  "title": "The monthly data refresh takes unverified upstream branch heads into a PR too large to review",
                   "status": "Open",
                   "severity": "Low",
                   "type": "Tampering",
@@ -2125,7 +2125,7 @@
             "data": {
               "type": "tm.Actor",
               "name": "GitHub Pages host",
-              "description": "Default public hosting (https://teamstarwolf.github.io/ATTACK-Navi/). CI builds the SPA and deploy-pages publishes it. Pages cannot set response headers and index.html has no CSP meta tag, so the hosted site runs with no Content-Security-Policy. The origin https://teamstarwolf.github.io is shared by every TeamStarWolf project page, and the proxy's example CORS allowlist trusts it.",
+              "description": "Default public hosting (https://teamstarwolf.github.io/ATTACK-Navi/). CI builds the SPA and deploy-pages publishes it. Pages cannot set response headers and index.html has no CSP meta tag, so the hosted site runs with no Content-Security-Policy. The origin https://teamstarwolf.github.io is shared by every TeamStarWolf project page, and README.md:203 tells proxy operators never to list a shared origin in ALLOWED_ORIGINS.",
               "outOfScope": false,
               "reasonOutOfScope": "",
               "hasOpenThreats": true,
@@ -2146,12 +2146,12 @@
                 },
                 {
                   "id": "7fd8a802-f9d1-42bb-86c6-1999363613fb",
-                  "title": "The Pages build job has deploy permissions while running npm install, and first-party actions use mutable tags",
+                  "title": "The Pages build job runs dependency install scripts, and its artifact is deployed as-is",
                   "status": "Open",
                   "severity": "Low",
                   "type": "Elevation of privilege",
                   "description": "At the 5831e2d baseline: deploy.yml grants `pages: write` and `id-token: write` at workflow level, so the build job gets them too. That job runs `npm ci` (install scripts from roughly 500 packages), Karma tests and the Angular build, then uploads the artifact that deploy-pages publishes as-is. A malicious dependency in that job can already alter the shipped bundle, and also holds OIDC and Pages-write scope it does not need. The deploy runs on every push to main and daily on a schedule. First-party actions (actions/checkout@v7, setup-node@v7, upload-pages-artifact@v5, deploy-pages@v5) are pinned to mutable major tags. e2e.yml uses v6 tags. On main (#119) the workflow-level token is contents: read, only the deploy job holds `pages: write` and `id-token: write`, and the actions in every workflow are pinned to commit SHAs; the build job still runs `npm ci` with lifecycle scripts. Evidence on main: .github/workflows/deploy.yml:10-14 (workflow-level contents: read only); .github/workflows/deploy.yml:21-39 (build job: contents: read; npm ci, tests, build, upload); .github/workflows/deploy.yml:41-53 (deploy job holds pages and id-token write); .github/workflows/deploy.yml:4-8 (push, daily schedule, dispatch); .github/workflows/e2e.yml:54-55 (SHA-pinned checkout and setup-node); .github/workflows/osv-scanner.yml:42,51 (SHA pins)",
-                  "mitigation": "Partial: the only third-party actions (google/osv-scanner-action reusable workflows) are pinned to commit SHAs (.github/workflows/osv-scanner.yml:42,51). Dependabot updates github-actions (.github/dependabot.yml:18-23). The other workflows use contents: read (.github/workflows/docker.yml:37-38, .github/workflows/e2e.yml:42-43, .github/workflows/proxy-tests.yml:16-17). Implemented on main (#119): `pages: write` and `id-token: write` are on the deploy job only, the build job has `contents: read`, and first-party actions are pinned to SHAs too. Recommended: use `npm ci --ignore-scripts` where the build allows it.",
+                  "mitigation": "Partial: the only third-party actions (google/osv-scanner-action reusable workflows) are pinned to commit SHAs (.github/workflows/osv-scanner.yml:42,51). Dependabot updates github-actions (.github/dependabot.yml:18-23). The other workflows use contents: read (.github/workflows/docker.yml:37-38, .github/workflows/e2e.yml:42-43, .github/workflows/proxy-tests.yml:16-17). Implemented on main (#119): `pages: write` and `id-token: write` are on the deploy job only, the build job has `contents: read`, and first-party actions are pinned to SHAs too. Remaining: the build job still runs `npm ci` with lifecycle scripts (.github/workflows/deploy.yml:31), and the artifact it uploads is published as-is (.github/workflows/deploy.yml:37-39, :52-53); use `npm ci --ignore-scripts` where the build allows it.",
                   "modelType": "STRIDE",
                   "new": false,
                   "number": 21,
@@ -2306,7 +2306,7 @@
                   "status": "Open",
                   "severity": "Medium",
                   "type": "Tampering",
-                  "description": "The default data mode is 'live'. The ATT&CK and F3 STIX bundles are fetched from the moving master/main branches of raw.githubusercontent.com. Each bundle is saved to IndexedDB for 24 hours and to the service worker's attack-stix data group, and it replaces the bundled snapshot. That snapshot is the only data that gets human review, through the refresh-data PR. There is no hash, signature or schema check on the live payload. About 30 other runtime sources also track mutable branches, including personal repositories: mukul975/Anthropic-Cybersecurity-Skills, mdecrevoisier/SIGMA-detection-rules (rule content analysts copy into SIEMs), and stamparm/ipsum (IOC blocklist). A compromised or force-pushed upstream, or a poisoned cache, can quietly change coverage scores, detections, mitigations and URLs. The STIX data also feeds the report link sink described below. Evidence: src/app/services/data.service.ts:23-51 (master/main liveUrls), :81 (mode='live'), :273-278 (live fetch -> saveToIDB, no validation), :316 (24h TTL), :324-330; ngsw-config.json:30-38; .github/workflows/refresh-data.yml:64-84,199-280; src/app/services/anthropic-skills.service.ts:18-19,40; src/app/services/sigma.service.ts:174,274; src/app/services/ioc-feed.service.ts:37",
+                  "description": "The default data mode is 'live'. The ATT&CK and F3 STIX bundles are fetched from the moving master/main branches of raw.githubusercontent.com. Each bundle is saved to IndexedDB for 24 hours and to the service worker's attack-stix data group, and it replaces the bundled snapshot. That snapshot is the only data that gets human review, through the refresh-data PR. There is no hash, signature or schema check on the live payload. About 30 other runtime sources also track mutable branches, including personal repositories: mukul975/Anthropic-Cybersecurity-Skills, mdecrevoisier/SIGMA-detection-rules (rule content analysts copy into SIEMs), and stamparm/ipsum (IOC blocklist). A compromised or force-pushed upstream, or a poisoned cache, can quietly change coverage scores, detections, mitigations and URLs. Reference URLs from this data reach [href] bindings and the generated HTML report only as http(s) URLs (#132: src/app/services/data.service.ts:949-968; src/app/services/html-report.service.ts:34-42), so a tampered bundle cannot plant a script link that way. Evidence: src/app/services/data.service.ts:23-51 (master/main liveUrls), :81 (mode='live'), :273-278 (live fetch -> saveToIDB, no validation), :316 (24h TTL), :324-330; ngsw-config.json:30-38; .github/workflows/refresh-data.yml:64-84,199-280; src/app/services/anthropic-skills.service.ts:18-19,40; src/app/services/sigma.service.ts:174,274; src/app/services/ioc-feed.service.ts:37",
                   "mitigation": "Pin live URLs to release tags or commit SHAs and check a SHA-256 published alongside the build. Alternatively, make the reviewed bundled snapshot the default and treat live mode as opt-in, with a visible freshness and source indicator. Validate STIX shape and URL schemes before caching to IndexedDB. For community and personal sources, show provenance in the UI and allow them to be disabled.",
                   "modelType": "STRIDE",
                   "new": false,
@@ -3156,7 +3156,7 @@
                 ],
                 "attrs": {
                   "labelText": {
-                    "text": "Proxy mode: GraphQL and MISP REST without credentials or proxy token",
+                    "text": "Proxy mode: GraphQL and MISP REST with X-Requested-With and, when set, the proxy token (no integration credentials)",
                     "textAnchor": "middle",
                     "textVerticalAnchor": "middle"
                   },
@@ -3180,7 +3180,7 @@
             "connector": "smooth",
             "data": {
               "type": "tm.Flow",
-              "name": "Proxy mode: GraphQL and MISP REST without credentials or proxy token",
+              "name": "Proxy mode: GraphQL and MISP REST with X-Requested-With and, when set, the proxy token (no integration credentials)",
               "description": "src/app/services/misp.service.ts:305-316 (proxy URL; X-Requested-With and, when set, X-Proxy-Key; no MISP key); src/app/services/opencti.service.ts:345-347; server/src/index.js:27-47 (CORS), :89-103 (token checked when set; loopback bind only when unset); README.md:201-203",
               "outOfScope": false,
               "reasonOutOfScope": "",
@@ -3310,7 +3310,7 @@
                 ],
                 "attrs": {
                   "labelText": {
-                    "text": "Forwarded client-chosen GraphQL query with Bearer OPENCTI_TOKEN; response relayed verbatim",
+                    "text": "Forwarded GraphQL (allowlisted root fields only) with Bearer OPENCTI_TOKEN; response relayed verbatim",
                     "textAnchor": "middle",
                     "textVerticalAnchor": "middle"
                   },
@@ -3334,7 +3334,7 @@
             "connector": "smooth",
             "data": {
               "type": "tm.Flow",
-              "name": "Forwarded client-chosen GraphQL query with Bearer OPENCTI_TOKEN; response relayed verbatim",
+              "name": "Forwarded GraphQL (allowlisted root fields only) with Bearer OPENCTI_TOKEN; response relayed verbatim",
               "description": "server/src/index.js:310-342 (root-field allowlist checked first), :201-224 (validateUpstreamUrl)",
               "outOfScope": false,
               "reasonOutOfScope": "",
@@ -3541,7 +3541,7 @@
                 ],
                 "attrs": {
                   "labelText": {
-                    "text": "Persist NVD API key for the tab session",
+                    "text": "Persist NVD API key and proxy access token for the tab session",
                     "textAnchor": "middle",
                     "textVerticalAnchor": "middle"
                   },
@@ -3565,8 +3565,8 @@
             "connector": "smooth",
             "data": {
               "type": "tm.Flow",
-              "name": "Persist NVD API key for the tab session",
-              "description": "src/app/services/settings.service.ts:160-169, :191-195",
+              "name": "Persist NVD API key and proxy access token for the tab session",
+              "description": "src/app/services/settings.service.ts:159-170, :189-200",
               "outOfScope": false,
               "reasonOutOfScope": "",
               "hasOpenThreats": false,
