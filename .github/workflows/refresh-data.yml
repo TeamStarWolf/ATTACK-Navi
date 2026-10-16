@@ -9,6 +9,15 @@ name: Refresh Bundled Data
 # read-only token (npm ci runs lifecycle scripts of hundreds of packages and
 # must not hold a write token); only `open-pr` holds contents/pull-requests
 # write, and it never installs anything.
+#
+# The artifact that crosses between the jobs is UNTRUSTED input to `open-pr`
+# (a compromised dependency in `refresh` could otherwise plant `..` paths,
+# absolute paths, symlinks or hardlinks into .git/hooks or .github/workflows).
+# So `refresh` packages it from an explicit allowlist with a sha256 manifest
+# BEFORE `npm ci` runs, and `open-pr` re-verifies every entry with
+# scripts/ci/verify-data-archive.mjs, extracts into an empty temp directory,
+# copies only src/assets/data/ files into the checkout, keeps no persisted
+# git credential and runs git with hooks disabled.
 on:
   schedule:
     - cron: '43 5 3 * *'   # 05:43 UTC on the 3rd of each month (off-minute)
@@ -96,6 +105,34 @@ jobs:
             git diff --stat -- src/assets/data | tee -a "$GITHUB_STEP_SUMMARY"
           fi
 
+      # Package and upload BEFORE any dependency is installed: from `npm ci`
+      # on, third-party lifecycle scripts run in this job and must not be
+      # able to shape what the privileged open-pr job applies. The file list
+      # is an explicit allowlist (tracked files changed under
+      # src/assets/data/); the manifest step fails the job on any other path,
+      # a symlink or a non-regular file and records each file's sha256. An
+      # uploaded artifact cannot be replaced by later steps, and open-pr only
+      # runs when every later step (tests, build) has passed.
+      - name: Package the changed data files (allowlist + sha256 manifest)
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          git diff --name-only -- src/assets/data > changed-files.txt
+          wc -l changed-files.txt
+          node scripts/ci/verify-data-archive.mjs manifest changed-files.txt refreshed-data.manifest.json
+          tar --format=ustar --no-recursion --owner=0 --group=0 --numeric-owner \
+            -czf refreshed-data.tgz --verbatim-files-from -T changed-files.txt
+          node scripts/ci/verify-data-archive.mjs check-archive refreshed-data.tgz refreshed-data.manifest.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: steps.diff.outputs.changed == 'true'
+        with:
+          name: refreshed-data
+          path: |
+            refreshed-data.tgz
+            refreshed-data.manifest.json
+          retention-days: 7
+          if-no-files-found: error
+
       # The PR this workflow opens is created with the workflow token, and
       # GitHub does not run pull_request workflows for such PRs, so the unit
       # suite and the production build run HERE, against the refreshed data,
@@ -110,21 +147,6 @@ jobs:
         if: steps.diff.outputs.changed == 'true'
         run: npx ng build --configuration production
 
-      - name: Package the changed data files
-        if: steps.diff.outputs.changed == 'true'
-        run: |
-          set -euo pipefail
-          git diff --name-only -- src/assets/data > changed-files.txt
-          tar -czf refreshed-data.tgz -T changed-files.txt
-          wc -l changed-files.txt
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: steps.diff.outputs.changed == 'true'
-        with:
-          name: refreshed-data
-          path: refreshed-data.tgz
-          retention-days: 7
-          if-no-files-found: error
-
   open-pr:
     name: Push branch and open the review PR
     needs: refresh
@@ -135,17 +157,44 @@ jobs:
       contents: write
       pull-requests: write
     steps:
+      # No credential is persisted into .git/config; the push below passes
+      # the token explicitly, to that one command only.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Downloaded OUTSIDE the workspace: it is untrusted until verified.
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: refreshed-data
-      - name: Apply the validated data
+          path: ${{ runner.temp }}/refreshed-data
+      # The artifact comes from a job that ran npm ci, so it is untrusted:
+      # check the manifest (every path under src/assets/data/, no '..', no
+      # absolute path), check every tar entry (natively and via tar -tzvf:
+      # regular files only, no symlinks or hardlinks, inside the prefix, no
+      # '..', no leading '/', sha256 equal to the manifest), extract into an
+      # empty temp directory, re-verify the extracted tree, then copy only the
+      # manifest's paths into the checkout. Nothing is extracted at the root.
+      - name: Verify and apply the refreshed data
+        env:
+          ART: ${{ runner.temp }}/refreshed-data
         run: |
           set -euo pipefail
-          tar -xzf refreshed-data.tgz
-          rm -f refreshed-data.tgz
+          VERIFY=scripts/ci/verify-data-archive.mjs
+          MANIFEST="$ART/refreshed-data.manifest.json"
+          node "$VERIFY" check-manifest "$MANIFEST"
+          tar -tzvf "$ART/refreshed-data.tgz"
+          node "$VERIFY" check-archive "$ART/refreshed-data.tgz" "$MANIFEST"
+          TMP="$(mktemp -d "${RUNNER_TEMP}/refreshed-data-extract.XXXXXX")"
+          tar -xzf "$ART/refreshed-data.tgz" --no-same-owner --no-overwrite-dir -C "$TMP"
+          node "$VERIFY" check-extracted "$TMP" "$MANIFEST"
+          node "$VERIFY" install "$TMP" "$MANIFEST" "$GITHUB_WORKSPACE"
+          rm -rf "$TMP" "$ART"
           git status --short -- src/assets/data
-          git diff --quiet -- src/assets/data && { echo "::error::artifact contained no changes"; exit 1; }
+          # An if, not `diff && exit`: as the last line, a false && list would
+          # make the step exit 1 exactly when there ARE changes.
+          if git diff --quiet -- src/assets/data; then
+            echo "::error::artifact contained no changes"; exit 1
+          fi
 
       - name: Push branch and open or update the pull request
         env:
@@ -160,12 +209,21 @@ jobs:
           BRANCH="data-refresh/${MONTH}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -B "$BRANCH"
+          # Hooks are disabled for every git command that could run one.
+          git -c core.hooksPath=/dev/null checkout -B "$BRANCH"
           git add src/assets/data
-          git commit -m "chore(data): monthly bundled-data refresh (${MONTH})" \
+          git -c core.hooksPath=/dev/null commit -m "chore(data): monthly bundled-data refresh (${MONTH})" \
             -m "Automated refresh of the bundled ATT&CK STIX snapshots (enterprise/ics/mobile), the F3 bundle and the CVE2CAPEC-derived cve-technique-map asset; curated-layer provenance rewritten to the new snapshot." \
             -m "Sources: mitre-attack/attack-stix-data@${ATTACK_SHA}, center-for-threat-informed-defense/fight-fraud-framework@${F3_SHA}. Generated by .github/workflows/refresh-data.yml (${RUN_URL})."
-          git push -f origin "$BRANCH"
+          # persist-credentials is off, so authenticate this one push
+          # explicitly. The header reaches git through this command's
+          # environment only (not argv, not .git/config) and is masked.
+          AUTH="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          echo "::add-mask::${AUTH}"
+          GIT_CONFIG_COUNT=1 \
+          GIT_CONFIG_KEY_0="http.https://github.com/.extraheader" \
+          GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${AUTH}" \
+            git -c core.hooksPath=/dev/null push -f origin "$BRANCH"
 
           TABLE=$(node -e '
             const v = JSON.parse(process.env.VERSIONS);
