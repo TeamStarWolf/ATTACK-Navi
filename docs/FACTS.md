@@ -14,9 +14,9 @@ Counts and versions derived from the code. When a document states one of these n
 | Routed workspace tabs | 47 | child routes with `data.tab` in `src/app/pages/*/*.routes.ts` |
 | Library layers | 37 | `src/assets/data/library-layers/index.json` |
 | Lylat mission layers | 35 | `src/assets/data/lylat-mission-layers/index.json` |
-| Unit spec files | 165 | `src/**/*.spec.ts` |
-| Playwright spec files | 2 | `e2e/**/*.spec.ts` |
-| Script test files | 1 | `scripts/**/*.test.mjs` |
+| Unit spec files | 182 | `src/**/*.spec.ts` |
+| Playwright spec files | 5 | `e2e/**/*.spec.ts` |
+| Script test files | 3 | `scripts/**/*.test.mjs` |
 | Proxy test files | 1 | `server/**/*.test.*` |
 | Angular | 22.2.1 | `package-lock.json` (`@angular/core`) |
 | TypeScript | 6.0.3 | `package-lock.json` |
@@ -30,9 +30,9 @@ Unit spec files are files, not test cases; Karma prints the test-case count for 
 | Domain | Version | Objects | File |
 | :-- | --: | --: | :-- |
 | Enterprise ATT&CK | 19.2 | 26086 | `src/assets/data/enterprise-attack.json` |
-| ICS ATT&CK | 18.1 | 1826 | `src/assets/data/ics-attack.json` |
-| Mobile ATT&CK | 18.1 | 2536 | `src/assets/data/mobile-attack.json` |
-| CTID F3 Fraud Framework | 1.1 | 182 | `src/assets/data/f3-attack.json` |
+| ICS ATT&CK | 19.2 | 2173 | `src/assets/data/ics-attack.json` |
+| Mobile ATT&CK | 19.2 | 2635 | `src/assets/data/mobile-attack.json` |
+| CTID F3 Fraud Framework | 1.2 | 203 | `src/assets/data/f3-attack.json` |
 
 Version is the `x_mitre_version` of the bundle's `x-mitre-collection` object.
 
@@ -174,14 +174,14 @@ Read by `scripts/check-facts.mjs`.
   "routeFileWorkspaces": 8,
   "routedTabs": 47,
   "libraryLayers": 37,
-  "unitSpecs": 165,
+  "unitSpecs": 182,
   "angularMajor": 22,
   "typescriptMajor": 6,
   "bundleVersions": {
     "Enterprise ATT&CK": "19.2",
-    "ICS ATT&CK": "18.1",
-    "Mobile ATT&CK": "18.1",
-    "CTID F3 Fraud Framework": "1.1"
+    "ICS ATT&CK": "19.2",
+    "Mobile ATT&CK": "19.2",
+    "CTID F3 Fraud Framework": "1.2"
   }
 }
 facts-json -->
