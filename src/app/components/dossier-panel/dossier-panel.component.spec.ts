@@ -2,7 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, ParamMap } from '@angular/router';
-import { BehaviorSubject, of } from 'rxjs';
+import { BehaviorSubject, Subject, of } from 'rxjs';
 
 import { DossierPanelComponent } from './dossier-panel.component';
 import { CveDossier } from '../../models/dossier';
@@ -63,7 +63,9 @@ describe('DossierPanelComponent', () => {
 
   let queryParams: BehaviorSubject<ParamMap>;
   let dossierService: jasmine.SpyObj<DossierService>;
-  let cveService: jasmine.SpyObj<CveService> & { kevLoaded$: BehaviorSubject<boolean>; nvdCache$: BehaviorSubject<Map<string, unknown>> };
+  let cveService: jasmine.SpyObj<CveService> & { kevLoaded$: BehaviorSubject<boolean>; kevError$: BehaviorSubject<string | null> };
+  /** The pending NVD fetchCve() for the CVE on screen, resolved by the test. */
+  let nvdFetch: Subject<unknown>;
   let epss: jasmine.SpyObj<EpssService>;
   let cisa: jasmine.SpyObj<CisaSsvcService>;
   let f3: { ensureLoaded: jasmine.Spy; loaded$: BehaviorSubject<boolean> };
@@ -82,10 +84,12 @@ describe('DossierPanelComponent', () => {
     dossierService.recomputeEnrichment.and.callFake(d => d);
 
     cveService = Object.assign(
-      jasmine.createSpyObj<CveService>('CveService', ['loadKev', 'getCachedCve', 'searchCves']),
-      { kevLoaded$: new BehaviorSubject<boolean>(false), nvdCache$: new BehaviorSubject(new Map<string, unknown>()) },
+      jasmine.createSpyObj<CveService>('CveService', ['loadKev', 'getCachedCve', 'fetchCve']),
+      { kevLoaded$: new BehaviorSubject<boolean>(false), kevError$: new BehaviorSubject<string | null>(null) },
     );
     cveService.getCachedCve.and.returnValue(null);
+    nvdFetch = new Subject<unknown>();
+    cveService.fetchCve.and.returnValue(nvdFetch as never);
 
     epss = jasmine.createSpyObj<EpssService>('EpssService', ['getScore', 'fetchScores']);
     epss.getScore.and.returnValue(null);
@@ -214,12 +218,13 @@ describe('DossierPanelComponent', () => {
   it('fetches the NVD record once for a live dossier that is not cached, then rebuilds', () => {
     setup(CVE, dossier({ source: 'live' }));
 
-    expect(cveService.searchCves).toHaveBeenCalledOnceWith(CVE);
+    expect(cveService.fetchCve).toHaveBeenCalledOnceWith(CVE);
     expect(component.searching).toBeTrue();
     expect(component.notice).toContain('fetching it from NVD');
     expect(dossierService.load).toHaveBeenCalledTimes(1);
 
-    cveService.nvdCache$.next(new Map([[CVE, {}]]));
+    nvdFetch.next({ id: CVE });
+    nvdFetch.complete();
 
     expect(component.searching).toBeFalse();
     expect(component.notice).toBeNull();
@@ -234,7 +239,7 @@ describe('DossierPanelComponent', () => {
     queryParams.next(convertToParamMap({ cve: CVE }));
 
     expect(dossierService.load).toHaveBeenCalledTimes(1);
-    expect(cveService.searchCves).not.toHaveBeenCalled();
+    expect(cveService.fetchCve).not.toHaveBeenCalled();
   });
 
   it('rejects a malformed identifier without navigating or loading', () => {
@@ -260,5 +265,160 @@ describe('DossierPanelComponent', () => {
     setup(CVE, dossier({ techniques: [], countermeasures: [] }));
     expect(component.tierGroups).toEqual([]);
     expect(text('.block .empty')).toContain('No ATT&CK techniques are mapped');
+  });
+});
+
+const A = 'CVE-2024-0001';
+const B = 'CVE-2024-0002';
+
+function liveDossier(id: string): CveDossier {
+  return { cveId: id, source: 'live', warnings: [], techniques: [] } as unknown as CveDossier;
+}
+
+describe('DossierPanelComponent request handling', () => {
+  let fixture: ComponentFixture<DossierPanelComponent>;
+  let component: DossierPanelComponent;
+
+  /** One pending load() per CVE id, resolved by the test in whatever order it likes. */
+  let loads: Map<string, Subject<CveDossier>>;
+  /** One pending fetchCve() per CVE id. */
+  let fetches: Map<string, Subject<any>>;
+  let cached: Map<string, any>;
+  let fetchCve: jasmine.Spy;
+  let load: jasmine.Spy;
+
+  beforeEach(async () => {
+    loads = new Map();
+    fetches = new Map();
+    cached = new Map();
+
+    load = jasmine.createSpy('load').and.callFake((id: string) => {
+      const s = new Subject<CveDossier>();
+      loads.set(id, s);
+      return s;
+    });
+    fetchCve = jasmine.createSpy('fetchCve').and.callFake((id: string) => {
+      const s = new Subject<any>();
+      fetches.set(id, s);
+      return s;
+    });
+
+    await TestBed.configureTestingModule({
+      imports: [DossierPanelComponent],
+      providers: [
+        {
+          provide: DossierService,
+          useValue: {
+            load,
+            reevaluate: (d: CveDossier) => d,
+            recomputeF3: (d: CveDossier) => d,
+            recomputeEnrichment: (d: CveDossier) => d,
+          },
+        },
+        {
+          provide: CveService,
+          useValue: {
+            loadKev: () => undefined,
+            kevLoaded$: new BehaviorSubject(false),
+            kevError$: new BehaviorSubject<string | null>(null),
+            getCachedCve: (id: string) => cached.get(id) ?? null,
+            fetchCve,
+          },
+        },
+        { provide: EpssService, useValue: { getScore: () => null, fetchScores: () => of(null) } },
+        { provide: SsvcService, useValue: { loaded$: of(false), timelineDays: () => 0 } },
+        { provide: CisaSsvcService, useValue: { getSsvc: () => null, fetchSsvc: () => of(null) } },
+        { provide: F3FraudService, useValue: { ensureLoaded: () => undefined, loaded$: of(false) } },
+        { provide: DataService, useValue: { domain$: of(null) } },
+        { provide: ActivatedRoute, useValue: { queryParamMap: of(convertToParamMap({})) } },
+        { provide: Router, useValue: { navigate: () => Promise.resolve(true) } },
+      ],
+    })
+      // The template is not under test here; the request state machine is.
+      .overrideComponent(DossierPanelComponent, { set: { template: '', imports: [] } })
+      .compileComponents();
+
+    fixture = TestBed.createComponent(DossierPanelComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  function submit(id: string): void {
+    component.query = id;
+    component.submit();
+  }
+
+  it('clears the searching latch when NVD fails, tells the reader, and fetches again for the next CVE', () => {
+    submit(A);
+    loads.get(A)!.next(liveDossier(A));
+    expect(fetchCve).toHaveBeenCalledWith(A);
+    expect(component.searching).toBe(true);
+
+    fetches.get(A)!.error(new Error('Http failure response: 429 Too Many Requests'));
+    expect(component.searching).toBe(false);
+    expect(component.notice).toContain(`NVD lookup for ${A} failed`);
+    expect(component.notice).toContain('429');
+
+    // Before the fix `searching` stayed true here and B would never be fetched.
+    submit(B);
+    loads.get(B)!.next(liveDossier(B));
+    expect(fetchCve).toHaveBeenCalledWith(B);
+  });
+
+  it('clears the latch on an NVD miss without calling it an error', () => {
+    submit(A);
+    loads.get(A)!.next(liveDossier(A));
+    fetches.get(A)!.next(null);
+    fetches.get(A)!.complete();
+
+    expect(component.searching).toBe(false);
+    expect(component.notice).toContain(`NVD has no record for ${A}`);
+    expect(load).toHaveBeenCalledTimes(1);
+  });
+
+  it('rebuilds the dossier once the NVD record is in', () => {
+    submit(A);
+    loads.get(A)!.next(liveDossier(A));
+    cached.set(A, { id: A });
+    fetches.get(A)!.next({ id: A });
+    fetches.get(A)!.complete();
+
+    expect(component.searching).toBe(false);
+    expect(component.notice).toBeNull();
+    expect(load).toHaveBeenCalledTimes(2);
+    loads.get(A)!.next({ ...liveDossier(A), description: 'rebuilt' });
+    expect(component.dossier?.description).toBe('rebuilt');
+  });
+
+  it('ignores a dossier that arrives after a newer request and drops the stale subscription', () => {
+    submit(A);
+    const loadA = loads.get(A)!;
+    submit(B);
+    const loadB = loads.get(B)!;
+
+    // A's request is cancelled the moment B is requested.
+    expect(loadA.observed).toBe(false);
+
+    loadB.next(liveDossier(B));
+    expect(component.dossier?.cveId).toBe(B);
+
+    // Even a late emission from A (had it not been cancelled) must not land on top of B.
+    loadA.next(liveDossier(A));
+    expect(component.dossier?.cveId).toBe(B);
+    expect(component.loading).toBe(false);
+  });
+
+  it('drops an NVD result for a CVE that is no longer the one on screen', () => {
+    submit(A);
+    loads.get(A)!.next(liveDossier(A));
+    const fetchA = fetches.get(A)!;
+    submit(B);
+
+    // B superseded A: A's fetch was cancelled and its outcome, if any, is ignored.
+    expect(fetchA.observed).toBe(false);
+    expect(component.searching).toBe(false);
+    loads.get(B)!.next(liveDossier(B));
+    expect(fetchCve).toHaveBeenCalledWith(B);
+    expect(component.dossier?.cveId).toBe(B);
   });
 });

@@ -57,6 +57,8 @@ export class SsvcPanelComponent implements OnInit, OnDestroy {
   query = '';
   loading = false;
   error: string | null = null;
+  /** Set while the KEV catalogue failed to load: every "In KEV: no" below is then unverified. */
+  kevError: string | null = null;
   tablesLoaded = false;
 
   selected: NvdCveItem | null = null;
@@ -96,6 +98,12 @@ export class SsvcPanelComponent implements OnInit, OnDestroy {
       }),
     );
     this.subs.add(this.cveService.kevLoaded$.subscribe(() => this.recompute()));
+    this.subs.add(
+      this.cveService.kevError$.subscribe(err => {
+        this.kevError = err;
+        this.cdr.markForCheck();
+      }),
+    );
     this.subs.add(
       this.cveService.nvdCache$.subscribe(cache => {
         this.fetchEpssFor([...cache.keys()]);
@@ -137,6 +145,11 @@ export class SsvcPanelComponent implements OnInit, OnDestroy {
   }
 
   // ── actions ──────────────────────────────────────────────────────────────
+
+  /** Try the KEV feeds again after a failed load (a no-op once the catalogue is in). */
+  retryKev(): void {
+    this.cveService.loadKev();
+  }
 
   /**
    * Assess a CVE.
