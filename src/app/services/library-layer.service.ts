@@ -38,6 +38,10 @@ export class LibraryLayerService {
   private manifestSubject = new BehaviorSubject<LibraryLayerMeta[]>([]);
   readonly manifest$ = this.manifestSubject.asObservable();
 
+  /** True once the manifest request has settled (with a list or with nothing). */
+  private manifestLoadedSubject = new BehaviorSubject<boolean>(false);
+  readonly manifestLoaded$ = this.manifestLoadedSubject.asObservable();
+
   private activeFileSubject = new BehaviorSubject<string | null>(null);
   readonly activeFile$ = this.activeFileSubject.asObservable();
 
@@ -48,15 +52,31 @@ export class LibraryLayerService {
   private scores = new Map<string, number>();
   private cache = new Map<string, Map<string, number>>();
 
+  /**
+   * Set when a library view was requested before the manifest arrived, so the
+   * default layer can be selected the moment it does rather than never.
+   */
+  private pendingDefault = false;
+
   constructor(private http: HttpClient) {
     this.http
       .get<LibraryLayerMeta[]>(`${BASE}index.json`)
       .pipe(catchError(() => of([] as LibraryLayerMeta[])))
-      .subscribe(list => this.manifestSubject.next(Array.isArray(list) ? list : []));
+      .subscribe(list => {
+        this.manifestSubject.next(Array.isArray(list) ? list : []);
+        this.manifestLoadedSubject.next(true);
+        if (this.pendingDefault) {
+          this.pendingDefault = false;
+          this.ensureActive();
+        }
+      });
   }
 
   get manifest(): LibraryLayerMeta[] {
     return this.manifestSubject.value;
+  }
+  get manifestLoaded(): boolean {
+    return this.manifestLoadedSubject.value;
   }
   get activeFile(): string | null {
     return this.activeFileSubject.value;
@@ -72,8 +92,25 @@ export class LibraryLayerService {
     return this.scores.size ? Math.max(...this.scores.values()) : 1;
   }
 
+  /**
+   * Make sure some layer is active for a library view: keep the current one,
+   * otherwise select the manifest's first entry, and if the manifest has not
+   * arrived yet, do so as soon as it does. Before this, a `heat=library` share
+   * link opened before index.json resolved painted every cell "not in layer"
+   * and nothing ever selected a layer.
+   */
+  ensureActive(): void {
+    if (this.activeFile) return;
+    if (this.manifest.length) {
+      this.setActive(this.manifest[0].file);
+    } else if (!this.manifestLoaded) {
+      this.pendingDefault = true;
+    }
+  }
+
   /** Select a layer by manifest file name and load its scores (cached). */
   setActive(file: string): void {
+    this.pendingDefault = false;
     this.activeFileSubject.next(file);
     const cached = this.cache.get(file);
     if (cached) {
@@ -90,6 +127,9 @@ export class LibraryLayerService {
           if (t.techniqueID) map.set(t.techniqueID, t.score ?? 100);
         }
         this.cache.set(file, map);
+        // Ordering guard: a slow response for a layer the user has since moved
+        // away from populates the cache but must not replace the active scores.
+        if (this.activeFileSubject.value !== file) return;
         this.scores = map;
         this.changedSubject.next(true);
       });
