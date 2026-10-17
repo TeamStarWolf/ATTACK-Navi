@@ -145,6 +145,10 @@ export class DataService {
     this.mode = mode;
   }
 
+  getDataSourceMode(): DataSourceMode {
+    return this.mode;
+  }
+
   setAttackDomain(domain: AttackDomain): void {
     this.attackDomain = domain;
     this.currentDomain$.next(domain);

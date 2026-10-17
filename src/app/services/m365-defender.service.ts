@@ -94,6 +94,12 @@ export class M365DefenderService {
     this.loadTree();
   }
 
+  /** Load again after a failed or empty load: the data-health Retry (E1.3). */
+  retry(): void {
+    this.initialized = true;
+    this.loadTree();
+  }
+
   // ─── Public API ──────────────────────────────────────────────────────────────
 
   /** Returns all M365 Defender hunting queries mapped to a technique. */

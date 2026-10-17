@@ -31,7 +31,16 @@ export class CweService {
     for (const [k, v] of Object.entries(CweService.MAP)) {
       this.catalog.set(k, v);
     }
-    // Fetch full catalog
+    this.loadCatalog();
+  }
+
+  /** Load again after a failed or empty load: the data-health Retry (E1.3). */
+  retry(): void {
+    this.loadCatalog();
+  }
+
+  /** Fetch the full bundled catalog over the seed. */
+  private loadCatalog(): void {
     this.sources.begin('cwe-catalog');
     this.http.get<Record<string, CweEntry>>('assets/data/cwe-catalog.json')
       .subscribe({

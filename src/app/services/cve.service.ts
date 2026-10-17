@@ -81,6 +81,21 @@ export class CveService {
     ]).pipe(map(([kevLoaded, ctidLoaded]) => kevLoaded && ctidLoaded));
 
     // Load the CWE->ATT&CK exploitation anchor (corrects the generic CWE->CAPEC fan-out).
+    this.loadAnchor();
+
+    this.attackCveService.loaded$.subscribe(loaded => {
+      if (loaded && this.kevMapSubject.value.size > 0) {
+        this.computeKevTechScores([...this.kevMapSubject.value.values()]);
+      }
+    });
+  }
+
+  /** Load the exploitation anchor again after it failed: the data-health Retry (E1.3). */
+  retryAnchor(): void {
+    this.loadAnchor();
+  }
+
+  private loadAnchor(): void {
     this.sources.begin('cwe-exploitation-anchor');
     this.http.get<AnchorData>('assets/data/cwe-exploitation-anchor.json')
       .subscribe({
@@ -91,12 +106,6 @@ export class CveService {
         // Recorded as failed; correctTechniques() falls back to the raw CAPEC chain.
         error: err => this.sources.fail('cwe-exploitation-anchor', err),
       });
-
-    this.attackCveService.loaded$.subscribe(loaded => {
-      if (loaded && this.kevMapSubject.value.size > 0) {
-        this.computeKevTechScores([...this.kevMapSubject.value.values()]);
-      }
-    });
   }
 
   /**

@@ -205,6 +205,9 @@ export class D3fendService {
   /** Track in-flight and completed fetches to dedupe requests. */
   private fetchStatus = new Map<string, 'pending' | 'done'>();
 
+  /** Techniques whose per-technique API request failed this session (the Retry fetches them again). */
+  private failedTechniques = new Set<string>();
+
   /** Current D3FEND ontology ID -> label. Empty until startup fetch resolves. */
   private currentOntology = new Map<string, string>();
 
@@ -227,6 +230,11 @@ export class D3fendService {
         this.byAttackId.get(attackId)!.push(d);
       }
     }
+    this.loadOntologyIndex();
+  }
+
+  /** Fetch the ontology index again after it failed or came back empty: the data-health Retry (E1.3). */
+  retryOntologyIndex(): void {
     this.loadOntologyIndex();
   }
 
@@ -337,10 +345,25 @@ export class D3fendService {
           this.loaded$.next(true);
         }
       }, error: err => {
-        // Recorded as failed (not as "no countermeasures"); not retried this session.
+        // Recorded as failed (not as "no countermeasures"); not retried automatically this
+        // session, only by the data-health Retry.
         this.fetchStatus.set(attackId, 'done');
+        this.failedTechniques.add(attackId);
         this.sources.fail('d3fend-technique-api', err);
       } });
+  }
+
+  /**
+   * The data-health Retry (E1.3): fetch again every technique whose per-technique
+   * request failed this session, or `probe` when none has been requested yet.
+   */
+  retryTechniqueApi(probe: string): void {
+    const ids = this.failedTechniques.size ? [...this.failedTechniques] : [probe];
+    for (const id of ids) {
+      this.failedTechniques.delete(id);
+      this.fetchStatus.delete(id);
+      this.fetchLiveForAttackId(id);
+    }
   }
 
   /**

@@ -48,6 +48,15 @@ export class NvdBulkService {
     private http: HttpClient,
     private sources: SourceRegistryService = new SourceRegistryService(),
   ) {
+    this.loadMap();
+  }
+
+  /** Load again after a failed or empty load: the data-health Retry (E1.3). */
+  retry(): void {
+    this.loadMap();
+  }
+
+  private loadMap(): void {
     this.sources.begin('cve-technique-map');
     this.http
       .get<Record<string, CveMapEntryV2 | CveMapMetaV2>>('assets/data/cve-technique-map.json')

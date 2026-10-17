@@ -110,6 +110,15 @@ export class SsvcService {
     private http: HttpClient,
     private sources: SourceRegistryService = new SourceRegistryService(),
   ) {
+    this.loadTables();
+  }
+
+  /** Load again after a failed or empty load: the data-health Retry (E1.3). */
+  retry(): void {
+    this.loadTables();
+  }
+
+  private loadTables(): void {
     this.sources.begin('ssvc-tables');
     this.http
       .get<TablesAsset>('assets/data/ssvc-decision-tables.json')
