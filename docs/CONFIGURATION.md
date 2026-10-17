@@ -65,7 +65,7 @@ MISP servers usually do not send CORS headers, and in Direct browser mode the ap
 
 **Option A: turn on CORS in MISP, pinned to the app's origin**
 
-In MISP, set `Security.allow_cors` and `Security.cors_origins` to the app's exact origin (never `*`) so MISP answers the browser's preflight itself. The direct-mode request carries `Authorization` and `Content-Type: application/json`, so the browser sends a `CORS` preflight; a bare `add_header` block does not satisfy it (MISP answers an unauthenticated `OPTIONS` with a non-2xx status and the app reports "Connection failed"). If you add the headers at a reverse proxy instead, that proxy must also answer `OPTIONS` with `204` and the same headers:
+In MISP, set `Security.allow_cors` to `true` and `Security.cors_origins` to the app's exact origin (never `*`) so MISP answers the browser's preflight itself. The direct-mode request carries `Authorization` and `Content-Type: application/json`, so the browser sends a `CORS` preflight; a bare `add_header` block does not satisfy it (MISP answers an unauthenticated `OPTIONS` with a non-2xx status and the app reports "Connection failed"). If you add the headers at a reverse proxy instead, that proxy must also answer `OPTIONS` with `204` and the same headers:
 
 ```nginx
 # On the MISP host or a proxy in front of it; use the app's exact origin, never "*".
@@ -94,8 +94,9 @@ In **Secure backend proxy** mode:
 
 1. In the same card, set the mode to **Secure backend proxy**.
 2. In the proxy URL field (placeholder `https://your-proxy-host.example`), enter `http://localhost:8787` for the standalone proxy, or `http://localhost:8080` under Docker Compose (the app origin, no `/api/` suffix; the app appends the path).
-3. If the proxy sets `PROXY_AUTH_TOKEN`, paste the same value into the **Proxy access token** field on the Integrations tab. The app sends it as the `X-Proxy-Key` header and keeps it in sessionStorage for the browser session only.
-4. Click **Test & Save**. The MISP URL and key come from the proxy's `server/.env`, not this card.
+3. If the proxy sets `PROXY_AUTH_TOKEN`, paste the same value into the **Proxy access token** field and click its **Save** button; wait for "Proxy token saved for this session". Do this before Test & Save, because Test & Save does not persist that field and a proxy with `PROXY_AUTH_TOKEN` set answers 403 (shown as "Connection failed") without it. The app sends the token as the `X-Proxy-Key` header and keeps it in sessionStorage only.
+4. For the standalone proxy on `http://localhost:8787`, set `ALLOWED_ORIGINS` in `server/.env` to the exact origin the app is served from (for the Pages build, `https://teamstarwolf.github.io`); the proxy defaults to `http://localhost:4200` and rejects other origins with 403. Under Docker Compose the app and proxy are same-origin, so this is already handled.
+5. Click **Test & Save**. The MISP URL and key come from the proxy's `server/.env`, not this card.
 
 To remove a saved MISP connection, use **Disconnect** on the card.
 
@@ -159,7 +160,7 @@ In **Direct browser mode**:
 3. Click **Test & Save**. The app sends a test GraphQL query to verify authentication.
 4. On success a green "Connected to OpenCTI" status appears; on failure the error is shown (authentication, network, or a CORS block, which a browser reports the same as a network error).
 
-In **Secure backend proxy** mode set the mode to **Secure backend proxy**, enter the proxy URL in that field (placeholder `https://your-proxy-host.example`): `http://localhost:8787` standalone, or `http://localhost:8080` under Docker Compose, no `/api/` suffix. Add the proxy access token if the proxy sets `PROXY_AUTH_TOKEN`, and click **Test & Save**. The OpenCTI URL and token come from the proxy's `server/.env`.
+In **Secure backend proxy** mode set the mode to **Secure backend proxy** and enter the proxy URL in that field (placeholder `https://your-proxy-host.example`): `http://localhost:8787` standalone, or `http://localhost:8080` under Docker Compose, no `/api/` suffix. If the proxy sets `PROXY_AUTH_TOKEN`, paste it into the **Proxy access token** field and click its **Save** button (wait for "Proxy token saved for this session") before Test & Save, since Test & Save does not persist that field and the proxy otherwise answers 403. For the standalone proxy, set `ALLOWED_ORIGINS` in `server/.env` to the app's serving origin (the default is `http://localhost:4200`); under Compose the app and proxy are same-origin. Then click **Test & Save**. The OpenCTI URL and token come from the proxy's `server/.env`.
 
 ### Clearing the Connection
 
@@ -248,7 +249,7 @@ There are two data modes, chosen in Settings > Preferences > Data > **ATT&CK Dat
 https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/{domain}-attack/{domain}-attack.json
 ```
 
-and compares its release number with the pinned one. A status panel (a polite live region, so screen readers announce it) then says one of: no newer release; release N is available, with **Use N for this session** and **Keep** buttons; or the check failed, with **Try again**. A release you choose applies to this session only: it is held in memory, survives a domain round trip, and is gone after a reload or in a new tab, which start on the pinned bundle again. **Back to <pinned>** returns to the pinned release at any time. The live copy's own status (loaded, failed, cached) appears on the data-health view, where its **Load now** / **Retry** runs the same check. Adopting a new ATT&CK release for everyone is a reviewed data change to the bundles, not a runtime switch.
+and compares its release number with the pinned one. A status panel (a polite live region, so screen readers announce it) then says one of: no newer release; release N is available, with **Use N for this session** and **Keep** buttons; or the check failed, with **Try again**. A release you choose applies to this session only: it is held in memory, survives a domain round trip, and is gone after a reload or in a new tab, which start on the pinned bundle again. `Back to <pinned>` returns to the pinned release at any time. The live copy's own status (loaded, failed, cached) appears on the data-health view, where its **Load now** / **Retry** runs the same check. Adopting a new ATT&CK release for everyone is a reviewed data change to the bundles, not a runtime switch.
 
 ### Caching
 

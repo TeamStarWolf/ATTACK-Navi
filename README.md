@@ -1,6 +1,6 @@
 # ATTACK-Navi
 
-![STARWOLF 64 banner](assets/brand/starwolf64-banner-1280.png)
+<img src="assets/brand/starwolf64-banner-1280.png" alt="STARWOLF 64 banner" width="640">
 
 *STARWOLF 64 is the TeamStarWolf brand; this tool is ATTACK-Navi.*
 
@@ -56,7 +56,7 @@ The command palette (Ctrl+K) searches techniques, mitigations, groups, campaigns
 
 ## Heatmap modes
 
-The heatmap picker reads `HEATMAP_MODES` in `src/app/models/heatmap-modes.ts`. The default mode is Prevalence, the Frequency lens (`heat=frequency`): how many ATT&CK groups use each technique. It is a Threat lens, true for every visitor, and until you record a mitigation's implementation status or a validation run a one-line banner above the matrix says that it is reference data, not a view of your environment. Groups appear in this order, below any modes the current viewpoint pins at the top:
+The heatmap picker reads `HEATMAP_MODES` in `src/app/models/heatmap-modes.ts`. The default mode is the Frequency lens (`heat=frequency`), which its first-visit banner calls adversary prevalence: how many ATT&CK groups use each technique. It is listed under Coverage & Posture but carries the THREAT badge, true for every visitor, and until you record a mitigation's implementation status or a validation run a one-line banner above the matrix says that it is reference data, not a view of your environment. Groups appear in this order, below any modes the current viewpoint pins at the top:
 
 | Group | Modes |
 | :-- | :-- |
@@ -66,7 +66,7 @@ The heatmap picker reads `HEATMAP_MODES` in `src/app/models/heatmap-modes.ts`. T
 | Frameworks | D3FEND, Engage, NIST 800-53, VERIS Actions, CRI Profile, CSA CCM, M365 Controls, F3 Origin |
 | Coverage & Posture | Mitigations mapped, Status, Controls, Reference depth, Library Layer, Frequency |
 
-Lens labels follow the Known / Covered / Proven vocabulary: Known means a public source maps or documents the technique, Covered means you have recorded a mitigation or control for it, and Proven means a validation run has exercised a detection or defense for it. <!-- truth-vocab-allow covered-unqualified,proven-only -- defines the vocabulary; not a rung claim about this app -->A lens built from reference data says 'mapped', 'available' or 'reference depth'. The `heat=` values in links are unchanged. Reference depth combines defensive reference inputs only (mitigations, detection content, CTID control mappings, D3FEND, Atomic); threat intel and KEV appear in the Threat Landscape and Vulnerabilities lenses instead.
+Lens labels follow the Known / Covered / Proven vocabulary: Known means a public source maps or documents the technique, Covered means you have recorded something as deployed (self-attested), not shown to fire, and Proven means a named detection fired, or the technique was blocked, on a recorded date (no lens colours at this rung). <!-- truth-vocab-allow covered-unqualified,proven-only -- defines the vocabulary; not a rung claim about this app -->A lens built from reference data says 'mapped', 'available' or 'reference depth'. The `heat=` values in links are unchanged. Reference depth combines defensive reference inputs only (mitigations, detection content, CTID control mappings, D3FEND, Atomic); threat intel and KEV appear in the Threat Landscape and Vulnerabilities lenses instead.
 
 The Library Layer mode colors the matrix by one of the Navigator layers listed in `src/assets/data/library-layers/index.json`, described in [docs/LIBRARY_LAYERS.md](docs/LIBRARY_LAYERS.md). Those layers are a separate list, not additional modes. Scoring for each mode is described in [docs/HEATMAPS.md](docs/HEATMAPS.md). Adding a mode touches several files; [AGENTS.md](AGENTS.md) has the checklist.
 
@@ -282,7 +282,7 @@ Single-key shortcuts are ignored while you are typing in a field. When the matri
 - MISP event and attribute queries exist in `misp.service.ts` but nothing in the UI calls them. The MISP Events tab builds event templates locally.
 - Control mappings (NIST 800-53, cloud, CRI Profile, VERIS, CSA CCM and M365) are not translated through revoked-by relationships, so mappings to retired techniques such as the T1562 family do not appear on the techniques that replaced them.
 - CTID removed CIS Controls from Mappings Explorer as of ATT&CK v16, so the CIS Controls service has no source and loads empty.
-- CONTRIBUTING.md, ARCHITECTURE.md, docs/HEATMAPS.md and docs/LIBRARY_LAYERS.md have not been updated for the Angular 22 upgrade and some recent additions. Where they disagree with `package.json` or the source, the code is correct.
+- CONTRIBUTING.md, ARCHITECTURE.md and docs/HEATMAPS.md have not been updated for some recent additions (for example ARCHITECTURE's theming section predates the OS-following theme). Where they disagree with `package.json` or the source, the code is correct.
 
 ## Companion reference library
 
@@ -328,4 +328,4 @@ Report vulnerabilities privately, as described in [SECURITY.md](SECURITY.md), ra
 
 The application code in this repository is released under the [MIT License](LICENSE). That license does not cover the third-party content the repository redistributes: the ATT&CK, CWE, F3, CERT/CC SSVC and NVD-derived data under `src/assets/data`, the D3FEND and CAR seeds in the services, and the Lucide icon shapes in `src/app/shared/icons/icon-registry.ts` are governed by the licenses and terms collected in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), which also ships with every build as `assets/THIRD_PARTY_NOTICES.md` (linked from Settings > Data). Licenses of the npm packages compiled into the bundle are written by the production build to `dist/mitre-mitigation-navigator/3rdpartylicenses.txt`, one level above the `browser/` directory that the Pages deploy and the Docker image publish, so that file is not served by either; it ships with the repository's build output only.
 
-© 2026 The MITRE Corporation. This work is reproduced and distributed with the permission of The MITRE Corporation. MITRE ATT&CK® is a registered trademark of The MITRE Corporation. This project is not affiliated with or endorsed by MITRE. This product uses the NVD API but is not endorsed or certified by the NVD. Data fetched at runtime from other sources remains subject to those sources' own licenses and terms.
+For the ATT&CK data in `src/assets/data`: © 2026 The MITRE Corporation. This work is reproduced and distributed with the permission of The MITRE Corporation. MITRE ATT&CK® is a registered trademark of The MITRE Corporation. This project is not affiliated with or endorsed by MITRE. This product uses the NVD API but is not endorsed or certified by the NVD. Data fetched at runtime from other sources remains subject to those sources' own licenses and terms.
