@@ -13,7 +13,9 @@ interface GraphLink { source: string; target: string; type: string; }
 interface RelGraphData { nodes: GraphNode[]; links: GraphLink[]; }
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { buildTechniqueShareUrl } from '../../utils/share-link';
 import { Technique } from '../../models/technique';
 import { Mitigation, MitigationRelationship } from '../../models/mitigation';
 import { ThreatGroup } from '../../models/group';
@@ -595,6 +597,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     private evtxSamplesService: EvtxSamplesService,
     private sentinelRulesService: SentinelRulesService,
     private userLayerService: UserLayerService,
+    private router: Router,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -1252,10 +1255,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   shareTechnique(): void {
     if (!this.technique) return;
-    const base = window.location.origin + window.location.pathname;
-    const params = new URLSearchParams(window.location.hash.slice(1));
-    params.set('tech', this.technique.attackId);
-    const url = base + '#' + params.toString();
+    const url = buildTechniqueShareUrl(
+      window.location.origin,
+      window.location.pathname,
+      this.router.url,
+      this.technique.attackId,
+    );
     navigator.clipboard.writeText(url).then(() => {
       this.shareCopied = true;
       this.cdr.markForCheck();
