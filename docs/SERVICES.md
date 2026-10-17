@@ -197,7 +197,6 @@ full list of 20 BehaviorSubjects and 7 derived observables.
 | `saveConfig(url, token)` | Save OpenCTI API credentials and test connection |
 | `getConfig()` | Retrieve current configuration |
 | `getIndicatorsForTechnique(attackId)` | Query indicators mapped to a technique |
-| `getThreatActorsForTechnique(attackId)` | Query threat actors using a technique |
 | `importStixBundle(stixJson)` | Push a STIX bundle to the OpenCTI instance |
 | `isConfigured()` | True once an instance is configured (a proxy URL, or a URL and a token); no request is made before that |
 

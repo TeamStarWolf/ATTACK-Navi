@@ -118,11 +118,10 @@ The threat intelligence workflow connects the Navigator to live CTI sources. The
 
 5. **Browse MISP events.** Once connected, the sidebar shows MISP galaxy cluster data for selected techniques. MISP tags are displayed alongside ATT&CK technique metadata. Events tagged with ATT&CK technique IDs appear in the technique sidebar under the MISP section.
 
-6. **Connect to OpenCTI.** In Settings > Integrations, enter the OpenCTI URL and API token. Click "Test & Save" to verify. The Navigator queries OpenCTI's GraphQL API for indicators and threat actors.
+6. **Connect to OpenCTI.** In Settings > Integrations, enter the OpenCTI URL and API token. Click "Test & Save" to verify. The app queries OpenCTI's GraphQL API for indicators.
 
 7. **Enrich techniques with OpenCTI data.** Once connected, the sidebar includes an OpenCTI section for each technique showing:
    - Linked indicators with confidence scores
-   - Associated threat actors
    - Last-seen timestamps and provenance data
 
 8. **Switch to the intelligence heatmap.** In the toolbar heatmap mode selector, choose "intelligence". The matrix colors techniques based on the volume and recency of threat intelligence data available.
