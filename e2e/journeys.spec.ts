@@ -405,6 +405,15 @@ test.describe('stop shipping broken or misleading output (plan E1.6)', () => {
     expect(options).not.toContain('macOS:unifiedlog');
   });
 
+  test('a cold share link with the other spelling selects the listed one', async ({ page }) => {
+    // The URL state is applied before the domain loads; the picker must still show the source.
+    await page.goto(`${BASE}/#/matrix?ds=macOS%3Aunifiedlog`);
+    await page.reload();
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+    await expect(page.locator('.ds-select')).toHaveValue('macos:unifiedlog');
+    expect(await page.locator('.ds-select').evaluate((el: HTMLSelectElement) => el.selectedIndex)).toBeGreaterThan(0);
+  });
+
   test('every compliance tab shows its mapping version, and CIS shows source withdrawn upstream', async ({ page }) => {
     await page.goto(`${BASE}/#/coverage/compliance`);
     const panel = page.locator('app-compliance-panel');

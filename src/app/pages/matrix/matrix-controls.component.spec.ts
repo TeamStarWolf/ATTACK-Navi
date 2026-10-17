@@ -350,5 +350,20 @@ describe('MatrixControlsComponent', () => {
       (TestBed.inject(FilterService) as any).activeDataSource$.next('macOS:unifiedlog');
       expect(component.selectedDataSource).toBe('macos:unifiedlog');
     });
+
+    it('selects the listed spelling on a cold deep link, where the filter arrives before the domain', () => {
+      const data = TestBed.inject(DataService) as any;
+      data.domain$.next(null);
+      (TestBed.inject(FilterService) as any).activeDataSource$.next('macOS:unifiedlog');
+      const parser = new DataService(null as unknown as HttpClient) as unknown as { parseBundle(b: unknown): unknown };
+      data.domain$.next(parser.parseBundle(BUNDLE));
+      expect(component.selectedDataSource).toBe('macos:unifiedlog');
+      fixture.detectChanges();
+      const select = fixture.nativeElement.querySelector('.ds-select') as HTMLSelectElement;
+      return fixture.whenStable().then(() => {
+        fixture.detectChanges();
+        expect(select.value).toBe('macos:unifiedlog');
+      });
+    });
   });
 });
