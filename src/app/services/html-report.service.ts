@@ -5,6 +5,7 @@ import { Domain } from '../models/domain';
 import { ImplStatus } from './implementation.service';
 import { ReportConfig, DEFAULT_REPORT_CONFIG } from './report-config.service';
 import { SettingsService } from './settings.service';
+import { computeReportSplit, REPORT_SPLIT_LABELS } from '../models/report-split';
 
 @Injectable({ providedIn: 'root' })
 export class HtmlReportService {
@@ -57,32 +58,19 @@ export class HtmlReportService {
     // ── Core data computation ──────────────────────────────────────────────────
     const allTechs = domain.techniques;
     const parentTechs = allTechs.filter(t => !t.isSubtechnique);
-    const coveredCount = parentTechs.filter(t => t.mitigationCount > 0).length;
-    const uncoveredCount = parentTechs.length - coveredCount;
-    const coveragePct = parentTechs.length
-      ? Math.round((coveredCount / parentTechs.length) * 100)
-      : 0;
+    // Theoretical (Known: reference mapping) vs Implemented (Covered,
+    // self-attested). Shared with the Report Builder panel and the PDF report.
+    const L = REPORT_SPLIT_LABELS;
+    const split = computeReportSplit(domain, implStatusMap);
 
-    // Avg mitigations per covered technique
+    // Avg mitigations mapped per mapped technique
     const totalMitRels = parentTechs.reduce((sum, t) => sum + t.mitigationCount, 0);
-    const avgMits = coveredCount
-      ? (totalMitRels / coveredCount).toFixed(1)
+    const avgMits = split.theoretical
+      ? (totalMitRels / split.theoretical).toFixed(1)
       : '0';
 
-    // Fully implemented: all mitigations for the technique are 'implemented'
-    const fullyImplemented = parentTechs.filter(t => {
-      if (t.mitigationCount === 0) return false;
-      const rels = domain.mitigationsByTechnique.get(t.id) ?? [];
-      return rels.every(r => implStatusMap.get(r.mitigation.id) === 'implemented');
-    }).length;
-
-    // Per-tactic stats
-    const tacticStats = domain.tacticColumns.map(col => {
-      const parents = col.techniques.filter(t => !t.isSubtechnique);
-      const covered = parents.filter(t => t.mitigationCount > 0).length;
-      const pct = parents.length ? Math.round((covered / parents.length) * 100) : 0;
-      return { name: col.tactic.name, total: parents.length, covered, pct };
-    }).sort((a, b) => b.pct - a.pct);
+    // Per-tactic split, highest Theoretical share first
+    const tacticStats = [...split.byTactic].sort((a, b) => b.theoreticalPct - a.theoreticalPct);
 
     // Impl status breakdown (across mitigations in implStatusMap)
     const implCounts = { implemented: 0, inProgress: 0, planned: 0, notStarted: 0 };
@@ -95,7 +83,7 @@ export class HtmlReportService {
     const totalTracked = implCounts.implemented + implCounts.inProgress + implCounts.planned + implCounts.notStarted;
     const hasImplData = totalTracked > 0;
 
-    // Top 10 coverage gaps (0 mitigations), sorted by threat group count desc then alpha
+    // Top 10 techniques with no mitigation mapped, by threat group count desc then alpha
     const gapTechs = parentTechs
       .filter(t => t.mitigationCount === 0)
       .sort((a, b) => {
@@ -106,8 +94,8 @@ export class HtmlReportService {
       })
       .slice(0, 10);
 
-    // Top 10 best covered techniques
-    const bestCovered = [...parentTechs]
+    // Top 10 techniques by mitigations mapped (Theoretical, reference only)
+    const mostMapped = [...parentTechs]
       .filter(t => t.mitigationCount > 0)
       .sort((a, b) => b.mitigationCount - a.mitigationCount)
       .slice(0, 10);
@@ -133,13 +121,6 @@ export class HtmlReportService {
 
     const generatedDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-    // ── Helper: bar color based on coverage % ─────────────────────────────────
-    const barColor = (pct: number): string => {
-      if (pct >= 70) return 'linear-gradient(90deg,#22c55e,#16a34a)';
-      if (pct >= 40) return 'linear-gradient(90deg,#f59e0b,#d97706)';
-      return 'linear-gradient(90deg,#ef4444,#dc2626)';
-    };
-
     // ── Impl badge helper ──────────────────────────────────────────────────────
     const implBadge = (techId: string): string => {
       const rels = domain.mitigationsByTechnique.get(techId) ?? [];
@@ -164,15 +145,15 @@ export class HtmlReportService {
       }
     };
 
-    // ── Tactic bar chart rows ──────────────────────────────────────────────────
+    // ── Tactic bar chart rows: Theoretical (neutral) over Implemented (blue) ──
+    // No traffic-light colours: a reference mapping is not a pass mark.
     const tacticRows = tacticStats.map(ts => `
       <div class="tactic-row">
         <div class="tactic-name">${this.esc(ts.name)}</div>
-        <div class="bar-container">
-          <div class="bar-fill" style="width:${ts.pct}%;background:${barColor(ts.pct)}"></div>
+        <div class="tactic-bars">
+          <div class="bar-line"><span class="bar-key">${L.theoreticalShort}</span><div class="bar-container"><div class="bar-fill bar-theoretical" style="width:${ts.theoreticalPct}%"></div></div><span class="tactic-pct">${ts.theoreticalPct}%</span><span class="tactic-count">${ts.theoretical}/${ts.total}</span></div>
+          <div class="bar-line"><span class="bar-key">${L.implementedShort}</span><div class="bar-container"><div class="bar-fill bar-implemented" style="width:${ts.implementedPct}%"></div></div><span class="tactic-pct">${ts.implementedPct}%</span><span class="tactic-count">${ts.implemented}/${ts.total}</span></div>
         </div>
-        <div class="tactic-pct">${ts.pct}%</div>
-        <div class="tactic-count">${ts.covered}/${ts.total}</div>
       </div>`).join('');
 
     // ── Gap table rows ─────────────────────────────────────────────────────────
@@ -187,8 +168,8 @@ export class HtmlReportService {
       </tr>`;
     }).join('');
 
-    // ── Best covered table rows ────────────────────────────────────────────────
-    const bestRows = bestCovered.map(t => `
+    // ── Most-mapped table rows ─────────────────────────────────────────────────
+    const bestRows = mostMapped.map(t => `
       <tr>
         <td><a href="${this.safeHref(t.url)}" target="_blank" rel="noopener">${this.esc(t.attackId)}</a></td>
         <td>${this.esc(t.name)}</td>
@@ -246,8 +227,9 @@ export class HtmlReportService {
         </div>
       </div>` : '';
 
-    // ── Donut progress ring for coverage ──────────────────────────────────────
-    const donutDeg = Math.round(coveragePct * 3.6);
+    // ── Donut rings: Theoretical (neutral grey) and Implemented (blue) ────────
+    const theoreticalDeg = Math.round(split.theoreticalPct * 3.6);
+    const implementedDeg = Math.round(split.implementedPct * 3.6);
 
     // ── Full HTML ──────────────────────────────────────────────────────────────
     return `<!DOCTYPE html>
@@ -256,7 +238,7 @@ export class HtmlReportService {
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy" content="script-src 'none'; object-src 'none'; base-uri 'none'" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ATT&amp;CK Coverage Report — ${generatedDate}</title>
+  <title>ATT&amp;CK Mitigation Report — ${generatedDate}</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; background: #f5f7fa; color: #1a202c; }
@@ -285,7 +267,11 @@ export class HtmlReportService {
 
     /* Coverage ring */
     .coverage-ring-wrap { display: flex; align-items: center; gap: 40px; flex-wrap: wrap; }
-    .donut { width: 120px; height: 120px; border-radius: 50%; background: conic-gradient(#22c55e 0deg ${donutDeg}deg, #e2e8f0 ${donutDeg}deg 360deg); display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; }
+    .donut { width: 120px; height: 120px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; }
+    .donut-theoretical { background: conic-gradient(#64748b 0deg ${theoreticalDeg}deg, #e2e8f0 ${theoreticalDeg}deg 360deg); }
+    .donut-implemented { background: conic-gradient(#2563eb 0deg ${implementedDeg}deg, #e2e8f0 ${implementedDeg}deg 360deg); }
+    .split-block { display: flex; align-items: center; gap: 16px; }
+    .split-note { font-size: 13px; color: #4a5568; background: #f8fafc; border-left: 4px solid #64748b; padding: 10px 12px; margin-bottom: 20px; }
     .donut::after { content: ''; position: absolute; width: 80px; height: 80px; background: white; border-radius: 50%; }
     .donut-label { position: relative; z-index: 1; font-size: 22px; font-weight: 800; color: #07101a; }
 
@@ -294,6 +280,11 @@ export class HtmlReportService {
     .tactic-name { width: 180px; font-size: 13px; font-weight: 500; flex-shrink: 0; color: #374151; }
     .bar-container { background: #e2e8f0; border-radius: 4px; height: 14px; flex: 1; overflow: hidden; min-width: 0; }
     .bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s ease; }
+    .bar-theoretical { background: #64748b; }
+    .bar-implemented { background: #2563eb; }
+    .tactic-bars { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .bar-line { display: flex; align-items: center; gap: 12px; }
+    .bar-key { width: 88px; font-size: 11px; color: #4a5568; flex-shrink: 0; }
     .tactic-pct { width: 40px; text-align: right; font-size: 13px; font-weight: 700; color: #374151; flex-shrink: 0; }
     .tactic-count { width: 56px; text-align: right; font-size: 12px; color: #718096; flex-shrink: 0; }
 
@@ -339,7 +330,7 @@ export class HtmlReportService {
 <div class="report-header">
   <div class="header-top">
     <div>
-      <div class="header-title">ATT&amp;CK Coverage Report</div>
+      <div class="header-title">ATT&amp;CK Mitigation Report</div>
       <div class="header-subtitle">MITRE ATT&amp;CK&#174; Enterprise Matrix &mdash; v${this.esc(domain.attackVersion)}</div>
     </div>
     <div class="header-meta">
@@ -361,34 +352,47 @@ ${(() => {
     'exec-summary': `
   <div class="section">
     <div class="section-title">Executive Summary</div>
+    <div class="split-note" data-split="note"><strong>${L.theoreticalShort}</strong>: ${L.theoreticalNote} <strong>${L.implementedShort}</strong>: ${L.implementedNote}</div>
     <div class="coverage-ring-wrap" style="margin-bottom:24px">
-      <div class="donut"><span class="donut-label">${coveragePct}%</span></div>
-      <div>
-        <div style="font-size:22px;font-weight:700;color:#07101a;margin-bottom:4px">${coveragePct}% Technique Coverage</div>
-        <div style="font-size:14px;color:#718096">${coveredCount} of ${parentTechs.length} parent techniques have at least one mitigation mapped.</div>
-        ${hasImplData ? `<div style="font-size:14px;color:#718096;margin-top:4px">${implCounts.implemented} mitigations fully implemented across the environment.</div>` : ''}
+      <div class="split-block" data-split="theoretical">
+        <div class="donut donut-theoretical"><span class="donut-label">${split.theoreticalPct}%</span></div>
+        <div>
+          <div style="font-size:18px;font-weight:700;color:#07101a;margin-bottom:4px">${L.theoretical}</div>
+          <div style="font-size:14px;color:#718096">${split.theoretical} of ${split.total} parent techniques have at least one mitigation mapped in ATT&amp;CK.</div>
+        </div>
+      </div>
+      <div class="split-block" data-split="implemented">
+        <div class="donut donut-implemented"><span class="donut-label">${split.implementedPct}%</span></div>
+        <div>
+          <div style="font-size:18px;font-weight:700;color:#07101a;margin-bottom:4px">${L.implemented}</div>
+          <div style="font-size:14px;color:#718096">${split.implemented} of ${split.total} parent techniques have a mapped mitigation you marked implemented${hasImplData ? ` (${split.implementedMitigations} mitigations marked implemented)` : '. No implementation status recorded yet'}.</div>
+        </div>
       </div>
     </div>
     <div class="stat-grid">
       <div class="stat-card">
-        <div class="stat-number">${parentTechs.length}</div>
+        <div class="stat-number">${split.total}</div>
         <div class="stat-label">Total Techniques</div>
       </div>
-      <div class="stat-card" style="border-left-color:#22c55e">
-        <div class="stat-number" style="color:#15803d">${coveredCount}</div>
-        <div class="stat-label">Techniques Covered</div>
+      <div class="stat-card" style="border-left-color:#64748b">
+        <div class="stat-number">${split.theoretical}</div>
+        <div class="stat-label">${L.theoretical}</div>
       </div>
-      <div class="stat-card" style="border-left-color:#ef4444">
-        <div class="stat-number" style="color:#b91c1c">${uncoveredCount}</div>
-        <div class="stat-label">Techniques at Risk</div>
+      <div class="stat-card" style="border-left-color:#94a3b8">
+        <div class="stat-number">${split.unmapped}</div>
+        <div class="stat-label">${L.unmapped}</div>
       </div>
-      <div class="stat-card" style="border-left-color:#8b5cf6">
-        <div class="stat-number" style="color:#6d28d9">${fullyImplemented}</div>
-        <div class="stat-label">Fully Implemented</div>
+      <div class="stat-card" style="border-left-color:#2563eb">
+        <div class="stat-number" style="color:#1d4ed8">${split.implemented}</div>
+        <div class="stat-label">${L.implemented}</div>
       </div>
-      <div class="stat-card" style="border-left-color:#f59e0b">
-        <div class="stat-number" style="color:#92400e">${avgMits}</div>
-        <div class="stat-label">Avg Mitigations / Covered Tech</div>
+      <div class="stat-card" style="border-left-color:#2563eb">
+        <div class="stat-number" style="color:#1d4ed8">${split.allMappedImplemented}</div>
+        <div class="stat-label">All mapped mitigations implemented (self-attested)</div>
+      </div>
+      <div class="stat-card" style="border-left-color:#64748b">
+        <div class="stat-number">${avgMits}</div>
+        <div class="stat-label">Avg Mitigations Mapped / Mapped Technique</div>
       </div>
       <div class="stat-card" style="border-left-color:#06b6d4">
         <div class="stat-number" style="color:#0e7490">${domain.mitigations.length}</div>
@@ -398,8 +402,8 @@ ${(() => {
   </div>`,
     'coverage-by-tactic': `
   <div class="section">
-    <div class="section-title">Coverage by Tactic</div>
-    <div class="section-subtitle">Sorted by coverage percentage (highest first). Shows parent techniques only.</div>
+    <div class="section-title">Theoretical vs Implemented by Tactic</div>
+    <div class="section-subtitle">Parent techniques only, highest Theoretical share first. ${L.theoreticalShort}: ${L.theoreticalNote} ${L.implementedShort}: ${L.implementedNote}</div>
     ${tacticRows}
   </div>`,
     'impl-status': hasImplData ? `
@@ -410,8 +414,8 @@ ${(() => {
   </div>` : '',
     'exposure-gaps': `
   <div class="section">
-    <div class="section-title">Top 10 Coverage Gaps</div>
-    <div class="section-subtitle">Techniques with zero mitigations mapped, prioritized by threat group adoption.</div>
+    <div class="section-title">Top 10 Techniques with No Mitigation Mapped</div>
+    <div class="section-subtitle">Techniques with zero mitigations mapped in ATT&amp;CK, prioritized by threat group adoption.</div>
     ${gapTechs.length > 0 ? `
     <table>
       <thead>
@@ -423,19 +427,19 @@ ${(() => {
         </tr>
       </thead>
       <tbody>${gapRows}</tbody>
-    </table>` : '<p style="color:#718096;font-size:14px;margin:0">No coverage gaps — all techniques have at least one mitigation mapped.</p>'}
+    </table>` : '<p style="color:#718096;font-size:14px;margin:0">Every technique has at least one mitigation mapped in ATT&amp;CK (reference mapping only; this says nothing about what is implemented).</p>'}
   </div>`,
     'control-docs': `
   <div class="section">
-    <div class="section-title">Top 10 Best Covered Techniques</div>
-    <div class="section-subtitle">Techniques with the most mitigations mapped, sorted by mitigation count.</div>
+    <div class="section-title">Top 10 Techniques by Mitigations Mapped</div>
+    <div class="section-subtitle">Techniques with the most mitigations mapped in ATT&amp;CK (Theoretical), with your implementation status (self-attested).</div>
     <table>
       <thead>
         <tr>
           <th>ATT&amp;CK ID</th>
           <th>Technique</th>
-          <th>Mitigations</th>
-          <th>Impl Status</th>
+          <th>Mitigations Mapped</th>
+          <th>Impl Status (self-attested)</th>
         </tr>
       </thead>
       <tbody>${bestRows}</tbody>
@@ -444,14 +448,14 @@ ${(() => {
     'recommended-mits': hasImplData ? `
   <div class="section">
     <div class="section-title">Mitigation Implementation Progress</div>
-    <div class="section-subtitle">All tracked mitigations grouped by implementation status. Sorted by technique coverage count.</div>
+    <div class="section-subtitle">All tracked mitigations grouped by implementation status (self-attested). Sorted by techniques mapped.</div>
     <table>
       <thead>
         <tr>
           <th>Mitigation ID</th>
           <th>Mitigation Name</th>
           <th>Status</th>
-          <th>Techniques Covered</th>
+          <th>Techniques Mapped</th>
         </tr>
       </thead>
       <tbody>${mitTableRows}</tbody>

@@ -3,6 +3,7 @@
 import { Injectable } from '@angular/core';
 import { ImplStatus } from './implementation.service';
 import { Domain } from '../models/domain';
+import { computeReportSplit, REPORT_SPLIT_LABELS } from '../models/report-split';
 
 @Injectable({ providedIn: 'root' })
 export class PdfReportService {
@@ -56,21 +57,15 @@ export class PdfReportService {
   private buildReportHtml(domain: Domain, statusMap: Map<string, ImplStatus>): string {
     const allTechs = domain.techniques;
     const parentTechs = allTechs.filter(t => !t.isSubtechnique);
-    const coveredCount = parentTechs.filter(t => t.mitigationCount > 0).length;
-    const uncoveredCount = parentTechs.length - coveredCount;
-    const coveragePct = parentTechs.length
-      ? Math.round((coveredCount / parentTechs.length) * 100)
-      : 0;
+    // Theoretical (Known: reference mapping) vs Implemented (Covered,
+    // self-attested). Shared with the Report Builder panel and the HTML report.
+    const L = REPORT_SPLIT_LABELS;
+    const split = computeReportSplit(domain, statusMap);
 
-    // Tactic breakdown
-    const tacticStats = domain.tacticColumns.map(col => {
-      const parents = col.techniques.filter(t => !t.isSubtechnique);
-      const covered = parents.filter(t => t.mitigationCount > 0).length;
-      const pct = parents.length ? Math.round((covered / parents.length) * 100) : 0;
-      return { name: col.tactic.name, total: parents.length, covered, pct };
-    }).sort((a, b) => a.pct - b.pct);
+    // Tactic breakdown, lowest Theoretical share first
+    const tacticStats = [...split.byTactic].sort((a, b) => a.theoreticalPct - b.theoreticalPct);
 
-    // Top uncovered techniques (gap list)
+    // Techniques with no mitigation mapped (gap list)
     const gapTechs = parentTechs
       .filter(t => t.mitigationCount === 0)
       .sort((a, b) => {
@@ -111,8 +106,8 @@ export class PdfReportService {
       <tr>
         <td>${this.esc(ts.name)}</td>
         <td style="text-align:center">${ts.total}</td>
-        <td style="text-align:center">${ts.covered}</td>
-        <td style="text-align:center">${ts.pct}%</td>
+        <td style="text-align:center">${ts.theoretical} (${ts.theoreticalPct}%)</td>
+        <td style="text-align:center">${ts.implemented} (${ts.implementedPct}%)</td>
       </tr>`).join('');
 
     // Build gap rows
@@ -134,7 +129,7 @@ export class PdfReportService {
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>ATT&CK Coverage Report</title>
+  <title>ATT&CK Mitigation Report</title>
   <style>
     @media print {
       @page {
@@ -217,7 +212,7 @@ export class PdfReportService {
 <body>
 
 <div class="report-header">
-  <h1>ATT&amp;CK Coverage Report</h1>
+  <h1>ATT&amp;CK Mitigation Report</h1>
   <div class="header-meta">
     Domain: ${this.esc(domainLabel)} (ATT&amp;CK v${this.esc(domain.attackVersion)})
     &nbsp;|&nbsp; Generated: ${generatedDate}
@@ -226,22 +221,23 @@ export class PdfReportService {
 
 <!-- Summary Stats -->
 <h2>Summary</h2>
+<p style="font-size:10px;color:#555"><strong>${L.theoreticalShort}</strong>: ${L.theoreticalNote} <strong>${L.implementedShort}</strong>: ${L.implementedNote}</p>
 <div class="summary-grid no-break">
   <div class="summary-box">
-    <div class="num">${parentTechs.length}</div>
+    <div class="num">${split.total}</div>
     <div class="lbl">Total Techniques</div>
   </div>
   <div class="summary-box">
-    <div class="num">${coveredCount}</div>
-    <div class="lbl">Covered</div>
+    <div class="num">${split.theoretical} (${split.theoreticalPct}%)</div>
+    <div class="lbl">${L.theoretical}</div>
   </div>
   <div class="summary-box">
-    <div class="num">${uncoveredCount}</div>
-    <div class="lbl">Uncovered</div>
+    <div class="num">${split.unmapped}</div>
+    <div class="lbl">${L.unmapped}</div>
   </div>
   <div class="summary-box">
-    <div class="num">${coveragePct}%</div>
-    <div class="lbl">Coverage</div>
+    <div class="num">${split.implemented} (${split.implementedPct}%)</div>
+    <div class="lbl">${L.implemented}</div>
   </div>
 </div>
 
@@ -252,16 +248,16 @@ export class PdfReportService {
     <tr>
       <th>Tactic</th>
       <th style="text-align:center">Total</th>
-      <th style="text-align:center">Covered</th>
-      <th style="text-align:center">Coverage %</th>
+      <th style="text-align:center">${L.theoreticalShort} (mapped)</th>
+      <th style="text-align:center">${L.implemented}</th>
     </tr>
   </thead>
   <tbody>${tacticRows}</tbody>
 </table>
 
-<!-- Top Uncovered Techniques -->
+<!-- Techniques with no mitigation mapped -->
 <div class="page-break"></div>
-<h2>Top Uncovered Techniques (Gap List)</h2>
+<h2>Top Techniques with No Mitigation Mapped</h2>
 ${gapTechs.length > 0 ? `
 <table class="no-break">
   <thead>
@@ -273,10 +269,10 @@ ${gapTechs.length > 0 ? `
     </tr>
   </thead>
   <tbody>${gapRows}</tbody>
-</table>` : '<p>No coverage gaps found.</p>'}
+</table>` : '<p>Every technique has at least one mitigation mapped in ATT&amp;CK (reference mapping only).</p>'}
 
 <!-- Implementation Status -->
-<h2>Implementation Status</h2>
+<h2>Implementation Status (self-attested)</h2>
 ${totalTracked > 0 ? `
 <div class="impl-grid no-break">
   <div class="impl-box">

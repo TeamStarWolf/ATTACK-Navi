@@ -19,16 +19,18 @@ const STORAGE_KEY = 'mitre-nav-report-config-v1';
 // Section ids match the six <section>s the Report Builder renders
 // (report-panel.component.html). The HTML exporter gates + orders its own six
 // sections by these ids too, though two map to differently-titled export
-// sections (control-docs → "Top 10 Best Covered Techniques", recommended-mits →
-// "Mitigation Implementation Progress") — an approximate mapping documented on
-// the PR; exec-summary / coverage-by-tactic / impl-status / exposure-gaps align.
+// sections (control-docs → "Top 10 Techniques by Mitigations Mapped",
+// recommended-mits → "Mitigation Implementation Progress") — an approximate
+// mapping documented on the PR; exec-summary / coverage-by-tactic / impl-status
+// / exposure-gaps align. The ids are stable storage keys; only the labels
+// changed with the Theoretical / Implemented split (E1.1).
 const DEFAULT_SECTIONS: ReportSection[] = [
-  { id: 'exec-summary',       label: 'Executive Summary',               visible: true, order: 0 },
-  { id: 'impl-status',        label: 'Implementation Status Breakdown', visible: true, order: 1 },
-  { id: 'coverage-by-tactic', label: 'Coverage by Tactic',              visible: true, order: 2 },
-  { id: 'exposure-gaps',      label: 'Highest Exposure Gaps',           visible: true, order: 3 },
-  { id: 'control-docs',       label: 'Security Control Documentation',  visible: true, order: 4 },
-  { id: 'recommended-mits',   label: 'Recommended Next Mitigations',    visible: true, order: 5 },
+  { id: 'exec-summary',       label: 'Executive Summary',                     visible: true, order: 0 },
+  { id: 'impl-status',        label: 'Implementation Status Breakdown',       visible: true, order: 1 },
+  { id: 'coverage-by-tactic', label: 'Theoretical vs Implemented by Tactic',  visible: true, order: 2 },
+  { id: 'exposure-gaps',      label: 'Unmapped Techniques by Adversary Use',  visible: true, order: 3 },
+  { id: 'control-docs',       label: 'Security Control Documentation',        visible: true, order: 4 },
+  { id: 'recommended-mits',   label: 'Recommended Next Mitigations',          visible: true, order: 5 },
 ];
 
 export const DEFAULT_REPORT_CONFIG: ReportConfig = {
