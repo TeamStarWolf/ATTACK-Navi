@@ -3,14 +3,15 @@
 ATTACK-Navi is a browser-based workbench for MITRE ATT&CK. It runs as a static site with
 no account and no project server. This guide shows the first path to try, how to move
 around, what the colors mean, and the common workflows. It describes the app as built from
-`main`; control names are quoted as they appear on screen. The hosted build may lag `main`.
+`main`; control names are quoted as they appear on screen. The hosted build may lag `main`;
+the Status workspace shows the data versions it carries.
 
 ## Open the app
 
 Hosted build: https://teamstarwolf.github.io/ATTACK-Navi/
 
 The matrix loads with bundled Enterprise ATT&CK 19.2. There is no login and no telemetry.
-The data you create, assessment answers, imported assets, annotations and saved views,
+The data you create (assessment answers, imported assets, annotations and saved views)
 stays in your browser's local storage. Some features do reach the network: the app fetches
 reference datasets from their upstream hosts (listed in Data, limits and credits), a CVE
 search sends your query to the NVD API, and any MISP, OpenCTI or TAXII server you
@@ -189,7 +190,9 @@ The Library workspace includes 37 named layers drawn from the TeamStarWolf libra
 ## Optional integrations
 
 Set these at Settings > Preferences > Integrations with Test & Save. They are optional; the
-app works without them. Each integration offers two modes:
+app works without them.
+
+MISP and OpenCTI each offer two modes:
 
 - **Direct browser mode** keeps the secret in memory for the session and needs the server to
   allow cross-origin requests (CORS).
@@ -198,6 +201,8 @@ app works without them. Each integration offers two modes:
   compose stack, or `http://localhost:8787` standalone; the service appends its own
   `/api/...` path), and set the token in Settings > Preferences > Integrations > "Proxy
   access token" to the `PROXY_AUTH_TOKEN` the proxy expects.
+
+The integrations:
 
 - **MISP.** Enter your server URL, API key and organization ID, then Test & Save. The
   connection test and the public MISP Galaxy clusters work; querying your own MISP events
@@ -214,11 +219,10 @@ app works without them. Each integration offers two modes:
 
 The hosted build is a Progressive Web App. After the first visit its shell works offline.
 The service worker caches runtime data only for the upstream hosts listed in
-THIRD_PARTY_NOTICES.md, for 6 to 24
-hours, and never caches `api.github.com`, so offline or after the cache expires those
-sources show the MISSING DATA banner. The ICS and Mobile ATT&CK bundles are cached lazily,
-on first use. The install prompt appears in Chromium browsers; desktop Firefox does not
-offer one.
+THIRD_PARTY_NOTICES.md, for 6 to 24 hours, and never caches `api.github.com`, so offline or
+after the cache expires those sources show the MISSING DATA banner. The ICS and Mobile
+ATT&CK bundles are cached lazily, on first use. The install prompt appears in Chromium
+browsers; desktop Firefox does not offer one.
 
 ## Troubleshooting: the MISSING DATA banner
 
@@ -230,7 +234,8 @@ samples, Cyb3r-Monk hunts and the CTID KEV mapping. Their counts then read zero,
 means "not loaded", not "no content", and Gap Analysis counts fewer techniques as
 detected. A MISSING DATA banner above the matrix names the failed sources and carries one
 "Data health and Retry" link to the Status page, where the per-source Retry buttons live.
-Wait for the hourly reset, then Retry there.
+Wait for the hourly reset, then Retry there; the app has no way to raise the anonymous
+GitHub limit, so there is no other mitigation in the hosted build.
 
 ## Self-hosting
 
@@ -244,8 +249,8 @@ docker compose up -d --build
 Opens on http://localhost:8080. The optional credentials proxy is reached through the app
 at http://localhost:8080/api/ (and from the host on 127.0.0.1:8787); in an integration's
 proxy URL field, though, enter http://localhost:8080 with no /api/, since the service
-appends the path. The stack starts
-without `server/.env`; the proxy has nothing to forward until you fill it in. To serve on
+appends the path. The stack starts without `server/.env`; the proxy has nothing to forward
+until you fill it in. To serve on
 a LAN address or hostname instead of localhost, set `APP_ORIGIN` (the page origin, for
 example `http://navi.lan:8080`) and `APP_HOST` (the bare host the browser uses, for
 example `navi.lan`) in a `.env` file next to `docker-compose.yml`; the proxy refuses other
@@ -288,8 +293,8 @@ Elastic, Splunk, Atomic Red Team, Galeax CVE2CAPEC, CISA KEV, FIRST EPSS, NVD an
 are fetched from their upstream sources at runtime. THIRD_PARTY_NOTICES.md lists every
 source with its license and terms, and the Status workspace shows which sources loaded.
 
-© 2026 The MITRE Corporation. The ATT&CK data in this repository is reproduced and
-distributed with the permission of The MITRE Corporation. MITRE ATT&CK® is a registered
+© 2026 The MITRE Corporation. This work is reproduced and distributed with the permission
+of The MITRE Corporation. MITRE ATT&CK® is a registered
 trademark of The MITRE Corporation. This project is not affiliated with or endorsed by
 MITRE. This product uses the NVD API but is not endorsed or certified by the NVD. Data
 fetched at runtime from other sources remains subject to those sources' own licenses and
