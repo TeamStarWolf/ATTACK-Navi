@@ -114,7 +114,7 @@ Many mapping datasets are pinned to older ATT&CK releases: most CTID Mappings Ex
 | ATT&CK release notes | `attack-stix-data` GitHub releases |
 | Other sidebar content | `swisskyrepo/PayloadsAllTheThings`, `stamparm/ipsum`, `mukul975/Anthropic-Cybersecurity-Skills` |
 
-Several of these are community repositories rather than vendor or MITRE datasets. The Elastic, Splunk and Microsoft 365 Defender counts come from GitHub tree listings and include only files whose path contains a technique ID, so they undercount. The Microsoft 365 Defender hunting query repository was archived by Microsoft in 2022.
+Several of these are community repositories rather than vendor or MITRE datasets; `mukul975/Anthropic-Cybersecurity-Skills` is one such community repository, not an Anthropic project, despite its name. The Elastic, Splunk and Microsoft 365 Defender counts come from GitHub tree listings and include only files whose path contains a technique ID, so they undercount. The Microsoft 365 Defender hunting query repository was archived by Microsoft in 2022.
 
 ### Bundled with the app
 
@@ -204,7 +204,7 @@ cp server/.env.example server/.env    # Windows cmd: copy server\.env.example se
 npm run proxy:start
 ```
 
-Then set the OpenCTI or MISP mode in Settings to "Secure backend proxy" and enter the proxy URL, `http://localhost:8787` by default. If you set `PROXY_AUTH_TOKEN` in `server/.env`, paste the same value into Settings > Integrations > "Proxy access token"; the app sends it as `X-Proxy-Key` on every proxy request and keeps it in `sessionStorage` only, like the NVD key.
+Then set the OpenCTI or MISP mode in Settings to "Secure backend proxy" and enter the proxy URL, `http://localhost:8787` by default. If you set `PROXY_AUTH_TOKEN` in `server/.env`, paste the same value into Settings > Preferences > Integrations > "Proxy access token" and click its Save button before Test & Save (Test & Save does not persist that field); the app sends it as `X-Proxy-Key` on every proxy request and keeps it in `sessionStorage` only, like the NVD key.
 
 The proxy is a small Express app. It exposes `GET /api/health`, `POST /api/opencti/graphql`, and `GET` and `POST` under `/api/misp/` for a read-only allowlist (`servers/getVersion`, `attributes/restSearch`, `events/restSearch`, `events/view`). It binds `127.0.0.1` unless `HOST` says otherwise, and on a non-loopback `HOST` without `PROXY_AUTH_TOKEN` it fails closed: health still answers, every other route returns 503. Every credentialed route also checks the `Host` header against `localhost`, `127.0.0.1`, `::1` and `ALLOWED_HOSTS` (DNS-rebinding defence) and requires the `X-Requested-With` header the app sends, so a cross-origin browser call is always a CORS preflight that `ALLOWED_ORIGINS` decides. The code default origin is `http://localhost:4200` and `server/.env.example` lists only that; add your own deployment origin, never a shared one. The OpenCTI route parses each GraphQL document and forwards only read queries on the `about`, `indicators` and `threatActors` root fields (`OPENCTI_ALLOWED_QUERY_FIELDS` extends the list); mutations are refused unless `OPENCTI_ALLOW_IMPORT=true`, which admits exactly the app's `mutation ImportStix` used by Export to OpenCTI, and subscriptions are always refused. Upstream calls time out after `UPSTREAM_TIMEOUT_MS` (30 s) and bodies above `UPSTREAM_MAX_BYTES` (10 MB) or request bodies above `MAX_BODY_SIZE` (1 MB) are rejected.
 

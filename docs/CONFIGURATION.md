@@ -94,7 +94,7 @@ In **Secure backend proxy** mode:
 
 1. In the same card, set the mode to **Secure backend proxy**.
 2. In the proxy URL field (placeholder `https://your-proxy-host.example`), enter `http://localhost:8787` for the standalone proxy, or `http://localhost:8080` under Docker Compose (the app origin, no `/api/` suffix; the app appends the path).
-3. If the proxy sets `PROXY_AUTH_TOKEN`, paste the same value into the **Proxy access token** field and click its **Save** button; wait for "Proxy token saved for this session". Do this before Test & Save, because Test & Save does not persist that field and a proxy with `PROXY_AUTH_TOKEN` set answers 403 (shown as "Connection failed") without it. The app sends the token as the `X-Proxy-Key` header and keeps it in sessionStorage only.
+3. If the proxy sets `PROXY_AUTH_TOKEN`, paste the same value into the **Proxy access token** field and click its **Save** button; wait for "Proxy token saved for this session". Do this before Test & Save, because Test & Save does not persist that field and a proxy with `PROXY_AUTH_TOKEN` set answers 401 (`Proxy authentication required`, shown in the card as "Connection failed") without it. The app sends the token as the `X-Proxy-Key` header and keeps it in sessionStorage only.
 4. For the standalone proxy on `http://localhost:8787`, set `ALLOWED_ORIGINS` in `server/.env` to the exact origin the app is served from (for the Pages build, `https://teamstarwolf.github.io`); the proxy defaults to `http://localhost:4200` and rejects other origins with 403. Under Docker Compose the app and proxy are same-origin, so this is already handled.
 5. Click **Test & Save**. The MISP URL and key come from the proxy's `server/.env`, not this card.
 
@@ -113,7 +113,7 @@ The event and attribute REST queries (`events/restSearch`, `attributes/restSearc
 
 ## 2. OpenCTI Setup
 
-OpenCTI integration adds indicators from your OpenCTI instance to techniques: `getIndicatorsForTechnique` runs per selected technique (`sidebar.component.ts`, `threat-intelligence-panel.component.ts`) and the results show in the sidebar and in Intel > Feeds. It does not add threat-actor data; a `getThreatActorsForTechnique` method exists in `opencti.service.ts` but nothing in the UI calls it.
+OpenCTI integration adds indicators from your OpenCTI instance to techniques: `getIndicatorsForTechnique` runs per selected technique (`sidebar.component.ts`, `threat-intelligence-panel.component.ts`) and the results show in the sidebar and in Intel > Feeds. The app queries indicators only; it does not add threat-actor data.
 
 Like MISP, it has two modes in the integration card: **Direct browser mode**, where the browser calls OpenCTI, and **Secure backend proxy**, where the `server/` proxy holds the token (see [Optional credentials proxy](../README.md#optional-credentials-proxy)). Direct mode keeps the token in memory for the session only; proxy mode keeps it on the backend.
 
@@ -143,7 +143,7 @@ https://opencti.example.org
 
 ### Required Permissions
 
-The app queries only **Indicators**, so a token with read access to indicators is enough; a read-only analyst role suffices and no write permission is needed. (**Threat Actors** read access matters only if the unused threat-actor query is wired up later, or if you run the proxy, whose read allowlist covers that field.)
+The app queries only **Indicators**, so a token with read access to indicators is enough; a read-only analyst role suffices and no write permission is needed. (**Threat Actors** read access matters only if you run the proxy, whose read allowlist still lists that field as policy.)
 
 The proxy's read allowlist is `about`, `indicators` and `threatActors` by default; `OPENCTI_ALLOWED_QUERY_FIELDS` extends it, and mutations are refused unless `OPENCTI_ALLOW_IMPORT=true`, which admits only the app's `ImportStix` operation (`server/src/index.js`).
 
@@ -160,7 +160,13 @@ In **Direct browser mode**:
 3. Click **Test & Save**. The app sends a test GraphQL query to verify authentication.
 4. On success a green "Connected to OpenCTI" status appears; on failure the error is shown (authentication, network, or a CORS block, which a browser reports the same as a network error).
 
-In **Secure backend proxy** mode set the mode to **Secure backend proxy** and enter the proxy URL in that field (placeholder `https://your-proxy-host.example`): `http://localhost:8787` standalone, or `http://localhost:8080` under Docker Compose, no `/api/` suffix. If the proxy sets `PROXY_AUTH_TOKEN`, paste it into the **Proxy access token** field and click its **Save** button (wait for "Proxy token saved for this session") before Test & Save, since Test & Save does not persist that field and the proxy otherwise answers 403. For the standalone proxy, set `ALLOWED_ORIGINS` in `server/.env` to the app's serving origin (the default is `http://localhost:4200`); under Compose the app and proxy are same-origin. Then click **Test & Save**. The OpenCTI URL and token come from the proxy's `server/.env`.
+In **Secure backend proxy** mode:
+
+1. Set the mode to **Secure backend proxy**.
+2. In the proxy URL field (placeholder `https://your-proxy-host.example`), enter `http://localhost:8787` for the standalone proxy, or `http://localhost:8080` under Docker Compose (no `/api/` suffix; the app appends the path).
+3. If the proxy sets `PROXY_AUTH_TOKEN`, paste it into the **Proxy access token** field and click its **Save** button; wait for "Proxy token saved for this session". Do this before Test & Save, because Test & Save does not persist that field and a proxy with `PROXY_AUTH_TOKEN` set answers 401 (`Proxy authentication required`, shown as "Connection failed") without it.
+4. For the standalone proxy on `http://localhost:8787`, set `ALLOWED_ORIGINS` in `server/.env` to the app's serving origin; the proxy defaults to `http://localhost:4200`. Under Docker Compose the app and proxy are same-origin.
+5. Click **Test & Save**. The OpenCTI URL and token come from the proxy's `server/.env`.
 
 ### Clearing the Connection
 
