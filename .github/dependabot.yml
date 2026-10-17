@@ -22,7 +22,9 @@ updates:
     labels:
       - "dependencies"
 
-  # Base images (node:24-alpine build stage, nginx:alpine, the proxy's node:24-alpine)
+  # Base images in the root Dockerfile: node:24-alpine (build stage) and
+  # nginxinc/nginx-unprivileged:alpine (the served image). The proxy's
+  # node:24-alpine is tracked by the /server entry below.
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
