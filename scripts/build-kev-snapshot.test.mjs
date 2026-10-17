@@ -79,9 +79,9 @@ test('the source registry names the shipped snapshot (date, catalogue version, c
   const inventory = read('src/app/services/source-inventory.ts');
   const block = inventory.match(/export const BUNDLED_KEV_SNAPSHOT = \{([\s\S]*?)\} as const;/);
   assert.ok(block, 'BUNDLED_KEV_SNAPSHOT in source-inventory.ts');
-  assert.match(block[1], new RegExp(`date: '${m.snapshotDate}'`));
-  assert.match(block[1], new RegExp(`catalogVersion: '${m.catalogVersion.replace(/\./g, '\\.')}'`));
-  assert.match(block[1], new RegExp(`commit: '${m.commit}'`));
+  assert.ok(block[1].includes(`date: '${m.snapshotDate}'`), 'snapshot date in BUNDLED_KEV_SNAPSHOT');
+  assert.ok(block[1].includes(`catalogVersion: '${m.catalogVersion}'`), 'catalogue version in BUNDLED_KEV_SNAPSHOT');
+  assert.ok(block[1].includes(`commit: '${m.commit}'`), 'generator commit in BUNDLED_KEV_SNAPSHOT');
 });
 
 test('THIRD_PARTY_NOTICES covers the bundled snapshot under the KEV CC0 notice', () => {
