@@ -21,11 +21,11 @@ configure is contacted directly.
 This path needs no setup and runs on one technique:
 
 1. Open the app. The matrix loads on the Prevalence lens (the lens button reads
-   "Frequency"). Its legend badge reads THREAT: it is reference data on how many ATT&CK
-   groups use each technique, not your environment.
-2. Click a technique, for example T1059.001 (PowerShell). The sidebar opens. Its top card,
-   "Reference sources mapped", is a Known count of how many reference sources map to the
-   technique.
+   "Frequency"). The first-glance banner above the matrix says it shows adversary
+   prevalence, reference data, not your environment; expand "Legend · quick filters" to see
+   its THREAT badge.
+2. Click a technique, for example T1059.001 (PowerShell). The sidebar opens. Its "Reference
+   sources mapped" card is a Known count of how many reference sources map to the technique.
 3. Open the sidebar sections that are populated for it: Detected By (the data sources that
    observe it), CAR Detection Analytics, Wazuh stock rules (curated), Atomic Red Team
    Tests, and SIEM Queries.
@@ -59,14 +59,14 @@ technique, with no claim about your environment.
 **Covered (self-attested)** is something you recorded as deployed, not shown to have fired.
 
 <!-- truth-vocab-allow-next-line proven-only -- defines the Proven rung, not a claim about this app -->
-**Proven** is a named detection firing or a block on a recorded date. The hosted app has
-none of it; it comes from recorded test or detection evidence, which this app does not
-collect.
+**Proven** is a named detection firing or a block on a recorded date. No lens colors the
+matrix at this rung. You can log validation runs under Detect > Validation, but those are
+self-recorded, not an automated result.
 
 Read the active lens from its legend rather than the color alone. Expand Legend under the
 toolbar and it shows, for the current lens, a rung badge (KNOWN, COVERED self-attested,
 THREAT or EXPOSURE), the question the lens answers, a Sources line, what a zero cell
-means, and a "What is this lens?" link. THREAT and EXPOSURE are dimensions (how much
+means, and a "What is this lens?" button. THREAT and EXPOSURE are dimensions (how much
 adversaries care, what is reachable), not posture. The default Prevalence lens carries the
 THREAT badge.
 
@@ -74,16 +74,18 @@ THREAT badge.
 
 The matrix toolbar has a lens button, "View and explore options", that shows the active
 lens short label ("Frequency" by default) and opens a menu to switch the matrix coloring
-or change sorting and filtering. There are 33 lenses, grouped as Coverage and Posture,
-Threat Landscape, Vulnerabilities, Detections and Frameworks. Each lens carries a rung,
-shown as its legend badge, so before reading a color open the legend and check whether the
-lens badge reads KNOWN, COVERED self-attested, THREAT or EXPOSURE.
+or change sorting and filtering. There are 33 lenses. With no viewpoint set, the menu
+groups are Threat Landscape, Vulnerabilities, Detections, Frameworks and Coverage &
+Posture; Frequency is listed under Coverage & Posture but carries the THREAT badge. Each
+lens carries a rung, shown as its legend badge, so before reading a color open the legend
+and check whether the badge reads KNOWN, COVERED self-attested, THREAT or EXPOSURE.
 
 ## Record your own coverage
 
 Two lenses read your self-attested input: Status (the implementation status you set on
-mapped mitigations) and Controls (the controls you declare). Everything else is reference
-data.
+mapped mitigations) and Controls (the controls you declare). You can also log validation
+runs by hand under Detect > Validation, each with an outcome and evidence links. Everything
+else is reference data.
 
 ### Assessment (Coverage > Assessment)
 
@@ -104,10 +106,12 @@ data.
    `;`-separated; `criticality` is one of `critical`, `high`, `medium` or `low`, and
    anything else becomes `medium`. For example:
 
-``` hostname,os,software,tags,criticality web01,Ubuntu 22.04,nginx;openssh,prod;dmz,high
-```
+   ```
+   hostname,os,software,tags,criticality
+   web01,Ubuntu 22.04,nginx;openssh,prod;dmz,high
+   ```
 
-You can also add assets by hand.
+   You can also add assets by hand.
 3. Open the Exposure tab to see which techniques reach your assets, and use Enable My
    Exposure Heatmap to color the matrix by it. Matching is keyword-based and heuristic,
    and My Exposure is a reachability view (the EXPOSURE dimension), not a posture rung.
@@ -128,8 +132,7 @@ You can also add assets by hand.
 ## The technique sidebar
 
 Click any technique to open the sidebar. Hover for a short tooltip. Search by ID (T1059)
-or name (PowerShell) in the top bar. The top card, "Reference sources mapped", is a Known
-count.
+or name (PowerShell) in the top bar. The "Reference sources mapped" card is a Known count.
 
 The sidebar collects what public sources record about a technique, as collapsible sections
 that appear when they have content: ATT&CK mitigations and the status you set; Detected By
@@ -142,8 +145,10 @@ sections.
 
 For offensive work the sidebar also has CAPEC, ExploitDB, Nuclei, PoC Exploits, Payloads,
 C2, BloodHound, Offensive tools, EVTX samples and ThreatHunter Playbook sections, again
-shown when populated. Each section names its source, and detection and control content is
-reference data unless you have recorded your own status.
+shown when populated. Some of this is curated in this repository (the Wazuh mappings,
+offensive tools, C2, BloodHound, the YARA, Zeek and Suricata templates and the IR
+playbooks); the rest is upstream reference data. Each section names its source, and nothing
+here reflects your own posture unless you have recorded a status.
 
 ## Workspaces and tabs
 
@@ -184,9 +189,10 @@ Set these at Settings > Preferences > Integrations with Test & Save. They are op
 the app works without them. Each integration has a Direct browser mode and a Secure
 backend proxy mode. Direct mode keeps the secret in memory for the session and needs the
 server to allow cross-origin requests (CORS). Proxy mode sends requests through the proxy
-under `server/`: set the integration URL to the proxy (`http://localhost:8080/api/` under
-the compose stack, or `http://localhost:8787` per README), and set Settings > Integrations
-> Proxy access token to the `PROXY_AUTH_TOKEN` the proxy expects.
+under `server/`: set the per-integration proxy URL field to the proxy origin
+(`http://localhost:8080` under the compose stack, or `http://localhost:8787` per README;
+the service appends its own `/api/...` path). Set the token in Settings > Preferences >
+Integrations > "Proxy access token" to the `PROXY_AUTH_TOKEN` the proxy expects.
 
 - **MISP.** Enter your server URL, API key and organization ID, then Test & Save. The
   connection test and the public MISP Galaxy clusters work; querying your own MISP events
@@ -216,8 +222,9 @@ limit is reached and sources fail, including Elastic, Splunk, community Sigma, P
 exploits, M365 hunting queries, Sentinel rules, Nuclei, PayloadsAllTheThings, EVTX
 samples, Cyb3r-Monk hunts and the CTID KEV mapping. Their counts then read zero, which
 means "not loaded", not "no content", and Gap Analysis counts fewer techniques as
-detected. A MISSING DATA banner above the matrix names the failed sources and offers Data
-health and Retry links; wait for the hourly reset, then Retry.
+detected. A MISSING DATA banner above the matrix names the failed sources and carries one
+"Data health and Retry" link to the Status page, where the per-source Retry buttons live.
+Wait for the hourly reset, then Retry there.
 
 ## Self-hosting
 
@@ -260,8 +267,8 @@ npm ci && npx ng build
 
 The matrix shows reference data by default: what public sources map, not your posture. The
 only environment-specific views are the ones you populate (assessment status, imported
-assets, annotations), and those stay self-attested. The hosted app has no data at the
-evidenced rung.
+assets, annotations) and the validation runs you log under Detect > Validation, which are
+self-recorded. No lens colors the matrix at the evidenced rung.
 
 Enterprise, ICS and Mobile ATT&CK and the CTID F3 Fraud Framework are bundled. The app
 also bundles fallbacks it uses when a live source is unavailable (a CISA KEV snapshot, a
