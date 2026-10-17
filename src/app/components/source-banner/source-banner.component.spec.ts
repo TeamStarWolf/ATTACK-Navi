@@ -32,6 +32,7 @@ describe('SourceBannerComponent: view banner naming a missing source (E1.3)', ()
         provideRouter([
           { path: 'matrix', component: BlankComponent },
           { path: 'exposure/cve', component: BlankComponent },
+          { path: 'exposure/ssvc', component: BlankComponent },
           { path: 'coverage/compliance', component: BlankComponent },
           { path: 'settings/changelog', component: BlankComponent },
           { path: 'status', component: BlankComponent },
@@ -64,6 +65,26 @@ describe('SourceBannerComponent: view banner naming a missing source (E1.3)', ()
     const source = el.querySelector('[data-source-id="nvd"]')!;
     expect(source.getAttribute('title')).toContain('HTTP 403');
     expect(el.querySelector('a')!.getAttribute('href')).toBe('/status');
+  });
+
+  it('names the stand-in in use when a failed source has one (the bundled KEV snapshot)', async () => {
+    await go('/exposure/ssvc');
+    registry.fail('cisa-kev', 'network error (no response)');
+    registry.succeed('cisa-kev-snapshot', 1748, { version: 'snapshot of 2026-10-16, catalogVersion 2026.10.16' });
+    fixture.detectChanges();
+    const kev = banner()!.querySelector('[data-source-id="cisa-kev"]')!;
+    expect(kev.textContent).toContain('CISA Known Exploited Vulnerabilities (failed)');
+    expect(kev.textContent).toContain('using CISA KEV snapshot (bundled), snapshot of 2026-10-16');
+    expect(banner()!.querySelector('[data-source-id="cisa-kev-snapshot"]')).toBeNull();
+  });
+
+  it('lists the stand-in as missing too when it did not load either', async () => {
+    await go('/exposure/ssvc');
+    registry.fail('cisa-kev', 'network error (no response)');
+    registry.fail('cisa-kev-snapshot', 'HTTP 404 Not Found');
+    fixture.detectChanges();
+    expect(banner()!.textContent).toContain('CISA Known Exploited Vulnerabilities (failed), CISA KEV snapshot (bundled) (failed). ');
+    expect(banner()!.textContent).not.toContain('using');
   });
 
   it('names an empty source too, and counts every missing source', async () => {

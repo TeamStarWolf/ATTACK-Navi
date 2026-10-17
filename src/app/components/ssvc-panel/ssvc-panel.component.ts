@@ -22,6 +22,7 @@ import {
   SsvcPoint,
   ACTION_MEANING,
   DEFAULT_ENVIRONMENT,
+  DECISION_BLOCKED,
 } from '../../services/ssvc.service';
 
 type OverrideKey = 'exploitation' | 'automatable' | 'impact' | 'inKev' | 'exposed' | 'mission';
@@ -32,6 +33,8 @@ const ACTION_CLASS: Readonly<Record<string, string>> = {
   attend: 'action-attend',
   'track*': 'action-track-star',
   track: 'action-track',
+  // Not a table outcome: exploitation is unknown because no KEV catalogue loaded (E1.3).
+  blocked: 'action-blocked',
 };
 
 interface WorklistRow {
@@ -57,8 +60,13 @@ export class SsvcPanelComponent implements OnInit, OnDestroy {
   query = '';
   loading = false;
   error: string | null = null;
-  /** Set while the KEV catalogue failed to load: every "In KEV: no" below is then unverified. */
+  /** Why the live KEV feed failed to load, or null. */
   kevError: string | null = null;
+  /** A KEV catalogue (live, or the bundled snapshot) is on hand. */
+  kevLoaded = false;
+  /** Date of the bundled KEV snapshot while it stands in for the live feed; else null. */
+  kevSnapshotDate: string | null = null;
+  readonly decisionBlocked = DECISION_BLOCKED;
   tablesLoaded = false;
 
   selected: NvdCveItem | null = null;
@@ -97,7 +105,16 @@ export class SsvcPanelComponent implements OnInit, OnDestroy {
         this.recompute();
       }),
     );
-    this.subs.add(this.cveService.kevLoaded$.subscribe(() => this.recompute()));
+    // The snapshot date is read before the catalogue is used, so a decision made from
+    // the snapshot never shows without its date.
+    this.subs.add(this.cveService.kevSnapshotDate$.subscribe(date => {
+      this.kevSnapshotDate = date;
+      this.cdr.markForCheck();
+    }));
+    this.subs.add(this.cveService.kevLoaded$.subscribe(loaded => {
+      this.kevLoaded = loaded;
+      this.recompute();
+    }));
     this.subs.add(
       this.cveService.kevError$.subscribe(err => {
         this.kevError = err;
@@ -146,7 +163,7 @@ export class SsvcPanelComponent implements OnInit, OnDestroy {
 
   // ── actions ──────────────────────────────────────────────────────────────
 
-  /** Try the KEV feeds again after a failed load (a no-op once the catalogue is in). */
+  /** Try the live KEV feeds again (a no-op once the live catalogue is in; works while the snapshot stands in). */
   retryKev(): void {
     this.cveService.loadKev();
   }
@@ -187,7 +204,7 @@ export class SsvcPanelComponent implements OnInit, OnDestroy {
     this.selected = this.withLiveKev(cve);
     this.overrides = {};
     this.selectedResult = this.tablesLoaded
-      ? this.ssvc.evaluate(this.selected, this.env)
+      ? this.ssvc.evaluate(this.selected, this.env, {}, this.cveService.kevContext)
       : null;
     this.cdr.markForCheck();
   }
@@ -195,7 +212,7 @@ export class SsvcPanelComponent implements OnInit, OnDestroy {
   /** Re-evaluate the selected CVE after an override or environment change. */
   reevaluate(): void {
     if (this.selected && this.tablesLoaded) {
-      this.selectedResult = this.ssvc.evaluate(this.selected, this.env, this.overrides);
+      this.selectedResult = this.ssvc.evaluate(this.selected, this.env, this.overrides, this.cveService.kevContext);
     }
     this.recompute();
   }
@@ -262,10 +279,11 @@ export class SsvcPanelComponent implements OnInit, OnDestroy {
       }
     }
 
+    const kev = this.cveService.kevContext;
     const cves = this.cveService.getAllCachedCves().map(c => this.withLiveKev(c));
     this.rows = cves.map(cve => ({
       cve,
-      result: this.ssvc.evaluate(cve, this.env),
+      result: this.ssvc.evaluate(cve, this.env, {}, kev),
       epss: this.epssService.getScore(cve.id)?.epss ?? cve.epssScore ?? null,
       mapping: this.attackCve.getMappingForCve(cve.id) ?? null,
     }));
@@ -273,7 +291,7 @@ export class SsvcPanelComponent implements OnInit, OnDestroy {
 
     if (this.selected) {
       this.selected = this.withLiveKev(this.selected);
-      this.selectedResult = this.ssvc.evaluate(this.selected, this.env, this.overrides);
+      this.selectedResult = this.ssvc.evaluate(this.selected, this.env, this.overrides, kev);
     }
     this.cdr.markForCheck();
   }
@@ -351,6 +369,18 @@ export class SsvcPanelComponent implements OnInit, OnDestroy {
    */
   actionClass(action: string): string {
     return ACTION_CLASS[(action || '').toLowerCase()] ?? 'action-none';
+  }
+
+  /** The class for a result's coordinator outcome, including the blocked state. */
+  resultClass(result: SsvcResult): string {
+    return this.actionClass(result.actionBlocked ? 'blocked' : result.action);
+  }
+
+  /** What the KEV fact says: membership with its date added, or 'unknown' with no catalogue. */
+  kevFact(cve: NvdCveItem): string {
+    const from = this.kevSnapshotDate ? ` (KEV snapshot of ${this.kevSnapshotDate})` : '';
+    if (cve.isKev) return `yes${cve.kevDateAdded ? `, added ${cve.kevDateAdded}` : ''}${from}`;
+    return this.kevLoaded ? `no${from}` : 'unknown';
   }
 
   timelineClass(timeline: string): string {

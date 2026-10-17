@@ -162,7 +162,7 @@ export class DossierService {
         : dossier.kevRansomware,
       kevVendorProject: entry?.vendorProject ?? dossier.kevVendorProject,
       kevProduct: entry?.product ?? dossier.kevProduct,
-      ssvc: this.ssvc.evaluate(cve, env),
+      ssvc: this.ssvc.evaluate(cve, env, {}, this.cveService.kevContext),
     };
   }
 
@@ -187,9 +187,10 @@ export class DossierService {
       cveId: id,
       source: 'asset',
       epss: epssScore,
-      // Same rule as withLiveKev, so the badge and the verdict never disagree: a loaded
-      // catalogue is authoritative either way; an unavailable one leaves the asset's flag.
-      isKev: kevEntry ? true : this.cveService.kevAvailable ? false : (raw.isKev ?? false),
+      // Same rule as withLiveKev, so the badge and the verdict never disagree: the live
+      // catalogue is authoritative either way; the dated snapshot or no catalogue at all
+      // leaves the asset's flag.
+      isKev: kevEntry ? true : this.liveKevLoaded() ? false : (raw.isKev ?? false),
       kevDateAdded: kevEntry?.dateAdded ?? raw.kevDateAdded,
       kevDueDate: kevEntry?.dueDate ?? raw.kevDueDate,
       kevRansomware: kevEntry
@@ -222,7 +223,9 @@ export class DossierService {
     base.f3 = this.collectF3(assetTechIds);
 
     const cveForSsvc = live ?? this.synthesizeCve(base);
-    base.ssvc = this.ssvc.available ? this.ssvc.evaluate(this.withLiveKev(cveForSsvc), env) : null;
+    base.ssvc = this.ssvc.available
+      ? this.ssvc.evaluate(this.withLiveKev(cveForSsvc), env, {}, this.cveService.kevContext)
+      : null;
     if (!this.ssvc.available) {
       base.warnings.push('SSVC decision tables are not loaded, so no prioritization outcome is shown.');
     }
@@ -237,21 +240,39 @@ export class DossierService {
   }
 
   /**
-   * The warning shown while the KEV catalogue is unavailable, so a reader knows the
-   * KEV flag (and the verdict built on it) comes from the dossier, not from CISA.
-   * Maintained as a single entry: removed once the catalogue loads, added once it fails.
+   * The warning shown while the live KEV catalogue is unavailable, so a reader knows
+   * where the KEV flag (and the verdict built on it) comes from: the bundled, dated
+   * snapshot, or, with no catalogue at all, the dossier itself (and exploitation is
+   * unknown for a CVE it does not flag). Maintained as a single entry: removed once the
+   * live catalogue loads, added once it fails.
    */
   private withKevWarning(warnings: string[], d: CveDossier): string[] {
     const kept = warnings.filter(w => !w.startsWith(KEV_UNAVAILABLE_PREFIX));
     const error = this.cveService.kevError;
-    if (this.cveService.kevAvailable || !error) return kept;
+    if (this.liveKevLoaded() || !error) return kept;
+    // The service's error repeats the prefix; keep only its reason so the text is not said twice.
+    const reason = error.replace(/^CISA KEV catalog could not be loaded:\s*/, '');
+    const snapshot = this.cveService.kevSnapshotDate;
+    if (snapshot) {
+      kept.push(
+        `${KEV_UNAVAILABLE_PREFIX} KEV status is read from the bundled CISA KEV snapshot of ${snapshot}; ` +
+          `a CVE added to KEV after that date shows as not in KEV. (${reason})`,
+      );
+      return kept;
+    }
     const dated = d.source === 'asset' && d.generated
       ? `the generated dossier dated ${d.generated.slice(0, 10)}`
       : 'the record on hand';
-    // The service's error repeats the prefix; keep only its reason so the text is not said twice.
-    const reason = error.replace(/^CISA KEV catalog could not be loaded:\s*/, '');
-    kept.push(`${KEV_UNAVAILABLE_PREFIX} KEV status is taken from ${dated}. (${reason})`);
+    kept.push(
+      `${KEV_UNAVAILABLE_PREFIX} KEV status is taken from ${dated}; for a CVE it does not flag, ` +
+        `exploitation is unknown. (${reason})`,
+    );
     return kept;
+  }
+
+  /** The live KEV feed is the catalogue in use (not the dated snapshot, not nothing). */
+  private liveKevLoaded(): boolean {
+    return this.cveService.kevAvailable && !this.cveService.kevSnapshotDate;
   }
 
   // ── live path ────────────────────────────────────────────────────────────
@@ -284,7 +305,7 @@ export class DossierService {
     d.kevVendorProject = enriched.kevVendorProject;
     d.kevProduct = enriched.kevProduct;
 
-    d.ssvc = this.ssvc.available ? this.ssvc.evaluate(enriched, env) : null;
+    d.ssvc = this.ssvc.available ? this.ssvc.evaluate(enriched, env, {}, this.cveService.kevContext) : null;
 
     // Techniques, tiered by strength of claim.
     const ctid = this.attackCve.getMappingForCve(id);
@@ -693,12 +714,13 @@ export class DossierService {
    * The converse matters just as much: "not in the catalogue" only means "not exploited"
    * when the catalogue actually loaded. After a failed fetch the map is empty, and
    * clearing isKev on that evidence would strip KEV from a generated asset and drop its
-   * verdict from act to track. So isKev is only ever cleared when the catalogue is real.
+   * verdict from act to track. So isKev is only ever cleared by the live catalogue: the
+   * bundled snapshot is dated and may be older than the record that flags the CVE.
    */
   private withLiveKev(cve: NvdCveItem): NvdCveItem {
     const entry = this.cveService.getKevEntry(cve.id);
     if (!entry) {
-      return cve.isKev && this.cveService.kevAvailable ? { ...cve, isKev: false } : cve;
+      return cve.isKev && this.liveKevLoaded() ? { ...cve, isKev: false } : cve;
     }
     return {
       ...cve,

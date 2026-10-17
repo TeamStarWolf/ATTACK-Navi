@@ -34,6 +34,7 @@ test.describe('acceptance journeys (plan Appendix C)', () => {
     // 7. Assert at least one Blunt control.
     // 8. Assert a packet with every field.
     // 9. Force the KEV fetch to fail; assert the decision reads 'provisional: exploitation unknown'.
+    //    Live since P1 (E1.3) in the 'journey 1 ... KEV-down branch' block below.
     // 10. Record a close date; assert MTTM appears in the VM brief.
   });
 
@@ -165,6 +166,82 @@ test.describe('journey 4, Honesty: empty user', () => {
     await expect(page.locator('.sidebar .signal-pill').first()).toBeVisible({ timeout: ROUTE_TIMEOUT });
     await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => undefined);
     expect(await bannedStringsOnPage(page, forbiddenStrings)).toEqual([]);
+  });
+});
+
+// Journey 1, the KEV-down branch (plan P1 row E1.3: "the KEV-down branch of journey 1
+// passes"). The rest of journey 1 (Home, the CVE page, affected assets, the technique
+// chain, the packet, MTTM) is due in P5 and stays pending above. Until the CVE page
+// exists (P4/P5), the SSVC decision for the journey's CVE is read where the app shows it
+// today: Exposure > SSVC. NVD is served from a trimmed fixture; every other off-origin
+// request stays blocked by the hermetic workspace, so the live KEV feed always fails here.
+test.describe('journey 1, VM: KEV to packet: KEV-down branch (plan E1.3)', () => {
+  const { vmJourney } = loadSampleOrg();
+  const snapshotDate: string = JSON.parse(readFileSync('src/assets/data/kev-snapshot.json', 'utf8')).__meta.snapshotDate;
+  const nvdBody = readFileSync('e2e/fixtures/nvd-cve-2024-3400.json', 'utf8');
+
+  /** Serve NVD, force the live KEV feed offline, and assess the journey's CVE. Returns the blocked-request count. */
+  async function assessWithKevDown(page: Page): Promise<() => number> {
+    let liveKevRequests = 0;
+    await page.route(
+      url => url.href.startsWith('https://services.nvd.nist.gov/rest/json/cves/2.0'),
+      route => route.fulfill({ status: 200, contentType: 'application/json', body: nvdBody }),
+    );
+    await page.route(
+      url => url.href.includes('known_exploited_vulnerabilities.json'),
+      route => { liveKevRequests++; return route.abort('internetdisconnected'); },
+    );
+    await page.goto(`${BASE}/#/exposure/ssvc`);
+    const input = page.getByRole('searchbox', { name: 'CVE identifier or keyword search' });
+    await expect(input).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    await input.fill(vmJourney.cve);
+    await page.getByRole('button', { name: 'Assess' }).click();
+    return () => liveKevRequests;
+  }
+
+  test('live KEV down: the decision is made from the bundled snapshot, dated, with every input shown', greenBy('P1 (E1.3)'), async ({ page }) => {
+    const liveKevRequests = await assessWithKevDown(page);
+
+    await expect(page.getByTestId('kev-snapshot-notice')).toContainText(`Using the bundled CISA KEV snapshot of ${snapshotDate}`, { timeout: ROUTE_TIMEOUT });
+    // A dated KEV badge: the date added, and which catalogue it was read from.
+    await expect(page.getByTestId('kev-fact')).toHaveText(`KEV yes, added 2024-04-12 (KEV snapshot of ${snapshotDate})`);
+    // An SSVC decision with every input shown, each with its basis.
+    const decision = page.getByTestId('ssvc-decision');
+    await expect(decision.locator('strong')).toHaveText('act');
+    const inputs = page.locator('table.points tbody tr');
+    await expect(inputs).toHaveCount(6);
+    await expect(inputs.filter({ hasText: 'Exploitation' })).toContainText(`bundled CISA KEV snapshot of ${snapshotDate}`);
+    // The view banner names the failed live feed and the snapshot standing in for it.
+    const banner = page.locator('app-source-banner [data-testid="source-banner"]');
+    await expect(banner.locator('[data-source-id="cisa-kev"]')).toContainText('CISA Known Exploited Vulnerabilities (failed)');
+    await expect(banner.locator('[data-source-id="cisa-kev"]')).toContainText(`snapshot of ${snapshotDate}`);
+    expect(liveKevRequests(), 'the live KEV feed was requested and failed').toBeGreaterThan(0);
+  });
+
+  test('KEV and its snapshot both down: decision blocked, exploitation unknown, never track', greenBy('P1 (E1.3)'), async ({ page }) => {
+    let snapshotRequests = 0;
+    await page.route(
+      url => url.pathname.endsWith('/assets/data/kev-snapshot.json'),
+      route => { snapshotRequests++; return route.abort('internetdisconnected'); },
+    );
+    await assessWithKevDown(page);
+
+    const decision = page.getByTestId('ssvc-decision');
+    await expect(decision.locator('strong')).toHaveText('decision blocked: exploitation unknown', { timeout: ROUTE_TIMEOUT });
+    // Appendix C's wording for this branch.
+    await expect(decision).toContainText('Provisional: exploitation unknown');
+    await expect(decision).not.toContainText(/track/i);
+    await expect(page.getByTestId('ssvc-timeline').locator('strong')).toHaveText('blocked: KEV membership unknown');
+    await expect(page.getByTestId('kev-fact')).toHaveText('KEV unknown');
+    await expect(page.getByTestId('kev-unavailable-notice')).toContainText('exploitation is unknown');
+    const inputs = page.locator('table.points tbody tr');
+    await expect(inputs).toHaveCount(6);
+    await expect(inputs.filter({ hasText: 'Exploitation' }).locator('select')).toHaveValue('unknown');
+    // Nothing in the worklist reads track either.
+    await expect(page.locator('table.rows .pill', { hasText: /^\s*track\*?\s*$/i })).toHaveCount(0);
+    const banner = page.locator('app-source-banner [data-testid="source-banner"]');
+    await expect(banner).toContainText('CISA KEV snapshot (bundled) (failed)');
+    expect(snapshotRequests, 'the snapshot was requested and failed').toBeGreaterThan(0);
   });
 });
 

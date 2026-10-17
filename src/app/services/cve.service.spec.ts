@@ -5,9 +5,11 @@ import { provideHttpClient, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { CveService } from './cve.service';
 import { CapecService } from './capec.service';
+import { SourceRegistryService } from './source-registry.service';
 
 const KEV_URL = 'https://raw.githubusercontent.com/cisagov/kev-data/develop/known_exploited_vulnerabilities.json';
 const KEV_FALLBACK_URL = 'https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json';
+const KEV_SNAPSHOT_URL = 'assets/data/kev-snapshot.json';
 const NVD_API = 'https://services.nvd.nist.gov/rest/json/cves/2.0';
 const LAST_KEV_COUNT_KEY = 'mitre-nav-last-kev-count';
 
@@ -57,6 +59,11 @@ describe('CveService', () => {
       httpMock.expectOne(KEV_URL).error(new ProgressEvent('error'));
       httpMock.expectOne(KEV_FALLBACK_URL).error(new ProgressEvent('error'));
     };
+    /** Both live feeds fail, then the bundled snapshot fails too: no catalogue at all. */
+    const failAll = () => {
+      failBoth();
+      httpMock.expectOne(KEV_SNAPSHOT_URL).error(new ProgressEvent('error'));
+    };
 
     it('reports a loaded catalogue only when one actually arrived', () => {
       service.loadKev();
@@ -72,7 +79,7 @@ describe('CveService', () => {
       let loaded: boolean | undefined;
       service.kevLoaded$.subscribe(v => (loaded = v));
       service.loadKev();
-      failBoth();
+      failAll();
 
       expect(loaded).toBe(false);
       expect(service.kevAvailable).toBe(false);
@@ -83,7 +90,7 @@ describe('CveService', () => {
 
     it('retries on the next loadKev() after a failure, and clears the error on success', () => {
       service.loadKev();
-      failBoth();
+      failAll();
       expect(service.kevError).not.toBeNull();
 
       service.loadKev();
@@ -95,6 +102,7 @@ describe('CveService', () => {
     it('treats a 200 with no entries as a failure, not a catalogue of zero CVEs', () => {
       service.loadKev();
       httpMock.expectOne(KEV_URL).flush({ vulnerabilities: [] });
+      httpMock.expectOne(KEV_SNAPSHOT_URL).error(new ProgressEvent('error'));
       expect(service.kevAvailable).toBe(false);
       expect(service.kevError).toContain('no KEV entries');
     });
@@ -103,6 +111,105 @@ describe('CveService', () => {
       service.loadKev();
       service.loadKev();
       expect(httpMock.match(KEV_URL).length).toBe(1);
+    });
+
+    // E1.3: a dated, bundled snapshot stands in when the live feed fails.
+    describe('bundled snapshot fallback (E1.3)', () => {
+      const SNAPSHOT = {
+        __meta: { snapshotDate: '2026-10-16', catalogVersion: '2026.10.16' },
+        vulnerabilities: [{ ...KEV_ENTRY, cveID: 'CVE-2024-3400', dateAdded: '2024-04-12' }],
+      };
+
+      it('requests the snapshot only after both live feeds fail', () => {
+        service.loadKev();
+        httpMock.expectNone(KEV_SNAPSHOT_URL);
+        httpMock.expectOne(KEV_URL).flush({ vulnerabilities: [KEV_ENTRY] });
+        httpMock.expectNone(KEV_SNAPSHOT_URL);
+        expect(service.kevSnapshotDate).toBeNull();
+        expect(service.kevContext).toEqual({ available: true, snapshotDate: null });
+      });
+
+      it('uses the snapshot of its date when the live feed fails, and records both sources truthfully', () => {
+        const registry = TestBed.inject(SourceRegistryService);
+        const dates: (string | null)[] = [];
+        service.kevSnapshotDate$.subscribe(d => dates.push(d));
+        service.loadKev();
+        failBoth();
+        httpMock.expectOne(KEV_SNAPSHOT_URL).flush(SNAPSHOT);
+
+        expect(service.kevAvailable).toBe(true);
+        expect(service.kevSnapshotDate).toBe('2026-10-16');
+        expect(dates).toEqual([null, '2026-10-16']);
+        expect(service.kevContext).toEqual({ available: true, snapshotDate: '2026-10-16' });
+        expect(service.isKev('CVE-2024-3400')).toBe(true);
+        // The live failure stays visible: the snapshot is a stand-in, not a recovery.
+        expect(service.kevError).toContain('could not be loaded');
+        expect(registry.get('cisa-kev').status).toBe('failed');
+        const snap = registry.get('cisa-kev-snapshot');
+        expect(snap.status).toBe('loaded');
+        expect(snap.rows).toBe(1);
+        expect(snap.version).toContain('snapshot of 2026-10-16');
+        // The new-KEV badge counts live catalogues only.
+        expect(localStorage.getItem(LAST_KEV_COUNT_KEY)).toBeNull();
+      });
+
+      it('reports no catalogue (exploitation unknown) when the snapshot fails too', () => {
+        const registry = TestBed.inject(SourceRegistryService);
+        service.loadKev();
+        failAll();
+        expect(service.kevAvailable).toBe(false);
+        expect(service.kevSnapshotDate).toBeNull();
+        expect(service.kevContext).toEqual({ available: false, snapshotDate: null });
+        expect(registry.get('cisa-kev-snapshot').status).toBe('failed');
+      });
+
+      it('does not use an undated snapshot', () => {
+        const registry = TestBed.inject(SourceRegistryService);
+        service.loadKev();
+        failBoth();
+        httpMock.expectOne(KEV_SNAPSHOT_URL).flush({ vulnerabilities: SNAPSHOT.vulnerabilities });
+        expect(service.kevAvailable).toBe(false);
+        expect(registry.get('cisa-kev-snapshot').status).toBe('failed');
+        expect(registry.get('cisa-kev-snapshot').lastError).toContain('snapshotDate');
+      });
+
+      it('tries the live feed again on Retry while the snapshot stands in, and the live catalogue replaces it', () => {
+        service.loadKev();
+        failBoth();
+        httpMock.expectOne(KEV_SNAPSHOT_URL).flush(SNAPSHOT);
+        expect(service.kevSnapshotDate).toBe('2026-10-16');
+
+        service.loadKev();
+        httpMock.expectOne(KEV_URL).flush({ vulnerabilities: [KEV_ENTRY] });
+        expect(service.kevSnapshotDate).toBeNull();
+        expect(service.kevError).toBeNull();
+        expect(service.kevContext).toEqual({ available: true, snapshotDate: null });
+        expect(service.isKev('CVE-2021-44228')).toBe(true);
+        expect(service.isKev('CVE-2024-3400')).toBe(false);
+        // Once live, loadKev() is a no-op.
+        service.loadKev();
+        httpMock.expectNone(KEV_URL);
+      });
+
+      it('keeps the snapshot (without refetching it) when a Retry of the live feed fails again', () => {
+        service.loadKev();
+        failBoth();
+        httpMock.expectOne(KEV_SNAPSHOT_URL).flush(SNAPSHOT);
+        service.loadKev();
+        failBoth();
+        httpMock.expectNone(KEV_SNAPSHOT_URL);
+        expect(service.kevSnapshotDate).toBe('2026-10-16');
+        expect(service.kevAvailable).toBe(true);
+      });
+
+      it('never lets a late snapshot replace a live catalogue', () => {
+        service.loadKevSnapshot();
+        service.loadKev();
+        httpMock.expectOne(KEV_URL).flush({ vulnerabilities: [KEV_ENTRY] });
+        httpMock.expectOne(KEV_SNAPSHOT_URL).flush(SNAPSHOT);
+        expect(service.kevSnapshotDate).toBeNull();
+        expect(service.isKev('CVE-2024-3400')).toBe(false);
+      });
     });
   });
 

@@ -38,6 +38,7 @@ describe('DataHealthComponent', () => {
 
   const loadedSubjects: Record<string, BehaviorSubject<boolean>> = {};
   let kevError$: BehaviorSubject<string | null>;
+  let kevSnapshotDate$: BehaviorSubject<string | null>;
   let epssCheck$: BehaviorSubject<boolean>;
 
   // Services that expose loaded$ (used in the component's sources array)
@@ -70,7 +71,8 @@ describe('DataHealthComponent', () => {
     const mockCveKevLoaded$ = new BehaviorSubject<boolean>(false);
     loadedSubjects['cveKev'] = mockCveKevLoaded$;
     kevError$ = new BehaviorSubject<string | null>(null);
-    const mockCveService = { kevLoaded$: mockCveKevLoaded$, kevError$ };
+    kevSnapshotDate$ = new BehaviorSubject<string | null>(null);
+    const mockCveService = { kevLoaded$: mockCveKevLoaded$, kevError$, kevSnapshotDate$ };
 
     const mockDataService = {
       lastFetched$: of(null),
@@ -195,6 +197,25 @@ describe('DataHealthComponent', () => {
 
     kevError$.next(null);
     loadedSubjects['cveKev'].next(true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.dot-failed').length).toBe(0);
+    expect(fixture.nativeElement.querySelectorAll('.dot-loaded').length).toBe(1);
+  });
+
+  it('keeps CISA KEV red while the bundled snapshot stands in, and names the snapshot date (E1.3)', () => {
+    kevError$.next('CISA KEV catalog could not be loaded: network error');
+    kevSnapshotDate$.next('2026-10-16');
+    loadedSubjects['cveKev'].next(true);
+    fixture.detectChanges();
+    const failed = fixture.nativeElement.querySelector('.dot-failed');
+    expect(failed).toBeTruthy();
+    expect(failed.getAttribute('title')).toContain('CISA KEV: failed');
+    expect(failed.getAttribute('title')).toContain('using the bundled KEV snapshot of 2026-10-16');
+    expect(fixture.nativeElement.querySelectorAll('.dot-loaded').length).toBe(0);
+
+    // The live feed arrives on Retry: the snapshot steps aside and the dot turns green.
+    kevSnapshotDate$.next(null);
+    kevError$.next(null);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelectorAll('.dot-failed').length).toBe(0);
     expect(fixture.nativeElement.querySelectorAll('.dot-loaded').length).toBe(1);

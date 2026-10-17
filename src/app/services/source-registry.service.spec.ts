@@ -50,6 +50,18 @@ describe('SourceRegistryService', () => {
       }
     });
 
+    it('gives each stand-in a live source in the same 6.3 row, and a dated version (the KEV snapshot)', () => {
+      const standIns = registry.all().filter(r => r.fallbackFor);
+      expect(standIns.map(r => r.id)).toEqual(['cisa-kev-snapshot']);
+      for (const s of standIns) {
+        const live = registry.get(s.fallbackFor!);
+        expect(live.kind).withContext(s.id).toBe('live');
+        expect(s.kind).withContext(s.id).toBe('bundled');
+        expect(s.inventoryRow).withContext(s.id).toBe(live.inventoryRow);
+        expect(s.version).withContext(s.id).toMatch(/snapshot of \d{4}-\d{2}-\d{2}/);
+      }
+    });
+
     it('covers every row of the checked-in section 6.3 list with at least one record', () => {
       const uncovered = SECTION_6_3_INVENTORY
         .filter(row => !row.absentToday)

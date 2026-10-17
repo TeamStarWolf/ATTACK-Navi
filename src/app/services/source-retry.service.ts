@@ -114,6 +114,7 @@ export const SOURCE_RETRY: Readonly<Record<string, RetryEntry>> = {
   'ctid-attack-to-cve': { service: AttackCveService, run: (s: AttackCveService) => s.retry('ctid-attack-to-cve') },
   'ctid-kev': { service: AttackCveService, run: (s: AttackCveService) => s.retry('ctid-kev') },
   'cisa-kev': { service: CveService, run: (s: CveService) => s.loadKev() },
+  'cisa-kev-snapshot': { service: CveService, run: (s: CveService) => s.loadKevSnapshot() },
   'epss': { service: EpssService, run: (s: EpssService) => s.checkAvailability().subscribe() },
   'nvd': { service: CveService, run: (s: CveService) => s.fetchCve(RETRY_PROBE_CVE).subscribe({ error: () => undefined }) },
   'cve-services': { service: CisaSsvcService, run: (s: CisaSsvcService) => s.fetchSsvc(RETRY_PROBE_CVE).subscribe() },

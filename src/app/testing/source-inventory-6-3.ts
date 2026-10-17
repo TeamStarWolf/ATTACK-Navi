@@ -55,6 +55,7 @@ export const SECTION_6_3_INVENTORY: readonly InventoryRow[] = [
  */
 export const REQUIRED_RECORDS_BY_ROW: Readonly<Record<string, readonly string[]>> = {
   'ATT&CK Enterprise / ICS / Mobile / F3 bundles': ['attack-enterprise', 'attack-ics', 'attack-mobile', 'attack-f3'],
+  'CISA KEV': ['cisa-kev', 'cisa-kev-snapshot'],
   'EPSS, NVD': ['epss', 'nvd'],
   'CTID mappings (NIST 800-53, CRI, CSA CCM, VERIS, AWS, Azure, GCP, M365)': [
     'ctid-nist-800-53', 'ctid-cri-profile', 'ctid-csa-ccm', 'ctid-veris', 'ctid-aws', 'ctid-azure', 'ctid-gcp', 'ctid-m365',

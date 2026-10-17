@@ -105,6 +105,12 @@ export interface SourceDefinition {
   initialStatus?: SourceStatus;
   /** One line of context (why stale, what is withdrawn, who reads it). */
   note?: string;
+  /**
+   * The id of the live source this one stands in for when that source fails (the
+   * bundled KEV snapshot for 'cisa-kev'). View banners name the stand-in next to the
+   * failed source.
+   */
+  fallbackFor?: string;
 }
 
 /** The live half: definition plus what happened this session. */

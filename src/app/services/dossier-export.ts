@@ -1,6 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { CveDossier, DossierNamed, DossierTechnique, TIER_LABEL, TIER_ORDER } from '../models/dossier';
+import { DECISION_BLOCKED } from './ssvc.service';
 
 /**
  * Render an assembled dossier as analyst-ready Markdown for pasting into a report.
@@ -48,7 +49,9 @@ export function dossierToMarkdown(d: CveDossier): string {
     line('- **SSVC (CISA published):** not published by CISA for this CVE');
   }
   if (d.ssvc) {
-    line(`- **SSVC (computed):** ${d.ssvc.action}${d.ssvc.timeline ? ` — ${d.ssvc.timeline}` : ''}`);
+    const action = d.ssvc.actionBlocked ? DECISION_BLOCKED : d.ssvc.action;
+    const timeline = d.ssvc.timelineBlocked ? `blocked: ${d.ssvc.timelineBlocked}` : d.ssvc.timeline;
+    line(`- **SSVC (computed):** ${action}${timeline ? ` — ${timeline}` : ''}`);
   }
   if (d.description) {
     line();

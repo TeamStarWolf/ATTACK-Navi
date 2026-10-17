@@ -31,10 +31,37 @@ export interface KevEntry {
   product: string;
   vulnerabilityName: string;
   dateAdded: string;
-  shortDescription: string;
-  requiredAction: string;
+  /** Free-text fields: present in the live feed, left out of the bundled snapshot (no view reads them). */
+  shortDescription?: string;
+  requiredAction?: string;
   dueDate: string;
   knownRansomwareCampaignUse: string; // 'Known' | 'Unknown'
-  notes: string;
-  cwes?: string;
+  notes?: string;
+  /** The live feed sends an array; older copies sent a comma-separated string. */
+  cwes?: string | string[];
+}
+
+/**
+ * What an SSVC evaluation may conclude from KEV membership (plan E1.3).
+ *
+ * "Not in the catalogue" means "not known to be exploited" only when a catalogue is on
+ * hand. When neither the live feed nor the bundled snapshot loaded, exploitation is
+ * unknown and SSVC blocks the decision instead of falling through to 'track'.
+ */
+export interface KevContext {
+  /** A KEV catalogue (live, or the bundled snapshot) is on hand. */
+  available: boolean;
+  /** YYYY-MM-DD of the bundled snapshot when that is the catalogue on hand; null for the live feed. */
+  snapshotDate: string | null;
+}
+
+/** No KEV catalogue on hand: exploitation is unknown for any CVE not already flagged in KEV. */
+export const KEV_UNAVAILABLE: KevContext = { available: false, snapshotDate: null };
+
+/** The live KEV feed is loaded. */
+export const KEV_LIVE: KevContext = { available: true, snapshotDate: null };
+
+/** The bundled KEV snapshot of `date` is the catalogue on hand. */
+export function kevSnapshot(date: string): KevContext {
+  return { available: true, snapshotDate: date };
 }
