@@ -13,8 +13,8 @@ Nothing in this file is legal advice. If you redistribute this project or its da
 | What | Where |
 |---|---|
 | ATT&CK Enterprise 19.2 STIX 2.1 bundle | `src/assets/data/enterprise-attack.json` |
-| ATT&CK for ICS 18.1 STIX 2.1 bundle | `src/assets/data/ics-attack.json` |
-| ATT&CK Mobile 18.1 STIX 2.1 bundle | `src/assets/data/mobile-attack.json` |
+| ATT&CK for ICS 19.2 STIX 2.1 bundle | `src/assets/data/ics-attack.json` |
+| ATT&CK Mobile 19.2 STIX 2.1 bundle | `src/assets/data/mobile-attack.json` |
 | ATT&CK technique and tactic identifiers and names inside the project's layer files | `src/assets/data/library-layers/`, `src/assets/data/lylat-mission-layers/`, `src/assets/data/cve-technique-map.json`, curated tables in `src/app/services/` |
 
 Source: https://github.com/mitre-attack/attack-stix-data (the live copy that the application fetches comes from the same repository). The bundles are reproduced under the ATT&CK license, which requires the following statement to accompany any copy:
