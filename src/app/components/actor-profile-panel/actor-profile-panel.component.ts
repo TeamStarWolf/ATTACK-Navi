@@ -133,8 +133,8 @@ export class ActorProfilePanelComponent implements OnInit, OnDestroy {
 
   selectTechnique(tech: Technique): void {
     this.filterService.selectTechnique(tech);
-    // The technique sidebar opens over the matrix.
-    this.panelNav.open('matrix');
+    // The technique sidebar opens over the matrix — keep the selection we just made.
+    this.panelNav.open('matrix', { keepTechniqueSelection: true });
   }
 
   getTechCoverage(techId: string): boolean {

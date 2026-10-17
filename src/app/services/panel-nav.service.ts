@@ -19,14 +19,21 @@ export class PanelNavService {
     return routeForPanel(id) !== undefined;
   }
 
-  open(id: string): void {
+  open(id: string, opts?: { keepTechniqueSelection?: boolean }): void {
     if (id === 'search') {
       this.palette.open();
       return;
     }
     const commands = routeForPanel(id);
     if (commands) {
-      void this.router.navigate(commands, { queryParamsHandling: 'preserve' });
+      // keepTechniqueSelection travels in the navigation state so AppComponent's
+      // route-change handler knows this navigation carries a selection made FOR
+      // the destination (e.g. "show this technique on the matrix") and must not
+      // clear it as a leftover drawer.
+      void this.router.navigate(commands, {
+        queryParamsHandling: 'preserve',
+        ...(opts?.keepTechniqueSelection ? { state: { keepTechniqueSelection: true } } : {}),
+      });
     }
   }
 

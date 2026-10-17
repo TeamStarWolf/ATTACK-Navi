@@ -1260,7 +1260,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   openTechniqueGraph(): void {
-    this.panelNav.open('technique-graph');
+    // The graph focuses the selected technique, so keep it across this navigation.
+    this.panelNav.open('technique-graph', { keepTechniqueSelection: true });
   }
 
   filterByMitigation(mitigation: Mitigation): void {
