@@ -49,7 +49,7 @@ import { AttackNaviLayer, UserLayerTechnique } from '../../models/user-layer';
 import { WatchlistService } from '../../services/watchlist.service';
 import { MispService, MispGalaxyCluster, MispTag } from '../../services/misp.service';
 import { SigmaService, SigmaRuleDetail } from '../../services/sigma.service';
-import { OpenCtiService, OpenCtiIndicator, OpenCtiThreatActor } from '../../services/opencti.service';
+import { OpenCtiService, OpenCtiIndicator } from '../../services/opencti.service';
 import { EpssService } from '../../services/epss.service';
 import { ExploitdbService } from '../../services/exploitdb.service';
 import { NucleiService } from '../../services/nuclei.service';
@@ -460,7 +460,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   // OpenCTI indicators
   openctiIndicators: OpenCtiIndicator[] = [];
-  openctiActors: OpenCtiThreatActor[] = [];
   openctiLoading = false;
   openctiError = '';
 
@@ -768,7 +767,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
         this.computeCompleteness();
         // OpenCTI — load if connected
         this.openctiIndicators = [];
-        this.openctiActors = [];
         this.openctiError = '';
         if (tech && this.openctiService.getConfig().connected) {
           this.openctiLoading = true;
