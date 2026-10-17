@@ -76,7 +76,9 @@ export const RUNGS = Object.freeze({
 });
 
 const KNOWN_WORDS = RUNGS.known.allowed.map(w => `'${w}'`).join(', ');
-const QUALIFIER_RE = RUNGS.covered.qualifiers.map(q => q.replace(/[-]/g, '\\-')).join('|');
+/** A literal string as a regular-expression source (every metacharacter escaped). */
+const escapeRegExp = (s) => s.replace(/[\\^$.*+?()[\]{}|-]/g, '\\$&');
+const QUALIFIER_RE = RUNGS.covered.qualifiers.map(escapeRegExp).join('|');
 
 // Labels retired by E1.1 PR 1 (#166) and PR 2 (#171), with their replacement.
 export const RETIRED_LABELS = Object.freeze([
@@ -124,7 +126,7 @@ export const RULES = Object.freeze([
     id: 'proven-only',
     // A negation ('not validated', 'never proven', '**not** a validated
     // result') makes no Proven claim.
-    patterns: [new RegExp(`(?<!\\b(?:not|never|nor)\\b[*_]*\\s+(?:(?:a|an|any|the)\\s+)?)\\b(?:${RUNGS.proven.words.join('|')})\\b`, 'gi')],
+    patterns: [new RegExp(`(?<!\\b(?:not|never|nor)\\b[*_]*\\s+(?:(?:a|an|any|the)\\s+)?)\\b(?:${RUNGS.proven.words.map(escapeRegExp).join('|')})\\b`, 'gi')],
     hint: () => "'proven', 'validated' and 'defended' only on Proven data, with its date and source (allow it where the data is Proven)",
   },
   {
