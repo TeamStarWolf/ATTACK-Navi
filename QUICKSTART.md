@@ -3,7 +3,7 @@
 ATTACK-Navi is a browser-based workbench for MITRE ATT&CK. It runs as a static site with
 no account and no project server. This guide shows the first path to try, how to move
 around, what the colors mean, and the common workflows. It describes the app as built from
-`main`; control names are quoted as they appear on screen.
+`main`; control names are quoted as they appear on screen. The hosted build may lag `main`.
 
 ## Open the app
 
@@ -44,7 +44,8 @@ The left rail lists the workspaces: Matrix, Exposure, Intel, Detect, Coverage, D
 Reports, Library, Status, then Help and Settings. Most workspaces have their own tabs;
 Matrix and Status do not. Three ways to navigate:
 
-- `Ctrl+K` opens the command palette. Type a destination name and press Enter.
+- `Ctrl+K` (`Cmd+K` on macOS) opens the command palette. Type a destination name and
+  press Enter.
 - Every tab has its own URL, so you can bookmark or share it.
 - Press `?` for the keyboard shortcut list.
 
@@ -145,10 +146,12 @@ sections.
 
 For offensive work the sidebar also has CAPEC, ExploitDB, Nuclei, PoC Exploits, Payloads,
 C2, BloodHound, Offensive tools, EVTX samples and ThreatHunter Playbook sections, again
-shown when populated. Some of this is curated in this repository (the Wazuh mappings,
-offensive tools, C2, BloodHound, the YARA, Zeek and Suricata templates and the IR
-playbooks); the rest is upstream reference data. Each section names its source, and nothing
-here reflects your own posture unless you have recorded a status.
+shown when populated. Some of these sidebar sections are curated in this repository with no
+fetch (the Wazuh mappings, offensive tools, C2 and BloodHound); the rest is upstream
+reference data. The YARA, Zeek and Suricata templates (the Detect tabs) and the IR
+playbooks (Reports) are curated here too, in their own workspaces rather than the sidebar.
+Each section names its source, and nothing here reflects your own posture unless you have
+recorded a status.
 
 ## Workspaces and tabs
 
@@ -185,14 +188,16 @@ The Library workspace includes 37 named layers drawn from the TeamStarWolf libra
 
 ## Optional integrations
 
-Set these at Settings > Preferences > Integrations with Test & Save. They are optional;
-the app works without them. Each integration has a Direct browser mode and a Secure
-backend proxy mode. Direct mode keeps the secret in memory for the session and needs the
-server to allow cross-origin requests (CORS). Proxy mode sends requests through the proxy
-under `server/`: set the per-integration proxy URL field to the proxy origin
-(`http://localhost:8080` under the compose stack, or `http://localhost:8787` per README;
-the service appends its own `/api/...` path). Set the token in Settings > Preferences >
-Integrations > "Proxy access token" to the `PROXY_AUTH_TOKEN` the proxy expects.
+Set these at Settings > Preferences > Integrations with Test & Save. They are optional; the
+app works without them. Each integration offers two modes:
+
+- **Direct browser mode** keeps the secret in memory for the session and needs the server to
+  allow cross-origin requests (CORS).
+- **Secure backend proxy mode** sends requests through the proxy under `server/`. Set the
+  per-integration proxy URL field to the proxy origin (`http://localhost:8080` under the
+  compose stack, or `http://localhost:8787` standalone; the service appends its own
+  `/api/...` path), and set the token in Settings > Preferences > Integrations > "Proxy
+  access token" to the `PROXY_AUTH_TOKEN` the proxy expects.
 
 - **MISP.** Enter your server URL, API key and organization ID, then Test & Save. The
   connection test and the public MISP Galaxy clusters work; querying your own MISP events
@@ -208,7 +213,8 @@ Integrations > "Proxy access token" to the `PROXY_AUTH_TOKEN` the proxy expects.
 ## Offline use
 
 The hosted build is a Progressive Web App. After the first visit its shell works offline.
-The service worker caches runtime data only for the listed upstream hosts, for 6 to 24
+The service worker caches runtime data only for the upstream hosts listed in
+THIRD_PARTY_NOTICES.md, for 6 to 24
 hours, and never caches `api.github.com`, so offline or after the cache expires those
 sources show the MISSING DATA banner. The ICS and Mobile ATT&CK bundles are cached lazily,
 on first use. The install prompt appears in Chromium browsers; desktop Firefox does not
@@ -236,7 +242,9 @@ docker compose up -d --build
 ```
 
 Opens on http://localhost:8080. The optional credentials proxy is reached through the app
-at http://localhost:8080/api/ (and from the host on 127.0.0.1:8787). The stack starts
+at http://localhost:8080/api/ (and from the host on 127.0.0.1:8787); in an integration's
+proxy URL field, though, enter http://localhost:8080 with no /api/, since the service
+appends the path. The stack starts
 without `server/.env`; the proxy has nothing to forward until you fill it in. To serve on
 a LAN address or hostname instead of localhost, set `APP_ORIGIN` (the page origin, for
 example `http://navi.lan:8080`) and `APP_HOST` (the bare host the browser uses, for
@@ -247,7 +255,7 @@ Host names. If you use an integration in Direct browser mode, add its origin to
 ### Kubernetes
 
 No workflow in this repository publishes a container image, so build and push one first,
-then point the chart at it:
+then point the chart (named `attack-nav`) at it:
 
 ```bash
 helm install attack-nav helm/attack-nav/ \
@@ -257,6 +265,8 @@ helm install attack-nav helm/attack-nav/ \
 See docs/HELM.md ("Build and push the image") for the full steps.
 
 ### Manual
+
+Needs Node.js `^22.22.3`, `^24.15.0` or `>=26.0.0` (see README, Getting started).
 
 ```bash
 npm ci && npx ng build
@@ -268,7 +278,7 @@ npm ci && npx ng build
 The matrix shows reference data by default: what public sources map, not your posture. The
 only environment-specific views are the ones you populate (assessment status, imported
 assets, annotations) and the validation runs you log under Detect > Validation, which are
-self-recorded. No lens colors the matrix at the evidenced rung.
+self-recorded. No lens colors the matrix at the Proven rung. <!-- truth-vocab-allow proven-only -- naming the rung, not a claim about this app -->
 
 Enterprise, ICS and Mobile ATT&CK and the CTID F3 Fraud Framework are bundled. The app
 also bundles fallbacks it uses when a live source is unavailable (a CISA KEV snapshot, a
