@@ -30,11 +30,13 @@ test('dotenv retains parsing and existing-environment precedence', () => {
  * fetch() silently drops a caller-supplied Host header, so Host-allowlist cases
  * go through node:http directly. Resolves { status, body }.
  */
-function rawRequest(base, path, { method = 'GET', headers = {}, body } = {}) {
+function rawRequest(base, path, { method = 'GET', headers = {}, body, verbatim = false } = {}) {
   const url = new URL(path, base);
   return new Promise((resolveRequest, rejectRequest) => {
     const req = request({
-      host: url.hostname, port: url.port, path: url.pathname, method,
+      // verbatim sends the request target exactly as written: URL parsing (and so
+      // fetch) would resolve '..' segments before the proxy ever saw them.
+      host: url.hostname, port: url.port, path: verbatim ? path : url.pathname, method,
       headers: { ...(body ? { 'content-length': Buffer.byteLength(body) } : {}), ...headers },
     }, res => {
       let data = '';
@@ -213,6 +215,107 @@ test('proxy handles configured requests after dependency updates', { timeout: 30
     assert.equal(requests.length, before + loopbackForms.length);
   });
 
+  await t.test('Host allowlist ignores the port: each name passes or fails the same with and without one', async () => {
+    const before = requests.length;
+    const allowed = ['localhost', 'localhost:4200', 'LocalHost', 'LOCALHOST:80', '127.0.0.1', '127.0.0.1:8787', '[::1]', '[::1]:8787'];
+    for (const host of allowed) {
+      const response = await rawRequest(base, '/api/misp/servers/getVersion', { headers: { ...CLIENT_HEADERS, host } });
+      assert.equal(response.status, 200, host);
+    }
+    const refused = [
+      'evil.example.test', 'evil.example.test:8787',
+      'localhost.evil.example.test', 'localhost.evil.example.test:8787',
+      '127.0.0.1.nip.io', '127.0.0.1.nip.io:80',
+      '[::2]', '[::2]:8787',
+    ];
+    for (const host of refused) {
+      const response = await rawRequest(base, '/api/misp/servers/getVersion', { headers: { ...CLIENT_HEADERS, host } });
+      assert.equal(response.status, 421, host);
+      assert.match(JSON.parse(response.body).error, /Host header/, host);
+    }
+    assert.equal(requests.length, before + allowed.length);
+  });
+
+  await t.test('refuses MISP traversal (dot segments, encoded slashes, absolute paths) before any upstream call', async () => {
+    const before = requests.length;
+    const attempts = [
+      // allowlisted prefix, then a traversal: the upstream URL check answers 400
+      ['/api/misp/events/view/../../admin', 400],
+      ['/api/misp/events/view/..', 400],
+      ['/api/misp/events/view/%2E%2E/%2E%2E/admin', 400],
+      ['/api/misp/events/view/..%2F..%2Fadmin', 400],
+      ['/api/misp/events/view%2F..%2F..%2Fadmin', 400],
+      ['/api/misp/events/view/..%5C..%5Cadmin', 400],
+      ['/api/misp/events/view//etc/passwd', 400],
+      ['/api/misp/events/view/%2Fetc%2Fpasswd', 400],
+      ['/api/misp/events/view/http:%2F%2Fevil.example.test', 400],
+      // traversal or absolute target outside the allowlist: refused 403
+      ['/api/misp/../admin', 403],
+      ['/api/misp/%2E%2E/admin', 403],
+      ['/api/misp/attributes%2F..%2Fadmin%2FrestSearch', 403],
+      ['/api/misp/%2Fetc%2Fpasswd', 403],
+      ['/api/misp/http://evil.example.test/servers/getVersion', 403],
+    ];
+    for (const method of ['GET', 'POST']) {
+      for (const [path, status] of attempts) {
+        const response = await rawRequest(base, path, { method, headers: CLIENT_HEADERS, verbatim: true });
+        assert.equal(response.status, status, `${method} ${path}`);
+        assert.equal(typeof JSON.parse(response.body).error, 'string', `${method} ${path}`);
+      }
+    }
+    assert.equal(requests.length, before);
+  });
+
+  await t.test('refuses non-allowlisted MISP endpoints 403 and still proxies allowlisted multi-segment ones', async () => {
+    const before = requests.length;
+    for (const path of ['/api/misp/', '/api/misp/events/add', '/api/misp/admin/users', '/api/misp/servers/getVersionX', '/api/misp/SERVERS/getVersion']) {
+      for (const method of ['GET', 'POST']) {
+        const response = await rawRequest(base, path, { method, headers: CLIENT_HEADERS, verbatim: true });
+        assert.equal(response.status, 403, `${method} ${path}`);
+        assert.match(JSON.parse(response.body).error, /^Endpoint not allowed: /, `${method} ${path}`);
+      }
+    }
+    const bare = await rawRequest(base, '/api/misp', { headers: CLIENT_HEADERS, verbatim: true });
+    assert.equal(bare.status, 404, 'no endpoint segment at all is not a MISP route');
+    assert.equal(requests.length, before);
+
+    const forwarded = [
+      ['GET', '/api/misp/events/view/42', '/misp/events/view/42'],
+      ['GET', '/api/misp/events/view/42/extra.json', '/misp/events/view/42/extra.json'],
+      ['GET', '/api/misp/servers%2FgetVersion', '/misp/servers/getVersion'],
+      ['GET', '/api/misp//servers/getVersion', '/misp/servers/getVersion'],
+      ['POST', '/api/misp/attributes/restSearch', '/misp/attributes/restSearch'],
+    ];
+    for (const [method, path, upstreamPath] of forwarded) {
+      const body = method === 'POST' ? JSON.stringify({ value: 'T1059' }) : undefined;
+      const response = await rawRequest(base, path, {
+        method, verbatim: true, body, headers: method === 'POST' ? JSON_HEADERS : CLIENT_HEADERS,
+      });
+      assert.equal(response.status, 200, `${method} ${path}`);
+      assert.deepEqual(JSON.parse(response.body), { upstream: true });
+      assert.equal(requests.at(-1).path, upstreamPath, `${method} ${path}`);
+      assert.equal(requests.at(-1).method, method);
+      assert.equal(requests.at(-1).authorization, 'synthetic-misp-key');
+      if (body) assert.deepEqual(JSON.parse(requests.at(-1).body), { value: 'T1059' });
+    }
+    assert.equal(requests.length, before + forwarded.length);
+  });
+
+  await t.test('router and body-parser errors reach the JSON error handler with no stack trace', async () => {
+    const before = requests.length;
+    const decode = await rawRequest(base, '/api/misp/events/view/%E0%A4%A', { headers: CLIENT_HEADERS, verbatim: true });
+    const charset = await rawRequest(base, '/api/opencti/graphql', {
+      method: 'POST', headers: { ...CLIENT_HEADERS, 'content-type': 'application/json; charset=koi8-r' },
+      body: JSON.stringify({ query: '{ about { version } }' }),
+    });
+    for (const [response, status] of [[decode, 400], [charset, 415]]) {
+      assert.equal(response.status, status);
+      assert.equal(typeof JSON.parse(response.body).error, 'string');
+      assert.doesNotMatch(response.body, /\n\s+at |node_modules|index\.js|<html|<pre>/);
+    }
+    assert.equal(requests.length, before);
+  });
+
   await t.test('rejects mutations, subscriptions, root fragments and unlisted root fields before forwarding', async () => {
     const before = requests.length;
     const refused = [
@@ -238,7 +341,7 @@ test('proxy handles configured requests after dependency updates', { timeout: 30
     assert.equal(requests.length, before);
   });
 
-  await t.test('retains Express 4 wildcard MISP routing and rejects unlisted endpoints', async () => {
+  await t.test('retains wildcard MISP routing (Express 5 named splat) and rejects unlisted endpoints', async () => {
     const response = await fetch(`${base}/api/misp/servers/getVersion`, { headers: CLIENT_HEADERS });
     assert.equal(response.status, 200);
     await response.arrayBuffer();
@@ -375,6 +478,14 @@ test('OPENCTI_ALLOW_IMPORT=true admits only the SPA ImportStix mutation; ALLOWED
     const denied = await rawRequest(base, '/api/opencti/graphql', { method: 'POST', headers: { ...JSON_HEADERS, host: 'proxy.evil.example' }, body });
     assert.equal(denied.status, 421);
   });
+
+  await t.test('the ALLOWED_HOSTS name passes with and without a port; look-alikes fail with and without one', async () => {
+    const body = JSON.stringify({ query: '{ about { version } }' });
+    for (const [host, status] of [['proxy', 200], ['PROXY:443', 200], ['proxy.', 421], ['proxy.:8787', 421], ['proxy2', 421], ['proxy2:8787', 421]]) {
+      const response = await rawRequest(base, '/api/opencti/graphql', { method: 'POST', headers: { ...JSON_HEADERS, host }, body });
+      assert.equal(response.status, status, host);
+    }
+  });
 });
 
 test('non-loopback HOST without PROXY_AUTH_TOKEN fails closed: health only', { timeout: 30000 }, async t => {
@@ -392,6 +503,32 @@ test('non-loopback HOST without PROXY_AUTH_TOKEN fails closed: health only', { t
   assert.match((await response.json()).error, /PROXY_AUTH_TOKEN/);
   assert.equal(requests.length, 0);
   assert.match(output(), /not a loopback address and PROXY_AUTH_TOKEN is not set/);
+});
+
+test('a bind failure is logged and exits non-zero instead of claiming to listen', { timeout: 30000 }, async t => {
+  const holder = createServer();
+  await new Promise(resolveListen => holder.listen(0, '127.0.0.1', resolveListen));
+  t.after(() => new Promise(resolveClose => holder.close(resolveClose)));
+  const port = holder.address().port;
+  const temporaryRoot = resolve(tmpdir());
+  const directory = await mkdtemp(join(temporaryRoot, 'attack-navi-proxy-bind-'));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const child = spawn(process.execPath, [fileURLToPath(new URL('../src/index.js', import.meta.url))], {
+    cwd: directory,
+    env: { PORT: String(port), ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}) },
+    windowsHide: true,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  let output = '';
+  child.stdout.on('data', data => { output += data; });
+  child.stderr.on('data', data => { output += data; });
+  const timer = setTimeout(() => child.kill(), 10000);
+  const [code] = await once(child, 'exit');
+  clearTimeout(timer);
+  assert.equal(code, 1, output);
+  assert.match(output, new RegExp(`could not listen on 127\\.0\\.0\\.1:${port}: .*EADDRINUSE`));
+  assert.doesNotMatch(output, /proxy listening on/);
+  assert.doesNotMatch(output, /\n\s+at /, 'no stack trace');
 });
 
 test('upstream guards: timeout -> 504 and oversized body -> 502', { timeout: 30000 }, async t => {

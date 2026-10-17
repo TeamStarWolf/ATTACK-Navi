@@ -359,7 +359,11 @@ const mispProxy = async (req, res) => {
     return res.status(500).json({ error: 'MISP proxy is not configured.' });
   }
 
-  const endpoint = String(req.params[0] || '').replace(/^\/+/, '');
+  // Express 5 (path-to-regexp v8) delivers the named splat as an array of
+  // decoded path segments; joined with '/' it is the same string Express 4 gave
+  // as req.params[0], so the allowlist and traversal checks below see identical input.
+  const segments = req.params.endpoint;
+  const endpoint = (Array.isArray(segments) ? segments.join('/') : String(segments || '')).replace(/^\/+/, '');
 
   // Allowlist check — only permit known, read-only MISP API endpoints
   const isAllowed = MISP_ALLOWED_ENDPOINTS.some((allowed) =>
@@ -385,16 +389,23 @@ const mispProxy = async (req, res) => {
   }, 'MISP proxy request failed.');
 };
 
-app.get('/api/misp/*', mispProxy);
-app.post('/api/misp/*', mispProxy);
+// '{*endpoint}' is Express 5's named, optional splat: it matches '/api/misp/' (refused
+// 403 above, as Express 4's '/api/misp/*' was) and every deeper path; '/api/misp' stays 404.
+app.get('/api/misp/{*endpoint}', mispProxy);
+app.post('/api/misp/{*endpoint}', mispProxy);
 
 // ── Error handler ────────────────────────────────────────────────────────────
 // Every error (CORS denial, body-parser 400/413, anything thrown) is answered as
 // generic JSON: the status the error carries (or 500) and, for client errors
 // only, its message. Never the stack, never file paths or dependency versions —
 // Express's default handler prints those whenever NODE_ENV is not "production".
-app.use((error, _req, res, _next) => {
-  const status = Number(error?.status ?? error?.statusCode) || 500;
+// Express 5 also routes rejected async handlers here, and its res.status() throws
+// on a code outside 100-999 (which would fall through to that default handler),
+// so only a 4xx/5xx carried by the error is relayed; anything else becomes 500.
+app.use((error, _req, res, next) => {
+  if (res.headersSent) return next(error); // the response is under way: let Express close it
+  const carried = Number(error?.status ?? error?.statusCode);
+  const status = Number.isInteger(carried) && carried >= 400 && carried <= 599 ? carried : 500;
   if (status >= 500) console.error('[attack-nav proxy]', error);
   const message = status < 500 && error instanceof Error && error.message
     ? error.message
@@ -404,6 +415,13 @@ app.use((error, _req, res, _next) => {
 
 // ── Start ────────────────────────────────────────────────────────────────────
 
-app.listen(port, host, () => {
-  console.log(`attack-nav proxy listening on http://${host.includes(':') ? `[${host}]` : host}:${port}`);
+// Express 5 hands a bind failure (EADDRINUSE, EACCES, bad HOST) to this callback
+// instead of throwing; report it and exit non-zero rather than log a false "listening".
+app.listen(port, host, (error) => {
+  const address = `${host.includes(':') ? `[${host}]` : host}:${port}`;
+  if (error) {
+    console.error(`[attack-nav proxy] could not listen on ${address}: ${error.message}`);
+    process.exit(1);
+  }
+  console.log(`attack-nav proxy listening on http://${address}`);
 });
