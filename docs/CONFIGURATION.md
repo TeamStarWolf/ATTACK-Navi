@@ -36,7 +36,7 @@ In **Direct browser mode** the card shows:
 | API Key | Yes | Your MISP automation/API key |
 | Org ID | No | Your MISP organization ID; stored for future event queries, not used by the UI yet |
 
-In **Secure backend proxy** mode the card shows only the **Proxy URL**; the MISP URL, API key and Org ID live in the proxy's `server/.env`, not in the browser (see [Optional credentials proxy](../README.md#optional-credentials-proxy)).
+In **Secure backend proxy** mode the card shows only a proxy URL field (placeholder `https://your-proxy-host.example`); the MISP URL, API key and Org ID live in the proxy's `server/.env`, not in the browser (see [Optional credentials proxy](../README.md#optional-credentials-proxy)).
 
 ### URL Format
 
@@ -57,19 +57,22 @@ Do not include trailing slashes or path segments like `/events`.
 4. Click **Add authentication key**.
 5. Set the allowed IPs if your organization requires IP restrictions.
 6. Copy the generated key immediately -- it is shown only once.
-7. The key should look like a 40-character hexadecimal string.
+7. The key is a 40-character key string.
 
 ### CORS in Direct browser mode
 
 MISP servers usually do not send CORS headers, and in Direct browser mode the app calls MISP from the browser, so MISP has to allow cross-origin requests from the app's origin. Two safe ways to do that:
 
-**Option A: add CORS headers on MISP, pinned to the app's origin**
+**Option A: turn on CORS in MISP, pinned to the app's origin**
+
+In MISP, set `Security.allow_cors` and `Security.cors_origins` to the app's exact origin (never `*`) so MISP answers the browser's preflight itself. The direct-mode request carries `Authorization` and `Content-Type: application/json`, so the browser sends a `CORS` preflight; a bare `add_header` block does not satisfy it (MISP answers an unauthenticated `OPTIONS` with a non-2xx status and the app reports "Connection failed"). If you add the headers at a reverse proxy instead, that proxy must also answer `OPTIONS` with `204` and the same headers:
 
 ```nginx
-# Nginx example on the MISP host; use your app's exact origin, never "*"
+# On the MISP host or a proxy in front of it; use the app's exact origin, never "*".
 add_header Access-Control-Allow-Origin "https://your-attack-navi-origin.example" always;
 add_header Access-Control-Allow-Methods "GET, POST, OPTIONS" always;
 add_header Access-Control-Allow-Headers "Authorization, Content-Type, Accept" always;
+if ($request_method = OPTIONS) { return 204; }
 ```
 
 **Option B: use the bundled proxy instead**
@@ -90,7 +93,7 @@ In **Direct browser mode**:
 In **Secure backend proxy** mode:
 
 1. In the same card, set the mode to **Secure backend proxy**.
-2. Enter the **Proxy URL**: `http://localhost:8787` for the standalone proxy, or `http://localhost:8080` under Docker Compose (the app origin, no `/api/` suffix; the app appends the path).
+2. In the proxy URL field (placeholder `https://your-proxy-host.example`), enter `http://localhost:8787` for the standalone proxy, or `http://localhost:8080` under Docker Compose (the app origin, no `/api/` suffix; the app appends the path).
 3. If the proxy sets `PROXY_AUTH_TOKEN`, paste the same value into the **Proxy access token** field on the Integrations tab. The app sends it as the `X-Proxy-Key` header and keeps it in sessionStorage for the browser session only.
 4. Click **Test & Save**. The MISP URL and key come from the proxy's `server/.env`, not this card.
 
@@ -122,7 +125,7 @@ In **Direct browser mode** the card shows:
 | URL | Yes | The base URL of your OpenCTI instance |
 | API Token | Yes | Your OpenCTI API bearer token |
 
-In **Secure backend proxy** mode the card shows only the **Proxy URL**; the OpenCTI URL and token live in the proxy's `server/.env`, not in the browser.
+In **Secure backend proxy** mode the card shows only a proxy URL field (placeholder `https://your-proxy-host.example`); the OpenCTI URL and token live in the proxy's `server/.env`, not in the browser.
 
 ### URL Format
 
@@ -133,10 +136,9 @@ https://opencti.example.org
 ### Token Generation
 
 1. Log in to your OpenCTI instance.
-2. Click your profile icon in the top-right corner.
-3. Navigate to **Settings** or **API access**.
-4. Copy the API token displayed on the settings page.
-5. Tokens are typically UUIDs (e.g., `a1b2c3d4-e5f6-7890-abcd-ef1234567890`).
+2. Open the profile menu (your avatar, top-right) and choose **Profile**.
+3. Copy the API token shown under **API access** on your profile page.
+4. Tokens are typically UUIDs (e.g., `a1b2c3d4-e5f6-7890-abcd-ef1234567890`).
 
 ### Required Permissions
 
@@ -146,7 +148,7 @@ The proxy's read allowlist is `about`, `indicators` and `threatActors` by defaul
 
 ### GraphQL Queries
 
-In Direct browser mode the app calls OpenCTI's GraphQL endpoint at `{url}/graphql`, so allow POST requests to that path through your firewall and any proxy. In Secure backend proxy mode the browser calls the `server/` proxy instead, which forwards to OpenCTI.
+In Direct browser mode the app calls OpenCTI's GraphQL endpoint at `{url}/graphql`, so allow POST requests to that path through your firewall and any proxy. This has the same cross-origin requirement as MISP: OpenCTI (or a proxy in front of it) must allow the app's exact origin and answer the `OPTIONS` preflight, or use Secure backend proxy mode to keep OpenCTI off the browser entirely. In Secure backend proxy mode the browser calls the `server/` proxy, which forwards to OpenCTI.
 
 ### Testing the Connection
 
@@ -157,7 +159,7 @@ In **Direct browser mode**:
 3. Click **Test & Save**. The app sends a test GraphQL query to verify authentication.
 4. On success a green "Connected to OpenCTI" status appears; on failure the error is shown (authentication, network, or a CORS block, which a browser reports the same as a network error).
 
-In **Secure backend proxy** mode set the mode to **Secure backend proxy**, enter the **Proxy URL** (`http://localhost:8787` standalone, or `http://localhost:8080` under Docker Compose, no `/api/` suffix), add the **Proxy access token** if the proxy sets `PROXY_AUTH_TOKEN`, and click **Test & Save**. The OpenCTI URL and token come from the proxy's `server/.env`.
+In **Secure backend proxy** mode set the mode to **Secure backend proxy**, enter the proxy URL in that field (placeholder `https://your-proxy-host.example`): `http://localhost:8787` standalone, or `http://localhost:8080` under Docker Compose, no `/api/` suffix. Add the proxy access token if the proxy sets `PROXY_AUTH_TOKEN`, and click **Test & Save**. The OpenCTI URL and token come from the proxy's `server/.env`.
 
 ### Clearing the Connection
 
@@ -202,7 +204,7 @@ ATTACK-Navi follows the operating system's light or dark setting (`prefers-color
 
 **Settings > Preferences > Display > Heatmap Color Theme** sets the palette for matrix cells. There are five: Default, Vivid, Blue/Orange, Monochrome and High Contrast, each a five-step ramp from low to high.
 
-This palette colors only the **Mitigations mapped** (coverage) lens: `getCoverageColors` is read just by that lens's cell and legend rendering (`matrix.component.ts` `case 'coverage'`, `technique-cell.component.ts`, `legend.component.ts`). Every other lens has its own fixed ramp in `heatmap-modes.ts`, and the default lens is Prevalence, so changing the theme shows nothing until you switch to the Mitigations mapped lens.
+This palette colors only the **Mitigations mapped** (coverage) lens: `getCoverageColors` is read just by that lens's cell and legend rendering (`matrix.component.ts` `case 'coverage'`, `technique-cell.component.ts`, `legend.component.ts`). Every other lens has its own fixed ramp in `heatmap-modes.ts`, and the default lens is the one labelled **Frequency** (its first-visit banner describes it as adversary prevalence), so changing the theme shows nothing until you switch to the Mitigations mapped lens.
 
 A separate **Colorblind-safe heatmaps** toggle on the same tab replaces every lens's ramp with Viridis (sequential) and Okabe-Ito (status), regardless of the theme chosen.
 
@@ -229,7 +231,7 @@ ATTACK-Navi supports four ATT&CK domains:
 4. The bundle is parsed into tactics, techniques, mitigations, groups, software, campaigns, and relationships.
 5. All panels and the sidebar reset to reflect the new domain's data.
 
-### Data Source: pinned ATT&CK (decision D2)
+### Data Source: pinned ATT&CK
 
 ATT&CK is pinned to the release bundled with the build. Each domain loads its bundle from `src/assets/data/` (`enterprise-attack.json`, `ics-attack.json`, `mobile-attack.json`, `f3-attack.json`); the pinned version is the one the bundle's own `x-mitre-collection` object declares, recorded in the source registry and shown on the data-health view (`#/status`). The version on screen never changes by itself during a session.
 
@@ -256,7 +258,7 @@ A live STIX copy fetched by an update check is cached in IndexedDB (database: `m
 
 ## 6. Scoring Weights (retired)
 
-The Scoring Weights tab and its setting were removed in plan epic E1.5. They weighted reference sources into a 0-100 score in the technique drawer, coloured red to green, although every input was reference data that says nothing about what is deployed. The drawer now shows a plain count of the reference sources that map the technique (CAR, Atomic, D3FEND, Mitigations, NIST, CRI, CAPEC) under the Known rung. A `scoringWeights` value saved by an older version is dropped when settings load.
+The Scoring Weights tab and its setting were removed. They weighted reference sources into a 0-100 score in the technique drawer, coloured red to green, although every input was reference data that says nothing about what is deployed. The drawer now shows a plain count of the reference sources that map the technique (CAR, Atomic, D3FEND, Mitigations, NIST, CRI, CAPEC). A `scoringWeights` value saved by an older version is dropped when settings load.
 
 **Reset All to Defaults**, which sat on the old tab, is now on the Display tab.
 
@@ -280,6 +282,7 @@ The cell-size choice is saved with your preferences, but matrix rendering does n
 
 | Option | Default | Description |
 |--------|---------|-------------|
+| Colorblind-safe heatmaps | Off | Replace every lens's ramp with the Viridis and Okabe-Ito palettes (see [Theme Settings](#4-theme-settings)) |
 | Show technique IDs | On | Display ATT&CK IDs (e.g., T1059) on matrix cells |
 | Expand sections by default | On | Collapsible groups (Detect, Data Sources, Assessment) start expanded |
 | Show mitigation count badge | On | Number of mitigations as a badge on each cell |

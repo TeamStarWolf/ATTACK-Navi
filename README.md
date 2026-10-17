@@ -2,16 +2,17 @@
 
 ![STARWOLF 64 banner](assets/brand/starwolf64-banner-1280.png)
 
+*STARWOLF 64 is the TeamStarWolf brand; this tool is ATTACK-Navi.*
+
 ATTACK-Navi is a single-page Angular application for working with the MITRE ATT&CK matrix. It colors the matrix by mitigation, threat, vulnerability, detection and framework data, opens a detail sidebar for each technique, and puts longer tasks (threat group analysis, CVE exposure, detection content, control coverage, reporting) in routed workspaces with their own URLs.
 
-It runs as a static site with no required backend. ATT&CK, D3FEND, CTID mappings and many other public datasets are fetched from their upstream sources in the browser; the app also ships bundled snapshots and some hand-curated content, and [Data sources](#data-sources) lists which is which. An optional proxy under `server/` can hold OpenCTI and MISP credentials.
+It runs as a static site with no required backend. ATT&CK is pinned to a bundled snapshot, and a newer release is offered only when you ask for it; D3FEND, CTID mappings and many other public datasets are fetched from their upstream sources in the browser. The app also ships other bundled snapshots and some hand-curated content, and [Data sources](#data-sources) lists which is which. An optional proxy under `server/` can hold OpenCTI and MISP credentials.
 
 A build is published to GitHub Pages at <https://teamstarwolf.github.io/ATTACK-Navi/> by the `deploy.yml` workflow. The site shows the last build that deployed successfully. The current release is v0.10.0, and release notes are in [CHANGELOG.md](CHANGELOG.md). Further documentation starts at [docs/README.md](docs/README.md).
 
 ## Screenshots
 
-<!-- truth-vocab-allow-next-line retired-label -- historical: names the old default heatmap label that these screenshots predate -->
-Captured on 2026-08-15 with `scripts/capture-screenshots.mjs`, in the dark theme. They predate the Status workspace, the grouped nav rail, the Unified Coverage default heatmap, and the toolbar rename from "ATT&CK NAV" to "ATT&CK Navi". The two images below are the current ones; `screenshots/attack-navi-live.png` is the uncropped matrix capture from the same run. The repository does not keep a social-preview image: set one in the repository's Settings > Social preview from a fresh capture, since the previous copy advertised an old Angular version and mode count.
+Captured on 2026-08-15 with `scripts/capture-screenshots.mjs`, in the dark theme; they predate several recent changes, including the toolbar rename to "ATT&CK Navi". The two images below are the current ones, and `screenshots/attack-navi-live.png` is the uncropped matrix capture from the same run.
 
 ![Matrix with the technique sidebar open for T1590](screenshots/live2.png)
 
@@ -65,7 +66,7 @@ The heatmap picker reads `HEATMAP_MODES` in `src/app/models/heatmap-modes.ts`. T
 | Frameworks | D3FEND, Engage, NIST 800-53, VERIS Actions, CRI Profile, CSA CCM, M365 Controls, F3 Origin |
 | Coverage & Posture | Mitigations mapped, Status, Controls, Reference depth, Library Layer, Frequency |
 
-Lens labels follow the Known / Covered / Proven vocabulary: a lens built from reference data says 'mapped', 'available' or 'reference depth'. The `heat=` values in links are unchanged. Reference depth combines defensive reference inputs only (mitigations, detection content, CTID control mappings, D3FEND, Atomic); threat intel and KEV appear in the Threat Landscape and Vulnerabilities lenses instead.
+Lens labels follow the Known / Covered / Proven vocabulary: Known means a public source maps or documents the technique, Covered means you have recorded a mitigation or control for it, and Proven means a validation run has exercised a detection or defense for it. <!-- truth-vocab-allow covered-unqualified,proven-only -- defines the vocabulary; not a rung claim about this app -->A lens built from reference data says 'mapped', 'available' or 'reference depth'. The `heat=` values in links are unchanged. Reference depth combines defensive reference inputs only (mitigations, detection content, CTID control mappings, D3FEND, Atomic); threat intel and KEV appear in the Threat Landscape and Vulnerabilities lenses instead.
 
 The Library Layer mode colors the matrix by one of the Navigator layers listed in `src/assets/data/library-layers/index.json`, described in [docs/LIBRARY_LAYERS.md](docs/LIBRARY_LAYERS.md). Those layers are a separate list, not additional modes. Scoring for each mode is described in [docs/HEATMAPS.md](docs/HEATMAPS.md). Adding a mode touches several files; [AGENTS.md](AGENTS.md) has the checklist.
 
@@ -281,11 +282,11 @@ Single-key shortcuts are ignored while you are typing in a field. When the matri
 - MISP event and attribute queries exist in `misp.service.ts` but nothing in the UI calls them. The MISP Events tab builds event templates locally.
 - Control mappings (NIST 800-53, cloud, CRI Profile, VERIS, CSA CCM and M365) are not translated through revoked-by relationships, so mappings to retired techniques such as the T1562 family do not appear on the techniques that replaced them.
 - CTID removed CIS Controls from Mappings Explorer as of ATT&CK v16, so the CIS Controls service has no source and loads empty.
-- CONTRIBUTING.md, ARCHITECTURE.md, docs/CONFIGURATION.md, docs/HEATMAPS.md and docs/LIBRARY_LAYERS.md have not been updated for the Angular 22 upgrade and some recent additions. Where they disagree with `package.json` or the source, the code is correct.
+- CONTRIBUTING.md, ARCHITECTURE.md, docs/HEATMAPS.md and docs/LIBRARY_LAYERS.md have not been updated for the Angular 22 upgrade and some recent additions. Where they disagree with `package.json` or the source, the code is correct.
 
 ## Companion reference library
 
-[TeamStarWolf/TeamStarWolf](https://github.com/TeamStarWolf/TeamStarWolf) is a separate repository of written ATT&CK reference material from the same organization. The two are independent at runtime: this app loads ATT&CK, D3FEND and CTID mappings directly from their upstream sources in the browser and does not read the library's data files. What the app takes from the library is bundled at build time. Some of the Navigator layers in `src/assets/data/library-layers/` were authored there, and several cite library files such as `data/attack/technique_profiles.jsonl` as their source. `src/assets/technique-queries.json` mirrors the library's `detections/technique-queries.json`. `src/assets/library.json`, the index behind Library > Workbench and the sidebar's From the Library section, is generated by the library's `research/scripts/build_library_index.py`.
+[TeamStarWolf/TeamStarWolf](https://github.com/TeamStarWolf/TeamStarWolf) is a separate repository of written ATT&CK reference material from the same organization. The two are independent at runtime: this app loads its ATT&CK data from the bundled snapshot (and D3FEND, CTID mappings and other datasets from their own upstream sources in the browser), not from the library's data files. What the app takes from the library is bundled at build time. Some of the Navigator layers in `src/assets/data/library-layers/` were authored there, and several cite library files such as `data/attack/technique_profiles.jsonl` as their source. `src/assets/technique-queries.json` mirrors the library's `detections/technique-queries.json`. `src/assets/library.json`, the index behind Library > Workbench and the sidebar's From the Library section, is generated by the library's `research/scripts/build_library_index.py`.
 
 For the written background on a technique, group or detection, these are useful starting points:
 

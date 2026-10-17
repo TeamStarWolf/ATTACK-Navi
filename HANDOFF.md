@@ -47,3 +47,4 @@ Three-phase effort so the app opens on a repo-wide view and lets you traverse ev
 
 - The approved architecture makes the TeamStarWolf library (`data/`, `navigator/`) canonical for all layers. Library vendoring (E3.5, ROADMAP P3) and one layer store with all layers in one catalog (E6.6, ROADMAP P6) are still planned in [ROADMAP.md](ROADMAP.md); neither is deployed. Keep generators with their outputs and validate the workbench manifest after ingestion.
 - Respect ATT&CK version skew (`Domain.supersededBy`) when mapping library data (often pinned to older ATT&CK) onto the live matrix.
+- The repository keeps no social-preview image. Set one from a fresh capture in the repository's Settings > Social preview; the previous copy advertised an old Angular version and mode count. (Moved here from the README so the maintainer step is not in user-facing docs.)
