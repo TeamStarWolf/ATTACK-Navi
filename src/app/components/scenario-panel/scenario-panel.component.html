@@ -162,7 +162,7 @@
                     <div class="outcome-card outcome-detected upgrade-section-block">
                       <div class="outcome-count">{{ result.detectedCount }}</div>
                       <div class="outcome-label">Detected</div>
-                      <div class="outcome-desc">Partially covered</div>
+                      <div class="outcome-desc">Partially mitigated, or detection content mapped</div>
                     </div>
                     <div class="outcome-card outcome-vulnerable upgrade-section-block">
                       <div class="outcome-count">{{ result.vulnerableCount }}</div>
@@ -182,7 +182,6 @@
                       <div class="donut" [style.background]="donutGradient">
                         <div class="donut-inner">
                           <span class="donut-score">{{ result.overallScore }}</span>
-                          <span class="donut-grade">{{ scoreGrade }}</span>
                         </div>
                       </div>
                       <div class="donut-legend">
@@ -208,7 +207,6 @@
                     <div class="score-details">
                       <div class="score-title">Readiness Score</div>
                       <div class="score-value score-grade-{{ scoreGrade }}">{{ result.overallScore }}<span class="score-max">/100</span></div>
-                      <div class="score-grade-label grade-{{ scoreGrade }}">Grade {{ scoreGrade }}</div>
                       <div class="score-bar-wrap">
                         <div class="score-bar">
                           <div
@@ -232,7 +230,7 @@
                           Implementing {{ remediationPlan.length }} quick-win mitigation{{ remediationPlan.length !== 1 ? 's' : '' }} could improve your score by ~{{ remediationScoreImpact }} points.
                         }
                       } @else {
-                        <strong>Excellent posture.</strong> All {{ result.group.name }} techniques are either blocked or detectable. Keep mitigations up to date.
+                        <strong>No gap found.</strong> Every {{ result.group.name }} technique has an implemented mitigation (self-attested) or mapped detection content. Keep mitigations up to date.
                       }
                     </div>
                   </div>
@@ -505,11 +503,11 @@
                   </div>
                   <div class="sim-summary-card">
                     <div class="sim-summary-value" [style.color]="sim.riskScore >= 70 ? '#f87171' : sim.riskScore >= 40 ? '#fbbf24' : '#4ade80'">{{ sim.riskScore }}</div>
-                    <div class="sim-summary-label">Risk Score</div>
+                    <div class="sim-summary-label">Threat-weighted gap</div>
                   </div>
                   <div class="sim-summary-card">
                     <div class="sim-summary-value">{{ sim.techniquesCovered }}/{{ sim.techniquesTotal }}</div>
-                    <div class="sim-summary-label">Covered</div>
+                    <div class="sim-summary-label">Covered (self-attested)</div>
                   </div>
                   <div class="sim-summary-card">
                     <div class="sim-summary-value" style="color: #f97316;">{{ sim.gaps.length }}</div>

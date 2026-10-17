@@ -235,7 +235,7 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
         ['Generated', new Date().toLocaleString()],
         ['Domain', this.cachedDomain.name],
         [],
-        ['Framework', 'Total controls / techniques', 'Covered', 'Coverage %', 'Status'],
+        ['Framework', 'Total controls / techniques', 'Mapped', 'Mapped %', 'Status'],
       ];
       for (const fw of this.frameworkScores) {
         sumRows.push([fw.label, fw.total, fw.covered, `${fw.pct}%`, fw.status.toUpperCase()]);

@@ -40,8 +40,8 @@
           </div>
           <div class="quad-card quad-protected upgrade-section-block">
             <div class="quad-count">{{ wellProtectedCount }}</div>
-            <div class="quad-label">Well Protected</div>
-            <div class="quad-sub">Well Covered</div>
+            <div class="quad-label">Well Mapped</div>
+            <div class="quad-sub">Low threat, low gap</div>
           </div>
         </div>
 
@@ -58,7 +58,7 @@
             Address Later ({{ lowPriorityCount }})
           </button>
           <button class="filter-btn filter-protected" [class.active]="filterQuadrant === 'well-protected'" (click)="setFilterQuadrant('well-protected')">
-            Protected ({{ wellProtectedCount }})
+            Well Mapped ({{ wellProtectedCount }})
           </button>
         </div>
 
@@ -90,7 +90,7 @@
                   <!-- Quadrant backgrounds -->
                   <div class="quadrant q-low-priority">Address Later</div>
                   <div class="quadrant q-critical">Act Now</div>
-                  <div class="quadrant q-well-protected">Well Protected</div>
+                  <div class="quadrant q-well-protected">Well Mapped</div>
                   <div class="quadrant q-monitor">Monitor</div>
 
                   <!-- Crosshair lines -->
@@ -122,7 +122,7 @@
               <span class="legend-item"><span class="legend-dot dot-critical"></span> Critical — high exposure, high gap</span>
               <span class="legend-item"><span class="legend-dot dot-monitor"></span> Monitor — high exposure, low gap</span>
               <span class="legend-item"><span class="legend-dot dot-low-priority"></span> Address Later — low exposure, high gap</span>
-              <span class="legend-item"><span class="legend-dot dot-well-protected"></span> Well Protected — low exposure, low gap</span>
+              <span class="legend-item"><span class="legend-dot dot-well-protected"></span> Well Mapped — low exposure, low gap</span>
             </div>
 
             <div class="matrix-hint">Click any dot to open technique details. Hover for quick info.</div>
@@ -140,7 +140,7 @@
                     <th class="tactic-col">Tactic</th>
                     <th class="num-col" title="Threat Score (0-100)">Threat</th>
                     <th class="num-col" title="Security Gap Score (0-100)">Gap</th>
-                    <th class="num-col" title="Risk Score = Threat × Gap / 100">Risk</th>
+                    <th class="num-col" title="Threat-weighted gap = Threat × Gap / 100">Risk</th>
                     <th class="num-col">Groups</th>
                     <th class="num-col">Mits</th>
                     <th class="quad-col">Quadrant</th>

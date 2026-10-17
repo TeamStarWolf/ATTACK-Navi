@@ -96,7 +96,7 @@ export class FilterChipsComponent implements OnInit, OnDestroy {
 
         if (dimUncovered) {
           this.chips.push({
-            label: 'Dimming uncovered',
+            label: 'Dimming unmapped',
             clear: () => this.filterService.toggleDimUncovered(),
           });
         }

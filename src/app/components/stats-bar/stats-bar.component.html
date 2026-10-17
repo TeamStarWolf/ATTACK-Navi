@@ -11,7 +11,7 @@
         <div class="coverage-fill" [style.width.%]="coveragePct"></div>
       </div>
       @if (implementedCount > 0) {
-        <div class="coverage-bar impl-bar" [title]="implementedCount + '/' + totalTechniques + ' techniques covered by implemented mitigations'">
+        <div class="coverage-bar impl-bar" [title]="implementedCount + '/' + totalTechniques + ' techniques with an implemented mitigation (self-attested)'">
           <div class="coverage-fill impl-fill" [style.width.%]="implementedPct"></div>
         </div>
       }
@@ -54,7 +54,7 @@
 
     <div class="tactic-bars">
       @for (ts of tacticStats; track ts.name) {
-        <div class="tactic-stat clickable-tactic" [title]="ts.name + ': ' + ts.covered + '/' + ts.total + ' covered (' + ts.pct + '%) — Click to scroll'" (click)="tacticClicked.emit(ts.shortname)">
+        <div class="tactic-stat clickable-tactic" [title]="ts.name + ': ' + ts.covered + '/' + ts.total + ' enriched (' + ts.pct + '%) — Click to scroll'" (click)="tacticClicked.emit(ts.shortname)">
           <div class="tactic-mini-bar">
             <div class="tactic-fill" [style.height.%]="ts.pct" [style.background]="ts.pct >= 80 ? '#4caf50' : ts.pct >= 50 ? '#ffd54f' : '#ff9800'"></div>
           </div>

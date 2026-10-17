@@ -200,7 +200,7 @@
             <span class="score-label">/ 100</span>
           </div>
           <div class="score-breakdown">
-            <div class="score-title">Coverage Score <span class="score-grade" [style.color]="coverageColor">{{ coverageGrade }}</span></div>
+            <div class="score-title">Reference depth score</div>
             <div class="score-items">
               <span class="score-item" [class.active]="carAnalytics.length > 0">
                 🔍 {{ carAnalytics.length }} CAR
@@ -1580,7 +1580,7 @@
           <section class="sidebar-section wazuh-section upgrade-section-block">
             <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-wazuh-xdr" [attr.aria-expanded]="!isSectionCollapsed('wazuh-xdr')" (click)="toggleSection('wazuh-xdr')">
               <span class="section-chevron">{{ isSectionCollapsed('wazuh-xdr') ? '&#x25B8;' : '&#x25BE;' }}</span>
-              <span class="section-icon" style="color: #3AABE0;">&#x1F6E1;</span> Wazuh XDR
+              <span class="section-icon" style="color: #3AABE0;">&#x1F6E1;</span> Wazuh stock rules (curated)
               <span class="count-badge upgrade-section-count">{{ wazuhRules.length }}</span>
             </h4>
             @if (!isSectionCollapsed('wazuh-xdr')) {
@@ -1720,7 +1720,7 @@
                     <button
                       class="filter-mit-btn"
                       (click)="filterByMitigation(rel.mitigation)"
-                      title="Highlight all techniques covered by this mitigation"
+                      title="Highlight all techniques this mitigation is mapped to"
                     >Show all →</button>
                   </div>
 

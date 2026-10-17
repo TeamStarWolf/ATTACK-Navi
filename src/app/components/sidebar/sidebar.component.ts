@@ -257,7 +257,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       { id: 'atomic', label: 'Atomic' }, { id: 'd3fend', label: 'D3FEND' },
       { id: 'engage', label: 'Engage' }, { id: 'siem', label: 'SIEM Queries' },
       { id: 'sentinel-rules', label: 'Sentinel' }, { id: 'm365', label: 'M365 Hunting' },
-      { id: 'wazuh-xdr', label: 'Wazuh XDR' }, { id: 'evtx-samples', label: 'EVTX Samples' },
+      { id: 'wazuh-xdr', label: 'Wazuh stock rules (curated)' }, { id: 'evtx-samples', label: 'EVTX Samples' },
     ]},
     { label: 'Offense & Hunting', sections: [
       { id: 'payloads', label: 'Payloads' }, { id: 'offensive-tools', label: 'Offensive Tools' },

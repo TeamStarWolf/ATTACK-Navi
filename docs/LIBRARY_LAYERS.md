@@ -16,7 +16,7 @@ Counts below are distinct technique IDs in each layer, not technique/tactic rows
 
 | Layer type | Score meaning | Source |
 |---|---|---|
-| Curated theme / weakness | Membership tier (core = 100, supporting = 55) or membership-only | TeamStarWolf reference library + validated against bundled ATT&CK data. **Not** an official MITRE mapping. |
+| Curated theme / weakness | Membership tier (core = 100, supporting = 55) or membership-only | TeamStarWolf reference library + checked against bundled ATT&CK data. **Not** an official MITRE mapping. |
 | HTB frequency views | Normalized machine count (100 = most frequent technique within that layer) | Derived technique metadata only; broad, core, OS, and difficulty views have different cohorts/methods. Reflects HTB teaching bias, not enterprise prevalence. |
 | Agentic AI Swarm | Event frequency across a de-identified 8-phase intrusion | Illustrative composite pattern; ATT&CK x ATLAS. Not an attribution of any specific incident. |
 | Threat Group emulation | 100 = MITRE-documented use | Generated directly from MITRE's `intrusion-set --uses--> technique` relationships. **MITRE's own attribution.** |
@@ -114,7 +114,7 @@ Coverage from the Lylat Labs themed training missions (a companion training-rang
 
 ## Analyst use-cases
 
-- **Detection-gap analysis** - overlay a control/theme layer against your own coverage layer to find uncovered techniques.
+- **Detection-gap analysis** - overlay a control/theme layer against your own coverage layer to find unmapped techniques.
 - **Adversary emulation & purple teaming** - load a threat-group layer to scope an emulation plan or a tabletop around what that actor actually does.
 - **Prioritization** - the HTB frequency and agentic-swarm layers highlight techniques that recur, useful for sequencing detection or hardening work.
 - **Comparison** - switch between two group layers to see shared vs distinctive TTPs, or a group vs a theme to map an actor onto a weakness class.

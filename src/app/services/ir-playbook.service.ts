@@ -88,7 +88,7 @@ export const TACTIC_RESPONSES: Record<string, { contain: string[]; eradicate: st
   },
   'impair-process-control': {
     contain: ['Return the process to a safe operating state', 'Block unauthorized writes to controllers at the network boundary', 'Disconnect compromised HMIs from the control network'],
-    eradicate: ['Restore controller setpoints and logic from validated backups', 'Remove rogue control messages or modified parameters', 'Patch or replace compromised field devices'],
+    eradicate: ['Restore controller setpoints and logic from known-good backups', 'Remove rogue control messages or modified parameters', 'Patch or replace compromised field devices'],
     recover: ['Validate process variables against physical measurements', 'Audit all controller writes during the incident window', 'Implement write protection on controllers'],
   },
   // Mobile-only tactics (ATT&CK for Mobile)

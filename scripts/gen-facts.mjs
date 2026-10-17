@@ -16,6 +16,7 @@
 import { readFileSync, writeFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, relative, dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { lintRepo } from './lint-truth-vocab.mjs';
 
 export const FACTS_PATH = 'docs/FACTS.md';
 const JSON_START = '<!-- facts-json';
@@ -265,6 +266,12 @@ function toolchain(root) {
   return { source: 'package-lock.json', ...out, angularMajor: Number(out.angular.split('.')[0]), typescriptMajor: Number(out.typescript.split('.')[0]) };
 }
 
+/** Truth-vocabulary lint result (scripts/lint-truth-vocab.mjs, plan 4.1). */
+function truthVocab(root) {
+  const { files, findings, allows } = lintRepo(root);
+  return { files, findings: findings.length, allows };
+}
+
 export function collectFacts(root) {
   return {
     heatmap: heatmapModes(root),
@@ -275,6 +282,7 @@ export function collectFacts(root) {
     toolchain: toolchain(root),
     dataAssets: dataAssets(root),
     upstreams: upstreams(root),
+    truthVocab: truthVocab(root),
   };
 }
 
@@ -318,6 +326,10 @@ export function renderFacts(f) {
   L.push(`| TypeScript | ${f.toolchain.typescript} | \`package-lock.json\` |`);
   L.push(`| RxJS | ${f.toolchain.rxjs} | \`package-lock.json\` |`);
   L.push(`| zone.js | ${f.toolchain.zoneJs} | \`package-lock.json\` |`);
+  if (f.truthVocab) {
+    L.push(`| Truth-vocabulary lint findings | ${f.truthVocab.findings} | \`node scripts/lint-truth-vocab.mjs\` over ${f.truthVocab.files} files |`);
+    L.push(`| Truth-vocabulary allow directives | ${f.truthVocab.allows} | inline allow comments in those files, each with its reason |`);
+  }
   L.push('');
   L.push('Unit spec files are files, not test cases; Karma prints the test-case count for the commit it ran.', '');
 
