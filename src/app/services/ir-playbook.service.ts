@@ -150,7 +150,7 @@ export const TACTIC_RESPONSES: Record<string, { contain: string[]; eradicate: st
   },
 };
 
-// Technique-specific containment overrides â€” used instead of generic tactic contain steps when available
+// Technique-specific containment overrides — used instead of generic tactic contain steps when available
 const TECHNIQUE_CONTAINMENT: Record<string, string[]> = {
   'T1059': ['Kill suspicious script interpreter processes (powershell.exe, cmd.exe, wscript.exe)', 'Block script execution via AppLocker or WDAC policy'],
   'T1059.001': ['Kill powershell.exe processes', 'Enable Constrained Language Mode', 'Block encoded command execution'],
@@ -187,7 +187,7 @@ export class IRPlaybookService {
 
     const steps: PlaybookStep[] = [];
 
-    // Phase 1: Identify â€” technique-specific detection guidance
+    // Phase 1: Identify — technique-specific detection guidance
     const detectionGuidance = technique.detectionText
       ? technique.detectionText.substring(0, 500)
       : 'Review ATT&CK detection guidance for this technique.';
@@ -212,7 +212,7 @@ export class IRPlaybookService {
       });
     }
 
-    // Phase 2: Contain â€” use technique-specific steps if available, then add generic tactic steps
+    // Phase 2: Contain — use technique-specific steps if available, then add generic tactic steps
     const techniqueContain = TECHNIQUE_CONTAINMENT[technique.attackId];
     if (techniqueContain) {
       for (const action of techniqueContain) {
@@ -242,7 +242,7 @@ export class IRPlaybookService {
       });
     }
 
-    // Phase 3: Eradicate â€” generic tactic steps plus technique-specific mitigations
+    // Phase 3: Eradicate — generic tactic steps plus technique-specific mitigations
     for (const action of responses.eradicate) {
       steps.push({
         phase: 'eradicate',

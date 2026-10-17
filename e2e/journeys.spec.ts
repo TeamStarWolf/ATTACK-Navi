@@ -366,3 +366,77 @@ test.describe('lens availability (plan E1.2)', () => {
     await expect(help).toBeFocused();
   });
 });
+
+// Plan P1 row E1.6 has no Appendix C journey of its own; these are the minimal
+// journey-level checks for the three acceptance criteria this PR addresses
+// (the unit specs carry the same criteria: opencti.service.spec.ts,
+// threat-intelligence-panel.component.spec.ts, matrix-controls.component.spec.ts,
+// data-source-names.spec.ts and the compliance-panel specs).
+test.describe('stop shipping broken or misleading output (plan E1.6)', () => {
+  test('OpenCTI makes 0 requests on a fresh profile', async ({ page }) => {
+    const openCti: string[] = [];
+    page.on('request', req => {
+      if (/opencti|\/graphql\b/i.test(req.url())) openCti.push(req.url());
+    });
+    await page.goto(`${BASE}/#/intel/feeds`);
+    const panel = page.locator('app-threat-intelligence-panel');
+    await expect(panel.locator('.stat-card', { hasText: 'OpenCTI' })).toContainText('Not configured', { timeout: ROUTE_TIMEOUT });
+    for (const tab of ['Indicators', 'Actors', 'MISP', 'Overview']) {
+      await panel.locator('.tab-btn', { hasText: tab }).first().click();
+    }
+    await panel.locator('.tab-btn', { hasText: 'Indicators' }).first().click();
+    await expect(page.getByTestId('opencti-not-configured')).toBeVisible();
+    await page.goto(`${BASE}/#/settings/preferences`);
+    await expect(page.locator('app-settings-panel > *').first()).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => undefined);
+    expect(openCti, 'requests to an OpenCTI instance or a /graphql endpoint').toEqual([]);
+  });
+
+  test('the data-source filter lists each component once', async ({ page }) => {
+    await page.goto(BASE);
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+    const options = (await page.locator('.ds-select option').allTextContents())
+      .map(t => t.trim())
+      .filter(t => t !== 'All data sources');
+    expect(options.length).toBeGreaterThan(10);
+    const keys = options.map(o => o.toLowerCase());
+    expect(keys.filter((k, i) => keys.indexOf(k) !== i), 'sources listed twice in different spellings').toEqual([]);
+    expect(options).toContain('macos:unifiedlog');
+    expect(options).not.toContain('macOS:unifiedlog');
+  });
+
+  test('a cold share link with the other spelling selects the listed one', async ({ page }) => {
+    // The URL state is applied before the domain loads; the picker must still show the source.
+    await page.goto(`${BASE}/#/matrix?ds=macOS%3Aunifiedlog`);
+    await page.reload();
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+    await expect(page.locator('.ds-select')).toHaveValue('macos:unifiedlog');
+    expect(await page.locator('.ds-select').evaluate((el: HTMLSelectElement) => el.selectedIndex)).toBeGreaterThan(0);
+  });
+
+  test('every compliance tab shows its mapping version, and CIS shows source withdrawn upstream', async ({ page }) => {
+    await page.goto(`${BASE}/#/coverage/compliance`);
+    const panel = page.locator('app-compliance-panel');
+    const tabs = panel.locator('.tab-bar .tab-btn');
+    await expect(tabs.first()).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    // The tab bar order (compliance-mapping-meta.ts COMPLIANCE_TABS).
+    const keys = ['cis', 'aws', 'azure', 'gcp', 'nist', 'cri', 'csa-ccm', 'm365-ctrl', 'soc2', 'iso27001', 'pci'];
+    const count = await tabs.count();
+    expect(count).toBe(keys.length);
+    const stamps: string[] = [];
+    for (let i = 0; i < count; i++) {
+      await tabs.nth(i).click();
+      const stamp = page.getByTestId('mapping-stamp');
+      // Wait for this tab's stamp, not the previous tab's still on screen.
+      await expect(stamp).toHaveAttribute('data-tab', keys[i]);
+      stamps.push((await stamp.textContent())!.trim());
+    }
+    expect(stamps[0]).toMatch(/^Source withdrawn upstream: /);
+    expect(stamps.filter(s => /mapped vs ATT&CK 16\.1/.test(s)).length).toBe(6);
+    expect(stamps.filter(s => /mapped vs ATT&CK 17\.1/.test(s)).length).toBe(1);
+    expect(stamps.filter(s => s.startsWith('Project-authored mapping')).length).toBe(3);
+    await tabs.first().click();
+    await expect(page.getByTestId('mapping-withdrawn')).toContainText('Source withdrawn upstream.');
+    await expect(panel.locator('.score-card .score-label', { hasText: 'CIS' })).toHaveCount(0);
+  });
+});

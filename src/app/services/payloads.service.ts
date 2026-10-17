@@ -165,7 +165,7 @@ export class PayloadsService {
 
       if (!attackId) continue;
 
-      // Build the URL â€” prefer the directory with a README
+      // Build the URL — prefer the directory with a README
       const hasReadme = readmeFiles.has(dir.path + '/README.md');
       const url = `${GITHUB_BASE}/${encodeURIComponent(dir.path).replace(/%2F/g, '/')}`;
 

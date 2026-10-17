@@ -150,7 +150,7 @@ export class IocFeedService {
       }
     }
 
-    // Domains (simple heuristic â€” word.tld pattern, excluding IPs)
+    // Domains (simple heuristic — word.tld pattern, excluding IPs)
     const domainRegex = /\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+(?:com|net|org|io|ru|cn|xyz|top|tk|info|biz|cc|pw|club)\b/gi;
     for (const match of text.matchAll(domainRegex)) {
       const val = match[0].toLowerCase();

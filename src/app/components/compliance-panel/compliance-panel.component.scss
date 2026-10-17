@@ -123,6 +123,7 @@
   &.tab-badge-cri   { background: rgb(171 71 188 / 15%);  color: #ab47bc; }
   &.tab-badge-csa   { background: rgb(76 175 80 / 15%);   color: #4caf50; }
   &.tab-badge-m365c { background: rgb(0 120 212 / 15%);   color: #0078d4; }
+  &.tab-badge-withdrawn { background: var(--bg-hover); color: var(--text-muted); font-weight: 600; }
 }
 
 .loading-dot {
@@ -139,6 +140,28 @@
 }
 
 /* ── Search Row ── */
+// Which mapping the active tab shows and the ATT&CK release it was mapped against (E1.6).
+.mapping-stamp {
+  margin: 0;
+  padding: 6px 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.withdrawn-state {
+  margin: 16px;
+  padding: 12px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-main);
+  background: var(--bg-raised);
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+}
+
 .search-row {
   display: flex;
   align-items: center;

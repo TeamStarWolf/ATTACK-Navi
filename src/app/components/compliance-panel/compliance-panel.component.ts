@@ -19,6 +19,7 @@ import { ComplianceMapperService, ComplianceFramework, ComplianceControl } from 
 import { ImplementationService, ImplStatus, IMPL_STATUS_LABELS, IMPL_STATUS_COLORS } from '../../services/implementation.service';
 import { CsaCcmService, CsaCcmControl } from '../../services/csa-ccm.service';
 import { M365ControlsService, M365Control } from '../../services/m365-controls.service';
+import { COMPLIANCE_TAB_META, ComplianceTab, ComplianceTabMeta } from './compliance-mapping-meta';
 import { Domain } from '../../models/domain';
 
 export interface FrameworkScore {
@@ -62,7 +63,9 @@ export interface ComplianceRow {
   styleUrl: './compliance-panel.component.scss',
 })
 export class CompliancePanelComponent implements OnInit, OnDestroy {
-  activeTab: 'cis' | 'aws' | 'azure' | 'gcp' | 'nist' | 'cri' | 'csa-ccm' | 'm365-ctrl' | 'soc2' | 'iso27001' | 'pci' = 'nist';
+  activeTab: ComplianceTab = 'nist';
+  /** What each tab's mapping is and which ATT&CK release it was mapped against (E1.6). */
+  readonly mappingMeta = COMPLIANCE_TAB_META;
   searchText = '';
   sortBy: 'technique' | 'coverage' = 'coverage';
   complianceRows: ComplianceRow[] = [];
@@ -169,8 +172,12 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
     });
   }
 
-  setTab(tab: 'cis' | 'aws' | 'azure' | 'gcp' | 'nist' | 'cri' | 'csa-ccm' | 'm365-ctrl' | 'soc2' | 'iso27001' | 'pci'): void {
-    this.activeTab = tab as any;
+  get activeMapping(): ComplianceTabMeta {
+    return this.mappingMeta[this.activeTab];
+  }
+
+  setTab(tab: ComplianceTab): void {
+    this.activeTab = tab;
     this.searchText = '';
   }
 
@@ -209,7 +216,8 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
         status: pct >= 80 ? 'green' : pct >= 50 ? 'amber' : 'red',
       });
     };
-    techCoverage('cis',       'CIS v8',      r => r.cisCount);
+    // CIS has no source (withdrawn upstream), so it is not scored rather than scored 0%.
+    if (!this.mappingMeta.cis.withdrawn) techCoverage('cis', 'CIS v8', r => r.cisCount);
     techCoverage('nist',      'NIST 800-53', r => r.nistCount);
     techCoverage('cri',       'CRI Profile', r => r.criCount);
     techCoverage('csa-ccm',   'CSA CCM',     r => r.csaCcmCount);
@@ -384,7 +392,7 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
 
   get displayRows(): ComplianceRow[] {
     switch (this.activeTab) {
-      case 'cis':      return this.cisRows;
+      case 'cis':      return this.mappingMeta.cis.withdrawn ? [] : this.cisRows;
       case 'aws':      return this.awsRows;
       case 'azure':    return this.azureRows;
       case 'gcp':      return this.gcpRows;
@@ -401,7 +409,7 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
 
   get activeTabCount(): number {
     switch (this.activeTab) {
-      case 'cis':      return this.complianceRows.filter(r => r.cisCount > 0).length;
+      case 'cis':      return this.mappingMeta.cis.withdrawn ? 0 : this.complianceRows.filter(r => r.cisCount > 0).length;
       case 'aws':      return this.complianceRows.filter(r => r.awsCount > 0).length;
       case 'azure':    return this.complianceRows.filter(r => r.azureCount > 0).length;
       case 'gcp':      return this.complianceRows.filter(r => r.gcpCount > 0).length;

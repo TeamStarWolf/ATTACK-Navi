@@ -178,6 +178,7 @@ export const NO_RETRY_REASON: Readonly<Record<string, string>> = {
   'suricata-templates': 'compiled into the app',
   'event-logging': 'compiled into the app',
   'ir-playbooks': 'compiled into the app',
+  'compliance-mapper-seed': 'compiled into the app',
 };
 
 /**

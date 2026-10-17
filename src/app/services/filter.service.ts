@@ -7,6 +7,7 @@ import { Mitigation } from '../models/mitigation';
 import { Domain } from '../models/domain';
 import { DataService } from './data.service';
 import { HEATMAP_MODES } from '../models/heatmap-modes';
+import { sameDataSource } from '../utils/data-source-names';
 
 export type SortMode = 'alpha' | 'coverage';
 export type HeatmapMode = 'coverage' | 'exposure' | 'status' | 'controls' | 'software' | 'campaign' | 'risk' | 'kev' | 'd3fend' | 'atomic' | 'engage' | 'car' | 'cve' | 'detection' | 'frequency' | 'cri' | 'unified' | 'library' | 'sigma' | 'nist' | 'veris' | 'epss' | 'elastic' | 'splunk' | 'intelligence' | 'm365' | 'my-exposure' | 'wazuh' | 'csa-ccm' | 'm365-controls' | 'kill-chain' | 'poc-exploits' | 'f3-origin';
@@ -210,7 +211,7 @@ export class FilterService {
         // Find all data components whose dataSourceName matches, then collect their techniques
         const ids = new Set<string>();
         for (const dc of domain.dataComponents) {
-          if (dc.dataSourceName === dsName) {
+          if (sameDataSource(dc.dataSourceName, dsName)) {
             const techs = domain.techniquesByDataComponent.get(dc.id) ?? [];
             for (const t of techs) ids.add(t.id);
           }

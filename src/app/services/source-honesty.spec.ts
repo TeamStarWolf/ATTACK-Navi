@@ -181,6 +181,7 @@ const NO_LOADER: Record<string, string> = {
   'suricata-templates': 'compiled into the code',
   'event-logging': 'compiled into the code',
   'ir-playbooks': 'compiled into the code',
+  'compliance-mapper-seed': 'compiled into the code',
 };
 
 /** Answer every request, including retries, fallbacks and timed-out ones, with a network error. */
