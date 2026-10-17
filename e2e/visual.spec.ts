@@ -11,7 +11,7 @@
 // It is skipped in CI until Linux baselines exist. To add them, capture inside
 // the Playwright container the workflow uses, commit the *-linux.png files and
 // drop the skip:
-//   docker run --rm -v "$PWD":/work -w /work mcr.microsoft.com/playwright:v1.63.0-noble \
+//   docker run --rm -v "$PWD":/work -w /work mcr.microsoft.com/playwright:v1.64.1-noble \
 //     npx playwright test e2e/visual.spec.ts --update-snapshots
 //
 // Update the local baselines intentionally with:  npm run test:visual:update
