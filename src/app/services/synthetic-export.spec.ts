@@ -188,7 +188,7 @@ describe('synthetic export honesty (E1.6)', () => {
       expect(docs.length).toBe(everyTechnique.filter(t => sigma.hasTemplate(t)).length);
       expect(docs.length).toBeGreaterThanOrEqual(WITH_TEMPLATE.length);
       for (const doc of docs) {
-        expect(doc).toMatch(new RegExp(`^title: '${SIGMA_TEMPLATE_TITLE_PREFIX.replace(/[()]/g, '\\$&')}: `, 'm'));
+        expect(doc.split('\n').some(l => l.startsWith(`title: '${SIGMA_TEMPLATE_TITLE_PREFIX}: `))).withContext(doc).toBeTrue();
         expect(doc).toMatch(/^description: 'Template \(not a rule\) for ATT&CK technique /m);
         expect(doc).toMatch(new RegExp(`^status: ${SIGMA_TEMPLATE_STATUS}$`, 'm'));
         expect(doc).toMatch(/^level: informational$/m);
