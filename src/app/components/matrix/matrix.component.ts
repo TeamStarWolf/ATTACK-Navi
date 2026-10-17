@@ -58,6 +58,8 @@ import { Cve2CapecService } from '../../services/cve2capec.service';
 import { PocExploitService } from '../../services/poc-exploit.service';
 import { EnrichmentService } from '../../services/enrichment.service';
 import { referenceDepthScore } from '../../models/reference-depth';
+import { LENS_NA_COLOR, isLensAvailable } from '../../models/heatmap-modes';
+import type { AttackDomain } from '../../services/data.service';
 
 /**
  * Tactic header colours keyed by shortname. Enterprise v19 split
@@ -100,6 +102,21 @@ export const TACTIC_HEADER_COLORS: Record<string, string> = {
 })
 export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
   @Input() domain!: Domain;
+  /**
+   * The ATT&CK domain on screen (E1.2). A lens without data for it renders
+   * every cell as 'n/a in this domain' instead of its zero colour.
+   */
+  @Input() attackDomain: AttackDomain = 'enterprise';
+
+  /** True when the active lens has no data for attackDomain (E1.2: no silent zeros). */
+  get lensUnavailable(): boolean {
+    return !isLensAvailable(this.heatmapMode, this.attackDomain);
+  }
+
+  /** Minimap colour: the lens colour, or the neutral n/a colour when the lens has no data here. */
+  getMinimapCellColor(tech: Technique): string {
+    return this.lensUnavailable ? LENS_NA_COLOR : this.getCellColor(tech);
+  }
   @Output() focusSearch = new EventEmitter<void>();
   @Output() tacticClicked = new EventEmitter<{ tactic: Tactic; techniques: Technique[]; event: MouseEvent }>();
   @ViewChild(TechniqueTooltipComponent) tooltip!: TechniqueTooltipComponent;

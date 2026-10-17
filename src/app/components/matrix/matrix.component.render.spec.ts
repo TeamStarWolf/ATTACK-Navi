@@ -14,6 +14,7 @@ import { Domain } from '../../models/domain';
 import { Technique } from '../../models/technique';
 import { DataService } from '../../services/data.service';
 import { FilterService } from '../../services/filter.service';
+import { HEATMAP_MODES, LENS_NA_COLOR, unavailableLenses } from '../../models/heatmap-modes';
 import {
   controlsProvider, parseFixtureDomain, resetBrowserState, signal, signalStubProviders,
 } from '../../testing/lens-harness';
@@ -119,5 +120,41 @@ describe('MatrixComponent (rendered, fixture domain)', () => {
     filter.setHeatmapMode('coverage');
     fixture.detectChanges();
     expect([bg(withRules), bg(without)]).not.toEqual([sigmaWith, sigmaWithout]);
+  });
+
+  // E1.2 PR 2, no silent zeros: switching to ICS, a lens whose domains[] lacks
+  // ics never renders an all-zero map; every cell shows 'n/a in this domain'.
+  it('renders every lens that has no ICS data as n/a on every cell, never as its zero colour', () => {
+    fixture.componentRef.setInput('attackDomain', 'ics');
+    const disabled = unavailableLenses('ics');
+    expect(disabled.length).toBe(23);
+    const parent = domain.techniques.find(x => !x.isSubtechnique)!;
+    for (const def of disabled) {
+      filter.setHeatmapMode(def.value);
+      fixture.detectChanges();
+      expect(fixture.componentInstance.lensUnavailable).withContext(def.value).toBeTrue();
+      const cells = Array.from(host.querySelectorAll<HTMLElement>('app-technique-cell .cell'));
+      expect(cells.length).withContext(def.value).toBeGreaterThan(0);
+      const notNa = cells.filter(c => !c.classList.contains('lens-na'));
+      expect(notNa.length).withContext(`${def.value}: cells painted on the ramp`).toBe(0);
+      expect(fixture.componentInstance.getMinimapCellColor(parent)).withContext(def.value).toBe(LENS_NA_COLOR);
+      // No zero metric badge either (D3FEND would otherwise print a 0 on every cell).
+      expect(host.querySelectorAll('.d3fend-badge, .atomic-badge, .cri-hm-badge').length).withContext(def.value).toBe(0);
+    }
+  });
+
+  it('keeps painting a lens that has ICS data, and every lens on Enterprise except F3 origin', () => {
+    fixture.componentRef.setInput('attackDomain', 'ics');
+    filter.setHeatmapMode('frequency');
+    fixture.detectChanges();
+    expect(host.querySelectorAll('.cell.lens-na').length).toBe(0);
+
+    fixture.componentRef.setInput('attackDomain', 'enterprise');
+    for (const def of HEATMAP_MODES) {
+      filter.setHeatmapMode(def.value);
+      fixture.detectChanges();
+      const naCells = host.querySelectorAll('.cell.lens-na').length;
+      expect(naCells > 0).withContext(def.value).toBe(def.value === 'f3-origin');
+    }
   });
 });

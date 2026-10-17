@@ -94,7 +94,7 @@
             (click)="toggleViewMenu()"
             title="View & explore options"
             aria-label="View and explore options">
-      🎨 {{ heatmapShort }} ▾
+      🎨 {{ heatmapShort }}{{ activeLensUnavailable ? ' (n/a)' : '' }} ▾
     </button>
     @if (showViewMenu) {
       <div class="views-menu view-panel" (click)="$event.stopPropagation()">
@@ -103,22 +103,56 @@
             <div class="views-menu-header featured-header">★ For {{ currentViewpoint.label }}</div>
             <div class="featured-grid">
               @for (mode of featuredModeDefs; track mode.value) {
-                <button class="featured-lens-btn" [class.active]="heatmapMode === mode.value" (click)="setHeatmap(mode.value)">
+                @let fs = lensState(mode.value);
+                <button class="featured-lens-btn" [class.active]="heatmapMode === mode.value"
+                        [class.unavailable]="!fs.available"
+                        [attr.aria-disabled]="fs.available ? null : 'true'"
+                        [attr.aria-describedby]="fs.available ? null : 'lens-na-featured-' + mode.value"
+                        [title]="fs.reason ?? mode.question"
+                        (click)="setHeatmap(mode.value)">
                   {{ mode.label }}
+                  @if (!fs.available) {
+                    <span class="lens-na-tag">{{ fs.short }}</span>
+                  }
                 </button>
+                @if (!fs.available) {
+                  <span class="sr-only lens-na-reason" [id]="'lens-na-featured-' + mode.value">{{ fs.reason }}</span>
+                }
               }
             </div>
           </div>
         }
         <div class="heatmap-groups">
+          @if (disabledLensCount > 0) {
+            <p class="lens-na-summary" role="status">
+              {{ disabledLensCount }} of {{ heatmapModes.length }} lenses have no {{ domainName }} data and are disabled; each says why. Use ? for a lens's definition.
+            </p>
+          }
           @for (group of heatmapGroups; track group) {
             <div class="heatmap-group">
               <div class="views-menu-header">{{ group }}</div>
               <div class="heatmap-grid">
                 @for (m of modesForGroup(group); track m.value) {
-                  <button class="heatmap-mode-btn" [class.active]="heatmapMode === m.value" (click)="setHeatmap(m.value)">
-                    {{ m.label }}
-                  </button>
+                  @let ls = lensState(m.value);
+                  <div class="lens-item" [attr.data-lens]="m.value">
+                    <button class="heatmap-mode-btn" [class.active]="heatmapMode === m.value"
+                            [class.unavailable]="!ls.available"
+                            [attr.aria-disabled]="ls.available ? null : 'true'"
+                            [attr.aria-describedby]="ls.available ? null : 'lens-na-' + m.value"
+                            [title]="ls.reason ?? m.question"
+                            (click)="setHeatmap(m.value)">
+                      {{ m.label }}
+                      @if (!ls.available) {
+                        <span class="lens-na-tag">{{ ls.short }}</span>
+                      }
+                    </button>
+                    @if (!ls.available) {
+                      <span class="sr-only lens-na-reason" [id]="'lens-na-' + m.value">{{ ls.reason }}</span>
+                    }
+                    <button type="button" class="lens-help-btn" aria-haspopup="dialog"
+                            [attr.aria-label]="'What is the ' + m.label + ' lens?'"
+                            (click)="openLensCard(m.value, $event)">?</button>
+                  </div>
                 }
               </div>
             </div>

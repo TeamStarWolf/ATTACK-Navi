@@ -16,6 +16,15 @@
   }
   <app-filter-chips />
 
+  <!-- E1.2: a lens with no data for this domain is shown as n/a, never as zeros. -->
+  <div class="lens-na-banner" role="status" [class.shown]="!!lensNa">
+    @if (lensNa; as na) {
+      <span class="hatch" aria-hidden="true"></span>
+      <span class="lens-na-text">{{ na.reason }} The matrix shows it hatched as n/a, not as zero. Pick another lens from the lens menu.</span>
+      <button type="button" class="lens-na-help" aria-haspopup="dialog" (click)="openLensCard($event)">What is this lens?</button>
+    }
+  </div>
+
   <div class="matrix-scroll">
     @if (loading && !domain) {
       <div class="state-screen">
@@ -33,6 +42,7 @@
       <app-matrix
         #matrixRef
         [domain]="domain"
+        [attackDomain]="currentDomain"
         (focusSearch)="focusTechniqueSearch()"
         (tacticClicked)="onTacticClick($event)"
       />
@@ -42,6 +52,9 @@
 
 <!-- Tactic summary popover (matrix-scoped) -->
 <app-tactic-summary />
+
+<!-- The '?' lens definition card (E1.2), opened from the legend, the lens menu and the n/a banner. -->
+<app-lens-definition-card />
 
 @if (selectedTechniqueCount > 0) {
   <div class="bulk-action-bar">

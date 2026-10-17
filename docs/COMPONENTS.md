@@ -166,8 +166,19 @@ Components that render the ATT&CK matrix grid and its supporting UI.
 |----------|-------|
 | **Selector** | `app-legend` |
 | **File** | `src/app/components/legend/legend.component.ts` |
-| **Purpose** | Lens legend in the matrix context strip. Renders the active mode's `HEATMAP_MODES` registry entry: rung badge, lens question, colour stops, domain line, sources with vintage, and what zero means. Updates when the heatmap mode, the domain or the loaded bundle changes. |
+| **Purpose** | Lens legend in the matrix context strip. Renders the active mode's `HEATMAP_MODES` registry entry: rung badge, lens question, colour stops, domain line, sources with vintage, and what zero means; when the lens has no data for the domain, the stated reason. Its 'What is this lens?' button opens the lens definition card. Updates when the heatmap mode, the domain or the loaded bundle changes. |
 | **Key I/O** | Subscribes to `FilterService.heatmapMode$` |
+
+---
+
+### LensDefinitionCardComponent
+
+| Property | Value |
+|----------|-------|
+| **Selector** | `app-lens-definition-card` |
+| **File** | `src/app/components/lens-definition-card/lens-definition-card.component.ts` |
+| **Purpose** | The '?' definition card for one lens (E1.2): question, rung and what the rung means, formula, each source with its vintage, the domains it has data for, what zero means, and the reason when the lens is n/a in the current domain. A modal dialog (focus moves in, Tab is trapped, Escape or the backdrop closes it, focus returns to the opener). One instance lives on the matrix page. |
+| **Key I/O** | Reads `LensCardService.openMode` (opened from the legend, the lens menu and the n/a banner) and `DataService.currentDomain$` / `domain$` / `freshness$` |
 
 ---
 

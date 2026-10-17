@@ -8,7 +8,10 @@
 // formula, domains, sources, zero meaning, ramp), labels carry no emoji, every
 // heat= id survives, and the legend ramp is the one the renderer paints.
 import SNAPSHOTS from '../testing/__snapshots__/lens-snapshots.json';
-import { HEATMAP_MODES, HeatmapModeDef, LensRung, heatmapModeDef, heatmapShortLabel, lensRungBadge, nextHeatmapMode } from './heatmap-modes';
+import {
+  HEATMAP_MODES, HeatmapModeDef, LENS_NA_COLOR, LENS_RUNG_MEANING, LensRung, heatmapModeDef, heatmapShortLabel,
+  isLensAvailable, lensAvailability, lensRungBadge, nextHeatmapMode, unavailableLenses,
+} from './heatmap-modes';
 import { LENS_SOURCES, LensSourceId, lensSourceVintage } from './lens-sources';
 
 const PICTOGRAPHIC = /\p{Extended_Pictographic}|️/u;
@@ -195,5 +198,69 @@ describe('HEATMAP_MODES relabel (E1.1)', () => {
       const def = HEATMAP_MODES.find(m => m.value === value)!;
       expect(`${def.label} ${def.short}`).withContext(value).not.toMatch(/Unified|Coverage|\bRisk\b|XDR|Exposure/);
     }
+  });
+});
+
+// E1.2 PR 2 acceptance (plan P1 row E1.2): lenses without data for the current
+// domain are disabled with a stated reason, about 23 of them on ICS today.
+describe('lens availability per domain (E1.2 definition cards)', () => {
+  const lacking = (domain: string) => HEATMAP_MODES.filter((m) => !(m.domains as readonly string[]).includes(domain));
+
+  it('switching to ICS disables exactly the lenses whose domains[] lacks ics (23 today)', () => {
+    const disabled = unavailableLenses('ics').map((m) => m.value);
+    expect(disabled).toEqual(lacking('ics').map((m) => m.value));
+    expect(disabled.length).toBe(23);
+    // Every lens built only on the ATT&CK bundle or your own workspace stays on.
+    for (const v of ['coverage', 'status', 'controls', 'library', 'frequency', 'risk', 'exposure', 'software', 'campaign', 'intelligence'] as const) {
+      expect(isLensAvailable(v, 'ics')).withContext(v).toBeTrue();
+    }
+  });
+
+  it('gives every disabled ICS lens a reason that names the lens, the domain and why', () => {
+    for (const def of unavailableLenses('ics')) {
+      const a = lensAvailability(def, 'ics');
+      expect(a.available).withContext(def.value).toBeFalse();
+      expect(a.short).withContext(def.value).toBe('n/a for ICS ATT&CK');
+      expect(a.reason).withContext(def.value).toContain(def.label);
+      expect(a.reason).withContext(def.value).toContain('ICS ATT&CK');
+      // The why: either the lens's own domain note, or its sources and the domains they cover.
+      const why = def.domainNote ?? LENS_SOURCES[def.sources[0]].name;
+      expect(a.reason).withContext(def.value).toContain(why);
+      expect(a.reason!.length).withContext(def.value).toBeGreaterThan(def.label.length + 30);
+    }
+  });
+
+  it('states the domains a source-limited lens does cover', () => {
+    const sigma = heatmapModeDef('sigma')!;
+    expect(lensAvailability(sigma, 'mobile').reason).toBe(
+      'Sigma Rules is n/a for Mobile ATT&CK: its sources (SigmaHQ coverage) have data for Enterprise ATT&CK only.',
+    );
+    expect(lensAvailability(heatmapModeDef('f3-origin')!, 'ics').reason).toContain('CTID F3 only');
+  });
+
+  it('disables nothing that has data: available lenses carry no reason', () => {
+    for (const domain of DOMAINS) {
+      for (const def of HEATMAP_MODES) {
+        const a = lensAvailability(def, domain as HeatmapModeDef['domains'][number]);
+        expect(a.available).withContext(`${def.value} in ${domain}`).toBe(def.domains.includes(domain as HeatmapModeDef['domains'][number]));
+        if (a.available) {
+          expect(a.reason).toBeNull();
+          expect(a.short).toBeNull();
+        }
+      }
+    }
+    expect(unavailableLenses('enterprise').map((m) => m.value)).toEqual(['f3-origin']);
+    expect(unavailableLenses('f3').map((m) => m.value)).toEqual(lacking('f3').map((m) => m.value));
+  });
+
+  it('paints n/a in a neutral colour that is in no lens ramp', () => {
+    const rampColours = new Set(HEATMAP_MODES.flatMap((m) => m.ramp.stops.map((s) => s.color.toLowerCase())));
+    expect(rampColours.has(LENS_NA_COLOR.toLowerCase())).toBeFalse();
+  });
+
+  it('explains every rung or dimension a lens can sit on', () => {
+    for (const rung of RUNGS) expect(nonEmpty(LENS_RUNG_MEANING[rung])).withContext(rung).toBeTrue();
+    expect(LENS_RUNG_MEANING.Threat).toContain('never a posture rung');
+    expect(LENS_RUNG_MEANING.Exposure).toContain('never a posture rung');
   });
 });

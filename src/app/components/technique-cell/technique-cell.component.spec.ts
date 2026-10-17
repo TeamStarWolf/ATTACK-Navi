@@ -5,6 +5,7 @@ import { BehaviorSubject } from 'rxjs';
 import { TechniqueCellComponent } from './technique-cell.component';
 import { SettingsService } from '../../services/settings.service';
 import { Technique } from '../../models/technique';
+import { LENS_NA_COLOR } from '../../models/heatmap-modes';
 
 const STUB_TECH = {
   id: 'attack-pattern--abc',
@@ -210,5 +211,40 @@ describe('TechniqueCellComponent', () => {
     expect(el.querySelector('.note-dot')).not.toBeNull();
     expect(el.querySelector('.ann-red')).not.toBeNull();
     expect(el.querySelector('.watch-indicator')).not.toBeNull();
+  });
+
+  // E1.2 PR 2: a lens with no data for the domain on screen paints the neutral
+  // n/a hatch, never its zero colour, and shows no zero metric badge.
+  describe('lens n/a in this domain (E1.2)', () => {
+    function set(inputs: Record<string, unknown>): HTMLElement {
+      for (const [k, v] of Object.entries(inputs)) fixture.componentRef.setInput(k, v);
+      fixture.detectChanges();
+      return fixture.nativeElement as HTMLElement;
+    }
+
+    it('paints the neutral n/a colour with the hatch class instead of the lens zero colour', () => {
+      configure();
+      set({ technique: STUB_TECH, heatmapMode: 'd3fend', d3fendScore: 0 });
+      const zeroColour = component.bgColor;
+      const el = set({ lensUnavailable: true });
+      expect(component.bgColor).toBe(LENS_NA_COLOR);
+      expect(component.bgColor).not.toBe(zeroColour);
+      expect(el.querySelector('.cell')!.classList).toContain('lens-na');
+    });
+
+    it('shows no zero metric badge for an n/a lens', () => {
+      configure();
+      let el = set({ technique: STUB_TECH, heatmapMode: 'd3fend', d3fendScore: 0 });
+      expect(el.querySelector('.d3fend-badge')).not.toBeNull();
+      el = set({ lensUnavailable: true });
+      expect(el.querySelector('.d3fend-badge')).toBeNull();
+    });
+
+    it('is off by default', () => {
+      configure();
+      const el = set({ technique: STUB_TECH, heatmapMode: 'coverage' });
+      expect(component.lensUnavailable).toBeFalse();
+      expect(el.querySelector('.cell')!.classList).not.toContain('lens-na');
+    });
   });
 });

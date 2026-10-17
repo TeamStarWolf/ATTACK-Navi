@@ -85,6 +85,12 @@ Each cell computes its background color from the active `heatmapMode` and its sc
 
 The legend subscribes to `heatmapMode$` and renders the active mode's entry in the `HEATMAP_MODES` registry (`src/app/models/heatmap-modes.ts`): the rung badge and the lens question, the colour stops of its `ramp`, an 'n/a for <domain>' line when the lens has no source data for the loaded domain, a source line with each source's vintage (`src/app/models/lens-sources.ts`; the loaded ATT&CK release comes from the bundle's `x-mitre-collection`), and what zero means. Relative ramps are labelled as shares of the highest score; categorical and banded ramps show no scale note.
 
+A **What is this lens?** button in the legend, a **?** next to every lens in the lens menu and the matrix page's n/a banner open the lens definition card (`src/app/components/lens-definition-card/`, a modal dialog with a focus trap that Escape closes): the lens question, rung, formula, each source with its vintage, the domains it has data for, and what zero means.
+
+### Step 6b: Lenses without data for the loaded domain
+
+A lens is available in a domain exactly when that domain is in its `domains` list (`lensAvailability()` in `heatmap-modes.ts`). In any other domain the lens menu disables it (`aria-disabled`, with a stated reason such as 'Sigma Rules is n/a for ICS ATT&CK: its sources (SigmaHQ coverage) have data for Enterprise ATT&CK only.' linked by `aria-describedby`), and if it is the active lens the matrix paints every cell in the neutral, hatched n/a colour (`LENS_NA_COLOR`, in no ramp) instead of the lens's zero colour, the minimap does the same, and a status banner on the matrix page states the reason. On ICS that is 23 of the 33 lenses today. The lens snapshots (`MatrixComponent.getCellColor`) are unaffected: they characterize each lens's own scoring.
+
 ### Step 7: Cell Color Fallback (MatrixComponent.getCellColor)
 
 **File:** `src/app/components/matrix/matrix.component.ts` (line ~1257)

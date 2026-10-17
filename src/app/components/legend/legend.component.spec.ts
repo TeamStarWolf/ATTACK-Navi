@@ -6,7 +6,8 @@ import { LegendComponent } from './legend.component';
 import { FilterService, HeatmapMode } from '../../services/filter.service';
 import { AttackDomain, DataService } from '../../services/data.service';
 import { SettingsService } from '../../services/settings.service';
-import { heatmapModeDef } from '../../models/heatmap-modes';
+import { heatmapModeDef, lensAvailability } from '../../models/heatmap-modes';
+import { LensCardService } from '../../services/lens-card.service';
 
 describe('LegendComponent', () => {
   let component: LegendComponent;
@@ -160,5 +161,26 @@ describe('LegendComponent', () => {
     for (const banned of ['covered', 'exposed', 'protected', 'strong']) {
       expect(labels).not.toContain(banned);
     }
+  });
+
+  // E1.2 PR 2: the legend states why a lens is n/a and opens its definition card.
+  it('states the reason under the n/a domain line', () => {
+    currentDomain$.next('ics');
+    show('sigma');
+    expect(text('.legend-na-reason')).toBe(lensAvailability(heatmapModeDef('sigma')!, 'ics').reason!);
+    currentDomain$.next('enterprise');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.legend-na-reason')).toBeNull();
+  });
+
+  it("opens the active lens's definition card from 'What is this lens?'", () => {
+    const cards = TestBed.inject(LensCardService);
+    show('kev');
+    const btn = fixture.nativeElement.querySelector('.lens-help-btn') as HTMLButtonElement;
+    expect(btn.textContent!.trim()).toBe('What is this lens?');
+    expect(btn.getAttribute('aria-haspopup')).toBe('dialog');
+    expect(btn.getAttribute('aria-label')).toBe('What is the KEV lens?');
+    btn.click();
+    expect(cards.openMode()).toBe('kev');
   });
 });

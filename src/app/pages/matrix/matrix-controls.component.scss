@@ -360,3 +360,78 @@
   font-size: 11px;
   cursor: pointer;
 }
+
+// ── Lens availability and definitions (E1.2) ──────────────────
+.lens-na-summary {
+  margin: 0 0 8px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.lens-item {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  min-width: 0;
+
+  .heatmap-mode-btn {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.heatmap-mode-btn.unavailable,
+.featured-lens-btn.unavailable {
+  cursor: not-allowed;
+  border-style: dashed;
+  color: var(--text-muted);
+  background-image: repeating-linear-gradient(45deg, color-mix(in srgb, var(--text-muted) 14%, transparent) 0 1px, transparent 1px 6px);
+
+  &:hover {
+    color: var(--text-muted);
+    border-color: var(--border-subtle);
+  }
+}
+
+.lens-na-tag {
+  display: block;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lens-help-btn {
+  flex-shrink: 0;
+  width: 22px;
+  padding: 0;
+  background: var(--bg-soft);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--text-primary);
+    border-color: var(--border-default);
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
