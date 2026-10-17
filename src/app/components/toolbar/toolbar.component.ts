@@ -21,6 +21,7 @@ import { CommandPaletteService } from '../../services/command-palette.service';
 import { ThemeService } from '../../services/theme.service';
 import { SavedViewsService, SavedView } from '../../services/saved-views.service';
 import { IconComponent } from '../../shared/icons/icon.component';
+import { VintageChipComponent } from '../vintage-chip/vintage-chip.component';
 
 export const PLATFORMS = [
   'Windows', 'Linux', 'macOS', 'Azure AD', 'Office 365',
@@ -50,7 +51,7 @@ export const PLATFORM_PILLS = [
 @Component({
   selector: 'app-toolbar',
   standalone: true,
-  imports: [FormsModule, RouterLink, IconComponent],
+  imports: [FormsModule, RouterLink, IconComponent, VintageChipComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './toolbar.component.html',
   styleUrl: './toolbar.component.scss',
@@ -65,7 +66,6 @@ export class ToolbarComponent implements OnInit, OnDestroy {
 
   isLightMode = false;
 
-  attackVersion = '';
   attackDomain: AttackDomain = 'enterprise';
   /** "Check for ATT&CK update" state for the domain on screen (decision D2). */
   update: AttackUpdateState = { status: 'idle' };
@@ -95,8 +95,7 @@ export class ToolbarComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.subs.add(this.themeService.isLight$.subscribe((v) => { this.isLightMode = v; this.cdr.markForCheck(); }));
     this.subs.add(this.dataService.loading$.subscribe((l) => { this.loading = l; this.cdr.markForCheck(); }));
-    this.subs.add(this.dataService.domain$.subscribe((d) => {
-      this.attackVersion = d?.attackVersion ?? '';
+    this.subs.add(this.dataService.domain$.subscribe(() => {
       this.pinnedVersion = this.dataService.pinnedVersion();
       this.cdr.markForCheck();
     }));

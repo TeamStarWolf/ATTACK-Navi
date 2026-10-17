@@ -26,10 +26,17 @@ describe('ToolbarComponent', () => {
     update$ = new BehaviorSubject<AttackUpdateState>({ status: 'idle' });
     mockDataService = jasmine.createSpyObj(
       'DataService',
-      ['fetchDomain', 'pinnedVersion', 'checkForUpdate', 'applyUpdate', 'dismissUpdate', 'revertToPinned', 'setDataSourceMode', 'loadDomain'],
-      { loading$: of(false), domain$: of(null), update$ },
+      ['fetchDomain', 'pinnedVersion', 'checkForUpdate', 'applyUpdate', 'dismissUpdate', 'revertToPinned', 'setDataSourceMode', 'loadDomain', 'getCurrentAttackDomain'],
+      {
+        loading$: of(false),
+        domain$: of({ attackVersion: '19.2', attackModified: '2026-08-05T21:33:58.496Z' }),
+        update$,
+        freshness$: new BehaviorSubject<'bundled' | 'cached' | 'live' | null>('bundled'),
+        currentDomain$: new BehaviorSubject('enterprise'),
+      },
     );
     mockDataService.pinnedVersion.and.returnValue('19.2');
+    mockDataService.getCurrentAttackDomain.and.returnValue('enterprise');
 
     mockSavedViewsService = jasmine.createSpyObj('SavedViewsService', ['saveCurrentView', 'deleteView'], {
       views$: of([]),
@@ -89,6 +96,15 @@ describe('ToolbarComponent', () => {
     const brand = fixture.nativeElement.querySelector('a.brand-link');
     expect(brand).toBeTruthy();
     expect(brand.getAttribute('href')).toBe('/matrix');
+  });
+
+  it('carries the vintage chip (E1.4): the pinned version and bundle date, linking to data health', () => {
+    const chip = fixture.nativeElement.querySelector('app-vintage-chip [data-testid="vintage-chip"]') as HTMLAnchorElement;
+    expect(chip).toBeTruthy();
+    expect(chip.textContent!.replace(/\s+/g, ' ').trim()).toBe('ATT&CK v19.2 pinned 2026-08-05');
+    expect(chip.getAttribute('href')).toBe('/status');
+    // The brand no longer carries a bare version badge of its own.
+    expect(fixture.nativeElement.querySelectorAll('.attack-version').length).toBe(1);
   });
 
   describe('ATT&CK pinning (E1.4, decision D2)', () => {

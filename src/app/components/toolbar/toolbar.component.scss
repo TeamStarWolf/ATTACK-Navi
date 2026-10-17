@@ -168,18 +168,6 @@
   }
 }
 
-.attack-version {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--success);
-  background: rgb(99 210 151 / 12%);
-  border: 1px solid rgb(99 210 151 / 24%);
-  border-radius: 999px;
-  padding: 3px 8px;
-  white-space: nowrap;
-  font-family: 'IBM Plex Mono', monospace;
-}
-
 .bar-divider {
   width: 1px;
   height: 28px;
@@ -985,10 +973,6 @@
   .brand {
     gap: 4px;
     padding: 0 8px 0 4px;
-
-    .attack-version {
-      display: none;
-    }
   }
 
   .search-group {
@@ -1127,7 +1111,6 @@
 
   .toolbar.top-bar::-webkit-scrollbar { display: none; }
 
-  .attack-version,
   .group-label,
   .totd-btn,
   .save-view-btn,
