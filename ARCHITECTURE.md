@@ -230,7 +230,7 @@ Responsible for fetching, caching, and parsing the MITRE ATT&CK STIX 2.1 bundle.
 
 #### Domain Configuration
 
-Three domains are supported:
+Four domains are supported:
 
 | Domain | Pinned bundle (loaded) | Live URL (update check only) | IDB Cache Key |
 |---|---|---|---|

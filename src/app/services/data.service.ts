@@ -153,8 +153,10 @@ export class DataService {
 
   /**
    * Where the currently displayed domain data came from:
-   * 'bundled' = shipped snapshot (instant first paint), 'cached' = IndexedDB
-   * copy of a previous live fetch, 'live' = fresh from MITRE this session.
+   * 'bundled' = the pinned bundle (decision D2, epic E1.4);
+   * 'live' = a newer release the user chose with applyUpdate() for this
+   * session only;
+   * 'cached' = no longer emitted since E1.4 (kept in the type for the legend).
    */
   freshness$ = new BehaviorSubject<'bundled' | 'cached' | 'live' | null>(null);
   private loadRequestId = 0;

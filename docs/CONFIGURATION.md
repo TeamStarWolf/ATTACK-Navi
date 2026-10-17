@@ -210,13 +210,14 @@ Select a theme by clicking its color swatch in Settings > Display > Heatmap Colo
 
 ## 5. Domain Selection
 
-The Navigator supports three ATT&CK domains:
+The Navigator supports four ATT&CK domains:
 
 | Domain | Description | STIX Source |
 |--------|-------------|-------------|
 | Enterprise | Enterprise IT techniques (default) | `enterprise-attack.json` |
 | ICS | Industrial Control Systems | `ics-attack.json` |
 | Mobile | Mobile platform techniques | `mobile-attack.json` |
+| F3 | CTID Fight Fraud Framework | `f3-attack.json` |
 
 ### How Switching Works
 
