@@ -67,6 +67,8 @@
 | 49 | `app-data-health` | Utility | -- | Inline data-source health ribbon (loaded/loading/failed dots) |
 | 50 | `app-dashboard-panel` | Utility | `dashboard` | Executive dashboard with KPIs, tactic bars, and trend data |
 | -- | `app-universal-search` | Utility | `search` | Global search across techniques, mitigations, groups, and more |
+| -- | `app-vintage-chip` | Shell | -- | Toolbar chip: the ATT&CK release on screen (pinned or this session), its bundle date and one source dot; opens data health |
+| -- | `app-briefing-strip` | Shell | -- | One status line under the toolbar on every route, in a polite live region: failed and empty sources, snapshots in use, the ATT&CK update offer |
 
 ---
 
@@ -94,6 +96,28 @@ These components form the application frame and are always visible.
 | **Purpose** | Top-of-page toolbar providing technique search, mitigation dropdown filter, platform pills, heatmap mode picker (every mode in `HEATMAP_MODES`), sort/dim toggles, saved views, and a comprehensive export menu (CSV, XLSX, PNG, HTML report, Navigator layer, implementation plan). |
 | **Inputs** | `mitigations: Mitigation[]`, `techniques: Technique[]`, `isLightMode: boolean`, `currentDomain: AttackDomain`, `multiSelectMode: boolean`, `activePlatforms: Set<string>` |
 | **Outputs** | `domainChange`, `expandAll`, `collapseAll`, `toggleMultiSelect`, `exportCsv`, `exportTacticCsv`, `exportImplPlan`, `exportState`, `importState`, `exportNavigatorLayer`, `importNavigatorLayer`, `openNavigator`, `exportFullReport`, `exportMatrixPng`, `exportHtmlReport`, `exportXlsx`, `showGapView`, `toggleDark`, `copyShareLink` |
+
+---
+
+### VintageChipComponent
+
+| Property | Value |
+|----------|-------|
+| **Selector** | `app-vintage-chip` (inside `app-toolbar`) |
+| **File** | `src/app/components/vintage-chip/vintage-chip.component.ts` |
+| **Purpose** | The toolbar vintage chip (plan 6.4, epic E1.4). Renders `DataService.freshness$`: the framework and release on screen (`ATT&CK v19.2`), whether it is the pinned bundle or a release chosen for this session only, the bundle's own date (the `x-mitre-collection` `modified` date, or 'undated' when the bundle states none), and one aggregate source dot (ok / stale / failed / n/a from the SourceRegistry). Its accessible name says all of this in words. A click opens the data-health view (`#/status`). The wording comes from `src/app/models/briefing.ts`. |
+| **Key I/O** | Reads `DataService.domain$` / `freshness$` / `currentDomain$` / `pinnedVersion()` and `SourceRegistryService.records$` |
+
+---
+
+### BriefingStripComponent
+
+| Property | Value |
+|----------|-------|
+| **Selector** | `app-briefing-strip` (in `app-root`, under the toolbar, so it is on every route) |
+| **File** | `src/app/components/briefing-strip/briefing-strip.component.ts` |
+| **Purpose** | Briefing strip v1 (plan 6.4, epic E1.4). One status line whose text sits in a `role="status"` `aria-live="polite"` `aria-atomic="true"` region that is always in the DOM, so a screen reader hears each change: the sources that failed or came back empty, 'using snapshot of <date>' when a stand-in (the bundled KEV snapshot) serves a failed source, and the ATT&CK update on offer or in use for this session. With nothing to report it reads 'No source failures so far this session.' Later phases add KEV additions, new proof and expiring proof. |
+| **Key I/O** | Reads `SourceRegistryService.records$` and `DataService.update$` |
 
 ---
 
