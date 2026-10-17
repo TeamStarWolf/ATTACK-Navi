@@ -9,10 +9,13 @@ import { TimelineService } from '../../services/timeline.service';
 import { PanelNavService } from '../../services/panel-nav.service';
 import { EnrichmentService } from '../../services/enrichment.service';
 
+/** Snapshots on another count basis (mitigations only, before E1.7) stay out of the trend. */
+const TREND_BASIS = 'reference-mapped';
+
 interface TacticStat {
   name: string;
   shortname: string;
-  covered: number;
+  mapped: number;
   total: number;
   pct: number;
 }
@@ -30,8 +33,9 @@ export class StatsBarComponent implements OnInit, OnChanges, OnDestroy {
   @Output() tacticClicked = new EventEmitter<string>();
 
   totalTechniques = 0;
-  coveredTechniques = 0;
-  coveragePct = 0;
+  /** Known tier: techniques with >=1 defensive reference input mapped (EnrichmentService.mappedRollup). */
+  mappedTechniques = 0;
+  mappedPct = 0;
   implementedPct = 0;
   implementedCount = 0;
   totalMitigations = 0;
@@ -89,7 +93,7 @@ export class StatsBarComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   get sparklineData(): number[] {
-    const snapshots = this.timelineService.getAll();
+    const snapshots = this.timelineService.getAll().filter(s => s.basis === TREND_BASIS);
     if (snapshots.length < 2) return [];
     return snapshots
       .slice()
@@ -124,14 +128,12 @@ export class StatsBarComponent implements OnInit, OnChanges, OnDestroy {
   private recompute(): void {
     if (!this.domain) return;
 
-    const parentTechs = this.includeSubtechniques
-      ? this.domain.techniques
-      : this.domain.techniques.filter((t) => !t.isSubtechnique);
-    this.totalTechniques = parentTechs.length;
-    // "Coverage" = cross-framework enrichment (≥1 defensive/framework signal),
-    // not "≥1 mitigation" — so no single framework owns the headline.
-    this.coveredTechniques = parentTechs.filter((t) => this.enrichment.isEnriched(t, this.domain)).length;
-    this.coveragePct = this.totalTechniques > 0 ? Math.round((this.coveredTechniques / this.totalTechniques) * 100) : 0;
+    // Known tier ('mapped'): defensive reference inputs only, never threat-intel
+    // or CVE links (E1.7). The same rollup feeds the per-tactic bars below.
+    const rollup = this.enrichment.mappedRollup(this.domain, { includeSubtechniques: this.includeSubtechniques });
+    this.totalTechniques = rollup.overall.total;
+    this.mappedTechniques = rollup.overall.mapped;
+    this.mappedPct = rollup.overall.pct;
     this.totalMitigations = this.domain.mitigations.length;
 
     let relCount = 0;
@@ -152,16 +154,12 @@ export class StatsBarComponent implements OnInit, OnChanges, OnDestroy {
     this.implementedCount = implementedTechIds.size;
     this.implementedPct = this.totalTechniques > 0 ? Math.round((this.implementedCount / this.totalTechniques) * 100) : 0;
 
-    this.tacticStats = this.domain.tacticColumns.map((col) => {
-      const total = col.techniques.length;
-      const covered = col.techniques.filter((t) => this.enrichment.isEnriched(t, this.domain)).length;
-      return {
-        name: col.tactic.name,
-        shortname: col.tactic.shortname,
-        covered,
-        total,
-        pct: total > 0 ? Math.round((covered / total) * 100) : 0,
-      };
-    });
+    this.tacticStats = rollup.byTactic.map((t) => ({
+      name: t.tacticName,
+      shortname: t.shortname,
+      mapped: t.mapped,
+      total: t.total,
+      pct: t.pct,
+    }));
   }
 }

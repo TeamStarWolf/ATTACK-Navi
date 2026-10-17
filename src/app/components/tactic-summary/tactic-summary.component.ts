@@ -12,7 +12,7 @@ import { Subscription } from 'rxjs';
 import { Tactic } from '../../models/tactic';
 import { Technique } from '../../models/technique';
 import { ImplementationService, ImplStatus } from '../../services/implementation.service';
-import { EnrichmentService } from '../../services/enrichment.service';
+import { EnrichmentService, MappedCount } from '../../services/enrichment.service';
 import { Domain } from '../../models/domain';
 
 export interface TacticSummaryData {
@@ -34,6 +34,15 @@ export class TacticSummaryComponent implements OnInit, OnDestroy {
   data: TacticSummaryData | null = null;
   position: { top: number; left: number } = { top: 0, left: 0 };
   visible = false;
+  /**
+   * Known tier ('mapped', E1.7): this tactic's parent techniques with >=1
+   * defensive reference input, from the same EnrichmentService.mappedCount()
+   * that mappedRollup() runs per tactic column. Never counts threat-intel or
+   * CVE links. P2 seam: PostureService's tactic rollup replaces it.
+   */
+  mappedStats: MappedCount = { total: 0, mapped: 0, pct: 0 };
+  /** Most-mapped techniques, ranked by how many of the five reference inputs they have. */
+  topMapped: Array<Technique & { referenceCount: number }> = [];
 
   private latestStatusMap = new Map<string, ImplStatus>();
   private subs = new Subscription();
@@ -59,6 +68,12 @@ export class TacticSummaryComponent implements OnInit, OnDestroy {
 
   show(data: TacticSummaryData, event: MouseEvent): void {
     this.data = data;
+    this.mappedStats = this.enrichment.mappedCount(data.parentTechniques, data.domain);
+    this.topMapped = [...data.parentTechniques]
+      .map((t) => ({ ...t, referenceCount: this.enrichment.referenceSignalCount(t, data.domain) }))
+      .filter((t) => t.referenceCount > 0)
+      .sort((a, b) => b.referenceCount - a.referenceCount || b.mitigationCount - a.mitigationCount)
+      .slice(0, 3);
     this.visible = true;
     this.positionNear(event);
     this.cdr.markForCheck();
@@ -67,6 +82,8 @@ export class TacticSummaryComponent implements OnInit, OnDestroy {
   hide(): void {
     this.visible = false;
     this.data = null;
+    this.mappedStats = { total: 0, mapped: 0, pct: 0 };
+    this.topMapped = [];
     this.cdr.markForCheck();
   }
 
@@ -90,14 +107,6 @@ export class TacticSummaryComponent implements OnInit, OnDestroy {
     this.position = { top, left };
   }
 
-  /** Enrichment coverage: techniques with ≥1 cross-framework signal. */
-  get coverageStats(): { covered: number; total: number; pct: number } {
-    if (!this.data) return { covered: 0, total: 0, pct: 0 };
-    const total = this.data.parentTechniques.length;
-    const covered = this.data.parentTechniques.filter((t) => this.enrichment.isEnriched(t, this.data!.domain)).length;
-    return { covered, total, pct: total > 0 ? Math.round((covered / total) * 100) : 0 };
-  }
-
   /** Mitigation-only coverage, kept as an explicit secondary line. */
   get mitigationStats(): { covered: number; total: number; pct: number } {
     if (!this.data) return { covered: 0, total: 0, pct: 0 };
@@ -106,17 +115,9 @@ export class TacticSummaryComponent implements OnInit, OnDestroy {
     return { covered, total, pct: total > 0 ? Math.round((covered / total) * 100) : 0 };
   }
 
-  /** Best-covered techniques ranked by BREADTH of enrichment (signal families). */
-  get topCovered(): Array<Technique & { signalCount: number }> {
-    return [...(this.data?.parentTechniques ?? [])]
-      .map((t) => ({ ...t, signalCount: this.enrichment.signalCount(t, this.data!.domain) }))
-      .filter((t) => t.signalCount > 0)
-      .sort((a, b) => b.signalCount - a.signalCount || b.mitigationCount - a.mitigationCount)
-      .slice(0, 3);
-  }
-
-  get uncoveredCount(): number {
-    return (this.data?.parentTechniques ?? []).filter((t) => !this.enrichment.isEnriched(t, this.data!.domain)).length;
+  /** Parent techniques in this tactic with no defensive reference input mapped. */
+  get unmappedCount(): number {
+    return this.mappedStats.total - this.mappedStats.mapped;
   }
 
   get implStats(): { implemented: number; inProgress: number; planned: number; notStarted: number } {

@@ -75,8 +75,10 @@ describe('DashboardPanelComponent', () => {
   let atomicLoaded$: BehaviorSubject<boolean>;
   let widgets$: BehaviorSubject<DashboardWidget[]>;
   let totalsSpy: jasmine.Spy;
+  let snapshots: Array<{ coveragePct: number; basis?: 'reference-mapped' }>;
 
   beforeEach(() => {
+    snapshots = [{ coveragePct: 40 }, { coveragePct: 50 }];
     status$ = new BehaviorSubject(new Map<string, string>());
     atomicLoaded$ = new BehaviorSubject<boolean>(false);
     widgets$ = new BehaviorSubject(WIDGETS);
@@ -101,7 +103,7 @@ describe('DashboardPanelComponent', () => {
             status$,
             summarize: () => ({ implemented: 2, 'in-progress': 1, planned: 1, 'not-started': 0, untracked: 2 }),
         } },
-        { provide: TimelineService, useValue: { getAll: () => [{ coveragePct: 40 }, { coveragePct: 50 }] } },
+        { provide: TimelineService, useValue: { getAll: () => snapshots } },
         { provide: AttackCveService, useValue: {
             loaded$: loaded(),
             getKevCvesForTechnique: (id: string) => (id === 'T1190' ? [{ cveId: 'CVE-2024-0001' }] : []),
@@ -160,6 +162,28 @@ describe('DashboardPanelComponent', () => {
     expect(s.hasTrendData).toBeTrue();
     expect(s.coverageTrend).toBe(10);
     expect(component.trendSign(s.coverageTrend)).toBe('+');
+  });
+
+  it('shows no trend when the last two snapshots count on different bases (older mitigations-only, then mapped)', () => {
+    const footer = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(footer()).toContain('vs last snapshot');
+
+    // E1.7: the 'mapped' basis always counts at least the mitigation-only one,
+    // so a legacy -> mapped pair would otherwise read as a spurious gain.
+    snapshots = [{ coveragePct: 7 }, { coveragePct: 60, basis: 'reference-mapped' }];
+    component.buildStats();
+    fixture.detectChanges();
+    expect(component.stats!.hasTrendData).toBeFalse();
+    expect(component.stats!.coverageTrend).toBe(0);
+    expect(footer()).not.toContain('vs last snapshot');
+
+    // Two snapshots on the mapped basis are a trend again.
+    snapshots = [...snapshots, { coveragePct: 65, basis: 'reference-mapped' }];
+    component.buildStats();
+    fixture.detectChanges();
+    expect(component.stats!.hasTrendData).toBeTrue();
+    expect(component.stats!.coverageTrend).toBe(5);
+    expect(footer()).toContain('+5% vs last snapshot');
   });
 
   it('folds the async intel sources into the stats after the first build', () => {

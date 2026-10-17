@@ -61,6 +61,37 @@ export interface ReferenceDefenseTotals {
   atomic: number;
 }
 
+/** Known-tier 'mapped' count over one set of techniques (defensive reference inputs only). */
+export interface MappedCount {
+  total: number;
+  mapped: number;        // >=1 defensive reference input (Known rung: 'mapped')
+  pct: number;           // mappedPct(mapped, total)
+}
+
+/** One tactic column's Known-tier 'mapped' count. */
+export interface MappedTacticCount extends MappedCount {
+  tacticId: string;      // tactic STIX id (the key timeline snapshots use)
+  tacticName: string;
+  shortname: string;
+}
+
+/**
+ * The Known-tier 'mapped' rollup the summary surfaces show (E1.7): one overall
+ * count and one count per tactic column, all from `isReferenceMapped()`.
+ */
+export interface MappedRollup {
+  overall: MappedCount;
+  byTactic: MappedTacticCount[];
+}
+
+/**
+ * The one rounding every 'mapped %' uses, so two surfaces showing the same
+ * count cannot print different percentages.
+ */
+export function mappedPct(mapped: number, total: number): number {
+  return total > 0 ? Math.round((mapped / total) * 100) : 0;
+}
+
 /** Aggregate counts across a set of techniques, one flag family per column. */
 export interface EnrichmentTotals {
   total: number;
@@ -203,6 +234,62 @@ export class EnrichmentService {
   }
 
   /**
+   * Known tier: how many of the five defensive reference inputs a technique
+   * has (0-5). The breadth used to rank "most mapped" techniques; it never
+   * counts threat-intel or CVE links.
+   */
+  referenceSignalCount(tech: Technique, domain?: Domain | null): number {
+    const r = this.referenceDefenseSignals(tech, domain);
+    return (
+      (r.mitigation ? 1 : 0) + (r.detection ? 1 : 0) + (r.control ? 1 : 0) +
+      (r.d3fend ? 1 : 0) + (r.atomic ? 1 : 0)
+    );
+  }
+
+  /** Known tier: the 'mapped' count over one set of techniques. */
+  mappedCount(techs: readonly Technique[], domain?: Domain | null): MappedCount {
+    let total = 0;
+    let mapped = 0;
+    for (const tech of techs ?? []) {
+      total++;
+      if (this.isReferenceMapped(tech, domain)) mapped++;
+    }
+    return { total, mapped, pct: mappedPct(mapped, total) };
+  }
+
+  /**
+   * Known tier: the single 'mapped' rollup every summary surface reads
+   * (stats-bar, tactic-summary, analytics-panel, the timeline snapshots that
+   * timeline-panel and coverage-diff-panel show, and roadmap-panel). One
+   * method and one filter, so the six surfaces cannot disagree (E1.7
+   * equality spec).
+   *
+   * Filter: `overall` counts parent techniques, or every technique when
+   * `includeSubtechniques` is set; each `byTactic` row counts that tactic
+   * column's techniques (parents only, as TacticColumn holds them).
+   *
+   * P2 SEAM (E2.1, E9.3): PostureService's tactic rollup replaces this method
+   * with Known / Covered / Proven per tactic. Each surface reaches its
+   * defensive count only through here, so the swap is one call per surface.
+   */
+  mappedRollup(
+    domain: Domain | null | undefined,
+    opts: { includeSubtechniques?: boolean } = {},
+  ): MappedRollup {
+    if (!domain) return { overall: { total: 0, mapped: 0, pct: 0 }, byTactic: [] };
+    const techs = opts.includeSubtechniques
+      ? domain.techniques ?? []
+      : (domain.techniques ?? []).filter((t) => !t.isSubtechnique);
+    const byTactic = (domain.tacticColumns ?? []).map((col) => ({
+      tacticId: col.tactic.id,
+      tacticName: col.tactic.name,
+      shortname: col.tactic.shortname,
+      ...this.mappedCount(col.techniques, domain),
+    }));
+    return { overall: this.mappedCount(techs, domain), byTactic };
+  }
+
+  /**
    * Presence of each signal family for a single technique: the five defensive
    * reference inputs (from `referenceDefenseSignals()`) plus the threat-intel
    * and CVE inputs. Threat side; for a Known-tier view use
@@ -234,9 +321,9 @@ export class EnrichmentService {
    * CVE mappings. Those two inputs describe adversary interest, so this rises
    * when a group starts using a technique; it must not feed a defensive or
    * 'mapped' count. Use `isReferenceMapped()` / `referenceDefenseTotals()`
-   * (Known tier) for those. Kept for Threat-side counts only: the summary
-   * surfaces move off it in E1.7, and PostureService replaces their counts
-   * with Known / Covered / Proven in P2.
+   * (Known tier) for those. Kept for Threat-side counts only: the six summary
+   * surfaces moved off it to `mappedRollup()` in E1.7, and PostureService
+   * replaces their counts with Known / Covered / Proven in P2.
    */
   isEnriched(tech: Technique, domain?: Domain | null): boolean {
     const s = this.signals(tech, domain);

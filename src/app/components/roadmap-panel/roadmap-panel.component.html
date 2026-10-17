@@ -31,7 +31,10 @@
 
     <div class="roadmap-legend">
       <span class="legend-item"><span class="legend-dot priority">●</span> Priority = Impact ÷ Effort</span>
-      <span class="legend-item"><span class="legend-dot impact">●</span> Impact = Unmapped Techniques × Avg Threat Groups</span>
+      <span class="legend-item"><span class="legend-dot impact">●</span> Impact = Techniques with no implemented mitigation (self-attested) × Avg Threat Groups</span>
+    </div>
+    <div class="roadmap-known" data-testid="roadmap-mapped" title="Known tier: techniques with ≥1 mitigation, detection content, control mapping, D3FEND countermeasure or Atomic test. Reference, no claim about your estate.">
+      <strong>{{ mapped.mapped }} / {{ mapped.total }}</strong> techniques mapped ({{ mapped.pct }}%) to ≥1 defensive reference
     </div>
 
     <div class="roadmap-body">
@@ -46,7 +49,7 @@
             </div>
             <div class="item-meta">
               <span class="meta-chip">{{ item.techniquesCovered }} techniques</span>
-              <span class="meta-chip gap" [class.has-gap]="item.uncoveredTechniques > 0">{{ item.uncoveredTechniques }} gaps</span>
+              <span class="meta-chip gap" [class.has-gap]="item.uncoveredTechniques > 0" title="Techniques this mitigation maps to that have no implemented mitigation (self-attested)">{{ item.uncoveredTechniques }} gaps</span>
               <span class="meta-chip">~{{ item.avgGroupCount }} groups</span>
               @for (t of item.tacticsCovered; track t) {
                 <span class="meta-chip tactic">{{ t }}</span>
@@ -104,7 +107,7 @@
               <span class="phase-label">{{ phase.label }}</span>
               <div class="phase-stats">
                 <span>{{ phase.mitigations.length }} mitigations</span>
-                <span>+{{ phase.techniquesGained }} technique coverage</span>
+                <span>{{ phase.techniquesGained }} techniques mapped to these mitigations</span>
                 @if (phase.cvesCovered > 0) { <span class="cve-badge">{{ phase.cvesCovered }} CVEs</span> }
               </div>
             </div>
