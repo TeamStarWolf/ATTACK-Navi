@@ -428,11 +428,64 @@
   }
 }
 
-.source-mode-btn {
-  font-size: 16px;
-  width: 32px;
-  padding: 0;
-  justify-content: center;
+/* "Check for ATT&CK update" (D2): the offer lives in a polite live region that is
+   always in the DOM, so a screen reader hears each state as it changes. */
+.update-check {
+  position: relative;
+  display: inline-flex;
+}
+
+.update-offer {
+  &:not(.open) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  &.open {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 210;
+    width: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+    background: var(--bg-panel-strong);
+    color: var(--text-main);
+    border: 1px solid var(--line-strong);
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+}
+
+.update-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.update-btn {
+  background: transparent;
+  color: var(--text-main);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+
+  &.primary {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  &:hover { background: rgb(127 127 127 / 12%); }
 }
 
 .domain-select {

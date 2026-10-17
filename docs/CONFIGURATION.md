@@ -222,23 +222,32 @@ The Navigator supports three ATT&CK domains:
 
 1. Use the domain selector in the toolbar.
 2. Selecting a new domain clears the current matrix data.
-3. The Navigator fetches the corresponding STIX bundle from GitHub (or from IndexedDB cache if available).
+3. The Navigator loads that domain's pinned STIX bundle, shipped with the build (see Data Source below).
 4. The bundle is parsed into tactics, techniques, mitigations, groups, software, campaigns, and relationships.
 5. All panels and the sidebar reset to reflect the new domain's data.
 
-### Data Source
+### Data Source: pinned ATT&CK (decision D2)
 
-Each domain's STIX bundle is fetched live from the MITRE `attack-stix-data` repository on GitHub:
+ATT&CK is pinned to the release bundled with the build. Each domain loads its bundle from `src/assets/data/` (`enterprise-attack.json`, `ics-attack.json`, `mobile-attack.json`, `f3-attack.json`); the pinned version is the one the bundle's own `x-mitre-collection` object declares, recorded in the source registry and shown on the data-health view (`#/status`). The version on screen never changes by itself during a session.
+
+There are two data modes, chosen in Settings > Data > **ATT&CK Data** and saved with the other settings (`mitre-nav-settings-v1`, field `attackDataMode`):
+
+| Mode | Value | What happens |
+|------|-------|--------------|
+| Pinned bundle (default) | `bundled` | Only the pinned bundle is loaded. MITRE is contacted only when you click **Check for ATT&CK update**. A fresh profile starts here. |
+| Pinned bundle, check MITRE for an update when data loads | `live` | The pinned bundle still loads; after each load the app also checks MITRE and, if a newer release exists, offers it. Nothing is applied without a click. |
+
+**Check for ATT&CK update** (the refresh-arrow button next to the domain selector) fetches the domain's current STIX from MITRE's `attack-stix-data` master branch (F3: CTID's `fight-fraud-framework` main branch):
 
 ```
 https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/{domain}-attack/{domain}-attack.json
 ```
 
-For Enterprise, a bundled fallback is included in the build at `assets/enterprise-attack.json`.
+and compares its release number with the pinned one. A status panel (a polite live region, so screen readers announce it) then says one of: no newer release; release N is available, with **Use N for this session** and **Keep** buttons; or the check failed, with **Try again**. A release you choose applies to this session only: it is held in memory, survives a domain round trip, and is gone after a reload or in a new tab, which start on the pinned bundle again. **Back to <pinned>** returns to the pinned release at any time. The live copy's own status (loaded, failed, cached) appears on the data-health view, where its **Load now** / **Retry** runs the same check. Adopting a new ATT&CK release for everyone is a reviewed data change to the bundles, not a runtime switch.
 
 ### Caching
 
-STIX bundles are cached in IndexedDB (database: `mitre-navigator-cache`, object store: `stix-bundles`) with a 24-hour TTL. After 24 hours, the Navigator fetches a fresh bundle. You can manually clear or refresh the cache in Settings > Data.
+A live STIX copy fetched by an update check is cached in IndexedDB (database: `mitre-navigator-cache`, object store: `stix-bundles`) with a 24-hour TTL. Only the automatic check of the `live` mode may answer from that cache; **Check for ATT&CK update** always asks MITRE. The cache is never put on screen by itself. You can clear it in Settings > Data.
 
 ---
 
@@ -317,7 +326,7 @@ All application state is stored client-side using localStorage and IndexedDB. No
 
 | Key | Service | Description |
 |-----|---------|-------------|
-| `mitre-nav-settings-v1` | SettingsService | Scoring weights, display options, org name, NVD API key |
+| `mitre-nav-settings-v1` | SettingsService | Scoring weights, display options, org name, ATT&CK data mode (`attackDataMode`, default `bundled`); the NVD API key is kept in sessionStorage |
 | `mitre-nav-impl-v1` | ImplementationService | Mitigation implementation status (Map of ID to status) |
 | `mitre-nav-docs-mit-v1` | DocumentationService | Mitigation documentation notes |
 | `mitre-nav-docs-tech-v1` | DocumentationService | Technique documentation notes |
@@ -337,13 +346,14 @@ All application state is stored client-side using localStorage and IndexedDB. No
 
 | Database | Object Store | Description |
 |----------|-------------|-------------|
-| `mitre-navigator-cache` | `stix-bundles` | Cached ATT&CK STIX bundles (24h TTL) |
+| `mitre-navigator-cache` | `stix-bundles` | Live ATT&CK STIX copies fetched by an update check (24h TTL); never shown without a click |
 
 ### Data Management
 
 In Settings > Data:
-- **Refresh Data** -- Clears the IndexedDB cache and fetches a fresh STIX bundle from GitHub
-- **Clear Cache** -- Removes the cached STIX bundle without re-fetching
+- **ATT&CK Data** -- The data mode: pinned bundle (default), or pinned bundle with an update check when data loads (see Domain Selection > Data Source)
+- **Refresh Data** -- Clears the cached live copy and this session's chosen release for the domain on screen, and reloads the pinned bundle
+- **Clear Cache** -- Removes the cached live STIX copies without re-fetching
 - **Clear All Snapshots** -- Deletes all timeline snapshots from localStorage
 - **Export Implementation CSV** -- Downloads the current implementation status as a CSV file
 

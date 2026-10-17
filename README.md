@@ -80,7 +80,7 @@ The toolbar switches between four domains. Each has a live source and a bundled 
 | Mobile ATT&CK | `mitre-attack/attack-stix-data` | v19.2 |
 | CTID F3 Fraud Framework | `center-for-threat-informed-defense/fight-fraud-framework` | v1.2 |
 
-In the default live mode, the app uses a copy cached in IndexedDB if it is less than 24 hours old. Otherwise it renders the bundled snapshot first, fetches the live STIX bundle in the background and switches to it when it arrives. It reports an error only if both fail. A toolbar toggle switches to bundled-only mode. F3 has no mitigations or groups, so coverage views are empty for that domain.
+ATT&CK is pinned to the bundled snapshot, and the version on screen never changes by itself during a session. The toolbar's "Check for ATT&CK update" compares the live release with the pinned one and offers a newer release for the current session only; nothing is applied without a click. Settings > Data can also run that check each time data loads (the offer is the same). F3 has no mitigations or groups, so coverage views are empty for that domain.
 
 The `refresh-data.yml` workflow runs monthly, downloads the four snapshots from a pinned upstream commit, refuses a version downgrade or a mismatched ATT&CK version across domains, regenerates the CVE map described below, revalidates the curated library layers, runs the unit suite and a production build against the refreshed data, and then opens a `data-refresh/YYYY-MM` pull request. Opening that pull request needs the repository setting "Allow GitHub Actions to create and approve pull requests"; without it the workflow pushes the branch and fails with that instruction in its job summary.
 

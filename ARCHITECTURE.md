@@ -232,22 +232,28 @@ Responsible for fetching, caching, and parsing the MITRE ATT&CK STIX 2.1 bundle.
 
 Three domains are supported:
 
-| Domain | Live URL | Bundled Fallback | IDB Cache Key |
+| Domain | Pinned bundle (loaded) | Live URL (update check only) | IDB Cache Key |
 |---|---|---|---|
-| Enterprise | `mitre-attack/attack-stix-data/.../enterprise-attack.json` | `assets/enterprise-attack.json` | `enterprise-attack-v2` |
-| ICS | `mitre-attack/attack-stix-data/.../ics-attack.json` | (none) | `ics-attack-v1` |
-| Mobile | `mitre-attack/attack-stix-data/.../mobile-attack.json` | (none) | `mobile-attack-v1` |
+| Enterprise | `assets/data/enterprise-attack.json` | `mitre-attack/attack-stix-data/.../enterprise-attack.json` | `enterprise-attack-v2` |
+| ICS | `assets/data/ics-attack.json` | `mitre-attack/attack-stix-data/.../ics-attack.json` | `ics-attack-v1` |
+| Mobile | `assets/data/mobile-attack.json` | `mitre-attack/attack-stix-data/.../mobile-attack.json` | `mobile-attack-v1` |
+| F3 | `assets/data/f3-attack.json` | `fight-fraud-framework/main/public/f3-stix.json` | `f3-attack-v1` |
 
 #### Loading Pipeline
 
 1. `loadDomain()` is called (either on init or on domain switch).
-2. The service checks `DataSourceMode`: `'live'` (default) or `'bundled'`.
-3. **Live path:** Opens IndexedDB (`mitre-navigator-cache` / `stix-bundles`), checks for a cached
-   entry with the domain's `idbKey`.  If the cached entry exists and is less than 24 hours old
-   (`CACHE_TTL_MS = 24 * 60 * 60 * 1000`), uses it.  Otherwise fetches from GitHub, stores the
-   result in IDB, and proceeds.
-4. **Bundled path:** Fetches from `assets/enterprise-attack.json` (Enterprise only).
-5. The raw STIX JSON is parsed into a `Domain` model object.
+2. ATT&CK is pinned (decision D2, epic E1.4): the domain's bundle under `assets/data/` is fetched
+   and parsed into a `Domain` model object. The pinned version is the bundle's own
+   `x-mitre-collection` version, recorded in the `SourceRegistryService` (`pinnedVersion()`).
+   If the user chose a newer release earlier in this session, that in-memory copy is shown instead.
+3. `DataSourceMode` is the persisted user setting `AppSettings.attackDataMode`: `'bundled'`
+   (default) stops there; `'live'` then runs an update check, which may answer from an IndexedDB
+   copy (`mitre-navigator-cache` / `stix-bundles`) less than 24 hours old.
+4. **Update check** (`checkForUpdate()`, the toolbar's "Check for ATT&CK update"): fetches the
+   live STIX from GitHub, stores it in IDB, parses it and compares its release with the pinned one
+   (`update$`: checking, up-to-date, available, failed). A newer release is only offered;
+   `applyUpdate()` shows it for this session only, `revertToPinned()` goes back. The version on
+   screen never changes without that click.
 
 #### Domain Model
 

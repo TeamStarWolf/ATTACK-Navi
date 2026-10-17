@@ -44,16 +44,51 @@
         <app-icon name="scale" [size]="15" aria-hidden="true" />
       </button>
     </div>
-    <button class="icon-btn source-mode-btn"
-            [class.active]="dataSourceMode === 'live'"
-            (click)="dataSourceMode = dataSourceMode === 'live' ? 'bundled' : 'live'; onDataSourceChange()"
-            [title]="dataSourceMode === 'live' ? 'Live data — click for bundled' : 'Bundled data — click for live'"
-            [attr.aria-label]="dataSourceMode === 'live' ? 'Switch to bundled data' : 'Switch to live data'">
-      <app-icon [name]="dataSourceMode === 'live' ? 'globe' : 'package'" [size]="15" aria-hidden="true" />
-    </button>
-    <button class="icon-btn refresh-btn" (click)="forceRefresh()" [disabled]="loading" title="Force refresh ATT&CK data from MITRE" aria-label="Force refresh ATT&CK data">
-      <app-icon name="refresh-cw" [size]="15" aria-hidden="true" />
-    </button>
+    <!-- D2: ATT&CK is pinned to the bundled release; a newer one is only ever offered. -->
+    <div class="update-check">
+      <button class="icon-btn refresh-btn update-check-btn"
+              (click)="checkForUpdate()"
+              [disabled]="loading || update.status === 'checking'"
+              [title]="'Check MITRE for an ATT&CK release newer than the pinned ' + (pinnedVersion || 'bundle')"
+              aria-label="Check for ATT&CK update">
+        <app-icon name="refresh-cw" [size]="15" aria-hidden="true" />
+      </button>
+      <div class="update-offer" [class.open]="update.status !== 'idle'" role="status" aria-live="polite" data-testid="attack-update"
+           [attr.data-status]="update.status">
+        @switch (update.status) {
+          @case ('checking') {
+            <span class="update-text">Checking MITRE for an ATT&amp;CK release newer than {{ update.pinnedVersion }} (pinned)…</span>
+          }
+          @case ('up-to-date') {
+            <span class="update-text">No newer release: MITRE publishes ATT&amp;CK {{ update.liveVersion }}; this view stays on {{ update.pinnedVersion }} (pinned).</span>
+            <div class="update-actions">
+              <button class="update-btn" (click)="dismissUpdate()">Close</button>
+            </div>
+          }
+          @case ('available') {
+            <span class="update-text">ATT&amp;CK {{ update.liveVersion }} is available. This view is pinned to {{ update.pinnedVersion }}; switching applies to this session only.</span>
+            <div class="update-actions">
+              <button class="update-btn primary" (click)="applyUpdate()">Use {{ update.liveVersion }} for this session</button>
+              <button class="update-btn" (click)="dismissUpdate()">Keep {{ update.pinnedVersion }}</button>
+            </div>
+          }
+          @case ('failed') {
+            <span class="update-text">Could not check for an ATT&amp;CK update: {{ update.error }}. This view stays on {{ update.pinnedVersion }} (pinned).</span>
+            <div class="update-actions">
+              <button class="update-btn" (click)="checkForUpdate()">Try again</button>
+              <button class="update-btn" (click)="dismissUpdate()">Close</button>
+            </div>
+          }
+          @case ('applied') {
+            <span class="update-text">Using ATT&amp;CK {{ update.liveVersion }} for this session only. The pinned release is {{ update.pinnedVersion }}; a reload returns to it.</span>
+            <div class="update-actions">
+              <button class="update-btn" (click)="revertToPinned()">Back to {{ update.pinnedVersion }}</button>
+              <button class="update-btn" (click)="dismissUpdate()">Close</button>
+            </div>
+          }
+        }
+      </div>
+    </div>
     @if (loading) {
       <div class="spinner"></div>
     }

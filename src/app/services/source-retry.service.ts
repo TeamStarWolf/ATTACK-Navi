@@ -74,17 +74,21 @@ export interface RetryEntry {
   blocked?: (injector: Injector) => string | null;
 }
 
-/** An ATT&CK bundle: only the active domain's copy can be reloaded without changing what the matrix shows. */
+/**
+ * An ATT&CK bundle: only the active domain's copy can be reloaded without changing what the
+ * matrix shows. The live copy is fetched only by the update check (decision D2), so its
+ * Retry / Load now runs "Check for ATT&CK update", which offers a newer release and never
+ * applies it.
+ */
 function attackEntry(domain: AttackDomain, live: boolean): RetryEntry {
   return {
     service: DataService,
-    run: (svc: DataService) => svc.loadDomain(),
+    run: (svc: DataService) => (live ? svc.checkForUpdate() : svc.loadDomain()),
     blocked: injector => {
       const data = injector.get(DataService);
       if (data.getCurrentAttackDomain() !== domain) {
         return `loads when the matrix is switched to ${DOMAIN_LABEL[domain]}`;
       }
-      if (live && data.getDataSourceMode() !== 'live') return 'live mode is off; the bundled copy is in use';
       return null;
     },
   };
