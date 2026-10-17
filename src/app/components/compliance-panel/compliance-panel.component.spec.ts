@@ -143,8 +143,9 @@ describe('CompliancePanelComponent', () => {
     it('frameworkScores reports technique coverage per framework with a traffic-light status', () => {
       const nist = component.frameworkScores.find(f => f.key === 'nist')!;
       expect(nist).toEqual(jasmine.objectContaining({ total: 4, covered: 3, pct: 75, status: 'amber' }));
-      const cis = component.frameworkScores.find(f => f.key === 'cis')!;
-      expect(cis).toEqual(jasmine.objectContaining({ total: 4, covered: 1, pct: 25, status: 'red' }));
+      // CIS has no source since CTID withdrew it (E1.6): it is not scored at all, even
+      // when its service reports controls, rather than scored as a mapping gap.
+      expect(component.frameworkScores.find(f => f.key === 'cis')).toBeUndefined();
       // Mapper-based frameworks with no controls score 0 rather than dividing by zero.
       const soc2 = component.frameworkScores.find(f => f.key === 'soc2')!;
       expect(soc2).toEqual(jasmine.objectContaining({ total: 0, covered: 0, pct: 0, status: 'red' }));
@@ -154,8 +155,15 @@ describe('CompliancePanelComponent', () => {
       component.searchText = 'phish';
       component.setTab('cis');
       expect(component.searchText).toBe('');
-      expect(component.displayRows.map(r => r.attackId)).toEqual(['T1566']);
-      expect(component.activeTabCount).toBe(1);
+      // CIS is withdrawn upstream (E1.6): no rows, no count, the withdrawn stamp.
+      expect(component.displayRows).toEqual([]);
+      expect(component.activeTabCount).toBe(0);
+      expect(component.activeMapping.withdrawn).toBeTrue();
+      component.setTab('nist');
+      component.searchText = 'phish';
+      expect(component.displayRows).toEqual([]);
+      component.searchText = '';
+      expect(component.displayRows.map(r => r.attackId)).toEqual(['T1003', 'T1190', 'T1059']);
       component.setTab('soc2');
       expect(component.displayRows).toEqual([]);
     });

@@ -63,6 +63,8 @@ export class ThreatIntelligencePanelComponent implements OnInit, OnDestroy {
   // Overview
   galaxyClustersLoaded = 0;
   openCtiConnected = false;
+  /** False until the user configures an OpenCTI instance; there is no default server. */
+  openCtiConfigured = false;
   totalGroups = 0;
   totalWithIntel = 0;
   topIntelRows: IntelRow[] = [];
@@ -100,6 +102,7 @@ export class ThreatIntelligencePanelComponent implements OnInit, OnDestroy {
     this.subs.add(
       this.openCtiService.connected$.subscribe(c => {
         this.openCtiConnected = c;
+        this.openCtiConfigured = this.openCtiService.isConfigured();
         this.cdr.markForCheck();
       }),
     );

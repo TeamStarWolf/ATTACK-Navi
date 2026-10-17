@@ -2,13 +2,13 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { SettingsService } from './settings.service';
 import { proxyRequestHeaders } from './proxy-headers';
 
 export interface OpenCtiConfig {
-  url: string;       // e.g. https://demo.opencti.io
+  url: string;       // your instance, e.g. https://opencti.example.org; empty until configured
   token: string;     // API token (Bearer)
   connected: boolean;
   mode: 'direct' | 'proxy';
@@ -334,14 +334,21 @@ export class OpenCtiService {
     return JSON.stringify(bundle, null, 2);
   }
 
-  /** OpenCTI public demo URL — for documentation link */
-  getDemoUrl(): string {
-    return 'https://demo.opencti.io';
+  /** True once the user has configured an instance (a proxy URL, or a URL and token). */
+  isConfigured(): boolean {
+    return this.config.mode === 'proxy'
+      ? !!this.config.proxyUrl
+      : !!this.config.url && !!this.config.token;
   }
 
   // ─── Private helpers ──────────────────────────────────────────────────────
 
   private graphql<T>(query: string, variables: Record<string, unknown>): Observable<T> {
+    // No instance, no request: there is no default server (E1.6). Without this an
+    // empty URL would post to this app's own origin at /graphql.
+    if (!this.isConfigured()) {
+      return throwError(() => new Error('No OpenCTI instance is configured.'));
+    }
     const endpoint = this.config.mode === 'proxy'
       ? `${this.config.proxyUrl}/api/opencti/graphql`
       : `${this.config.url}/graphql`;

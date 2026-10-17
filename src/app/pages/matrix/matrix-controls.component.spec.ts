@@ -5,6 +5,7 @@ import { BehaviorSubject } from 'rxjs';
 import { MatrixControlsComponent } from './matrix-controls.component';
 import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
+import { HttpClient } from '@angular/common/http';
 import { MatrixControlService } from '../../services/matrix-control.service';
 import { AttackCveService } from '../../services/attack-cve.service';
 import { ViewpointService } from '../../services/viewpoint.service';
@@ -307,6 +308,47 @@ describe('MatrixControlsComponent', () => {
       const reason = el.querySelector('#' + kev.getAttribute('aria-describedby'))!.textContent!.trim();
       expect(reason).toBe(lensAvailability(HEATMAP_MODES.find((m) => m.value === 'kev')!, 'ics').reason!);
       expect(freq.hasAttribute('aria-disabled')).toBeFalse();
+    });
+  });
+
+  // Plan P1 row E1.6: "data-source ids are normalised case-insensitively (macOS:unifiedlog
+  // vs macos:unifiedlog)"; acceptance "the data-source filter lists each component once".
+  // The bundle goes through the production parser; the bundled releases are checked in
+  // utils/data-source-names.spec.ts.
+  describe('data-source filter (E1.6)', () => {
+    const dc = (id: string, name: string, logSources: string[]) => ({
+      type: 'x-mitre-data-component', id: `x-mitre-data-component--${id}`, name,
+      x_mitre_log_sources: logSources.map((n) => ({ name: n, channel: 'x' })),
+    });
+    // The upstream spells the unified log both ways on one source each.
+    const BUNDLE = {
+      objects: [
+        dc('a', 'File Access', ['macOS:unifiedlog', 'macos:unifiedlog']),
+        dc('b', 'Driver Metadata', ['macos:unifiedlog']),
+        dc('c', 'Process Creation', ['WinEventLog:Sysmon']),
+        dc('d', 'Network Connection Creation', ['NSM:FLow', 'NSM:Flow', 'NSM:Flow']),
+      ],
+    };
+    const options = () => Array.from(fixture.nativeElement.querySelectorAll('.ds-select option') as NodeListOf<HTMLOptionElement>)
+      .map((o) => o.textContent!.trim())
+      .filter((t) => t !== 'All data sources');
+
+    beforeEach(() => {
+      // The production parser; the DataService token itself is stubbed above.
+      const parser = new DataService(null as unknown as HttpClient) as unknown as { parseBundle(b: unknown): unknown };
+      (TestBed.inject(DataService) as any).domain$.next(parser.parseBundle(BUNDLE));
+      fixture.detectChanges();
+    });
+
+    it('lists each data source once, in one spelling, however the bundle spells it', () => {
+      expect(options()).toEqual(['NSM:Flow', 'WinEventLog:Sysmon', 'macos:unifiedlog']);
+      const keys = options().map((o) => o.toLowerCase());
+      expect(new Set(keys).size).toBe(keys.length);
+    });
+
+    it('selects the listed spelling when a share link carries another one', () => {
+      (TestBed.inject(FilterService) as any).activeDataSource$.next('macOS:unifiedlog');
+      expect(component.selectedDataSource).toBe('macos:unifiedlog');
     });
   });
 });

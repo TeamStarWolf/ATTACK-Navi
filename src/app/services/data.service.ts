@@ -17,6 +17,7 @@ import { ThreatGroup } from '../models/group';
 import { AttackSoftware } from '../models/software';
 import { ProcedureExample } from '../models/procedure';
 import { MitreDataSource, MitreDataComponent } from '../models/datasource';
+import { canonicalDataSourceSpellings, dataSourceKey } from '../utils/data-source-names';
 import { Campaign } from '../models/campaign';
 
 /**
@@ -564,6 +565,7 @@ export class DataService {
     const softwareMap = new Map<string, AttackSoftware>(); // STIX id → Software
     const dataSourcesMap = new Map<string, MitreDataSource>(); // STIX id → DataSource
     const dataComponentsMap = new Map<string, MitreDataComponent>(); // STIX id → DataComponent
+    const logSourceNames: string[] = []; // every x_mitre_log_sources name, for one spelling per source
     const campaignsMap = new Map<string, Campaign>(); // STIX id → Campaign
     // v18 detection model
     const analyticsMap = new Map<string, string[]>(); // analyticId → dataComponentRefs[]
@@ -690,6 +692,7 @@ export class DataService {
           // older: x_mitre_data_source_ref (now deprecated/empty)
           const logSources: Array<{ name: string; channel?: string }> = obj.x_mitre_log_sources ?? [];
           const dataSourceName = logSources.length > 0 ? logSources[0].name : '';
+          for (const ls of logSources) if (typeof ls?.name === 'string') logSourceNames.push(ls.name);
           dataComponentsMap.set(obj.id, {
             id: obj.id,
             name: obj.name ?? '',
@@ -934,7 +937,19 @@ export class DataService {
     // ── Resolve data component source names (legacy fallback) ────────────────
     for (const dc of dataComponentsMap.values()) {
       const ds = dataSourcesMap.get(dc.dataSourceRef);
-      if (ds) dc.dataSourceName = ds.name;
+      if (ds) {
+        dc.dataSourceName = ds.name;
+        logSourceNames.push(ds.name);
+      }
+    }
+
+    // ── One spelling per data source (E1.6) ──────────────────────────────────
+    // The bundles spell some log sources two ways ('macos:unifiedlog' and
+    // 'macOS:unifiedlog'); names compare case-insensitively and each takes the
+    // spelling used most often across the bundle's log sources.
+    const dataSourceSpelling = canonicalDataSourceSpellings(logSourceNames);
+    for (const dc of dataComponentsMap.values()) {
+      if (dc.dataSourceName) dc.dataSourceName = dataSourceSpelling.get(dataSourceKey(dc.dataSourceName)) ?? dc.dataSourceName;
     }
 
     const techniquesByDataComponent = new Map<string, Technique[]>();

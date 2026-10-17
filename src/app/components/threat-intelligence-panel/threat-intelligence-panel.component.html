@@ -22,7 +22,7 @@
         </div>
         <div class="stat-card">
           <span class="stat-value" [class.connected]="openCtiConnected">
-            {{ openCtiConnected ? 'Connected' : 'Offline' }}
+            {{ openCtiConnected ? 'Connected' : openCtiConfigured ? 'Offline' : 'Not configured' }}
           </span>
           <span class="stat-label">OpenCTI</span>
         </div>
@@ -167,8 +167,10 @@
           } @else {
             <div class="empty-state">
               <p>Search by technique ID to find related indicators from MISP and OpenCTI.</p>
-              @if (!openCtiConnected) {
-                <p class="hint-text">OpenCTI is not connected. Configure it in Settings to see live indicators.</p>
+              @if (!openCtiConfigured) {
+                <p class="hint-text" data-testid="opencti-not-configured">No OpenCTI instance is configured, so none is contacted. Add your own in Settings to see its indicators.</p>
+              } @else if (!openCtiConnected) {
+                <p class="hint-text">OpenCTI is not connected. Check the instance in Settings to see live indicators.</p>
               }
             </div>
           }

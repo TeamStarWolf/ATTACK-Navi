@@ -21,6 +21,7 @@ import { CriProfileService } from '../../services/cri-profile.service';
 import { CsaCcmService } from '../../services/csa-ccm.service';
 import { M365ControlsService } from '../../services/m365-controls.service';
 import { parseFixtureDomain, resetBrowserState, signal } from '../../testing/lens-harness';
+import { COMPLIANCE_TABS, COMPLIANCE_TAB_META } from './compliance-mapping-meta';
 
 /** `n` fake controls for one technique, ids prefixed by framework so pills are recognisable. */
 const controls = (prefix: string, source: string, attackId: string) =>
@@ -91,19 +92,21 @@ describe('CompliancePanelComponent (rendered, fixture domain)', () => {
   it('score cards show technique coverage per framework (covered / parent techniques)', () => {
     const card = (label: string) => [...host.querySelectorAll('.score-card')]
       .find(c => c.querySelector('.score-label')!.textContent!.trim() === label) as HTMLElement;
-    for (const [label, source] of [['NIST 800-53', 'nist'], ['CIS v8', 'cis'], ['CRI Profile', 'cri'], ['AWS', 'cloud-aws']]) {
+    for (const [label, source] of [['NIST 800-53', 'nist'], ['CRI Profile', 'cri'], ['AWS', 'cloud-aws']]) {
       const covered = parents.filter(t => signal(source, t.attackId) > 0).length;
       const c = card(label);
       expect(c.querySelector('.score-meta')!.textContent!.trim()).withContext(label).toBe(`${covered}/${parents.length}`);
       expect(c.querySelector('.score-value')!.textContent!.trim()).withContext(label)
         .toBe(`${Math.round((covered / parents.length) * 100)}%`);
     }
+    // CIS is withdrawn upstream (E1.6): no score card, even though its stub reports controls.
+    expect(card('CIS v8')).toBeUndefined();
   });
 
   it('switching tab and searching re-renders the table', () => {
-    (host.querySelector('.tab-btn:nth-child(1)') as HTMLButtonElement).click(); // CIS
+    (host.querySelector('.tab-btn:nth-child(2)') as HTMLButtonElement).click(); // AWS (CIS, the first tab, is withdrawn)
     fixture.detectChanges();
-    expect(rows().length).toBe(parents.filter(t => signal('cis', t.attackId) > 0).length);
+    expect(rows().length).toBe(parents.filter(t => signal('cloud-aws', t.attackId) > 0).length);
 
     const target = rowIds()[0];
     const input = host.querySelector('.search-input') as HTMLInputElement;
@@ -118,5 +121,36 @@ describe('CompliancePanelComponent (rendered, fixture domain)', () => {
     btn.click();
     fixture.detectChanges();
     expect(rows().length).toBe(parents.length);
+  });
+
+  // Plan P1 row E1.6, acceptance "every compliance tab shows its mapping version".
+  it('every compliance tab shows its mapping version', () => {
+    const tabs = [...host.querySelectorAll('.tab-bar .tab-btn')] as HTMLButtonElement[];
+    expect(tabs.length).toBe(COMPLIANCE_TABS.length);
+    tabs.forEach((btn, i) => {
+      btn.click();
+      fixture.detectChanges();
+      const tab = COMPLIANCE_TABS[i];
+      const meta = COMPLIANCE_TAB_META[tab];
+      const stamp = host.querySelector('[data-testid="mapping-stamp"]') as HTMLElement;
+      expect(stamp.getAttribute('data-tab')).withContext(btn.textContent!.trim()).toBe(tab);
+      expect(stamp.textContent!.trim()).withContext(tab).toBe(meta.stamp);
+      expect(btn.title).withContext(tab).toContain(meta.stamp);
+      if (meta.mappedVs) expect(stamp.textContent).withContext(tab).toMatch(/mapped vs ATT&CK 1[67].1/);
+    });
+    const versions = COMPLIANCE_TABS.map(t => COMPLIANCE_TAB_META[t].mappedVs).filter(Boolean);
+    expect(new Set(versions)).toEqual(new Set(['16.1', '17.1']));
+  });
+
+  it("shows CIS as 'source withdrawn upstream' with no table, even when its service reports controls", () => {
+    const cisBtn = host.querySelector('.tab-bar .tab-btn') as HTMLButtonElement;
+    expect(cisBtn.querySelector('.tab-badge-withdrawn')?.textContent?.trim()).toBe('withdrawn');
+    cisBtn.click();
+    fixture.detectChanges();
+    expect(host.querySelector('[data-testid="mapping-withdrawn"]')?.textContent).toContain('Source withdrawn upstream.');
+    expect(host.querySelector('[data-testid="mapping-stamp"]')!.textContent).toMatch(/^Source withdrawn upstream: /);
+    expect(host.querySelector('.header-subtitle')!.textContent!.trim()).toBe('CIS Controls: source withdrawn upstream');
+    expect(host.querySelector('table.comp-table')).toBeNull();
+    expect(rows().length).toBe(0);
   });
 });

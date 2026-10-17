@@ -119,7 +119,6 @@ OpenCTI integration enriches techniques with structured threat intelligence, inc
 
 ```
 https://opencti.example.org
-https://demo.opencti.io
 ```
 
 ### Token Generation

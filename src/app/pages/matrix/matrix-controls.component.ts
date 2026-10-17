@@ -24,6 +24,7 @@ import { domainLabel } from '../../models/lens-sources';
 import { LensCardService } from '../../services/lens-card.service';
 import { PLATFORM_PILLS } from '../../components/toolbar/toolbar.component';
 import { Viewpoint, ViewpointService } from '../../services/viewpoint.service';
+import { distinctDataSourceNames, sameDataSource } from '../../utils/data-source-names';
 
 /**
  * Matrix-scoped controls row: technique + mitigation search, platform /
@@ -123,7 +124,7 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
     this.subs.add(this.dataService.domain$.subscribe((d) => {
       this.techniques = d?.techniques ?? [];
       this.mitigations = d?.mitigations ?? [];
-      this.dataSourceNames = d ? [...new Set(d.dataComponents.map(dc => dc.dataSourceName))].filter(Boolean).sort() : [];
+      this.dataSourceNames = d ? distinctDataSourceNames(d.dataComponents.map(dc => dc.dataSourceName)) : [];
       this.cdr.markForCheck();
     }));
     this.subs.add(this.filterService.activeMitigationFilters$.subscribe((mits) => {
@@ -141,7 +142,8 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
     this.subs.add(this.filterService.searchScope$.subscribe((s) => { this.searchScope = s; this.cdr.markForCheck(); }));
     this.subs.add(this.filterService.searchFilterMode$.subscribe((v) => { this.searchFilterMode = v; this.cdr.markForCheck(); }));
     this.subs.add(this.filterService.platformMulti$.subscribe((ps) => { this.activePlatforms = ps; this.cdr.markForCheck(); }));
-    this.subs.add(this.filterService.activeDataSource$.subscribe((ds) => { this.selectedDataSource = ds ?? ''; this.cdr.markForCheck(); }));
+    // A share link may carry another spelling of the name ('macOS:unifiedlog'); select the listed one.
+    this.subs.add(this.filterService.activeDataSource$.subscribe((ds) => { this.selectedDataSource = ds ? (this.dataSourceNames.find((n) => sameDataSource(n, ds)) ?? ds) : ''; this.cdr.markForCheck(); }));
     this.subs.add(this.filterService.implStatusFilter$.subscribe((s) => { this.implStatusFilter = s ?? ''; this.cdr.markForCheck(); }));
     this.subs.add(this.filterService.heatmapMode$.subscribe((m) => { this.heatmapMode = m; this.cdr.markForCheck(); }));
     this.subs.add(this.libraryLayerService.manifest$.subscribe((list) => { this.libraryLayers = list; this.cdr.markForCheck(); }));

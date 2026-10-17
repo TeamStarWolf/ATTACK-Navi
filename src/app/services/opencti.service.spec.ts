@@ -127,4 +127,57 @@ describe('OpenCtiService', () => {
       expect(result?.success).toBeTrue();
     });
   });
+
+  // Plan P1 row E1.6: "threat-intelligence-panel drops the demo.opencti.io default
+  // and makes no request until an instance is configured"; acceptance "OpenCTI makes
+  // 0 requests on a fresh profile". The panel-level check lives in
+  // threat-intelligence-panel.component.spec.ts.
+  describe('on a fresh profile (E1.6)', () => {
+    let httpMock: HttpTestingController;
+
+    beforeEach(() => {
+      httpMock = TestBed.inject(HttpTestingController);
+    });
+
+    afterEach(() => httpMock.verify());
+
+    it('has no default instance: no URL, no proxy, not configured, and no demo-server helper', () => {
+      const config = service.getConfig();
+      expect(config.url).toBe('');
+      expect(config.proxyUrl).toBe('');
+      expect(config.connected).toBeFalse();
+      expect(service.isConfigured()).toBeFalse();
+      expect('getDemoUrl' in service).withContext('the demo.opencti.io helper is gone').toBeFalse();
+    });
+
+    it('makes 0 requests through every entry point until an instance is configured', () => {
+      const results: unknown[] = [];
+      service.testConnection();
+      service.getIndicatorsForTechnique('T1059').subscribe(r => results.push(r));
+      service.getThreatActorsForTechnique('T1059').subscribe(r => results.push(r));
+      service.importStixBundle('{"type":"bundle"}').subscribe(r => results.push(r));
+      // Even a forced "connected" flag cannot send a request without an instance.
+      (service as unknown as { config: { connected: boolean } }).config.connected = true;
+      service.getIndicatorsForTechnique('T1003').subscribe({ next: r => results.push(r), error: e => results.push(e) });
+      service.importStixBundle('{"type":"bundle"}').subscribe(r => results.push(r));
+
+      expect(httpMock.match(() => true).length).withContext('HTTP requests on a fresh profile').toBe(0);
+      expect(results).toEqual([[], [], { success: false, message: 'Not connected to OpenCTI.' }, [], jasmine.objectContaining({ success: false })]);
+    });
+
+    it('a stored config without a token (a reload) still sends nothing until the token is entered', () => {
+      localStorage.setItem('opencti_config', JSON.stringify({ url: 'https://opencti.example', mode: 'direct', proxyUrl: '' }));
+      const reloaded = new OpenCtiService(TestBed.inject(HttpClient), TestBed.inject(SettingsService));
+      reloaded.testConnection();
+      expect(reloaded.isConfigured()).toBeFalse();
+      expect(httpMock.match(() => true).length).toBe(0);
+    });
+
+    it('contacts only the instance the user configures, once the URL and token are given', () => {
+      service.saveConfig({ url: 'https://opencti.example/', token: 'cti-token', mode: 'direct', proxyUrl: '' });
+      const req = httpMock.expectOne('https://opencti.example/graphql');
+      req.flush({ data: { about: { version: '6.0', title: 'OpenCTI' } } });
+      expect(service.isConfigured()).toBeTrue();
+    });
+  });
 });
