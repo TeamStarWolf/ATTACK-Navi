@@ -23,6 +23,7 @@ import { CveService } from '../../services/cve.service';
 import { MispService } from '../../services/misp.service';
 import { OpenCtiService } from '../../services/opencti.service';
 import { EnrichmentService } from '../../services/enrichment.service';
+import { SourceRegistryService } from '../../services/source-registry.service';
 
 function technique(attackId: string, name: string, tactic: string): Technique {
   return {
@@ -72,11 +73,13 @@ describe('DashboardPanelComponent', () => {
   let component: DashboardPanelComponent;
   let status$: BehaviorSubject<Map<string, string>>;
   let atomicLoaded$: BehaviorSubject<boolean>;
+  let widgets$: BehaviorSubject<DashboardWidget[]>;
   let totalsSpy: jasmine.Spy;
 
   beforeEach(() => {
     status$ = new BehaviorSubject(new Map<string, string>());
     atomicLoaded$ = new BehaviorSubject<boolean>(false);
+    widgets$ = new BehaviorSubject(WIDGETS);
     const loaded = () => new BehaviorSubject<boolean>(false);
     totalsSpy = jasmine.createSpy('totals').and.returnValue({
       total: 4, enriched: 2, mitigation: 2, detection: 1, atomic: 0, d3fend: 0, control: 1, threatIntel: 2, cve: 1, defended: 2,
@@ -107,7 +110,7 @@ describe('DashboardPanelComponent', () => {
         { provide: CARService, useValue: { loaded$: loaded(), getAnalytics: (id: string) => (id === 'T1059' ? [{}] : []) } },
         { provide: AtomicService, useValue: { loaded$: atomicLoaded$, getTestCount: () => 0 } },
         { provide: D3fendService, useValue: { loaded$: loaded(), getCountermeasures: () => [] } },
-        { provide: DashboardConfigService, useValue: { widgets$: new BehaviorSubject(WIDGETS) } },
+        { provide: DashboardConfigService, useValue: { widgets$ } },
         { provide: SigmaService, useValue: { loaded$: loaded(), getRuleCount: (id: string) => (id === 'T1059' ? 5 : 0) } },
         { provide: ElasticService, useValue: { loaded$: loaded(), getRuleCount: () => 0 } },
         { provide: SplunkContentService, useValue: { loaded$: loaded(), getRuleCount: () => 1 } },
@@ -183,6 +186,49 @@ describe('DashboardPanelComponent', () => {
     atomicLoaded$.next(true);
     expect(atomic().status).toBe('loaded');
     expect(component.healthEntries.filter(h => h.status === 'loaded').length).toBe(1);
+  });
+
+  describe('data health reads the source registry (E1.3)', () => {
+    const row = (name: string): HTMLElement =>
+      [...fixture.nativeElement.querySelectorAll('.health-row')]
+        .find((r: HTMLElement) => r.querySelector('.health-name')?.textContent?.trim() === name) as HTMLElement;
+
+    beforeEach(() => {
+      widgets$.next([...WIDGETS, { id: 'data-health', label: 'Data Health', icon: '', visible: true, order: 3 }]);
+      fixture.detectChanges();
+    });
+
+    it('renders a source whose fetch failed as a failed row with the reason, not "loading"', () => {
+      TestBed.inject(SourceRegistryService).fail('atomic-layer', 'HTTP 503 Service Unavailable');
+      fixture.detectChanges();
+      const atomic = row('Atomic Red Team');
+      expect(atomic.querySelector('.health-status')!.textContent!.trim()).toBe('failed');
+      expect(atomic.querySelector('.health-dot')!.classList).toContain('dot-failed');
+      expect(atomic.getAttribute('title')).toContain('HTTP 503');
+      // The service's loaded$ replaying false does not demote it back to "loading".
+      atomicLoaded$.next(false);
+      fixture.detectChanges();
+      expect(row('Atomic Red Team').querySelector('.health-status')!.textContent!.trim()).toBe('failed');
+    });
+
+    it('renders a source that answered with 0 rows (Elastic) as an empty row, not "loading"', () => {
+      TestBed.inject(SourceRegistryService).succeed('elastic-tree', 0);
+      fixture.detectChanges();
+      const elastic = row('Elastic Rules');
+      expect(elastic.querySelector('.health-status')!.textContent!.trim()).toBe('empty');
+      expect(elastic.querySelector('.health-dot')!.classList).toContain('dot-empty');
+      expect(elastic.querySelector('.health-dot')!.classList).not.toContain('dot-loading');
+    });
+
+    it('keeps a two-source entry out of the failed state while one of its sources has data', () => {
+      const registry = TestBed.inject(SourceRegistryService);
+      registry.fail('ctid-attack-to-cve', 'network error');
+      fixture.detectChanges();
+      expect(component.healthEntries.find(h => h.name === 'ATT&CK CVE')!.status).toBe('loading');
+      registry.fail('ctid-kev', 'network error');
+      fixture.detectChanges();
+      expect(row('ATT&CK CVE').querySelector('.health-status')!.textContent!.trim()).toBe('failed');
+    });
   });
 
   it('grades the composite posture, not mitigation coverage alone', () => {

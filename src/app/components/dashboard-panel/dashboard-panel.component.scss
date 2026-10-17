@@ -614,6 +614,7 @@
   &.dot-loaded { background: #22c55e; }
   &.dot-loading { background: #eab308; animation: pulse-dot 1.2s infinite; }
   &.dot-failed { background: #ef4444; }
+  &.dot-empty { background: #94a3b8; }
 }
 
 @keyframes pulse-dot {
@@ -636,6 +637,7 @@
   &.hs-loaded { color: #22c55e; }
   &.hs-loading { color: #eab308; }
   &.hs-failed { color: #ef4444; }
+  &.hs-empty { color: #94a3b8; }
 }
 
 // ─── Intel Summary ───────────────────────────────────────────────────────────

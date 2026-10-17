@@ -5,15 +5,15 @@ import { HttpClient } from '@angular/common/http';
 import { of } from 'rxjs';
 import { DataService } from './data.service';
 import { Domain } from '../models/domain';
+import { BUNDLED_ATTACK_VERSION, BUNDLED_F3_VERSION } from './source-inventory';
 
 // The bundled snapshots in src/assets/data power bundled-first loading and the
 // air-gapped build. The three ATT&CK domains must ship the same release (ICS and
 // Mobile were once left at 18.1 after Enterprise moved to 19.2, so the ICS matrix
 // showed retired techniques and missed new ones) and that release must be the one
 // the library layers, the Lylat layers and scripts/validate-curated-threat-layers.mjs
-// are written against. Bump these constants together with a data refresh.
-const BUNDLED_ATTACK_VERSION = '19.2';
-const BUNDLED_F3_VERSION = '1.2';
+// are written against. Bump these constants together with a data refresh; they live in
+// source-inventory.ts so the source registry's bundled records state the same version.
 const ATTACK_DOMAINS = ['enterprise', 'ics', 'mobile'] as const;
 const BUNDLE_FILES = [...ATTACK_DOMAINS, 'f3'].map(domain => `${domain}-attack.json`);
 const FETCH_TIMEOUT_MS = 120_000; // enterprise-attack.json is ~54 MB

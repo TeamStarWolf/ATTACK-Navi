@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { CisControlsService } from './cis-controls.service';
+import { SourceRegistryService } from './source-registry.service';
 
 describe('CisControlsService', () => {
   let service: CisControlsService;
@@ -15,13 +16,14 @@ describe('CisControlsService', () => {
     service = TestBed.inject(CisControlsService);
   });
 
-  it('loads as empty (no JSON source available since ATT&CK v16)', (done) => {
-    service.loaded$.subscribe(loaded => {
-      if (loaded) {
-        expect(service.getControlsForTechnique('T1003.001')).toEqual([]);
-        done();
-      }
-    });
+  it('is recorded as withdrawn upstream and never reports loaded (no JSON source since ATT&CK v16)', () => {
+    let loaded: boolean | undefined;
+    service.loaded$.subscribe(v => (loaded = v));
+    expect(loaded).toBeFalse();
+    expect(service.getControlsForTechnique('T1003.001')).toEqual([]);
+    const record = TestBed.inject(SourceRegistryService).get('cis-controls');
+    expect(record.status).toBe('archived-upstream');
+    expect(record.note).toContain('withdrawn');
   });
 
   it('returns empty array for any technique when no mappings loaded', () => {

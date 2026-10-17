@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { retryWithBackoff } from '../utils/retry';
+import { SourceRegistryService, describeLoadError } from './source-registry.service';
 
 export interface KillChainEntry {
   cveId: string;
@@ -33,7 +34,10 @@ export class Cve2CapecService {
   /** Unique ATT&CK techniques with ≥1 CVE2CAPEC kill chain. */
   readonly covered$ = this.coveredSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {
     this.load();
   }
 
@@ -48,11 +52,16 @@ export class Cve2CapecService {
       `${Cve2CapecService.BASE_URL}/CVE-${currentYear - 1}.jsonl.gz`,
     ];
 
+    this.sources.begin('cve2capec-runtime');
+    const errors: string[] = [];
     forkJoin(
       urls.map(url =>
         this.http.get(url, { responseType: 'blob' }).pipe(
           retryWithBackoff(),
-          catchError(() => of(null)),
+          catchError(err => {
+            errors.push(describeLoadError(err));
+            return of(null);
+          }),
         ),
       ),
     ).subscribe(async results => {
@@ -60,13 +69,22 @@ export class Cve2CapecService {
         if (!blob || blob.size === 0) continue;
         try {
           await this.streamParseGzipJsonl(blob);
-        } catch {
-          // Corrupt payload or unsupported browser — skip this year file.
+        } catch (err) {
+          // Corrupt payload or unsupported browser: this year file is not usable.
+          errors.push(`unreadable year file: ${describeLoadError(err)}`);
         }
       }
       this.totalSubject.next(this.byCveId.size);
       this.coveredSubject.next(this.byTechniqueId.size);
-      this.loadedSubject.next(true);
+      if (this.byCveId.size > 0) {
+        this.sources.succeed('cve2capec-runtime', this.byCveId.size);
+        this.loadedSubject.next(true);
+      } else if (errors.length) {
+        // Nothing usable arrived: report the failure, never "loaded, 0".
+        this.sources.fail('cve2capec-runtime', errors.join('; '));
+      } else {
+        this.sources.succeed('cve2capec-runtime', 0);
+      }
     });
   }
 

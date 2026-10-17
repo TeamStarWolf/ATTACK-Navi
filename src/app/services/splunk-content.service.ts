@@ -3,7 +3,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
-import { catchError, of } from 'rxjs';
+import { SourceRegistryService } from './source-registry.service';
 
 
 interface NavigatorLayer {
@@ -29,16 +29,19 @@ export class SplunkContentService {
   private coveredSubject = new BehaviorSubject<number>(0);
   readonly covered$ = this.coveredSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {
     this.loadLive();
   }
 
   private loadLive(): void {
     // Splunk no longer publishes a unified Navigator layer.
     // Scan the GitHub tree for .yml detection files and extract technique IDs.
+    this.sources.begin('splunk-tree');
     this.http.get<any>('https://api.github.com/repos/splunk/security_content/git/trees/develop?recursive=1')
-      .pipe(catchError(() => of(null)))
-      .subscribe((tree: any) => {
+      .subscribe({ next: (tree: any) => {
         if (tree?.tree) {
           const counts = new Map<string, number>();
           const techRegex = /[Tt](1\d{3}(?:\.\d{3})?)/;
@@ -59,8 +62,10 @@ export class SplunkContentService {
             this.ingestLayer(layer);
           }
         }
-        this.loadedSubject.next(true);
-      });
+        const rows = this.coveredSubject.value;
+        this.sources.succeed('splunk-tree', rows);
+        if (rows > 0) this.loadedSubject.next(true);
+      }, error: err => this.sources.fail('splunk-tree', err) });
   }
 
   /** Ingest a Navigator layer JSON with techniques[].techniqueID and techniques[].score. */

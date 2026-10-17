@@ -3,8 +3,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
-import { catchError } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { SourceRegistryService } from './source-registry.service';
 
 export interface CarAnalytic {
   id: string;           // e.g., "CAR-2014-04-003"
@@ -66,7 +65,10 @@ export class CARService {
   /** Number of unique ATT&CK techniques covered by CAR. */
   covered$ = this.coveredSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {
     // Index hardcoded analytics synchronously (always available)
     for (const analytic of CAR_ANALYTICS) {
       for (const id of analytic.attackIds) {
@@ -79,13 +81,16 @@ export class CARService {
   }
 
   private loadLive(): void {
-    this.http.get<any>(CARService.NAVIGATOR_URL).pipe(
-      catchError(() => of(null)),
-    ).subscribe(data => {
-      if (data?.techniques) {
-        this.parseLiveLayer(data.techniques);
-      }
-      this.loadedSubject.next(true);
+    this.sources.begin('car-layer');
+    this.http.get<any>(CARService.NAVIGATOR_URL).subscribe({
+      next: data => {
+        const techniques: any[] = Array.isArray(data?.techniques) ? data.techniques : [];
+        if (techniques.length) this.parseLiveLayer(techniques);
+        this.sources.succeed('car-layer', techniques.length);
+        if (techniques.length) this.loadedSubject.next(true);
+      },
+      // The seed stays indexed; the live layer is recorded as failed and loaded$ stays false.
+      error: err => this.sources.fail('car-layer', err),
     });
   }
 

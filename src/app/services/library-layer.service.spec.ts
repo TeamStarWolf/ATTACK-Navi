@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { LibraryLayerService } from './library-layer.service';
+import { SourceRegistryService } from './source-registry.service';
 
 describe('LibraryLayerService', () => {
   let service: LibraryLayerService;
@@ -132,11 +133,21 @@ describe('LibraryLayerService', () => {
       httpMock.expectNone('assets/data/library-layers/web-application-attacks.json');
     });
 
-    it('reports a settled-but-empty manifest so the UI can say so', () => {
+    it('reports a failed manifest as failed, with the reason, not as a loaded empty list (E1.3)', () => {
+      let error: string | null = null;
+      service.manifestError$.subscribe(e => (error = e));
       httpMock.expectOne('assets/data/library-layers/index.json').error(new ProgressEvent('error'));
       service.ensureActive();
-      expect(service.manifestLoaded).toBe(true);
+      expect(service.manifestLoaded).toBe(false);
+      expect(error).toBeTruthy();
       expect(service.activeFile).toBeNull();
+      expect(TestBed.inject(SourceRegistryService).get('library-layers').status).toBe('failed');
+    });
+
+    it('reports a manifest that lists nothing as loaded and empty', () => {
+      httpMock.expectOne('assets/data/library-layers/index.json').flush([]);
+      expect(service.manifestLoaded).toBe(true);
+      expect(TestBed.inject(SourceRegistryService).get('library-layers').status).toBe('empty');
     });
   });
 

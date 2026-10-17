@@ -4,6 +4,7 @@ import { HttpClientTestingModule, HttpTestingController } from '@angular/common/
 import { TestBed } from '@angular/core/testing';
 
 import { F3FraudService } from './f3-fraud.service';
+import { SourceRegistryService } from './source-registry.service';
 
 const BUNDLE = {
   objects: [
@@ -73,12 +74,16 @@ describe('F3FraudService', () => {
     expect(service.overlapCount).toBe(1);
   });
 
-  it('never throws on a failed load — overlap set is just empty', () => {
+  it('never throws on a failed load, records it as failed, never as loaded, and retries on the next call (E1.3)', () => {
     service.ensureLoaded();
     httpMock.expectOne('assets/data/f3-attack.json').flush('boom', { status: 500, statusText: 'Server Error' });
 
-    expect(service.loaded).toBe(true);
+    expect(service.loaded).toBe(false);
     expect(service.overlapCount).toBe(0);
     expect(service.hasOverlap('T1557')).toBe(false);
+    expect(TestBed.inject(SourceRegistryService).get('attack-f3').status).toBe('failed');
+
+    service.ensureLoaded();
+    httpMock.expectOne('assets/data/f3-attack.json').flush({ objects: [] });
   });
 });

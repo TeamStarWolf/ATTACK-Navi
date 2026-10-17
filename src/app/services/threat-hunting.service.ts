@@ -2,6 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { SourceRegistryService } from './source-registry.service';
 
 export interface HuntingQuery {
   title: string;
@@ -101,7 +102,7 @@ export class ThreatHuntingService {
 
   private initialized = false;
 
-  constructor() {}
+  constructor(private sources: SourceRegistryService = new SourceRegistryService()) {}
 
   /** Trigger data fetch on first use. Safe to call multiple times. */
   loadOnDemand(): void {
@@ -111,6 +112,7 @@ export class ThreatHuntingService {
   }
 
   private async loadQueries(): Promise<void> {
+    this.sources.begin('cyb3r-monk-hunting-tree');
     try {
       const resp = await retryFetch(
         'https://api.github.com/repos/Cyb3r-Monk/Threat-Hunting-and-Detection/git/trees/main?recursive=1',
@@ -155,10 +157,11 @@ export class ThreatHuntingService {
 
       this.totalSubject.next(queries.length);
       this.coveredSubject.next(this.byTechnique.size);
-      this.loadedSubject.next(true);
-    } catch {
-      // Silently fail on network errors (GitHub rate limits, etc.)
-      this.loadedSubject.next(true);
+      this.sources.succeed('cyb3r-monk-hunting-tree', queries.length);
+      if (queries.length > 0) this.loadedSubject.next(true);
+    } catch (err) {
+      // Network error, rate limit or unreadable body: recorded as failed, never as loaded.
+      this.sources.fail('cyb3r-monk-hunting-tree', err);
     }
   }
 

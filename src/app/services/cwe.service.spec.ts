@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { CweService } from './cwe.service';
+import { SourceRegistryService } from './source-registry.service';
 
 describe('CweService', () => {
   let service: CweService;
@@ -112,11 +113,13 @@ describe('CweService', () => {
     expect(loaded).toBeTrue();
   });
 
-  it('should emit true even if the catalog request fails', () => {
+  it('records a failed catalog request as failed and keeps loaded$ false; the static map still answers (E1.3)', () => {
     flushCatalog(null);
-    let loaded = false;
+    let loaded = true;
     service.loaded$.subscribe(val => { loaded = val; });
-    expect(loaded).toBeTrue();
+    expect(loaded).toBeFalse();
+    expect(TestBed.inject(SourceRegistryService).get('cwe-catalog').status).toBe('failed');
+    expect(service.getInfo('CWE-79')).toBeTruthy();
   });
 
   it('should merge fetched catalog data with static MAP', () => {

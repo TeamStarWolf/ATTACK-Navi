@@ -3,6 +3,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
+import { SourceRegistryService } from './source-registry.service';
 
 export interface CisControl {
   id: string;          // "CIS 1.1"
@@ -26,21 +27,25 @@ export class CisControlsService {
   private totalSubject = new BehaviorSubject<number>(0);
   total$ = this.totalSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {
     this.load();
   }
 
   private load(): void {
     if (!CisControlsService.URL) {
-      // No data source available — mark as loaded with empty dataset
-      this.loadedSubject.next(true);
+      // No data source exists: the registry says 'archived-upstream' (withdrawn) and
+      // loaded$ stays false rather than claiming an empty mapping loaded.
       return;
     }
+    this.sources.begin('cis-controls');
     this.http.get<any>(CisControlsService.URL).subscribe({
       next: (data) => this.parseAndIndex(data),
       error: (err) => {
         console.error('[CisControlsService] Failed to load CIS Controls mapping:', err);
-        this.loadedSubject.next(true);
+        this.sources.fail('cis-controls', err);
       },
     });
   }
@@ -67,7 +72,8 @@ export class CisControlsService {
       }
     }
     this.totalSubject.next(count);
-    this.loadedSubject.next(true);
+    this.sources.succeed('cis-controls', count);
+    if (count > 0) this.loadedSubject.next(true);
   }
 
   private extractGroup(m: any): string {

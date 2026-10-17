@@ -18,6 +18,7 @@ describe('MatrixControlsComponent', () => {
   let libraryStub: {
     manifest$: BehaviorSubject<{ file: string; name: string; description: string }[]>;
     manifestLoaded$: BehaviorSubject<boolean>;
+    manifestError$: BehaviorSubject<string | null>;
     activeFile$: BehaviorSubject<string | null>;
     setActive: jasmine.Spy;
   };
@@ -31,6 +32,7 @@ describe('MatrixControlsComponent', () => {
     libraryStub = {
       manifest$: new BehaviorSubject<{ file: string; name: string; description: string }[]>([]),
       manifestLoaded$: new BehaviorSubject(false),
+      manifestError$: new BehaviorSubject<string | null>(null),
       activeFile$: new BehaviorSubject<string | null>(null),
       setActive: jasmine.createSpy('setActive'),
     };
@@ -151,6 +153,18 @@ describe('MatrixControlsComponent', () => {
       fixture.detectChanges();
       el = fixture.nativeElement;
       expect(el.querySelector('.library-status')?.textContent).toContain('No library layers');
+    });
+
+    it('says the list failed, with the reason, when the manifest request fails (E1.3)', () => {
+      let el = menu();
+      expect(el.querySelector('.library-status')?.textContent).toContain('Loading');
+      libraryStub.manifestError$.next('HTTP 404 Not Found');
+      fixture.detectChanges();
+      el = fixture.nativeElement;
+      const text = el.querySelector('.library-status')?.textContent ?? '';
+      expect(text).toContain('did not load');
+      expect(text).toContain('HTTP 404 Not Found');
+      expect(text).not.toContain('Loading');
     });
 
     it('picking a curated layer unloads an active imported layer so the pick is what shows', () => {

@@ -2,7 +2,8 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, catchError, of } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
+import { SourceRegistryService } from './source-registry.service';
 import { NvdCveItem } from '../models/cve';
 
 /**
@@ -105,16 +106,25 @@ export class SsvcService {
   private loadedSubject = new BehaviorSubject<boolean>(false);
   loaded$ = this.loadedSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {
+    this.sources.begin('ssvc-tables');
     this.http
       .get<TablesAsset>('assets/data/ssvc-decision-tables.json')
-      .pipe(catchError(() => of(null)))
-      .subscribe(data => {
-        if (data?.tables) {
-          this.tables = data.tables;
-          this.meta = data.__meta ?? {};
-        }
-        this.loadedSubject.next(true);
+      .subscribe({
+        next: data => {
+          if (data?.tables) {
+            this.tables = data.tables;
+            this.meta = data.__meta ?? {};
+          }
+          const rows = Object.keys(this.tables).length;
+          this.sources.succeed('ssvc-tables', rows);
+          if (rows > 0) this.loadedSubject.next(true);
+        },
+        // Recorded as failed; loaded$ stays false and the SSVC panel says the tables did not load.
+        error: err => this.sources.fail('ssvc-tables', err),
       });
   }
 

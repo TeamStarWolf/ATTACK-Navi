@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { EngageService } from './engage.service';
+import { SourceRegistryService } from './source-registry.service';
 
 /**
  * A small slice of the five MITRE Engage JSON files the service joins:
@@ -107,7 +108,9 @@ describe('EngageService', () => {
     });
   });
 
-  it('tolerates a file that fails to load and still indexes the rest', () => {
+  it('fails the source, naming the file, when any file fails; no silent partial index (E1.3)', () => {
+    let loaded: boolean | undefined;
+    service.loaded$.subscribe(v => (loaded = v));
     httpMock.expectOne(r => r.url.endsWith('/activities.json')).flush(ACTIVITIES);
     httpMock.expectOne(r => r.url.endsWith('/attack_mapping.json')).flush(ATTACK_MAPPING);
     httpMock
@@ -116,9 +119,13 @@ describe('EngageService', () => {
     httpMock.expectOne(r => r.url.endsWith('/approach_activity_mappings.json')).flush(APPROACH_ACTIVITY);
     httpMock.expectOne(r => r.url.endsWith('/goals.json')).flush(GOALS);
 
-    const acts = service.getActivities('T1566');
-    expect(acts.map(a => a.id)).toEqual(['EAC0005']);
-    // The goal chain is broken, so the category falls back to the default.
-    expect(acts[0].category).toBe('Expose');
+    // Before E1.3 the broken goal chain gave every activity the default category
+    // 'Expose' and the service still said loaded.
+    expect(loaded).toBeFalse();
+    expect(service.getActivities('T1566')).toEqual([]);
+    const record = TestBed.inject(SourceRegistryService).get('engage');
+    expect(record.status).toBe('failed');
+    expect(record.lastError).toContain('goal_approach_mappings.json');
+    expect(record.lastError).toContain('HTTP 500');
   });
 });

@@ -2,7 +2,8 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, catchError, of } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
+import { SourceRegistryService } from './source-registry.service';
 
 /** v2 asset schema: exact per-technique count + most-recent CVE id sample. */
 interface CveMapEntryV2 {
@@ -43,11 +44,14 @@ export class NvdBulkService {
   /** Techniques with at least one mapped CVE. */
   covered$ = this.coveredSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {
+    this.sources.begin('cve-technique-map');
     this.http
       .get<Record<string, CveMapEntryV2 | CveMapMetaV2>>('assets/data/cve-technique-map.json')
-      .pipe(catchError(() => of(null)))
-      .subscribe(data => {
+      .subscribe({ next: data => {
         if (data) {
           for (const [key, value] of Object.entries(data)) {
             if (key === '__meta') {
@@ -62,8 +66,11 @@ export class NvdBulkService {
           this.totalSubject.next(this.meta.cveCount ?? this.counts.size);
           this.coveredSubject.next(this.counts.size);
         }
-        this.loadedSubject.next(true);
-      });
+        this.sources.succeed('cve-technique-map', this.counts.size);
+        if (this.counts.size > 0) this.loadedSubject.next(true);
+      },
+      // Recorded as failed; loaded$ stays false.
+      error: err => this.sources.fail('cve-technique-map', err) });
   }
 
   /** Exact count of pipeline-mapped CVEs for a technique (subtechniques roll up). */

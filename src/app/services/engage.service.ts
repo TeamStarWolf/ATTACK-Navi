@@ -4,6 +4,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { SourceRegistryService, describeLoadError } from './source-registry.service';
 
 export interface EngageActivity {
   id: string;           // e.g., "EAC0002"
@@ -34,13 +35,25 @@ export class EngageService {
   private loadedSubject = new BehaviorSubject<boolean>(false);
   readonly loaded$ = this.loadedSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {
     this.load();
   }
 
   private load(): void {
+    // Every file is needed to build the activity index; any failure fails the source
+    // (recorded with the file and reason) instead of indexing a partial, silent subset.
+    const errors: string[] = [];
     const get = <T>(file: string) =>
-      this.http.get<T[]>(`${ENGAGE_DATA_BASE}/${file}`).pipe(catchError(() => of([] as T[])));
+      this.http.get<T[]>(`${ENGAGE_DATA_BASE}/${file}`).pipe(
+        catchError(err => {
+          errors.push(`${file}: ${describeLoadError(err)}`);
+          return of([] as T[]);
+        }),
+      );
+    this.sources.begin('engage');
 
     forkJoin({
       activities: get<EngageActivityRow>('activities.json'),
@@ -49,6 +62,10 @@ export class EngageService {
       approachActivity: get<EngageApproachActivityRow>('approach_activity_mappings.json'),
       goals: get<EngageGoalRow>('goals.json'),
     }).subscribe(({ activities, attackMap, goalApproach, approachActivity, goals }) => {
+      if (errors.length) {
+        this.sources.fail('engage', errors.join('; '));
+        return;
+      }
       // Category = the activity's goal, resolved activity → approach → goal.
       const goalNames = new Map(goals.map(g => [g.id, g.name ?? '']));
       const approachGoal = new Map<string, string>();
@@ -88,7 +105,8 @@ export class EngageService {
         if (!list.some(existing => existing.id === activity.id)) list.push(activity);
       }
 
-      this.loadedSubject.next(true);
+      this.sources.succeed('engage', this.byAttackId.size);
+      if (this.byAttackId.size > 0) this.loadedSubject.next(true);
     });
   }
 

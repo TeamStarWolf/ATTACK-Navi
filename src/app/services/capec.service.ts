@@ -3,8 +3,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
-import { catchError } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { SourceRegistryService } from './source-registry.service';
 import { retryWithBackoff } from '../utils/retry';
 
 export interface CapecEntry {
@@ -38,16 +37,21 @@ export class CapecService {
   /** Number of unique ATT&CK techniques that have ≥1 CAPEC entry. */
   covered$ = this.coveredSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {
     this.load();
   }
 
   private load(): void {
+    this.sources.begin('capec');
     this.http.get<any>(CapecService.URL).pipe(
       retryWithBackoff(),
-      catchError(() => of({ objects: [] })),
-    ).subscribe(data => {
-      this.parseAndIndex(data);
+    ).subscribe({
+      next: data => this.parseAndIndex(data),
+      // Recorded as failed; loaded$ stays false.
+      error: err => this.sources.fail('capec', err),
     });
   }
 
@@ -111,7 +115,8 @@ export class CapecService {
 
     this.totalSubject.next(linkCount);
     this.coveredSubject.next(this.byTechniqueId.size);
-    this.loadedSubject.next(true);
+    this.sources.succeed('capec', linkCount);
+    if (linkCount > 0) this.loadedSubject.next(true);
   }
 
   /** Strip markdown-style formatting from CAPEC descriptions. */
