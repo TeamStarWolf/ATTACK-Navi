@@ -237,7 +237,7 @@
               </div>
               <div class="result-card" [ngClass]="getRiskClass()">
                 <span class="result-value">{{ riskScore }}</span>
-                <span class="result-label">Risk Score (0-100)</span>
+                <span class="result-label">Threat-weighted gap (0-100)</span>
               </div>
             </div>
 
@@ -326,7 +326,7 @@
                 <button class="next-step-card" (click)="openPanel('detection')">
                   <span class="next-icon">&#128300;</span>
                   <span class="next-label">Detection Panel</span>
-                  <span class="next-desc">Plan detection coverage for uncovered techniques</span>
+                  <span class="next-desc">Plan detection content for unmapped techniques</span>
                 </button>
                 <button class="next-step-card" (click)="openPanel('coverage-diff')">
                   <span class="next-icon">&Delta;</span>

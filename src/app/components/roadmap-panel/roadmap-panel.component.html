@@ -15,7 +15,7 @@
         <select class="control-select" [(ngModel)]="sortBy">
           <option value="priority">Priority Score</option>
           <option value="impact">Impact Score</option>
-          <option value="coverage">Techniques Covered</option>
+          <option value="coverage">Techniques Mapped</option>
           <option value="status">Status</option>
         </select>
       </div>
@@ -31,7 +31,7 @@
 
     <div class="roadmap-legend">
       <span class="legend-item"><span class="legend-dot priority">●</span> Priority = Impact ÷ Effort</span>
-      <span class="legend-item"><span class="legend-dot impact">●</span> Impact = Uncovered Techniques × Avg Threat Groups</span>
+      <span class="legend-item"><span class="legend-dot impact">●</span> Impact = Unmapped Techniques × Avg Threat Groups</span>
     </div>
 
     <div class="roadmap-body">

@@ -71,7 +71,7 @@ export class ExportActionsService {
 
   exportTacticCsv(): void {
     if (!this.domain) return;
-    const rows: string[] = ['Tactic,Technique Count,Covered Count,Coverage %,Uncovered Technique IDs'];
+    const rows: string[] = ['Tactic,Technique Count,Mitigation-Mapped Count,Mitigation-mapped %,Unmapped Technique IDs'];
     for (const col of this.domain.tacticColumns) {
       const parents = col.techniques.filter((t) => !t.isSubtechnique);
       const covered = parents.filter((t) => t.mitigationCount > 0);
@@ -92,7 +92,7 @@ export class ExportActionsService {
     if (!this.domain) return;
     const statusMap = this.implService.getStatusMap();
     const rows: string[] = [
-      'Mitigation ID,Mitigation Name,Status,Owner,Target Date,Security Controls,Evidence URL,Covered Techniques,Unique Coverage,Notes'
+      'Mitigation ID,Mitigation Name,Status,Owner,Target Date,Security Controls,Evidence URL,Mapped Techniques,Unique Coverage,Notes'
     ];
     const techMitCount = new Map<string, number>();
     for (const [techId, rels] of this.domain.mitigationsByTechnique.entries()) {

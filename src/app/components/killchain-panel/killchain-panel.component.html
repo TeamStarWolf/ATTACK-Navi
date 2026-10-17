@@ -63,10 +63,10 @@
               <th class="col-id">ATT&amp;CK ID</th>
               <th class="col-num">Techniques</th>
               <th class="col-num">Subtechniques</th>
-              <th class="col-pct">Coverage %</th>
+              <th class="col-pct">Mitigation-mapped %</th>
               <th class="col-num">Avg Mitigations</th>
               <th class="col-num">Threat Groups</th>
-              <th class="col-uncovered">Top Uncovered</th>
+              <th class="col-uncovered">Top Unmapped</th>
             </tr>
           </thead>
           <tbody>
@@ -102,7 +102,7 @@
                   @if (stat.topUncoveredTech) {
                     <span class="uncovered-name" [title]="stat.topUncoveredTech">{{ stat.topUncoveredTech }}</span>
                   } @else {
-                    <span class="fully-covered">All covered</span>
+                    <span class="fully-covered">All mapped</span>
                   }
                 </td>
               </tr>
@@ -115,14 +115,14 @@
       <div class="summary-bar">
         @if (bestCovered) {
           <div class="summary-item">
-            <span class="summary-label">Best covered</span>
+            <span class="summary-label">Most mapped</span>
             <span class="summary-value summary-green">{{ bestCovered.tactic.name }} ({{ bestCovered.coveragePct }}%)</span>
           </div>
         }
         <div class="summary-sep"></div>
         @if (worstCovered) {
           <div class="summary-item">
-            <span class="summary-label">Worst covered</span>
+            <span class="summary-label">Least mapped</span>
             <span class="summary-value summary-red">{{ worstCovered.tactic.name }} ({{ worstCovered.coveragePct }}%)</span>
           </div>
         }

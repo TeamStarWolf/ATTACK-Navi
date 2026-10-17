@@ -144,7 +144,7 @@ export class CtemPageComponent implements OnInit, OnDestroy {
             n: 3, name: 'Prioritization',
             question: 'What matters most, right now?',
             metrics: [
-              { label: 'Uncovered techniques (0 mitigations)', value: uncovered },
+              { label: 'Unmapped techniques (0 mitigations)', value: uncovered },
               { label: 'Mitigations not started', value: counts['not-started'] },
               { label: 'Mitigations in progress', value: counts['in-progress'] },
             ],

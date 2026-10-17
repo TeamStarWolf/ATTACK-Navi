@@ -54,7 +54,7 @@
             <div class="hero-from">{{ baseSnap.coveragePct | number:'1.1-1' }}% → {{ compareSnap.coveragePct | number:'1.1-1' }}%</div>
           </div>
           <div class="hero-card" [class.positive]="techniqueDelta >= 0" [class.negative]="techniqueDelta < 0">
-            <div class="hero-label">Techniques Covered</div>
+            <div class="hero-label">Techniques Mapped</div>
             <div class="hero-value">{{ techniqueDelta >= 0 ? '+' : '' }}{{ techniqueDelta }}</div>
             <div class="hero-from">{{ baseSnap.coveredTechniques }} → {{ compareSnap.coveredTechniques }}</div>
           </div>

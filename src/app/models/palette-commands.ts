@@ -42,7 +42,7 @@ export const NAV_COMMANDS: readonly NavCommand[] = [
   { panelId: 'risk-matrix', label: 'Risk Matrix', workspace: 'Exposure', keywords: 'risk quadrant' },
   { panelId: 'killchain', label: 'Kill Chain', workspace: 'Exposure', keywords: 'kill chain phases' },
   { panelId: 'technique-graph', label: 'Technique Graph', workspace: 'Exposure', keywords: 'graph relationships network' },
-  { panelId: 'gap-analysis', label: 'Gap Analysis', workspace: 'Exposure', keywords: 'gap report gaps uncovered' },
+  { panelId: 'gap-analysis', label: 'Gap Analysis', workspace: 'Exposure', keywords: 'gap report gaps unmapped' },
   { panelId: 'priority', label: 'Priority Mitigations', workspace: 'Exposure', keywords: 'ranked priorities' },
   { panelId: 'whatif', label: 'What-If Simulator', workspace: 'Exposure', keywords: 'simulate coverage' },
   { panelId: 'ctem', label: 'CTEM Program Board', workspace: 'Exposure', keywords: 'continuous threat exposure management gartner stages' },

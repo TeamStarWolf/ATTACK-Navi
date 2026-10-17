@@ -26,7 +26,7 @@
 | 8 | `app-legend` | Matrix | -- | Dynamic heatmap legend that updates with the active mode |
 | 9 | `app-filter-chips` | Matrix | -- | Active-filter chip bar with one-click removal |
 | 10 | `app-quick-filters` | Matrix | -- | Preset filter buttons (No Mitigation, KEV Exposed, etc.) |
-| 11 | `app-gap-view` | Matrix | -- | Modal overlay listing all uncovered techniques grouped by tactic |
+| 11 | `app-gap-view` | Matrix | -- | Modal overlay listing all unmapped techniques (no mitigation mapped) grouped by tactic |
 | 12 | `app-tactic-summary` | Matrix | -- | Popover card showing tactic-level stats on header click |
 | 13 | `app-sidebar` | Sidebar | -- | Right-side detail panel for a selected technique |
 | 14 | `app-threat-panel` | Threat Intel | `threats` | Threat group and campaign browser with coverage gaps |
@@ -115,7 +115,7 @@ These components form the application frame and are always visible.
 |----------|-------|
 | **Selector** | `app-stats-bar` |
 | **File** | `src/app/components/stats-bar/stats-bar.component.ts` |
-| **Purpose** | Horizontal statistics bar showing total techniques, covered count, coverage percentage, implemented percentage, and per-tactic mini-bar charts. Clicking a tactic bar filters the matrix to that tactic. Recomputes on every implementation status change. |
+| **Purpose** | Horizontal statistics bar showing total techniques, enriched count, enriched percentage, implemented (self-attested) percentage, and per-tactic mini-bar charts. Clicking a tactic bar filters the matrix to that tactic. Recomputes on every implementation status change. |
 | **Inputs** | `domain: Domain` |
 | **Outputs** | `tacticClicked: EventEmitter<string>` |
 
@@ -188,7 +188,7 @@ Components that render the ATT&CK matrix grid and its supporting UI.
 |----------|-------|
 | **Selector** | `app-filter-chips` |
 | **File** | `src/app/components/filter-chips/filter-chips.component.ts` |
-| **Purpose** | Renders a horizontal bar of active-filter chips (mitigation filters, search query, platform, dim-uncovered, hidden tactics, threat groups, software, campaigns). Each chip has a remove button. Includes a "Clear all" button. |
+| **Purpose** | Renders a horizontal bar of active-filter chips (mitigation filters, search query, platform, dim-unmapped, hidden tactics, threat groups, software, campaigns). Each chip has a remove button. Includes a "Clear all" button. |
 | **Key I/O** | Subscribes to eight FilterService observables via `combineLatest` |
 
 ---
@@ -221,7 +221,7 @@ Components that render the ATT&CK matrix grid and its supporting UI.
 |----------|-------|
 | **Selector** | `app-tactic-summary` |
 | **File** | `src/app/components/tactic-summary/tactic-summary.component.ts` |
-| **Purpose** | Popover card triggered by clicking a tactic column header. Shows technique count, coverage percentage, implementation status breakdown, and top uncovered techniques for that tactic. Positioned near the click event. |
+| **Purpose** | Popover card triggered by clicking a tactic column header. Shows technique count, coverage percentage, implementation status breakdown, and top unmapped techniques for that tactic. Positioned near the click event. |
 | **Key I/O** | Programmatic API: `show(data: TacticSummaryData, event: MouseEvent)` |
 
 ---
@@ -272,7 +272,7 @@ Components that render the ATT&CK matrix grid and its supporting UI.
 | **Selector** | `app-actor-profile-panel` |
 | **File** | `src/app/components/actor-profile-panel/actor-profile-panel.component.ts` |
 | **Panel ID** | `actor` |
-| **Purpose** | Deep-dive profile for a single threat actor. Shows technique list, associated software, campaigns, coverage percentage, tactic breakdown, and top uncovered techniques. Four-tab view: Overview, Techniques, Software, Campaigns. |
+| **Purpose** | Deep-dive profile for a single threat actor. Shows technique list, associated software, campaigns, coverage percentage, tactic breakdown, and top unmapped techniques. Four-tab view: Overview, Techniques, Software, Campaigns. |
 | **Key I/O** | Subscribes to `DataService.domain$`, `ImplementationService.status$` |
 
 ---
@@ -296,7 +296,7 @@ Components that render the ATT&CK matrix grid and its supporting UI.
 | **Selector** | `app-scenario-panel` |
 | **File** | `src/app/components/scenario-panel/scenario-panel.component.ts` |
 | **Panel ID** | `scenario` |
-| **Purpose** | Attack scenario simulator. Select a threat group and simulate an attack against current defenses. Classifies each technique as blocked, detected, vulnerable, or unknown based on implementation status, detection coverage, and mitigation presence. Generates an overall risk score (0--100) with radar chart visualization and a recommended action plan. Three tabs: Summary, Techniques, Plan. |
+| **Purpose** | Attack scenario simulator. Select a threat group and simulate an attack against current defenses. Classifies each technique as blocked, detected, vulnerable, or unknown based on implementation status, detection coverage, and mitigation presence. Generates an overall threat-weighted gap (0--100) with radar chart visualization and a recommended action plan. Three tabs: Summary, Techniques, Plan. |
 | **Key I/O** | Subscribes to `FilterService`, `DataService`, `ImplementationService`, `CARService`, `AtomicService`, `D3fendService` |
 
 ---
@@ -335,7 +335,7 @@ Components that render the ATT&CK matrix grid and its supporting UI.
 | **Selector** | `app-analytics-panel` |
 | **File** | `src/app/components/analytics-panel/analytics-panel.component.ts` |
 | **Panel ID** | `analytics` |
-| **Purpose** | Executive analytics dashboard showing per-tactic stats (coverage %, average risk), implementation status summary, top coverage gaps (ranked by group count, KEV, and risk), and highest-impact mitigations. Integrates CVE, Sigma, and NIST data for enriched scoring. |
+| **Purpose** | Executive analytics dashboard showing per-tactic stats (mitigation-mapped %, average risk), implementation status summary, top coverage gaps (ranked by group count, KEV, and risk), and highest-impact mitigations. Integrates CVE, Sigma, and NIST data for enriched scoring. |
 | **Key I/O** | Subscribes to `DataService`, `ImplementationService`, `CveService`, `SigmaService`, `NistMappingService` |
 
 ---
@@ -347,7 +347,7 @@ Components that render the ATT&CK matrix grid and its supporting UI.
 | **Selector** | `app-killchain-panel` |
 | **File** | `src/app/components/killchain-panel/killchain-panel.component.ts` |
 | **Panel ID** | `killchain` |
-| **Purpose** | Kill-chain analysis showing each ATT&CK tactic as a row with total techniques, covered count, coverage percentage, sub-technique count, threat group count, average mitigations per technique, and the top uncovered technique. Click a tactic to see its detail. |
+| **Purpose** | Kill-chain analysis showing each ATT&CK tactic as a row with total techniques, mitigation-mapped percentage, sub-technique count, threat group count, average mitigations per technique, and the top unmapped technique. Click a tactic to see its detail. |
 | **Key I/O** | Subscribes to `DataService.domain$` |
 
 ---
@@ -359,7 +359,7 @@ Components that render the ATT&CK matrix grid and its supporting UI.
 | **Selector** | `app-risk-matrix-panel` |
 | **File** | `src/app/components/risk-matrix-panel/risk-matrix-panel.component.ts` |
 | **Panel ID** | `risk-matrix` |
-| **Purpose** | 2D scatter plot placing techniques by threat score (Y: group count) vs. gap score (X: inverse of mitigation coverage). Techniques are classified into four quadrants: Critical (high threat, low coverage), Monitor (high threat, covered), Low Priority (low threat, low coverage), and Well Protected (low threat, covered). Filterable by quadrant with a searchable list view. |
+| **Purpose** | 2D scatter plot placing techniques by threat score (Y: group count) vs. gap score (X: inverse of mitigation coverage). Techniques are classified into four quadrants: Critical (high threat, few mitigations mapped), Monitor (high threat, well mapped), Address Later (low threat, few mitigations mapped), and Well Mapped (low threat, well mapped). Filterable by quadrant with a searchable list view. |
 | **Key I/O** | Subscribes to `DataService.domain$` |
 
 ---
@@ -445,7 +445,7 @@ Components that render the ATT&CK matrix grid and its supporting UI.
 | **Selector** | `app-priority-panel` |
 | **File** | `src/app/components/priority-panel/priority-panel.component.ts` |
 | **Panel ID** | `priority` |
-| **Purpose** | Mitigation priority ranker. Scores each mitigation across eight dimensions: unique technique coverage, total techniques, threat group exposure, KEV CVE count, Atomic test count, Sigma rule count, unified risk score, and NIST control count. Sortable by any column. Inline implementation status editing. |
+| **Purpose** | Mitigation priority ranker. Scores each mitigation across eight dimensions: unique technique coverage, total techniques, threat group exposure, KEV CVE count, Atomic test count, Sigma rule count, average reference depth, and NIST control count. Sortable by any column. Inline implementation status editing. |
 | **Key I/O** | Subscribes to `DataService`, `ImplementationService`, `CveService`, `AtomicService`, `SigmaService`, `EpssService`, `AttackCveService`, `NistMappingService` |
 
 ---
@@ -687,7 +687,7 @@ Components that render the ATT&CK matrix grid and its supporting UI.
 | **Selector** | `app-dashboard-panel` |
 | **File** | `src/app/components/dashboard-panel/dashboard-panel.component.ts` |
 | **Panel ID** | `dashboard` |
-| **Purpose** | Executive KPI dashboard. Displays coverage stats (total, covered, percentage), implementation breakdown (implemented/in-progress/planned/not-started), detection coverage (CAR/Atomic/D3FEND), risk indicators (critical-risk count, CVE-exposed count), coverage trend from timeline snapshots, per-tactic bar chart, and top-risk techniques. Supports HTML report export. |
+| **Purpose** | Executive KPI dashboard. Displays mapping stats (total, mapped, percentage), implementation breakdown (implemented/in-progress/planned/not-started), detection coverage (CAR/Atomic/D3FEND), risk indicators (critical-risk count, CVE-exposed count), coverage trend from timeline snapshots, per-tactic bar chart, and top-risk techniques. Supports HTML report export. |
 | **Key I/O** | Subscribes to `DataService`, `ImplementationService`, `TimelineService`, `AttackCveService`, `CARService`, `AtomicService`, `D3fendService`, `HtmlReportService` |
 
 ---

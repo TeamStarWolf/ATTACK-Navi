@@ -84,7 +84,7 @@ export const OBJECTIVE_TEMPLATES: Record<string, string> = {
 
 // Map tactic to success criteria templates
 export const SUCCESS_CRITERIA: Record<string, string> = {
-  'reconnaissance': 'Target information gathered and validated',
+  'reconnaissance': 'Target information gathered and confirmed',
   'resource-development': 'Infrastructure and tooling operational',
   'initial-access': 'Initial shell or access obtained on target',
   'execution': 'Payload executed successfully on target host',

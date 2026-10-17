@@ -16,12 +16,14 @@ Counts and versions derived from the code. When a document states one of these n
 | Lylat mission layers | 35 | `src/assets/data/lylat-mission-layers/index.json` |
 | Unit spec files | 192 | `src/**/*.spec.ts` |
 | Playwright spec files | 6 | `e2e/**/*.spec.ts` |
-| Script test files | 3 | `scripts/**/*.test.mjs` |
+| Script test files | 4 | `scripts/**/*.test.mjs` |
 | Proxy test files | 1 | `server/**/*.test.*` |
 | Angular | 22.2.2 | `package-lock.json` (`@angular/core`) |
 | TypeScript | 6.0.3 | `package-lock.json` |
 | RxJS | 7.8.2 | `package-lock.json` |
 | zone.js | 0.16.3 | `package-lock.json` |
+| Truth-vocabulary lint findings | 0 | `node scripts/lint-truth-vocab.mjs` (src/app templates and TS, README, docs) |
+| Truth-vocabulary allow directives | 2 | inline allow comments in those files, each with its reason |
 
 Unit spec files are files, not test cases; Karma prints the test-case count for the commit it ran.
 
