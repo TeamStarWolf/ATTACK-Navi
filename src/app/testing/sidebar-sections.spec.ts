@@ -9,6 +9,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
+import { provideLocationMocks } from '@angular/common/testing';
 
 import { SidebarComponent } from '../components/sidebar/sidebar.component';
 import { Domain } from '../models/domain';
@@ -44,7 +46,7 @@ describe('Sidebar section presence (fixture domain, 5 techniques)', () => {
     domain = parseFixtureDomain();
     TestBed.configureTestingModule({
       imports: [SidebarComponent],
-      providers: [provideHttpClient(withXhr()), provideHttpClientTesting()],
+      providers: [provideHttpClient(withXhr()), provideHttpClientTesting(), provideRouter([]), provideLocationMocks()],
     });
     (TestBed.inject(DataService) as unknown as { domainSubject: { next(d: Domain): void } }).domainSubject.next(domain);
     filter = TestBed.inject(FilterService);
