@@ -315,3 +315,14 @@
   margin: 0;
   white-space: pre-wrap;
 }
+
+/* E1.7: two snapshots counted on different bases */
+.cdp-basis-note {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  color: var(--text-main);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+}

@@ -6,6 +6,7 @@ import { RoadmapPanelComponent } from './roadmap-panel.component';
 import { DataService } from '../../services/data.service';
 import { ImplementationService } from '../../services/implementation.service';
 import { AttackCveService } from '../../services/attack-cve.service';
+import { EnrichmentService } from '../../services/enrichment.service';
 
 describe('RoadmapPanelComponent', () => {
   let component: RoadmapPanelComponent;
@@ -18,6 +19,7 @@ describe('RoadmapPanelComponent', () => {
         { provide: DataService, useValue: { domain$: new BehaviorSubject(null) }},
         { provide: ImplementationService, useValue: { status$: new BehaviorSubject(new Map()) }},
         { provide: AttackCveService, useValue: { getCvesForTechnique: () => [] } },
+        { provide: EnrichmentService, useValue: { mappedRollup: () => ({ overall: { total: 0, mapped: 0, pct: 0 }, byTactic: [] }) } },
       ],
     });
     fixture = TestBed.createComponent(RoadmapPanelComponent);

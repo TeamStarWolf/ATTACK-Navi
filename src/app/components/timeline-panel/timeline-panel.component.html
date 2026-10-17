@@ -151,7 +151,7 @@
                           ></div>
                         </div>
                         <!-- Delta from previous snapshot (previous in original order = next in reversed list) -->
-                        @if (i < snapshotsNewest.length - 1) {
+                        @if (i < snapshotsNewest.length - 1 && sameBasis(snap, snapshotsNewest[i + 1])) {
                           @let prev = snapshotsNewest[i + 1];
                           @let delta = snap.coveragePct - prev.coveragePct;
                           <span class="delta-badge" [class]="deltaClass(delta)">
@@ -168,8 +168,12 @@
                     </div>
 
                     <!-- Tech coverage -->
-                    <div class="card-sub">
-                      {{ snap.coveredTechniques }} / {{ snap.totalTechniques }} techniques mapped
+                    <div class="card-sub" [title]="basisLabel(snap)">
+                      @if (isLegacy(snap)) {
+                        {{ snap.coveredTechniques }} / {{ snap.totalTechniques }} techniques with a mapped mitigation (older snapshot: mitigations only)
+                      } @else {
+                        {{ snap.coveredTechniques }} / {{ snap.totalTechniques }} techniques mapped
+                      }
                     </div>
 
                     <!-- Notes (if any) -->
@@ -240,14 +244,18 @@
               <!-- Overall diff -->
               <div class="compare-overall">
                 <div class="overall-card">
-                  <div class="overall-label">Overall Coverage</div>
+                  <div class="overall-label">Mapped</div>
                   <div class="overall-values">
                     <span class="ov-a">{{ compareA.coveragePct }}%</span>
                     <span class="ov-arrow">→</span>
                     <span class="ov-b">{{ compareB.coveragePct }}%</span>
-                    <span class="delta-badge" [class]="deltaClass(compareB.coveragePct - compareA.coveragePct)">
-                      {{ deltaLabel(compareB.coveragePct - compareA.coveragePct) }}
-                    </span>
+                    @if (sameBasis(compareA, compareB)) {
+                      <span class="delta-badge" [class]="deltaClass(compareB.coveragePct - compareA.coveragePct)">
+                        {{ deltaLabel(compareB.coveragePct - compareA.coveragePct) }}
+                      </span>
+                    } @else {
+                      <span class="delta-badge" title="The two snapshots count on different bases: {{ basisLabel(compareA) }} vs {{ basisLabel(compareB) }}">bases differ</span>
+                    }
                   </div>
                 </div>
                 <div class="overall-card">
@@ -286,7 +294,7 @@
               </div>
 
               <!-- Per-tactic table -->
-              <div class="compare-section-title">Per-Tactic Coverage Change</div>
+              <div class="compare-section-title">Per-Tactic Mapped Change</div>
               <div class="compare-table-wrap">
                 <table class="compare-table">
                   <thead>
@@ -334,7 +342,7 @@
             </div>
           } @else {
             <div class="trends-container">
-              <div class="trends-title">Mitigation-mapped % Over Time</div>
+              <div class="trends-title">Mapped % Over Time</div>
 
               <!-- Bar chart -->
               <div class="bar-chart">
@@ -369,7 +377,7 @@
                     <tr>
                       <th>Snapshot</th>
                       <th>Date</th>
-                      <th class="num-col">Coverage</th>
+                      <th class="num-col">Mapped</th>
                       <th class="num-col">✅ Done</th>
                       <th class="num-col">🔄 In Progress</th>
                       <th class="num-col">📋 Planned</th>
@@ -408,10 +416,14 @@
                 @let last = snapshots[snapshots.length - 1];
                 <div class="summary-box">
                   <div class="summary-stat">
-                    <div class="summary-val" [class]="deltaClass(last.coveragePct - first.coveragePct)">
-                      {{ deltaLabel(last.coveragePct - first.coveragePct) }}
-                    </div>
-                    <div class="summary-label">Total coverage change</div>
+                    @if (sameBasis(first, last)) {
+                      <div class="summary-val" [class]="deltaClass(last.coveragePct - first.coveragePct)">
+                        {{ deltaLabel(last.coveragePct - first.coveragePct) }}
+                      </div>
+                    } @else {
+                      <div class="summary-val" title="The first and latest snapshots count on different bases">—</div>
+                    }
+                    <div class="summary-label">Total mapped % change</div>
                   </div>
                   <div class="summary-stat">
                     <div class="summary-val delta-pos">+{{ last.implCounts.implemented - first.implCounts.implemented }}</div>
@@ -422,8 +434,8 @@
                     <div class="summary-label">Snapshots tracked</div>
                   </div>
                   <div class="summary-stat">
-                    <div class="summary-val">{{ last.coveragePct }}%</div>
-                    <div class="summary-label">Current coverage</div>
+                    <div class="summary-val" [title]="basisLabel(last)">{{ last.coveragePct }}%</div>
+                    <div class="summary-label">Mapped now</div>
                   </div>
                 </div>
               }

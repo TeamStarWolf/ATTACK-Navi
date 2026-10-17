@@ -20,7 +20,7 @@ describe('StatsBarComponent', () => {
         { provide: ImplementationService, useValue: { status$: new BehaviorSubject(new Map()) }},
         { provide: TimelineService, useValue: { snapshots$: new BehaviorSubject([]), takeSnapshot: jasmine.createSpy() } },
         { provide: FilterService, useValue: { setActivePanel: jasmine.createSpy() } },
-        { provide: EnrichmentService, useValue: { isEnriched: () => false } },
+        { provide: EnrichmentService, useValue: { mappedRollup: () => ({ overall: { total: 0, mapped: 0, pct: 0 }, byTactic: [] }) } },
       ],
     });
     fixture = TestBed.createComponent(StatsBarComponent);

@@ -7,6 +7,7 @@ import { Subscription } from 'rxjs';
 import { DataService } from '../../services/data.service';
 import { ImplementationService, ImplStatus, IMPL_STATUS_LABELS, IMPL_STATUS_COLORS } from '../../services/implementation.service';
 import { AttackCveService } from '../../services/attack-cve.service';
+import { EnrichmentService, MappedCount } from '../../services/enrichment.service';
 import { Mitigation } from '../../models/mitigation';
 import { Domain } from '../../models/domain';
 import { Technique } from '../../models/technique';
@@ -32,7 +33,7 @@ interface RoadmapMitigation {
 interface RoadmapItem {
   mitigation: Mitigation;
   techniquesCovered: number;     // unique techniques this mitigation covers
-  uncoveredTechniques: number;   // techniques NOT yet fully mitigated
+  uncoveredTechniques: number;   // techniques with no implemented mitigation (self-attested)
   avgGroupCount: number;         // avg threat groups using covered techniques
   impactScore: number;           // uncoveredTechniques * avgGroupCount
   currentStatus: ImplStatus | null;
@@ -83,6 +84,14 @@ export class RoadmapPanelComponent implements OnInit, OnDestroy {
   implStatusMap = new Map<string, ImplStatus>();
   private subs = new Subscription();
 
+  /**
+   * Known tier ('mapped', E1.7): parent techniques with >=1 defensive reference
+   * input, from the same EnrichmentService.mappedRollup() the other summary
+   * surfaces show. P2 seam: PostureService replaces it with Known / Covered /
+   * Proven.
+   */
+  mapped: MappedCount = { total: 0, mapped: 0, pct: 0 };
+
   autoRoadmap: AutoRoadmapPhase[] | null = null;
   generatingRoadmap = false;
   showAutoRoadmap = false;
@@ -91,6 +100,7 @@ export class RoadmapPanelComponent implements OnInit, OnDestroy {
     private dataService: DataService,
     private implService: ImplementationService,
     private attackCveService: AttackCveService,
+    private enrichment: EnrichmentService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -109,6 +119,7 @@ export class RoadmapPanelComponent implements OnInit, OnDestroy {
 
   private buildRoadmap(): void {
     if (!this.domain) return;
+    this.mapped = this.enrichment.mappedRollup(this.domain).overall;
 
     const groupsByTech = new Map<string, number>();
     for (const t of this.domain.techniques) {
@@ -164,7 +175,7 @@ export class RoadmapPanelComponent implements OnInit, OnDestroy {
 
   exportCsv(): void {
     const rows = [
-      ['Rank', 'ID', 'Mitigation', 'Techniques Mapped', 'Unmapped', 'Avg Groups', 'Impact Score', 'Effort', 'Priority Score', 'Status', 'Tactics'],
+      ['Rank', 'ID', 'Mitigation', 'Techniques Mapped', 'No Implemented Mitigation (self-attested)', 'Avg Groups', 'Impact Score', 'Effort', 'Priority Score', 'Status', 'Tactics'],
       ...this.sortedRoadmap.map((item, i) => [
         i + 1,
         item.mitigation.attackId,

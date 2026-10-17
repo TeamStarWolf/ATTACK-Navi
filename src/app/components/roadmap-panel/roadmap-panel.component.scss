@@ -33,6 +33,7 @@
 }
 .roadmap-legend { display: flex; gap: 16px; padding: 5px 16px; font-size: 11px; color: var(--text-faint); flex-shrink: 0; }
 .legend-dot { &.priority { color: var(--accent); } &.impact { color: var(--accent-warm); } }
+.roadmap-known { padding: 2px 16px 6px; font-size: 11px; color: var(--text-muted); flex-shrink: 0; strong { color: var(--text-main); font-weight: 600; } }
 .roadmap-body { flex: 1; overflow-y: auto; background: var(--bg-panel); padding: 4px 0; }
 
 .roadmap-item {

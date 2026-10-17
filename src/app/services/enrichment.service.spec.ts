@@ -1,7 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed } from '@angular/core/testing';
-import { EnrichmentService } from './enrichment.service';
+import { EnrichmentService, mappedPct } from './enrichment.service';
 import { SigmaService } from './sigma.service';
 import { CARService } from './car.service';
 import { AtomicService } from './atomic.service';
@@ -327,6 +327,86 @@ describe('EnrichmentService', () => {
       const zero = { total: 0, mapped: 0, mitigation: 0, detection: 0, control: 0, d3fend: 0, atomic: 0 };
       expect(service.referenceDefenseTotals([], domain)).toEqual(zero);
       expect(service.referenceDefenseTotals(undefined as unknown as Technique[], domain)).toEqual(zero);
+    });
+  });
+
+  describe('mappedRollup (the one Known-tier count the summary surfaces read, E1.7)', () => {
+    /** Two tactic columns over parents T1..T4, with one sub-technique under T1. */
+    function rollupDomain(): Domain {
+      counts.sigma.set('T1', 1);
+      counts.atomic.set('T1.001', 1);
+      counts.nist.set('T3', 2);
+      counts.cve.set('T4', 5);                                   // threat side only
+      const t1 = { ...tech('T1', 's1'), isSubtechnique: false } as Technique;
+      const t1a = { ...tech('T1.001', 's1a'), isSubtechnique: true } as Technique;
+      const t2 = { ...tech('T2', 's2', 2), isSubtechnique: false } as Technique;   // mitigation
+      const t3 = { ...tech('T3', 's3'), isSubtechnique: false } as Technique;
+      const t4 = { ...tech('T4', 's4'), isSubtechnique: false } as Technique;
+      domain.groupsByTechnique.set('s4', arr(3) as never);      // threat side only
+      return {
+        ...domain,
+        techniques: [t1, t1a, t2, t3, t4],
+        tacticColumns: [
+          { tactic: { id: 'x-ta-1', name: 'Execution', shortname: 'execution' }, techniques: [t1, t2] },
+          { tactic: { id: 'x-ta-2', name: 'Discovery', shortname: 'discovery' }, techniques: [t3, t4] },
+        ],
+      } as unknown as Domain;
+    }
+
+    it('counts parent techniques by default and every technique with includeSubtechniques', () => {
+      const d = rollupDomain();
+      expect(service.mappedRollup(d).overall).toEqual({ total: 4, mapped: 3, pct: 75 });
+      expect(service.mappedRollup(d, { includeSubtechniques: true }).overall).toEqual({ total: 5, mapped: 4, pct: 80 });
+    });
+
+    it('rolls each tactic column up with the same per-technique test as referenceDefenseTotals()', () => {
+      const d = rollupDomain();
+      const r = service.mappedRollup(d);
+      expect(r.byTactic).toEqual([
+        { tacticId: 'x-ta-1', tacticName: 'Execution', shortname: 'execution', total: 2, mapped: 2, pct: 100 },
+        { tacticId: 'x-ta-2', tacticName: 'Discovery', shortname: 'discovery', total: 2, mapped: 1, pct: 50 },
+      ]);
+      for (const col of d.tacticColumns) {
+        const row = r.byTactic.find(t => t.tacticId === col.tactic.id)!;
+        expect(row.mapped).withContext(col.tactic.name).toBe(service.referenceDefenseTotals(col.techniques, d).mapped);
+        expect(service.mappedCount(col.techniques, d)).withContext(col.tactic.name)
+          .toEqual({ total: row.total, mapped: row.mapped, pct: row.pct });
+      }
+    });
+
+    it('is threat-independent: a group, software, campaign or CVE on every technique changes no number', () => {
+      const d = rollupDomain();
+      const before = service.mappedRollup(d);
+      expect(service.totals(d.techniques, d).threatIntel).toBe(1);
+      for (const t of d.techniques) {
+        d.groupsByTechnique.set(t.id, arr(2) as never);
+        d.softwareByTechnique.set(t.id, arr(1) as never);
+        d.campaignsByTechnique.set(t.id, arr(1) as never);
+        counts.cve.set(t.attackId, 1);
+      }
+      expect(service.mappedRollup(d)).toEqual(before);
+      // Control: the threat links really were added (1 technique before, all 5 after).
+      expect(service.totals(d.techniques, d).threatIntel).toBe(5);
+    });
+
+    it('returns an empty rollup for a missing domain, and mappedPct rounds one way everywhere', () => {
+      expect(service.mappedRollup(null)).toEqual({ overall: { total: 0, mapped: 0, pct: 0 }, byTactic: [] });
+      expect(service.mappedRollup(undefined)).toEqual({ overall: { total: 0, mapped: 0, pct: 0 }, byTactic: [] });
+      expect(mappedPct(0, 0)).toBe(0);
+      expect(mappedPct(1, 3)).toBe(33);
+      expect(mappedPct(2, 3)).toBe(67);
+      expect(mappedPct(1, 8)).toBe(13);
+    });
+
+    it('ranks breadth over the five reference inputs only (referenceSignalCount)', () => {
+      const d = rollupDomain();
+      const [t1, , t2, t3, t4] = d.techniques;
+      counts.d3fend.set('T1', 1);
+      expect(service.referenceSignalCount(t1, d)).toBe(2);      // detection + D3FEND
+      expect(service.referenceSignalCount(t2, d)).toBe(1);      // mitigation
+      expect(service.referenceSignalCount(t3, d)).toBe(1);      // control
+      expect(service.referenceSignalCount(t4, d)).toBe(0);      // CVE + group: threat side only
+      expect(service.signalCount(t4, d)).toBe(2);               // ...which the Threat-side count does see
     });
   });
 });

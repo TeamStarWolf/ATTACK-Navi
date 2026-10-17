@@ -12,7 +12,8 @@ import { FormsModule } from '@angular/forms';
 import { Subscription, filter, take } from 'rxjs';
 import { DataService } from '../../services/data.service';
 import { ImplementationService } from '../../services/implementation.service';
-import { TimelineService, CoverageSnapshot } from '../../services/timeline.service';
+import { TimelineService, CoverageSnapshot, snapshotBasisLabel } from '../../services/timeline.service';
+import { EnrichmentService } from '../../services/enrichment.service';
 
 interface TrendPoint {
   snapshot: CoverageSnapshot;
@@ -57,6 +58,7 @@ export class TimelinePanelComponent implements OnInit, OnDestroy {
     private dataService: DataService,
     private implService: ImplementationService,
     private timelineService: TimelineService,
+    private enrichment: EnrichmentService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -89,7 +91,8 @@ export class TimelinePanelComponent implements OnInit, OnDestroy {
     if (!this.newLabel.trim()) return;
     this.dataService.domain$.pipe(filter(Boolean), take(1)).subscribe(domain => {
       const implMap = this.implService.getStatusMap();
-      this.timelineService.takeSnapshot(this.newLabel, domain, implMap, this.newNotes);
+      // Known tier ('mapped', E1.7): the rollup every summary surface shows.
+      this.timelineService.takeSnapshot(this.newLabel, this.enrichment.mappedRollup(domain), implMap, this.newNotes);
       this.newLabel = '';
       this.newNotes = '';
       this.snapshotSuccess = true;
@@ -165,12 +168,29 @@ export class TimelinePanelComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Delta of coverage % between consecutive snapshots (ordered oldest→newest). */
+  /** Whether two snapshots counted on the same basis (a mapped % delta is only meaningful then). */
+  sameBasis(a: CoverageSnapshot | null | undefined, b: CoverageSnapshot | null | undefined): boolean {
+    return !!a && !!b && (a.basis ?? null) === (b.basis ?? null);
+  }
+
+  /** True for a snapshot saved before E1.7 (mitigations only). */
+  isLegacy(s: CoverageSnapshot): boolean {
+    return s.basis !== 'reference-mapped';
+  }
+
+  basisLabel(s: CoverageSnapshot): string {
+    return snapshotBasisLabel(s);
+  }
+
+  /**
+   * Delta of mapped % between consecutive snapshots (ordered oldest→newest);
+   * null when the two were counted on different bases.
+   */
   get trends(): TrendPoint[] {
     const sorted = [...this.snapshots]; // already oldest-first from service
     return sorted.map((snap, i) => {
       const prev = i > 0 ? sorted[i - 1] : null;
-      const delta = prev != null ? snap.coveragePct - prev.coveragePct : null;
+      const delta = prev != null && this.sameBasis(prev, snap) ? snap.coveragePct - prev.coveragePct : null;
       const implDelta = prev != null
         ? snap.implCounts.implemented - prev.implCounts.implemented
         : null;

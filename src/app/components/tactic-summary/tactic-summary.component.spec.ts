@@ -18,8 +18,8 @@ describe('TacticSummaryComponent', () => {
             status$: new BehaviorSubject(new Map()),
         }},
         { provide: EnrichmentService, useValue: {
-            isEnriched: () => false,
-            signalCount: () => 0,
+            mappedCount: () => ({ total: 0, mapped: 0, pct: 0 }),
+            referenceSignalCount: () => 0,
         }},
       ],
     });

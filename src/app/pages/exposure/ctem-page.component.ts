@@ -99,10 +99,14 @@ export class CtemPageComponent implements OnInit, OnDestroy {
         ].filter(c => (valCounts.get(c.label) ?? 0) > 0)
           .map(c => ({ ...c, count: valCounts.get(c.label)! }));
 
-        // Coverage trend: latest snapshot vs the one before it.
+        // Mapped trend: latest snapshot vs the one before it, only when both
+        // counted on the same basis (E1.7 changed it from mitigations only).
         const prevSnap = snapshots.length >= 2 ? snapshots[snapshots.length - 2] : null;
-        const trend = lastSnap && prevSnap
+        const sameBasis = !!prevSnap && !!lastSnap && (prevSnap.basis ?? null) === (lastSnap.basis ?? null);
+        const trend = lastSnap && prevSnap && sameBasis
           ? `${prevSnap.coveragePct}% → ${lastSnap.coveragePct}%`
+          : lastSnap && prevSnap
+          ? `${lastSnap.coveragePct}% (previous snapshot counted on another basis)`
           : lastSnap ? `${lastSnap.coveragePct}% (first snapshot)` : '—';
 
         // F3 domain: native-vs-shared split. The T-prefix rule is CTID's own
@@ -177,7 +181,7 @@ export class CtemPageComponent implements OnInit, OnDestroy {
               { label: 'Planned next', value: counts['planned'] },
               { label: 'Coverage snapshots', value: snapshots.length },
               { label: 'Last snapshot', value: lastSnap ? lastSnap.label : 'none yet' },
-              { label: 'Coverage trend', value: trend },
+              { label: 'Mapped trend', value: trend },
             ],
             links: [
               { label: 'Remediation roadmap', route: ['/library', 'roadmap'] },

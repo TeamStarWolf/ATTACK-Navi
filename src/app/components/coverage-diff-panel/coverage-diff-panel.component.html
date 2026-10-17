@@ -7,7 +7,7 @@
       <div class="cdp-title-row">
         <span class="cdp-icon">📊</span>
         <h2 class="cdp-title">Coverage Diff</h2>
-        <p class="cdp-subtitle">Compare two coverage snapshots to measure improvement over time</p>
+        <p class="cdp-subtitle">Compare two snapshots of the mapped count (techniques with ≥1 defensive reference input; reference, no claim about your estate)</p>
       </div>
 
       <!-- Snapshot selectors -->
@@ -44,10 +44,17 @@
         </div>
       } @else if (baseSnap && compareSnap) {
 
+        @if (basesDiffer) {
+          <p class="cdp-basis-note" role="note">
+            These snapshots count on different bases ({{ basisLabel(baseSnap) }} vs {{ basisLabel(compareSnap) }}),
+            so the change below reflects the definition as well as the data. Take a new snapshot to compare like with like.
+          </p>
+        }
+
         <!-- Hero metrics -->
         <div class="hero-metrics">
           <div class="hero-card" [class.positive]="isPositive" [class.negative]="!isPositive">
-            <div class="hero-label">Coverage Change</div>
+            <div class="hero-label">Mapped % Change</div>
             <div class="hero-value">
               {{ isPositive ? '+' : '' }}{{ coverageDelta | number:'1.1-1' }}%
             </div>
@@ -96,7 +103,7 @@
 
         <!-- Tactic breakdown -->
         <div class="section">
-          <h3 class="section-title">Tactic Coverage Changes</h3>
+          <h3 class="section-title">Mapped Techniques by Tactic</h3>
           <div class="tactic-table">
             <div class="tac-header">
               <span class="tac-name">Tactic</span>
