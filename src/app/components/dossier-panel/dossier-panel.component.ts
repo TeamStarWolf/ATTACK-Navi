@@ -31,6 +31,7 @@ import { CisaSsvcService } from '../../services/cisa-ssvc.service';
 import { F3FraudService } from '../../services/f3-fraud.service';
 import {
   ACTION_MEANING,
+  DECISION_BLOCKED,
   DEFAULT_ENVIRONMENT,
   SsvcEnvironment,
   SsvcService,
@@ -71,6 +72,7 @@ export class DossierPanelComponent implements OnInit, OnDestroy {
 
   env: SsvcEnvironment = { ...DEFAULT_ENVIRONMENT };
   actionMeaning = ACTION_MEANING;
+  readonly decisionBlocked = DECISION_BLOCKED;
   tierLabel = TIER_LABEL;
 
   /** Transient "Copied" / "Downloaded" confirmation for the export buttons. */

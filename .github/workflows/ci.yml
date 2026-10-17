@@ -48,5 +48,9 @@ jobs:
       # exit 1. Needs npm ci (it reads TypeScript sources with the compiler).
       - run: node --test scripts/lint-truth-vocab.test.mjs
       - run: node scripts/lint-truth-vocab.mjs
+      # The bundled KEV snapshot (plan E1.3) is sound, byte-identical to what
+      # scripts/build-kev-snapshot.mjs writes, and the one the registry names.
+      # No network: the builder's fetch is not exercised here.
+      - run: node --test scripts/build-kev-snapshot.test.mjs
       - run: npx ng test --no-watch --browsers=ChromeHeadless
       - run: npx ng build --configuration production

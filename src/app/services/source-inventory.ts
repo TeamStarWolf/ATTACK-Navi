@@ -56,6 +56,17 @@ export const BUNDLED_ATTACK_VERSION = '19.2';
 /** The F3 release shipped in src/assets/data/f3-attack.json (checked by bundled-data.spec.ts). */
 export const BUNDLED_F3_VERSION = '1.2';
 
+/**
+ * The bundled KEV snapshot (src/assets/data/kev-snapshot.json), pinned by date by
+ * scripts/build-kev-snapshot.mjs. Bump together with a new snapshot; kev-snapshot.spec.ts
+ * and scripts/build-kev-snapshot.test.mjs check these against the file's __meta.
+ */
+export const BUNDLED_KEV_SNAPSHOT = {
+  date: '2026-10-16',
+  catalogVersion: '2026.10.16',
+  commit: '6a392940c663b52271fa4e6aa7b39995b18c9a71',
+} as const;
+
 /** Licence notes, keyed by the id each SourceDefinition carries. */
 export const LICENCE_NOTES: Record<LicenceNoteId, LicenceNote> = {
   'attack': { licence: 'ATT&CK licence (MITRE)', notice: 'THIRD_PARTY_NOTICES.md section 1.1' },
@@ -176,6 +187,13 @@ export const SOURCE_DEFINITIONS: readonly SourceDefinition[] = [
     version: 'develop, unpinned (cisagov/kev-data mirror; cisa.gov feed as fallback)',
     upstream: 'https://github.com/cisagov/kev-data', licence: 'kev-cc0',
     inventoryRow: R.kev, owner: 'services/cve.service.ts',
+  },
+  {
+    id: 'cisa-kev-snapshot', name: 'CISA KEV snapshot (bundled)', kind: 'bundled',
+    version: `snapshot of ${BUNDLED_KEV_SNAPSHOT.date}, catalogVersion ${BUNDLED_KEV_SNAPSHOT.catalogVersion} (cisagov/kev-data@${BUNDLED_KEV_SNAPSHOT.commit.slice(0, 7)})`,
+    upstream: 'https://github.com/cisagov/kev-data', licence: 'kev-cc0',
+    inventoryRow: R.kev, owner: 'services/cve.service.ts', onDemand: true, fallbackFor: 'cisa-kev',
+    note: 'Read only when the live KEV feed fails; built by scripts/build-kev-snapshot.mjs. A CVE added to KEV after the snapshot date is not in it.',
   },
   {
     id: 'epss', name: 'FIRST EPSS API', kind: 'live', version: 'API v1 (current scores)',

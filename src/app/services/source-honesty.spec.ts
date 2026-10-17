@@ -103,6 +103,9 @@ const CASES: HonestyCase[] = [
   { id: 'ctid-attack-to-cve', service: AttackCveService, loaded: s => current(s.loaded$) },
   { id: 'ctid-kev', service: AttackCveService, loaded: s => current(s.loaded$) },
   { id: 'cisa-kev', service: CveService, start: s => s.loadKev(), loaded: s => current(s.kevLoaded$) },
+  // The live feed failing loads the dated snapshot in its place; offline, it fails too and
+  // no catalogue is reported as loaded.
+  { id: 'cisa-kev-snapshot', service: CveService, start: s => s.loadKev(), loaded: s => current(s.kevLoaded$) },
   { id: 'nvd', service: CveService, start: s => s.searchCves('CVE-2024-3400') },
   {
     id: 'nvd',

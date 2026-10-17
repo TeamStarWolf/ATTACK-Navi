@@ -4,7 +4,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, Subscription, of, combineLatest, catchError, defer, throwError, timeout } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { NvdCveItem, KevEntry } from '../models/cve';
+import { NvdCveItem, KevEntry, KevContext, KEV_LIVE, KEV_UNAVAILABLE, kevSnapshot } from '../models/cve';
 import { AttackCveService } from './attack-cve.service';
 import { CapecService } from './capec.service';
 import { correctCveTechniques, AnchorData, CorrectionResult } from './cwe-attack-anchor';
@@ -21,9 +21,19 @@ export class CveService {
   // proxies but is CORS-blocked in a plain browser context).
   private readonly KEV_URL = 'https://raw.githubusercontent.com/cisagov/kev-data/develop/known_exploited_vulnerabilities.json';
   private readonly KEV_FALLBACK_URL = 'https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json';
+  /**
+   * Dated copy of the catalogue, read only when both live feeds fail (E1.3). Built by
+   * scripts/build-kev-snapshot.mjs from cisagov/kev-data at a commit pinned by date.
+   */
+  private readonly KEV_SNAPSHOT_URL = 'assets/data/kev-snapshot.json';
 
   private searchSub?: Subscription;
   private kevLoading = false;
+  private kevSnapshotLoading = false;
+  /** Which catalogue is in kevMapSubject: the live feed, the bundled snapshot, or none yet. */
+  private kevOriginSubject = new BehaviorSubject<'live' | 'snapshot' | null>(null);
+  /** The date of the bundled snapshot while it is the catalogue in use; null otherwise. */
+  private kevSnapshotDateSubject = new BehaviorSubject<string | null>(null);
   /** CWE->ATT&CK exploitation anchor (assets/data/cwe-exploitation-anchor.json); null until loaded. */
   private anchorData: AnchorData | null = null;
 
@@ -48,6 +58,9 @@ export class CveService {
   kevLoaded$: Observable<boolean> = this.kevLoadedSubject.asObservable();
   kevError$: Observable<string | null> = this.kevErrorSubject.asObservable();
   kevTechScores$: Observable<Map<string, number>> = this.kevTechScoresSubject.asObservable();
+  kevOrigin$: Observable<'live' | 'snapshot' | null> = this.kevOriginSubject.asObservable();
+  /** YYYY-MM-DD of the bundled KEV snapshot while the app is using it in place of the live feed; else null. */
+  kevSnapshotDate$: Observable<string | null> = this.kevSnapshotDateSubject.asObservable();
 
   /**
    * True when the KEV catalogue on hand is real. Consumers that would otherwise treat
@@ -56,6 +69,18 @@ export class CveService {
    */
   get kevAvailable(): boolean {
     return this.kevLoadedSubject.value;
+  }
+
+  /** The snapshot date while the bundled KEV snapshot stands in for the live feed; else null. */
+  get kevSnapshotDate(): string | null {
+    return this.kevSnapshotDateSubject.value;
+  }
+
+  /** What SSVC may conclude from KEV membership right now (see KevContext). */
+  get kevContext(): KevContext {
+    if (!this.kevLoadedSubject.value) return KEV_UNAVAILABLE;
+    const date = this.kevSnapshotDateSubject.value;
+    return date ? kevSnapshot(date) : KEV_LIVE;
   }
 
   /** The last KEV load failure, or null. */
@@ -110,11 +135,14 @@ export class CveService {
 
   /**
    * Load the CISA KEV catalogue. A failed fetch (offline, CORS-blocked, timed out, or a
-   * body with no entries) is reported on `kevError$` and leaves `kevLoaded$` false, so
-   * the next `loadKev()` call retries rather than treating an empty map as the catalogue.
+   * body with no entries) is reported on `kevError$` and recorded as 'failed' on the
+   * 'cisa-kev' source; the bundled, dated snapshot is then loaded in its place (E1.3).
+   * Only when the snapshot fails too does `kevLoaded$` stay false. The next
+   * `loadKev()` call tries the live feed again while the snapshot is in use, and a live
+   * catalogue that arrives replaces it.
    */
   loadKev(): void {
-    if (this.kevLoadedSubject.value || this.kevLoading) return;
+    if (this.kevOriginSubject.value === 'live' || this.kevLoading) return;
     this.kevLoading = true;
     this.kevErrorSubject.next(null);
     this.sources.begin('cisa-kev');
@@ -132,25 +160,19 @@ export class CveService {
           this.failKev('the response carried no KEV entries');
           return;
         }
-        const map = new Map<string, KevEntry>();
-        for (const v of vulns) {
-          map.set(v.cveID, v);
-        }
-        this.kevMapSubject.next(map);
         this.kevLoading = false;
         this.kevErrorSubject.next(null);
         this.sources.succeed('cisa-kev', vulns.length);
-        this.kevLoadedSubject.next(true);
+        this.applyKev(vulns, 'live');
 
-        // Track new KEV entries for notification badge
+        // Track new KEV entries for notification badge (live catalogue only: the
+        // snapshot is older and would only ever lower the count).
         const currentCount = vulns.length;
         const previousCount = parseInt(localStorage.getItem('mitre-nav-last-kev-count') ?? '0', 10);
         if (previousCount > 0 && currentCount > previousCount) {
           this.newKevCount$.next(currentCount - previousCount);
         }
         localStorage.setItem('mitre-nav-last-kev-count', String(currentCount));
-
-        this.computeKevTechScores(vulns);
       },
       error: (err: any) => this.failKev(err?.message ?? 'network error'),
     });
@@ -160,6 +182,56 @@ export class CveService {
     this.kevLoading = false;
     this.kevErrorSubject.next(`CISA KEV catalog could not be loaded: ${reason}`);
     this.sources.fail('cisa-kev', reason);
+    // Fall back to the dated snapshot, unless it is already the catalogue in use.
+    if (this.kevOriginSubject.value !== 'snapshot') this.loadKevSnapshot();
+  }
+
+  /**
+   * Load the bundled KEV snapshot (assets/data/kev-snapshot.json) and record it on the
+   * 'cisa-kev-snapshot' source. It becomes the catalogue in use only while no live
+   * catalogue has loaded; a live one always wins. Called after a live failure, and by
+   * the data-health Retry / Load now for the snapshot.
+   */
+  loadKevSnapshot(): void {
+    if (this.kevSnapshotLoading) return;
+    this.kevSnapshotLoading = true;
+    this.sources.begin('cisa-kev-snapshot');
+    this.http.get<any>(this.KEV_SNAPSHOT_URL).subscribe({
+      next: (data: any) => {
+        this.kevSnapshotLoading = false;
+        const vulns: KevEntry[] = Array.isArray(data?.vulnerabilities) ? data.vulnerabilities : [];
+        const date: unknown = data?.__meta?.snapshotDate;
+        if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+          // An undated snapshot cannot say how old its answer is, so it is not used.
+          this.sources.fail('cisa-kev-snapshot', 'the snapshot carries no snapshotDate');
+          return;
+        }
+        const catalogVersion = data?.__meta?.catalogVersion;
+        this.sources.succeed('cisa-kev-snapshot', vulns.length, {
+          version: `snapshot of ${date}${catalogVersion ? `, catalogVersion ${catalogVersion}` : ''}`,
+        });
+        if (vulns.length === 0 || this.kevOriginSubject.value === 'live') return;
+        this.kevSnapshotDateSubject.next(date);
+        this.applyKev(vulns, 'snapshot');
+      },
+      error: (err: unknown) => {
+        this.kevSnapshotLoading = false;
+        this.sources.fail('cisa-kev-snapshot', err);
+      },
+    });
+  }
+
+  /** Make `vulns` the catalogue in use. The origin and snapshot date change before `kevLoaded$` emits. */
+  private applyKev(vulns: KevEntry[], origin: 'live' | 'snapshot'): void {
+    const map = new Map<string, KevEntry>();
+    for (const v of vulns) {
+      map.set(v.cveID, v);
+    }
+    if (origin === 'live') this.kevSnapshotDateSubject.next(null);
+    this.kevOriginSubject.next(origin);
+    this.kevMapSubject.next(map);
+    this.kevLoadedSubject.next(true);
+    this.computeKevTechScores(vulns);
   }
 
   /**

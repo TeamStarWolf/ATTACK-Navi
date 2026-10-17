@@ -2,7 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 
-import { Observable, Subscription, distinctUntilChanged, map, merge } from 'rxjs';
+import { Observable, Subscription, combineLatest, distinctUntilChanged, map, merge } from 'rxjs';
 import { AtomicService } from '../../services/atomic.service';
 import { SigmaService } from '../../services/sigma.service';
 import { AttackCveService } from '../../services/attack-cve.service';
@@ -203,7 +203,17 @@ export class DataHealthComponent implements OnInit, OnDestroy {
         ),
         ids: ['epss'],
       },
-      { name: 'CISA KEV', loaded$: this.cveService.kevLoaded$, failed$: this.cveService.kevError$ },
+      // Green only for the live feed. While the dated KEV snapshot stands in for it (E1.3),
+      // the dot stays red and its title names the snapshot date.
+      {
+        name: 'CISA KEV',
+        loaded$: combineLatest([this.cveService.kevLoaded$, this.cveService.kevSnapshotDate$]).pipe(
+          map(([loaded, snapshotDate]) => loaded && !snapshotDate),
+        ),
+        failed$: combineLatest([this.cveService.kevError$, this.cveService.kevSnapshotDate$]).pipe(
+          map(([error, snapshotDate]) => (error && snapshotDate ? `${error}; using the bundled KEV snapshot of ${snapshotDate}` : error)),
+        ),
+      },
       { name: 'NVD Bulk', loaded$: this.nvdBulkService.loaded$, ids: ['cve-technique-map'] },
       { name: 'CVE2CAPEC', loaded$: this.cve2capecService.loaded$, ids: ['cve2capec-runtime'] },
       { name: 'PoC Exploits', loaded$: this.pocExploitService.loaded$, ids: ['trickest-poc-tree'] },

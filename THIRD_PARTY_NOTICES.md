@@ -81,6 +81,7 @@ CERT Coordination Center® is registered in the U.S. Patent and Trademark Office
 |---|---|
 | CVE identifiers grouped by ATT&CK technique, generated from NVD records by `scripts/build-cve-technique-map.mjs` | `src/assets/data/cve-technique-map.json`, `src/assets/data/cve-technique-counts.json` |
 | Pre-built CVE dossiers: NVD description, CVSS, published date; EPSS score and percentile; CISA KEV fields; derived SSVC, CWE, CAPEC and ATT&CK context | `src/assets/data/dossiers/*.json` |
+| Dated snapshot of the CISA KEV catalog (identifier, vendor, product, name, date added, due date, ransomware use, CWEs), fetched from cisagov/kev-data at a commit pinned by date by `scripts/build-kev-snapshot.mjs`; read only when the live KEV feed fails | `src/assets/data/kev-snapshot.json` |
 
 - **NVD (NIST).** The CVE records come from the NIST National Vulnerability Database API. The NVD terms of use (https://nvd.nist.gov/developers/terms-of-use) ask services that use the API to display this notice, which the application shows in Settings > Data:
 

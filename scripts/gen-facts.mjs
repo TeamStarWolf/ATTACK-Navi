@@ -211,6 +211,15 @@ function dataAssets(root) {
   });
 }
 
+/** The dated KEV snapshot the app falls back to when the live feed fails (plan E1.3); null when absent. */
+function kevSnapshot(root) {
+  const file = 'src/assets/data/kev-snapshot.json';
+  if (!existsSync(join(root, file))) return null;
+  const m = JSON.parse(readFileSync(join(root, file), 'utf8')).__meta ?? {};
+  if (!m.snapshotDate) throw new Error(`${file}: no __meta.snapshotDate`);
+  return { file, snapshotDate: m.snapshotDate, catalogVersion: m.catalogVersion, count: m.count, commit: m.commit };
+}
+
 // Hosts that serve data feeds. Literals on other hosts (project pages, tool
 // homepages, documentation links, example hosts used in tests) are not loaders.
 const DATA_HOSTS = new Set([
@@ -283,6 +292,7 @@ export function collectFacts(root) {
     libraryLayers: libraryLayers(root),
     toolchain: toolchain(root),
     dataAssets: dataAssets(root),
+    kevSnapshot: kevSnapshot(root),
     upstreams: upstreams(root),
     truthVocab: truthVocab(root),
   };
@@ -360,6 +370,14 @@ export function renderFacts(f) {
   L.push('Contents of `src/assets/data/`:', '');
   for (const a of f.dataAssets) L.push(`- \`${a.path}\`${a.files !== undefined ? ` (${a.files} files)` : ''}`);
   L.push('');
+
+  if (f.kevSnapshot) {
+    const k = f.kevSnapshot;
+    L.push('## Bundled KEV snapshot', '');
+    L.push('Read only when the live CISA KEV feed fails; built by `node scripts/build-kev-snapshot.mjs` from cisagov/kev-data at a commit pinned by date.', '');
+    L.push('| Snapshot date | Catalog version | Entries | Commit | File |', '| :-- | :-- | --: | :-- | :-- |');
+    L.push(`| ${k.snapshotDate} | ${k.catalogVersion} | ${k.count} | \`${String(k.commit).slice(0, 7)}\` | \`${k.file}\` |`, '');
+  }
 
   L.push('## Upstream data URLs in the loaders', '');
   L.push(`URL literals in \`src/app/**/*.ts\` (specs excluded) on a data host (${[...DATA_HOSTS].sort().map((h) => `\`${h}\``).join(', ')}). \`…\` marks where a template expression follows. Links to project pages and documentation are not listed.`, '');

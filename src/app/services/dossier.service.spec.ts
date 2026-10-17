@@ -269,6 +269,24 @@ describe('DossierService', () => {
       expect(loaded.ssvc?.action).toBe('track');
       expect(loaded.warnings.some(w => w.includes('KEV catalog could not be loaded'))).toBe(false);
     });
+
+    it('with the bundled snapshot standing in (E1.3): keeps the asset flag, dates the warning, and hands SSVC the snapshot', () => {
+      cveStub.kevAvailable = true;
+      cveStub.kevSnapshotDate = '2026-10-16';
+      cveStub.kevContext = { available: true, snapshotDate: '2026-10-16' };
+      const evaluate = spyOn(TestBed.inject(SsvcService), 'evaluate').and.callThrough();
+      let result: CveDossier | undefined;
+      service.load('CVE-2021-44228').subscribe(d => (result = d));
+      httpMock.expectOne('assets/data/dossiers/CVE-2021-44228.json').flush(assetPayload());
+
+      // The snapshot is dated and may be older than the dossier, so its silence does not clear the flag.
+      expect(result?.isKev).toBe(true);
+      expect(result?.ssvc?.action).toBe('act');
+      const warning = result?.warnings.find(w => w.includes('KEV catalog could not be loaded'));
+      expect(warning).toContain('bundled CISA KEV snapshot of 2026-10-16');
+      expect(warning).toContain('(network error)');
+      expect(evaluate.calls.mostRecent().args[3]).toEqual({ available: true, snapshotDate: '2026-10-16' });
+    });
   });
 
   it('clears an asset KEV flag the loaded catalogue does not confirm', () => {

@@ -4,7 +4,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
 import { SourceRegistryService } from './source-registry.service';
-import { NvdCveItem } from '../models/cve';
+import { KevContext, KEV_UNAVAILABLE, NvdCveItem } from '../models/cve';
 
 /**
  * SSVC (Stakeholder-Specific Vulnerability Categorization) decision support.
@@ -26,6 +26,13 @@ import { NvdCveItem } from '../models/cve';
  *                   CVSS vector — they are not CVSS fields, and each records its basis.
  *   environmental   Publicly Exposed and Mission & Well-Being depend on the asset, not
  *                   the CVE. They are assumptions the analyst must set.
+ *
+ * KEV is read through a KevContext (plan E1.3). "Not in KEV" means "not known to be
+ * exploited" only when a catalogue is on hand. With no catalogue (the live feed and
+ * the bundled snapshot both failed, or the caller did not say), Exploitation and In KEV
+ * are 'unknown' and both outcomes are blocked: the result reads
+ * 'decision blocked: exploitation unknown', never 'track'. An analyst override of the
+ * unknown points unblocks it. With the bundled snapshot, every basis names its date.
  */
 
 export type PointKind = 'derived' | 'environmental' | 'override';
@@ -46,12 +53,30 @@ export interface SsvcPoint {
 export interface SsvcResult {
   cveId: string;
   points: SsvcPoint[];
+  /** Coordinator outcome; '' when blocked or when no table row matched. */
   action: string;
   actionTable: string;
+  /** Why the coordinator outcome is blocked ('exploitation unknown'), or null. */
+  actionBlocked: string | null;
+  /** BOD 26-04 timeline; '' when blocked or when no table row matched. */
   timeline: string;
   timelineTable: string;
+  /** Why the timeline is blocked ('KEV membership unknown'), or null. */
+  timelineBlocked: string | null;
   warnings: string[];
 }
+
+/** The value of a KEV-derived decision point when no KEV catalogue is on hand. */
+export const UNKNOWN = 'unknown';
+
+/** What the SSVC views show in place of an outcome when exploitation is unknown. */
+export const DECISION_BLOCKED = 'decision blocked: exploitation unknown';
+
+/** Why each KEV-derived point can block a table, keyed by the point's short name. */
+const BLOCKED_REASON: Readonly<Record<string, string>> = {
+  exploitation: 'exploitation unknown',
+  inKev: 'KEV membership unknown',
+};
 
 export interface SsvcEnvironment {
   exposed: 'yes' | 'no';
@@ -208,25 +233,48 @@ export class SsvcService {
     };
   }
 
-  private exploitation(cve: NvdCveItem): { value: string; basis: string } {
+  /** 'CISA KEV' or 'the bundled CISA KEV snapshot of <date>'. */
+  private kevName(kev: KevContext): string {
+    return kev.snapshotDate ? `the bundled CISA KEV snapshot of ${kev.snapshotDate}` : 'CISA KEV';
+  }
+
+  private exploitation(cve: NvdCveItem, kev: KevContext): { value: string; basis: string } {
     if (cve.isKev) {
+      // Membership is positive evidence whatever else failed to load.
+      const where = kev.snapshotDate ? `in ${this.kevName(kev)}` : 'in CISA KEV';
       return {
         value: 'active',
-        basis: cve.kevKnownRansomware
-          ? 'in CISA KEV with known ransomware campaign use'
-          : 'in CISA KEV',
+        basis: cve.kevKnownRansomware ? `${where} with known ransomware campaign use` : where,
       };
     }
     const exploitRef = (cve.references ?? []).some(r =>
       (r.tags ?? []).some(t => t.toLowerCase() === 'exploit'),
     );
+    if (!kev.available) {
+      // Absent from an empty map says nothing: the CVE may be in KEV.
+      return {
+        value: UNKNOWN,
+        basis:
+          'the CISA KEV catalog did not load, so whether this CVE is exploited in the wild is unknown' +
+          (exploitRef ? ' (NVD has an Exploit-tagged reference, so at least public poc)' : ''),
+      };
+    }
+    const dated = kev.snapshotDate
+      ? `; KEV read from ${this.kevName(kev)}, so a later KEV addition would not show`
+      : '';
     if (exploitRef) {
-      return { value: 'public poc', basis: 'NVD reference tagged Exploit' };
+      return { value: 'public poc', basis: `NVD reference tagged Exploit${dated}` };
     }
     return {
       value: 'none',
-      basis: 'not in KEV and no Exploit-tagged reference in NVD',
+      basis: `not in KEV and no Exploit-tagged reference in NVD${dated}`,
     };
+  }
+
+  private inKev(cve: NvdCveItem, kev: KevContext): { value: string; basis: string } {
+    if (cve.isKev) return { value: 'yes', basis: `${kev.snapshotDate ? this.kevName(kev) : 'CISA KEV catalog'} membership` };
+    if (!kev.available) return { value: UNKNOWN, basis: 'the CISA KEV catalog did not load' };
+    return { value: 'no', basis: `${kev.snapshotDate ? this.kevName(kev) : 'CISA KEV catalog'} membership` };
   }
 
   private parseVector(vector: string | null): Record<string, string> | null {
@@ -247,11 +295,15 @@ export class SsvcService {
    *
    * @param overrides keyed by the short names in COL (exploitation, automatable,
    *   impact, inKev, exposed, mission); any supplied value replaces the derived one.
+   * @param kev whether a KEV catalogue is on hand (CveService.kevContext). Defaults to
+   *   none: a caller that does not say KEV loaded gets 'exploitation unknown' for any
+   *   CVE not flagged in KEV, never a 'track' built on an absent catalogue.
    */
   evaluate(
     cve: NvdCveItem,
     env: SsvcEnvironment = DEFAULT_ENVIRONMENT,
     overrides: Partial<Record<keyof typeof COL, string>> = {},
+    kev: KevContext = KEV_UNAVAILABLE,
   ): SsvcResult {
     const warnings: string[] = [];
     if (!this.available) {
@@ -264,7 +316,7 @@ export class SsvcService {
       );
     }
 
-    const exploitation = this.exploitation(cve);
+    const exploitation = this.exploitation(cve, kev);
     const automatable = this.automatable(cve);
     const impact = this.technicalImpact(cve);
 
@@ -276,22 +328,22 @@ export class SsvcService {
     ): SsvcPoint => {
       const column = this.column(COL[short]);
       const override = overrides[short];
+      const options = this.optionsFor(column);
+      const value = override ?? derived.value;
       return {
         column,
         label,
-        value: override ?? derived.value,
+        value,
         kind: override ? 'override' : kind,
         basis: override ? `analyst override (was "${derived.value}")` : derived.basis,
-        options: this.optionsFor(column),
+        // 'unknown' is not a table value; it is offered only while it is the value shown.
+        options: value === UNKNOWN && !options.includes(UNKNOWN) ? [UNKNOWN, ...options] : options,
       };
     };
 
     const points: SsvcPoint[] = [
       build('exploitation', 'Exploitation', exploitation, 'derived'),
-      build('inKev', 'In KEV', {
-        value: cve.isKev ? 'yes' : 'no',
-        basis: 'CISA KEV catalog membership',
-      }, 'derived'),
+      build('inKev', 'In KEV', this.inKev(cve, kev), 'derived'),
       build('automatable', 'Automatable', automatable, 'derived'),
       build('impact', 'Technical Impact', impact, 'derived'),
       build('exposed', 'Publicly Exposed', {
@@ -305,16 +357,41 @@ export class SsvcService {
     ];
 
     const values = new Map(points.map(p => [p.column, p.value]));
-    const coordinator = this.decide('cisa-coordinator', values, warnings);
-    const bod = this.decide('bod-26-04', values, warnings);
+    const blockedBy = new Map<string, string>();
+    for (const short of ['exploitation', 'inKev'] as const) {
+      const column = this.column(COL[short]);
+      if (values.get(column) === UNKNOWN) blockedBy.set(column, BLOCKED_REASON[short]);
+    }
+    const coordinator = this.decide('cisa-coordinator', values, warnings, blockedBy);
+    const bod = this.decide('bod-26-04', values, warnings, blockedBy);
+
+    if (coordinator.blocked || bod.blocked) {
+      const exploitationOverridden = !!overrides.exploitation;
+      warnings.unshift(
+        (coordinator.blocked ? 'Decision blocked: exploitation unknown. ' : '') +
+          'Provisional: exploitation unknown. The CISA KEV catalog did not load (neither the live feed ' +
+          'nor the bundled snapshot), so "not in KEV" cannot be read as "not exploited". ' +
+          (exploitationOverridden
+            ? 'Set In KEV by hand as well to get a remediation timeline.'
+            : 'Retry KEV, or set Exploitation and In KEV by hand to decide anyway.'),
+      );
+    } else if (kev.snapshotDate && !cve.isKev) {
+      warnings.push(
+        `KEV membership is read from the bundled CISA KEV snapshot of ${kev.snapshotDate} because the live ` +
+          'feed did not load. A CVE added to KEV after that date shows here as not in KEV, so this outcome ' +
+          'is provisional.',
+      );
+    }
 
     return {
       cveId: cve.id,
       points,
       action: coordinator.outcome,
       actionTable: coordinator.url,
+      actionBlocked: coordinator.blocked,
       timeline: bod.outcome,
       timelineTable: bod.url,
+      timelineBlocked: bod.blocked,
       warnings,
     };
   }
@@ -323,9 +400,15 @@ export class SsvcService {
     id: string,
     values: Map<string, string>,
     warnings: string[],
-  ): { outcome: string; url: string } {
+    blockedBy: ReadonlyMap<string, string> = new Map(),
+  ): { outcome: string; url: string; blocked: string | null } {
     const table = this.tables[id];
-    if (!table) return { outcome: '', url: '' };
+    if (!table) return { outcome: '', url: '', blocked: null };
+
+    // A KEV-derived input that is unknown blocks this table: no row is looked up, so
+    // no outcome (and in particular no 'track') can come from an absent catalogue.
+    const reason = table.columns.map(c => blockedBy.get(c)).find(r => !!r);
+    if (reason) return { outcome: '', url: table.url, blocked: reason };
 
     const key: string[] = [];
     const missing: string[] = [];
@@ -340,7 +423,7 @@ export class SsvcService {
     }
     if (missing.length > 0) {
       warnings.push(`${table.label}: no value for ${missing.join(', ')}.`);
-      return { outcome: '', url: table.url };
+      return { outcome: '', url: table.url, blocked: null };
     }
     const hit = table.rows.find(r => r.key.every((k, i) => k === key[i]));
     if (!hit) {
@@ -348,9 +431,9 @@ export class SsvcService {
         `${table.label}: no row matches ${key.join(' / ')}. The table may have been ` +
           'regenerated with different value names.',
       );
-      return { outcome: '', url: table.url };
+      return { outcome: '', url: table.url, blocked: null };
     }
-    return { outcome: hit.outcome, url: table.url };
+    return { outcome: hit.outcome, url: table.url, blocked: null };
   }
 
   /** Rank an outcome for sorting: most urgent first. */

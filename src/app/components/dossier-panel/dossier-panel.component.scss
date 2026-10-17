@@ -310,6 +310,17 @@ select {
   strong { color: var(--text-muted); }
 }
 
+// No KEV catalogue: no outcome exists (E1.3), so no urgency colour and not the muted
+// 'not now' grey either.
+.action-blocked {
+  border-left-color: var(--warning);
+  border-left-style: dashed;
+  strong {
+    color: var(--text-primary);
+    text-transform: none;
+  }
+}
+
 // ── blocks ──────────────────────────────────────────────────────────────────
 .block {
   padding: 0.85rem 1rem;

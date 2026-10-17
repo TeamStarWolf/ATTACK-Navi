@@ -18,7 +18,7 @@ function emptyDossier(overrides: Partial<CveDossier> = {}): CveDossier {
     kevDateAdded: '2021-12-10',
     kevDueDate: '2021-12-24',
     kevRansomware: true,
-    ssvc: { cveId: 'CVE-2021-44228', points: [], action: 'act', actionTable: '', timeline: '3 days', timelineTable: '', warnings: [] },
+    ssvc: { cveId: 'CVE-2021-44228', points: [], action: 'act', actionTable: '', actionBlocked: null, timeline: '3 days', timelineTable: '', timelineBlocked: null, warnings: [] },
     cisaSsvc: null,
     cwes: [],
     capecs: [],
@@ -48,6 +48,17 @@ describe('dossierToMarkdown', () => {
     expect(md).toContain('**KEV:** yes');
     expect(md).toContain('known ransomware use');
     expect(md).toContain('**SSVC (computed):** act');
+  });
+
+  it('exports a blocked SSVC decision as blocked, never as track (E1.3)', () => {
+    const md = dossierToMarkdown(emptyDossier({
+      ssvc: {
+        cveId: 'CVE-2021-44228', points: [], action: '', actionTable: '', actionBlocked: 'exploitation unknown',
+        timeline: '', timelineTable: '', timelineBlocked: 'KEV membership unknown', warnings: [],
+      },
+    }));
+    expect(md).toContain('**SSVC (computed):** decision blocked: exploitation unknown — blocked: KEV membership unknown');
+    expect(md).not.toMatch(/SSVC \(computed\):\*\* track/);
   });
 
   it('renders CISA published SSVC when present, and a clear absence when not', () => {

@@ -255,6 +255,17 @@ input[type='search'] {
   strong { color: var(--text-muted); }
 }
 
+// No KEV catalogue: no outcome exists, so neither an urgency colour nor the muted
+// 'not now' grey. A dashed warning edge and plain text.
+.action-blocked {
+  border-left-color: var(--warning);
+  border-left-style: dashed;
+  strong {
+    color: var(--text-primary);
+    text-transform: none;
+  }
+}
+
 .facts {
   display: flex;
   flex-wrap: wrap;
@@ -447,6 +458,12 @@ table {
   &.deadline-medium {
     border-color: var(--accent);
     color: var(--accent);
+  }
+
+  &.action-blocked {
+    border-color: var(--warning);
+    border-style: dashed;
+    color: var(--text-primary);
   }
 }
 
