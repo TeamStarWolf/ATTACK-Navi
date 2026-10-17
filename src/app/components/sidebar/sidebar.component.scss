@@ -1890,8 +1890,8 @@
 .score-number { font-size: 18px; font-weight: 700; color: var(--score-color, var(--accent)); line-height: 1; }
 .score-label { font-size: 9px; color: rgb(255 255 255 / 40%); }
 .score-breakdown { flex: 1; min-width: 0; }
-.score-title { font-size: 12px; font-weight: 600; color: rgb(255 255 255 / 85%); margin-bottom: 6px; }
-.score-grade { font-size: 14px; font-weight: 700; margin-left: 6px; }
+.score-title { font-size: 12px; font-weight: 600; color: rgb(255 255 255 / 85%); margin-bottom: 2px; }
+.score-rung { font-size: 9px; font-weight: 700; letter-spacing: 0.1em; color: var(--text-secondary); margin-bottom: 6px; }
 .score-items { display: flex; flex-wrap: wrap; gap: 4px; }
 .score-item { font-size: 10px; padding: 2px 6px; border-radius: 10px; background: rgb(255 255 255 / 4%); color: rgb(255 255 255 / 30%); }
 .score-item.active { background: rgb(88 166 255 / 10%); color: rgb(255 255 255 / 70%); }

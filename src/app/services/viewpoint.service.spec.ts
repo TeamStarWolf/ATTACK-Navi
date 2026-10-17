@@ -44,7 +44,8 @@ describe('ViewpointService', () => {
 
   it('defaults to the analyst viewpoint', () => {
     expect(service.current.id).toBe('analyst');
-    expect(service.current.defaultLens).toBe('unified');
+    // E1.5 (D4): the neutral viewpoint leads with Prevalence, the app's default lens.
+    expect(service.current.defaultLens).toBe('frequency');
     expect(service.current.homeRoute).toBe('/matrix');
   });
 
@@ -143,6 +144,7 @@ describe('ViewpointService', () => {
 
   it('isFeaturedLens reflects the active viewpoint featured lenses', () => {
     spyOn(router, 'navigateByUrl').and.resolveTo(true);
+    expect(service.isFeaturedLens('frequency')).toBeTrue(); // analyst featured
     expect(service.isFeaturedLens('unified')).toBeTrue(); // analyst featured
     expect(service.isFeaturedLens('kev')).toBeFalse();
 

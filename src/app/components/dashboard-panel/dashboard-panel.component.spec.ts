@@ -148,8 +148,6 @@ describe('DashboardPanelComponent', () => {
     expect(s.avgMitigations).toBe(2);                // (3 + 1) / 2 covered techniques
     // 0.2*0.5 + 0.2*0.25 + 0.2*0.25 + 0.15*0 + 0.15*0.75 + 0.10*0.75 = 38.75 -> 39
     expect(s.postureScore).toBe(39);
-    expect(component.overallGrade).toBe('D');
-    expect(component.riskLevel).toBe('high');
   });
 
   it('orders the tactic breakdown worst-first and reads the trend from the last two snapshots', () => {
@@ -255,18 +253,24 @@ describe('DashboardPanelComponent', () => {
     });
   });
 
-  it('grades the composite posture, not mitigation coverage alone', () => {
-    const grade = (postureScore: number) => {
-      component.stats = { ...component.stats!, postureScore };
-      return component.overallGrade;
-    };
-    expect(grade(80)).toBe('A');
-    expect(grade(65)).toBe('B');
-    expect(grade(50)).toBe('C');
-    expect(grade(35)).toBe('D');
-    expect(grade(34)).toBe('F');
-    component.stats = { ...component.stats!, postureScore: 90, criticalRiskCount: 60 };
-    expect(component.riskLevel).toBe('critical');
+  // E1.5: no risk verdict and no letter grade on reference data (plan 4.1);
+  // the header names the rung instead, whatever the numbers are.
+  it('shows the Known rung badge, never a risk verdict or a grade', () => {
+    for (const postureScore of [95, 70, 40, 5]) {
+      component.stats = { ...component.stats!, postureScore, criticalRiskCount: postureScore > 50 ? 0 : 80 };
+      fixture.detectChanges();
+      const el: HTMLElement = fixture.nativeElement;
+      const header = el.querySelector('.dashboard-header') as HTMLElement;
+      expect(header.querySelector('.rung-badge')!.textContent!.trim()).toBe('KNOWN · reference data');
+      expect(header.querySelector('.risk-badge')).toBeNull();
+      expect(el.textContent).not.toMatch(/\b(?:low|medium|high|critical)\s+risk\b/i);
+      expect(el.textContent).not.toMatch(/posture score/i);
+      for (const v of Array.from(el.querySelectorAll('.widget-coverage-summary .mini-stat-value'))) {
+        expect((v as HTMLElement).style.color).withContext('no grade colour on a Known value').not.toMatch(/success|danger/);
+      }
+    }
+    expect('overallGrade' in component).toBeFalse();
+    expect('riskLevel' in component).toBeFalse();
   });
 
   it('picks a technique of the day from the loaded parents', () => {

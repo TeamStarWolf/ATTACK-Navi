@@ -47,6 +47,7 @@ export class WorkspaceBundleService {
     // Preferences & UX state
     'mitre-nav-settings-v1',           // NVD key stripped on export
     'mitre-nav-theme',
+    'mitre-nav-theme-explicit',
     'matrix-context-strip',
     'mitre-nav-quick-filters-expanded',
     'palette-frecency-v1',

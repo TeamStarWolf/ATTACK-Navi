@@ -10,6 +10,16 @@ import { HEATMAP_MODES } from '../models/heatmap-modes';
 
 export type SortMode = 'alpha' | 'coverage';
 export type HeatmapMode = 'coverage' | 'exposure' | 'status' | 'controls' | 'software' | 'campaign' | 'risk' | 'kev' | 'd3fend' | 'atomic' | 'engage' | 'car' | 'cve' | 'detection' | 'frequency' | 'cri' | 'unified' | 'library' | 'sigma' | 'nist' | 'veris' | 'epss' | 'elastic' | 'splunk' | 'intelligence' | 'm365' | 'my-exposure' | 'wazuh' | 'csa-ccm' | 'm365-controls' | 'kill-chain' | 'poc-exploits' | 'f3-origin';
+
+/**
+ * The lens a fresh profile opens on (plan E1.5, decision D4): Prevalence, the
+ * Threat lens 'frequency' (how many ATT&CK groups use each technique). It is
+ * true for every visitor and claims nothing about their environment, unlike
+ * 'unified' (Reference depth), which painted a profile with no owner data as
+ * strong. Shown with a one-line banner until owner data exists (OwnerDataService).
+ * A link without heat= opens this lens.
+ */
+export const DEFAULT_HEATMAP_MODE: HeatmapMode = 'frequency';
 export type SearchScope = 'name' | 'full';
 export const SEARCH_SCOPES: readonly SearchScope[] = ['name', 'full'];
 /** Mitigation implementation statuses the `impl` filter (and URL param) may take. */
@@ -55,7 +65,7 @@ export class FilterService {
   private activeSoftwareIdsSubject = new BehaviorSubject<Set<string>>(new Set());
   private activeCampaignIdsSubject = new BehaviorSubject<Set<string>>(new Set());
   private activeDataSourceSubject = new BehaviorSubject<string | null>(null);
-  private heatmapModeSubject = new BehaviorSubject<HeatmapMode>('unified');
+  private heatmapModeSubject = new BehaviorSubject<HeatmapMode>(DEFAULT_HEATMAP_MODE);
   private implStatusFilterSubject = new BehaviorSubject<string | null>(null);
   private searchFilterModeSubject = new BehaviorSubject<boolean>(false);
   searchFilterMode$: Observable<boolean> = this.searchFilterModeSubject.asObservable();
@@ -321,7 +331,7 @@ export class FilterService {
     const ds = this.activeDataSourceSubject.value;
     if (ds) params['ds'] = ds;
     const heat = this.heatmapModeSubject.value;
-    if (heat !== 'unified') params['heat'] = heat;
+    if (heat !== DEFAULT_HEATMAP_MODE) params['heat'] = heat;
     const impl = this.implStatusFilterSubject.value;
     if (impl) params['impl'] = impl;
     const scope = this.searchScopeSubject.value;
@@ -514,7 +524,7 @@ export class FilterService {
     this.activeSoftwareIdsSubject.next(new Set());
     this.activeCampaignIdsSubject.next(new Set());
     this.activeDataSourceSubject.next(null);
-    this.heatmapModeSubject.next('unified');
+    this.heatmapModeSubject.next(DEFAULT_HEATMAP_MODE);
     this.implStatusFilterSubject.next(null);
     this.searchFilterModeSubject.next(false);
     this.cveTechniqueIdsSubject.next(new Set());

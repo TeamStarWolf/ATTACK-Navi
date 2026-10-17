@@ -50,15 +50,22 @@
   font-family: 'IBM Plex Mono', monospace;
 }
 
-.risk-badge {
+// E1.5: names the rung of the dashboard's numbers (plan 4.1); neutral, never green.
+.rung-badge {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.12em;
   padding: 5px 12px;
   border-radius: 999px;
-  border: 1px solid;
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
   background: rgb(255 255 255 / 3%);
   white-space: nowrap;
+}
+
+// Known-rung values use the neutral text colour, not a red-to-green grade.
+.mini-stat-value.known-value {
+  color: var(--text-secondary);
 }
 
 .configure-btn {

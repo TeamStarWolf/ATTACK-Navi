@@ -3,7 +3,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { FilterService, HeatmapMode } from './filter.service';
+import { DEFAULT_HEATMAP_MODE, FilterService, HeatmapMode } from './filter.service';
 
 /** A security role the whole app can be viewed through. */
 export type ViewpointId =
@@ -41,8 +41,8 @@ const STORAGE_KEY = 'attack-navi-viewpoint';
  * Re-frames the whole app for a security role: sets the matrix's default
  * heatmap lens, navigates to the role's home workspace, and marks that role's
  * featured lenses in the lens menu. The default `analyst` viewpoint reproduces
- * the app's neutral behaviour (Reference depth lens, heat=unified, /matrix home), so users who never
- * touch the switcher see no change.
+ * the app's neutral behaviour (the Prevalence lens, heat=frequency, /matrix home;
+ * plan E1.5, decision D4), so users who never touch the switcher see no change.
  *
  * Every lens value below is a real `HeatmapMode` (filter.service.ts) and every
  * `homeRoute` is a real top-level route (app.routes.ts); every `icon` is a name
@@ -59,10 +59,10 @@ export class ViewpointService {
       label: 'Analyst',
       short: 'Analyst',
       icon: 'compass',
-      tagline: 'Neutral reference-depth view',
-      defaultLens: 'unified',
+      tagline: 'Neutral adversary-prevalence view',
+      defaultLens: DEFAULT_HEATMAP_MODE,
       homeRoute: '/matrix',
-      featuredLenses: ['unified', 'coverage', 'risk', 'detection'],
+      featuredLenses: [DEFAULT_HEATMAP_MODE, 'unified', 'coverage', 'risk', 'detection'],
     },
     {
       id: 'red',

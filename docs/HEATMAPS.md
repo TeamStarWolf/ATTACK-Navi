@@ -1,6 +1,6 @@
 # Heatmap Modes Reference
 
-> Complete reference for all 31 heatmap coloring modes in the MITRE ATT&CK Navi.
+> Complete reference for all 31 heatmap coloring modes in ATTACK-Navi.
 > Each mode recolors every technique cell in the matrix to visualize a different security dimension.
 
 ---
@@ -173,7 +173,7 @@ To add a 25th heatmap mode, modify these seven files in order:
 | **Data Source** | `Domain.groupsByTechnique` |
 | **Score Computation** | Total count of unique threat groups that use this technique across the entire ATT&CK knowledge base (not filtered). Bucketed: 0, 1--2, 3--5, 6--10, 11+. |
 | **Color Scale** | `#1c2a38` (0) -> `#1e3a5f` (1--2) -> `#1565c0` (3--5) -> `#0ea5e9` (6--10) -> `#38bdf8` (11+) |
-| **Use Case** | Identify the most commonly used techniques across all known threat actors. High-frequency techniques represent the most popular attack patterns and should be prioritized for detection coverage. |
+| **Use Case** | Identify the most commonly used techniques across all known threat actors. High-frequency techniques represent the most popular attack patterns and should be prioritized for detection coverage. Since E1.5 (decision D4) this is the default lens, called Prevalence: until the user records a mitigation's implementation status or a validation run, a one-line banner over the matrix says it is reference data, not a view of their environment. |
 
 ---
 
@@ -363,7 +363,7 @@ To add a 25th heatmap mode, modify these seven files in order:
 | | - Atomic tests (weight 10): `min(atomicCount / 3, 1) * 10` |
 | | Threat intel (groups, software, campaigns) and KEV are not inputs: the Threat lenses (Frequency, Selected adversaries, Intelligence, KEV, Threat-weighted mapping gap) show them. A technique's Reference depth does not change when the number of groups using it changes. |
 | **Color Scale** | `#0e1b30` (minimal, 0--15) -> `#143a5c` (thin, 16--30) -> `#1f6aa8` (some, 31--50) -> `#2f95d8` (51--65) -> `#38bdf8` (deep, 66--80) -> `#a78bfa` (deepest, 81--100) |
-| **Use Case** | The default lens: how much defensive reference material (Known rung) exists for each technique. It is not a posture measure and says nothing about what is deployed. |
+| **Use Case** | How much defensive reference material (Known rung) exists for each technique. It is not a posture measure and says nothing about what is deployed. It was the default lens until E1.5 (decision D4) made Prevalence (`frequency`) the default. |
 
 ---
 

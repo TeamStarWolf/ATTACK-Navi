@@ -41,23 +41,19 @@ describe('SettingsPanelComponent (rendered)', () => {
     fixture.detectChanges();
   };
 
-  it('opens on Scoring Weights with the default weights summing to 100 and the sample score', () => {
-    expect(text('.tab-btn.active')).toBe('Scoring Weights');
-    expect(text('.weights-total')).toBe('Total: 100 / 100 ✓');
-    expect(host.querySelector('.weights-total')!.classList).toContain('weights-ok');
-    // 20/20/20/20/20: mitigations 3/5 of 20 = 12, CAR 20, Atomic 20, D3FEND 0, NIST 20 -> 72%.
-    expect(text('.preview-score-val')).toBe('72%');
-    expect(host.querySelector('.preview-score-val')!.classList).toContain('score-orange');
-  });
-
-  it('moving a weight slider persists the weight and flags a total that is not 100', () => {
-    const slider = host.querySelector('.weight-row .slider-input') as HTMLInputElement; // Mitigations
-    slider.value = '60';
-    slider.dispatchEvent(new Event('input'));
+  // E1.5: the Scoring Weights tab is retired (plan 4.1: no Coverage Score, no
+  // grades on reference data). The panel opens on Display, which now carries
+  // the 'Reset All to Defaults' button that used to sit on the weights tab.
+  it('opens on Display, with no Scoring Weights tab and the reset button in place', () => {
+    const tabs = [...host.querySelectorAll('.tab-btn')].map(b => b.textContent!.trim());
+    expect(tabs).toEqual(['Display', 'Organization', 'Data', 'Integrations']);
+    expect(text('.tab-btn.active')).toBe('Display');
+    expect(host.querySelector('.weights-total, .weight-row, .preview-score-val')).toBeNull();
+    expect(host.textContent).not.toMatch(/scoring weights?/i);
+    settings.update({ matrixCellSize: 'large' });
+    (host.querySelector('.section-actions .btn-reset') as HTMLButtonElement).click();
     fixture.detectChanges();
-    expect(settings.current.scoringWeights.mitigations).toBe(60);
-    expect(text('.weights-total')).toBe('Total: 140 / 100 ⚠');
-    expect(host.querySelector('.weights-total')!.classList).toContain('weights-bad');
+    expect(settings.current.matrixCellSize).toBe('normal');
   });
 
   it('choosing a colour theme applies it to the coverage ramp the matrix reads', () => {

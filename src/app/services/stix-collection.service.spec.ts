@@ -50,6 +50,15 @@ describe('StixCollectionService', () => {
 
   // --- exportCollection() ---
 
+  // E1.5 (D13): a shared collection is signed by this app, never by a MITRE name.
+  it('signs a shared collection with ATTACK-Navi, not a MITRE product name', () => {
+    const url = service.shareAsUrl();
+    const json = decodeURIComponent(escape(atob(decodeURIComponent(url.split('#import=')[1]))));
+    const identity = (JSON.parse(json).objects as any[]).find(o => o.type === 'identity');
+    expect(identity.description).toBe('Shared via ATTACK-Navi');
+    expect(json).not.toContain('Mitigation Navigator');
+  });
+
   describe('exportCollection', () => {
     it('should produce a bundle with type "bundle"', () => {
       const bundle = service.exportCollection('Test', 'A test collection');

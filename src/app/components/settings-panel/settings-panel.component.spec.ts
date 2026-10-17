@@ -4,7 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
 
 import { SettingsPanelComponent } from './settings-panel.component';
-import { DEFAULT_SETTINGS, SettingsService } from '../../services/settings.service';
+import { SettingsService } from '../../services/settings.service';
 import { DataService } from '../../services/data.service';
 import { TimelineService } from '../../services/timeline.service';
 import { OpenCtiService } from '../../services/opencti.service';
@@ -52,30 +52,19 @@ describe('SettingsPanelComponent', () => {
     localStorage.removeItem('mitre-nav-settings-v1');
   });
 
-  it('starts from the saved settings on the scoring tab with nothing dirty', () => {
-    expect(component.activeTab).toBe('scoring');
-    expect(component.settings.scoringWeights).toEqual(DEFAULT_SETTINGS.scoringWeights);
-    expect(component.weightsTotal).toBe(100);
+  // E1.5: the Scoring Weights tab and its setting are retired (plan 4.1 bans
+  // the Coverage Score and grades on reference data); Display is the first tab.
+  it('starts from the saved settings on the Display tab with nothing dirty', () => {
+    expect(component.activeTab).toBe('display');
+    expect('scoringWeights' in component.settings).toBeFalse();
     expect(component.isDirty).toBeFalse();
   });
 
-  it('autoNormalize rescales the weights to sum to 100 and persists them', () => {
-    component.settings.scoringWeights = { mitigations: 30, car: 10, atomic: 5, d3fend: 5, nist: 0 };
-    component.autoNormalize();
-
-    const w = component.settings.scoringWeights;
-    expect(w.mitigations + w.car + w.atomic + w.d3fend + w.nist).toBe(100);
-    expect(w).toEqual({ mitigations: 60, car: 20, atomic: 10, d3fend: 10, nist: 0 });
-    expect(settingsService.current.scoringWeights).toEqual(w);
-    expect(component.isDirty).toBeFalse();
-  });
-
-  it('onWeightChange clamps each weight into its allowed range before saving', () => {
-    component.settings.scoringWeights = { mitigations: 99, car: -5, atomic: 31, d3fend: 30, nist: 25 };
-    component.onWeightChange();
-
-    expect(component.settings.scoringWeights).toEqual({ mitigations: 60, car: 0, atomic: 30, d3fend: 30, nist: 20 });
-    expect(settingsService.current.scoringWeights).toEqual(component.settings.scoringWeights);
+  it('has no scoring-weight controls left', () => {
+    const c = component as unknown as Record<string, unknown>;
+    for (const gone of ['weightsTotal', 'sampleCoverageScore', 'onWeightChange', 'autoNormalize']) {
+      expect(c[gone]).withContext(gone).toBeUndefined();
+    }
   });
 
   it('isDirty tracks an unsaved edit and clears once applied', () => {
@@ -94,17 +83,6 @@ describe('SettingsPanelComponent', () => {
     component.resetToDefaults();
     expect(component.settings.heatmapColorTheme).toBe('default');
     expect(settingsService.current.heatmapColorTheme).toBe('default');
-  });
-
-  it('sampleCoverageScore follows the weights', () => {
-    // Everything on mitigations: the sample has 3 of 5, so 60.
-    component.settings.scoringWeights = { mitigations: 100, car: 0, atomic: 0, d3fend: 0, nist: 0 };
-    expect(component.sampleCoverageScore).toBe(60);
-    // Everything on D3FEND (absent in the sample): 0.
-    component.settings.scoringWeights = { mitigations: 0, car: 0, atomic: 0, d3fend: 100, nist: 0 };
-    expect(component.sampleCoverageScore).toBe(0);
-    component.settings.scoringWeights = { mitigations: 0, car: 0, atomic: 0, d3fend: 0, nist: 0 };
-    expect(component.sampleCoverageScore).toBe(0);
   });
 
   it('reflects the loaded ATT&CK release on the data tab', () => {
@@ -174,7 +152,7 @@ describe('SettingsPanelComponent', () => {
     });
 
     it('keeps the notices on the Data tab only', () => {
-      const fixture = render('scoring');
+      const fixture = render('display');
       expect(fixture.nativeElement.querySelector('a.third-party-notices-link')).toBeNull();
       expect(fixture.nativeElement.querySelector('.third-party-notice--mitre')).toBeNull();
     });
