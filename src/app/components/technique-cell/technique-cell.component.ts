@@ -21,6 +21,7 @@ import { HeatmapMode } from '../../services/filter.service';
 import { ImplStatus } from '../../services/implementation.service';
 import { TechniqueAnnotation } from '../../services/annotation.service';
 import { SettingsService } from '../../services/settings.service';
+import { LENS_NA_COLOR } from '../../models/heatmap-modes';
 
 @Component({
   selector: 'app-technique-cell',
@@ -40,6 +41,7 @@ import { SettingsService } from '../../services/settings.service';
       [class.focused]="isFocused"
       [class.search-dimmed]="hasActiveSearch && !isSearchMatch"
       [class.search-highlighted]="hasActiveSearch && isSearchMatch"
+      [class.lens-na]="lensUnavailable"
       [style.background-color]="bgColor"
       [style.color]="textColor"
       (click)="selected.emit(technique)"
@@ -84,17 +86,17 @@ import { SettingsService } from '../../services/settings.service';
             🎯{{ campaignScore }}
           </span>
         }
-        @if (heatmapMode === 'd3fend' && showMetricBadge) {
+        @if (heatmapMode === 'd3fend' && showMetricBadge && !lensUnavailable) {
           <span class="d3fend-badge" [title]="d3fendScore + ' D3FEND countermeasure(s)'">
             🛡{{ d3fendScore }}
           </span>
         }
-        @if (heatmapMode === 'atomic' && atomicScore > 0 && showMetricBadge) {
+        @if (heatmapMode === 'atomic' && atomicScore > 0 && showMetricBadge && !lensUnavailable) {
           <span class="atomic-badge" [title]="atomicScore + ' Atomic Red Team test(s)'">
             ⚛{{ atomicScore }}
           </span>
         }
-        @if (heatmapMode === 'cri' && criScore > 0 && showMetricBadge) {
+        @if (heatmapMode === 'cri' && criScore > 0 && showMetricBadge && !lensUnavailable) {
           <span class="cri-hm-badge" [title]="criScore + ' CRI Profile control(s)'">
             🏦{{ criScore }}
           </span>
@@ -146,6 +148,12 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
   @Input() softwareScore = 0;
   @Input() campaignScore = 0;
   @Input() heatmapMode: HeatmapMode = 'unified';
+  /**
+   * The active lens has no data for the domain on screen (E1.2): paint the
+   * neutral n/a hatch instead of the lens's zero colour, so a missing source
+   * never reads as a real zero.
+   */
+  @Input() lensUnavailable = false;
   @Input() implStatus: ImplStatus | null = null;
   @Input() maxExposure = 1;
   @Input() maxSoftware = 1;
@@ -259,7 +267,9 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   ngOnChanges(): void {
-    if (this.heatmapMode === 'exposure') {
+    if (this.lensUnavailable) {
+      this.bgColor = LENS_NA_COLOR;
+    } else if (this.heatmapMode === 'exposure') {
       this.bgColor = this.computeExposureColor(this.exposureScore, this.maxExposure);
     } else if (this.heatmapMode === 'software') {
       this.bgColor = this.computeExposureColor(this.softwareScore, this.maxSoftware);

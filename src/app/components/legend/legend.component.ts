@@ -7,7 +7,8 @@ import { FilterService, HeatmapMode } from '../../services/filter.service';
 import { SettingsService } from '../../services/settings.service';
 import { AttackDomain, DataService } from '../../services/data.service';
 import { SAFE_SEQ, SAFE_STATUS, SAFE_CONTROLS } from '../../models/safe-palette';
-import { HEATMAP_MODES, HeatmapModeDef, LensRampStop, heatmapModeDef, lensRungBadge } from '../../models/heatmap-modes';
+import { HEATMAP_MODES, HeatmapModeDef, LensAvailability, LensRampStop, heatmapModeDef, lensAvailability, lensRungBadge } from '../../models/heatmap-modes';
+import { LensCardService } from '../../services/lens-card.service';
 import { LoadedBundleInfo, domainLabel, lensSourceVintage } from '../../models/lens-sources';
 
 /** The unified lens's colorblind-safe 6-stop viridis, mirroring technique-cell. */
@@ -22,8 +23,10 @@ const SCALE_NOTE: Partial<Record<HeatmapModeDef['ramp']['scale'], string>> = {
 /**
  * Lens legend (product plan 4.7). Everything it shows comes from the
  * HEATMAP_MODES registry: the rung badge and the lens question, the colour
- * stops, the domain line, the source line with each source's vintage, and
- * what zero means.
+ * stops, the domain line (with the stated reason when the lens has no data
+ * for the current domain), the source line with each source's vintage, what
+ * zero means, and a 'What is this lens?' button that opens the lens's
+ * definition card.
  */
 @Component({
   selector: 'app-legend',
@@ -50,9 +53,15 @@ const SCALE_NOTE: Partial<Record<HeatmapModeDef['ramp']['scale'], string>> = {
       <p class="legend-question">{{ def.question }}</p>
       @if (notInDomain) {
         <p class="legend-domain"><span class="swatch hatch" aria-hidden="true"></span>n/a for {{ domainName }} (no source data)</p>
+        <p class="legend-na-reason">{{ availability.reason }}</p>
       }
       <p class="legend-sources"><span class="meta-key">Sources:</span> {{ sourceLine }}</p>
-      <p class="legend-zero">{{ def.zeroMeaning }}</p>
+      <div class="legend-foot">
+        <p class="legend-zero">{{ def.zeroMeaning }}</p>
+        <button type="button" class="lens-help-btn" aria-haspopup="dialog"
+                [attr.aria-label]="'What is the ' + def.label + ' lens?'"
+                (click)="openDefinition($event)">What is this lens?</button>
+      </div>
     </div>
   `,
   styleUrl: './legend.component.scss',
@@ -75,8 +84,17 @@ export class LegendComponent implements OnInit, OnDestroy {
     return SCALE_NOTE[this.def.ramp.scale];
   }
 
+  get availability(): LensAvailability {
+    return lensAvailability(this.def, this.domain);
+  }
+
   get notInDomain(): boolean {
-    return !this.def.domains.includes(this.domain);
+    return !this.availability.available;
+  }
+
+  /** Open the '?' definition card for the active lens (E1.2). */
+  openDefinition(event: Event): void {
+    this.lensCards.open(this.heatmapMode, event.currentTarget);
   }
 
   get domainName(): string {
@@ -140,6 +158,7 @@ export class LegendComponent implements OnInit, OnDestroy {
     private settingsService: SettingsService,
     private dataService: DataService,
     private cdr: ChangeDetectorRef,
+    private lensCards: LensCardService,
   ) {}
 
   ngOnInit(): void {

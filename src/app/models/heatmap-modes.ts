@@ -1,10 +1,11 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 // Type-only: FilterService imports HEATMAP_MODES from here to validate URL params,
-// so this must not become a runtime import cycle.
+// so this must not become a runtime import cycle. lens-sources.ts has no
+// runtime imports of its own, so the one runtime import below is cycle-free.
 import type { HeatmapMode } from '../services/filter.service';
 import type { AttackDomain } from '../services/data.service';
-import type { LensSourceId } from './lens-sources';
+import { LENS_SOURCES, domainLabel, type LensSourceId } from './lens-sources';
 
 /**
  * The rung or dimension a lens's numbers belong to (product plan 4.1).
@@ -60,6 +61,12 @@ export interface HeatmapModeDef {
   /** What a zero (or blank, or lowest band) means for this lens. */
   zeroMeaning: string;
   ramp: LensRamp;
+  /**
+   * Why the lens has no data outside its domains, when naming its sources
+   * would not say it (the lens is about one framework's own ids). Without it,
+   * the reason names the sources and the domains they cover.
+   */
+  domainNote?: string;
 }
 
 const RELATIVE_LABELS = ['<25%', '25-49%', '50-74%', '75-100%'] as const;
@@ -329,6 +336,7 @@ export const HEATMAP_MODES: readonly HeatmapModeDef[] = [
     rung: 'Known',
     formula: 'T-prefixed ids are shared with ATT&CK, F-prefixed ids are fraud-native; the prefix is the CTID isAttack flag.',
     domains: ['f3'], sources: ['attack-bundle'],
+    domainNote: 'it sorts CTID F3 fraud-framework ids by their T or F prefix, so it exists for CTID F3 only',
     zeroMeaning: 'No zero state: every F3 technique is either shared or fraud-native.',
     ramp: stops('categorical', [['#1565c0', 'shared w/ ATT&CK'], ['#6a1b9a', 'fraud-native']]) },
 ] as const;
@@ -353,3 +361,56 @@ export function lensRungBadge(def: Pick<HeatmapModeDef, 'rung' | 'qualifier'>): 
   const rung = def.rung.toUpperCase();
   return def.qualifier ? `${rung} ${def.qualifier}` : rung;
 }
+
+/** Whether a lens has data for an ATT&CK domain, and if not, why (E1.2). */
+export interface LensAvailability {
+  readonly available: boolean;
+  /** Short tag for a disabled control, e.g. 'n/a for ICS ATT&CK'; null when available. */
+  readonly short: string | null;
+  /** The full stated reason; null when available. */
+  readonly reason: string | null;
+}
+
+const AVAILABLE: LensAvailability = { available: true, short: null, reason: null };
+
+/**
+ * Base colour of a cell whose lens has no data in the domain on screen. A
+ * neutral grey that is in no lens ramp; the cell adds the diagonal hatch on
+ * top (4.1 'n/a in this domain': diagonal hatch, never a ramp colour).
+ */
+export const LENS_NA_COLOR = '#9e9e9e';
+
+/**
+ * A lens is available in a domain exactly when that domain is in its
+ * domains[] (the domains its sources actually cover). An unavailable lens is
+ * disabled in the lens picker and rendered as 'n/a in this domain' (hatched,
+ * never a ramp colour) instead of an all-zero map, so a missing source never
+ * reads as a zero.
+ */
+export function lensAvailability(def: Pick<HeatmapModeDef, 'label' | 'domains' | 'sources' | 'domainNote'>, domain: AttackDomain): LensAvailability {
+  if (def.domains.includes(domain)) return AVAILABLE;
+  const short = `n/a for ${domainLabel(domain)}`;
+  const why = def.domainNote
+    ?? `its sources (${[...new Set(def.sources.map((id) => LENS_SOURCES[id].name))].join(', ')}) have data for ${def.domains.map(domainLabel).join(' and ')} only`;
+  return { available: false, short, reason: `${def.label} is ${short}: ${why}.` };
+}
+
+/** True when the lens for `mode` has data in `domain` (unknown modes count as available). */
+export function isLensAvailable(mode: HeatmapMode, domain: AttackDomain): boolean {
+  const def = heatmapModeDef(mode);
+  return !def || lensAvailability(def, domain).available;
+}
+
+/** Every lens that has no data in `domain`, in registry order. */
+export function unavailableLenses(domain: AttackDomain): HeatmapModeDef[] {
+  return HEATMAP_MODES.filter((m) => !lensAvailability(m, domain).available);
+}
+
+/** What each rung or dimension means (plan 4.1), as the definition card states it. */
+export const LENS_RUNG_MEANING: Readonly<Record<LensRung, string>> = {
+  Known: 'Reference data: the world knows how to mitigate, detect or test this. It makes no claim about your environment.',
+  Covered: 'Something you declared is deployed for this, but it has not been shown to fire.',
+  Proven: 'A named detection fired, or the technique was blocked, on a recorded date.',
+  Threat: 'How much adversaries care about this. A threat dimension, never a posture rung.',
+  Exposure: 'Whether this is reachable in your estate. An exposure dimension, never a posture rung.',
+};

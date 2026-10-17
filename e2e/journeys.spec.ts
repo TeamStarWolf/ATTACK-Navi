@@ -16,7 +16,7 @@
 // live today: it guards that fixture so a journey never turns on against data
 // that has drifted from what its script promises.
 import { readFileSync } from 'node:fs';
-import { test, expect, loadSampleOrg } from './fixtures/workspace';
+import { test, expect, loadSampleOrg, BASE, ROUTE_TIMEOUT } from './fixtures/workspace';
 
 /** Annotation shown next to each pending journey in the report. */
 const greenBy = (phase: string) => ({ tag: '@journey', annotation: { type: 'green by', description: phase } });
@@ -142,5 +142,52 @@ test.describe('shared fixture workspace', () => {
     expect(asset?.cves).toContain(org.vmJourney.cve);
     expect(org.vmJourney.cve).toBe('CVE-2024-3400');
     expect(org.share.hash).toBe('/matrix?lens=posture&tech=T1059.001&dom=enterprise&v=20.0');
+  });
+});
+
+// Plan P1 row E1.2 has no Appendix C journey of its own; this is the minimal
+// journey-level check the row asks for: switching to ICS disables the lenses
+// that have no ICS data, each with its stated reason, and the matrix shows the
+// active one as n/a instead of an all-zero map.
+test.describe('lens availability (plan E1.2)', () => {
+  test('switching to ICS shows why each lens without ICS data is disabled', async ({ page }) => {
+    await page.goto(BASE);
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+    await expect(page.locator('.lens-na-banner.shown')).toHaveCount(0);
+
+    await page.locator('.domain-btn[title="ICS ATT&CK"]').click();
+    await expect(page.locator('.tactic-header', { hasText: 'Inhibit Response Function' })).toHaveCount(1, { timeout: ROUTE_TIMEOUT });
+
+    // The default lens (Reference depth) has no ICS data: a stated reason, and
+    // every cell hatched as n/a rather than painted as zero.
+    const banner = page.locator('.lens-na-banner.shown');
+    await expect(banner).toContainText('Reference depth is n/a for ICS ATT&CK');
+    await expect(banner).toHaveAttribute('role', 'status');
+    const cells = await page.locator('.cell').count();
+    expect(cells).toBeGreaterThan(0);
+    await expect(page.locator('.cell.lens-na')).toHaveCount(cells);
+
+    // The lens menu disables the 23 lenses without ICS data, each with its reason.
+    await page.locator('.heatmap-btn').click();
+    await expect(page.locator('.lens-na-summary')).toContainText('23 of 33 lenses have no ICS ATT&CK data');
+    const disabled = page.locator('.heatmap-groups .heatmap-mode-btn[aria-disabled="true"]');
+    await expect(disabled).toHaveCount(23);
+    for (const btn of await disabled.all()) {
+      const reasonId = await btn.getAttribute('aria-describedby');
+      expect(reasonId).toBeTruthy();
+      await expect(page.locator(`#${reasonId}`)).toContainText('is n/a for ICS ATT&CK: ');
+    }
+    await expect(page.locator('.lens-item[data-lens="frequency"] .heatmap-mode-btn')).not.toHaveAttribute('aria-disabled', 'true');
+
+    // The '?' card opens as a dialog that states the reason, and Escape returns focus.
+    const help = page.locator('.lens-item[data-lens="sigma"] .lens-help-btn');
+    await help.click();
+    const dialog = page.getByRole('dialog', { name: 'Sigma Rules' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toContainText('Sigma Rules is n/a for ICS ATT&CK');
+    await expect(dialog.locator('.lens-card-close')).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+    await expect(help).toBeFocused();
   });
 });

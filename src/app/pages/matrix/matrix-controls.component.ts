@@ -12,14 +12,16 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { Mitigation } from '../../models/mitigation';
 import { Technique } from '../../models/technique';
-import { FilterService, SearchScope, SortMode } from '../../services/filter.service';
-import { DataService } from '../../services/data.service';
+import { FilterService, HeatmapMode, SearchScope, SortMode } from '../../services/filter.service';
+import { AttackDomain, DataService } from '../../services/data.service';
 import { MatrixControlService } from '../../services/matrix-control.service';
 import { AttackCveService } from '../../services/attack-cve.service';
 import { LibraryLayerService, LibraryLayerMeta } from '../../services/library-layer.service';
 import { UserLayerService } from '../../services/user-layer.service';
 import { AttackNaviLayer } from '../../models/user-layer';
-import { HEATMAP_MODES, HEATMAP_GROUPS, HeatmapModeDef, heatmapShortLabel } from '../../models/heatmap-modes';
+import { HEATMAP_MODES, HEATMAP_GROUPS, HeatmapModeDef, LensAvailability, heatmapShortLabel, lensAvailability } from '../../models/heatmap-modes';
+import { domainLabel } from '../../models/lens-sources';
+import { LensCardService } from '../../services/lens-card.service';
 import { PLATFORM_PILLS } from '../../components/toolbar/toolbar.component';
 import { Viewpoint, ViewpointService } from '../../services/viewpoint.service';
 
@@ -75,7 +77,13 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
   showViewMenu = false;
   /** Active viewpoint — drives the pinned "featured lenses" group in the menu. */
   currentViewpoint: Viewpoint | null = null;
-  heatmapMode: import('../../services/filter.service').HeatmapMode = 'unified';
+  heatmapMode: HeatmapMode = 'unified';
+  /** The ATT&CK domain on screen; lenses without data for it are disabled with a reason (E1.2). */
+  attackDomain: AttackDomain = 'enterprise';
+  /** Availability of every lens in attackDomain, rebuilt when the domain changes. */
+  private lensAvailabilityByMode = new Map<HeatmapMode, LensAvailability>();
+  /** How many lenses are disabled in attackDomain. */
+  disabledLensCount = 0;
   libraryLayers: LibraryLayerMeta[] = [];
   /** False until the library manifest loads - the menu says "loading" rather than showing nothing. */
   libraryManifestLoaded = false;
@@ -104,7 +112,10 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
     private userLayerService: UserLayerService,
     private viewpointService: ViewpointService,
     private cdr: ChangeDetectorRef,
-  ) {}
+    private lensCards: LensCardService,
+  ) {
+    this.rebuildLensAvailability();
+  }
 
   ngOnInit(): void {
     this.subs.add(this.dataService.domain$.subscribe((d) => {
@@ -141,6 +152,32 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
     this.subs.add(this.filterService.activeThreatGroupIds$.subscribe((ids) => { this.activeThreatGroupCount = ids.size; this.cdr.markForCheck(); }));
     this.subs.add(this.matrixControl.multiSelectMode$.subscribe((v) => { this.multiSelectMode = v; this.cdr.markForCheck(); }));
     this.subs.add(this.viewpointService.viewpoint$.subscribe((vp) => { this.currentViewpoint = vp; this.cdr.markForCheck(); }));
+    this.subs.add(this.dataService.currentDomain$.subscribe((d) => {
+      this.attackDomain = d;
+      this.rebuildLensAvailability();
+      this.cdr.markForCheck();
+    }));
+  }
+
+  private rebuildLensAvailability(): void {
+    this.lensAvailabilityByMode = new Map(this.heatmapModes.map((m) => [m.value, lensAvailability(m, this.attackDomain)]));
+    this.disabledLensCount = [...this.lensAvailabilityByMode.values()].filter((a) => !a.available).length;
+  }
+
+  /** Whether `mode` has data in the domain on screen, and if not, why. */
+  lensState(mode: HeatmapMode): LensAvailability {
+    return this.lensAvailabilityByMode.get(mode) ?? { available: true, short: null, reason: null };
+  }
+
+  get domainName(): string { return domainLabel(this.attackDomain); }
+
+  /** True when the active lens has no data for the domain on screen. */
+  get activeLensUnavailable(): boolean { return !this.lensState(this.heatmapMode).available; }
+
+  /** Open the '?' definition card for a lens; focus returns to the '?' button on close. */
+  openLensCard(mode: HeatmapMode, event: Event): void {
+    event.stopPropagation();
+    this.lensCards.open(mode, event.currentTarget);
   }
 
   ngOnDestroy(): void { this.subs.unsubscribe(); }
@@ -239,7 +276,9 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  setHeatmap(mode: import('../../services/filter.service').HeatmapMode): void {
+  /** Pick a lens. A lens with no data for the domain on screen is disabled: the click does nothing. */
+  setHeatmap(mode: HeatmapMode): void {
+    if (!this.lensState(mode).available) return;
     this.filterService.setHeatmapMode(mode);
     this.showViewMenu = false;
   }
