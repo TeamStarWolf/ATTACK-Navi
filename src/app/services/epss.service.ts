@@ -2,9 +2,12 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, forkJoin } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { Observable, of, forkJoin, defer, TimeoutError } from 'rxjs';
+import { map, catchError, timeout } from 'rxjs/operators';
 import { SourceRegistryService } from './source-registry.service';
+
+/** How long the EPSS availability check waits for an answer. */
+export const EPSS_CHECK_TIMEOUT_MS = 8000;
 
 export interface EpssScore {
   cveId: string;
@@ -22,6 +25,36 @@ export class EpssService {
     private http: HttpClient,
     private sources: SourceRegistryService = new SourceRegistryService(),
   ) {}
+
+  /**
+   * A real availability check for the EPSS API (E1.3; it replaces a hard-coded "up"):
+   * one small GET (`limit=1`) with a timeout. The outcome lands on the 'epss'
+   * SourceRecord: 'loaded' when the API answers with a score, 'empty' when it answers
+   * with none, 'failed' with the reason on an error or no answer in time. Emits true
+   * only when the API answered with data. A record that already holds data (scores
+   * fetched earlier this session) is not checked again.
+   */
+  checkAvailability(): Observable<boolean> {
+    return defer(() => {
+      if (this.sources.hasData('epss')) return of(true);
+      this.sources.begin('epss');
+      return this.http.get<any>(`${this.API}?limit=1`).pipe(
+        timeout(EPSS_CHECK_TIMEOUT_MS),
+        map(response => {
+          const answered = Array.isArray(response?.data) && response.data.length > 0;
+          this.sources.succeed('epss', answered ? null : 0);
+          return answered;
+        }),
+        catchError(err => {
+          this.sources.fail(
+            'epss',
+            err instanceof TimeoutError ? `no answer within ${EPSS_CHECK_TIMEOUT_MS / 1000} s from ${this.API}` : err,
+          );
+          return of(false);
+        }),
+      );
+    });
+  }
 
   /** Fetch EPSS scores for a batch of CVE IDs. Returns cached results immediately.
    *  Batches into groups of 100 to stay within API limits. */

@@ -38,6 +38,7 @@ describe('DataHealthComponent', () => {
 
   const loadedSubjects: Record<string, BehaviorSubject<boolean>> = {};
   let kevError$: BehaviorSubject<string | null>;
+  let epssCheck$: BehaviorSubject<boolean>;
 
   // Services that expose loaded$ (used in the component's sources array)
   const loadedServiceNames = [
@@ -61,8 +62,9 @@ describe('DataHealthComponent', () => {
       mocks[name] = mock;
     }
 
-    // EpssService is injected but sources use of(true) inline - provide minimal mock
-    const mockEpssService = {};
+    // EPSS has a real availability check (E1.3) instead of a hard-coded of(true).
+    epssCheck$ = new BehaviorSubject<boolean>(false);
+    const mockEpssService = { checkAvailability: jasmine.createSpy('checkAvailability').and.returnValue(epssCheck$) };
 
     // CveService exposes kevLoaded$ (not loaded$) plus kevError$ for a failed fetch
     const mockCveKevLoaded$ = new BehaviorSubject<boolean>(false);
@@ -122,19 +124,60 @@ describe('DataHealthComponent', () => {
   });
 
   it('should show dots in loading state initially', () => {
-    // EPSS uses of(true) inline so it loads immediately; all others start loading
+    // Every source starts loading, EPSS included: it is no longer hard-coded as up.
     const loadingDots = fixture.nativeElement.querySelectorAll('.dot-loading');
-    expect(loadingDots.length).toBe(23);
+    expect(loadingDots.length).toBe(24);
   });
 
   it('should transition dot to loaded state when service loads', () => {
     loadedSubjects['atomic'].next(true);
     fixture.detectChanges();
-    // EPSS pre-loaded (of(true)) + atomic = 2 loaded
     const loadedDots = fixture.nativeElement.querySelectorAll('.dot-loaded');
-    expect(loadedDots.length).toBe(2);
+    expect(loadedDots.length).toBe(1);
     const loadingDots = fixture.nativeElement.querySelectorAll('.dot-loading');
-    expect(loadingDots.length).toBe(22);
+    expect(loadingDots.length).toBe(23);
+  });
+
+  it('runs the EPSS availability check instead of reporting EPSS up unconditionally (E1.3)', () => {
+    expect(TestBed.inject(EpssService).checkAvailability).toHaveBeenCalledTimes(1);
+    const epssDot = () =>
+      [...fixture.nativeElement.querySelectorAll('.health-dot')].find((d: Element) => d.getAttribute('title')!.startsWith('EPSS:')) as Element;
+    expect(epssDot().classList).toContain('dot-loading');
+
+    // The check failed: the registry turns the dot red with the reason.
+    TestBed.inject(SourceRegistryService).fail('epss', 'no answer within 8 s from https://api.first.org/data/v1/epss');
+    fixture.detectChanges();
+    expect(epssDot().classList).toContain('dot-failed');
+    expect(epssDot().getAttribute('title')).toContain('no answer within 8 s');
+  });
+
+  it('turns the EPSS dot loaded when a Retry succeeds after a failed check, as the registry says (E1.3)', () => {
+    const registry = TestBed.inject(SourceRegistryService);
+    const epssDot = () =>
+      [...fixture.nativeElement.querySelectorAll('.health-dot')].find((d: Element) => d.getAttribute('title')!.startsWith('EPSS:')) as Element;
+
+    // The availability check fails.
+    epssCheck$.next(false);
+    registry.fail('epss', 'network error reaching https://api.first.org/data/v1/epss');
+    fixture.detectChanges();
+    expect(epssDot().classList).toContain('dot-failed');
+
+    // Retry: the check runs again and succeeds.
+    registry.begin('epss');
+    fixture.detectChanges();
+    expect(epssDot().classList).toContain('dot-loading');
+    registry.succeed('epss', null);
+    fixture.detectChanges();
+    expect(registry.get('epss').status).toBe('loaded');
+    expect(epssDot().classList).toContain('dot-loaded');
+    expect(epssDot().getAttribute('title')).toBe('EPSS: loaded');
+  });
+
+  it('shows EPSS loaded once the availability check answers', () => {
+    epssCheck$.next(true);
+    fixture.detectChanges();
+    const loaded = [...fixture.nativeElement.querySelectorAll('.dot-loaded')] as Element[];
+    expect(loaded.map(d => d.getAttribute('title'))).toEqual(['EPSS: loaded']);
   });
 
   it('marks CISA KEV failed when the fetch fails, and loaded once a retry succeeds', () => {
@@ -154,7 +197,7 @@ describe('DataHealthComponent', () => {
     loadedSubjects['cveKev'].next(true);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelectorAll('.dot-failed').length).toBe(0);
-    expect(fixture.nativeElement.querySelectorAll('.dot-loaded').length).toBe(2);
+    expect(fixture.nativeElement.querySelectorAll('.dot-loaded').length).toBe(1);
   });
 
   it('turns a dot red with the reason when its source records a failure, instead of pulsing "loading" (E1.3)', () => {

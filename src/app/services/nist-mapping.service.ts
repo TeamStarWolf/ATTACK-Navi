@@ -31,6 +31,11 @@ export class NistMappingService {
     this.load();
   }
 
+  /** Load again after a failed or empty load: the data-health Retry (E1.3). */
+  retry(): void {
+    this.load();
+  }
+
   private load(): void {
     this.sources.begin('ctid-nist-800-53');
     this.http.get<any>(NistMappingService.URL).subscribe({

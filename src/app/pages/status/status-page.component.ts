@@ -16,16 +16,18 @@ import { Domain } from '../../models/domain';
 import { StatsBarComponent } from '../../components/stats-bar/stats-bar.component';
 import { CoverageBreakdownComponent } from '../../components/coverage-breakdown/coverage-breakdown.component';
 import { DataHealthComponent } from '../../components/data-health/data-health.component';
+import { SourceHealthComponent } from '../../components/source-health/source-health.component';
 
 /**
  * Integration Health workspace: the at-a-glance coverage stats and the
  * data-source integration-health strip, relocated here from the matrix's
- * context bar so the matrix stays focused on the grid and its legend.
+ * context bar so the matrix stays focused on the grid and its legend. It is
+ * also the data-health view (E1.3): one row per SourceRecord with a Retry.
  */
 @Component({
   selector: 'app-status-page',
   standalone: true,
-  imports: [CommonModule, StatsBarComponent, CoverageBreakdownComponent, DataHealthComponent],
+  imports: [CommonModule, StatsBarComponent, CoverageBreakdownComponent, DataHealthComponent, SourceHealthComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './status-page.component.html',
   styleUrl: './status-page.component.scss',

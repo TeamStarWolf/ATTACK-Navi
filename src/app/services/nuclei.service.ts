@@ -49,6 +49,12 @@ export class NucleiService {
     this.load();
   }
 
+  /** Load again after a failed or empty load: the data-health Retry (E1.3). */
+  retry(): void {
+    this.initialized = true;
+    this.load();
+  }
+
   private load(): void {
     // Wait for AttackCveService to finish loading before cross-referencing
     this.sources.begin('nuclei-tree');

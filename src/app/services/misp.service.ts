@@ -118,6 +118,11 @@ export class MispService {
     this.loadConfigFromStorage();
   }
 
+  /** Load again after a failed or empty load: the data-health Retry (E1.3). */
+  retry(): void {
+    this.load();
+  }
+
   // ─── Live server configuration ──────────────────────────────────────────
 
   private loadConfigFromStorage(): void {

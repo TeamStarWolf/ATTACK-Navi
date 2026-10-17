@@ -41,6 +41,11 @@ export class Cve2CapecService {
     this.load();
   }
 
+  /** Load again after a failed or empty load: the data-health Retry (E1.3). */
+  retry(): void {
+    this.load();
+  }
+
   private load(): void {
     const currentYear = new Date().getFullYear();
     // Fetch current year + previous year for reasonable coverage.

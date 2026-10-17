@@ -36,6 +36,11 @@ export class SplunkContentService {
     this.loadLive();
   }
 
+  /** Load again after a failed or empty load: the data-health Retry (E1.3). */
+  retry(): void {
+    this.loadLive();
+  }
+
   private loadLive(): void {
     // Splunk no longer publishes a unified Navigator layer.
     // Scan the GitHub tree for .yml detection files and extract technique IDs.

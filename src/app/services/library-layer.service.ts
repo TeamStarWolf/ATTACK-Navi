@@ -67,7 +67,21 @@ export class LibraryLayerService {
     private http: HttpClient,
     private sources: SourceRegistryService = new SourceRegistryService(),
   ) {
+    this.loadManifest();
+  }
+
+  /**
+   * Load again after a failure: the data-health Retry (E1.3). A failed manifest is
+   * fetched again; otherwise the active layer file (never cached after a failure) is.
+   */
+  retry(): void {
+    if (!this.manifestLoaded) this.loadManifest();
+    else if (this.activeFile) this.setActive(this.activeFile);
+  }
+
+  private loadManifest(): void {
     this.sources.begin('library-layers');
+    this.manifestErrorSubject.next(null);
     this.http
       .get<LibraryLayerMeta[]>(`${BASE}index.json`)
       .subscribe({

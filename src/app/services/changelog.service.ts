@@ -30,6 +30,11 @@ export class ChangelogService {
     this.load();
   }
 
+  /** Load again after a failed or empty load: the data-health Retry (E1.3). */
+  retry(): void {
+    this.load();
+  }
+
   private load(): void {
     this.sources.begin('attack-releases');
     this.http.get<any[]>(this.RELEASES_URL).subscribe({

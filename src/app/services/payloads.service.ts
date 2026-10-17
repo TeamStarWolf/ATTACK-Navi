@@ -109,6 +109,12 @@ export class PayloadsService {
     this.loadPayloads();
   }
 
+  /** Load again after a failed or empty load: the data-health Retry (E1.3). */
+  retry(): void {
+    this.initialized = true;
+    this.loadPayloads();
+  }
+
   private loadPayloads(): void {
     this.sources.begin('payloads-tree');
     this.http.get<{ tree: Array<{ path: string; type: string }> }>(

@@ -85,6 +85,18 @@ export class DossierService {
     private f3: F3FraudService,
     private sources: SourceRegistryService = new SourceRegistryService(),
   ) {
+    this.loadIndex();
+    // The F3 overlap bundle is separate from the Enterprise domain; start it early so it
+    // is usually ready by the time a dossier is opened.
+    this.f3.ensureLoaded();
+  }
+
+  /** Load again after a failed or empty load: the data-health Retry (E1.3). */
+  retry(): void {
+    this.loadIndex();
+  }
+
+  private loadIndex(): void {
     this.sources.begin('cve-dossiers');
     this.http
       .get<{ cves?: string[] }>(`${ASSET_DIR}/index.json`)
@@ -97,9 +109,6 @@ export class DossierService {
         // tries the asset and composes on demand when it is missing.
         error: err => this.sources.fail('cve-dossiers', err),
       });
-    // The F3 overlap bundle is separate from the Enterprise domain; start it early so it
-    // is usually ready by the time a dossier is opened.
-    this.f3.ensureLoaded();
   }
 
   /** True when a pre-generated dossier is known to exist for this CVE. */

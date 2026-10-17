@@ -36,6 +36,11 @@ export class ElasticService {
     this.loadLive();
   }
 
+  /** Load again after a failed or empty load: the data-health Retry (E1.3). */
+  retry(): void {
+    this.loadLive();
+  }
+
   private loadLive(): void {
     // Elastic no longer publishes a pre-built Navigator layer.
     // Scan the GitHub tree for .toml rule files and extract technique IDs.

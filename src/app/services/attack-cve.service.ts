@@ -132,52 +132,73 @@ export class AttackCveService {
   private load(): void {
     this.sources.begin('ctid-attack-to-cve');
     this.sources.begin('ctid-kev');
+    forkJoin({ csv: this.csv$(), kev: this.kev$() }).subscribe(({ csv, kev }) => this.indexDatasets(csv, kev));
+  }
+
+  /**
+   * Fetch one dataset again after it failed or came back empty: the data-health Retry
+   * (E1.3). The other dataset is left as it is. While the retry runs, the services that
+   * wait on outcome$ see 'pending' again rather than the earlier failure.
+   */
+  retry(id: 'ctid-attack-to-cve' | 'ctid-kev'): void {
+    this.sources.begin(id);
+    if (this.outcomeSubject.value === 'failed') this.outcomeSubject.next('pending');
     forkJoin({
-      // Each dataset records its own failure and yields null, so one failing does not
-      // hide the other, and neither failure is reported as an empty, loaded mapping.
-      csv: this.http.get(AttackCveService.CSV_URL, { responseType: 'text' }).pipe(
-        retryWithBackoff(),
-        catchError(err => {
-          this.sources.fail('ctid-attack-to-cve', err);
-          return of(null);
-        }),
-      ),
-      kev: this.resolveKevUrl().pipe(
-        switchMap(url => {
-          this.kevSourceUrl = url;
-          return this.http.get<any>(url).pipe(
-            retryWithBackoff(),
-            // A discovered path that does not serve is worse than the pinned one.
-            catchError(err => {
-              if (url === AttackCveService.KEV_CTID_URL) return throwError(() => err);
-              this.kevSourceUrl = AttackCveService.KEV_CTID_URL;
-              return this.http.get<any>(AttackCveService.KEV_CTID_URL);
-            }),
-          );
-        }),
-        catchError(err => {
-          this.sources.fail('ctid-kev', err);
-          return of(null);
-        }),
-      ),
-    }).subscribe(({ csv, kev }) => {
-      if (csv !== null) {
-        this.parseAndIndexCsv(csv);
-        this.sources.succeed('ctid-attack-to-cve', this.byCveId.size);
-      }
-      if (kev !== null) {
-        this.parseAndIndexKevJson(kev);
-        this.sources.succeed('ctid-kev', Array.isArray(kev?.mapping_objects) ? kev.mapping_objects.length : 0);
-      }
-      this.totalSubject.next(this.byCveId.size);
-      this.coveredSubject.next(this.byTechniqueId.size);
-      if (this.byCveId.size > 0) {
-        this.loadedSubject.next(true);
-        this.outcomeSubject.next('loaded');
-      } else {
-        this.outcomeSubject.next('failed');
-      }
-    });
+      csv: id === 'ctid-attack-to-cve' ? this.csv$() : of(null),
+      kev: id === 'ctid-kev' ? this.kev$() : of(null),
+    }).subscribe(({ csv, kev }) => this.indexDatasets(csv, kev));
+  }
+
+  // Each dataset records its own failure and yields null, so one failing does not
+  // hide the other, and neither failure is reported as an empty, loaded mapping.
+  private csv$(): Observable<string | null> {
+    return this.http.get(AttackCveService.CSV_URL, { responseType: 'text' }).pipe(
+      retryWithBackoff(),
+      catchError(err => {
+        this.sources.fail('ctid-attack-to-cve', err);
+        return of(null);
+      }),
+    );
+  }
+
+  private kev$(): Observable<any> {
+    return this.resolveKevUrl().pipe(
+      switchMap(url => {
+        this.kevSourceUrl = url;
+        return this.http.get<any>(url).pipe(
+          retryWithBackoff(),
+          // A discovered path that does not serve is worse than the pinned one.
+          catchError(err => {
+            if (url === AttackCveService.KEV_CTID_URL) return throwError(() => err);
+            this.kevSourceUrl = AttackCveService.KEV_CTID_URL;
+            return this.http.get<any>(AttackCveService.KEV_CTID_URL);
+          }),
+        );
+      }),
+      catchError(err => {
+        this.sources.fail('ctid-kev', err);
+        return of(null);
+      }),
+    );
+  }
+
+  private indexDatasets(csv: string | null, kev: any): void {
+    if (csv !== null) {
+      this.parseAndIndexCsv(csv);
+      this.sources.succeed('ctid-attack-to-cve', this.byCveId.size);
+    }
+    if (kev !== null) {
+      this.parseAndIndexKevJson(kev);
+      this.sources.succeed('ctid-kev', Array.isArray(kev?.mapping_objects) ? kev.mapping_objects.length : 0);
+    }
+    this.totalSubject.next(this.byCveId.size);
+    this.coveredSubject.next(this.byTechniqueId.size);
+    if (this.byCveId.size > 0) {
+      this.loadedSubject.next(true);
+      this.outcomeSubject.next('loaded');
+    } else {
+      this.outcomeSubject.next('failed');
+    }
   }
 
   private parseAndIndexCsv(csv: string): void {

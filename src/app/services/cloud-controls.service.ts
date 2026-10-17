@@ -55,6 +55,13 @@ export class CloudControlsService {
     this.loadProvider(CloudControlsService.GCP_URL, 'gcp');
   }
 
+  /** Load one provider again after it failed or came back empty: the data-health Retry (E1.3). */
+  retry(id: 'ctid-aws' | 'ctid-azure' | 'ctid-gcp'): void {
+    if (id === 'ctid-aws') this.loadProvider(CloudControlsService.AWS_URL, 'aws');
+    else if (id === 'ctid-azure') this.loadProvider(CloudControlsService.AZURE_URL, 'azure');
+    else this.loadProvider(CloudControlsService.GCP_URL, 'gcp');
+  }
+
   private loadProvider(url: string, provider: 'aws' | 'azure' | 'gcp'): void {
     this.sources.begin(`ctid-${provider}`);
     this.http.get<any>(url).subscribe({

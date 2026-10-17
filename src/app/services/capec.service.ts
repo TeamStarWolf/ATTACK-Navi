@@ -44,6 +44,11 @@ export class CapecService {
     this.load();
   }
 
+  /** Load again after a failed or empty load: the data-health Retry (E1.3). */
+  retry(): void {
+    this.load();
+  }
+
   private load(): void {
     this.sources.begin('capec');
     this.http.get<any>(CapecService.URL).pipe(

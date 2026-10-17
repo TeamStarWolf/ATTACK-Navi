@@ -2,7 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, shareReplay, map, catchError, of } from 'rxjs';
+import { BehaviorSubject, Observable, shareReplay, map, catchError, of, switchMap } from 'rxjs';
 import { ENTERPRISE_TACTIC_ORDER, tacticAliases, tacticLabel } from './attack-tactics';
 import { SourceRegistryService } from './source-registry.service';
 
@@ -84,25 +84,30 @@ export class LibraryService {
   private loaded = new BehaviorSubject<boolean>(false);
   private cached: LibraryData = EMPTY;
 
-  /** Hot observable that emits the library data once loaded. */
-  readonly library$: Observable<LibraryData> = this.http
-    .get<LibraryData>('assets/library.json')
-    .pipe(
-      map(raw => {
-        const data = normalizeLibraryData(raw);
-        this.cached = data;
-        this.sources.succeed('library-index', data.assets.length);
-        if (data.assets.length) this.loaded.next(true);
-        return data;
-      }),
-      catchError(err => {
-        console.warn('[LibraryService] failed to load library.json', err);
-        // Recorded as failed; loaded$ stays false. Views still get the empty shape.
-        this.sources.fail('library-index', err);
-        return of(EMPTY);
-      }),
-      shareReplay(1),
-    );
+  /** Each emission fetches library.json (again); the data-health Retry pushes one. */
+  private readonly reload = new BehaviorSubject<void>(undefined);
+
+  /** Hot observable that emits the library data once loaded, and again after a retry. */
+  readonly library$: Observable<LibraryData> = this.reload.pipe(
+    switchMap(() =>
+      this.http.get<LibraryData>('assets/library.json').pipe(
+        map(raw => {
+          const data = normalizeLibraryData(raw);
+          this.cached = data;
+          this.sources.succeed('library-index', data.assets.length);
+          if (data.assets.length) this.loaded.next(true);
+          return data;
+        }),
+        catchError(err => {
+          console.warn('[LibraryService] failed to load library.json', err);
+          // Recorded as failed; loaded$ stays false. Views still get the empty shape.
+          this.sources.fail('library-index', err);
+          return of(EMPTY);
+        }),
+      ),
+    ),
+    shareReplay(1),
+  );
 
   loaded$: Observable<boolean> = this.loaded.asObservable();
 
@@ -112,6 +117,12 @@ export class LibraryService {
     // in the ATT&CK Workbench).
     this.sources.begin('library-index');
     this.library$.subscribe();
+  }
+
+  /** Fetch library.json again after it failed or came back empty: the data-health Retry (E1.3). */
+  retry(): void {
+    this.sources.begin('library-index');
+    this.reload.next();
   }
 
   // ─── Cross-reference helpers ───────────────────────────────────────────────
