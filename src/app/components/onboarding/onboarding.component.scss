@@ -51,7 +51,7 @@
   margin: 0;
   font-size: 22px;
   font-weight: 700;
-  color: #f0f4f8;
+  color: var(--text-main);
   letter-spacing: -0.3px;
 }
 
@@ -59,7 +59,7 @@
   margin: 0;
   font-size: 14px;
   line-height: 1.6;
-  color: #8aa8c0;
+  color: var(--text-muted);
   max-width: 380px;
 }
 
@@ -69,14 +69,14 @@
   border-radius: 8px;
   background: var(--accent);
   border: none;
-  color: #fff;
+  color: var(--bg-base);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s;
 
   &:hover {
-    background: #79b8ff;
+    background: var(--accent-strong);
   }
 }
 
@@ -85,7 +85,7 @@
   border-radius: 8px;
   background: transparent;
   border: 1px solid var(--border-subtle);
-  color: #8aa8c0;
+  color: var(--text-muted);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;

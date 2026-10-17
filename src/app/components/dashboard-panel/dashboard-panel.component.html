@@ -97,7 +97,7 @@
                       <div class="mini-stat-label">Mitigation coverage</div>
                     </div>
                     <div class="mini-stat" title="Techniques with ≥1 detection (CAR / Atomic / D3FEND)">
-                      <div class="mini-stat-value" style="color: #60a5fa">{{ stats.detectionCoveragePct }}%</div>
+                      <div class="mini-stat-value" style="color: var(--accent-blue)">{{ stats.detectionCoveragePct }}%</div>
                       <div class="mini-stat-label">Detection coverage</div>
                     </div>
                     <div class="mini-stat" title="Techniques with ≥1 control-framework mapping (NIST / CRI / CIS / CSA / M365)">
@@ -281,11 +281,11 @@
                 <div class="widget-body">
                   <div class="detection-cards">
                     <div class="det-card">
-                      <div class="det-value" style="color: #facc15">{{ stats.sigmaRuleCount }}</div>
+                      <div class="det-value" style="color: var(--accent-warm)">{{ stats.sigmaRuleCount }}</div>
                       <div class="det-label">Sigma Rules</div>
                     </div>
                     <div class="det-card">
-                      <div class="det-value" style="color: #60a5fa">{{ stats.elasticRuleCount }}</div>
+                      <div class="det-value" style="color: var(--accent-blue)">{{ stats.elasticRuleCount }}</div>
                       <div class="det-label">Elastic Rules</div>
                     </div>
                     <div class="det-card">
@@ -417,14 +417,14 @@
                   @if (todTechnique) {
                     <div style="margin-bottom: 8px;">
                       <span style="color: var(--accent); font-weight: 700; font-size: 1rem;">{{ todTechnique.attackId }}</span>
-                      <span style="color: #e0e0e0; font-weight: 600; margin-left: 6px;">{{ todTechnique.name }}</span>
+                      <span style="color: var(--text-main); font-weight: 600; margin-left: 6px;">{{ todTechnique.name }}</span>
                     </div>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;">
-                      <span style="font-size: 0.75rem; color: var(--text-muted);">Tactic: <span style="color: #ccc;">{{ todTactic }}</span></span>
+                      <span style="font-size: 0.75rem; color: var(--text-muted);">Tactic: <span style="color: var(--text-secondary);">{{ todTactic }}</span></span>
                       <span style="font-size: 0.75rem; color: var(--text-muted);">Mitigations: <span style="color: var(--success);">{{ todMitigationCount }}</span></span>
                     </div>
                     @if (todDescription) {
-                      <p style="font-size: 0.78rem; color: #aaa; margin: 4px 0 10px; line-height: 1.4;">{{ todDescription }}</p>
+                      <p style="font-size: 0.78rem; color: var(--text-muted); margin: 4px 0 10px; line-height: 1.4;">{{ todDescription }}</p>
                     }
                     <button class="action-btn" (click)="viewTechniqueOfDay()" style="width: 100%; justify-content: center;">
                       <span class="action-icon">&#x1F50D;</span>

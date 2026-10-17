@@ -939,6 +939,19 @@ export class SidebarComponent implements OnInit, OnDestroy {
       }),
     );
 
+    // Refresh D3FEND countermeasures when the live per-technique answer arrives
+    // (plan E1.5). Opening the drawer starts that fetch but reads the bundled
+    // seed synchronously, so without this the live d3fend.mitre.org mappings,
+    // which take precedence, only showed after the drawer was reopened.
+    this.subs.add(
+      this.d3fendService.loaded$.subscribe((loaded) => {
+        if (loaded && this.technique) {
+          this.d3fendMeasures = this.d3fendService.getCountermeasures(this.technique.attackId);
+          this.cdr.markForCheck();
+        }
+      }),
+    );
+
     // Refresh CSA CCM controls when data finishes loading
     this.subs.add(
       this.csaCcmService.loaded$.subscribe((loaded) => {

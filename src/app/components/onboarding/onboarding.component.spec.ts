@@ -3,6 +3,7 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { OnboardingComponent } from './onboarding.component';
 import { FilterService } from '../../services/filter.service';
+import { textContrast } from '../../testing/contrast';
 
 describe('OnboardingComponent', () => {
   let component: OnboardingComponent;
@@ -48,5 +49,30 @@ describe('OnboardingComponent', () => {
       component.prevStep(); // undershoot
       expect(component.currentStep).toBe(0);
     });
+  });
+
+  // Plan E1.5, light-mode leak 1: the onboarding titles were a fixed near-white
+  // (#f0f4f8) that vanished on the light card (1.0:1). Every text node of every
+  // step now reads at 4.5:1 or better in both themes.
+  describe('text contrast in both themes (E1.5)', () => {
+    afterEach(() => document.body.classList.remove('light-mode'));
+
+    for (const theme of ['dark', 'light'] as const) {
+      it(`titles, copy and buttons are >= 4.5:1 on every step in the ${theme} theme`, () => {
+        document.body.classList.toggle('light-mode', theme === 'light');
+        const failures: string[] = [];
+        for (let step = 0; step < component.totalSteps; step++) {
+          component.currentStep = step;
+          fixture.detectChanges();
+          const nodes = fixture.nativeElement.querySelectorAll('.step-title, .step-desc, .btn-primary, .btn-secondary');
+          expect(nodes.length).toBeGreaterThan(0);
+          for (const el of Array.from(nodes) as Element[]) {
+            const ratio = textContrast(el);
+            if (ratio < 4.5) failures.push(`step ${step} .${el.className}: ${ratio.toFixed(2)}:1`);
+          }
+        }
+        expect(failures).toEqual([]);
+      });
+    }
   });
 });
