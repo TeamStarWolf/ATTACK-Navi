@@ -105,7 +105,7 @@ describe('LegendComponent', () => {
     fixture.detectChanges();
     const labels = Array.from(fixture.nativeElement.querySelectorAll('.stop-label'))
       .map((el: any) => el.textContent.trim());
-    expect(labels).toEqual(['none', 'thin', 'some', 'deep', 'deepest']);
+    expect(labels).toEqual(['minimal', 'thin', 'some', 'deep', 'deepest']);
     for (const banned of ['covered', 'exposed', 'protected', 'strong']) {
       expect(labels).not.toContain(banned);
     }

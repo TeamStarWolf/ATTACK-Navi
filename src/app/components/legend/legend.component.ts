@@ -186,7 +186,7 @@ const MODE_CONFIGS: Record<HeatmapMode, LegendConfig> = {
   unified: {
     label: 'Reference depth',
     stops: [
-      { color: '#0e1b30', label: 'none' },
+      { color: '#0e1b30', label: 'minimal' },
       { color: '#143a5c', label: 'thin' },
       { color: '#1f6aa8', label: 'some' },
       { color: '#38bdf8', label: 'deep' },

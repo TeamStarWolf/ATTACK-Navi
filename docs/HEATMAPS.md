@@ -356,7 +356,7 @@ To add a 25th heatmap mode, modify these seven files in order:
 | | - D3FEND countermeasures (weight 10): `min(d3fendCount / 2, 1) * 10` |
 | | - Atomic tests (weight 10): `min(atomicCount / 3, 1) * 10` |
 | | Threat intel (groups, software, campaigns) and KEV are not inputs: the Threat lenses (Frequency, Selected adversaries, Intelligence, KEV, Threat-weighted mapping gap) show them. A technique's Reference depth does not change when the number of groups using it changes. |
-| **Color Scale** | `#0e1b30` (none, 0--15) -> `#143a5c` (thin, 16--30) -> `#1f6aa8` (some, 31--50) -> `#2f95d8` (51--65) -> `#38bdf8` (deep, 66--80) -> `#a78bfa` (deepest, 81--100) |
+| **Color Scale** | `#0e1b30` (minimal, 0--15) -> `#143a5c` (thin, 16--30) -> `#1f6aa8` (some, 31--50) -> `#2f95d8` (51--65) -> `#38bdf8` (deep, 66--80) -> `#a78bfa` (deepest, 81--100) |
 | **Use Case** | The default lens: how much defensive reference material (Known rung) exists for each technique. It is not a posture or risk score and says nothing about what is deployed. |
 
 ---
