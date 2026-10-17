@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { M365ControlsService } from './m365-controls.service';
+import { SourceRegistryService } from './source-registry.service';
 
 describe('M365ControlsService', () => {
   let service: M365ControlsService;
@@ -42,14 +43,13 @@ describe('M365ControlsService', () => {
     });
   });
 
-  it('handles HTTP failure gracefully', (done) => {
-    service.loaded$.subscribe(loaded => {
-      if (loaded) {
-        expect(service.getControlsForTechnique('T9999')).toEqual([]);
-        done();
-      }
-    });
+  it('records an HTTP failure as failed, never as loaded (E1.3)', () => {
+    let loaded: boolean | undefined;
+    service.loaded$.subscribe(v => (loaded = v));
     const req = httpMock.expectOne(r => r.url.includes('m365'));
     req.error(new ProgressEvent('boom'));
+    expect(loaded).toBeFalse();
+    expect(service.getControlsForTechnique('T9999')).toEqual([]);
+    expect(TestBed.inject(SourceRegistryService).get('ctid-m365').status).toBe('failed');
   });
 });

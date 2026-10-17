@@ -4,6 +4,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, shareReplay, map, catchError, of } from 'rxjs';
 import { ENTERPRISE_TACTIC_ORDER, tacticAliases, tacticLabel } from './attack-tactics';
+import { SourceRegistryService } from './source-registry.service';
 
 export type AssetType = 'tool' | 'channel' | 'x-account' | 'book' | 'field-note';
 
@@ -79,6 +80,7 @@ export function normalizeLibraryData(data: LibraryData): LibraryData {
 @Injectable({ providedIn: 'root' })
 export class LibraryService {
   private http = inject(HttpClient);
+  private sources = inject(SourceRegistryService);
   private loaded = new BehaviorSubject<boolean>(false);
   private cached: LibraryData = EMPTY;
 
@@ -88,13 +90,15 @@ export class LibraryService {
     .pipe(
       map(raw => {
         const data = normalizeLibraryData(raw);
-        this.loaded.next(true);
         this.cached = data;
+        this.sources.succeed('library-index', data.assets.length);
+        if (data.assets.length) this.loaded.next(true);
         return data;
       }),
       catchError(err => {
         console.warn('[LibraryService] failed to load library.json', err);
-        this.loaded.next(true);
+        // Recorded as failed; loaded$ stays false. Views still get the empty shape.
+        this.sources.fail('library-index', err);
         return of(EMPTY);
       }),
       shareReplay(1),
@@ -106,6 +110,7 @@ export class LibraryService {
     // Eager-subscribe so cross-reference helpers work even when the Library
     // view hasn't been opened yet (e.g. when used by the technique sidebar
     // in the ATT&CK Workbench).
+    this.sources.begin('library-index');
     this.library$.subscribe();
   }
 

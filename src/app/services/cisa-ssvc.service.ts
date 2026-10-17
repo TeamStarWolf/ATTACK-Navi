@@ -3,6 +3,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, timeout, catchError, map } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { SourceRegistryService } from './source-registry.service';
 
 /**
  * CISA's *authoritative, published* SSVC decision for a CVE.
@@ -187,24 +189,32 @@ export class CisaSsvcService {
   // errored: cveId -> fetch failed (network/CORS/timeout/404); decision is unknown, not absent.
   private errored = new Set<string>();
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {}
 
   /** Fetch + parse CISA's published SSVC for a CVE. Cached; never throws (null on miss). */
   fetchSsvc(cveId: string): Observable<CisaSsvcAssessment | null> {
     const id = cveId.toUpperCase();
     if (this.cache.has(id)) return of(this.cache.get(id)!);
 
+    this.sources.begin('cve-services');
     return this.http.get<any>(`${this.CVE_API}/${encodeURIComponent(id)}`).pipe(
       timeout(10000),
       map(record => {
         const assessment = parseCisaSsvcRecord(id, record);
         this.cache.set(id, assessment);
         this.errored.delete(id);
+        this.sources.succeed('cve-services', null);
         return assessment;
       }),
-      catchError(() => {
+      catchError(err => {
         // CORS-blocked, offline, rate-limited, or not-found — record "unknown", do NOT fabricate.
         this.errored.add(id);
+        // A 404 is "no such record"; anything else means the service did not answer.
+        if (err instanceof HttpErrorResponse && err.status === 404) this.sources.succeed('cve-services', null);
+        else this.sources.fail('cve-services', err);
         return of(null);
       }),
     );

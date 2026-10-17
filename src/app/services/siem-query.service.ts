@@ -4,6 +4,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
 import { tacticAliases } from './attack-tactics';
+import { SourceRegistryService } from './source-registry.service';
 
 export interface SiemQuery {
   platform: 'splunk' | 'elastic' | 'microsoft' | 'chronicle' | 'crowdstrike';
@@ -884,7 +885,10 @@ export class SiemQueryService {
   private techniqueQueries = new BehaviorSubject<Record<string, SiemQuery[]>>({});
   readonly techniqueQueries$ = this.techniqueQueries.asObservable();
 
+  private sources = inject(SourceRegistryService);
+
   constructor() {
+    this.sources.begin('technique-queries');
     this.http.get<{ queries: Record<string, Array<Omit<SiemQuery, 'platformLabel'>>> }>(
       'assets/technique-queries.json',
     ).subscribe({
@@ -897,8 +901,12 @@ export class SiemQueryService {
           }));
         }
         this.techniqueQueries.next(enriched);
+        this.sources.succeed('technique-queries', Object.keys(enriched).length);
       },
-      error: e => console.warn('[SiemQueryService] failed to load technique-queries.json', e),
+      error: e => {
+        console.warn('[SiemQueryService] failed to load technique-queries.json', e);
+        this.sources.fail('technique-queries', e);
+      },
     });
   }
 

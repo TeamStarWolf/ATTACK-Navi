@@ -3,9 +3,10 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, map } from 'rxjs';
 import { NucleiService } from './nuclei.service';
 import { AttackCveService } from './attack-cve.service';
+import { SourceRegistryService } from './source-registry.service';
 
 describe('NucleiService', () => {
   let service: NucleiService;
@@ -39,6 +40,8 @@ describe('NucleiService', () => {
           provide: AttackCveService,
           useValue: {
             loaded$: mockAttackCveLoaded$.asObservable(),
+            // The service waits on how the CTID mapping load settled (E1.3).
+            outcome$: mockAttackCveLoaded$.pipe(map(l => (l ? 'loaded' : 'pending'))),
             getMappingForCve: (cveId: string) => mockMappings[cveId] ?? null,
           },
         },
@@ -205,13 +208,16 @@ describe('NucleiService', () => {
 
   // --- Error handling ---
 
-  it('should handle HTTP error gracefully and set loaded$', () => {
+  it('records an HTTP error as failed and never reports loaded$ (E1.3)', () => {
     triggerLoadError();
 
-    let loaded = false;
+    let loaded = true;
     service.loaded$.subscribe(val => { loaded = val; });
-    expect(loaded).toBeTrue();
+    expect(loaded).toBeFalse();
     expect(service.getTemplateCount('T1059')).toBe(0);
+    const record = TestBed.inject(SourceRegistryService).get('nuclei-tree');
+    expect(record.status).toBe('failed');
+    expect(record.lastError).toBeTruthy();
   });
 
   it('should handle empty tree', () => {

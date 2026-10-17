@@ -3,7 +3,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
-import { catchError, map, shareReplay, switchMap } from 'rxjs/operators';
+import { catchError, map, shareReplay, switchMap, tap } from 'rxjs/operators';
+import { SourceRegistryService, describeLoadError } from './source-registry.service';
 import { Technique } from '../models/technique';
 
 export interface SigmaRule {
@@ -96,7 +97,10 @@ export class SigmaService {
   private communityCoveredSubject = new BehaviorSubject<number>(0);
   readonly communityCovered$ = this.communityCoveredSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {
     this.loadLive();
   }
 
@@ -105,18 +109,28 @@ export class SigmaService {
    * Tries each URL in sequence; silently falls back to empty counts on failure.
    */
   loadLive(): void {
+    this.sources.begin('sigmahq-coverage');
     this.tryUrl(0);
   }
 
-  private tryUrl(index: number): void {
-    if (index >= SIGMA_LAYER_URLS.length) return;
+  private tryUrl(index: number, errors: string[] = []): void {
+    if (index >= SIGMA_LAYER_URLS.length) {
+      // Every candidate failed or was empty: record it, never "loaded, 0".
+      if (errors.length) this.sources.fail('sigmahq-coverage', errors.join('; '));
+      else this.sources.succeed('sigmahq-coverage', 0);
+      return;
+    }
     this.http.get<SigmaNavigatorLayer>(SIGMA_LAYER_URLS[index])
-      .pipe(catchError(() => of(null)))
+      .pipe(catchError(err => {
+        errors.push(describeLoadError(err));
+        return of(null);
+      }))
       .subscribe(layer => {
         if (layer?.techniques?.length) {
           this.ingestLayer(layer);
+          this.sources.succeed('sigmahq-coverage', this.coveredSubject.value);
         } else {
-          this.tryUrl(index + 1);
+          this.tryUrl(index + 1, errors);
         }
       });
   }
@@ -208,7 +222,8 @@ export class SigmaService {
         });
       }),
       catchError(() => {
-        this.ruleDetailCache.set(attackId, []);
+        // The rule list could not be fetched (recorded on the source registry): return
+        // nothing for now but do not cache it as "this technique has no rules".
         return of([] as SigmaRuleDetail[]);
       }),
     );
@@ -270,6 +285,7 @@ export class SigmaService {
   /** Cached list of .yml rule paths in mdecrevoisier/SIGMA-detection-rules. */
   private getCommunityRulePaths(): Observable<string[]> {
     if (!this.communityRulePaths$) {
+      this.sources.begin('mdecrevoisier-sigma-tree');
       this.communityRulePaths$ = this.http
         .get<any>('https://api.github.com/repos/mdecrevoisier/SIGMA-detection-rules/git/trees/main?recursive=1')
         .pipe(
@@ -278,7 +294,14 @@ export class SigmaService {
               .filter(item => item.type === 'blob' && !!item.path?.endsWith('.yml'))
               .map(item => item.path as string),
           ),
-          catchError(() => of([] as string[])),
+          tap(paths => this.sources.succeed('mdecrevoisier-sigma-tree', paths.length)),
+          catchError(err => {
+            // Recorded as failed and not cached, so the next call retries; callers that
+            // need the list see the error rather than an empty rule set.
+            this.sources.fail('mdecrevoisier-sigma-tree', err);
+            this.communityRulePaths$ = undefined;
+            throw err;
+          }),
           shareReplay(1),
         );
     }
@@ -288,7 +311,8 @@ export class SigmaService {
   /** Load community Sigma rules from mdecrevoisier/SIGMA-detection-rules. */
   loadCommunityRules(): void {
     if (this.communityLoadedSubject.value) return;
-    this.getCommunityRulePaths().subscribe(paths => {
+    // A failed listing is already recorded on the source registry; communityLoaded$ stays false.
+    this.getCommunityRulePaths().subscribe({ next: paths => {
       const techRegex = /T(\d{4}(?:\.\d{3})?)/;
       let total = 0;
       for (const path of paths) {
@@ -301,8 +325,8 @@ export class SigmaService {
       }
       this.communityTotalSubject.next(total);
       this.communityCoveredSubject.next(this.communityCounts.size);
-      this.communityLoadedSubject.next(true);
-    });
+      if (total > 0) this.communityLoadedSubject.next(true);
+    }, error: () => undefined });
   }
 
   /** Community rule count for a technique. */

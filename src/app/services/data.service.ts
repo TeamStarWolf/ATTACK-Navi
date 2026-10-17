@@ -2,10 +2,11 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, Subscription, EMPTY, concat, from, of, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, Subscription, EMPTY, concat, defer, from, of, throwError } from 'rxjs';
 import { catchError, switchMap, tap, throwIfEmpty } from 'rxjs/operators';
 import { retryWithBackoff } from '../utils/retry';
 import { AttackIdResolverService } from './attack-id-resolver.service';
+import { SourceRegistryService } from './source-registry.service';
 import { Domain, TacticColumn, DetectionNote } from '../models/domain';
 import { Tactic } from '../models/tactic';
 import { Technique } from '../models/technique';
@@ -20,24 +21,40 @@ export type DataSourceMode = 'live' | 'bundled';
 
 export type AttackDomain = 'enterprise' | 'ics' | 'mobile' | 'f3';
 
-const DOMAIN_CONFIG: Record<AttackDomain, { liveUrl: string; bundledUrl: string | null; idbKey: string; name: string }> = {
+type DomainConfig = {
+  liveUrl: string;
+  bundledUrl: string | null;
+  idbKey: string;
+  name: string;
+  /** SourceRegistry ids of the bundled snapshot and the live copy. */
+  sourceId: string;
+  liveSourceId: string;
+};
+
+const DOMAIN_CONFIG: Record<AttackDomain, DomainConfig> = {
   enterprise: {
     liveUrl: 'https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/enterprise-attack/enterprise-attack.json',
     bundledUrl: 'assets/data/enterprise-attack.json',
     idbKey: 'enterprise-attack-v2',
     name: 'Enterprise ATT&CK',
+    sourceId: 'attack-enterprise',
+    liveSourceId: 'attack-live-enterprise',
   },
   ics: {
     liveUrl: 'https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/ics-attack/ics-attack.json',
     bundledUrl: 'assets/data/ics-attack.json',
     idbKey: 'ics-attack-v1',
     name: 'ICS ATT&CK',
+    sourceId: 'attack-ics',
+    liveSourceId: 'attack-live-ics',
   },
   mobile: {
     liveUrl: 'https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/mobile-attack/mobile-attack.json',
     bundledUrl: 'assets/data/mobile-attack.json',
     idbKey: 'mobile-attack-v1',
     name: 'Mobile ATT&CK',
+    sourceId: 'attack-mobile',
+    liveSourceId: 'attack-live-mobile',
   },
   // CTID's F3 Fraud Framework (ctid.mitre.org/fraud) — ATT&CK-convention STIX
   // (123 techniques incl. 49 subtechniques, 8 tactics, source_name mitre-f3).
@@ -47,6 +64,8 @@ const DOMAIN_CONFIG: Record<AttackDomain, { liveUrl: string; bundledUrl: string 
     bundledUrl: 'assets/data/f3-attack.json',
     idbKey: 'f3-attack-v1',
     name: 'F3 Fraud Framework',
+    sourceId: 'attack-f3',
+    liveSourceId: 'attack-live-f3',
   },
 };
 
@@ -104,6 +123,7 @@ export class DataService {
     // DI always supplies the root resolver; the default only serves callers
     // that construct the parser directly (e.g. the lens test harness).
     private attackIdResolver: AttackIdResolverService = new AttackIdResolverService(),
+    private sources: SourceRegistryService = new SourceRegistryService(),
   ) {
     // Keep the shared resolver in step with whichever domain is on screen, so
     // lookup tables keyed by retired ids translate against the same release.
@@ -270,11 +290,22 @@ export class DataService {
               catchError(() => EMPTY),
             )
           : EMPTY as Observable<Domain>;
-        const live$ = this.http.get<any>(config.liveUrl).pipe(
+        // The live copy records its own outcome: a failure stays on screen as the bundled
+        // snapshot (freshness 'bundled') and the live source is recorded as failed.
+        const live$ = defer(() => {
+          this.sources.begin(config.liveSourceId);
+          return this.http.get<any>(config.liveUrl);
+        }).pipe(
           retryWithBackoff(),
           switchMap((bundle) => from(this.saveToIDB(bundle, config.idbKey).then(() => this.parseBundle(bundle, config.name)))),
-          tap(() => this.freshness$.next('live')),
-          catchError(() => EMPTY as Observable<Domain>),
+          tap((domain) => {
+            this.freshness$.next('live');
+            this.sources.succeed(config.liveSourceId, domain.techniques.length, { version: domain.attackVersion || undefined });
+          }),
+          catchError((err) => {
+            this.sources.fail(config.liveSourceId, err);
+            return EMPTY as Observable<Domain>;
+          }),
         );
         return concat(bundledFirst$, live$).pipe(
           throwIfEmpty(() => new Error('Failed to load ATT&CK data (live fetch and bundled snapshot both unavailable)')),
@@ -287,9 +318,17 @@ export class DataService {
     if (!config.bundledUrl) {
       return throwError(() => new Error('No bundled fallback available'));
     }
-    return this.http
-      .get<any>(config.bundledUrl)
-      .pipe(switchMap((bundle) => of(this.parseBundle(bundle, config.name))));
+    return defer(() => {
+      this.sources.begin(config.sourceId);
+      return this.http.get<any>(config.bundledUrl!);
+    }).pipe(
+      switchMap((bundle) => of(this.parseBundle(bundle, config.name))),
+      tap({
+        // The version comes from the bundle itself, so the record cannot drift from the file.
+        next: (domain) => this.sources.succeed(config.sourceId, domain.techniques.length, { version: domain.attackVersion || undefined }),
+        error: (err) => this.sources.fail(config.sourceId, err),
+      }),
+    );
   }
 
   // ── IndexedDB helpers ────────────────────────────────────────────────────────

@@ -2,7 +2,8 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, catchError, of } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
+import { SourceRegistryService, describeLoadError } from './source-registry.service';
 
 /** One entry in the library-layers manifest (index.json). */
 export interface LibraryLayerMeta {
@@ -38,9 +39,13 @@ export class LibraryLayerService {
   private manifestSubject = new BehaviorSubject<LibraryLayerMeta[]>([]);
   readonly manifest$ = this.manifestSubject.asObservable();
 
-  /** True once the manifest request has settled (with a list or with nothing). */
+  /** True once the manifest has loaded. A failed request never sets it; see manifestError$. */
   private manifestLoadedSubject = new BehaviorSubject<boolean>(false);
   readonly manifestLoaded$ = this.manifestLoadedSubject.asObservable();
+
+  /** Why the manifest did not load, or null. */
+  private manifestErrorSubject = new BehaviorSubject<string | null>(null);
+  readonly manifestError$ = this.manifestErrorSubject.asObservable();
 
   private activeFileSubject = new BehaviorSubject<string | null>(null);
   readonly activeFile$ = this.activeFileSubject.asObservable();
@@ -58,17 +63,29 @@ export class LibraryLayerService {
    */
   private pendingDefault = false;
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {
+    this.sources.begin('library-layers');
     this.http
       .get<LibraryLayerMeta[]>(`${BASE}index.json`)
-      .pipe(catchError(() => of([] as LibraryLayerMeta[])))
-      .subscribe(list => {
-        this.manifestSubject.next(Array.isArray(list) ? list : []);
-        this.manifestLoadedSubject.next(true);
-        if (this.pendingDefault) {
-          this.pendingDefault = false;
-          this.ensureActive();
-        }
+      .subscribe({
+        next: list => {
+          const layers = Array.isArray(list) ? list : [];
+          this.manifestSubject.next(layers);
+          this.sources.succeed('library-layers', layers.length);
+          this.manifestLoadedSubject.next(true);
+          if (this.pendingDefault) {
+            this.pendingDefault = false;
+            this.ensureActive();
+          }
+        },
+        error: err => {
+          // Recorded as failed; the matrix controls show the reason, not an empty list.
+          this.sources.fail('library-layers', err);
+          this.manifestErrorSubject.next(this.sources.get('library-layers').lastError);
+        },
       });
   }
 
@@ -120,18 +137,27 @@ export class LibraryLayerService {
     }
     this.http
       .get<LibraryLayerFile>(`${BASE}${file}`)
-      .pipe(catchError(() => of(null)))
-      .subscribe(data => {
-        const map = new Map<string, number>();
-        for (const t of data?.techniques ?? []) {
-          if (t.techniqueID) map.set(t.techniqueID, t.score ?? 100);
-        }
-        this.cache.set(file, map);
-        // Ordering guard: a slow response for a layer the user has since moved
-        // away from populates the cache but must not replace the active scores.
-        if (this.activeFileSubject.value !== file) return;
-        this.scores = map;
-        this.changedSubject.next(true);
+      .subscribe({
+        next: data => {
+          const map = new Map<string, number>();
+          for (const t of data?.techniques ?? []) {
+            if (t.techniqueID) map.set(t.techniqueID, t.score ?? 100);
+          }
+          this.cache.set(file, map);
+          // Ordering guard: a slow response for a layer the user has since moved
+          // away from populates the cache but must not replace the active scores.
+          if (this.activeFileSubject.value !== file) return;
+          this.scores = map;
+          this.changedSubject.next(true);
+        },
+        error: err => {
+          // A layer file that failed is recorded as failed and not cached as an empty
+          // layer, so choosing it again retries.
+          this.sources.fail('library-layers', `${file}: ${describeLoadError(err)}`);
+          if (this.activeFileSubject.value !== file) return;
+          this.scores = new Map();
+          this.changedSubject.next(true);
+        },
       });
   }
 }

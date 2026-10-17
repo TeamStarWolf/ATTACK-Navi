@@ -6,6 +6,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { SourceRegistryService } from './source-registry.service';
 
 export interface PayloadRef {
   title: string;
@@ -96,7 +97,10 @@ export class PayloadsService {
 
   private initialized = false;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {}
 
   /** Trigger data fetch on first use. Safe to call multiple times. */
   loadOnDemand(): void {
@@ -106,15 +110,21 @@ export class PayloadsService {
   }
 
   private loadPayloads(): void {
+    this.sources.begin('payloads-tree');
     this.http.get<{ tree: Array<{ path: string; type: string }> }>(
       'https://api.github.com/repos/swisskyrepo/PayloadsAllTheThings/git/trees/master?recursive=1'
     ).subscribe({
       next: (response) => {
-        this.buildMap(response.tree || []);
+        const tree = response.tree || [];
+        this.buildMap(tree);
+        this.sources.succeed('payloads-tree', tree.length);
         this.loadedSubject.next(true);
       },
-      error: () => {
-        // If GitHub API fails (rate limit, etc.), use the static directory mapping
+      error: (err) => {
+        // The tree listing is recorded as failed. The curated folder map (its own
+        // project-authored source) still serves the panel, so loaded$ reports that
+        // data is on hand, not that the live listing arrived.
+        this.sources.fail('payloads-tree', err);
         this.buildStaticMap();
         this.loadedSubject.next(true);
       },

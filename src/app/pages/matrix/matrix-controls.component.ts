@@ -77,8 +77,10 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
   currentViewpoint: Viewpoint | null = null;
   heatmapMode: import('../../services/filter.service').HeatmapMode = 'unified';
   libraryLayers: LibraryLayerMeta[] = [];
-  /** False until the library manifest request settles - the menu says "loading" rather than showing nothing. */
+  /** False until the library manifest loads - the menu says "loading" rather than showing nothing. */
   libraryManifestLoaded = false;
+  /** Why the manifest did not load (E1.3): a failure is shown as a failure, not as "loading" or an empty list. */
+  libraryManifestError: string | null = null;
   activeLibraryFile: string | null = null;
   /**
    * The imported (user) Navigator layer the matrix is colouring by, if any. It
@@ -131,6 +133,7 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
     this.subs.add(this.filterService.heatmapMode$.subscribe((m) => { this.heatmapMode = m; this.cdr.markForCheck(); }));
     this.subs.add(this.libraryLayerService.manifest$.subscribe((list) => { this.libraryLayers = list; this.cdr.markForCheck(); }));
     this.subs.add(this.libraryLayerService.manifestLoaded$.subscribe((v) => { this.libraryManifestLoaded = v; this.cdr.markForCheck(); }));
+    this.subs.add(this.libraryLayerService.manifestError$.subscribe((e) => { this.libraryManifestError = e; this.cdr.markForCheck(); }));
     this.subs.add(this.libraryLayerService.activeFile$.subscribe((f) => { this.activeLibraryFile = f; this.cdr.markForCheck(); }));
     this.subs.add(this.userLayerService.activeLayer$.subscribe((l) => { this.activeUserLayer = l; this.cdr.markForCheck(); }));
     this.subs.add(this.filterService.sortMode$.subscribe((m) => { this.sortMode = m; this.cdr.markForCheck(); }));

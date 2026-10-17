@@ -114,7 +114,7 @@ URL literals in `src/app/**/*.ts` (specs excluded) on a data host (`api.first.or
 
 | URL | Referenced in |
 | :-- | :-- |
-| `https://api.first.org/data/v1/epss` | `services/epss.service.ts` |
+| `https://api.first.org/data/v1/epss` | `services/epss.service.ts`, `services/source-inventory.ts` |
 | `https://api.github.com/repos/Cyb3r-Monk/Threat-Hunting-and-Detection/git/trees/main?recursive=1` | `services/threat-hunting.service.ts` |
 | `https://api.github.com/repos/center-for-threat-informed-defense/mappings-explorer/contents/mappings/kev` | `services/attack-cve.service.ts` |
 | `https://api.github.com/repos/edoardogerosa/sentinel-attack/git/trees/master?recursive=1` | `services/sentinel-rules.service.ts` |
@@ -122,23 +122,25 @@ URL literals in `src/app/**/*.ts` (specs excluded) on a data host (`api.first.or
 | `https://api.github.com/repos/mdecrevoisier/EVTX-to-MITRE-Attack/git/trees/master?recursive=1` | `services/evtx-samples.service.ts` |
 | `https://api.github.com/repos/mdecrevoisier/SIGMA-detection-rules/git/trees/main?recursive=1` | `services/sigma.service.ts` |
 | `https://api.github.com/repos/microsoft/Microsoft-365-Defender-Hunting-Queries/git/trees/master?recursive=1` | `services/m365-defender.service.ts` |
+| `https://api.github.com/repos/mitre-attack/attack-stix-data/releases` | `services/source-inventory.ts` |
 | `https://api.github.com/repos/mitre-attack/attack-stix-data/releases?per_page=5` | `services/changelog.service.ts` |
 | `https://api.github.com/repos/projectdiscovery/nuclei-templates/git/trees/main?recursive=1` | `services/nuclei.service.ts` |
 | `https://api.github.com/repos/splunk/security_content/git/trees/develop?recursive=1` | `services/splunk-content.service.ts` |
 | `https://api.github.com/repos/swisskyrepo/PayloadsAllTheThings/git/trees/master?recursive=1` | `services/payloads.service.ts` |
 | `https://api.github.com/repos/trickest/cve/git/trees/main?recursive=1` | `services/poc-exploit.service.ts` |
-| `https://cveawg.mitre.org/api/cve` | `services/cisa-ssvc.service.ts` |
-| `https://d3fend.mitre.org/api/offensive-technique/attack/` | `services/d3fend.service.ts` |
-| `https://d3fend.mitre.org/api/technique/all.json` | `services/d3fend.service.ts` |
-| `https://gitlab.com/exploit-database/exploitdb/-/raw/main/files_exploits.csv` | `services/exploitdb.service.ts` |
+| `https://cveawg.mitre.org/api/cve` | `services/cisa-ssvc.service.ts`, `services/source-inventory.ts` |
+| `https://d3fend.mitre.org/api/offensive-technique/attack/` | `services/d3fend.service.ts`, `services/source-inventory.ts` |
+| `https://d3fend.mitre.org/api/technique/all.json` | `services/d3fend.service.ts`, `services/source-inventory.ts` |
+| `https://gitlab.com/exploit-database/exploitdb/-/raw/main/files_exploits.csv` | `services/exploitdb.service.ts`, `services/source-inventory.ts` |
 | `https://raw.githubusercontent.com/Galeax/CVE2CAPEC/main/database` | `services/cve2capec.service.ts` |
-| `https://raw.githubusercontent.com/MISP/misp-galaxy/main/clusters/mitre-attack-pattern.json` | `services/misp.service.ts` |
+| `https://raw.githubusercontent.com/MISP/misp-galaxy/main/clusters/mitre-attack-pattern.json` | `services/misp.service.ts`, `services/source-inventory.ts` |
 | `https://raw.githubusercontent.com/OTRF/ThreatHunter-Playbook/main/docs/hunts/windows/attack_navigator.json` | `services/threathunter-playbook.service.ts` |
 | `https://raw.githubusercontent.com/OTRF/ThreatHunter-Playbook/master/docs/hunts/windows/attack_navigator.json` | `services/threathunter-playbook.service.ts` |
-| `https://raw.githubusercontent.com/SigmaHQ/sigma/master/other/sigma_attack_nav_coverage.json` | `services/sigma.service.ts` |
+| `https://raw.githubusercontent.com/SigmaHQ/sigma/master/other/sigma_attack_nav_coverage.json` | `services/sigma.service.ts`, `services/source-inventory.ts` |
 | `https://raw.githubusercontent.com/center-for-threat-informed-defense/attack_to_cve/master/Att%26ckToCveMappings.csv` | `services/attack-cve.service.ts` |
-| `https://raw.githubusercontent.com/center-for-threat-informed-defense/fight-fraud-framework/main/public/f3-stix.json` | `services/data.service.ts` |
+| `https://raw.githubusercontent.com/center-for-threat-informed-defense/fight-fraud-framework/main/public/f3-stix.json` | `services/data.service.ts`, `services/source-inventory.ts` |
 | `https://raw.githubusercontent.com/center-for-threat-informed-defense/mappings-explorer/main` | `services/attack-cve.service.ts` |
+| `https://raw.githubusercontent.com/center-for-threat-informed-defense/mappings-explorer/main/mappings` | `services/source-inventory.ts` |
 | `https://raw.githubusercontent.com/center-for-threat-informed-defense/mappings-explorer/main/mappings/aws/attack-16.1/aws-12.12.2024/enterprise/aws-12.12.2024_attack-16.1-enterprise.json` | `services/cloud-controls.service.ts` |
 | `https://raw.githubusercontent.com/center-for-threat-informed-defense/mappings-explorer/main/mappings/azure/attack-16.1/azure-04.26.2025/enterprise/azure-04.26.2025_attack-16.1-enterprise.json` | `services/cloud-controls.service.ts` |
 | `https://raw.githubusercontent.com/center-for-threat-informed-defense/mappings-explorer/main/mappings/cri_profile/attack-16.1/cri_profile-v2.1/enterprise/cri_profile-v2.1_attack-16.1-enterprise.json` | `services/cri-profile.service.ts` |
@@ -150,17 +152,17 @@ URL literals in `src/app/**/*.ts` (specs excluded) on a data host (`api.first.or
 | `https://raw.githubusercontent.com/center-for-threat-informed-defense/mappings-explorer/main/mappings/veris/attack-16.1/veris-1.4.0/enterprise/veris-1.4.0_attack-16.1-enterprise.json` | `services/veris.service.ts` |
 | `https://raw.githubusercontent.com/cisagov/kev-data/develop/known_exploited_vulnerabilities.json` | `services/cve.service.ts` |
 | `https://raw.githubusercontent.com/mdecrevoisier/SIGMA-detection-rules/main/…` | `services/sigma.service.ts` |
-| `https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/enterprise-attack/enterprise-attack.json` | `services/data.service.ts` |
-| `https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/ics-attack/ics-attack.json` | `services/data.service.ts` |
-| `https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/mobile-attack/mobile-attack.json` | `services/data.service.ts` |
-| `https://raw.githubusercontent.com/mitre-attack/car/master/docs/car_attack/car_attack.json` | `services/car.service.ts` |
-| `https://raw.githubusercontent.com/mitre/cti/master/capec/2.1/stix-capec.json` | `services/capec.service.ts` |
+| `https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/enterprise-attack/enterprise-attack.json` | `services/data.service.ts`, `services/source-inventory.ts` |
+| `https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/ics-attack/ics-attack.json` | `services/data.service.ts`, `services/source-inventory.ts` |
+| `https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/mobile-attack/mobile-attack.json` | `services/data.service.ts`, `services/source-inventory.ts` |
+| `https://raw.githubusercontent.com/mitre-attack/car/master/docs/car_attack/car_attack.json` | `services/car.service.ts`, `services/source-inventory.ts` |
+| `https://raw.githubusercontent.com/mitre/cti/master/capec/2.1/stix-capec.json` | `services/capec.service.ts`, `services/source-inventory.ts` |
 | `https://raw.githubusercontent.com/mitre/engage/main/Data/json` | `services/engage.service.ts` |
-| `https://raw.githubusercontent.com/mukul975/Anthropic-Cybersecurity-Skills/main/mappings/attack-navigator-layer.json` | `services/anthropic-skills.service.ts` |
+| `https://raw.githubusercontent.com/mukul975/Anthropic-Cybersecurity-Skills/main/mappings/attack-navigator-layer.json` | `services/anthropic-skills.service.ts`, `services/source-inventory.ts` |
 | `https://raw.githubusercontent.com/redcanaryco/atomic-red-team/master/atomics` | `services/atomic.service.ts` |
-| `https://raw.githubusercontent.com/redcanaryco/atomic-red-team/master/atomics/Indexes/Attack-Navigator-Layers/art-navigator-layer.json` | `services/atomic.service.ts` |
-| `https://raw.githubusercontent.com/stamparm/ipsum/master/levels/3.txt` | `services/ioc-feed.service.ts` |
-| `https://services.nvd.nist.gov/rest/json/cves/2.0` | `services/cve.service.ts` |
+| `https://raw.githubusercontent.com/redcanaryco/atomic-red-team/master/atomics/Indexes/Attack-Navigator-Layers/art-navigator-layer.json` | `services/atomic.service.ts`, `services/source-inventory.ts` |
+| `https://raw.githubusercontent.com/stamparm/ipsum/master/levels/3.txt` | `services/ioc-feed.service.ts`, `services/source-inventory.ts` |
+| `https://services.nvd.nist.gov/rest/json/cves/2.0` | `services/cve.service.ts`, `services/source-inventory.ts` |
 | `https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json` | `services/cve.service.ts` |
 
 ## Machine-readable

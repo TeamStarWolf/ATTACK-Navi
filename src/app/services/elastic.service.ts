@@ -3,7 +3,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
-import { catchError, of } from 'rxjs';
+import { SourceRegistryService } from './source-registry.service';
 
 
 interface NavigatorLayer {
@@ -29,16 +29,19 @@ export class ElasticService {
   private coveredSubject = new BehaviorSubject<number>(0);
   readonly covered$ = this.coveredSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {
     this.loadLive();
   }
 
   private loadLive(): void {
     // Elastic no longer publishes a pre-built Navigator layer.
     // Scan the GitHub tree for .toml rule files and extract technique IDs.
+    this.sources.begin('elastic-tree');
     this.http.get<any>('https://api.github.com/repos/elastic/detection-rules/git/trees/main?recursive=1')
-      .pipe(catchError(() => of(null)))
-      .subscribe((tree: any) => {
+      .subscribe({ next: (tree: any) => {
         if (tree?.tree) {
           const counts = new Map<string, number>();
           const techRegex = /[Tt](1\d{3}(?:\.\d{3})?)/;
@@ -59,8 +62,10 @@ export class ElasticService {
             this.ingestLayer(layer);
           }
         }
-        this.loadedSubject.next(true);
-      });
+        const rows = this.coveredSubject.value;
+        this.sources.succeed('elastic-tree', rows);
+        if (rows > 0) this.loadedSubject.next(true);
+      }, error: err => this.sources.fail('elastic-tree', err) });
   }
 
   /** Ingest a Navigator layer JSON with techniques[].techniqueID and techniques[].score. */

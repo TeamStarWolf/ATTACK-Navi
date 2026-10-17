@@ -3,7 +3,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
-import { catchError, of } from 'rxjs';
+import { SourceRegistryService } from './source-registry.service';
 import { retryWithBackoff } from '../utils/retry';
 
 export interface M365Query {
@@ -82,7 +82,10 @@ export class M365DefenderService {
 
   private initialized = false;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {}
 
   /** Trigger data fetch on first use. Safe to call multiple times. */
   loadOnDemand(): void {
@@ -123,13 +126,20 @@ export class M365DefenderService {
   // ─── Private ─────────────────────────────────────────────────────────────────
 
   private loadTree(): void {
+    this.sources.begin('m365-hunting-queries');
     this.http.get<GitHubTree>(GITHUB_TREE_URL)
-      .pipe(retryWithBackoff(), catchError(() => of(null)))
-      .subscribe(tree => {
-        if (tree?.tree?.length) {
-          this.parseTree(tree);
-        }
-        this.loadedSubject.next(true);
+      .pipe(retryWithBackoff())
+      .subscribe({
+        next: tree => {
+          if (tree?.tree?.length) {
+            this.parseTree(tree);
+          }
+          const rows = this.totalSubject.value;
+          this.sources.succeed('m365-hunting-queries', rows);
+          if (rows > 0) this.loadedSubject.next(true);
+        },
+        // Recorded as failed; loaded$ stays false.
+        error: err => this.sources.fail('m365-hunting-queries', err),
       });
   }
 

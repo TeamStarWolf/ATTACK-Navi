@@ -3,7 +3,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
-import { catchError, of } from 'rxjs';
+import { filter, take } from 'rxjs';
+import { SourceRegistryService } from './source-registry.service';
 import { AttackCveService } from './attack-cve.service';
 
 /**
@@ -38,6 +39,7 @@ export class NucleiService {
   constructor(
     private http: HttpClient,
     private attackCveService: AttackCveService,
+    private sources: SourceRegistryService = new SourceRegistryService(),
   ) {}
 
   /** Trigger data fetch on first use. Safe to call multiple times. */
@@ -49,21 +51,26 @@ export class NucleiService {
 
   private load(): void {
     // Wait for AttackCveService to finish loading before cross-referencing
-    const sub = this.attackCveService.loaded$.subscribe(cveLoaded => {
-      if (!cveLoaded) return;
-      sub.unsubscribe();
-      this.fetchTree();
+    this.sources.begin('nuclei-tree');
+    this.attackCveService.outcome$.pipe(filter(o => o !== 'pending'), take(1)).subscribe(outcome => {
+      if (outcome === 'failed') this.sources.fail('nuclei-tree', 'blocked: the CTID ATT&CK-to-CVE mapping it cross-references did not load');
+      else this.fetchTree();
     });
   }
 
   private fetchTree(): void {
     this.http.get<GitHubTree>(NucleiService.TREE_URL)
-      .pipe(catchError(() => of(null)))
-      .subscribe(tree => {
-        if (tree?.tree) {
-          this.processTree(tree.tree);
-        }
-        this.loadedSubject.next(true);
+      .subscribe({
+        next: tree => {
+          if (tree?.tree) {
+            this.processTree(tree.tree);
+          }
+          const rows = this.totalSubject.value;
+          this.sources.succeed('nuclei-tree', rows);
+          if (rows > 0) this.loadedSubject.next(true);
+        },
+        // Recorded as failed; loaded$ stays false.
+        error: err => this.sources.fail('nuclei-tree', err),
       });
   }
 

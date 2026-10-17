@@ -5,6 +5,7 @@ import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { BehaviorSubject, of } from 'rxjs';
 import { DataHealthComponent } from './data-health.component';
+import { SourceRegistryService } from '../../services/source-registry.service';
 import { AtomicService } from '../../services/atomic.service';
 import { SigmaService } from '../../services/sigma.service';
 import { AttackCveService } from '../../services/attack-cve.service';
@@ -154,6 +155,39 @@ describe('DataHealthComponent', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelectorAll('.dot-failed').length).toBe(0);
     expect(fixture.nativeElement.querySelectorAll('.dot-loaded').length).toBe(2);
+  });
+
+  it('turns a dot red with the reason when its source records a failure, instead of pulsing "loading" (E1.3)', () => {
+    const registry = TestBed.inject(SourceRegistryService);
+    registry.fail('capec', 'HTTP 503 Service Unavailable');
+    fixture.detectChanges();
+    const failed = fixture.nativeElement.querySelector('.dot-failed');
+    expect(failed).toBeTruthy();
+    expect(failed.getAttribute('title')).toContain('CAPEC: failed');
+    expect(failed.getAttribute('title')).toContain('HTTP 503');
+    // The service's loaded$ replaying false does not demote it to "loading".
+    loadedSubjects['capec'].next(false);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.dot-failed').length).toBe(1);
+  });
+
+  it('shows a source that answered with no rows as empty, not loaded and not loading', () => {
+    TestBed.inject(SourceRegistryService).succeed('elastic-tree', 0);
+    fixture.detectChanges();
+    const empty = fixture.nativeElement.querySelector('.dot-empty');
+    expect(empty).toBeTruthy();
+    expect(empty.getAttribute('title')).toContain('Elastic Rules: empty');
+  });
+
+  it('keeps a multi-source entry out of the failed state while one of its sources still loads', () => {
+    const registry = TestBed.inject(SourceRegistryService);
+    registry.fail('ctid-aws', 'network error');
+    registry.fail('ctid-azure', 'network error');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.dot-failed').length).toBe(0);
+    registry.fail('ctid-gcp', 'network error');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.dot-failed').getAttribute('title')).toContain('Cloud Controls: failed');
   });
 
   it('should show refresh button', () => {

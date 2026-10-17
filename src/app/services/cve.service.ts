@@ -9,6 +9,7 @@ import { AttackCveService } from './attack-cve.service';
 import { CapecService } from './capec.service';
 import { correctCveTechniques, AnchorData, CorrectionResult } from './cwe-attack-anchor';
 import { retryWithBackoff } from '../utils/retry';
+import { SourceRegistryService } from './source-registry.service';
 
 
 @Injectable({ providedIn: 'root' })
@@ -72,6 +73,7 @@ export class CveService {
     private http: HttpClient,
     private attackCveService: AttackCveService,
     private capecService: CapecService,
+    private sources: SourceRegistryService = new SourceRegistryService(),
   ) {
     this.ctidKevReady$ = combineLatest([
       this.kevLoadedSubject,
@@ -79,9 +81,16 @@ export class CveService {
     ]).pipe(map(([kevLoaded, ctidLoaded]) => kevLoaded && ctidLoaded));
 
     // Load the CWE->ATT&CK exploitation anchor (corrects the generic CWE->CAPEC fan-out).
+    this.sources.begin('cwe-exploitation-anchor');
     this.http.get<AnchorData>('assets/data/cwe-exploitation-anchor.json')
-      .pipe(catchError(() => of(null)))
-      .subscribe(d => { this.anchorData = d; });
+      .subscribe({
+        next: d => {
+          this.anchorData = d;
+          this.sources.succeed('cwe-exploitation-anchor', null);
+        },
+        // Recorded as failed; correctTechniques() falls back to the raw CAPEC chain.
+        error: err => this.sources.fail('cwe-exploitation-anchor', err),
+      });
 
     this.attackCveService.loaded$.subscribe(loaded => {
       if (loaded && this.kevMapSubject.value.size > 0) {
@@ -99,6 +108,7 @@ export class CveService {
     if (this.kevLoadedSubject.value || this.kevLoading) return;
     this.kevLoading = true;
     this.kevErrorSubject.next(null);
+    this.sources.begin('cisa-kev');
     // GitHub mirror first (CORS-safe), direct CISA feed as fallback.
     this.http.get<any>(this.KEV_URL).pipe(
       timeout(10000),
@@ -120,6 +130,7 @@ export class CveService {
         this.kevMapSubject.next(map);
         this.kevLoading = false;
         this.kevErrorSubject.next(null);
+        this.sources.succeed('cisa-kev', vulns.length);
         this.kevLoadedSubject.next(true);
 
         // Track new KEV entries for notification badge
@@ -139,6 +150,7 @@ export class CveService {
   private failKev(reason: string): void {
     this.kevLoading = false;
     this.kevErrorSubject.next(`CISA KEV catalog could not be loaded: ${reason}`);
+    this.sources.fail('cisa-kev', reason);
   }
 
   /**
@@ -249,14 +261,17 @@ export class CveService {
 
   /** One NVD query: parse and cache the records, surfacing HTTP failures on error$ before rethrowing. */
   private requestNvd(params: string): Observable<NvdCveItem[]> {
+    this.sources.begin('nvd');
     return this.http.get<any>(`${this.NVD_API}?${params}`).pipe(
       map((data: any) => {
         const items: NvdCveItem[] = (data?.vulnerabilities ?? []).map((v: any) => this.parseNvdItem(v.cve));
         this.cacheNvdItems(items);
+        this.sources.succeed('nvd', null);
         return items;
       }),
       catchError(err => {
         this.errorSubject.next('NVD API error: ' + (err?.message ?? 'network error'));
+        this.sources.fail('nvd', err);
         return throwError(() => err);
       }),
     );
@@ -342,8 +357,13 @@ export class CveService {
     return new Observable(observer => {
       const allItems = new Map<string, NvdCveItem>();
       let idx = 0;
+      // A failed CWE query is recorded as failed for the whole batch, even if a later one succeeds.
+      let batchError: unknown = null;
+      this.sources.begin('nvd');
       const fetchNext = () => {
         if (idx >= targetCwes.length) {
+          if (batchError) this.sources.fail('nvd', batchError);
+          else this.sources.succeed('nvd', null);
           observer.next({ items: [...allItems.values()], cwesFetched: targetCwes, totalResults: allItems.size });
           observer.complete();
           return;
@@ -353,7 +373,10 @@ export class CveService {
         const cweParam = cwe.startsWith('CWE-') ? cwe : `CWE-${cwe}`;
         const url = `${this.NVD_API}?cweId=${encodeURIComponent(cweParam)}&resultsPerPage=100`;
         this.http.get<any>(url, { headers }).pipe(
-          catchError(() => of({ vulnerabilities: [] }))
+          catchError(err => {
+            batchError = err;
+            return of({ vulnerabilities: [] });
+          })
         ).subscribe(data => {
           const items = (data?.vulnerabilities ?? []).map((v: any) => this.parseNvdItem(v.cve));
           this.cacheNvdItems(items);

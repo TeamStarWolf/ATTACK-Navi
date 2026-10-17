@@ -3,6 +3,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
+import { SourceRegistryService } from './source-registry.service';
 
 export interface AttackRelease {
   tag: string;
@@ -22,11 +23,15 @@ export class ChangelogService {
   private loadedSubject = new BehaviorSubject<boolean>(false);
   loaded$ = this.loadedSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {
     this.load();
   }
 
   private load(): void {
+    this.sources.begin('attack-releases');
     this.http.get<any[]>(this.RELEASES_URL).subscribe({
       next: (data) => {
         const releases = data.map(r => ({
@@ -37,9 +42,10 @@ export class ChangelogService {
           url: r.html_url as string,
         }));
         this.releasesSubject.next(releases);
+        this.sources.succeed('attack-releases', releases.length);
         this.loadedSubject.next(true);
       },
-      error: () => this.loadedSubject.next(false),
+      error: (err) => this.sources.fail('attack-releases', err),
     });
   }
 }

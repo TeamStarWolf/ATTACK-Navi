@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { CsaCcmService } from './csa-ccm.service';
+import { SourceRegistryService } from './source-registry.service';
 
 describe('CsaCcmService', () => {
   let service: CsaCcmService;
@@ -42,14 +43,13 @@ describe('CsaCcmService', () => {
     });
   });
 
-  it('marks loaded on HTTP error and exposes empty results', (done) => {
-    service.loaded$.subscribe(loaded => {
-      if (loaded) {
-        expect(service.getControlsForTechnique('T9999')).toEqual([]);
-        done();
-      }
-    });
+  it('records an HTTP error as failed, never as loaded, and exposes empty results (E1.3)', () => {
+    let loaded: boolean | undefined;
+    service.loaded$.subscribe(v => (loaded = v));
     const req = httpMock.expectOne(r => r.url.includes('csa_ccm'));
     req.error(new ProgressEvent('boom'));
+    expect(loaded).toBeFalse();
+    expect(service.getControlsForTechnique('T9999')).toEqual([]);
+    expect(TestBed.inject(SourceRegistryService).get('ctid-csa-ccm').status).toBe('failed');
   });
 });

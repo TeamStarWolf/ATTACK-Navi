@@ -2,7 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 
-import { Observable, Subscription, of } from 'rxjs';
+import { Observable, Subscription, distinctUntilChanged, map, of } from 'rxjs';
 import { AtomicService } from '../../services/atomic.service';
 import { SigmaService } from '../../services/sigma.service';
 import { AttackCveService } from '../../services/attack-cve.service';
@@ -28,8 +28,12 @@ import { EvtxSamplesService } from '../../services/evtx-samples.service';
 import { SentinelRulesService } from '../../services/sentinel-rules.service';
 import { AnthropicSkillsService } from '../../services/anthropic-skills.service';
 import { ThreatHunterPlaybookService } from '../../services/threathunter-playbook.service';
+import { SourceRegistryService } from '../../services/source-registry.service';
 
-interface HealthEntry { name: string; status: 'loading' | 'loaded' | 'failed'; detail?: string; }
+interface HealthEntry { name: string; status: 'loading' | 'loaded' | 'failed' | 'empty'; detail?: string; }
+
+/** What the source registry says about a ribbon entry: failed or empty with a reason, or nothing. */
+interface RegistryVerdict { status: 'failed' | 'empty'; detail: string; }
 
 const LAST_REFRESHED_KEY = 'data-health-last-refreshed';
 
@@ -46,6 +50,7 @@ const LAST_REFRESHED_KEY = 'data-health-last-refreshed';
           [class.dot-loaded]="entry.status === 'loaded'"
           [class.dot-loading]="entry.status === 'loading'"
           [class.dot-failed]="entry.status === 'failed'"
+          [class.dot-empty]="entry.status === 'empty'"
           [title]="entry.name + ': ' + entry.status + (entry.detail ? ' - ' + entry.detail : '')"
         ></span>
       }
@@ -66,6 +71,7 @@ const LAST_REFRESHED_KEY = 'data-health-last-refreshed';
     .dot-loaded { background: #22c55e; }
     .dot-loading { background: #eab308; animation: pulse-dot 1.2s infinite; }
     .dot-failed { background: #ef4444; }
+    .dot-empty { background: #94a3b8; }
     @keyframes pulse-dot {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.4; }
@@ -91,6 +97,7 @@ const LAST_REFRESHED_KEY = 'data-health-last-refreshed';
     :host-context(body.light-mode) .dot-loaded { background: #16a34a; }
     :host-context(body.light-mode) .dot-loading { background: #d97706; }
     :host-context(body.light-mode) .dot-failed { background: #dc2626; }
+    :host-context(body.light-mode) .dot-empty { background: #64748b; }
     :host-context(body.light-mode) .last-refreshed { color: #475569; }
     :host-context(body.light-mode) .refresh-btn { color: #64748b; }
     :host-context(body.light-mode) .refresh-btn:hover { color: #1e293b; }
@@ -130,7 +137,31 @@ export class DataHealthComponent implements OnInit, OnDestroy {
     private anthropicSkillsService: AnthropicSkillsService,
     private threatHunterPlaybookService: ThreatHunterPlaybookService,
     private cdr: ChangeDetectorRef,
+    private sources: SourceRegistryService,
   ) {}
+
+  /**
+   * The registry's verdict for a ribbon entry backed by one or more sources: 'failed'
+   * (or 'empty') only when every one of them failed (or returned nothing), so an entry
+   * that still has some data is not painted red.
+   */
+  private registryVerdict$(ids: string[]): Observable<RegistryVerdict | null> {
+    return this.sources.records$.pipe(
+      map(records => {
+        const mine = records.filter(r => ids.includes(r.id));
+        if (!mine.length) return null;
+        if (mine.every(r => r.status === 'failed' || r.status === 'empty')) {
+          const failed = mine.filter(r => r.status === 'failed');
+          if (failed.length) {
+            return { status: 'failed' as const, detail: failed.map(r => r.lastError ?? 'failed').join('; ') };
+          }
+          return { status: 'empty' as const, detail: 'the source returned no usable rows' };
+        }
+        return null;
+      }),
+      distinctUntilChanged((a, b) => a?.status === b?.status && a?.detail === b?.detail),
+    );
+  }
 
   ngOnInit(): void {
     // Restore persisted timestamp
@@ -142,31 +173,34 @@ export class DataHealthComponent implements OnInit, OnDestroy {
 
     // `failed$` (optional) emits a reason when a fetch has definitively failed; the dot
     // turns red rather than pulsing "loading" forever.
-    const sources: { name: string; loaded$: any; failed$?: Observable<string | null> }[] = [
-      { name: 'Atomic Red Team', loaded$: this.atomicService.loaded$ },
-      { name: 'Sigma Rules', loaded$: this.sigmaService.loaded$ },
-      { name: 'ATT&CK CVE', loaded$: this.attackCveService.loaded$ },
-      { name: 'CAPEC', loaded$: this.capecService.loaded$ },
-      { name: 'MISP Galaxy', loaded$: this.mispService.loaded$ },
-      { name: 'NIST 800-53', loaded$: this.nistMappingService.loaded$ },
-      { name: 'CRI Profile', loaded$: this.criProfileService.loaded$ },
-      { name: 'Cloud Controls', loaded$: this.cloudControlsService.loaded$ },
-      { name: 'VERIS', loaded$: this.verisService.loaded$ },
-      { name: 'D3FEND', loaded$: this.d3fendService.loaded$ },
-      { name: 'CAR Analytics', loaded$: this.carService.loaded$ },
-      { name: 'Elastic Rules', loaded$: this.elasticService.loaded$ },
-      { name: 'Splunk Content', loaded$: this.splunkContentService.loaded$ },
-      { name: 'ExploitDB', loaded$: this.exploitdbService.loaded$ },
-      { name: 'Nuclei Templates', loaded$: this.nucleiService.loaded$ },
+    // `ids` name the SourceRegistry records behind an entry (E1.3): a loader that fails
+    // no longer reports loaded, so the registry is what turns its dot red (or grey when
+    // the source answered with nothing) instead of leaving it pulsing "loading".
+    const sources: { name: string; loaded$: any; failed$?: Observable<string | null>; ids?: string[] }[] = [
+      { name: 'Atomic Red Team', loaded$: this.atomicService.loaded$, ids: ['atomic-layer'] },
+      { name: 'Sigma Rules', loaded$: this.sigmaService.loaded$, ids: ['sigmahq-coverage'] },
+      { name: 'ATT&CK CVE', loaded$: this.attackCveService.loaded$, ids: ['ctid-attack-to-cve', 'ctid-kev'] },
+      { name: 'CAPEC', loaded$: this.capecService.loaded$, ids: ['capec'] },
+      { name: 'MISP Galaxy', loaded$: this.mispService.loaded$, ids: ['misp-galaxy'] },
+      { name: 'NIST 800-53', loaded$: this.nistMappingService.loaded$, ids: ['ctid-nist-800-53'] },
+      { name: 'CRI Profile', loaded$: this.criProfileService.loaded$, ids: ['ctid-cri-profile'] },
+      { name: 'Cloud Controls', loaded$: this.cloudControlsService.loaded$, ids: ['ctid-aws', 'ctid-azure', 'ctid-gcp'] },
+      { name: 'VERIS', loaded$: this.verisService.loaded$, ids: ['ctid-veris'] },
+      { name: 'D3FEND', loaded$: this.d3fendService.loaded$, ids: ['d3fend-ontology'] },
+      { name: 'CAR Analytics', loaded$: this.carService.loaded$, ids: ['car-layer'] },
+      { name: 'Elastic Rules', loaded$: this.elasticService.loaded$, ids: ['elastic-tree'] },
+      { name: 'Splunk Content', loaded$: this.splunkContentService.loaded$, ids: ['splunk-tree'] },
+      { name: 'ExploitDB', loaded$: this.exploitdbService.loaded$, ids: ['exploitdb'] },
+      { name: 'Nuclei Templates', loaded$: this.nucleiService.loaded$, ids: ['nuclei-tree'] },
       { name: 'EPSS', loaded$: of(true) },
       { name: 'CISA KEV', loaded$: this.cveService.kevLoaded$, failed$: this.cveService.kevError$ },
-      { name: 'NVD Bulk', loaded$: this.nvdBulkService.loaded$ },
-      { name: 'CVE2CAPEC', loaded$: this.cve2capecService.loaded$ },
-      { name: 'PoC Exploits', loaded$: this.pocExploitService.loaded$ },
-      { name: 'EVTX Samples', loaded$: this.evtxSamplesService.loaded$ },
-      { name: 'Sentinel Rules', loaded$: this.sentinelRulesService.loaded$ },
-      { name: 'Anthropic Skills', loaded$: this.anthropicSkillsService.loaded$ },
-      { name: 'ThreatHunter Playbook', loaded$: this.threatHunterPlaybookService.loaded$ },
+      { name: 'NVD Bulk', loaded$: this.nvdBulkService.loaded$, ids: ['cve-technique-map'] },
+      { name: 'CVE2CAPEC', loaded$: this.cve2capecService.loaded$, ids: ['cve2capec-runtime'] },
+      { name: 'PoC Exploits', loaded$: this.pocExploitService.loaded$, ids: ['trickest-poc-tree'] },
+      { name: 'EVTX Samples', loaded$: this.evtxSamplesService.loaded$, ids: ['evtx-samples-tree'] },
+      { name: 'Sentinel Rules', loaded$: this.sentinelRulesService.loaded$, ids: ['sentinel-attack-tree'] },
+      { name: 'Anthropic Skills', loaded$: this.anthropicSkillsService.loaded$, ids: ['anthropic-skills-layer'] },
+      { name: 'ThreatHunter Playbook', loaded$: this.threatHunterPlaybookService.loaded$, ids: ['threathunter-playbook'] },
     ];
 
     this.entries = sources.map(s => ({ name: s.name, status: 'loading' as const }));
@@ -174,8 +208,8 @@ export class DataHealthComponent implements OnInit, OnDestroy {
     sources.forEach((src, i) => {
       this.subs.add(
         src.loaded$.subscribe((loaded: boolean) => {
-          // A failed source stays red until its own failed$ clears (a retry started).
-          if (!loaded && this.entries[i].status === 'failed') return;
+          // A failed or empty source keeps its colour until its own verdict clears (a retry started).
+          if (!loaded && (this.entries[i].status === 'failed' || this.entries[i].status === 'empty')) return;
           this.entries[i] = { name: src.name, status: loaded ? 'loaded' : 'loading' };
           if (loaded) this.markRefreshed();
           this.cdr.markForCheck();
@@ -187,6 +221,17 @@ export class DataHealthComponent implements OnInit, OnDestroy {
             if (this.entries[i].status === 'loaded') return;
             this.entries[i] = reason
               ? { name: src.name, status: 'failed', detail: reason }
+              : { name: src.name, status: 'loading' };
+            this.cdr.markForCheck();
+          }),
+        );
+      }
+      if (src.ids) {
+        this.subs.add(
+          this.registryVerdict$(src.ids).subscribe(verdict => {
+            if (this.entries[i].status === 'loaded') return;
+            this.entries[i] = verdict
+              ? { name: src.name, status: verdict.status, detail: verdict.detail }
               : { name: src.name, status: 'loading' };
             this.cdr.markForCheck();
           }),
