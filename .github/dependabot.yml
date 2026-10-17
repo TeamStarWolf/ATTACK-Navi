@@ -1,5 +1,10 @@
 version: 2
 updates:
+  # Grouping (version updates only; security updates stay one PR each):
+  # every @angular/* and @angular-devkit/* bump lands as one PR, majors
+  # included, because those packages must move in lockstep. Other npm minor
+  # and patch bumps share one PR. Other npm majors are deliberately left
+  # ungrouped so each one gets its own PR and its own evaluation.
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
@@ -7,6 +12,18 @@ updates:
     labels:
       - "dependencies"
     open-pull-requests-limit: 10
+    groups:
+      angular:
+        patterns:
+          - "@angular/*"
+          - "@angular-devkit/*"
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+        exclude-patterns:
+          - "@angular/*"
+          - "@angular-devkit/*"
 
   - package-ecosystem: "npm"
     directory: "/server"
@@ -14,6 +31,11 @@ updates:
       interval: "weekly"
     labels:
       - "dependencies"
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -21,16 +43,25 @@ updates:
       interval: "weekly"
     labels:
       - "dependencies"
+    groups:
+      actions:
+        patterns:
+          - "*"
 
   # Base images in the root Dockerfile: node:24-alpine (build stage) and
   # nginxinc/nginx-unprivileged:alpine (the served image). The proxy's
   # node:24-alpine is tracked by the /server entry below.
+  # Odd-numbered Node majors never become LTS, so they are ignored here and
+  # in the /server entry; even-numbered (LTS) majors are still proposed.
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: "weekly"
     labels:
       - "dependencies"
+    ignore:
+      - dependency-name: "node"
+        versions: ["25", "25.x", "27", "27.x"]
 
   - package-ecosystem: "docker"
     directory: "/server"
@@ -38,3 +69,6 @@ updates:
       interval: "weekly"
     labels:
       - "dependencies"
+    ignore:
+      - dependency-name: "node"
+        versions: ["25", "25.x", "27", "27.x"]
