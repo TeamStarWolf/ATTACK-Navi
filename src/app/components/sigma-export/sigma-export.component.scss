@@ -69,6 +69,13 @@
   gap: 16px;
 }
 
+.sigma-template-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-main);
+}
+
 .sigma-section {
   display: flex;
   flex-direction: column;
