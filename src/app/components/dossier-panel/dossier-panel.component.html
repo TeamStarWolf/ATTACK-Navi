@@ -93,16 +93,21 @@
             }
           </div>
           @if (d.ssvc; as s) {
-            <div class="verdict" [class]="actionClass(s.action)">
+            <div class="verdict" [class]="s.actionBlocked ? 'action-blocked' : actionClass(s.action)">
               <span class="verdict-label">SSVC · computed</span>
-              <strong>{{ s.action || '—' }}</strong>
-              @if (actionMeaning[s.action]) {
-                <span class="verdict-note">{{ actionMeaning[s.action] }}</span>
+              @if (s.actionBlocked) {
+                <strong>{{ decisionBlocked }}</strong>
+                <span class="verdict-note">Provisional: exploitation unknown until the CISA KEV catalog loads.</span>
+              } @else {
+                <strong>{{ s.action || '—' }}</strong>
+                @if (actionMeaning[s.action]) {
+                  <span class="verdict-note">{{ actionMeaning[s.action] }}</span>
+                }
               }
             </div>
-            <div class="verdict" [class]="timelineClass(s.timeline)">
+            <div class="verdict" [class]="s.timelineBlocked ? 'action-blocked' : timelineClass(s.timeline)">
               <span class="verdict-label">BOD 26-04</span>
-              <strong>{{ s.timeline || '—' }}</strong>
+              <strong>{{ s.timelineBlocked ? 'blocked: ' + s.timelineBlocked : (s.timeline || '—') }}</strong>
             </div>
           }
         </div>

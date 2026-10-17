@@ -14,9 +14,9 @@ Counts and versions derived from the code. When a document states one of these n
 | Routed workspace tabs | 47 | child routes with `data.tab` in `src/app/pages/*/*.routes.ts` |
 | Library layers | 37 | `src/assets/data/library-layers/index.json` |
 | Lylat mission layers | 35 | `src/assets/data/lylat-mission-layers/index.json` |
-| Unit spec files | 192 | `src/**/*.spec.ts` |
+| Unit spec files | 193 | `src/**/*.spec.ts` |
 | Playwright spec files | 6 | `e2e/**/*.spec.ts` |
-| Script test files | 4 | `scripts/**/*.test.mjs` |
+| Script test files | 5 | `scripts/**/*.test.mjs` |
 | Proxy test files | 1 | `server/**/*.test.*` |
 | Angular | 22.2.2 | `package-lock.json` (`@angular/core`) |
 | TypeScript | 6.0.3 | `package-lock.json` |
@@ -105,10 +105,19 @@ Contents of `src/assets/data/`:
 - `src/assets/data/enterprise-attack.json`
 - `src/assets/data/f3-attack.json`
 - `src/assets/data/ics-attack.json`
+- `src/assets/data/kev-snapshot.json`
 - `src/assets/data/library-layers/` (38 files)
 - `src/assets/data/lylat-mission-layers/` (36 files)
 - `src/assets/data/mobile-attack.json`
 - `src/assets/data/ssvc-decision-tables.json`
+
+## Bundled KEV snapshot
+
+Read only when the live CISA KEV feed fails; built by `node scripts/build-kev-snapshot.mjs` from cisagov/kev-data at a commit pinned by date.
+
+| Snapshot date | Catalog version | Entries | Commit | File |
+| :-- | :-- | --: | :-- | :-- |
+| 2026-10-16 | 2026.10.16 | 1748 | `6a39294` | `src/assets/data/kev-snapshot.json` |
 
 ## Upstream data URLs in the loaders
 
@@ -178,7 +187,7 @@ Read by `scripts/check-facts.mjs`.
   "routeFileWorkspaces": 8,
   "routedTabs": 47,
   "libraryLayers": 37,
-  "unitSpecs": 192,
+  "unitSpecs": 193,
   "angularMajor": 22,
   "typescriptMajor": 6,
   "bundleVersions": {

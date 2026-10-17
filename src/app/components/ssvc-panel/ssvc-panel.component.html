@@ -63,9 +63,17 @@
     @if (error) {
       <div class="notice notice-error">{{ error }}</div>
     }
-    @if (kevError) {
-      <div class="notice notice-warn">
-        {{ kevError }} "In KEV" is unverified for every CVE below until it loads.
+    @if (kevSnapshotDate) {
+      <div class="notice notice-warn" data-testid="kev-snapshot-notice">
+        @if (kevError) { {{ kevError }} }
+        Using the bundled CISA KEV snapshot of {{ kevSnapshotDate }} in its place: a CVE added to KEV
+        after that date shows here as not in KEV, so those decisions are provisional.
+        <button type="button" class="btn-link" (click)="retryKev()">Retry the live feed</button>
+      </div>
+    } @else if (kevError && !kevLoaded) {
+      <div class="notice notice-warn" data-testid="kev-unavailable-notice">
+        {{ kevError }} No KEV catalogue is on hand, so exploitation is unknown and SSVC
+        decisions are blocked until KEV loads.
         <button type="button" class="btn-link" (click)="retryKev()">Retry</button>
       </div>
     }
@@ -82,16 +90,25 @@
             <p class="desc">{{ selected.description }}</p>
           </div>
           <div class="verdicts">
-            <div class="verdict" [class]="actionClass(selectedResult.action)">
+            <div class="verdict" [class]="resultClass(selectedResult)" data-testid="ssvc-decision">
               <span class="verdict-label">SSVC decision</span>
-              <strong>{{ selectedResult.action || '—' }}</strong>
-              @if (actionMeaning[selectedResult.action]) {
-                <span class="verdict-note">{{ actionMeaning[selectedResult.action] }}</span>
+              @if (selectedResult.actionBlocked) {
+                <strong>{{ decisionBlocked }}</strong>
+                <span class="verdict-note">Provisional: exploitation unknown until the CISA KEV catalog loads.</span>
+              } @else {
+                <strong>{{ selectedResult.action || '—' }}</strong>
+                @if (actionMeaning[selectedResult.action]) {
+                  <span class="verdict-note">{{ actionMeaning[selectedResult.action] }}</span>
+                }
               }
             </div>
-            <div class="verdict" [class]="timelineClass(selectedResult.timeline)">
+            <div class="verdict" [class]="selectedResult.timelineBlocked ? 'action-blocked' : timelineClass(selectedResult.timeline)" data-testid="ssvc-timeline">
               <span class="verdict-label">BOD 26-04 remediation</span>
-              <strong>{{ selectedResult.timeline || '—' }}</strong>
+              @if (selectedResult.timelineBlocked) {
+                <strong>blocked: {{ selectedResult.timelineBlocked }}</strong>
+              } @else {
+                <strong>{{ selectedResult.timeline || '—' }}</strong>
+              }
             </div>
           </div>
         </div>
@@ -106,8 +123,8 @@
           @if (selected.epssScore !== null && selected.epssScore !== undefined) {
             <span class="fact">EPSS {{ selected.epssScore | number: '1.5-5' }}</span>
           }
-          <span class="fact" [class.kev]="selected.isKev">
-            KEV {{ selected.isKev ? 'yes' : 'no' }}
+          <span class="fact" [class.kev]="selected.isKev" data-testid="kev-fact">
+            KEV {{ kevFact(selected) }}
           </span>
           @if (selected.kevDueDate) {
             <span class="fact">CISA due {{ selected.kevDueDate }}</span>
@@ -240,13 +257,13 @@
                   (click)="select(row.cve)">
                   <td class="id">{{ row.cve.id }}</td>
                   <td>
-                    <span class="pill" [class]="actionClass(row.result.action)">
-                      {{ row.result.action || '—' }}
+                    <span class="pill" [class]="resultClass(row.result)">
+                      {{ row.result.actionBlocked ? decisionBlocked : (row.result.action || '—') }}
                     </span>
                   </td>
                   <td>
-                    <span class="pill" [class]="timelineClass(row.result.timeline)">
-                      {{ row.result.timeline || '—' }}
+                    <span class="pill" [class]="row.result.timelineBlocked ? 'action-blocked' : timelineClass(row.result.timeline)">
+                      {{ row.result.timelineBlocked ? 'blocked' : (row.result.timeline || '—') }}
                     </span>
                   </td>
                   <td class="num">
@@ -258,7 +275,7 @@
                   <td class="num">
                     {{ row.epss !== null ? (row.epss | number: '1.5-5') : '—' }}
                   </td>
-                  <td>{{ row.cve.isKev ? 'yes' : '—' }}</td>
+                  <td>{{ row.cve.isKev ? 'yes' : (kevLoaded ? '—' : 'unknown') }}</td>
                   <td class="techniques">
                     @if (row.mapping) {
                       @for (t of row.mapping.exploitationTechnique; track t) {

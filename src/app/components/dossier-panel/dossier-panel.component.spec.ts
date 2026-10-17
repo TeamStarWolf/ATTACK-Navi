@@ -168,7 +168,7 @@ describe('DossierPanelComponent', () => {
       ...d,
       isKev: true,
       kevDueDate: '2026-02-01',
-      ssvc: { cveId: CVE, points: [], action: 'Act', actionTable: '', timeline: 'P3D', timelineTable: '', warnings: [] },
+      ssvc: { cveId: CVE, points: [], action: 'Act', actionTable: '', actionBlocked: null, timeline: 'P3D', timelineTable: '', timelineBlocked: null, warnings: [] },
     }));
 
     cveService.kevLoaded$.next(true);

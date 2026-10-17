@@ -4,7 +4,7 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, OnIn
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { combineLatest, filter, map, startWith } from 'rxjs';
-import { SourceRecord } from '../../models/source-record';
+import { DATA_PRESENT_STATUSES, SourceRecord } from '../../models/source-record';
 import { DataService } from '../../services/data.service';
 import { SourceRegistryService } from '../../services/source-registry.service';
 import { sourcesForRoute } from '../../services/route-sources';
@@ -16,21 +16,36 @@ export interface MissingSource {
   status: 'failed' | 'empty';
   /** Why: the recorded error, or what 'empty' means. */
   detail: string;
+  /** The stand-in that loaded in its place (a source whose fallbackFor names this one), with its version. */
+  fallback?: string;
 }
 
-/** The sources a route reads that are failed or empty right now, in the route's order. */
+/**
+ * The sources a route reads that are failed or empty right now, in the route's order.
+ * A failed source with a stand-in (the bundled KEV snapshot for the live KEV feed) says
+ * which stand-in is in use; when the stand-in did not load either, it is listed too.
+ */
 export function missingSources(ids: readonly string[], records: readonly SourceRecord[]): MissingSource[] {
   const byId = new Map(records.map(r => [r.id, r]));
   const missing: MissingSource[] = [];
-  for (const id of ids) {
-    const r = byId.get(id);
-    if (!r || (r.status !== 'failed' && r.status !== 'empty')) continue;
+  const add = (r: SourceRecord, fallback?: string) => {
+    if (missing.some(m => m.id === r.id)) return;
     missing.push({
       id: r.id,
       name: r.name,
-      status: r.status,
+      status: r.status as 'failed' | 'empty',
       detail: r.status === 'failed' ? (r.lastError ?? 'the request failed') : 'the source answered with no usable rows',
+      ...(fallback ? { fallback } : {}),
     });
+  };
+  const isMissing = (r: SourceRecord | undefined): r is SourceRecord => !!r && (r.status === 'failed' || r.status === 'empty');
+  for (const id of ids) {
+    const r = byId.get(id);
+    if (!isMissing(r)) continue;
+    const standIn = records.find(f => f.fallbackFor === r.id);
+    const standInHasData = !!standIn && DATA_PRESENT_STATUSES.includes(standIn.status) && (standIn.rows ?? 1) > 0;
+    add(r, standInHasData ? `${standIn!.name}, ${standIn!.version ?? 'version unknown'}` : undefined);
+    if (isMissing(standIn)) add(standIn);
   }
   return missing;
 }
@@ -54,7 +69,7 @@ export function missingSources(ids: readonly string[], records: readonly SourceR
           {{ missing.length === 1 ? 'A source this view reads did not load:' : missing.length + ' sources this view reads did not load:' }}
           @for (m of missing; track m.id; let last = $last) {
             <span class="sb-source" [attr.data-source-id]="m.id" [attr.data-status]="m.status" [title]="m.detail"
-              >{{ m.name }} ({{ m.status }}){{ last ? '. ' : ', ' }}</span>
+              >{{ m.name }} ({{ m.status }}){{ m.fallback ? ' - using ' + m.fallback : '' }}{{ last ? '. ' : ', ' }}</span>
           }
           Results that use them are incomplete.
         </span>
