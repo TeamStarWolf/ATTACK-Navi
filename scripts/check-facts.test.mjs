@@ -80,6 +80,19 @@ test('versions in other tables are not read as bundle versions', () => {
   assert.deepEqual(checkText(text, FACTS), []);
 });
 
+test('ATT&CK bundle versions in prose (THIRD_PARTY_NOTICES style) are checked', () => {
+  const ok = [
+    '| ATT&CK Enterprise 19.2 STIX 2.1 bundle | `src/assets/data/enterprise-attack.json` |',
+    '| ATT&CK for ICS 18.1 STIX 2.1 bundle | `src/assets/data/ics-attack.json` |',
+  ].join('\n');
+  assert.deepEqual(checkText(ok, FACTS), []);
+
+  const stale = checkText('ATT&CK Enterprise 18.1 STIX 2.1 bundle\n', FACTS, 'THIRD_PARTY_NOTICES.md');
+  assert.equal(stale.length, 1, JSON.stringify(stale));
+  assert.equal(stale[0].fact, 'bundleVersions.Enterprise ATT&CK');
+  assert.equal(stale[0].expected, '19.2');
+});
+
 test('fenced code, facts:ignore lines and ignore blocks are skipped', () => {
   const text = [
     '```text', '25 heatmap modes', '```',
