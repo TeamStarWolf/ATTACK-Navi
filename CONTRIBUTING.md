@@ -339,9 +339,9 @@ Add an option to the heatmap mode dropdown so users can select your mode from th
 
 ### Step 5: Update the Legend
 
-**File:** `src/app/components/legend/legend.component.ts`
+**File:** `src/app/models/heatmap-modes.ts`
 
-Add a label and description for your mode so the legend bar explains what the colors mean.
+The legend reads the `HEATMAP_MODES` registry, so describe your mode there: the question it answers, its rung (Known, Covered, Proven, or the Threat / Exposure dimension), the formula, the domains its sources cover, its source ids (`src/app/models/lens-sources.ts`), what zero means, and the colour ramp your cell colouring paints.
 
 ### Step 6: Add Tooltip Text
 

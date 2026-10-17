@@ -166,7 +166,7 @@ Components that render the ATT&CK matrix grid and its supporting UI.
 |----------|-------|
 | **Selector** | `app-legend` |
 | **File** | `src/app/components/legend/legend.component.ts` |
-| **Purpose** | Dynamic color-scale legend below the matrix. Maintains a `MODE_CONFIGS` record mapping all 24 `HeatmapMode` values to their label, color stops, and categorical/gradient flag. Automatically updates when the heatmap mode changes. |
+| **Purpose** | Lens legend in the matrix context strip. Renders the active mode's `HEATMAP_MODES` registry entry: rung badge, lens question, colour stops, domain line, sources with vintage, and what zero means. Updates when the heatmap mode, the domain or the loaded bundle changes. |
 | **Key I/O** | Subscribes to `FilterService.heatmapMode$` |
 
 ---
