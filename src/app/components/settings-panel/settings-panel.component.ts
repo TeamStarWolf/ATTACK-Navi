@@ -33,13 +33,20 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
   // E1.5 retired the 'scoring' tab (Scoring Weights); Display is the first tab.
   activeTab: 'display' | 'organization' | 'data' | 'integrations' = 'display';
 
-  readonly themes = [
-    { id: 'default',     label: 'Default',       colors: ['#d32f2f', '#e65100', '#f9a825', '#558b2f', '#1b5e20'] },
-    { id: 'redgreen',    label: 'Vivid',          colors: ['#dc2626', '#f97316', '#eab308', '#16a34a', '#15803d'] },
-    { id: 'blueorange',  label: 'Blue/Orange',    colors: ['#1d4ed8', '#0ea5e9', '#f59e0b', '#d97706', '#92400e'] },
-    { id: 'monochrome',  label: 'Monochrome',     colors: ['#111827', '#374151', '#6b7280', '#9ca3af', '#e5e7eb'] },
-    { id: 'accessible',  label: 'High Contrast',  colors: ['#cc0000', '#ff6600', '#ffcc00', '#006600', '#003300'] },
+  // Swatch labels only; the colours come from the one place the matrix reads
+  // them (SettingsService.COLOR_THEMES), so the preview always matches the ramp
+  // the matrix applies for each theme and cannot drift from a second copy.
+  private readonly themeLabels: ReadonlyArray<{ id: string; label: string }> = [
+    { id: 'default',    label: 'Default' },
+    { id: 'redgreen',   label: 'Vivid' },
+    { id: 'blueorange', label: 'Blue/Orange' },
+    { id: 'monochrome', label: 'Monochrome' },
+    { id: 'accessible', label: 'High Contrast' },
   ];
+
+  get themes(): { id: string; label: string; colors: string[] }[] {
+    return this.themeLabels.map(t => ({ ...t, colors: this.settingsService.COLOR_THEMES[t.id] ?? [] }));
+  }
 
   // Data tab info
   attackVersion = '';
