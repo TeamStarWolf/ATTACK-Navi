@@ -10,7 +10,8 @@ import { AttackCveService } from '../../services/attack-cve.service';
 import { ViewpointService } from '../../services/viewpoint.service';
 import { LibraryLayerService } from '../../services/library-layer.service';
 import { UserLayerService } from '../../services/user-layer.service';
-import { HEATMAP_MODES } from '../../models/heatmap-modes';
+import { HEATMAP_MODES, lensAvailability, unavailableLenses } from '../../models/heatmap-modes';
+import { LensCardService } from '../../services/lens-card.service';
 
 describe('MatrixControlsComponent', () => {
   let component: MatrixControlsComponent;
@@ -62,7 +63,7 @@ describe('MatrixControlsComponent', () => {
             setTechniqueQuery: jasmine.createSpy(),
             setHeatmapMode: jasmine.createSpy(),
         }},
-        { provide: DataService, useValue: { domain$: new BehaviorSubject(null) }},
+        { provide: DataService, useValue: { domain$: new BehaviorSubject(null), currentDomain$: new BehaviorSubject('enterprise') }},
         { provide: MatrixControlService, useValue: {
             multiSelectMode$: new BehaviorSubject(false),
             expandAll: jasmine.createSpy(),
@@ -214,5 +215,98 @@ describe('MatrixControlsComponent', () => {
     // The 'coverage' key now surfaces as "Mitigations" (mitigation is one lens,
     // not the app's headline); the key itself is unchanged.
     expect(component.heatmapShort).toBe('Mitigations mapped');
+  });
+
+  // E1.2 PR 2: lenses without data for the domain on screen are disabled with
+  // a stated reason, and every lens has a '?' that opens its definition card.
+  describe('lens availability and definition cards (E1.2)', () => {
+    const dataSvc = () => TestBed.inject(DataService) as unknown as { currentDomain$: BehaviorSubject<string> };
+    function openMenuIn(domain: string): HTMLElement {
+      dataSvc().currentDomain$.next(domain);
+      component.toggleViewMenu();
+      fixture.detectChanges();
+      return fixture.nativeElement;
+    }
+    const lensButton = (el: HTMLElement, mode: string): HTMLButtonElement =>
+      el.querySelector(`.lens-item[data-lens="${mode}"] .heatmap-mode-btn`) as HTMLButtonElement;
+
+    it('switching to ICS disables every lens whose domains[] lacks ics, each with an announced reason', () => {
+      const el = openMenuIn('ics');
+      const expected = unavailableLenses('ics');
+      expect(expected.length).toBe(23);
+      const disabled = Array.from(el.querySelectorAll<HTMLButtonElement>('.heatmap-groups .heatmap-mode-btn[aria-disabled="true"]'));
+      expect(disabled.length).toBe(expected.length);
+      for (const def of expected) {
+        const btn = lensButton(el, def.value);
+        expect(btn.getAttribute('aria-disabled')).withContext(def.value).toBe('true');
+        expect(btn.classList).withContext(def.value).toContain('unavailable');
+        expect(btn.textContent).withContext(def.value).toContain('n/a for ICS ATT&CK');
+        const reasonEl = el.querySelector('#' + btn.getAttribute('aria-describedby')) as HTMLElement;
+        expect(reasonEl).withContext(def.value).toBeTruthy();
+        expect(reasonEl.textContent!.trim()).withContext(def.value).toBe(lensAvailability(def, 'ics').reason!);
+        expect(btn.title).withContext(def.value).toBe(lensAvailability(def, 'ics').reason!);
+      }
+      for (const def of HEATMAP_MODES.filter((m) => m.domains.includes('ics'))) {
+        const btn = lensButton(el, def.value);
+        expect(btn.hasAttribute('aria-disabled')).withContext(def.value).toBeFalse();
+        expect(btn.hasAttribute('aria-describedby')).withContext(def.value).toBeFalse();
+      }
+      expect(el.querySelector('.lens-na-summary')!.textContent).toContain('23 of 33 lenses have no ICS ATT&CK data');
+      expect(el.querySelector('.lens-na-summary')!.getAttribute('role')).toBe('status');
+    });
+
+    it('a disabled lens cannot be picked; an available one can', () => {
+      const filterSvc = TestBed.inject(FilterService) as any;
+      const el = openMenuIn('ics');
+      lensButton(el, 'sigma').click();
+      expect(filterSvc.setHeatmapMode).not.toHaveBeenCalled();
+      expect(component.showViewMenu).toBeTrue();
+      lensButton(el, 'frequency').click();
+      expect(filterSvc.setHeatmapMode).toHaveBeenCalledWith('frequency');
+    });
+
+    it('re-enables the lenses on the way back to Enterprise', () => {
+      const el = openMenuIn('ics');
+      dataSvc().currentDomain$.next('enterprise');
+      fixture.detectChanges();
+      const disabled = Array.from(el.querySelectorAll('.heatmap-groups .heatmap-mode-btn[aria-disabled="true"]'));
+      expect(disabled.map((b) => b.closest('.lens-item')!.getAttribute('data-lens'))).toEqual(['f3-origin']);
+    });
+
+    it('marks the trigger when the active lens is n/a here', () => {
+      const filterSvc = TestBed.inject(FilterService) as any;
+      filterSvc.heatmapMode$.next('sigma');
+      openMenuIn('ics');
+      expect(component.activeLensUnavailable).toBeTrue();
+      expect((fixture.nativeElement.querySelector('.heatmap-btn') as HTMLElement).textContent).toContain('(n/a)');
+    });
+
+    it("gives every lens a '?' that opens its definition card, disabled lenses included", () => {
+      const cards = TestBed.inject(LensCardService);
+      const el = openMenuIn('ics');
+      const helps = el.querySelectorAll<HTMLButtonElement>('.lens-item .lens-help-btn');
+      expect(helps.length).toBe(HEATMAP_MODES.length);
+      const sigmaHelp = el.querySelector('.lens-item[data-lens="sigma"] .lens-help-btn') as HTMLButtonElement;
+      expect(sigmaHelp.getAttribute('aria-label')).toBe('What is the Sigma Rules lens?');
+      expect(sigmaHelp.getAttribute('aria-haspopup')).toBe('dialog');
+      sigmaHelp.click();
+      expect(cards.openMode()).toBe('sigma');
+      cards.close();
+    });
+
+    it('disables featured lenses with the same reason', () => {
+      const vp = TestBed.inject(ViewpointService) as any;
+      vp.viewpoint$.next({
+        id: 'vuln', label: 'Vulnerability & Exposure', short: 'Vuln', icon: 'shield-alert',
+        tagline: '', defaultLens: 'kev', homeRoute: '/exposure',
+        featuredLenses: ['kev', 'frequency'],
+      });
+      const el = openMenuIn('ics');
+      const [kev, freq] = Array.from(el.querySelectorAll<HTMLButtonElement>('.featured-lens-btn'));
+      expect(kev.getAttribute('aria-disabled')).toBe('true');
+      const reason = el.querySelector('#' + kev.getAttribute('aria-describedby'))!.textContent!.trim();
+      expect(reason).toBe(lensAvailability(HEATMAP_MODES.find((m) => m.value === 'kev')!, 'ics').reason!);
+      expect(freq.hasAttribute('aria-disabled')).toBeFalse();
+    });
   });
 });

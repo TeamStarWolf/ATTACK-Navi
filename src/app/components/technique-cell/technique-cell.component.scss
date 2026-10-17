@@ -124,6 +124,11 @@
     opacity: 0.18;
   }
 
+  // E1.2: the active lens has no data for this domain (4.1 'n/a in this domain').
+  &.lens-na {
+    background-image: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 5px);
+  }
+
   &.search-dimmed {
     opacity: 0.15;
     filter: grayscale(0.8);

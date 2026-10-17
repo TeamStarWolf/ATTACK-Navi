@@ -22,6 +22,10 @@ import { MatrixControlsComponent } from './matrix-controls.component';
 import { LegendComponent } from '../../components/legend/legend.component';
 import { QuickFiltersComponent } from '../../components/quick-filters/quick-filters.component';
 import { FilterChipsComponent } from '../../components/filter-chips/filter-chips.component';
+import { LensDefinitionCardComponent } from '../../components/lens-definition-card/lens-definition-card.component';
+import { FilterService, HeatmapMode } from '../../services/filter.service';
+import { LensCardService } from '../../services/lens-card.service';
+import { LensAvailability, heatmapModeDef, lensAvailability } from '../../models/heatmap-modes';
 import {
   TacticSummaryComponent,
   TacticSummaryData,
@@ -47,6 +51,7 @@ import {
     QuickFiltersComponent,
     FilterChipsComponent,
     TacticSummaryComponent,
+    LensDefinitionCardComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './matrix-page.component.html',
@@ -56,6 +61,8 @@ export class MatrixPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly dataService = inject(DataService);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly filterService = inject(FilterService);
+  private readonly lensCards = inject(LensCardService);
 
   @ViewChild(MatrixComponent) matrixRef?: MatrixComponent;
   @ViewChild(TacticSummaryComponent) tacticSummary?: TacticSummaryComponent;
@@ -64,6 +71,23 @@ export class MatrixPageComponent implements OnInit {
   loading = true;
   error: string | null = null;
   currentDomain: AttackDomain = 'enterprise';
+  heatmapMode: HeatmapMode = 'unified';
+
+  /**
+   * The active lens's availability in the domain on screen (E1.2). When it has
+   * no data here the matrix shows every cell as 'n/a in this domain' (hatched)
+   * and this banner says why, so a missing source never reads as all zeros.
+   */
+  get lensNa(): (LensAvailability & { label: string }) | null {
+    const def = heatmapModeDef(this.heatmapMode);
+    if (!def) return null;
+    const a = lensAvailability(def, this.currentDomain);
+    return a.available ? null : { ...a, label: def.label };
+  }
+
+  openLensCard(event: Event): void {
+    this.lensCards.open(this.heatmapMode, event.currentTarget);
+  }
 
   /** Legend/quick-filters/stats strip — collapsed by default, sticky choice. */
   contextStripOpen = localStorage.getItem('matrix-context-strip') === 'open';
@@ -91,6 +115,10 @@ export class MatrixPageComponent implements OnInit {
     });
     this.dataService.currentDomain$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((d) => {
       this.currentDomain = d;
+      this.cdr.markForCheck();
+    });
+    this.filterService.heatmapMode$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((m) => {
+      this.heatmapMode = m;
       this.cdr.markForCheck();
     });
   }

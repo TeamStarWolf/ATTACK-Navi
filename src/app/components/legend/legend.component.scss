@@ -76,6 +76,7 @@
 
 .legend-question,
 .legend-domain,
+.legend-na-reason,
 .legend-sources,
 .legend-zero {
   margin: 0;
@@ -104,5 +105,28 @@
     border-radius: 999px;
     border: 1px solid var(--border-default);
     background: repeating-linear-gradient(45deg, var(--text-muted) 0 1px, transparent 1px 4px);
+  }
+}
+
+.legend-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.lens-help-btn {
+  padding: 1px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--bg-soft);
+  border: 1px solid var(--border-default);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--text-primary);
   }
 }
