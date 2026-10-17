@@ -410,13 +410,16 @@ test.describe('stop shipping broken or misleading output (plan E1.6)', () => {
     const panel = page.locator('app-compliance-panel');
     const tabs = panel.locator('.tab-bar .tab-btn');
     await expect(tabs.first()).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    // The tab bar order (compliance-mapping-meta.ts COMPLIANCE_TABS).
+    const keys = ['cis', 'aws', 'azure', 'gcp', 'nist', 'cri', 'csa-ccm', 'm365-ctrl', 'soc2', 'iso27001', 'pci'];
     const count = await tabs.count();
-    expect(count).toBe(11);
+    expect(count).toBe(keys.length);
     const stamps: string[] = [];
     for (let i = 0; i < count; i++) {
       await tabs.nth(i).click();
       const stamp = page.getByTestId('mapping-stamp');
-      await expect(stamp).toBeVisible();
+      // Wait for this tab's stamp, not the previous tab's still on screen.
+      await expect(stamp).toHaveAttribute('data-tab', keys[i]);
       stamps.push((await stamp.textContent())!.trim());
     }
     expect(stamps[0]).toMatch(/^Source withdrawn upstream: /);
