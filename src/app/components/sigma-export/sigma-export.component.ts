@@ -32,6 +32,8 @@ export class SigmaExportComponent implements OnInit, OnDestroy {
   selectedMode: SigmaExportMode = 'current';
   previewYaml = '';
   techniqueCount = 0;
+  /** Selected techniques the generator has a template for (plan E1.6). */
+  templateCount = 0;
   customTechIds: string[] = [];
 
   private subs = new Subscription();
@@ -61,16 +63,23 @@ export class SigmaExportComponent implements OnInit, OnDestroy {
   generatePreview(): void {
     const techs = this.getTechniquesForMode();
     this.techniqueCount = techs.length;
-    const previewTechs = techs.slice(0, 3);
-    this.previewYaml = previewTechs.length > 0
-      ? this.sigmaService.generateRulesForTechniques(previewTechs)
-      : '# No techniques found for the selected mode.';
+    const withTemplate = techs.length ? techs.filter(t => this.sigmaService.hasTemplate(t)) : [];
+    this.templateCount = withTemplate.length;
+    if (techs.length === 0) {
+      this.previewYaml = '# No techniques found for the selected mode.';
+    } else if (withTemplate.length === 0) {
+      this.previewYaml = '# None of the selected techniques has a Sigma template.';
+    } else {
+      // Preview the first three templates, not the first three techniques:
+      // most techniques have no template and would preview as nothing.
+      this.previewYaml = this.sigmaService.generateRulesForTechniques(withTemplate.slice(0, 3));
+    }
     this.cdr.markForCheck();
   }
 
   exportAll(): void {
     const techs = this.getTechniquesForMode();
-    if (techs.length === 0) return;
+    if (techs.length === 0 || this.templateCount === 0) return;
     this.sigmaService.exportRules(techs);
   }
 
@@ -120,6 +129,6 @@ export class SigmaExportComponent implements OnInit, OnDestroy {
   }
 
   get countLabel(): string {
-    return this.techniqueCount === 1 ? '1 technique' : `${this.techniqueCount} techniques`;
+    return this.templateCount === 1 ? '1 template' : `${this.templateCount} templates`;
   }
 }

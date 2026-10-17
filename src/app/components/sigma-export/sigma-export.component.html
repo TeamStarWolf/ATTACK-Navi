@@ -1,14 +1,19 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-<section class="page-panel sigma-panel" aria-label="Sigma Rule Export">
+<section class="page-panel sigma-panel" aria-label="Sigma Template Export">
     <div class="sigma-header">
       <span class="sigma-title-icon">Σ</span>
-      <h2 class="sigma-title">Sigma Rule Export</h2>
+      <h2 class="sigma-title">Sigma Template Export</h2>
     </div>
 
     <div class="sigma-body">
+      <p class="sigma-template-note">
+        Templates, not rules: untested starting points at level informational, for the few
+        techniques a built-in pattern fits. Check each one against your own telemetry before use.
+      </p>
+
       <div class="sigma-section">
-        <div class="sigma-section-label">Export rules for:</div>
+        <div class="sigma-section-label">Export templates for:</div>
         <div class="sigma-mode-options">
           <label class="sigma-radio-label">
             <input
@@ -43,12 +48,12 @@
         </div>
         <div class="sigma-count-info">
           <span class="sigma-count-badge">{{ techniqueCount }}</span>
-          <span class="sigma-count-text">{{ techniqueCount === 1 ? 'technique' : 'techniques' }} selected</span>
+          <span class="sigma-count-text">{{ techniqueCount === 1 ? 'technique' : 'techniques' }} selected, {{ templateCount }} with a template</span>
         </div>
       </div>
 
       <div class="sigma-section">
-        <div class="sigma-section-label">Preview (first 3 rules):</div>
+        <div class="sigma-section-label">Preview (first 3 templates):</div>
         <pre class="sigma-preview">{{ previewYaml }}</pre>
       </div>
     </div>
@@ -56,9 +61,9 @@
     <div class="sigma-footer">
       <button
         class="sigma-export-btn"
-        [disabled]="techniqueCount === 0"
+        [disabled]="templateCount === 0"
         (click)="exportAll()"
-        [title]="techniqueCount === 0 ? 'No techniques to export' : 'Download Sigma rules as YAML'"
+        [title]="templateCount === 0 ? 'No templates to export' : 'Download Sigma templates as YAML'"
       >
         ⬇ Export {{ countLabel }} as YAML
       </button>
