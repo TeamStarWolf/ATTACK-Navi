@@ -159,7 +159,7 @@ export class TimelineService {
     const snapshots = this.snapshotsSubject.value;
     if (!snapshots.length) return;
 
-    const header = 'ID,Label,Date,Total Techniques,Covered Techniques,Coverage %,Implemented,In Progress,Planned,Not Started,Notes';
+    const header = 'ID,Label,Date,Total Techniques,Mapped Techniques,Mitigation-mapped %,Implemented,In Progress,Planned,Not Started,Notes';
     const rows = snapshots.map(s => csvRow([
       s.id,
       s.label,

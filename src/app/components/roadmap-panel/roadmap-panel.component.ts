@@ -164,7 +164,7 @@ export class RoadmapPanelComponent implements OnInit, OnDestroy {
 
   exportCsv(): void {
     const rows = [
-      ['Rank', 'ID', 'Mitigation', 'Techniques Covered', 'Uncovered', 'Avg Groups', 'Impact Score', 'Effort', 'Priority Score', 'Status', 'Tactics'],
+      ['Rank', 'ID', 'Mitigation', 'Techniques Mapped', 'Unmapped', 'Avg Groups', 'Impact Score', 'Effort', 'Priority Score', 'Status', 'Tactics'],
       ...this.sortedRoadmap.map((item, i) => [
         i + 1,
         item.mitigation.attackId,

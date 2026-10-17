@@ -61,6 +61,6 @@
     "hash": "/matrix?lens=posture&tech=T1059.001&dom=enterprise&v=20.0"
   },
   "honesty": {
-    "forbiddenStrings": ["covered", "defended", "LOW RISK"]
+    "forbiddenStrings": ["covered", "defended", "LOW RISK", "protected", "Coverage Score"]
   }
 }

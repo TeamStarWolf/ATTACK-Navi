@@ -16,7 +16,7 @@
 | 5 | `software` | Software | Software | Gradient (5) | `Domain.softwareByTechnique` | Count of ATT&CK software entries using this technique |
 | 6 | `campaign` | Campaign | Campaigns | Gradient (5) | `Domain.campaignsByTechnique` | Count of ATT&CK campaigns using this technique |
 | 7 | `status` | Status | Status | Categorical (5) | `ImplementationService.status$` | Best implementation status across a technique's mitigations |
-| 8 | `controls` | Controls | Controls | Categorical (3) | `ControlsService` | Whether technique is covered/planned/none by security controls |
+| 8 | `controls` | Controls | Controls | Categorical (3) | `ControlsService` | Whether a declared security control reaches the technique: covered (self-attested), planned or none |
 | 9 | `kev` | KEV | KEV CVEs | Gradient (4) | `CveService.kevTechScores$` | Count of CISA KEV CVEs mapped to this technique |
 | 10 | `d3fend` | D3FEND | D3FEND | Gradient (5) | `D3fendService` | Count of D3FEND countermeasure techniques |
 | 11 | `atomic` | Atomic | Atomic Tests | Gradient (5) | `AtomicService` | Count of Atomic Red Team test cases |
@@ -201,7 +201,7 @@ To add a 25th heatmap mode, modify these seven files in order:
 | **Data Source** | `Domain.campaignsByTechnique` |
 | **Score Computation** | Count of ATT&CK campaign entries that used this technique. |
 | **Color Scale** | `#eceff1` (0) -> `#ce93d8` (1) -> `#ab47bc` (2) -> `#7b1fa2` (3) -> `#4a148c` (4+) |
-| **Use Case** | Highlight techniques that appear across multiple real-world campaigns. High-campaign techniques have demonstrated operational use and represent proven attack patterns. Purple gradient distinguishes it from the threat-group views. |
+| **Use Case** | Highlight techniques that appear across multiple real-world campaigns. High-campaign techniques have demonstrated operational use and represent established attack patterns. Purple gradient distinguishes it from the threat-group views. |
 
 ---
 
@@ -228,8 +228,8 @@ To add a 25th heatmap mode, modify these seven files in order:
 | **Icon** | (lock) |
 | **Legend Label** | Controls |
 | **Data Source** | `ControlsService` |
-| **Score Computation** | Categorical (3 states). Checks whether the technique has at least one security control marked "implemented" (covered), at least one marked "planned" (planned), or none at all. |
-| **Color Scale** | `#1c2b30` (none) -> `#1565c0` (planned) -> `#00c853` (covered) |
+| **Score Computation** | Categorical (3 states). Checks whether the technique has at least one security control marked "implemented" (covered, self-attested), at least one marked "planned" (planned), or none at all. |
+| **Color Scale** | `#1c2b30` (none) -> `#1565c0` (planned) -> `#00c853` (covered, self-attested) |
 | **Scale Type** | Categorical |
 | **Use Case** | Visualize which techniques are addressed by your organization's security control inventory. Pair with the Controls panel to manage control-to-technique mappings across NIST 800-53, CIS, ISO 27001, and custom frameworks. |
 
@@ -363,7 +363,7 @@ To add a 25th heatmap mode, modify these seven files in order:
 | | - Atomic tests (weight 10): `min(atomicCount / 3, 1) * 10` |
 | | Threat intel (groups, software, campaigns) and KEV are not inputs: the Threat lenses (Frequency, Selected adversaries, Intelligence, KEV, Threat-weighted mapping gap) show them. A technique's Reference depth does not change when the number of groups using it changes. |
 | **Color Scale** | `#0e1b30` (minimal, 0--15) -> `#143a5c` (thin, 16--30) -> `#1f6aa8` (some, 31--50) -> `#2f95d8` (51--65) -> `#38bdf8` (deep, 66--80) -> `#a78bfa` (deepest, 81--100) |
-| **Use Case** | The default lens: how much defensive reference material (Known rung) exists for each technique. It is not a posture or risk score and says nothing about what is deployed. |
+| **Use Case** | The default lens: how much defensive reference material (Known rung) exists for each technique. It is not a posture measure and says nothing about what is deployed. |
 
 ---
 

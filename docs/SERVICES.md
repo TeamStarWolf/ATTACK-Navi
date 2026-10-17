@@ -76,7 +76,7 @@ full list of 20 BehaviorSubjects and 7 derived observables.
 | `removeMitigationFilter(mitigation)` | Remove a mitigation from the active filter set |
 | `setTechniqueQuery(q)` | Set the free-text technique search query |
 | `setSortMode(mode)` | Set matrix sort order (`'alpha'` or `'coverage'`) |
-| `toggleDimUncovered()` | Toggle dimming of uncovered techniques |
+| `toggleDimUncovered()` | Toggle dimming of unmapped techniques |
 | `setPlatformFilter(platform)` | Set single-platform filter |
 | `togglePlatform(platform)` | Toggle a platform in multi-platform filter |
 | `toggleTacticVisibility(tacticId)` | Show/hide a tactic column |
@@ -1105,7 +1105,7 @@ full list of 20 BehaviorSubjects and 7 derived observables.
 | `getLatest()` | Return the most recent snapshot |
 | `exportCsv()` | Download snapshots as a CSV file |
 
-**CoverageSnapshot fields:** total/covered technique counts, coverage percentage, per-tactic
+**CoverageSnapshot fields:** total/mitigation-mapped technique counts, mitigation-mapped percentage, per-tactic
 breakdown, implementation status counts.
 
 **Dependencies:** None

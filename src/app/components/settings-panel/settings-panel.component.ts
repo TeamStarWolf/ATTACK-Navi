@@ -375,7 +375,7 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
     const domain = this.dataService.getCurrentDomain();
     if (!domain) return;
     const statusMap = this.implService.getStatusMap();
-    const rows: string[] = ['Mitigation ID,Mitigation Name,Status,Covered Techniques'];
+    const rows: string[] = ['Mitigation ID,Mitigation Name,Status,Mapped Techniques'];
     for (const mit of domain.mitigations) {
       const techniques = domain.techniquesByMitigation.get(mit.id) ?? [];
       const status = statusMap.get(mit.id) ?? 'not-tracked';

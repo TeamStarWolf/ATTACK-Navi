@@ -8,6 +8,7 @@ A build is published to GitHub Pages at <https://teamstarwolf.github.io/ATTACK-N
 
 ## Screenshots
 
+<!-- truth-vocab-allow-next-line retired-label -- historical: names the old default heatmap label that these screenshots predate -->
 Captured on 2026-08-15 with `scripts/capture-screenshots.mjs`, in the dark theme. They predate the Status workspace, the grouped nav rail, the Unified Coverage default heatmap, and the toolbar rename from "ATT&CK NAV" to "ATT&CK Navi". The two images below are the current ones; `screenshots/attack-navi-live.png` is the uncropped matrix capture from the same run. The repository does not keep a social-preview image: set one in the repository's Settings > Social preview from a fresh capture, since the previous copy advertised an old Angular version and mode count.
 
 ![Matrix with the technique sidebar open for T1590](screenshots/live2.png)
@@ -123,7 +124,7 @@ Several of these are community repositories rather than vendor or MITRE datasets
 
 ### Curated content
 
-Some content is written and maintained in this repository rather than derived from an upstream dataset: the Zeek, Suricata and YARA templates, Wazuh mappings, IR playbooks, offensive tools, C2, BloodHound, Azure identity, event logging, the IOC feed's technique associations, the PayloadsAllTheThings folder-to-technique mapping, and the SOC 2, ISO and PCI compliance mapper. Each of these services starts with a `PROVENANCE` comment. In the sidebar, the payloads, offensive tools, C2, BloodHound, Azure identity, logging, IOC feed, Wazuh XDR, SIEM and threat hunting sections carry a "curated" chip. The Wazuh heatmap mode is labeled "Wazuh stock rules (curated)". IR playbooks and the Zeek, Suricata and YARA templates are not labeled as curated in the UI. [DATA_SOURCE_SCORECARD.md](DATA_SOURCE_SCORECARD.md) and [MAPPINGS_CHEAT_SHEET.md](MAPPINGS_CHEAT_SHEET.md) have more detail.
+Some content is written and maintained in this repository rather than derived from an upstream dataset: the Zeek, Suricata and YARA templates, Wazuh mappings, IR playbooks, offensive tools, C2, BloodHound, Azure identity, event logging, the IOC feed's technique associations, the PayloadsAllTheThings folder-to-technique mapping, and the SOC 2, ISO and PCI compliance mapper. Each of these services starts with a `PROVENANCE` comment. In the sidebar, the payloads, offensive tools, C2, BloodHound, Azure identity, logging, IOC feed, Wazuh stock rules (curated), SIEM and threat hunting sections carry a "curated" chip. The Wazuh heatmap mode is labeled "Wazuh stock rules (curated)". IR playbooks and the Zeek, Suricata and YARA templates are not labeled as curated in the UI. [DATA_SOURCE_SCORECARD.md](DATA_SOURCE_SCORECARD.md) and [MAPPINGS_CHEAT_SHEET.md](MAPPINGS_CHEAT_SHEET.md) have more detail.
 
 ## Exports
 

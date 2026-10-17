@@ -115,7 +115,7 @@ export const HEATMAP_MODES: readonly HeatmapModeDef[] = [
   { value: 'controls', label: 'Controls', short: 'Controls', group: 'Coverage & Posture',
     question: 'Which techniques do the security controls you declared address?',
     rung: 'Covered', qualifier: 'self-attested',
-    formula: 'Covered when an implemented control you declared lists an ATT&CK mitigation mapped to the technique; planned when only planned controls do.',
+    formula: 'Covered (self-attested) when an implemented control you declared lists an ATT&CK mitigation mapped to the technique; planned when only planned controls do.',
     domains: ALL_ATTACK, sources: ['attack-bundle', 'workspace-local'],
     zeroMeaning: 'No declared control reaches this technique. Not known to us, not safe.',
     ramp: stops('categorical', [['#1c2b30', 'none'], ['#1565c0', 'planned'], ['#00c853', 'covered']]) },

@@ -2,7 +2,7 @@
 
 ## What It Is
 
-ATTACK-Navi is a browser-based cybersecurity workbench built on top of the MITRE ATT&CK framework. The application is designed to help analysts move from a technique-centric view into richer operational questions: what is covered, what is exposed, what intelligence is relevant, and what evidence exists for detection or control depth.
+ATTACK-Navi is a browser-based cybersecurity workbench built on top of the MITRE ATT&CK framework. The application is designed to help analysts move from a technique-centric view into richer operational questions: what reference is mapped, what is exposed, what intelligence is relevant, and what evidence exists for detection or control depth.
 
 The project is intentionally broader than a traditional ATT&CK Navigator layer viewer. It treats the ATT&CK matrix as the entry point to a multi-surface analysis environment rather than the final product.
 
