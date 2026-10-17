@@ -66,7 +66,6 @@ export class ToolbarComponent implements OnInit, OnDestroy {
 
   isLightMode = false;
 
-  attackVersion = '';
   attackDomain: AttackDomain = 'enterprise';
   /** "Check for ATT&CK update" state for the domain on screen (decision D2). */
   update: AttackUpdateState = { status: 'idle' };
@@ -96,8 +95,7 @@ export class ToolbarComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.subs.add(this.themeService.isLight$.subscribe((v) => { this.isLightMode = v; this.cdr.markForCheck(); }));
     this.subs.add(this.dataService.loading$.subscribe((l) => { this.loading = l; this.cdr.markForCheck(); }));
-    this.subs.add(this.dataService.domain$.subscribe((d) => {
-      this.attackVersion = d?.attackVersion ?? '';
+    this.subs.add(this.dataService.domain$.subscribe(() => {
       this.pinnedVersion = this.dataService.pinnedVersion();
       this.cdr.markForCheck();
     }));
