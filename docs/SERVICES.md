@@ -137,8 +137,6 @@ full list of 20 BehaviorSubjects and 7 derived observables.
 | `current` | Getter returning the current `AppSettings` snapshot |
 | `update(partial)` | Merge partial settings and persist |
 | `setNvdApiKey(key)` | Update the NVD API key |
-| `updateWeights(weights)` | Update scoring weights (auto-normalized to sum 100) |
-| `getNormalizedWeights()` | Return weights normalized to sum to 100 |
 | `getCoverageColors()` | Return the 5-color array for the active heatmap theme |
 
 **Dependencies:** None (standalone)

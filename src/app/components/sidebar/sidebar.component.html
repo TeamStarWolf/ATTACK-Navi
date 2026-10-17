@@ -193,14 +193,19 @@
           </div>
         }
 
-        <!-- Coverage Score -->
-        <div class="coverage-score-card upgrade-section-block">
-          <div class="score-circle" [style.--score-color]="coverageColor">
-            <span class="score-number">{{ coverageScore }}</span>
-            <span class="score-label">/ 100</span>
+        <!-- Reference sources (Known rung, plan 4.1). E1.5 replaced the weighted
+             0-100 score, its red-to-green colour and its user-set Scoring Weights
+             with a plain count: how many of the reference sources below map this
+             technique. Reference data, no claim about your environment. -->
+        <div class="coverage-score-card upgrade-section-block"
+             title="Known rung: reference sources that map this technique. It makes no claim about your environment.">
+          <div class="score-circle">
+            <span class="score-number">{{ referenceSourcesMapped }}</span>
+            <span class="score-label">of {{ referenceSources.length }}</span>
           </div>
           <div class="score-breakdown">
-            <div class="score-title">Reference depth score</div>
+            <div class="score-title">Reference sources mapped</div>
+            <div class="score-rung">KNOWN · reference data</div>
             <div class="score-items">
               <span class="score-item" [class.active]="carAnalytics.length > 0">
                 🔍 {{ carAnalytics.length }} CAR

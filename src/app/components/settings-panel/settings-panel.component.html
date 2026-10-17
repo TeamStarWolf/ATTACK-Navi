@@ -18,11 +18,6 @@
       <div class="tab-bar">
         <button
           class="tab-btn"
-          [class.active]="activeTab === 'scoring'"
-          (click)="setTab('scoring')"
-        >Scoring Weights</button>
-        <button
-          class="tab-btn"
           [class.active]="activeTab === 'display'"
           (click)="setTab('display')"
         >Display</button>
@@ -45,159 +40,6 @@
 
       <!-- Tab content -->
       <div class="tab-content">
-
-        <!-- Scoring Weights Tab -->
-        @if (activeTab === 'scoring') {
-          <div class="section">
-            <p class="section-desc">
-              These weights determine the reference depth score shown in the technique sidebar for each technique.
-              Adjust each dimension to reflect your organization's priorities.
-            </p>
-
-            <div class="weights-form">
-
-              <!-- Mitigations -->
-              <div class="weight-row">
-                <div class="weight-header">
-                  <span class="weight-label">Mitigations</span>
-                  <span class="weight-sublabel">ATT&amp;CK mitigations mapped to this technique</span>
-                </div>
-                <div class="settings-slider">
-                  <input
-                    class="slider-input"
-                    type="range"
-                    min="0"
-                    max="60"
-                    step="1"
-                    [(ngModel)]="settings.scoringWeights.mitigations"
-                    (ngModelChange)="onWeightChange()"
-                  />
-                  <span class="slider-value">{{ settings.scoringWeights.mitigations }}</span>
-                </div>
-              </div>
-
-              <!-- CAR Analytics -->
-              <div class="weight-row">
-                <div class="weight-header">
-                  <span class="weight-label">CAR Analytics</span>
-                  <span class="weight-sublabel">MITRE Cyber Analytics Repository detections</span>
-                </div>
-                <div class="settings-slider">
-                  <input
-                    class="slider-input"
-                    type="range"
-                    min="0"
-                    max="40"
-                    step="1"
-                    [(ngModel)]="settings.scoringWeights.car"
-                    (ngModelChange)="onWeightChange()"
-                  />
-                  <span class="slider-value">{{ settings.scoringWeights.car }}</span>
-                </div>
-              </div>
-
-              <!-- Atomic Red Team -->
-              <div class="weight-row">
-                <div class="weight-header">
-                  <span class="weight-label">Atomic Red Team</span>
-                  <span class="weight-sublabel">Atomic Red Team test coverage</span>
-                </div>
-                <div class="settings-slider">
-                  <input
-                    class="slider-input"
-                    type="range"
-                    min="0"
-                    max="30"
-                    step="1"
-                    [(ngModel)]="settings.scoringWeights.atomic"
-                    (ngModelChange)="onWeightChange()"
-                  />
-                  <span class="slider-value">{{ settings.scoringWeights.atomic }}</span>
-                </div>
-              </div>
-
-              <!-- D3FEND -->
-              <div class="weight-row">
-                <div class="weight-header">
-                  <span class="weight-label">D3FEND</span>
-                  <span class="weight-sublabel">MITRE D3FEND countermeasures</span>
-                </div>
-                <div class="settings-slider">
-                  <input
-                    class="slider-input"
-                    type="range"
-                    min="0"
-                    max="30"
-                    step="1"
-                    [(ngModel)]="settings.scoringWeights.d3fend"
-                    (ngModelChange)="onWeightChange()"
-                  />
-                  <span class="slider-value">{{ settings.scoringWeights.d3fend }}</span>
-                </div>
-              </div>
-
-              <!-- NIST Controls -->
-              <div class="weight-row">
-                <div class="weight-header">
-                  <span class="weight-label">NIST Controls</span>
-                  <span class="weight-sublabel">NIST 800-53 Rev5 control mappings</span>
-                </div>
-                <div class="settings-slider">
-                  <input
-                    class="slider-input"
-                    type="range"
-                    min="0"
-                    max="20"
-                    step="1"
-                    [(ngModel)]="settings.scoringWeights.nist"
-                    (ngModelChange)="onWeightChange()"
-                  />
-                  <span class="slider-value">{{ settings.scoringWeights.nist }}</span>
-                </div>
-              </div>
-
-              <!-- Totals row -->
-              <div class="weights-footer">
-                <div
-                  class="weights-total"
-                  [class.weights-ok]="weightsTotal === 100"
-                  [class.weights-bad]="weightsTotal !== 100"
-                >
-                  Total: {{ weightsTotal }} / 100
-                  @if (weightsTotal === 100) {
-                    <span class="total-icon">✓</span>
-                  } @else {
-                    <span class="total-icon">⚠</span>
-                  }
-                </div>
-                <button class="normalize-btn" (click)="autoNormalize()" title="Adjust weights proportionally to sum to 100">
-                  Auto-normalize to 100
-                </button>
-              </div>
-
-              <!-- Sample preview -->
-              <div class="score-preview">
-                <div class="preview-label">Preview: Sample technique score</div>
-                <div class="preview-desc">
-                  (3 mitigations, has CAR analytics, has Atomic tests, no D3FEND, has NIST controls)
-                </div>
-                <div class="preview-score-wrap">
-                  <div class="preview-bar-track">
-                    <div class="preview-bar-fill" [style.width.%]="sampleCoverageScore"></div>
-                  </div>
-                  <span class="preview-score-val" [class.score-green]="sampleCoverageScore >= 75" [class.score-orange]="sampleCoverageScore >= 50 && sampleCoverageScore < 75" [class.score-red]="sampleCoverageScore < 50">
-                    {{ sampleCoverageScore }}%
-                  </span>
-                </div>
-              </div>
-
-            </div>
-
-            <div class="section-actions">
-              <button class="btn-reset" (click)="resetToDefaults()">Reset All to Defaults</button>
-            </div>
-          </div>
-        }
 
         <!-- Display Tab -->
         @if (activeTab === 'display') {
@@ -436,6 +278,11 @@
                   </div>
                 </label>
               </div>
+            </div>
+
+            <!-- E1.5: moved here from the retired Scoring Weights tab. -->
+            <div class="section-actions">
+              <button class="btn-reset" (click)="resetToDefaults()">Reset All to Defaults</button>
             </div>
           </div>
         }

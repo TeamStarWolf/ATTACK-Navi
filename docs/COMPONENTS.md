@@ -1,6 +1,6 @@
 # Component Catalog
 
-> Auto-generated reference for the Angular components in the MITRE ATT&CK Navi.
+> Auto-generated reference for the Angular components in ATTACK-Navi.
 > Each component is standalone and uses `ChangeDetectionStrategy.OnPush`.
 >
 > **v0.8.0 note:** the "Panel ID" column below is historical — panels are now
@@ -62,7 +62,7 @@
 | 44 | `app-roadmap-panel` | Tools | `roadmap` | Auto-generated quarterly implementation roadmap |
 | 45 | `app-report-panel` | Tools | `report` | Executive summary report with export to clipboard/HTML |
 | 46 | `app-changelog-panel` | Tools | `changelog` | ATT&CK release changelog viewer |
-| 47 | `app-settings-panel` | Settings | `settings` | Application settings (scoring weights, theme, integrations) |
+| 47 | `app-settings-panel` | Settings | `settings` | Application settings (display, organization, data, integrations) |
 | 48 | `app-keyboard-help` | Utility | -- | Keyboard shortcut reference overlay (toggle with `?`) |
 | 49 | `app-data-health` | Utility | -- | Inline data-source health ribbon (loaded/loading/failed dots) |
 | 50 | `app-dashboard-panel` | Utility | `dashboard` | Executive dashboard with KPIs, tactic bars, and trend data |

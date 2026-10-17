@@ -3,7 +3,7 @@
 import { TestBed } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
 import { DataService } from './data.service';
-import { FilterService } from './filter.service';
+import { DEFAULT_HEATMAP_MODE, FilterService } from './filter.service';
 
 describe('FilterService', () => {
   let service: FilterService;
@@ -24,6 +24,23 @@ describe('FilterService', () => {
     service = TestBed.inject(FilterService);
   });
 
+  // E1.5 (D4): a fresh profile opens on Prevalence, a Threat lens, never on
+  // Reference depth ('unified') or a posture lens.
+  describe('default lens (E1.5, D4)', () => {
+    it('starts on Prevalence (heat=frequency)', () => {
+      expect(DEFAULT_HEATMAP_MODE).toBe('frequency');
+      expect(service.getStateSnapshot().heatmapMode).toBe('frequency');
+    });
+
+    it('leaves the default out of the URL and writes any other lens, Reference depth included', () => {
+      expect(service.serializeUrlState()['heat']).toBeUndefined();
+      service.setHeatmapMode('unified');
+      expect(service.serializeUrlState()['heat']).toBe('unified');
+      service.setHeatmapMode('frequency');
+      expect(service.serializeUrlState()['heat']).toBeUndefined();
+    });
+  });
+
   describe('applyUrlState validation', () => {
     const apply = (query: string) => service.applyUrlState(new URLSearchParams(query));
 
@@ -38,9 +55,9 @@ describe('FilterService', () => {
       // A retired or mistyped mode used to put the matrix in an unknown mode with
       // the wrong legend and none of the mode's loaders running.
       apply('heat=mitigations');
-      expect(service.getStateSnapshot().heatmapMode).toBe('unified');
+      expect(service.getStateSnapshot().heatmapMode).toBe('frequency');
       apply('heat=bogus');
-      expect(service.getStateSnapshot().heatmapMode).toBe('unified');
+      expect(service.getStateSnapshot().heatmapMode).toBe('frequency');
     });
 
     it('ignores unknown scope and impl values but still applies the rest of the link', () => {
@@ -70,7 +87,7 @@ describe('FilterService', () => {
 
     service.clearAll();
 
-    expect(service.getStateSnapshot().heatmapMode).toBe('unified');
+    expect(service.getStateSnapshot().heatmapMode).toBe('frequency');
     expect(service.getStateSnapshot().hiddenTacticIds).toEqual([]);
     expect(service.getTechniqueSearch()).toBe('');
 

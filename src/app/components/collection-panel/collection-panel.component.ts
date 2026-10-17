@@ -141,13 +141,13 @@ export class CollectionPanelComponent implements OnInit, OnDestroy {
 
   downloadBundle(): void {
     const name = this.exportName.trim() || 'My Collection';
-    const desc = this.exportDescription.trim() || 'Exported from MITRE Mitigation Navigator';
+    const desc = this.exportDescription.trim() || 'Exported from ATTACK-Navi';
     this.stixCollectionService.downloadBundle(name, desc);
   }
 
   copyToClipboard(): void {
     const name = this.exportName.trim() || 'My Collection';
-    const desc = this.exportDescription.trim() || 'Exported from MITRE Mitigation Navigator';
+    const desc = this.exportDescription.trim() || 'Exported from ATTACK-Navi';
     const bundle = this.stixCollectionService.exportCollection(name, desc);
     const json = JSON.stringify(bundle, null, 2);
     navigator.clipboard.writeText(json).then(() => {
@@ -159,7 +159,7 @@ export class CollectionPanelComponent implements OnInit, OnDestroy {
 
   shareLink(): void {
     const name = this.exportName.trim() || 'My Collection';
-    const desc = this.exportDescription.trim() || 'Exported from MITRE Mitigation Navigator';
+    const desc = this.exportDescription.trim() || 'Exported from ATTACK-Navi';
     const url = this.stixCollectionService.shareAsUrl(name, desc);
     navigator.clipboard.writeText(url).then(() => {
       this.shareUrl = url;

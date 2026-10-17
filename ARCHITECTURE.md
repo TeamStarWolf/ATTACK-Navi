@@ -18,7 +18,7 @@
 
 ## 1. Overview
 
-The MITRE ATT&CK Navi is a single-page Angular 22.2.x application that visualizes
+ATTACK-Navi is a single-page Angular 22.2.x application that visualizes
 the full ATT&CK matrix, overlays mitigation coverage data, and integrates 40+ external threat
 intelligence, detection, vulnerability, and compliance data sources into a unified analyst
 workspace.

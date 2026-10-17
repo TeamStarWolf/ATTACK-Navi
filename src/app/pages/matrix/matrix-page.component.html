@@ -17,6 +17,16 @@
   }
   <app-filter-chips />
 
+  <!-- E1.5 (D4): the first-visit lens is Prevalence, a Threat lens. Until the
+       user has recorded anything about their own environment, one line says
+       what the lens is and that it is reference data. -->
+  @if (prevalenceBanner) {
+    <div class="first-glance-banner" role="note" aria-label="About the Prevalence lens">
+      <span class="first-glance-text">{{ prevalenceBannerText }}</span>
+      <button type="button" class="lens-na-help" aria-haspopup="dialog" (click)="openLensCard($event)">What is this lens?</button>
+    </div>
+  }
+
   <!-- E1.2: a lens with no data for this domain is shown as n/a, never as zeros. -->
   <div class="lens-na-banner" role="status" [class.shown]="!!lensNa">
     @if (lensNa; as na) {

@@ -39,10 +39,27 @@ describe('SettingsService', () => {
     });
   });
 
-  describe('updateWeights', () => {
-    it('merges new weight values', () => {
-      service.updateWeights({ atomic: 25 });
-      expect(service.current.scoringWeights.atomic).toBe(25);
+  // E1.5: Scoring Weights are retired (plan 4.1 bans the Coverage Score and
+  // grades on reference data), and so is their setting.
+  describe('retired scoring weights (E1.5)', () => {
+    it('has no scoring-weight setting or weight API', () => {
+      expect('scoringWeights' in service.current).toBeFalse();
+      expect((service as unknown as Record<string, unknown>)['updateWeights']).toBeUndefined();
+      expect((service as unknown as Record<string, unknown>)['getNormalizedWeights']).toBeUndefined();
+    });
+
+    it('drops weights stored by an older version and never writes them back', () => {
+      localStorage.setItem('mitre-nav-settings-v1', JSON.stringify({
+        matrixCellSize: 'large',
+        scoringWeights: { mitigations: 60, car: 10, atomic: 10, d3fend: 10, nist: 10 },
+      }));
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({});
+      const fresh = TestBed.inject(SettingsService);
+      expect('scoringWeights' in fresh.current).toBeFalse();
+      expect(fresh.current.matrixCellSize).toBe('large');
+      fresh.update({ showTechniqueIds: false });
+      expect(localStorage.getItem('mitre-nav-settings-v1')).not.toContain('scoringWeights');
     });
   });
 
@@ -51,14 +68,6 @@ describe('SettingsService', () => {
       service.update({ matrixCellSize: 'large' });
       service.reset();
       expect(service.current.matrixCellSize).not.toBe('large');
-    });
-  });
-
-  describe('getNormalizedWeights', () => {
-    it('returns weight values that sum to a positive number', () => {
-      const w = service.getNormalizedWeights();
-      const sum = Object.values(w).reduce((a, b) => a + b, 0);
-      expect(sum).toBeGreaterThan(0);
     });
   });
 

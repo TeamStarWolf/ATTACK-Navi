@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 
 import { Subscription, combineLatest } from 'rxjs';
-import { FilterService, HeatmapMode } from '../../services/filter.service';
+import { DEFAULT_HEATMAP_MODE, FilterService, HeatmapMode } from '../../services/filter.service';
 import { ImplementationService } from '../../services/implementation.service';
 import { DataService } from '../../services/data.service';
 import { AttackCveService } from '../../services/attack-cve.service';
@@ -150,7 +150,7 @@ export class QuickFiltersComponent implements OnInit, OnDestroy {
 
   clearPreset(): void {
     this.activePreset = null;
-    this.filterService.setHeatmapMode('unified');
+    this.filterService.setHeatmapMode(DEFAULT_HEATMAP_MODE);
     this.filterService.setImplStatusFilter(null);
     this.cdr.markForCheck();
   }

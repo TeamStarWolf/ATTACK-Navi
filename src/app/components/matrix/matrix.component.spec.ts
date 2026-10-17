@@ -10,7 +10,7 @@ import { Domain, TacticColumn } from '../../models/domain';
 import { Tactic } from '../../models/tactic';
 import { Technique } from '../../models/technique';
 import { AttackNaviLayer } from '../../models/user-layer';
-import { FilterService } from '../../services/filter.service';
+import { DEFAULT_HEATMAP_MODE, FilterService } from '../../services/filter.service';
 import { LibraryLayerService, LibraryLayerMeta } from '../../services/library-layer.service';
 import { UserLayerService } from '../../services/user-layer.service';
 
@@ -214,17 +214,20 @@ describe('MatrixComponent', () => {
   afterEach(() => {
     // FilterService is a root singleton inside this TestBed; put the mode back so
     // the next spec starts from the real default.
-    filterService.setHeatmapMode('unified');
+    filterService.setHeatmapMode(DEFAULT_HEATMAP_MODE);
   });
 
-  it('starts in the unified heatmap mode and renders one column per tactic', () => {
-    expect(component.heatmapMode).toBe('unified');
+  // E1.5 (D4): the matrix starts on Prevalence (heat=frequency), not Reference depth.
+  it('starts in the default Prevalence heatmap mode and renders one column per tactic', () => {
+    expect(component.heatmapMode).toBe('frequency');
     expect(component.sortedColumns.map(c => c.tactic.shortname)).toEqual(['stealth', 'impact']);
     expect(component.sortedColumns[0].techniques.map(t => t.attackId)).toEqual(['T9001', 'T9002']);
     expect(fixture.nativeElement.querySelectorAll('.tactic-header').length).toBe(2);
   });
 
   it('unified score rewards a technique with more defensive signals', () => {
+    // Reference depth scores are computed while its lens is on screen.
+    filterService.setHeatmapMode('unified');
     const strong = component.getUnifiedScore(T_WELL_MITIGATED);
     const weak = component.getUnifiedScore(T_UNMITIGATED);
     expect(strong).toBeGreaterThan(weak);

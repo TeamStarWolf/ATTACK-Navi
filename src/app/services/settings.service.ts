@@ -5,14 +5,9 @@ import { BehaviorSubject } from 'rxjs';
 import { SAFE_COVERAGE } from '../models/safe-palette';
 
 export interface AppSettings {
-  // Scoring weights (normalized to sum to 100)
-  scoringWeights: {
-    mitigations: number;  // default 40
-    car: number;          // default 20
-    atomic: number;       // default 15
-    d3fend: number;       // default 15
-    nist: number;         // default 10
-  };
+  // E1.5 removed the user-set 'scoringWeights' (plan 4.1: no Coverage Score and
+  // no grade on reference data). A stored copy from an older version is
+  // dropped on load and never written back.
 
   // Display preferences
   matrixCellSize: 'compact' | 'normal' | 'large';  // default 'normal'
@@ -58,7 +53,6 @@ export interface AppSettings {
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  scoringWeights: { mitigations: 20, car: 20, atomic: 20, d3fend: 20, nist: 20 },
   matrixCellSize: 'normal',
   showTechniqueIds: true,
   showMitigationCount: true,
@@ -111,9 +105,6 @@ export class SettingsService {
     const merged: AppSettings = {
       ...this.settingsSubject.value,
       ...partial,
-      scoringWeights: partial.scoringWeights
-        ? { ...this.settingsSubject.value.scoringWeights, ...partial.scoringWeights }
-        : this.settingsSubject.value.scoringWeights,
     };
     this.save(merged);
     this.settingsSubject.next(merged);
@@ -127,14 +118,6 @@ export class SettingsService {
     this.update({ proxyToken: token.trim() });
   }
 
-  updateWeights(weights: Partial<AppSettings['scoringWeights']>): void {
-    const merged: AppSettings['scoringWeights'] = {
-      ...this.settingsSubject.value.scoringWeights,
-      ...weights,
-    };
-    this.update({ scoringWeights: merged });
-  }
-
   reset(): void {
     const resetSettings: AppSettings = {
       ...DEFAULT_SETTINGS,
@@ -142,22 +125,6 @@ export class SettingsService {
     };
     this.save(resetSettings);
     this.settingsSubject.next(resetSettings);
-  }
-
-  getNormalizedWeights(): AppSettings['scoringWeights'] {
-    const w = this.settingsSubject.value.scoringWeights;
-    const total = w.mitigations + w.car + w.atomic + w.d3fend + w.nist;
-    if (total === 0) {
-      return { mitigations: 20, car: 20, atomic: 20, d3fend: 20, nist: 20 };
-    }
-    const factor = 100 / total;
-    return {
-      mitigations: Math.round(w.mitigations * factor),
-      car: Math.round(w.car * factor),
-      atomic: Math.round(w.atomic * factor),
-      d3fend: Math.round(w.d3fend * factor),
-      nist: Math.round(w.nist * factor),
-    };
   }
 
   private load(): AppSettings {
@@ -168,16 +135,13 @@ export class SettingsService {
       if (!raw) {
         return { ...DEFAULT_SETTINGS, nvdApiKey: sessionKey, proxyToken: sessionProxyToken };
       }
-      const parsed = JSON.parse(raw) as Partial<AppSettings>;
+      // 'scoringWeights' is a retired key (E1.5): drop it so it is never saved again.
+      const { scoringWeights: _retired, ...parsed } = JSON.parse(raw) as Partial<AppSettings> & { scoringWeights?: unknown };
       return {
         ...DEFAULT_SETTINGS,
         ...parsed,
         nvdApiKey: sessionKey,          // Always sourced from sessionStorage
         proxyToken: sessionProxyToken,  // Always sourced from sessionStorage
-        scoringWeights: {
-          ...DEFAULT_SETTINGS.scoringWeights,
-          ...(parsed.scoringWeights ?? {}),
-        },
         cellDisplay: {
           ...DEFAULT_SETTINGS.cellDisplay,
           ...(parsed.cellDisplay ?? {}),

@@ -23,10 +23,11 @@ import { LegendComponent } from '../../components/legend/legend.component';
 import { QuickFiltersComponent } from '../../components/quick-filters/quick-filters.component';
 import { FilterChipsComponent } from '../../components/filter-chips/filter-chips.component';
 import { LensDefinitionCardComponent } from '../../components/lens-definition-card/lens-definition-card.component';
-import { FilterService, HeatmapMode } from '../../services/filter.service';
+import { DEFAULT_HEATMAP_MODE, FilterService, HeatmapMode } from '../../services/filter.service';
 import { LensCardService } from '../../services/lens-card.service';
 import { LensAvailability, heatmapModeDef, lensAvailability } from '../../models/heatmap-modes';
 import { SourceBannerComponent } from '../../components/source-banner/source-banner.component';
+import { OwnerDataService, PREVALENCE_BANNER_TEXT, showPrevalenceBanner } from '../../services/owner-data.service';
 import {
   TacticSummaryComponent,
   TacticSummaryData,
@@ -65,6 +66,7 @@ export class MatrixPageComponent implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly filterService = inject(FilterService);
   private readonly lensCards = inject(LensCardService);
+  private readonly ownerData = inject(OwnerDataService);
 
   @ViewChild(MatrixComponent) matrixRef?: MatrixComponent;
   @ViewChild(TacticSummaryComponent) tacticSummary?: TacticSummaryComponent;
@@ -73,7 +75,15 @@ export class MatrixPageComponent implements OnInit {
   loading = true;
   error: string | null = null;
   currentDomain: AttackDomain = 'enterprise';
-  heatmapMode: HeatmapMode = 'unified';
+  heatmapMode: HeatmapMode = DEFAULT_HEATMAP_MODE;
+  /** True once the user's stores hold any Implementation, Validation or stack record (D4). */
+  ownerDataExists = false;
+  readonly prevalenceBannerText = PREVALENCE_BANNER_TEXT;
+
+  /** The one-line Prevalence banner (plan E1.5, decision D4). */
+  get prevalenceBanner(): boolean {
+    return showPrevalenceBanner(this.heatmapMode, this.ownerDataExists);
+  }
 
   /**
    * The active lens's availability in the domain on screen (E1.2). When it has
@@ -121,6 +131,10 @@ export class MatrixPageComponent implements OnInit {
     });
     this.filterService.heatmapMode$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((m) => {
       this.heatmapMode = m;
+      this.cdr.markForCheck();
+    });
+    this.ownerData.hasOwnerData$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((has) => {
+      this.ownerDataExists = has;
       this.cdr.markForCheck();
     });
   }

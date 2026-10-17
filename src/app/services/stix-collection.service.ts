@@ -381,7 +381,7 @@ export class StixCollectionService {
   shareAsUrl(name?: string, description?: string): string {
     const bundle = this.exportCollection(
       name || 'Shared Collection',
-      description || 'Shared via MITRE Mitigation Navigator',
+      description || 'Shared via ATTACK-Navi',
     );
     const json = JSON.stringify(bundle);
     // encodeURIComponent the base64 so `+`/`=` survive URLSearchParams parsing.
