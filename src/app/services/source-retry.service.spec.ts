@@ -43,15 +43,19 @@ const ctidUp = (req: TestRequest): boolean => {
 };
 const NEEDS_CTID = new Set(['exploitdb', 'nuclei-tree', 'trickest-poc-tree']);
 
-/** The domain and data mode an ATT&CK source needs to be the one the matrix reads. */
+/**
+ * The domain and data mode an ATT&CK source needs to be the one the matrix reads. The live
+ * copies run in the default 'bundled' mode: since E1.4 (decision D2) their Load now / Retry
+ * is the explicit update check, which works in either mode.
+ */
 const ATTACK_SETUP: Record<string, { domain: AttackDomain; mode: 'live' | 'bundled' }> = {
   'attack-enterprise': { domain: 'enterprise', mode: 'bundled' },
   'attack-ics': { domain: 'ics', mode: 'bundled' },
   'attack-mobile': { domain: 'mobile', mode: 'bundled' },
-  'attack-live-enterprise': { domain: 'enterprise', mode: 'live' },
-  'attack-live-ics': { domain: 'ics', mode: 'live' },
-  'attack-live-mobile': { domain: 'mobile', mode: 'live' },
-  'attack-live-f3': { domain: 'f3', mode: 'live' },
+  'attack-live-enterprise': { domain: 'enterprise', mode: 'bundled' },
+  'attack-live-ics': { domain: 'ics', mode: 'bundled' },
+  'attack-live-mobile': { domain: 'mobile', mode: 'bundled' },
+  'attack-live-f3': { domain: 'f3', mode: 'bundled' },
 };
 
 describe('SourceRetryService: Retry per source on the data-health view (E1.3)', () => {
@@ -137,8 +141,11 @@ describe('SourceRetryService: Retry per source on the data-health view (E1.3)', 
     const data = TestBed.inject(DataService);
     data.setAttackDomain('enterprise');
     expect(retry.unavailableReason('attack-ics')).toBe('loads when the matrix is switched to ICS');
+    // D2: the live copy is fetched only by the update check, which data health may run in
+    // any mode; it offers a newer release and never changes the matrix by itself.
     data.setDataSourceMode('bundled');
-    expect(retry.unavailableReason('attack-live-enterprise')).toBe('live mode is off; the bundled copy is in use');
+    expect(retry.unavailableReason('attack-live-enterprise')).toBeNull();
+    expect(retry.unavailableReason('attack-live-ics')).toBe('loads when the matrix is switched to ICS');
     expect(retry.retry('attack-ics')).toBeFalse();
   });
 

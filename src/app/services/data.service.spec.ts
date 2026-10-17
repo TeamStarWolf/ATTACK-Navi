@@ -25,7 +25,8 @@ describe('DataService', () => {
     const icsDomain = { name: 'ICS ATT&CK' } as any;
     const pending: Array<() => void> = [];
 
-    spyOn<any>(service, 'loadLive').and.callFake((config: { name: string }) =>
+    // E1.4 (D2): the default mode loads the pinned bundle.
+    spyOn<any>(service, 'loadBundled').and.callFake((config: { name: string }) =>
       new Observable((subscriber) => {
         pending.push(() => subscriber.next(config.name === 'Enterprise ATT&CK' ? enterpriseDomain : icsDomain));
       })

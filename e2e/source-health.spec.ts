@@ -139,15 +139,16 @@ test.describe('E1.3: each live source forced offline shows failed, and its view 
       await expect(row).toBeAttached({ timeout: ROUTE_TIMEOUT });
 
       if (c.domain) {
-        // Switching the matrix to the domain is what loads its live bundle.
+        // The live copy can be checked only for the domain on screen.
         await page.locator(`.domain-btn[title="${DOMAIN_BUTTON[c.domain]}"]`).click();
         await expect(page.locator(`.domain-btn[title="${DOMAIN_BUTTON[c.domain]}"]`)).toHaveClass(/active/);
       }
 
       // Let a source that loads on its own start; one that loads only on demand stays
-      // 'pending' and is started from its row.
+      // 'pending' and is started from its row. Since E1.4 (decision D2) the live ATT&CK
+      // copies are on demand too: their Load now runs "Check for ATT&CK update".
       await expect(row).not.toHaveAttribute('data-status', 'loading', { timeout: ROUTE_TIMEOUT });
-      if (!c.domain && (await row.getAttribute('data-status')) === 'pending') {
+      if ((await row.getAttribute('data-status')) === 'pending') {
         await row.getByRole('button', { name: `Load now: ${def.name}` }).click();
       }
 

@@ -16,7 +16,7 @@ import { Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { Technique } from '../../models/technique';
 import { FilterService } from '../../services/filter.service';
-import { DataService, DataSourceMode, AttackDomain } from '../../services/data.service';
+import { DataService, AttackDomain, AttackUpdateState } from '../../services/data.service';
 import { CommandPaletteService } from '../../services/command-palette.service';
 import { ThemeService } from '../../services/theme.service';
 import { SavedViewsService, SavedView } from '../../services/saved-views.service';
@@ -66,8 +66,11 @@ export class ToolbarComponent implements OnInit, OnDestroy {
   isLightMode = false;
 
   attackVersion = '';
-  dataSourceMode: DataSourceMode = 'live';
   attackDomain: AttackDomain = 'enterprise';
+  /** "Check for ATT&CK update" state for the domain on screen (decision D2). */
+  update: AttackUpdateState = { status: 'idle' };
+  /** The pinned (bundled) ATT&CK release of the domain on screen. */
+  pinnedVersion = '';
   loading = false;
 
   // Saved views
@@ -94,8 +97,10 @@ export class ToolbarComponent implements OnInit, OnDestroy {
     this.subs.add(this.dataService.loading$.subscribe((l) => { this.loading = l; this.cdr.markForCheck(); }));
     this.subs.add(this.dataService.domain$.subscribe((d) => {
       this.attackVersion = d?.attackVersion ?? '';
+      this.pinnedVersion = this.dataService.pinnedVersion();
       this.cdr.markForCheck();
     }));
+    this.subs.add(this.dataService.update$.subscribe((u) => { this.update = u; this.cdr.markForCheck(); }));
     this.subs.add(this.savedViewsService.views$.subscribe(views => { this.views = views; this.cdr.markForCheck(); }));
   }
 
@@ -109,17 +114,26 @@ export class ToolbarComponent implements OnInit, OnDestroy {
     this.themeService.toggle();
   }
 
-  onDataSourceChange(): void {
-    this.dataService.setDataSourceMode(this.dataSourceMode);
-    this.dataService.loadDomain();
-  }
-
   onDomainChange(): void {
     this.domainChange.emit(this.attackDomain);
   }
 
-  forceRefresh(): void {
-    this.dataService.forceRefresh();
+  /** Ask MITRE for a newer ATT&CK release; it is offered, never applied without a click. */
+  checkForUpdate(): void {
+    this.dataService.checkForUpdate();
+  }
+
+  /** Use the offered release for this session only. */
+  applyUpdate(): void {
+    this.dataService.applyUpdate();
+  }
+
+  dismissUpdate(): void {
+    this.dataService.dismissUpdate();
+  }
+
+  revertToPinned(): void {
+    this.dataService.revertToPinned();
   }
 
   saveView(): void {

@@ -608,6 +608,22 @@
   }
 }
 
+.data-mode-item {
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+
+.data-mode-select {
+  max-width: 100%;
+  font-size: 12px;
+}
+
+.data-info-hint {
+  flex-basis: 100%;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
 .data-actions {
   display: flex;
   gap: 8px;

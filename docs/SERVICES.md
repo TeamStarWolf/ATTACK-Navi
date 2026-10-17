@@ -26,8 +26,8 @@ name, file path, data source, key methods, observables, and injected dependencie
 | | |
 |---|---|
 | **File** | `src/app/services/data.service.ts` |
-| **Data Source** | GitHub STIX bundles (live) or `assets/enterprise-attack.json` (bundled) |
-| **Cache** | IndexedDB `mitre-navigator-cache` / `stix-bundles`, 24-hour TTL |
+| **Data Source** | Pinned bundles under `assets/data/` (decision D2); the GitHub STIX is fetched only by the update check |
+| **Cache** | IndexedDB `mitre-navigator-cache` / `stix-bundles`, 24-hour TTL, for live copies fetched by an update check |
 
 **Observables**
 
@@ -44,8 +44,11 @@ name, file path, data source, key methods, observables, and injected dependencie
 |---|---|
 | `loadDomain()` | Fetch and parse the active domain's STIX bundle |
 | `switchDomain(domain)` | Clear current domain and reload with a new domain |
-| `forceRefresh()` | Delete IDB cache entry and reload from network |
-| `setDataSourceMode(mode)` | Switch between `'live'` and `'bundled'` fetch modes |
+| `forceRefresh()` | Delete the IDB cache entry and this session's chosen release, then reload the pinned bundle |
+| `setDataSourceMode(mode)` | Set `'bundled'` (pinned only) or `'live'` (pinned, plus an update check on load); persisted as `AppSettings.attackDataMode` |
+| `checkForUpdate()` | Fetch the live release and compare it with the pinned one; a newer release is offered on `update$`, never applied |
+| `applyUpdate()` / `revertToPinned()` | Use the offered release for this session only / go back to the pinned bundle |
+| `pinnedVersion(domain?)` | The pinned release, from the bundle's collection object via the SourceRegistry |
 | `getMitigationsForTechnique(id)` | Synchronous lookup: technique STIX ID to mitigation relationships |
 | `getTechniquesForMitigation(id)` | Reverse lookup: mitigation STIX ID to techniques |
 | `getGroupsForTechnique(id)` | Lookup threat groups associated with a technique |

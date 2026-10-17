@@ -4,10 +4,10 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 import { ToolbarComponent } from './toolbar.component';
 import { FilterService } from '../../services/filter.service';
-import { DataService } from '../../services/data.service';
+import { AttackUpdateState, DataService } from '../../services/data.service';
 import { SavedViewsService } from '../../services/saved-views.service';
 import { CommandPaletteService } from '../../services/command-palette.service';
 
@@ -18,14 +18,18 @@ describe('ToolbarComponent', () => {
   let mockDataService: jasmine.SpyObj<DataService>;
   let mockSavedViewsService: jasmine.SpyObj<SavedViewsService>;
   let mockPalette: jasmine.SpyObj<CommandPaletteService>;
+  let update$: BehaviorSubject<AttackUpdateState>;
 
   beforeEach(async () => {
     mockFilterService = jasmine.createSpyObj('FilterService', ['setTechniqueQuery']);
 
-    mockDataService = jasmine.createSpyObj('DataService', ['fetchDomain'], {
-      loading$: of(false),
-      domain$: of(null),
-    });
+    update$ = new BehaviorSubject<AttackUpdateState>({ status: 'idle' });
+    mockDataService = jasmine.createSpyObj(
+      'DataService',
+      ['fetchDomain', 'pinnedVersion', 'checkForUpdate', 'applyUpdate', 'dismissUpdate', 'revertToPinned', 'setDataSourceMode', 'loadDomain'],
+      { loading$: of(false), domain$: of(null), update$ },
+    );
+    mockDataService.pinnedVersion.and.returnValue('19.2');
 
     mockSavedViewsService = jasmine.createSpyObj('SavedViewsService', ['saveCurrentView', 'deleteView'], {
       views$: of([]),
@@ -85,5 +89,64 @@ describe('ToolbarComponent', () => {
     const brand = fixture.nativeElement.querySelector('a.brand-link');
     expect(brand).toBeTruthy();
     expect(brand.getAttribute('href')).toBe('/matrix');
+  });
+
+  describe('ATT&CK pinning (E1.4, decision D2)', () => {
+    const offer = () => fixture.nativeElement.querySelector('[data-testid="attack-update"]') as HTMLElement;
+    const show = (state: AttackUpdateState) => { update$.next(state); fixture.detectChanges(); };
+    const buttons = () => Array.from(offer().querySelectorAll('button')) as HTMLButtonElement[];
+
+    it('has no live/bundled toggle; the one ATT&CK action is "Check for ATT&CK update"', () => {
+      expect(fixture.nativeElement.querySelector('.source-mode-btn')).toBeNull();
+      const check = fixture.nativeElement.querySelector('button[aria-label="Check for ATT&CK update"]') as HTMLButtonElement;
+      expect(check).toBeTruthy();
+      expect(check.title).toContain('19.2');
+      check.click();
+      expect(mockDataService.checkForUpdate).toHaveBeenCalledTimes(1);
+      expect(mockDataService.loadDomain).not.toHaveBeenCalled();
+      expect(mockDataService.setDataSourceMode).not.toHaveBeenCalled();
+    });
+
+    it('keeps a polite status region in the DOM so each check state is announced', () => {
+      expect(offer()).toBeTruthy();
+      expect(offer().getAttribute('role')).toBe('status');
+      expect(offer().getAttribute('aria-live')).toBe('polite');
+      expect(offer().textContent!.trim()).toBe('');
+      show({ status: 'checking', pinnedVersion: '19.2' });
+      expect(offer().textContent).toContain('Checking MITRE');
+    });
+
+    it('offers a newer release for this session only and applies it only on click', () => {
+      show({ status: 'available', pinnedVersion: '19.2', liveVersion: '20.0' });
+      expect(offer().textContent).toContain('ATT&CK 20.0 is available');
+      expect(offer().textContent).toContain('pinned to 19.2');
+      expect(offer().textContent).toContain('this session only');
+      expect(mockDataService.applyUpdate).not.toHaveBeenCalled();
+      const [use, keep] = buttons();
+      expect(use.textContent!.trim()).toBe('Use 20.0 for this session');
+      expect(keep.textContent!.trim()).toBe('Keep 19.2');
+      keep.click();
+      expect(mockDataService.dismissUpdate).toHaveBeenCalled();
+      use.click();
+      expect(mockDataService.applyUpdate).toHaveBeenCalledTimes(1);
+    });
+
+    it('says when the pinned release is current, when the check failed, and how to go back after applying', () => {
+      show({ status: 'up-to-date', pinnedVersion: '19.2', liveVersion: '19.2' });
+      expect(offer().textContent).toContain('No newer release');
+
+      show({ status: 'failed', pinnedVersion: '19.2', error: 'network error' });
+      expect(offer().textContent).toContain('Could not check for an ATT&CK update: network error');
+      expect(offer().textContent).toContain('stays on 19.2 (pinned)');
+      buttons()[0].click();
+      expect(mockDataService.checkForUpdate).toHaveBeenCalled();
+
+      show({ status: 'applied', pinnedVersion: '19.2', liveVersion: '20.0' });
+      expect(offer().textContent).toContain('Using ATT&CK 20.0 for this session only');
+      const back = buttons()[0];
+      expect(back.textContent!.trim()).toBe('Back to 19.2');
+      back.click();
+      expect(mockDataService.revertToPinned).toHaveBeenCalled();
+    });
   });
 });

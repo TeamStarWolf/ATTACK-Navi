@@ -116,6 +116,25 @@ describe('SettingsPanelComponent', () => {
     expect(settingsService.current.attackVersion).toBe('19.2');
   });
 
+  it('E1.4 (D2): the Data tab persists the ATT&CK data mode, pinned bundle by default', async () => {
+    const dataFixture = TestBed.createComponent(SettingsPanelComponent);
+    dataFixture.componentInstance.activeTab = 'data';
+    dataFixture.detectChanges();
+    await dataFixture.whenStable();
+    const select = dataFixture.nativeElement.querySelector('select#attack-data-mode') as HTMLSelectElement;
+    expect(select).toBeTruthy();
+    expect(select.value).toBe('bundled');
+    expect(settingsService.current.attackDataMode).toBe('bundled');
+    expect(dataFixture.nativeElement.textContent).not.toContain('Live (GitHub STIX bundle)');
+
+    select.value = 'live';
+    select.dispatchEvent(new Event('change'));
+    dataFixture.detectChanges();
+    expect(settingsService.current.attackDataMode).toBe('live');
+    expect(JSON.parse(localStorage.getItem('mitre-nav-settings-v1')!).attackDataMode).toBe('live');
+    expect(new SettingsService().current.attackDataMode).withContext('after a reload').toBe('live');
+  });
+
   describe('third-party notices (Data tab)', () => {
     // Reuses the suite-level TestBed set up above (its DataService stub and
     // service stubs); a second configureTestingModule here would throw because
