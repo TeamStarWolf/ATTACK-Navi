@@ -2,7 +2,8 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, catchError, of } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
+import { SourceRegistryService } from './source-registry.service';
 
 export interface CsaCcmControl {
   controlId: string;      // capability_id e.g. "STA-16"
@@ -28,21 +29,22 @@ export class CsaCcmService {
   private coveredSubject = new BehaviorSubject<number>(0);
   covered$ = this.coveredSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {
     this.load();
   }
 
   private load(): void {
-    this.http.get<any>(CsaCcmService.URL).pipe(
-      catchError(err => {
+    this.sources.begin('ctid-csa-ccm');
+    this.http.get<any>(CsaCcmService.URL).subscribe({
+      next: data => this.parseAndIndex(data),
+      error: err => {
         console.error('[CsaCcmService] Failed to load CSA CCM mapping:', err);
-        return of(null);
-      }),
-    ).subscribe(data => {
-      if (data) {
-        this.parseAndIndex(data);
-      }
-      this.loadedSubject.next(true);
+        // Recorded as failed; loaded$ stays false.
+        this.sources.fail('ctid-csa-ccm', err);
+      },
     });
   }
 
@@ -70,6 +72,8 @@ export class CsaCcmService {
     }
     this.totalSubject.next(count);
     this.coveredSubject.next(this.byTechniqueId.size);
+    this.sources.succeed('ctid-csa-ccm', count);
+    if (count > 0) this.loadedSubject.next(true);
   }
 
   getControlsForTechnique(attackId: string): CsaCcmControl[] {

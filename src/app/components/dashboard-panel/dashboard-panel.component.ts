@@ -8,7 +8,7 @@ import {
   ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Subscription, combineLatest, filter, take } from 'rxjs';
+import { Observable, Subscription, combineLatest, distinctUntilChanged, filter, map, take } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
 import { PanelNavService } from '../../services/panel-nav.service';
 import { DataService } from '../../services/data.service';
@@ -31,6 +31,7 @@ import { XlsxExportService } from '../../services/xlsx-export.service';
 import { CustomMitigationService } from '../../services/custom-mitigation.service';
 import { EnrichmentService } from '../../services/enrichment.service';
 import { KevEntry } from '../../models/cve';
+import { SourceRegistryService } from '../../services/source-registry.service';
 
 export interface DashboardStats {
   // Coverage (enrichment = ≥1 cross-framework signal)
@@ -106,8 +107,13 @@ interface RadarChart {
 // Data-health entry
 interface HealthEntry {
   name: string;
-  status: 'loading' | 'loaded' | 'failed';
+  status: 'loading' | 'loaded' | 'failed' | 'empty';
+  /** Why the entry is failed or empty, from the source registry. */
+  detail?: string;
 }
+
+/** What the source registry says about a health entry: failed or empty with a reason, or nothing. */
+interface RegistryVerdict { status: 'failed' | 'empty'; detail: string; }
 
 @Component({
   selector: 'app-dashboard-panel',
@@ -164,6 +170,7 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
     private customMitService: CustomMitigationService,
     private enrichment: EnrichmentService,
     private cdr: ChangeDetectorRef,
+    private sources: SourceRegistryService,
   ) {}
 
   ngOnInit(): void {
@@ -456,24 +463,65 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
       .slice(0, 5);
   }
 
+  /**
+   * The registry's verdict for a health entry backed by one or more sources: 'failed'
+   * (or 'empty') only when every one of them failed (or returned nothing), so an entry
+   * that still has some data is not painted red. Same rule as the data-health ribbon.
+   */
+  private registryVerdict$(ids: string[]): Observable<RegistryVerdict | null> {
+    return this.sources.records$.pipe(
+      map(records => {
+        const mine = records.filter(r => ids.includes(r.id));
+        if (!mine.length) return null;
+        if (mine.every(r => r.status === 'failed' || r.status === 'empty')) {
+          const failed = mine.filter(r => r.status === 'failed');
+          if (failed.length) {
+            return { status: 'failed' as const, detail: failed.map(r => r.lastError ?? 'failed').join('; ') };
+          }
+          return { status: 'empty' as const, detail: 'the source returned no usable rows' };
+        }
+        return null;
+      }),
+      distinctUntilChanged((a, b) => a?.status === b?.status && a?.detail === b?.detail),
+    );
+  }
+
   private initHealthEntries(): void {
-    const sources: { name: string; loaded$: any }[] = [
-      { name: 'Atomic Red Team', loaded$: this.atomicService.loaded$ },
-      { name: 'Sigma Rules', loaded$: this.sigmaService.loaded$ },
-      { name: 'ATT&CK CVE', loaded$: this.attackCveService.loaded$ },
-      { name: 'MISP Galaxy', loaded$: this.mispService.loaded$ },
-      { name: 'D3FEND', loaded$: this.d3fendService.loaded$ },
-      { name: 'CAR Analytics', loaded$: this.carService.loaded$ },
-      { name: 'Elastic Rules', loaded$: this.elasticService.loaded$ },
-      { name: 'Splunk Content', loaded$: this.splunkContentService.loaded$ },
+    // `ids` name the SourceRegistry records behind an entry (E1.3), the same mapping as the
+    // data-health ribbon: a loader that fails (or answers with 0 rows) no longer reports
+    // loaded, so the registry is what turns the entry 'failed' (or 'empty') instead of
+    // leaving it 'loading' for the whole session.
+    const sources: { name: string; loaded$: Observable<boolean>; ids: string[] }[] = [
+      { name: 'Atomic Red Team', loaded$: this.atomicService.loaded$, ids: ['atomic-layer'] },
+      { name: 'Sigma Rules', loaded$: this.sigmaService.loaded$, ids: ['sigmahq-coverage'] },
+      { name: 'ATT&CK CVE', loaded$: this.attackCveService.loaded$, ids: ['ctid-attack-to-cve', 'ctid-kev'] },
+      { name: 'MISP Galaxy', loaded$: this.mispService.loaded$, ids: ['misp-galaxy'] },
+      { name: 'D3FEND', loaded$: this.d3fendService.loaded$, ids: ['d3fend-ontology'] },
+      { name: 'CAR Analytics', loaded$: this.carService.loaded$, ids: ['car-layer'] },
+      { name: 'Elastic Rules', loaded$: this.elasticService.loaded$, ids: ['elastic-tree'] },
+      { name: 'Splunk Content', loaded$: this.splunkContentService.loaded$, ids: ['splunk-tree'] },
     ];
     this.healthEntries = sources.map(s => ({ name: s.name, status: 'loading' as const }));
+    const setEntry = (i: number, entry: HealthEntry) => {
+      this.healthEntries = [...this.healthEntries];
+      this.healthEntries[i] = entry;
+      this.cdr.markForCheck();
+    };
     sources.forEach((src, i) => {
       this.subs.add(
         src.loaded$.subscribe((loaded: boolean) => {
-          this.healthEntries = [...this.healthEntries];
-          this.healthEntries[i] = { name: src.name, status: loaded ? 'loaded' : 'loading' };
-          this.cdr.markForCheck();
+          // A failed or empty source keeps its verdict until the registry clears it (a retry started).
+          const status = this.healthEntries[i].status;
+          if (!loaded && (status === 'failed' || status === 'empty')) return;
+          setEntry(i, { name: src.name, status: loaded ? 'loaded' : 'loading' });
+        }),
+      );
+      this.subs.add(
+        this.registryVerdict$(src.ids).subscribe(verdict => {
+          if (this.healthEntries[i].status === 'loaded') return;
+          setEntry(i, verdict
+            ? { name: src.name, status: verdict.status, detail: verdict.detail }
+            : { name: src.name, status: 'loading' });
         }),
       );
     });

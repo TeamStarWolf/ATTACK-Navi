@@ -2,7 +2,8 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, catchError, of } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { SourceRegistryService } from './source-registry.service';
 
 /**
  * CTID's F3 Fraud Framework (ctid.mitre.org/fraud) — ATT&CK-convention STIX.
@@ -38,9 +39,12 @@ export class F3FraudService {
   private loadedSubject = new BehaviorSubject<boolean>(false);
   loaded$: Observable<boolean> = this.loadedSubject.asObservable();
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {}
 
-  /** True once the bundle has been parsed (success or failure). */
+  /** True once the bundle has been parsed; false while loading and after a failed load. */
   get loaded(): boolean {
     return this.loadedSubject.value;
   }
@@ -54,12 +58,21 @@ export class F3FraudService {
   ensureLoaded(): void {
     if (this.started) return;
     this.started = true;
+    this.sources.begin('attack-f3');
     this.http
       .get<{ objects?: any[] }>(F3_ASSET)
-      .pipe(catchError(() => of(null)))
-      .subscribe(bundle => {
-        this.index(bundle?.objects ?? []);
-        this.loadedSubject.next(true);
+      .subscribe({
+        next: bundle => {
+          const objects = bundle?.objects ?? [];
+          this.index(objects);
+          this.sources.succeed('attack-f3', objects.length);
+          if (objects.length) this.loadedSubject.next(true);
+        },
+        error: err => {
+          // Recorded as failed; loaded stays false and the next ensureLoaded() retries.
+          this.started = false;
+          this.sources.fail('attack-f3', err);
+        },
       });
   }
 

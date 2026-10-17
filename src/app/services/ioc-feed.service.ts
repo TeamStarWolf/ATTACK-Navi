@@ -6,9 +6,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
-import { catchError } from 'rxjs/operators';
-import { of } from 'rxjs';
 import { retryWithBackoff } from '../utils/retry';
+import { SourceRegistryService } from './source-registry.service';
 
 export interface IoC {
   type: 'ip' | 'domain' | 'hash' | 'url' | 'email' | 'cve';
@@ -47,7 +46,10 @@ export class IocFeedService {
 
   private initialized = false;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {}
 
   /** Trigger data fetch on first use. Safe to call multiple times. */
   loadOnDemand(): void {
@@ -58,14 +60,20 @@ export class IocFeedService {
 
   /** Fetch public IP blocklist and index by technique. */
   loadFeeds(): void {
+    this.sources.begin('ipsum');
     this.http
       .get(IocFeedService.IPSUM_URL, { responseType: 'text' })
-      .pipe(retryWithBackoff(), catchError(() => of('')))
-      .subscribe((text) => {
-        if (text) this.parseIpsum(text);
-        this.rebuildIndex();
-        this.totalSubject.next(this.iocs.length);
-        this.loadedSubject.next(true);
+      .pipe(retryWithBackoff())
+      .subscribe({
+        next: (text) => {
+          if (text) this.parseIpsum(text);
+          this.rebuildIndex();
+          this.totalSubject.next(this.iocs.length);
+          this.sources.succeed('ipsum', this.iocs.length);
+          if (this.iocs.length > 0) this.loadedSubject.next(true);
+        },
+        // Recorded as failed; loaded$ stays false.
+        error: (err) => this.sources.fail('ipsum', err),
       });
   }
 

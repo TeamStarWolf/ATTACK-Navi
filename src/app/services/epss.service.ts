@@ -4,6 +4,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, forkJoin } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
+import { SourceRegistryService } from './source-registry.service';
 
 export interface EpssScore {
   cveId: string;
@@ -17,7 +18,10 @@ export class EpssService {
   private readonly API = 'https://api.first.org/data/v1/epss';
   private cache = new Map<string, EpssScore>();
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {}
 
   /** Fetch EPSS scores for a batch of CVE IDs. Returns cached results immediately.
    *  Batches into groups of 100 to stay within API limits. */
@@ -34,14 +38,23 @@ export class EpssService {
       batches.push(toFetch.slice(i, i + 100));
     }
 
+    // A failed batch is recorded as failed in the source registry. Callers still get the
+    // scores that did arrive; a CVE missing from the map is "unknown", not "no score".
+    this.sources.begin('epss');
+    let failure: unknown = null;
     const requests = batches.map(batch =>
       this.http.get<any>(`${this.API}?cve=${batch.join(',')}`).pipe(
-        catchError(() => of({ data: [] }))
+        catchError(err => {
+          failure = err;
+          return of({ data: [] });
+        })
       )
     );
 
     return forkJoin(requests).pipe(
       map(responses => {
+        if (failure) this.sources.fail('epss', failure);
+        else this.sources.succeed('epss', null);
         for (const response of responses) {
           for (const item of (response?.data ?? [])) {
             const score: EpssScore = {

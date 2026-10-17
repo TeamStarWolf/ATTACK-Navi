@@ -3,6 +3,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
+import { SourceRegistryService } from './source-registry.service';
 
 export interface NistControl {
   id: string;          // e.g. "CM-03"
@@ -23,14 +24,18 @@ export class NistMappingService {
   private totalSubject = new BehaviorSubject<number>(0);
   total$ = this.totalSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {
     this.load();
   }
 
   private load(): void {
+    this.sources.begin('ctid-nist-800-53');
     this.http.get<any>(NistMappingService.URL).subscribe({
       next: (data) => this.parseAndIndex(data),
-      error: () => this.loadedSubject.next(false),
+      error: (err) => this.sources.fail('ctid-nist-800-53', err),
     });
   }
 
@@ -54,7 +59,8 @@ export class NistMappingService {
       }
     }
     this.totalSubject.next(count);
-    this.loadedSubject.next(true);
+    this.sources.succeed('ctid-nist-800-53', count);
+    if (count > 0) this.loadedSubject.next(true);
   }
 
   getControlsForTechnique(attackId: string): NistControl[] {

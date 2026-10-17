@@ -2,7 +2,8 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, catchError, of } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
+import { SourceRegistryService } from './source-registry.service';
 
 export interface CweInfo {
   id: string;
@@ -22,21 +23,28 @@ export class CweService {
   private loadedSubject = new BehaviorSubject<boolean>(false);
   readonly loaded$ = this.loadedSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {
     // Seed with static MAP
     for (const [k, v] of Object.entries(CweService.MAP)) {
       this.catalog.set(k, v);
     }
     // Fetch full catalog
+    this.sources.begin('cwe-catalog');
     this.http.get<Record<string, CweEntry>>('assets/data/cwe-catalog.json')
-      .pipe(catchError(() => of(null)))
-      .subscribe(data => {
-        if (data) {
-          for (const [k, v] of Object.entries(data)) {
+      .subscribe({
+        next: data => {
+          const entries = Object.entries(data ?? {});
+          for (const [k, v] of entries) {
             this.catalog.set(k, v);
           }
-        }
-        this.loadedSubject.next(true);
+          this.sources.succeed('cwe-catalog', entries.length);
+          if (entries.length) this.loadedSubject.next(true);
+        },
+        // The static seed above stays; the catalog is recorded as failed and loaded$ stays false.
+        error: err => this.sources.fail('cwe-catalog', err),
       });
   }
 

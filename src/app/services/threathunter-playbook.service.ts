@@ -4,6 +4,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { SourceRegistryService, describeLoadError } from './source-registry.service';
 
 interface PlaybookNavigatorLayer {
   name?: string;
@@ -36,20 +37,32 @@ export class ThreatHunterPlaybookService {
   private coveredSubject = new BehaviorSubject<number>(0);
   readonly covered$ = this.coveredSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {
+    this.sources.begin('threathunter-playbook');
     this.tryUrl(0);
   }
 
   /** Try each URL in sequence until one succeeds. */
-  private tryUrl(index: number): void {
-    if (index >= PLAYBOOK_LAYER_URLS.length) return;
+  private tryUrl(index: number, errors: string[] = []): void {
+    if (index >= PLAYBOOK_LAYER_URLS.length) {
+      // Every candidate failed or was empty: record it, never "loaded, 0".
+      if (errors.length) this.sources.fail('threathunter-playbook', errors.join('; '));
+      else this.sources.succeed('threathunter-playbook', 0);
+      return;
+    }
     this.http.get<PlaybookNavigatorLayer>(PLAYBOOK_LAYER_URLS[index]).pipe(
-      catchError(() => of(null)),
+      catchError(err => {
+        errors.push(describeLoadError(err));
+        return of(null);
+      }),
     ).subscribe(layer => {
       if (layer?.techniques?.length) {
         this.ingestLayer(layer);
       } else {
-        this.tryUrl(index + 1);
+        this.tryUrl(index + 1, errors);
       }
     });
   }
@@ -72,7 +85,8 @@ export class ThreatHunterPlaybookService {
     }
     this.totalSubject.next(total);
     this.coveredSubject.next(covered);
-    this.loadedSubject.next(true);
+    this.sources.succeed('threathunter-playbook', covered);
+    if (covered > 0) this.loadedSubject.next(true);
   }
 
   /** Playbook count for a technique (rolls up sub-technique counts). */

@@ -3,6 +3,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
+import { SourceRegistryService } from './source-registry.service';
 
 export interface VerisAction {
   id: string;         // "action.hacking.variety.Brute force"
@@ -26,16 +27,20 @@ export class VerisService {
   private totalSubject = new BehaviorSubject<number>(0);
   total$ = this.totalSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {
     this.load();
   }
 
   private load(): void {
+    this.sources.begin('ctid-veris');
     this.http.get<any>(VerisService.URL).subscribe({
       next: (data) => this.parseAndIndex(data),
       error: (err) => {
         console.error('[VerisService] Failed to load VERIS mapping:', err);
-        this.loadedSubject.next(false);
+        this.sources.fail('ctid-veris', err);
       },
     });
   }
@@ -55,7 +60,8 @@ export class VerisService {
       }
     }
     this.totalSubject.next(count);
-    this.loadedSubject.next(true);
+    this.sources.succeed('ctid-veris', count);
+    if (count > 0) this.loadedSubject.next(true);
   }
 
   private parseAction(m: any): VerisAction {

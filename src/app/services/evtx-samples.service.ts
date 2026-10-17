@@ -3,7 +3,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
-import { catchError, of } from 'rxjs';
+import { SourceRegistryService } from './source-registry.service';
 
 export interface EvtxSample {
   filename: string;
@@ -26,16 +26,19 @@ export class EvtxSamplesService {
 
   private loadRequested = false;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {}
 
   /** Load on demand - only fetches once. */
   loadOnDemand(): void {
     if (this.loadRequested) return;
     this.loadRequested = true;
+    this.sources.begin('evtx-samples-tree');
     this.http
       .get<any>('https://api.github.com/repos/mdecrevoisier/EVTX-to-MITRE-Attack/git/trees/master?recursive=1')
-      .pipe(catchError(() => of(null)))
-      .subscribe((tree: any) => {
+      .subscribe({ next: (tree: any) => {
         if (tree?.tree) {
           const techRegex = /T(\d{4}(?:\.\d{3})?)/;
           let total = 0;
@@ -66,8 +69,10 @@ export class EvtxSamplesService {
           this.totalSubject.next(total);
           this.coveredSubject.next(this.samplesMap.size);
         }
-        this.loadedSubject.next(true);
-      });
+        const rows = this.coveredSubject.value;
+        this.sources.succeed('evtx-samples-tree', rows);
+        if (rows > 0) this.loadedSubject.next(true);
+      }, error: err => this.sources.fail('evtx-samples-tree', err) });
   }
 
   getSamplesForTechnique(attackId: string): EvtxSample[] {

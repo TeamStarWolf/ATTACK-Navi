@@ -2,8 +2,8 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { BehaviorSubject } from 'rxjs';
+import { SourceRegistryService } from './source-registry.service';
 
 export interface D3fendTechnique {
   id: string;          // e.g., "D3-PSA"
@@ -211,7 +211,10 @@ export class D3fendService {
   /** Emits on bundled-ready and after each successful live fetch merges. */
   loaded$ = new BehaviorSubject<boolean>(true);
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {
     // Build index from bundled data, excluding entries that are invalid in
     // D3FEND 1.4.0. This runs synchronously at startup so stale tiles never
     // render — even before the live ontology fetch resolves or when offline.
@@ -235,21 +238,24 @@ export class D3fendService {
    * No-op on network failure — bundled data stays as offline fallback.
    */
   private loadOntologyIndex(): void {
+    this.sources.begin('d3fend-ontology');
     this.http.get<D3fendOntologyResponse>(D3FEND_ALL_TECHNIQUES_API)
-      .pipe(catchError(() => of(null)))
-      .subscribe(response => {
-        const graph = response?.['@graph'];
-        if (!graph?.length) return;
+      .subscribe({
+        next: response => {
+          const graph = response?.['@graph'] ?? [];
+          for (const node of graph) {
+            const id = node['d3f:d3fend-id'];
+            const label = node['rdfs:label'];
+            if (id && label && id.startsWith('D3-')) this.currentOntology.set(id, label);
+          }
+          this.sources.succeed('d3fend-ontology', this.currentOntology.size);
+          if (!this.currentOntology.size) return;
 
-        for (const node of graph) {
-          const id = node['d3f:d3fend-id'];
-          const label = node['rdfs:label'];
-          if (id && label && id.startsWith('D3-')) this.currentOntology.set(id, label);
-        }
-        if (!this.currentOntology.size) return;
-
-        this.reconcileBundledData();
-        this.loaded$.next(true);
+          this.reconcileBundledData();
+          this.loaded$.next(true);
+        },
+        // The seed stays as the offline fallback; the index is recorded as failed.
+        error: err => this.sources.fail('d3fend-ontology', err),
       });
   }
 
@@ -289,11 +295,12 @@ export class D3fendService {
     const urlId = attackId.replace('.', '/');
     this.fetchStatus.set(attackId, 'pending');
 
+    this.sources.begin('d3fend-technique-api');
     this.http.get<D3fendAttackResponse>(`${D3FEND_TECHNIQUE_API}${urlId}.json`)
-      .pipe(catchError(() => of(null)))
-      .subscribe(response => {
+      .subscribe({ next: response => {
         this.fetchStatus.set(attackId, 'done');
         const bindings = response?.off_to_def?.results?.bindings;
+        this.sources.succeed('d3fend-technique-api', null);
         if (!bindings?.length) return;
 
         const collected: D3fendTechnique[] = [];
@@ -329,7 +336,11 @@ export class D3fendService {
           this.liveMap.set(attackId, collected);
           this.loaded$.next(true);
         }
-      });
+      }, error: err => {
+        // Recorded as failed (not as "no countermeasures"); not retried this session.
+        this.fetchStatus.set(attackId, 'done');
+        this.sources.fail('d3fend-technique-api', err);
+      } });
   }
 
   /**

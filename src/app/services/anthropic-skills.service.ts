@@ -3,7 +3,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { SourceRegistryService } from './source-registry.service';
 
 interface SkillsNavigatorLayer {
   name?: string;
@@ -31,21 +31,26 @@ export class AnthropicSkillsService {
   private coveredSubject = new BehaviorSubject<number>(0);
   readonly covered$ = this.coveredSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {
     this.loadLayer();
   }
 
   /** Fetch the Anthropic Cybersecurity Skills Navigator layer. */
   private loadLayer(): void {
-    this.http.get<SkillsNavigatorLayer>(SKILLS_LAYER_URL).pipe(
-      catchError(() => {
-        this.loadedSubject.next(false);
-        return [];
-      }),
-    ).subscribe(layer => {
-      if (layer?.techniques?.length) {
-        this.ingestLayer(layer);
-      }
+    this.sources.begin('anthropic-skills-layer');
+    this.http.get<SkillsNavigatorLayer>(SKILLS_LAYER_URL).subscribe({
+      next: layer => {
+        if (layer?.techniques?.length) {
+          this.ingestLayer(layer);
+        } else {
+          this.sources.succeed('anthropic-skills-layer', 0);
+        }
+      },
+      // A failed fetch is recorded as failed; loaded$ stays false.
+      error: err => this.sources.fail('anthropic-skills-layer', err),
     });
   }
 
@@ -64,7 +69,8 @@ export class AnthropicSkillsService {
     }
     this.totalSubject.next(total);
     this.coveredSubject.next(covered);
-    this.loadedSubject.next(true);
+    this.sources.succeed('anthropic-skills-layer', covered);
+    if (covered > 0) this.loadedSubject.next(true);
   }
 
   /** Skill count for a technique (rolls up sub-technique counts). */

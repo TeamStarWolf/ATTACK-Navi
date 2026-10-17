@@ -1,9 +1,10 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
+import { SourceRegistryService } from './source-registry.service';
 
 /** Rich test record fetched live from the Atomic Red Team GitHub YAML index. */
 export interface AtomicLiveTest {
@@ -64,7 +65,10 @@ export class AtomicService {
   private coveredSubject = new BehaviorSubject<number>(0);
   readonly covered$ = this.coveredSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {
     this.fetchNavigatorLayer();
   }
 
@@ -128,9 +132,19 @@ export class AtomicService {
       map(yaml => {
         const tests = this.parseAtomicYaml(yaml, attackId);
         this.liveTestCache.set(attackId, tests);
+        this.sources.succeed('atomic-tests', null);
         return tests.slice(0, limit);
       }),
-      catchError(() => of([])),
+      catchError(err => {
+        // A 404 means Atomic Red Team has no tests for this technique; anything else is
+        // a failed fetch, recorded as failed (the caller still gets an empty list).
+        if (err instanceof HttpErrorResponse && err.status === 404) {
+          this.liveTestCache.set(attackId, []);
+        } else {
+          this.sources.fail('atomic-tests', err);
+        }
+        return of([]);
+      }),
     );
   }
 
@@ -250,12 +264,11 @@ export class AtomicService {
   }
 
   private fetchNavigatorLayer(): void {
+    this.sources.begin('atomic-layer');
     this.http.get<AtomicNavigatorLayer>(AtomicService.NAVIGATOR_LAYER_URL).subscribe({
       next: (layer) => this.ingestLayer(layer),
-      error: () => {
-        // Network unavailable — service falls back to hardcoded counts silently
-        this.loadedSubject.next(false);
-      },
+      // Recorded as failed; loaded$ stays false and counts stay zero.
+      error: (err) => this.sources.fail('atomic-layer', err),
     });
   }
 
@@ -276,7 +289,8 @@ export class AtomicService {
 
     this.totalSubject.next(totalTests);
     this.coveredSubject.next(coveredTechs);
-    this.loadedSubject.next(true);
+    this.sources.succeed('atomic-layer', coveredTechs);
+    if (coveredTechs > 0) this.loadedSubject.next(true);
   }
 
   /**

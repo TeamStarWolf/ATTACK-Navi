@@ -6,6 +6,7 @@ import { BehaviorSubject, Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { SettingsService } from './settings.service';
 import { proxyRequestHeaders } from './proxy-headers';
+import { SourceRegistryService } from './source-registry.service';
 
 export interface MispGalaxyCluster {
   uuid: string;
@@ -108,7 +109,11 @@ export class MispService {
   private attributeCache = new Map<string, MispAttribute[]>();
   private eventCache = new Map<string, MispEvent[]>();
 
-  constructor(private http: HttpClient, private settings: SettingsService) {
+  constructor(
+    private http: HttpClient,
+    private settings: SettingsService,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {
     this.load();
     this.loadConfigFromStorage();
   }
@@ -326,13 +331,21 @@ export class MispService {
   }
 
   private load(): void {
+    this.sources.begin('misp-galaxy');
     this.http.get<MispGalaxyFile>(GALAXY_URL)
-      .pipe(catchError(() => of(null)))
-      .subscribe(data => {
-        if (!data?.values?.length) return;
-        this.ingest(data.values);
-        this.totalSubject.next(this.allClusters.length);
-        this.loadedSubject.next(true);
+      .subscribe({
+        next: data => {
+          if (!data?.values?.length) {
+            this.sources.succeed('misp-galaxy', 0);
+            return;
+          }
+          this.ingest(data.values);
+          this.totalSubject.next(this.allClusters.length);
+          this.sources.succeed('misp-galaxy', this.allClusters.length);
+          if (this.allClusters.length) this.loadedSubject.next(true);
+        },
+        // Recorded as failed; loaded$ stays false.
+        error: err => this.sources.fail('misp-galaxy', err),
       });
   }
 

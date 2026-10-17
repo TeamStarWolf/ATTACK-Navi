@@ -3,9 +3,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { forkJoin, of } from 'rxjs';
+import { forkJoin, of, throwError } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { retryWithBackoff } from '../utils/retry';
+import { SourceRegistryService } from './source-registry.service';
 
 export interface CveAttackMapping {
   cveId: string;
@@ -47,7 +48,16 @@ export class AttackCveService {
   private byCveId = new Map<string, CveAttackMapping>();
 
   private loadedSubject = new BehaviorSubject<boolean>(false);
+  /** True once at least one of the two CTID datasets loaded with rows; never after a failure. */
   loaded$ = this.loadedSubject.asObservable();
+
+  private outcomeSubject = new BehaviorSubject<'pending' | 'loaded' | 'failed'>('pending');
+  /**
+   * How the load settled: 'loaded' when either dataset arrived, 'failed' when neither did.
+   * Services that cross-reference CVEs (ExploitDB, Nuclei, trickest) wait on this so a
+   * failure here marks them blocked instead of leaving them pending forever.
+   */
+  readonly outcome$ = this.outcomeSubject.asObservable();
 
   private totalSubject = new BehaviorSubject<number>(0);
   total$ = this.totalSubject.asObservable();
@@ -56,7 +66,10 @@ export class AttackCveService {
   /** Number of unique ATT&CK techniques that have ≥1 CVE mapping. */
   covered$ = this.coveredSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {
     this.load();
   }
 
@@ -117,10 +130,17 @@ export class AttackCveService {
   }
 
   private load(): void {
+    this.sources.begin('ctid-attack-to-cve');
+    this.sources.begin('ctid-kev');
     forkJoin({
+      // Each dataset records its own failure and yields null, so one failing does not
+      // hide the other, and neither failure is reported as an empty, loaded mapping.
       csv: this.http.get(AttackCveService.CSV_URL, { responseType: 'text' }).pipe(
         retryWithBackoff(),
-        catchError(() => of('')),
+        catchError(err => {
+          this.sources.fail('ctid-attack-to-cve', err);
+          return of(null);
+        }),
       ),
       kev: this.resolveKevUrl().pipe(
         switchMap(url => {
@@ -128,22 +148,35 @@ export class AttackCveService {
           return this.http.get<any>(url).pipe(
             retryWithBackoff(),
             // A discovered path that does not serve is worse than the pinned one.
-            catchError(() =>
-              url === AttackCveService.KEV_CTID_URL
-                ? of({ mapping_objects: [] })
-                : this.http.get<any>(AttackCveService.KEV_CTID_URL).pipe(
-                    catchError(() => of({ mapping_objects: [] })),
-                  ),
-            ),
+            catchError(err => {
+              if (url === AttackCveService.KEV_CTID_URL) return throwError(() => err);
+              this.kevSourceUrl = AttackCveService.KEV_CTID_URL;
+              return this.http.get<any>(AttackCveService.KEV_CTID_URL);
+            }),
           );
+        }),
+        catchError(err => {
+          this.sources.fail('ctid-kev', err);
+          return of(null);
         }),
       ),
     }).subscribe(({ csv, kev }) => {
-      if (csv) this.parseAndIndexCsv(csv);
-      this.parseAndIndexKevJson(kev);
+      if (csv !== null) {
+        this.parseAndIndexCsv(csv);
+        this.sources.succeed('ctid-attack-to-cve', this.byCveId.size);
+      }
+      if (kev !== null) {
+        this.parseAndIndexKevJson(kev);
+        this.sources.succeed('ctid-kev', Array.isArray(kev?.mapping_objects) ? kev.mapping_objects.length : 0);
+      }
       this.totalSubject.next(this.byCveId.size);
       this.coveredSubject.next(this.byTechniqueId.size);
-      this.loadedSubject.next(true);
+      if (this.byCveId.size > 0) {
+        this.loadedSubject.next(true);
+        this.outcomeSubject.next('loaded');
+      } else {
+        this.outcomeSubject.next('failed');
+      }
     });
   }
 

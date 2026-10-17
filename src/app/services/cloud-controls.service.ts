@@ -2,6 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { SourceRegistryService } from './source-registry.service';
 import { BehaviorSubject, combineLatest, map } from 'rxjs';
 
 export interface CloudControl {
@@ -34,25 +35,34 @@ export class CloudControlsService {
   azureTotal$ = this.azureTotalSubject.asObservable();
   gcpTotal$ = this.gcpTotalSubject.asObservable();
 
-  /** True once all three providers have loaded (or failed). */
+  /**
+   * True once at least one provider's mapping has loaded. A failed provider never
+   * counts as loaded (its SourceRecord says 'failed'), and one provider failing does
+   * not hide the others.
+   */
   loaded$ = combineLatest([
     this.awsLoadedSubject,
     this.azureLoadedSubject,
     this.gcpLoadedSubject,
-  ]).pipe(map(([a, b, c]) => a && b && c));
+  ]).pipe(map(([a, b, c]) => a || b || c));
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {
     this.loadProvider(CloudControlsService.AWS_URL, 'aws');
     this.loadProvider(CloudControlsService.AZURE_URL, 'azure');
     this.loadProvider(CloudControlsService.GCP_URL, 'gcp');
   }
 
   private loadProvider(url: string, provider: 'aws' | 'azure' | 'gcp'): void {
+    this.sources.begin(`ctid-${provider}`);
     this.http.get<any>(url).subscribe({
       next: (data) => this.parseAndIndex(data, provider),
       error: (err) => {
         console.error(`[CloudControlsService] Failed to load ${provider.toUpperCase()} mapping:`, err);
-        this.markLoaded(provider, 0);
+        // Recorded as failed; this provider's loaded flag stays false.
+        this.sources.fail(`ctid-${provider}`, err);
       },
     });
   }
@@ -77,7 +87,8 @@ export class CloudControlsService {
         count++;
       }
     }
-    this.markLoaded(provider, count);
+    this.sources.succeed(`ctid-${provider}`, count);
+    if (count > 0) this.markLoaded(provider, count);
   }
 
   private markLoaded(provider: 'aws' | 'azure' | 'gcp', count: number): void {

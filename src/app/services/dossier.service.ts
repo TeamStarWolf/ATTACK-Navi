@@ -39,6 +39,7 @@ import { NistMappingService } from './nist-mapping.service';
 import { PocExploitService } from './poc-exploit.service';
 import { SigmaService } from './sigma.service';
 import { DEFAULT_ENVIRONMENT, SsvcEnvironment, SsvcService } from './ssvc.service';
+import { SourceRegistryService } from './source-registry.service';
 
 const ASSET_DIR = 'assets/data/dossiers';
 /** Leading text of the warning carried while the KEV catalogue could not be loaded. */
@@ -82,12 +83,19 @@ export class DossierService {
     private m365: M365ControlsService,
     private cwe: CweService,
     private f3: F3FraudService,
+    private sources: SourceRegistryService = new SourceRegistryService(),
   ) {
+    this.sources.begin('cve-dossiers');
     this.http
       .get<{ cves?: string[] }>(`${ASSET_DIR}/index.json`)
-      .pipe(catchError(() => of(null)))
-      .subscribe(idx => {
-        this.assetIndex = new Set((idx?.cves ?? []).map(c => c.toUpperCase()));
+      .subscribe({
+        next: idx => {
+          this.assetIndex = new Set((idx?.cves ?? []).map(c => c.toUpperCase()));
+          this.sources.succeed('cve-dossiers', this.assetIndex.size);
+        },
+        // Recorded as failed; the index stays null (indexLoaded false), and load() still
+        // tries the asset and composes on demand when it is missing.
+        error: err => this.sources.fail('cve-dossiers', err),
       });
     // The F3 overlap bundle is separate from the Enterprise domain; start it early so it
     // is usually ready by the time a dossier is opened.

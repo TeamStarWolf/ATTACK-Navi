@@ -3,6 +3,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
+import { SourceRegistryService } from './source-registry.service';
 
 export interface CriControl {
   id: string;          // e.g. "PR.IR-01.05"
@@ -44,16 +45,21 @@ export class CriProfileService {
   /** Number of unique ATT&CK techniques that have ≥1 CRI Profile mapping. */
   covered$ = this.coveredSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private sources: SourceRegistryService = new SourceRegistryService(),
+  ) {
     this.load();
   }
 
   private load(): void {
+    this.sources.begin('ctid-cri-profile');
     this.http.get<any>(CriProfileService.URL).subscribe({
       next: (data) => this.parseAndIndex(data),
       error: (err) => {
         console.error('[CriProfileService] Failed to load CRI Profile mapping:', err);
-        this.loadedSubject.next(true); // mark done even on failure
+        // Recorded as failed; loaded$ stays false (it no longer means "done").
+        this.sources.fail('ctid-cri-profile', err);
       },
     });
   }
@@ -74,7 +80,8 @@ export class CriProfileService {
     }
     this.totalSubject.next(count);
     this.coveredSubject.next(this.byTechniqueId.size);
-    this.loadedSubject.next(true);
+    this.sources.succeed('ctid-cri-profile', count);
+    if (count > 0) this.loadedSubject.next(true);
   }
 
   private parseControl(m: any): CriControl {
