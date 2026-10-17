@@ -1,21 +1,40 @@
 # ATTACK-Navi quick start
 
 ATTACK-Navi is a browser-based workbench for MITRE ATT&CK. It runs as a static site with
-no login and no required backend. This guide covers how to move around, what the colors
-mean, and the common workflows.
+no account and no project server. This guide shows the first path to try, how to move
+around, what the colors mean, and the common workflows.
 
 ## Open the app
 
 Hosted build: https://teamstarwolf.github.io/ATTACK-Navi/
 
-The matrix loads with bundled Enterprise ATT&CK 19.2. Nothing is sent anywhere; the data
-you enter (assets, assessment answers, annotations) stays in your browser.
+The matrix loads with bundled Enterprise ATT&CK 19.2. There is no login and no telemetry.
+The data you create, assessment answers, imported assets, annotations and saved views,
+stays in your browser's local storage. Some features do reach the network: the app fetches
+reference datasets from their upstream hosts (listed in Data, limits and credits), a CVE
+search sends your query to the NVD API, and any MISP, OpenCTI or TAXII server you configure
+is contacted directly.
+
+## First five minutes
+
+A detection-focused path that touches the core of the app:
+
+1. Open the app. The Matrix loads with Enterprise ATT&CK.
+2. Click the lens button in the matrix toolbar (labelled "View & explore options"; it shows
+   the active lens, "Reference depth" by default) and choose the Sigma lens. It populates
+   once the Sigma coverage data loads, then recolors the matrix by how much Sigma content
+   maps to each technique.
+3. Click a technique, for example T1059.001. The sidebar opens.
+4. Open the Detection and Sigma sections to read the mapped rule counts and detail.
+5. Open the SIEM Query Library section and copy a query.
+6. Copy a share link with the link button (titled "Copy share link") in the sidebar header.
+   The link reopens the app with that technique selected.
 
 ## Move around
 
-The left rail holds 10 workspaces: Matrix, Detection, Exposure, Dashboard, Threat Intel,
-Coverage, Library, Reports, Status and Settings. Each workspace has its own tabs (47 tabs
-in all). Three ways to navigate:
+The left rail lists the workspaces: Matrix, Exposure, Intel, Detect, Coverage, Dashboard,
+Reports, Library, Status, then Help and Settings. Most workspaces have their own tabs;
+Matrix and Status do not. Three ways to navigate:
 
 - `Ctrl+K` opens the command palette. Type a destination name and press Enter.
 - Every tab has its own URL, so you can bookmark or share it.
@@ -24,110 +43,127 @@ in all). Three ways to navigate:
 ## What the colors mean
 
 Lens labels follow the Known / Covered / Proven vocabulary, so a color never claims more
-than the data behind it supports:
+than the data behind it supports.
 
-- **Known (reference data).** The world knows how to mitigate, detect or test the
-  technique. These lenses read "mapped", "available" or "reference depth". They say nothing
-  about your environment.
-- **Covered (self-attested).** Something is deployed for the technique, recorded by you, but
-  not shown to have fired. The assessment and status lenses sit here.
-<!-- truth-vocab-allow-next-line proven-only -- names the Proven rung in its own definition; not a claim about this app's data -->
-- **Proven.** A named detection fired, or the technique was blocked, on a recorded date.
-  The hosted app carries none of it; that rung comes from range evidence, not from anything
-  you can enter in the browser.
+**Known (reference data).** Public reference sources map a mitigation, detection or test to
+the technique. These lenses read "mapped", "available" or "reference depth". They say
+nothing about your environment.
 
-So the matrix out of the box shows reference depth (what is mappable), not your posture.
-Your posture appears only after you record your own implementation status or import assets.
+**Covered (self-attested).** Something is deployed for the technique, recorded by you, but
+not shown to have fired. The hosted app has only the self-attested form of this rung;
+"covered (range)" is produced elsewhere, not in the browser.
 
-## Workflow: map your coverage and find gaps
+<!-- truth-vocab-allow-next-line proven-only -- defines the Proven rung, not a claim about this app -->
+**Proven.** A named detection fired, or the technique was blocked, on a recorded date. The
+hosted app carries none of it: it comes from recorded test or detection evidence, which this
+app does not collect.
 
-### 1. Record your implementation status
+So the matrix out of the box shows reference depth, what is mappable, not your posture.
+Posture appears only in the views you populate, and those stay self-attested.
 
-1. Open Coverage, Assessment (or `Ctrl+K`, then "assessment").
+## The lens picker
+
+The matrix toolbar has a lens button, "View & explore options", that shows the active lens
+short label ("Reference depth" by default). Open it to switch the matrix coloring or change
+sorting and filtering. There are 33 lenses, grouped as Coverage and Posture, Threat
+Landscape, Vulnerabilities, Detections and Frameworks. Each lens carries a rung, so a
+Detections lens reads "mapped" or "available" (reference content exists), never a posture
+claim. The Threat Landscape and Vulnerabilities lenses are dimensions, how much adversaries
+care and what is reachable, not posture rungs.
+
+## Record your own coverage
+
+Two lenses read your self-attested input: Status (the implementation status you set on
+mapped mitigations) and Controls (the controls you declare). Everything else is reference
+data.
+
+### Assessment (Coverage > Assessment)
+
+1. Open Coverage > Assessment (or `Ctrl+K`, then "assessment").
 2. Pick a domain. Enterprise is the common choice.
 3. Select the threat groups relevant to your sector.
-4. Mark your self-attested implementation status for each technique.
-5. Review the summary: techniques with a mapped mitigation, and the ones you marked as
-   implemented. The summary is self-attested, not evidenced.
+4. Set your implementation status for each technique.
+5. The results show how many techniques you marked Implemented or In Progress, a
+   self-attested coverage percentage, a tactic breakdown and the top priority gaps. These
+   numbers are self-attested, not validated.
 6. Export the result.
 
-### 2. Import your assets
+### Assets and exposure (Coverage > Assets)
 
-1. Open Coverage, Assets (or `Ctrl+K`, then "assets").
-2. Upload a CSV with the columns `hostname, os, software, tags, criticality`.
-3. Open Exposure, or turn on the My Exposure lens, to see which techniques affect the
-   assets you imported. My Exposure is a reachability view, not a posture rung.
+1. Open Coverage > Assets (or `Ctrl+K`, then "assets").
+2. In the Inventory tab, upload a CSV with the columns `hostname, os, software, tags,
+   criticality`, or add assets by hand.
+3. Open the Exposure tab to see which techniques reach your assets, and use Enable Heatmap
+   to turn on the My Exposure lens on the matrix. Matching is keyword-based and heuristic,
+   and My Exposure is a reachability view, not a posture rung.
 
-### 3. Run a gap analysis
+### Gap analysis (Exposure > Gap Analysis)
 
-1. Open Exposure, Gap Analysis (or `Ctrl+K`, then "gap analysis").
+1. Open Exposure > Gap Analysis (or `Ctrl+K`, then "gap analysis").
 2. Select the threat groups you care about.
-3. Generate the report. It marks each of the selected groups' techniques by whether you
-   have a mapped mitigation and a self-attested detection, so the gaps are the techniques
-   with neither.
+3. Generate the report. It marks each selected technique by whether ATT&CK maps a mitigation
+   to it and whether public detection content (Sigma, Elastic, Splunk, M365, CAR) exists for
+   it; the gaps are the techniques with neither. This is reference data, not your posture.
 4. Export as PDF.
 
-## The matrix and the technique sidebar
+## The technique sidebar
 
 Click any technique to open the sidebar. Hover for a short tooltip. Search by ID (T1059) or
 name (PowerShell) in the top bar.
 
-The sidebar collects what public sources know about a technique: ATT&CK mitigations and
-your implementation status; detection content from Sigma, Elastic, Splunk, M365 Defender,
-CAR and Atomic Red Team; CVE and KEV links and EPSS scores; copy-ready SIEM queries;
-D3FEND countermeasures and MITRE Engage activities; and control mappings for NIST 800-53,
-CRI Profile, VERIS, CSA CCM and cloud providers. Each section names its source, and the
-detection and control sections are reference data (Known) unless you have recorded your own
-status.
-
-## Heatmap modes
-
-The Coverage dropdown in the toolbar switches the matrix coloring. There are 33 modes,
-grouped as Coverage and Posture, Threat Landscape, Vulnerabilities, Detections and
-Frameworks. Each mode carries a rung, so a Detections lens reads "mapped" or "available"
-(reference content exists), not a self-attested or evidenced claim, unless the data is yours. The Threat Landscape
-and Vulnerabilities lenses are dimensions (how much adversaries care, what is reachable),
-never a posture rung.
+The sidebar collects what public sources record about a technique: ATT&CK mitigations and
+the status you set; detection content in its Detection, Sigma, SIEM Query Library, M365,
+CAR, Atomic Red Team and Sentinel sections; CVE and KEV links and EPSS scores; D3FEND
+countermeasures and MITRE Engage activities; and control mappings for NIST 800-53, CRI
+Profile, VERIS, CSA CCM and cloud providers. Elastic and Splunk appear as rule counts rather
+than as their own sections. Each section names its source, and detection and control content
+is reference data unless you have recorded your own status.
 
 ## Workspaces and tabs
 
-| Workspace | Tabs |
+| Workspace (rail label) | Tabs |
 |---|---|
-| Matrix | the single matrix view |
-| Detection | Detections, Sigma, SIEM, YARA, Validation, Data Sources, Purple Team |
+| Matrix | none; the matrix view |
 | Exposure | CVE, Risk, Kill Chain, Graph, Gap Analysis, Priority, SSVC, Dossier, What-If, CTEM |
-| Dashboard | Overview, Analytics |
-| Threat Intel | Groups, Actors, Compare, Scenarios, Emulation, Campaigns, Software, Feeds |
+| Intel (Threat Intel) | Groups, Actors, Compare, Scenarios, Emulation, Campaigns, Software, Feeds |
+| Detect (Detection) | Detections, Sigma, SIEM, YARA, Validation, Data Sources, Purple Team |
 | Coverage | Assessment, Controls, Custom Mitigations, Compliance, Diff, Timeline, Target, Assets |
-| Library | Workbench, Layers, Collections, Comparison, Roadmap, Watchlist, Tags |
+| Dashboard | Overview, Analytics |
 | Reports | Report Builder, IR Playbooks, Export Hub |
-| Status | source health and data freshness |
+| Library | Workbench, Layers, Collections, Comparison, Roadmap, Watchlist, Tags |
+| Status | none; source health and data freshness |
 | Settings | Preferences, Changelog |
 
 The Library workspace includes 37 named layers drawn from the TeamStarWolf library.
 
 ## Share and export
 
-- **Share a technique.** The Share button in the sidebar header copies a URL such as
-  `https://teamstarwolf.github.io/ATTACK-Navi/#tech=T1059.001`. Opening it pre-selects the
-  technique.
-- **Share a collection.** Library, Collections has a share link that encodes your custom
-  techniques and annotations in the URL hash.
-- **Export.** Reports, Export Hub offers CSV, XLSX, an HTML report, PDF, PNG, an ATT&CK
-  Navigator JSON layer (import and export), a STIX 2.1 bundle, Sigma rules, SIEM queries and
-  YARA rules.
+- **Share a technique.** The link button in the sidebar header ("Copy share link") copies a
+  URL such as `https://teamstarwolf.github.io/ATTACK-Navi/#tech=T1059.001`. Opening it
+  pre-selects the technique. A second button copies the technique as Markdown.
+- **Share a collection.** Library > Collections has a share link, and the STIX 2.1 bundle
+  import and export, for your custom techniques and annotations.
+- **Export Hub (Reports > Export Hub).** Coverage CSV, Tactic Summary CSV, Implementation
+  Plan CSV, an Excel workbook, a Full Report CSV, an HTML report, a PDF, Print, a Matrix
+  PNG, ATT&CK Navigator layer export, open and import, and workspace state export and
+  import.
+- **Detection exports.** Sigma rule templates, SIEM queries and YARA rules are generated
+  from their own Detect tabs (Sigma, SIEM, YARA). The Sigma output is a labelled template at
+  informational level, a starting point you complete.
 
 ## Optional integrations
 
 Set these in Settings. They are optional; the app works without them.
 
 - **MISP.** Enter your server URL, API key and organization ID, then Test and Save. The
-  Threat Intel panel and sidebar then show your MISP data.
+  connection test and the public MISP Galaxy clusters work; querying your own MISP events
+  and attributes is not wired into the UI, and the MISP Events tab builds templates locally.
 - **OpenCTI.** Enter your URL and API token. The sidebar then shows OpenCTI indicators and
   actors.
 - **TAXII 2.1.** Add a server, fetch collections and import STIX bundles.
-- **NVD API key.** Register at https://nvd.nist.gov/developers/request-an-api-key and enter
-  the key in Settings to raise your NVD rate limit for CVE queries.
+- **NVD API key.** Set it at Settings > Preferences > Integrations. It is sent only by the
+  per-technique CWE lookups, not by keyword or CVE ID searches, and it raises your NVD rate
+  limit (50 requests per 30 seconds with a key, 5 without).
 
 Credentials entered in the browser stay in the browser. To keep OpenCTI or MISP credentials
 off the client, run the optional proxy under `server/` (see Self-hosting).
@@ -151,15 +187,21 @@ Opens on http://localhost:8080. The optional credentials proxy is reached throug
 http://localhost:8080/api/ (and from the host on 127.0.0.1:8787). The stack starts without
 `server/.env`; the proxy has nothing to forward until you fill it in. To serve on a LAN
 address or hostname instead of localhost, set `APP_ORIGIN` (the page origin, for example
-`http://navi.lan:8080`) and `APP_HOST` (the bare host name the browser uses, for example
+`http://navi.lan:8080`) and `APP_HOST` (the bare host the browser uses, for example
 `navi.lan`) in a `.env` file next to `docker-compose.yml`; the proxy refuses other Host
 names.
 
 ### Kubernetes
 
+No workflow in this repository publishes a container image, so build and push one first,
+then point the chart at it:
+
 ```bash
-helm install attack-nav helm/attack-nav/
+helm install attack-nav helm/attack-nav/ \
+  --set image.repository=YOUR_REGISTRY/attack-nav --set image.tag=YOUR_TAG
 ```
+
+See docs/HELM.md ("Build and push the image") for the full steps.
 
 ### Manual
 
@@ -172,14 +214,16 @@ npm ci && npx ng build
 
 The matrix shows reference data by default: what public sources map, not your posture. The
 only environment-specific views are the ones you populate (assessment status, imported
-assets, annotations), and those are self-attested, not evidenced. The hosted app has no data
-at the evidenced rung.
+assets, annotations), and those stay self-attested. The hosted app has no data at the
+evidenced rung.
 
-ATT&CK, ICS and Mobile ATT&CK and the CTID F3 Fraud Framework are bundled; D3FEND, the CTID
-mappings, Sigma, Elastic, Splunk, Atomic Red Team, Galeax CVE2CAPEC, CISA KEV, FIRST EPSS,
-NVD and others are fetched from their upstream sources at runtime. `THIRD_PARTY_NOTICES.md`
-lists every source with its license and terms, and the Status workspace shows which sources
-loaded.
+Enterprise, ICS and Mobile ATT&CK and the CTID F3 Fraud Framework are bundled. The app also
+bundles fallbacks it uses when a live source is unavailable (a CISA KEV snapshot, a D3FEND
+seed, a CVE-to-technique map, a CWE catalog and SSVC decision tables); the "Bundled data
+assets" section of docs/FACTS.md lists them. D3FEND, the CTID mappings, Sigma, Elastic,
+Splunk, Atomic Red Team, Galeax CVE2CAPEC, CISA KEV, FIRST EPSS, NVD and others are fetched
+from their upstream sources at runtime. THIRD_PARTY_NOTICES.md lists every source with its
+license and terms, and the Status workspace shows which sources loaded.
 
 © 2026 The MITRE Corporation. The ATT&CK data in this repository is reproduced and
 distributed with the permission of The MITRE Corporation. MITRE ATT&CK® is a registered
