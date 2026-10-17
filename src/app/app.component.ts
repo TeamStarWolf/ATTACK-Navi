@@ -82,13 +82,26 @@ export class AppComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((e) => {
         if (e instanceof NavigationStart) {
-          this.pendingKeepSelection =
-            this.router.getCurrentNavigation()?.extras?.state?.['keepTechniqueSelection'] === true;
+          this.pendingKeepSelection = this.shouldKeepSelection(
+            e.navigationTrigger, this.router.getCurrentNavigation()?.extras?.state);
         } else if (e instanceof NavigationEnd) {
           this.clearSelectionOnRouteChange(e.urlAfterRedirects ?? e.url, this.pendingKeepSelection);
           this.pendingKeepSelection = false;
         }
       });
+  }
+
+  /**
+   * Honor keepTechniqueSelection only on an IMPERATIVE navigation. On Back/Forward
+   * (popstate) the router restores the history entry's saved state, which still
+   * carries the flag from when PanelNavService pushed that entry — re-applying it
+   * would resurrect a leftover drawer (the original bug, back through history).
+   */
+  private shouldKeepSelection(
+    trigger: NavigationStart['navigationTrigger'],
+    state: { [k: string]: unknown } | undefined,
+  ): boolean {
+    return trigger !== 'popstate' && state?.['keepTechniqueSelection'] === true;
   }
 
   /**
