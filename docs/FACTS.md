@@ -14,7 +14,7 @@ Counts and versions derived from the code. When a document states one of these n
 | Routed workspace tabs | 47 | child routes with `data.tab` in `src/app/pages/*/*.routes.ts` |
 | Library layers | 37 | `src/assets/data/library-layers/index.json` |
 | Lylat mission layers | 35 | `src/assets/data/lylat-mission-layers/index.json` |
-| Unit spec files | 182 | `src/**/*.spec.ts` |
+| Unit spec files | 184 | `src/**/*.spec.ts` |
 | Playwright spec files | 5 | `e2e/**/*.spec.ts` |
 | Script test files | 3 | `scripts/**/*.test.mjs` |
 | Proxy test files | 1 | `server/**/*.test.*` |
@@ -40,14 +40,14 @@ Version is the `x_mitre_version` of the bundle's `x-mitre-collection` object.
 
 | # | Id | Short label | Group |
 | --: | :-- | :-- | :-- |
-| 1 | `coverage` | Mitigations | Coverage & Posture |
+| 1 | `coverage` | Mitigations mapped | Coverage & Posture |
 | 2 | `status` | Status | Coverage & Posture |
 | 3 | `controls` | Controls | Coverage & Posture |
-| 4 | `unified` | Unified | Coverage & Posture |
+| 4 | `unified` | Reference depth | Coverage & Posture |
 | 5 | `library` | Library | Coverage & Posture |
 | 6 | `frequency` | Frequency | Coverage & Posture |
-| 7 | `risk` | Risk | Threat Landscape |
-| 8 | `exposure` | Exposure | Threat Landscape |
+| 7 | `risk` | Threat-weighted gap | Threat Landscape |
+| 8 | `exposure` | Selected adversaries | Threat Landscape |
 | 9 | `software` | Software | Threat Landscape |
 | 10 | `campaign` | Campaign | Threat Landscape |
 | 11 | `intelligence` | Intelligence | Threat Landscape |
@@ -57,11 +57,11 @@ Version is the `x_mitre_version` of the bundle's `x-mitre-collection` object.
 | 15 | `epss` | EPSS | Vulnerabilities |
 | 16 | `kill-chain` | Kill Chain | Vulnerabilities |
 | 17 | `poc-exploits` | PoC | Vulnerabilities |
-| 18 | `detection` | Detection | Detections |
+| 18 | `detection` | Detection content | Detections |
 | 19 | `sigma` | Sigma | Detections |
 | 20 | `elastic` | Elastic | Detections |
 | 21 | `splunk` | Splunk | Detections |
-| 22 | `wazuh` | Wazuh | Detections |
+| 22 | `wazuh` | Wazuh stock rules | Detections |
 | 23 | `m365` | M365 | Detections |
 | 24 | `car` | CAR | Detections |
 | 25 | `atomic` | Atomic | Detections |
@@ -174,7 +174,7 @@ Read by `scripts/check-facts.mjs`.
   "routeFileWorkspaces": 8,
   "routedTabs": 47,
   "libraryLayers": 37,
-  "unitSpecs": 182,
+  "unitSpecs": 184,
   "angularMajor": 22,
   "typescriptMajor": 6,
   "bundleVersions": {

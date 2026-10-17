@@ -17,19 +17,24 @@ export interface HeatmapModeDef {
  * Single source of truth for every heatmap mode. The heatmap dropdown, the
  * trigger-button label, and mode cycling all read from this list — adding a
  * mode here is the only edit needed.
+ *
+ * Labels follow the Known / Covered / Proven vocabulary (plan 4.1, E1.1): a
+ * lens built from reference data says 'mapped', 'available' or 'reference
+ * depth', never 'coverage'. The `value` ids are the heat= URL values and never
+ * change, so old links keep working.
  */
 export const HEATMAP_MODES: readonly HeatmapModeDef[] = [
   // Coverage & Posture
-  { value: 'coverage',  label: '🛡 Mitigations',     short: 'Mitigations', group: 'Coverage & Posture' },
+  { value: 'coverage',  label: '🛡 Mitigations mapped', short: 'Mitigations mapped', group: 'Coverage & Posture' },
   { value: 'status',    label: '✅ Status',          short: 'Status',      group: 'Coverage & Posture' },
   { value: 'controls',  label: '🔒 Controls',        short: 'Controls',    group: 'Coverage & Posture' },
-  { value: 'unified',   label: '🎯 Unified Coverage', short: 'Unified',     group: 'Coverage & Posture' },
+  { value: 'unified',   label: '🎯 Reference depth', short: 'Reference depth', group: 'Coverage & Posture' },
   { value: 'library',   label: '📚 Library Layer',   short: 'Library',     group: 'Coverage & Posture' },
   { value: 'frequency', label: '📊 Frequency',       short: 'Frequency',   group: 'Coverage & Posture' },
 
   // Threat Landscape
-  { value: 'risk',         label: '🔥 Risk',          short: 'Risk',         group: 'Threat Landscape' },
-  { value: 'exposure',     label: '☢ Exposure',      short: 'Exposure',     group: 'Threat Landscape' },
+  { value: 'risk',         label: '🔥 Threat-weighted mapping gap', short: 'Threat-weighted gap', group: 'Threat Landscape' },
+  { value: 'exposure',     label: '☢ Selected adversaries', short: 'Selected adversaries', group: 'Threat Landscape' },
   { value: 'software',     label: '💾 Software',      short: 'Software',     group: 'Threat Landscape' },
   { value: 'campaign',     label: '🎯 Campaign',      short: 'Campaign',     group: 'Threat Landscape' },
   { value: 'intelligence', label: '🧠 Intelligence',  short: 'Intelligence', group: 'Threat Landscape' },
@@ -43,11 +48,11 @@ export const HEATMAP_MODES: readonly HeatmapModeDef[] = [
   { value: 'poc-exploits', label: '💣 PoC Exploits',   short: 'PoC',        group: 'Vulnerabilities' },
 
   // Detections
-  { value: 'detection', label: '🔍 Detection',         short: 'Detection', group: 'Detections' },
+  { value: 'detection', label: '🔍 Detection content available', short: 'Detection content', group: 'Detections' },
   { value: 'sigma',     label: 'Σ Sigma Rules',        short: 'Sigma',     group: 'Detections' },
   { value: 'elastic',   label: '🟢 Elastic Rules',     short: 'Elastic',   group: 'Detections' },
   { value: 'splunk',    label: '🟠 Splunk Detections', short: 'Splunk',    group: 'Detections' },
-  { value: 'wazuh',     label: '🔵 Wazuh XDR',         short: 'Wazuh',     group: 'Detections' },
+  { value: 'wazuh',     label: '🔵 Wazuh stock rules (curated)', short: 'Wazuh stock rules', group: 'Detections' },
   { value: 'm365',      label: '🔷 M365 Defender',     short: 'M365',      group: 'Detections' },
   { value: 'car',       label: '🔬 CAR',               short: 'CAR',       group: 'Detections' },
   { value: 'atomic',    label: '⚛ Atomic',            short: 'Atomic',    group: 'Detections' },

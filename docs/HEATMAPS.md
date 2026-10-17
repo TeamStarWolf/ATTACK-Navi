@@ -9,9 +9,9 @@
 
 | # | Mode ID | Display Label | Legend Label | Scale Type | Data Source Service | What the Score Represents |
 |---|---------|--------------|--------------|------------|--------------------|----|
-| 1 | `coverage` | Coverage | Mitigations | Gradient (5) | `Domain.mitigationsByTechnique` | Count of mapped ATT&CK mitigations (0, 1, 2, 3, 4+) |
-| 2 | `risk` | Risk | Risk Score | Gradient (5) | Computed in `MatrixComponent` | `groupCount * (1 + 1/(mitigationCount+1))` |
-| 3 | `exposure` | Exposure | Exposure | Gradient (5) | `FilterService.activeThreatGroupIds$` | Count of selected threat groups using this technique |
+| 1 | `coverage` | Mitigations mapped | Mitigations mapped | Gradient (5) | `Domain.mitigationsByTechnique` | Count of mapped ATT&CK mitigations (0, 1, 2, 3, 4+) |
+| 2 | `risk` | Threat-weighted mapping gap | Threat-weighted mapping gap | Gradient (5) | Computed in `MatrixComponent` | `groupCount * (1 + 1/(mitigationCount+1))` |
+| 3 | `exposure` | Selected adversaries | Selected adversaries | Gradient (5) | `FilterService.activeThreatGroupIds$` | Count of selected threat groups using this technique |
 | 4 | `frequency` | Frequency | Groups | Gradient (5) | `Domain.groupsByTechnique` | Total unique threat groups using this technique |
 | 5 | `software` | Software | Software | Gradient (5) | `Domain.softwareByTechnique` | Count of ATT&CK software entries using this technique |
 | 6 | `campaign` | Campaign | Campaigns | Gradient (5) | `Domain.campaignsByTechnique` | Count of ATT&CK campaigns using this technique |
@@ -23,9 +23,9 @@
 | 12 | `engage` | Engage | Engage | Gradient (5) | `EngageService` | Count of MITRE Engage activities |
 | 13 | `car` | CAR | CAR Analytics | Gradient (5) | `CARService` | Count of Cyber Analytics Repository analytics |
 | 14 | `cve` | CVE | CVEs | Gradient (5) | `AttackCveService` | Count of CVEs from CTID ATT&CK-to-CVE dataset |
-| 15 | `detection` | Detection | Sigma Rules | Gradient (5) | Computed (multi-service) | Weighted: `sigma*3 + d3fend*2 + car*2 + atomic*1` |
+| 15 | `detection` | Detection content available | Detection content available | Gradient (5) | Computed (multi-service) | Weighted: `sigma*3 + d3fend*2 + car*2 + atomic*1` |
 | 16 | `cri` | CRI Profile | CRI Controls | Gradient (5) | `CriProfileService` | Count of CRI Profile controls mapped |
-| 17 | `unified` | Unified Risk | Unified Risk | Gradient (5) | Computed (multi-service) | Composite 0--100 score across 5 dimensions |
+| 17 | `unified` | Reference depth | Reference depth | Threshold (6) | Computed (multi-service) | 0--100 composite of defensive reference inputs only (mitigations, detection content, CTID controls, D3FEND, Atomic) |
 | 18 | `sigma` | Sigma Rules | Sigma Rules | Gradient (5) | `SigmaService` | Count of Sigma detection rules |
 | 19 | `nist` | NIST 800-53 | NIST 800-53 | Gradient (5) | `NistMappingService` | Count of mapped NIST 800-53 controls |
 | 20 | `veris` | VERIS Actions | VERIS Actions | Gradient (5) | `VerisService` | Count of VERIS incident action mappings |
@@ -115,45 +115,45 @@ To add a 25th heatmap mode, modify these seven files in order:
 
 ## Detailed Mode Documentation
 
-### 1. Coverage (`coverage`)
+### 1. Mitigations mapped (`coverage`)
 
 | Property | Value |
 |----------|-------|
-| **Display Label** | Coverage |
+| **Display Label** | Mitigations mapped |
 | **Icon** | (shield) |
-| **Legend Label** | Mitigations |
+| **Legend Label** | Mitigations mapped |
 | **Data Source** | `Domain.mitigationsByTechnique` (built-in ATT&CK data) |
 | **Score Computation** | `technique.mitigationCount` -- direct count of ATT&CK mitigations mapped to this technique. Uses `SettingsService.getCoverageColors()` for theme-aware color customization. |
 | **Color Scale** | `#d32f2f` (0) -> `#ff9800` (1) -> `#ffd54f` (2) -> `#aed581` (3) -> `#4caf50` (4+) |
-| **Use Case** | Default view. Quickly identify techniques with zero mitigations (red) vs. well-mitigated techniques (green). The most fundamental analyst view for coverage gap analysis. |
+| **Use Case** | Quickly identify techniques with zero ATT&CK mitigations mapped vs. techniques with many. A Known-rung (reference) view: it says what the world has mapped, not what is deployed. |
 
 ---
 
-### 2. Risk (`risk`)
+### 2. Threat-weighted mapping gap (`risk`)
 
 | Property | Value |
 |----------|-------|
-| **Display Label** | Risk |
+| **Display Label** | Threat-weighted mapping gap |
 | **Icon** | (fire) |
-| **Legend Label** | Risk Score |
+| **Legend Label** | Threat-weighted mapping gap |
 | **Data Source** | Computed in `MatrixComponent` from `Domain.groupsByTechnique` and `technique.mitigationCount` |
 | **Score Computation** | `groupCount * (1 + 1 / (mitigationCount + 1))`. Techniques used by many threat groups with few mitigations score highest. The inverse-mitigation factor amplifies risk for under-mitigated techniques. Normalized against the global maximum. |
 | **Color Scale** | `#eceff1` (0) -> `#ff7043` (low) -> `#e53935` (med) -> `#b71c1c` (high) -> `#4a0000` (critical) |
-| **Use Case** | Prioritize remediation by identifying techniques that are both heavily targeted and poorly defended. Critical for risk-based decision making. |
+| **Use Case** | Find techniques that many groups use but that have few mitigations mapped. It weighs threat against reference mapping; it does not measure deployed defense. |
 
 ---
 
-### 3. Exposure (`exposure`)
+### 3. Selected adversaries (`exposure`)
 
 | Property | Value |
 |----------|-------|
-| **Display Label** | Exposure |
+| **Display Label** | Selected adversaries |
 | **Icon** | (radioactive) |
-| **Legend Label** | Exposure |
+| **Legend Label** | Selected adversaries |
 | **Data Source** | `FilterService.activeThreatGroupIds$` cross-referenced with `Domain.techniquesByGroup` |
 | **Score Computation** | Count of currently-selected threat groups that use this technique. Only active when threat group filters are applied. Each selected group that includes this technique increments the score by 1. |
 | **Color Scale** | `#eceff1` (0) -> `#ffb74d` (low) -> `#ff7043` (med) -> `#e53935` (high) -> `#b71c1c` (critical) |
-| **Use Case** | After selecting specific threat actors in the Threats panel, switch to Exposure mode to see which techniques your selected adversaries concentrate on. Hot spots indicate high-priority defensive targets. |
+| **Use Case** | After selecting specific threat actors in the Threats panel, switch to the Selected adversaries lens to see which techniques your selected adversaries concentrate on. Hot spots indicate high-priority defensive targets. |
 
 ---
 
@@ -313,17 +313,17 @@ To add a 25th heatmap mode, modify these seven files in order:
 
 ---
 
-### 15. Detection (`detection`)
+### 15. Detection content available (`detection`)
 
 | Property | Value |
 |----------|-------|
-| **Display Label** | Detection |
+| **Display Label** | Detection content available |
 | **Icon** | (magnifying glass) |
-| **Legend Label** | Sigma Rules |
+| **Legend Label** | Detection content available |
 | **Data Source** | Composite: `SigmaService`, `D3fendService`, `CARService`, `AtomicService` |
 | **Score Computation** | Weighted composite: `(sigmaCount * 3) + (d3fendCount * 2) + (carCount * 2) + (atomicCount * 1)`. Sigma rules are weighted highest as direct detection content. Normalized against the global maximum score. |
 | **Color Scale** | `#1a2332` (0) -> `#0c2d2d` (1--3) -> `#0d5e5e` (4--8) -> `#0e8a7a` (9--15) -> `#10b981` (16+) |
-| **Use Case** | Comprehensive detection coverage assessment combining all detection sources with weighted scoring. The most holistic view of detection readiness. Teal-green scale suggests detection health. |
+| **Use Case** | How much public detection and validation content exists for a technique, across Sigma, D3FEND, CAR and Atomic with weighted scoring. Content available is not content deployed. |
 
 ---
 
@@ -341,23 +341,23 @@ To add a 25th heatmap mode, modify these seven files in order:
 
 ---
 
-### 17. Unified Risk (`unified`)
+### 17. Reference depth (`unified`)
 
 | Property | Value |
 |----------|-------|
-| **Display Label** | Unified Risk |
+| **Display Label** | Reference depth |
 | **Icon** | (target) |
-| **Legend Label** | Unified Risk |
-| **Data Source** | Composite: multi-service computation in `MatrixComponent` |
-| **Score Computation** | Composite 0--100 score across five weighted dimensions: |
-| | - Mitigation coverage (weight 30): `min(mitigationCount / 4, 1) * 30` |
-| | - Detection (weight 20): `min((sigmaCount + carCount) / 5, 1) * 20` |
-| | - Atomic test validation (weight 15): `min(atomicCount / 3, 1) * 15` |
+| **Legend Label** | Reference depth |
+| **Data Source** | `referenceDepthScore()` in `src/app/models/reference-depth.ts`, fed by `MatrixComponent` |
+| **Score Computation** | 0--100 composite of defensive reference inputs only; the weighted sum (out of 70) is rescaled to 100: |
+| | - Mitigations (weight 15): `min(mitigationCount / 4, 1) * 15` |
+| | - Detection content (weight 20): `min((sigmaCount + carLiveCount) / 5, 1) * 20` |
+| | - CTID control mappings (weight 15): `min(controlCount / 4, 1) * 15` (NIST 800-53, CRI, CIS, CSA CCM, M365) |
 | | - D3FEND countermeasures (weight 10): `min(d3fendCount / 2, 1) * 10` |
-| | - KEV exposure penalty (weight 25): `25 - min(kevCount * 5, 25)` (inverted: more KEVs = lower score = more risk) |
-| | Higher scores indicate better overall defense posture. |
-| **Color Scale** | `#7f0000` (critical, 0--20) -> `#c62828` (high, 21--40) -> `#f9a825` (medium, 41--60) -> `#558b2f` (good, 61--80) -> `#1b5e20` (strong, 81--100) |
-| **Use Case** | The most comprehensive single-number risk assessment. Balances mitigation coverage, detection depth, test validation, defensive techniques, and active exploitation. Ideal for executive reporting and dashboard views. Red-to-green scale for intuitive risk communication. |
+| | - Atomic tests (weight 10): `min(atomicCount / 3, 1) * 10` |
+| | Threat intel (groups, software, campaigns) and KEV are not inputs: the Threat lenses (Frequency, Selected adversaries, Intelligence, KEV, Threat-weighted mapping gap) show them. A technique's Reference depth does not change when the number of groups using it changes. |
+| **Color Scale** | `#0e1b30` (minimal, 0--15) -> `#143a5c` (thin, 16--30) -> `#1f6aa8` (some, 31--50) -> `#2f95d8` (51--65) -> `#38bdf8` (deep, 66--80) -> `#a78bfa` (deepest, 81--100) |
+| **Use Case** | The default lens: how much defensive reference material (Known rung) exists for each technique. It is not a posture or risk score and says nothing about what is deployed. |
 
 ---
 

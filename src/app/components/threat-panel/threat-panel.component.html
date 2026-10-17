@@ -55,7 +55,7 @@
     <div class="panel-body">
       <p class="panel-desc">
         @if (activeTab === 'groups') {
-          Select APT groups to highlight their techniques. Coverage % shows how many of their techniques have ≥1 mitigation.
+          Select APT groups to highlight their techniques. Mitigation-mapped % shows how many of their techniques have ≥1 ATT&amp;CK mitigation mapped (reference data, not deployed defense).
         } @else {
           Select campaigns to highlight their techniques. Campaigns are time-bounded intrusion operations attributed to one or more groups.
         }
@@ -103,7 +103,7 @@
                 <div class="group-stats">
                   <div class="stat-num">{{ row.techniqueCount }}</div>
                   <div class="stat-label">techniques</div>
-                  <div class="coverage-pill" [style.background]="coveragePct(row.techniqueCount, row.coveredCount) >= 60 ? '#1b5e20' : coveragePct(row.techniqueCount, row.coveredCount) >= 30 ? '#7a4a00' : '#b71c1c'">
+                  <div class="coverage-pill" title="Mitigation-mapped %: techniques with at least one ATT&amp;CK mitigation mapped" [style.background]="coveragePct(row.techniqueCount, row.coveredCount) >= 60 ? '#1b5e20' : coveragePct(row.techniqueCount, row.coveredCount) >= 30 ? '#7a4a00' : '#b71c1c'">
                     {{ coveragePct(row.techniqueCount, row.coveredCount) }}%
                   </div>
                 </div>
@@ -147,7 +147,7 @@
                 <div class="group-stats">
                   <div class="stat-num">{{ row.techniqueCount }}</div>
                   <div class="stat-label">techniques</div>
-                  <div class="coverage-pill" [style.background]="coveragePct(row.techniqueCount, row.coveredCount) >= 60 ? '#1b5e20' : coveragePct(row.techniqueCount, row.coveredCount) >= 30 ? '#7a4a00' : '#b71c1c'">
+                  <div class="coverage-pill" title="Mitigation-mapped %: techniques with at least one ATT&amp;CK mitigation mapped" [style.background]="coveragePct(row.techniqueCount, row.coveredCount) >= 60 ? '#1b5e20' : coveragePct(row.techniqueCount, row.coveredCount) >= 30 ? '#7a4a00' : '#b71c1c'">
                     {{ coveragePct(row.techniqueCount, row.coveredCount) }}%
                   </div>
                 </div>

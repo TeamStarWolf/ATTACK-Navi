@@ -325,7 +325,7 @@ every technique in the domain to compute a numeric score.  Each mode has its own
 | `elastic` | `ElasticService.getRuleCount()` | Elastic detection rules |
 | `splunk` | `SplunkContentService.getRuleCount()` | Splunk content rules |
 | `cri` | `CriProfileService` control count | CRI Profile controls |
-| `unified` | Weighted composite of all sources | 0-100 unified risk score |
+| `unified` | `referenceDepthScore()`: mitigations, detection content, CTID controls, D3FEND, Atomic | 0-100 Reference depth (defensive reference only; no threat-intel or KEV term) |
 | `intelligence` | Threat intelligence indicators | CTI indicator count |
 
 Results are stored in per-mode `Map<string, number>` fields on `MatrixComponent` (e.g.

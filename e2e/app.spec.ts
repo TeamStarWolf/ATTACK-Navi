@@ -110,13 +110,11 @@ test.describe('ATT&CK Navi', () => {
     // Open heatmap/view dropdown
     await page.locator('.heatmap-btn').click();
     await expect(page.locator('.views-menu')).toBeVisible();
-    // Click Risk mode ("Risk" also substring-matches "Unified Risk")
-    const riskBtn = page
-      .locator('.heatmap-mode-btn', { hasText: 'Risk' })
-      .filter({ hasNotText: 'Unified' });
+    // Click the heat=risk lens, relabelled 'Threat-weighted mapping gap' in E1.1
+    const riskBtn = page.locator('.heatmap-mode-btn', { hasText: 'Threat-weighted mapping gap' });
     await riskBtn.click();
-    // The heatmap button label should now reflect Risk
-    await expect(page.locator('.heatmap-btn')).toContainText('Risk');
+    // The heatmap button shows the lens's short label
+    await expect(page.locator('.heatmap-btn')).toContainText('Threat-weighted gap');
   });
 
   test('nav rail routes to every workspace', async ({ page }) => {
