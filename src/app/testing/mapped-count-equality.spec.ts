@@ -297,5 +297,28 @@ describe('Known-tier mapped count: the six summary surfaces agree (E1.7 equality
     const diff = create(CoverageDiffPanelComponent);
     expect(diff.componentInstance.basesDiffer).toBeTrue();
     expect(text(el(diff).querySelector('.cdp-basis-note'))).toContain('different bases');
+    // No signed or coloured delta presented as progress across bases: hero cards and tactic rows.
+    const diffEl = el(diff);
+    expect(diffEl.querySelectorAll('.hero-card.positive, .hero-card.negative').length).withContext('hero cards').toBe(0);
+    const heroValues = Array.from(diffEl.querySelectorAll('.hero-card .hero-value')).map(text);
+    expect(heroValues).toEqual(['bases differ', 'bases differ']);
+    expect(heroValues.some(v => /[+-]\d/.test(v))).toBeFalse();
+    const tacRows = Array.from(diffEl.querySelectorAll('.tac-row'));
+    expect(tacRows.length).toBeGreaterThan(0);
+    expect(diffEl.querySelectorAll('.tac-row.improved, .tac-row.declined, .tac-delta.pos, .tac-delta.neg, .bar-fill').length)
+      .withContext('tactic rows').toBe(0);
+    for (const row of tacRows) {
+      expect(text(row.querySelector('.tac-delta'))).toBe('bases differ');
+    }
+
+    // Trends tab: the older bar says its basis; the row after a change of basis is not a 'baseline'.
+    const tr = create(TimelinePanelComponent);
+    tr.componentInstance.setTab('trends');
+    tr.detectChanges();
+    const bars = Array.from(el(tr).querySelectorAll('.bar-chart .bar-fill')).map(b => b.getAttribute('title') ?? '');
+    expect(bars[0]).toContain('(mitigations only (older snapshot))');
+    expect(bars[1]).toContain('(mapped (defensive reference inputs))');
+    const deltas = Array.from(el(tr).querySelectorAll('.trends-row')).map(r => text(r.lastElementChild));
+    expect(deltas).toEqual(['baseline', 'bases differ']);
   });
 });

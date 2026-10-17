@@ -179,7 +179,7 @@ export class CtemPageComponent implements OnInit, OnDestroy {
             metrics: [
               { label: 'Mitigations implemented', value: counts['implemented'] },
               { label: 'Planned next', value: counts['planned'] },
-              { label: 'Coverage snapshots', value: snapshots.length },
+              { label: 'Mapped snapshots', value: snapshots.length },
               { label: 'Last snapshot', value: lastSnap ? lastSnap.label : 'none yet' },
               { label: 'Mapped trend', value: trend },
             ],

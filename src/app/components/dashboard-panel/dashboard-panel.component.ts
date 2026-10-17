@@ -304,8 +304,12 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
       if (snapshots.length >= 2) {
         const last = snapshots[snapshots.length - 1];
         const prev = snapshots[snapshots.length - 2];
-        coverageTrend = last.coveragePct - prev.coveragePct;
-        hasTrendData = true;
+        // A change of count basis (an older mitigations-only snapshot next to a
+        // 'mapped' one) is not progress: no trend until both share a basis.
+        if ((last.basis ?? null) === (prev.basis ?? null)) {
+          coverageTrend = last.coveragePct - prev.coveragePct;
+          hasTrendData = true;
+        }
       }
 
       // Per-tactic coverage, sorted ascending (worst first)

@@ -37,7 +37,7 @@
             [class.success]="snapshotSuccess"
             [disabled]="!newLabel.trim()"
             (click)="takeSnapshot()"
-            title="Capture current coverage state"
+            title="Capture the current mapped count"
           >
             @if (snapshotSuccess) {
               ✓ Saved!
@@ -211,7 +211,7 @@
             <div class="empty-state">
               <div class="empty-icon">⚔️</div>
               <div class="empty-title">Need at least 2 snapshots</div>
-              <div class="empty-hint">Take a second snapshot to start comparing coverage changes.</div>
+              <div class="empty-hint">Take a second snapshot to start comparing mapped changes.</div>
             </div>
           } @else {
             <div class="compare-selectors">
@@ -354,7 +354,7 @@
                         [style.height.%]="(tp.snapshot.coveragePct / maxCoveragePct) * 100"
                         [class.high]="tp.snapshot.coveragePct >= 70"
                         [class.mid]="tp.snapshot.coveragePct >= 40 && tp.snapshot.coveragePct < 70"
-                        [title]="tp.snapshot.label + ': ' + tp.snapshot.coveragePct + '%'"
+                        [title]="tp.snapshot.label + ': ' + tp.snapshot.coveragePct + '% (' + basisLabel(tp.snapshot) + ')'"
                       ></div>
                     </div>
                     <div class="bar-pct-label">{{ tp.snapshot.coveragePct }}%</div>
@@ -400,6 +400,8 @@
                         <td class="num-cell">
                           @if (tp.delta !== null) {
                             <span class="delta-badge" [class]="deltaClass(tp.delta)">{{ deltaLabel(tp.delta) }}</span>
+                          } @else if (tp.basisChanged) {
+                            <span class="delta-badge" title="Counted on a different basis from the snapshot before it ({{ basisLabel(tp.snapshot) }})">bases differ</span>
                           } @else {
                             <span class="baseline-label">baseline</span>
                           }

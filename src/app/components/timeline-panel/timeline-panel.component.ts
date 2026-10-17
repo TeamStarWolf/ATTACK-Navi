@@ -19,6 +19,8 @@ interface TrendPoint {
   snapshot: CoverageSnapshot;
   delta: number | null;
   implDelta: number | null;
+  /** The previous snapshot was counted on a different basis (so no delta, but not a baseline either). */
+  basisChanged: boolean;
 }
 
 interface ComparisonRow {
@@ -190,11 +192,12 @@ export class TimelinePanelComponent implements OnInit, OnDestroy {
     const sorted = [...this.snapshots]; // already oldest-first from service
     return sorted.map((snap, i) => {
       const prev = i > 0 ? sorted[i - 1] : null;
-      const delta = prev != null && this.sameBasis(prev, snap) ? snap.coveragePct - prev.coveragePct : null;
+      const basisChanged = prev != null && !this.sameBasis(prev, snap);
+      const delta = prev != null && !basisChanged ? snap.coveragePct - prev.coveragePct : null;
       const implDelta = prev != null
         ? snap.implCounts.implemented - prev.implCounts.implemented
         : null;
-      return { snapshot: snap, delta, implDelta };
+      return { snapshot: snap, delta, implDelta, basisChanged };
     });
   }
 
