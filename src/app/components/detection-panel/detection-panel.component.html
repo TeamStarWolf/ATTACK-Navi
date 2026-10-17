@@ -1,14 +1,14 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-<section class="page-panel page-panel--full panel" aria-label="Detection Coverage">
+<section class="page-panel page-panel--full panel" aria-label="Detection content available">
 
       <!-- Header -->
       <div class="panel-header">
         <div class="header-left">
-          <span class="panel-title">Detection Coverage</span>
+          <span class="panel-title">Detection content available</span>
           @if (detectionRows.length > 0) {
             <span class="header-subtitle">
-              {{ totalWithDetection }} / {{ detectionRows.length }} techniques with detection
+              {{ totalWithDetection }} / {{ detectionRows.length }} techniques with reference content mapped (CAR, Atomic, D3FEND). Reference only: not your deployed detections.
             </span>
           }
         </div>
@@ -21,37 +21,17 @@
         </div>
       } @else {
 
-        <!-- Stats bar -->
-        <div class="stats-bar">
-          <div class="bracket-item">
-            <span class="dot dot-none"></span>
-            <span class="bracket-count">{{ scoreDistribution[0] }}</span>
-            <span class="bracket-label">No Detection</span>
-          </div>
-          <div class="bracket-sep"></div>
-          <div class="bracket-item">
-            <span class="dot dot-low"></span>
-            <span class="bracket-count">{{ scoreDistribution[1] }}</span>
-            <span class="bracket-label">Low (1–3)</span>
-          </div>
-          <div class="bracket-sep"></div>
-          <div class="bracket-item">
-            <span class="dot dot-medium"></span>
-            <span class="bracket-count">{{ scoreDistribution[2] }}</span>
-            <span class="bracket-label">Medium (4–6)</span>
-          </div>
-          <div class="bracket-sep"></div>
-          <div class="bracket-item">
-            <span class="dot dot-high"></span>
-            <span class="bracket-count">{{ scoreDistribution[3] }}</span>
-            <span class="bracket-label">High (7–9)</span>
-          </div>
-          <div class="bracket-sep"></div>
-          <div class="bracket-item">
-            <span class="dot dot-excellent"></span>
-            <span class="bracket-count">{{ scoreDistribution[4] }}</span>
-            <span class="bracket-label">Excellent (10+)</span>
-          </div>
+        <!-- Stats bar: reference depth bands (Known), not grades -->
+        <div class="stats-bar" aria-label="Reference depth: CAR×3 + D3FEND×2 + Atomic×1">
+          <span class="bracket-label">Reference depth</span>
+          @for (band of bands; track band; let i = $index) {
+            <div class="bracket-sep"></div>
+            <div class="bracket-item" [attr.data-band]="band">
+              <span class="dot dot-{{ band }}"></span>
+              <span class="bracket-count">{{ scoreDistribution[i] }}</span>
+              <span class="bracket-label">{{ bandLabels[band] }} ({{ bandRanges[band] }})</span>
+            </div>
+          }
         </div>
 
         <!-- Tabs -->
@@ -75,7 +55,7 @@
             class="tab-btn"
             [class.active]="activeTab === 'top'"
             (click)="setTab('top')"
-          >Top Detected</button>
+          >Most Content Mapped</button>
           <button
             class="tab-btn"
             [class.active]="activeTab === 'tactic'"
@@ -118,7 +98,7 @@
                     <th class="num-col" title="CAR Analytics">CAR</th>
                     <th class="num-col" title="Atomic Red Team Tests">Atomic</th>
                     <th class="num-col" title="D3FEND Countermeasures">D3FEND</th>
-                    <th class="num-col">Score</th>
+                    <th class="num-col" title="Reference depth: CAR×3 + D3FEND×2 + Atomic×1">Reference depth</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -169,7 +149,7 @@
           @if (activeTab === 'gaps') {
             @if (gapRows.length === 0) {
               <div class="empty-state">
-                <p>All techniques have at least some detection coverage — great work!</p>
+                <p>Every technique has some reference content mapped. This says nothing about what you have deployed.</p>
               </div>
             } @else {
               <div class="gap-intro">
@@ -179,7 +159,7 @@
                 @for (row of gapRows; track row.id) {
                   <div class="gap-card">
                     <div class="gap-card-header">
-                      <span class="gap-badge">No Detection</span>
+                      <span class="gap-badge">{{ bandLabels.none }}</span>
                       <a [href]="attackUrl(row.attackId)" target="_blank" rel="noopener" class="gap-link">↗ ATT&amp;CK</a>
                     </div>
                     <div class="gap-tech-name">{{ row.name }}</div>
@@ -197,7 +177,7 @@
 
           <!-- Top Detected tab -->
           @if (activeTab === 'top') {
-            <div class="top-intro">Top 20 techniques by detection score (CAR×3 + D3FEND×2 + Atomic×1)</div>
+            <div class="top-intro">Top 20 techniques by reference depth (CAR×3 + D3FEND×2 + Atomic×1). Reference content available, not deployed detections.</div>
             <div class="top-list">
               @for (row of topRows; track row.id; let i = $index) {
                 <div class="top-item">

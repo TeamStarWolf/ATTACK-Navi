@@ -14,6 +14,29 @@ import { SettingsService } from '../../services/settings.service';
 import { CARService } from '../../services/car.service';
 import { AtomicService } from '../../services/atomic.service';
 import { D3fendService } from '../../services/d3fend.service';
+import {
+  ReferenceDepthBand,
+  REFERENCE_DEPTH_BAND_LABELS,
+  REFERENCE_DEPTH_BANDS,
+  referenceDepthBand,
+} from '../../models/reference-depth';
+
+/**
+ * Lowest weighted score (CAR×3 + D3FEND×2 + Atomic×1) for the thin, some,
+ * deep and deepest reference-depth bands. These are the old Low / Medium /
+ * High / Excellent grade boundaries; only the words changed (plan 4.1: no
+ * grades on Known data).
+ */
+export const DETECTION_DEPTH_FLOORS = [1, 4, 7, 10] as const;
+
+/** Range text shown next to each band in the summary bar. */
+const DETECTION_BAND_RANGES: Readonly<Record<ReferenceDepthBand, string>> = {
+  none: '0',
+  thin: '1–3',
+  some: '4–6',
+  deep: '7–9',
+  deepest: '10+',
+};
 
 export interface DetectionRow {
   id: string;
@@ -46,6 +69,9 @@ export class DetectionPanelComponent implements OnInit {
   searchText = '';
   sortBy: 'score' | 'name' | 'tactic' = 'score';
   detectionRows: DetectionRow[] = [];
+  readonly bands = REFERENCE_DEPTH_BANDS;
+  readonly bandLabels = REFERENCE_DEPTH_BAND_LABELS;
+  readonly bandRanges = DETECTION_BAND_RANGES;
 
   constructor(
     private dataService: DataService,
@@ -141,14 +167,11 @@ export class DetectionPanelComponent implements OnInit {
     return this.detectionRows.reduce((max, r) => Math.max(max, r.score), 0) || 1;
   }
 
+  /** Techniques per reference-depth band, in REFERENCE_DEPTH_BANDS order. */
   get scoreDistribution(): number[] {
-    const counts = [0, 0, 0, 0, 0];
+    const counts = this.bands.map(() => 0);
     for (const r of this.detectionRows) {
-      if (r.score === 0) counts[0]++;
-      else if (r.score <= 3) counts[1]++;
-      else if (r.score <= 6) counts[2]++;
-      else if (r.score <= 9) counts[3]++;
-      else counts[4]++;
+      counts[this.bands.indexOf(this.scoreBracket(r.score))]++;
     }
     return counts;
   }
@@ -157,12 +180,9 @@ export class DetectionPanelComponent implements OnInit {
     return this.detectionRows.filter(r => r.score > 0).length;
   }
 
-  scoreBracket(score: number): 'none' | 'low' | 'medium' | 'high' | 'excellent' {
-    if (score === 0) return 'none';
-    if (score <= 3) return 'low';
-    if (score <= 6) return 'medium';
-    if (score <= 9) return 'high';
-    return 'excellent';
+  /** Reference-depth band of a weighted score. Known-rung wording, never a grade. */
+  scoreBracket(score: number): ReferenceDepthBand {
+    return referenceDepthBand(score, DETECTION_DEPTH_FLOORS);
   }
 
   scoreBarWidth(score: number): number {

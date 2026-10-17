@@ -6,6 +6,7 @@ import { Domain, TacticColumn } from '../models/domain';
 import { Technique } from '../models/technique';
 import { Tactic } from '../models/tactic';
 import { ImplStatus } from './implementation.service';
+import { MitigationRelationship } from '../models/mitigation';
 
 describe('PdfReportService', () => {
   let service: PdfReportService;
@@ -167,7 +168,7 @@ describe('PdfReportService', () => {
 
     expect(mockIframeDoc.open).toHaveBeenCalled();
     expect(mockIframeDoc.write).toHaveBeenCalled();
-    expect(writtenHtml).toContain('ATT&amp;CK Coverage Report');
+    expect(writtenHtml).toContain('ATT&amp;CK Mitigation Report');
   });
 
   it('should include a summary table in the HTML output', () => {
@@ -239,5 +240,60 @@ describe('PdfReportService', () => {
     service.generateReport(domain, statusMap);
 
     expect(writtenHtml).toContain('16.1');
+  });
+
+  describe('Theoretical / Implemented split (E1.1)', () => {
+    function capture(domain: Domain, statusMap: Map<string, ImplStatus>): string {
+      let writtenHtml = '';
+      const mockIframeDoc = {
+        open: jasmine.createSpy('open'),
+        write: jasmine.createSpy('write').and.callFake((html: string) => { writtenHtml = html; }),
+        close: jasmine.createSpy('close'),
+      };
+      const mockIframe = document.createElement('iframe');
+      Object.defineProperty(mockIframe, 'contentDocument', { value: mockIframeDoc });
+      Object.defineProperty(mockIframe, 'contentWindow', { value: { print: jasmine.createSpy('print') } });
+      spyOn(document, 'createElement').and.returnValue(mockIframe as any);
+      spyOn(document.body, 'appendChild').and.stub();
+      spyOn(document.body, 'removeChild').and.stub();
+      service.generateReport(domain, statusMap);
+      return writtenHtml;
+    }
+
+    /** The mock domain with T1059's two mitigations wired into mitigationsByTechnique. */
+    function mappedDomain(): Domain {
+      const domain = makeMockDomain();
+      domain.mitigationsByTechnique.set('attack-pattern--1', [
+        { mitigation: { id: 'course-of-action--m1' } },
+        { mitigation: { id: 'course-of-action--m2' } },
+      ] as unknown as MitigationRelationship[]);
+      return domain;
+    }
+
+    it('labels the summary Theoretical and Implemented (self-attested), not Covered / Coverage', () => {
+      const html = capture(mappedDomain(), new Map());
+      expect(html).toContain('Theoretical: mitigation mapped');
+      expect(html).toContain('Implemented (self-attested)');
+      expect(html).toContain('<div class="num">1 (50%)</div>');
+      expect(html).toContain('<div class="num">0 (0%)</div>');
+      expect(html).not.toContain('<div class="lbl">Covered</div>');
+      expect(html).not.toContain('<div class="lbl">Uncovered</div>');
+      expect(html).not.toContain('<div class="lbl">Coverage</div>');
+      expect(html).not.toContain('Coverage %');
+      expect(html).not.toContain('Top Uncovered Techniques');
+    });
+
+    it('counts Implemented only from mitigations the owner marked implemented', () => {
+      const planned = capture(mappedDomain(), new Map<string, ImplStatus>([['course-of-action--m1', 'planned']]));
+      expect(planned).not.toContain('<div class="num">1 (50%)</div>\n    <div class="lbl">Implemented (self-attested)</div>');
+      expect(planned).toContain('<div class="num">0 (0%)</div>\n    <div class="lbl">Implemented (self-attested)</div>');
+    });
+
+    it('shows the split per tactic', () => {
+      const html = capture(mappedDomain(), new Map<string, ImplStatus>([['course-of-action--m2', 'implemented']]));
+      expect(html).toContain('<div class="num">1 (50%)</div>\n    <div class="lbl">Implemented (self-attested)</div>');
+      // The Execution column holds T1059 (mapped) and T1190 (not mapped).
+      expect(html).toContain('<td style="text-align:center">2</td>\n        <td style="text-align:center">1 (50%)</td>\n        <td style="text-align:center">1 (50%)</td>');
+    });
   });
 });

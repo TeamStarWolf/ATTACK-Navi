@@ -17,6 +17,19 @@ import { AtomicService, AtomicTest } from '../../services/atomic.service';
 import { DataService } from '../../services/data.service';
 import { Technique } from '../../models/technique';
 import { Domain } from '../../models/domain';
+import {
+  ReferenceDepthBand,
+  REFERENCE_DEPTH_BAND_LABELS,
+  referenceDepthBand,
+} from '../../models/reference-depth';
+
+/**
+ * Lowest total reference-content count (D3FEND + Engage + CAR + Atomic) for
+ * the thin, some, deep and deepest bands. These are the old poor / partial /
+ * good / excellent grade boundaries; only the words changed (plan 4.1: no
+ * grades on Known data).
+ */
+export const PURPLE_DEPTH_FLOORS = [1, 3, 7, 12] as const;
 
 interface TechniqueScore {
   technique: Technique;
@@ -25,7 +38,8 @@ interface TechniqueScore {
   carCount: number;
   atomicCount: number;
   totalScore: number;
-  coverageRating: 'excellent' | 'good' | 'partial' | 'poor' | 'none';
+  /** Known-rung reference depth band of totalScore; never a grade. */
+  referenceDepth: ReferenceDepthBand;
 }
 
 @Component({
@@ -50,6 +64,7 @@ export class PurpleTeamPanelComponent implements OnInit, OnDestroy {
   topGaps: TechniqueScore[] = [];
   topCovered: TechniqueScore[] = [];
   viewMode: 'selected' | 'gaps' | 'covered' = 'selected';
+  readonly bandLabels = REFERENCE_DEPTH_BAND_LABELS;
 
   private subs = new Subscription();
 
@@ -100,14 +115,10 @@ export class PurpleTeamPanelComponent implements OnInit, OnDestroy {
         const c = this.carService.getAnalytics(t.attackId).length;
         const a = this.atomicService.getTests(t.attackId).length;
         const total = d + e + c + a;
-        const rating: TechniqueScore['coverageRating'] =
-          total >= 12 ? 'excellent' :
-          total >= 7  ? 'good' :
-          total >= 3  ? 'partial' :
-          total >= 1  ? 'poor' : 'none';
-        return { technique: t, d3fendCount: d, engageCount: e, carCount: c, atomicCount: a, totalScore: total, coverageRating: rating };
+        const band = referenceDepthBand(total, PURPLE_DEPTH_FLOORS);
+        return { technique: t, d3fendCount: d, engageCount: e, carCount: c, atomicCount: a, totalScore: total, referenceDepth: band };
       });
-    this.topGaps    = scores.filter(s => s.totalScore === 0 || s.coverageRating === 'poor').sort((a, b) => a.totalScore - b.totalScore).slice(0, 15);
+    this.topGaps    = scores.filter(s => s.referenceDepth === 'none' || s.referenceDepth === 'thin').sort((a, b) => a.totalScore - b.totalScore).slice(0, 15);
     this.topCovered = [...scores].sort((a, b) => b.totalScore - a.totalScore).slice(0, 15);
   }
 

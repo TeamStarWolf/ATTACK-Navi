@@ -360,7 +360,7 @@ Components that render the ATT&CK matrix grid and its supporting UI.
 | **Selector** | `app-detection-panel` |
 | **File** | `src/app/components/detection-panel/detection-panel.component.ts` |
 | **Panel ID** | `detection` |
-| **Purpose** | Detection coverage analysis combining four detection sources: CAR analytics, Atomic Red Team tests, and D3FEND countermeasures. Shows per-technique detection scores, gaps (techniques with zero detection), top-covered techniques, and tactic-grouped breakdowns. Four tabs: Overview, Gaps, Top, Tactic. |
+| **Purpose** | Detection content available (Known rung: reference content, not deployed detections), combining CAR analytics, Atomic Red Team tests, and D3FEND countermeasures. Shows each technique's reference depth (CAR×3 + D3FEND×2 + Atomic×1) in neutral bands (None mapped, Thin, Some, Deep, Deepest; no grades), techniques with nothing mapped, the most-mapped techniques, and tactic-grouped breakdowns. Four tabs: Overview, Gaps, Most Content Mapped, By Tactic. |
 | **Key I/O** | Subscribes to `CARService`, `AtomicService`, `D3fendService` |
 
 ---
@@ -544,7 +544,7 @@ Components that render the ATT&CK matrix grid and its supporting UI.
 | **Selector** | `app-purple-team-panel` |
 | **File** | `src/app/components/purple-team-panel/purple-team-panel.component.ts` |
 | **Panel ID** | `purple` |
-| **Purpose** | Purple-team readiness assessor. Scores each technique across four dimensions: D3FEND countermeasures, Engage activities, CAR analytics, and Atomic Red Team tests. Classifies coverage as excellent/good/partial/poor/none. Three views: Selected technique detail, top gaps, and top covered. |
+| **Purpose** | Purple-team readiness assessor. Scores each technique across four dimensions: D3FEND countermeasures, Engage activities, CAR analytics, and Atomic Red Team tests. Shows each technique's reference depth band (None mapped, Thin, Some, Deep, Deepest; Known rung, no grades). Three views: Selected technique detail, least content mapped, and most content mapped. |
 | **Key I/O** | Subscribes to `D3fendService`, `EngageService`, `CARService`, `AtomicService` |
 
 ---
@@ -616,7 +616,7 @@ Components that render the ATT&CK matrix grid and its supporting UI.
 | **Selector** | `app-report-panel` |
 | **File** | `src/app/components/report-panel/report-panel.component.ts` |
 | **Panel ID** | `report` |
-| **Purpose** | Executive summary report generator. Compiles total techniques, coverage percentage, implemented-coverage percentage, per-tactic breakdown with top gaps, recommended mitigations ranked by unique coverage, and documented mitigations with owner/due-date/evidence metadata. Supports copy-to-clipboard and HTML export. |
+| **Purpose** | Executive summary report generator with a Theoretical / Implemented split (`models/report-split.ts`): Theoretical counts techniques with a mitigation mapped in ATT&CK (Known, reference only); Implemented counts techniques with a mapped mitigation the owner marked implemented (Covered, self-attested). Per-tactic split with unmapped techniques, recommended mitigations ranked by techniques where they are the only mapped mitigation, and documented mitigations with owner/due-date/evidence metadata. Supports CSV export (separate Theoretical and Implemented columns) and print. |
 | **Key I/O** | Subscribes to `DataService`, `ImplementationService`, `DocumentationService` |
 
 ---

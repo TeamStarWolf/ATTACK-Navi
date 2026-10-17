@@ -234,8 +234,10 @@
 .gt-score { text-align: center; color: var(--text-faint); font-weight: 600; &.zero { color: var(--text-faint); } }
 .gt-total { text-align: right; font-weight: 700; color: var(--accent); }
 .gt-rating { text-align: right; font-size: 10px; font-weight: 600; }
-.rating-excellent { color: var(--success); }
-.rating-good      { color: var(--accent); }
-.rating-partial   { color: var(--accent-warm); }
-.rating-poor      { color: var(--accent-warm); }
-.rating-none      { color: var(--danger); }
+
+// Reference depth is Known-rung: neutral text, never green or red (plan 4.1).
+.depth-none    { color: var(--text-faint); }
+.depth-thin    { color: var(--text-muted); }
+.depth-some    { color: var(--text-muted); }
+.depth-deep    { color: var(--text-main); }
+.depth-deepest { color: var(--text-main); }

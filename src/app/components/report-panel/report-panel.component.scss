@@ -292,10 +292,22 @@
   padding: 12px;
   text-align: center;
 
-  &.green {
-    border-color: rgb(74 222 128 / 25%);
-    background: rgb(74 222 128 / 5%);
+  // Theoretical is Known (reference only): neutral, never green.
+  &.theoretical {
+    border-style: dashed;
   }
+
+  // Implemented is Covered (self-attested): blue, per the plan 4.1 rung colours.
+  &.implemented {
+    border-color: var(--accent);
+  }
+}
+
+.report-split-note {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
 }
 
 .card-num {
@@ -424,6 +436,14 @@
 .mini-bar {
   height: 100%;
   border-radius: 4px;
+
+  &--theoretical { background: var(--text-faint); }
+  &--implemented { background: var(--accent); }
+}
+
+.pct-val {
+  font-weight: 600;
+  color: var(--text-muted);
 }
 
 .gaps-cell {

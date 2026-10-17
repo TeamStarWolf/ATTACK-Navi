@@ -15,12 +15,25 @@ import { ImplementationService, ImplStatus, IMPL_STATUS_LABELS } from '../../ser
 import { DocumentationService, MitigationDoc } from '../../services/documentation.service';
 import { ReportConfigService, ReportSection } from '../../services/report-config.service';
 import { csvRow } from '../../utils/csv';
+import {
+  computeReportSplit,
+  isTechniqueImplemented,
+  isTechniqueMapped,
+  REPORT_SPLIT_LABELS,
+} from '../../models/report-split';
 
+/**
+ * One tactic row of the Theoretical / Implemented split. Theoretical is
+ * reference mapping (Known); Implemented is owner-attested (Covered,
+ * self-attested). See models/report-split.ts.
+ */
 interface TacticReport {
   name: string;
   total: number;
-  covered: number;
-  pct: number;
+  theoretical: number;
+  theoreticalPct: number;
+  implemented: number;
+  implementedPct: number;
   topGaps: string[];
 }
 
@@ -54,11 +67,15 @@ export class ReportPanelComponent implements OnInit, OnDestroy {
   domain: Domain | null = null;
   reportDate = '';
 
+  readonly labels = REPORT_SPLIT_LABELS;
+
   totalTechniques = 0;
-  coveredTechniques = 0;
-  coveragePct = 0;
-  implementedCoveredPct = 0;
-  implementedCovered = 0;
+  /** Known: parent techniques with at least one mitigation mapped (reference only). */
+  theoreticalTechniques = 0;
+  theoreticalPct = 0;
+  /** Covered (self-attested): parent techniques with a mapped mitigation marked implemented. */
+  implementedTechniques = 0;
+  implementedPct = 0;
   totalMitigations = 0;
   totalGroups = 0;
   totalCampaigns = 0;
@@ -76,6 +93,8 @@ export class ReportPanelComponent implements OnInit, OnDestroy {
   allSections: ReportSection[] = [];
   configOpen = false;
 
+  /** Latest owner implementation statuses (mitigation STIX id to status). */
+  private statusMap: ReadonlyMap<string, ImplStatus> = new Map();
   private subs = new Subscription();
 
   constructor(
@@ -102,53 +121,39 @@ export class ReportPanelComponent implements OnInit, OnDestroy {
         this.docService.mitDocs$,
       ]).subscribe(([domain, statusMap, mitDocs]) => {
         this.domain = domain;
+        this.statusMap = statusMap;
         if (!domain) return;
 
         this.reportDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
         const parentTechs = domain.techniques.filter((t) => !t.isSubtechnique);
-        this.totalTechniques = parentTechs.length;
         this.totalMitigations = domain.mitigations.length;
         this.totalGroups = domain.groups.length;
         this.totalCampaigns = domain.campaigns.length;
 
-        const coveredNow = parentTechs.filter((t) => (domain.mitigationsByTechnique.get(t.id)?.length ?? 0) > 0);
-        this.coveredTechniques = coveredNow.length;
-        this.coveragePct = Math.round((this.coveredTechniques / this.totalTechniques) * 100);
-
-        // Implemented coverage: technique has at least one mitigation that is "implemented"
-        const implementedIds = new Set<string>();
-        for (const [mitId, status] of statusMap.entries()) {
-          if (status === 'implemented') {
-            const techs = domain.techniquesByMitigation.get(mitId) ?? [];
-            for (const t of techs) {
-              if (!t.isSubtechnique) implementedIds.add(t.id);
-            }
-          }
-        }
-        this.implementedCovered = implementedIds.size;
-        this.implementedCoveredPct = Math.round((this.implementedCovered / this.totalTechniques) * 100);
+        // Theoretical / Implemented split: one shared computation for the
+        // panel, the HTML export and the PDF report.
+        const split = computeReportSplit(domain, statusMap);
+        this.totalTechniques = split.total;
+        this.theoreticalTechniques = split.theoretical;
+        this.theoreticalPct = split.theoreticalPct;
+        this.implementedTechniques = split.implemented;
+        this.implementedPct = split.implementedPct;
 
         // Impl summary
         this.implSummary = this.implService.summarize();
 
         // Tactic stats
-        this.tacticStats = domain.tacticColumns.map((col) => {
-          const parents = col.techniques.filter((t) => !t.isSubtechnique);
-          const covered = parents.filter((t) => (domain.mitigationsByTechnique.get(t.id)?.length ?? 0) > 0);
-          const gaps = parents
-            .filter((t) => (domain.mitigationsByTechnique.get(t.id)?.length ?? 0) === 0)
-            .slice(0, 5)
-            .map((t) => t.attackId);
-          return {
-            name: col.tactic.name,
-            total: parents.length,
-            covered: covered.length,
-            pct: parents.length > 0 ? Math.round((covered.length / parents.length) * 100) : 0,
-            topGaps: gaps,
-          };
-        });
+        this.tacticStats = split.byTactic.map((ts) => ({
+          name: ts.name,
+          total: ts.total,
+          theoretical: ts.theoretical,
+          theoreticalPct: ts.theoreticalPct,
+          implemented: ts.implemented,
+          implementedPct: ts.implementedPct,
+          topGaps: ts.unmappedIds.slice(0, 5),
+        }));
 
-        // Top uncovered techniques (by group exposure)
+        // Techniques with no mitigation mapped, by adversary use
         const uncoveredTechs = parentTechs
           .filter((t) => (domain.mitigationsByTechnique.get(t.id)?.length ?? 0) === 0)
           .map((t) => ({
@@ -252,8 +257,11 @@ export class ReportPanelComponent implements OnInit, OnDestroy {
 
   exportCsv(): void {
     if (!this.domain) return;
+    // Theoretical (reference mapping) and Implemented (self-attested) are
+    // separate columns: a mapped mitigation is never reported as implemented.
+    const statusMap = this.statusMap;
     const rows = [
-      'Technique ID,Technique Name,Tactics,Platforms,Mitigations,Threat Groups,Covered',
+      `Technique ID,Technique Name,Tactics,Platforms,Mitigations Mapped,Threat Groups,${REPORT_SPLIT_LABELS.theoretical},${REPORT_SPLIT_LABELS.implemented}`,
     ];
     for (const t of this.domain.techniques.filter((t) => !t.isSubtechnique)) {
       const mitCount = this.domain.mitigationsByTechnique.get(t.id)?.length ?? 0;
@@ -265,7 +273,8 @@ export class ReportPanelComponent implements OnInit, OnDestroy {
         t.platforms.join('; '),
         mitCount,
         groupCount,
-        mitCount > 0 ? 'Yes' : 'No',
+        isTechniqueMapped(t) ? 'Yes' : 'No',
+        isTechniqueImplemented(this.domain, t, statusMap) ? 'Yes' : 'No',
       ]));
     }
     const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
@@ -276,9 +285,4 @@ export class ReportPanelComponent implements OnInit, OnDestroy {
     URL.revokeObjectURL(a.href);
   }
 
-  pctColor(pct: number): string {
-    if (pct >= 80) return '#4caf50';
-    if (pct >= 50) return '#ff9800';
-    return '#e53935';
-  }
 }

@@ -198,6 +198,29 @@ describe('ReportConfigService', () => {
     expect(service2.getSections().length).toBe(6);
   });
 
+  it('replaces the pre-split section labels of a saved blob with the current ones (E1.1)', () => {
+    // A blob saved before the Theoretical / Implemented split still carries
+    // 'Coverage by Tactic' and 'Highest Exposure Gaps'; ids and the user's
+    // visibility and order survive, the labels do not.
+    const oldBlob = {
+      sections: [
+        { id: 'exec-summary',       label: 'Executive Summary',     visible: true,  order: 0 },
+        { id: 'coverage-by-tactic', label: 'Coverage by Tactic',    visible: false, order: 1 },
+        { id: 'exposure-gaps',      label: 'Highest Exposure Gaps', visible: true,  order: 2 },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(oldBlob));
+
+    const sections = new ReportConfigService().getSections();
+    const byTactic = sections.find(s => s.id === 'coverage-by-tactic')!;
+    const gaps = sections.find(s => s.id === 'exposure-gaps')!;
+    expect(byTactic.label).toBe('Theoretical vs Implemented by Tactic');
+    expect(byTactic.visible).toBeFalse();
+    expect(byTactic.order).toBe(1);
+    expect(gaps.label).toBe('Unmapped Techniques by Adversary Use');
+    expect(sections.map(s => s.label).join(' ')).not.toMatch(/Coverage|Exposure/);
+  });
+
   it('should handle corrupted localStorage gracefully', () => {
     localStorage.setItem(STORAGE_KEY, 'not-valid-json');
 
