@@ -3,12 +3,12 @@
 <div class="stats-bar">
   <div class="stat-group primary">
     <div class="big-stat">
-      <span class="big-num">{{ coveragePct }}%</span>
-      <span class="big-label">Enriched</span>
+      <span class="big-num">{{ mappedPct }}%</span>
+      <span class="big-label">Mapped</span>
     </div>
     <div class="coverage-bar-wrap">
-      <div class="coverage-bar" title="{{ coveredTechniques }}/{{ totalTechniques }} techniques enriched across ≥1 framework">
-        <div class="coverage-fill" [style.width.%]="coveragePct"></div>
+      <div class="coverage-bar" title="{{ mappedTechniques }}/{{ totalTechniques }} techniques mapped to ≥1 defensive reference (mitigation, detection content, control, D3FEND or Atomic). Known tier: reference, no claim about your estate.">
+        <div class="coverage-fill" [style.width.%]="mappedPct"></div>
       </div>
       @if (implementedCount > 0) {
         <div class="coverage-bar impl-bar" [title]="implementedCount + '/' + totalTechniques + ' techniques with an implemented mitigation (self-attested)'">
@@ -16,7 +16,7 @@
         </div>
       }
       <span class="coverage-sub">
-        {{ coveredTechniques }}/{{ totalTechniques }} enriched
+        {{ mappedTechniques }}/{{ totalTechniques }} mapped
         @if (implementedCount > 0) {
           · <span class="impl-sub">{{ implementedCount }} mitigations implemented</span>
         }
@@ -40,8 +40,8 @@
       <span class="counter-label">Relationships</span>
     </div>
     <div class="counter warn">
-      <span class="counter-num">{{ totalTechniques - coveredTechniques }}</span>
-      <span class="counter-label">No Coverage</span>
+      <span class="counter-num">{{ totalTechniques - mappedTechniques }}</span>
+      <span class="counter-label">Unmapped</span>
     </div>
     <div class="counter camp">
       <span class="counter-num">{{ domain.campaigns.length }}</span>
@@ -54,7 +54,7 @@
 
     <div class="tactic-bars">
       @for (ts of tacticStats; track ts.name) {
-        <div class="tactic-stat clickable-tactic" [title]="ts.name + ': ' + ts.covered + '/' + ts.total + ' enriched (' + ts.pct + '%) — Click to scroll'" (click)="tacticClicked.emit(ts.shortname)">
+        <div class="tactic-stat clickable-tactic" [title]="ts.name + ': ' + ts.mapped + '/' + ts.total + ' mapped (' + ts.pct + '%) — Click to scroll'" (click)="tacticClicked.emit(ts.shortname)">
           <div class="tactic-mini-bar">
             <div class="tactic-fill" [style.height.%]="ts.pct" [style.background]="ts.pct >= 80 ? '#4caf50' : ts.pct >= 50 ? '#ffd54f' : '#ff9800'"></div>
           </div>
@@ -81,7 +81,7 @@
 
   <button class="tactic-toggle-btn"
           (click)="toggleTacticBars()"
-          [title]="showTacticBars ? 'Hide per-tactic bars' : 'Show per-tactic coverage bars'">
+          [title]="showTacticBars ? 'Hide per-tactic bars' : 'Show per-tactic mapped bars'">
     {{ showTacticBars ? '◀' : '▶' }}
     <span class="tactic-toggle-label">Tactics</span>
   </button>

@@ -16,20 +16,20 @@
 
         <!-- Row 1: Key metrics -->
         <div class="metrics-row">
-          <!-- Coverage Donut (cross-framework enrichment) -->
+          <!-- Mapped donut (Known tier: defensive reference inputs only) -->
           <div class="stat-card donut-card upgrade-section-block">
-            <div class="donut" [style]="'--pct:' + coveragePct">
-              <span class="donut-value">{{ coveragePct }}%</span>
+            <div class="donut" [style]="'--pct:' + mappedPct">
+              <span class="donut-value">{{ mappedPct }}%</span>
             </div>
-            <div class="stat-label">Overall Coverage</div>
-            <div class="stat-sub">enriched across ≥1 framework</div>
+            <div class="stat-label">Mapped</div>
+            <div class="stat-sub">≥1 defensive reference input; no claim about your estate</div>
           </div>
 
           <!-- Technique counts -->
           <div class="stat-card upgrade-section-block">
-            <div class="stat-big">{{ coveredTechs }} <span class="stat-denom">/ {{ totalTechs }}</span></div>
-            <div class="stat-label">Techniques Enriched</div>
-            <div class="stat-sub">{{ totalTechs - coveredTechs }} with no signal · {{ mitigationPct }}% mitigated</div>
+            <div class="stat-big">{{ mappedTechs }} <span class="stat-denom">/ {{ totalTechs }}</span></div>
+            <div class="stat-label">Techniques Mapped</div>
+            <div class="stat-sub">{{ totalTechs - mappedTechs }} unmapped · {{ mitigationPct }}% with a mapped mitigation</div>
           </div>
 
           <!-- KEV Exposure -->
@@ -56,7 +56,7 @@
 
         <!-- Row 2: Tactic Coverage -->
         <div class="section upgrade-section-block">
-          <h3 class="section-title upgrade-section-title">Coverage by Tactic</h3>
+          <h3 class="section-title upgrade-section-title">Mapped by Tactic</h3>
 
           <!-- Radar chart -->
           @if (radarChart.spokes.length > 0) {
@@ -97,7 +97,7 @@
                   ></div>
                 </div>
                 <span class="tactic-pct" [style.color]="barColor(ts.pct)">{{ ts.pct }}%</span>
-                <span class="tactic-counts">{{ ts.covered }}/{{ ts.total }}</span>
+                <span class="tactic-counts">{{ ts.mapped }}/{{ ts.total }}</span>
               </div>
             }
           </div>

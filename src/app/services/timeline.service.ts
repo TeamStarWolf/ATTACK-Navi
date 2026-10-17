@@ -2,17 +2,31 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { Domain } from '../models/domain';
 import { ImplStatus } from './implementation.service';
+// Type only: TimelineService sits in the initial bundle (export actions), so it
+// must not pull EnrichmentService and its ten reference sources in with it.
+import type { MappedRollup } from './enrichment.service';
 import { csvRow } from '../utils/csv';
+
+/**
+ * What a snapshot's technique count means.
+ * - 'reference-mapped' (E1.7 onwards): >=1 defensive reference input mapped,
+ *   the Known-tier count from EnrichmentService.mappedRollup().
+ * - absent: a snapshot saved before E1.7, which counted techniques with >=1
+ *   ATT&CK mitigation only. Kept as saved; shown as 'mitigations only' and
+ *   left out of the trend, so a change of basis never reads as progress.
+ */
+export type SnapshotBasis = 'reference-mapped';
 
 export interface CoverageSnapshot {
   id: string;
   label: string;
   createdAt: string;
   totalTechniques: number;
+  /** Techniques counted under `basis` (Known tier 'mapped' from E1.7). The name is the stored key. */
   coveredTechniques: number;
   coveragePct: number;
+  basis?: SnapshotBasis;
   implCounts: {
     implemented: number;
     inProgress: number;
@@ -27,6 +41,13 @@ export interface CoverageSnapshot {
     pct: number;
   }>;
   notes: string;
+}
+
+/** Human label for a snapshot's count basis (CSV column, timeline and diff views). */
+export function snapshotBasisLabel(s: Pick<CoverageSnapshot, 'basis'>): string {
+  return s.basis === 'reference-mapped'
+    ? 'mapped (defensive reference inputs)'
+    : 'mitigations only (older snapshot)';
 }
 
 @Injectable({ providedIn: 'root' })
@@ -54,23 +75,23 @@ export class TimelineService {
     } catch { /* quota */ }
   }
 
+  /**
+   * Store a snapshot of the Known-tier 'mapped' rollup. The caller passes
+   * EnrichmentService.mappedRollup(domain), the same rollup stats-bar,
+   * tactic-summary, analytics-panel and roadmap-panel show (E1.7). P2 seam:
+   * PostureService's Known / Covered / Proven rollup is stored here instead
+   * (E9.2).
+   */
   takeSnapshot(
     label: string,
-    domain: Domain,
+    rollup: MappedRollup,
     implStatusMap: Map<string, ImplStatus>,
     notes = '',
   ): CoverageSnapshot {
-    const parentTechniques = domain.techniques.filter(t => !t.isSubtechnique);
-    const totalTechniques = parentTechniques.length;
-
-    // A technique is "covered" if it has at least one mitigation relationship
-    const coveredTechniques = parentTechniques.filter(
-      t => (domain.mitigationsByTechnique.get(t.id)?.length ?? 0) > 0,
-    ).length;
-
-    const coveragePct = totalTechniques > 0
-      ? Math.round((coveredTechniques / totalTechniques) * 100)
-      : 0;
+    // Known tier ('mapped'): parent techniques with >=1 defensive reference input.
+    const totalTechniques = rollup.overall.total;
+    const coveredTechniques = rollup.overall.mapped;
+    const coveragePct = rollup.overall.pct;
 
     // Count impl statuses for all mitigations that have been set
     let implemented = 0;
@@ -84,22 +105,14 @@ export class TimelineService {
       else if (status === 'not-started') notStarted++;
     }
 
-    // Per-tactic coverage
-    const tacticCoverage = domain.tacticColumns.map(col => {
-      const parents = col.techniques.filter(t => !t.isSubtechnique);
-      const covered = parents.filter(
-        t => (domain.mitigationsByTechnique.get(t.id)?.length ?? 0) > 0,
-      ).length;
-      const total = parents.length;
-      const pct = total > 0 ? Math.round((covered / total) * 100) : 0;
-      return {
-        tacticName: col.tactic.name,
-        tacticId: col.tactic.id,
-        covered,
-        total,
-        pct,
-      };
-    });
+    // Per-tactic mapped counts (tactic columns hold parent techniques only)
+    const tacticCoverage = rollup.byTactic.map(t => ({
+      tacticName: t.tacticName,
+      tacticId: t.tacticId,
+      covered: t.mapped,
+      total: t.total,
+      pct: t.pct,
+    }));
 
     const snapshot: CoverageSnapshot = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
@@ -108,6 +121,7 @@ export class TimelineService {
       totalTechniques,
       coveredTechniques,
       coveragePct,
+      basis: 'reference-mapped',
       implCounts: { implemented, inProgress, planned, notStarted },
       tacticCoverage,
       notes: notes.trim(),
@@ -159,7 +173,7 @@ export class TimelineService {
     const snapshots = this.snapshotsSubject.value;
     if (!snapshots.length) return;
 
-    const header = 'ID,Label,Date,Total Techniques,Mapped Techniques,Mitigation-mapped %,Implemented,In Progress,Planned,Not Started,Notes';
+    const header = 'ID,Label,Date,Total Techniques,Mapped Techniques,Mapped %,Count Basis,Implemented,In Progress,Planned,Not Started,Notes';
     const rows = snapshots.map(s => csvRow([
       s.id,
       s.label,
@@ -167,6 +181,7 @@ export class TimelineService {
       s.totalTechniques,
       s.coveredTechniques,
       s.coveragePct,
+      snapshotBasisLabel(s),
       s.implCounts.implemented,
       s.implCounts.inProgress,
       s.implCounts.planned,

@@ -32,7 +32,7 @@ describe('AnalyticsPanelComponent', () => {
         { provide: CveService, useValue: { kev$: new BehaviorSubject([]), kevTechScores$: new BehaviorSubject(new Map()), getCachedCves: () => [] } },
         { provide: SigmaService, useValue: { getRuleCount: () => 0 } },
         { provide: NistMappingService, useValue: { loaded$: new BehaviorSubject(true), getControlsForTechnique: () => [] } },
-        { provide: EnrichmentService, useValue: { isEnriched: () => false } },
+        { provide: EnrichmentService, useValue: { mappedRollup: () => ({ overall: { total: 0, mapped: 0, pct: 0 }, byTactic: [] }) } },
       ],
     });
     fixture = TestBed.createComponent(AnalyticsPanelComponent);

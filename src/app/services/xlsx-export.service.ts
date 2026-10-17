@@ -4,7 +4,7 @@ import { Injectable } from '@angular/core';
 import { Domain } from '../models/domain';
 import { ImplStatus, IMPL_STATUS_LABELS } from './implementation.service';
 import { CustomMitigation } from './custom-mitigation.service';
-import { CoverageSnapshot } from './timeline.service';
+import { CoverageSnapshot, snapshotBasisLabel } from './timeline.service';
 
 type XLSX = typeof import('xlsx-js-style');
 
@@ -259,7 +259,7 @@ export class XlsxExportService {
 
   private buildTimelineSheet(XLSX: XLSX, snapshots: CoverageSnapshot[]): any {
     const headers = [
-      'Date', 'Label', 'Mitigation-mapped %', 'Mapped', 'Total',
+      'Date', 'Label', 'Mapped %', 'Mapped', 'Total', 'Count Basis',
       'Implemented', 'In Progress', 'Planned', 'Notes',
     ];
 
@@ -269,6 +269,7 @@ export class XlsxExportService {
       `${s.coveragePct}%`,
       s.coveredTechniques,
       s.totalTechniques,
+      snapshotBasisLabel(s),
       s.implCounts.implemented,
       s.implCounts.inProgress,
       s.implCounts.planned,
@@ -276,7 +277,7 @@ export class XlsxExportService {
     ]);
 
     const ws = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
-    this.setColumnWidths(ws, [22, 30, 12, 10, 10, 14, 12, 10, 50]);
+    this.setColumnWidths(ws, [22, 30, 12, 10, 10, 34, 14, 12, 10, 50]);
     return ws;
   }
 

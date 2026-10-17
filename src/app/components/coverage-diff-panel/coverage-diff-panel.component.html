@@ -7,7 +7,7 @@
       <div class="cdp-title-row">
         <span class="cdp-icon">📊</span>
         <h2 class="cdp-title">Coverage Diff</h2>
-        <p class="cdp-subtitle">Compare two coverage snapshots to measure improvement over time</p>
+        <p class="cdp-subtitle">Compare two snapshots of the mapped count (techniques with ≥1 defensive reference input; reference, no claim about your estate)</p>
       </div>
 
       <!-- Snapshot selectors -->
@@ -40,24 +40,45 @@
         <div class="cdp-empty">
           <div class="empty-icon">📊</div>
           <p>You need at least 2 saved snapshots to use Coverage Diff.</p>
-          <p class="empty-hint">Go to <strong>Timeline</strong> in the nav rail and save coverage snapshots over time.</p>
+          <p class="empty-hint">Go to <strong>Timeline</strong> in the nav rail and save snapshots over time.</p>
         </div>
       } @else if (baseSnap && compareSnap) {
 
+        @if (basesDiffer) {
+          <p class="cdp-basis-note" role="note">
+            These snapshots count on different bases ({{ basisLabel(baseSnap) }} vs {{ basisLabel(compareSnap) }}),
+            so the change below reflects the definition as well as the data. Take a new snapshot to compare like with like.
+          </p>
+        }
+
         <!-- Hero metrics -->
         <div class="hero-metrics">
-          <div class="hero-card" [class.positive]="isPositive" [class.negative]="!isPositive">
-            <div class="hero-label">Coverage Change</div>
-            <div class="hero-value">
-              {{ isPositive ? '+' : '' }}{{ coverageDelta | number:'1.1-1' }}%
+          @if (basesDiffer) {
+            <!-- Different count bases: no signed or coloured delta, the change is not progress. -->
+            <div class="hero-card">
+              <div class="hero-label">Mapped % Change</div>
+              <div class="hero-value" title="The two snapshots count on different bases: {{ basisLabel(baseSnap) }} vs {{ basisLabel(compareSnap) }}">bases differ</div>
+              <div class="hero-from">{{ baseSnap.coveragePct | number:'1.1-1' }}% → {{ compareSnap.coveragePct | number:'1.1-1' }}%</div>
             </div>
-            <div class="hero-from">{{ baseSnap.coveragePct | number:'1.1-1' }}% → {{ compareSnap.coveragePct | number:'1.1-1' }}%</div>
-          </div>
-          <div class="hero-card" [class.positive]="techniqueDelta >= 0" [class.negative]="techniqueDelta < 0">
-            <div class="hero-label">Techniques Mapped</div>
-            <div class="hero-value">{{ techniqueDelta >= 0 ? '+' : '' }}{{ techniqueDelta }}</div>
-            <div class="hero-from">{{ baseSnap.coveredTechniques }} → {{ compareSnap.coveredTechniques }}</div>
-          </div>
+            <div class="hero-card">
+              <div class="hero-label">Techniques Mapped</div>
+              <div class="hero-value" title="The two snapshots count on different bases: {{ basisLabel(baseSnap) }} vs {{ basisLabel(compareSnap) }}">bases differ</div>
+              <div class="hero-from">{{ baseSnap.coveredTechniques }} → {{ compareSnap.coveredTechniques }}</div>
+            </div>
+          } @else {
+            <div class="hero-card" [class.positive]="isPositive" [class.negative]="!isPositive">
+              <div class="hero-label">Mapped % Change</div>
+              <div class="hero-value">
+                {{ isPositive ? '+' : '' }}{{ coverageDelta | number:'1.1-1' }}%
+              </div>
+              <div class="hero-from">{{ baseSnap.coveragePct | number:'1.1-1' }}% → {{ compareSnap.coveragePct | number:'1.1-1' }}%</div>
+            </div>
+            <div class="hero-card" [class.positive]="techniqueDelta >= 0" [class.negative]="techniqueDelta < 0">
+              <div class="hero-label">Techniques Mapped</div>
+              <div class="hero-value">{{ techniqueDelta >= 0 ? '+' : '' }}{{ techniqueDelta }}</div>
+              <div class="hero-from">{{ baseSnap.coveredTechniques }} → {{ compareSnap.coveredTechniques }}</div>
+            </div>
+          }
           <div class="hero-card">
             <div class="hero-label">Baseline</div>
             <div class="hero-snap-name">{{ baseSnap.label }}</div>
@@ -96,7 +117,7 @@
 
         <!-- Tactic breakdown -->
         <div class="section">
-          <h3 class="section-title">Tactic Coverage Changes</h3>
+          <h3 class="section-title">Mapped Techniques by Tactic</h3>
           <div class="tactic-table">
             <div class="tac-header">
               <span class="tac-name">Tactic</span>
@@ -106,7 +127,7 @@
               <span class="tac-bar">Change Bar</span>
             </div>
             @for (tac of tacticDiffs; track trackByTactic($index, tac)) {
-              <div class="tac-row" [class.improved]="tac.delta > 0" [class.declined]="tac.delta < 0">
+              <div class="tac-row" [class.improved]="!basesDiffer && tac.delta > 0" [class.declined]="!basesDiffer && tac.delta < 0">
                 <span class="tac-name">{{ tac.tacticName }}</span>
                 <span class="tac-base">
                   {{ tac.oldCovered }}/{{ tac.oldTotal }}
@@ -116,14 +137,20 @@
                   {{ tac.newCovered }}/{{ tac.newTotal }}
                   <small>({{ tac.newPct | number:'1.0-0' }}%)</small>
                 </span>
-                <span class="tac-delta" [class.pos]="tac.delta > 0" [class.neg]="tac.delta < 0">
-                  {{ tac.delta > 0 ? '+' : '' }}{{ tac.delta }}
-                  @if (tac.deltaPct !== 0) {
-                    <small>({{ tac.deltaPct > 0 ? '+' : '' }}{{ tac.deltaPct | number:'1.0-0' }}%)</small>
-                  }
-                </span>
+                @if (basesDiffer) {
+                  <span class="tac-delta">bases differ</span>
+                } @else {
+                  <span class="tac-delta" [class.pos]="tac.delta > 0" [class.neg]="tac.delta < 0">
+                    {{ tac.delta > 0 ? '+' : '' }}{{ tac.delta }}
+                    @if (tac.deltaPct !== 0) {
+                      <small>({{ tac.deltaPct > 0 ? '+' : '' }}{{ tac.deltaPct | number:'1.0-0' }}%)</small>
+                    }
+                  </span>
+                }
                 <span class="tac-bar">
-                  @if (tac.delta !== 0) {
+                  @if (basesDiffer) {
+                    <span class="no-change-mark">not comparable</span>
+                  } @else if (tac.delta !== 0) {
                     <div class="bar-track">
                       <div
                         class="bar-fill"

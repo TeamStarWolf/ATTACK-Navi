@@ -10,7 +10,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
-import { TimelineService, CoverageSnapshot } from '../../services/timeline.service';
+import { TimelineService, CoverageSnapshot, snapshotBasisLabel } from '../../services/timeline.service';
 
 interface TacticDiff {
   tacticName: string;
@@ -151,6 +151,20 @@ export class CoverageDiffPanelComponent implements OnInit, OnDestroy {
   }
 
   get isPositive(): boolean { return this.coverageDelta >= 0; }
+
+  /**
+   * True when the two snapshots counted on different bases (one saved before
+   * E1.7 counted mitigations only; later ones count Known-tier 'mapped'), so
+   * their delta is a change of definition, not of the data.
+   */
+  get basesDiffer(): boolean {
+    if (!this.baseSnap || !this.compareSnap) return false;
+    return (this.baseSnap.basis ?? null) !== (this.compareSnap.basis ?? null);
+  }
+
+  basisLabel(s: CoverageSnapshot): string {
+    return snapshotBasisLabel(s);
+  }
 
   get maxTacticDelta(): number {
     return Math.max(1, ...this.tacticDiffs.map(t => Math.abs(t.delta)));

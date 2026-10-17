@@ -23,7 +23,7 @@ interface TacticStat {
   name: string;
   shortname: string;
   total: number;
-  covered: number;
+  mapped: number;
   pct: number;
   avgRisk: number;
 }
@@ -60,9 +60,12 @@ export class AnalyticsPanelComponent implements OnInit, OnDestroy {
   implSummary: Record<string, number> = {};
   topGaps: TopGap[] = [];
   topMitigations: TopMitigation[] = [];
-  coveragePct = 0;         // enrichment coverage (≥1 cross-framework signal)
+  // Known tier ('mapped', E1.7): >=1 defensive reference input, from
+  // EnrichmentService.mappedRollup(). Never threat-intel or CVE links.
+  // P2 seam: PostureService replaces these with Known / Covered / Proven.
+  mappedPct = 0;
   totalTechs = 0;
-  coveredTechs = 0;        // enriched techniques
+  mappedTechs = 0;
   mitigatedTechs = 0;      // techniques with ≥1 mitigation (one framework)
   mitigationPct = 0;
   kevExposureCount = 0;
@@ -120,12 +123,12 @@ export class AnalyticsPanelComponent implements OnInit, OnDestroy {
 
     // Only parent techniques (not sub-techniques)
     const parentTechs = this.domain.techniques.filter(t => !t.isSubtechnique);
-    this.totalTechs = parentTechs.length;
-    // "Coverage" = cross-framework enrichment; mitigation is tracked separately.
-    this.coveredTechs = parentTechs.filter(t => this.enrichment.isEnriched(t, this.domain)).length;
-    this.coveragePct = this.totalTechs > 0
-      ? Math.round(100 * this.coveredTechs / this.totalTechs)
-      : 0;
+    // Known tier: the same rollup stats-bar, tactic-summary, the timeline
+    // snapshots and roadmap-panel show; mitigation is tracked separately.
+    const rollup = this.enrichment.mappedRollup(this.domain);
+    this.totalTechs = rollup.overall.total;
+    this.mappedTechs = rollup.overall.mapped;
+    this.mappedPct = rollup.overall.pct;
     this.mitigatedTechs = parentTechs.filter(t => t.mitigationCount > 0).length;
     this.mitigationPct = this.totalTechs > 0
       ? Math.round(100 * this.mitigatedTechs / this.totalTechs)
@@ -152,10 +155,12 @@ export class AnalyticsPanelComponent implements OnInit, OnDestroy {
     // Impl summary
     this.implSummary = this.implService.summarize();
 
-    // Tactic stats — coverage (and the posture radar it feeds) is enrichment-based.
+    // Tactic stats: the mapped count (and the radar it feeds) is Known tier;
+    // avgRisk stays a Threat-side number.
+    const mappedByTactic = new Map(rollup.byTactic.map(t => [t.tacticId, t]));
     this.tacticStats = this.domain.tacticColumns.map(col => {
       const total = col.techniques.length;
-      const covered = col.techniques.filter(t => this.enrichment.isEnriched(t, this.domain)).length;
+      const known = mappedByTactic.get(col.tactic.id);
       const avgRisk = col.techniques.reduce((sum, t) => {
         const g = (this.domain!.groupsByTechnique.get(t.id) ?? []).length;
         return sum + g * (1 + 1 / (t.mitigationCount + 1));
@@ -164,8 +169,8 @@ export class AnalyticsPanelComponent implements OnInit, OnDestroy {
         name: col.tactic.name,
         shortname: col.tactic.shortname,
         total,
-        covered,
-        pct: total > 0 ? Math.round(100 * covered / total) : 0,
+        mapped: known?.mapped ?? 0,
+        pct: known?.pct ?? 0,
         avgRisk: Math.round(avgRisk * 10) / 10,
       };
     });
