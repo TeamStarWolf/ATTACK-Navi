@@ -169,5 +169,164 @@ describe('EnrichmentService', () => {
     const s = TestBed.inject(EnrichmentService);
     expect(() => s.isEnriched(tech('T9', 's9', 0), emptyDomain())).not.toThrow();
     expect(s.isEnriched(tech('T9', 's9', 0), emptyDomain())).toBe(false);
+    // The Known-tier entry points are guarded the same way.
+    expect(() => s.referenceDefenseSignals(tech('T9', 's9', 0), emptyDomain())).not.toThrow();
+    expect(s.isReferenceMapped(tech('T9', 's9', 0), emptyDomain())).toBe(false);
+    expect(s.referenceDefenseTotals([tech('T9', 's9', 0)], emptyDomain()).mapped).toBe(0);
+  });
+
+  // ─── E1.7: Known-tier defensive reference signals (plan 4.1) ─────────────
+  describe('referenceDefenseSignals (Known tier, E1.7)', () => {
+    /**
+     * A mixed fixture: each defensive input alone, one technique with all of
+     * them, one with none, and one that is threat-side only.
+     */
+    function fixture(): Technique[] {
+      counts.sigma.set('T1', 2);      // detection content (Sigma)
+      counts.car.set('T2', 1);        // detection content (CAR)
+      counts.nist.set('T3', 1);       // CTID control
+      counts.d3fend.set('T4', 2);     // D3FEND
+      counts.atomic.set('T5', 4);     // Atomic
+      counts.sigma.set('T7', 1);
+      counts.cis.set('T7', 1);
+      counts.d3fend.set('T7', 1);
+      counts.atomic.set('T7', 1);
+      counts.cve.set('T9', 3);        // threat side only (CVE)
+      domain.groupsByTechnique.set('s9', arr(4) as never); // threat side only (group)
+      return [
+        tech('T1', 's1'), tech('T2', 's2'), tech('T3', 's3'), tech('T4', 's4'),
+        tech('T5', 's5'), tech('T6', 's6', 3) /* mitigation */, tech('T7', 's7', 1),
+        tech('T8', 's8'), tech('T9', 's9'),
+      ];
+    }
+
+    /** Every Known-tier number the service can produce for a set of techniques. */
+    function knownSnapshot(techs: Technique[]) {
+      return {
+        totals: service.referenceDefenseTotals(techs, domain),
+        perTechnique: techs.map(t => ({
+          id: t.attackId,
+          signals: service.referenceDefenseSignals(t, domain),
+          mapped: service.isReferenceMapped(t, domain),
+        })),
+      };
+    }
+
+    it('carries only the five defensive reference inputs (no threat-intel or CVE field)', () => {
+      const r = service.referenceDefenseSignals(tech('T1', 's1', 1), domain);
+      expect(Object.keys(r).sort()).toEqual(['atomic', 'control', 'd3fend', 'detection', 'mitigation']);
+    });
+
+    it('marks a technique mapped when any one defensive reference input is present', () => {
+      const cases: Array<[string, () => Technique]> = [
+        ['mitigation (mitigationCount)', () => tech('M1', 'sm1', 1)],
+        ['mitigation (domain relationship)', () => {
+          domain.mitigationsByTechnique.set('sm2', arr(1) as never);
+          return tech('M2', 'sm2', 0);
+        }],
+        ['Sigma', () => { counts.sigma.set('M3', 1); return tech('M3', 'sm3'); }],
+        ['CAR', () => { counts.car.set('M4', 1); return tech('M4', 'sm4'); }],
+        ['NIST', () => { counts.nist.set('M5', 1); return tech('M5', 'sm5'); }],
+        ['CRI', () => { counts.cri.set('M6', 1); return tech('M6', 'sm6'); }],
+        ['CIS', () => { counts.cis.set('M7', 1); return tech('M7', 'sm7'); }],
+        ['CSA CCM', () => { counts.csa.set('M8', 1); return tech('M8', 'sm8'); }],
+        ['M365', () => { counts.m365.set('M9', 1); return tech('M9', 'sm9'); }],
+        ['D3FEND', () => { counts.d3fend.set('M10', 1); return tech('M10', 'sm10'); }],
+        ['Atomic', () => { counts.atomic.set('M11', 1); return tech('M11', 'sm11'); }],
+      ];
+      for (const [label, make] of cases) {
+        expect(service.isReferenceMapped(make(), domain)).withContext(label).toBe(true);
+      }
+      expect(service.isReferenceMapped(tech('M0', 'sm0'), domain)).withContext('nothing').toBe(false);
+    });
+
+    it('does not count a threat-only or CVE-only technique as mapped (isEnriched still does)', () => {
+      const groupOnly = tech('T4001', 's-4001');
+      domain.groupsByTechnique.set('s-4001', arr(5) as never);
+      domain.softwareByTechnique.set('s-4001', arr(2) as never);
+      domain.campaignsByTechnique.set('s-4001', arr(1) as never);
+      counts.cve.set('T4002', 7);
+      const cveOnly = tech('T4002', 's-4002');
+      for (const t of [groupOnly, cveOnly]) {
+        expect(service.isEnriched(t, domain)).withContext(`${t.attackId} threat side`).toBe(true);
+        expect(service.isReferenceMapped(t, domain)).withContext(`${t.attackId} Known tier`).toBe(false);
+      }
+    });
+
+    it('adding a group that uses a technique changes no Known-tier count', () => {
+      const techs = fixture();
+      const before = knownSnapshot(techs);
+      const enrichedBefore = service.totals(techs, domain);
+      expect(before.totals).toEqual({
+        total: 9, mapped: 7, mitigation: 2, detection: 3, control: 2, d3fend: 2, atomic: 2,
+      });
+
+      // A new group (plus its software and a campaign) starts using EVERY technique.
+      for (const t of techs) {
+        const g = (domain.groupsByTechnique.get(t.id) as unknown as unknown[] | undefined) ?? [];
+        domain.groupsByTechnique.set(t.id, [...g, 'new-group'] as never);
+        domain.softwareByTechnique.set(t.id, ['new-software'] as never);
+        domain.campaignsByTechnique.set(t.id, ['new-campaign'] as never);
+      }
+
+      expect(knownSnapshot(techs)).toEqual(before);
+      // The Threat side did see the group: the old composite moves, the Known tier does not.
+      const enrichedAfter = service.totals(techs, domain);
+      expect(enrichedAfter.threatIntel).toBe(9);
+      expect(enrichedAfter.threatIntel).toBeGreaterThan(enrichedBefore.threatIntel);
+      expect(enrichedAfter.enriched).toBeGreaterThan(enrichedBefore.enriched);
+    });
+
+    it('adding CVE / KEV mappings to a technique changes no Known-tier count', () => {
+      const techs = fixture();
+      const before = knownSnapshot(techs);
+      for (const t of techs) counts.cve.set(t.attackId, 10);
+      expect(knownSnapshot(techs)).toEqual(before);
+      expect(service.totals(techs, domain).cve).toBe(9);
+    });
+
+    it('never reads the threat-intel or CVE inputs at all', () => {
+      const techs = fixture();
+      const cveSpy = spyOn(TestBed.inject(AttackCveService), 'getCvesForTechnique').and.callThrough();
+      const groupSpy = spyOn(domain.groupsByTechnique, 'get').and.callThrough();
+      const softwareSpy = spyOn(domain.softwareByTechnique, 'get').and.callThrough();
+      const campaignSpy = spyOn(domain.campaignsByTechnique, 'get').and.callThrough();
+      knownSnapshot(techs);
+      expect(cveSpy).not.toHaveBeenCalled();
+      expect(groupSpy).not.toHaveBeenCalled();
+      expect(softwareSpy).not.toHaveBeenCalled();
+      expect(campaignSpy).not.toHaveBeenCalled();
+      // Sanity: the Threat-side composite does read them.
+      service.isEnriched(techs[8], domain);
+      expect(cveSpy).toHaveBeenCalled();
+      expect(groupSpy).toHaveBeenCalled();
+    });
+
+    it('agrees with signals() on the five shared families (signals() is built on it)', () => {
+      const techs = fixture();
+      for (const t of techs) {
+        const all = service.signals(t, domain);
+        const ref = service.referenceDefenseSignals(t, domain);
+        expect({
+          mitigation: all.mitigation, detection: all.detection, control: all.control,
+          d3fend: all.d3fend, atomic: all.atomic,
+        }).withContext(t.attackId).toEqual(ref);
+      }
+      const known = service.referenceDefenseTotals(techs, domain);
+      const threatSide = service.totals(techs, domain);
+      for (const k of ['mitigation', 'detection', 'control', 'd3fend', 'atomic'] as const) {
+        expect(known[k]).withContext(k).toBe(threatSide[k]);
+      }
+    });
+
+    it('returns all-false / zero totals for a missing technique or an empty set', () => {
+      expect(service.referenceDefenseSignals(null as unknown as Technique, domain)).toEqual({
+        mitigation: false, detection: false, control: false, d3fend: false, atomic: false,
+      });
+      expect(service.isReferenceMapped(undefined as unknown as Technique)).toBe(false);
+      const zero = { total: 0, mapped: 0, mitigation: 0, detection: 0, control: 0, d3fend: 0, atomic: 0 };
+      expect(service.referenceDefenseTotals([], domain)).toEqual(zero);
+      expect(service.referenceDefenseTotals(undefined as unknown as Technique[], domain)).toEqual(zero);
+    });
   });
 });

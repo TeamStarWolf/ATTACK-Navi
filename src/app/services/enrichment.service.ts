@@ -29,6 +29,38 @@ export interface EnrichmentSignals {
   cve: boolean;          // CVE / KEV mapping
 }
 
+/**
+ * Per-technique presence of each DEFENSIVE REFERENCE input: the Known rung of
+ * plan 4.1 ("the world knows how to mitigate, detect or test it; no claim
+ * about you"). These are exactly the inputs of the Reference depth lens
+ * (models/reference-depth.ts): mitigations, detection content, CTID control
+ * mappings, D3FEND and Atomic.
+ *
+ * There is deliberately no threat-intel or CVE field. Groups, software,
+ * campaigns and CVE/KEV links say how much adversaries care, not what is
+ * mapped to defend against it, so a Known-tier count must not move when a
+ * group starts using a technique. The type has no field a threat signal could
+ * flow through.
+ */
+export interface ReferenceDefenseSignals {
+  mitigation: boolean;   // ATT&CK mitigation relationship (M-series)
+  detection: boolean;    // detection content available: Sigma + CAR analytics
+  control: boolean;      // CTID control-framework mapping (NIST/CRI/CIS/CSA/M365)
+  d3fend: boolean;       // D3FEND countermeasure
+  atomic: boolean;       // Atomic Red Team test
+}
+
+/** Known-tier aggregate across a set of techniques (defensive reference inputs only). */
+export interface ReferenceDefenseTotals {
+  total: number;
+  mapped: number;        // >=1 defensive reference input (Known rung: 'mapped')
+  mitigation: number;
+  detection: number;
+  control: number;
+  d3fend: number;
+  atomic: number;
+}
+
 /** Aggregate counts across a set of techniques, one flag family per column. */
 export interface EnrichmentTotals {
   total: number;
@@ -44,13 +76,22 @@ export interface EnrichmentTotals {
 }
 
 /**
- * Single source of truth for "coverage" in ATTACK-Navi.
+ * Per-technique signal families from the cross-framework reference data.
  *
- * The app is ATT&CK/framework-centric, not mitigation-centric: a technique is
- * "covered" (enriched) when it carries ANY cross-framework defensive/framework
- * signal, so mitigation is one contributor among seven rather than the sole
- * definition of coverage. Every service call is guarded — missing/unloaded data
- * yields `false`, never a throw.
+ * Two different questions are answered here and must not be confused (plan
+ * 4.1, epic E1.7):
+ *
+ * - Known tier ('mapped'): `referenceDefenseSignals()`, `isReferenceMapped()`
+ *   and `referenceDefenseTotals()` read the defensive reference inputs only
+ *   (mitigations, detection content, CTID controls, D3FEND, Atomic). Any count
+ *   that describes defense uses these.
+ * - Threat side: `isEnriched()`, `signals()`, `signalCount()`, `totals()` and
+ *   `coverage()` also mix in threat-intel links (groups, software, campaigns)
+ *   and CVE mappings, so they rise when adversaries use a technique. They are
+ *   kept for Threat-side counts only, never for a defensive summary.
+ *
+ * Every service call is guarded: missing or unloaded data yields `false`,
+ * never a throw.
  */
 @Injectable({ providedIn: 'root' })
 export class EnrichmentService {
@@ -106,13 +147,17 @@ export class EnrichmentService {
     );
   }
 
-  /** Presence of each signal family for a single technique. */
-  signals(tech: Technique, domain?: Domain | null): EnrichmentSignals {
+  /**
+   * Known tier: presence of each defensive reference input for one technique
+   * (mitigations, detection content, CTID controls, D3FEND, Atomic). It never
+   * reads the threat-intel (groups, software, campaigns) or CVE inputs, so
+   * adding a group that uses a technique cannot change it. `domain` is read
+   * only for the mitigation relationship, when the technique carries no
+   * precomputed mitigationCount.
+   */
+  referenceDefenseSignals(tech: Technique, domain?: Domain | null): ReferenceDefenseSignals {
     if (!tech) {
-      return {
-        mitigation: false, detection: false, atomic: false, d3fend: false,
-        control: false, threatIntel: false, cve: false,
-      };
+      return { mitigation: false, detection: false, control: false, d3fend: false, atomic: false };
     }
     const id = tech.attackId;
     const mitCount =
@@ -124,18 +169,74 @@ export class EnrichmentService {
     return {
       mitigation: mitCount > 0,
       detection: detection > 0,
-      atomic: this.num(() => this.atomicService.getTestCount(id)) > 0,
-      d3fend: this.len(() => this.d3fendService.getCountermeasures(id)) > 0,
       control: this.controlCount(id) > 0,
+      d3fend: this.len(() => this.d3fendService.getCountermeasures(id)) > 0,
+      atomic: this.num(() => this.atomicService.getTestCount(id)) > 0,
+    };
+  }
+
+  /**
+   * Known tier: whether a technique has at least one defensive reference input
+   * mapped (the 'mapped' count on summary surfaces). Threat-independent.
+   */
+  isReferenceMapped(tech: Technique, domain?: Domain | null): boolean {
+    const r = this.referenceDefenseSignals(tech, domain);
+    return r.mitigation || r.detection || r.control || r.d3fend || r.atomic;
+  }
+
+  /** Known tier: aggregate defensive reference counts across a set of techniques in one pass. */
+  referenceDefenseTotals(techs: readonly Technique[], domain?: Domain | null): ReferenceDefenseTotals {
+    const t: ReferenceDefenseTotals = {
+      total: 0, mapped: 0, mitigation: 0, detection: 0, control: 0, d3fend: 0, atomic: 0,
+    };
+    for (const tech of techs ?? []) {
+      t.total++;
+      const r = this.referenceDefenseSignals(tech, domain);
+      if (r.mitigation) t.mitigation++;
+      if (r.detection) t.detection++;
+      if (r.control) t.control++;
+      if (r.d3fend) t.d3fend++;
+      if (r.atomic) t.atomic++;
+      if (r.mitigation || r.detection || r.control || r.d3fend || r.atomic) t.mapped++;
+    }
+    return t;
+  }
+
+  /**
+   * Presence of each signal family for a single technique: the five defensive
+   * reference inputs (from `referenceDefenseSignals()`) plus the threat-intel
+   * and CVE inputs. Threat side; for a Known-tier view use
+   * `referenceDefenseSignals()`.
+   */
+  signals(tech: Technique, domain?: Domain | null): EnrichmentSignals {
+    if (!tech) {
+      return {
+        mitigation: false, detection: false, atomic: false, d3fend: false,
+        control: false, threatIntel: false, cve: false,
+      };
+    }
+    const id = tech.attackId;
+    const r = this.referenceDefenseSignals(tech, domain);
+    return {
+      mitigation: r.mitigation,
+      detection: r.detection,
+      atomic: r.atomic,
+      d3fend: r.d3fend,
+      control: r.control,
       threatIntel: this.threatIntelCount(tech, domain) > 0,
       cve: this.len(() => this.attackCveService.getCvesForTechnique(id)) > 0,
     };
   }
 
   /**
-   * Canonical coverage test: a technique is "covered/enriched" when it carries
-   * ANY cross-framework signal. This is the definition reused everywhere the app
-   * reports "Coverage".
+   * Threat side only. True when a technique carries ANY of the seven signal
+   * families, including threat-intel links (groups, software, campaigns) and
+   * CVE mappings. Those two inputs describe adversary interest, so this rises
+   * when a group starts using a technique; it must not feed a defensive or
+   * 'mapped' count. Use `isReferenceMapped()` / `referenceDefenseTotals()`
+   * (Known tier) for those. Kept for Threat-side counts only: the summary
+   * surfaces move off it in E1.7, and PostureService replaces their counts
+   * with Known / Covered / Proven in P2.
    */
   isEnriched(tech: Technique, domain?: Domain | null): boolean {
     const s = this.signals(tech, domain);
@@ -158,7 +259,9 @@ export class EnrichmentService {
    * Whether a technique has a genuine DEFENSIVE signal (mitigation, detection,
    * control, or D3FEND countermeasure). Excludes atomic tests, threat-intel and
    * CVE links, which describe exposure/validation rather than a control. Used to
-   * flag critical-risk gaps (threat-relevant but wholly undefended).
+   * flag critical-risk gaps (threat-relevant but wholly undefended). Narrower
+   * than `isReferenceMapped()`, which also counts Atomic tests as Known-tier
+   * reference content.
    */
   hasDefensiveSignal(tech: Technique, domain?: Domain | null): boolean {
     const s = this.signals(tech, domain);
