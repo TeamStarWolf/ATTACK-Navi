@@ -65,7 +65,7 @@ const TOOLS: OffensiveTool[] = [
   { name: 'Invoke-AtomicRedTeam', category: 'Validation', techniqueIds: ['T1059.001', 'T1204.002'], description: 'PowerShell Atomic test executor', url: 'https://github.com/redcanaryco/invoke-atomicredteam' },
   { name: 'log4j-scanner', category: 'Vulnerability Scanning', techniqueIds: ['T1190', 'T1059'], description: 'CISA Log4j vulnerability scanner', url: 'https://github.com/cisagov/log4j-scanner' },
   { name: 'Commando-VM', category: 'Offensive Platform', techniqueIds: ['T1059', 'T1588.002'], description: 'Windows offensive distribution (Mandiant)', url: 'https://github.com/mandiant/commando-vm' },
-  // From starred repos â€” additional
+  // From starred repos — additional
   { name: 'Amass', category: 'Reconnaissance', techniqueIds: ['T1595.001', 'T1590', 'T1589'], description: 'In-depth attack surface mapping and asset discovery (OWASP)', url: 'https://github.com/owasp-amass/amass' },
   { name: 'sqlmap', category: 'Exploitation', techniqueIds: ['T1190', 'T1059'], description: 'Automatic SQL injection and database takeover', url: 'https://github.com/sqlmapproject/sqlmap' },
   { name: 'Sherlock', category: 'Reconnaissance', techniqueIds: ['T1589.001', 'T1593'], description: 'Hunt social media accounts by username', url: 'https://github.com/sherlock-project/sherlock' },

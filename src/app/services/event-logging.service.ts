@@ -239,7 +239,7 @@ export class EventLoggingService {
       const configs = this.getLoggingConfig(attackId);
       if (!configs.length) continue;
 
-      commands.push(`# â”€â”€ ${attackId} â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ï¿½ï¿½ï¿½â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€`);
+      commands.push(`# ── ${attackId} ──────────────────────────────────`);
       for (const config of configs) {
         const key = config.command.trim();
         if (seen.has(key)) continue;

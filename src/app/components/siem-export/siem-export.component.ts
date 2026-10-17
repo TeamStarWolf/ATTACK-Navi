@@ -53,7 +53,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
   suricataRuleCount = 0;
   zeekScriptCount = 0;
 
-  // â”€â”€ Query Library tab state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Query Library tab state ────────────────────────────────────────────────
   librarySearchText = '';
   librarySelectedTechniqueId = '';
   libraryPlatformFilter: SiemQuery['platform'] | 'all' = 'all';
@@ -233,7 +233,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
   buildSplunkExport(analytics: CarAnalytic[]): string {
     const lines: string[] = [
       '| =====================================================================',
-      '| MITRE ATT&CK CAR Analytics â€” Splunk SPL Detection Queries',
+      '| MITRE ATT&CK CAR Analytics — Splunk SPL Detection Queries',
       `| Generated: ${new Date().toISOString().slice(0, 10)}`,
       `| Analytics: ${analytics.length}  |  Platform: Splunk SPL`,
       '| Source: MITRE Cyber Analytics Repository (car.mitre.org)',
@@ -261,7 +261,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
   buildSentinelExport(analytics: CarAnalytic[]): string {
     const lines: string[] = [
       '// =====================================================================',
-      '// MITRE ATT&CK CAR Analytics â€” Microsoft Sentinel KQL Detection Queries',
+      '// MITRE ATT&CK CAR Analytics — Microsoft Sentinel KQL Detection Queries',
       `// Generated: ${new Date().toISOString().slice(0, 10)}`,
       `// Analytics: ${analytics.length}  |  Platform: Microsoft Sentinel KQL`,
       '// Source: MITRE Cyber Analytics Repository (car.mitre.org)',
@@ -289,7 +289,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
   buildElasticExport(analytics: CarAnalytic[]): string {
     const lines: string[] = [
       '// =====================================================================',
-      '// MITRE ATT&CK CAR Analytics â€” Elastic EQL Detection Queries',
+      '// MITRE ATT&CK CAR Analytics — Elastic EQL Detection Queries',
       `// Generated: ${new Date().toISOString().slice(0, 10)}`,
       `// Analytics: ${analytics.length}  |  Platform: Elastic EQL`,
       '// Source: MITRE Cyber Analytics Repository (car.mitre.org)',
@@ -556,7 +556,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1059.001') || analytic.name.toLowerCase().includes('powershell')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `SecurityEvent`,
         `| where TimeGenerated > ago(1d)`,
         `| where EventID in (4688, 4104)`,
@@ -569,7 +569,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
     }
     if (techId.startsWith('T1059')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `SecurityEvent`,
         `| where EventID == 4688`,
         `| where NewProcessName endswith "cmd.exe" or NewProcessName endswith "powershell.exe"`,
@@ -582,7 +582,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1055')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `Event`,
         `| where Source == "Microsoft-Windows-Sysmon" and EventID == 8`,
         `| extend TargetImage = extract(@"TargetImage: ([^\\n]+)", 1, RenderedDescription)`,
@@ -595,7 +595,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1053')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `SecurityEvent`,
         `| where EventID in (4698, 4702, 4699)`,
         `| where AccountName != "SYSTEM"`,
@@ -608,7 +608,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1021.001') || analytic.name.toLowerCase().includes('rdp')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `SecurityEvent`,
         `| where EventID == 4624 and LogonType == 10`,
         `| summarize Count=count() by Computer, AccountName, WorkstationName, IpAddress`,
@@ -619,7 +619,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
     }
     if (techId.startsWith('T1021')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `SecurityEvent`,
         `| where EventID in (4624, 4625) and LogonType in (3, 10)`,
         `| summarize Attempts=count(), Sources=dcount(IpAddress) by Computer, AccountName, bin(TimeGenerated, 5m)`,
@@ -630,7 +630,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1003')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `Event`,
         `| where Source == "Microsoft-Windows-Sysmon" and EventID == 10`,
         `| extend TargetImage = extract(@"TargetImage: ([^\\n]+)", 1, RenderedDescription)`,
@@ -644,7 +644,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1548')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `Event`,
         `| where Source == "Microsoft-Windows-Sysmon" and EventID == 1`,
         `| extend IntegrityLevel = extract(@"IntegrityLevel: ([^\\n]+)", 1, RenderedDescription)`,
@@ -657,7 +657,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1046')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `CommonSecurityLog`,
         `| where TimeGenerated > ago(1h)`,
         `| summarize UniqueDestPorts=dcount(DestinationPort), Connections=count() by SourceIP, bin(TimeGenerated, 1m)`,
@@ -669,7 +669,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1047')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `Event`,
         `| where Source == "Microsoft-Windows-Sysmon" and EventID == 1`,
         `| extend ParentImage = extract(@"ParentImage: ([^\\n]+)", 1, RenderedDescription)`,
@@ -683,7 +683,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1574') || techId.startsWith('T1112')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `Event`,
         `| where Source == "Microsoft-Windows-Sysmon" and EventID == 13`,
         `| extend TargetObject = extract(@"TargetObject: ([^\\n]+)", 1, RenderedDescription)`,
@@ -696,7 +696,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1197')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `SecurityEvent`,
         `| where EventID == 4688 and NewProcessName endswith "bitsadmin.exe"`,
         `| where CommandLine contains "/transfer" or CommandLine contains "/SetNotifyCmdLine"`,
@@ -707,7 +707,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1490')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `SecurityEvent`,
         `| where EventID == 4688 and NewProcessName endswith "bcdedit.exe"`,
         `| where CommandLine contains "recoveryenabled" or CommandLine contains "bootstatuspolicy"`,
@@ -718,7 +718,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1078') || techId.startsWith('T1110')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `SecurityEvent`,
         `| where EventID == 4625`,
         `| summarize Failures=count() by AccountName, IpAddress, bin(TimeGenerated, 5m)`,
@@ -730,7 +730,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1505')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `SecurityEvent`,
         `| where EventID == 4688`,
         `| where ParentProcessName has_any ("httpd", "nginx", "w3wp", "tomcat", "apache")`,
@@ -742,7 +742,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1105')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `SecurityEvent`,
         `| where EventID == 4688`,
         `| where NewProcessName has_any ("scp.exe", "sftp.exe", "certutil.exe", "curl.exe", "wget.exe", "bitsadmin.exe")`,
@@ -753,7 +753,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1190')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `Event`,
         `| where Source == "Microsoft-Windows-Sysmon" and EventID == 1`,
         `| extend ParentImage = extract(@"ParentImage: ([^\\n]+)", 1, RenderedDescription)`,
@@ -767,7 +767,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1562') || techId.startsWith('T1027')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `SecurityEvent`,
         `| where EventID == 4688 and NewProcessName endswith "powershell.exe"`,
         `| where CommandLine contains "Set-MpPreference" or CommandLine contains "netsh advfirewall"`,
@@ -779,7 +779,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     // Default
     return [
-      `// ${analytic.id} â€” ${analytic.name}`,
+      `// ${analytic.id} — ${analytic.name}`,
       `SecurityEvent`,
       `| where TimeGenerated > ago(1d)`,
       `| extend Analytic = "${analytic.id}", TechniqueId = "${techId}"`,
@@ -793,7 +793,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1059.001') || analytic.name.toLowerCase().includes('powershell')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `process where event.type == "start"`,
         `  and process.name : ("powershell.exe", "pwsh.exe")`,
         `  and (`,
@@ -805,7 +805,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
     }
     if (techId.startsWith('T1059')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `process where event.type == "start"`,
         `  and process.name : ("cmd.exe", "powershell.exe", "wscript.exe", "cscript.exe")`,
         `  and (`,
@@ -818,7 +818,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1055')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `sequence with maxspan=30s`,
         `  [process where event.type == "start" and process.name != null]`,
         `  [process where event.type == "start" and`,
@@ -830,7 +830,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1053')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `process where event.type == "start"`,
         `  and process.name : "schtasks.exe"`,
         `  and process.command_line : ("*/create*", "*/change*")`,
@@ -841,7 +841,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1021')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `sequence with maxspan=1h`,
         `  [authentication where event.outcome == "failure"] with runs=5`,
         `  [authentication where event.outcome == "success"]`,
@@ -851,7 +851,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1003')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `process where event.type == "start"`,
         `  and process.pe.original_file_name : ("procdump.exe", "taskmgr.exe", "werfault.exe")`,
         `  and process.command_line : ("*lsass*", "*pid*")`,
@@ -861,7 +861,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1548')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `process where event.type == "start"`,
         `  and process.token.integrity_level_name == "high"`,
         `  and not user.name : ("Administrator", "SYSTEM")`,
@@ -872,7 +872,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1046')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `network where event.type == "connection_attempted"`,
         `  and destination.port > 1024`,
         `  and not process.name : ("chrome.exe", "firefox.exe", "msedge.exe")`,
@@ -882,7 +882,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1047')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `process where event.type == "start"`,
         `  and process.parent.name : "WmiPrvSE.exe"`,
         `  and not user.name : ("SYSTEM", "LOCAL SERVICE", "NETWORK SERVICE")`,
@@ -892,7 +892,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1197')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `process where event.type == "start"`,
         `  and process.name : "bitsadmin.exe"`,
         `  and process.command_line : ("*/transfer*", "*/AddFile*", "*/SetNotifyCmdLine*")`,
@@ -902,7 +902,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1490')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `process where event.type == "start"`,
         `  and process.name : "bcdedit.exe"`,
         `  and process.command_line : ("*recoveryenabled*", "*bootstatuspolicy*")`,
@@ -912,7 +912,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1078') || techId.startsWith('T1110')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `sequence by source.ip with maxspan=5m`,
         `  [authentication where event.outcome == "failure"] with runs=10`,
         `/* TechniqueId: ${techId} | Analytic: ${analytic.id} | Tactic: InitialAccess */`,
@@ -921,7 +921,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1505')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `process where event.type == "start"`,
         `  and process.parent.name : ("httpd", "nginx", "w3wp.exe", "tomcat", "apache")`,
         `  and process.name : ("cmd.exe", "powershell.exe", "bash", "sh")`,
@@ -931,7 +931,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1190')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `sequence with maxspan=1h`,
         `  [process where event.type == "start" and process.name : ("java", "javaw") ]`,
         `  [process where event.type == "start" and process.name : ("cmd.exe", "bash", "sh", "powershell.exe")]`,
@@ -941,7 +941,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     if (techId.startsWith('T1562') || techId.startsWith('T1027')) {
       return [
-        `// ${analytic.id} â€” ${analytic.name}`,
+        `// ${analytic.id} — ${analytic.name}`,
         `process where event.type == "start"`,
         `  and process.name : "powershell.exe"`,
         `  and process.command_line : ("*Set-MpPreference*", "*netsh advfirewall*", "*Disable-WindowsOptionalFeature*")`,
@@ -951,7 +951,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
 
     // Default EQL
     return [
-      `// ${analytic.id} â€” ${analytic.name}`,
+      `// ${analytic.id} — ${analytic.name}`,
       `process where event.type == "start"`,
       `  and process.name != null`,
       `/* TechniqueId: ${techId} | Analytic: ${analytic.id} */`,
@@ -1008,7 +1008,7 @@ export class SiemExportComponent implements OnInit, OnDestroy {
     return this.techniques.filter(t => !t.isSubtechnique).slice(0, 300);
   }
 
-  // â”€â”€ Query Library tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Query Library tab ─────────────────────────────────────────────────────
 
   onLibrarySearchChange(): void {
     const q = this.librarySearchText.trim().toLowerCase();
