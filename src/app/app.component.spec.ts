@@ -1,9 +1,11 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Component } from '@angular/core';
+import { Location } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideLocationMocks } from '@angular/common/testing';
 import { NavigationEnd, provideRouter, Router } from '@angular/router';
 import { filter, firstValueFrom, take } from 'rxjs';
 import { AppComponent } from './app.component';
@@ -17,6 +19,8 @@ class Blank {}
 
 type Tech = Parameters<FilterService['selectTechnique']>[0];
 const TECH = { attackId: 'T1059', id: 'T1059', name: 'Command Interpreter' } as unknown as Tech;
+const OTHER = { attackId: 'T1003', id: 'T1003', name: 'OS Credential Dumping' } as unknown as Tech;
+const tick = (ms = 30): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
 describe('AppComponent — technique drawer route scope', () => {
   let router: Router;
@@ -32,8 +36,11 @@ describe('AppComponent — technique drawer route scope', () => {
           { path: 'matrix', component: Blank },
           { path: 'exposure/risk', component: Blank },
           { path: 'exposure/graph', component: Blank },
+          { path: 'dashboard/analytics', component: Blank },
+          { path: 'intel/actors', component: Blank },
           { path: '**', component: Blank },
         ]),
+        provideLocationMocks(),
       ],
     }).compileComponents();
     router = TestBed.inject(Router);
@@ -110,18 +117,38 @@ describe('AppComponent — technique drawer route scope', () => {
     expect(current()).toBe(TECH);
   });
 
-  // Back/Forward must NOT resurrect a leftover drawer: on popstate the router restores the
-  // matrix history entry's saved keepTechniqueSelection, so the handler must ignore the flag
-  // on popstate. (Driving a real popstate through the bare TestBed router is unreliable — the
-  // location-change listener does not emit — so the guard is asserted directly; the imperative
-  // path is covered end-to-end by the router-backed cases above.)
-  it('ignores the keep flag on Back/Forward (popstate), honors it imperatively', () => {
+  // Back/Forward must NOT resurrect a leftover drawer. A real popstate IS drivable in TestBed
+  // via provideLocationMocks() + Router.setUpLocationChangeListener(): PanelNavService pushes the
+  // /matrix entry WITH keepTechniqueSelection, so on Back the router restores that saved state —
+  // the handler must ignore the flag on popstate. This fails if the NavigationStart handler's
+  // navigationTrigger check (app.component.ts) is mutated to a constant.
+  it('does not resurrect a leftover drawer on Back (real popstate)', async () => {
+    wireHandler();
+    router.setUpLocationChangeListener();
+    const location = TestBed.inject(Location);
+    const panelNav = TestBed.inject(PanelNavService);
+    await router.navigateByUrl('/dashboard/analytics');
+    filter_.selectTechnique(TECH);
+    panelNav.open('matrix', { keepTechniqueSelection: true }); // pushes /matrix WITH keep state
+    await tick();
+    expect(router.url).toBe('/matrix');
+    expect(current()).toBe(TECH);
+    await router.navigateByUrl('/intel/actors'); // leave matrix -> leftover clears
+    expect(current()).toBeNull();
+    filter_.selectTechnique(OTHER); // a fresh selection on the new workspace
+    location.back(); // Back to the flagged /matrix entry (its keep state is restored)
+    await tick(80);
+    expect(router.url).toBe('/matrix');
+    expect(current()).toBeNull(); // leftover NOT resurrected
+  });
+
+  it('shouldKeepSelection ignores the flag on popstate, honors it imperatively (unit)', () => {
     const app = TestBed.createComponent(AppComponent).componentInstance as unknown as {
       shouldKeepSelection(t: string, s: Record<string, unknown> | undefined): boolean;
     };
     const flag = { keepTechniqueSelection: true };
     expect(app.shouldKeepSelection('imperative', flag)).toBeTrue();
-    expect(app.shouldKeepSelection('popstate', flag)).toBeFalse(); // Back must not resurrect
+    expect(app.shouldKeepSelection('popstate', flag)).toBeFalse();
     expect(app.shouldKeepSelection('hashchange', flag)).toBeTrue();
     expect(app.shouldKeepSelection('imperative', undefined)).toBeFalse();
   });
