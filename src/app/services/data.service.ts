@@ -2,11 +2,13 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, Subscription, EMPTY, concat, defer, from, of, throwError } from 'rxjs';
-import { catchError, switchMap, tap, throwIfEmpty } from 'rxjs/operators';
+import { BehaviorSubject, Observable, Subscription, defer, from, of, throwError } from 'rxjs';
+import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators';
 import { retryWithBackoff } from '../utils/retry';
 import { AttackIdResolverService } from './attack-id-resolver.service';
 import { SourceRegistryService } from './source-registry.service';
+import { SOURCE_DEFINITIONS } from './source-inventory';
+import { SettingsService } from './settings.service';
 import { Domain, TacticColumn, DetectionNote } from '../models/domain';
 import { Tactic } from '../models/tactic';
 import { Technique } from '../models/technique';
@@ -17,7 +19,47 @@ import { ProcedureExample } from '../models/procedure';
 import { MitreDataSource, MitreDataComponent } from '../models/datasource';
 import { Campaign } from '../models/campaign';
 
+/**
+ * How ATT&CK reaches the matrix (decision D2: the bundled version is pinned).
+ * - 'bundled' (the default for a fresh profile): only the pinned bundle shipped with the
+ *   build is loaded; MITRE is contacted only when the user asks "Check for ATT&CK update".
+ * - 'live': the pinned bundle is still what loads, and each load also checks MITRE for a
+ *   newer release and offers it. Neither mode ever swaps the version on screen by itself:
+ *   a newer release is applied only by an explicit click, and only for this session.
+ * Persisted as the user setting AppSettings.attackDataMode.
+ */
 export type DataSourceMode = 'live' | 'bundled';
+
+/** Where an ATT&CK update check stands, for the domain on screen. */
+export type AttackUpdateStatus = 'idle' | 'checking' | 'up-to-date' | 'available' | 'failed' | 'applied';
+
+export interface AttackUpdateState {
+  status: AttackUpdateStatus;
+  domain?: AttackDomain;
+  /** The pinned (bundled) release, read from the bundle's own collection object via the SourceRegistry. */
+  pinnedVersion?: string;
+  /** The release MITRE publishes now (set once a check has fetched it). */
+  liveVersion?: string;
+  /** Why the check failed ('failed' only). */
+  error?: string;
+}
+
+/**
+ * Compare two dotted ATT&CK release numbers ('19.2' vs '20.0'). Returns a negative
+ * number when a < b, 0 when equal, positive when a > b; null when either is not a
+ * release number, so an unreadable version is never mistaken for a newer one.
+ */
+export function compareAttackVersions(a: string, b: string): number | null {
+  const parse = (v: string) => (/^\d+(\.\d+)*$/.test(v.trim()) ? v.trim().split('.').map(Number) : null);
+  const pa = parse(a);
+  const pb = parse(b);
+  if (!pa || !pb) return null;
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const d = (pa[i] ?? 0) - (pb[i] ?? 0);
+    if (d !== 0) return d;
+  }
+  return 0;
+}
 
 export type AttackDomain = 'enterprise' | 'ics' | 'mobile' | 'f3';
 
@@ -99,7 +141,9 @@ export class DataService {
   private domainSubject = new BehaviorSubject<Domain | null>(null);
   private loadingSubject = new BehaviorSubject<boolean>(false);
   private errorSubject = new BehaviorSubject<string | null>(null);
-  private mode: DataSourceMode = 'live';
+  // D2: the pinned bundle is the default. The persisted user setting (AppSettings.attackDataMode)
+  // replaces this in the constructor; a fresh profile has no setting and stays 'bundled'.
+  private mode: DataSourceMode = 'bundled';
   private attackDomain: AttackDomain = 'enterprise';
 
   currentDomain$ = new BehaviorSubject<AttackDomain>('enterprise');
@@ -109,12 +153,26 @@ export class DataService {
 
   /**
    * Where the currently displayed domain data came from:
-   * 'bundled' = shipped snapshot (instant first paint), 'cached' = IndexedDB
-   * copy of a previous live fetch, 'live' = fresh from MITRE this session.
+   * 'bundled' = the pinned bundle (decision D2, epic E1.4);
+   * 'live' = a newer release the user chose with applyUpdate() for this
+   * session only;
+   * 'cached' = no longer emitted since E1.4 (kept in the type for the legend).
    */
   freshness$ = new BehaviorSubject<'bundled' | 'cached' | 'live' | null>(null);
   private loadRequestId = 0;
   private domainSub?: Subscription;
+
+  /** The state of "Check for ATT&CK update" for the domain on screen. */
+  readonly update$ = new BehaviorSubject<AttackUpdateState>({ status: 'idle' });
+  private checkSub?: Subscription;
+  private checkRequestId = 0;
+  /** A newer release fetched by a check and offered, not yet applied. */
+  private pendingUpdate: { domain: AttackDomain; data: Domain } | null = null;
+  /**
+   * Releases the user chose to use for this session only (in memory, never persisted):
+   * a reload or a new tab starts on the pinned bundle again.
+   */
+  private sessionUpdates = new Map<AttackDomain, Domain>();
 
   domain$: Observable<Domain | null> = this.domainSubject.asObservable();
   loading$: Observable<boolean> = this.loadingSubject.asObservable();
@@ -126,10 +184,16 @@ export class DataService {
     // that construct the parser directly (e.g. the lens test harness).
     private attackIdResolver: AttackIdResolverService = new AttackIdResolverService(),
     private sources: SourceRegistryService = new SourceRegistryService(),
+    settings: SettingsService = new SettingsService(),
   ) {
     // Keep the shared resolver in step with whichever domain is on screen, so
     // lookup tables keyed by retired ids translate against the same release.
     this.domainSubject.subscribe((domain) => this.attackIdResolver.setSupersededBy(domain?.supersededBy));
+    // The data mode is a persisted user setting; 'bundled' when nothing was saved.
+    settings.settings$.pipe(
+      map((s) => (s.attackDataMode === 'live' ? 'live' : 'bundled') as DataSourceMode),
+      distinctUntilChanged(),
+    ).subscribe((mode) => { this.mode = mode; });
   }
 
   /**
@@ -141,6 +205,10 @@ export class DataService {
     return this.attackIdResolver.resolve(attackId);
   }
 
+  /**
+   * Set the data mode for this service instance. The persisted choice is the user
+   * setting AppSettings.attackDataMode (Settings > Data), which this follows.
+   */
   setDataSourceMode(mode: DataSourceMode): void {
     this.mode = mode;
   }
@@ -170,6 +238,10 @@ export class DataService {
     this.loadDomain();
   }
 
+  /**
+   * Drop the cached live copy and this session's applied update for the domain on
+   * screen, then reload the pinned bundle. Never fetches a newer release.
+   */
   async forceRefresh(): Promise<void> {
     try {
       const config = DOMAIN_CONFIG[this.attackDomain];
@@ -181,30 +253,153 @@ export class DataService {
         req.onerror = () => rej(req.error);
       });
     } catch { /* ignore */ }
+    this.sessionUpdates.delete(this.attackDomain);
     this.loadDomain();
   }
 
+  /**
+   * Load the domain on screen: the pinned bundle, or the release the user chose for
+   * this session. The version never changes here on its own (decision D2); in 'live'
+   * mode the load is followed by an update check that only offers a newer release.
+   */
   loadDomain(): void {
     this.domainSub?.unsubscribe();
+    this.resetUpdateCheck();
     const requestId = ++this.loadRequestId;
     this.loadingSubject.next(true);
     this.errorSubject.next(null);
 
-    const config = DOMAIN_CONFIG[this.attackDomain];
-    const load$ = this.mode === 'live'
-      ? this.loadLive(config)
+    const domainKey = this.attackDomain;
+    const config = DOMAIN_CONFIG[domainKey];
+    const chosen = this.sessionUpdates.get(domainKey);
+    const load$ = chosen
+      ? of(chosen).pipe(tap(() => this.freshness$.next('live')))
       : this.loadBundled(config).pipe(tap(() => this.freshness$.next('bundled')));
+    const afterLoad = () => {
+      if (chosen) this.update$.next(this.updateState('applied', domainKey, chosen.attackVersion));
+      else if (this.mode === 'live') this.runUpdateCheck(true);
+    };
     this.domainSub = load$.subscribe({
       next: (domain) => {
         if (requestId !== this.loadRequestId) return;
         this.domainSubject.next(domain);
         this.loadingSubject.next(false);
         this.lastFetched$.next(new Date().toISOString());
+        afterLoad();
       },
       error: (err) => {
         if (requestId !== this.loadRequestId) return;
         this.errorSubject.next(err?.message ?? 'Failed to load ATT&CK data');
         this.loadingSubject.next(false);
+        afterLoad();
+      },
+    });
+  }
+
+  /**
+   * The pinned ATT&CK release of `domain`: the version the bundled file's own
+   * x-mitre-collection object declares, as the SourceRegistry recorded it when the
+   * bundle loaded, falling back to the inventory's bundled version before that.
+   */
+  pinnedVersion(domain: AttackDomain = this.attackDomain): string {
+    const id = DOMAIN_CONFIG[domain].sourceId;
+    return this.sources.get(id).version || SOURCE_DEFINITIONS.find((d) => d.id === id)?.version || '';
+  }
+
+  /**
+   * "Check for ATT&CK update": fetch the release MITRE publishes now for the domain on
+   * screen and compare it with the pinned one. A newer release is only offered
+   * (update$ 'available'); nothing on screen changes until applyUpdate().
+   */
+  checkForUpdate(): void {
+    this.runUpdateCheck(false);
+  }
+
+  /** Use the offered release for the domain on screen, for this session only. */
+  applyUpdate(): void {
+    const pending = this.pendingUpdate;
+    if (!pending || pending.domain !== this.attackDomain) return;
+    this.pendingUpdate = null;
+    this.sessionUpdates.set(pending.domain, pending.data);
+    // A load still in flight must not overwrite the release the user just chose.
+    this.domainSub?.unsubscribe();
+    this.loadRequestId++;
+    this.domainSubject.next(pending.data);
+    this.loadingSubject.next(false);
+    this.freshness$.next('live');
+    this.lastFetched$.next(new Date().toISOString());
+    this.update$.next(this.updateState('applied', pending.domain, pending.data.attackVersion));
+  }
+
+  /** Decline the offer (or close the check's message); the pinned release stays. */
+  dismissUpdate(): void {
+    this.cancelCheck();
+    this.pendingUpdate = null;
+    this.update$.next({ status: 'idle' });
+  }
+
+  /** Leave this session's applied release and go back to the pinned bundle. */
+  revertToPinned(): void {
+    this.sessionUpdates.delete(this.attackDomain);
+    this.loadDomain();
+  }
+
+  private updateState(status: AttackUpdateStatus, domain: AttackDomain, liveVersion?: string, error?: string): AttackUpdateState {
+    return { status, domain, pinnedVersion: this.pinnedVersion(domain), liveVersion: liveVersion || undefined, error };
+  }
+
+  private cancelCheck(): void {
+    this.checkSub?.unsubscribe();
+    this.checkSub = undefined;
+    this.checkRequestId++;
+  }
+
+  private resetUpdateCheck(): void {
+    this.cancelCheck();
+    this.pendingUpdate = null;
+    if (this.update$.value.status !== 'idle') this.update$.next({ status: 'idle' });
+  }
+
+  /**
+   * Fetch the live release for the domain on screen and compare it with the pinned one.
+   * `allowCache`: the automatic check of 'live' mode may answer from a live copy cached in
+   * IndexedDB in the last 24 hours; the explicit button always asks MITRE.
+   */
+  private runUpdateCheck(allowCache: boolean): void {
+    this.cancelCheck();
+    this.pendingUpdate = null;
+    const checkId = this.checkRequestId;
+    const domainKey = this.attackDomain;
+    const config = DOMAIN_CONFIG[domainKey];
+    this.update$.next(this.updateState('checking', domainKey));
+    const live$ = allowCache
+      ? from(this.loadFromIDB(config.idbKey)).pipe(
+          switchMap((cached) => cached
+            ? of(cached).pipe(tap(() => this.sources.succeed(config.liveSourceId, cached.techniques.length, {
+                version: cached.attackVersion || undefined,
+                note: CACHED_LIVE_NOTE,
+              })))
+            : this.fetchLive(config)),
+        )
+      : this.fetchLive(config);
+    this.checkSub = live$.subscribe({
+      next: (live) => {
+        if (checkId !== this.checkRequestId || this.attackDomain !== domainKey) return;
+        const pinned = this.pinnedVersion(domainKey);
+        const order = compareAttackVersions(live.attackVersion ?? '', pinned);
+        if (order === null) {
+          this.update$.next(this.updateState('failed', domainKey, live.attackVersion,
+            `the live release '${live.attackVersion || 'none'}' cannot be compared with the pinned '${pinned || 'none'}'`));
+        } else if (order > 0) {
+          this.pendingUpdate = { domain: domainKey, data: live };
+          this.update$.next(this.updateState('available', domainKey, live.attackVersion));
+        } else {
+          this.update$.next(this.updateState('up-to-date', domainKey, live.attackVersion));
+        }
+      },
+      error: (err) => {
+        if (checkId !== this.checkRequestId || this.attackDomain !== domainKey) return;
+        this.update$.next(this.updateState('failed', domainKey, undefined, err?.message ?? String(err)));
       },
     });
   }
@@ -280,52 +475,22 @@ export class DataService {
 
   // ── Private helpers ──────────────────────────────────────────────────────────
 
-  private loadLive(config: typeof DOMAIN_CONFIG[AttackDomain]): Observable<Domain> {
-    return from(this.loadFromIDB(config.idbKey)).pipe(
-      switchMap((cached) => {
-        if (cached) {
-          // A return visit is served from the IndexedDB copy of an earlier live fetch and
-          // never requests the live bundle, so record that copy as the live source's data
-          // (with a note saying where it came from) rather than leaving it 'pending' while
-          // ATT&CK is on screen. E1.4 replaces this path with the pinned bundle (decision D2).
-          return of(cached).pipe(tap(() => {
-            this.freshness$.next('cached');
-            this.sources.succeed(config.liveSourceId, cached.techniques.length, {
-              version: cached.attackVersion || undefined,
-              note: CACHED_LIVE_NOTE,
-            });
-          }));
-        }
-        // Bundled-first (stale-while-revalidate): paint instantly from the
-        // shipped snapshot, then fetch the live STIX in the background and
-        // re-emit when it lands. If live fails we silently stay on the
-        // snapshot; an error is raised only when BOTH sources fail.
-        const bundledFirst$ = config.bundledUrl
-          ? this.loadBundled(config).pipe(
-              tap(() => this.freshness$.next('bundled')),
-              catchError(() => EMPTY),
-            )
-          : EMPTY as Observable<Domain>;
-        // The live copy records its own outcome: a failure stays on screen as the bundled
-        // snapshot (freshness 'bundled') and the live source is recorded as failed.
-        const live$ = defer(() => {
-          this.sources.begin(config.liveSourceId);
-          return this.http.get<any>(config.liveUrl);
-        }).pipe(
-          retryWithBackoff(),
-          switchMap((bundle) => from(this.saveToIDB(bundle, config.idbKey).then(() => this.parseBundle(bundle, config.name)))),
-          tap((domain) => {
-            this.freshness$.next('live');
-            this.sources.succeed(config.liveSourceId, domain.techniques.length, { version: domain.attackVersion || undefined });
-          }),
-          catchError((err) => {
-            this.sources.fail(config.liveSourceId, err);
-            return EMPTY as Observable<Domain>;
-          }),
-        );
-        return concat(bundledFirst$, live$).pipe(
-          throwIfEmpty(() => new Error('Failed to load ATT&CK data (live fetch and bundled snapshot both unavailable)')),
-        );
+  /**
+   * Fetch and parse the live STIX for `config` (MITRE's master branch, unpinned). Used only
+   * by the update check: the result is compared and offered, never put on screen directly.
+   * The live source records its own outcome in the SourceRegistry.
+   */
+  private fetchLive(config: typeof DOMAIN_CONFIG[AttackDomain]): Observable<Domain> {
+    return defer(() => {
+      this.sources.begin(config.liveSourceId);
+      return this.http.get<any>(config.liveUrl);
+    }).pipe(
+      retryWithBackoff(),
+      switchMap((bundle) => from(this.saveToIDB(bundle, config.idbKey).then(() => this.parseBundle(bundle, config.name)))),
+      tap((domain) => this.sources.succeed(config.liveSourceId, domain.techniques.length, { version: domain.attackVersion || undefined })),
+      catchError((err) => {
+        this.sources.fail(config.liveSourceId, err);
+        return throwError(() => err);
       }),
     );
   }

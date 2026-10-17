@@ -245,20 +245,27 @@ describe('source honesty: a failed loader never reports loaded (E1.3)', () => {
     }));
   });
 
-  it('records the live ATT&CK source as loaded from cache when a return visit is served from IndexedDB', fakeAsync(() => {
-    const cachedDomain = { name: 'Enterprise ATT&CK', techniques: [{}, {}, {}], attackVersion: '18.1' };
+  // E1.4 (decision D2): a return visit in 'live' mode still paints the pinned bundle. The
+  // start-of-session update check may answer from the IndexedDB copy of an earlier live
+  // fetch; that copy is recorded as the live source's data and offered, never shown.
+  it('records the live ATT&CK source as loaded from cache when the update check is answered from IndexedDB', fakeAsync(() => {
+    const cachedDomain = { name: 'Enterprise ATT&CK', techniques: [{}, {}, {}], attackVersion: '20.0' };
     (DataService.prototype as any).loadFromIDB.and.returnValue(Promise.resolve(cachedDomain));
     const svc = TestBed.inject(DataService);
     svc.setDataSourceMode('live');
     svc.setAttackDomain('enterprise');
     svc.loadDomain();
+    http.expectOne('assets/data/enterprise-attack.json')
+      .flush({ objects: [{ type: 'x-mitre-collection', x_mitre_version: '19.2', modified: '2026-01-01' }] });
     flush();
     http.expectNone(() => true);
     const record = registry.get('attack-live-enterprise');
-    expect(svc.freshness$.value).toBe('cached');
+    expect(svc.freshness$.value).toBe('bundled');
+    expect(svc.getCurrentDomain()?.attackVersion).toBe('19.2');
+    expect(svc.update$.value).toEqual(jasmine.objectContaining({ status: 'available', pinnedVersion: '19.2', liveVersion: '20.0' }));
     expect(record.status).toBe('loaded');
     expect(record.rows).toBe(3);
-    expect(record.version).toBe('18.1');
+    expect(record.version).toBe('20.0');
     expect(record.note).toBe(CACHED_LIVE_NOTE);
     expect(record.lastLoadedAt).not.toBeNull();
     discardPeriodicTasks();

@@ -134,7 +134,7 @@ export const SOURCE_DEFINITIONS: readonly SourceDefinition[] = [
     id: 'attack-live-enterprise', name: 'ATT&CK Enterprise (live)', kind: 'live',
     version: 'master, unpinned', upstream: 'https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/enterprise-attack/enterprise-attack.json',
     licence: 'attack', inventoryRow: R.attackBundles, owner: 'services/data.service.ts',
-    note: 'Live mode only; E1.4 turns this into "check for update" (decision D2).',
+    note: 'Fetched only by "Check for ATT&CK update" (and by the check at load in the opt-in live mode); a newer release is offered, never applied without a click, and only for the session (decision D2).',
   },
   {
     id: 'attack-live-ics', name: 'ATT&CK for ICS (live)', kind: 'live',

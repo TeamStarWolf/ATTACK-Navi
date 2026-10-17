@@ -35,6 +35,11 @@ export interface AppSettings {
   // Data (read-only display)
   attackVersion: string;  // default ''
 
+  // ATT&CK data mode (decision D2): 'bundled' loads only the pinned bundle; 'live' also
+  // checks MITRE for a newer release when data loads and offers it, never applying it
+  // without a click. DataService follows this setting (see DataSourceMode).
+  attackDataMode: 'bundled' | 'live';  // default 'bundled'
+
   // API integrations
   nvdApiKey: string;   // default ''
   // Credentials-proxy access token (server/ PROXY_AUTH_TOKEN). Sent as X-Proxy-Key
@@ -64,6 +69,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   orgName: '',
   orgLogo: '',
   attackVersion: '',
+  attackDataMode: 'bundled',
   nvdApiKey: '',
   proxyToken: '',
   cellDisplay: {

@@ -492,9 +492,18 @@
                 <span class="data-info-label">ATT&amp;CK Version</span>
                 <span class="data-info-value">{{ attackVersion || settings.attackVersion || 'Loading…' }}</span>
               </div>
-              <div class="data-info-item">
-                <span class="data-info-label">Data Source</span>
-                <span class="data-info-value">Live (GitHub STIX bundle)</span>
+              <div class="data-info-item data-mode-item">
+                <label class="data-info-label" for="attack-data-mode">ATT&amp;CK Data</label>
+                <select
+                  id="attack-data-mode"
+                  class="form-input data-mode-select"
+                  [(ngModel)]="settings.attackDataMode"
+                  (ngModelChange)="onDisplayChange()"
+                >
+                  <option value="bundled">Pinned bundle (default)</option>
+                  <option value="live">Pinned bundle, check MITRE for an update when data loads</option>
+                </select>
+                <span class="data-info-hint">The version never changes on its own: a newer release is offered, and applies to this session only.</span>
               </div>
               <div class="data-info-item">
                 <span class="data-info-label">Cache Status</span>
@@ -511,7 +520,7 @@
                 class="btn-action btn-refresh"
                 (click)="refreshData()"
                 [disabled]="isRefreshing"
-                title="Clear cached data and re-fetch the latest STIX bundle from MITRE"
+                title="Clear the cached live copy and reload the pinned ATT&CK bundle"
               >
                 @if (isRefreshing) {
                   <span class="spinner-inline"></span> Refreshing…

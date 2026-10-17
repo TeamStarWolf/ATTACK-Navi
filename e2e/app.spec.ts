@@ -1,5 +1,6 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
+import { readFileSync } from 'node:fs';
 import { test, expect, Page } from '@playwright/test';
 
 const BASE = 'http://localhost:4200';
@@ -348,7 +349,7 @@ test.describe('ATT&CK Navi', () => {
 
     await page.locator('.domain-btn[title="ICS ATT&CK"]').click();
 
-    // Both the bundled snapshot and the (routed) live revalidation are ICS now.
+    // The pinned ICS bundle is on screen (E1.4: no live revalidation replaces it).
     await expect(icsOnly).toHaveCount(1, { timeout: ROUTE_TIMEOUT });
     await expect(enterpriseOnly).toHaveCount(0);
     await expect(page.locator('.domain-btn[title="ICS ATT&CK"]')).toHaveClass(/active/);
@@ -400,5 +401,70 @@ test.describe('ATT&CK Navi', () => {
     // so the layer's own entry (score badge) is rendered.
     await page.locator('#sb-sec-imported-layer').click();
     await expect(page.locator('.imported-layer-section')).toContainText('Score: 90');
+  });
+});
+
+// E1.4 (decision D2): ATT&CK is pinned to the bundled release. MITRE's live Enterprise STIX
+// is served here as a newer release (the bundled file with its x-mitre-collection version
+// set to 20.0, as v20.0 shipped on 2026-10-13). Before E1.4 the default live mode fetched
+// it on load and swapped the matrix to it; now it is fetched only by "Check for ATT&CK
+// update", only offered, and applied for this session only.
+test.describe('E1.4: pinned ATT&CK, "Check for ATT&CK update"', () => {
+  let live20 = '';
+
+  test.beforeAll(() => {
+    const bundle = JSON.parse(readFileSync('src/assets/data/enterprise-attack.json', 'utf8')) as { objects: Array<Record<string, unknown>> };
+    const collection = bundle.objects.find(o => o['type'] === 'x-mitre-collection');
+    expect(collection?.['x_mitre_version']).toBe('19.2');
+    collection!['x_mitre_version'] = '20.0';
+    live20 = JSON.stringify(bundle);
+  });
+
+  test('the version never changes by itself; a newer release is offered and applies to this session only', async ({ page }) => {
+    test.slow(); // the 20.0 copy is a full Enterprise bundle
+    await hermetic(page);
+    await page.addInitScript(() => localStorage.setItem('onboarding-completed', 'true'));
+    let liveRequests = 0;
+    await page.route(ATTACK_FIXTURES[0][0], route => {
+      liveRequests++;
+      return route.fulfill({ status: 200, contentType: 'application/json', body: live20 });
+    });
+
+    const version = page.locator('.attack-version');
+    const status = page.locator('[data-testid="attack-update"]');
+    await page.goto(BASE);
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+    await expect(version).toHaveText('v19.2');
+    await expect(status).toHaveAttribute('role', 'status');
+    await page.waitForLoadState('networkidle');
+    expect(liveRequests, 'a fresh profile loads the pinned bundle and never asks MITRE').toBe(0);
+    await expect(page.locator('.source-mode-btn')).toHaveCount(0);
+
+    // The check offers 20.0 and changes nothing.
+    const check = page.getByRole('button', { name: 'Check for ATT&CK update' });
+    await check.click();
+    await expect(status).toContainText('ATT&CK 20.0 is available', { timeout: ROUTE_TIMEOUT });
+    await expect(status).toContainText('pinned to 19.2');
+    expect(liveRequests).toBe(1);
+    await expect(version).toHaveText('v19.2');
+
+    // Declining keeps 19.2.
+    await status.getByRole('button', { name: 'Keep 19.2' }).click();
+    await expect(status).toHaveAttribute('data-status', 'idle');
+    await expect(version).toHaveText('v19.2');
+
+    // Only the explicit choice applies it.
+    await check.click();
+    await status.getByRole('button', { name: 'Use 20.0 for this session' }).click();
+    await expect(version).toHaveText('v20.0');
+    await expect(status).toContainText('Using ATT&CK 20.0 for this session only');
+    expect(liveRequests).toBe(2);
+
+    // Session only: a reload starts on the pinned bundle again, without asking MITRE.
+    await page.reload();
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+    await expect(version).toHaveText('v19.2');
+    await page.waitForLoadState('networkidle');
+    expect(liveRequests).toBe(2);
   });
 });
