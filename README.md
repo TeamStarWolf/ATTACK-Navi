@@ -131,7 +131,7 @@ Other exports live with the feature that produces them. Sigma, SIEM query, Suric
 
 ## Getting started
 
-You need Node.js ^22.22.3, ^24.15.0 or >=26.0.0 (the engine range of the locked Angular 22.2.1 packages), npm, and Chrome or Chromium for the unit tests.
+You need Node.js ^22.22.3, ^24.15.0 or >=26.0.0 (the engine range of the locked Angular 22.2.2 packages), npm, and Chrome or Chromium for the unit tests.
 
 ```bash
 git clone https://github.com/TeamStarWolf/ATTACK-Navi.git
