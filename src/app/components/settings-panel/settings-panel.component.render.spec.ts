@@ -66,15 +66,18 @@ describe('SettingsPanelComponent (rendered)', () => {
     expect(settings.getCoverageColors()).toEqual(['#111827', '#374151', '#6b7280', '#9ca3af', '#e5e7eb']);
   });
 
-  it('characterizes a known drift: the Default swatch preview is not the ramp that is applied', () => {
-    // The panel's preview list and SettingsService.COLOR_THEMES are separate copies;
-    // they have diverged for 'default' (and 'blueorange'). Pinned so a fix is a
-    // deliberate, visible change.
+  it('the Default swatch preview equals the ramp the matrix applies (no drift)', () => {
+    // The panel now reads its swatch colours from SettingsService.COLOR_THEMES,
+    // the same source the matrix uses, so the preview cannot diverge from the
+    // applied ramp. (It used to: the preview showed #e65100 while #b45309 applied.)
     tab('Display');
     const swatch = [...host.querySelectorAll('.theme-swatch')].find(b => b.querySelector('.swatch-label')!.textContent!.trim() === 'Default')!;
     const preview = [...swatch.querySelectorAll('.swatch-dot')].map(d => (d as HTMLElement).style.background);
-    expect(preview[1]).toBe('rgb(230, 81, 0)');          // #e65100 shown
-    expect(settings.getCoverageColors()[1]).toBe('#b45309'); // #b45309 applied
+    const toRgb = (hex: string) => {
+      const n = parseInt(hex.slice(1), 16);
+      return `rgb(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255})`;
+    };
+    expect(preview).toEqual(settings.getCoverageColors().map(toRgb));
   });
 
   it('the colorblind-safe toggle switches the coverage ramp to the safe palette', () => {
