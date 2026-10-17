@@ -58,6 +58,12 @@ export class IocFeedService {
     this.loadFeeds();
   }
 
+  /** Load again after a failed or empty load: the data-health Retry (E1.3). */
+  retry(): void {
+    this.initialized = true;
+    this.loadFeeds();
+  }
+
   /** Fetch public IP blocklist and index by technique. */
   loadFeeds(): void {
     this.sources.begin('ipsum');

@@ -38,6 +38,11 @@ export class AnthropicSkillsService {
     this.loadLayer();
   }
 
+  /** Load again after a failed or empty load: the data-health Retry (E1.3). */
+  retry(): void {
+    this.loadLayer();
+  }
+
   /** Fetch the Anthropic Cybersecurity Skills Navigator layer. */
   private loadLayer(): void {
     this.sources.begin('anthropic-skills-layer');

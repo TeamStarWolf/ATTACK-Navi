@@ -111,6 +111,12 @@ export class ThreatHuntingService {
     this.loadQueries();
   }
 
+  /** Load again after a failed or empty load: the data-health Retry (E1.3). */
+  retry(): void {
+    this.initialized = true;
+    void this.loadQueries();
+  }
+
   private async loadQueries(): Promise<void> {
     this.sources.begin('cyb3r-monk-hunting-tree');
     try {

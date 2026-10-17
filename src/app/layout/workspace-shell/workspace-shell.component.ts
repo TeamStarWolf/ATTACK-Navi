@@ -4,6 +4,7 @@ import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/cor
 import { ActivatedRoute, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { IconComponent } from '../../shared/icons/icon.component';
 import { IconName } from '../../shared/icons/icon-registry';
+import { SourceBannerComponent } from '../../components/source-banner/source-banner.component';
 
 interface WorkspaceTab {
   path: string;
@@ -20,7 +21,7 @@ interface WorkspaceTab {
 @Component({
   selector: 'app-workspace-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, IconComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, IconComponent, SourceBannerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './workspace-shell.component.html',
   styleUrl: './workspace-shell.component.scss',

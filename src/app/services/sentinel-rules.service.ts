@@ -31,6 +31,12 @@ export class SentinelRulesService {
     private sources: SourceRegistryService = new SourceRegistryService(),
   ) {}
 
+  /** Load again after a failed or empty load: the data-health Retry (E1.3). */
+  retry(): void {
+    this.loadRequested = false;
+    this.loadOnDemand();
+  }
+
   /** Load on demand - only fetches once. */
   loadOnDemand(): void {
     if (this.loadRequested) return;

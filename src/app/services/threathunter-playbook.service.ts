@@ -41,6 +41,11 @@ export class ThreatHunterPlaybookService {
     private http: HttpClient,
     private sources: SourceRegistryService = new SourceRegistryService(),
   ) {
+    this.retry();
+  }
+
+  /** Load the layer, trying each URL in turn; also the data-health Retry (E1.3). */
+  retry(): void {
     this.sources.begin('threathunter-playbook');
     this.tryUrl(0);
   }

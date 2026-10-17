@@ -80,6 +80,11 @@ export class CARService {
     this.loadLive();
   }
 
+  /** Load again after a failed or empty load: the data-health Retry (E1.3). */
+  retry(): void {
+    this.loadLive();
+  }
+
   private loadLive(): void {
     this.sources.begin('car-layer');
     this.http.get<any>(CARService.NAVIGATOR_URL).subscribe({

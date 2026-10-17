@@ -26,6 +26,7 @@ import { LensDefinitionCardComponent } from '../../components/lens-definition-ca
 import { FilterService, HeatmapMode } from '../../services/filter.service';
 import { LensCardService } from '../../services/lens-card.service';
 import { LensAvailability, heatmapModeDef, lensAvailability } from '../../models/heatmap-modes';
+import { SourceBannerComponent } from '../../components/source-banner/source-banner.component';
 import {
   TacticSummaryComponent,
   TacticSummaryData,
@@ -52,6 +53,7 @@ import {
     FilterChipsComponent,
     TacticSummaryComponent,
     LensDefinitionCardComponent,
+    SourceBannerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './matrix-page.component.html',

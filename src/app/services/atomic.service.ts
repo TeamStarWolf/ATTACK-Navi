@@ -72,6 +72,11 @@ export class AtomicService {
     this.fetchNavigatorLayer();
   }
 
+  /** Load again after a failed or empty load: the data-health Retry (E1.3). */
+  retry(): void {
+    this.fetchNavigatorLayer();
+  }
+
   // ─── Public API ──────────────────────────────────────────────────────────────
 
   /** Returns ATT&CK test count for a technique (from the live navigator layer). */

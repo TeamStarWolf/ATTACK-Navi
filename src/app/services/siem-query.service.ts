@@ -888,6 +888,15 @@ export class SiemQueryService {
   private sources = inject(SourceRegistryService);
 
   constructor() {
+    this.loadQueries();
+  }
+
+  /** Load again after a failed or empty load: the data-health Retry (E1.3). */
+  retry(): void {
+    this.loadQueries();
+  }
+
+  private loadQueries(): void {
     this.sources.begin('technique-queries');
     this.http.get<{ queries: Record<string, Array<Omit<SiemQuery, 'platformLabel'>>> }>(
       'assets/technique-queries.json',
