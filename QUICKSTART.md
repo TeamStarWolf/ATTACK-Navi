@@ -16,33 +16,27 @@ reference datasets from their upstream hosts (listed in Data, limits and credits
 search sends your query to the NVD API, and any MISP, OpenCTI or TAXII server you
 configure is contacted directly.
 
-### When you see a MISSING DATA banner
-
-Several datasets load from `api.github.com` without authentication, which GitHub limits to
-60 requests per hour per IP. After a few loads, or behind a shared corporate IP, that
-limit is reached and the Elastic, Splunk, community Sigma and PoC-exploit sources fail.
-Their counts then read zero, which means "not loaded", not "no content", and Gap Analysis
-counts fewer techniques as detected. A MISSING DATA banner above the matrix names the
-failed sources; wait for the hourly reset, then use Status > Data health and Retry.
-
 ## First five minutes
 
-A path that works on the bundled data, on one technique:
+This path needs no setup and runs on one technique:
 
 1. Open the app. The matrix loads on the Prevalence lens (the lens button reads
-   "Frequency"), and a banner notes it is reference data on how many ATT&CK groups use
-   each technique, not your environment.
-2. Click a technique, for example T1059.001 (PowerShell). The sidebar opens.
+   "Frequency"). Its legend badge reads THREAT: it is reference data on how many ATT&CK
+   groups use each technique, not your environment.
+2. Click a technique, for example T1059.001 (PowerShell). The sidebar opens. Its top card,
+   "Reference sources mapped", is a Known count of how many reference sources map to the
+   technique.
 3. Open the sidebar sections that are populated for it: Detected By (the data sources that
    observe it), CAR Detection Analytics, Wazuh stock rules (curated), Atomic Red Team
    Tests, and SIEM Queries.
 4. In SIEM Queries, use Copy query to copy one to the clipboard.
-5. Use the link button in the sidebar header ("Copy share link") to copy a deep link;
-   opening it reopens the app with T1059.001 selected.
+5. Use the link button in the sidebar header ("Copy share link") to copy a link; opening
+   it reopens the app with T1059.001 selected (the lens is not restored).
 6. To color the whole matrix by detection content, open the lens button ("View and explore
-   options") and choose the Sigma lens. The lens count comes from the SigmaHQ coverage
-   layer; the per-technique Sigma rule detail in the sidebar is community content that
-   appears only when `api.github.com` is reachable (see the MISSING DATA note).
+   options") and choose "Sigma Rules" (in the Detections group; the button then reads
+   "Sigma"). The lens count comes from the SigmaHQ coverage layer; the per-technique Sigma
+   rule detail in the sidebar is community content that appears only when `api.github.com`
+   is reachable (see Troubleshooting).
 
 ## Move around
 
@@ -56,35 +50,34 @@ Matrix and Status do not. Three ways to navigate:
 
 ## What the colors mean
 
-Lens labels follow the Known / Covered / Proven vocabulary, so a color never claims more
-than the data behind it supports.
+Lens colors follow the Known / Covered / Proven vocabulary, so a color never claims more
+than the data behind it supports:
 
-**Known (reference data).** Public reference sources map a mitigation, detection or test
-to the technique. These lenses read "mapped", "available" or "reference depth". They say
-nothing about your environment. The default Prevalence lens is reference data of this
-kind: how many ATT&CK groups use a technique.
+**Known** is reference data: public sources map a mitigation, detection or test to the
+technique, with no claim about your environment.
 
-**Covered (self-attested).** Something is deployed for the technique, recorded by you, but
-not shown to have fired. The hosted app has only the self-attested form of this rung; a
-range form is produced elsewhere, not in the browser.
+**Covered (self-attested)** is something you recorded as deployed, not shown to have fired.
 
 <!-- truth-vocab-allow-next-line proven-only -- defines the Proven rung, not a claim about this app -->
-**Proven.** A named detection fired, or the technique was blocked, on a recorded date. The
-hosted app carries none of it: it comes from recorded test or detection evidence, which
-this app does not collect.
+**Proven** is a named detection firing or a block on a recorded date. The hosted app has
+none of it; it comes from recorded test or detection evidence, which this app does not
+collect.
 
-So the matrix out of the box shows reference data, not your posture. Posture appears only
-in the views you populate, and those stay self-attested.
+Read the active lens from its legend rather than the color alone. Expand Legend under the
+toolbar and it shows, for the current lens, a rung badge (KNOWN, COVERED self-attested,
+THREAT or EXPOSURE), the question the lens answers, a Sources line, what a zero cell
+means, and a "What is this lens?" link. THREAT and EXPOSURE are dimensions (how much
+adversaries care, what is reachable), not posture. The default Prevalence lens carries the
+THREAT badge.
 
 ## The lens picker
 
 The matrix toolbar has a lens button, "View and explore options", that shows the active
 lens short label ("Frequency" by default) and opens a menu to switch the matrix coloring
 or change sorting and filtering. There are 33 lenses, grouped as Coverage and Posture,
-Threat Landscape, Vulnerabilities, Detections and Frameworks. Each lens carries a rung, so
-a Detections lens reads "mapped" or "available" (reference content exists), never a
-posture claim. The Threat Landscape and Vulnerabilities lenses are dimensions, how much
-adversaries care and what is reachable, not posture rungs.
+Threat Landscape, Vulnerabilities, Detections and Frameworks. Each lens carries a rung,
+shown as its legend badge, so before reading a color open the legend and check whether the
+lens badge reads KNOWN, COVERED self-attested, THREAT or EXPOSURE.
 
 ## Record your own coverage
 
@@ -106,18 +99,26 @@ data.
 ### Assets and exposure (Coverage > Assets)
 
 1. Open Coverage > Assets (or `Ctrl+K`, then "assets").
-2. In the Inventory tab, upload a CSV with the columns `hostname, os, software, tags,
-   criticality`, where `software` and `tags` are `;`-separated, for example `web01,Ubuntu
-   22.04,nginx;openssh,prod;dmz,high`. You can also add assets by hand.
+2. In the Inventory tab, upload a CSV whose first line is the header `hostname`
+   (required), with optional `os,software,tags,criticality`. `software` and `tags` are
+   `;`-separated; `criticality` is one of `critical`, `high`, `medium` or `low`, and
+   anything else becomes `medium`. For example:
+
+``` hostname,os,software,tags,criticality web01,Ubuntu 22.04,nginx;openssh,prod;dmz,high
+```
+
+You can also add assets by hand.
 3. Open the Exposure tab to see which techniques reach your assets, and use Enable My
    Exposure Heatmap to color the matrix by it. Matching is keyword-based and heuristic,
-   and My Exposure is a reachability view, not a posture rung.
+   and My Exposure is a reachability view (the EXPOSURE dimension), not a posture rung.
 
 ### Gap analysis (Exposure > Gap Analysis)
 
 1. Open Exposure > Gap Analysis (or `Ctrl+K`, then "gap analysis").
-2. Select the threat groups you care about. The scope is the parent techniques those
-   groups use; with no selection it is all parent techniques.
+2. Select the threat groups you care about, or tick "Analyze all techniques (no actor
+   filter)". Generate Report stays disabled until you do one or the other. The scope is
+   the parent techniques of the selected groups, or all parent techniques when you analyze
+   all.
 3. Generate the report. For each technique it checks whether ATT&CK maps a mitigation to
    it and whether public detection content exists for it (Sigma, Elastic, Splunk, M365,
    CAR). Prioritized Gaps are techniques missing a mitigation or detection; Fully Blind
@@ -127,7 +128,8 @@ data.
 ## The technique sidebar
 
 Click any technique to open the sidebar. Hover for a short tooltip. Search by ID (T1059)
-or name (PowerShell) in the top bar.
+or name (PowerShell) in the top bar. The top card, "Reference sources mapped", is a Known
+count.
 
 The sidebar collects what public sources record about a technique, as collapsible sections
 that appear when they have content: ATT&CK mitigations and the status you set; Detected By
@@ -136,10 +138,12 @@ Atomic Red Team Tests, SIEM Queries, and Sigma Rules, Microsoft 365 Defender and
 Rules when those are present; CVE and KEV links and EPSS scores; D3FEND countermeasures
 and MITRE Engage activities; and control mappings for NIST 800-53, CRI Profile, VERIS, CSA
 CCM and cloud providers. Elastic and Splunk appear as rule counts rather than as their own
-sections. A Detection Guidance block appears only for a technique that carries ATT&CK
-detection text, which few Enterprise 19.2 techniques do. Each section names its source,
-and detection and control content is reference data unless you have recorded your own
-status.
+sections.
+
+For offensive work the sidebar also has CAPEC, ExploitDB, Nuclei, PoC Exploits, Payloads,
+C2, BloodHound, Offensive tools, EVTX samples and ThreatHunter Playbook sections, again
+shown when populated. Each section names its source, and detection and control content is
+reference data unless you have recorded your own status.
 
 ## Workspaces and tabs
 
@@ -161,28 +165,30 @@ The Library workspace includes 37 named layers drawn from the TeamStarWolf libra
 ## Share and export
 
 - **Share a technique.** The link button in the sidebar header ("Copy share link") copies
-  a routed deep link, for example `#%2Fmatrix%3Ftq=T1059.001&heat=sigma&tech=T1059.001`.
-  Opening it reopens the app with the technique selected (the lens is not restored). A
-  second button copies the technique as Markdown.
+  a link that reopens the app with the technique selected; the active lens is not
+  restored. A second button copies the technique as Markdown.
 - **Share a collection.** Library > Collections has a share link, and the STIX 2.1 bundle
   import and export, for your custom techniques and annotations.
-- **Export Hub (Reports > Export Hub).** Coverage CSV, Tactic Summary CSV, Implementation
-  Plan CSV, an Excel workbook, a Full Report CSV, an HTML report, a PDF, Print, a Matrix
-  PNG, ATT&CK Navigator layer export, open and import, a Saved Layers list, and a Full
-  Workspace Backup (Export Workspace and Import Workspace).
+- **Export Hub (Reports > Export Hub).** Six sections: Coverage Data (Coverage CSV, Tactic
+  Summary, Implementation Plan, Excel Workbook), Reports (Full Report, HTML Report, PDF
+  Report, Print Matrix, Matrix PNG), ATT&CK Navigator (Export, Open in, Import), Workspace
+  State (Export State, Import State), Saved Layers, and Full Workspace Backup (Export
+  Workspace, Import Workspace).
 - **Detection exports.** Sigma rule templates, SIEM queries and YARA rules are generated
   from their own Detect tabs (Sigma, SIEM, YARA). The Sigma output is a labelled template
   at informational level, a starting point you complete.
 
 ## Optional integrations
 
-Set these at Settings > Preferences > Integrations. They are optional; the app works
-without them. Each integration has a Direct browser mode and a Secure backend proxy mode.
-Direct mode keeps the secret in memory for the session and needs the server to allow
-cross-origin requests (CORS); the proxy mode keeps the secret on the server under
-`server/`.
+Set these at Settings > Preferences > Integrations with Test & Save. They are optional;
+the app works without them. Each integration has a Direct browser mode and a Secure
+backend proxy mode. Direct mode keeps the secret in memory for the session and needs the
+server to allow cross-origin requests (CORS). Proxy mode sends requests through the proxy
+under `server/`: set the integration URL to the proxy (`http://localhost:8080/api/` under
+the compose stack, or `http://localhost:8787` per README), and set Settings > Integrations
+> Proxy access token to the `PROXY_AUTH_TOKEN` the proxy expects.
 
-- **MISP.** Enter your server URL, API key and organization ID, then Test and Save. The
+- **MISP.** Enter your server URL, API key and organization ID, then Test & Save. The
   connection test and the public MISP Galaxy clusters work; querying your own MISP events
   and attributes is not wired into the UI, and the MISP Events tab builds templates
   locally.
@@ -190,14 +196,28 @@ cross-origin requests (CORS); the proxy mode keeps the secret on the server unde
   actors.
 - **TAXII 2.1.** Add a server, fetch collections and import STIX bundles.
 - **NVD API key.** The key is sent only by the per-technique CWE lookups, not by keyword
-  or CVE ID searches, and it raises your NVD rate limit. README.md ("NVD") has the exact
-  limits.
+  or CVE ID searches, and it raises your NVD rate limit. README.md ("Configuration") has
+  the exact limits.
 
 ## Offline use
 
-The hosted build is a Progressive Web App. After the first visit it works offline, and
-ATT&CK data is cached locally. Look for the install prompt in your browser's address bar
-to add it to your device.
+The hosted build is a Progressive Web App. After the first visit its shell works offline.
+The service worker caches runtime data only for the listed upstream hosts, for 6 to 24
+hours, and never caches `api.github.com`, so offline or after the cache expires those
+sources show the MISSING DATA banner. The ICS and Mobile ATT&CK bundles are cached lazily,
+on first use. The install prompt appears in Chromium browsers; desktop Firefox does not
+offer one.
+
+## Troubleshooting: the MISSING DATA banner
+
+Several datasets load from `api.github.com` without authentication, which GitHub limits to
+60 requests per hour per IP. After a few loads, or behind a shared corporate IP, that
+limit is reached and sources fail, including Elastic, Splunk, community Sigma, PoC
+exploits, M365 hunting queries, Sentinel rules, Nuclei, PayloadsAllTheThings, EVTX
+samples, Cyb3r-Monk hunts and the CTID KEV mapping. Their counts then read zero, which
+means "not loaded", not "no content", and Gap Analysis counts fewer techniques as
+detected. A MISSING DATA banner above the matrix names the failed sources and offers Data
+health and Retry links; wait for the hourly reset, then Retry.
 
 ## Self-hosting
 
@@ -216,7 +236,6 @@ example `http://navi.lan:8080`) and `APP_HOST` (the bare host the browser uses, 
 example `navi.lan`) in a `.env` file next to `docker-compose.yml`; the proxy refuses other
 Host names. If you use an integration in Direct browser mode, add its origin to
 `CSP_EXTRA_CONNECT_SRC`, or the self-hosted Content-Security-Policy blocks the request.
-The compose `env_file: required: false` option needs Docker Compose 2.x.
 
 ### Kubernetes
 
