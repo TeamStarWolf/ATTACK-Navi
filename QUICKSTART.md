@@ -293,8 +293,9 @@ Elastic, Splunk, Atomic Red Team, Galeax CVE2CAPEC, CISA KEV, FIRST EPSS, NVD an
 are fetched from their upstream sources at runtime. THIRD_PARTY_NOTICES.md lists every
 source with its license and terms, and the Status workspace shows which sources loaded.
 
-© 2026 The MITRE Corporation. This work is reproduced and distributed with the permission
-of The MITRE Corporation. MITRE ATT&CK® is a registered trademark of The MITRE
-Corporation. This project is not affiliated with or endorsed by MITRE. This product uses
-the NVD API but is not endorsed or certified by the NVD. Data fetched at runtime from
-other sources remains subject to those sources' own licenses and terms.
+For the ATT&CK data in `src/assets/data`: © 2026 The MITRE Corporation. This work is
+reproduced and distributed with the permission of The MITRE Corporation. MITRE ATT&CK® is
+a registered trademark of The MITRE Corporation. This project is not affiliated with or
+endorsed by MITRE. This product uses the NVD API but is not endorsed or certified by the
+NVD. Data fetched at runtime from other sources remains subject to those sources' own
+licenses and terms.

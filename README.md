@@ -1,15 +1,18 @@
 # ATTACK-Navi
 
+<img src="assets/brand/starwolf64-banner-1280.png" alt="STARWOLF 64 banner" width="640">
+
+*STARWOLF 64 is the TeamStarWolf brand; this tool is ATTACK-Navi.*
+
 ATTACK-Navi is a single-page Angular application for working with the MITRE ATT&CK matrix. It colors the matrix by mitigation, threat, vulnerability, detection and framework data, opens a detail sidebar for each technique, and puts longer tasks (threat group analysis, CVE exposure, detection content, control coverage, reporting) in routed workspaces with their own URLs.
 
-It runs as a static site with no required backend. ATT&CK, D3FEND, CTID mappings and many other public datasets are fetched from their upstream sources in the browser; the app also ships bundled snapshots and some hand-curated content, and [Data sources](#data-sources) lists which is which. An optional proxy under `server/` can hold OpenCTI and MISP credentials.
+It runs as a static site with no required backend. ATT&CK is pinned to a bundled snapshot, and a newer release is offered only when you ask for it; D3FEND, CTID mappings and many other public datasets are fetched from their upstream sources in the browser. The app also ships other bundled snapshots and some hand-curated content, and [Data sources](#data-sources) lists which is which. An optional proxy under `server/` can hold OpenCTI and MISP credentials.
 
 A build is published to GitHub Pages at <https://teamstarwolf.github.io/ATTACK-Navi/> by the `deploy.yml` workflow. The site shows the last build that deployed successfully. The current release is v0.10.0, and release notes are in [CHANGELOG.md](CHANGELOG.md). Further documentation starts at [docs/README.md](docs/README.md).
 
 ## Screenshots
 
-<!-- truth-vocab-allow-next-line retired-label -- historical: names the old default heatmap label that these screenshots predate -->
-Captured on 2026-08-15 with `scripts/capture-screenshots.mjs`, in the dark theme. They predate the Status workspace, the grouped nav rail, the Unified Coverage default heatmap, and the toolbar rename from "ATT&CK NAV" to "ATT&CK Navi". The two images below are the current ones; `screenshots/attack-navi-live.png` is the uncropped matrix capture from the same run. The repository does not keep a social-preview image: set one in the repository's Settings > Social preview from a fresh capture, since the previous copy advertised an old Angular version and mode count.
+Captured on 2026-08-15 with `scripts/capture-screenshots.mjs`, in the dark theme; they predate several recent changes, including the toolbar rename to "ATT&CK Navi". The two images below are the current ones, and `screenshots/attack-navi-live.png` is the uncropped matrix capture from the same run.
 
 ![Matrix with the technique sidebar open for T1590](screenshots/live2.png)
 
@@ -53,7 +56,7 @@ The command palette (Ctrl+K) searches techniques, mitigations, groups, campaigns
 
 ## Heatmap modes
 
-The heatmap picker reads `HEATMAP_MODES` in `src/app/models/heatmap-modes.ts`. The default mode is Prevalence, the Frequency lens (`heat=frequency`): how many ATT&CK groups use each technique. It is a Threat lens, true for every visitor, and until you record a mitigation's implementation status or a validation run a one-line banner above the matrix says that it is reference data, not a view of your environment. Groups appear in this order, below any modes the current viewpoint pins at the top:
+The heatmap picker reads `HEATMAP_MODES` in `src/app/models/heatmap-modes.ts`. The default mode is the Frequency lens (`heat=frequency`), which its first-visit banner calls adversary prevalence: how many ATT&CK groups use each technique. It is listed under Coverage & Posture but carries the THREAT badge, true for every visitor, and until you record a mitigation's implementation status or a validation run a one-line banner above the matrix says that it is reference data, not a view of your environment. Groups appear in this order, below any modes the current viewpoint pins at the top:
 
 | Group | Modes |
 | :-- | :-- |
@@ -63,7 +66,7 @@ The heatmap picker reads `HEATMAP_MODES` in `src/app/models/heatmap-modes.ts`. T
 | Frameworks | D3FEND, Engage, NIST 800-53, VERIS Actions, CRI Profile, CSA CCM, M365 Controls, F3 Origin |
 | Coverage & Posture | Mitigations mapped, Status, Controls, Reference depth, Library Layer, Frequency |
 
-Lens labels follow the Known / Covered / Proven vocabulary: a lens built from reference data says 'mapped', 'available' or 'reference depth'. The `heat=` values in links are unchanged. Reference depth combines defensive reference inputs only (mitigations, detection content, CTID control mappings, D3FEND, Atomic); threat intel and KEV appear in the Threat Landscape and Vulnerabilities lenses instead.
+Lens labels follow the Known / Covered / Proven vocabulary: Known means a public source maps or documents the technique, Covered means you have recorded something as deployed (self-attested), not shown to fire, and Proven means a named detection fired, or the technique was blocked, on a recorded date (no lens colours at this rung). <!-- truth-vocab-allow covered-unqualified,proven-only -- defines the vocabulary; not a rung claim about this app -->A lens built from reference data says 'mapped', 'available' or 'reference depth'. The `heat=` values in links are unchanged. Reference depth combines defensive reference inputs only (mitigations, detection content, CTID control mappings, D3FEND, Atomic); threat intel and KEV appear in the Threat Landscape and Vulnerabilities lenses instead.
 
 The Library Layer mode colors the matrix by one of the Navigator layers listed in `src/assets/data/library-layers/index.json`, described in [docs/LIBRARY_LAYERS.md](docs/LIBRARY_LAYERS.md). Those layers are a separate list, not additional modes. Scoring for each mode is described in [docs/HEATMAPS.md](docs/HEATMAPS.md). Adding a mode touches several files; [AGENTS.md](AGENTS.md) has the checklist.
 
@@ -111,7 +114,7 @@ Many mapping datasets are pinned to older ATT&CK releases: most CTID Mappings Ex
 | ATT&CK release notes | `attack-stix-data` GitHub releases |
 | Other sidebar content | `swisskyrepo/PayloadsAllTheThings`, `stamparm/ipsum`, `mukul975/Anthropic-Cybersecurity-Skills` |
 
-Several of these are community repositories rather than vendor or MITRE datasets. The Elastic, Splunk and Microsoft 365 Defender counts come from GitHub tree listings and include only files whose path contains a technique ID, so they undercount. The Microsoft 365 Defender hunting query repository was archived by Microsoft in 2022.
+Several of these are community repositories rather than vendor or MITRE datasets; `mukul975/Anthropic-Cybersecurity-Skills` is one such community repository, not an Anthropic project, despite its name. The Elastic, Splunk and Microsoft 365 Defender counts come from GitHub tree listings and include only files whose path contains a technique ID, so they undercount. The Microsoft 365 Defender hunting query repository was archived by Microsoft in 2022.
 
 ### Bundled with the app
 
@@ -201,7 +204,7 @@ cp server/.env.example server/.env    # Windows cmd: copy server\.env.example se
 npm run proxy:start
 ```
 
-Then set the OpenCTI or MISP mode in Settings to "Secure backend proxy" and enter the proxy URL, `http://localhost:8787` by default. If you set `PROXY_AUTH_TOKEN` in `server/.env`, paste the same value into Settings > Integrations > "Proxy access token"; the app sends it as `X-Proxy-Key` on every proxy request and keeps it in `sessionStorage` only, like the NVD key.
+Then set the OpenCTI or MISP mode in Settings to "Secure backend proxy" and enter the proxy URL, `http://localhost:8787` by default. If you set `PROXY_AUTH_TOKEN` in `server/.env`, paste the same value into Settings > Preferences > Integrations > "Proxy access token" and click its Save button before Test & Save (Test & Save does not persist that field); the app sends it as `X-Proxy-Key` on every proxy request and keeps it in `sessionStorage` only, like the NVD key.
 
 The proxy is a small Express app. It exposes `GET /api/health`, `POST /api/opencti/graphql`, and `GET` and `POST` under `/api/misp/` for a read-only allowlist (`servers/getVersion`, `attributes/restSearch`, `events/restSearch`, `events/view`). It binds `127.0.0.1` unless `HOST` says otherwise, and on a non-loopback `HOST` without `PROXY_AUTH_TOKEN` it fails closed: health still answers, every other route returns 503. Every credentialed route also checks the `Host` header against `localhost`, `127.0.0.1`, `::1` and `ALLOWED_HOSTS` (DNS-rebinding defence) and requires the `X-Requested-With` header the app sends, so a cross-origin browser call is always a CORS preflight that `ALLOWED_ORIGINS` decides. The code default origin is `http://localhost:4200` and `server/.env.example` lists only that; add your own deployment origin, never a shared one. The OpenCTI route parses each GraphQL document and forwards only read queries on the `about`, `indicators` and `threatActors` root fields (`OPENCTI_ALLOWED_QUERY_FIELDS` extends the list); mutations are refused unless `OPENCTI_ALLOW_IMPORT=true`, which admits exactly the app's `mutation ImportStix` used by Export to OpenCTI, and subscriptions are always refused. Upstream calls time out after `UPSTREAM_TIMEOUT_MS` (30 s) and bodies above `UPSTREAM_MAX_BYTES` (10 MB) or request bodies above `MAX_BODY_SIZE` (1 MB) are rejected.
 
@@ -279,11 +282,11 @@ Single-key shortcuts are ignored while you are typing in a field. When the matri
 - MISP event and attribute queries exist in `misp.service.ts` but nothing in the UI calls them. The MISP Events tab builds event templates locally.
 - Control mappings (NIST 800-53, cloud, CRI Profile, VERIS, CSA CCM and M365) are not translated through revoked-by relationships, so mappings to retired techniques such as the T1562 family do not appear on the techniques that replaced them.
 - CTID removed CIS Controls from Mappings Explorer as of ATT&CK v16, so the CIS Controls service has no source and loads empty.
-- CONTRIBUTING.md, ARCHITECTURE.md, docs/CONFIGURATION.md, docs/HEATMAPS.md and docs/LIBRARY_LAYERS.md have not been updated for the Angular 22 upgrade and some recent additions. Where they disagree with `package.json` or the source, the code is correct.
+- CONTRIBUTING.md, ARCHITECTURE.md and docs/HEATMAPS.md have not been updated for some recent additions (for example ARCHITECTURE's theming section predates the OS-following theme). Where they disagree with `package.json` or the source, the code is correct.
 
 ## Companion reference library
 
-[TeamStarWolf/TeamStarWolf](https://github.com/TeamStarWolf/TeamStarWolf) is a separate repository of written ATT&CK reference material from the same organization. The two are independent at runtime: this app loads ATT&CK, D3FEND and CTID mappings directly from their upstream sources in the browser and does not read the library's data files. What the app takes from the library is bundled at build time. Some of the Navigator layers in `src/assets/data/library-layers/` were authored there, and several cite library files such as `data/attack/technique_profiles.jsonl` as their source. `src/assets/technique-queries.json` mirrors the library's `detections/technique-queries.json`. `src/assets/library.json`, the index behind Library > Workbench and the sidebar's From the Library section, is generated by the library's `research/scripts/build_library_index.py`.
+[TeamStarWolf/TeamStarWolf](https://github.com/TeamStarWolf/TeamStarWolf) is a separate repository of written ATT&CK reference material from the same organization. The two are independent at runtime: this app loads its ATT&CK data from the bundled snapshot (and D3FEND, CTID mappings and other datasets from their own upstream sources in the browser), not from the library's data files. What the app takes from the library is bundled at build time. Some of the Navigator layers in `src/assets/data/library-layers/` were authored there, and several cite library files such as `data/attack/technique_profiles.jsonl` as their source. `src/assets/technique-queries.json` mirrors the library's `detections/technique-queries.json`. `src/assets/library.json`, the index behind Library > Workbench and the sidebar's From the Library section, is generated by the library's `research/scripts/build_library_index.py`.
 
 For the written background on a technique, group or detection, these are useful starting points:
 
@@ -325,4 +328,4 @@ Report vulnerabilities privately, as described in [SECURITY.md](SECURITY.md), ra
 
 The application code in this repository is released under the [MIT License](LICENSE). That license does not cover the third-party content the repository redistributes: the ATT&CK, CWE, F3, CERT/CC SSVC and NVD-derived data under `src/assets/data`, the D3FEND and CAR seeds in the services, and the Lucide icon shapes in `src/app/shared/icons/icon-registry.ts` are governed by the licenses and terms collected in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), which also ships with every build as `assets/THIRD_PARTY_NOTICES.md` (linked from Settings > Data). Licenses of the npm packages compiled into the bundle are written by the production build to `dist/mitre-mitigation-navigator/3rdpartylicenses.txt`, one level above the `browser/` directory that the Pages deploy and the Docker image publish, so that file is not served by either; it ships with the repository's build output only.
 
-© 2026 The MITRE Corporation. The ATT&CK data in this repository is reproduced and distributed with the permission of The MITRE Corporation. MITRE ATT&CK® is a registered trademark of The MITRE Corporation. This project is not affiliated with or endorsed by MITRE. This product uses the NVD API but is not endorsed or certified by the NVD. Data fetched at runtime from other sources remains subject to those sources' own licenses and terms.
+For the ATT&CK data in `src/assets/data`: © 2026 The MITRE Corporation. This work is reproduced and distributed with the permission of The MITRE Corporation. MITRE ATT&CK® is a registered trademark of The MITRE Corporation. This project is not affiliated with or endorsed by MITRE. This product uses the NVD API but is not endorsed or certified by the NVD. Data fetched at runtime from other sources remains subject to those sources' own licenses and terms.
