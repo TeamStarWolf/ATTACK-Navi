@@ -2,9 +2,10 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 //
-// Fails when README.md, ARCHITECTURE.md, HANDOFF.md or QUICKSTART.md state a
-// count or version that disagrees with docs/FACTS.md, or when docs/FACTS.md no
-// longer matches the code (regenerate it with node scripts/gen-facts.mjs).
+// Fails when README.md, ARCHITECTURE.md, HANDOFF.md, QUICKSTART.md or
+// THIRD_PARTY_NOTICES.md state a count or version that disagrees with
+// docs/FACTS.md, or when docs/FACTS.md no longer matches the code (regenerate
+// it with node scripts/gen-facts.mjs).
 //
 //   node scripts/check-facts.mjs                    check the four docs
 //   node scripts/check-facts.mjs FILE...            check other markdown files
@@ -16,8 +17,10 @@
 // "N routed workspaces" (also "N workspaces", "N lazily loaded workspaces"),
 // "the other N workspaces lazy-load a route file", "N routed tabs",
 // "N library layers", "lists N overlays", "N unit specs" / "N spec files",
-// "Angular N", "TypeScript N", and the version column of a markdown table whose
-// header names "Bundled snapshot". A line containing `facts:ignore`, a block
+// "Angular N", "TypeScript N", the version column of a markdown table whose
+// header names "Bundled snapshot", and an ATT&CK bundle version in prose
+// ("ATT&CK Enterprise/for ICS/Mobile <version> STIX"). A line containing
+// `facts:ignore`, a block
 // between `<!-- facts:ignore-start -->` and `<!-- facts:ignore-end -->`, and
 // fenced code are skipped: use the marker for historical statements.
 
@@ -26,7 +29,7 @@ import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { FACTS_PATH, parseFactsMarkdown, collectFacts, renderFacts } from './gen-facts.mjs';
 
-export const DEFAULT_DOCS = ['README.md', 'ARCHITECTURE.md', 'HANDOFF.md', 'QUICKSTART.md'];
+export const DEFAULT_DOCS = ['README.md', 'ARCHITECTURE.md', 'HANDOFF.md', 'QUICKSTART.md', 'THIRD_PARTY_NOTICES.md'];
 
 const UNITS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
   'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
@@ -59,6 +62,12 @@ export const RULES = [
 ];
 
 const BUNDLE_ROW = /^\|\s*([^|]+?)\s*\|.*\|\s*v?(\d+(?:\.\d+)+)\s*\|\s*$/;
+
+// ATT&CK bundle versions stated in prose (e.g. THIRD_PARTY_NOTICES.md's
+// "ATT&CK for ICS 19.2 STIX 2.1 bundle"), checked against facts.bundleVersions
+// so the notices cannot silently restale after a version bump.
+const ATTACK_PROSE = /ATT&CK\s+(?:for\s+)?(Enterprise|ICS|Mobile)\s+v?(\d+(?:\.\d+)+)\s+STIX/gi;
+const ATTACK_DOMAIN_KEY = { enterprise: 'Enterprise ATT&CK', ics: 'ICS ATT&CK', mobile: 'Mobile ATT&CK' };
 
 /**
  * Check one markdown text against the headline facts. Returns a list of
@@ -100,6 +109,18 @@ export function checkText(text, facts, file = '<text>') {
         if (expected === undefined || Number.isNaN(stated)) continue;
         const ok = atLeast ? expected >= stated : expected === stated;
         if (!ok) problems.push({ file, line: n, text: m[0], fact: rule.fact, label: rule.label, stated: m[1] + m[2], expected });
+      }
+    }
+
+    // ATT&CK bundle versions written in prose, e.g. "ATT&CK for ICS 19.2 STIX".
+    if (facts.bundleVersions) {
+      ATTACK_PROSE.lastIndex = 0;
+      for (const m of line.matchAll(ATTACK_PROSE)) {
+        const key = ATTACK_DOMAIN_KEY[m[1].toLowerCase()];
+        const expected = facts.bundleVersions[key];
+        if (expected && m[2] !== expected) {
+          problems.push({ file, line: n, text: m[0], fact: `bundleVersions.${key}`, label: `${key} bundled version`, stated: m[2], expected });
+        }
       }
     }
   });
