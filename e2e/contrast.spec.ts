@@ -182,7 +182,9 @@ test.describe('D3FEND links on a sub-technique drawer (plan E1.5)', () => {
     const notFound: string[] = [];
     const console404: string[] = [];
     page.on('response', res => {
-      if (res.url().includes('d3fend.mitre.org') && res.status() >= 400) notFound.push(`${res.status()} ${res.url()}`);
+      if (new URL(res.url()).hostname === 'd3fend.mitre.org' && res.status() >= 400) {
+        notFound.push(`${res.status()} ${res.url()}`);
+      }
     });
     page.on('console', msg => {
       if (msg.type() === 'error' && /404/.test(msg.text())) console404.push(`${msg.text()} @ ${msg.location().url}`);
