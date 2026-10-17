@@ -5,6 +5,7 @@ import { HtmlReportService } from './html-report.service';
 import { Domain } from '../models/domain';
 import { ImplStatus } from './implementation.service';
 import { DEFAULT_REPORT_CONFIG, ReportConfig } from './report-config.service';
+import { makeSplitDomain } from '../testing/report-split-fixture';
 
 // Minimal Domain stub — buildHtml only touches these fields, and empty
 // collections still exercise every ungated section (exec summary, coverage by
@@ -66,9 +67,9 @@ describe('HtmlReportService', () => {
     service.generateAndOpen(makeDomain(), new Map());
     const html = await lastHtml();
     expect(html).toContain('Executive Summary');
-    expect(html).toContain('Coverage by Tactic');
-    expect(html).toContain('Top 10 Coverage Gaps');
-    expect(html).toContain('Top 10 Best Covered Techniques');
+    expect(html).toContain('Theoretical vs Implemented by Tactic');
+    expect(html).toContain('Top 10 Techniques with No Mitigation Mapped');
+    expect(html).toContain('Top 10 Techniques by Mitigations Mapped');
   });
 
   it('produces identical output for an explicit default config', async () => {
@@ -93,15 +94,15 @@ describe('HtmlReportService', () => {
     service.generateAndOpen(makeDomain(), new Map(), config);
     const html = await lastHtml();
     // The hidden section title is gone...
-    expect(html).not.toContain('Coverage by Tactic');
+    expect(html).not.toContain('Theoretical vs Implemented by Tactic');
     // ...while the still-visible sections remain.
     expect(html).toContain('Executive Summary');
-    expect(html).toContain('Top 10 Coverage Gaps');
+    expect(html).toContain('Top 10 Techniques with No Mitigation Mapped');
   });
 
   describe('technique links', () => {
     // A technique as the report sees it: a parent with zero mitigations lands
-    // in the "Top 10 Coverage Gaps" table, one with mitigations in "Best Covered".
+    // in the "No Mitigation Mapped" table, one with mitigations in "Mitigations Mapped".
     function makeTechnique(attackId: string, url: string, mitigationCount = 0) {
       return {
         id: `attack-pattern--${attackId}`,
@@ -182,6 +183,72 @@ describe('HtmlReportService', () => {
     expect(html).toContain(`<meta http-equiv="Content-Security-Policy" content="script-src 'none'; object-src 'none'; base-uri 'none'" />`);
     expect(html).not.toMatch(/<script\b/i);
     expect(html).not.toMatch(/\son[a-z]+=/i);
+  });
+
+  describe('Theoretical / Implemented split (E1.1)', () => {
+    function splitDomain(): Domain {
+      const d = makeSplitDomain() as unknown as Record<string, unknown> & { techniques: Array<Record<string, unknown>> };
+      for (const t of d.techniques) t['url'] = `https://attack.mitre.org/techniques/${t['attackId']}`;
+      return {
+        ...makeDomain(),
+        ...d,
+        mitigations: ['M1', 'M2', 'M3'].map(m => ({ id: `course-of-action--${m}`, attackId: m, name: `Mitigation ${m}` })),
+      } as unknown as Domain;
+    }
+
+    const block = (html: string, key: string): string => {
+      const start = html.indexOf(`data-split="${key}"`);
+      expect(start).withContext(key).toBeGreaterThan(-1);
+      return html.slice(start, html.indexOf('</div>\n      </div>', start));
+    };
+
+    it('reports the reference count as Theoretical and the owner count as Implemented (self-attested)', async () => {
+      installCaptureSpies();
+      service.generateAndOpen(splitDomain(), new Map<string, ImplStatus>([['course-of-action--M1', 'implemented']]));
+      const html = await lastHtml();
+      const theoretical = block(html, 'theoretical');
+      const implemented = block(html, 'implemented');
+      expect(theoretical).toContain('60%');
+      expect(theoretical).toContain('Theoretical: mitigation mapped');
+      expect(theoretical).toContain('3 of 5 parent techniques');
+      expect(implemented).toContain('40%');
+      expect(implemented).toContain('Implemented (self-attested)');
+      expect(implemented).toContain('2 of 5 parent techniques');
+      expect(html).toContain('ATT&amp;CK Mitigation Report');
+    });
+
+    it('shows 0% Implemented on a fresh profile, whatever the reference mapping says', async () => {
+      installCaptureSpies();
+      service.generateAndOpen(splitDomain(), new Map());
+      const html = await lastHtml();
+      expect(block(html, 'theoretical')).toContain('60%');
+      expect(block(html, 'implemented')).toContain('0%');
+      expect(block(html, 'implemented')).toContain('No implementation status recorded yet');
+    });
+
+    it('drops every wording and colour that read reference mapping as implemented or safe', async () => {
+      installCaptureSpies();
+      service.generateAndOpen(splitDomain(), new Map());
+      const html = await lastHtml();
+      for (const retired of ['Techniques Covered', 'Techniques at Risk', 'Technique Coverage', 'Fully Implemented',
+        'Avg Mitigations / Covered Tech', 'ATT&amp;CK Coverage Report', 'Best Covered', 'Coverage Gaps', 'No coverage gaps']) {
+        expect(html).withContext(retired).not.toContain(retired);
+      }
+      // The coverage donut and tactic bars were green/amber/red by percentage.
+      expect(html).not.toContain('conic-gradient(#22c55e');
+      expect(html).not.toContain('linear-gradient(90deg,#22c55e');
+      expect(html).not.toContain('linear-gradient(90deg,#ef4444');
+    });
+
+    it('gives each tactic a Theoretical bar and an Implemented bar', async () => {
+      installCaptureSpies();
+      service.generateAndOpen(splitDomain(), new Map<string, ImplStatus>([['course-of-action--M3', 'implemented']]));
+      const html = await lastHtml();
+      expect(html).toContain('Theoretical vs Implemented by Tactic');
+      expect((html.match(/class="bar-fill bar-theoretical" style="width:\d+%"/g) ?? []).length).toBe(2);
+      expect(html).toContain('class="bar-fill bar-implemented" style="width:50%"');
+      expect(html).toContain('class="bar-fill bar-implemented" style="width:0%"');
+    });
   });
 
   it('uses the configured organization name in the header when set', async () => {

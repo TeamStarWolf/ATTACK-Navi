@@ -53,3 +53,44 @@ export function referenceDepthScore(inputs: ReferenceDepthInputs): number {
   }
   return Math.round((raw * 100) / TOTAL_WEIGHT);
 }
+
+// ─── Reference depth bands (replace the old Detect letter grades) ──────────
+//
+// The Detect panels used to grade techniques 'Excellent', 'Good', 'Poor' and
+// so on from reference-content counts (CAR, Atomic, D3FEND, Engage). Those
+// counts are Known-rung: they say how much content the world has mapped, not
+// how well you detect. Plan 4.1 allows 'mapped', 'available' and 'reference
+// depth' for Known data and bans letter grades, so the panels show a
+// reference-depth band instead, with the same neutral words as the Reference
+// depth legend.
+
+export type ReferenceDepthBand = 'none' | 'thin' | 'some' | 'deep' | 'deepest';
+
+/** Display words for each band. 'none' is a fact about the reference data, never 'safe' or 'at risk'. */
+export const REFERENCE_DEPTH_BAND_LABELS: Readonly<Record<ReferenceDepthBand, string>> = {
+  none: 'None mapped',
+  thin: 'Thin',
+  some: 'Some',
+  deep: 'Deep',
+  deepest: 'Deepest',
+};
+
+/** Bands in ascending order. */
+export const REFERENCE_DEPTH_BANDS: readonly ReferenceDepthBand[] = ['none', 'thin', 'some', 'deep', 'deepest'];
+
+/**
+ * The band a reference-content count falls in. `floors` are the lowest counts
+ * for thin, some, deep and deepest (ascending); anything below the first floor
+ * (including 0, negatives and non-finite values) is 'none'.
+ */
+export function referenceDepthBand(
+  count: number,
+  floors: readonly [thin: number, some: number, deep: number, deepest: number],
+): ReferenceDepthBand {
+  const n = Number.isFinite(count) ? count : 0;
+  if (n >= floors[3]) return 'deepest';
+  if (n >= floors[2]) return 'deep';
+  if (n >= floors[1]) return 'some';
+  if (n >= floors[0]) return 'thin';
+  return 'none';
+}

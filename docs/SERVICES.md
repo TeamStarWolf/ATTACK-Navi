@@ -1125,7 +1125,7 @@ breakdown, implementation status counts.
 
 | Method | Description |
 |---|---|
-| `generateAndOpen(domain, implStatusMap)` | Build a full HTML coverage report and open in a new tab |
+| `generateAndOpen(domain, implStatusMap)` | Build the HTML mitigation report (Theoretical / Implemented split from `models/report-split.ts`) and open it in a new tab |
 
 **Dependencies:** None (standalone)
 

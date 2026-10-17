@@ -12,10 +12,10 @@
         Selected Technique
       </button>
       <button class="ptab" [class.active]="viewMode === 'gaps'" (click)="setViewMode('gaps')">
-        🔴 Coverage Gaps
+        Least Content Mapped
       </button>
       <button class="ptab" [class.active]="viewMode === 'covered'" (click)="setViewMode('covered')">
-        🟢 Best Covered
+        Most Content Mapped
       </button>
     </div>
 
@@ -119,12 +119,12 @@
 
       <!-- Coverage gaps view -->
       @if (viewMode === 'gaps') {
-        <p class="view-desc">Top 15 parent techniques with lowest cross-framework coverage:</p>
+        <p class="view-desc">Top 15 parent techniques with the least reference content mapped (D3FEND, Engage, CAR, Atomic). Reference only: not your deployed defenses.</p>
         <div class="gap-table">
           <div class="gap-row header-row">
             <span>Technique</span>
             <span>🛡</span><span>🎭</span><span>🔬</span><span>⚛</span>
-            <span>Rating</span>
+            <span>Reference depth</span>
           </div>
           @for (row of topGaps; track row.technique.id) {
             <div class="gap-row" (click)="selectTech(row.technique)" [title]="row.technique.name">
@@ -133,7 +133,7 @@
               <span class="gt-score" [class.zero]="row.engageCount === 0">{{ row.engageCount }}</span>
               <span class="gt-score" [class.zero]="row.carCount === 0">{{ row.carCount }}</span>
               <span class="gt-score" [class.zero]="row.atomicCount === 0">{{ row.atomicCount }}</span>
-              <span class="gt-rating rating-{{ row.coverageRating }}">{{ row.coverageRating }}</span>
+              <span class="gt-rating depth-{{ row.referenceDepth }}">{{ bandLabels[row.referenceDepth] }}</span>
             </div>
           }
         </div>
@@ -141,7 +141,7 @@
 
       <!-- Best covered view -->
       @if (viewMode === 'covered') {
-        <p class="view-desc">Top 15 parent techniques with highest cross-framework coverage:</p>
+        <p class="view-desc">Top 15 parent techniques with the most reference content mapped (D3FEND, Engage, CAR, Atomic). Reference only: not your deployed defenses.</p>
         <div class="gap-table">
           <div class="gap-row header-row">
             <span>Technique</span>
