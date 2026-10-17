@@ -356,10 +356,13 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
       // Recent KEV entries (most recent 5 by dateAdded)
       const recentKevEntries = this.getRecentKevEntries();
 
-      // Composite defensive posture (0–100). Mitigation is ONE weighted input
-      // among detection, controls, D3FEND, KEV exposure (inverted) and threat
-      // pressure (inverted). Shown as the Known-rung 'Reference depth index'
-      // (E1.5): no grade and no risk verdict is derived from it.
+      // Legacy composite (0–100), kept computed for the E0.2 characterization
+      // pin only and NOT rendered (E1.5, D6 hide-before-delete). It is not a
+      // Known-rung number: 25% of its weight is threat input (KEV exposure and
+      // group-used techniques, both inverted), so adding a group that uses an
+      // unmitigated technique lowers it. Threat is a separate dimension, never a
+      // posture rung (plan 4.1), so no label, grade or risk verdict is derived
+      // from it; the defensive-only Known view is the Reference depth lens.
       //   mitigation coverage       0.20
       //   detection coverage        0.20
       //   control coverage          0.20

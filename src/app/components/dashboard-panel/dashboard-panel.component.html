@@ -104,10 +104,6 @@
                       <div class="mini-stat-value" style="color: var(--accent)">{{ stats.controlCoveragePct }}%</div>
                       <div class="mini-stat-label">Control coverage</div>
                     </div>
-                    <div class="mini-stat" title="Known rung, reference data: a weighted mix of mapped mitigations, detection content, controls and D3FEND, pulled down by KEV-linked and group-used techniques with no mapped mitigation. It says nothing about your environment.">
-                      <div class="mini-stat-value known-value">{{ stats.postureScore }}</div>
-                      <div class="mini-stat-label">Reference depth index</div>
-                    </div>
                   </div>
                   @if (stats.hasTrendData) {
                     <div class="widget-footer-note" [class]="stats.coverageTrend >= 0 ? 'trend-up' : 'trend-down'">

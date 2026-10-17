@@ -137,8 +137,9 @@ describe('Dashboard KPIs (fixture domain)', () => {
     expect(rendered('Coverage')).toBe(`${stats.coveragePct}%`);
     expect(rendered('Mitigation coverage')).toBe(`${stats.mitigationCoveragePct}%`);
     expect(rendered('Control coverage')).toBe(`${stats.controlCoveragePct}%`);
-    // E1.5: the composite is shown as a Known-rung 'Reference depth index', not a 'Posture score'.
-    expect(rendered('Reference depth index')).toBe(String(stats.postureScore));
+    // E1.5: the threat-weighted composite (postureScore, still computed above) is not
+    // rendered under any label: it moves with group usage, so it is not Known-rung data.
+    expect(rendered('Reference depth index')).toBe('(not rendered)');
     expect(rendered('Posture score')).toBe('(not rendered)');
   });
 });
