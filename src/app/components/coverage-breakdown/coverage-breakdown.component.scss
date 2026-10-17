@@ -29,7 +29,7 @@
   font-variant-numeric: tabular-nums;
 
   &.enriched { color: var(--accent, #38bdf8); }
-  &.defended { color: #22c55e; }
+  &.defended { color: var(--success); }
 }
 
 .cov-head-label {

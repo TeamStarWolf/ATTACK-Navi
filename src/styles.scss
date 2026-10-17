@@ -710,7 +710,7 @@ body.light-mode {
     color: #1e293b !important;
   }
   .panel-desc { color: #64748b !important; }
-  .empty { color: #94a3b8 !important; }
+  .empty { color: var(--text-muted) !important; } /* was #94a3b8: 2.5:1 on #fafafa (axe, E1.5) */
 
   .tab-btn {
     color: #64748b !important;
