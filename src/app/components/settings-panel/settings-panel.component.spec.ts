@@ -76,6 +76,17 @@ describe('SettingsPanelComponent', () => {
     expect(component.isDirty).toBeFalse();
   });
 
+  it('each theme swatch equals the ramp the matrix applies for that theme', () => {
+    settingsService.update({ colorblindSafe: false });
+    for (const theme of component.themes) {
+      settingsService.update({ heatmapColorTheme: theme.id as never });
+      // getCoverageColors() is exactly what the matrix cell/legend use.
+      expect(settingsService.getCoverageColors())
+        .withContext(`swatch vs applied ramp for "${theme.label}"`)
+        .toEqual(theme.colors);
+    }
+  });
+
   it('resetToDefaults restores the shipped defaults', () => {
     component.setColorTheme('monochrome');
     expect(settingsService.current.heatmapColorTheme).toBe('monochrome');
