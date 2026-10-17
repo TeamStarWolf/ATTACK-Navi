@@ -177,7 +177,7 @@ export class KillchainPanelComponent implements OnInit, OnDestroy {
   }
 
   get totalThreatGroups(): number {
-    // Unique across all tactics â€” need to re-derive from domain
+    // Unique across all tactics — need to re-derive from domain
     // For summary we use max of all distinct groups seen in tacticStats as a proxy
     // (could double count across tactics, but this is a display metric)
     const seen = new Set<string>();

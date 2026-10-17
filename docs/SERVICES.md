@@ -199,7 +199,7 @@ full list of 20 BehaviorSubjects and 7 derived observables.
 | `getIndicatorsForTechnique(attackId)` | Query indicators mapped to a technique |
 | `getThreatActorsForTechnique(attackId)` | Query threat actors using a technique |
 | `importStixBundle(stixJson)` | Push a STIX bundle to the OpenCTI instance |
-| `getDemoUrl()` | Return the OpenCTI demo instance URL |
+| `isConfigured()` | True once an instance is configured (a proxy URL, or a URL and a token); no request is made before that |
 
 **Dependencies:** `HttpClient`
 

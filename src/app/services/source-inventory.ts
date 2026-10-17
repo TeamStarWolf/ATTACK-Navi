@@ -477,6 +477,12 @@ export const SOURCE_DEFINITIONS: readonly SourceDefinition[] = [
     owner: 'services/ir-playbook.service.ts', initialStatus: 'loaded',
   },
   {
+    id: 'compliance-mapper-seed', name: 'SOC 2 / ISO 27001 / PCI DSS control-to-technique table', kind: 'project-authored',
+    reviewedDate: '2026-10-16', upstream: 'no upstream', licence: 'project-mit', inventoryRow: NOT_IN_INVENTORY,
+    owner: 'services/compliance-mapper.service.ts', initialStatus: 'loaded',
+    note: 'Editorial suggestions written in this repository, not CTID- or MITRE-published mappings; not mapped against a specific ATT&CK release.',
+  },
+  {
     id: 'library-index', name: 'Library index (library.json)', kind: 'bundled', version: 'generated 2026-04-18T01:55:35Z',
     upstream: 'https://github.com/TeamStarWolf', licence: 'project-mit',
     inventoryRow: R.library, owner: 'services/library.service.ts',

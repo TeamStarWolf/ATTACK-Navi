@@ -16,7 +16,7 @@ import { SourceRegistryService } from './source-registry.service';
 export class CveService {
   private readonly NVD_API = 'https://services.nvd.nist.gov/rest/json/cves/2.0';
   // CISA's official GitHub mirror of the KEV catalog (updated with the feed).
-  // raw.githubusercontent.com sends Access-Control-Allow-Origin: * â€” the
+  // raw.githubusercontent.com sends Access-Control-Allow-Origin: * — the
   // cisa.gov feed does not, so it is only a fallback (works via extensions/
   // proxies but is CORS-blocked in a plain browser context).
   private readonly KEV_URL = 'https://raw.githubusercontent.com/cisagov/kev-data/develop/known_exploited_vulnerabilities.json';
@@ -274,7 +274,7 @@ export class CveService {
       }
     }
 
-    // CTID-based scores (direct) â€” only available if AttackCveService has loaded
+    // CTID-based scores (direct) — only available if AttackCveService has loaded
     const kevCveIds = vulns.map(v => v.cveID);
     const ctidScores = this.getKevScoresFromCtid(kevCveIds);
     for (const [techId, cveIds] of ctidScores) {

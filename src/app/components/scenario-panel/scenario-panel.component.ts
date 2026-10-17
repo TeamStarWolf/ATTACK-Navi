@@ -65,7 +65,7 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
   isSimulating = false;
   groupSearch = '';
 
-  // ─── Threat Simulation (enhanced) ────────────────��────────────────────
+  // ─── Threat Simulation (enhanced) ──────────────────────────────────────
   selectedGroupIds = new Set<string>();
   threatSimResults: ThreatSimResult[] = [];
   activeThreatSimResult: ThreatSimResult | null = null;
@@ -391,7 +391,7 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
     return `https://attack.mitre.org/techniques/${attackId.replace('.', '/')}/`;
   }
 
-  // ─── Threat Simulation (enhanced) ───────────────────────���─────────────
+  // ─── Threat Simulation (enhanced) ───────────────────────────────────────
 
   toggleGroupSelection(group: ThreatGroup): void {
     if (this.selectedGroupIds.has(group.id)) {

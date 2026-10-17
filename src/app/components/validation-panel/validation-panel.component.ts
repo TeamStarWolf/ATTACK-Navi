@@ -101,7 +101,7 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
     this.subs.unsubscribe();
   }
 
-  // â”€â”€â”€ Data loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Data loading ─────────────────────────────────────────────────────────
 
   private loadDomain(): void {
     this.dataService.domain$.pipe(filter(Boolean), take(1)).subscribe(d => {
@@ -113,7 +113,7 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
 
   private rebuildCards(): void {
     if (!this.domain) return;
-    // Keep card list small â€” only techniques with at least one validation input
+    // Keep card list small — only techniques with at least one validation input
     const cards: TechniqueValidationCard[] = [];
     for (const tech of this.domain.techniques) {
       if (tech.isSubtechnique) continue;
@@ -141,7 +141,7 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
     this.techniqueCards = cards;
   }
 
-  // â”€â”€â”€ UI actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── UI actions ───────────────────────────────────────────────────────────
 
   setTab(t: typeof this.currentTab): void {
     this.currentTab = t;
@@ -258,7 +258,7 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
     URL.revokeObjectURL(url);
   }
 
-  // â”€â”€â”€ Telemetry coverage tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Telemetry coverage tab ───────────────────────────────────────────────
 
   get filteredTelemetryMatrix(): TelemetrySourceRow[] {
     const q = this.telemetrySearch.trim().toLowerCase();

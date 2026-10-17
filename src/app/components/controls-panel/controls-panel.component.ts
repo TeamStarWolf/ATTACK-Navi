@@ -276,7 +276,7 @@ export class ControlsPanelComponent implements OnInit, OnDestroy {
   importTemplate(template: FrameworkTemplate, status: ControlStatus): void {
     if (!this.domain) return;
     const added = this.controlsService.importFromTemplate(template, this.domain, status);
-    this.importStatus = added > 0 ? `âœ“ Added ${added} controls from ${template.name}` : `Already imported`;
+    this.importStatus = added > 0 ? `✓ Added ${added} controls from ${template.name}` : `Already imported`;
     setTimeout(() => { this.importStatus = ''; this.cdr.markForCheck(); }, 3000);
     this.cdr.markForCheck();
   }
