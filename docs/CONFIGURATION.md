@@ -1,6 +1,6 @@
 # Configuration Guide
 
-This document covers all configuration options for ATTACK-Navi, including external integrations, display preferences, data management, and deployment.
+This document covers the configuration options for ATTACK-Navi: external integrations, display preferences, data management, and deployment.
 
 ---
 
@@ -22,7 +22,7 @@ This document covers all configuration options for ATTACK-Navi, including extern
 
 ## 1. MISP Server Setup
 
-MISP (Malware Information Sharing Platform) integration enables live threat event queries and ATT&CK galaxy cluster enrichment for techniques.
+MISP (Malware Information Sharing Platform) integration adds MISP's ATT&CK galaxy cluster data to techniques. It has two modes, set by the mode selector in the integration card: **Direct browser mode**, where the browser calls MISP, and **Secure backend proxy**, where the optional `server/` proxy holds the credentials (see [Optional credentials proxy](../README.md#optional-credentials-proxy)). Direct mode keeps the API key in memory for the session only. The connection test and the public MISP Galaxy data work today; the event and attribute queries in `misp.service.ts` are not wired to the UI, so the MISP Events tab builds event templates locally.
 
 ### Configuration Fields
 
@@ -96,17 +96,13 @@ location /misp-proxy/ {
 
 ### What Data Is Used
 
-Once connected, the Navigator:
-- Fetches MISP galaxy clusters mapped to ATT&CK techniques
-- Displays MISP tags in the technique sidebar
-- Shows event counts and sighting data
-- Populates the Intelligence panel with MISP-sourced indicators
+The public MISP Galaxy ATT&CK clusters are the part that is wired in. In Intel > Feeds, a technique's score is the number of ATT&CK groups that use it, plus one when MISP Galaxy has a cluster for it. The event and attribute REST queries (`events/restSearch`, `attributes/restSearch`) are implemented in `misp.service.ts`, but nothing in the UI calls them yet, so live event counts and sightings are not shown. See the README's [Known limitations](../README.md#known-limitations).
 
 ---
 
 ## 2. OpenCTI Setup
 
-OpenCTI integration enriches techniques with structured threat intelligence, including indicators, confidence levels, and threat actor attribution.
+OpenCTI integration enriches techniques with indicators and threat-actor data from your OpenCTI instance. Like MISP, it has two modes set in the integration card: **Direct browser mode**, where the browser calls OpenCTI, and **Secure backend proxy**, where the `server/` proxy holds the token. Direct mode keeps the token in memory for the session only; proxy mode keeps it on the backend.
 
 ### Configuration Fields
 
@@ -131,13 +127,7 @@ https://opencti.example.org
 
 ### Required Permissions
 
-The API token must have at least read access to:
-- **Indicators** -- For technique enrichment with IOCs
-- **Threat Actors** -- For actor attribution data
-- **Attack Patterns** -- For ATT&CK technique mappings
-- **Reports** -- For intelligence context
-
-A read-only analyst role is sufficient. No write permissions are needed.
+The API token needs read access to **Indicators** and **Threat Actors**; the app looks these up per technique over GraphQL. A read-only analyst role is enough, and no write permission is needed. If you use the proxy, it forwards only read queries on the `about`, `indicators` and `threatActors` fields.
 
 ### GraphQL Queries
 
@@ -154,7 +144,7 @@ The Navigator uses OpenCTI's GraphQL API endpoint at `{url}/graphql`. Ensure you
 
 ### Clearing the Connection
 
-Click the **Clear** button to remove the stored OpenCTI configuration. This deletes the URL and token from localStorage.
+Click the **Clear** button to remove the stored OpenCTI configuration. It removes `opencti_config` from localStorage (which holds the URL, mode and proxy URL) and clears the token from memory. The token is never written to localStorage.
 
 ---
 
@@ -170,9 +160,9 @@ An NVD (National Vulnerability Database) API key increases the rate limit for CV
 4. The API key is sent to your email immediately.
 5. The key is a UUID-format string.
 
-### How It Improves Performance
+### What the key affects
 
-Without an API key, the Navigator throttles NVD requests to 5 per 30 seconds. When browsing multiple techniques with CVE data, this can cause noticeable delays. With the API key, the 10x rate increase makes CVE lookups significantly faster.
+Without a key, NVD allows 5 requests per 30 seconds; with a key, 50. The key is sent only by the per-technique CWE lookups, which query at most five CWEs in turn, waiting 100 ms between requests with a key and 300 ms without. Keyword and CVE ID searches do not send it. So a key reduces the wait on the CWE lookups for CVE-heavy techniques and changes nothing else.
 
 ### Configuration
 
@@ -181,7 +171,7 @@ Without an API key, the Navigator throttles NVD requests to 5 per 30 seconds. Wh
 3. Click **Save**.
 4. A green "API key saved" confirmation appears.
 
-The key is stored in localStorage under the `mitre-nav-settings-v1` key as part of the application settings object.
+The key is kept in sessionStorage (under `mitre-nav-settings-v1-key`), not localStorage, so it is gone when the tab closes and is never written to disk. The rest of the settings do live in localStorage under `mitre-nav-settings-v1`.
 
 ---
 
@@ -193,17 +183,17 @@ ATTACK-Navi follows the operating system's light or dark setting (`prefers-color
 
 ### Heatmap Color Themes
 
-The heatmap color palette used for matrix cells is configurable in Settings > Display:
+Settings > Display > Heatmap Color Theme sets the palette used to color matrix cells. Each theme is a five-step ramp from low to high; click a swatch to apply it.
 
-| Theme | Description | Colors |
-|-------|-------------|--------|
-| Default | Red to green gradient | `#d32f2f` to `#1b5e20` |
-| Vivid | Bright red to green | `#dc2626` to `#15803d` |
-| Blue/Orange | Cool to warm | `#1d4ed8` to `#92400e` |
-| Monochrome | Grayscale | `#111827` to `#e5e7eb` |
-| High Contrast | Accessible palette | `#cc0000` to `#003300` |
+| Theme | Notes |
+|-------|-------|
+| Default | The standard ramp |
+| Vivid | A brighter version of the default ramp |
+| Blue/Orange | Cool to warm, to avoid a red/green ramp |
+| Monochrome | Grayscale |
+| High Contrast | A colorblind-safe (Viridis) ramp with monotonic luminance |
 
-Select a theme by clicking its color swatch in Settings > Display > Heatmap Color Theme. The High Contrast theme is designed for accessibility and meets WCAG color contrast requirements.
+A separate **Colorblind-safe heatmaps** toggle on the same tab forces the Viridis ramp regardless of the theme chosen. The applied hex values are in `COLOR_THEMES` in `src/app/services/settings.service.ts`; the swatch preview in the picker is maintained separately, so treat the swatch as an approximation of the ramp the matrix uses.
 
 ---
 
@@ -268,8 +258,10 @@ Configure matrix rendering in Settings > Display:
 | Size | Description |
 |------|-------------|
 | Compact | Smaller cells, more techniques visible at once |
-| Normal | Default size (recommended) |
+| Normal | Default size |
 | Large | Bigger cells, easier to read labels |
+
+The cell-size choice is saved with your preferences, but matrix rendering does not use it yet; the Settings panel notes this next to the control.
 
 ### Matrix Display Toggles
 
@@ -279,7 +271,7 @@ Configure matrix rendering in Settings > Display:
 | Show mitigation count | On | Show the number of mitigations as a badge on cells |
 | Show subtechnique count | On | Show subtechnique count on parent technique cells |
 
-All display preferences are persisted in localStorage and take effect immediately.
+The display toggles are persisted in localStorage and take effect immediately. The cell-size choice is persisted too, but matrix rendering does not use it yet (see the note above).
 
 ---
 
@@ -290,7 +282,7 @@ Configure organization information in Settings > Organization:
 | Field | Description |
 |-------|-------------|
 | Organization Name | Appears in the header of generated HTML reports |
-| Organization Logo | Coming soon (placeholder in current version) |
+| Organization Logo | Placeholder; the field reads "Coming soon" and logo upload is not implemented |
 
 A live preview of the report header is shown when an organization name is entered.
 
@@ -318,8 +310,8 @@ All application state is stored client-side using localStorage and IndexedDB. No
 | `mitre-nav-timeline-v1` | TimelineService | Coverage timeline snapshots |
 | `mitre-nav-theme` | ThemeService | Light/dark theme the user picked (absent while the theme follows the OS) |
 | `mitre-nav-theme-explicit` | ThemeService | `1` when `mitre-nav-theme` holds an explicit choice |
-| `misp_config` | MispService | MISP server URL, API key, org ID |
-| `opencti_config` | OpenCtiService | OpenCTI URL and API token |
+| `misp_config` | MispService | MISP server URL, org ID, mode and proxy URL; the API key is kept in memory only |
+| `opencti_config` | OpenCtiService | OpenCTI URL, mode and proxy URL; the API token is kept in memory only |
 
 ### IndexedDB
 
@@ -356,10 +348,12 @@ The Navigator encodes the current filter configuration in the URL hash fragment.
 
 ### How It Works
 
-1. When any filter changes (search query, heatmap mode, threat group selection, etc.), the Navigator updates the URL hash after a 300ms debounce.
-2. The hash uses URL search parameter format: `#key1=value1&key2=value2`
-3. Only non-default values are included to keep URLs compact.
-4. On page load, the Navigator reads the hash and restores the encoded state.
+1. When any filter changes (search query, heatmap mode, threat group selection, and so on), the app re-serializes the state into the URL after a 300 ms debounce.
+2. The state lives in router query params inside the hash, for example `#/matrix?heat=sigma&grp=G0007`. Older flat-hash links such as `#heat=sigma&grp=G0007` still work; the app rewrites them on load.
+3. Only non-default values are written, to keep URLs short. The default heatmap mode (`frequency`) and the default search scope (`name`) are omitted.
+4. On load, the app reads the query params once and restores the state.
+
+The Share button copies the current URL. It does not include the selected technique, but an incoming link with a `tech=` parameter, such as `#/matrix?tech=T1059`, selects that technique.
 
 ### Supported Parameters
 
@@ -382,19 +376,19 @@ The Navigator encodes the current filter configuration in the URL hash fragment.
 
 ### Example Shareable URLs
 
-Show Sigma heatmap with APT28 filter:
+Show the Sigma heatmap with the APT28 group filter:
 ```
-https://example.com/attack-nav/#heat=sigma&grp=G0007
-```
-
-Show CVE heatmap with Windows platform filter and credential search:
-```
-https://example.com/attack-nav/#heat=cve&pf=Windows&tq=credential
+https://teamstarwolf.github.io/ATTACK-Navi/#/matrix?heat=sigma&grp=G0007
 ```
 
-Show coverage heatmap with two mitigations highlighted:
+Show the CVE heatmap with a Windows platform filter and a credential search:
 ```
-https://example.com/attack-nav/#mit=M1036,M1038&dim=1
+https://teamstarwolf.github.io/ATTACK-Navi/#/matrix?heat=cve&pf=Windows&tq=credential
+```
+
+Show two mitigations with unmapped techniques dimmed:
+```
+https://teamstarwolf.github.io/ATTACK-Navi/#/matrix?mit=M1036,M1038&dim=1
 ```
 
 ### Limitations
