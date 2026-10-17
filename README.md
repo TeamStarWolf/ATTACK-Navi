@@ -94,7 +94,7 @@ Many mapping datasets are pinned to older ATT&CK releases: most CTID Mappings Ex
 | Data | Upstream |
 | :-- | :-- |
 | CVE records | NVD CVE API 2.0 |
-| Known exploited vulnerabilities, including known ransomware use | `cisagov/kev-data`, with the cisa.gov feed as fallback |
+| Known exploited vulnerabilities, including known ransomware use | `cisagov/kev-data`, with the cisa.gov feed as a fallback; the bundled `kev-snapshot.json` stands in when the live feed is unavailable |
 | Exploit probability | FIRST EPSS API (`api.first.org`) |
 | Curated CVE to technique mappings | CTID `attack_to_cve` CSV and Mappings Explorer KEV mappings |
 | CVE to technique inference, current and previous year | Galeax/CVE2CAPEC |
@@ -121,6 +121,7 @@ Several of these are community repositories rather than vendor or MITRE datasets
 - The four STIX snapshots listed above.
 - `cve-technique-map.json`, a CVE to technique index built by `scripts/build-cve-technique-map.mjs` from Galeax/CVE2CAPEC (CVE to CWE to CAPEC to ATT&CK) with a correction from `cwe-exploitation-anchor.json`. It stores exact per-technique counts and up to 200 sample CVE IDs per technique, and its `__meta` block records the source, generation date and totals. The UI keeps these inferred mappings separate from the curated CTID mappings.
 - `cwe-catalog.json`, the CERT/CC SSVC decision tables in `ssvc-decision-tables.json`, and a set of pre-generated CVE dossiers in `dossiers/`.
+- `kev-snapshot.json`, a dated CISA KEV catalogue built by `scripts/build-kev-snapshot.mjs` from `cisagov/kev-data` at a pinned commit. `cve.service.ts` loads it in place of the live feed when both the GitHub mirror and the cisa.gov feed are unavailable (`KEV_SNAPSHOT_URL`).
 - The Navigator layers in `library-layers/` and the curated SIEM queries in `src/assets/technique-queries.json`.
 - `src/assets/library.json`, the index of tools, channels and X accounts behind Library > Workbench and the sidebar's From the Library section, generated in the companion library (see [Companion reference library](#companion-reference-library)).
 - Offline fallbacks: a curated D3FEND countermeasure seed and a seed of CAR analytics checked against upstream. The live sources take precedence when they load.
