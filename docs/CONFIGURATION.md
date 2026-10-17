@@ -192,7 +192,7 @@ Without a key, NVD allows 5 requests per 30 seconds; with a key, 50. The key is 
 
 ### Configuration
 
-1. Open **Settings** > **Integrations** tab.
+1. Open **Settings > Preferences** and the **Integrations** tab.
 2. Paste the NVD API key into the input field.
 3. Click **Save**.
 4. A green "API key saved" confirmation appears.
