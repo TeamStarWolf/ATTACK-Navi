@@ -56,7 +56,7 @@ test.describe('acceptance journeys (plan Appendix C)', () => {
   // Journey 4 is live in the 'journey 4, Honesty: empty user' block below:
   // step 2 (the default lens, E1.5 / D4) and step 3 (the DOM scan, one test per route).
 
-  test.fixme('journey 5, Share', greenBy('P2 / P4'), async () => {
+  test.fixme('journey 5, Share', greenBy('P2 (tech, dom: E2.3) / P4 (lens, v, redirects)'), async () => {
     // 1. In a new browser context, open #/matrix?lens=posture&tech=T1059.001&dom=enterprise&v=20.0
     //    (sample-org.json share.hash).
     // 2. Assert the same lens, the T1059.001 drawer open and data version 20.0.

@@ -7,6 +7,7 @@ import { Router, provideRouter } from '@angular/router';
 import { UrlStateService } from './url-state.service';
 import { FilterService } from './filter.service';
 import { DataService } from './data.service';
+import { Domain } from '../models/domain';
 
 describe('UrlStateService', () => {
   let service: UrlStateService;
@@ -64,6 +65,40 @@ describe('UrlStateService', () => {
     tick(1000);
     expect(navigateSpy).not.toHaveBeenCalled();
   }));
+
+  // E2.3 (P2-04): the writer replaces the whole query, and it used to drop tech=
+  // about 300 ms after load because serializeUrlState never wrote it.
+  describe('tech= survives the first writer pass (E2.3)', () => {
+    const query = () => router.parseUrl(router.url).queryParams;
+
+    it('while the domain is still loading (the pending link id is serialized)', fakeAsync(() => {
+      service.init();
+      void router.navigateByUrl('/?tech=T1059.001');
+      tick(); // NavigationEnd: the reader applies the link, the writer starts
+      tick(300); // the writer's first debounced pass
+      tick(); // its replaceUrl navigation completes
+      // The pass ran (it added heat and dom, which tech forces) and kept tech.
+      expect(query()).toEqual({ tech: 'T1059.001', heat: 'frequency', dom: 'enterprise' });
+    }));
+
+    it('once the technique is selected from the loaded domain', fakeAsync(() => {
+      const domain = {
+        name: 'Enterprise ATT&CK',
+        techniques: [{ id: 'attack-pattern--1', attackId: 'T1059.001', name: 'PowerShell' }],
+        mitigations: [], groups: [], software: [], campaigns: [], dataComponents: [],
+      } as unknown as Domain;
+      (TestBed.inject(DataService) as unknown as { domainSubject: { next(d: Domain): void } }).domainSubject.next(domain);
+      service.init();
+      void router.navigateByUrl('/?heat=kev&tech=T1059.001');
+      tick();
+      let selected: string | undefined;
+      filterService.selectedTechnique$.subscribe(t => (selected = t?.attackId)).unsubscribe();
+      expect(selected).toBe('T1059.001');
+      tick(300);
+      tick();
+      expect(query()).toEqual({ tech: 'T1059.001', heat: 'kev', dom: 'enterprise' });
+    }));
+  });
 
   it('round-trips: serialized params apply back to identical state', () => {
     filterService.setHeatmapMode('kev');
