@@ -52,5 +52,12 @@ jobs:
       # scripts/build-kev-snapshot.mjs writes, and the one the registry names.
       # No network: the builder's fetch is not exercised here.
       - run: node --test scripts/build-kev-snapshot.test.mjs
+      # Headline facts (plan E0): docs/FACTS.md must still match the code, and the
+      # gated docs (README, ARCHITECTURE, HANDOFF, QUICKSTART) must match it, so a
+      # stale count or version fails the PR instead of landing. Its own tests run
+      # first. Needs npm ci (gen-facts reads TypeScript sources with the compiler).
+      - run: node --test scripts/check-facts.test.mjs
+      - run: node scripts/gen-facts.mjs --check
+      - run: node scripts/check-facts.mjs
       - run: npx ng test --no-watch --browsers=ChromeHeadless
       - run: npx ng build --configuration production
