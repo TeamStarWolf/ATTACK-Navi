@@ -12,7 +12,7 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { Mitigation } from '../../models/mitigation';
 import { Technique } from '../../models/technique';
-import { FilterService, HeatmapMode, SearchScope, SortMode } from '../../services/filter.service';
+import { DEFAULT_HEATMAP_MODE, FilterService, HeatmapMode, SearchScope, SortMode } from '../../services/filter.service';
 import { AttackDomain, DataService } from '../../services/data.service';
 import { MatrixControlService } from '../../services/matrix-control.service';
 import { AttackCveService } from '../../services/attack-cve.service';
@@ -77,7 +77,9 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
   showViewMenu = false;
   /** Active viewpoint — drives the pinned "featured lenses" group in the menu. */
   currentViewpoint: Viewpoint | null = null;
-  heatmapMode: HeatmapMode = 'unified';
+  heatmapMode: HeatmapMode = DEFAULT_HEATMAP_MODE;
+  /** The first-visit lens (E1.5, D4); the View button is highlighted when any other lens is on. */
+  readonly defaultHeatmapMode = DEFAULT_HEATMAP_MODE;
   /** The ATT&CK domain on screen; lenses without data for it are disabled with a reason (E1.2). */
   attackDomain: AttackDomain = 'enterprise';
   /** Availability of every lens in attackDomain, rebuilt when the domain changes. */

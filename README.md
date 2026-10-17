@@ -47,13 +47,13 @@ Other matrix behavior:
 - The matrix menu can sort techniques by risk or alphabetically and dim techniques that have no coverage.
 - A collapsible strip above the grid holds the legend and quick filters.
 - Filter state (heatmap mode, mitigation and technique filters, platforms, groups, software, campaigns, data source, implementation status) is written to the URL query string, so the Share button and bookmarks reproduce a view. The Share link does not include the selected technique, but an incoming link with a `tech=` parameter, such as `#/matrix?tech=T1059`, selects it. Older share links in the `#tech=`, `#heat=` and `#import=` forms are rewritten when the app loads.
-- New users get the light theme; the toolbar has a dark/light toggle and the choice is remembered.
+- The theme follows the operating system's light or dark setting until you pick one with the toolbar's dark/light toggle; that choice is remembered and wins over the OS.
 
 The command palette (Ctrl+K) searches techniques, mitigations, groups, campaigns, software and CVEs, along with D3FEND, CAR, Atomic and Engage entries. It also has "Go to" commands for most workspace tabs and actions for the theme, clearing filters, copying a share link, keyboard help, CSV and XLSX export, Navigator layer export and opening the view in the MITRE ATT&CK Navigator.
 
 ## Heatmap modes
 
-The heatmap picker reads `HEATMAP_MODES` in `src/app/models/heatmap-modes.ts`. The default mode is Reference depth (`heat=unified`). Groups appear in this order, below any modes the current viewpoint pins at the top:
+The heatmap picker reads `HEATMAP_MODES` in `src/app/models/heatmap-modes.ts`. The default mode is Prevalence, the Frequency lens (`heat=frequency`): how many ATT&CK groups use each technique. It is a Threat lens, true for every visitor, and until you record a mitigation's implementation status or a validation run a one-line banner above the matrix says that it is reference data, not a view of your environment. Groups appear in this order, below any modes the current viewpoint pins at the top:
 
 | Group | Modes |
 | :-- | :-- |

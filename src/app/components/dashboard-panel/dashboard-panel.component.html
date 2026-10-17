@@ -8,9 +8,9 @@
         <span class="header-title">Threat-Informed Defense Dashboard</span>
         <span class="header-date upgrade-mono">{{ currentDate }}</span>
         @if (stats) {
-          <span class="risk-badge upgrade-mono" [style.color]="riskLevelColor" [style.border-color]="riskLevelColor">
-            {{ riskLevel | uppercase }} RISK
-          </span>
+          <!-- E1.5: the risk verdict badge is gone. These numbers are reference
+               data (the Known rung, plan 4.1), so the badge names the rung. -->
+          <span class="rung-badge upgrade-mono" [title]="rungBadgeTitle">{{ rungBadgeText }}</span>
         }
       </div>
       <div class="header-right">
@@ -78,11 +78,11 @@
                       <div class="mini-stat-label">Total Techniques</div>
                     </div>
                     <div class="mini-stat">
-                      <div class="mini-stat-value" style="color: var(--success)">{{ stats.coveredTechniques }}</div>
+                      <div class="mini-stat-value known-value">{{ stats.coveredTechniques }}</div>
                       <div class="mini-stat-label">Enriched</div>
                     </div>
                     <div class="mini-stat" title="Techniques with ≥1 cross-framework signal (any of: mitigation, detection, atomic test, D3FEND, control mapping, threat-intel, CVE/KEV)">
-                      <div class="mini-stat-value" [style.color]="gradeColor">{{ stats.coveragePct }}%</div>
+                      <div class="mini-stat-value known-value">{{ stats.coveragePct }}%</div>
                       <div class="mini-stat-label">Coverage</div>
                     </div>
                     <div class="mini-stat">
@@ -103,10 +103,6 @@
                     <div class="mini-stat" title="Techniques with ≥1 control-framework mapping (NIST / CRI / CIS / CSA / M365)">
                       <div class="mini-stat-value" style="color: var(--accent)">{{ stats.controlCoveragePct }}%</div>
                       <div class="mini-stat-label">Control coverage</div>
-                    </div>
-                    <div class="mini-stat" title="Composite defensive posture — mitigation is one weighted input among detection, controls, D3FEND, KEV exposure and threat pressure">
-                      <div class="mini-stat-value" [style.color]="gradeColor">{{ stats.postureScore }}</div>
-                      <div class="mini-stat-label">Posture score</div>
                     </div>
                   </div>
                   @if (stats.hasTrendData) {

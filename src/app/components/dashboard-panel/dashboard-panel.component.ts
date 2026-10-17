@@ -356,9 +356,13 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
       // Recent KEV entries (most recent 5 by dateAdded)
       const recentKevEntries = this.getRecentKevEntries();
 
-      // Composite defensive posture (0–100). Mitigation is ONE weighted input
-      // among detection, controls, D3FEND, KEV exposure (inverted) and threat
-      // pressure (inverted) — so the grade no longer tracks mitigation alone.
+      // Legacy composite (0–100), kept computed for the E0.2 characterization
+      // pin only and NOT rendered (E1.5, D6 hide-before-delete). It is not a
+      // Known-rung number: 25% of its weight is threat input (KEV exposure and
+      // group-used techniques, both inverted), so adding a group that uses an
+      // unmitigated technique lowers it. Threat is a separate dimension, never a
+      // posture rung (plan 4.1), so no label, grade or risk verdict is derived
+      // from it; the defensive-only Known view is the Reference depth lens.
       //   mitigation coverage       0.20
       //   detection coverage        0.20
       //   control coverage          0.20
@@ -639,48 +643,14 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
     this.filterService.clearAll();
   }
 
-  // ─── Display helpers (preserved from original) ─────────────────────────
-  get overallGrade(): string {
-    // Grade the composite defensive posture, not mitigation coverage alone.
-    const score = this.stats?.postureScore ?? 0;
-    if (score >= 80) return 'A';
-    if (score >= 65) return 'B';
-    if (score >= 50) return 'C';
-    if (score >= 35) return 'D';
-    return 'F';
-  }
-
-  get gradeColor(): string {
-    switch (this.overallGrade) {
-      case 'A': return 'var(--success)';
-      case 'B': return 'var(--success)';
-      case 'C': return 'var(--accent-warm)';
-      case 'D': return 'var(--accent-warm)';
-      case 'F': return 'var(--danger)';
-      default:  return 'var(--text-faint)';
-    }
-  }
-
-  get riskLevel(): 'critical' | 'high' | 'medium' | 'low' {
-    // Risk follows the composite posture and the count of wholly-undefended,
-    // threat-relevant techniques — not mitigation coverage alone.
-    const score = this.stats?.postureScore ?? 0;
-    const crit = this.stats?.criticalRiskCount ?? 0;
-    if (score < 35 || crit > 50) return 'critical';
-    if (score < 50 || crit > 25) return 'high';
-    if (score < 65 || crit > 10) return 'medium';
-    return 'low';
-  }
-
-  get riskLevelColor(): string {
-    switch (this.riskLevel) {
-      case 'critical': return 'var(--danger)';
-      case 'high':     return 'var(--accent-warm)';
-      case 'medium':   return 'var(--accent-warm)';
-      case 'low':      return 'var(--success)';
-      default:         return 'var(--text-faint)';
-    }
-  }
+  // ─── Display helpers ───────────────────────────────────────────────────
+  // E1.5 removed the letter grade (overallGrade/gradeColor) and the risk
+  // verdict badge (riskLevel, which read 'LOW RISK' on reference data alone).
+  // Plan 4.1 bans both; the header now names the rung of these numbers.
+  readonly rungBadgeText = 'KNOWN · reference data';
+  readonly rungBadgeTitle =
+    'Known rung (plan 4.1): what the world has mapped for each technique. ' +
+    'No claim about your environment, and no risk rating.';
 
   tacticBarColor(pct: number): string {
     if (pct >= 70) return 'var(--success)';

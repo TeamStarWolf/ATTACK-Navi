@@ -40,7 +40,6 @@ import { VerisService, VerisAction } from '../../services/veris.service';
 import { CriProfileService, CriControl } from '../../services/cri-profile.service';
 import { CapecService, CapecEntry } from '../../services/capec.service';
 import { CweService } from '../../services/cwe.service';
-import { SettingsService } from '../../services/settings.service';
 import { CustomMitigationService, CustomMitigation } from '../../services/custom-mitigation.service';
 import { AnnotationService, TechniqueAnnotation } from '../../services/annotation.service';
 import { UserLayerService } from '../../services/user-layer.service';
@@ -564,7 +563,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
     private verisService: VerisService,
     private criProfileService: CriProfileService,
     private capecService: CapecService,
-    private settingsService: SettingsService,
     private customMitigationService: CustomMitigationService,
     private annotationService: AnnotationService,
     private watchlistService: WatchlistService,
@@ -1025,13 +1023,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
       }),
     );
 
-    // Re-render coverage score whenever settings (weights) change
-    this.subs.add(
-      this.settingsService.settings$.subscribe(() => {
-        this.cdr.markForCheck();
-      }),
-    );
-
     // Refresh watchlist state reactively so the button updates
     this.subs.add(
       this.watchlistService.entries$.subscribe(() => {
@@ -1415,24 +1406,27 @@ export class SidebarComponent implements OnInit, OnDestroy {
     }
   }
 
-  get coverageScore(): number {
-    const w = this.settingsService.getNormalizedWeights();
-    const mitScore = Math.min(w.mitigations, (this.mitigations.length / 5) * w.mitigations);
-    const carScore = this.carAnalytics.length > 0 ? w.car : 0;
-    const atomicScore = this.atomicTests.length > 0 ? w.atomic : 0;
-    const d3fendScore = this.d3fendMeasures.length > 0 ? w.d3fend : 0;
-    const nistScore = this.nistControls.length > 0 ? w.nist : 0;
-    const criScore = this.criControls.length > 0 ? Math.min(w.nist * 0.5, (this.criControls.length / 10) * w.nist * 0.5) : 0;
-    return Math.min(100, Math.round(mitScore + carScore + atomicScore + d3fendScore + nistScore + criScore));
+  /**
+   * The reference sources the drawer's summary card lists, and whether each
+   * maps this technique (Known rung, plan 4.1). E1.5 replaced the weighted
+   * 0-100 score and its user-set Scoring Weights with this plain count; the
+   * 'mapped' flags match the card's highlighted pills.
+   */
+  get referenceSources(): { label: string; mapped: boolean }[] {
+    return [
+      { label: 'CAR', mapped: this.carAnalytics.length > 0 },
+      { label: 'Atomic', mapped: this.atomicLiveCount > 0 },
+      { label: 'D3FEND', mapped: this.d3fendMeasures.length > 0 },
+      { label: 'Mitigations', mapped: this.mitigations.length > 0 },
+      { label: 'NIST', mapped: this.nistControls.length > 0 },
+      { label: 'CRI', mapped: this.criControls.length > 0 },
+      { label: 'CAPEC', mapped: this.capecEntries.length > 0 },
+    ];
   }
 
-  get coverageGrade(): string {
-    const s = this.coverageScore;
-    if (s >= 90) return 'A';
-    if (s >= 75) return 'B';
-    if (s >= 60) return 'C';
-    if (s >= 40) return 'D';
-    return 'F';
+  /** How many of {@link referenceSources} map this technique. */
+  get referenceSourcesMapped(): number {
+    return this.referenceSources.filter((s) => s.mapped).length;
   }
 
   get isWatched(): boolean {
@@ -1444,13 +1438,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
       this.watchlistService.toggle(this.technique);
       this.cdr.markForCheck();
     }
-  }
-
-  get coverageColor(): string {
-    const s = this.coverageScore;
-    if (s >= 75) return '#4ade80';   // green
-    if (s >= 50) return '#fb923c';   // orange
-    return '#f87171';                 // red
   }
 
   /** Builds the compact signal pills for the sidebar header area. */

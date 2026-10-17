@@ -1,6 +1,6 @@
 # Configuration Guide
 
-This document covers all configuration options for the MITRE ATT&CK Navi, including external integrations, display preferences, data management, and deployment.
+This document covers all configuration options for ATTACK-Navi, including external integrations, display preferences, data management, and deployment.
 
 ---
 
@@ -11,7 +11,7 @@ This document covers all configuration options for the MITRE ATT&CK Navi, includ
 3. [NVD API Key](#3-nvd-api-key)
 4. [Theme Settings](#4-theme-settings)
 5. [Domain Selection](#5-domain-selection)
-6. [Scoring Weights](#6-scoring-weights)
+6. [Scoring Weights (retired)](#6-scoring-weights-retired)
 7. [Display Options](#7-display-options)
 8. [Organization Settings](#8-organization-settings)
 9. [Data Persistence](#9-data-persistence)
@@ -190,7 +190,7 @@ The key is stored in localStorage under the `mitre-nav-settings-v1` key as part 
 
 ### Dark and Light Mode
 
-The Navigator defaults to dark mode. Toggle light mode using the theme button in the application toolbar. The preference is stored in localStorage under the key `mitre-nav-theme` with a value of `light` or `dark`.
+ATTACK-Navi follows the operating system's light or dark setting (`prefers-color-scheme`) until you pick a theme, and keeps following it if the OS setting changes. The theme button in the toolbar (or "Toggle theme" in the command palette) is an explicit choice: it is stored in localStorage under `mitre-nav-theme` (`light` or `dark`) with the marker `mitre-nav-theme-explicit`, and it always wins over the OS. Following the OS writes nothing to storage. A `light` value stored by an older version without the marker was the old automatic default, so the OS decides instead; a stored `dark` is kept as a choice.
 
 ### Heatmap Color Themes
 
@@ -252,33 +252,11 @@ A live STIX copy fetched by an update check is cached in IndexedDB (database: `m
 
 ---
 
-## 6. Scoring Weights
+## 6. Scoring Weights (retired)
 
-Coverage scores displayed in the technique sidebar and used by the coverage heatmap are computed from five weighted dimensions:
+The Scoring Weights tab and its setting were removed in plan epic E1.5. They weighted reference sources into a 0-100 score in the technique drawer, coloured red to green, although every input was reference data that says nothing about what is deployed. The drawer now shows a plain count of the reference sources that map the technique (CAR, Atomic, D3FEND, Mitigations, NIST, CRI, CAPEC) under the Known rung. A `scoringWeights` value saved by an older version is dropped when settings load.
 
-| Dimension | Default Weight | Max | Description |
-|-----------|---------------|-----|-------------|
-| Mitigations | 40 | 60 | ATT&CK mitigations mapped to the technique |
-| CAR Analytics | 20 | 40 | MITRE Cyber Analytics Repository detections |
-| Atomic Red Team | 15 | 30 | Atomic Red Team test coverage |
-| D3FEND | 15 | 30 | MITRE D3FEND countermeasures |
-| NIST Controls | 10 | 20 | NIST 800-53 Rev5 control mappings |
-
-### Adjusting Weights
-
-1. Open **Settings** > **Scoring Weights** tab.
-2. Use the sliders to adjust each dimension's weight.
-3. The total should sum to 100. A warning appears if it does not.
-4. Click **Auto-normalize to 100** to proportionally adjust all weights to sum to 100.
-5. Changes are auto-saved and immediately affect all coverage scores.
-
-### Sample Preview
-
-The settings panel includes a live preview showing how the current weights would score a sample technique (3 mitigations, has CAR analytics, has Atomic tests, no D3FEND, has NIST controls).
-
-### Resetting
-
-Click **Reset All to Defaults** to restore the default weight distribution.
+**Reset All to Defaults**, which sat on the old tab, is now on the Display tab.
 
 ---
 
@@ -327,7 +305,7 @@ All application state is stored client-side using localStorage and IndexedDB. No
 
 | Key | Service | Description |
 |-----|---------|-------------|
-| `mitre-nav-settings-v1` | SettingsService | Scoring weights, display options, org name, ATT&CK data mode (`attackDataMode`, default `bundled`); the NVD API key is kept in sessionStorage |
+| `mitre-nav-settings-v1` | SettingsService | Display options, org name, ATT&CK data mode (`attackDataMode`, default `bundled`); the NVD API key and proxy token live in sessionStorage |
 | `mitre-nav-impl-v1` | ImplementationService | Mitigation implementation status (Map of ID to status) |
 | `mitre-nav-docs-mit-v1` | DocumentationService | Mitigation documentation notes |
 | `mitre-nav-docs-tech-v1` | DocumentationService | Technique documentation notes |
@@ -339,7 +317,8 @@ All application state is stored client-side using localStorage and IndexedDB. No
 | `mitre-nav-controls-v1` | ControlsService | Custom control entries |
 | `mitre-nav-layers-v1` | LayersService | Saved Navigator layer snapshots |
 | `mitre-nav-timeline-v1` | TimelineService | Coverage timeline snapshots |
-| `mitre-nav-theme` | AppComponent | Light/dark mode preference |
+| `mitre-nav-theme` | ThemeService | Light/dark theme the user picked (absent while the theme follows the OS) |
+| `mitre-nav-theme-explicit` | ThemeService | `1` when `mitre-nav-theme` holds an explicit choice |
 | `misp_config` | MispService | MISP server URL, API key, org ID |
 | `opencti_config` | OpenCtiService | OpenCTI URL and API token |
 

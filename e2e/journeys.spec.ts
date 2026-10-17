@@ -53,13 +53,8 @@ test.describe('acceptance journeys (plan Appendix C)', () => {
     // 4. Open the T1558.003 drawer; assert it lists 'validated, wazuh:100821'.
   });
 
-  // Journey 4 is split in two. Its DOM scan (step 3) is live, one test per
-  // route, in the 'journey 4, Honesty: empty user' block below. Step 2 waits
-  // for E1.5, which moves the first-visit lens to Prevalence (decision D4).
-  test.fixme('journey 4, Honesty: empty user: default lens', greenBy('P1 (E1.5, D4)'), async () => {
-    // 1. Fresh profile: test.use({ workspace: { skipOnboarding: false } }), no stored state.
-    // 2. Assert the default lens is neither Posture nor Reference depth.
-  });
+  // Journey 4 is live in the 'journey 4, Honesty: empty user' block below:
+  // step 2 (the default lens, E1.5 / D4) and step 3 (the DOM scan, one test per route).
 
   test.fixme('journey 5, Share', greenBy('P2 / P4'), async () => {
     // 1. In a new browser context, open #/matrix?lens=posture&tech=T1059.001&dom=enterprise&v=20.0
@@ -142,6 +137,25 @@ test.describe('journey 4, Honesty: empty user', () => {
   // Each route is its own test so a failure names the route; they share no state.
   test.describe.configure({ mode: 'parallel', timeout: process.env['CI'] ? 120000 : 60000 });
   const { forbiddenStrings } = loadSampleOrg().honesty;
+
+  // Step 2 (plan E1.5, decision D4): a fresh profile opens on Prevalence, a
+  // Threat lens, never on Posture or Reference depth, and a one-line banner
+  // says what the lens is and that it is reference data.
+  test('default lens is neither Posture nor Reference depth', greenBy('P1 (E1.5, D4)'), async ({ page }) => {
+    await page.goto(`${BASE}/#/matrix`);
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+    // No heat= in the URL: the default lens is in force. The onboarding
+    // dialog is open on a fresh profile, so the lens is read from the View
+    // button's label rather than from the menu behind the dialog.
+    expect(new URL(page.url()).hash).not.toContain('heat=');
+    const lens = page.locator('.heatmap-btn');
+    await expect(lens).toContainText('Frequency');
+    expect(await lens.innerText()).not.toMatch(/reference depth|posture/i);
+    const banner = page.locator('.first-glance-banner');
+    await expect(banner).toBeVisible();
+    await expect(banner).toContainText('Showing adversary prevalence');
+    await expect(banner).toContainText('reference data');
+  });
 
   for (const { path, host } of CURRENT_ROUTES) {
     test(`DOM scan #${path}`, greenBy('P1'), async ({ page }) => {
@@ -311,10 +325,18 @@ test.describe('lens availability (plan E1.2)', () => {
     await page.locator('.domain-btn[title="ICS ATT&CK"]').click();
     await expect(page.locator('.tactic-header', { hasText: 'Inhibit Response Function' })).toHaveCount(1, { timeout: ROUTE_TIMEOUT });
 
-    // The default lens (Reference depth) has no ICS data: a stated reason, and
-    // every cell hatched as n/a rather than painted as zero.
+    // A domain switch resets the lens to the default, Prevalence (E1.5, D4),
+    // which has ICS data: nothing is n/a.
+    await expect(page.locator('.heatmap-btn')).toContainText('Frequency');
+    await expect(page.locator('.lens-na-banner.shown')).toHaveCount(0);
+
+    // A viewpoint can still put an Enterprise-only lens on screen: Red Team
+    // leads with Atomic, which has no ICS data. A stated reason, and every
+    // cell hatched as n/a rather than painted as zero.
+    await page.locator('.vp-trigger').click();
+    await page.getByRole('menuitemradio', { name: /Red Team/ }).click();
     const banner = page.locator('.lens-na-banner.shown');
-    await expect(banner).toContainText('Reference depth is n/a for ICS ATT&CK');
+    await expect(banner).toContainText('Atomic is n/a for ICS ATT&CK');
     await expect(banner).toHaveAttribute('role', 'status');
     const cells = await page.locator('.cell').count();
     expect(cells).toBeGreaterThan(0);

@@ -1,6 +1,6 @@
 # Analyst Workflow Guide
 
-This guide describes eight operational workflows supported by the MITRE ATT&CK Navi. Each workflow follows a structured sequence of steps using the workspaces, heatmaps, and sidebar sections built into the application.
+This guide describes eight operational workflows supported by ATTACK-Navi. Each workflow follows a structured sequence of steps using the workspaces, heatmaps, and sidebar sections built into the application.
 
 > **Navigation (v0.8.0).** The app is now organized into **routed workspaces** on the left
 > rail — Matrix, Dashboard, Intel, Detect, Exposure, Coverage, Library, Reports, Settings, and (since the Status workspace was added) Status — each
@@ -54,7 +54,7 @@ Behavior analysis is the starting point for every other workflow. The matrix dis
 
 4. **Explore the technique sidebar.** When a technique is selected, the sidebar opens with:
    - Technique name, ATT&CK ID, and description
-   - Coverage score (weighted composite of mitigations, CAR, Atomic, D3FEND, and NIST data)
+   - Reference sources mapped: N of 7 (Known rung)
    - Signal summary pills (CVE count, EPSS score, Sigma rules, Atomic tests)
    - Collapsible sections for mitigations, threat groups, software, campaigns, procedures, data sources, and more
 
@@ -396,14 +396,7 @@ Coverage analysis is the core analytical workflow. The default "coverage" heatma
 
 ### Steps
 
-1. **View the coverage heatmap.** The default heatmap mode is "coverage". Each technique cell is colored based on a weighted coverage score computed from:
-   - ATT&CK mitigations (default weight: 40)
-   - CAR analytics (default weight: 20)
-   - Atomic Red Team tests (default weight: 15)
-   - D3FEND countermeasures (default weight: 15)
-   - NIST 800-53 controls (default weight: 10)
-
-   The weights are configurable in Settings > Scoring Weights.
+1. **View the coverage heatmap.** The default lens is Prevalence (`heat=frequency`): each technique cell is shaded by how many ATT&CK groups are recorded using it. Until you have recorded anything about your own environment (an Implementation, Validation or stack record), a one-line banner above the matrix says what the lens is and that it is reference data, not a view of your environment. Switch to the `coverage` lens ("Mitigations mapped") from the lens menu to shade each cell by its count of mapped ATT&CK mitigations.
 
 2. **Identify gaps.** Look for red or dark cells on the matrix -- these techniques have low or no coverage. Enable "Dim uncovered" in the toolbar to fade techniques with zero mitigations, making gaps stand out.
 
@@ -563,7 +556,7 @@ The reporting workflow covers all export capabilities: CSV and XLSX spreadsheets
 
 | Mode | Description |
 |------|-------------|
-| `coverage` | Weighted mitigation coverage score (default) |
+| `coverage` | Weighted mitigation coverage score |
 | `exposure` | Vulnerability exposure composite |
 | `status` | Implementation status of mitigations |
 | `controls` | Control mapping density |
@@ -577,7 +570,7 @@ The reporting workflow covers all export capabilities: CSV and XLSX spreadsheets
 | `car` | MITRE CAR analytic coverage |
 | `cve` | CVE count per technique |
 | `detection` | Composite detection coverage |
-| `frequency` | Technique usage frequency across groups |
+| `frequency` | Technique usage frequency across groups (default) |
 | `cri` | CRI Profile control coverage |
 | `unified` | Blended multi-factor heatmap |
 | `sigma` | Sigma rule count |

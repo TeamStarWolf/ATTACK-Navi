@@ -29,8 +29,9 @@ import { csvRow } from '../../utils/csv';
   styleUrl: './settings-panel.component.scss',
 })
 export class SettingsPanelComponent implements OnInit, OnDestroy {
-  settings: AppSettings = { ...DEFAULT_SETTINGS, scoringWeights: { ...DEFAULT_SETTINGS.scoringWeights }, cellDisplay: { ...DEFAULT_SETTINGS.cellDisplay } };
-  activeTab: 'scoring' | 'display' | 'organization' | 'data' | 'integrations' = 'scoring';
+  settings: AppSettings = { ...DEFAULT_SETTINGS, cellDisplay: { ...DEFAULT_SETTINGS.cellDisplay } };
+  // E1.5 retired the 'scoring' tab (Scoring Weights); Display is the first tab.
+  activeTab: 'display' | 'organization' | 'data' | 'integrations' = 'display';
 
   readonly themes = [
     { id: 'default',     label: 'Default',       colors: ['#d32f2f', '#e65100', '#f9a825', '#558b2f', '#1b5e20'] },
@@ -90,7 +91,7 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
   csvImportError = '';
 
   private subs = new Subscription();
-  private savedSettings: AppSettings = { ...DEFAULT_SETTINGS, scoringWeights: { ...DEFAULT_SETTINGS.scoringWeights }, cellDisplay: { ...DEFAULT_SETTINGS.cellDisplay } };
+  private savedSettings: AppSettings = { ...DEFAULT_SETTINGS, cellDisplay: { ...DEFAULT_SETTINGS.cellDisplay } };
 
   constructor(
     readonly settingsService: SettingsService,
@@ -110,7 +111,7 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
 
     this.subs.add(
       this.settingsService.settings$.subscribe(s => {
-        this.savedSettings = { ...s, scoringWeights: { ...s.scoringWeights }, cellDisplay: { ...s.cellDisplay } };
+        this.savedSettings = { ...s, cellDisplay: { ...s.cellDisplay } };
         this.cdr.markForCheck();
       }),
     );
@@ -188,7 +189,7 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
 
   private reloadSettings(): void {
     const s = this.settingsService.current;
-    this.settings = { ...s, scoringWeights: { ...s.scoringWeights }, cellDisplay: { ...s.cellDisplay } };
+    this.settings = { ...s, cellDisplay: { ...s.cellDisplay } };
   }
 
   private refreshDataInfo(): void {
@@ -235,20 +236,10 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
     };
   }
 
-  get weightsTotal(): number {
-    const w = this.settings.scoringWeights;
-    return w.mitigations + w.car + w.atomic + w.d3fend + w.nist;
-  }
-
   get isDirty(): boolean {
     const s = this.settings;
     const saved = this.savedSettings;
     return (
-      s.scoringWeights.mitigations !== saved.scoringWeights.mitigations ||
-      s.scoringWeights.car !== saved.scoringWeights.car ||
-      s.scoringWeights.atomic !== saved.scoringWeights.atomic ||
-      s.scoringWeights.d3fend !== saved.scoringWeights.d3fend ||
-      s.scoringWeights.nist !== saved.scoringWeights.nist ||
       s.matrixCellSize !== saved.matrixCellSize ||
       s.showTechniqueIds !== saved.showTechniqueIds ||
       s.showMitigationCount !== saved.showMitigationCount ||
@@ -265,20 +256,6 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
     );
   }
 
-  get sampleCoverageScore(): number {
-    const w = this.settings.scoringWeights;
-    const total = w.mitigations + w.car + w.atomic + w.d3fend + w.nist;
-    if (total === 0) return 0;
-    // Sample: 3 mitigations, has CAR, has Atomic, no D3FEND, has NIST
-    const mitScore = Math.min(w.mitigations, (3 / 5) * w.mitigations);
-    const carScore = w.car;
-    const atomicScore = w.atomic;
-    const d3fendScore = 0;
-    const nistScore = w.nist;
-    const raw = mitScore + carScore + atomicScore + d3fendScore + nistScore;
-    return Math.min(100, Math.round((raw / total) * 100));
-  }
-
   applySettings(): void {
     this.settingsService.update(this.settings);
   }
@@ -286,37 +263,6 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
   resetToDefaults(): void {
     this.settingsService.reset();
     this.reloadSettings();
-    this.cdr.markForCheck();
-  }
-
-  onWeightChange(): void {
-    // Clamp each weight to valid range
-    const w = this.settings.scoringWeights;
-    w.mitigations = Math.max(0, Math.min(60, w.mitigations));
-    w.car         = Math.max(0, Math.min(40, w.car));
-    w.atomic      = Math.max(0, Math.min(30, w.atomic));
-    w.d3fend      = Math.max(0, Math.min(30, w.d3fend));
-    w.nist        = Math.max(0, Math.min(20, w.nist));
-    this.applySettings();
-    this.cdr.markForCheck();
-  }
-
-  autoNormalize(): void {
-    const total = this.weightsTotal;
-    if (total === 0) return;
-    const w = this.settings.scoringWeights;
-    const factor = 100 / total;
-    // Distribute rounding to mitigations
-    const car     = Math.round(w.car * factor);
-    const atomic  = Math.round(w.atomic * factor);
-    const d3fend  = Math.round(w.d3fend * factor);
-    const nist    = Math.round(w.nist * factor);
-    const mitigations = 100 - car - atomic - d3fend - nist;
-    this.settings = {
-      ...this.settings,
-      scoringWeights: { mitigations, car, atomic, d3fend, nist },
-    };
-    this.applySettings();
     this.cdr.markForCheck();
   }
 
@@ -398,7 +344,7 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
     return new Date().toLocaleDateString();
   }
 
-  setTab(tab: 'scoring' | 'display' | 'organization' | 'data' | 'integrations'): void {
+  setTab(tab: SettingsPanelComponent['activeTab']): void {
     this.activeTab = tab;
     this.cdr.markForCheck();
   }
