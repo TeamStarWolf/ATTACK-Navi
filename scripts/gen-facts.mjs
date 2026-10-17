@@ -268,8 +268,10 @@ function toolchain(root) {
 
 /** Truth-vocabulary lint result (scripts/lint-truth-vocab.mjs, plan 4.1). */
 function truthVocab(root) {
-  const { files, findings, allows } = lintRepo(root);
-  return { files, findings: findings.length, allows };
+  // The file count is left out on purpose: it would change with every new
+  // component and make docs/FACTS.md churn for no reader's benefit.
+  const { findings, allows } = lintRepo(root);
+  return { findings: findings.length, allows };
 }
 
 export function collectFacts(root) {
@@ -327,7 +329,7 @@ export function renderFacts(f) {
   L.push(`| RxJS | ${f.toolchain.rxjs} | \`package-lock.json\` |`);
   L.push(`| zone.js | ${f.toolchain.zoneJs} | \`package-lock.json\` |`);
   if (f.truthVocab) {
-    L.push(`| Truth-vocabulary lint findings | ${f.truthVocab.findings} | \`node scripts/lint-truth-vocab.mjs\` over ${f.truthVocab.files} files |`);
+    L.push(`| Truth-vocabulary lint findings | ${f.truthVocab.findings} | \`node scripts/lint-truth-vocab.mjs\` (src/app templates and TS, README, docs) |`);
     L.push(`| Truth-vocabulary allow directives | ${f.truthVocab.allows} | inline allow comments in those files, each with its reason |`);
   }
   L.push('');
