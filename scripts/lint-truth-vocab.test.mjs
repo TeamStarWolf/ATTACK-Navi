@@ -88,6 +88,15 @@ test('labels retired by E1.1 PR 1 and PR 2 are flagged once each', () => {
   assert.deepEqual(rules('| 4 | unified | 0 |', 'md'), []);
 });
 
+test("a per-framework '<x> coverage' label is flagged in templates and TS, not in markdown (R9a)", () => {
+  assert.deepEqual(matches('<div>Mitigation coverage</div><div>Detection coverage</div><div>Control coverage</div>', 'html'),
+    ['retired-label:Mitigation coverage', 'retired-label:Detection coverage', 'retired-label:Control coverage']);
+  assert.deepEqual(rules("const l = '71% combined detection coverage';", 'ts'), ['retired-label']);
+  assert.deepEqual(rules('<div>Mitigation mapped</div><div>Detection content mapped</div><div>Control mapped</div>', 'html'), []);
+  assert.deepEqual(rules('Detection coverage in docs prose.', 'md'), []);
+  assert.match(lintText('<p>Control coverage</p>', 'html').findings[0].hint, /'Control mapped'/);
+});
+
 test('naming the vocabulary is not a claim', () => {
   assert.deepEqual(rules('<p>Lens labels follow the Known / Covered / Proven vocabulary.</p>', 'html'), []);
   assert.deepEqual(rules('The Known, Covered and Proven rungs.', 'md'), []);

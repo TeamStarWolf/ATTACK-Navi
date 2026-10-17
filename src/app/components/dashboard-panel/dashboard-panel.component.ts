@@ -29,18 +29,18 @@ import { MispService } from '../../services/misp.service';
 import { OpenCtiService } from '../../services/opencti.service';
 import { XlsxExportService } from '../../services/xlsx-export.service';
 import { CustomMitigationService } from '../../services/custom-mitigation.service';
-import { EnrichmentService } from '../../services/enrichment.service';
+import { EnrichmentService, mappedPct } from '../../services/enrichment.service';
 import { KevEntry } from '../../models/cve';
 import { SourceRegistryService } from '../../services/source-registry.service';
 
 export interface DashboardStats {
-  // Coverage (enrichment = ≥1 cross-framework signal)
+  // Known tier: 'mapped' = >=1 defensive reference input (EnrichmentService.mappedRollup)
   totalTechniques: number;
   coveredTechniques: number;
   coveragePct: number;
   uncoveredCount: number;
 
-  // Per-framework coverage (so no single framework is the headline)
+  // Per-framework mapped % (so no single framework is the headline)
   mitigationCoveragePct: number;
   controlCoveragePct: number;
 
@@ -68,7 +68,7 @@ export interface DashboardStats {
   coverageTrend: number;  // +/- % from previous snapshot
   hasTrendData: boolean;
 
-  // Per-tactic coverage (for bar chart)
+  // Per-tactic mapped count (for bar chart), from mappedRollup().byTactic
   tacticStats: Array<{ name: string; shortname: string; pct: number; covered: number; total: number }>;
 
   // Top risk techniques (expanded to 10 for gap-summary widget)
@@ -220,20 +220,20 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
     this.dataService.domain$.pipe(filter(Boolean), take(1)).subscribe(domain => {
       const parentTechs = domain.techniques.filter(t => !t.isSubtechnique);
       const totalTechniques = parentTechs.length;
-      // Cross-framework enrichment counts in a single pass — "coverage" here means
-      // ≥1 defensive/framework signal, with per-framework counts kept alongside.
-      const et = this.enrichment.totals(parentTechs, domain);
-      const coveredTechniques = et.enriched;
-      const coveragePct = totalTechniques > 0
-        ? Math.round((coveredTechniques / totalTechniques) * 100)
-        : 0;
+      // Known tier (post-Phase-1 QA R9a): the headline is the same 'mapped'
+      // rollup the stats bar, analytics, tactic summary, timeline, coverage diff
+      // and roadmap show (>=1 defensive reference input; threat-intel and CVE
+      // links are not inputs), so a group starting to use a technique cannot
+      // move it. The per-framework tiles read the same reference inputs.
+      const rollup = this.enrichment.mappedRollup(domain);
+      const coveredTechniques = rollup.overall.mapped;
+      const coveragePct = rollup.overall.pct;
       const uncoveredCount = totalTechniques - coveredTechniques;
-      const mitigationCoveragePct = totalTechniques > 0
-        ? Math.round((et.mitigation / totalTechniques) * 100)
-        : 0;
-      const controlCoveragePct = totalTechniques > 0
-        ? Math.round((et.control / totalTechniques) * 100)
-        : 0;
+      const ref = this.enrichment.referenceDefenseTotals(parentTechs, domain);
+      const mitigationCoveragePct = mappedPct(ref.mitigation, totalTechniques);
+      const controlCoveragePct = mappedPct(ref.control, totalTechniques);
+      // Threat-side totals, read only by the legacy composite below (not rendered).
+      const et = this.enrichment.totals(parentTechs, domain);
 
       // Implementation counts
       const implSummary = this.implService.summarize();
@@ -243,25 +243,20 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
       const notStartedCount = implSummary['not-started'] ?? 0;
       const totalMitigations = domain.mitigations.length;
 
-      // Detection coverage
+      // Per-source counts
       let withCarCount = 0;
       let withAtomicCount = 0;
       let withD3fendCount = 0;
-      let withAnyDetection = 0;
 
       for (const tech of parentTechs) {
-        const hasCar = this.carService.getAnalytics(tech.attackId).length > 0;
-        const hasAtomic = this.atomicService.getTestCount(tech.attackId) > 0;
-        const hasD3fend = this.d3fendService.getCountermeasures(tech.attackId).length > 0;
-        if (hasCar) withCarCount++;
-        if (hasAtomic) withAtomicCount++;
-        if (hasD3fend) withD3fendCount++;
-        if (hasCar || hasAtomic || hasD3fend) withAnyDetection++;
+        if (this.carService.getAnalytics(tech.attackId).length > 0) withCarCount++;
+        if (this.atomicService.getTestCount(tech.attackId) > 0) withAtomicCount++;
+        if (this.d3fendService.getCountermeasures(tech.attackId).length > 0) withD3fendCount++;
       }
 
-      const detectionCoveragePct = totalTechniques > 0
-        ? Math.round((withAnyDetection / totalTechniques) * 100)
-        : 0;
+      // Detection content mapped: >=1 Sigma rule or CAR analytic, the
+      // 'detection' reference input of the Known tier.
+      const detectionCoveragePct = mappedPct(ref.detection, totalTechniques);
 
       // Critical risk: threat-relevant (≥1 group) techniques with NO defensive
       // signal of ANY kind — no mitigation AND no detection AND no control AND
@@ -312,20 +307,11 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
         }
       }
 
-      // Per-tactic coverage, sorted ascending (worst first)
-      const tacticStats = domain.tacticColumns
-        .map(col => {
-          const parents = col.techniques.filter(t => !t.isSubtechnique);
-          // Enrichment-based coverage (≥1 framework), matching the dashboard
-          // headline + stats-bar/analytics/tactic-summary — NOT mitigation-only,
-          // so the Tactic Breakdown bars and Radar agree with the Coverage stat.
-          const covered = parents.filter(
-            t => this.enrichment.isEnriched(t, domain),
-          ).length;
-          const total = parents.length;
-          const pct = total > 0 ? Math.round((covered / total) * 100) : 0;
-          return { name: col.tactic.name, shortname: col.tactic.shortname, pct, covered, total };
-        })
+      // Per-tactic mapped count, sorted ascending (fewest mapped first). The
+      // same mappedRollup() rows as the stats bar, analytics panel and tactic
+      // summary, so the Tactic Breakdown bars and Radar agree with them.
+      const tacticStats = rollup.byTactic
+        .map(row => ({ name: row.tacticName, shortname: row.shortname, pct: row.pct, covered: row.mapped, total: row.total }))
         .sort((a, b) => a.pct - b.pct);
 
       // Average mitigations per covered technique

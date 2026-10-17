@@ -165,12 +165,6 @@ export const SOURCE_DEFINITIONS: readonly SourceDefinition[] = [
     inventoryRow: R.cveTechniqueMap, owner: 'services/nvd-bulk.service.ts',
   },
   {
-    id: 'cve-technique-counts', name: 'CVE to technique counts (bundled)', kind: 'bundled',
-    reviewedDate: '2026-04-05', upstream: 'https://github.com/Galeax/CVE2CAPEC', licence: 'galeax-gpl-3.0',
-    inventoryRow: R.cveTechniqueMap, owner: 'src/assets/data/cve-technique-counts.json',
-    note: 'Shipped but read by no code path.',
-  },
-  {
     id: 'cve2capec-runtime', name: 'CVE2CAPEC database (runtime)', kind: 'live',
     version: 'main, unpinned (current and previous year files)', upstream: 'https://github.com/Galeax/CVE2CAPEC',
     licence: 'galeax-gpl-3.0', inventoryRow: R.cve2capecRuntime, owner: 'services/cve2capec.service.ts',

@@ -4,7 +4,7 @@
 // Characterization of the dashboard KPIs on the fixed fixture domain. Every
 // expected number is recomputed here by an independent oracle from the fixture
 // and the stub signal data (lens-harness.ts), then checked twice: on the
-// component's `stats` and on the rendered Coverage Summary widget.
+// component's `stats` and on the rendered Mapped Summary widget.
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -34,6 +34,7 @@ function oracle(t: Technique, d: Domain) {
   const defended = mitigation || detection || control || d3fend;
   return {
     groups, mitigation, detection, control, d3fend, atomic, cve, kev, defended,
+    mapped: defended || atomic,
     enriched: defended || atomic || threat > 0 || cve,
     car: signal('car', id) > 0,
   };
@@ -75,22 +76,24 @@ describe('Dashboard KPIs (fixture domain)', () => {
     return stat?.querySelector('.mini-stat-value')?.textContent?.trim() ?? '(not rendered)';
   }
 
-  it('counts parent techniques only, and coverage = any of the seven signal families', () => {
+  it('counts parent techniques only, and mapped = any of the five defensive reference inputs (no threat or CVE links)', () => {
     const stats = fixture.componentInstance.stats!;
     expect(stats.totalTechniques).toBe(45);
-    expect(stats.coveredTechniques).toBe(count(o => o.enriched));
+    expect(stats.coveredTechniques).toBe(count(o => o.mapped));
+    // The fixture has threat-only techniques, so the old enriched count would differ.
+    expect(count(o => o.enriched)).toBeGreaterThan(stats.coveredTechniques);
     expect(stats.uncoveredCount).toBe(45 - stats.coveredTechniques);
     expect(stats.coveragePct).toBe(pct(stats.coveredTechniques));
     expect(stats.mitigationCoveragePct).toBe(pct(count(o => o.mitigation)));
     expect(stats.controlCoveragePct).toBe(pct(count(o => o.control)));
   });
 
-  it('detection coverage is CAR analytics / Atomic / D3FEND (not Sigma)', () => {
+  it('detection content mapped is Sigma rules or CAR analytics; the per-source counts stay alongside', () => {
     const stats = fixture.componentInstance.stats!;
     expect(stats.withCarCount).toBe(count(o => o.car));
     expect(stats.withAtomicCount).toBe(count(o => o.atomic));
     expect(stats.withD3fendCount).toBe(count(o => o.d3fend));
-    expect(stats.detectionCoveragePct).toBe(pct(count(o => o.car || o.atomic || o.d3fend)));
+    expect(stats.detectionCoveragePct).toBe(pct(count(o => o.detection)));
   });
 
   it('critical risk = used by a group AND no mitigation / detection / control / D3FEND', () => {
@@ -130,13 +133,17 @@ describe('Dashboard KPIs (fixture domain)', () => {
     expect(stats.notStartedCount).toBe(statuses.filter(s => s === 'not-started').length);
   });
 
-  it('renders the headline KPIs in the Coverage Summary widget', () => {
+  it('renders the headline KPIs in the Mapped Summary widget, labelled with the Known-rung word', () => {
     const stats = fixture.componentInstance.stats!;
     expect(rendered('Total Techniques')).toBe('45');
-    expect(rendered('Enriched')).toBe(String(stats.coveredTechniques));
-    expect(rendered('Coverage')).toBe(`${stats.coveragePct}%`);
-    expect(rendered('Mitigation coverage')).toBe(`${stats.mitigationCoveragePct}%`);
-    expect(rendered('Control coverage')).toBe(`${stats.controlCoveragePct}%`);
+    expect(rendered('Techniques mapped')).toBe(String(stats.coveredTechniques));
+    expect(rendered('Mapped')).toBe(`${stats.coveragePct}%`);
+    expect(rendered('Mitigation mapped')).toBe(`${stats.mitigationCoveragePct}%`);
+    expect(rendered('Detection content mapped')).toBe(`${stats.detectionCoveragePct}%`);
+    expect(rendered('Control mapped')).toBe(`${stats.controlCoveragePct}%`);
+    for (const old of ['Enriched', 'Coverage', 'Mitigation coverage', 'Detection coverage', 'Control coverage']) {
+      expect(rendered(old)).withContext(old).toBe('(not rendered)');
+    }
     // E1.5: the threat-weighted composite (postureScore, still computed above) is not
     // rendered under any label: it moves with group usage, so it is not Known-rung data.
     expect(rendered('Reference depth index')).toBe('(not rendered)');

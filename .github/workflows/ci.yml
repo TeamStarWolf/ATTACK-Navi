@@ -42,6 +42,10 @@ jobs:
       - run: npm ci
       # Curated library layers must still match the bundled Enterprise snapshot.
       - run: npm run validate:layers
+      # Every file or folder under src/assets/data is read by app code or listed
+      # as served for manual import (post-Phase-1 QA R7: no asset ships unread).
+      - run: node --test scripts/check-data-assets.test.mjs
+      - run: node scripts/check-data-assets.mjs
       # Truth-vocabulary lint (plan 4.1, epic E1.1): banned and rung-mismatched
       # words in templates, string literals, README and docs fail the gate.
       # Its own tests run first; one of them plants a violation and expects

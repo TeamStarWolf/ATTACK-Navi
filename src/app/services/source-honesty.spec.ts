@@ -168,7 +168,6 @@ const CASES: HonestyCase[] = [
  */
 const NO_LOADER: Record<string, string> = {
   'cis-controls': 'withdrawn upstream: no request is made (status archived-upstream, loaded$ false)',
-  'cve-technique-counts': 'shipped but read by no code path',
   'lylat-mission-layers': 'shipped but read by no code path',
   'payloads-folder-map': 'compiled into the code',
   'offensive-tools': 'compiled into the code',
