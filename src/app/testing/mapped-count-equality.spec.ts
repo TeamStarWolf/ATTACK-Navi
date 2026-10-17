@@ -1,8 +1,9 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 //
-// E1.7 equality spec: the six summary surfaces (stats-bar, tactic-summary,
-// analytics-panel, timeline-panel, coverage-diff-panel, roadmap-panel) show the
+// E1.7 equality spec: the seven summary surfaces (stats-bar, tactic-summary,
+// analytics-panel, timeline-panel, coverage-diff-panel, roadmap-panel and,
+// since the post-Phase-1 QA sweep (R9a), dashboard-panel) show the
 // SAME Known-tier 'mapped' count for the same filter, read off what each one
 // renders, and none of them moves when a group starts using a technique.
 //
@@ -28,6 +29,7 @@ import { AnalyticsPanelComponent } from '../components/analytics-panel/analytics
 import { TimelinePanelComponent } from '../components/timeline-panel/timeline-panel.component';
 import { CoverageDiffPanelComponent } from '../components/coverage-diff-panel/coverage-diff-panel.component';
 import { RoadmapPanelComponent } from '../components/roadmap-panel/roadmap-panel.component';
+import { DashboardPanelComponent } from '../components/dashboard-panel/dashboard-panel.component';
 import { controlsProvider, cvesFor, parseFixtureDomain, resetBrowserState, signal, signalStubProviders } from './lens-harness';
 
 /** Known tier, straight from the stubs: >=1 defensive reference input. */
@@ -63,7 +65,7 @@ function fraction(s: string): [number, number] {
 /** What each surface renders for the overall (parent-technique) mapped count. */
 interface Rendered { mapped: number; total: number; pct?: number }
 
-describe('Known-tier mapped count: the six summary surfaces agree (E1.7 equality spec)', () => {
+describe('Known-tier mapped count: the seven summary surfaces agree (E1.7 equality spec)', () => {
   let domain: Domain;
   let parents: Technique[];
 
@@ -176,9 +178,27 @@ describe('Known-tier mapped count: the six summary surfaces agree (E1.7 equality
     return { mapped, total, pct };
   }
 
+  /** Dashboard Mapped Summary tiles and Tactic Breakdown rows (R9a). */
+  function dashboard(): { overall: Rendered; byTactic: Map<string, [number, number]> } {
+    const f = create(DashboardPanelComponent);
+    const tile = (label: string) => text(Array.from(el(f).querySelectorAll('.widget-coverage-summary .mini-stat'))
+      .find(s => text(s.querySelector('.mini-stat-label')) === label)?.querySelector('.mini-stat-value'));
+    const overall = {
+      mapped: Number(tile('Techniques mapped')),
+      total: Number(tile('Total Techniques')),
+      pct: Number(tile('Mapped').replace('%', '')),
+    };
+    const byTactic = new Map<string, [number, number]>();
+    for (const row of Array.from(el(f).querySelectorAll('.tactic-bar-row'))) {
+      byTactic.set(text(row.querySelector('.tactic-name')), fraction(text(row.querySelector('.tactic-counts'))));
+    }
+    f.destroy();
+    return { overall, byTactic };
+  }
+
   // ── The specs ─────────────────────────────────────────────────────────────
 
-  it('all six surfaces show the oracle mapped count over parent techniques, and it is not the isEnriched count', () => {
+  it('all seven surfaces show the oracle mapped count over parent techniques, and it is not the isEnriched count', () => {
     const expected = parents.filter(oracleMapped).length;
     const enriched = parents.filter(t => oracleEnriched(t, domain)).length;
     const total = parents.length;
@@ -194,6 +214,7 @@ describe('Known-tier mapped count: the six summary surfaces agree (E1.7 equality
       'analytics-panel': analytics().overall,
       'timeline-panel': tl2.overall,
       'roadmap-panel': roadmap(),
+      'dashboard-panel': dashboard().overall,
     };
     for (const [surface, r] of Object.entries(shown)) {
       expect(r).withContext(surface).toEqual({ mapped: expected, total, pct });
@@ -209,12 +230,14 @@ describe('Known-tier mapped count: the six summary surfaces agree (E1.7 equality
     expect(summed).withContext('tactic-summary, summed over tactics').toBe(oracleSummed);
   });
 
-  it('per tactic, stats-bar, tactic-summary, analytics-panel, the timeline snapshot and coverage-diff agree', () => {
+  it('per tactic, stats-bar, tactic-summary, analytics-panel, the timeline snapshot, coverage-diff and the dashboard agree', () => {
     timeline('A');
     const { snapshot } = timeline('B');
     const sb = statsBar().byTactic;
     const an = analytics().byTactic;
     const diff = coverageDiff().byTactic;
+    const dash = dashboard().byTactic;
+    expect(dash.size).withContext('dashboard tactic rows').toBe(domain.tacticColumns.length);
     expect(domain.tacticColumns.length).toBeGreaterThan(5);
     for (const col of domain.tacticColumns) {
       const name = col.tactic.name;
@@ -226,6 +249,7 @@ describe('Known-tier mapped count: the six summary surfaces agree (E1.7 equality
       expect(an.get(name)).withContext(`analytics-panel ${name}`).toEqual(expected);
       expect([snap.covered, snap.total]).withContext(`timeline snapshot ${name}`).toEqual(expected);
       expect(diff.get(name)).withContext(`coverage-diff-panel ${name}`).toEqual(expected);
+      expect(dash.get(name)).withContext(`dashboard-panel ${name}`).toEqual(expected);
       expect(p).withContext(`tactic-summary % ${name}`).toBe(snap.pct);
     }
   });
@@ -245,7 +269,7 @@ describe('Known-tier mapped count: the six summary surfaces agree (E1.7 equality
   it('adding a group, software and campaign that use every technique changes no surface\'s mapped count', () => {
     timeline('Before');
     const before = {
-      stats: statsBar(), analytics: analytics(), roadmap: roadmap(),
+      stats: statsBar(), analytics: analytics(), roadmap: roadmap(), dashboard: dashboard(),
       tactics: domain.tacticColumns.map(c => tacticSummary(c)),
     };
     const enrichment = TestBed.inject(EnrichmentService);
@@ -266,6 +290,7 @@ describe('Known-tier mapped count: the six summary surfaces agree (E1.7 equality
     expect(statsBar()).toEqual(before.stats);
     expect(analytics()).toEqual(before.analytics);
     expect(roadmap()).toEqual(before.roadmap);
+    expect(dashboard()).toEqual(before.dashboard);
     expect(domain.tacticColumns.map(c => tacticSummary(c))).toEqual(before.tactics);
     const diff = coverageDiff();
     expect(diff.compare).withContext('coverage-diff after vs before').toBe(diff.base);

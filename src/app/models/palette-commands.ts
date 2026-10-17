@@ -30,7 +30,7 @@ export const NAV_COMMANDS: readonly NavCommand[] = [
   { panelId: 'software', label: 'Software & Malware', workspace: 'Intel', keywords: 'tools malware' },
   { panelId: 'intelligence', label: 'Intel Feeds', workspace: 'Intel', keywords: 'misp opencti tip threat intelligence' },
 
-  { panelId: 'detection', label: 'Detections', workspace: 'Detect', keywords: 'detection coverage rules' },
+  { panelId: 'detection', label: 'Detections', workspace: 'Detect', keywords: 'detection content rules' },
   { panelId: 'sigma', label: 'Sigma Rules', workspace: 'Detect', keywords: 'sigma export' },
   { panelId: 'siem', label: 'SIEM Export', workspace: 'Detect', keywords: 'splunk elastic sentinel queries' },
   { panelId: 'yara', label: 'YARA Rules', workspace: 'Detect', keywords: 'yara export' },

@@ -79,7 +79,7 @@ CERT Coordination Center® is registered in the U.S. Patent and Trademark Office
 
 | What | Where |
 |---|---|
-| CVE identifiers grouped by ATT&CK technique, generated from NVD records by `scripts/build-cve-technique-map.mjs` | `src/assets/data/cve-technique-map.json`, `src/assets/data/cve-technique-counts.json` |
+| CVE identifiers grouped by ATT&CK technique, generated from NVD records by `scripts/build-cve-technique-map.mjs` | `src/assets/data/cve-technique-map.json` |
 | Pre-built CVE dossiers: NVD description, CVSS, published date; EPSS score and percentile; CISA KEV fields; derived SSVC, CWE, CAPEC and ATT&CK context | `src/assets/data/dossiers/*.json` |
 | Dated snapshot of the CISA KEV catalog (identifier, vendor, product, name, date added, due date, ransomware use, CWEs), fetched from cisagov/kev-data at a commit pinned by date by `scripts/build-kev-snapshot.mjs`; read only when the live KEV feed fails | `src/assets/data/kev-snapshot.json` |
 
@@ -103,7 +103,8 @@ CERT Coordination Center® is registered in the U.S. Patent and Trademark Office
 
 | What | Where |
 |---|---|
-| Editorial seed of about 97 D3FEND countermeasure identifiers, names and one-line definitions, used only until the live D3FEND API responds | `src/app/services/d3fend.service.ts` |
+| Editorial seed of 15 D3FEND countermeasure identifiers, names and one-line definitions, used only until the live D3FEND API responds | `src/app/services/d3fend.service.ts` |
+| Snapshot of the D3FEND technique list (`https://d3fend.mitre.org/api/technique/all.json`, fetched 2026-10-17), read only by a unit test that checks every seed identifier, label and URL fragment against it; not shipped in the build | `src/app/testing/__snapshots__/d3fend-all-techniques.json` |
 
 Source: https://d3fend.mitre.org/. D3FEND terms of use (https://d3fend.mitre.org/tou/):
 

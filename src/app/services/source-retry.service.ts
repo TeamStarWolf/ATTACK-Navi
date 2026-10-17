@@ -165,7 +165,6 @@ export const SOURCE_RETRY: Readonly<Record<string, RetryEntry>> = {
 /** Sources with nothing to retry, each with the reason the data-health view shows. */
 export const NO_RETRY_REASON: Readonly<Record<string, string>> = {
   'cis-controls': 'withdrawn upstream; nothing to fetch',
-  'cve-technique-counts': 'shipped but read by no code path',
   'lylat-mission-layers': 'shipped but read by no code path',
   'payloads-folder-map': 'compiled into the app',
   'offensive-tools': 'compiled into the app',

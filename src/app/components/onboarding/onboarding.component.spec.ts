@@ -4,6 +4,7 @@ import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { OnboardingComponent } from './onboarding.component';
 import { FilterService } from '../../services/filter.service';
 import { textContrast } from '../../testing/contrast';
+import { defaultRailSections } from '../nav-rail/nav-rail.component';
 
 describe('OnboardingComponent', () => {
   let component: OnboardingComponent;
@@ -30,6 +31,28 @@ describe('OnboardingComponent', () => {
   it('exposes 4 quick-start cards', () => {
     expect(component.quickCards.length).toBe(4);
     expect(component.totalSteps).toBe(3);
+  });
+
+  // The welcome step describes the rail as it is: three labelled sections with
+  // their default workspaces in order, and Help and Settings at the bottom.
+  describe('welcome step describes the current rail', () => {
+    const welcomeText = (): string => {
+      component.currentStep = 0;
+      fixture.detectChanges();
+      return (fixture.nativeElement.querySelector('.step-content')?.textContent ?? '').replace(/\s+/g, ' ');
+    };
+
+    it('names each rail section with its workspaces in the default order', () => {
+      const text = welcomeText();
+      const sections = defaultRailSections();
+      expect(sections.length).toBe(3);
+      for (const s of sections) expect(text).toContain(`${s.label} (${s.items.join(', ')})`);
+      expect(text).toContain('Help and Settings sit at the bottom of the rail');
+    });
+
+    it('no longer gives a flat workspace list or count', () => {
+      expect(welcomeText()).not.toMatch(/\b(ten|nine|eleven|\d+) workspaces\b/i);
+    });
   });
 
   describe('nextStep / prevStep', () => {

@@ -84,7 +84,9 @@ describe('DashboardPanelComponent', () => {
     widgets$ = new BehaviorSubject(WIDGETS);
     const loaded = () => new BehaviorSubject<boolean>(false);
     totalsSpy = jasmine.createSpy('totals').and.returnValue({
-      total: 4, enriched: 2, mitigation: 2, detection: 1, atomic: 0, d3fend: 0, control: 1, threatIntel: 2, cve: 1, defended: 2,
+      // Threat side: enriched also counts T1190's group and CVE links, so it
+      // differs from the Known-tier mapped count (2) the headline must show.
+      total: 4, enriched: 3, mitigation: 2, detection: 1, atomic: 0, d3fend: 0, control: 1, threatIntel: 2, cve: 1, defended: 2,
     });
 
     TestBed.configureTestingModule({
@@ -98,6 +100,20 @@ describe('DashboardPanelComponent', () => {
             totals: totalsSpy,
             isEnriched: (t: Technique) => ENRICHED.has(t.attackId),
             hasDefensiveSignal: (t: Technique) => ENRICHED.has(t.attackId),
+            // Known tier: T1003 and T1059 have a defensive reference input.
+            mappedRollup: () => {
+              const count = (ts: Technique[]) => {
+                const mapped = ts.filter(t => ENRICHED.has(t.attackId)).length;
+                return { total: ts.length, mapped, pct: ts.length ? Math.round((mapped / ts.length) * 100) : 0 };
+              };
+              return {
+                overall: count(DOMAIN.techniques.filter(t => !t.isSubtechnique)),
+                byTactic: DOMAIN.tacticColumns.map(c => ({
+                  tacticId: c.tactic.id, tacticName: c.tactic.name, shortname: c.tactic.shortname, ...count(c.techniques),
+                })),
+              };
+            },
+            referenceDefenseTotals: () => ({ total: 4, mapped: 2, mitigation: 2, detection: 1, control: 1, d3fend: 0, atomic: 0 }),
         } },
         { provide: ImplementationService, useValue: {
             status$,
@@ -126,16 +142,16 @@ describe('DashboardPanelComponent', () => {
     fixture.detectChanges();
   });
 
-  it('computes the headline coverage, posture and risk numbers from the loaded domain', () => {
+  it('computes the headline mapped count, posture and risk numbers from the loaded domain', () => {
     const s = component.stats!;
     expect(component.loading).toBeFalse();
     expect(s.totalTechniques).toBe(4);               // parents only
-    expect(s.coveredTechniques).toBe(2);
+    expect(s.coveredTechniques).toBe(2);             // Known-tier mapped, not the threat-side enriched (3)
     expect(s.coveragePct).toBe(50);
     expect(s.uncoveredCount).toBe(2);
     expect(s.mitigationCoveragePct).toBe(50);
     expect(s.controlCoveragePct).toBe(25);
-    expect(s.detectionCoveragePct).toBe(25);         // only T1059 has a CAR analytic
+    expect(s.detectionCoveragePct).toBe(25);         // only T1059 has detection content (Sigma)
     expect(s.withCarCount).toBe(1);
     expect(s.implementedCount).toBe(2);
     expect(s.totalMitigations).toBe(6);

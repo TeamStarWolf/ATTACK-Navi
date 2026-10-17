@@ -63,7 +63,7 @@ export class QuickFiltersComponent implements OnInit, OnDestroy {
       id: 'no-detection',
       label: 'No Detection',
       icon: '🔍',
-      description: 'Show techniques with no CAR/Atomic/D3FEND detection coverage',
+      description: 'Show techniques with no CAR/Atomic/D3FEND detection content mapped',
       heatmapMode: 'detection',
     },
     // Mitigation-gap lenses come last.

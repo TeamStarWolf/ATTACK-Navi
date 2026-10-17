@@ -260,9 +260,9 @@ export class EnrichmentService {
   /**
    * Known tier: the single 'mapped' rollup every summary surface reads
    * (stats-bar, tactic-summary, analytics-panel, the timeline snapshots that
-   * timeline-panel and coverage-diff-panel show, and roadmap-panel). One
-   * method and one filter, so the six surfaces cannot disagree (E1.7
-   * equality spec).
+   * timeline-panel and coverage-diff-panel show, roadmap-panel and
+   * dashboard-panel). One method and one filter, so the seven surfaces cannot
+   * disagree (E1.7 equality spec).
    *
    * Filter: `overall` counts parent techniques, or every technique when
    * `includeSubtechniques` is set; each `byTactic` row counts that tactic

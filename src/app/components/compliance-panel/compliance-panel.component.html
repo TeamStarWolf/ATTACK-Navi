@@ -9,9 +9,7 @@
           @if (complianceRows.length > 0 && activeMapping.withdrawn) {
             <span class="header-subtitle">CIS Controls: source withdrawn upstream</span>
           } @else if (complianceRows.length > 0) {
-            <span class="header-subtitle">
-              {{ activeTabCount }} techniques with {{ activeTab === 'cis' ? 'CIS Controls' : activeTab === 'nist' ? 'NIST 800-53' : activeTab === 'cri' ? 'CRI Profile' : activeTab === 'csa-ccm' ? 'CSA CCM' : activeTab === 'm365-ctrl' ? 'M365 Controls' : activeTab.toUpperCase() }} coverage
-            </span>
+            <span class="header-subtitle">{{ activeTabSummary }}</span>
           }
         </div>
       </div>
@@ -23,13 +21,17 @@
         </div>
       } @else {
 
-        <!-- Compliance Score Dashboard -->
+        <!-- Control mapping by framework -->
         @if (frameworkScores.length > 0) {
           <div class="score-dashboard">
             <div class="score-dashboard-head">
-              <h3>Compliance Score Dashboard</h3>
+              <h3>Control mapping by framework</h3>
               <button class="export-btn" (click)="exportComplianceXlsx()" title="Export multi-sheet Excel workbook of all framework mappings">📊 Export Excel</button>
             </div>
+            <p class="score-dashboard-note">
+              Technique-mapped frameworks: share of parent techniques with at least one control mapped.
+              SOC 2, ISO 27001 and PCI DSS: share of controls whose mapped mitigations are all marked implemented (self-attested).
+            </p>
             <div class="score-grid">
               @for (fw of frameworkScores; track fw.key) {
                 <button class="score-card"

@@ -424,6 +424,30 @@ export class CompliancePanelComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * The header line for the active tab (post-Phase-1 QA R9c). The technique
+   * tabs count parent techniques with at least one control mapped (Known
+   * data); SOC 2, ISO 27001 and PCI DSS count controls whose mapped
+   * mitigations are all marked implemented (self-attested), so they say so.
+   */
+  get activeTabSummary(): string {
+    const n = this.activeTabCount;
+    const score = this.frameworkScores.find(f => f.key === this.activeTab);
+    switch (this.activeTab) {
+      case 'soc2':
+      case 'iso27001':
+      case 'pci':
+        return `${n} of ${score?.total ?? 0} ${score?.label ?? this.activeTab} controls with every mapped mitigation implemented (self-attested)`;
+      default: {
+        const names: Record<string, string> = {
+          cis: 'CIS', aws: 'AWS', azure: 'Azure', gcp: 'GCP', nist: 'NIST 800-53',
+          cri: 'CRI Profile', 'csa-ccm': 'CSA CCM', 'm365-ctrl': 'M365',
+        };
+        return `${n} techniques with ${names[this.activeTab] ?? this.activeTab} controls mapped`;
+      }
+    }
+  }
+
   activeCount(row: ComplianceRow): number {
     switch (this.activeTab) {
       case 'cis':      return row.cisCount;
