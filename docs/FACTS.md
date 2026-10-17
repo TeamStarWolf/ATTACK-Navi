@@ -38,41 +38,41 @@ Version is the `x_mitre_version` of the bundle's `x-mitre-collection` object.
 
 ## Heatmap modes
 
-| # | Id | Short label | Group |
-| --: | :-- | :-- | :-- |
-| 1 | `coverage` | Mitigations mapped | Coverage & Posture |
-| 2 | `status` | Status | Coverage & Posture |
-| 3 | `controls` | Controls | Coverage & Posture |
-| 4 | `unified` | Reference depth | Coverage & Posture |
-| 5 | `library` | Library | Coverage & Posture |
-| 6 | `frequency` | Frequency | Coverage & Posture |
-| 7 | `risk` | Threat-weighted gap | Threat Landscape |
-| 8 | `exposure` | Selected adversaries | Threat Landscape |
-| 9 | `software` | Software | Threat Landscape |
-| 10 | `campaign` | Campaign | Threat Landscape |
-| 11 | `intelligence` | Intelligence | Threat Landscape |
-| 12 | `my-exposure` | My Exposure | Threat Landscape |
-| 13 | `kev` | KEV | Vulnerabilities |
-| 14 | `cve` | CVE | Vulnerabilities |
-| 15 | `epss` | EPSS | Vulnerabilities |
-| 16 | `kill-chain` | Kill Chain | Vulnerabilities |
-| 17 | `poc-exploits` | PoC | Vulnerabilities |
-| 18 | `detection` | Detection content | Detections |
-| 19 | `sigma` | Sigma | Detections |
-| 20 | `elastic` | Elastic | Detections |
-| 21 | `splunk` | Splunk | Detections |
-| 22 | `wazuh` | Wazuh stock rules | Detections |
-| 23 | `m365` | M365 | Detections |
-| 24 | `car` | CAR | Detections |
-| 25 | `atomic` | Atomic | Detections |
-| 26 | `d3fend` | D3FEND | Frameworks |
-| 27 | `engage` | Engage | Frameworks |
-| 28 | `nist` | NIST | Frameworks |
-| 29 | `veris` | VERIS | Frameworks |
-| 30 | `cri` | CRI | Frameworks |
-| 31 | `csa-ccm` | CSA CCM | Frameworks |
-| 32 | `m365-controls` | M365 Ctl | Frameworks |
-| 33 | `f3-origin` | F3 Origin | Frameworks |
+| # | Id | Short label | Group | Rung |
+| --: | :-- | :-- | :-- | :-- |
+| 1 | `coverage` | Mitigations mapped | Coverage & Posture | Known |
+| 2 | `status` | Status | Coverage & Posture | Covered self-attested |
+| 3 | `controls` | Controls | Coverage & Posture | Covered self-attested |
+| 4 | `unified` | Reference depth | Coverage & Posture | Known |
+| 5 | `library` | Library | Coverage & Posture | Known |
+| 6 | `frequency` | Frequency | Coverage & Posture | Threat |
+| 7 | `risk` | Threat-weighted gap | Threat Landscape | Threat |
+| 8 | `exposure` | Selected adversaries | Threat Landscape | Threat |
+| 9 | `software` | Software | Threat Landscape | Threat |
+| 10 | `campaign` | Campaign | Threat Landscape | Threat |
+| 11 | `intelligence` | Intelligence | Threat Landscape | Threat |
+| 12 | `my-exposure` | My Exposure | Threat Landscape | Exposure |
+| 13 | `kev` | KEV | Vulnerabilities | Threat |
+| 14 | `cve` | CVE | Vulnerabilities | Threat |
+| 15 | `epss` | EPSS | Vulnerabilities | Threat |
+| 16 | `kill-chain` | Kill Chain | Vulnerabilities | Threat |
+| 17 | `poc-exploits` | PoC | Vulnerabilities | Threat |
+| 18 | `detection` | Detection content | Detections | Known |
+| 19 | `sigma` | Sigma | Detections | Known |
+| 20 | `elastic` | Elastic | Detections | Known |
+| 21 | `splunk` | Splunk | Detections | Known |
+| 22 | `wazuh` | Wazuh stock rules | Detections | Known |
+| 23 | `m365` | M365 | Detections | Known |
+| 24 | `car` | CAR | Detections | Known |
+| 25 | `atomic` | Atomic | Detections | Known |
+| 26 | `d3fend` | D3FEND | Frameworks | Known |
+| 27 | `engage` | Engage | Frameworks | Known |
+| 28 | `nist` | NIST | Frameworks | Known |
+| 29 | `veris` | VERIS | Frameworks | Known |
+| 30 | `cri` | CRI | Frameworks | Known |
+| 31 | `csa-ccm` | CSA CCM | Frameworks | Known |
+| 32 | `m365-controls` | M365 Ctl | Frameworks | Known |
+| 33 | `f3-origin` | F3 Origin | Frameworks | Known |
 
 ## Routes and tabs
 

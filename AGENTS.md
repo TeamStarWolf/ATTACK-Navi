@@ -50,11 +50,12 @@ Always run the typecheck and the unit suite after changes and report the result.
 
 ## Where things live
 
-- `src/app/models/heatmap-modes.ts` — the heatmap-mode list (dropdown source of truth).
+- `src/app/models/heatmap-modes.ts` — the heatmap-mode registry (`HEATMAP_MODES`): labels, groups, and each lens's question, rung, formula, domains, sources, zero meaning and colour ramp. The picker, cycling and the legend all read it.
 - `src/app/services/filter.service.ts` — `HeatmapMode` union type + the **default mode** (`heatmapModeSubject`), URL (de)serialize.
 - `src/app/components/matrix/` — the matrix; score builders (the big `else-if` chain), `getCellColor` minimap copy, 3× cell bindings in the HTML.
 - `src/app/components/technique-cell/` — per-cell color (`ngOnChanges` per-mode `if/else`, `compute*Color` helpers).
-- `src/app/components/legend/legend.component.ts` — `MODE_CONFIGS` (compile-enforced `Record<HeatmapMode, …>`).
+- `src/app/models/lens-sources.ts` — source ids for each lens (rows of the plan's source inventory) and the legend's vintage text; the seam E1.3's SourceRegistry replaces.
+- `src/app/components/legend/legend.component.ts` — renders the active lens from the registry (rung badge, question, stops, domain line, sources with vintage, zero meaning).
 - `src/app/services/*.service.ts` — one enrichment service per data source (D3FEND, Engage, NIST, CVE/KEV, EPSS, CWE, CAPEC, Sigma/CAR/Atomic, …); most lazy-load JSON from `src/assets/data/` or CTID/live URLs.
 - `src/app/models/domain.ts` — the parsed `Domain` with all relationship maps + reverse maps + `supersededBy`.
 - Routing: `app.routes.ts` + `app.routes-map.ts`; workspaces in `pages/<ws>/<ws>.routes.ts`; nav in `components/nav-rail`.
@@ -62,9 +63,9 @@ Always run the typecheck and the unit suite after changes and report the result.
 
 ### Adding a heatmap mode (touches ~6 places — all required)
 
-1. `models/heatmap-modes.ts` (add to `HEATMAP_MODES`).
+1. `models/heatmap-modes.ts` (add to `HEATMAP_MODES` with every field: question, rung, formula, domains, sources, zeroMeaning and the ramp the cell renderer paints; `heatmap-modes.spec.ts` fails on an empty field or a ramp that misses a rendered colour).
 2. `services/filter.service.ts` (add to the `HeatmapMode` union).
-3. `components/legend/legend.component.ts` (`MODE_CONFIGS` — compile-enforced).
+3. The legend needs no edit: it reads the registry. Add any new source id to `models/lens-sources.ts`.
 4. `components/technique-cell/technique-cell.component.ts` (add the color branch in `ngOnChanges`).
 5. `components/matrix/matrix.component.ts` (score builder in the mode `else-if` chain **and** the `getCellColor` minimap copy) + a `getXScore()` and `[input]` bound 3× in `matrix.component.html`.
 6. A `*.spec.ts` update.
