@@ -152,6 +152,20 @@ test.describe('journey 4, Honesty: empty user', () => {
       expect(await bannedStringsOnPage(page, forbiddenStrings)).toEqual([]);
     });
   }
+
+  // The routes above never open a drawer, so the technique drawer gets its own
+  // scan. T1059.001 has bundled CAR and D3FEND data, so its signal pills and
+  // sections render with no network. A one-word lowercase literal is skipped by
+  // the source lint as identifier-like; when the drawer renders one, this scan
+  // is where it is checked.
+  test('DOM scan #/matrix with the T1059.001 drawer open', greenBy('P1'), async ({ page }) => {
+    await page.goto(`${BASE}/#/matrix?tech=T1059.001`);
+    await expect(page.locator('.sidebar.open')).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    await expect(page.locator('.sidebar-header .attack-id')).toContainText('T1059.001');
+    await expect(page.locator('.sidebar .signal-pill').first()).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => undefined);
+    expect(await bannedStringsOnPage(page, forbiddenStrings)).toEqual([]);
+  });
 });
 
 test.describe('shared fixture workspace', () => {

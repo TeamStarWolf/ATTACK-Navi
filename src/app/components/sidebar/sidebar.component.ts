@@ -1538,7 +1538,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     signals.push({
       icon: '🔵',
       label: 'D3FEND',
-      value: d3fendCount > 0 ? 'covered' : 'none',
+      value: d3fendCount > 0 ? `${d3fendCount} mapped` : 'none',
       color: d3fendCount > 0 ? '#60a5fa' : '#64748b',
     });
 

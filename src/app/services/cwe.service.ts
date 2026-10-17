@@ -105,7 +105,7 @@ export class CweService {
     '476':  { name: 'NULL Pointer Dereference',             description: 'A NULL pointer dereference occurs when the application dereferences a pointer that it expects to be valid, but is NULL, causing a crash or unexpected behavior.' },
     '502':  { name: 'Deserialization of Untrusted Data',    description: 'The application deserializes untrusted data without sufficiently verifying that the resulting data will be valid.' },
     // truth-vocab-allow-next-line banned -- the official CWE-522 title, quoted from MITRE CWE; it names a weakness, not the reader's posture
-  '522':  { name: 'Insufficiently Protected Credentials', description: 'This weakness occurs when the software transmits or stores authentication credentials, but uses an insecure method that is susceptible to unauthorized interception or retrieval.' },
+    '522':  { name: 'Insufficiently Protected Credentials', description: 'This weakness occurs when the software transmits or stores authentication credentials, but uses an insecure method that is susceptible to unauthorized interception or retrieval.' },
     '532':  { name: 'Insertion of Sensitive Information into Log File', description: 'Information written to log files can be of a sensitive nature and give valuable guidance to an attacker or expose user data.' },
     '538':  { name: 'File and Directory Information Exposure', description: 'The product makes sensitive information about a file or directory accessible to actors who are not authorized to access it.' },
     '539':  { name: 'Use of Persistent Cookies Containing Sensitive Information', description: 'The web application uses persistent cookies, but the cookies contain sensitive information.' },
