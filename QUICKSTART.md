@@ -250,12 +250,12 @@ Opens on http://localhost:8080. The optional credentials proxy is reached throug
 at http://localhost:8080/api/ (and from the host on 127.0.0.1:8787); in an integration's
 proxy URL field, though, enter http://localhost:8080 with no /api/, since the service
 appends the path. The stack starts without `server/.env`; the proxy has nothing to forward
-until you fill it in. To serve on
-a LAN address or hostname instead of localhost, set `APP_ORIGIN` (the page origin, for
-example `http://navi.lan:8080`) and `APP_HOST` (the bare host the browser uses, for
-example `navi.lan`) in a `.env` file next to `docker-compose.yml`; the proxy refuses other
-Host names. If you use an integration in Direct browser mode, add its origin to
-`CSP_EXTRA_CONNECT_SRC`, or the self-hosted Content-Security-Policy blocks the request.
+until you fill it in. To serve on a LAN address or hostname instead of localhost, set
+`APP_ORIGIN` (the page origin, for example `http://navi.lan:8080`) and `APP_HOST` (the
+bare host the browser uses, for example `navi.lan`) in a `.env` file next to
+`docker-compose.yml`; the proxy refuses other Host names. If you use an integration in
+Direct browser mode, add its origin to `CSP_EXTRA_CONNECT_SRC`, or the self-hosted
+Content-Security-Policy blocks the request.
 
 ### Kubernetes
 
@@ -294,8 +294,7 @@ are fetched from their upstream sources at runtime. THIRD_PARTY_NOTICES.md lists
 source with its license and terms, and the Status workspace shows which sources loaded.
 
 © 2026 The MITRE Corporation. This work is reproduced and distributed with the permission
-of The MITRE Corporation. MITRE ATT&CK® is a registered
-trademark of The MITRE Corporation. This project is not affiliated with or endorsed by
-MITRE. This product uses the NVD API but is not endorsed or certified by the NVD. Data
-fetched at runtime from other sources remains subject to those sources' own licenses and
-terms.
+of The MITRE Corporation. MITRE ATT&CK® is a registered trademark of The MITRE
+Corporation. This project is not affiliated with or endorsed by MITRE. This product uses
+the NVD API but is not endorsed or certified by the NVD. Data fetched at runtime from
+other sources remains subject to those sources' own licenses and terms.
