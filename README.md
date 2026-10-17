@@ -52,15 +52,17 @@ The command palette (Ctrl+K) searches techniques, mitigations, groups, campaigns
 
 ## Heatmap modes
 
-The heatmap picker reads `HEATMAP_MODES` in `src/app/models/heatmap-modes.ts`. The default mode is Unified Coverage. Groups appear in this order, below any modes the current viewpoint pins at the top:
+The heatmap picker reads `HEATMAP_MODES` in `src/app/models/heatmap-modes.ts`. The default mode is Reference depth (`heat=unified`). Groups appear in this order, below any modes the current viewpoint pins at the top:
 
 | Group | Modes |
 | :-- | :-- |
-| Threat Landscape | Risk, Exposure, Software, Campaign, Intelligence, My Exposure |
+| Threat Landscape | Threat-weighted mapping gap, Selected adversaries, Software, Campaign, Intelligence, My Exposure |
 | Vulnerabilities | KEV, CVE, EPSS, CVE Kill Chain, PoC Exploits |
-| Detections | Detection, Sigma Rules, Elastic Rules, Splunk Detections, Wazuh XDR, M365 Defender, CAR, Atomic |
+| Detections | Detection content available, Sigma Rules, Elastic Rules, Splunk Detections, Wazuh stock rules (curated), M365 Defender, CAR, Atomic |
 | Frameworks | D3FEND, Engage, NIST 800-53, VERIS Actions, CRI Profile, CSA CCM, M365 Controls, F3 Origin |
-| Coverage & Posture | Mitigations, Status, Controls, Unified Coverage, Library Layer, Frequency |
+| Coverage & Posture | Mitigations mapped, Status, Controls, Reference depth, Library Layer, Frequency |
+
+Lens labels follow the Known / Covered / Proven vocabulary: a lens built from reference data says 'mapped', 'available' or 'reference depth'. The `heat=` values in links are unchanged. Reference depth combines defensive reference inputs only (mitigations, detection content, CTID control mappings, D3FEND, Atomic); threat intel and KEV appear in the Threat Landscape and Vulnerabilities lenses instead.
 
 The Library Layer mode colors the matrix by one of the Navigator layers listed in `src/assets/data/library-layers/index.json`, described in [docs/LIBRARY_LAYERS.md](docs/LIBRARY_LAYERS.md). Those layers are a separate list, not additional modes. Scoring for each mode is described in [docs/HEATMAPS.md](docs/HEATMAPS.md). Adding a mode touches several files; [AGENTS.md](AGENTS.md) has the checklist.
 
@@ -121,7 +123,7 @@ Several of these are community repositories rather than vendor or MITRE datasets
 
 ### Curated content
 
-Some content is written and maintained in this repository rather than derived from an upstream dataset: the Zeek, Suricata and YARA templates, Wazuh mappings, IR playbooks, offensive tools, C2, BloodHound, Azure identity, event logging, the IOC feed's technique associations, the PayloadsAllTheThings folder-to-technique mapping, and the SOC 2, ISO and PCI compliance mapper. Each of these services starts with a `PROVENANCE` comment. In the sidebar, the payloads, offensive tools, C2, BloodHound, Azure identity, logging, IOC feed, Wazuh XDR, SIEM and threat hunting sections carry a "curated" chip. IR playbooks, the Wazuh XDR heatmap mode and the Zeek, Suricata and YARA templates are not labeled as curated in the UI. [DATA_SOURCE_SCORECARD.md](DATA_SOURCE_SCORECARD.md) and [MAPPINGS_CHEAT_SHEET.md](MAPPINGS_CHEAT_SHEET.md) have more detail.
+Some content is written and maintained in this repository rather than derived from an upstream dataset: the Zeek, Suricata and YARA templates, Wazuh mappings, IR playbooks, offensive tools, C2, BloodHound, Azure identity, event logging, the IOC feed's technique associations, the PayloadsAllTheThings folder-to-technique mapping, and the SOC 2, ISO and PCI compliance mapper. Each of these services starts with a `PROVENANCE` comment. In the sidebar, the payloads, offensive tools, C2, BloodHound, Azure identity, logging, IOC feed, Wazuh XDR, SIEM and threat hunting sections carry a "curated" chip. The Wazuh heatmap mode is labeled "Wazuh stock rules (curated)". IR playbooks and the Zeek, Suricata and YARA templates are not labeled as curated in the UI. [DATA_SOURCE_SCORECARD.md](DATA_SOURCE_SCORECARD.md) and [MAPPINGS_CHEAT_SHEET.md](MAPPINGS_CHEAT_SHEET.md) have more detail.
 
 ## Exports
 

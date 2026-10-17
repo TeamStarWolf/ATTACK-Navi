@@ -12,7 +12,7 @@
     <div class="cov-head">
       <div class="cov-head-pct defended">{{ defendedPct }}%</div>
       <div class="cov-head-body">
-        <div class="cov-head-label">Defended</div>
+        <div class="cov-head-label">Has mapped countermeasure</div>
         <div class="cov-head-sub">{{ defendedCount }}/{{ total }} have a mitigation, detection, control or D3FEND</div>
       </div>
     </div>
@@ -20,8 +20,8 @@
 
   <p class="cov-note">
     <strong>Enriched</strong> is the cross-framework context assembled in the workbench &mdash; reference
-    availability, not deployed defense. <strong>Defended</strong> counts techniques with at least one
-    mitigating or detecting control mapped. Neither asserts that a control is live in your environment.
+    availability, not deployed defense. <strong>Has mapped countermeasure</strong> counts techniques with at least one
+    mitigation, detection, control or D3FEND countermeasure mapped. Neither asserts that a control is live in your environment.
   </p>
 
   <div class="cov-rows">
@@ -43,7 +43,7 @@
   </div>
 
   <div class="cov-legend">
-    <span class="cov-legend-item"><span class="dot defensive"></span> contributes to Defended</span>
+    <span class="cov-legend-item"><span class="dot defensive"></span> contributes to Has mapped countermeasure</span>
     <span class="cov-legend-item"><span class="dot context"></span> context / validation only</span>
   </div>
 </div>

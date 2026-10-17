@@ -60,7 +60,7 @@ export class CoverageBreakdownComponent implements OnChanges {
     this.enrichedPct = this.pct(t.enriched, t.total);
     this.defendedCount = t.defended;
     this.defendedPct = this.pct(t.defended, t.total);
-    // Order: defensive contributors first (they feed "Defended"), then
+    // Order: defensive contributors first (they feed "Has mapped countermeasure"), then
     // context/validation families (enrichment-only).
     this.rows = [
       { label: 'ATT&CK Mitigations', hint: 'M-series mitigations', count: t.mitigation, pct: this.pct(t.mitigation, t.total), defensive: true },

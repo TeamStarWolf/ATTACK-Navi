@@ -435,7 +435,7 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
     return ramp[3];
   }
 
-  /** Unified Risk Score: 0–100 composite. Low = poorly defended, high = strong. */
+  /** Reference depth (heat=unified): 0–100 defensive-reference composite. Low = little mapped, high = deep. */
   computeUnifiedColor(score: number): string {
     if (this.settingsService.current.colorblindSafe) {
       // 6-stop viridis: monotonic luminance keeps low→high readable.
@@ -446,8 +446,9 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
       if (score <= 80) return '#7ad151';
       return '#fde725';
     }
-    // ATT&CK-brand ramp: dim navy (thinly covered / exposed) -> sky -> violet
-    // (strongly covered). Higher unified score = better posture = brighter.
+    // ATT&CK-brand ramp: dim navy (little reference mapped) -> sky -> violet
+    // (deepest reference). Higher score = more reference material = brighter;
+    // it is a Known-rung number, not a statement about deployed defense.
     if (score <= 15) return '#0e1b30';
     if (score <= 30) return '#143a5c';
     if (score <= 50) return '#1f6aa8';

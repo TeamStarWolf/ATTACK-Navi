@@ -41,7 +41,7 @@ const STORAGE_KEY = 'attack-navi-viewpoint';
  * Re-frames the whole app for a security role: sets the matrix's default
  * heatmap lens, navigates to the role's home workspace, and marks that role's
  * featured lenses in the lens menu. The default `analyst` viewpoint reproduces
- * the app's neutral behaviour (unified lens, /matrix home), so users who never
+ * the app's neutral behaviour (Reference depth lens, heat=unified, /matrix home), so users who never
  * touch the switcher see no change.
  *
  * Every lens value below is a real `HeatmapMode` (filter.service.ts) and every
@@ -59,7 +59,7 @@ export class ViewpointService {
       label: 'Analyst',
       short: 'Analyst',
       icon: 'compass',
-      tagline: 'Neutral, unified coverage view',
+      tagline: 'Neutral reference-depth view',
       defaultLens: 'unified',
       homeRoute: '/matrix',
       featuredLenses: ['unified', 'coverage', 'risk', 'detection'],
