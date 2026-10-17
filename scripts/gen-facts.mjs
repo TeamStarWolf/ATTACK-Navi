@@ -103,8 +103,10 @@ function heatmapModes(root) {
   const body = exportedArray(read(root, file), 'HEATMAP_MODES', file);
   const modes = topLevelObjects(body).map((o) => ({
     id: ownString(o, 'value'), short: ownString(o, 'short'), group: ownString(o, 'group'),
+    rung: [ownString(o, 'rung'), ownString(o, 'qualifier')].filter(Boolean).join(' '),
   }));
   if (modes.some((m) => !m.id)) throw new Error(`${file}: a HEATMAP_MODES entry has no value`);
+  if (modes.some((m) => !m.rung)) throw new Error(`${file}: a HEATMAP_MODES entry has no rung`);
   return { source: file, count: modes.length, modes };
 }
 
@@ -325,8 +327,8 @@ export function renderFacts(f) {
   L.push('', 'Version is the `x_mitre_version` of the bundle\'s `x-mitre-collection` object.', '');
 
   L.push('## Heatmap modes', '');
-  L.push('| # | Id | Short label | Group |', '| --: | :-- | :-- | :-- |');
-  f.heatmap.modes.forEach((m, i) => L.push(`| ${i + 1} | \`${m.id}\` | ${m.short} | ${m.group} |`));
+  L.push('| # | Id | Short label | Group | Rung |', '| --: | :-- | :-- | :-- | :-- |');
+  f.heatmap.modes.forEach((m, i) => L.push(`| ${i + 1} | \`${m.id}\` | ${m.short} | ${m.group} | ${m.rung} |`));
   L.push('');
 
   L.push('## Routes and tabs', '');

@@ -5,374 +5,100 @@ import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRe
 import { Subscription } from 'rxjs';
 import { FilterService, HeatmapMode } from '../../services/filter.service';
 import { SettingsService } from '../../services/settings.service';
-import { SAFE_SEQ, SAFE_COVERAGE, SAFE_STATUS, SAFE_CONTROLS } from '../../models/safe-palette';
+import { AttackDomain, DataService } from '../../services/data.service';
+import { SAFE_SEQ, SAFE_STATUS, SAFE_CONTROLS } from '../../models/safe-palette';
+import { HEATMAP_MODES, HeatmapModeDef, LensRampStop, heatmapModeDef, lensRungBadge } from '../../models/heatmap-modes';
+import { LoadedBundleInfo, domainLabel, lensSourceVintage } from '../../models/lens-sources';
 
-interface LegendStop { color: string; label: string; }
-interface LegendConfig { label: string; stops: LegendStop[]; categorical?: boolean; }
+/** The unified lens's colorblind-safe 6-stop viridis, mirroring technique-cell. */
+const SAFE_UNIFIED = ['#440154', '#414487', '#2a788e', '#22a884', '#7ad151', '#fde725'];
 
-// Legend titles use the Known / Covered / Proven vocabulary (plan 4.1, E1.1):
-// reference-data lenses say 'mapped' / 'available' / 'reference depth', never
-// 'coverage', 'exposed' or 'covered'.
-const MODE_CONFIGS: Record<HeatmapMode, LegendConfig> = {
-  coverage: {
-    label: 'Mitigations mapped',
-    stops: [
-      { color: '#d32f2f', label: '0' },
-      { color: '#ff9800', label: '1' },
-      { color: '#ffd54f', label: '2' },
-      { color: '#aed581', label: '3' },
-      { color: '#4caf50', label: '4+' },
-    ],
-  },
-  exposure: {
-    label: 'Selected adversaries',
-    stops: [
-      { color: '#eceff1', label: '0' },
-      { color: '#ffb74d', label: 'low' },
-      { color: '#ff7043', label: 'med' },
-      { color: '#e53935', label: 'high' },
-      { color: '#b71c1c', label: 'critical' },
-    ],
-  },
-  software: {
-    label: 'Software',
-    stops: [
-      { color: '#eceff1', label: '0' },
-      { color: '#ffb74d', label: '1' },
-      { color: '#ff7043', label: '2' },
-      { color: '#e53935', label: '3' },
-      { color: '#b71c1c', label: '4+' },
-    ],
-  },
-  campaign: {
-    label: 'Campaigns',
-    stops: [
-      { color: '#eceff1', label: '0' },
-      { color: '#ce93d8', label: '1' },
-      { color: '#ab47bc', label: '2' },
-      { color: '#7b1fa2', label: '3' },
-      { color: '#4a148c', label: '4+' },
-    ],
-  },
-  status: {
-    label: 'Status',
-    categorical: true,
-    stops: [
-      { color: '#90a4ae', label: 'none' },
-      { color: '#e53935', label: '!' },
-      { color: '#ff9800', label: '🔧' },
-      { color: '#2196f3', label: '📋' },
-      { color: '#4caf50', label: '✓' },
-    ],
-  },
-  controls: {
-    label: 'Controls',
-    categorical: true,
-    stops: [
-      { color: '#1c2b30', label: 'none' },
-      { color: '#1565c0', label: 'planned' },
-      { color: '#00c853', label: 'covered' },
-    ],
-  },
-  risk: {
-    label: 'Threat-weighted mapping gap',
-    stops: [
-      { color: '#eceff1', label: '0' },
-      { color: '#ff7043', label: 'low' },
-      { color: '#e53935', label: 'med' },
-      { color: '#b71c1c', label: 'high' },
-      { color: '#4a0000', label: 'critical' },
-    ],
-  },
-  kev: {
-    label: 'KEV CVEs',
-    stops: [
-      { color: '#eceff1', label: '0' },
-      { color: '#ffd54f', label: '1–2' },
-      { color: '#ff9800', label: '3–5' },
-      { color: '#d32f2f', label: '6+' },
-    ],
-  },
-  d3fend: {
-    label: 'D3FEND',
-    stops: [
-      { color: '#d32f2f', label: '0' },
-      { color: '#e64a19', label: '1' },
-      { color: '#f57c00', label: '2' },
-      { color: '#1565c0', label: '3' },
-      { color: '#1a6fba', label: '4+' },
-    ],
-  },
-  atomic: {
-    label: 'Atomic Tests',
-    stops: [
-      { color: '#1a1a0a', label: '0' },
-      { color: '#6d3a10', label: '1' },
-      { color: '#c06020', label: '2' },
-      { color: '#e08030', label: '3' },
-      { color: '#f0a040', label: '4+' },
-    ],
-  },
-  engage: {
-    label: 'Engage',
-    stops: [
-      { color: '#0a1a0a', label: '0' },
-      { color: '#4a3a10', label: '1' },
-      { color: '#906020', label: '2' },
-      { color: '#c08030', label: '3' },
-      { color: '#f0a040', label: '4+' },
-    ],
-  },
-  car: {
-    label: 'CAR Analytics',
-    stops: [
-      { color: '#0a0a1a', label: '0' },
-      { color: '#0d2a4a', label: '1' },
-      { color: '#1a4a7a', label: '2' },
-      { color: '#2a6aaa', label: '3' },
-      { color: '#58a6ff', label: '4+' },
-    ],
-  },
-  cve: {
-    label: 'CVEs',
-    stops: [
-      { color: '#1a2332', label: '0' },
-      { color: '#4a1a4a', label: '1–2' },
-      { color: '#7b2d8b', label: '3–5' },
-      { color: '#a855b5', label: '6–10' },
-      { color: '#d946ef', label: '11+' },
-    ],
-  },
-  detection: {
-    label: 'Detection content available',
-    stops: [
-      { color: '#1a2332', label: '0' },
-      { color: '#0c2d2d', label: '1–3' },
-      { color: '#0d5e5e', label: '4–8' },
-      { color: '#0e8a7a', label: '9–15' },
-      { color: '#10b981', label: '16+' },
-    ],
-  },
-  frequency: {
-    label: 'Groups',
-    stops: [
-      { color: '#1c2a38', label: '0' },
-      { color: '#1e3a5f', label: '1–2' },
-      { color: '#1565c0', label: '3–5' },
-      { color: '#0ea5e9', label: '6–10' },
-      { color: '#38bdf8', label: '11+' },
-    ],
-  },
-  cri: {
-    label: 'CRI Controls',
-    stops: [
-      { color: '#1a0a2e', label: '0' },
-      { color: '#ce93d8', label: 'low' },
-      { color: '#ab47bc', label: 'med' },
-      { color: '#8e24aa', label: 'high' },
-      { color: '#6a1b9a', label: 'max' },
-    ],
-  },
-  library: {
-    label: 'Library Layer',
-    stops: [
-      { color: '#12122a', label: 'not in layer' },
-      { color: '#1e3a5f', label: 'low' },
-      { color: '#2f6ab0', label: 'mid' },
-      { color: '#38bdf8', label: 'high' },
-      { color: '#a78bfa', label: 'core' },
-    ],
-  },
-  unified: {
-    label: 'Reference depth',
-    stops: [
-      { color: '#0e1b30', label: 'minimal' },
-      { color: '#143a5c', label: 'thin' },
-      { color: '#1f6aa8', label: 'some' },
-      { color: '#38bdf8', label: 'deep' },
-      { color: '#a78bfa', label: 'deepest' },
-    ],
-  },
-  sigma: {
-    label: 'Sigma Rules',
-    stops: [
-      { color: '#0a1a1a', label: '0' },
-      { color: '#0d4a3a', label: '1–3' },
-      { color: '#0d7a5e', label: '4–8' },
-      { color: '#0ea87a', label: '9–15' },
-      { color: '#10b981', label: '16+' },
-    ],
-  },
-  nist: {
-    label: 'NIST 800-53',
-    stops: [
-      { color: '#0d1b2a', label: '0' },
-      { color: '#1a4a7a', label: '1–5' },
-      { color: '#1565c0', label: '6–15' },
-      { color: '#1976d2', label: '16–30' },
-      { color: 'var(--accent)', label: '31+' },
-    ],
-  },
-  veris: {
-    label: 'VERIS Actions',
-    stops: [
-      { color: '#1a0a0a', label: '0' },
-      { color: '#5c1a1a', label: '1–2' },
-      { color: '#a83232', label: '3–5' },
-      { color: '#d64e4e', label: '6–10' },
-      { color: '#f28b8b', label: '11+' },
-    ],
-  },
-  epss: {
-    label: 'EPSS Probability',
-    stops: [
-      { color: '#1a1a0a', label: 'None' },
-      { color: '#5c4a00', label: '<1%' },
-      { color: '#c17900', label: '1–5%' },
-      { color: '#e65100', label: '5–20%' },
-      { color: '#d32f2f', label: '20%+' },
-    ],
-  },
-  elastic: {
-    label: 'Elastic Rules',
-    stops: [
-      { color: '#0a1a0a', label: '0' },
-      { color: '#1a3a1a', label: '1–3' },
-      { color: '#2a6a2a', label: '4–8' },
-      { color: '#3a9a3a', label: '9–15' },
-      { color: '#4caf50', label: '16+' },
-    ],
-  },
-  splunk: {
-    label: 'Splunk Detections',
-    stops: [
-      { color: '#1a0a0a', label: '0' },
-      { color: '#4a2a0a', label: '1–3' },
-      { color: '#7a4a1a', label: '4–8' },
-      { color: '#c06a20', label: '9–15' },
-      { color: '#ff9800', label: '16+' },
-    ],
-  },
-  intelligence: {
-    label: 'Intel Signals',
-    stops: [
-      { color: '#0a1a2e', label: '0' },
-      { color: '#1a3a7a', label: '1–2' },
-      { color: '#5a2d8b', label: '3–5' },
-      { color: '#8b1a5a', label: '6–10' },
-      { color: '#d32f2f', label: '11+' },
-    ],
-  },
-  m365: {
-    label: 'M365 Defender',
-    stops: [
-      { color: '#0a1a2e', label: '0' },
-      { color: '#003a6e', label: '1–2' },
-      { color: '#005a9e', label: '3–5' },
-      { color: '#0078d4', label: '6–10' },
-      { color: '#4ca6ff', label: '11+' },
-    ],
-  },
-  'my-exposure': {
-    label: 'My Exposure',
-    stops: [
-      { color: '#1a2332', label: '0' },
-      { color: '#ff9800', label: '1' },
-      { color: '#f44336', label: '2–3' },
-      { color: '#d32f2f', label: '4–6' },
-      { color: '#b71c1c', label: '7+' },
-    ],
-  },
-  wazuh: {
-    label: 'Wazuh stock rules (curated)',
-    stops: [
-      { color: '#0a1520', label: '0' },
-      { color: '#0d3a5c', label: '1' },
-      { color: '#1a6fa0', label: '2–3' },
-      { color: '#2196c8', label: '4–5' },
-      { color: '#3aabe0', label: '6+' },
-    ],
-  },
-  'csa-ccm': {
-    label: 'CSA CCM',
-    stops: [
-      { color: '#0a1a10', label: '0' },
-      { color: '#1a4a2a', label: '1–2' },
-      { color: '#2a7a3a', label: '3–5' },
-      { color: '#3aaa4a', label: '6–10' },
-      { color: '#4cce5a', label: '11+' },
-    ],
-  },
-  'm365-controls': {
-    label: 'M365 Controls',
-    stops: [
-      { color: '#0a1028', label: '0' },
-      { color: '#0a3068', label: '1–2' },
-      { color: '#0050a8', label: '3–5' },
-      { color: '#0070e8', label: '6–10' },
-      { color: '#40a0ff', label: '11+' },
-    ],
-  },
-  'kill-chain': {
-    label: 'CVE Kill Chain',
-    stops: [
-      { color: '#0e0a1a', label: '0' },
-      { color: '#2d1a5e', label: '1–3' },
-      { color: '#5a2d8b', label: '4–8' },
-      { color: '#7b3faa', label: '9–15' },
-      { color: '#9c5cc5', label: '16+' },
-    ],
-  },
-  'poc-exploits': {
-    label: 'PoC Exploits',
-    stops: [
-      { color: '#1a0e0a', label: '0' },
-      { color: '#5c2a0a', label: '1–2' },
-      { color: '#a84a1a', label: '3–5' },
-      { color: '#d96a2a', label: '6–10' },
-      { color: '#ff8c3a', label: '11+' },
-    ],
-  },
-  'f3-origin': {
-    label: 'F3 Origin',
-    categorical: true,
-    stops: [
-      { color: '#1565c0', label: 'shared w/ ATT&CK' },
-      { color: '#6a1b9a', label: 'fraud-native' },
-    ],
-  },
+/** Scale note shown after the stops, by ramp scale (none for categorical and threshold bands). */
+const SCALE_NOTE: Partial<Record<HeatmapModeDef['ramp']['scale'], string>> = {
+  relative: 'share of the highest score',
+  absolute: 'fewer to more',
 };
 
+/**
+ * Lens legend (product plan 4.7). Everything it shows comes from the
+ * HEATMAP_MODES registry: the rung badge and the lens question, the colour
+ * stops, the domain line, the source line with each source's vintage, and
+ * what zero means.
+ */
 @Component({
   selector: 'app-legend',
   standalone: true,
   imports: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="legend">
-      <span class="legend-label">{{ config.label }}</span>
-      <div class="legend-scale">
-        @for (stop of config.stops; track stop.label) {
-          <div class="legend-stop">
-            <div class="swatch" [style.background]="stop.color"></div>
-            <span class="stop-label">{{ stop.label }}</span>
-          </div>
-        }
-        @if (!config.categorical) {
-          <span class="scale-arrow">fewer ←→ more</span>
-        }
+    <div class="legend" role="group" [attr.aria-label]="'Legend: ' + def.label">
+      <div class="legend-row">
+        <span class="rung-badge" [attr.data-rung]="def.rung">{{ rungBadge }}</span>
+        <span class="legend-label">{{ def.label }}</span>
+        <div class="legend-scale">
+          @for (stop of stops; track stop.label) {
+            <div class="legend-stop">
+              <div class="swatch" [style.background]="stop.color"></div>
+              <span class="stop-label">{{ stop.label }}</span>
+            </div>
+          }
+          @if (scaleNote) {
+            <span class="scale-arrow">{{ scaleNote }}</span>
+          }
+        </div>
       </div>
+      <p class="legend-question">{{ def.question }}</p>
+      @if (notInDomain) {
+        <p class="legend-domain"><span class="swatch hatch" aria-hidden="true"></span>n/a for {{ domainName }} (no source data)</p>
+      }
+      <p class="legend-sources"><span class="meta-key">Sources:</span> {{ sourceLine }}</p>
+      <p class="legend-zero">{{ def.zeroMeaning }}</p>
     </div>
   `,
   styleUrl: './legend.component.scss',
 })
 export class LegendComponent implements OnInit, OnDestroy {
   heatmapMode: HeatmapMode = 'unified';
+  private domain: AttackDomain = 'enterprise';
+  private attackVersion = '';
+  private freshness: LoadedBundleInfo['freshness'] = null;
 
-  get config(): LegendConfig {
-    const base = MODE_CONFIGS[this.heatmapMode] ?? MODE_CONFIGS['coverage'];
-    if (!this.settingsService.current.colorblindSafe) return base;
-    return this.toSafeConfig(base);
+  get def(): HeatmapModeDef {
+    return heatmapModeDef(this.heatmapMode) ?? HEATMAP_MODES[0];
+  }
+
+  get rungBadge(): string {
+    return lensRungBadge(this.def);
+  }
+
+  get scaleNote(): string | undefined {
+    return SCALE_NOTE[this.def.ramp.scale];
+  }
+
+  get notInDomain(): boolean {
+    return !this.def.domains.includes(this.domain);
+  }
+
+  get domainName(): string {
+    return domainLabel(this.domain);
+  }
+
+  /** Each source with its vintage, joined in registry order. */
+  get sourceLine(): string {
+    const bundle: LoadedBundleInfo = { domain: this.domain, attackVersion: this.attackVersion, freshness: this.freshness };
+    return this.def.sources.map((id) => lensSourceVintage(id, bundle)).join(' · ');
+  }
+
+  get stops(): readonly LensRampStop[] {
+    const def = this.def;
+    // Mitigations follows the heatmap colour theme (and returns the
+    // colorblind-safe ramp itself), exactly as the cell renderer does.
+    if (def.value === 'coverage') {
+      const colors = this.settingsService.getCoverageColors();
+      return def.ramp.stops.map((s, i) => ({ ...s, color: colors[Math.min(i, colors.length - 1)] ?? s.color }));
+    }
+    if (!this.settingsService.current.colorblindSafe) return def.ramp.stops;
+    return this.toSafeStops(def);
   }
 
   /**
@@ -380,36 +106,31 @@ export class LegendComponent implements OnInit, OnDestroy {
    * the viridis ramp (first stop = the mode's zero color), categorical
    * status/controls show Okabe-Ito.
    */
-  private toSafeConfig(base: LegendConfig): LegendConfig {
-    if (this.heatmapMode === 'status') {
+  private toSafeStops(def: HeatmapModeDef): readonly LensRampStop[] {
+    const base = def.ramp.stops;
+    if (def.value === 'status') {
       const order = ['none', 'not-started', 'in-progress', 'planned', 'implemented'];
-      return { ...base, stops: base.stops.map((s, i) => ({ ...s, color: SAFE_STATUS[order[i]] ?? s.color })) };
+      return base.map((s, i) => ({ ...s, color: SAFE_STATUS[order[i]] ?? s.color }));
     }
-    if (this.heatmapMode === 'controls') {
+    if (def.value === 'controls') {
       const order = ['none', 'planned', 'covered'];
-      return { ...base, stops: base.stops.map((s, i) => ({ ...s, color: SAFE_CONTROLS[order[i]] ?? s.color })) };
+      return base.map((s, i) => ({ ...s, color: SAFE_CONTROLS[order[i]] ?? s.color }));
     }
-    if (this.heatmapMode === 'f3-origin') {
+    if (def.value === 'f3-origin') {
       // Okabe-Ito blue / reddish purple, mirroring the cell renderer.
       const safe = ['#0072b2', '#cc79a7'];
-      return { ...base, stops: base.stops.map((s, i) => ({ ...s, color: safe[i] ?? s.color })) };
+      return base.map((s, i) => ({ ...s, color: safe[i] ?? s.color }));
     }
-    if (this.heatmapMode === 'coverage' || this.heatmapMode === 'unified') {
-      const ramp = this.heatmapMode === 'coverage'
-        ? SAFE_COVERAGE
-        : ['#440154', '#414487', '#2a788e', '#22a884', '#fde725'];
-      return { ...base, stops: base.stops.map((s, i) => ({ ...s, color: ramp[Math.min(i, ramp.length - 1)] })) };
+    if (def.value === 'unified') {
+      return base.map((s, i) => ({ ...s, color: SAFE_UNIFIED[Math.min(i, SAFE_UNIFIED.length - 1)] }));
     }
-    // Relative modes: keep the zero stop, map the rest onto the viridis ramp.
-    const steps = base.stops.length - 1;
-    return {
-      ...base,
-      stops: base.stops.map((s, i) => {
-        if (i === 0) return s;
-        const rampIdx = Math.min(SAFE_SEQ.length - 1, Math.round(((i - 1) / Math.max(1, steps - 1)) * (SAFE_SEQ.length - 1)));
-        return { ...s, color: SAFE_SEQ[rampIdx] };
-      }),
-    };
+    // Relative and EPSS bands: keep the zero stop, map the rest onto the viridis ramp.
+    const steps = base.length - 1;
+    return base.map((s, i) => {
+      if (i === 0) return s;
+      const rampIdx = Math.min(SAFE_SEQ.length - 1, Math.round(((i - 1) / Math.max(1, steps - 1)) * (SAFE_SEQ.length - 1)));
+      return { ...s, color: SAFE_SEQ[rampIdx] };
+    });
   }
 
   private sub = new Subscription();
@@ -417,6 +138,7 @@ export class LegendComponent implements OnInit, OnDestroy {
   constructor(
     private filterService: FilterService,
     private settingsService: SettingsService,
+    private dataService: DataService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -429,6 +151,24 @@ export class LegendComponent implements OnInit, OnDestroy {
     );
     this.sub.add(
       this.settingsService.settings$.subscribe(() => this.cdr.markForCheck()),
+    );
+    this.sub.add(
+      this.dataService.currentDomain$.subscribe(domain => {
+        this.domain = domain;
+        this.cdr.markForCheck();
+      }),
+    );
+    this.sub.add(
+      this.dataService.domain$.subscribe(domain => {
+        this.attackVersion = domain?.attackVersion ?? '';
+        this.cdr.markForCheck();
+      }),
+    );
+    this.sub.add(
+      this.dataService.freshness$.subscribe(freshness => {
+        this.freshness = freshness;
+        this.cdr.markForCheck();
+      }),
     );
   }
 

@@ -81,9 +81,9 @@ Each cell computes its background color from the active `heatmapMode` and its sc
 
 ### Step 6: Legend Update (LegendComponent)
 
-**File:** `src/app/components/legend/legend.component.ts` (lines 9--249)
+**File:** `src/app/components/legend/legend.component.ts`
 
-The legend subscribes to `heatmapMode$` and looks up the active mode in `MODE_CONFIGS` to render the correct color stops and labels. Categorical modes suppress the "fewer -- more" arrow.
+The legend subscribes to `heatmapMode$` and renders the active mode's entry in the `HEATMAP_MODES` registry (`src/app/models/heatmap-modes.ts`): the rung badge and the lens question, the colour stops of its `ramp`, an 'n/a for <domain>' line when the lens has no source data for the loaded domain, a source line with each source's vintage (`src/app/models/lens-sources.ts`; the loaded ATT&CK release comes from the bundle's `x-mitre-collection`), and what zero means. Relative ramps are labelled as shares of the highest score; categorical and banded ramps show no scale note.
 
 ### Step 7: Cell Color Fallback (MatrixComponent.getCellColor)
 
@@ -107,7 +107,7 @@ To add a 25th heatmap mode, modify these seven files in order:
 
 5. **`src/app/components/matrix/matrix.component.html`** -- Bind the new score map to the `<app-technique-cell>` inputs.
 
-6. **`src/app/components/legend/legend.component.ts`** -- Add a `LegendConfig` entry to the `MODE_CONFIGS` record with label and color stops.
+6. **`src/app/models/heatmap-modes.ts`** -- Fill in the mode's legend metadata (question, rung, formula, domains, sources, zeroMeaning, ramp). The legend reads it; there is no separate legend table.
 
 7. **`src/app/components/nav-rail/nav-rail.component.ts`** -- (Optional) If the mode has an associated panel, add a nav-rail entry.
 
