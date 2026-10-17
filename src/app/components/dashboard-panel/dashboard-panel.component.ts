@@ -734,8 +734,9 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
 
   viewTechniqueOfDay(): void {
     if (!this.todTechnique) return;
-    // The technique sidebar is a global overlay — open it over the matrix.
-    this.panelNav.open('matrix');
+    // The technique sidebar is a global overlay — open it over the matrix and
+    // keep the selection this flow makes for it.
+    this.panelNav.open('matrix', { keepTechniqueSelection: true });
     this.filterService.selectTechnique(this.todTechnique);
   }
 }

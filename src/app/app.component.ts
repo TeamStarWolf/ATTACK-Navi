@@ -3,8 +3,7 @@
 import { Component, OnInit, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
-import { filter } from 'rxjs';
+import { NavigationEnd, NavigationStart, Router, RouterOutlet } from '@angular/router';
 import { DataService, AttackDomain } from './services/data.service';
 import { Domain } from './models/domain';
 import { FilterService } from './services/filter.service';
@@ -44,6 +43,7 @@ export class AppComponent implements OnInit {
   toastMessage = '';
   currentDomain: AttackDomain = 'enterprise';
   private lastRoutePath?: string;
+  private pendingKeepSelection = false;
 
   constructor(
     private dataService: DataService,
@@ -60,14 +60,7 @@ export class AppComponent implements OnInit {
     this.matrixControl.gapViewRequests$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.gapViewRef?.show());
-    // The technique sidebar is global and its selection lives in FilterService,
-    // so an open drawer used to ride over the next workspace. Close it when the
-    // route PATH changes. url-state writes filter edits with replaceUrl on the
-    // SAME path (query only), so those keep the drawer open; only a real
-    // workspace change (a different path) clears the selection.
-    this.router.events
-      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd), takeUntilDestroyed(this.destroyRef))
-      .subscribe((e) => this.clearSelectionOnRouteChange(e.urlAfterRedirects ?? e.url));
+    this.initDrawerRouteScope();
     // Restore the saved viewpoint's lens before the URL writer starts, and let
     // it defer to an explicit `heat` deep link (handled inside restore()).
     this.viewpoint.restore();
@@ -77,13 +70,36 @@ export class AppComponent implements OnInit {
   }
 
   /**
-   * Close the technique sidebar when the route path changes. The first
-   * navigation only records the starting path (nothing to clear on load);
-   * a same-path navigation (a url-state query write) leaves the drawer open.
+   * The technique sidebar is global and its selection lives in FilterService, so
+   * an open drawer used to ride over the next workspace. Close it when the route
+   * PATH changes — UNLESS the navigation carries keepTechniqueSelection (set by
+   * PanelNavService for flows that select a technique FOR the destination, e.g.
+   * "show this technique on the matrix"). url-state writes filter edits with
+   * replaceUrl on the SAME path (query only), so those keep the drawer open.
    */
-  private clearSelectionOnRouteChange(url: string): void {
-    const path = url.split('?')[0];
-    if (this.lastRoutePath !== undefined && path !== this.lastRoutePath) {
+  private initDrawerRouteScope(): void {
+    this.router.events
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((e) => {
+        if (e instanceof NavigationStart) {
+          this.pendingKeepSelection =
+            this.router.getCurrentNavigation()?.extras?.state?.['keepTechniqueSelection'] === true;
+        } else if (e instanceof NavigationEnd) {
+          this.clearSelectionOnRouteChange(e.urlAfterRedirects ?? e.url, this.pendingKeepSelection);
+          this.pendingKeepSelection = false;
+        }
+      });
+  }
+
+  /**
+   * Close the technique sidebar when the route path changes, unless this
+   * navigation carries a selection made for the destination (keep). The first
+   * navigation only records the starting path (nothing to clear on load); a
+   * same-path navigation (a url-state query write) leaves the drawer open.
+   */
+  private clearSelectionOnRouteChange(url: string, keep: boolean): void {
+    const path = url.split(/[?#]/)[0];
+    if (this.lastRoutePath !== undefined && path !== this.lastRoutePath && !keep) {
       this.filterService.selectTechnique(null);
     }
     this.lastRoutePath = path;
