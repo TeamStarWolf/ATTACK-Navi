@@ -257,6 +257,84 @@ test.describe('journey 1, VM: KEV to packet: KEV-down branch (plan E1.3)', () =>
     await expect(banner).toContainText('CISA KEV snapshot (bundled) (failed)');
     expect(snapshotRequests, 'the snapshot was requested and failed').toBeGreaterThan(0);
   });
+
+  // E1.4: the Briefing strip on every route announces the same failure, and the
+  // snapshot standing in for it, in its polite live region.
+  test('live KEV down: the Briefing strip announces the failure and "using snapshot of <date>"', greenBy('P1 (E1.4)'), async ({ page }) => {
+    await assessWithKevDown(page);
+    const live = page.getByTestId('briefing-live');
+    await expect(live).toHaveAttribute('role', 'status');
+    await expect(live).toHaveAttribute('aria-live', 'polite');
+    await expect(live).toContainText('CISA Known Exploited Vulnerabilities', { timeout: ROUTE_TIMEOUT });
+    await expect(live).toContainText(/\d+ sources? failed/);
+    await expect(live).toContainText(`CISA Known Exploited Vulnerabilities: using snapshot of ${snapshotDate}.`);
+  });
+});
+
+// Plan P1 row E1.4 (PR 2 of 2): the toolbar vintage chip and the Briefing
+// strip. The chip renders DataService.freshness$ (the pinned release, its
+// bundle date and an aggregate source dot) and opens the data-health view; the
+// strip is a polite live region on every route. Ten routes: Matrix, Status and
+// one view in each of the eight other workspaces.
+test.describe('vintage chip and Briefing strip on every route (plan E1.4)', () => {
+  test.describe.configure({ mode: 'parallel', timeout: process.env['CI'] ? 120000 : 60000 });
+  const collection = (JSON.parse(readFileSync('src/assets/data/enterprise-attack.json', 'utf8')) as {
+    objects: Array<{ type: string; x_mitre_version?: string; modified?: string }>;
+  }).objects.find(o => o.type === 'x-mitre-collection')!;
+  const pinned = collection.x_mitre_version!;
+  const bundleDate = collection.modified!.slice(0, 10);
+  const CHIP_ROUTES = [
+    '/matrix',
+    '/status',
+    '/dashboard/overview',
+    '/intel/groups',
+    '/detect/detections',
+    '/exposure/cve',
+    '/coverage/assessment',
+    '/library/layers',
+    '/reports/builder',
+    '/settings/preferences',
+  ];
+
+  test('the ten routes are current routes', () => {
+    expect(CHIP_ROUTES).toHaveLength(10);
+    const current = new Set(CURRENT_ROUTES.map(r => r.path));
+    expect(CHIP_ROUTES.filter(p => !current.has(p))).toEqual([]);
+  });
+
+  for (const path of CHIP_ROUTES) {
+    test(`#${path}: the chip shows the pinned version and bundle date; the strip is a live region`, greenBy('P1 (E1.4)'), async ({ page }) => {
+      const host = CURRENT_ROUTES.find(r => r.path === path)!.host;
+      await page.goto(`${BASE}/#${path}`);
+      await expect(page.locator(`${host} > *`).first()).toBeVisible({ timeout: ROUTE_TIMEOUT });
+
+      const chip = page.getByTestId('vintage-chip');
+      await expect(chip).toHaveCount(1);
+      await expect(chip).toBeVisible();
+      await expect(chip).toHaveAttribute('data-state', 'pinned', { timeout: ROUTE_TIMEOUT });
+      await expect(chip.locator('.attack-version')).toHaveText(`v${pinned}`);
+      await expect(chip).toContainText('pinned');
+      await expect(chip).toContainText(bundleDate);
+      expect(await chip.getAttribute('aria-label')).toContain(`ATT&CK ${pinned} (pinned); bundle dated ${bundleDate}`);
+
+      const strip = page.getByTestId('briefing-strip');
+      await expect(strip).toHaveCount(1);
+      await expect(strip).toBeVisible();
+      const live = page.getByTestId('briefing-live');
+      await expect(live).toHaveAttribute('role', 'status');
+      await expect(live).toHaveAttribute('aria-live', 'polite');
+      await expect(live).not.toBeEmpty();
+    });
+  }
+
+  test('the chip opens the data-health view', greenBy('P1 (E1.4)'), async ({ page }) => {
+    await page.goto(`${BASE}/#/dashboard/overview`);
+    await expect(page.locator('app-dashboard-panel > *').first()).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    await page.getByTestId('vintage-chip').click();
+    await expect(page).toHaveURL(/#\/status$/);
+    await expect(page.locator('app-status-page app-data-health')).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    await expect(page.locator('app-status-page app-source-health')).toBeVisible();
+  });
 });
 
 test.describe('shared fixture workspace', () => {
