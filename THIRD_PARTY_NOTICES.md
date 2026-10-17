@@ -75,18 +75,21 @@ Source: https://github.com/CERTCC/SSVC (`data/csv/cisa/`). The `data/` directory
 
 CERT Coordination Center® is registered in the U.S. Patent and Trademark Office by Carnegie Mellon University. The SSVC documentation (as opposed to the data files) is licensed CC BY-NC 4.0 and is not reproduced here.
 
-### 1.5 NVD, CVE®, EPSS and KEV derived data
+### 1.5 Galeax/CVE2CAPEC, NVD, CVE®, EPSS and KEV derived data
 
 | What | Where |
 |---|---|
-| CVE identifiers grouped by ATT&CK technique, generated from NVD records by `scripts/build-cve-technique-map.mjs` | `src/assets/data/cve-technique-map.json`, `src/assets/data/cve-technique-counts.json` |
+| CVE identifiers grouped by ATT&CK technique (exact per-technique counts and up to 200 sample CVE IDs), derived from Galeax/CVE2CAPEC data (CVE to CWE to CAPEC to ATT&CK) plus this project's exploitation-anchor correction, written by `scripts/build-cve-technique-map.mjs` | `src/assets/data/cve-technique-map.json` |
+| Per-technique CVE counts left by an earlier NVD API scan generator that is no longer in the repository; no script in the repository regenerates this file and no application code reads it | `src/assets/data/cve-technique-counts.json` |
 | Pre-built CVE dossiers: NVD description, CVSS, published date; EPSS score and percentile; CISA KEV fields; derived SSVC, CWE, CAPEC and ATT&CK context | `src/assets/data/dossiers/*.json` |
+
+- **Galeax/CVE2CAPEC.** `scripts/build-cve-technique-map.mjs` reads the per-year `CVE-<year>.jsonl.gz` files from https://raw.githubusercontent.com/Galeax/CVE2CAPEC/main/database, that is, the head of the upstream `main` branch each time it runs, with no pinned commit; `.github/workflows/refresh-data.yml` runs it and opens a pull request with the result. For each CVE it keeps the techniques derived from the upstream CWE and ATT&CK fields after the correction in `src/assets/data/cwe-exploitation-anchor.json` (section 1.10), then replaces retired ATT&CK IDs with their successors in the bundled Enterprise release and drops IDs that have none. The output is stored in this repository, copied into every build as `assets/data/cve-technique-map.json` and loaded by the application (`src/app/services/nvd-bulk.service.ts`). Its `__meta.source` field reads "Galeax/CVE2CAPEC (CVE→CWE→CAPEC→ATT&CK) + TeamStarWolf exploitation-anchor correction (cwe-exploitation-anchor.json)". The LICENSE file of https://github.com/Galeax/CVE2CAPEC is the text of the GNU General Public License, Version 3, 29 June 2007 (SPDX identifier reported by GitHub: `GPL-3.0`), and the upstream README states that the project is released under the GNU General Public License version 3. The application also reads Galeax/CVE2CAPEC data at runtime (section 2).
 
 - **NVD (NIST).** The CVE records come from the NIST National Vulnerability Database API. The NVD terms of use (https://nvd.nist.gov/developers/terms-of-use) ask services that use the API to display this notice, which the application shows in Settings > Data:
 
   > This product uses the NVD API but is not endorsed or certified by the NVD.
 
-  NVD content is produced by the National Institute of Standards and Technology, a U.S. federal agency, and is made available as a public service. The NVD name is used here only to identify the source of the data and not to imply endorsement. Content that this project derives from NVD data (the CVE-to-technique mapping, SSVC outcomes, kill-chain context) is this project's own interpretation and is not attributed to the NVD.
+  NVD content is produced by the National Institute of Standards and Technology, a U.S. federal agency, and is made available as a public service. The NVD name is used here only to identify the source of the data and not to imply endorsement. Content that this project derives from NVD data (SSVC outcomes, kill-chain context) is this project's own interpretation and is not attributed to the NVD.
 
 - **CVE® Program.** CVE identifiers and descriptions are used under the CVE terms of use (https://www.cve.org/Legal/TermsOfUse):
 
@@ -188,7 +191,7 @@ The application also loads data from the services below while it runs. That data
 | NIST NVD CVE API 2.0 | services.nvd.nist.gov | NVD terms of use (section 1.5); the application sends the user's own API key only as a request header |
 | FIRST EPSS API | api.first.org | Free to use; attribution requested (section 1.5) |
 | trickest/cve (proof-of-concept index) | github.com/trickest/cve | MIT License |
-| Galeax/CVE2CAPEC | raw.githubusercontent.com/Galeax/CVE2CAPEC | GNU General Public License v3.0 (data is read at runtime, not bundled) |
+| Galeax/CVE2CAPEC | raw.githubusercontent.com/Galeax/CVE2CAPEC (`main` branch) | GNU General Public License v3.0 (section 1.5). The application reads the current and previous year's files at runtime (`src/app/services/cve2capec.service.ts`); data derived from the same source is also bundled as `src/assets/data/cve-technique-map.json` (section 1.5) |
 | stamparm/ipsum (IP reputation feed) | raw.githubusercontent.com/stamparm/ipsum | The Unlicense |
 | swisskyrepo/PayloadsAllTheThings | github.com/swisskyrepo/PayloadsAllTheThings | MIT License |
 | mukul975/Anthropic-Cybersecurity-Skills Navigator layer | raw.githubusercontent.com/mukul975 | Apache License 2.0 |
