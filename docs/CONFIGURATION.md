@@ -490,7 +490,7 @@ Note that the GitHub Pages deployment serves no CSP at all (Pages sets no header
 
 ### Docker
 
-The repository's [`Dockerfile`](../Dockerfile) is the containerized deployment: a `node:24-alpine` build stage runs `npm ci` and `ng build --configuration production --base-href /`, and an `nginx:alpine` stage serves `dist/mitre-mitigation-navigator/browser` with the two nginx files above installed as templates under `/etc/nginx/templates/`. The image accepts three environment variables, all with defaults:
+The repository's [`Dockerfile`](../Dockerfile) is the containerized deployment: a `node:24-alpine` build stage runs `npm ci` and `ng build --configuration production --base-href /`, and an `nginxinc/nginx-unprivileged:alpine` stage (nginx on port 8080 as the unprivileged user 101) serves `dist/mitre-mitigation-navigator/browser` with the two nginx files above installed as templates under `/etc/nginx/templates/`. The image accepts three environment variables, all with defaults:
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
