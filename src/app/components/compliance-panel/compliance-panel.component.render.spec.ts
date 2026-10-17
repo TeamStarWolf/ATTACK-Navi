@@ -121,7 +121,14 @@ describe('CompliancePanelComponent (rendered, fixture domain)', () => {
     tabs[COMPLIANCE_TABS.indexOf('m365-ctrl')].click();
     fixture.detectChanges();
     expect(subtitle()).toBe(`${parents.filter(t => signal('m365-ctl', t.attackId) > 0).length} techniques with M365 controls mapped`);
-    expect(host.textContent).not.toMatch(/Compliance Score|\bcoverage\b/);
+    // The technique-tab sort button orders by the Known control-mapping count.
+    expect(host.querySelector('.sort-btn')!.textContent!.trim()).toBe('Controls mapped');
+    // Checked per text node: host.textContent joins adjacent buttons with no
+    // separator ('CoverageTechnique'), which hides a trailing word boundary.
+    const texts: string[] = [];
+    const walker = document.createTreeWalker(host, NodeFilter.SHOW_TEXT);
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) texts.push(n.textContent!);
+    expect(texts.filter(t => /compliance score|\bcoverage\b/i.test(t))).toEqual([]);
   });
 
   it('switching tab and searching re-renders the table', () => {
