@@ -1,194 +1,189 @@
-# ATTACK-Navi Quick Start Guide
+# ATTACK-Navi quick start
 
-## Getting Started
+ATTACK-Navi is a browser-based workbench for MITRE ATT&CK. It runs as a static site with
+no login and no required backend. This guide covers how to move around, what the colors
+mean, and the common workflows.
 
-Open the app: **https://teamstarwolf.github.io/ATTACK-Navi/**
+## Open the app
 
-The matrix loads automatically with Enterprise ATT&CK data. No login required.
+Hosted build: https://teamstarwolf.github.io/ATTACK-Navi/
 
-> **Finding things:** the left rail holds ten workspaces (Matrix, Dashboard, Intel, Detect,
-> Exposure, Coverage, Library, Reports, Status, Settings), each with a tab bar. The quickest way anywhere
-> is **`Ctrl+K`** — type a destination name and press Enter. Every destination also has its own
-> URL, so you can bookmark it. Press **`?`** for the full shortcut list.
+The matrix loads with bundled Enterprise ATT&CK 19.2. Nothing is sent anywhere; the data
+you enter (assets, assessment answers, annotations) stays in your browser.
 
----
+## Move around
 
-## Core Workflow: "How secure am I?"
+The left rail holds 10 workspaces: Matrix, Detection, Exposure, Dashboard, Threat Intel,
+Coverage, Library, Reports, Status and Settings. Each workspace has its own tabs (47 tabs
+in all). Three ways to navigate:
 
-### Step 1: Run the Assessment Wizard
-1. Go to **Coverage → Assessment** (or press `Ctrl+K`, type "assessment")
-2. Pick your domain (Enterprise is most common)
-3. Select threat actors relevant to your industry
-4. Rate your implementation status for each technique
-5. Review your coverage score and top gaps
-6. Export the results
+- `Ctrl+K` opens the command palette. Type a destination name and press Enter.
+- Every tab has its own URL, so you can bookmark or share it.
+- Press `?` for the keyboard shortcut list.
 
-### Step 2: Import Your Assets
-1. Go to **Coverage → Assets** (or `Ctrl+K` → "assets")
-2. Upload a CSV with columns: `hostname, os, software, tags, criticality`
-3. Switch to the Exposure tab to see which techniques affect YOUR environment
-4. Enable the "My Exposure" heatmap to see your personalized risk
+## What the colors mean
 
-### Step 3: Run Gap Analysis
-1. Go to **Exposure → Gap Analysis** (or `Ctrl+K` → "gap analysis")
-2. Select the threat actors you care about
-3. Click Generate — you get a RAG (Red/Amber/Green) report showing:
-   - Which actor techniques you've mitigated
-   - Which ones you have detection rules for
-   - Which ones you're completely blind to
-4. Export as PDF for your CISO
+Lens labels follow the Known / Covered / Proven vocabulary, so a color never claims more
+than the data behind it supports:
 
----
+- **Known (reference data).** The world knows how to mitigate, detect or test the
+  technique. These lenses read "mapped", "available" or "reference depth". They say nothing
+  about your environment.
+- **Covered (self-attested).** Something is deployed for the technique, recorded by you, but
+  not shown to have fired. The assessment and status lenses sit here.
+<!-- truth-vocab-allow-next-line proven-only -- names the Proven rung in its own definition; not a claim about this app's data -->
+- **Proven.** A named detection fired, or the technique was blocked, on a recorded date.
+  The hosted app carries none of it; that rung comes from range evidence, not from anything
+  you can enter in the browser.
 
-## Daily Use
+So the matrix out of the box shows reference depth (what is mappable), not your posture.
+Your posture appears only after you record your own implementation status or import assets.
 
-### Browse the Matrix
-- **Click any technique** to open the sidebar with 30+ enrichment sections
-- **Hover** to see a tooltip with key stats
-- **Search** by ID (T1059) or name (PowerShell) in the top search bar
+## Workflow: map your coverage and find gaps
 
-### Heatmap Modes (26 available)
-Click the **Coverage** dropdown in the toolbar. Key modes:
-- **Coverage** — which techniques have mitigations (green = covered)
-- **Risk** — combined risk score
-- **KEV** — CISA Known Exploited Vulnerabilities
-- **EPSS** — exploitation probability
-- **My Exposure** — YOUR risk based on imported assets
-- **Intelligence** — threat intel signal density
-- **Sigma/Elastic/Splunk** — detection rule coverage
-- **M365 Defender** — Microsoft hunting query coverage
+### 1. Record your implementation status
 
-### Sidebar Sections (when you click a technique)
-The sidebar shows everything known about a technique:
-- Mitigations and implementation status
-- CVE exposure (from 4.5M mappings)
-- EPSS exploitation probability
-- Sigma, Elastic, Splunk, M365 Defender detection rules
-- Atomic Red Team tests (with copy Invoke-AtomicTest commands)
-- SIEM queries for 5 platforms (copy to clipboard)
-- AD attack paths (BloodHound mappings)
-- C2 framework capabilities (Sliver, Cobalt Strike, Metasploit)
-- PayloadsAllTheThings references
-- Windows logging configuration scripts
-- MISP Galaxy clusters, OpenCTI indicators
-- NIST 800-53, CRI, cloud controls, VERIS
-- D3FEND countermeasures, MITRE Engage activities
-- Completeness score (0-100%)
+1. Open Coverage, Assessment (or `Ctrl+K`, then "assessment").
+2. Pick a domain. Enterprise is the common choice.
+3. Select the threat groups relevant to your sector.
+4. Mark your self-attested implementation status for each technique.
+5. Review the summary: techniques with a mapped mitigation, and the ones you marked as
+   implemented. The summary is self-attested, not evidenced.
+6. Export the result.
 
-### Technique of the Day
-The **Dashboard** panel shows a random technique each day. Good for team learning.
+### 2. Import your assets
 
----
+1. Open Coverage, Assets (or `Ctrl+K`, then "assets").
+2. Upload a CSV with the columns `hostname, os, software, tags, criticality`.
+3. Open Exposure, or turn on the My Exposure lens, to see which techniques affect the
+   assets you imported. My Exposure is a reachability view, not a posture rung.
 
-## Key Panels
+### 3. Run a gap analysis
 
-| Nav Item | What It Does |
-|----------|-------------|
-| **DASHBOARD** | Configurable widgets: coverage, radar chart, gaps, health, KEVs |
-| **THREATS** | Select threat groups, see their techniques, run gap analysis |
-| **ACTORS** | Deep-dive on a specific threat actor |
-| **SCENARIO** | What-if simulation: "What if APT29 targets us?" |
-| **INTEL** | Unified threat intelligence: MISP + OpenCTI + ATT&CK |
-| **KILL CHAIN** | Technique distribution across attack phases |
-| **ANALYTICS** | Radar chart + tactic breakdown |
-| **DETECT** | Detection coverage across all rule sources |
-| **GAP RPT** | Detection gap analysis with RAG scoring |
-| **CVE** | Search CVEs, browse KEV catalog, explore by technique |
-| **ASSETS** | Import asset inventory, see personalized exposure |
-| **CONTROLS** | NIST 800-53, CIS, cloud control mappings |
-| **COMPLY** | SOC 2 / ISO 27001 / PCI DSS compliance mapping |
-| **SIGMA** | Generate and export Sigma detection rules |
-| **SIEM** | Pre-built queries for Splunk, Elastic, Microsoft, Chronicle, CrowdStrike |
-| **YARA** | Generate YARA malware detection rules |
-| **IR PLAY** | Incident response playbooks (5-phase) |
-| **PURPLE** | Purple team planning and validation |
-| **ASSESS** | Guided step-by-step coverage assessment |
-| **COLLECT** | STIX 2.1 import/export, custom techniques, sharing |
-| **LAYERS** | Save and restore matrix view snapshots |
-| **REPORT** | Generate HTML coverage reports |
+1. Open Exposure, Gap Analysis (or `Ctrl+K`, then "gap analysis").
+2. Select the threat groups you care about.
+3. Generate the report. It marks each of the selected groups' techniques by whether you
+   have a mapped mitigation and a self-attested detection, so the gaps are the techniques
+   with neither.
+4. Export as PDF.
 
----
+## The matrix and the technique sidebar
 
-## Sharing & Export
+Click any technique to open the sidebar. Hover for a short tooltip. Search by ID (T1059) or
+name (PowerShell) in the top bar.
 
-### Share a Technique
-Click the **Share** button in the sidebar header. Copies a URL like:
-`https://teamstarwolf.github.io/ATTACK-Navi/#tech=T1059.001`
+The sidebar collects what public sources know about a technique: ATT&CK mitigations and
+your implementation status; detection content from Sigma, Elastic, Splunk, M365 Defender,
+CAR and Atomic Red Team; CVE and KEV links and EPSS scores; copy-ready SIEM queries;
+D3FEND countermeasures and MITRE Engage activities; and control mappings for NIST 800-53,
+CRI Profile, VERIS, CSA CCM and cloud providers. Each section names its source, and the
+detection and control sections are reference data (Known) unless you have recorded your own
+status.
 
-Anyone opening that link sees the technique pre-selected.
+## Heatmap modes
 
-### Share Your Collection
-Go to **Library → Collections** and click "Share Link" to generate a URL containing your custom techniques and annotations (base64-encoded in the hash).
+The Coverage dropdown in the toolbar switches the matrix coloring. There are 33 modes,
+grouped as Coverage and Posture, Threat Landscape, Vulnerabilities, Detections and
+Frameworks. Each mode carries a rung, so a Detections lens reads "mapped" or "available"
+(reference content exists), not a self-attested or evidenced claim, unless the data is yours. The Threat Landscape
+and Vulnerabilities lenses are dimensions (how much adversaries care, what is reachable),
+never a posture rung.
 
-### Export Formats
-Go to **Reports → Export Hub** for the full card grid of formats:
-- CSV, XLSX (multi-sheet), HTML report, PDF, PNG screenshot
-- ATT&CK Navigator JSON layer (export + import)
-- STIX 2.1 bundle
-- Sigma rules, SIEM queries, YARA rules
+## Workspaces and tabs
 
----
+| Workspace | Tabs |
+|---|---|
+| Matrix | the single matrix view |
+| Detection | Detections, Sigma, SIEM, YARA, Validation, Data Sources, Purple Team |
+| Exposure | CVE, Risk, Kill Chain, Graph, Gap Analysis, Priority, SSVC, Dossier, What-If, CTEM |
+| Dashboard | Overview, Analytics |
+| Threat Intel | Groups, Actors, Compare, Scenarios, Emulation, Campaigns, Software, Feeds |
+| Coverage | Assessment, Controls, Custom Mitigations, Compliance, Diff, Timeline, Target, Assets |
+| Library | Workbench, Layers, Collections, Comparison, Roadmap, Watchlist, Tags |
+| Reports | Report Builder, IR Playbooks, Export Hub |
+| Status | source health and data freshness |
+| Settings | Preferences, Changelog |
 
-## Integrations (Optional)
+The Library workspace includes 37 named layers drawn from the TeamStarWolf library.
 
-### Connect MISP Server
-1. Click **Settings** in the nav rail
-2. Enter your MISP URL, API key, and Org ID
-3. Click "Test & Save"
-4. The INTEL panel and sidebar now show live MISP data
+## Share and export
 
-### Connect OpenCTI
-1. Click **Settings**
-2. Enter your OpenCTI URL and API token
-3. Click "Test & Save"
-4. Sidebar shows OpenCTI indicators and threat actors
+- **Share a technique.** The Share button in the sidebar header copies a URL such as
+  `https://teamstarwolf.github.io/ATTACK-Navi/#tech=T1059.001`. Opening it pre-selects the
+  technique.
+- **Share a collection.** Library, Collections has a share link that encodes your custom
+  techniques and annotations in the URL hash.
+- **Export.** Reports, Export Hub offers CSV, XLSX, an HTML report, PDF, PNG, an ATT&CK
+  Navigator JSON layer (import and export), a STIX 2.1 bundle, Sigma rules, SIEM queries and
+  YARA rules.
 
-### Connect TAXII 2.1 Server
-1. Click **Settings**
-2. Add a TAXII server (URL, credentials)
-3. Fetch collections and import STIX bundles
+## Optional integrations
 
-### NVD API Key (Faster CVE Queries)
-1. Register at https://nvd.nist.gov/developers/request-an-api-key
-2. Enter the key in Settings
-3. CVE queries run 3x faster
+Set these in Settings. They are optional; the app works without them.
 
----
+- **MISP.** Enter your server URL, API key and organization ID, then Test and Save. The
+  Threat Intel panel and sidebar then show your MISP data.
+- **OpenCTI.** Enter your URL and API token. The sidebar then shows OpenCTI indicators and
+  actors.
+- **TAXII 2.1.** Add a server, fetch collections and import STIX bundles.
+- **NVD API key.** Register at https://nvd.nist.gov/developers/request-an-api-key and enter
+  the key in Settings to raise your NVD rate limit for CVE queries.
 
-## Keyboard Shortcuts
+Credentials entered in the browser stay in the browser. To keep OpenCTI or MISP credentials
+off the client, run the optional proxy under `server/` (see Self-hosting).
 
-| Key | Action |
-|-----|--------|
-| `Escape` | Close sidebar or panel |
-| `/` | Focus search bar |
-| `?` | Show keyboard help |
+## Offline use
 
----
+The hosted build is a Progressive Web App. After the first visit it works offline, and
+ATT&CK data is cached locally. Look for the install prompt in your browser's address bar to
+add it to your device.
 
-## Offline Use
-
-The app is a PWA (Progressive Web App). After your first visit, it works offline — ATT&CK data is cached locally for 24 hours.
-
-To install on your device: look for the "Install" prompt in your browser's address bar.
-
----
-
-## Self-Hosting
+## Self-hosting
 
 ### Docker
+
 ```bash
-cp server/.env.example server/.env    # optional: credentials + PROXY_AUTH_TOKEN for the proxy
+cp server/.env.example server/.env    # optional: credentials and PROXY_AUTH_TOKEN for the proxy
 docker compose up -d --build
 ```
-Opens on http://localhost:8080. The optional credentials proxy is reached through the app at http://localhost:8080/api/ (and from the host on 127.0.0.1:8787); the stack starts without `server/.env`, the proxy just has nothing to forward to until you fill it in. Serving it on a LAN address or hostname instead of localhost? Set `APP_ORIGIN` (the page origin, e.g. `http://navi.lan:8080`) and `APP_HOST` (the bare host name the browser uses, e.g. `navi.lan`) in a `.env` file next to `docker-compose.yml`; the proxy refuses other Host names.
+
+Opens on http://localhost:8080. The optional credentials proxy is reached through the app at
+http://localhost:8080/api/ (and from the host on 127.0.0.1:8787). The stack starts without
+`server/.env`; the proxy has nothing to forward until you fill it in. To serve on a LAN
+address or hostname instead of localhost, set `APP_ORIGIN` (the page origin, for example
+`http://navi.lan:8080`) and `APP_HOST` (the bare host name the browser uses, for example
+`navi.lan`) in a `.env` file next to `docker-compose.yml`; the proxy refuses other Host
+names.
 
 ### Kubernetes
+
 ```bash
 helm install attack-nav helm/attack-nav/
 ```
 
 ### Manual
+
 ```bash
 npm ci && npx ng build
 # Serve dist/mitre-mitigation-navigator/browser/ with any static server
 ```
+
+## Data, limits and credits
+
+The matrix shows reference data by default: what public sources map, not your posture. The
+only environment-specific views are the ones you populate (assessment status, imported
+assets, annotations), and those are self-attested, not evidenced. The hosted app has no data
+at the evidenced rung.
+
+ATT&CK, ICS and Mobile ATT&CK and the CTID F3 Fraud Framework are bundled; D3FEND, the CTID
+mappings, Sigma, Elastic, Splunk, Atomic Red Team, Galeax CVE2CAPEC, CISA KEV, FIRST EPSS,
+NVD and others are fetched from their upstream sources at runtime. `THIRD_PARTY_NOTICES.md`
+lists every source with its license and terms, and the Status workspace shows which sources
+loaded.
+
+© 2026 The MITRE Corporation. The ATT&CK data in this repository is reproduced and
+distributed with the permission of The MITRE Corporation. MITRE ATT&CK® is a registered
+trademark of The MITRE Corporation. This project is not affiliated with or endorsed by
+MITRE. This product uses the NVD API but is not endorsed or certified by the NVD. Data
+fetched at runtime from other sources remains subject to those sources' own licenses and
+terms.
