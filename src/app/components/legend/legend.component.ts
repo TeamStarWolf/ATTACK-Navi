@@ -10,9 +10,12 @@ import { SAFE_SEQ, SAFE_COVERAGE, SAFE_STATUS, SAFE_CONTROLS } from '../../model
 interface LegendStop { color: string; label: string; }
 interface LegendConfig { label: string; stops: LegendStop[]; categorical?: boolean; }
 
+// Legend titles use the Known / Covered / Proven vocabulary (plan 4.1, E1.1):
+// reference-data lenses say 'mapped' / 'available' / 'reference depth', never
+// 'coverage', 'exposed' or 'covered'.
 const MODE_CONFIGS: Record<HeatmapMode, LegendConfig> = {
   coverage: {
-    label: 'Mitigations',
+    label: 'Mitigations mapped',
     stops: [
       { color: '#d32f2f', label: '0' },
       { color: '#ff9800', label: '1' },
@@ -22,7 +25,7 @@ const MODE_CONFIGS: Record<HeatmapMode, LegendConfig> = {
     ],
   },
   exposure: {
-    label: 'Exposure',
+    label: 'Selected adversaries',
     stops: [
       { color: '#eceff1', label: '0' },
       { color: '#ffb74d', label: 'low' },
@@ -72,7 +75,7 @@ const MODE_CONFIGS: Record<HeatmapMode, LegendConfig> = {
     ],
   },
   risk: {
-    label: 'Risk Score',
+    label: 'Threat-weighted mapping gap',
     stops: [
       { color: '#eceff1', label: '0' },
       { color: '#ff7043', label: 'low' },
@@ -141,7 +144,7 @@ const MODE_CONFIGS: Record<HeatmapMode, LegendConfig> = {
     ],
   },
   detection: {
-    label: 'Sigma Rules',
+    label: 'Detection content available',
     stops: [
       { color: '#1a2332', label: '0' },
       { color: '#0c2d2d', label: '1–3' },
@@ -181,13 +184,13 @@ const MODE_CONFIGS: Record<HeatmapMode, LegendConfig> = {
     ],
   },
   unified: {
-    label: 'Unified Coverage',
+    label: 'Reference depth',
     stops: [
-      { color: '#0e1b30', label: 'exposed' },
+      { color: '#0e1b30', label: 'none' },
       { color: '#143a5c', label: 'thin' },
-      { color: '#1f6aa8', label: 'partial' },
-      { color: '#38bdf8', label: 'covered' },
-      { color: '#a78bfa', label: 'strong' },
+      { color: '#1f6aa8', label: 'some' },
+      { color: '#38bdf8', label: 'deep' },
+      { color: '#a78bfa', label: 'deepest' },
     ],
   },
   sigma: {
@@ -281,7 +284,7 @@ const MODE_CONFIGS: Record<HeatmapMode, LegendConfig> = {
     ],
   },
   wazuh: {
-    label: 'Wazuh XDR',
+    label: 'Wazuh stock rules (curated)',
     stops: [
       { color: '#0a1520', label: '0' },
       { color: '#0d3a5c', label: '1' },

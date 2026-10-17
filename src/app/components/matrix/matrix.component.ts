@@ -57,6 +57,7 @@ import { M365ControlsService } from '../../services/m365-controls.service';
 import { Cve2CapecService } from '../../services/cve2capec.service';
 import { PocExploitService } from '../../services/poc-exploit.service';
 import { EnrichmentService } from '../../services/enrichment.service';
+import { referenceDepthScore } from '../../models/reference-depth';
 
 /**
  * Tactic header colours keyed by shortname. Enterprise v19 split
@@ -186,7 +187,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
   // Detection coverage scores (CAR + Atomic + D3FEND combined): attackId -> weighted score
   detectionScoreMap = new Map<string, number>();
   maxDetectionScore = 1;
-  // Unified Risk Score: attackId -> 0–100 composite
+  // Reference depth (heat=unified): attackId -> 0–100 defensive-reference composite
   unifiedScoreMap = new Map<string, number>();
   // Sigma rule scores: attackId -> rule count
   sigmaScoreMap = new Map<string, number>();
@@ -545,6 +546,8 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     this.subs.add(
       this.filterService.heatmapMode$.subscribe((mode) => {
         this.currentHeatmapMode = mode;
+        // KEV is not a Reference depth input, but the default lens still loads
+        // it: the cells' KEV badge and the risk sort read the same scores.
         if (mode === 'kev' || mode === 'unified') {
           this.cveService.loadKev();
         }
@@ -699,38 +702,19 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
           this.maxRisk = 1;
           this.sigmaScoreMap = new Map();
           this.unifiedScoreMap = new Map();
-          // Unified cross-framework posture — mitigation is at most co-equal, and
-          // controls + threat-intel (previously missing) now contribute. Weights:
-          //   mitigation ......... 15   detection (Sigma+CAR) .. 20
-          //   controls ........... 15   D3FEND ................. 10
-          //   atomic ............. 10   threat-intel ........... 10
-          //   KEV/exposure (inv) . 20                     total = 100
+          // Reference depth (Known rung): defensive reference inputs only -
+          // mitigations, detection content (Sigma + CAR), CTID control mappings,
+          // D3FEND and Atomic. The threat-intel and KEV terms the old 'Unified
+          // Coverage' composite mixed in are gone; the Threat lenses show them.
+          // Weights and saturation points: models/reference-depth.ts.
           for (const tech of this.domain.techniques) {
-            // Mitigation (weight 15): 4+ mitigations = full score
-            const mitScore = Math.min(tech.mitigationCount / 4, 1) * 15;
-            // Detection (weight 20): Sigma + CAR rules presence
-            const sigmaCount  = this.sigmaService.getRuleCount(tech.attackId);
-            const carCount    = this.carService.getLiveCount(tech.attackId);
-            const detectScore = Math.min((sigmaCount + carCount) / 5, 1) * 20;
-            // Control-framework mappings (weight 15): NIST/CRI/CIS/CSA/M365
-            const controlCount = this.enrichment.controlCount(tech.attackId);
-            const controlScore = Math.min(controlCount / 4, 1) * 15;
-            // D3FEND countermeasures (weight 10)
-            const d3fendCount = this.d3fendService.getCountermeasures(tech.attackId).length;
-            const d3fendScore = Math.min(d3fendCount / 2, 1) * 10;
-            // Atomic test validation (weight 10)
-            const atomicCount = this.atomicService.getTestCount(tech.attackId);
-            const atomicScore = Math.min(atomicCount / 3, 1) * 10;
-            // Threat-intel linkage (weight 10): groups + software + campaigns
-            const threatCount = this.enrichment.threatIntelCount(tech, this.domain);
-            const threatScore = Math.min(threatCount / 4, 1) * 10;
-            // KEV exposure INVERTED (weight 20): more KEV CVEs = lower score = higher risk
-            const kevCount = this.kevScores.get(tech.attackId) ?? 0;
-            const kevPenalty = Math.min(kevCount * 5, 20);
-            const kevScore = 20 - kevPenalty;
-            const total = Math.round(
-              mitScore + detectScore + controlScore + d3fendScore + atomicScore + threatScore + kevScore,
-            );
+            const total = referenceDepthScore({
+              mitigations: tech.mitigationCount,
+              detectionContent: this.sigmaService.getRuleCount(tech.attackId) + this.carService.getLiveCount(tech.attackId),
+              controls: this.enrichment.controlCount(tech.attackId),
+              d3fend: this.d3fendService.getCountermeasures(tech.attackId).length,
+              atomic: this.atomicService.getTestCount(tech.attackId),
+            });
             this.unifiedScoreMap.set(tech.attackId, total);
           }
         } else if (mode === 'library' && this.domain) {
@@ -909,7 +893,6 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
       this.cveService.kevTechScores$.subscribe(scores => {
         this.kevScores = scores;
         this.maxKev = scores.size > 0 ? Math.max(...scores.values()) : 1;
-        this.refreshActiveHeatmap('unified');
         this.cdr.markForCheck();
       }),
     );

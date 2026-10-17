@@ -7,7 +7,7 @@ import { Viewpoint, ViewpointService } from '../../services/viewpoint.service';
 
 const ANALYST: Viewpoint = {
   id: 'analyst', label: 'Analyst', short: 'Analyst', icon: 'compass',
-  tagline: 'Neutral, unified coverage view', defaultLens: 'unified',
+  tagline: 'Neutral reference-depth view', defaultLens: 'unified',
   homeRoute: '/matrix', featuredLenses: ['unified', 'coverage', 'risk', 'detection'],
 };
 const RED: Viewpoint = {

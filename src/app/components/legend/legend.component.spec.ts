@@ -46,7 +46,7 @@ describe('LegendComponent', () => {
   it('should show the mode label', () => {
     const label = fixture.nativeElement.querySelector('.legend-label');
     expect(label).toBeTruthy();
-    expect(label.textContent.trim()).toBe('Mitigations');
+    expect(label.textContent.trim()).toBe('Mitigations mapped');
   });
 
   it('should update stops when heatmap mode changes to exposure', () => {
@@ -54,7 +54,7 @@ describe('LegendComponent', () => {
     fixture.detectChanges();
 
     const label = fixture.nativeElement.querySelector('.legend-label');
-    expect(label.textContent.trim()).toBe('Exposure');
+    expect(label.textContent.trim()).toBe('Selected adversaries');
 
     const stops = fixture.nativeElement.querySelectorAll('.legend-stop');
     expect(stops.length).toBe(5);
@@ -81,5 +81,33 @@ describe('LegendComponent', () => {
     expect(swatches.length).toBe(5);
     expect(swatches[0].style.background).toContain('rgb(211, 47, 47)');
     expect(swatches[4].style.background).toContain('rgb(76, 175, 80)');
+  });
+
+  // E1.1 relabel (plan 4.1 / 4.7): legend titles use the Known vocabulary.
+  const RELABELLED: Array<[HeatmapMode, string]> = [
+    ['coverage', 'Mitigations mapped'],
+    ['unified', 'Reference depth'],
+    ['detection', 'Detection content available'],
+    ['exposure', 'Selected adversaries'],
+    ['risk', 'Threat-weighted mapping gap'],
+    ['wazuh', 'Wazuh stock rules (curated)'],
+  ];
+  for (const [mode, title] of RELABELLED) {
+    it(`titles the ${mode} legend '${title}'`, () => {
+      heatmapMode$.next(mode);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.legend-label').textContent.trim()).toBe(title);
+    });
+  }
+
+  it('labels the Reference depth stops without posture words', () => {
+    heatmapMode$.next('unified');
+    fixture.detectChanges();
+    const labels = Array.from(fixture.nativeElement.querySelectorAll('.stop-label'))
+      .map((el: any) => el.textContent.trim());
+    expect(labels).toEqual(['none', 'thin', 'some', 'deep', 'deepest']);
+    for (const banned of ['covered', 'exposed', 'protected', 'strong']) {
+      expect(labels).not.toContain(banned);
+    }
   });
 });
