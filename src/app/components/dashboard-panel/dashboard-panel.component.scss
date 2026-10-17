@@ -560,7 +560,7 @@
   font-weight: 700;
   padding: 2px 7px;
   border-radius: 999px;
-  background: rgb(255 143 122 / 15%);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
   color: var(--danger);
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -641,10 +641,11 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
 
-  &.hs-loaded { color: #22c55e; }
-  &.hs-loading { color: #eab308; }
-  &.hs-failed { color: #ef4444; }
-  &.hs-empty { color: #94a3b8; }
+  // Plan E1.5: status words use theme tokens (>= 4.5:1 in both themes).
+  &.hs-loaded { color: var(--success); }
+  &.hs-loading { color: var(--accent-warm); }
+  &.hs-failed { color: var(--danger); }
+  &.hs-empty { color: var(--text-faint); }
 }
 
 // ─── Intel Summary ───────────────────────────────────────────────────────────

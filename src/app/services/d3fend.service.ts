@@ -138,6 +138,17 @@ export const D3FEND_MAPPING: D3fendTechnique[] = [
 // D3FEND 1.4.0+ per-technique mapping endpoint. Returns SPARQL-style bindings
 // with authoritative def_tactic_label (Harden/Detect/Isolate/Deceive/Evict).
 const D3FEND_TECHNIQUE_API = 'https://d3fend.mitre.org/api/offensive-technique/attack/';
+
+/**
+ * The d3fend.mitre.org API URL for one ATT&CK technique. D3FEND keys
+ * sub-techniques by their dotted ATT&CK id (T1059.001.json); the slash form
+ * (T1059/001.json) is a 404, checked against d3fend.mitre.org on 2026-10-17
+ * (plan E1.5).
+ */
+export function d3fendTechniqueApiUrl(attackId: string): string {
+  return `${D3FEND_TECHNIQUE_API}${encodeURIComponent(attackId)}.json`;
+}
+
 // JSON-LD list of every defensive technique currently in the ontology.
 // Used at startup to prune bundled entries whose IDs/names were removed or
 // reassigned in D3FEND 1.4.0 (e.g. D3-PRS, D3-CE).
@@ -299,12 +310,10 @@ export class D3fendService {
    */
   private fetchLiveForAttackId(attackId: string): void {
     if (this.fetchStatus.has(attackId)) return;
-    // D3FEND URL format uses slash for subtechniques: T1059.001 -> T1059/001
-    const urlId = attackId.replace('.', '/');
     this.fetchStatus.set(attackId, 'pending');
 
     this.sources.begin('d3fend-technique-api');
-    this.http.get<D3fendAttackResponse>(`${D3FEND_TECHNIQUE_API}${urlId}.json`)
+    this.http.get<D3fendAttackResponse>(d3fendTechniqueApiUrl(attackId))
       .subscribe({ next: response => {
         this.fetchStatus.set(attackId, 'done');
         const bindings = response?.off_to_def?.results?.bindings;
