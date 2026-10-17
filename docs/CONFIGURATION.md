@@ -380,7 +380,7 @@ The Navigator encodes the current filter configuration in the URL hash fragment.
 | `tq` | String | Technique search query | `tq=credential` |
 | `pf` | String | Platform filter (single) | `pf=Windows` |
 | `plat` | CSV | Multi-platform filter | `plat=Windows,Linux` |
-| `dim` | Flag | Dim uncovered techniques | `dim=1` |
+| `dim` | Flag | Dim unmapped techniques | `dim=1` |
 | `sfm` | Flag | Search filter mode | `sfm=1` |
 | `ds` | String | Data source filter | `ds=Process` |
 | `heat` | Enum | Heatmap mode | `heat=sigma` |

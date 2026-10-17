@@ -425,9 +425,9 @@ export class GapAnalysisService {
     rows.push(`Total Techniques,${result.summary.totalTechniques}`);
     rows.push(`Mitigated,${result.summary.mitigated}`);
     rows.push(`Detected,${result.summary.detected}`);
-    rows.push(`Validated,${result.summary.validated}`);
+    rows.push(`Atomic tests available,${result.summary.validated}`);
     rows.push(`Fully Blind,${result.summary.fullyBlind}`);
-    rows.push(`Coverage %,${result.summary.coveragePercent}`);
+    rows.push(`Mitigation-mapped %,${result.summary.coveragePercent}`);
     rows.push(`Detection %,${result.summary.detectionPercent}`);
     rows.push(`RAG Status,${result.summary.ragStatus.toUpperCase()}`);
 
@@ -475,12 +475,12 @@ export class GapAnalysisService {
         ['Techniques used by selected actors', result.summary.actorTechniques],
         ['Mitigated', result.summary.mitigated],
         ['Detected', result.summary.detected],
-        ['Validated', result.summary.validated],
+        ['Atomic tests available', result.summary.validated],
         ['Fully blind (no detection, no mitigation)', result.summary.fullyBlind],
-        ['Coverage %', result.summary.coveragePercent],
+        ['Mitigation-mapped %', result.summary.coveragePercent],
         ['Detection %', result.summary.detectionPercent],
         [],
-        ['Detection source', 'Covered', 'Total', 'Coverage %'],
+        ['Detection source', 'Mapped', 'Total', 'Mapped %'],
         ...this.detectionCoverageRows(result.detectionCoverage),
       ];
       const sumWs = XLSX.utils.aoa_to_sheet(sumRows);
@@ -768,7 +768,7 @@ export class GapAnalysisService {
   <div class="summary-box"><div class="num">${result.summary.totalTechniques}</div><div class="lbl">Total</div></div>
   <div class="summary-box"><div class="num" style="color:#4caf50">${result.summary.mitigated}</div><div class="lbl">Mitigated</div></div>
   <div class="summary-box"><div class="num" style="color:#2196f3">${result.summary.detected}</div><div class="lbl">Detected</div></div>
-  <div class="summary-box"><div class="num" style="color:#9c27b0">${result.summary.validated}</div><div class="lbl">Validated</div></div>
+  <div class="summary-box"><div class="num" style="color:#9c27b0">${result.summary.validated}</div><div class="lbl">Atomic tests available</div></div>
   <div class="summary-box"><div class="num" style="color:#f44336">${result.summary.fullyBlind}</div><div class="lbl">Fully Blind</div></div>
   <div class="summary-box"><div class="num" style="color:${ragColor}">${result.summary.ragStatus.toUpperCase()}</div><div class="lbl">RAG Status</div></div>
 </div>

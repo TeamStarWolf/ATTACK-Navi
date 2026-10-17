@@ -81,7 +81,7 @@ export class XlsxExportService {
       ['Metric', 'Value'],
       ['Total Techniques', parentTechniques.length],
       ['Total Subtechniques', subtechniques.length],
-      ['Covered Techniques', coveredTechniques.length],
+      ['Techniques with a mapped mitigation', coveredTechniques.length],
       ['Coverage Rate', `${coverageRate}%`],
       ['Total Mitigations', domain.mitigations.length],
       ['Implemented', implemented],
@@ -161,7 +161,7 @@ export class XlsxExportService {
   ): any {
     const headers = [
       'Mitigation ID', 'Name', 'Implementation Status', 'Status Label',
-      'Techniques Covered (count)', 'Description',
+      'Techniques Mapped (count)', 'Description',
     ];
 
     const dataRows = domain.mitigations.map(mit => {
@@ -186,7 +186,7 @@ export class XlsxExportService {
   // ── Sheet 5: Coverage by Tactic ──────────────────────────────────────────────
 
   private buildCoverageByTacticSheet(XLSX: XLSX, domain: Domain): any {
-    const headers = ['Tactic', 'ATT&CK ID', 'Total Techniques', 'Covered', 'Coverage %', 'Avg Mitigations'];
+    const headers = ['Tactic', 'ATT&CK ID', 'Total Techniques', 'Mapped', 'Mitigation-mapped %', 'Avg Mitigations'];
 
     const dataRows = domain.tacticColumns.map(col => {
       const parents = col.techniques.filter(t => !t.isSubtechnique);
@@ -259,7 +259,7 @@ export class XlsxExportService {
 
   private buildTimelineSheet(XLSX: XLSX, snapshots: CoverageSnapshot[]): any {
     const headers = [
-      'Date', 'Label', 'Coverage %', 'Covered', 'Total',
+      'Date', 'Label', 'Mitigation-mapped %', 'Mapped', 'Total',
       'Implemented', 'In Progress', 'Planned', 'Notes',
     ];
 

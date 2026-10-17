@@ -42,5 +42,11 @@ jobs:
       - run: npm ci
       # Curated library layers must still match the bundled Enterprise snapshot.
       - run: npm run validate:layers
+      # Truth-vocabulary lint (plan 4.1, epic E1.1): banned and rung-mismatched
+      # words in templates, string literals, README and docs fail the gate.
+      # Its own tests run first; one of them plants a violation and expects
+      # exit 1. Needs npm ci (it reads TypeScript sources with the compiler).
+      - run: node --test scripts/lint-truth-vocab.test.mjs
+      - run: node scripts/lint-truth-vocab.mjs
       - run: npx ng test --no-watch --browsers=ChromeHeadless
       - run: npx ng build --configuration production

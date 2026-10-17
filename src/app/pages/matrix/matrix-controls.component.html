@@ -203,7 +203,7 @@
                 {{ sortMode === 'alpha' ? '↕ Sort by risk' : '↕ Sort A–Z' }}
               </button>
               <button class="menu-action" [class.active]="dimUncovered" (click)="toggleDimUncovered()">
-                👁 {{ dimUncovered ? 'Show all' : 'Dim uncovered' }}
+                👁 {{ dimUncovered ? 'Show all' : 'Dim unmapped' }}
               </button>
               <button class="menu-action" (click)="onGapView(); showViewMenu = false">⚠ Gap view</button>
               <button class="menu-action" [class.active]="multiSelectMode" (click)="onToggleMultiSelect(); showViewMenu = false">

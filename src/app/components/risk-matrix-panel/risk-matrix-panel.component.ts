@@ -176,7 +176,7 @@ export class RiskMatrixPanelComponent implements OnInit, OnDestroy {
       case 'critical':      return 'Critical';
       case 'monitor':       return 'Monitor';
       case 'low-priority':  return 'Address Later';
-      case 'well-protected': return 'Well Protected';
+      case 'well-protected': return 'Well Mapped';
     }
   }
 }

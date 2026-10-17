@@ -16,7 +16,9 @@
 // live today: it guards that fixture so a journey never turns on against data
 // that has drifted from what its script promises.
 import { readFileSync } from 'node:fs';
+import { Page } from '@playwright/test';
 import { test, expect, loadSampleOrg, BASE, ROUTE_TIMEOUT } from './fixtures/workspace';
+import { CURRENT_ROUTES } from './fixtures/workspace/routes';
 
 /** Annotation shown next to each pending journey in the report. */
 const greenBy = (phase: string) => ({ tag: '@journey', annotation: { type: 'green by', description: phase } });
@@ -50,11 +52,12 @@ test.describe('acceptance journeys (plan Appendix C)', () => {
     // 4. Open the T1558.003 drawer; assert it lists 'validated, wazuh:100821'.
   });
 
-  test.fixme('journey 4, Honesty: empty user', greenBy('P1'), async () => {
+  // Journey 4 is split in two. Its DOM scan (step 3) is live, one test per
+  // route, in the 'journey 4, Honesty: empty user' block below. Step 2 waits
+  // for E1.5, which moves the first-visit lens to Prevalence (decision D4).
+  test.fixme('journey 4, Honesty: empty user: default lens', greenBy('P1 (E1.5, D4)'), async () => {
     // 1. Fresh profile: test.use({ workspace: { skipOnboarding: false } }), no stored state.
     // 2. Assert the default lens is neither Posture nor Reference depth.
-    // 3. DOM scan: assert no 'covered', 'defended', 'LOW RISK' (sample-org.json
-    //    honesty.forbiddenStrings) or grade strings anywhere on the page.
   });
 
   test.fixme('journey 5, Share', greenBy('P2 / P4'), async () => {
@@ -89,6 +92,79 @@ test.describe('acceptance journeys (plan Appendix C)', () => {
     // 4. Accept them and save a layer with citations.
     // 5. Assert no network request left the browser.
     // 6. Assert elapsed time <= 2 minutes.
+  });
+});
+
+/**
+ * Every banned string visible on the page: the rendered text, plus the
+ * title, aria-label, placeholder and alt attributes a reader hovers over or a
+ * screen reader announces. Words match whole and case-insensitively, so
+ * 'covered' also catches 'Covered' and 'COVERED' but not 'uncovered' or
+ * 'discovered'. A grade string is the word 'grade' (not 'government-grade') or a lone letter grade
+ * (A to F, optionally + or -) shown in an element whose class names a grade.
+ */
+async function bannedStringsOnPage(page: Page, forbidden: readonly string[]): Promise<string[]> {
+  return page.evaluate((words) => {
+    const escape = (w: string) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const patterns = [...words.map(w => new RegExp(`\\b${escape(w)}\\b`, 'i')), /(?<![\w-])grades?\b(?!-)/i];
+    const texts: Array<[where: string, text: string]> = [['text', document.body.innerText]];
+    for (const el of Array.from(document.body.querySelectorAll('[title], [aria-label], [placeholder], [alt]'))) {
+      for (const attr of ['title', 'aria-label', 'placeholder', 'alt']) {
+        const v = el.getAttribute(attr);
+        if (v) texts.push([`${el.tagName.toLowerCase()}[${attr}]`, v]);
+      }
+    }
+    const hits: string[] = [];
+    for (const [where, text] of texts) {
+      for (const line of text.split('\n')) {
+        for (const re of patterns) {
+          if (re.test(line)) hits.push(`${where}: ${line.trim().slice(0, 160)}`);
+        }
+      }
+    }
+    for (const el of Array.from(document.body.querySelectorAll('[class*="grade"]'))) {
+      const t = (el as HTMLElement).innerText?.trim() ?? '';
+      if (/^[A-F][+-]?$/.test(t)) hits.push(`letter grade '${t}' in .${String(el.className).trim().replace(/\s+/g, '.')}`);
+    }
+    return [...new Set(hits)];
+  }, forbidden);
+}
+
+// Journey 4, step 3 (plan Appendix C, green by P1 through E1.1): on a fresh
+// profile no route may say 'covered', 'defended', 'LOW RISK', 'protected',
+// 'Coverage Score' or show a grade. A fresh profile has no owner data, so
+// nothing on screen can be Covered or Proven. The words come from
+// sample-org.json honesty.forbiddenStrings; scripts/lint-truth-vocab.mjs is
+// the source-level half of the same rule.
+test.describe('journey 4, Honesty: empty user', () => {
+  test.use({ workspace: { skipOnboarding: false } });
+  // Each route is its own test so a failure names the route; they share no state.
+  test.describe.configure({ mode: 'parallel', timeout: process.env['CI'] ? 120000 : 60000 });
+  const { forbiddenStrings } = loadSampleOrg().honesty;
+
+  for (const { path, host } of CURRENT_ROUTES) {
+    test(`DOM scan #${path}`, greenBy('P1'), async ({ page }) => {
+      await page.goto(`${BASE}/#${path}`);
+      await expect(page.locator(`${host} > *`).first()).toBeVisible({ timeout: ROUTE_TIMEOUT });
+      // Let late chips, badges and lazy sections settle. All off-origin
+      // requests are aborted, so the network goes idle quickly.
+      await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => undefined);
+      expect(await bannedStringsOnPage(page, forbiddenStrings)).toEqual([]);
+    });
+  }
+
+  // The routes above never open a drawer, so the technique drawer gets its own
+  // scan. T1059.001 has bundled CAR and D3FEND data, so its signal pills and
+  // sections render with no network. A one-word lowercase literal is skipped by
+  // the source lint as identifier-like; when the drawer renders one, this scan
+  // is where it is checked.
+  test('DOM scan #/matrix with the T1059.001 drawer open', greenBy('P1'), async ({ page }) => {
+    await page.goto(`${BASE}/#/matrix?tech=T1059.001`);
+    await expect(page.locator('.sidebar.open')).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    await expect(page.locator('.sidebar-header .attack-id')).toContainText('T1059.001');
+    await expect(page.locator('.sidebar .signal-pill').first()).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => undefined);
+    expect(await bannedStringsOnPage(page, forbiddenStrings)).toEqual([]);
   });
 });
 

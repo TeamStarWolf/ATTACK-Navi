@@ -7,13 +7,13 @@
 
     <div class="panel-controls">
       <div class="sort-tabs">
-        <button class="sort-tab" [class.active]="sortKey === 'unique'" (click)="setSortKey('unique')" title="Sort by techniques only this mitigation covers">
+        <button class="sort-tab" [class.active]="sortKey === 'unique'" (click)="setSortKey('unique')" title="Sort by techniques only this mitigation is mapped to">
           Unique
         </button>
-        <button class="sort-tab" [class.active]="sortKey === 'total'" (click)="setSortKey('total')" title="Sort by total techniques covered">
+        <button class="sort-tab" [class.active]="sortKey === 'total'" (click)="setSortKey('total')" title="Sort by total techniques mapped">
           Total
         </button>
-        <button class="sort-tab" [class.active]="sortKey === 'exposure'" (click)="setSortKey('exposure')" title="Sort by distinct threat groups using covered techniques">
+        <button class="sort-tab" [class.active]="sortKey === 'exposure'" (click)="setSortKey('exposure')" title="Sort by distinct threat groups using mapped techniques">
           Groups
         </button>
         <button class="sort-tab kev-tab" [class.active]="sortKey === 'kev'" (click)="setSortKey('kev')" title="Sort by CISA KEV urgency — mitigations covering actively exploited vulnerabilities">
@@ -25,8 +25,8 @@
         <button class="sort-tab sigma-tab" [class.active]="sortKey === 'sigma'" (click)="setSortKey('sigma')" title="Sort by total Sigma detection rules covering this mitigation's techniques">
           Σ Sigma
         </button>
-        <button class="sort-tab unified-tab" [class.active]="sortKey === 'unified'" (click)="setSortKey('unified')" title="Sort by average unified risk score across covered techniques">
-          🎯 Unified
+        <button class="sort-tab unified-tab" [class.active]="sortKey === 'unified'" (click)="setSortKey('unified')" title="Sort by average reference depth across mapped techniques">
+          🎯 Depth
         </button>
         <button class="sort-tab nist-tab" [class.active]="sortKey === 'nist'" (click)="setSortKey('nist')" title="Sort by total NIST 800-53 controls covering this mitigation's techniques">
           🏛 NIST
@@ -55,21 +55,21 @@
                 </button>
                 <div class="coverage-nums">
                   @if (row.uniqueTechniques > 0) {
-                    <span class="unique-badge" title="Techniques only this mitigation covers">{{ row.uniqueTechniques }} unique</span>
+                    <span class="unique-badge" title="Techniques only this mitigation is mapped to">{{ row.uniqueTechniques }} unique</span>
                   }
-                  <span class="total-num" title="Total techniques covered">{{ row.totalTechniques }} techs</span>
+                  <span class="total-num" title="Total techniques mapped">{{ row.totalTechniques }} techs</span>
                   @if (row.exposureScore > 0) {
-                    <span class="exposure-badge" title="Distinct threat groups using covered techniques">
+                    <span class="exposure-badge" title="Distinct threat groups using mapped techniques">
                       {{ row.exposureScore }} groups
                     </span>
                   }
                   @if (row.kevScore > 0) {
-                    <span class="kev-badge" title="CISA KEV CVEs mapped to covered techniques — active exploitation in the wild">
+                    <span class="kev-badge" title="CISA KEV CVEs linked to mapped techniques — active exploitation in the wild">
                       🔴 {{ row.kevScore }} KEV
                     </span>
                   }
                   @if (row.atomicScore > 0) {
-                    <span class="atomic-badge" title="Atomic Red Team tests available for covered techniques">
+                    <span class="atomic-badge" title="Atomic Red Team tests available for mapped techniques">
                       🧪 {{ row.atomicScore }}
                     </span>
                   }
@@ -78,7 +78,7 @@
                       Σ {{ row.sigmaScore }}
                     </span>
                   }
-                  <span class="unified-badge" [style.background]="getUnifiedColor(row.unifiedScore)" title="Average unified risk score across covered techniques (0-65 scale)">
+                  <span class="unified-badge" [style.background]="getUnifiedColor(row.unifiedScore)" title="Average reference depth across mapped techniques (0-65 scale)">
                     🎯 {{ row.unifiedScore }}
                   </span>
                   @if (row.nistScore > 0) {
