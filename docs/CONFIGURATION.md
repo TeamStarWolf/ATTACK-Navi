@@ -22,15 +22,21 @@ This document covers the configuration options for ATTACK-Navi: external integra
 
 ## 1. MISP Server Setup
 
-MISP (Malware Information Sharing Platform) integration adds MISP's ATT&CK galaxy cluster data to techniques. It has two modes, set by the mode selector in the integration card: **Direct browser mode**, where the browser calls MISP, and **Secure backend proxy**, where the optional `server/` proxy holds the credentials (see [Optional credentials proxy](../README.md#optional-credentials-proxy)). Direct mode keeps the API key in memory for the session only. The connection test and the public MISP Galaxy data work today; the event and attribute queries in `misp.service.ts` are not wired to the UI, so the MISP Events tab builds event templates locally.
+MISP (Malware Information Sharing Platform). The app shows public MISP Galaxy ATT&CK data with no configuration at all: it loads the MISP Galaxy attack-pattern clusters from the public `MISP/misp-galaxy` file on GitHub (`misp.service.ts`), which drive the sidebar's MISP Galaxy Cluster section and the Intelligence heatmap lens. Configuring a MISP server here adds only a connection test. The event and attribute queries in `misp.service.ts` are not wired to the UI, so no live MISP events or sightings are shown and the MISP Events tab builds event templates locally.
+
+The server connection has two modes, set by the mode selector in the integration card: **Direct browser mode**, where the browser calls MISP directly, and **Secure backend proxy**, where the optional `server/` proxy holds the credentials (see [Optional credentials proxy](../README.md#optional-credentials-proxy)). Direct mode keeps the API key in memory for the session only.
 
 ### Configuration Fields
+
+In **Direct browser mode** the card shows:
 
 | Field | Required | Description |
 |-------|----------|-------------|
 | Server URL | Yes | The base URL of your MISP instance |
 | API Key | Yes | Your MISP automation/API key |
-| Org ID | No | Your MISP organization ID (filters events to your org) |
+| Org ID | No | Your MISP organization ID; stored for future event queries, not used by the UI yet |
+
+In **Secure backend proxy** mode the card shows only the **Proxy URL**; the MISP URL, API key and Org ID live in the proxy's `server/.env`, not in the browser (see [Optional credentials proxy](../README.md#optional-credentials-proxy)).
 
 ### URL Format
 
@@ -53,63 +59,70 @@ Do not include trailing slashes or path segments like `/events`.
 6. Copy the generated key immediately -- it is shown only once.
 7. The key should look like a 40-character hexadecimal string.
 
-### CORS Considerations
+### CORS in Direct browser mode
 
-MISP servers typically do not serve CORS headers by default. The Navigator makes requests from the browser, so the MISP server must allow cross-origin requests from the Navigator's domain.
+MISP servers usually do not send CORS headers, and in Direct browser mode the app calls MISP from the browser, so MISP has to allow cross-origin requests from the app's origin. Two safe ways to do that:
 
-**Option A: Configure MISP CORS headers**
-
-Add CORS headers to your MISP Apache or Nginx configuration:
+**Option A: add CORS headers on MISP, pinned to the app's origin**
 
 ```nginx
-# Nginx example for MISP
-add_header Access-Control-Allow-Origin "https://your-navigator-domain.com" always;
+# Nginx example on the MISP host; use your app's exact origin, never "*"
+add_header Access-Control-Allow-Origin "https://your-attack-navi-origin.example" always;
 add_header Access-Control-Allow-Methods "GET, POST, OPTIONS" always;
 add_header Access-Control-Allow-Headers "Authorization, Content-Type, Accept" always;
 ```
 
-**Option B: Use a reverse proxy**
+**Option B: use the bundled proxy instead**
 
-Place a reverse proxy between the Navigator and MISP that adds CORS headers:
-
-```nginx
-location /misp-proxy/ {
-    proxy_pass https://misp.internal.company.com/;
-    add_header Access-Control-Allow-Origin "*" always;
-    add_header Access-Control-Allow-Methods "GET, POST, OPTIONS" always;
-    add_header Access-Control-Allow-Headers "Authorization, Content-Type" always;
-    if ($request_method = OPTIONS) {
-        return 204;
-    }
-}
-```
+Switch the integration to **Secure backend proxy** and run the `server/` proxy. It keeps the MISP credentials on the server, pins the allowed origin with `ALLOWED_ORIGINS`, checks the `Host` header against `ALLOWED_HOSTS`, and fails closed on a non-loopback host with no token. This keeps MISP off the browser entirely. Do not place a hand-rolled reverse proxy that sends `Access-Control-Allow-Origin: *` and forwards `Authorization` in front of an internal MISP; that opens it to every origin.
 
 ### Testing the Connection
 
-1. Open **Settings** (gear icon at the bottom of the nav rail).
-2. Click the **Integrations** tab.
-3. Enter the MISP URL and API key.
-4. Optionally enter the Org ID.
-5. Click **Test & Save**.
-6. A green "Connected to MISP" status appears on success.
-7. On failure, the error message describes the issue (network error, authentication failure, CORS block).
+In **Direct browser mode**:
+
+1. Open **Settings > Preferences** (gear icon at the bottom of the nav rail) and the **Integrations** tab.
+2. Leave the mode on **Direct browser mode**.
+3. Enter the MISP URL and API key, and optionally the Org ID.
+4. Click **Test & Save**.
+5. On success a green "Connected to MISP" status appears.
+6. On failure the status reads "Connection failed" with the message the browser returned. A browser cannot tell a CORS block from a network error, so a blocked cross-origin request and an unreachable host look the same here.
+
+In **Secure backend proxy** mode:
+
+1. In the same card, set the mode to **Secure backend proxy**.
+2. Enter the **Proxy URL**: `http://localhost:8787` for the standalone proxy, or `http://localhost:8080` under Docker Compose (the app origin, no `/api/` suffix; the app appends the path).
+3. If the proxy sets `PROXY_AUTH_TOKEN`, paste the same value into the **Proxy access token** field on the Integrations tab. The app sends it as the `X-Proxy-Key` header and keeps it in sessionStorage for the browser session only.
+4. Click **Test & Save**. The MISP URL and key come from the proxy's `server/.env`, not this card.
+
+To remove a saved MISP connection, use **Disconnect** on the card.
 
 ### What Data Is Used
 
-The public MISP Galaxy ATT&CK clusters are the part that is wired in. In Intel > Feeds, a technique's score is the number of ATT&CK groups that use it, plus one when MISP Galaxy has a cluster for it. The event and attribute REST queries (`events/restSearch`, `attributes/restSearch`) are implemented in `misp.service.ts`, but nothing in the UI calls them yet, so live event counts and sightings are not shown. See the README's [Known limitations](../README.md#known-limitations).
+The public MISP Galaxy ATT&CK clusters (loaded with no configuration, as above) are what is wired in. They appear in two places:
+
+- the sidebar's **MISP Galaxy Cluster** section for a selected technique, with the galaxy tag you can copy;
+- the **Intelligence** heatmap lens, whose per-technique score is the number of ATT&CK groups that use the technique, plus one when MISP Galaxy has a cluster for it.
+
+The event and attribute REST queries (`events/restSearch`, `attributes/restSearch`) are implemented in `misp.service.ts`, but nothing in the UI calls them, so live event counts and sightings are not shown. See the README's [Known limitations](../README.md#known-limitations).
 
 ---
 
 ## 2. OpenCTI Setup
 
-OpenCTI integration enriches techniques with indicators and threat-actor data from your OpenCTI instance. Like MISP, it has two modes set in the integration card: **Direct browser mode**, where the browser calls OpenCTI, and **Secure backend proxy**, where the `server/` proxy holds the token. Direct mode keeps the token in memory for the session only; proxy mode keeps it on the backend.
+OpenCTI integration adds indicators from your OpenCTI instance to techniques: `getIndicatorsForTechnique` runs per selected technique (`sidebar.component.ts`, `threat-intelligence-panel.component.ts`) and the results show in the sidebar and in Intel > Feeds. It does not add threat-actor data; a `getThreatActorsForTechnique` method exists in `opencti.service.ts` but nothing in the UI calls it.
+
+Like MISP, it has two modes in the integration card: **Direct browser mode**, where the browser calls OpenCTI, and **Secure backend proxy**, where the `server/` proxy holds the token (see [Optional credentials proxy](../README.md#optional-credentials-proxy)). Direct mode keeps the token in memory for the session only; proxy mode keeps it on the backend.
 
 ### Configuration Fields
+
+In **Direct browser mode** the card shows:
 
 | Field | Required | Description |
 |-------|----------|-------------|
 | URL | Yes | The base URL of your OpenCTI instance |
 | API Token | Yes | Your OpenCTI API bearer token |
+
+In **Secure backend proxy** mode the card shows only the **Proxy URL**; the OpenCTI URL and token live in the proxy's `server/.env`, not in the browser.
 
 ### URL Format
 
@@ -127,20 +140,24 @@ https://opencti.example.org
 
 ### Required Permissions
 
-The API token needs read access to **Indicators** and **Threat Actors**; the app looks these up per technique over GraphQL. A read-only analyst role is enough, and no write permission is needed. If you use the proxy, it forwards only read queries on the `about`, `indicators` and `threatActors` fields.
+The app queries only **Indicators**, so a token with read access to indicators is enough; a read-only analyst role suffices and no write permission is needed. (**Threat Actors** read access matters only if the unused threat-actor query is wired up later, or if you run the proxy, whose read allowlist covers that field.)
+
+The proxy's read allowlist is `about`, `indicators` and `threatActors` by default; `OPENCTI_ALLOWED_QUERY_FIELDS` extends it, and mutations are refused unless `OPENCTI_ALLOW_IMPORT=true`, which admits only the app's `ImportStix` operation (`server/src/index.js`).
 
 ### GraphQL Queries
 
-The Navigator uses OpenCTI's GraphQL API endpoint at `{url}/graphql`. Ensure your firewall and proxy rules allow POST requests to this path.
+In Direct browser mode the app calls OpenCTI's GraphQL endpoint at `{url}/graphql`, so allow POST requests to that path through your firewall and any proxy. In Secure backend proxy mode the browser calls the `server/` proxy instead, which forwards to OpenCTI.
 
 ### Testing the Connection
 
-1. Open **Settings** > **Integrations** tab.
-2. Enter the OpenCTI URL and API token.
-3. Click **Test & Save**.
-4. The Navigator sends a test GraphQL query to verify authentication.
-5. A green "Connected to OpenCTI" status appears on success.
-6. On failure, the specific error is displayed (authentication, network, CORS).
+In **Direct browser mode**:
+
+1. Open **Settings > Preferences** and the **Integrations** tab.
+2. Leave the mode on **Direct browser mode** and enter the OpenCTI URL and API token.
+3. Click **Test & Save**. The app sends a test GraphQL query to verify authentication.
+4. On success a green "Connected to OpenCTI" status appears; on failure the error is shown (authentication, network, or a CORS block, which a browser reports the same as a network error).
+
+In **Secure backend proxy** mode set the mode to **Secure backend proxy**, enter the **Proxy URL** (`http://localhost:8787` standalone, or `http://localhost:8080` under Docker Compose, no `/api/` suffix), add the **Proxy access token** if the proxy sets `PROXY_AUTH_TOKEN`, and click **Test & Save**. The OpenCTI URL and token come from the proxy's `server/.env`.
 
 ### Clearing the Connection
 
@@ -150,7 +167,7 @@ Click the **Clear** button to remove the stored OpenCTI configuration. It remove
 
 ## 3. NVD API Key
 
-An NVD (National Vulnerability Database) API key increases the rate limit for CVE lookups from 5 requests per 30 seconds (unauthenticated) to 50 requests per 30 seconds.
+An NVD (National Vulnerability Database) API key raises the NVD rate limit from 5 requests per 30 seconds (unauthenticated) to 50. The app sends the key only on its per-technique CWE lookups, described under [What the key affects](#what-the-key-affects).
 
 ### Where to Get a Key
 
@@ -171,7 +188,7 @@ Without a key, NVD allows 5 requests per 30 seconds; with a key, 50. The key is 
 3. Click **Save**.
 4. A green "API key saved" confirmation appears.
 
-The key is kept in sessionStorage (under `mitre-nav-settings-v1-key`), not localStorage, so it is gone when the tab closes and is never written to disk. The rest of the settings do live in localStorage under `mitre-nav-settings-v1`.
+The key is kept in sessionStorage (under `mitre-nav-settings-v1-key`), not localStorage, so it is cleared when the tab's session ends rather than persisting with the rest of the settings. (It is not written to localStorage; note that Chromium may retain sessionStorage across a restart for session restore.) The other settings live in localStorage under `mitre-nav-settings-v1`.
 
 ---
 
@@ -183,23 +200,19 @@ ATTACK-Navi follows the operating system's light or dark setting (`prefers-color
 
 ### Heatmap Color Themes
 
-Settings > Display > Heatmap Color Theme sets the palette used to color matrix cells. Each theme is a five-step ramp from low to high; click a swatch to apply it.
+**Settings > Preferences > Display > Heatmap Color Theme** sets the palette for matrix cells. There are five: Default, Vivid, Blue/Orange, Monochrome and High Contrast, each a five-step ramp from low to high.
 
-| Theme | Notes |
-|-------|-------|
-| Default | The standard ramp |
-| Vivid | A brighter version of the default ramp |
-| Blue/Orange | Cool to warm, to avoid a red/green ramp |
-| Monochrome | Grayscale |
-| High Contrast | A colorblind-safe (Viridis) ramp with monotonic luminance |
+This palette colors only the **Mitigations mapped** (coverage) lens: `getCoverageColors` is read just by that lens's cell and legend rendering (`matrix.component.ts` `case 'coverage'`, `technique-cell.component.ts`, `legend.component.ts`). Every other lens has its own fixed ramp in `heatmap-modes.ts`, and the default lens is Prevalence, so changing the theme shows nothing until you switch to the Mitigations mapped lens.
 
-A separate **Colorblind-safe heatmaps** toggle on the same tab forces the Viridis ramp regardless of the theme chosen. The applied hex values are in `COLOR_THEMES` in `src/app/services/settings.service.ts`; the swatch preview in the picker is maintained separately, so treat the swatch as an approximation of the ramp the matrix uses.
+A separate **Colorblind-safe heatmaps** toggle on the same tab replaces every lens's ramp with Viridis (sequential) and Okabe-Ito (status), regardless of the theme chosen.
+
+One caveat: the swatch you click and the ramp the matrix applies are defined in two places and currently disagree. "High Contrast" shows a red-to-green swatch (`#cc0000` to `#003300`, `settings-panel.component.ts`) but applies the Viridis ramp (`#440154` to `#fde725`, `settings.service.ts` and `safe-palette.ts`), the opposite palette; "Blue/Orange" shows `#1d4ed8` to `#92400e` but applies `#1d4ed8, #2563eb, #0ea5e9, #f59e0b, #d97706`; and Default's second step is `#e65100` in the swatch versus `#b45309` applied. A follow-up code change will render the swatches from the same definition the matrix uses, and this note will go when it lands.
 
 ---
 
 ## 5. Domain Selection
 
-The Navigator supports four ATT&CK domains:
+ATTACK-Navi supports four ATT&CK domains:
 
 | Domain | Description | STIX Source |
 |--------|-------------|-------------|
@@ -212,7 +225,7 @@ The Navigator supports four ATT&CK domains:
 
 1. Use the domain selector in the toolbar.
 2. Selecting a new domain clears the current matrix data.
-3. The Navigator loads that domain's pinned STIX bundle, shipped with the build (see Data Source below).
+3. The app loads that domain's pinned STIX bundle, shipped with the build (see Data Source below).
 4. The bundle is parsed into tactics, techniques, mitigations, groups, software, campaigns, and relationships.
 5. All panels and the sidebar reset to reflect the new domain's data.
 
@@ -220,7 +233,7 @@ The Navigator supports four ATT&CK domains:
 
 ATT&CK is pinned to the release bundled with the build. Each domain loads its bundle from `src/assets/data/` (`enterprise-attack.json`, `ics-attack.json`, `mobile-attack.json`, `f3-attack.json`); the pinned version is the one the bundle's own `x-mitre-collection` object declares, recorded in the source registry and shown on the data-health view (`#/status`). The version on screen never changes by itself during a session.
 
-There are two data modes, chosen in Settings > Data > **ATT&CK Data** and saved with the other settings (`mitre-nav-settings-v1`, field `attackDataMode`):
+There are two data modes, chosen in Settings > Preferences > Data > **ATT&CK Data** and saved with the other settings (`mitre-nav-settings-v1`, field `attackDataMode`):
 
 | Mode | Value | What happens |
 |------|-------|--------------|
@@ -237,7 +250,7 @@ and compares its release number with the pinned one. A status panel (a polite li
 
 ### Caching
 
-A live STIX copy fetched by an update check is cached in IndexedDB (database: `mitre-navigator-cache`, object store: `stix-bundles`) with a 24-hour TTL. Only the automatic check of the `live` mode may answer from that cache; **Check for ATT&CK update** always asks MITRE. The cache is never put on screen by itself. You can clear it in Settings > Data.
+A live STIX copy fetched by an update check is cached in IndexedDB (database: `mitre-navigator-cache`, object store: `stix-bundles`) with a 24-hour TTL. Only the automatic check of the `live` mode may answer from that cache; **Check for ATT&CK update** always asks MITRE. The cache is never put on screen by itself. You can clear it in Settings > Preferences > Data.
 
 ---
 
@@ -251,7 +264,7 @@ The Scoring Weights tab and its setting were removed in plan epic E1.5. They wei
 
 ## 7. Display Options
 
-Configure matrix rendering in Settings > Display:
+Configure matrix rendering in Settings > Preferences > Display:
 
 ### Matrix Cell Size
 
@@ -268,16 +281,31 @@ The cell-size choice is saved with your preferences, but matrix rendering does n
 | Option | Default | Description |
 |--------|---------|-------------|
 | Show technique IDs | On | Display ATT&CK IDs (e.g., T1059) on matrix cells |
-| Show mitigation count | On | Show the number of mitigations as a badge on cells |
-| Show subtechnique count | On | Show subtechnique count on parent technique cells |
+| Expand sections by default | On | Collapsible groups (Detect, Data Sources, Assessment) start expanded |
+| Show mitigation count badge | On | Number of mitigations as a badge on each cell |
+| Show subtechnique count badge | On | Subtechnique count on parent technique cells |
 
-The display toggles are persisted in localStorage and take effect immediately. The cell-size choice is persisted too, but matrix rendering does not use it yet (see the note above).
+### Cell Display
+
+A separate group toggles the badges and markers drawn on each cell, all on by default:
+
+| Toggle | Shows |
+|--------|-------|
+| Show exposure (groups) badge | Count of threat-actor groups using the technique |
+| Show software badge | Count of software or malware using it |
+| Show campaign badge | Count of campaigns using it |
+| Show heatmap metric badge | The mode-specific count, shown only in its own heatmap (D3FEND, Atomic, CRI) |
+| Show analyst note marker | A marker when the technique has analyst notes |
+| Show annotation dot | A colored dot when the technique is annotated |
+| Show watchlist marker | A marker when the technique is on the watchlist |
+
+These preferences are persisted in localStorage and take effect immediately. The cell-size choice above is persisted too, but matrix rendering does not use it yet.
 
 ---
 
 ## 8. Organization Settings
 
-Configure organization information in Settings > Organization:
+Configure organization information in Settings > Preferences > Organization:
 
 | Field | Description |
 |-------|-------------|
@@ -290,7 +318,7 @@ A live preview of the report header is shown when an organization name is entere
 
 ## 9. Data Persistence
 
-All application state is stored client-side using localStorage and IndexedDB. No data is sent to any server (except for configured integrations like MISP and OpenCTI).
+Your application state (assessment answers, imported assets, annotations, tags, saved views, and so on) is stored client-side in localStorage and IndexedDB and is not sent anywhere. The app does make outbound requests to fetch public data from the hosts listed under Deployment, and to your configured MISP and OpenCTI endpoints. Some of those carry terms you type: a CVE keyword or CVE ID search sends your query to the NVD API, and a per-technique CWE lookup sends CWE IDs. Your saved application state is never part of those requests.
 
 ### localStorage Keys
 
@@ -321,7 +349,7 @@ All application state is stored client-side using localStorage and IndexedDB. No
 
 ### Data Management
 
-In Settings > Data:
+In Settings > Preferences > Data:
 - **ATT&CK Data** -- The data mode: pinned bundle (default), or pinned bundle with an update check when data loads (see Domain Selection > Data Source)
 - **Refresh Data** -- Clears the cached live copy and this session's chosen release for the domain on screen, and reloads the pinned bundle
 - **Clear Cache** -- Removes the cached live STIX copies without re-fetching
@@ -330,7 +358,7 @@ In Settings > Data:
 
 ### Storage Limits
 
-localStorage is typically limited to 5-10 MB depending on the browser. If the quota is exceeded, write operations fail silently. The Navigator uses a try-catch pattern around all localStorage writes to handle this gracefully.
+localStorage is typically limited to 5-10 MB depending on the browser. If the quota is exceeded, write operations fail silently. The app uses a try-catch pattern around all localStorage writes to handle this gracefully.
 
 ### Clearing All Data
 
@@ -344,7 +372,7 @@ To reset the application to factory state:
 
 ## 10. URL State
 
-The Navigator encodes the current filter configuration in the URL hash fragment. This enables sharing specific views by copying the URL.
+The app encodes the current filter configuration in the URL hash fragment. This enables sharing specific views by copying the URL.
 
 ### How It Works
 
@@ -494,9 +522,9 @@ The repository's [`Dockerfile`](../Dockerfile) is the containerized deployment: 
 
 ### Environment Requirements
 
-The Navigator is a fully client-side application. The deployment server only needs to:
+ATTACK-Navi is a fully client-side application. The deployment server only needs to:
 1. Serve static files (HTML, JS, CSS, JSON assets)
 2. Return `index.html` for all non-file routes (SPA fallback)
-3. Allow outbound HTTPS connections to GitHub and NVD APIs (from the user's browser, not the server)
+3. Let the user's browser (not the server) reach the runtime data hosts in the CSP `connect-src` table above: `raw.githubusercontent.com`, `api.github.com`, `gitlab.com`, `api.first.org`, `services.nvd.nist.gov`, `www.cisa.gov`, `d3fend.mitre.org` and `cveawg.mitre.org`, plus any MISP, OpenCTI or TAXII origin you configure
 
 No server-side runtime, database, or backend API is required.

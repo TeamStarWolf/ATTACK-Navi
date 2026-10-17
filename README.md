@@ -1,6 +1,6 @@
 # ATTACK-Navi
 
-![ATTACK-Navi](assets/brand/starwolf64-banner-1280.png)
+![STARWOLF 64 banner](assets/brand/starwolf64-banner-1280.png)
 
 ATTACK-Navi is a single-page Angular application for working with the MITRE ATT&CK matrix. It colors the matrix by mitigation, threat, vulnerability, detection and framework data, opens a detail sidebar for each technique, and puts longer tasks (threat group analysis, CVE exposure, detection content, control coverage, reporting) in routed workspaces with their own URLs.
 
