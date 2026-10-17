@@ -3,7 +3,7 @@
 import { Component, OnInit, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { RouterOutlet } from '@angular/router';
+import { NavigationEnd, NavigationStart, Router, RouterOutlet } from '@angular/router';
 import { DataService, AttackDomain } from './services/data.service';
 import { Domain } from './models/domain';
 import { FilterService } from './services/filter.service';
@@ -35,12 +35,15 @@ export class AppComponent implements OnInit {
 
   domain: Domain | null = null;
   private matrixControl = inject(MatrixControlService);
+  private readonly router = inject(Router);
   private hotkeys = inject(HotkeysService);
   private viewpoint = inject(ViewpointService);
   protected helpOverlay = inject(HelpOverlayService);
   showToast = false;
   toastMessage = '';
   currentDomain: AttackDomain = 'enterprise';
+  private lastRoutePath?: string;
+  private pendingKeepSelection = false;
 
   constructor(
     private dataService: DataService,
@@ -57,12 +60,62 @@ export class AppComponent implements OnInit {
     this.matrixControl.gapViewRequests$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.gapViewRef?.show());
+    this.initDrawerRouteScope();
     // Restore the saved viewpoint's lens before the URL writer starts, and let
     // it defer to an explicit `heat` deep link (handled inside restore()).
     this.viewpoint.restore();
     this.urlStateService.init();
     this.themeService.init();
     this.hotkeys.init();
+  }
+
+  /**
+   * The technique sidebar is global and its selection lives in FilterService, so
+   * an open drawer used to ride over the next workspace. Close it when the route
+   * PATH changes — UNLESS the navigation carries keepTechniqueSelection (set by
+   * PanelNavService for flows that select a technique FOR the destination, e.g.
+   * "show this technique on the matrix"). url-state writes filter edits with
+   * replaceUrl on the SAME path (query only), so those keep the drawer open.
+   */
+  private initDrawerRouteScope(): void {
+    this.router.events
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((e) => {
+        if (e instanceof NavigationStart) {
+          this.pendingKeepSelection = this.shouldKeepSelection(
+            e.navigationTrigger, this.router.getCurrentNavigation()?.extras?.state);
+        } else if (e instanceof NavigationEnd) {
+          this.clearSelectionOnRouteChange(e.urlAfterRedirects ?? e.url, this.pendingKeepSelection);
+          this.pendingKeepSelection = false;
+        }
+      });
+  }
+
+  /**
+   * Honor keepTechniqueSelection only on an IMPERATIVE navigation. On Back/Forward
+   * (popstate) the router restores the history entry's saved state, which still
+   * carries the flag from when PanelNavService pushed that entry — re-applying it
+   * would resurrect a leftover drawer (the original bug, back through history).
+   */
+  private shouldKeepSelection(
+    trigger: NavigationStart['navigationTrigger'],
+    state: { [k: string]: unknown } | undefined,
+  ): boolean {
+    return trigger !== 'popstate' && state?.['keepTechniqueSelection'] === true;
+  }
+
+  /**
+   * Close the technique sidebar when the route path changes, unless this
+   * navigation carries a selection made for the destination (keep). The first
+   * navigation only records the starting path (nothing to clear on load); a
+   * same-path navigation (a url-state query write) leaves the drawer open.
+   */
+  private clearSelectionOnRouteChange(url: string, keep: boolean): void {
+    const path = url.split(/[?#]/)[0];
+    if (this.lastRoutePath !== undefined && path !== this.lastRoutePath && !keep) {
+      this.filterService.selectTechnique(null);
+    }
+    this.lastRoutePath = path;
   }
 
   onDomainChange(domain: AttackDomain): void {

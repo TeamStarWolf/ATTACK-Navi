@@ -249,8 +249,8 @@ export class AnalyticsPanelComponent implements OnInit, OnDestroy {
     const tech = this.domain.techniques.find(t => t.attackId === attackId);
     if (tech) {
       this.filterService.selectTechnique(tech);
-      // The technique sidebar opens over the matrix.
-      this.panelNav.open('matrix');
+      // The technique sidebar opens over the matrix — keep the selection we just made.
+      this.panelNav.open('matrix', { keepTechniqueSelection: true });
     }
   }
 

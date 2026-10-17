@@ -97,8 +97,8 @@ export class WatchlistPanelComponent implements OnInit, OnDestroy {
       const tech = domain.techniques.find(t => t.attackId === entry.techniqueId);
       if (tech) {
         this.filterService.selectTechnique(tech);
-        // Show the selected technique on the matrix.
-        this.panelNav.open('matrix');
+        // Show the selected technique on the matrix — keep the selection we just made.
+        this.panelNav.open('matrix', { keepTechniqueSelection: true });
       }
     });
   }
