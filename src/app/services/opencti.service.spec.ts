@@ -154,7 +154,6 @@ describe('OpenCtiService', () => {
       const results: unknown[] = [];
       service.testConnection();
       service.getIndicatorsForTechnique('T1059').subscribe(r => results.push(r));
-      service.getThreatActorsForTechnique('T1059').subscribe(r => results.push(r));
       service.importStixBundle('{"type":"bundle"}').subscribe(r => results.push(r));
       // Even a forced "connected" flag cannot send a request without an instance.
       (service as unknown as { config: { connected: boolean } }).config.connected = true;
@@ -162,7 +161,7 @@ describe('OpenCtiService', () => {
       service.importStixBundle('{"type":"bundle"}').subscribe(r => results.push(r));
 
       expect(httpMock.match(() => true).length).withContext('HTTP requests on a fresh profile').toBe(0);
-      expect(results).toEqual([[], [], { success: false, message: 'Not connected to OpenCTI.' }, [], jasmine.objectContaining({ success: false })]);
+      expect(results).toEqual([[], { success: false, message: 'Not connected to OpenCTI.' }, [], jasmine.objectContaining({ success: false })]);
     });
 
     it('a stored config without a token (a reload) still sends nothing until the token is entered', () => {

@@ -428,7 +428,7 @@ renders 25+ data sections for the selected technique.
 | ExploitDB | `ExploitdbService` | Public exploit count |
 | Nuclei | `NucleiService` | Nuclei template count |
 | MISP | `MispService` | Galaxy cluster data, tags for hunting |
-| OpenCTI | `OpenCtiService` | Live indicators and threat actors (requires API config) |
+| OpenCTI | `OpenCtiService` | Live indicators (requires API config) |
 | Tags | `TaggingService` | User-assigned tags with presets |
 | Notes | `DocumentationService` | Free-form analyst notes |
 | Relationship Graph | Computed locally | Force-directed graph of technique relationships |

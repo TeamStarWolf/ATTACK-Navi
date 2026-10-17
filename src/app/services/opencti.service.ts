@@ -29,16 +29,6 @@ export interface OpenCtiIndicator {
   externalRef?: string;
 }
 
-export interface OpenCtiThreatActor {
-  id: string;
-  name: string;
-  description: string;
-  aliases: string[];
-  labels: string[];
-  attackIds: string[];    // techniques this actor uses
-  confidence: number;
-}
-
 export interface OpenCtiRelationship {
   id: string;
   fromId: string;
@@ -77,28 +67,6 @@ const INDICATORS_QUERY = `
   }
 `;
 
-const THREAT_ACTORS_QUERY = `
-  query ThreatActorsByTechnique($attackId: String!) {
-    threatActors(filters: {
-      key: "uses",
-      values: [$attackId]
-    }) {
-      edges {
-        node {
-          id
-          name
-          description
-          aliases
-          confidence
-          objectLabel {
-            edges { node { value } }
-          }
-        }
-      }
-    }
-  }
-`;
-
 @Injectable({ providedIn: 'root' })
 export class OpenCtiService {
   private config: OpenCtiConfig = {
@@ -120,7 +88,6 @@ export class OpenCtiService {
 
   // Cached results per technique
   private indicatorCache = new Map<string, OpenCtiIndicator[]>();
-  private actorCache = new Map<string, OpenCtiThreatActor[]>();
 
   constructor(private http: HttpClient, private settings: SettingsService) {
     this.loadConfigFromStorage();
@@ -156,7 +123,6 @@ export class OpenCtiService {
       proxyUrl: (config.proxyUrl ?? '').replace(/\/$/, ''),
     };
     this.indicatorCache.clear();
-    this.actorCache.clear();
     try {
       localStorage.setItem('opencti_config', JSON.stringify({
         url: this.config.url,
@@ -178,7 +144,6 @@ export class OpenCtiService {
     this.connectedSubject.next(false);
     localStorage.removeItem('opencti_config');
     this.indicatorCache.clear();
-    this.actorCache.clear();
   }
 
   testConnection(): void {
@@ -247,33 +212,6 @@ export class OpenCtiService {
         });
         this.indicatorCache.set(attackId, indicators);
         return indicators;
-      }),
-      catchError(() => of([])),
-    );
-  }
-
-  /** Fetch threat actors using an ATT&CK technique from OpenCTI. */
-  getThreatActorsForTechnique(attackId: string): Observable<OpenCtiThreatActor[]> {
-    if (!this.config.connected) return of([]);
-    if (this.actorCache.has(attackId)) return of(this.actorCache.get(attackId)!);
-
-    return this.graphql<any>(THREAT_ACTORS_QUERY, { attackId }).pipe(
-      map(data => {
-        const edges = data?.threatActors?.edges ?? [];
-        const actors: OpenCtiThreatActor[] = edges.map((e: any) => {
-          const n = e.node;
-          return {
-            id: n.id ?? '',
-            name: n.name ?? '',
-            description: n.description ?? '',
-            aliases: n.aliases ?? [],
-            labels: (n.objectLabel?.edges ?? []).map((le: any) => le.node?.value ?? ''),
-            attackIds: [attackId],
-            confidence: n.confidence ?? 0,
-          } as OpenCtiThreatActor;
-        });
-        this.actorCache.set(attackId, actors);
-        return actors;
       }),
       catchError(() => of([])),
     );
