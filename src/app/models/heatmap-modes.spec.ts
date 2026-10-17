@@ -91,6 +91,7 @@ describe('HEATMAP_MODES registry (E1.2 lens metadata)', () => {
     expect(heatmapModeDef('f3-origin')!.domains).toEqual(['f3']);
     expect(heatmapModeDef('sigma')!.domains).not.toContain('ics');
     expect(heatmapModeDef('coverage')!.domains).toContain('ics');
+    expect(heatmapModeDef('library')!.domains).toContain('ics');
   });
 
   it('points every source at a 6.3 inventory row or a stated non-inventory id', () => {

@@ -90,7 +90,7 @@ export const LENS_SOURCES: Readonly<Record<LensSourceId, LensSourceInfo>> = {
   'splunk': { name: 'Splunk security_content', inventoryRow: ROW_VENDOR, delivery: 'runtime', pinned: null },
   'm365-hunting': { name: 'M365 Defender hunting queries', inventoryRow: 'M365 Defender hunting queries', delivery: 'runtime', pinned: null, note: 'archived upstream 2022-02' },
   'wazuh-stock-rules': { name: 'Wazuh stock-rule table', inventoryRow: ROW_CURATED, delivery: 'in-code', pinned: 'curated in code', mappedVs: '19.2' },
-  'd3fend-seed': { name: 'D3FEND seed', inventoryRow: 'D3FEND seed', delivery: 'in-code', pinned: 'pruned vs D3FEND 1.4.0', mappedVs: '19.2' },
+  'd3fend-seed': { name: 'D3FEND seed', inventoryRow: 'D3FEND seed', delivery: 'in-code', pinned: 'pruned vs D3FEND 1.4.0', mappedVs: '19.2', note: 'per-technique live D3FEND API answers override the seed when fetched' },
   'ctid-nist-800-53': { name: 'CTID NIST 800-53', inventoryRow: ROW_CTID, delivery: 'runtime', pinned: 'rev5', mappedVs: '16.1' },
   'ctid-veris': { name: 'CTID VERIS', inventoryRow: ROW_CTID, delivery: 'runtime', pinned: '1.4.0', mappedVs: '16.1' },
   'ctid-cri': { name: 'CTID CRI Profile', inventoryRow: ROW_CTID, delivery: 'runtime', pinned: 'v2.1', mappedVs: '16.1' },
