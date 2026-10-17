@@ -151,6 +151,28 @@ describe('DataHealthComponent', () => {
     expect(epssDot().getAttribute('title')).toContain('no answer within 8 s');
   });
 
+  it('turns the EPSS dot loaded when a Retry succeeds after a failed check, as the registry says (E1.3)', () => {
+    const registry = TestBed.inject(SourceRegistryService);
+    const epssDot = () =>
+      [...fixture.nativeElement.querySelectorAll('.health-dot')].find((d: Element) => d.getAttribute('title')!.startsWith('EPSS:')) as Element;
+
+    // The availability check fails.
+    epssCheck$.next(false);
+    registry.fail('epss', 'network error reaching https://api.first.org/data/v1/epss');
+    fixture.detectChanges();
+    expect(epssDot().classList).toContain('dot-failed');
+
+    // Retry: the check runs again and succeeds.
+    registry.begin('epss');
+    fixture.detectChanges();
+    expect(epssDot().classList).toContain('dot-loading');
+    registry.succeed('epss', null);
+    fixture.detectChanges();
+    expect(registry.get('epss').status).toBe('loaded');
+    expect(epssDot().classList).toContain('dot-loaded');
+    expect(epssDot().getAttribute('title')).toBe('EPSS: loaded');
+  });
+
   it('shows EPSS loaded once the availability check answers', () => {
     epssCheck$.next(true);
     fixture.detectChanges();

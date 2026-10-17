@@ -2,7 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 
-import { Observable, Subscription, distinctUntilChanged, map } from 'rxjs';
+import { Observable, Subscription, distinctUntilChanged, map, merge } from 'rxjs';
 import { AtomicService } from '../../services/atomic.service';
 import { SigmaService } from '../../services/sigma.service';
 import { AttackCveService } from '../../services/attack-cve.service';
@@ -193,7 +193,16 @@ export class DataHealthComponent implements OnInit, OnDestroy {
       { name: 'ExploitDB', loaded$: this.exploitdbService.loaded$, ids: ['exploitdb'] },
       { name: 'Nuclei Templates', loaded$: this.nucleiService.loaded$, ids: ['nuclei-tree'] },
       // A real availability check (E1.3), recorded on the 'epss' source; no longer a hard-coded true.
-      { name: 'EPSS', loaded$: this.epssService.checkAvailability(), ids: ['epss'] },
+      // The check emits once and completes, so the dot also follows the registry record: a Retry
+      // that succeeds on the data-health table turns it green instead of leaving it 'loading'.
+      {
+        name: 'EPSS',
+        loaded$: merge(
+          this.epssService.checkAvailability(),
+          this.sources.record$('epss').pipe(map(() => this.sources.hasData('epss')), distinctUntilChanged()),
+        ),
+        ids: ['epss'],
+      },
       { name: 'CISA KEV', loaded$: this.cveService.kevLoaded$, failed$: this.cveService.kevError$ },
       { name: 'NVD Bulk', loaded$: this.nvdBulkService.loaded$, ids: ['cve-technique-map'] },
       { name: 'CVE2CAPEC', loaded$: this.cve2capecService.loaded$, ids: ['cve2capec-runtime'] },

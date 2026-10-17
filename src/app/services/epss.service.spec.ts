@@ -72,7 +72,7 @@ describe('EpssService', () => {
 
     it('records failed with the reason when the API errors, and never reports it up', () => {
       service.checkAvailability().subscribe(r => (result = r));
-      httpMock.expectOne(r => r.url.includes('first.org')).error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown Error' });
+      httpMock.expectOne(r => r.url === 'https://api.first.org/data/v1/epss?limit=1').error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown Error' });
       expect(result).toBeFalse();
       const record = registry.get('epss');
       expect(record.status).toBe('failed');
@@ -82,7 +82,7 @@ describe('EpssService', () => {
 
     it('records failed when the API does not answer in time', fakeAsync(() => {
       service.checkAvailability().subscribe(r => (result = r));
-      const req = httpMock.expectOne(r => r.url.includes('first.org'));
+      const req = httpMock.expectOne(r => r.url === 'https://api.first.org/data/v1/epss?limit=1');
       tick(EPSS_CHECK_TIMEOUT_MS + 1);
       expect(req.cancelled).toBeTrue();
       expect(result).toBeFalse();
@@ -92,7 +92,7 @@ describe('EpssService', () => {
 
     it('records empty when the API answers with no scores', () => {
       service.checkAvailability().subscribe(r => (result = r));
-      httpMock.expectOne(r => r.url.includes('first.org')).flush({ data: [] });
+      httpMock.expectOne(r => r.url === 'https://api.first.org/data/v1/epss?limit=1').flush({ data: [] });
       expect(result).toBeFalse();
       expect(registry.get('epss').status).toBe('empty');
     });
