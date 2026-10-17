@@ -56,6 +56,16 @@ describe('SettingsPanelComponent (rendered)', () => {
     expect(settings.current.matrixCellSize).toBe('normal');
   });
 
+  // Post-Phase-1 QA (R9d): the cell size already applies to the matrix
+  // (matrix.component.spec.ts), so no note says it will apply later.
+  it('offers the three cell sizes with no "will apply later" note', () => {
+    tab('Display');
+    const sizes = [...host.querySelectorAll('.cell-size-name')].map(e => e.textContent!.trim());
+    expect(sizes).toEqual(['Compact', 'Normal', 'Large']);
+    expect(host.querySelector('.cell-size-note')).toBeNull();
+    expect(host.textContent).not.toMatch(/will apply when/i);
+  });
+
   it('choosing a colour theme applies it to the coverage ramp the matrix reads', () => {
     tab('Display');
     const swatch = [...host.querySelectorAll('.theme-swatch')].find(b => b.querySelector('.swatch-label')!.textContent!.trim() === 'Monochrome') as HTMLButtonElement;

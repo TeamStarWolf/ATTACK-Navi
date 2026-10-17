@@ -14,13 +14,13 @@ export interface DashboardWidget {
 const STORAGE_KEY = 'mitre-nav-dashboard-config-v1';
 
 const DEFAULT_WIDGETS: DashboardWidget[] = [
-  { id: 'coverage-summary',   label: 'Coverage Summary',   icon: '\u{1F6E1}',  visible: true,  order: 0 },
+  { id: 'coverage-summary',   label: 'Mapped Summary',     icon: '\u{1F6E1}',  visible: true,  order: 0 },
   { id: 'tactic-breakdown',   label: 'Tactic Breakdown',   icon: '\u{1F4CA}',  visible: true,  order: 1 },
   { id: 'radar-chart',        label: 'Radar Chart',        icon: '\u{1F3AF}',  visible: true,  order: 2 },
   { id: 'gap-summary',        label: 'Top Gaps',           icon: '\u26A0',     visible: true,  order: 3 },
   { id: 'data-health',        label: 'Data Source Health',  icon: '\u{1F49A}',  visible: true,  order: 4 },
   { id: 'intel-summary',      label: 'Intel Summary',      icon: '\u{1F9E0}',  visible: true,  order: 5 },
-  { id: 'detection-summary',  label: 'Detection Coverage', icon: '\u{1F52C}',  visible: true,  order: 6 },
+  { id: 'detection-summary',  label: 'Detection Content',  icon: '\u{1F52C}',  visible: true,  order: 6 },
   { id: 'recent-cves',        label: 'Recent KEV CVEs',    icon: '\u{1F534}',  visible: true,  order: 7 },
   { id: 'impl-status',        label: 'Implementation Status', icon: '\u2705', visible: true,  order: 8 },
   { id: 'quick-actions',      label: 'Quick Actions',      icon: '\u26A1',     visible: false, order: 9 },

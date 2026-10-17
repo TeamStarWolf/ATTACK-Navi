@@ -13,6 +13,7 @@ import { AttackNaviLayer } from '../../models/user-layer';
 import { DEFAULT_HEATMAP_MODE, FilterService } from '../../services/filter.service';
 import { LibraryLayerService, LibraryLayerMeta } from '../../services/library-layer.service';
 import { UserLayerService } from '../../services/user-layer.service';
+import { SettingsService } from '../../services/settings.service';
 
 // ── fixtures ────────────────────────────────────────────────────────────────
 
@@ -223,6 +224,28 @@ describe('MatrixComponent', () => {
     expect(component.sortedColumns.map(c => c.tactic.shortname)).toEqual(['stealth', 'impact']);
     expect(component.sortedColumns[0].techniques.map(t => t.attackId)).toEqual(['T9001', 'T9002']);
     expect(fixture.nativeElement.querySelectorAll('.tactic-header').length).toBe(2);
+  });
+
+  // Post-Phase-1 QA (R9d): the Settings cell-size choice applies to the
+  // matrix now, so Settings no longer says it will apply later.
+  it('applies the Settings cell size to the matrix host', () => {
+    const settings = TestBed.inject(SettingsService);
+    const host = fixture.nativeElement as HTMLElement;
+    try {
+      settings.update({ matrixCellSize: 'compact' });
+      fixture.detectChanges();
+      expect(host.classList).toContain('cell-compact');
+      expect(host.classList).not.toContain('cell-large');
+      settings.update({ matrixCellSize: 'large' });
+      fixture.detectChanges();
+      expect(host.classList).toContain('cell-large');
+      expect(host.classList).not.toContain('cell-compact');
+    } finally {
+      settings.update({ matrixCellSize: 'normal' });
+    }
+    fixture.detectChanges();
+    expect(host.classList).not.toContain('cell-compact');
+    expect(host.classList).not.toContain('cell-large');
   });
 
   it('unified score rewards a technique with more defensive signals', () => {

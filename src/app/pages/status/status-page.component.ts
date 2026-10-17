@@ -19,7 +19,7 @@ import { DataHealthComponent } from '../../components/data-health/data-health.co
 import { SourceHealthComponent } from '../../components/source-health/source-health.component';
 
 /**
- * Integration Health workspace: the at-a-glance coverage stats and the
+ * Integration Health workspace: the at-a-glance mapped counts and the
  * data-source integration-health strip, relocated here from the matrix's
  * context bar so the matrix stays focused on the grid and its legend. It is
  * also the data-health view (E1.3): one row per SourceRecord with a Retry.

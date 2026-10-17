@@ -725,3 +725,10 @@
     font-variant-numeric: tabular-nums;
   }
 }
+
+.score-dashboard-note {
+  margin: 0 0 10px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}

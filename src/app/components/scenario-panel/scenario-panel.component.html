@@ -93,7 +93,7 @@
             <div class="empty-state">
               <div class="empty-icon">🎭</div>
               <div class="empty-title">Select a Threat Actor</div>
-              <div class="empty-desc">Choose a threat group from the left to simulate their attack against your current mitigation coverage.</div>
+              <div class="empty-desc">Choose a threat group from the left to simulate their attack against your mapped mitigations and their implementation status (self-attested).</div>
             </div>
           }
 
@@ -394,7 +394,7 @@
                       <div class="plan-empty-icon">✅</div>
                       <div class="plan-empty-title">No Quick Wins Needed</div>
                       <div class="plan-empty-desc">
-                        All {{ result.group.name }} techniques have active mitigation coverage. Consider expanding detection capabilities.
+                        Every {{ result.group.name }} technique with a mapped mitigation has at least one marked implemented (self-attested). Consider expanding detection capabilities.
                       </div>
                     </div>
                   } @else {

@@ -56,6 +56,11 @@ const SECTION_DEFS: { key: string; label: string; routes: string[] }[] = [
   { key: 'reference', label: 'Reference',         routes: ['/dashboard', '/reports', '/library', '/status'] },
 ];
 
+/** The default rail: each section label with its workspace labels, in order (the first-run guide describes it). */
+export function defaultRailSections(): { label: string; items: string[] }[] {
+  return SECTION_DEFS.map(def => ({ label: def.label, items: def.routes.map(r => CATALOG[r].label) }));
+}
+
 const NAVRAIL_ORDER_KEY = 'navrail-sections-v1';
 
 @Component({

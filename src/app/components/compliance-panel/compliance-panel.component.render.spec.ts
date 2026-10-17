@@ -103,6 +103,34 @@ describe('CompliancePanelComponent (rendered, fixture domain)', () => {
     expect(card('CIS v8')).toBeUndefined();
   });
 
+  // Post-Phase-1 QA (R9c): the percentages are Known data (technique tabs) or
+  // self-attested implementation (SOC 2, ISO 27001, PCI DSS), never a
+  // 'compliance score' or 'coverage'.
+  it('names the score cards a control mapping and says what each header count counts', () => {
+    const subtitle = () => host.querySelector('.header-subtitle')!.textContent!.replace(/\s+/g, ' ').trim();
+    expect(host.querySelector('.score-dashboard-head h3')!.textContent!.trim()).toBe('Control mapping by framework');
+    expect(host.querySelector('.score-dashboard-note')!.textContent).toContain('at least one control mapped');
+    const nist = parents.filter(t => signal('nist', t.attackId) > 0).length;
+    expect(subtitle()).toBe(`${nist} techniques with NIST 800-53 controls mapped`);
+
+    const tabs = [...host.querySelectorAll('.tab-bar .tab-btn')] as HTMLButtonElement[];
+    tabs[COMPLIANCE_TABS.indexOf('pci')].click();
+    fixture.detectChanges();
+    expect(subtitle()).toMatch(/^\d+ of \d+ PCI DSS v4\.0 controls with every mapped mitigation implemented \(self-attested\)$/);
+
+    tabs[COMPLIANCE_TABS.indexOf('m365-ctrl')].click();
+    fixture.detectChanges();
+    expect(subtitle()).toBe(`${parents.filter(t => signal('m365-ctl', t.attackId) > 0).length} techniques with M365 controls mapped`);
+    // The technique-tab sort button orders by the Known control-mapping count.
+    expect(host.querySelector('.sort-btn')!.textContent!.trim()).toBe('Controls mapped');
+    // Checked per text node: host.textContent joins adjacent buttons with no
+    // separator ('CoverageTechnique'), which hides a trailing word boundary.
+    const texts: string[] = [];
+    const walker = document.createTreeWalker(host, NodeFilter.SHOW_TEXT);
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) texts.push(n.textContent!);
+    expect(texts.filter(t => /compliance score|\bcoverage\b/i.test(t))).toEqual([]);
+  });
+
   it('switching tab and searching re-renders the table', () => {
     (host.querySelector('.tab-btn:nth-child(2)') as HTMLButtonElement).click(); // AWS (CIS, the first tab, is withdrawn)
     fixture.detectChanges();

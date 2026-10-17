@@ -37,4 +37,15 @@ describe('QuickFiltersComponent', () => {
   it('is created', () => {
     expect(component).toBeTruthy();
   });
+
+  // Post-Phase-1 QA (R9c repair): the 'detection' heatmap this preset switches
+  // on scores Sigma, CAR, D3FEND and Atomic, while 'detection content mapped'
+  // elsewhere means Sigma or CAR only. The tooltip names the scored sources and
+  // does not call them all detection content.
+  it('the No Detection preset names the sources the detection heatmap scores', () => {
+    const preset = component.presets.find(p => p.id === 'no-detection')!;
+    expect(preset.heatmapMode).toBe('detection');
+    expect(preset.description).toBe('Show techniques with no Sigma rules, CAR analytics, D3FEND countermeasures or Atomic tests mapped');
+    expect(preset.description).not.toMatch(/detection content|coverage/i);
+  });
 });

@@ -63,7 +63,7 @@
 
           @for (widget of visibleWidgets; track trackWidget($index, widget)) {
 
-            <!-- ============ COVERAGE SUMMARY ============ -->
+            <!-- ============ MAPPED SUMMARY ============ -->
             @if (widget.id === 'coverage-summary') {
               <div class="widget-card widget-coverage-summary">
                 <div class="widget-header">
@@ -79,30 +79,30 @@
                     </div>
                     <div class="mini-stat">
                       <div class="mini-stat-value known-value">{{ stats.coveredTechniques }}</div>
-                      <div class="mini-stat-label">Enriched</div>
+                      <div class="mini-stat-label">Techniques mapped</div>
                     </div>
-                    <div class="mini-stat" title="Techniques with ≥1 cross-framework signal (any of: mitigation, detection, atomic test, D3FEND, control mapping, threat-intel, CVE/KEV)">
+                    <div class="mini-stat" title="Techniques with ≥1 defensive reference input mapped (ATT&CK mitigation, Sigma or CAR detection content, CTID control mapping, D3FEND countermeasure or Atomic test); threat-intel and CVE links are not counted">
                       <div class="mini-stat-value known-value">{{ stats.coveragePct }}%</div>
-                      <div class="mini-stat-label">Coverage</div>
+                      <div class="mini-stat-label">Mapped</div>
                     </div>
                     <div class="mini-stat">
                       <div class="mini-stat-value" style="color: var(--accent-purple)">{{ stats.avgMitigations }}</div>
                       <div class="mini-stat-label">Avg Mitigations</div>
                     </div>
                   </div>
-                  <!-- Per-framework coverage: mitigation is one of several, not the headline. -->
+                  <!-- Per-framework mapped %: mitigation is one of several, not the headline. -->
                   <div class="stat-cards-row">
                     <div class="mini-stat" title="Techniques with ≥1 ATT&CK mitigation">
                       <div class="mini-stat-value" style="color: var(--accent-warm)">{{ stats.mitigationCoveragePct }}%</div>
-                      <div class="mini-stat-label">Mitigation coverage</div>
+                      <div class="mini-stat-label">Mitigation mapped</div>
                     </div>
-                    <div class="mini-stat" title="Techniques with ≥1 detection (CAR / Atomic / D3FEND)">
+                    <div class="mini-stat" title="Techniques with ≥1 Sigma rule or CAR analytic mapped">
                       <div class="mini-stat-value" style="color: var(--accent-blue)">{{ stats.detectionCoveragePct }}%</div>
-                      <div class="mini-stat-label">Detection coverage</div>
+                      <div class="mini-stat-label">Detection content mapped</div>
                     </div>
                     <div class="mini-stat" title="Techniques with ≥1 control-framework mapping (NIST / CRI / CIS / CSA / M365)">
                       <div class="mini-stat-value" style="color: var(--accent)">{{ stats.controlCoveragePct }}%</div>
-                      <div class="mini-stat-label">Control coverage</div>
+                      <div class="mini-stat-label">Control mapped</div>
                     </div>
                   </div>
                   @if (stats.hasTrendData) {
@@ -294,7 +294,7 @@
                     </div>
                   </div>
                   <div class="widget-footer-note">
-                    {{ stats.detectionCoveragePct }}% combined detection coverage
+                    {{ stats.detectionCoveragePct }}% of techniques with detection content mapped
                   </div>
                 </div>
               </div>
