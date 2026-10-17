@@ -31,7 +31,7 @@ import { CveService } from './cve.service';
 import { Cve2CapecService } from './cve2capec.service';
 import { CweService } from './cwe.service';
 import { D3fendService } from './d3fend.service';
-import { AttackDomain, DataService } from './data.service';
+import { AttackDomain, CACHED_LIVE_NOTE, DataService } from './data.service';
 import { DossierService } from './dossier.service';
 import { ElasticService } from './elastic.service';
 import { EngageService } from './engage.service';
@@ -241,6 +241,25 @@ describe('source honesty: a failed loader never reports loaded (E1.3)', () => {
       if (c.loaded) expect(c.loaded(svc)).withContext(`${c.id}: the service's own loaded flag`).not.toBeTrue();
     }));
   });
+
+  it('records the live ATT&CK source as loaded from cache when a return visit is served from IndexedDB', fakeAsync(() => {
+    const cachedDomain = { name: 'Enterprise ATT&CK', techniques: [{}, {}, {}], attackVersion: '18.1' };
+    (DataService.prototype as any).loadFromIDB.and.returnValue(Promise.resolve(cachedDomain));
+    const svc = TestBed.inject(DataService);
+    svc.setDataSourceMode('live');
+    svc.setAttackDomain('enterprise');
+    svc.loadDomain();
+    flush();
+    http.expectNone(() => true);
+    const record = registry.get('attack-live-enterprise');
+    expect(svc.freshness$.value).toBe('cached');
+    expect(record.status).toBe('loaded');
+    expect(record.rows).toBe(3);
+    expect(record.version).toBe('18.1');
+    expect(record.note).toBe(CACHED_LIVE_NOTE);
+    expect(record.lastLoadedAt).not.toBeNull();
+    discardPeriodicTasks();
+  }));
 
   it('marks the never-requested withdrawn source (CIS) as archived-upstream, not loaded', fakeAsync(() => {
     const cis = TestBed.inject(CisControlsService);

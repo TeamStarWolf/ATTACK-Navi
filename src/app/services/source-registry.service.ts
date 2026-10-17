@@ -97,7 +97,7 @@ export class SourceRegistryService {
    * An archived upstream reports 'archived-upstream' and a source marked stale stays
    * 'stale', so a successful load never hides either fact.
    */
-  succeed(id: string, rows: number | null = null, extra: { version?: string } = {}): void {
+  succeed(id: string, rows: number | null = null, extra: { version?: string; note?: string } = {}): void {
     const def = this.get(id);
     if (rows === 0) {
       this.patch(id, { status: 'empty', lastError: null, rows: 0, lastLoadedAt: new Date().toISOString(), ...extra });

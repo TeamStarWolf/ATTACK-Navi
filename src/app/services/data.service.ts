@@ -72,6 +72,8 @@ const DOMAIN_CONFIG: Record<AttackDomain, DomainConfig> = {
 const IDB_DB = 'mitre-navigator-cache';
 const IDB_STORE = 'stix-bundles';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+/** SourceRecord note for a live ATT&CK source served from the IndexedDB cache this session. */
+export const CACHED_LIVE_NOTE = 'Served this session from the IndexedDB cache of an earlier live fetch (at most 24 hours old); not re-fetched.';
 
 export const ATTACK_NAVIGATOR_DOMAIN_CONFIG: Record<AttackDomain, { navigatorDomain: string; defaultPlatforms: string[] }> = {
   enterprise: {
@@ -278,7 +280,17 @@ export class DataService {
     return from(this.loadFromIDB(config.idbKey)).pipe(
       switchMap((cached) => {
         if (cached) {
-          return of(cached).pipe(tap(() => this.freshness$.next('cached')));
+          // A return visit is served from the IndexedDB copy of an earlier live fetch and
+          // never requests the live bundle, so record that copy as the live source's data
+          // (with a note saying where it came from) rather than leaving it 'pending' while
+          // ATT&CK is on screen. E1.4 replaces this path with the pinned bundle (decision D2).
+          return of(cached).pipe(tap(() => {
+            this.freshness$.next('cached');
+            this.sources.succeed(config.liveSourceId, cached.techniques.length, {
+              version: cached.attackVersion || undefined,
+              note: CACHED_LIVE_NOTE,
+            });
+          }));
         }
         // Bundled-first (stale-while-revalidate): paint instantly from the
         // shipped snapshot, then fetch the live STIX in the background and

@@ -228,12 +228,13 @@
                 <div class="widget-body">
                   <div class="health-grid">
                     @for (entry of healthEntries; track entry.name) {
-                      <div class="health-row">
+                      <div class="health-row" [attr.title]="entry.detail ? entry.name + ': ' + entry.status + ' (' + entry.detail + ')' : null">
                         <span
                           class="health-dot"
                           [class.dot-loaded]="entry.status === 'loaded'"
                           [class.dot-loading]="entry.status === 'loading'"
                           [class.dot-failed]="entry.status === 'failed'"
+                          [class.dot-empty]="entry.status === 'empty'"
                         ></span>
                         <span class="health-name">{{ entry.name }}</span>
                         <span class="health-status" [class]="'hs-' + entry.status">{{ entry.status }}</span>
