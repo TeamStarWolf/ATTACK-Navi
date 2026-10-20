@@ -460,6 +460,45 @@
 
             <div class="data-section-divider"></div>
 
+            <div class="data-section-header">Posture rules</div>
+            <p class="section-desc posture-rules-copy" data-testid="posture-rules-copy" style="margin: 4px 0 8px; font-size: 0.8rem; opacity: 0.7;">
+              A mitigation mapped to more than {{ posture.mitigationBreadthThreshold }} techniques counts as partial until you confirm it per technique.
+            </p>
+            <div class="data-info-grid posture-rules">
+              <label class="data-info-item">
+                <span class="data-info-label">Mitigation breadth threshold (techniques)</span>
+                <input
+                  type="number"
+                  class="form-input"
+                  style="width: 88px; height: 28px;"
+                  data-testid="posture-threshold"
+                  [min]="postureLimits.threshold.min"
+                  [max]="postureLimits.threshold.max"
+                  step="1"
+                  [value]="posture.mitigationBreadthThreshold"
+                  (change)="setPostureThreshold($event)"
+                />
+              </label>
+              @for (w of postureWindows; track w.scope) {
+                <label class="data-info-item">
+                  <span class="data-info-label">{{ w.label }}</span>
+                  <input
+                    type="number"
+                    class="form-input"
+                    style="width: 88px; height: 28px;"
+                    [attr.data-testid]="'posture-window-' + w.scope"
+                    [min]="postureLimits.decayDays.min"
+                    [max]="postureLimits.decayDays.max"
+                    step="1"
+                    [value]="posture.decayDays[w.scope]"
+                    (change)="setPostureWindow(w.scope, $event)"
+                  />
+                </label>
+              }
+            </div>
+
+            <div class="data-section-divider"></div>
+
             <div class="data-section-header">Third-Party Data and Licenses</div>
             <p class="section-desc third-party-notice" style="margin: 4px 0 8px; font-size: 0.8rem; opacity: 0.7;">
               The application code is MIT-licensed. The bundled ATT&amp;CK, CWE, F3 and CERT/CC SSVC data, the NVD-derived

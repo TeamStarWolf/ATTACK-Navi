@@ -1,7 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed } from '@angular/core/testing';
-import { SettingsService } from './settings.service';
+import { SettingsService, mergePostureSettings } from './settings.service';
 
 describe('SettingsService', () => {
   let service: SettingsService;
@@ -177,6 +177,51 @@ describe('SettingsService', () => {
       const fresh = TestBed.inject(SettingsService);
       expect(fresh.current.cellDisplay.campaignBadge).toBe(false);
       expect(fresh.current.cellDisplay.exposureBadge).toBe(true);
+    });
+  });
+
+  // Phase 2 design P2-05 (§6, §7): the posture rules, deep-merged for older
+  // stored settings.
+  describe('posture rules (P2-05)', () => {
+    const DEFAULTS = { mitigationBreadthThreshold: 15, decayDays: { range: 90, production: 180, 'own-run': 90 } };
+    const reload = (blob: unknown): SettingsService => {
+      localStorage.setItem('mitre-nav-settings-v1', JSON.stringify(blob));
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({});
+      return TestBed.inject(SettingsService);
+    };
+
+    it('defaults to threshold 15 and windows range 90, production 180, own-run 90', () => {
+      expect(service.current.posture).toEqual(DEFAULTS);
+    });
+
+    it('an old stored settings object gains the posture defaults', () => {
+      const fresh = reload({ matrixCellSize: 'large', showTechniqueIds: false });
+      expect(fresh.current.posture).toEqual(DEFAULTS);
+      expect(fresh.current.matrixCellSize).toBe('large');
+    });
+
+    it('deep-merges a partial posture object and drops out-of-range values', () => {
+      const fresh = reload({ posture: { mitigationBreadthThreshold: 20, decayDays: { range: 30, production: 0, 'own-run': 1.5 } } });
+      expect(fresh.current.posture).toEqual({ mitigationBreadthThreshold: 20, decayDays: { range: 30, production: 180, 'own-run': 90 } });
+      expect(reload({ posture: { mitigationBreadthThreshold: 501 } }).current.posture.mitigationBreadthThreshold).toBe(15);
+      expect(mergePostureSettings('junk')).toEqual(DEFAULTS);
+    });
+
+    it('persists an update and emits it', () => {
+      const seen: number[] = [];
+      service.settings$.subscribe(s => seen.push(s.posture.mitigationBreadthThreshold));
+      service.update({ posture: { ...service.current.posture, mitigationBreadthThreshold: 20 } });
+      expect(seen).toEqual([15, 20]);
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({});
+      expect(TestBed.inject(SettingsService).current.posture.mitigationBreadthThreshold).toBe(20);
+    });
+
+    it('reset restores the posture defaults', () => {
+      service.update({ posture: { mitigationBreadthThreshold: 3, decayDays: { range: 1, production: 2, 'own-run': 3 } } });
+      service.reset();
+      expect(service.current.posture).toEqual(DEFAULTS);
     });
   });
 });

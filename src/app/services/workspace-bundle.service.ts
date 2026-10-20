@@ -38,6 +38,7 @@ export class WorkspaceBundleService {
     'attacknavi.validation-runs.v1',
     'navi.v2.threat-profile',           // E2.6 shared threat profile (P2-03)
     'navi.v2.validation-runs',         // the v2 run store (P2-02); authoritative when present (design §5.5)
+    'navi.v2.technique-marks',         // per-technique confirmations (P2-05); no UI writes them until P2-16
     // Custom entities & plans
     'mitre-nav-custom-techniques-v1',
     'mitre-nav-custom-groups-v1',

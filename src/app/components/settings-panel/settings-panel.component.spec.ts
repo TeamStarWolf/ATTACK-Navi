@@ -168,4 +168,51 @@ describe('SettingsPanelComponent', () => {
       expect(fixture.nativeElement.querySelector('.third-party-notice--mitre')).toBeNull();
     });
   });
+
+  // Phase 2 design P2-05 (§6, §7): Settings > Data > "Posture rules", next to
+  // "Bulk Import Status": the D16 threshold (integer 1-500) and the three D10
+  // windows. A change is saved at once; PostureService recomputes from it.
+  describe('Posture rules (P2-05)', () => {
+    // OnPush: the tab is chosen before the first change detection pass.
+    let pf: ComponentFixture<SettingsPanelComponent>;
+    const el = () => pf.nativeElement as HTMLElement;
+    const input = (id: string) => el().querySelector(`[data-testid="${id}"]`) as HTMLInputElement;
+    const copy = () => el().querySelector('[data-testid="posture-rules-copy"]')!.textContent!.trim().replace(/\s+/g, ' ');
+    const change = (id: string, value: string) => {
+      const i = input(id);
+      i.value = value;
+      i.dispatchEvent(new Event('change'));
+      pf.detectChanges();
+    };
+
+    beforeEach(() => {
+      pf = TestBed.createComponent(SettingsPanelComponent);
+      pf.componentInstance.activeTab = 'data';
+      pf.detectChanges();
+    });
+
+    it('shows threshold 15 and windows 90 / 180 / 90 on a fresh profile, after Bulk Import Status', () => {
+      const headers = Array.from(el().querySelectorAll('.data-section-header')).map(h => h.textContent!.trim());
+      expect(headers).toContain('Posture rules');
+      expect(headers.indexOf('Posture rules')).toBe(headers.indexOf('Bulk Import Status') + 1);
+      expect(input('posture-threshold').value).toBe('15');
+      expect(input('posture-window-range').value).toBe('90');
+      expect(input('posture-window-production').value).toBe('180');
+      expect(input('posture-window-own-run').value).toBe('90');
+      expect(copy()).toBe('A mitigation mapped to more than 15 techniques counts as partial until you confirm it per technique.');
+    });
+
+    it('saves a valid threshold and window, and refuses an out-of-range one', () => {
+      change('posture-threshold', '20');
+      expect(settingsService.current.posture.mitigationBreadthThreshold).toBe(20);
+      expect(copy()).toContain('more than 20 techniques');
+      change('posture-window-own-run', '30');
+      expect(settingsService.current.posture.decayDays).toEqual({ range: 90, production: 180, 'own-run': 30 });
+      change('posture-threshold', '501');
+      expect(settingsService.current.posture.mitigationBreadthThreshold).toBe(20);
+      expect(input('posture-threshold').value).toBe('20');
+      change('posture-window-range', '2.5');
+      expect(settingsService.current.posture.decayDays.range).toBe(90);
+    });
+  });
 });
