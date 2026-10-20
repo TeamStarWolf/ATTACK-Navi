@@ -88,6 +88,17 @@ describe('ThreatProfileService', () => {
     expect(svc.weight('t1')).toBe(1);
   });
 
+  it('empties the profile but names the new domain when domain$ emits null (item 9)', () => {
+    const domain$ = new BehaviorSubject<Domain | null>(null);
+    const svc = makeService(domain$);
+    domain$.next(tinyDomain());
+    svc.setSource({ kind: 'all' });
+    expect(svc.current.parentTechniqueIds.has('t1')).toBeTrue();
+    domain$.next(null);   // a domain switch emits null before the new domain arrives
+    expect(svc.current.parentTechniqueIds.size).toBe(0);   // no stale cross-domain denominator
+    expect(svc.current.domain).toBe('enterprise');         // getCurrentAttackDomain names the new domain
+  });
+
   it('resolves a library-layer source to the layer\'s techniques (not an empty profile)', () => {
     const domain$ = new BehaviorSubject<Domain | null>(null);
     const svc = makeService(domain$, ['T1']);   // the layer lists T1

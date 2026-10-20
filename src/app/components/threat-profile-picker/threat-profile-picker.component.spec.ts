@@ -11,6 +11,8 @@ import { Domain } from '../../models/domain';
 import { ThreatGroup } from '../../models/group';
 import { Campaign } from '../../models/campaign';
 import { ThreatProfileSource } from '../../models/threat-profile';
+// Compare against the wizard's OWN exported table so a drift in either fails this spec (round 2, item D).
+import { SECTOR_CATEGORIES as WIZARD_SECTORS } from '../assessment-wizard/assessment-wizard.component';
 
 function grp(id: string, attackId: string, description: string): ThreatGroup {
   return { id, attackId, name: `grp-${attackId}`, description, url: '', aliases: [] };
@@ -22,16 +24,6 @@ function domainWith(groups: ThreatGroup[], campaigns: Campaign[] = []): Domain {
   return { name: 'Enterprise ATT&CK', groups, campaigns } as unknown as Domain;
 }
 
-// The wizard's keyword table (assessment-wizard.component.ts:46-52); the picker must match it verbatim.
-const WIZARD_SECTORS = [
-  { label: 'Financial', keywords: ['financial', 'banking', 'payment', 'fin'] },
-  { label: 'Government', keywords: ['government', 'military', 'defense', 'intelligence', 'political', 'embassy'] },
-  { label: 'Healthcare', keywords: ['health', 'hospital', 'medical', 'pharma'] },
-  { label: 'Technology', keywords: ['technology', 'software', 'tech', 'telecom', 'it '] },
-  { label: 'Energy', keywords: ['energy', 'oil', 'gas', 'nuclear', 'power', 'utility'] },
-  { label: 'Education', keywords: ['education', 'university', 'academic', 'research'] },
-];
-
 describe('ThreatProfilePickerComponent', () => {
   let fixture: ComponentFixture<ThreatProfilePickerComponent>;
   let component: ThreatProfilePickerComponent;
@@ -39,6 +31,7 @@ describe('ThreatProfilePickerComponent', () => {
   let setSource: jasmine.Spy;
   let toggleThreatGroup: jasmine.Spy;
   let currentSource: ThreatProfileSource;
+  let profileSubject: BehaviorSubject<{ source: ThreatProfileSource }>;
 
   function configure(): void {
     domain$ = new BehaviorSubject<Domain | null>(domainWith(
@@ -48,6 +41,7 @@ describe('ThreatProfilePickerComponent', () => {
     ));
     setSource = jasmine.createSpy('setSource');
     toggleThreatGroup = jasmine.createSpy('toggleThreatGroup');
+    profileSubject = new BehaviorSubject<{ source: ThreatProfileSource }>({ source: currentSource });
     TestBed.configureTestingModule({
       imports: [ThreatProfilePickerComponent],
       providers: [
@@ -56,7 +50,7 @@ describe('ThreatProfilePickerComponent', () => {
         { provide: LibraryLayerService, useValue: { manifest$: new BehaviorSubject([]) } },
         { provide: ThreatProfileService, useValue: {
             get current() { return { source: currentSource }; },
-            profile$: new BehaviorSubject({ source: currentSource }),
+            profile$: profileSubject,
             setSource,
         } },
       ],
@@ -126,13 +120,63 @@ describe('ThreatProfilePickerComponent', () => {
     expect([...component.selectedGroupIds]).toEqual(['intrusion-set--bbb']);
   });
 
-  it('clamps the Top-N field to [1, number of groups]', () => {
+  it('profile mode keeps following profile$ after init (not just the first seed, item C)', () => {
+    component.mode = 'profile';
+    fixture.detectChanges();
+    expect(component.preset).toBe('top-groups');           // the beforeEach seed
+    profileSubject.next({ source: { kind: 'campaigns', ids: ['campaign--ccc'] } });
+    fixture.detectChanges();
+    expect(component.preset).toBe('campaigns');             // a later push is reflected
+    expect([...component.selectedCampaignIds]).toEqual(['campaign--ccc']);
+    expect(component.selectedGroupIds.size).toBe(0);        // the other kind is cleared
+  });
+
+  it('profile mode seeds preset, n, ids and layer from every stored source kind (item C)', () => {
+    currentSource = { kind: 'top-groups', n: 7 };
+    TestBed.resetTestingModule(); configure();
+    component.mode = 'profile'; fixture.detectChanges();
+    expect(component.preset).toBe('top-groups');
+    expect(component.topN).toBe(7);
+
+    currentSource = { kind: 'campaigns', ids: ['campaign--ccc'] };
+    TestBed.resetTestingModule(); configure();
+    component.mode = 'profile'; fixture.detectChanges();
+    expect(component.preset).toBe('campaigns');
+    expect([...component.selectedCampaignIds]).toEqual(['campaign--ccc']);
+
+    currentSource = { kind: 'library-layer', file: 'ransomware.json' };
+    TestBed.resetTestingModule(); configure();
+    component.mode = 'profile'; fixture.detectChanges();
+    expect(component.preset).toBe('library-layer');
+    expect(component.selectedLayerFile).toBe('ransomware.json');
+  });
+
+  it('clamps the Top-N field to an integer in [1, 1000], NOT to the current group count', () => {
     component.mode = 'profile';
     fixture.detectChanges();
     component.topN = 999;
     component.onTopNChange();
-    expect(component.topN).toBe(2);   // only two groups in the fixture
-    expect(setSource).toHaveBeenCalledWith({ kind: 'top-groups', n: 2 });
+    expect(component.topN).toBe(999);   // kept though the fixture has two groups; resolveProfile clamps at resolve time
+    expect(setSource).toHaveBeenCalledWith({ kind: 'top-groups', n: 999 });
+    component.topN = 99999;
+    component.onTopNChange();
+    expect(component.topN).toBe(1000);  // the stored-source guard's upper bound
+    component.topN = 0;
+    component.onTopNChange();
+    expect(component.topN).toBe(1);
+  });
+
+  it('does not collapse Top-N to the group count while domain$ is null (regression, item A)', () => {
+    component.mode = 'profile';
+    fixture.detectChanges();
+    domain$.next(null);                 // mid domain switch: component.groups becomes []
+    expect(component.groups.length).toBe(0);
+    component.topN = 20;
+    component.onTopNChange();
+    expect(setSource).toHaveBeenCalledWith({ kind: 'top-groups', n: 20 });   // never n:1 or n:groups.length
+    setSource.calls.reset();
+    component.setPreset('top-groups');
+    expect(setSource).toHaveBeenCalledWith({ kind: 'top-groups', n: 20 });
   });
 
   it('"Use as matrix filter" toggles only group ids on the FilterService', () => {

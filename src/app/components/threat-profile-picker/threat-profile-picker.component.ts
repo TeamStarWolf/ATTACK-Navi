@@ -145,9 +145,13 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
+  // Enforce an integer in [1, 1000] (the stored-source guard's upper bound) only — NEVER the
+  // current domain's group count. `groups` is [] while domain$ is null (e.g. mid domain switch),
+  // so clamping to groups.length here would persist n=1, and that stored value outlives the
+  // switch. resolveProfile clamps to the real group count at resolve time (threat-profile.ts).
   private clampTopN(n: number): number {
-    const i = Number.isFinite(n) ? Math.trunc(n) : 0;
-    return Math.min(Math.max(i, 1), Math.max(1, this.groups.length));
+    const i = Number.isFinite(n) ? Math.trunc(n) : 1;
+    return Math.min(Math.max(i, 1), 1000);
   }
 
   filteredGroups(): ThreatGroup[] {
