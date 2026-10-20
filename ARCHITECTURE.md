@@ -36,7 +36,7 @@ Key technical characteristics:
 - **OS-following theming** -- the theme follows the operating system's `prefers-color-scheme`
   until the user picks one (decision D13); an explicit choice always wins and is the only thing
   written to `localStorage`, so a later OS change is still followed.  A `light-mode` CSS class on
-  `<body>` carries the light theme; the base dark palette is `#070d14`.  Owned by `ThemeService`.
+  `<body>` carries the light theme; the base dark palette is `#101012` (`--bg-base`).  Owned by `ThemeService`.
 
 The application ships as a static SPA; ordinary reference-data workflows require no backend.
 It loads public STIX bundles, CTID mappings, vendor-published Navigator layers, and bundled
@@ -494,7 +494,7 @@ Panel visibility is driven entirely by `FilterService.activePanel$`:
 ### Dark Theme Overlay Pattern
 
 Panels render as full-height overlays on top of the matrix workspace.  The overlay uses a
-semi-transparent dark backdrop consistent with the application's dark theme (`#070d14` base).
+semi-transparent dark backdrop consistent with the application's dark theme (`#101012` base).
 Each panel component manages its own SCSS scoped styles.
 
 ---
@@ -614,7 +614,7 @@ The default color system is built on a dark base:
 
 | Token | Value | Usage |
 |---|---|---|
-| Background base | `#070d14` | Page and panel backgrounds |
+| Background base | `#101012` | Page and panel backgrounds |
 | Surface | `#0f1923` | Cards, sidebar, overlays |
 | Border | `#1a2332` | Section dividers |
 | Text primary | `#e0e6ed` | Body text |

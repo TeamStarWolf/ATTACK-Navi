@@ -105,7 +105,7 @@ To add a heatmap mode (33 exist today), modify these files in order:
 
 1. **`src/app/services/filter.service.ts`** -- Add the new mode string to the `HeatmapMode` union type.
 
-2. **`src/app/models/heatmap-modes.ts`** -- Add a `HeatmapModeDef` entry to the `HEATMAP_MODES` table (`value`, `label`, `group`); the matrix controls render it from this table, so there is no separate toolbar array. Its legend metadata is step 6, in the same entry.
+2. **`src/app/models/heatmap-modes.ts`** -- Add a `HeatmapModeDef` entry to the `HEATMAP_MODES` table (`value`, `label`, the required `short` for the trigger button, and `group`); the matrix controls render it from this table, so there is no separate toolbar array. Its legend metadata is step 6, in the same entry.
 
 3. **`src/app/components/matrix/matrix.component.ts`** -- Add a new score `Map` field, add an `else if (mode === 'new-mode')` branch in the `heatmapMode$` subscription (~line 467), and populate the score map.
 
