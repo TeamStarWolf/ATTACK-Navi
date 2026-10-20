@@ -188,8 +188,7 @@
       "dimmed": [],
       "dashboard": {
         "criticalRiskCount": 5,
-        "kevExposedGapCount": 0,
-        "postureScore": 82
+        "kevExposedGapCount": 0
       },
       "statusStops": {
         "T1001": ["none","#90a4ae"],
@@ -270,8 +269,7 @@
       "dimmed": [],
       "dashboard": {
         "criticalRiskCount": 5,
-        "kevExposedGapCount": 0,
-        "postureScore": 82
+        "kevExposedGapCount": 0
       },
       "statusStops": {
         "T1001": ["none","#90a4ae"],

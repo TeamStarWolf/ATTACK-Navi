@@ -11,7 +11,6 @@ import { ImplementationService } from '../../services/implementation.service';
 import { CveService } from '../../services/cve.service';
 import { SigmaService } from '../../services/sigma.service';
 import { NistMappingService } from '../../services/nist-mapping.service';
-import { EnrichmentService } from '../../services/enrichment.service';
 import { makePostureStub, postureStubProvider } from '../../testing/posture-stub';
 
 describe('AnalyticsPanelComponent', () => {
@@ -33,8 +32,7 @@ describe('AnalyticsPanelComponent', () => {
         { provide: CveService, useValue: { kev$: new BehaviorSubject([]), kevTechScores$: new BehaviorSubject(new Map()), getCachedCves: () => [] } },
         { provide: SigmaService, useValue: { getRuleCount: () => 0 } },
         { provide: NistMappingService, useValue: { loaded$: new BehaviorSubject(true), getControlsForTechnique: () => [] } },
-        { provide: EnrichmentService, useValue: { mappedRollup: () => ({ overall: { total: 0, mapped: 0, pct: 0 }, byTactic: [] }) } },
-        // P2-08: the Known numbers and the posture card read PostureService.rollup.
+        // P2-08: the Known numbers and the posture line read PostureService.rollup.
         postureStubProvider(makePostureStub(() => null)),
       ],
     });

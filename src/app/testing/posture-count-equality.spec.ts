@@ -23,7 +23,10 @@
 // report split (HTML and PDF inputs, and the Report Builder), stats-bar and,
 // since P2-08 (E2.1-d2), the dashboard's Mapped Summary widget, which mounts
 // the same posture card. The surfaces are read from the DOM through their
-// data-posture attributes.
+// data-posture attributes. P2-08 also adds one posture line to tactic-summary,
+// analytics, roadmap and timeline (their Known numbers are pinned in
+// mapped-count-equality.spec.ts); the describe at the end shows each line is
+// absent on a fresh profile and equals the rollup on the seeded one.
 // Denominators (R16, §2.2): Known divides by `total`, every Covered share by
 // `assessable` (total minus excluded); each surface renders its Covered
 // denominator as data-posture="assessable" and its share as data-share-pct.
@@ -42,7 +45,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { BehaviorSubject, of } from 'rxjs';
 
 import BASELINE from './__snapshots__/legacy-baseline.json';
-import type { Domain } from '../models/domain';
+import type { Domain, TacticColumn } from '../models/domain';
 import type { Mitigation } from '../models/mitigation';
 import type { Technique } from '../models/technique';
 import type { PostureBucket, PostureState } from '../models/posture/posture.types';
@@ -65,6 +68,10 @@ import { ValidationPanelComponent } from '../components/validation-panel/validat
 import { ReportPanelComponent } from '../components/report-panel/report-panel.component';
 import { StatsBarComponent } from '../components/stats-bar/stats-bar.component';
 import { DashboardPanelComponent } from '../components/dashboard-panel/dashboard-panel.component';
+import { TacticSummaryComponent } from '../components/tactic-summary/tactic-summary.component';
+import { AnalyticsPanelComponent } from '../components/analytics-panel/analytics-panel.component';
+import { RoadmapPanelComponent } from '../components/roadmap-panel/roadmap-panel.component';
+import { TimelinePanelComponent } from '../components/timeline-panel/timeline-panel.component';
 import { ActorProfilePanelComponent, type TechMark } from '../components/actor-profile-panel/actor-profile-panel.component';
 import { assetExposure, parseFixtureDomain, resetBrowserState, signal as fixtureSignal, signalStubProviders } from './lens-harness';
 
@@ -579,6 +586,93 @@ describe('[AC] Posture count equality across the count surfaces (P2-07, E2.1-d1)
       expect(Number(doc.querySelector('.stat-grid [data-posture="partial"]')!.textContent)).toBe(posture.rollup().overall.partial);
       expect(doc.body.textContent).not.toContain('All mapped mitigations implemented');
       expect(doc.body.textContent).toContain('partial (broad mitigation, not confirmed per technique)');
+    });
+  });
+
+  // ── P2-08: the posture lines of the remaining Known surfaces ──────────────
+  // tactic-summary, analytics, roadmap and timeline keep their Known numbers
+  // (mapped-count-equality.spec.ts) and each add one posture line under
+  // ownerWords(), which renders nothing on a fresh profile (design §1 fact 3).
+  // The e2e fresh scan opens none of them (the tactic popup opens on a click,
+  // the three panels are closed by default), so this spec does: on a fresh
+  // profile no line and no Covered or Proven word renders; on the seeded
+  // profile each line shows the REAL rollup's numbers, rollup().overall on the
+  // three panels and the tactic's own byTactic row on tactic-summary.
+  describe('posture lines on tactic-summary, analytics, roadmap and timeline (P2-08, E2.1-d2)', () => {
+    const PANELS = {
+      analytics: { type: AnalyticsPanelComponent as Type<unknown>, testid: 'analytics-posture' },
+      roadmap: { type: RoadmapPanelComponent as Type<unknown>, testid: 'roadmap-posture' },
+      timeline: { type: TimelinePanelComponent as Type<unknown>, testid: 'timeline-posture' },
+    } as const;
+    const PANEL_NAMES = Object.keys(PANELS) as (keyof typeof PANELS)[];
+    const TACTIC_LINE = 'tactic-posture-covered';
+
+    /** The tactic-summary popup for one tactic column, opened as the matrix opens it. */
+    function tacticPopup(col: TacticColumn): HTMLElement {
+      const f = create(TacticSummaryComponent);
+      const all = col.techniques.flatMap(t => [t, ...(t.subtechniques ?? [])]);
+      f.componentInstance.show(
+        { tactic: col.tactic, techniques: all, parentTechniques: col.techniques, domain },
+        new MouseEvent('click', { clientX: 10, clientY: 10 }),
+      );
+      f.detectChanges();
+      const popup = (f.nativeElement as HTMLElement).querySelector('.tactic-popup') as HTMLElement;
+      expect(popup).withContext(`${col.tactic.shortname} popup is open`).not.toBeNull();
+      return popup;
+    }
+
+    const tallyShown = (r: Shown) => [r.assessable, r.covered, r.partial, r.proven, r.stale];
+    const tallyOf = (t: { assessable: number; covered: number; partial: number; proven: number; stale: number }) =>
+      [t.assessable, t.covered, t.partial, t.proven, t.stale];
+
+    beforeEach(() => boot());
+
+    it('fresh profile: none of the four renders its posture line or a Covered or Proven word', () => {
+      expect(posture.ownerWords()).toBeFalse();
+      for (const name of PANEL_NAMES) {
+        const el = create(PANELS[name].type).nativeElement as HTMLElement;
+        expect(el.querySelector('.stat-card, .roadmap-known, .quick-labels')).withContext(`${name} rendered its body`).not.toBeNull();
+        expect(el.querySelector(`[data-testid="${PANELS[name].testid}"]`)).withContext(name).toBeNull();
+        expect(el.querySelector('[data-posture]')).withContext(`${name} posture numbers`).toBeNull();
+        expect(renderedWords(el)).withContext(`${name} renders an owner word on a fresh profile`).not.toMatch(OWNER_WORDS);
+      }
+      expect(domain.tacticColumns.length).toBeGreaterThan(5);
+      for (const col of domain.tacticColumns) {
+        const popup = tacticPopup(col);
+        expect(popup.querySelector(`[data-testid="${TACTIC_LINE}"]`)).withContext(col.tactic.shortname).toBeNull();
+        expect(popup.querySelector('[data-posture]')).withContext(`${col.tactic.shortname} posture numbers`).toBeNull();
+        expect(renderedWords(popup)).withContext(`${col.tactic.shortname} renders an owner word on a fresh profile`).not.toMatch(OWNER_WORDS);
+      }
+    });
+
+    it('seeded profile: analytics, roadmap and timeline show rollup().overall; tactic-summary shows its tactic row', () => {
+      seed(picks(), true);
+      expect(posture.ownerWords()).toBeTrue();
+      const rollup = posture.rollup();
+      const o = rollup.overall;
+      expect(o.covered).withContext('the seed has Covered parents').toBeGreaterThan(0);
+      expect(o.partial).withContext('the seed has partial parents').toBeGreaterThan(0);
+      expect(o.proven).withContext('the seed has one Proven parent').toBe(1);
+      expect(o.assessable).withContext('the not-reproducible run excludes one parent').toBe(o.total - 1);
+
+      for (const name of PANEL_NAMES) {
+        const el = create(PANELS[name].type).nativeElement as HTMLElement;
+        const line = el.querySelector(`[data-testid="${PANELS[name].testid}"]`) as HTMLElement | null;
+        expect(line).withContext(`${name} shows its posture line`).not.toBeNull();
+        expect(tallyShown(readShown(line!))).withContext(`${name}: assessable, covered, partial, proven, stale`).toEqual(tallyOf(o));
+      }
+
+      let differsFromOverall = 0;
+      for (const col of domain.tacticColumns) {
+        const row = rollup.byTactic.find(r => r.tacticId === col.tactic.id);
+        expect(row).withContext(`${col.tactic.shortname} has a rollup row`).toBeDefined();
+        const popup = tacticPopup(col);
+        expect(popup.querySelector(`[data-testid="${TACTIC_LINE}"]`)).withContext(`${col.tactic.shortname} shows its posture line`).not.toBeNull();
+        expect(tallyShown(readShown(popup))).withContext(`${col.tactic.shortname}: assessable, covered, partial, proven, stale`)
+          .toEqual(tallyOf(row!));
+        if (JSON.stringify(tallyOf(row!)) !== JSON.stringify(tallyOf(o))) differsFromOverall++;
+      }
+      expect(differsFromOverall).withContext('the popup reads its own tactic row, not the overall tally').toBeGreaterThan(0);
     });
   });
 });
