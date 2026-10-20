@@ -32,7 +32,7 @@ import { PostureService } from './posture.service';
 import { SettingsService } from './settings.service';
 import { TechniqueMarksService } from './technique-marks.service';
 import { TelemetryCoverageService, telemetryKey } from './telemetry-coverage.service';
-import { VALIDATION_RUNS_V1_KEY, ValidationService } from './validation.service';
+import { VALIDATION_RUNS_V1_KEY, VALIDATION_RUNS_V2_KEY, ValidationService } from './validation.service';
 import { parseFixtureDomain, resetBrowserState, signalStubProviders } from '../testing/lens-harness';
 
 const TODAY = new Date('2026-10-01T00:00:00.000Z');
@@ -384,11 +384,25 @@ describe('PostureService (P2-05, E2.1-c)', () => {
     });
 
     it("an Enterprise T1110 run lights F3's T1110 (F3 T-ids are Enterprise ids); F-ids stay unlit", () => {
+      // Record: import the run through the store, which persists it to navi.v2.validation-runs.
       boot();
       TestBed.inject(ValidationService).importJson(JSON.stringify({ runs: [{
         id: 'ent-1', techniqueId: 'T1110', techniqueRef: 'attack/enterprise/T1110@19.2', domain: 'enterprise', attackVersion: '19.2',
         runDate: daysBefore(20), status: 'passed', attackResult: 'executed', detectionsFired: ['sigma:brute'],
       }] }));
+      const persisted = localStorage.getItem(VALIDATION_RUNS_V2_KEY);
+      expect(persisted).withContext('the import persisted the run').not.toBeNull();
+      expect(persisted).toContain('attack/enterprise/T1110@19.2');
+
+      // Reload: a fresh injector whose ValidationService reads the run back from storage alone.
+      TestBed.resetTestingModule();
+      boot(() => localStorage.setItem(VALIDATION_RUNS_V2_KEY, persisted!));
+      const reread = TestBed.inject(ValidationService).all.find(r => r.id === 'ent-1')!;
+      expect(reread).withContext('the run was re-read from navi.v2.validation-runs').toBeDefined();
+      expect(reread.techniqueRef).toBe('attack/enterprise/T1110@19.2');
+      expect(reread.techniqueId).toBe('T1110');
+
+      // Look up: F3 loads after the reload and the stored run matches its T1110 through runMatches.
       const f3 = tinyDomain('f3', '1.0', ['T1110', 'F1001']);
       load(f3, 'f3');
       expect(posture.states().get('f3/f3/T1110@1.0')).toEqual(jasmine.objectContaining({ rung: 'proven', proofScope: 'own-run' }));
