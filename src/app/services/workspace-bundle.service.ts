@@ -35,6 +35,7 @@ export class WorkspaceBundleService {
     'mitre-nav-assets-v1',
     'attacknavi.telemetry-coverage.v1',
     'attacknavi.validation-runs.v1',
+    'navi.v2.threat-profile',           // E2.6 shared threat profile (P2-03)
     // Custom entities & plans
     'mitre-nav-custom-techniques-v1',
     'mitre-nav-custom-groups-v1',

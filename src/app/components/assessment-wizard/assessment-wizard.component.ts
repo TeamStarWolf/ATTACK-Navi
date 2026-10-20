@@ -43,7 +43,9 @@ interface SectorCategory {
   keywords: string[];
 }
 
-const SECTOR_CATEGORIES: SectorCategory[] = [
+// Exported so threat-profile-picker.component.spec can compare the picker's copy against
+// this table and fail on drift (P2-03 round 2, item D). P2-10 removes the picker's copy.
+export const SECTOR_CATEGORIES: SectorCategory[] = [
   { label: 'Financial', keywords: ['financial', 'banking', 'payment', 'fin'] },
   { label: 'Government', keywords: ['government', 'military', 'defense', 'intelligence', 'political', 'embassy'] },
   { label: 'Healthcare', keywords: ['health', 'hospital', 'medical', 'pharma'] },

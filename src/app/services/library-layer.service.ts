@@ -2,7 +2,8 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { SourceRegistryService, describeLoadError } from './source-registry.service';
 
 /** One entry in the library-layers manifest (index.json). */
@@ -114,6 +115,28 @@ export class LibraryLayerService {
   }
   activeMeta(): LibraryLayerMeta | undefined {
     return this.manifest.find(m => m.file === this.activeFile);
+  }
+
+  /**
+   * The technique attackIds (T####) a layer file lists, without disturbing the
+   * active layer. Used by ThreatProfileService to resolve a `library-layer`
+   * profile source end to end (the file's shape is otherwise private here).
+   * Reuses the score cache; empty on a load failure.
+   */
+  layerTechniqueIds(file: string): Observable<readonly string[]> {
+    const cached = this.cache.get(file);
+    if (cached) return of([...cached.keys()]);
+    return this.http.get<LibraryLayerFile>(`${BASE}${file}`).pipe(
+      map((data) => {
+        const scores = new Map<string, number>();
+        for (const t of data?.techniques ?? []) {
+          if (t.techniqueID) scores.set(t.techniqueID, t.score ?? 100);
+        }
+        this.cache.set(file, scores);
+        return [...scores.keys()];
+      }),
+      catchError(() => of<readonly string[]>([])),
+    );
   }
 
   getScore(attackId: string): number {
