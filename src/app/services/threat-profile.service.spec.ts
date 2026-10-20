@@ -1,8 +1,9 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 import { ThreatProfileService } from './threat-profile.service';
 import { DataService, AttackDomain } from './data.service';
+import { LibraryLayerService } from './library-layer.service';
 import { Domain } from '../models/domain';
 import { ThreatProfile } from '../models/threat-profile';
 
@@ -19,13 +20,14 @@ function tinyDomain(): Domain {
   } as unknown as Domain;
 }
 
-function makeService(domainSubject = new BehaviorSubject<Domain | null>(null)): ThreatProfileService {
-  const stub = {
+function makeService(domainSubject = new BehaviorSubject<Domain | null>(null), layerIds: readonly string[] = []): ThreatProfileService {
+  const data = {
     domain$: domainSubject.asObservable(),
     getCurrentDomain: () => domainSubject.value,
     getCurrentAttackDomain: () => 'enterprise' as AttackDomain,
   };
-  return new ThreatProfileService(stub as unknown as DataService);
+  const library = { layerTechniqueIds: (_file: string) => of(layerIds), manifest: [] as unknown[] };
+  return new ThreatProfileService(data as unknown as DataService, library as unknown as LibraryLayerService);
 }
 
 describe('ThreatProfileService', () => {
@@ -84,5 +86,23 @@ describe('ThreatProfileService', () => {
     expect(svc.current.parentTechniqueIds.has('t1')).toBeTrue();
     expect(svc.weight('t1')).toBe(svc.current.weight('t1'));
     expect(svc.weight('t1')).toBe(1);
+  });
+
+  it('resolves a library-layer source to the layer\'s techniques (not an empty profile)', () => {
+    const domain$ = new BehaviorSubject<Domain | null>(null);
+    const svc = makeService(domain$, ['T1']);   // the layer lists T1
+    domain$.next(tinyDomain());
+    svc.setSource({ kind: 'library-layer', file: 'x.json' });
+    expect(svc.current.source.kind).toBe('library-layer');
+    expect(svc.current.parentTechniqueIds.has('t1')).toBeTrue();
+  });
+
+  it('round-trips sources that carry n, ids and file', () => {
+    makeService().setSource({ kind: 'top-groups', n: 7 });
+    expect(makeService().current.source).toEqual({ kind: 'top-groups', n: 7 });
+    makeService().setSource({ kind: 'groups', ids: ['intrusion-set--a', 'intrusion-set--b'] });
+    expect(makeService().current.source).toEqual({ kind: 'groups', ids: ['intrusion-set--a', 'intrusion-set--b'] });
+    makeService().setSource({ kind: 'library-layer', file: 'ransomware.json' });
+    expect(makeService().current.source).toEqual({ kind: 'library-layer', file: 'ransomware.json' });
   });
 });

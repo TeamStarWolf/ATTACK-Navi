@@ -3,9 +3,10 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { DataService } from './data.service';
+import { LibraryLayerService } from './library-layer.service';
 import { Domain } from '../models/domain';
 import { readV2, writeV2, V2Envelope } from '../models/storage-envelope';
-import { ThreatProfile, ThreatProfileSource, resolveProfile } from '../models/threat-profile';
+import { ThreatProfile, ThreatProfileSource, LibraryLayerInput, resolveProfile } from '../models/threat-profile';
 
 const STORAGE_KEY = 'navi.v2.threat-profile';
 const DEFAULT_SOURCE: ThreatProfileSource = { kind: 'top-groups', n: 20 };
@@ -34,7 +35,7 @@ function isStoredSource(x: unknown): x is ThreatProfileSource & V2Envelope {
 /** The label shown before a domain has loaded; resolveProfile recomputes it once a Domain is present. */
 function labelFor(src: ThreatProfileSource): string {
   switch (src.kind) {
-    case 'top-groups': return `Top ${src.n} groups by prevalence`;
+    case 'top-groups': return `Top ${Number.isFinite(src.n) ? Math.max(1, Math.trunc(src.n)) : 1} groups by prevalence`;
     case 'groups': return 'Groups';
     case 'campaigns': return 'Campaigns';
     case 'library-layer': return src.file;
@@ -56,18 +57,22 @@ function sourceFromRecord(r: ThreatProfileSource & V2Envelope): ThreatProfileSou
 @Injectable({ providedIn: 'root' })
 export class ThreatProfileService implements OnDestroy {
   private source: ThreatProfileSource;
+  /** The resolved layer input for a `library-layer` source; null until it loads. */
+  private layerInput: LibraryLayerInput | null = null;
+  private layerSub?: Subscription;
   private profileSubject: BehaviorSubject<ThreatProfile>;
   readonly profile$: Observable<ThreatProfile>;
   private readonly sub: Subscription;
 
-  constructor(private dataService: DataService) {
+  constructor(private dataService: DataService, private libraryLayers: LibraryLayerService) {
     this.source = this.loadSource();
     this.profileSubject = new BehaviorSubject<ThreatProfile>(this.build(this.dataService.getCurrentDomain()));
     this.profile$ = this.profileSubject.asObservable();
-    // Re-resolve the stored source whenever a domain loads or the user switches domains.
-    this.sub = this.dataService.domain$.subscribe((domain) => {
-      if (domain) this.profileSubject.next(this.build(domain));
-    });
+    // Re-resolve on every domain emission, INCLUDING null: a domain switch emits null
+    // first (data.service), and leaving the old profile up would show a cross-domain
+    // denominator while getCurrentAttackDomain() already names the new domain.
+    this.sub = this.dataService.domain$.subscribe((domain) => this.profileSubject.next(this.build(domain)));
+    this.loadLayerIfNeeded();
   }
 
   get current(): ThreatProfile {
@@ -77,6 +82,7 @@ export class ThreatProfileService implements OnDestroy {
   setSource(src: ThreatProfileSource): void {
     this.source = src;
     this.persist(src);
+    this.loadLayerIfNeeded();   // clears or (re)loads the layer input, then re-emits
     this.profileSubject.next(this.build(this.dataService.getCurrentDomain()));
   }
 
@@ -88,7 +94,7 @@ export class ThreatProfileService implements OnDestroy {
   private build(domain: Domain | null): ThreatProfile {
     if (domain) {
       // Defensive: a resolve failure must not throw inside the domain$ subscription.
-      try { return resolveProfile(this.source, domain); } catch { /* fall through to the empty profile */ }
+      try { return resolveProfile(this.source, domain, this.layerInput ?? undefined); } catch { /* fall through */ }
     }
     const src = this.source;
     return {
@@ -101,6 +107,20 @@ export class ThreatProfileService implements OnDestroy {
       weight: () => 0,
       usedBy: () => [],
     };
+  }
+
+  /** A library-layer source needs its technique ids loaded (async); other kinds clear the input. */
+  private loadLayerIfNeeded(): void {
+    this.layerSub?.unsubscribe();
+    this.layerInput = null;
+    const src = this.source;
+    if (src.kind !== 'library-layer') return;
+    const file = src.file;
+    this.layerSub = this.libraryLayers.layerTechniqueIds(file).subscribe((ids) => {
+      const meta = this.libraryLayers.manifest.find((m) => m.file === file) ?? { file, name: file, description: '' };
+      this.layerInput = { meta, techniques: ids.map((techniqueID) => ({ techniqueID })) };
+      this.profileSubject.next(this.build(this.dataService.getCurrentDomain()));
+    });
   }
 
   private loadSource(): ThreatProfileSource {
@@ -127,5 +147,6 @@ export class ThreatProfileService implements OnDestroy {
 
   ngOnDestroy(): void {
     this.sub.unsubscribe();
+    this.layerSub?.unsubscribe();
   }
 }

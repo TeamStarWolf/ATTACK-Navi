@@ -1,28 +1,30 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
 <div class="tpp" role="group" aria-label="Threat profile picker">
-  <div class="tpp-presets" role="tablist" aria-label="Profile source">
-    <button type="button" role="tab" [attr.aria-selected]="preset === 'top-groups'"
-            [class.active]="preset === 'top-groups'" (click)="setPreset('top-groups')">Top N by prevalence</button>
-    <button type="button" role="tab" [attr.aria-selected]="preset === 'all'"
-            [class.active]="preset === 'all'" (click)="setPreset('all')">All techniques</button>
-    <button type="button" role="tab" [attr.aria-selected]="preset === 'groups'"
-            [class.active]="preset === 'groups'" (click)="setPreset('groups')">Groups</button>
-    <button type="button" role="tab" [attr.aria-selected]="preset === 'campaigns'"
-            [class.active]="preset === 'campaigns'" (click)="setPreset('campaigns')">Campaigns</button>
-    <button type="button" role="tab" [attr.aria-selected]="preset === 'library-layer'"
-            [class.active]="preset === 'library-layer'" (click)="setPreset('library-layer')">Library layer</button>
-  </div>
+  @if (showPresetTabs) {
+    <div class="tpp-presets" role="tablist" aria-label="Profile source">
+      <button type="button" role="tab" [attr.aria-selected]="preset === 'top-groups'"
+              [class.active]="preset === 'top-groups'" (click)="setPreset('top-groups')">Top N by prevalence</button>
+      <button type="button" role="tab" [attr.aria-selected]="preset === 'all'"
+              [class.active]="preset === 'all'" (click)="setPreset('all')">All techniques</button>
+      <button type="button" role="tab" [attr.aria-selected]="preset === 'groups'"
+              [class.active]="preset === 'groups'" (click)="setPreset('groups')">Groups</button>
+      <button type="button" role="tab" [attr.aria-selected]="preset === 'campaigns'"
+              [class.active]="preset === 'campaigns'" (click)="setPreset('campaigns')">Campaigns</button>
+      <button type="button" role="tab" [attr.aria-selected]="preset === 'library-layer'"
+              [class.active]="preset === 'library-layer'" (click)="setPreset('library-layer')">Library layer</button>
+    </div>
+  }
 
-  @if (preset === 'top-groups') {
+  @if (showPresetTabs && preset === 'top-groups') {
     <label class="tpp-topn">
       Top
-      <input type="number" min="1" [(ngModel)]="topN" (ngModelChange)="setPreset('top-groups')" aria-label="Number of groups" />
+      <input type="number" min="1" [(ngModel)]="topN" (ngModelChange)="onTopNChange()" aria-label="Number of groups" />
       groups by prevalence
     </label>
   }
 
-  @if (preset === 'groups') {
+  @if (!showPresetTabs || preset === 'groups') {
     <div class="tpp-search">
       <input type="search" [(ngModel)]="searchText" placeholder="Search groups by name, ID or alias"
              aria-label="Search groups" />
@@ -51,12 +53,12 @@
     }
   }
 
-  @if (preset === 'campaigns') {
+  @if (showPresetTabs && preset === 'campaigns') {
     <ul class="tpp-list" aria-label="Campaigns">
       @for (c of campaigns; track c.id) {
         <li>
-          <button type="button" class="tpp-item" [class.selected]="selectedGroupIds.has(c.id)"
-                  [attr.aria-pressed]="selectedGroupIds.has(c.id)" (click)="selectCampaign(c)">
+          <button type="button" class="tpp-item" [class.selected]="selectedCampaignIds.has(c.id)"
+                  [attr.aria-pressed]="selectedCampaignIds.has(c.id)" (click)="selectCampaign(c)">
             <span class="tpp-item-name">{{ c.name }}</span>
             <span class="tpp-item-id">{{ c.attackId }}</span>
           </button>
@@ -67,7 +69,7 @@
     </ul>
   }
 
-  @if (preset === 'library-layer') {
+  @if (showPresetTabs && preset === 'library-layer') {
     <ul class="tpp-list" aria-label="Library layers">
       @for (l of layers; track l.file) {
         <li>

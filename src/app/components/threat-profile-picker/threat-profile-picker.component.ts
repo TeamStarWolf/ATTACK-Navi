@@ -18,20 +18,25 @@ import { LibraryLayerService, LibraryLayerMeta } from '../../services/library-la
 import { ThreatProfileService } from '../../services/threat-profile.service';
 import { ThreatGroup } from '../../models/group';
 import { Campaign } from '../../models/campaign';
-import { rankGroupsByPrevalence } from '../../models/threat-profile';
+import { ThreatProfileSource } from '../../models/threat-profile';
 
 type PickerMode = 'profile' | 'single' | 'multi-local';
 type Preset = 'top-groups' | 'all' | 'groups' | 'campaigns' | 'library-layer';
 
 interface SectorCategory { readonly label: string; readonly keywords: readonly string[]; }
 
-/** The wizard's sector keyword aid, kept so E2.6 does not lose that capability (assessment-wizard.component.ts:46). */
+/**
+ * Kept verbatim from assessment-wizard.component.ts:46-52 so the same sector click
+ * matches the same groups. P2-10 points the wizard at this picker and drops its copy;
+ * threat-profile-picker.component.spec pins these against the wizard's table.
+ */
 const SECTOR_CATEGORIES: readonly SectorCategory[] = [
   { label: 'Financial', keywords: ['financial', 'banking', 'payment', 'fin'] },
   { label: 'Government', keywords: ['government', 'military', 'defense', 'intelligence', 'political', 'embassy'] },
-  { label: 'Healthcare', keywords: ['health', 'medical', 'hospital', 'pharma'] },
-  { label: 'Technology', keywords: ['technology', 'software', 'telecom', 'semiconductor'] },
-  { label: 'Energy', keywords: ['energy', 'oil', 'gas', 'utility', 'nuclear', 'power'] },
+  { label: 'Healthcare', keywords: ['health', 'hospital', 'medical', 'pharma'] },
+  { label: 'Technology', keywords: ['technology', 'software', 'tech', 'telecom', 'it '] },
+  { label: 'Energy', keywords: ['energy', 'oil', 'gas', 'nuclear', 'power', 'utility'] },
+  { label: 'Education', keywords: ['education', 'university', 'academic', 'research'] },
 ];
 
 /**
@@ -53,9 +58,9 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
   /** Default N for the Top-N preset. */
   @Input() topN = 20;
 
-  /** single mode: the chosen group's STIX id. */
+  /** single mode: the chosen group's STIX intrusion-set id (never a campaign). */
   @Output() groupSelected = new EventEmitter<string>();
-  /** multi-local mode: the chosen group STIX ids; never mutates ThreatProfileService. */
+  /** multi-local mode: the active preset's selected STIX ids; never mutates ThreatProfileService. */
   @Output() selectionChange = new EventEmitter<ReadonlySet<string>>();
 
   readonly sectors = SECTOR_CATEGORIES;
@@ -67,8 +72,9 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
   campaigns: Campaign[] = [];
   layers: LibraryLayerMeta[] = [];
 
-  /** Selected group STIX ids (groups preset, single/multi-local). */
+  /** Group and campaign selections are kept apart so a profile source never mixes id kinds. */
   readonly selectedGroupIds = new Set<string>();
+  readonly selectedCampaignIds = new Set<string>();
   selectedLayerFile: string | null = null;
 
   private subs = new Subscription();
@@ -81,7 +87,17 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
   ) {}
 
+  /** Campaigns, All and Library layer make no sense when the caller wants exactly one group. */
+  get showPresetTabs(): boolean { return this.mode !== 'single'; }
+
   ngOnInit(): void {
+    if (this.mode === 'single') {
+      this.preset = 'groups';
+    } else if (this.mode === 'profile') {
+      this.initFromProfile(this.threatProfile.current.source);
+      // Stay in sync if the shared profile changes elsewhere.
+      this.subs.add(this.threatProfile.profile$.subscribe((p) => { this.initFromProfile(p.source); this.cdr.markForCheck(); }));
+    }
     this.subs.add(this.dataService.domain$.subscribe((domain) => {
       this.groups = domain ? [...domain.groups].sort((a, b) => a.name.localeCompare(b.name)) : [];
       this.campaigns = domain ? [...domain.campaigns].sort((a, b) => a.name.localeCompare(b.name)) : [];
@@ -98,16 +114,40 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
     this.subs.unsubscribe();
   }
 
+  /** Reflect the stored profile source so the first click does not silently replace it. */
+  private initFromProfile(src: ThreatProfileSource): void {
+    this.preset = src.kind;
+    this.selectedGroupIds.clear();
+    this.selectedCampaignIds.clear();
+    this.selectedLayerFile = null;
+    switch (src.kind) {
+      case 'top-groups': this.topN = src.n; break;
+      case 'groups': for (const id of src.ids) this.selectedGroupIds.add(id); break;
+      case 'campaigns': for (const id of src.ids) this.selectedCampaignIds.add(id); break;
+      case 'library-layer': this.selectedLayerFile = src.file; break;
+      case 'all': break;
+    }
+  }
+
   setPreset(preset: Preset): void {
     this.preset = preset;
+    // A preset switch clears the other id kind so a source never mixes groups and campaigns.
+    if (preset !== 'groups') this.selectedGroupIds.clear();
+    if (preset !== 'campaigns') this.selectedCampaignIds.clear();
+    if (preset !== 'library-layer') this.selectedLayerFile = null;
     if (this.mode === 'profile' && (preset === 'top-groups' || preset === 'all')) this.applyProfile();
     this.cdr.markForCheck();
   }
 
-  /** Top-N ranked by prevalence, so the preview matches the profile the model builds. */
-  get rankedGroups(): readonly ThreatGroup[] {
-    const domain = this.dataService.getCurrentDomain();
-    return domain ? rankGroupsByPrevalence(domain) : this.groups;
+  onTopNChange(): void {
+    this.topN = this.clampTopN(this.topN);
+    if (this.mode === 'profile') this.applyProfile();
+    this.cdr.markForCheck();
+  }
+
+  private clampTopN(n: number): number {
+    const i = Number.isFinite(n) ? Math.trunc(n) : 0;
+    return Math.min(Math.max(i, 1), Math.max(1, this.groups.length));
   }
 
   filteredGroups(): ThreatGroup[] {
@@ -129,7 +169,7 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  /** Emits/mutates per mode. Every id passed here is a STIX id (group.id), never a G#### attackId. */
+  /** Group selection. Every id is a STIX intrusion-set id (group.id), never a G#### attackId. */
   selectGroup(g: ThreatGroup): void {
     if (this.mode === 'single') {
       this.groupSelected.emit(g.id);
@@ -146,16 +186,13 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  /** Campaign selection mirrors group selection; every id is a STIX campaign id. */
+  /** Campaign selection (STIX campaign ids). Not available in single mode, which emits one group only. */
   selectCampaign(c: Campaign): void {
-    if (this.mode === 'single') {
-      this.groupSelected.emit(c.id);
-      return;
-    }
-    if (this.selectedGroupIds.has(c.id)) this.selectedGroupIds.delete(c.id);
-    else this.selectedGroupIds.add(c.id);
+    if (this.mode === 'single') return;
+    if (this.selectedCampaignIds.has(c.id)) this.selectedCampaignIds.delete(c.id);
+    else this.selectedCampaignIds.add(c.id);
     if (this.mode === 'multi-local') {
-      this.selectionChange.emit(new Set(this.selectedGroupIds));
+      this.selectionChange.emit(new Set(this.selectedCampaignIds));
     } else {
       this.preset = 'campaigns';
       this.applyProfile();
@@ -170,7 +207,7 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  /** Push the selected groups into the matrix filter. Deliberately separate from the profile (R4 risk 6). */
+  /** Push the selected GROUPS into the matrix filter. Deliberately separate from the profile (R4 risk 6). */
   useAsMatrixFilter(): void {
     for (const id of this.selectedGroupIds) this.filterService.toggleThreatGroup(id);
   }
@@ -179,10 +216,10 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
   private applyProfile(): void {
     if (this.mode !== 'profile') return;
     switch (this.preset) {
-      case 'top-groups': this.threatProfile.setSource({ kind: 'top-groups', n: this.topN }); break;
+      case 'top-groups': this.threatProfile.setSource({ kind: 'top-groups', n: this.clampTopN(this.topN) }); break;
       case 'all': this.threatProfile.setSource({ kind: 'all' }); break;
       case 'groups': this.threatProfile.setSource({ kind: 'groups', ids: [...this.selectedGroupIds] }); break;
-      case 'campaigns': this.threatProfile.setSource({ kind: 'campaigns', ids: [...this.selectedGroupIds] }); break;
+      case 'campaigns': this.threatProfile.setSource({ kind: 'campaigns', ids: [...this.selectedCampaignIds] }); break;
       case 'library-layer':
         if (this.selectedLayerFile) this.threatProfile.setSource({ kind: 'library-layer', file: this.selectedLayerFile });
         break;

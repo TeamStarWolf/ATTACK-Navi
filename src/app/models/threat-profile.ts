@@ -18,6 +18,8 @@ export interface ThreatProfile {
   readonly source: ThreatProfileSource;
   readonly domain: AttackDomain;
   readonly label: string;                            // 'Top 20 groups by prevalence'
+  // STIX intrusion-set ids: the selected/top groups; every group for 'all'; the
+  // campaigns' attributed groups for 'campaigns'; empty for 'library-layer'.
   readonly groupIds: readonly string[];
   readonly techniqueIds: ReadonlySet<string>;        // STIX, parents and subs
   readonly parentTechniqueIds: ReadonlySet<string>;  // subs rolled up to parents: THE denominator
@@ -65,6 +67,12 @@ export function rankGroupsByPrevalence(domain: Domain): readonly ThreatGroup[] {
 
 interface Actor { readonly name: string; readonly techniques: readonly Technique[]; }
 
+/** Top-N is clamped to an integer in [1, number of groups]; a null/NaN/float n never reaches the label or the slice. */
+function clampTopN(n: number, groupCount: number): number {
+  const i = Number.isFinite(n) ? Math.trunc(n) : 0;
+  return Math.min(Math.max(i, 1), Math.max(1, groupCount));
+}
+
 export function resolveProfile(src: ThreatProfileSource, domain: Domain, layer?: LibraryLayerInput): ThreatProfile {
   const byStix = new Map(domain.techniques.map((t) => [t.id, t]));
   const byAttackId = new Map(domain.techniques.map((t) => [t.attackId, t]));
@@ -81,9 +89,10 @@ export function resolveProfile(src: ThreatProfileSource, domain: Domain, layer?:
 
   switch (src.kind) {
     case 'top-groups': {
-      const groups = rankGroupsByPrevalence(domain).slice(0, Math.max(0, src.n));
+      const n = clampTopN(src.n, domain.groups.length);
+      const groups = rankGroupsByPrevalence(domain).slice(0, n);
       groupIds = groups.map((g) => g.id);
-      label = `Top ${src.n} groups by prevalence`;
+      label = `Top ${n} groups by prevalence`;
       for (const g of groups) actors.push({ name: g.name, techniques: domain.techniquesByGroup.get(g.id) ?? [] });
       break;
     }
@@ -98,6 +107,7 @@ export function resolveProfile(src: ThreatProfileSource, domain: Domain, layer?:
     case 'campaigns': {
       const wanted = new Set(src.ids);
       const campaigns = domain.campaigns.filter((c) => wanted.has(c.id));
+      groupIds = [...new Set(campaigns.flatMap((c) => c.attributedGroupIds))];   // the intrusion-sets attributed to these campaigns
       label = campaigns.length === 1 ? campaigns[0].name : `${campaigns.length} campaigns`;
       for (const c of campaigns) actors.push({ name: c.name, techniques: domain.techniquesByCampaign.get(c.id) ?? [] });
       break;
@@ -114,6 +124,7 @@ export function resolveProfile(src: ThreatProfileSource, domain: Domain, layer?:
     }
     case 'all': {
       label = 'All techniques';
+      groupIds = domain.groups.map((g) => g.id);
       // Weight/usedBy over every group; the denominator is every parent technique.
       for (const g of domain.groups) actors.push({ name: g.name, techniques: domain.techniquesByGroup.get(g.id) ?? [] });
       for (const t of domain.techniques) {
