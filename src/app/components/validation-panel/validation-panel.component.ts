@@ -12,7 +12,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription, filter, take } from 'rxjs';
 import { DataService } from '../../services/data.service';
-import { ValidationService, ValidationRun, ValidationStatus } from '../../services/validation.service';
+import { ValidationService, ValidationRun, ValidationStatus, describeImportResult } from '../../services/validation.service';
 import { EventLoggingService } from '../../services/event-logging.service';
 import { AtomicService } from '../../services/atomic.service';
 import { SigmaService } from '../../services/sigma.service';
@@ -235,14 +235,18 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
     this.downloadBlob(json, `validation-runs-${new Date().toISOString().split('T')[0]}.json`, 'application/json');
   }
 
+  /** The last import's per-source result ("manual: 1 added, 0 replaced"), shown under the header. */
+  importMessage: string | null = null;
+
   importRuns(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
     if (!file) return;
     file.text().then(text => {
       const result = this.validationService.importJson(text);
-      if (!result.ok) {
-        alert(`Import failed: ${result.error}`);
-      }
+      this.importMessage = describeImportResult(result);
+      input.value = '';
+      this.cdr.markForCheck();
     });
   }
 
@@ -287,7 +291,11 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
 
   // Helpers used in template
   statusLabel(s: ValidationStatus): string {
-    return { passed: 'PASS', failed: 'FAIL', partial: 'PARTIAL', 'no-telemetry': 'NO TELEMETRY', untested: 'UNTESTED' }[s];
+    const labels: Record<ValidationStatus, string> = {
+      passed: 'PASS', failed: 'FAIL', partial: 'PARTIAL', 'no-telemetry': 'NO TELEMETRY', untested: 'UNTESTED',
+      'not-reproducible': 'Not reproducible (patched target)',
+    };
+    return labels[s];
   }
 
   // Detections list and runs are useful in the runs/evidence tabs

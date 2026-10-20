@@ -16,6 +16,9 @@
           <button class="vp-btn" (click)="exportNavigatorLayer()">Export ATT&amp;CK Layer</button>
         </div>
       </header>
+      @if (importMessage) {
+        <p class="vp-import-msg" role="status">{{ importMessage }}</p>
+      }
 
       <!-- KPI tiles -->
       <section class="vp-kpis">
@@ -88,6 +91,7 @@
               <option value="failed">Failed</option>
               <option value="no-telemetry">No Telemetry</option>
               <option value="untested">Untested</option>
+              <option value="not-reproducible">Not reproducible (patched target)</option>
             </select>
             <span class="vp-result-count">{{ filteredCards.length }} of {{ totalCards }} in scope</span>
           </div>

@@ -114,7 +114,7 @@ export class ExportHubComponent {
       const reader = new FileReader();
       reader.onload = (ev) => {
         try {
-          const applied = this.workspaceBundle.importBundle(ev.target?.result as string);
+          const applied = this.workspaceBundle.importBundle(ev.target?.result as string).length;
           if (confirm(`Workspace restored (${applied} data sets). Reload now to apply everywhere?`)) {
             window.location.reload();
           }

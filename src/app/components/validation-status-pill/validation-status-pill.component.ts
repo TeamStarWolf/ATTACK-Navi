@@ -12,6 +12,7 @@ import { PanelNavService } from '../../services/panel-nav.service';
 const STATUS_LABEL: Record<ValidationStatus, string> = {
   passed: 'PASS', failed: 'FAIL', partial: 'PARTIAL',
   'no-telemetry': 'NO TELEMETRY', untested: 'UNTESTED',
+  'not-reproducible': 'Not reproducible (patched target)',
 };
 
 @Component({
