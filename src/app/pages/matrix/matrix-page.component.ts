@@ -28,6 +28,7 @@ import { LensCardService } from '../../services/lens-card.service';
 import { LensAvailability, heatmapModeDef, lensAvailability } from '../../models/heatmap-modes';
 import { SourceBannerComponent } from '../../components/source-banner/source-banner.component';
 import { OwnerDataService, PREVALENCE_BANNER_TEXT, showPrevalenceBanner } from '../../services/owner-data.service';
+import { PostureService } from '../../services/posture.service';
 import {
   TacticSummaryComponent,
   TacticSummaryData,
@@ -67,6 +68,7 @@ export class MatrixPageComponent implements OnInit {
   private readonly filterService = inject(FilterService);
   private readonly lensCards = inject(LensCardService);
   private readonly ownerData = inject(OwnerDataService);
+  private readonly posture = inject(PostureService);
 
   @ViewChild(MatrixComponent) matrixRef?: MatrixComponent;
   @ViewChild(TacticSummaryComponent) tacticSummary?: TacticSummaryComponent;
@@ -76,13 +78,21 @@ export class MatrixPageComponent implements OnInit {
   error: string | null = null;
   currentDomain: AttackDomain = 'enterprise';
   heatmapMode: HeatmapMode = DEFAULT_HEATMAP_MODE;
-  /** True once the user's stores hold any Implementation, Validation or stack record (D4). */
+  /** The exact D4 predicate (OwnerDataService.hasOwnerData$, P2-05). */
   ownerDataExists = false;
   readonly prevalenceBannerText = PREVALENCE_BANNER_TEXT;
 
-  /** The one-line Prevalence banner (plan E1.5, decision D4). */
+  /**
+   * The one-line Prevalence banner (plan E1.5, decision D4; Phase 2 design
+   * P2-05, Revision 3). It hides when D4 holds or when PostureService has
+   * Covered or Proven data to show (ownerWords): once any surface can show
+   * such a number, "not a view of your environment" is not true. Combined
+   * here, not in OwnerDataService, because PostureService reads
+   * OwnerDataService and the reverse injection would be circular. Reading the
+   * ownerWords signal from the template keeps this OnPush view current.
+   */
   get prevalenceBanner(): boolean {
-    return showPrevalenceBanner(this.heatmapMode, this.ownerDataExists);
+    return showPrevalenceBanner(this.heatmapMode, this.ownerDataExists || this.posture.ownerWords());
   }
 
   /**

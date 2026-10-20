@@ -9,8 +9,11 @@ import { DataService } from '../../services/data.service';
 import { FilterService } from '../../services/filter.service';
 import { LensCardService } from '../../services/lens-card.service';
 import { heatmapModeDef, lensAvailability } from '../../models/heatmap-modes';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 import { OwnerDataService, PREVALENCE_BANNER_TEXT } from '../../services/owner-data.service';
+import { MatrixComponent } from '../../components/matrix/matrix.component';
+import { Domain } from '../../models/domain';
+import { parseFixtureDomain, resetBrowserState } from '../../testing/lens-harness';
 
 describe('MatrixPageComponent', () => {
   let ownerData: BehaviorSubject<boolean>;
@@ -21,7 +24,10 @@ describe('MatrixPageComponent', () => {
       imports: [MatrixPageComponent],
       providers: [
         provideHttpClient(withXhr()), provideHttpClientTesting(), provideRouter([]),
-        { provide: OwnerDataService, useValue: { hasOwnerData$: ownerData.asObservable() } },
+        {
+          provide: OwnerDataService,
+          useValue: { hasOwnerData$: ownerData.asObservable(), counts$: of({ implementation: 0, validation: 0, stack: 0 }) },
+        },
       ],
     }).compileComponents();
   });
@@ -60,6 +66,54 @@ describe('MatrixPageComponent', () => {
       TestBed.inject(FilterService).setHeatmapMode('unified');
       fixture.detectChanges();
       expect(bannerOf(fixture.nativeElement)).toBeNull();
+    });
+  });
+
+  // Phase 2 design P2-05 (Revision 3): the banner predicate is
+  // showPrevalenceBanner(mode, hasOwnerData || posture.ownerWords()), on the
+  // real stores and the real PostureService over the lens fixture. Updated on
+  // purpose: a controls-only profile now hides the banner (owner words), and a
+  // planned-only profile shows it (D4 exact).
+  describe('banner predicate: D4 or owner words (P2-05)', () => {
+    let domain: Domain;
+    const bannerOf = (el: HTMLElement) => el.querySelector('.first-glance-banner');
+
+    function render(seed: (d: Domain) => void) {
+      TestBed.resetTestingModule();
+      resetBrowserState();
+      domain = parseFixtureDomain();
+      seed(domain);
+      TestBed.configureTestingModule({
+        imports: [MatrixPageComponent],
+        providers: [provideHttpClient(withXhr()), provideHttpClientTesting(), provideRouter([])],
+      });
+      // The grid itself is not under test here: render the page chrome only.
+      TestBed.overrideTemplate(MatrixComponent, '');
+      (TestBed.inject(DataService) as unknown as { domainSubject: { next(d: Domain): void } }).domainSubject.next(domain);
+      const fixture = TestBed.createComponent(MatrixPageComponent);
+      fixture.detectChanges();
+      expect(fixture.componentInstance.heatmapMode).toBe('frequency');
+      return fixture;
+    }
+    const m1047 = (d: Domain) => d.mitigations.find(m => m.attackId === 'M1047')!.id;
+
+    afterEach(() => resetBrowserState());
+
+    it('controls-only (one implemented control) on heat=frequency: no banner', () => {
+      const fixture = render(d => localStorage.setItem('mitre-nav-controls-v1', JSON.stringify([{
+        id: 'c1', name: 'EDR policy', framework: 'Custom', controlRef: 'c1', description: '', mitigationIds: [m1047(d)], status: 'implemented',
+      }])));
+      expect(bannerOf(fixture.nativeElement)).toBeNull();
+    });
+
+    it('a fresh profile: banner', () => {
+      const fixture = render(() => undefined);
+      expect(bannerOf(fixture.nativeElement)).toBeTruthy();
+    });
+
+    it('planned-only: banner', () => {
+      const fixture = render(d => localStorage.setItem('mitre-nav-impl-v1', JSON.stringify([[m1047(d), 'planned']])));
+      expect(bannerOf(fixture.nativeElement)).toBeTruthy();
     });
   });
 

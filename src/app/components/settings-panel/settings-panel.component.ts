@@ -10,7 +10,7 @@ import {
 
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
-import { SettingsService, AppSettings, DEFAULT_SETTINGS } from '../../services/settings.service';
+import { SettingsService, AppSettings, DEFAULT_SETTINGS, POSTURE_LIMITS, PostureSettings } from '../../services/settings.service';
 import { DataService } from '../../services/data.service';
 import { ImplementationService } from '../../services/implementation.service';
 import { TimelineService } from '../../services/timeline.service';
@@ -93,6 +93,14 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
   taxiiImportResult: ImportSummary | null = null;
   taxiiError = '';
 
+  // Posture rules (P2-05; design §6, §7): edited in place, saved on change.
+  readonly postureLimits = POSTURE_LIMITS;
+  readonly postureWindows: ReadonlyArray<{ scope: keyof PostureSettings['decayDays']; label: string }> = [
+    { scope: 'range', label: 'Range proof window (days)' },
+    { scope: 'production', label: 'Production proof window (days)' },
+    { scope: 'own-run', label: 'Own-run proof window (days)' },
+  ];
+
   // Bulk CSV import state
   csvImportResult: { imported: number; errors: number } | null = null;
   csvImportError = '';
@@ -118,7 +126,7 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
 
     this.subs.add(
       this.settingsService.settings$.subscribe(s => {
-        this.savedSettings = { ...s, cellDisplay: { ...s.cellDisplay } };
+        this.savedSettings = { ...s, cellDisplay: { ...s.cellDisplay }, posture: this.copyPosture(s.posture) };
         this.cdr.markForCheck();
       }),
     );
@@ -196,7 +204,54 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
 
   private reloadSettings(): void {
     const s = this.settingsService.current;
-    this.settings = { ...s, cellDisplay: { ...s.cellDisplay } };
+    this.settings = { ...s, cellDisplay: { ...s.cellDisplay }, posture: this.copyPosture(s.posture) };
+  }
+
+  private copyPosture(p: PostureSettings): PostureSettings {
+    return { ...p, decayDays: { ...p.decayDays } };
+  }
+
+  /** The stored posture rules (the block shows what PostureService uses). */
+  get posture(): PostureSettings {
+    return this.settingsService.current.posture;
+  }
+
+  /** An integer in [min, max] from a number input, or null. */
+  private intFrom(event: Event, min: number, max: number): number | null {
+    const input = event.target as HTMLInputElement;
+    const v = Number(input.value);
+    if (input.value.trim() === '' || !Number.isInteger(v) || v < min || v > max) return null;
+    return v;
+  }
+
+  /** Save the D16 threshold; an out-of-range or non-integer entry is refused and the stored value shown again. */
+  setPostureThreshold(event: Event): void {
+    const { min, max } = POSTURE_LIMITS.threshold;
+    const v = this.intFrom(event, min, max);
+    if (v === null) {
+      (event.target as HTMLInputElement).value = String(this.posture.mitigationBreadthThreshold);
+      return;
+    }
+    this.savePosture({ ...this.copyPosture(this.posture), mitigationBreadthThreshold: v });
+  }
+
+  /** Save one D10 proof window (days). */
+  setPostureWindow(scope: keyof PostureSettings['decayDays'], event: Event): void {
+    const { min, max } = POSTURE_LIMITS.decayDays;
+    const v = this.intFrom(event, min, max);
+    if (v === null) {
+      (event.target as HTMLInputElement).value = String(this.posture.decayDays[scope]);
+      return;
+    }
+    const next = this.copyPosture(this.posture);
+    next.decayDays[scope] = v;
+    this.savePosture(next);
+  }
+
+  private savePosture(posture: PostureSettings): void {
+    this.settingsService.update({ posture });
+    this.settings = { ...this.settings, posture: this.copyPosture(posture) };
+    this.cdr.markForCheck();
   }
 
   private refreshDataInfo(): void {
