@@ -107,6 +107,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
   dataComponents: MitreDataComponent[] = [];
   detectionNotes: import('../../models/domain').DetectionNote[] = [];
   open = false;
+  /** The drawer stays open across workspaces while pinned (FilterService.drawerPinned$). */
+  pinned = false;
   isCustomTechnique = false;
   mitSearchText = '';
 
@@ -609,6 +611,13 @@ export class SidebarComponent implements OnInit, OnDestroy {
     for (const core of ['annotation', 'subtechniques', 'detection', 'datasources', 'procedures']) {
       this.collapsedSections.delete(core);
     }
+
+    this.subs.add(
+      this.filterService.drawerPinned$.subscribe((pinned) => {
+        this.pinned = pinned;
+        this.cdr.markForCheck();
+      }),
+    );
 
     this.subs.add(
       this.filterService.selectedTechnique$.subscribe((tech) => {
@@ -1236,6 +1245,11 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   close(): void {
     this.filterService.selectTechnique(null);
+  }
+
+  /** Pin keeps the drawer open across workspaces (E2.3); FilterService holds the state. */
+  togglePin(): void {
+    this.filterService.setDrawerPinned(!this.pinned);
   }
 
   /** Clicking the CVE signal pill highlights all techniques sharing this technique's CVEs in the matrix. */

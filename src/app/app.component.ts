@@ -43,8 +43,9 @@ export class AppComponent implements OnInit {
   showToast = false;
   toastMessage = '';
   currentDomain: AttackDomain = 'enterprise';
-  private lastRoutePath?: string;
+  private lastWorkspace?: string;
   private pendingKeepSelection = false;
+  private drawerPinned = false;
 
   constructor(
     private dataService: DataService,
@@ -62,6 +63,10 @@ export class AppComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.gapViewRef?.show());
     this.initDrawerRouteScope();
+    // A shared link whose `tech` is not in the loaded domain says so here (E2.3).
+    this.filterService.urlNotice$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((message) => this.showToastMessage(message, 6000));
     // Restore the saved viewpoint's lens before the URL writer starts, and let
     // it defer to an explicit `heat` deep link (handled inside restore()).
     this.viewpoint.restore();
@@ -72,13 +77,17 @@ export class AppComponent implements OnInit {
 
   /**
    * The technique sidebar is global and its selection lives in FilterService, so
-   * an open drawer used to ride over the next workspace. Close it when the route
-   * PATH changes — UNLESS the navigation carries keepTechniqueSelection (set by
+   * an open drawer used to ride over the next workspace. Close it when the
+   * WORKSPACE (the first path segment) changes (E2.3) — UNLESS the drawer is
+   * pinned, or the navigation carries keepTechniqueSelection (set by
    * PanelNavService for flows that select a technique FOR the destination, e.g.
-   * "show this technique on the matrix"). url-state writes filter edits with
-   * replaceUrl on the SAME path (query only), so those keep the drawer open.
+   * "show this technique on the matrix"). A tab change inside one workspace and
+   * url-state's replaceUrl query writes keep the drawer open.
    */
   private initDrawerRouteScope(): void {
+    this.filterService.drawerPinned$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((pinned) => (this.drawerPinned = pinned));
     this.router.events
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((e) => {
@@ -106,17 +115,19 @@ export class AppComponent implements OnInit {
   }
 
   /**
-   * Close the technique sidebar when the route path changes, unless this
-   * navigation carries a selection made for the destination (keep). The first
-   * navigation only records the starting path (nothing to clear on load); a
-   * same-path navigation (a url-state query write) leaves the drawer open.
+   * Close the technique sidebar when the workspace changes (#/detect/sigma to
+   * #/intel/groups), unless the drawer is pinned or this navigation carries a
+   * selection made for the destination (keep). The first navigation only records
+   * the starting workspace (nothing to clear on load); a tab change in the same
+   * workspace (#/detect/sigma to #/detect/validation) or a url-state query write
+   * leaves the drawer open.
    */
   private clearSelectionOnRouteChange(url: string, keep: boolean): void {
-    const path = url.split(/[?#]/)[0];
-    if (this.lastRoutePath !== undefined && path !== this.lastRoutePath && !keep) {
+    const workspace = url.split(/[?#]/)[0].split('/').find(Boolean) ?? '';
+    if (this.lastWorkspace !== undefined && workspace !== this.lastWorkspace && !keep && !this.drawerPinned) {
       this.filterService.selectTechnique(null);
     }
-    this.lastRoutePath = path;
+    this.lastWorkspace = workspace;
   }
 
   onDomainChange(domain: AttackDomain): void {
@@ -135,10 +146,10 @@ export class AppComponent implements OnInit {
     this.showToastMessage('Link copied to clipboard!');
   }
 
-  private showToastMessage(message: string): void {
+  private showToastMessage(message: string, durationMs = 2500): void {
     this.showToast = true;
     this.toastMessage = message;
     this.cdr.markForCheck();
-    setTimeout(() => { this.showToast = false; this.cdr.markForCheck(); }, 2500);
+    setTimeout(() => { this.showToast = false; this.cdr.markForCheck(); }, durationMs);
   }
 }

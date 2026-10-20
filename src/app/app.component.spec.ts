@@ -38,6 +38,9 @@ describe('AppComponent — technique drawer route scope', () => {
           { path: 'exposure/graph', component: Blank },
           { path: 'dashboard/analytics', component: Blank },
           { path: 'intel/actors', component: Blank },
+          { path: 'intel/groups', component: Blank },
+          { path: 'detect/sigma', component: Blank },
+          { path: 'detect/validation', component: Blank },
           { path: '**', component: Blank },
         ]),
         provideLocationMocks(),
@@ -151,6 +154,62 @@ describe('AppComponent — technique drawer route scope', () => {
     expect(app.shouldKeepSelection('popstate', flag)).toBeFalse();
     expect(app.shouldKeepSelection('hashchange', flag)).toBeTrue();
     expect(app.shouldKeepSelection('imperative', undefined)).toBeFalse();
+  });
+
+  // E2.3 (P2-04): the drawer is scoped to the WORKSPACE (first path segment), not the path.
+  describe('workspace scope and Pin (E2.3)', () => {
+    it('[AC] the drawer never persists into another workspace: /detect/sigma to /intel/groups closes it', async () => {
+      wireHandler();
+      await router.navigateByUrl('/detect/sigma');
+      filter_.selectTechnique(TECH);
+      await router.navigateByUrl('/intel/groups');
+      expect(current()).toBeNull();
+    });
+
+    it('keeps the drawer on a tab change inside one workspace: /detect/sigma to /detect/validation', async () => {
+      wireHandler();
+      await router.navigateByUrl('/detect/sigma');
+      filter_.selectTechnique(TECH);
+      await router.navigateByUrl('/detect/validation');
+      expect(current()).toBe(TECH);
+    });
+
+    it('a pinned drawer stays open across workspaces; closing it unpins', async () => {
+      wireHandler();
+      await router.navigateByUrl('/detect/sigma');
+      filter_.selectTechnique(TECH);
+      filter_.setDrawerPinned(true);
+      await router.navigateByUrl('/intel/groups');
+      expect(current()).toBe(TECH);
+      await router.navigateByUrl('/matrix');
+      expect(current()).toBe(TECH);
+      filter_.selectTechnique(null); // the close button, Escape
+      filter_.selectTechnique(OTHER);
+      await router.navigateByUrl('/detect/sigma');
+      expect(current()).toBeNull();
+    });
+
+    // Regression for #170 under the workspace rule: Back to an entry pushed WITH
+    // keepTechniqueSelection restores that stale flag; popstate must still close.
+    it('popstate with a stale keep flag still closes (#170 regression)', async () => {
+      wireHandler();
+      router.setUpLocationChangeListener();
+      const location = TestBed.inject(Location);
+      const panelNav = TestBed.inject(PanelNavService);
+      await router.navigateByUrl('/matrix');
+      filter_.selectTechnique(TECH);
+      panelNav.open('technique-graph', { keepTechniqueSelection: true }); // pushes /exposure/graph WITH keep state
+      await tick();
+      expect(router.url).toBe('/exposure/graph');
+      expect(current()).toBe(TECH);
+      await router.navigateByUrl('/intel/actors'); // another workspace: closes
+      expect(current()).toBeNull();
+      filter_.selectTechnique(OTHER);
+      location.back(); // Back to the flagged /exposure/graph entry
+      await tick(80);
+      expect(router.url).toBe('/exposure/graph');
+      expect(current()).toBeNull();
+    });
   });
 
   it('PanelNavService.open forwards keepTechniqueSelection as navigation state', () => {
