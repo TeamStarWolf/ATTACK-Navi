@@ -1,6 +1,6 @@
 # Heatmap Modes Reference
 
-> Complete reference for all 31 heatmap coloring modes in ATTACK-Navi.
+> Reference for the heatmap coloring modes (lenses) in ATTACK-Navi. There are 33 today; the authoritative count is the Heatmap modes row in [FACTS.md](FACTS.md). The Detailed Mode Documentation below covers the original 24; the lenses added since are listed in the lens menu and defined in `src/app/models/heatmap-modes.ts`.
 > Each mode recolors every technique cell in the matrix to visualize a different security dimension.
 
 ---
@@ -40,11 +40,11 @@
 
 When a user selects a heatmap mode, the following seven-step pipeline executes:
 
-### Step 1: Mode Selection (Toolbar)
+### Step 1: Mode Selection (Matrix controls)
 
-**File:** `src/app/components/toolbar/toolbar.component.ts` (line ~275)
+**File:** `src/app/pages/matrix/matrix-controls.component.ts`
 
-The toolbar maintains the `heatmapModes` array of 24 `{ value, label }` entries. When the user clicks a mode button or calls `cycleHeatmap()`, it calls `FilterService.setHeatmapMode(mode)`.
+The matrix controls read the `HEATMAP_MODES` table from `src/app/models/heatmap-modes.ts` (33 lenses, grouped by `HEATMAP_GROUPS`) and render the lens menu. When the user picks a lens it calls `FilterService.setHeatmapMode(mode)`.
 
 ### Step 2: State Broadcast (FilterService)
 
@@ -101,11 +101,11 @@ For the `coverage` and `frequency` modes, `MatrixComponent.getCellColor()` provi
 
 ## Adding a New Heatmap Mode
 
-To add a 25th heatmap mode, modify these seven files in order:
+To add a heatmap mode (33 exist today), modify these files in order:
 
 1. **`src/app/services/filter.service.ts`** -- Add the new mode string to the `HeatmapMode` union type.
 
-2. **`src/app/components/toolbar/toolbar.component.ts`** -- Add a `{ value, label }` entry to the `heatmapModes` array (~line 275).
+2. **`src/app/models/heatmap-modes.ts`** -- Add a `HeatmapModeDef` entry to the `HEATMAP_MODES` table (`value`, `label`, the required `short` for the trigger button, and `group`); the matrix controls render it from this table, so there is no separate toolbar array. Its legend metadata is step 6, in the same entry.
 
 3. **`src/app/components/matrix/matrix.component.ts`** -- Add a new score `Map` field, add an `else if (mode === 'new-mode')` branch in the `heatmapMode$` subscription (~line 467), and populate the score map.
 
@@ -467,7 +467,7 @@ To add a 25th heatmap mode, modify these seven files in order:
 
 ## Color Scale Design Principles
 
-The 31 heatmap modes follow these design conventions:
+The 33 heatmap modes follow these design conventions:
 
 1. **Dark backgrounds for zero**: All gradient scales use a very dark color (#0a--#1a range) for zero-score cells, maintaining matrix readability.
 
