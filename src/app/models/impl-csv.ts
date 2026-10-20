@@ -94,9 +94,20 @@ function findIdColumn(header: readonly string[]): number {
  * rows. Writes nothing.
  */
 export function previewStatusCsv(text: string, domain: Domain): CsvPreview {
-  const preview: CsvPreview = { matched: [], unmatched: [], errors: 0 };
   const rows = parseCsv(text);
-  if (rows.length === 0) return preview;
+  // Keyed by STIX id so a file naming the same mitigation twice (two Mxxxx rows,
+  // or an Mxxxx and its STIX id) counts as ONE matched mitigation; the last row
+  // for that mitigation wins. preview.matched.length, the Apply button and
+  // applyStatusCsv's return all then count distinct mitigations.
+  const matchedByStix = new Map<string, ImplStatus>();
+  const unmatched: { row: number; id: string; reason: string }[] = [];
+  let errors = 0;
+  const build = (): CsvPreview => ({
+    matched: [...matchedByStix].map(([mitStixId, status]) => ({ mitStixId, status })),
+    unmatched,
+    errors,
+  });
+  if (rows.length === 0) return build();
 
   const header = rows[0].map((h) => h.trim().toLowerCase());
   const idCol = findIdColumn(header);
@@ -104,8 +115,8 @@ export function previewStatusCsv(text: string, domain: Domain): CsvPreview {
   if (idCol < 0 || statusCol < 0) {
     // Unrecognised header: no id/status column by name. Count the data rows so
     // the UI reports the file as unusable rather than silently importing zero.
-    preview.errors = rows.slice(1).filter((r) => r.some((c) => c.trim() !== '')).length;
-    return preview;
+    errors = rows.slice(1).filter((r) => r.some((c) => c.trim() !== '')).length;
+    return build();
   }
 
   const mitByAttackId = new Map((domain.mitigations ?? []).map((m) => [m.attackId.toUpperCase(), m.id]));
@@ -118,12 +129,12 @@ export function previewStatusCsv(text: string, domain: Domain): CsvPreview {
     const status = csvUnneutralise((cells[statusCol] ?? '').trim()).toLowerCase();
     const rowNo = i + 1;                                               // 1-based, header is row 1
 
-    if (!id) { preview.errors++; continue; }                          // no id
+    if (!id) { errors++; continue; }                                  // no id
     if (status === 'not-tracked') continue;                           // export placeholder: skip
-    if (!VALID_STATUSES.has(status)) { preview.errors++; continue; }  // bad status
+    if (!VALID_STATUSES.has(status)) { errors++; continue; }          // bad status
 
     if (TECH_ID.test(id)) {
-      preview.unmatched.push({ row: rowNo, id: id.toUpperCase(), reason: TECHNIQUE_ID_REASON });
+      unmatched.push({ row: rowNo, id: id.toUpperCase(), reason: TECHNIQUE_ID_REASON });
       continue;
     }
     let stix: string | undefined;
@@ -131,14 +142,14 @@ export function previewStatusCsv(text: string, domain: Domain): CsvPreview {
     else if (MIT_ATTACK_ID.test(id)) stix = mitByAttackId.get(id.toUpperCase());
 
     if (stix) {
-      preview.matched.push({ mitStixId: stix, status: status as ImplStatus });
+      matchedByStix.set(stix, status as ImplStatus);                  // last row for this mitigation wins
     } else {
       const shown = MIT_ATTACK_ID.test(id) ? id.toUpperCase() : id;
       const reason = MIT_ATTACK_ID.test(id) || STIX_MIT.test(id)
         ? `no mitigation with this id in ${domain.name}`
         : 'unrecognised id (expected a mitigation id)';
-      preview.unmatched.push({ row: rowNo, id: shown, reason });
+      unmatched.push({ row: rowNo, id: shown, reason });
     }
   }
-  return preview;
+  return build();
 }

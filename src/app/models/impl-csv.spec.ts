@@ -18,11 +18,10 @@ const DOMAIN = domainWith([
   mit('course-of-action--bbb', 'M1015', 'Active Directory Configuration'),
 ]);
 
-// The two headers the app's own exports write, verbatim:
-//  - settings-panel.component.ts:386 (Export Implementation CSV)
-//  - export-actions.service.ts:95   (Implementation Plan)
+// The settings-panel export header, verbatim (settings-panel.component.ts:386). The
+// end-to-end round-trips of BOTH app exports run in implementation.service.spec
+// through the real export code; this file unit-tests the parser itself.
 const SETTINGS_HEADER = 'Mitigation ID,Mitigation Name,Status,Mapped Techniques';
-const PLAN_HEADER = 'Mitigation ID,Mitigation Name,Status,Owner,Target Date,Security Controls,Evidence URL,Mapped Techniques,Unique Coverage,Notes';
 
 describe('impl-csv previewStatusCsv', () => {
   it('accepts the mitigation_id,status header and resolves an Mxxxx id', () => {
@@ -49,13 +48,13 @@ describe('impl-csv previewStatusCsv', () => {
     expect(p.errors).toBe(0);
   });
 
-  it('accepts the export-actions implementation-plan header', () => {
-    const text = [
-      PLAN_HEADER,
-      csvRow(['M1036', 'Account Use Policies', 'planned', '', '', '', '', 3, 1, '']),
-    ].join('\n');
+  it('dedupes by mitigation (last row wins) across repeated Mxxxx and STIX ids', () => {
+    // All three rows name the same mitigation (course-of-action--aaa is M1036's STIX id).
+    const text = 'mitigation_id,status\nM1036,planned\nM1036,implemented\ncourse-of-action--aaa,in-progress';
     const p = previewStatusCsv(text, DOMAIN);
-    expect(p.matched).toEqual([{ mitStixId: 'course-of-action--aaa', status: 'planned' }]);
+    expect(p.matched).toEqual([{ mitStixId: 'course-of-action--aaa', status: 'in-progress' }]);
+    expect(p.unmatched.length).toBe(0);
+    expect(p.errors).toBe(0);
   });
 
   it('keeps columns aligned when a quoted name contains a comma (RFC-4180)', () => {

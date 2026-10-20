@@ -106,6 +106,8 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
   csvPreview: CsvPreview | null = null;
   csvImportApplied: number | null = null;
   csvImportError = '';
+  /** Two-step confirm for the destructive "reset all implementation statuses" action. */
+  confirmingResetImpl = false;
 
   private subs = new Subscription();
   private savedSettings: AppSettings = { ...DEFAULT_SETTINGS, cellDisplay: { ...DEFAULT_SETTINGS.cellDisplay } };
@@ -693,6 +695,24 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
     if (!this.csvPreview) return;
     this.csvImportApplied = this.implService.applyStatusCsv(this.csvPreview);
     this.csvPreview = null;
+    this.cdr.markForCheck();
+  }
+
+  /** First click arms the confirm; the second clears every saved implementation status. */
+  resetImplementationStatuses(): void {
+    if (!this.confirmingResetImpl) {
+      this.confirmingResetImpl = true;
+      this.cdr.markForCheck();
+      return;
+    }
+    this.implService.resetAll();
+    this.confirmingResetImpl = false;
+    this.csvImportApplied = null;
+    this.cdr.markForCheck();
+  }
+
+  cancelResetImpl(): void {
+    this.confirmingResetImpl = false;
     this.cdr.markForCheck();
   }
 }

@@ -15,6 +15,19 @@ import { TimelineService } from './timeline.service';
 import { OpenCtiService } from './opencti.service';
 import { MispService } from './misp.service';
 import { TaxiiService } from './taxii.service';
+import { ExportActionsService } from './export-actions.service';
+import { DocumentationService } from './documentation.service';
+import { BrowserFileService } from './browser-file.service';
+import { FilterService } from './filter.service';
+import { MatrixExportService } from './matrix-export.service';
+import { HtmlReportService } from './html-report.service';
+import { ReportConfigService } from './report-config.service';
+import { PdfReportService } from './pdf-report.service';
+import { XlsxExportService } from './xlsx-export.service';
+import { CustomMitigationService } from './custom-mitigation.service';
+import { NavigatorLayerService } from './navigator-layer.service';
+import { AnnotationService } from './annotation.service';
+import { UserLayerService } from './user-layer.service';
 import { Domain } from '../models/domain';
 import { Mitigation } from '../models/mitigation';
 
@@ -286,6 +299,22 @@ describe('ImplementationService CSV import (P2-06)', () => {
     expect(service.getStatusMap().size).toBe(1);   // the T-id row wrote nothing
   });
 
+  it('the settings reset control is two-step and empties the status map and status$', () => {
+    let live: Map<string, ImplStatus> = new Map();
+    service.status$.subscribe((m) => (live = m));
+    service.setStatus(AAA, 'implemented');
+    const c = TestBed.createComponent(SettingsPanelComponent).componentInstance;
+
+    c.resetImplementationStatuses();                  // first click: arm the confirm only
+    expect(c.confirmingResetImpl).toBeTrue();
+    expect(service.getStatusMap().size).toBe(1);      // nothing cleared yet
+
+    c.resetImplementationStatuses();                  // second click: reset
+    expect(c.confirmingResetImpl).toBeFalse();
+    expect(service.getStatusMap().size).toBe(0);
+    expect(live.size).toBe(0);                        // status$ emitted the empty map
+  });
+
   it('round-trips the REAL Settings export and overwrites only the named mitigation (R8)', async () => {
     let live: Map<string, ImplStatus> = new Map();
     service.status$.subscribe((m) => (live = m));
@@ -327,5 +356,72 @@ describe('ImplementationService CSV import (P2-06)', () => {
     service.resetAll();
     expect(service.getStatusMap().size).toBe(0);
     invariant();
+  });
+});
+
+// The Export Hub "Implementation Plan" export (export-actions.service.ts) run through
+// its REAL code and fed back to the parser, so a header drift there fails this spec.
+describe('ImplementationService CSV import: real Implementation Plan export round-trip (P2-06)', () => {
+  const AAA = 'course-of-action--aaa';   // M1036
+  const BBB = 'course-of-action--bbb';   // M1015
+  function mit(id: string, attackId: string, name: string): Mitigation {
+    return { id, attackId, name, description: '', url: '' };
+  }
+  const DOMAIN = {
+    name: 'Enterprise ATT&CK',
+    mitigations: [mit(AAA, 'M1036', 'Account Use Policies'), mit(BBB, 'M1015', 'Active Directory Configuration')],
+    techniquesByMitigation: new Map(),
+    mitigationsByTechnique: new Map(),
+  } as unknown as Domain;
+
+  let service: ImplementationService;
+  let exportActions: ExportActionsService;
+  let captured: string | null;
+
+  beforeEach(() => {
+    localStorage.removeItem(STORAGE_KEY);
+    captured = null;
+    const domain$ = new BehaviorSubject<Domain | null>(DOMAIN);
+    const currentDomain$ = new BehaviorSubject('enterprise');
+    const emptyDoc = { notes: '', owner: '', dueDate: '', controlRefs: '', evidenceUrl: '' };
+    const stub = {};
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: DataService, useValue: { domain$, currentDomain$, getCurrentDomain: () => domain$.value, getCurrentAttackDomain: () => 'enterprise' } },
+        { provide: DocumentationService, useValue: { getMitDoc: () => emptyDoc } },
+        { provide: BrowserFileService, useValue: { downloadText: (c: string) => { captured = c; } } },
+        { provide: FilterService, useValue: stub },
+        { provide: MatrixExportService, useValue: stub },
+        { provide: HtmlReportService, useValue: stub },
+        { provide: ReportConfigService, useValue: stub },
+        { provide: PdfReportService, useValue: stub },
+        { provide: XlsxExportService, useValue: stub },
+        { provide: CustomMitigationService, useValue: stub },
+        { provide: TimelineService, useValue: stub },
+        { provide: NavigatorLayerService, useValue: stub },
+        { provide: AnnotationService, useValue: stub },
+        { provide: UserLayerService, useValue: stub },
+      ],
+    });
+    service = TestBed.inject(ImplementationService);
+    exportActions = TestBed.inject(ExportActionsService);
+  });
+
+  afterEach(() => localStorage.removeItem(STORAGE_KEY));
+
+  it('round-trips the REAL Implementation Plan export: both tracked rows matched, 0 unmatched, 0 errors', () => {
+    service.setStatus(AAA, 'implemented');
+    service.setStatus(BBB, 'planned');
+
+    exportActions.exportImplPlanCsv();
+    expect(captured).withContext('plan export produced a CSV').toBeTruthy();
+    expect(captured!.split(/\r?\n/)[0]).toBe(
+      'Mitigation ID,Mitigation Name,Status,Owner,Target Date,Security Controls,Evidence URL,Mapped Techniques,Unique Coverage,Notes',
+    );
+
+    const preview = service.previewStatusCsv(captured!, DOMAIN);
+    expect(preview.matched.length).toBe(2);
+    expect(preview.unmatched.length).toBe(0);
+    expect(preview.errors).toBe(0);
   });
 });

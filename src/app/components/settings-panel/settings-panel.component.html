@@ -421,6 +421,20 @@
               >
                 📥 Export Implementation CSV
               </button>
+              @if (!confirmingResetImpl) {
+                <button
+                  class="btn-action btn-clear-snapshots"
+                  (click)="resetImplementationStatuses()"
+                  title="Clear every saved implementation status"
+                >
+                  🗑️ Reset implementation statuses
+                </button>
+              } @else {
+                <button class="btn-action btn-clear-snapshots" (click)="resetImplementationStatuses()">
+                  Confirm reset
+                </button>
+                <button class="btn-action" (click)="cancelResetImpl()">Cancel</button>
+              }
             </div>
 
             <div class="data-section-divider"></div>
