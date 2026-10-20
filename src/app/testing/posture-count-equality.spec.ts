@@ -505,9 +505,9 @@ describe('[AC] Posture count equality across the count surfaces (P2-07, E2.1-d1)
         const techs = data.getTechniquesForGroup(g.id);
         const tally = posture.tallyFor(techs);
         const summary = (el.querySelector('[data-testid="actor-posture-summary"]')?.textContent ?? '').trim();
-        expect(summary).withContext(g.attackId).toMatch(/^\d+ of \d+ assessable techniques covered \(self-attested\), \d+ partial$/);
+        expect(summary).withContext(g.attackId).toMatch(/^\d+ of \d+ techniques covered \(self-attested\), \d+ partial$/);
         expect(summary).withContext(g.attackId)
-          .toBe(`${tally.covered} of ${tally.assessable} assessable techniques covered (self-attested), ${tally.partial} partial`);
+          .toBe(`${tally.covered} of ${tally.assessable} techniques covered (self-attested), ${tally.partial} partial`);
         const proven = (el.querySelector('[data-testid="actor-posture-proven"]')?.textContent ?? '').trim();
         expect(proven).withContext(g.attackId).toBe(`${postureBadge({ bucket: 'proven', qualifiers: [], proofScope: null, covered: [] })}: ${tally.proven} · ` +
           `${postureBadge({ bucket: 'stale', qualifiers: [], proofScope: null, covered: [] })}: ${tally.stale}`);

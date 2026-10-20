@@ -135,16 +135,32 @@ export class ActorProfilePanelComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * 'N of A assessable techniques covered (self-attested), K partial', where A
-   * is the tally's `assessable` (the profile's techniques minus those a
-   * not-reproducible run with no proof excludes, R16), or on a profile with no
-   * owner data 'M techniques; no data of yours recorded'.
+   * 'N of M techniques covered (self-attested), K partial' (the design's S6
+   * string), where M is the tally's `assessable` (the profile's techniques
+   * minus those a not-reproducible run with no proof excludes, R16; the
+   * summary's title says so), or on a profile with no owner data
+   * 'M techniques; no data of yours recorded'.
    */
   summaryLine(p: GroupProfile): string {
     const m = p.techniques.length;
     if (!this.ownerWords()) return `${m} techniques; no data of yours recorded`;
     const t = this.tallyOf(p);
-    return `${t.covered} of ${t.assessable} assessable techniques covered (self-attested), ${t.partial} partial`;
+    return `${t.covered} of ${t.assessable} techniques covered (self-attested), ${t.partial} partial`;
+  }
+
+  /**
+   * The denominator note on the summary and ring: M counts the assessable
+   * techniques, so a not-reproducible exclusion is named rather than hidden.
+   * Null on a profile with no owner data.
+   */
+  denominatorNote(p: GroupProfile): string | null {
+    if (!this.ownerWords()) return null;
+    const t = this.tallyOf(p);
+    const excluded = t.total - t.assessable;
+    const base = `Out of ${t.assessable} assessable techniques`;
+    return excluded > 0
+      ? `${base} (${t.total} total; ${excluded} excluded by a not-reproducible run with no proof)`
+      : `${base} (all ${t.total} of this group's techniques)`;
   }
 
   /** The ring's denominator with owner data: the profile's assessable techniques. */

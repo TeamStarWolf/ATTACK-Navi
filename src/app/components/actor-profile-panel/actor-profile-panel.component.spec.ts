@@ -95,12 +95,13 @@ describe('ActorProfilePanelComponent posture counts (S6, P2-07)', () => {
     const el = open({ T1: 'covered', T2: 'partial', 'T1.001': 'covered', T4: 'proven', T5: 'stale' });
     const tally = posture.tallyFor(techniques);
     const summary = text(el.querySelector('[data-testid="actor-posture-summary"]'));
-    expect(summary).toMatch(/^\d+ of \d+ assessable techniques covered \(self-attested\), \d+ partial$/);
-    expect(summary).toBe(`${tally.covered} of ${tally.assessable} assessable techniques covered (self-attested), ${tally.partial} partial`);
+    expect(summary).toMatch(/^\d+ of \d+ techniques covered \(self-attested\), \d+ partial$/);
+    expect(summary).toBe(`${tally.covered} of ${tally.assessable} techniques covered (self-attested), ${tally.partial} partial`);
     expect(tally.assessable).toBe(6);
+    expect(el.querySelector('[data-testid="actor-posture-summary"]')!.getAttribute('title')).toBe("Out of 6 assessable techniques (all 6 of this group's techniques)");
     expect([tally.covered, tally.partial]).toEqual([2, 1]);
     expect(text(el.querySelector('[data-testid="actor-posture-proven"]'))).toBe('Proven: 1 · Proven (stale): 1');
-    expect(ring(el)).toBe('2 of 6 assessable');
+    expect(ring(el)).toBe('2 of 6');
     expect(text(el)).not.toContain('%');
   });
 
@@ -110,8 +111,11 @@ describe('ActorProfilePanelComponent posture counts (S6, P2-07)', () => {
     fixture.detectChanges();
     const tally = posture.tallyFor(techniques);
     expect([tally.total, tally.assessable]).toEqual([6, 5]);
-    expect(text(el.querySelector('[data-testid="actor-posture-summary"]'))).toBe('2 of 5 assessable techniques covered (self-attested), 0 partial');
-    expect(ring(el)).toBe('2 of 5 assessable');
+    expect(text(el.querySelector('[data-testid="actor-posture-summary"]'))).toBe('2 of 5 techniques covered (self-attested), 0 partial');
+    expect(ring(el)).toBe('2 of 5');
+    const note = 'Out of 5 assessable techniques (6 total; 1 excluded by a not-reproducible run with no proof)';
+    expect(el.querySelector('[data-testid="actor-posture-summary"]')!.getAttribute('title')).toBe(note);
+    expect(el.querySelector('[data-testid="actor-ring"]')!.getAttribute('title')).toBe(note);
     const ttps = Array.from(el.querySelectorAll('.cov-stat')).find(s => text(s.querySelector('.cov-lbl')) === 'total TTPs');
     expect(text(ttps?.querySelector('.cov-val') ?? null)).toBe('6');
   });
@@ -143,6 +147,6 @@ describe('ActorProfilePanelComponent posture counts (S6, P2-07)', () => {
     posture.set({ T1: 'covered', T2: 'covered' });
     fixture.detectChanges();
     expect(panel.topExposed(profile).map(t => t.attackId)).not.toContain('T2');
-    expect(text(fixture.nativeElement.querySelector('[data-testid="actor-posture-summary"]'))).toBe('2 of 6 assessable techniques covered (self-attested), 0 partial');
+    expect(text(fixture.nativeElement.querySelector('[data-testid="actor-posture-summary"]'))).toBe('2 of 6 techniques covered (self-attested), 0 partial');
   });
 });

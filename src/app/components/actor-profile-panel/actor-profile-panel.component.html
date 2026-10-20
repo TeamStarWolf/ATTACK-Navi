@@ -59,12 +59,12 @@
         @if (viewTab === 'overview') {
           <div class="profile-overview">
             <div class="coverage-hero upgrade-section-block">
-              <div class="coverage-ring" data-testid="actor-ring">
+              <div class="coverage-ring" data-testid="actor-ring" [attr.title]="denominatorNote(selectedProfile)">
                 <span class="coverage-pct">{{ ringCount(selectedProfile) }}</span>
-                <span class="coverage-label">{{ ownerWords() ? 'of ' + ringDenominator(selectedProfile) + ' assessable' : 'techniques' }}</span>
+                <span class="coverage-label">{{ ownerWords() ? 'of ' + ringDenominator(selectedProfile) : 'techniques' }}</span>
               </div>
               <div class="coverage-stats">
-                <p class="actor-posture-summary" data-testid="actor-posture-summary">{{ summaryLine(selectedProfile) }}</p>
+                <p class="actor-posture-summary" data-testid="actor-posture-summary" [attr.title]="denominatorNote(selectedProfile)">{{ summaryLine(selectedProfile) }}</p>
                 @if (ownerWords()) {
                   <p class="actor-posture-proven" data-testid="actor-posture-proven">{{ provenLine(selectedProfile) }}</p>
                 }
