@@ -11,7 +11,7 @@
     @if (ownerWords()) {
       <div class="pc-row pc-row--covered">
         <dt>Covered (self-attested)</dt>
-        <dd data-posture="covered">{{ t.covered }}</dd>
+        <dd><span data-posture="covered">{{ t.covered }}</span> of <span data-posture="assessable" title="Assessable: every parent technique except those a not-reproducible run with no proof excludes">{{ t.assessable }}</span> assessable</dd>
       </div>
       <div class="pc-row pc-row--partial">
         <dt>partial</dt>

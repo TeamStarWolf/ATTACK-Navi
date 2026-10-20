@@ -64,6 +64,39 @@ describe('computeReportSplit (E1.1 Theoretical sub-line, P2-07 posture rollup)',
       .toEqual(r.byTactic.map(t => [t.tacticName, t.covered, t.partial, t.proven, t.stale]));
   });
 
+  it('R16: divides Covered by assessable (total minus excluded), overall and per tactic; Known keeps total', () => {
+    const domain = makeSplitDomain();
+    const stub = makePostureStub(() => domain, { T1: 'covered', T4: 'covered' });
+    const before = computeReportSplit(domain, stub.rollup(), 1);
+    expect([before.total, before.assessable, before.covered, before.coveredPct]).toEqual([5, 5, 2, 40]);
+    // T3 (Execution) is excluded: out of the Covered denominator only.
+    stub.exclude(['T3']);
+    const split = computeReportSplit(domain, stub.rollup(), 1);
+    expect([split.total, split.assessable, split.covered, split.coveredPct]).toEqual([5, 4, 2, 50]);
+    expect([split.known, split.knownPct, split.theoretical, split.theoreticalPct])
+      .withContext('Known and Theoretical still divide by total').toEqual([before.known, before.knownPct, before.theoretical, before.theoreticalPct]);
+    expect(split.byTactic.map(t => [t.shortname, t.total, t.assessable, t.covered, t.coveredPct])).toEqual([
+      ['execution', 3, 2, 1, 50],
+      ['persistence', 2, 2, 1, 50],
+    ]);
+    expect(split.byTactic[0].theoreticalPct).withContext('the tactic Theoretical share keeps total').toBe(67);
+  });
+
+  it('gives a 0% Covered share, not NaN, when every technique is excluded', () => {
+    const domain = makeSplitDomain();
+    const stub = makePostureStub(() => domain);
+    stub.exclude(['T1', 'T2', 'T3', 'T4', 'T5']);
+    const split = computeReportSplit(domain, stub.rollup(), 0);
+    expect([split.total, split.assessable, split.coveredPct]).toEqual([5, 0, 0]);
+    expect(split.byTactic.map(t => [t.assessable, t.coveredPct])).toEqual([[0, 0], [0, 0]]);
+  });
+
+  it('falls back to the column count as the Covered denominator for a tactic the rollup lacks', () => {
+    const domain = makeSplitDomain();
+    const split = computeReportSplit(domain, { ...rollup(domain), byTactic: [] }, 0);
+    expect(split.byTactic.map(t => [t.total, t.assessable])).toEqual([[3, 3], [2, 2]]);
+  });
+
   it('keeps partial separate from Covered: a broad mitigation never adds to Covered', () => {
     const domain = makeSplitDomain();
     const split = computeReportSplit(domain, rollup(domain, { T1: 'partial', T2: 'partial', T4: 'partial' }), 1);
@@ -85,11 +118,11 @@ describe('computeReportSplit (E1.1 Theoretical sub-line, P2-07 posture rollup)',
     const split = computeReportSplit(domain, rollup(domain, { T4: 'covered' }), 1);
     expect(split.byTactic).toEqual([
       {
-        name: 'Execution', shortname: 'execution', total: 3, known: 2, knownPct: 67, theoretical: 2, theoreticalPct: 67,
+        name: 'Execution', shortname: 'execution', total: 3, assessable: 3, known: 2, knownPct: 67, theoretical: 2, theoreticalPct: 67,
         covered: 0, coveredPct: 0, partial: 0, proven: 0, stale: 0, unmappedIds: ['T3'],
       },
       {
-        name: 'Persistence', shortname: 'persistence', total: 2, known: 1, knownPct: 50, theoretical: 1, theoreticalPct: 50,
+        name: 'Persistence', shortname: 'persistence', total: 2, assessable: 2, known: 1, knownPct: 50, theoretical: 1, theoreticalPct: 50,
         covered: 1, coveredPct: 50, partial: 0, proven: 0, stale: 0, unmappedIds: ['T5'],
       },
     ]);
@@ -108,7 +141,7 @@ describe('computeReportSplit (E1.1 Theoretical sub-line, P2-07 posture rollup)',
     const empty = { techniques: [], tacticColumns: [] } as unknown as Domain;
     const split = computeReportSplit(empty, rollup(empty), 0);
     expect(split).toEqual(jasmine.objectContaining({
-      total: 0, known: 0, knownPct: 0, theoretical: 0, theoreticalPct: 0, covered: 0, coveredPct: 0, partial: 0, unmapped: 0,
+      total: 0, assessable: 0, known: 0, knownPct: 0, theoretical: 0, theoreticalPct: 0, covered: 0, coveredPct: 0, partial: 0, unmapped: 0,
     }));
   });
 
@@ -123,6 +156,8 @@ describe('computeReportSplit (E1.1 Theoretical sub-line, P2-07 posture rollup)',
     expect(REPORT_SPLIT_LABELS.theoretical).toContain('mapped');
     expect(REPORT_SPLIT_LABELS.theoreticalNote).toMatch(/reference/i);
     expect(REPORT_SPLIT_LABELS.covered).toBe('Covered (self-attested)');
+    expect(REPORT_SPLIT_LABELS.assessable).toBe('assessable');
+    expect(REPORT_SPLIT_LABELS.assessableNote).toMatch(/not-reproducible/);
     expect(REPORT_SPLIT_LABELS.partialCard).toBe('partial (broad mitigation, not confirmed per technique)');
     // The CSV column header is unchanged.
     expect(REPORT_SPLIT_LABELS.implemented).toBe('Implemented (self-attested)');

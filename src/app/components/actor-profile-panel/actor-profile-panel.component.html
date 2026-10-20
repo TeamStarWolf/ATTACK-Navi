@@ -61,7 +61,7 @@
             <div class="coverage-hero upgrade-section-block">
               <div class="coverage-ring" data-testid="actor-ring">
                 <span class="coverage-pct">{{ ringCount(selectedProfile) }}</span>
-                <span class="coverage-label">{{ ownerWords() ? 'of ' + selectedProfile.techniques.length : 'techniques' }}</span>
+                <span class="coverage-label">{{ ownerWords() ? 'of ' + ringDenominator(selectedProfile) + ' assessable' : 'techniques' }}</span>
               </div>
               <div class="coverage-stats">
                 <p class="actor-posture-summary" data-testid="actor-posture-summary">{{ summaryLine(selectedProfile) }}</p>

@@ -84,9 +84,30 @@ describe('StatsBarComponent posture tally (P2-07)', () => {
     const o = posture.rollup().overall;
     expect([num(el, 'covered'), num(el, 'partial'), num(el, 'proven'), num(el, 'stale')]).toEqual([o.covered, o.partial, o.proven, o.stale]);
     expect([o.covered, o.partial, o.proven, o.stale]).withContext('the sub-technique T1.001 is not counted').toEqual([1, 1, 1, 0]);
-    expect(text(el.querySelector('[data-testid="stats-posture"]'))).toBe('Covered (self-attested): 1 · partial: 1 · Proven: 1 · stale: 0');
+    expect(text(el.querySelector('[data-testid="stats-posture"]'))).toBe('Covered (self-attested): 1 of 5 assessable · partial: 1 · Proven: 1 · stale: 0');
     expect(text(el)).not.toContain('mitigations implemented');
     expect(el.querySelector('[data-posture="covered-with-subs"]')).toBeNull();
+  });
+
+  it('R16: the impl-bar width, its title and the Covered line divide by assessable; the Known total keeps every parent', () => {
+    const el = render({ T1: 'covered', T2: 'covered' });
+    posture.exclude(['T3']);
+    fixture.detectChanges();
+    const o = posture.rollup().overall;
+    expect([o.total, o.assessable, o.covered]).toEqual([5, 4, 2]);
+    expect([num(el, 'covered'), num(el, 'assessable'), num(el, 'known-total')]).toEqual([2, 4, 5]);
+    const bar = el.querySelector('.impl-bar') as HTMLElement;
+    expect(bar.getAttribute('title')).toBe('Covered (self-attested): 2 of 4 assessable parent techniques (not-reproducible runs with no proof excluded)');
+    expect((bar.querySelector('.impl-fill') as HTMLElement).style.width).toBe('50%');
+    expect(fixture.componentInstance.postureTally().coveredPct).toBe(50);
+  });
+
+  it('gives a 0-width impl-bar, not NaN, when every parent is excluded', () => {
+    const el = render({ T1: 'covered' });
+    posture.exclude(['T1', 'T2', 'T3', 'T4', 'T5']);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.postureTally()).toEqual(jasmine.objectContaining({ assessable: 0, coveredPct: 0 }));
+    expect((el.querySelector('.impl-fill') as HTMLElement).style.width).toBe('0%');
   });
 
   it('adds a labelled sub-technique number when includeSubtechniques is on; the parents tally does not move', () => {

@@ -15,6 +15,10 @@
 //    read, so the report cannot disagree with them. A mitigation that maps
 //    more techniques than the breadth threshold (D16) makes its techniques
 //    partial, never Covered, until each is confirmed per technique.
+//  - Denominators (design §2.2, R16): Known shares divide by every parent
+//    technique (`total`); Covered shares divide by `assessable`, every parent
+//    technique minus those excluded by a not-reproducible run with no proof.
+//    The rollup carries `assessable` overall and on each tactic row.
 //
 // The Report Builder panel, the exported HTML report and the printable PDF
 // report all read this one function, so the three surfaces give the same
@@ -36,6 +40,9 @@ export const REPORT_SPLIT_LABELS = {
   implemented: 'Implemented (self-attested)',
   covered: 'Covered (self-attested)',
   coveredNote: 'A technique you recorded: a narrow mitigation you marked implemented, a control, a confirmation or a run. Not validated.',
+  /** The word after a Covered share's denominator: `N of A assessable`. */
+  assessable: 'assessable',
+  assessableNote: 'Covered (self-attested) shares divide by assessable parent techniques: every parent technique except those a not-reproducible run with no proof excludes.',
   partial: 'partial',
   partialCard: 'partial (broad mitigation, not confirmed per technique)',
   stale: 'stale',
@@ -46,8 +53,10 @@ export const REPORT_SPLIT_LABELS = {
 export interface TacticSplit {
   name: string;
   shortname: string;
-  /** Parent techniques in the tactic column. */
+  /** Parent techniques in the tactic column: the Known denominator. */
   total: number;
+  /** total minus excluded techniques (R16): the Covered denominator. */
+  assessable: number;
   /** Known: mapped (the posture rollup's tactic row). */
   known: number;
   knownPct: number;
@@ -55,6 +64,7 @@ export interface TacticSplit {
   theoretical: number;
   theoreticalPct: number;
   covered: number;
+  /** covered over assessable, not over total. */
   coveredPct: number;
   partial: number;
   proven: number;
@@ -64,8 +74,10 @@ export interface TacticSplit {
 }
 
 export interface ReportSplit {
-  /** Parent techniques in the domain. */
+  /** Parent techniques in the domain: the Known denominator. */
   total: number;
+  /** total minus excluded techniques (R16): the Covered denominator. */
+  assessable: number;
   /** Known: mapped. */
   known: number;
   knownPct: number;
@@ -73,6 +85,7 @@ export interface ReportSplit {
   theoretical: number;
   theoreticalPct: number;
   covered: number;
+  /** covered over assessable, not over total. */
   coveredPct: number;
   /** Covered through a broad mitigation only, not confirmed per technique (D16). */
   partial: number;
@@ -115,16 +128,18 @@ export function computeReportSplit(domain: SplitDomain, rollup: PostureRollup, i
     const colTheoretical = colParents.filter(isTechniqueMapped).length;
     const row = rollup.byTactic.find(r => r.shortname === col.tactic.shortname) ?? rollup.byTactic[i];
     const covered = row?.covered ?? 0;
+    const assessable = row?.assessable ?? n;
     return {
       name: col.tactic.name,
       shortname: col.tactic.shortname,
       total: n,
+      assessable,
       known: row?.mapped ?? 0,
       knownPct: row?.pct ?? 0,
       theoretical: colTheoretical,
       theoreticalPct: pct(colTheoretical, n),
       covered,
-      coveredPct: pct(covered, n),
+      coveredPct: pct(covered, assessable),
       partial: row?.partial ?? 0,
       proven: row?.proven ?? 0,
       stale: row?.stale ?? 0,
@@ -134,12 +149,13 @@ export function computeReportSplit(domain: SplitDomain, rollup: PostureRollup, i
 
   return {
     total,
+    assessable: o.assessable,
     known: o.mapped,
     knownPct: o.pct,
     theoretical,
     theoreticalPct: pct(theoretical, total),
     covered: o.covered,
-    coveredPct: pct(o.covered, total),
+    coveredPct: pct(o.covered, o.assessable),
     partial: o.partial,
     proven: o.proven,
     stale: o.stale,

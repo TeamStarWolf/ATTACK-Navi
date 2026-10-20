@@ -135,14 +135,21 @@ export class ActorProfilePanelComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * 'N of M techniques covered (self-attested), K partial', or on a profile
-   * with no owner data 'M techniques; no data of yours recorded'.
+   * 'N of A assessable techniques covered (self-attested), K partial', where A
+   * is the tally's `assessable` (the profile's techniques minus those a
+   * not-reproducible run with no proof excludes, R16), or on a profile with no
+   * owner data 'M techniques; no data of yours recorded'.
    */
   summaryLine(p: GroupProfile): string {
     const m = p.techniques.length;
     if (!this.ownerWords()) return `${m} techniques; no data of yours recorded`;
     const t = this.tallyOf(p);
-    return `${t.covered} of ${m} techniques covered (self-attested), ${t.partial} partial`;
+    return `${t.covered} of ${t.assessable} assessable techniques covered (self-attested), ${t.partial} partial`;
+  }
+
+  /** The ring's denominator with owner data: the profile's assessable techniques. */
+  ringDenominator(p: GroupProfile): number {
+    return this.tallyOf(p).assessable;
   }
 
   /** The Proven line, its words from the posture vocabulary. */

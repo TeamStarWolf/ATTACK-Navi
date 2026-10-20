@@ -104,8 +104,23 @@ describe('ReportPanelComponent split (E1.1, P2-07)', () => {
     expect(text(el.querySelector('[data-testid="report-theoretical"]'))).toContain('Theoretical: mitigation mapped: 3 / 5 techniques (60%)');
     const covered = text(el.querySelector('[data-testid="report-covered"]'));
     expect(covered).toContain('Covered (self-attested)');
-    expect(covered).toContain('2 / 5 techniques');
+    expect(covered).toContain('2 of 5 assessable techniques (40%)');
     expect(num(el, 'covered')).toBe(2);
+  });
+
+  it('R16: the Covered card and the tactic mini-bars divide by assessable; Known keeps every technique', () => {
+    const el = render({ T1: 'covered', T2: 'covered' }, 1);
+    posture.exclude(['T3']);
+    fixture.detectChanges();
+    const covered = el.querySelector('[data-testid="report-covered"]')!;
+    expect(text(covered)).toContain('2 of 4 assessable techniques (50%)');
+    expect(num(covered, 'assessable')).toBe(4);
+    expect(text(el.querySelector('[data-testid="report-known"]'))).toContain('3 / 5 techniques');
+    const exec = el.querySelector('tr[data-tactic="execution"]')!;
+    expect([num(exec, 'covered'), num(exec, 'assessable')]).toEqual([2, 2]);
+    expect(exec.querySelector('[data-share-pct]')!.getAttribute('data-share-pct')).toBe('100');
+    expect((exec.querySelector('.mini-bar--implemented') as HTMLElement).style.width).toBe('100%');
+    expect(text(exec.querySelectorAll('td')[1])).withContext('the Total column keeps every parent').toBe('3');
   });
 
   it('shows Known only on a fresh profile, with no Covered or Proven words', () => {
@@ -153,8 +168,8 @@ describe('ReportPanelComponent split (E1.1, P2-07)', () => {
     expect(headers).toEqual(['Tactic', 'Total', 'Theoretical (mapped)', 'Covered (self-attested)', 'partial', 'Proven', 'No mitigation mapped']);
     const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr => Array.from(tr.querySelectorAll('td')).map(td => text(td)));
     expect(rows).toEqual([
-      ['Execution', '3', '2 (67%)', '0 (0%)', '0', '0 · stale 0', 'T3'],
-      ['Persistence', '2', '1 (50%)', '1 (50%)', '0', '0 · stale 0', 'T5'],
+      ['Execution', '3', '2 (67%)', '0 of 3 (0%)', '0', '0 · stale 0', 'T3'],
+      ['Persistence', '2', '1 (50%)', '1 of 2 (50%)', '0', '0 · stale 0', 'T5'],
     ]);
     // Bars use the rung classes, not an inline green/amber/red background.
     for (const bar of Array.from(table.querySelectorAll<HTMLElement>('.mini-bar'))) {

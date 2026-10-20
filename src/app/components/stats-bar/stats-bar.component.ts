@@ -15,8 +15,12 @@ import { PROVEN } from '../../models/posture/posture-vocabulary';
 
 /** The posture numbers the bar shows: parents only, plus the Covered count with sub-techniques. */
 export interface StatsBarPosture {
-  /** Parent techniques: the denominator of the parents-only tally. */
+  /** Parent techniques: the Known denominator of the parents-only tally. */
   total: number;
+  /** total minus excluded techniques (R16): the Covered denominator. */
+  assessable: number;
+  /** covered over assessable, in percent (unrounded): the impl-bar width. */
+  coveredPct: number;
   covered: number;
   partial: number;
   proven: number;
@@ -73,7 +77,11 @@ export class StatsBarComponent implements OnInit, OnChanges, OnDestroy {
   readonly postureTally: Signal<StatsBarPosture> = computed(() => {
     const o = this.posture.rollup().overall;
     const coveredWithSubs = this.subsOn() ? this.posture.rollup({ includeSubtechniques: true }).overall.covered : o.covered;
-    return { total: o.total, covered: o.covered, partial: o.partial, proven: o.proven, stale: o.stale, coveredWithSubs };
+    const coveredPct = o.assessable > 0 ? (o.covered / o.assessable) * 100 : 0;
+    return {
+      total: o.total, assessable: o.assessable, coveredPct,
+      covered: o.covered, partial: o.partial, proven: o.proven, stale: o.stale, coveredWithSubs,
+    };
   });
 
   private subs = new Subscription();

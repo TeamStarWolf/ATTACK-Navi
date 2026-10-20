@@ -23,8 +23,12 @@ const PROOF: ProofRecord = {
   scope: 'own-run', detectionRef: 'sigma:stub', outcome: 'alerted', date: '2026-10-01T00:00:00.000Z', source: 'manual', runId: 'stub',
 };
 
-/** A PostureState in `bucket`, with the marks or proof that bucket needs. `mapped` sets knownSignals. */
-export function stubState(attackId: string, bucket: PostureBucket, mapped = bucket !== 'none'): PostureState {
+/**
+ * A PostureState in `bucket`, with the marks or proof that bucket needs.
+ * `mapped` sets knownSignals; `excluded` takes the technique out of
+ * `assessable` (R16: a not-reproducible run with no proof).
+ */
+export function stubState(attackId: string, bucket: PostureBucket, mapped = bucket !== 'none', excluded = false): PostureState {
   const proof = bucket === 'proven' || bucket === 'stale';
   return {
     ref: `attack/enterprise/${attackId}@stub`,
@@ -39,13 +43,15 @@ export function stubState(attackId: string, bucket: PostureBucket, mapped = buck
     knownSignals: mapped ? 1 : 0,
     threatWeight: 1,
     exposureWeight: 0,
-    excluded: false,
+    excluded,
   };
 }
 
 export interface PostureStub {
   /** Replace the bucket table (attackId to bucket); techniques not named are 'none' or 'known'. */
   set(buckets: Readonly<Record<string, PostureBucket>>): void;
+  /** Mark these attackIds excluded (out of `assessable` only). */
+  exclude(attackIds: readonly string[]): void;
   readonly ownerWords: Signal<boolean>;
   readonly states: Signal<ReadonlyMap<string, PostureState>>;
   stateFor(t: Pick<Technique, 'attackId' | 'mitigationCount'>): PostureState;
@@ -60,9 +66,11 @@ export interface PostureStub {
  */
 export function makePostureStub(domain: () => StubDomain | null, buckets: Readonly<Record<string, PostureBucket>> = {}): PostureStub {
   const table = signal<Readonly<Record<string, PostureBucket>>>(buckets);
+  const excluded = signal<ReadonlySet<string>>(new Set());
   const stateFor = (t: Pick<Technique, 'attackId' | 'mitigationCount'>): PostureState => {
     const mapped = (t.mitigationCount ?? 0) > 0;
-    return stubState(t.attackId, table()[t.attackId] ?? (mapped ? 'known' : 'none'), mapped || table()[t.attackId] !== undefined);
+    return stubState(t.attackId, table()[t.attackId] ?? (mapped ? 'known' : 'none'), mapped || table()[t.attackId] !== undefined,
+      excluded().has(t.attackId));
   };
   const states = computed(() => new Map((domain()?.techniques ?? []).map(t => [t.attackId, stateFor(t)] as const)));
   const tallyFor = (ts: readonly Pick<Technique, 'attackId' | 'mitigationCount'>[]) => tallyPosture(ts.map(stateFor));
@@ -72,6 +80,7 @@ export function makePostureStub(domain: () => StubDomain | null, buckets: Readon
   };
   return {
     set: b => table.set(b),
+    exclude: ids => excluded.set(new Set(ids)),
     ownerWords: computed(() => hasOwnerWords(states().values())),
     states,
     stateFor,

@@ -20,9 +20,13 @@ import { PROVEN } from '../../models/posture/posture-vocabulary';
 
 export type PostureCardScope = 'all' | 'threat-relevant';
 
-/** The numbers the card shows. `mapped` and `total` are the Known numbers. */
+/**
+ * The numbers the card shows. `mapped` and `total` are the Known numbers;
+ * `assessable` (total minus excluded, R16) is the Covered denominator.
+ */
 export interface PostureCardTally {
   total: number;
+  assessable: number;
   mapped: number;
   covered: number;
   partial: number;
@@ -56,13 +60,13 @@ export class PostureCardComponent {
   readonly tally: Signal<PostureCardTally> = computed(() => {
     if (this.scopeSig() === 'all') {
       const o = this.posture.rollup().overall;
-      return { total: o.total, mapped: o.mapped, covered: o.covered, partial: o.partial, proven: o.proven, stale: o.stale };
+      return { total: o.total, assessable: o.assessable, mapped: o.mapped, covered: o.covered, partial: o.partial, proven: o.proven, stale: o.stale };
     }
     const parents = (this.domain()?.techniques ?? []).filter(t => !t.isSubtechnique);
     const states = parents.map(t => this.posture.stateFor(t)).filter(s => s.threatWeight > 0);
     const t = tallyPosture(states);
     // Known 'mapped' is referenceSignalCount > 0, the same test as isReferenceMapped.
     const mapped = states.filter(s => s.knownSignals > 0).length;
-    return { total: t.total, mapped, covered: t.covered, partial: t.partial, proven: t.proven, stale: t.stale };
+    return { total: t.total, assessable: t.assessable, mapped, covered: t.covered, partial: t.partial, proven: t.proven, stale: t.stale };
   });
 }

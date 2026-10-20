@@ -237,7 +237,7 @@ export class PdfReportService {
 
 <!-- Summary Stats -->
 <h2>Summary</h2>
-<p style="font-size:10px;color:#555"><strong>${L.known}</strong>: ${L.knownNote} <strong>${L.theoreticalShort}</strong>: ${L.theoreticalNote}${ownerWords ? ` <strong>${L.covered}</strong>: ${L.coveredNote}` : ` ${L.fresh}`}</p>
+<p style="font-size:10px;color:#555"><strong>${L.known}</strong>: ${L.knownNote} <strong>${L.theoreticalShort}</strong>: ${L.theoreticalNote}${ownerWords ? ` <strong>${L.covered}</strong>: ${L.coveredNote} ${L.assessableNote}` : ` ${L.fresh}`}</p>
 <div class="summary-grid no-break">
   <div class="summary-box">
     <div class="num" data-posture="known-total">${split.total}</div>
@@ -256,8 +256,8 @@ export class PdfReportService {
     <div class="lbl">${L.unmapped}</div>
   </div>${ownerWords ? `
   <div class="summary-box">
-    <div class="num"><span data-posture="${DATA.covered}">${split.covered}</span> (${split.coveredPct}%)</div>
-    <div class="lbl">${L.covered}</div>
+    <div class="num" data-share-pct="${split.coveredPct}"><span data-posture="${DATA.covered}">${split.covered}</span> (${split.coveredPct}%)</div>
+    <div class="lbl">${L.covered}, of <span data-posture="assessable">${split.assessable}</span> ${L.assessable}</div>
   </div>
   <div class="summary-box">
     <div class="num" data-posture="${DATA.partial}">${split.partial}</div>

@@ -12,8 +12,8 @@
       </div>
       @if (ownerWords()) {
         @let p = postureTally();
-        <div class="coverage-bar impl-bar" [title]="'Covered (self-attested): ' + p.covered + ' of ' + p.total + ' parent techniques'">
-          <div class="coverage-fill impl-fill" [style.width.%]="p.total > 0 ? (p.covered / p.total) * 100 : 0"></div>
+        <div class="coverage-bar impl-bar" [title]="'Covered (self-attested): ' + p.covered + ' of ' + p.assessable + ' assessable parent techniques (not-reproducible runs with no proof excluded)'">
+          <div class="coverage-fill impl-fill" [style.width.%]="p.coveredPct"></div>
         </div>
       }
       <span class="coverage-sub">
@@ -22,7 +22,7 @@
       @if (ownerWords()) {
         @let p = postureTally();
         <span class="coverage-sub posture-sub" data-testid="stats-posture">
-          <span class="impl-sub">Covered (self-attested): <span data-posture="covered">{{ p.covered }}</span></span>
+          <span class="impl-sub">Covered (self-attested): <span data-posture="covered">{{ p.covered }}</span> of <span data-posture="assessable">{{ p.assessable }}</span> assessable</span>
           · partial: <span data-posture="partial">{{ p.partial }}</span>
           · {{ provenLabel }}: <span data-posture="proven">{{ p.proven }}</span>
           · stale: <span data-posture="stale">{{ p.stale }}</span>

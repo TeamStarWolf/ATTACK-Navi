@@ -72,6 +72,24 @@ describe('PostureCardComponent (P2-07)', () => {
     expect(text(el)).not.toContain('No data of yours recorded');
   });
 
+  it('R16: Covered reads "N of assessable"; an excluded technique lowers assessable and leaves the Known total', () => {
+    const el = render({ T1: 'covered', T2: 'partial' });
+    expect([num(el, 'covered'), num(el, 'assessable'), num(el, 'known-total')]).toEqual([1, 5, 5]);
+    posture.exclude(['T3']);
+    fixture.detectChanges();
+    const o = posture.rollup().overall;
+    expect([o.total, o.assessable]).toEqual([5, 4]);
+    expect([num(el, 'covered'), num(el, 'assessable'), num(el, 'known-total')]).toEqual([1, 4, 5]);
+    expect(text(el.querySelector('.pc-row--covered dd'))).toBe('1 of 4 assessable');
+  });
+
+  it("scope 'threat-relevant' takes assessable from the weighted states", () => {
+    const el = render({ T1: 'covered' }, 'threat-relevant', ['T4', 'T5']);
+    posture.exclude(['T2']);
+    fixture.detectChanges();
+    expect([num(el, 'known-total'), num(el, 'assessable')]).toEqual([3, 2]);
+  });
+
   it('recomputes when the posture states change', () => {
     const el = render({ T1: 'covered' });
     expect(num(el, 'covered')).toBe(1);
@@ -105,6 +123,6 @@ describe('PostureCardComponent (P2-07)', () => {
     const f = TestBed.createComponent(PostureCardComponent);
     f.componentRef.setInput('scope', 'threat-relevant');
     f.detectChanges();
-    expect(f.componentInstance.tally()).toEqual({ total: 0, mapped: 0, covered: 0, partial: 0, proven: 0, stale: 0 });
+    expect(f.componentInstance.tally()).toEqual({ total: 0, assessable: 0, mapped: 0, covered: 0, partial: 0, proven: 0, stale: 0 });
   });
 });

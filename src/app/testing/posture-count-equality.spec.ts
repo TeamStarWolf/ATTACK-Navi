@@ -22,6 +22,9 @@
 // Validation panel summary (the Detect > Coverage stand-in), the executive
 // report split (HTML and PDF inputs, and the Report Builder) and stats-bar.
 // The surfaces are read from the DOM through their data-posture attributes.
+// Denominators (R16, §2.2): Known divides by `total`, every Covered share by
+// `assessable` (total minus excluded); each surface renders its Covered
+// denominator as data-posture="assessable" and its share as data-share-pct.
 //
 // The last describe is the seam grep (§4.2): stats-bar, report-split and
 // actor-profile-panel no longer match both posture-rollup regexes. It reads
@@ -85,10 +88,15 @@ const ROW_DOT: Readonly<Record<PostureBucket, TechMark>> = {
   covered: 'yes', proven: 'yes', stale: 'yes', partial: 'partial', known: 'no', none: 'no',
 };
 
-/** What one surface shows. Covered words are absent on a fresh profile. */
+/**
+ * What one surface shows. Covered words are absent on a fresh profile.
+ * `assessable` is the Covered denominator a surface renders (R16: total minus
+ * excluded), read from its data-posture="assessable" element.
+ */
 interface Shown {
   mapped: number;
   total: number;
+  assessable?: number;
   covered?: number;
   partial?: number;
   proven?: number;
@@ -101,7 +109,7 @@ function readShown(root: ParentNode): Shown {
     return el ? Number((el.textContent ?? '').trim()) : undefined;
   };
   const out: Shown = { mapped: n('known-mapped') ?? NaN, total: n('known-total') ?? NaN };
-  for (const key of ['covered', 'partial', 'proven', 'stale'] as const) {
+  for (const key of ['assessable', 'covered', 'partial', 'proven', 'stale'] as const) {
     const v = n(key);
     if (v !== undefined) out[key] = v;
   }
@@ -229,6 +237,8 @@ describe('[AC] Posture count equality across the count surfaces (P2-07, E2.1-d1)
     statsBar: Shown;
     words: Record<string, string>;
     htmlDoc: Document;
+    pdfDoc: Document;
+    statsEl: HTMLElement;
     reportBuilderFixture: ComponentFixture<ReportPanelComponent>;
   }
 
@@ -258,8 +268,11 @@ describe('[AC] Posture count equality across the count surfaces (P2-07, E2.1-d1)
     const htmlDoc = parse(html);
     const pdfDoc = parse(pdf);
     // The HTML report: Known in the split block, the posture cards in the stat grid.
+    // The Covered denominator is in the Covered split block (absent on a fresh profile).
     const knownBlock = readShown(htmlDoc.querySelector('[data-split="known"]')!);
+    const coveredBlock = htmlDoc.querySelector('[data-split="covered"]');
     const htmlShown: Shown = { ...readShown(htmlDoc.querySelector('.stat-grid')!), mapped: knownBlock.mapped, total: knownBlock.total };
+    if (coveredBlock) htmlShown.assessable = readShown(coveredBlock).assessable;
 
     return {
       ctem: readShown(card),
@@ -277,6 +290,8 @@ describe('[AC] Posture count equality across the count surfaces (P2-07, E2.1-d1)
         pdfReport: renderedWords(pdfDoc.body),
       },
       htmlDoc,
+      pdfDoc,
+      statsEl: stats.nativeElement as HTMLElement,
       reportBuilderFixture: builder,
     };
   }
@@ -369,7 +384,9 @@ describe('[AC] Posture count equality across the count surfaces (P2-07, E2.1-d1)
 
     it('[AC] identical Known, Covered, partial, Proven and stale on the card, the Validation summary, the report split and stats-bar', () => {
       const o = posture.rollup().overall;
-      const expected: Shown = { mapped: o.mapped, total: o.total, covered: o.covered, partial: o.partial, proven: o.proven, stale: o.stale };
+      const expected: Shown = {
+        mapped: o.mapped, total: o.total, assessable: o.assessable, covered: o.covered, partial: o.partial, proven: o.proven, stale: o.stale,
+      };
       // The oracle of the seed: M1047's parents minus the proven and the contradicted one, plus the
       // confirmed M1026-only parent; partial is M1026's other parents.
       const only1026 = s.m1026Parents.filter(id => !s.m1047Parents.includes(id));
@@ -387,6 +404,64 @@ describe('[AC] Posture count equality across the count surfaces (P2-07, E2.1-d1)
         ...expected, assessable: o.assessable, notReproducible: o.notReproducible, contradicted: o.contradicted,
         proof: s.proof.attackId, failed: s.failed.attackId, confirmed: s.confirmed.attackId, notReproducibleRun: s.notReproducible.attackId,
       })}`);
+    });
+
+    it('[AC] R16 denominator: every Covered share divides by assessable (total - 1 here), overall and per tactic; Known keeps total', () => {
+      const o = posture.rollup().overall;
+      expect(o.assessable).withContext('the not-reproducible run excludes one parent').toBe(o.total - 1);
+      expect(o.covered).toBeGreaterThan(0);
+      const right = Math.round((o.covered / o.assessable) * 100);
+      const shown = surfaces();
+      for (const name of SURFACES) {
+        expect([shown[name].total, shown[name].assessable]).withContext(`${name}: Known total, Covered denominator`).toEqual([o.total, o.assessable]);
+      }
+      const pctOf = (el: Element | null) => Number(el?.getAttribute('data-share-pct') ?? NaN);
+      const split = computeReportSplit(domain, posture.rollup(), 2);
+      expect([split.total, split.assessable, split.coveredPct]).toEqual([o.total, o.assessable, right]);
+      expect(pctOf(shown.htmlDoc.querySelector('[data-split="covered"] [data-share-pct]'))).withContext('html donut').toBe(right);
+      expect(shown.htmlDoc.documentElement.innerHTML).withContext('html donut arc')
+        .toContain(`conic-gradient(#2563eb 0deg ${Math.round(right * 3.6)}deg`);
+      expect(pctOf(shown.pdfDoc.querySelector('.summary-grid [data-share-pct]'))).withContext('pdf covered box').toBe(right);
+      const builder = shown.reportBuilderFixture.nativeElement as HTMLElement;
+      expect(pctOf(builder.querySelector('[data-testid="report-covered"] [data-share-pct]'))).withContext('report builder card').toBe(right);
+      const bar = shown.statsEl.querySelector('.impl-bar') as HTMLElement;
+      // The browser keeps 4 decimals of a width; the total-based width differs in the first decimal on this seed.
+      const width = parseFloat((bar.querySelector('.impl-fill') as HTMLElement).style.width);
+      expect(width).withContext('stats-bar width').toBeCloseTo((o.covered / o.assessable) * 100, 3);
+      expect(Math.abs(width - (o.covered / o.total) * 100)).withContext('stats-bar width is not over total').toBeGreaterThan(0.1);
+      expect(bar.getAttribute('title')).toContain(`${o.covered} of ${o.assessable} assessable parent techniques`);
+
+      // Per tactic: the tactic rows carry assessable from tallyFor; one tactic holds the excluded parent.
+      const rows = posture.rollup().byTactic;
+      expect(rows.some(r => r.assessable === r.total - 1)).withContext('a tactic row loses the excluded parent').toBeTrue();
+      for (const row of rows) {
+        const want = row.assessable > 0 ? Math.round((row.covered / row.assessable) * 100) : 0;
+        const htmlRow = shown.htmlDoc.querySelector(`.tactic-row[data-tactic="${row.shortname}"]`)!;
+        const builderRow = builder.querySelector(`tr[data-tactic="${row.shortname}"]`)!;
+        expect([readShown(htmlRow).assessable, pctOf(htmlRow.querySelector('[data-share-pct]'))]).withContext(`html ${row.shortname}`)
+          .toEqual([row.assessable, want]);
+        expect([readShown(builderRow).assessable, pctOf(builderRow.querySelector('[data-share-pct]'))]).withContext(`builder ${row.shortname}`)
+          .toEqual([row.assessable, want]);
+        const t = split.byTactic.find(x => x.shortname === row.shortname)!;
+        expect([t.total, t.assessable, t.coveredPct]).withContext(`split ${row.shortname}`).toEqual([row.total, row.assessable, want]);
+      }
+    });
+
+    it('actor-profile divides by the tally assessable for every group', () => {
+      const f = create(ActorProfilePanelComponent);
+      const panel = f.componentInstance;
+      const data = TestBed.inject(DataService);
+      let lowered = 0;
+      for (const g of domain.groups) {
+        panel.selectGroup(g);
+        f.detectChanges();
+        const techs = data.getTechniquesForGroup(g.id);
+        const tally = posture.tallyFor(techs);
+        if (tally.assessable < techs.length) lowered++;
+        expect(panel.ringDenominator(panel.selectedProfile!)).withContext(g.attackId).toBe(tally.assessable);
+      }
+      const usesExcluded = domain.groups.some(g => data.getTechniquesForGroup(g.id).some(t => t.id === s.notReproducible.id));
+      expect(lowered > 0).withContext('a group holding the excluded technique shows a lower denominator').toBe(usesExcluded);
     });
 
     it('per-tactic rows equal rollup().byTactic on the HTML report and the Report Builder', () => {
@@ -430,8 +505,9 @@ describe('[AC] Posture count equality across the count surfaces (P2-07, E2.1-d1)
         const techs = data.getTechniquesForGroup(g.id);
         const tally = posture.tallyFor(techs);
         const summary = (el.querySelector('[data-testid="actor-posture-summary"]')?.textContent ?? '').trim();
-        expect(summary).withContext(g.attackId).toMatch(/^\d+ of \d+ techniques covered \(self-attested\), \d+ partial$/);
-        expect(summary).withContext(g.attackId).toBe(`${tally.covered} of ${techs.length} techniques covered (self-attested), ${tally.partial} partial`);
+        expect(summary).withContext(g.attackId).toMatch(/^\d+ of \d+ assessable techniques covered \(self-attested\), \d+ partial$/);
+        expect(summary).withContext(g.attackId)
+          .toBe(`${tally.covered} of ${tally.assessable} assessable techniques covered (self-attested), ${tally.partial} partial`);
         const proven = (el.querySelector('[data-testid="actor-posture-proven"]')?.textContent ?? '').trim();
         expect(proven).withContext(g.attackId).toBe(`${postureBadge({ bucket: 'proven', qualifiers: [], proofScope: null, covered: [] })}: ${tally.proven} · ` +
           `${postureBadge({ bucket: 'stale', qualifiers: [], proofScope: null, covered: [] })}: ${tally.stale}`);

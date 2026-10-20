@@ -291,10 +291,23 @@ describe('PdfReportService', () => {
 
     it('takes Covered, partial, Proven and stale from the posture rollup', () => {
       const html = capture(makeMockDomain(), { T1059: 'partial', T1190: 'proven' });
-      expect(html).toContain('<div class="num"><span data-posture="covered">0</span> (0%)</div>\n    <div class="lbl">Covered (self-attested)</div>');
+      expect(html).toContain('<div class="num" data-share-pct="0"><span data-posture="covered">0</span> (0%)</div>\n    <div class="lbl">Covered (self-attested), of <span data-posture="assessable">2</span> assessable</div>');
       expect(html).toContain('<div class="num" data-posture="partial">1</div>\n    <div class="lbl">partial (broad mitigation, not confirmed per technique)</div>');
       expect(html).toContain('<div class="num" data-posture="proven">1</div>\n    <div class="lbl">Proven</div>');
       expect(html).toContain('<div class="num" data-posture="stale">0</div>');
+    });
+
+    it('R16: the Covered share divides by assessable; the Total Techniques box keeps every parent', () => {
+      posture.exclude(['T1190']);
+      const html = capture(makeMockDomain(), { T1059: 'covered' });
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const grid = doc.querySelector('.summary-grid')!;
+      const o = posture.rollup().overall;
+      expect([o.total, o.assessable, o.covered]).toEqual([2, 1, 1]);
+      expect(grid.querySelector('[data-posture="known-total"]')!.textContent).toBe('2');
+      expect(grid.querySelector('[data-posture="assessable"]')!.textContent).toBe('1');
+      expect(grid.querySelector('[data-share-pct]')!.getAttribute('data-share-pct')).toBe('100');
+      expect(html).toContain('<span data-posture="covered">1</span> (100%)');
     });
 
     it('shows the split per tactic', () => {

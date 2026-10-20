@@ -244,9 +244,29 @@ describe('HtmlReportService', () => {
       const covered = block(html, 'covered');
       expect(covered).toContain('40%');
       expect(covered).toContain('Covered (self-attested)');
-      expect(covered).toContain('2 of 5 parent techniques');
+      expect(covered).toContain('2 of <span data-posture="assessable">5</span> assessable parent techniques');
       expect(card(html, 'covered')).toBe(2);
       expect(html).toContain('ATT&amp;CK Mitigation Report');
+    });
+
+    it('R16: the Covered donut, its line and the tactic bars divide by assessable; Known keeps every parent', async () => {
+      posture.exclude(['T3']);
+      const html = await report({ T1: 'covered', T2: 'covered' }, 1);
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const covered = doc.querySelector('[data-split="covered"]')!;
+      // 2 of 4 assessable (T3 excluded), not 2 of 5.
+      expect(covered.querySelector('[data-posture="assessable"]')!.textContent).toBe('4');
+      expect(covered.querySelector('[data-share-pct]')!.getAttribute('data-share-pct')).toBe('50');
+      expect(covered.textContent).toContain('2 of 4 assessable parent techniques');
+      expect(html).toContain('conic-gradient(#2563eb 0deg 180deg');
+      const known = doc.querySelector('[data-split="known"]')!;
+      expect(known.querySelector('[data-posture="known-total"]')!.textContent).toBe('5');
+      expect(known.textContent).toContain('60%');
+      const exec = doc.querySelector('.tactic-row[data-tactic="execution"]')!;
+      expect(exec.querySelector('[data-posture="assessable"]')!.textContent).toBe('2');
+      expect(exec.querySelector('[data-share-pct]')!.getAttribute('data-share-pct')).toBe('100');
+      expect(exec.textContent).toContain('2/3');
+      expect(doc.querySelector('[data-split="note"]')!.textContent).toContain('assessable');
     });
 
     it('shows Known only on a fresh profile, with no Covered or Proven words', async () => {

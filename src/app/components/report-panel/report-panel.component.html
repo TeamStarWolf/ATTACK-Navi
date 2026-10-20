@@ -73,7 +73,7 @@
                   <div class="summary-card implemented" data-testid="report-covered">
                     <div class="card-num" data-posture="covered">{{ s.covered }}</div>
                     <div class="card-label">{{ labels.covered }}</div>
-                    <div class="card-sub">{{ s.covered }} / {{ s.total }} techniques. {{ labels.coveredNote }}</div>
+                    <div class="card-sub" [attr.data-share-pct]="s.coveredPct">{{ s.covered }} of <span data-posture="assessable">{{ s.assessable }}</span> {{ labels.assessable }} techniques ({{ s.coveredPct }}%). {{ labels.coveredNote }} {{ labels.assessableNote }}</div>
                   </div>
                   <div class="summary-card implemented" data-testid="report-partial">
                     <div class="card-num" data-posture="partial">{{ s.partial }}</div>
@@ -162,7 +162,7 @@
                         <div class="mini-bar-wrap">
                           <div class="mini-bar mini-bar--implemented" [style.width.%]="ts.coveredPct"></div>
                         </div>
-                        <span class="pct-val"><span data-posture="covered">{{ ts.covered }}</span> ({{ ts.coveredPct }}%)</span>
+                        <span class="pct-val" [attr.data-share-pct]="ts.coveredPct"><span data-posture="covered">{{ ts.covered }}</span> of <span data-posture="assessable">{{ ts.assessable }}</span> ({{ ts.coveredPct }}%)</span>
                       </td>
                       <td class="num-cell" data-posture="partial">{{ ts.partial }}</td>
                       <td class="num-cell"><span data-posture="proven">{{ ts.proven }}</span> · {{ labels.stale }} <span data-posture="stale">{{ ts.stale }}</span></td>
