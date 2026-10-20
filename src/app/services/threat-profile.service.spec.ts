@@ -1,0 +1,68 @@
+// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+// https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
+import { BehaviorSubject } from 'rxjs';
+import { ThreatProfileService } from './threat-profile.service';
+import { DataService, AttackDomain } from './data.service';
+import { Domain } from '../models/domain';
+import { ThreatProfile } from '../models/threat-profile';
+
+const KEY = 'navi.v2.threat-profile';
+
+/** A one-group, one-technique domain, enough to prove resolution and weight. */
+function tinyDomain(): Domain {
+  const t = { id: 't1', attackId: 'T1', name: 'T1', isSubtechnique: false, parentId: null } as unknown as Domain['techniques'][number];
+  const g = { id: 'g1', attackId: 'G0001', name: 'G1', aliases: [] } as unknown as Domain['groups'][number];
+  return {
+    name: 'Enterprise ATT&CK', techniques: [t], groups: [g],
+    groupsByTechnique: new Map([['t1', [g]]]), techniquesByGroup: new Map([['g1', [t]]]),
+    campaigns: [], campaignsByGroup: new Map(), techniquesByCampaign: new Map(), attackVersion: '19.2',
+  } as unknown as Domain;
+}
+
+function makeService(domainSubject = new BehaviorSubject<Domain | null>(null)): ThreatProfileService {
+  const stub = {
+    domain$: domainSubject.asObservable(),
+    getCurrentDomain: () => domainSubject.value,
+    getCurrentAttackDomain: () => 'enterprise' as AttackDomain,
+  };
+  return new ThreatProfileService(stub as unknown as DataService);
+}
+
+describe('ThreatProfileService', () => {
+  beforeEach(() => localStorage.removeItem(KEY));
+  afterEach(() => localStorage.removeItem(KEY));
+
+  it('defaults to Top 20 groups by prevalence', () => {
+    const svc = makeService();
+    expect(svc.current.source).toEqual({ kind: 'top-groups', n: 20 });
+    expect(svc.current.label).toBe('Top 20 groups by prevalence');
+  });
+
+  it('profile$ emits synchronously on subscribe', () => {
+    const svc = makeService();
+    let emitted: ThreatProfile | undefined;
+    svc.profile$.subscribe((p) => (emitted = p));
+    expect(emitted).toBeDefined();
+    expect(emitted!.source.kind).toBe('top-groups');
+  });
+
+  it('persists a chosen source and restores it in a new instance', () => {
+    makeService().setSource({ kind: 'all' });
+    expect(makeService().current.source.kind).toBe('all');
+  });
+
+  it('falls back to the default when storage is corrupt', () => {
+    localStorage.setItem(KEY, 'not-json{');
+    expect(makeService().current.source).toEqual({ kind: 'top-groups', n: 20 });
+  });
+
+  it('resolves against a loaded domain and weight() delegates to the current profile', () => {
+    const domain$ = new BehaviorSubject<Domain | null>(null);
+    const svc = makeService(domain$);
+    domain$.next(tinyDomain());
+    svc.setSource({ kind: 'all' });
+    expect(svc.current.parentTechniqueIds.has('t1')).toBeTrue();
+    expect(svc.weight('t1')).toBe(svc.current.weight('t1'));
+    expect(svc.weight('t1')).toBe(1);
+  });
+});

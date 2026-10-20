@@ -1,0 +1,122 @@
+// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+// https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
+.tpp {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--text-main);
+}
+
+.tpp-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+
+  button {
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    cursor: pointer;
+
+    &.active {
+      color: var(--text-main);
+      border-color: var(--accent);
+      background: var(--bg-raised);
+    }
+  }
+}
+
+.tpp-topn input {
+  width: 4rem;
+  margin: 0 6px;
+  padding: 2px 6px;
+  color: var(--text-main);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+}
+
+.tpp-search input {
+  width: 100%;
+  padding: 6px 8px;
+  color: var(--text-main);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+}
+
+.tpp-sectors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+
+  .tpp-sector {
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    border-radius: 999px;
+    cursor: pointer;
+
+    &.active {
+      color: var(--text-main);
+      border-color: var(--accent);
+    }
+  }
+}
+
+.tpp-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 16rem;
+  overflow-y: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+
+  li + li { border-top: 1px solid var(--line-soft); }
+}
+
+.tpp-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  text-align: left;
+  color: var(--text-main);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+
+  &:hover { background: var(--bg-hover); }
+  &.selected { background: var(--bg-raised); box-shadow: inset 2px 0 0 var(--accent); }
+
+  .tpp-item-id {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-faint);
+  }
+}
+
+.tpp-empty {
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  color: var(--text-faint);
+}
+
+.tpp-matrix-filter {
+  align-self: flex-start;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  color: var(--text-main);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  cursor: pointer;
+}
