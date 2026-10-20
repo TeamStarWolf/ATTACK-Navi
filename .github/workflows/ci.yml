@@ -63,5 +63,12 @@ jobs:
       - run: node --test scripts/check-facts.test.mjs
       - run: node scripts/gen-facts.mjs --check
       - run: node scripts/check-facts.mjs
-      - run: npx ng test --no-watch --browsers=ChromeHeadless
+      # --code-coverage writes coverage/attack-navi/coverage-summary.json
+      # (karma.conf.js json-summary reporter) for the branch gate below.
+      - run: npx ng test --no-watch --browsers=ChromeHeadless --code-coverage
+      # Rung derivation and the D16 breadth guard must stay at 100% branch
+      # coverage (Phase 2 epic E2.1). The gate's own tests run first; one of
+      # them feeds it a 99% summary and expects exit 1.
+      - run: node --test scripts/check-branch-coverage.test.mjs
+      - run: node scripts/check-branch-coverage.mjs src/app/models/posture/derive-posture.ts src/app/models/posture/mitigation-rollup.ts
       - run: npx ng build --configuration production
