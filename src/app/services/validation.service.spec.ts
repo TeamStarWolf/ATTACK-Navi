@@ -186,6 +186,46 @@ describe('ValidationService', () => {
       const after = service.all.find(x => x.id === r.id)!;
       expect(after.status).toBe('failed');
     });
+
+    // P2-02 round 1: outcomes follow detectionsFired / attackResult (§5.2), as status follows the inputs.
+    it('re-derives outcomes on a manual run when detectionsFired or attackResult changes', () => {
+      const r = service.record(baseRun);
+      expect(r.outcomes).toEqual([{ detectionRef: 'sigma:lsass-dump', outcome: 'alerted' }]);
+      service.update(r.id, { detectionsFired: [] });
+      expect(service.all[0].outcomes).toEqual([]);
+      service.update(r.id, { attackResult: 'blocked' });
+      expect(service.all[0].outcomes).toEqual([{ detectionRef: null, outcome: 'blocked' }]);
+      expect(rebuild().all[0].outcomes).toEqual([{ detectionRef: null, outcome: 'blocked' }]);
+    });
+
+    it('re-keys techniqueRef when techniqueId changes, so runMatches follows the new technique', () => {
+      loadDomain('enterprise', '19.2');
+      const r = service.record(baseRun);
+      expect(r.techniqueRef).toBe('attack/enterprise/T1003.001@19.2');
+      service.update(r.id, { techniqueId: 'T1110' });
+      const after = rebuild();
+      expect(after.all[0].techniqueRef).toBe('attack/enterprise/T1110@19.2');
+      expect(after.forTechnique('T1003.001')).toEqual([]);
+      expect(after.forTechnique('T1110').map(x => x.id)).toEqual([r.id]);
+      // With no domain loaded the ref is cleared and the bare id matches lazily.
+      fakeData.loaded = null;
+      after.update(r.id, { techniqueId: 'T1059.001' });
+      expect(after.all[0].techniqueRef).toBeNull();
+      expect(after.forTechnique('T1059.001').map(x => x.id)).toEqual([r.id]);
+    });
+
+    it('patches only the v1 fields, never id, source, proofScope or outcomes', () => {
+      const r = service.record(baseRun);
+      service.update(r.id, { notes: 'n2', id: 'x', source: 'lylat-range:m', proofScope: 'production',
+        outcomes: [], statusFromSource: true } as never);
+      const after = service.all[0];
+      expect(after.id).toBe(r.id);
+      expect(after.notes).toBe('n2');
+      expect(after.source).toBe('manual');
+      expect(after.proofScope).toBe('own-run');
+      expect(after.statusFromSource).toBe(false);
+      expect(after.outcomes).toEqual(r.outcomes);
+    });
   });
 
   describe('delete', () => {
@@ -299,6 +339,29 @@ describe('ValidationService', () => {
       expect('hostname' in rebuild().all[0]).toBe(false);
     });
 
+    // P2-02 round 1: proofScope and statusFromSource follow the source, never the row.
+    it('a row cannot raise its own proof scope: manual is own-run, lylat-range is range', () => {
+      const res = service.importJson(JSON.stringify({ runs: [
+        v1Run('m1', 'T1110', { source: 'manual', proofScope: 'production', statusFromSource: true }),
+        v1Run('m2', 'T1110', { proofScope: 'range' }),
+      ] }));
+      expect(res.bySource).toEqual({ manual: { added: 2, replaced: 0 } });
+      service.importRows([
+        { ...rangeRow('r1', 'T1110'), proofScope: 'production' },
+        { ...rangeRow('r2', 'T1110'), proofScope: 'own-run', statusFromSource: false },
+      ], 'lylat-range:mission-a');
+      for (const svc of [service, rebuild()]) {
+        const byId = new Map(svc.all.map(r => [r.id, r]));
+        expect(byId.get('m1')!.proofScope).toBe('own-run');
+        expect(byId.get('m1')!.statusFromSource).toBe(false);
+        expect(byId.get('m2')!.proofScope).toBe('own-run');
+        expect(byId.get('r1')!.proofScope).toBe('range');
+        expect(byId.get('r2')!.proofScope).toBe('range');
+        expect(byId.get('r2')!.statusFromSource).toBe(true);
+      }
+      expect(localStorage.getItem(STORAGE_KEY)).not.toContain('production');
+    });
+
     it('update() does not recompute status when statusFromSource is set', () => {
       service.importRows([{ ...rangeRow('r1', 'T1110'), status: 'not-reproducible' }], 'lylat-range:mission-a');
       service.update('r1', { detectionsFired: [], notes: 'checked' });
@@ -345,6 +408,40 @@ describe('ValidationService', () => {
       again.update('v1-a', { notes: 'edited' });
       again.delete('v1-b');
       expect(localStorage.getItem(VALIDATION_RUNS_V1_KEY)).toBe(v1);
+    });
+
+    // P2-02 round 1: the pre-P2-02 importJson stored rows unvalidated; the v1 app
+    // still listed them, so the copy-forward carries what it can (§5.11).
+    it('carries v1 rows without a valid status, attackResult or id, and repeated ids; names the rest', async () => {
+      const loose = [
+        v1Run('s1', 'T1110', { status: undefined }),                       // status computed: passed
+        v1Run('a1', 'T1110', { attackResult: 'exploded' }),                 // attackResult 'executed'
+        { ...v1Run('x', 'T1021'), id: undefined },                          // id generated from content
+        v1Run('dup', 'T1003.001'),
+        v1Run('dup', 'T1059.001'),                                          // repeated id: dup~2
+        v1Run('t1', ''),                                                    // no techniqueId: named
+        'not a run',                                                        // not an object: named
+      ];
+      const raw = JSON.stringify(loose);
+      localStorage.setItem(VALIDATION_RUNS_V1_KEY, raw);
+      const svc = rebuild();
+      const ids = (await firstValueFrom(svc.runs$)).map(r => r.id);
+      expect(ids.length).toBe(5);
+      expect(ids.slice(0, 2)).toEqual(['s1', 'a1']);
+      expect(ids[2]).toMatch(/^v1-[0-9a-f]{8}-\d+$/);
+      expect(ids.slice(3)).toEqual(['dup', 'dup~2']);
+      expect(svc.all[0].status).toBe('passed');
+      expect(svc.all[1].attackResult).toBe('executed');
+      expect(svc.all[4].techniqueId).toBe('T1059.001');
+      expect(svc.migrationDropped).toEqual([
+        { row: 5, reason: 'missing techniqueId' },
+        { row: 6, reason: 'not an object' },
+      ]);
+      // Deterministic: a reload copies nothing more, keeps the same ids, and still names the rows.
+      const again = rebuild();
+      expect(again.all.map(r => r.id)).toEqual(ids);
+      expect(again.migrationDropped.length).toBe(2);
+      expect(localStorage.getItem(VALIDATION_RUNS_V1_KEY)).toBe(raw);
     });
 
     it('OwnerDataService run count is unchanged after copy-forward', async () => {
@@ -432,16 +529,21 @@ describe('ValidationService', () => {
       expect(reloaded.all[0].techniqueRef).toBeNull();
     });
 
-    it('parity, F3: an Enterprise T1110 run is found under F3, by forTechnique and by runMatches', () => {
+    it('parity, F3: an Enterprise T1110 run is found under F3 after a reload, by forTechnique and by runMatches', () => {
       loadDomain('enterprise', '19.2');
       const r = service.record({ ...baseRun, techniqueId: 'T1110' });
+      expect(r.techniqueRef).toBe('attack/enterprise/T1110@19.2');
+      const reloaded = rebuild();                                        // the run is read back from storage
       loadDomain('f3', '1.0');
+      const stored = reloaded.all[0];
+      expect(stored.id).toBe(r.id);
+      expect(stored.techniqueRef).toBe('attack/enterprise/T1110@19.2');
       const resolve = (id: string) => TestBed.inject(AttackIdResolverService).resolve(id);
-      expect(service.forTechnique('T1110').map(x => x.id)).toEqual([r.id]);
-      expect(runMatches(r, { attackId: 'T1110' }, 'f3', resolve)).toBe(true);
-      expect(runMatches(r, { attackId: 'F1001' }, 'f3', resolve)).toBe(false);
+      expect(reloaded.forTechnique('T1110').map(x => x.id)).toEqual([r.id]);
+      expect(runMatches(stored, { attackId: 'T1110' }, 'f3', resolve)).toBe(true);
+      expect(runMatches(stored, { attackId: 'F1001' }, 'f3', resolve)).toBe(false);
       loadDomain('ics', '17.1');
-      expect(service.forTechnique('T1110')).toEqual([]);   // ICS ids never equal Enterprise ids
+      expect(reloaded.forTechnique('T1110')).toEqual([]);   // ICS ids never equal Enterprise ids
     });
   });
 

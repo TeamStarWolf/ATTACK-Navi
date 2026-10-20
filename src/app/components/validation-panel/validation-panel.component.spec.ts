@@ -1,5 +1,6 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
+import { ChangeDetectorRef } from '@angular/core';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
 import { ValidationPanelComponent } from './validation-panel.component';
@@ -25,7 +26,8 @@ describe('ValidationPanelComponent', () => {
         { provide: ValidationService, useValue: {
             runs$: new BehaviorSubject([]),
             all: [],
-            statusCounts: () => ({ passed: 0, partial: 0, failed: 0, 'no-telemetry': 0, untested: 0 }),
+            statusCounts: () => ({ passed: 0, partial: 0, failed: 0, 'no-telemetry': 0, untested: 0, 'not-reproducible': 0 }),
+            migrationDropped: [],
             uniqueTechniqueCount: () => 0,
             forTechnique: () => [],
             latestFor: () => null,
@@ -57,6 +59,12 @@ describe('ValidationPanelComponent', () => {
 
   afterEach(() => localStorage.clear());
 
+  /** The panel is OnPush: mark its own view before re-rendering a changed stub. */
+  function rerender(): void {
+    fixture.debugElement.injector.get(ChangeDetectorRef).markForCheck();
+    fixture.detectChanges();
+  }
+
   it('is created on the overview tab', () => {
     expect(component).toBeTruthy();
     expect(component.currentTab).toBe('overview');
@@ -79,6 +87,33 @@ describe('ValidationPanelComponent', () => {
     expect(component.statusLabel('partial')).toBe('PARTIAL');
     expect(component.statusLabel('no-telemetry')).toBe('NO TELEMETRY');
     expect(component.statusLabel('untested')).toBe('UNTESTED');
+  });
+
+  // P2-02 round 1: 'not-reproducible' has its own KPI tile and is a recorded
+  // outcome, so it is counted out of "Untested (in scope)" and into "Coverage so far".
+  it('shows a not-reproducible KPI tile and counts it as recorded, not untested', () => {
+    const svc = TestBed.inject(ValidationService) as unknown as { statusCounts: () => Record<string, number> };
+    svc.statusCounts = () => ({ passed: 1, partial: 0, failed: 1, 'no-telemetry': 0, untested: 4, 'not-reproducible': 2 });
+    rerender();
+    expect(component.recordedCount).toBe(4);
+    const el: HTMLElement = fixture.nativeElement;
+    const tile = (s: string) => el.querySelector(`.vp-kpi[data-status="${s}"] .vp-kpi-value`)!.textContent!.trim();
+    expect(tile('not-reproducible')).toBe('2');
+    expect(el.querySelector('.vp-kpi[data-status="not-reproducible"] .vp-kpi-label')!.textContent!.trim())
+      .toBe('Not reproducible (patched target)');
+    expect(tile('untested')).toBe(String(component.totalCards - 4));
+    expect(el.textContent).toContain('Coverage so far: 4 validations recorded');
+  });
+
+  it('names v1 runs the copy-forward could not carry, and is silent when there are none', () => {
+    const el: HTMLElement = fixture.nativeElement;
+    expect(component.migrationNotice).toBeNull();
+    expect(el.querySelector('.vp-migration-msg')).toBeNull();
+    (TestBed.inject(ValidationService) as unknown as { migrationDropped: unknown }).migrationDropped =
+      [{ row: 2, reason: 'missing techniqueId' }];
+    rerender();
+    expect(el.querySelector('.vp-migration-msg')!.textContent).toContain('row 2: missing techniqueId');
+    expect(component.migrationNotice).toContain('attacknavi.validation-runs.v1');
   });
 
   it('cancelRecord closes the modal and clears selectedTechnique', () => {

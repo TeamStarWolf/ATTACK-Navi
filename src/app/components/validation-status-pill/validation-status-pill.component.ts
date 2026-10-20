@@ -96,6 +96,7 @@ const STATUS_LABEL: Record<ValidationStatus, string> = {
       &[data-status="failed"]      { background: rgba(239,68,68,0.18); color: #ef4444; }
       &[data-status="no-telemetry"]{ background: rgba(107,114,128,0.18); color: #6b7280; }
       &[data-status="untested"]    { background: rgba(156,163,175,0.18); color: #9ca3af; }
+      &[data-status="not-reproducible"] { background: rgba(139,92,246,0.18); color: #8b5cf6; }
     }
   `],
 })

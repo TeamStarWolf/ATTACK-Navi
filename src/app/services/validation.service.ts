@@ -98,7 +98,6 @@ export const LYLAT_CONTRACT_SCHEMA = 'lylat-validated-detections/1';
 
 const STATUSES: readonly ValidationStatus[] = ['passed', 'failed', 'partial', 'no-telemetry', 'untested', 'not-reproducible'];
 const ATTACK_RESULTS: readonly ValidationRun['attackResult'][] = ['executed', 'failed-prereq', 'blocked', 'errored'];
-const PROOF_SCOPES: readonly ProofScope[] = ['production', 'range', 'own-run'];
 const REF_DOMAINS: readonly RefDomain[] = ['enterprise', 'ics', 'mobile', 'f3', 'atlas'];
 const OUTCOMES: readonly ValidationOutcome['outcome'][] = ['alerted', 'blocked', 'logged', 'none'];
 const COVERAGE_STATES: readonly NonNullable<ValidationOutcome['coverageState']>[] =
@@ -131,6 +130,39 @@ export function isRunSource(x: unknown): x is Exclude<SourceId, 'wizard'> {
   const m = /^(lylat-range|layer):(.+)$/.exec(x);
   return m !== null && m[2].trim() !== '';
 }
+
+/**
+ * The proof scope a run of `source` carries (P2-02 interface): 'range' for a
+ * Lylat mission, 'own-run' for everything else. Never read from the row, so an
+ * import cannot raise a run's scope ('production' has no writer until E6.2).
+ */
+export function scopeForSource(source: Exclude<SourceId, 'wizard'>): ProofScope {
+  return source.startsWith('lylat-range:') ? 'range' : 'own-run';
+}
+
+/** Compute status from telemetry/detection inputs (the panel's rule, also used to fill a v1 row's missing status). */
+export function statusFromInputs(input: {
+  telemetryRequired: readonly string[];
+  telemetryAvailable: readonly string[];
+  detectionsExpected: readonly string[];
+  detectionsFired: readonly string[];
+}): ValidationStatus {
+  if (input.telemetryRequired.length > 0 && input.telemetryAvailable.length === 0) return 'no-telemetry';
+  if (input.detectionsExpected.length === 0) return 'untested';
+  const fired = input.detectionsFired.length;
+  if (fired === 0) return 'failed';
+  if (fired === input.detectionsExpected.length) return 'passed';
+  return 'partial';
+}
+
+/** The fields update() may patch: every v1 field but id. A Record, so a new field cannot be left out. */
+const PATCHABLE_FIELDS: Record<Exclude<keyof ValidationRun, 'id'>, true> = {
+  techniqueId: true, techniqueName: true, runDate: true, operator: true,
+  telemetryRequired: true, telemetryAvailable: true, atomicTestId: true, atomicCommand: true,
+  attackResult: true, detectionsExpected: true, detectionsFired: true,
+  responsePlaybook: true, responseActions: true, evidenceLinks: true, notes: true, status: true,
+};
+const PATCHABLE = Object.keys(PATCHABLE_FIELDS) as (keyof typeof PATCHABLE_FIELDS)[];
 
 /** §5.2: 'alerted' per fired detection, and one 'blocked' outcome without a detection when the attack was blocked. */
 export function outcomesFromV1(run: Pick<ValidationRun, 'detectionsFired' | 'attackResult'>): ValidationOutcome[] {
@@ -215,9 +247,12 @@ export function sanitizeRun(
     createdAt: typeof x['createdAt'] === 'string' ? x['createdAt'] : runDate,
     updatedAt: typeof x['updatedAt'] === 'string' ? x['updatedAt'] : runDate,
     techniqueRef: ref,
-    proofScope: oneOf(PROOF_SCOPES, x['proofScope']) ? x['proofScope'] : src.startsWith('lylat-range:') ? 'range' : 'own-run',
+    // Both follow the source, never the row: a 'manual' row is an own run whose
+    // status update() recomputes; a 'lylat-range:' row is a range run whose status
+    // came from its source. A row's own proofScope / statusFromSource is ignored.
+    proofScope: scopeForSource(src),
     outcomes,
-    statusFromSource: typeof x['statusFromSource'] === 'boolean' ? x['statusFromSource'] : src !== 'manual',
+    statusFromSource: src !== 'manual',
     ...(typeof x['missionId'] === 'string' ? { missionId: x['missionId'] } : {}),
   };
   return { run };
@@ -242,24 +277,65 @@ function readRaw(key: string): string | null {
   }
 }
 
-/** The v1 runs, upgraded (§5.2); malformed entries are skipped. */
-function upgradeV1(raw: string): ValidationRunV2[] {
+function nonBlank(x: unknown): x is string {
+  return typeof x === 'string' && x.trim() !== '';
+}
+
+/**
+ * The v1 runs, upgraded (§5.2), and the rows that could not be (§5.11).
+ *
+ * The pre-P2-02 importJson stored rows unvalidated, so a v1 row may lack fields
+ * the v2 allowlist requires. The v1 app still listed such a row, so the upgrade
+ * fills what it can rather than lose it:
+ * - a missing or unknown status is computed from the row's lists (the panel's rule);
+ * - a missing or unknown attackResult becomes 'executed' (the panel's form default);
+ * - a missing id becomes `v1-<fnv1a>-<length>` of the row, and a repeated id gets
+ *   `~2`, `~3`…, both deterministic, so a re-run of the copy-forward finds them taken.
+ * A row that is not an object, or has no techniqueId or runDate, is reported in
+ * `dropped` (row = its index in the v1 array); it stays in the v1 key.
+ */
+function upgradeV1(raw: string): { runs: ValidationRunV2[]; dropped: ImportResult['dropped'] } {
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
   } catch {
-    return [];
+    return { runs: [], dropped: [] };                 // the v1 app read this as no runs either
   }
-  if (!Array.isArray(parsed)) return [];
-  const out: ValidationRunV2[] = [];
-  for (const row of parsed) {
+  if (!Array.isArray(parsed)) return { runs: [], dropped: [] };
+  const runs: ValidationRunV2[] = [];
+  const dropped: ImportResult['dropped'] = [];
+  const ids = new Set<string>();
+  parsed.forEach((row: unknown, i: number) => {
+    if (!isObj(row)) {
+      dropped.push({ row: i, reason: 'not an object' });
+      return;
+    }
+    const base = nonBlank(row['id']) ? row['id'] : `v1-${fingerprint(JSON.stringify(row)).replace(':', '-')}`;
+    let id = base;
+    for (let n = 2; ids.has(id); n++) id = `${base}~${n}`;
+    const lists = {
+      telemetryRequired: strList(row['telemetryRequired']),
+      telemetryAvailable: strList(row['telemetryAvailable']),
+      detectionsExpected: strList(row['detectionsExpected']),
+      detectionsFired: strList(row['detectionsFired']),
+    };
     // v1 rows are always 'manual' own runs, whatever extra fields they carry.
-    const r = isObj(row) ? sanitizeRun({ ...row, source: undefined, domain: null, techniqueRef: null,
-      attackVersion: undefined, proofScope: undefined, outcomes: undefined, statusFromSource: undefined,
-      createdAt: undefined, updatedAt: undefined, missionId: undefined }, 'manual') : null;
-    if (r && 'run' in r) out.push(r.run);
-  }
-  return out;
+    const r = sanitizeRun({
+      ...row,
+      id,
+      status: oneOf(STATUSES, row['status']) ? row['status'] : statusFromInputs(lists),
+      attackResult: oneOf(ATTACK_RESULTS, row['attackResult']) ? row['attackResult'] : 'executed',
+      source: undefined, domain: null, techniqueRef: null,
+      attackVersion: undefined, outcomes: undefined, createdAt: undefined, updatedAt: undefined, missionId: undefined,
+    }, 'manual');
+    if ('reason' in r) {
+      dropped.push({ row: i, reason: r.reason });
+      return;
+    }
+    ids.add(id);
+    runs.push(r.run);
+  });
+  return { runs, dropped };
 }
 
 /** "manual: 1 added, 0 replaced; lylat-range:m1: 2 added, 3 replaced. 1 row dropped (row 2: missing id)." */
@@ -279,8 +355,15 @@ export class ValidationService {
   private readonly data = inject(DataService);
   private readonly resolver = inject(AttackIdResolverService);
 
+  private readonly boot = this.loadAndCopyForward();
+  /**
+   * v1 rows the copy-forward could not carry (§5.11), recomputed on every
+   * construction while the v1 key exists; they stay in that key. The panel
+   * names them, so a run that cannot be carried is never silently gone.
+   */
+  readonly migrationDropped: readonly { row: number; reason: string }[] = this.boot.dropped;
   /** The in-memory v2 store; every writer goes through commit(). */
-  private store: V2Store<ValidationRunV2> = this.loadAndCopyForward();
+  private store: V2Store<ValidationRunV2> = this.boot.store;
   private runsSubject = new BehaviorSubject<ValidationRunV2[]>([...this.store.records]);
   /** The first emission already holds the runs copied forward from v1 (S11). */
   readonly runs$: Observable<ValidationRunV2[]> = this.runsSubject.asObservable();
@@ -314,23 +397,24 @@ export class ValidationService {
    * absent from v2 and from its tombstones; never overwrites or deletes a v2
    * run; never writes or deletes the v1 key.
    */
-  private loadAndCopyForward(): V2Store<ValidationRunV2> {
+  private loadAndCopyForward(): { store: V2Store<ValidationRunV2>; dropped: ImportResult['dropped'] } {
     const stored = readStore();
     const v1Raw = readRaw(VALIDATION_RUNS_V1_KEY);
-    if (v1Raw === null) return stored;
+    if (v1Raw === null) return { store: stored, dropped: [] };
     const fp = fingerprint(v1Raw);
+    const upgraded = upgradeV1(v1Raw);
     const v2Present = readRaw(VALIDATION_RUNS_V2_KEY) !== null;
-    if (v2Present && stored.migratedFromV1Fingerprint === fp) return stored;
+    if (v2Present && stored.migratedFromV1Fingerprint === fp) return { store: stored, dropped: upgraded.dropped };
     const taken = new Set([...stored.records.map(r => r.id), ...stored.tombstones]);
     const copied: ValidationRunV2[] = [];
-    for (const run of upgradeV1(v1Raw)) {
+    for (const run of upgraded.runs) {
       if (taken.has(run.id)) continue;
       taken.add(run.id);
       copied.push(run);
     }
     const next: V2Store<ValidationRunV2> = { ...stored, migratedFromV1Fingerprint: fp, records: [...stored.records, ...copied] };
     writeV2(VALIDATION_RUNS_V2_KEY, next);
-    return next;
+    return { store: next, dropped: upgraded.dropped };
   }
 
   /** The one write path (two writers in one tick both land here). */
@@ -344,6 +428,22 @@ export class ValidationService {
   private loaded(): { id: AttackDomain; version: string } | null {
     const domain = this.data.getCurrentDomain();
     return domain ? { id: this.data.getCurrentAttackDomain(), version: domain.attackVersion ?? '' } : null;
+  }
+
+  /**
+   * The technique key of a run of `techniqueId` recorded now: its ref in the
+   * loaded domain, or null while none is loaded (§1.11). A ref is only written
+   * when it parses (a loaded bundle without a dotted version cannot be keyed).
+   */
+  private keyFor(techniqueId: string): Pick<ValidationRunV2, 'domain' | 'attackVersion' | 'techniqueRef'> {
+    const domain = this.loaded();
+    const ref = domain ? refForTechnique({ attackId: techniqueId }, domain.id, domain.version) : null;
+    const refKey = ref ? techniqueRefKey(ref) : null;
+    return {
+      domain: domain ? domain.id : null,
+      attackVersion: domain && domain.version ? domain.version : 'unknown',
+      techniqueRef: refKey !== null && parseTechniqueRef(refKey) !== null ? refKey : null,
+    };
   }
 
   private newId(): string {
@@ -383,20 +483,7 @@ export class ValidationService {
     detectionsExpected: string[];
     detectionsFired: string[];
   }): ValidationStatus {
-    if (
-      input.telemetryRequired.length > 0 &&
-      input.telemetryAvailable.length === 0
-    ) {
-      return 'no-telemetry';
-    }
-    if (input.detectionsExpected.length === 0) {
-      return 'untested';
-    }
-    const fired = input.detectionsFired.length;
-    const expected = input.detectionsExpected.length;
-    if (fired === 0) return 'failed';
-    if (fired === expected) return 'passed';
-    return 'partial';
+    return statusFromInputs(input);
   }
 
   /**
@@ -406,9 +493,6 @@ export class ValidationService {
   record(partial: Omit<ValidationRun, 'id' | 'runDate' | 'status'> & { runDate?: string }): ValidationRunV2 {
     const now = new Date().toISOString();
     const runDate = partial.runDate ?? now;
-    const domain = this.loaded();
-    const ref = domain ? refForTechnique({ attackId: partial.techniqueId }, domain.id, domain.version) : null;
-    const refKey = ref ? techniqueRefKey(ref) : null;
     const base: ValidationRun = {
       techniqueId: partial.techniqueId,
       techniqueName: partial.techniqueName,
@@ -430,13 +514,10 @@ export class ValidationService {
     };
     const run: ValidationRunV2 = {
       ...base,
-      domain: domain ? domain.id : null,
-      attackVersion: domain && domain.version ? domain.version : 'unknown',
+      ...this.keyFor(partial.techniqueId),
       source: 'manual',
       createdAt: now,
       updatedAt: now,
-      // A ref is only written when it parses (a loaded bundle without a dotted version cannot be keyed).
-      techniqueRef: refKey !== null && parseTechniqueRef(refKey) !== null ? refKey : null,
       proofScope: 'own-run',
       outcomes: outcomesFromV1(base),
       statusFromSource: false,
@@ -446,27 +527,34 @@ export class ValidationService {
   }
 
   /**
-   * Update an existing run by id. Status is recomputed when an input changes,
-   * except for runs whose status came from their source (§5.10).
+   * Update an existing run by id. Only the v1 fields are patched (never id,
+   * source, proofScope, outcomes or the envelope). For runs whose status did not
+   * come from their source (§5.10), status is recomputed when an input changes
+   * and outcomes are re-derived (§5.2) when detectionsFired or attackResult
+   * changes. A new techniqueId is re-keyed to the loaded domain, as record() keys it.
    */
   update(id: string, patch: Partial<ValidationRun>): void {
+    const fields = Object.fromEntries(
+      PATCHABLE.filter(k => patch[k] !== undefined).map(k => [k, patch[k]]),
+    ) as Partial<ValidationRun>;
     const list = this.store.records.map(r => {
       if (r.id !== id) return r;
-      const merged: ValidationRunV2 = { ...r, ...patch, id: r.id, updatedAt: new Date().toISOString() };
-      if (
-        !r.statusFromSource && (
-          patch.telemetryRequired !== undefined ||
-          patch.telemetryAvailable !== undefined ||
-          patch.detectionsExpected !== undefined ||
-          patch.detectionsFired !== undefined
-        )
-      ) {
-        merged.status = this.computeStatus({
-          telemetryRequired: merged.telemetryRequired,
-          telemetryAvailable: merged.telemetryAvailable,
-          detectionsExpected: merged.detectionsExpected,
-          detectionsFired: merged.detectionsFired,
-        });
+      let merged: ValidationRunV2 = { ...r, ...fields, updatedAt: new Date().toISOString() };
+      if (fields.techniqueId !== undefined && fields.techniqueId !== r.techniqueId) {
+        merged = { ...merged, ...this.keyFor(fields.techniqueId) };
+      }
+      if (!r.statusFromSource) {
+        if (
+          fields.telemetryRequired !== undefined ||
+          fields.telemetryAvailable !== undefined ||
+          fields.detectionsExpected !== undefined ||
+          fields.detectionsFired !== undefined
+        ) {
+          merged.status = statusFromInputs(merged);
+        }
+        if (fields.detectionsFired !== undefined || fields.attackResult !== undefined) {
+          merged = { ...merged, outcomes: outcomesFromV1(merged) };
+        }
       }
       return merged;
     });
@@ -543,7 +631,8 @@ export class ValidationService {
   /**
    * Replace every stored run of `source` with `rows` (the API "Import range
    * results" calls, P2-20). Rows go through the same allowlist and are stored
-   * under `source`.
+   * under `source`, with the scope and statusFromSource that source gives
+   * ('range' and true for `lylat-range:`), whatever the rows carry.
    */
   importRows(rows: readonly ValidationRunV2[], source: Exclude<SourceId, 'manual' | 'wizard'>): ImportResult {
     if (!isRunSource(source) || (source as string) === 'manual') {

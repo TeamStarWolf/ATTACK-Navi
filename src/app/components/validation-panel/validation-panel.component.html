@@ -19,6 +19,9 @@
       @if (importMessage) {
         <p class="vp-import-msg" role="status">{{ importMessage }}</p>
       }
+      @if (migrationNotice) {
+        <p class="vp-import-msg vp-migration-msg" role="status">{{ migrationNotice }}</p>
+      }
 
       <!-- KPI tiles -->
       <section class="vp-kpis">
@@ -38,8 +41,12 @@
           <div class="vp-kpi-value">{{ statusCounts['no-telemetry'] }}</div>
           <div class="vp-kpi-label">No Telemetry</div>
         </div>
+        <div class="vp-kpi" data-status="not-reproducible">
+          <div class="vp-kpi-value">{{ statusCounts['not-reproducible'] }}</div>
+          <div class="vp-kpi-label">{{ statusLabel('not-reproducible') }}</div>
+        </div>
         <div class="vp-kpi" data-status="untested">
-          <div class="vp-kpi-value">{{ totalCards - (statusCounts.passed + statusCounts.partial + statusCounts.failed + statusCounts['no-telemetry']) }}</div>
+          <div class="vp-kpi-value">{{ totalCards - recordedCount }}</div>
           <div class="vp-kpi-label">Untested (in scope)</div>
         </div>
       </section>
@@ -71,7 +78,7 @@
             <li>📁 <strong>Evidence</strong> — attach URLs to screenshots / wiki / S3 artifacts</li>
           </ul>
           <p class="vp-muted">
-            Coverage so far: <strong>{{ statusCounts.passed + statusCounts.partial + statusCounts.failed + statusCounts['no-telemetry'] }}</strong> validations recorded across
+            Coverage so far: <strong>{{ recordedCount }}</strong> validations recorded across
             <strong>{{ totalCards }}</strong> in-scope techniques.
           </p>
         </section>
