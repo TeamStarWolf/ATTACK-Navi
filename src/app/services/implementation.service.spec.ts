@@ -1,12 +1,35 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed } from '@angular/core/testing';
+import { BehaviorSubject } from 'rxjs';
 import {
   ImplementationService,
   ImplStatus,
   IMPL_STATUS_LABELS,
   IMPL_STATUS_COLORS,
 } from './implementation.service';
+import { SettingsPanelComponent } from '../components/settings-panel/settings-panel.component';
+import { SettingsService } from './settings.service';
+import { DataService } from './data.service';
+import { TimelineService } from './timeline.service';
+import { OpenCtiService } from './opencti.service';
+import { MispService } from './misp.service';
+import { TaxiiService } from './taxii.service';
+import { ExportActionsService } from './export-actions.service';
+import { DocumentationService } from './documentation.service';
+import { BrowserFileService } from './browser-file.service';
+import { FilterService } from './filter.service';
+import { MatrixExportService } from './matrix-export.service';
+import { HtmlReportService } from './html-report.service';
+import { ReportConfigService } from './report-config.service';
+import { PdfReportService } from './pdf-report.service';
+import { XlsxExportService } from './xlsx-export.service';
+import { CustomMitigationService } from './custom-mitigation.service';
+import { NavigatorLayerService } from './navigator-layer.service';
+import { AnnotationService } from './annotation.service';
+import { UserLayerService } from './user-layer.service';
+import { Domain } from '../models/domain';
+import { Mitigation } from '../models/mitigation';
 
 const STORAGE_KEY = 'mitre-nav-impl-v1';
 
@@ -217,5 +240,188 @@ describe('ImplementationService', () => {
 
     const service2 = new ImplementationService();
     expect(service2.getStatusMap().size).toBe(0);
+  });
+});
+
+// ─── P2-06: header-driven CSV import with a preview that writes the one map ───
+describe('ImplementationService CSV import (P2-06)', () => {
+  const SETTINGS_KEY = 'mitre-nav-settings-v1';
+  const AAA = 'course-of-action--aaa';   // M1036
+  const BBB = 'course-of-action--bbb';   // M1015
+
+  function mit(id: string, attackId: string, name: string): Mitigation {
+    return { id, attackId, name, description: '', url: '' };
+  }
+  const DOMAIN = {
+    name: 'Enterprise ATT&CK',
+    mitigations: [mit(AAA, 'M1036', 'Account Use Policies'), mit(BBB, 'M1015', 'Active Directory Configuration')],
+    techniquesByMitigation: new Map(),
+  } as unknown as Domain;
+
+  let service: ImplementationService;
+  let domain$: BehaviorSubject<Domain | null>;
+
+  beforeEach(() => {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(SETTINGS_KEY);
+    domain$ = new BehaviorSubject<Domain | null>(DOMAIN);
+    TestBed.configureTestingModule({
+      imports: [SettingsPanelComponent],
+      providers: [
+        { provide: DataService, useValue: { domain$, getCurrentDomain: () => domain$.value, getCurrentAttackDomain: () => 'enterprise' } },
+        { provide: TimelineService, useValue: { snapshots$: new BehaviorSubject([]), getStorageSizeKb: () => 0 } },
+        { provide: OpenCtiService, useValue: {
+            connected$: new BehaviorSubject(false), error$: new BehaviorSubject<string | null>(null), loading$: new BehaviorSubject(false),
+            getConfig: () => ({ url: '', token: '', mode: 'direct', proxyUrl: '', connected: false }),
+        } },
+        { provide: MispService, useValue: {
+            connected$: new BehaviorSubject(false), serverError$: new BehaviorSubject<string | null>(null), serverLoading$: new BehaviorSubject(false),
+            getConfig: () => ({ url: '', apiKey: '', orgId: '', mode: 'direct', proxyUrl: '', connected: false }),
+        } },
+        { provide: TaxiiService, useValue: { servers$: new BehaviorSubject([]) } },
+      ],
+    });
+    TestBed.inject(SettingsService).reset();
+    service = TestBed.inject(ImplementationService);
+  });
+
+  afterEach(() => {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(SETTINGS_KEY);
+  });
+
+  it('previewStatusCsv delegates to the parser; applyStatusCsv writes only matched rows', () => {
+    const preview = service.previewStatusCsv('mitigation_id,status\nM1036,implemented\nT1059,planned', DOMAIN);
+    expect(preview.matched.length).toBe(1);
+    expect(preview.unmatched.length).toBe(1);   // the T-id row
+    expect(service.applyStatusCsv(preview)).toBe(1);
+    expect(service.getStatus(AAA)).toBe('implemented');
+    expect(service.getStatusMap().size).toBe(1);   // the T-id row wrote nothing
+  });
+
+  it('the settings reset control is two-step and empties the status map and status$', () => {
+    let live: Map<string, ImplStatus> = new Map();
+    service.status$.subscribe((m) => (live = m));
+    service.setStatus(AAA, 'implemented');
+    const c = TestBed.createComponent(SettingsPanelComponent).componentInstance;
+
+    c.resetImplementationStatuses();                  // first click: arm the confirm only
+    expect(c.confirmingResetImpl).toBeTrue();
+    expect(service.getStatusMap().size).toBe(1);      // nothing cleared yet
+
+    c.resetImplementationStatuses();                  // second click: reset
+    expect(c.confirmingResetImpl).toBeFalse();
+    expect(service.getStatusMap().size).toBe(0);
+    expect(live.size).toBe(0);                        // status$ emitted the empty map
+  });
+
+  it('round-trips the REAL Settings export and overwrites only the named mitigation (R8)', async () => {
+    let live: Map<string, ImplStatus> = new Map();
+    service.status$.subscribe((m) => (live = m));
+    const invariant = () => expect(service.getStatusMap()).toBe(live);   // getStatusMap() === status$ value
+
+    service.setStatus(AAA, 'implemented');
+    service.setStatus(BBB, 'implemented');
+    invariant();
+
+    // Export through the real settings-panel code; capture the Blob it hands to the download.
+    const fixture = TestBed.createComponent(SettingsPanelComponent);
+    let captured: Blob | null = null;
+    spyOn(URL, 'createObjectURL').and.callFake((b: Blob) => { captured = b; return 'blob:fake'; });
+    spyOn(URL, 'revokeObjectURL');
+    fixture.componentInstance.exportImplCsv();
+    expect(captured).withContext('export produced a CSV blob').toBeTruthy();
+    const csv = await (captured as unknown as Blob).text();
+    expect(csv.split(/\r?\n/)[0]).toBe('Mitigation ID,Mitigation Name,Status,Mapped Techniques');
+
+    // Change one status, then re-import the original export: that one reverts.
+    service.setStatus(AAA, 'planned');
+    invariant();
+    const preview = service.previewStatusCsv(csv, DOMAIN);
+    expect(preview.matched.length).toBe(2);   // both tracked rows matched (fixes the zero-row bug)
+    expect(preview.unmatched.length).toBe(0);
+    expect(preview.errors).toBe(0);
+    service.applyStatusCsv(preview);
+    expect(service.getStatus(AAA)).toBe('implemented');
+    expect(service.getStatus(BBB)).toBe('implemented');
+    invariant();
+
+    // setStatus(id, null) after an import clears exactly that mitigation.
+    service.setStatus(AAA, null);
+    expect(service.getStatus(AAA)).toBeNull();
+    expect(service.getStatus(BBB)).toBe('implemented');
+    invariant();
+
+    // resetAll() after an import leaves an empty map.
+    service.resetAll();
+    expect(service.getStatusMap().size).toBe(0);
+    invariant();
+  });
+});
+
+// The Export Hub "Implementation Plan" export (export-actions.service.ts) run through
+// its REAL code and fed back to the parser, so a header drift there fails this spec.
+describe('ImplementationService CSV import: real Implementation Plan export round-trip (P2-06)', () => {
+  const AAA = 'course-of-action--aaa';   // M1036
+  const BBB = 'course-of-action--bbb';   // M1015
+  function mit(id: string, attackId: string, name: string): Mitigation {
+    return { id, attackId, name, description: '', url: '' };
+  }
+  const DOMAIN = {
+    name: 'Enterprise ATT&CK',
+    mitigations: [mit(AAA, 'M1036', 'Account Use Policies'), mit(BBB, 'M1015', 'Active Directory Configuration')],
+    techniquesByMitigation: new Map(),
+    mitigationsByTechnique: new Map(),
+  } as unknown as Domain;
+
+  let service: ImplementationService;
+  let exportActions: ExportActionsService;
+  let captured: string | null;
+
+  beforeEach(() => {
+    localStorage.removeItem(STORAGE_KEY);
+    captured = null;
+    const domain$ = new BehaviorSubject<Domain | null>(DOMAIN);
+    const currentDomain$ = new BehaviorSubject('enterprise');
+    const emptyDoc = { notes: '', owner: '', dueDate: '', controlRefs: '', evidenceUrl: '' };
+    const stub = {};
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: DataService, useValue: { domain$, currentDomain$, getCurrentDomain: () => domain$.value, getCurrentAttackDomain: () => 'enterprise' } },
+        { provide: DocumentationService, useValue: { getMitDoc: () => emptyDoc } },
+        { provide: BrowserFileService, useValue: { downloadText: (c: string) => { captured = c; } } },
+        { provide: FilterService, useValue: stub },
+        { provide: MatrixExportService, useValue: stub },
+        { provide: HtmlReportService, useValue: stub },
+        { provide: ReportConfigService, useValue: stub },
+        { provide: PdfReportService, useValue: stub },
+        { provide: XlsxExportService, useValue: stub },
+        { provide: CustomMitigationService, useValue: stub },
+        { provide: TimelineService, useValue: stub },
+        { provide: NavigatorLayerService, useValue: stub },
+        { provide: AnnotationService, useValue: stub },
+        { provide: UserLayerService, useValue: stub },
+      ],
+    });
+    service = TestBed.inject(ImplementationService);
+    exportActions = TestBed.inject(ExportActionsService);
+  });
+
+  afterEach(() => localStorage.removeItem(STORAGE_KEY));
+
+  it('round-trips the REAL Implementation Plan export: both tracked rows matched, 0 unmatched, 0 errors', () => {
+    service.setStatus(AAA, 'implemented');
+    service.setStatus(BBB, 'planned');
+
+    exportActions.exportImplPlanCsv();
+    expect(captured).withContext('plan export produced a CSV').toBeTruthy();
+    expect(captured!.split(/\r?\n/)[0]).toBe(
+      'Mitigation ID,Mitigation Name,Status,Owner,Target Date,Security Controls,Evidence URL,Mapped Techniques,Unique Coverage,Notes',
+    );
+
+    const preview = service.previewStatusCsv(captured!, DOMAIN);
+    expect(preview.matched.length).toBe(2);
+    expect(preview.unmatched.length).toBe(0);
+    expect(preview.errors).toBe(0);
   });
 });

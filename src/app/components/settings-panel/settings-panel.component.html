@@ -421,13 +421,27 @@
               >
                 📥 Export Implementation CSV
               </button>
+              @if (!confirmingResetImpl) {
+                <button
+                  class="btn-action btn-clear-snapshots"
+                  (click)="resetImplementationStatuses()"
+                  title="Clear every saved implementation status"
+                >
+                  🗑️ Reset implementation statuses
+                </button>
+              } @else {
+                <button class="btn-action btn-clear-snapshots" (click)="resetImplementationStatuses()">
+                  Confirm reset
+                </button>
+                <button class="btn-action" (click)="cancelResetImpl()">Cancel</button>
+              }
             </div>
 
             <div class="data-section-divider"></div>
 
             <div class="data-section-header">Bulk Import Status</div>
             <p class="section-desc" style="margin: 4px 0 8px; font-size: 0.8rem; opacity: 0.7;">
-              Upload a CSV with columns <code>technique_id,status</code>. Valid status values: implemented, in-progress, planned, not-started.
+              Upload a CSV with a header row. The app's exported <code>Mitigation ID,Mitigation Name,Status,…</code> files re-import, as do <code>mitigation_id,status</code> and the legacy <code>technique_id,status</code>; mitigation ATT&amp;CK ids (Mxxxx) are matched to the loaded domain. Valid status values: implemented, in-progress, planned, not-started. Technique ids are not accepted here — confirm per technique in the drawer. The import overwrites the status of the mitigations it names; the preview shows what will change before you apply it.
             </p>
             <div class="data-actions">
               <label class="btn-action btn-refresh" style="cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
@@ -440,18 +454,42 @@
                 />
               </label>
             </div>
-            @if (csvImportResult) {
+            @if (csvPreview) {
               <div class="data-info-grid" style="margin-top: 8px;">
                 <div class="data-info-item">
-                  <span class="data-info-label">Imported</span>
-                  <span class="data-info-value" style="color: #4caf50;">{{ csvImportResult.imported }} statuses</span>
+                  <span class="data-info-label">Matched</span>
+                  <span class="data-info-value" style="color: #4caf50;">{{ csvPreview.matched.length }} mitigations</span>
                 </div>
-                @if (csvImportResult.errors > 0) {
+                <div class="data-info-item">
+                  <span class="data-info-label">Unmatched</span>
+                  <span class="data-info-value" style="color: #ff9800;">{{ csvPreview.unmatched.length }} rows</span>
+                </div>
+                @if (csvPreview.errors > 0) {
                   <div class="data-info-item">
                     <span class="data-info-label">Errors</span>
-                    <span class="data-info-value" style="color: #f44336;">{{ csvImportResult.errors }} rows skipped</span>
+                    <span class="data-info-value" style="color: #f44336;">{{ csvPreview.errors }} rows</span>
                   </div>
                 }
+              </div>
+              @if (csvPreview.unmatched.length > 0) {
+                <ul class="csv-unmatched" style="margin: 6px 0 0; padding-left: 18px; font-size: 0.78rem; opacity: 0.85;">
+                  @for (u of csvPreview.unmatched; track $index) {
+                    <li>Row {{ u.row }}: <code>{{ u.id }}</code> — {{ u.reason }}</li>
+                  }
+                </ul>
+              }
+              <div class="data-actions" style="margin-top: 8px;">
+                <button type="button" class="btn-action btn-refresh" [disabled]="csvPreview.matched.length === 0" (click)="applyCsvPreview()">
+                  Apply {{ csvPreview.matched.length }} status{{ csvPreview.matched.length === 1 ? '' : 'es' }}
+                </button>
+              </div>
+            }
+            @if (csvImportApplied !== null) {
+              <div class="data-info-grid" style="margin-top: 8px;">
+                <div class="data-info-item">
+                  <span class="data-info-label">Applied</span>
+                  <span class="data-info-value" style="color: #4caf50;">{{ csvImportApplied }} statuses updated</span>
+                </div>
               </div>
             }
             @if (csvImportError) {
