@@ -50,6 +50,52 @@ export interface AppSettings {
     metricBadge: boolean;   // the mode-gated d3fend/atomic/cri badge
     noteDot: boolean; annotationDot: boolean; watchIndicator: boolean;
   };
+
+  // Posture rules (Phase 2 design §6, §7; P2-05). D16: a mitigation mapped to
+  // more than `mitigationBreadthThreshold` techniques in the loaded domain
+  // gives partial marks only. D10: how many days a proof stays fresh, per
+  // scope. PostureService recomputes through a computed over these settings.
+  posture: PostureSettings;
+}
+
+/** AppSettings.posture: the D16 threshold and the D10 proof windows (days). */
+export interface PostureSettings {
+  mitigationBreadthThreshold: number;   // integer 1-500, default 15
+  decayDays: { range: number; production: number; 'own-run': number };   // integers 1-3650
+}
+
+/** The editable bounds of the posture rules (the settings panel uses the same ones). */
+export const POSTURE_LIMITS = {
+  threshold: { min: 1, max: 500 },
+  decayDays: { min: 1, max: 3650 },
+} as const;
+
+const DEFAULT_POSTURE: PostureSettings = {
+  mitigationBreadthThreshold: 15,
+  decayDays: { range: 90, production: 180, 'own-run': 90 },
+};
+
+function intIn(x: unknown, min: number, max: number): x is number {
+  return typeof x === 'number' && Number.isInteger(x) && x >= min && x <= max;
+}
+
+/**
+ * Deep-merge stored posture settings over the defaults (§6). An older stored
+ * settings object has none and gains the defaults; a stored value that is not
+ * an integer in range (a hand edit, an imported bundle) falls back to its
+ * default alone.
+ */
+export function mergePostureSettings(stored: unknown): PostureSettings {
+  const p = (typeof stored === 'object' && stored !== null ? stored : {}) as Record<string, unknown>;
+  const d = (typeof p['decayDays'] === 'object' && p['decayDays'] !== null ? p['decayDays'] : {}) as Record<string, unknown>;
+  const day = (k: keyof PostureSettings['decayDays']): number =>
+    intIn(d[k], POSTURE_LIMITS.decayDays.min, POSTURE_LIMITS.decayDays.max) ? d[k] as number : DEFAULT_POSTURE.decayDays[k];
+  return {
+    mitigationBreadthThreshold: intIn(p['mitigationBreadthThreshold'], POSTURE_LIMITS.threshold.min, POSTURE_LIMITS.threshold.max)
+      ? p['mitigationBreadthThreshold'] as number
+      : DEFAULT_POSTURE.mitigationBreadthThreshold,
+    decayDays: { range: day('range'), production: day('production'), 'own-run': day('own-run') },
+  };
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -71,6 +117,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     metricBadge: true,
     noteDot: true, annotationDot: true, watchIndicator: true,
   },
+  posture: DEFAULT_POSTURE,
 };
 
 @Injectable({ providedIn: 'root' })
@@ -106,6 +153,7 @@ export class SettingsService {
       ...this.settingsSubject.value,
       ...partial,
     };
+    if (partial.posture !== undefined) merged.posture = mergePostureSettings(partial.posture);
     this.save(merged);
     this.settingsSubject.next(merged);
   }
@@ -122,6 +170,7 @@ export class SettingsService {
     const resetSettings: AppSettings = {
       ...DEFAULT_SETTINGS,
       attackVersion: this.settingsSubject.value.attackVersion,
+      posture: mergePostureSettings(undefined),
     };
     this.save(resetSettings);
     this.settingsSubject.next(resetSettings);
@@ -133,7 +182,7 @@ export class SettingsService {
       const sessionKey = sessionStorage.getItem(this.STORAGE_KEY + '-key') ?? '';
       const sessionProxyToken = sessionStorage.getItem(this.STORAGE_KEY + '-proxy-token') ?? '';
       if (!raw) {
-        return { ...DEFAULT_SETTINGS, nvdApiKey: sessionKey, proxyToken: sessionProxyToken };
+        return { ...DEFAULT_SETTINGS, nvdApiKey: sessionKey, proxyToken: sessionProxyToken, posture: mergePostureSettings(undefined) };
       }
       // 'scoringWeights' is a retired key (E1.5): drop it so it is never saved again.
       const { scoringWeights: _retired, ...parsed } = JSON.parse(raw) as Partial<AppSettings> & { scoringWeights?: unknown };
@@ -146,9 +195,10 @@ export class SettingsService {
           ...DEFAULT_SETTINGS.cellDisplay,
           ...(parsed.cellDisplay ?? {}),
         },
+        posture: mergePostureSettings(parsed.posture),
       };
     } catch {
-      return { ...DEFAULT_SETTINGS };
+      return { ...DEFAULT_SETTINGS, posture: mergePostureSettings(undefined) };
     }
   }
 
