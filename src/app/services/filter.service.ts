@@ -381,6 +381,8 @@ export class FilterService {
           // and says which domain to add. Skipped if the user selected meanwhile.
           if (techId && this.pendingUrlTechId === techId) {
             this.pendingUrlTechId = null;
+            // The resolver is the identity until a domain loads; DataService
+            // subscribed first, so it already holds THIS domain's map here.
             const liveId = this.attackIdResolver.resolve(techId);
             const technique = domain.techniques.find((t: Technique) => t.attackId === liveId);
             if (technique) {
