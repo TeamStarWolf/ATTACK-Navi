@@ -3,10 +3,10 @@
 <div class="cov-breakdown">
   <div class="cov-heads">
     <div class="cov-head">
-      <div class="cov-head-pct enriched">{{ enrichedPct }}%</div>
+      <div class="cov-head-pct enriched" data-testid="cov-known-pct">{{ mappedPct }}%</div>
       <div class="cov-head-body">
-        <div class="cov-head-label">Enriched</div>
-        <div class="cov-head-sub">{{ enrichedCount }}/{{ total }} techniques carry ≥1 framework signal</div>
+        <div class="cov-head-label">{{ knownLabel }}</div>
+        <div class="cov-head-sub" data-testid="cov-known-sub"><span data-posture="known-mapped">{{ mappedCount }}</span>/<span data-posture="known-total">{{ total }}</span> techniques have ≥1 defensive reference input mapped</div>
       </div>
     </div>
     <div class="cov-head">
@@ -19,9 +19,10 @@
   </div>
 
   <p class="cov-note">
-    <strong>Enriched</strong> is the cross-framework context assembled in the workbench &mdash; reference
-    availability, not deployed defense. <strong>Has mapped countermeasure</strong> counts techniques with at least one
-    mitigation, detection, control or D3FEND countermeasure mapped. Neither asserts that a control is live in your environment.
+    <strong>{{ knownLabel }}</strong> counts techniques with at least one defensive reference input mapped (mitigation,
+    detection content, control mapping, D3FEND countermeasure or Atomic test); threat-intel and CVE links are not inputs.
+    <strong>Has mapped countermeasure</strong> counts the same without Atomic tests. Both are reference availability,
+    not deployed defense: neither asserts that a control is live in your environment.
   </p>
 
   <div class="cov-rows">

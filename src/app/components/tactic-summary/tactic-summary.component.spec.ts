@@ -5,6 +5,7 @@ import { BehaviorSubject } from 'rxjs';
 import { TacticSummaryComponent } from './tactic-summary.component';
 import { ImplementationService } from '../../services/implementation.service';
 import { EnrichmentService } from '../../services/enrichment.service';
+import { makePostureStub, postureStubProvider } from '../../testing/posture-stub';
 
 describe('TacticSummaryComponent', () => {
   let component: TacticSummaryComponent;
@@ -21,6 +22,8 @@ describe('TacticSummaryComponent', () => {
             mappedCount: () => ({ total: 0, mapped: 0, pct: 0 }),
             referenceSignalCount: () => 0,
         }},
+        // P2-08: the Known count and posture lines read PostureService.rollup.
+        postureStubProvider(makePostureStub(() => null)),
       ],
     });
     fixture = TestBed.createComponent(TacticSummaryComponent);

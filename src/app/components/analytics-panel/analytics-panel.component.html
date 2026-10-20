@@ -32,6 +32,16 @@
             <div class="stat-sub">{{ totalTechs - mappedTechs }} unmapped · {{ mitigationPct }}% with a mapped mitigation</div>
           </div>
 
+          <!-- Posture (P2-08): PostureService.rollup() over parent techniques, only with data of yours recorded -->
+          @if (ownerWords()) {
+            @let p = postureOverall();
+            <div class="stat-card upgrade-section-block" data-testid="analytics-posture">
+              <div class="stat-big"><span data-posture="covered">{{ p.covered }}</span> <span class="stat-denom">/ <span data-posture="assessable">{{ p.assessable }}</span> assessable</span></div>
+              <div class="stat-label">{{ labels.covered }}</div>
+              <div class="stat-sub">{{ labels.partial }}: <span data-posture="partial">{{ p.partial }}</span> · {{ labels.proven }}: <span data-posture="proven">{{ p.proven }}</span> · {{ labels.stale }}: <span data-posture="stale">{{ p.stale }}</span></div>
+            </div>
+          }
+
           <!-- KEV Exposure -->
           <div class="stat-card upgrade-section-block" [class.kev-alert]="kevExposureCount > 0">
             <div class="stat-big kev-val">{{ kevExposureCount }}</div>

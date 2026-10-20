@@ -16,9 +16,24 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { DataService } from '../../services/data.service';
 import { PostureService } from '../../services/posture.service';
 import { tallyPosture } from '../../models/posture/derive-posture';
-import { PROVEN } from '../../models/posture/posture-vocabulary';
+import { PROVEN, postureBadge } from '../../models/posture/posture-vocabulary';
 
 export type PostureCardScope = 'all' | 'threat-relevant';
+
+/**
+ * The row labels of a posture line on the Known surfaces that add one under
+ * ownerWords() (P2-08: tactic-summary, analytics, timeline, roadmap). The rung
+ * words come from the vocabulary module: Known and Covered through
+ * postureBadge, Proven from PROVEN; 'partial' and 'stale' are the sub-state
+ * words the card uses.
+ */
+export const POSTURE_LINE_LABELS = {
+  known: postureBadge({ bucket: 'known', qualifiers: [], proofScope: null, covered: [] }),
+  covered: postureBadge({ bucket: 'covered', qualifiers: ['self-attested'], proofScope: null, covered: [] }),
+  partial: 'partial',
+  proven: PROVEN,
+  stale: 'stale',
+} as const;
 
 /**
  * The numbers the card shows. `mapped` and `total` are the Known numbers;

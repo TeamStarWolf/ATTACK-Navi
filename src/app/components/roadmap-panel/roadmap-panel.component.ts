@@ -1,13 +1,16 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, Signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { DataService } from '../../services/data.service';
 import { ImplementationService, ImplStatus, IMPL_STATUS_LABELS, IMPL_STATUS_COLORS } from '../../services/implementation.service';
 import { AttackCveService } from '../../services/attack-cve.service';
-import { EnrichmentService, MappedCount } from '../../services/enrichment.service';
+import type { MappedCount } from '../../services/enrichment.service';
+import { PostureService } from '../../services/posture.service';
+import type { PostureTally } from '../../models/posture/posture.types';
+import { POSTURE_LINE_LABELS } from '../posture-card/posture-card.component';
 import { Mitigation } from '../../models/mitigation';
 import { Domain } from '../../models/domain';
 import { Technique } from '../../models/technique';
@@ -86,11 +89,16 @@ export class RoadmapPanelComponent implements OnInit, OnDestroy {
 
   /**
    * Known tier ('mapped', E1.7): parent techniques with >=1 defensive reference
-   * input, from the same EnrichmentService.mappedRollup() the other summary
-   * surfaces show. P2 seam: PostureService replaces it with Known / Covered /
-   * Proven.
+   * input, from PostureService.rollup() (P2-08), whose Known numbers are the
+   * mappedRollup the other summary surfaces show.
    */
   mapped: MappedCount = { total: 0, mapped: 0, pct: 0 };
+
+  private readonly posture = inject(PostureService);
+  readonly ownerWords: Signal<boolean> = this.posture.ownerWords;
+  /** The rollup's Covered / partial / Proven / stale over parent techniques, shown only under ownerWords(). */
+  readonly postureOverall: Signal<PostureTally> = computed(() => this.posture.rollup().overall);
+  readonly labels = POSTURE_LINE_LABELS;
 
   autoRoadmap: AutoRoadmapPhase[] | null = null;
   generatingRoadmap = false;
@@ -100,7 +108,6 @@ export class RoadmapPanelComponent implements OnInit, OnDestroy {
     private dataService: DataService,
     private implService: ImplementationService,
     private attackCveService: AttackCveService,
-    private enrichment: EnrichmentService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -119,7 +126,8 @@ export class RoadmapPanelComponent implements OnInit, OnDestroy {
 
   private buildRoadmap(): void {
     if (!this.domain) return;
-    this.mapped = this.enrichment.mappedRollup(this.domain).overall;
+    const known = this.posture.rollup().overall;
+    this.mapped = { total: known.total, mapped: known.mapped, pct: known.pct };
 
     const groupsByTech = new Map<string, number>();
     for (const t of this.domain.techniques) {

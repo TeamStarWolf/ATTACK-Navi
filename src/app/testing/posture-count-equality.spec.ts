@@ -20,8 +20,10 @@
 // Every count surface must then show the same Known, Covered, partial, Proven
 // and stale numbers, subs off: the CTEM posture card (the Home stand-in), the
 // Validation panel summary (the Detect > Coverage stand-in), the executive
-// report split (HTML and PDF inputs, and the Report Builder) and stats-bar.
-// The surfaces are read from the DOM through their data-posture attributes.
+// report split (HTML and PDF inputs, and the Report Builder), stats-bar and,
+// since P2-08 (E2.1-d2), the dashboard's Mapped Summary widget, which mounts
+// the same posture card. The surfaces are read from the DOM through their
+// data-posture attributes.
 // Denominators (R16, §2.2): Known divides by `total`, every Covered share by
 // `assessable` (total minus excluded); each surface renders its Covered
 // denominator as data-posture="assessable" and its share as data-share-pct.
@@ -62,6 +64,7 @@ import { CtemPageComponent } from '../pages/exposure/ctem-page.component';
 import { ValidationPanelComponent } from '../components/validation-panel/validation-panel.component';
 import { ReportPanelComponent } from '../components/report-panel/report-panel.component';
 import { StatsBarComponent } from '../components/stats-bar/stats-bar.component';
+import { DashboardPanelComponent } from '../components/dashboard-panel/dashboard-panel.component';
 import { ActorProfilePanelComponent, type TechMark } from '../components/actor-profile-panel/actor-profile-panel.component';
 import { assetExposure, parseFixtureDomain, resetBrowserState, signal as fixtureSignal, signalStubProviders } from './lens-harness';
 
@@ -235,6 +238,7 @@ describe('[AC] Posture count equality across the count surfaces (P2-07, E2.1-d1)
     htmlReport: Shown;
     pdfReport: Shown;
     statsBar: Shown;
+    dashboard: Shown;
     words: Record<string, string>;
     htmlDoc: Document;
     pdfDoc: Document;
@@ -257,6 +261,12 @@ describe('[AC] Posture count equality across the count surfaces (P2-07, E2.1-d1)
     const stats = TestBed.createComponent(StatsBarComponent);
     stats.componentRef.setInput('domain', domain);
     stats.detectChanges();
+
+    // P2-08: the dashboard's Mapped Summary widget mounts the posture card.
+    const dash = create(DashboardPanelComponent);
+    const widget = dash.nativeElement.querySelector('.widget-coverage-summary') as HTMLElement;
+    const dashCard = widget?.querySelector('app-posture-card') as HTMLElement;
+    expect(dashCard).withContext('the Mapped Summary widget mounts the posture card').not.toBeNull();
 
     const statusMap = TestBed.inject(ImplementationService).getStatusMap();
     const html = (TestBed.inject(HtmlReportService) as unknown as {
@@ -281,11 +291,13 @@ describe('[AC] Posture count equality across the count surfaces (P2-07, E2.1-d1)
       htmlReport: htmlShown,
       pdfReport: readShown(pdfDoc.querySelector('.summary-grid')!),
       statsBar: readShown(stats.nativeElement),
+      dashboard: readShown(dashCard),
       words: {
         ctem: renderedWords(ctem.nativeElement),
         validation: renderedWords(validation.nativeElement),
         reportBuilder: renderedWords(builder.nativeElement),
         statsBar: renderedWords(stats.nativeElement),
+        dashboard: renderedWords(widget),
         htmlReport: renderedWords(htmlDoc.body),
         pdfReport: renderedWords(pdfDoc.body),
       },
@@ -296,7 +308,7 @@ describe('[AC] Posture count equality across the count surfaces (P2-07, E2.1-d1)
     };
   }
 
-  const SURFACES = ['ctem', 'validation', 'reportBuilder', 'htmlReport', 'pdfReport', 'statsBar'] as const;
+  const SURFACES = ['ctem', 'validation', 'reportBuilder', 'htmlReport', 'pdfReport', 'statsBar', 'dashboard'] as const;
 
   // ── Fresh profile ─────────────────────────────────────────────────────────
   describe('fresh profile', () => {
@@ -382,7 +394,7 @@ describe('[AC] Posture count equality across the count surfaces (P2-07, E2.1-d1)
       expect(posture.ownerWords()).toBeTrue();
     });
 
-    it('[AC] identical Known, Covered, partial, Proven and stale on the card, the Validation summary, the report split and stats-bar', () => {
+    it('[AC] identical Known, Covered, partial, Proven and stale on the card, the Validation summary, the report split, stats-bar and the dashboard widget', () => {
       const o = posture.rollup().overall;
       const expected: Shown = {
         mapped: o.mapped, total: o.total, assessable: o.assessable, covered: o.covered, partial: o.partial, proven: o.proven, stale: o.stale,

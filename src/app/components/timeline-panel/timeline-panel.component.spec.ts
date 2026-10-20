@@ -6,6 +6,7 @@ import { TimelinePanelComponent } from './timeline-panel.component';
 import { DataService } from '../../services/data.service';
 import { ImplementationService } from '../../services/implementation.service';
 import { TimelineService } from '../../services/timeline.service';
+import { makePostureStub, postureStubProvider } from '../../testing/posture-stub';
 
 describe('TimelinePanelComponent', () => {
   let component: TimelinePanelComponent;
@@ -18,6 +19,8 @@ describe('TimelinePanelComponent', () => {
         { provide: DataService, useValue: { domain$: new BehaviorSubject(null) }},
         { provide: ImplementationService, useValue: { status$: new BehaviorSubject(new Map()) }},
         { provide: TimelineService, useValue: { snapshots$: new BehaviorSubject([]), getAll: () => [] }},
+        // P2-08: snapshots and the posture line read PostureService.rollup.
+        postureStubProvider(makePostureStub(() => null)),
       ],
     });
     fixture = TestBed.createComponent(TimelinePanelComponent);

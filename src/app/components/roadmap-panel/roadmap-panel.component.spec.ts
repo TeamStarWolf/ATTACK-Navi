@@ -7,6 +7,7 @@ import { DataService } from '../../services/data.service';
 import { ImplementationService } from '../../services/implementation.service';
 import { AttackCveService } from '../../services/attack-cve.service';
 import { EnrichmentService } from '../../services/enrichment.service';
+import { makePostureStub, postureStubProvider } from '../../testing/posture-stub';
 
 describe('RoadmapPanelComponent', () => {
   let component: RoadmapPanelComponent;
@@ -20,6 +21,8 @@ describe('RoadmapPanelComponent', () => {
         { provide: ImplementationService, useValue: { status$: new BehaviorSubject(new Map()) }},
         { provide: AttackCveService, useValue: { getCvesForTechnique: () => [] } },
         { provide: EnrichmentService, useValue: { mappedRollup: () => ({ overall: { total: 0, mapped: 0, pct: 0 }, byTactic: [] }) } },
+        // P2-08: the Known count and the posture line read PostureService.rollup.
+        postureStubProvider(makePostureStub(() => null)),
       ],
     });
     fixture = TestBed.createComponent(RoadmapPanelComponent);

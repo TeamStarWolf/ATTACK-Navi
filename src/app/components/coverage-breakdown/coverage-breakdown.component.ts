@@ -4,6 +4,7 @@ import { ChangeDetectionStrategy, Component, Input, OnChanges } from '@angular/c
 import { CommonModule } from '@angular/common';
 import { Domain } from '../../models/domain';
 import { EnrichmentService, EnrichmentTotals } from '../../services/enrichment.service';
+import { POSTURE_LINE_LABELS } from '../posture-card/posture-card.component';
 
 interface CoverageRow {
   label: string;
@@ -16,11 +17,13 @@ interface CoverageRow {
 /**
  * Multi-framework coverage readout for the Status workspace.
  *
- * Deliberately separates two numbers that a single "% coverage" headline used to
- * conflate: ENRICHED (a technique carries ≥1 cross-framework signal — analytical
- * completeness of the workbench) vs DEFENDED (it has a mitigation, detection,
- * control, or D3FEND countermeasure — the honest posture signal). A per-framework
- * grid then shows each contributor; a new framework is one more row, sourced from
+ * Two Known-rung headlines: Known 'mapped' (≥1 defensive reference input:
+ * mitigation, detection content, control mapping, D3FEND countermeasure or
+ * Atomic test; the same EnrichmentService.mappedRollup count every summary
+ * surface shows, P2-08) and "Has mapped countermeasure" (the same without
+ * Atomic tests). Threat-intel and CVE links feed neither; P2-08 retired the
+ * old "Enriched" headline, which counted them. A per-framework grid then shows
+ * each contributor; a new framework is one more row, sourced from
  * EnrichmentService.totals() — no headline math to touch.
  */
 @Component({
@@ -34,9 +37,12 @@ interface CoverageRow {
 export class CoverageBreakdownComponent implements OnChanges {
   @Input() domain!: Domain;
 
+  /** 'Known: mapped', composed from the vocabulary module. */
+  readonly knownLabel = POSTURE_LINE_LABELS.known;
+
   total = 0;
-  enrichedCount = 0;
-  enrichedPct = 0;
+  mappedCount = 0;
+  mappedPct = 0;
   defendedCount = 0;
   defendedPct = 0;
   rows: CoverageRow[] = [];
@@ -56,8 +62,10 @@ export class CoverageBreakdownComponent implements OnChanges {
     const parents = this.domain.techniques.filter((t) => !t.isSubtechnique);
     const t: EnrichmentTotals = this.enrichment.totals(parents, this.domain);
     this.total = t.total;
-    this.enrichedCount = t.enriched;
-    this.enrichedPct = this.pct(t.enriched, t.total);
+    // Known 'mapped' over parent techniques: the one rollup's Known number.
+    const known = this.enrichment.mappedRollup(this.domain).overall;
+    this.mappedCount = known.mapped;
+    this.mappedPct = known.pct;
     this.defendedCount = t.defended;
     this.defendedPct = this.pct(t.defended, t.total);
     // Order: defensive contributors first (they feed "Has mapped countermeasure"), then
