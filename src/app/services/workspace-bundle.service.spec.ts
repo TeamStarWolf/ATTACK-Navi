@@ -62,6 +62,9 @@ describe('WorkspaceBundleService', () => {
   it('bundles the v2 validation run store (P2-02)', () => {
     expect(WorkspaceBundleService.BUNDLED_KEYS).toContain('navi.v2.validation-runs');
     expect(WorkspaceBundleService.BUNDLED_KEYS).toContain('attacknavi.validation-runs.v1');
+    // P2-03's shared threat profile key stays bundled alongside the run store (design §10.5 merge order).
+    expect(WorkspaceBundleService.BUNDLED_KEYS).toContain('navi.v2.threat-profile');
+    expect(new Set(WorkspaceBundleService.BUNDLED_KEYS).size).toBe(WorkspaceBundleService.BUNDLED_KEYS.length);
   });
 
   it('importBundle returns the written keys, v2 run store included (P2-02)', () => {
