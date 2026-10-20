@@ -56,6 +56,27 @@ export function isAttackDomain(value: string | null | undefined): value is Attac
 }
 
 /**
+ * The ids a `tech` URL param may carry (#118's pattern: anything else is ignored):
+ * ATT&CK Enterprise/ICS/Mobile techniques and sub-techniques (T1059, T1059.001,
+ * T0807), F3 ids (F1001) and ATLAS ids (AML.T0051, AML.T0051.000). Case-insensitive;
+ * applyUrlState trims first and rejects anything longer than URL_TECH_ID_MAX_LENGTH.
+ */
+export const URL_TECH_ID_PATTERN = /^(?:T\d{4}|F\d{4}|AML\.T\d{4})(?:\.\d{3})?$/i;
+export const URL_TECH_ID_MAX_LENGTH = 16;
+
+/**
+ * Validates and normalises the raw `tech` URL param: the trimmed, upper-cased id
+ * when it matches URL_TECH_ID_PATTERN, else null. A null is ignored silently, so a
+ * crafted link can never put its own text in front of the user.
+ */
+export function normalizeUrlTechId(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const id = value.trim();
+  if (!id || id.length > URL_TECH_ID_MAX_LENGTH || !URL_TECH_ID_PATTERN.test(id)) return null;
+  return id.toUpperCase();
+}
+
+/**
  * The domain a technique id belongs to when its id convention says so without
  * loading another bundle: ICS ids are T08xx, F3's own ids are Fxxxx. Any other id
  * is ambiguous (Enterprise, Mobile and v19 ICS share the T1xxx range), so null.
@@ -66,7 +87,7 @@ export function domainHintForAttackId(attackId: string): AttackDomain | null {
   return null;
 }
 
-/** The toast a `tech` link raises when its id is not in the loaded domain. */
+/** The toast a `tech` link raises when its id is not in the loaded domain. Takes the normalised id (normalizeUrlTechId), never the raw param. */
 export function techNotInDomainMessage(attackId: string, domain: AttackDomain): string {
   const where = `${attackId} is not in ${ATTACK_DOMAIN_NAMES[domain]}.`;
   const hint = domainHintForAttackId(attackId);
@@ -349,7 +370,10 @@ export class FilterService {
       const swAttackIds = (params.get('sw') ?? '').split(',').filter(Boolean);
       const campAttackIds = (params.get('camp') ?? '').split(',').filter(Boolean);
 
-      const techId = params.get('tech') ?? '';
+      // Validated before any use: an id outside URL_TECH_ID_PATTERN is ignored
+      // silently (no selection, no toast), and only the normalised id is ever
+      // echoed, so a crafted link cannot put arbitrary text in the notice.
+      const techId = normalizeUrlTechId(params.get('tech')) ?? '';
       this.pendingUrlTechId = techId || null;
 
       if (mitIds.length || grpIds.length || swAttackIds.length || campAttackIds.length || techId) {
