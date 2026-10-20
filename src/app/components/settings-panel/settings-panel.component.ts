@@ -13,6 +13,7 @@ import { Subscription } from 'rxjs';
 import { SettingsService, AppSettings, DEFAULT_SETTINGS, POSTURE_LIMITS, PostureSettings } from '../../services/settings.service';
 import { DataService } from '../../services/data.service';
 import { ImplementationService } from '../../services/implementation.service';
+import { CsvPreview } from '../../models/impl-csv';
 import { TimelineService } from '../../services/timeline.service';
 import { OpenCtiService } from '../../services/opencti.service';
 import { MispService } from '../../services/misp.service';
@@ -102,7 +103,8 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
   ];
 
   // Bulk CSV import state
-  csvImportResult: { imported: number; errors: number } | null = null;
+  csvPreview: CsvPreview | null = null;
+  csvImportApplied: number | null = null;
   csvImportError = '';
 
   private subs = new Subscription();
@@ -652,15 +654,24 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
     const file = input.files?.[0];
     if (!file) return;
 
-    this.csvImportResult = null;
+    this.csvPreview = null;
+    this.csvImportApplied = null;
     this.csvImportError = '';
     this.cdr.markForCheck();
+
+    const domain = this.dataService.getCurrentDomain();
+    if (!domain) {
+      this.csvImportError = 'Load a domain before importing.';
+      this.cdr.markForCheck();
+      input.value = '';
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = () => {
       try {
         const text = reader.result as string;
-        this.csvImportResult = this.implService.importStatusCsv(text);
+        this.csvPreview = this.implService.previewStatusCsv(text, domain);
         this.cdr.markForCheck();
       } catch (e: any) {
         this.csvImportError = e?.message ?? 'Failed to parse CSV file';
@@ -675,5 +686,13 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
 
     // Reset file input so the same file can be re-selected
     input.value = '';
+  }
+
+  /** Commit the previewed import: writes only the matched mitigations' statuses. */
+  applyCsvPreview(): void {
+    if (!this.csvPreview) return;
+    this.csvImportApplied = this.implService.applyStatusCsv(this.csvPreview);
+    this.csvPreview = null;
+    this.cdr.markForCheck();
   }
 }
