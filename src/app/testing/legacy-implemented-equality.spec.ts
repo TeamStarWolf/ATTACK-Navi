@@ -12,10 +12,17 @@
 //   - stats-bar (stats-bar.component.ts recompute: parents reached by an
 //     implemented mitigation; it exposes only the count);
 //   - the report split (report-split.ts isTechniqueImplemented / computeReportSplit);
-//   - actor-profile (actor-profile-panel.component.ts getTechCoverage, which
-//     also reaches sub-techniques; restricted to parents here).
+//   - actor-profile, two legs:
+//       * selectGroup (actor-profile-panel.component.ts:88-98, the coveredIds
+//         fold and the per-group coveredCount / uncoveredCount / coveragePct
+//         that P2-07 rewrites). Its coveredIds set, restricted to parents, is
+//         read through selectGroup itself with a one-technique probe group per
+//         parent, and the per-group numbers are pinned for every fixture group;
+//       * getTechCoverage (actor-profile-panel.component.ts:140-148, the
+//         per-technique dot), restricted to parents.
 // They must agree, and the set and its size are pinned in
-// __snapshots__/legacy-baseline.json (section implementedEquality).
+// __snapshots__/legacy-baseline.json (sections implementedEquality and
+// actorProfileGroups).
 //
 // The numbers are pinned on purpose: P2-07 changes them (the D16 breadth guard
 // makes M1026's marks partial) and updates this baseline in the same PR. To
@@ -29,6 +36,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import BASELINE from './__snapshots__/legacy-baseline.json';
 import { Domain } from '../models/domain';
+import { ThreatGroup } from '../models/group';
 import { Technique } from '../models/technique';
 import { computeReportSplit, isTechniqueImplemented } from '../models/report-split';
 import { DataService } from '../services/data.service';
@@ -94,6 +102,45 @@ for (const profile of ['fresh', 'seeded'] as const) {
       return set;
     }
 
+    /** Every group's profile as selectGroup builds it: attackId -> [coveredCount, uncoveredCount, coveragePct]. */
+    function selectGroupLeg(): { coveredParents: string[]; groups: Record<string, [number, number, number]> } {
+      const f = TestBed.createComponent(ActorProfilePanelComponent);
+      f.detectChanges();
+      const panel = f.componentInstance;
+      const select = (g: ThreatGroup) => {
+        panel.selectGroup(g);
+        const p = panel.selectedProfile!;
+        expect(p.group).toBe(g);
+        expect(p.coveredCount + p.uncoveredCount).withContext(g.attackId).toBe(p.techniques.length);
+        return p;
+      };
+
+      // The coveredIds fold (:88-94), restricted to parents: a probe group that
+      // uses exactly one parent technique is covered exactly when that parent is
+      // in coveredIds.
+      const probe: ThreatGroup = { ...domain.groups[0], id: 'intrusion-set--p2-01-probe', attackId: 'G-PROBE' };
+      const coveredParents: string[] = [];
+      for (const t of parents) {
+        domain.techniquesByGroup.set(probe.id, [t]);
+        const p = select(probe);
+        expect(p.coveredCount).withContext(`probe ${t.attackId}`).toBeLessThanOrEqual(1);
+        if (p.coveredCount === 1) coveredParents.push(t.attackId);
+      }
+      domain.techniquesByGroup.delete(probe.id);
+
+      // The per-group counts (:96-98) for every fixture group, cross-checked
+      // against the per-technique dot.
+      const groups: Record<string, [number, number, number]> = {};
+      for (const g of [...domain.groups].sort((a, b) => a.attackId.localeCompare(b.attackId))) {
+        const p = select(g);
+        expect(p.coveredCount).withContext(`${g.attackId} vs getTechCoverage`)
+          .toBe(p.techniques.filter(t => panel.getTechCoverage(t.id)).length);
+        groups[g.attackId] = [p.coveredCount, p.uncoveredCount, p.coveragePct];
+      }
+      f.destroy();
+      return { coveredParents: coveredParents.sort(), groups };
+    }
+
     it('precondition: the loaded fixture maps M1047 to 13 techniques and M1026 to 16 (§1.17)', () => {
       expect(domain.techniquesByMitigation.get(mitigation('M1047').id)?.length).toBe(13);
       expect(domain.techniquesByMitigation.get(mitigation('M1026').id)?.length).toBe(16);
@@ -107,7 +154,10 @@ for (const profile of ['fresh', 'seeded'] as const) {
       const actor = actorProfileSet();
       const stats = statsBarCount();
 
-      expect(actor).withContext('actor-profile vs report split').toEqual(report);
+      const groupLeg = selectGroupLeg();
+
+      expect(actor).withContext('actor-profile getTechCoverage vs report split').toEqual(report);
+      expect(groupLeg.coveredParents).withContext('actor-profile selectGroup coveredIds vs report split').toEqual(report);
       expect(split.implemented).withContext('report split count').toBe(report.length);
       expect(stats).withContext('stats-bar count').toBe(report.length);
 
@@ -129,6 +179,13 @@ for (const profile of ['fresh', 'seeded'] as const) {
         implementedPct: split.implementedPct,
         ids: report,
       });
+
+      // Non-degenerate: the per-group pin sees a covered group on the seeded
+      // profile and none on the fresh one.
+      const groupRows = Object.values(groupLeg.groups);
+      expect(groupRows.length).toBe(domain.groups.length);
+      expect(groupRows.some(([covered]) => covered > 0)).withContext('some group has a covered technique').toBe(profile === 'seeded');
+      pin(`actorProfileGroups.${profile}`, groupLeg);
     });
   });
 }

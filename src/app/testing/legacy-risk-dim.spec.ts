@@ -15,9 +15,15 @@
 //   - dimmed: the techniques "Dim uncovered" dims (matrix isDimmed with
 //     dimUncovered on, which reads EnrichmentService.isEnriched); empty on the
 //     fixture today, with a sensitivity spec that shows the pin can move;
-//   - dashboard: criticalRiskCount and kevExposedGapCount (dashboard-panel's
-//     own predicates; the gap count is not rendered, so it is recomputed with
-//     the component's predicate and cross-checked through postureScore);
+//   - dashboard: criticalRiskCount, kevExposedGapCount and the legacy
+//     postureScore, all read from DashboardPanelComponent's stats (the KEV-gap
+//     count is exposed there, unrendered, for this pin; an independent
+//     recomputation of both predicates cross-checks them). The KEV-gap count is 0
+//     on the fixture by construction (every KEV-mapped technique has a
+//     defensive signal; the DARK_TECHNIQUES have no CVE signal), so two
+//     sensitivity specs below show the pin can move: a dark technique given a
+//     KEV CVE, and a KEV-mapped parent stripped of every defensive link, each
+//     become a KEV-exposed gap and move postureScore;
 //   - statusStops: the status-lens stop and cell colour per technique (the
 //     best-status fold over every mapped mitigation);
 //   - implImplemented: the techniques impl=implemented keeps (not filtered).
@@ -36,6 +42,14 @@ import { Domain } from '../models/domain';
 import { HEATMAP_MODES } from '../models/heatmap-modes';
 import { Technique } from '../models/technique';
 import { AttackCveService } from '../services/attack-cve.service';
+import { CARService } from '../services/car.service';
+import { CisControlsService } from '../services/cis-controls.service';
+import { CriProfileService } from '../services/cri-profile.service';
+import { CsaCcmService } from '../services/csa-ccm.service';
+import { D3fendService } from '../services/d3fend.service';
+import { M365ControlsService } from '../services/m365-controls.service';
+import { NistMappingService } from '../services/nist-mapping.service';
+import { SigmaService } from '../services/sigma.service';
 import { DataService } from '../services/data.service';
 import { EnrichmentService } from '../services/enrichment.service';
 import { FilterService } from '../services/filter.service';
@@ -58,10 +72,19 @@ const STATUS_STOP: Record<ImplStatus | 'none', string> = {
   none: 'none', 'not-started': 'not started', 'in-progress': 'in progress', planned: 'planned', implemented: 'implemented',
 };
 
+interface DashboardValues { criticalRiskCount: number; kevExposedGapCount: number; postureScore: number }
+
+/** Replace one method of an injected stub for one ATT&CK id; every other id keeps the stub's answer. */
+function overrideFor(svc: object, method: string, attackId: string, value: unknown): void {
+  const target = svc as Record<string, (id: string) => unknown>;
+  const original = target[method].bind(svc);
+  target[method] = (id: string) => (id === attackId ? value : original(id));
+}
+
 interface RiskDimValues {
   riskTop20: [string, number][];
   dimmed: string[];
-  dashboard: { criticalRiskCount: number; kevExposedGapCount: number; postureScore: number };
+  dashboard: DashboardValues;
   statusStops: Record<string, [string, string]>;
   implImplemented: string[];
 }
@@ -98,6 +121,19 @@ for (const profile of ['fresh', 'seeded'] as const) {
 
     const byId = (a: Technique, b: Technique) => a.attackId.localeCompare(b.attackId);
 
+    /**
+     * The dashboard's threat-gap counters and legacy composite, read from
+     * DashboardPanelComponent's stats (kevExposedGapCount is exposed there,
+     * unrendered, for this pin; dashboard-panel.component.ts buildStats).
+     */
+    function dashboard(): DashboardValues {
+      const dash = TestBed.createComponent(DashboardPanelComponent);
+      dash.detectChanges();
+      const stats = dash.componentInstance.stats!;
+      dash.destroy();
+      return { criticalRiskCount: stats.criticalRiskCount, kevExposedGapCount: stats.kevExposedGapCount, postureScore: stats.postureScore };
+    }
+
     function values(): RiskDimValues {
       const enrichment = TestBed.inject(EnrichmentService);
       const all = [...domain.techniques].sort(byId);
@@ -122,17 +158,16 @@ for (const profile of ['fresh', 'seeded'] as const) {
       const dimmed = all.filter(t => matrix.isDimmed(t)).map(t => t.attackId);
       filter.toggleDimUncovered();
 
-      // Dashboard threat-gap counters (dashboard-panel.component.ts).
-      const dash = TestBed.createComponent(DashboardPanelComponent);
-      dash.detectChanges();
-      const stats = dash.componentInstance.stats!;
+      // Dashboard threat-gap counters (dashboard-panel.component.ts), read from
+      // the component; an independent recomputation cross-checks both.
+      const dash = dashboard();
       const cves = TestBed.inject(AttackCveService);
-      const kevExposedGapCount = parents.filter(t =>
+      const kevGaps = parents.filter(t =>
         cves.getKevCvesForTechnique(t.attackId).length > 0 && !enrichment.hasDefensiveSignal(t, domain)).length;
       const critical = parents.filter(t =>
         (domain.groupsByTechnique.get(t.id)?.length ?? 0) > 0 && !enrichment.hasDefensiveSignal(t, domain)).length;
-      expect(stats.criticalRiskCount).withContext('criticalRiskCount predicate').toBe(critical);
-      dash.destroy();
+      expect(dash.criticalRiskCount).withContext('criticalRiskCount predicate').toBe(critical);
+      expect(dash.kevExposedGapCount).withContext('kevExposedGapCount predicate').toBe(kevGaps);
 
       // Status lens: the best-status fold, its ramp stop and the cell colour.
       filter.setHeatmapMode('status');
@@ -155,7 +190,7 @@ for (const profile of ['fresh', 'seeded'] as const) {
       return {
         riskTop20: ranked.slice(0, 20).map(t => [t.attackId, risk(t)] as [string, number]),
         dimmed,
-        dashboard: { criticalRiskCount: stats.criticalRiskCount, kevExposedGapCount, postureScore: stats.postureScore },
+        dashboard: dash,
         statusStops,
         implImplemented,
       };
@@ -187,6 +222,64 @@ for (const profile of ['fresh', 'seeded'] as const) {
       domain.softwareByTechnique.delete(t.id);
       domain.campaignsByTechnique.delete(t.id);
       expect(values().dimmed).toEqual(['T1007']);
+    });
+
+    it('the KEV-gap pin can see a change: an undefended (dark) technique given a KEV CVE is a KEV-exposed gap', () => {
+      const pinned = (BASELINE as unknown as { riskDim: Record<string, RiskDimValues> }).riskDim[profile].dashboard;
+      const before = dashboard();
+      expect(before).withContext('the component reproduces the pinned counters').toEqual(pinned);
+
+      const cves = TestBed.inject(AttackCveService);
+      const enrichment = TestBed.inject(EnrichmentService);
+      const t1007 = domain.techniques.find(x => x.attackId === 'T1007')!;
+      expect(DARK_TECHNIQUES.has('T1007')).withContext('T1007 has no defensive or CVE signal').toBeTrue();
+      expect(enrichment.hasDefensiveSignal(t1007, domain)).toBeFalse();
+      expect(cves.getKevCvesForTechnique('T1007')).toEqual([]);
+
+      overrideFor(cves, 'getKevCvesForTechnique', 'T1007', [{ cveId: 'CVE-2024-10070' }]);
+      const one = dashboard();
+      expect(one.kevExposedGapCount).toBe(before.kevExposedGapCount + 1);
+      expect(one.kevExposedGapCount).toBe(1);
+      expect(one.criticalRiskCount).withContext('KEV is not a criticalRisk input').toBe(before.criticalRiskCount);
+
+      // One technique moves the 0.15 KEV term by 100 * 0.15 / 45 = 0.33 points,
+      // which rounding can hide; every dark parent at once cannot hide.
+      const darkParents = domain.techniques.filter(t => !t.isSubtechnique && DARK_TECHNIQUES.has(t.attackId));
+      expect(darkParents.length).toBeGreaterThan(3);
+      for (const t of darkParents) {
+        if (t.attackId !== 'T1007') overrideFor(cves, 'getKevCvesForTechnique', t.attackId, [{ cveId: `CVE-2024-${t.attackId.slice(1)}0` }]);
+      }
+      const all = dashboard();
+      expect(all.kevExposedGapCount).toBe(darkParents.length);
+      expect(all.criticalRiskCount).toBe(before.criticalRiskCount);
+      expect(all.postureScore).withContext('the KEV-gap term moves the legacy composite').toBeLessThan(before.postureScore);
+    });
+
+    it('the KEV-gap pin can see a change: a KEV-mapped parent stripped of every defensive link is a KEV-exposed gap', () => {
+      const before = dashboard();
+      const cves = TestBed.inject(AttackCveService);
+      const enrichment = TestBed.inject(EnrichmentService);
+      const target = domain.techniques.filter(t => !t.isSubtechnique).sort(byId)
+        .find(t => cves.getKevCvesForTechnique(t.attackId).length > 0)!;
+      expect(target).withContext('the fixture has a KEV-mapped parent').toBeDefined();
+      expect(enrichment.hasDefensiveSignal(target, domain)).withContext(`${target.attackId} is defended today`).toBeTrue();
+
+      // Strip its mitigation, detection, control and D3FEND links.
+      const id = target.attackId;
+      (target as { mitigationCount?: number }).mitigationCount = 0;
+      domain.mitigationsByTechnique.delete(target.id);
+      overrideFor(TestBed.inject(SigmaService), 'getRuleCount', id, 0);
+      overrideFor(TestBed.inject(CARService), 'getLiveCount', id, 0);
+      for (const svc of [NistMappingService, CriProfileService, CisControlsService, CsaCcmService, M365ControlsService]) {
+        overrideFor(TestBed.inject(svc as unknown as typeof NistMappingService), 'getControlCount', id, 0);
+      }
+      overrideFor(TestBed.inject(D3fendService), 'getCountermeasures', id, []);
+      expect(enrichment.hasDefensiveSignal(target, domain)).withContext(`${id} stripped`).toBeFalse();
+
+      const after = dashboard();
+      expect(after.kevExposedGapCount).toBe(before.kevExposedGapCount + 1);
+      expect(after.kevExposedGapCount).toBe(1);
+      expect(after.postureScore).withContext('the legacy composite moves').toBeLessThan(before.postureScore);
     });
 
     it('today, risk, dim and the threat-gap counters ignore implemented mitigations (P2-09 changes this)', () => {

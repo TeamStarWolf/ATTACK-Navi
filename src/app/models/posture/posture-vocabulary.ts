@@ -19,13 +19,28 @@ const SCOPE_WORDS: Readonly<Record<ProofScope, string>> = {
   'own-run': ' (your run)',
 };
 
-/** The Covered head for a qualifier set, open so the partial form can continue it. */
-function coveredHead(qualifiers: readonly CoveredQualifier[]): string {
+const QUALIFIER_ORDER: readonly CoveredQualifier[] = ['self-attested', 'range'];
+
+/**
+ * The qualifiers a Covered badge names: the state's own `qualifiers`, or, when
+ * that set is empty, the qualifiers of the marks that make the bucket (full
+ * marks for 'covered', partial marks for 'partial'). Never a default: an empty
+ * answer means the data holds no qualifier and the badge must not say Covered.
+ */
+function badgeQualifiers(s: Pick<PostureState, 'bucket' | 'qualifiers' | 'covered'>): readonly CoveredQualifier[] {
+  if (s.qualifiers.length > 0) return s.qualifiers;
+  const strength = s.bucket === 'covered' ? 'full' : 'partial';
+  return QUALIFIER_ORDER.filter(q => s.covered.some(m => m.strength === strength && m.qualifier === q));
+}
+
+/** The Covered head for a qualifier set, open so the partial form can continue it; null for no qualifier. */
+function coveredHead(qualifiers: readonly CoveredQualifier[]): string | null {
   const self = qualifiers.includes('self-attested');
   const range = qualifiers.includes('range');
   if (self && range) return 'Covered (self-attested, range';
   if (range) return 'Covered (range';
-  return 'Covered (self-attested';
+  if (self) return 'Covered (self-attested';
+  return null;
 }
 
 /** The distinct `via` of the partial marks, in mark order. */
@@ -43,6 +58,9 @@ function partialVia(marks: readonly CoveredMark[]): string[] {
  *   'Covered (self-attested)' | 'Covered (range)' | 'Covered (self-attested, range)'
  *   'Covered (self-attested, partial via M1038)'   (D16; passes covered-unqualified)
  *   'Known: mapped' | 'None'
+ * A 'covered' or 'partial' state names its own qualifiers (D5); with an empty
+ * `qualifiers` set they come from its marks, and with no qualified mark at all
+ * the badge is 'None' rather than an unbacked Covered claim.
  */
 export function postureBadge(s: Pick<PostureState, 'bucket' | 'qualifiers' | 'proofScope' | 'covered'>): string {
   switch (s.bucket) {
@@ -51,11 +69,15 @@ export function postureBadge(s: Pick<PostureState, 'bucket' | 'qualifiers' | 'pr
       const scope = s.proofScope ? SCOPE_WORDS[s.proofScope] : '';
       return PROVEN + scope + (s.bucket === 'stale' ? ' (stale)' : '');
     }
-    case 'covered':
-      return coveredHead(s.qualifiers) + ')';
+    case 'covered': {
+      const head = coveredHead(badgeQualifiers(s));
+      return head === null ? 'None' : head + ')';
+    }
     case 'partial': {
+      const head = coveredHead(badgeQualifiers(s));
+      if (head === null) return 'None';
       const via = partialVia(s.covered);
-      return coveredHead(s.qualifiers) + (via.length > 0 ? ', partial via ' + via.join(', ') : ', partial') + ')';
+      return head + (via.length > 0 ? ', partial via ' + via.join(', ') : ', partial') + ')';
     }
     case 'known':
       return 'Known: mapped';
