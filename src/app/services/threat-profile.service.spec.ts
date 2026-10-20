@@ -56,6 +56,26 @@ describe('ThreatProfileService', () => {
     expect(makeService().current.source).toEqual({ kind: 'top-groups', n: 20 });
   });
 
+  it('rejects a malformed record (ids not an array) and falls back to the default', () => {
+    // A poisoned bundle import: passes a naive kind/source/createdAt check but would
+    // throw in `new Set(ids)`. The strict guard must drop it, not crash on load.
+    localStorage.setItem(KEY, JSON.stringify({
+      schema: 2, tombstones: [], records: [
+        { kind: 'groups', ids: {}, source: 'manual', domain: 'enterprise', attackVersion: '19.2', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' },
+      ],
+    }));
+    expect(makeService().current.source).toEqual({ kind: 'top-groups', n: 20 });
+  });
+
+  it('restores a valid groups source with string ids', () => {
+    localStorage.setItem(KEY, JSON.stringify({
+      schema: 2, tombstones: [], records: [
+        { kind: 'groups', ids: ['intrusion-set--x'], source: 'manual', domain: 'enterprise', attackVersion: '19.2', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' },
+      ],
+    }));
+    expect(makeService().current.source).toEqual({ kind: 'groups', ids: ['intrusion-set--x'] });
+  });
+
   it('resolves against a loaded domain and weight() delegates to the current profile', () => {
     const domain$ = new BehaviorSubject<Domain | null>(null);
     const svc = makeService(domain$);

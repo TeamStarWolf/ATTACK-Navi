@@ -10,12 +10,25 @@ import { ThreatProfile, ThreatProfileSource, resolveProfile } from '../models/th
 const STORAGE_KEY = 'navi.v2.threat-profile';
 const DEFAULT_SOURCE: ThreatProfileSource = { kind: 'top-groups', n: 20 };
 
-const KINDS: ReadonlySet<string> = new Set(['top-groups', 'groups', 'campaigns', 'library-layer', 'all']);
-/** A stored source is a ThreatProfileSource carrying the v2 envelope. */
+/**
+ * A stored source is a ThreatProfileSource carrying the v2 envelope. Every kind's
+ * own fields are validated: the key is in WorkspaceBundleService.BUNDLED_KEYS, so a
+ * record can arrive from an imported bundle. A malformed one (for example
+ * `{kind:'groups', ids:{}}`, which would throw in `new Set(ids)`) must fail here so
+ * readV2 drops it and the service falls back to the default, rather than crashing on
+ * every load (a persistent client-side DoS).
+ */
 function isStoredSource(x: unknown): x is ThreatProfileSource & V2Envelope {
   const r = x as Record<string, unknown>;
-  return !!r && typeof r['kind'] === 'string' && KINDS.has(r['kind'] as string)
-    && typeof r['source'] === 'string' && typeof r['createdAt'] === 'string';
+  if (!r || typeof r['source'] !== 'string' || typeof r['createdAt'] !== 'string') return false;
+  switch (r['kind']) {
+    case 'top-groups': return Number.isInteger(r['n']) && (r['n'] as number) >= 0 && (r['n'] as number) <= 1000;
+    case 'groups':
+    case 'campaigns': return Array.isArray(r['ids']) && (r['ids'] as unknown[]).every((i) => typeof i === 'string');
+    case 'library-layer': return typeof r['file'] === 'string';
+    case 'all': return true;
+    default: return false;
+  }
 }
 
 /** The label shown before a domain has loaded; resolveProfile recomputes it once a Domain is present. */
@@ -73,7 +86,10 @@ export class ThreatProfileService implements OnDestroy {
 
   /** Resolve against a loaded domain, or an empty profile (label only) before one is present. */
   private build(domain: Domain | null): ThreatProfile {
-    if (domain) return resolveProfile(this.source, domain);
+    if (domain) {
+      // Defensive: a resolve failure must not throw inside the domain$ subscription.
+      try { return resolveProfile(this.source, domain); } catch { /* fall through to the empty profile */ }
+    }
     const src = this.source;
     return {
       source: src,
@@ -88,8 +104,12 @@ export class ThreatProfileService implements OnDestroy {
   }
 
   private loadSource(): ThreatProfileSource {
-    const record = readV2<ThreatProfileSource>(STORAGE_KEY, isStoredSource).records[0];
-    return record ? sourceFromRecord(record) : DEFAULT_SOURCE;
+    try {
+      const record = readV2<ThreatProfileSource>(STORAGE_KEY, isStoredSource).records[0];
+      return record ? sourceFromRecord(record) : DEFAULT_SOURCE;
+    } catch {
+      return DEFAULT_SOURCE;
+    }
   }
 
   private persist(src: ThreatProfileSource): void {
