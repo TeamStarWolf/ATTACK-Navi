@@ -11,6 +11,11 @@
     </div>
   </div>
 
+  <!-- The Home stand-in (Phase 2 design §1.7, §10.4 item 7): one posture tally for every count surface. -->
+  <div class="ctem-posture">
+    <app-posture-card scope="all" />
+  </div>
+
   <div class="ctem-board">
     @for (stage of stages; track stage.n) {
       <div class="stage-card">

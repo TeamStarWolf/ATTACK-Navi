@@ -8,8 +8,9 @@ import { ImplementationService } from '../../services/implementation.service';
 import { DocumentationService } from '../../services/documentation.service';
 import { ReportConfigService } from '../../services/report-config.service';
 import { Domain } from '../../models/domain';
-import { ImplStatus } from '../../services/implementation.service';
 import { makeSplitDomain } from '../../testing/report-split-fixture';
+import { PostureStub, makePostureStub, postureStubProvider } from '../../testing/posture-stub';
+import type { PostureBucket } from '../../models/posture/posture.types';
 
 describe('ReportPanelComponent', () => {
   let component: ReportPanelComponent;
@@ -29,6 +30,7 @@ describe('ReportPanelComponent', () => {
             getTechNote: () => '',
         }},
         ReportConfigService,
+        postureStubProvider(makePostureStub(() => null)),
       ],
     });
     fixture = TestBed.createComponent(ReportPanelComponent);
@@ -45,11 +47,13 @@ describe('ReportPanelComponent', () => {
   });
 });
 
-// E1.1: the Report Builder shows a Theoretical / Implemented split. Reference
-// mapping is labelled Theoretical; only owner-attested status is Implemented.
-describe('ReportPanelComponent Theoretical / Implemented split (E1.1)', () => {
+// E1.1 and P2-07: the Report Builder shows Known: mapped with the Theoretical
+// sub-line from reference mapping, and Covered, partial and Proven from the
+// posture rollup, so it cannot disagree with the posture card or the stats-bar.
+// Covered and Proven words render only with owner data (§2.4).
+describe('ReportPanelComponent split (E1.1, P2-07)', () => {
   let fixture: ComponentFixture<ReportPanelComponent>;
-  let status$: BehaviorSubject<Map<string, ImplStatus>>;
+  let posture: PostureStub;
 
   function reportDomain(): Domain {
     const d = makeSplitDomain() as unknown as Record<string, unknown> & { techniques: Array<Record<string, unknown>> };
@@ -64,19 +68,21 @@ describe('ReportPanelComponent Theoretical / Implemented split (E1.1)', () => {
     } as unknown as Domain;
   }
 
-  function render(statuses: Array<[string, ImplStatus]>): HTMLElement {
+  function render(buckets: Record<string, PostureBucket>, implemented = 0): HTMLElement {
     localStorage.removeItem('mitre-nav-report-config-v1');
-    status$ = new BehaviorSubject(new Map(statuses.map(([m, s]) => [`course-of-action--${m}`, s])));
+    const domain = reportDomain();
+    posture = makePostureStub(() => domain, buckets);
     TestBed.configureTestingModule({
       imports: [ReportPanelComponent],
       providers: [
-        { provide: DataService, useValue: { domain$: new BehaviorSubject(reportDomain()) } },
+        { provide: DataService, useValue: { domain$: new BehaviorSubject(domain) } },
         { provide: ImplementationService, useValue: {
-            status$,
-            summarize: () => ({ implemented: 0, 'in-progress': 0, planned: 0, 'not-started': 0 }),
+            status$: new BehaviorSubject(new Map()),
+            summarize: () => ({ implemented, 'in-progress': 0, planned: 0, 'not-started': 0 }),
         }},
         { provide: DocumentationService, useValue: { mitDocs$: new BehaviorSubject(new Map()) } },
         ReportConfigService,
+        postureStubProvider(posture),
       ],
     });
     fixture = TestBed.createComponent(ReportPanelComponent);
@@ -87,29 +93,48 @@ describe('ReportPanelComponent Theoretical / Implemented split (E1.1)', () => {
   afterEach(() => localStorage.removeItem('mitre-nav-report-config-v1'));
 
   const text = (el: Element | null): string => (el?.textContent ?? '').replace(/\s+/g, ' ').trim();
+  const num = (el: Element, key: string): number => Number(text(el.querySelector(`[data-posture="${key}"]`)));
 
-  it('labels the reference-derived count Theoretical and the owner-attested count Implemented (self-attested)', () => {
-    const el = render([['M1', 'implemented']]);
-    const theoretical = text(el.querySelector('[data-testid="report-theoretical"]'));
-    const implemented = text(el.querySelector('[data-testid="report-implemented"]'));
-    expect(theoretical).toContain('Theoretical: mitigation mapped');
-    expect(theoretical).toContain('60%');
-    expect(theoretical).toContain('3 / 5 techniques');
-    expect(implemented).toContain('Implemented (self-attested)');
-    expect(implemented).toContain('40%');
-    expect(implemented).toContain('2 / 5 techniques');
+  it('labels the reference count Known: mapped with the Theoretical sub-line, and the owner count Covered (self-attested)', () => {
+    const el = render({ T1: 'covered', T2: 'covered' }, 1);
+    const known = text(el.querySelector('[data-testid="report-known"]'));
+    expect(known).toContain('Known: mapped');
+    expect(known).toContain('60%');
+    expect(known).toContain('3 / 5 techniques');
+    expect(text(el.querySelector('[data-testid="report-theoretical"]'))).toContain('Theoretical: mitigation mapped: 3 / 5 techniques (60%)');
+    const covered = text(el.querySelector('[data-testid="report-covered"]'));
+    expect(covered).toContain('Covered (self-attested)');
+    expect(covered).toContain('2 of 5 assessable techniques (40%)');
+    expect(num(el, 'covered')).toBe(2);
   });
 
-  it('shows 0% Implemented on a fresh profile while Theoretical stays at the reference value', () => {
-    const el = render([]);
-    expect(text(el.querySelector('[data-testid="report-theoretical"]'))).toContain('60%');
-    expect(text(el.querySelector('[data-testid="report-implemented"]'))).toContain('0%');
-    expect(text(el.querySelector('[data-testid="report-implemented"]'))).toContain('0 / 5 techniques');
+  it('R16: the Covered card and the tactic mini-bars divide by assessable; Known keeps every technique', () => {
+    const el = render({ T1: 'covered', T2: 'covered' }, 1);
+    posture.exclude(['T3']);
+    fixture.detectChanges();
+    const covered = el.querySelector('[data-testid="report-covered"]')!;
+    expect(text(covered)).toContain('2 of 4 assessable techniques (50%)');
+    expect(num(covered, 'assessable')).toBe(4);
+    expect(text(el.querySelector('[data-testid="report-known"]'))).toContain('3 / 5 techniques');
+    const exec = el.querySelector('tr[data-tactic="execution"]')!;
+    expect([num(exec, 'covered'), num(exec, 'assessable')]).toEqual([2, 2]);
+    expect(exec.querySelector('[data-share-pct]')!.getAttribute('data-share-pct')).toBe('100');
+    expect((exec.querySelector('.mini-bar--implemented') as HTMLElement).style.width).toBe('100%');
+    expect(text(exec.querySelectorAll('td')[1])).withContext('the Total column keeps every parent').toBe('3');
   });
 
-  it('never words or colours the Theoretical half as implemented, covered or protected', () => {
-    const el = render([]);
-    const card = el.querySelector('[data-testid="report-theoretical"]')!;
+  it('shows Known only on a fresh profile, with no Covered or Proven words', () => {
+    const el = render({});
+    expect(text(el.querySelector('[data-testid="report-known"]'))).toContain('60%');
+    expect(el.querySelector('[data-testid="report-covered"]')).toBeNull();
+    expect(el.querySelector('[data-posture="covered"]')).toBeNull();
+    expect(text(el)).not.toMatch(/\bcovered\b|\bproven\b|\bdefended\b/i);
+    expect(text(el.querySelector('[data-testid="report-split-note"]'))).toContain('No data of yours recorded yet');
+  });
+
+  it('never words or colours the Known half as implemented, covered or protected', () => {
+    const el = render({});
+    const card = el.querySelector('[data-testid="report-known"]')!;
     expect(text(card)).not.toMatch(/implement|cover|protect|defend/i);
     expect(card.classList).not.toContain('green');
     expect(card.classList).not.toContain('implemented');
@@ -120,20 +145,31 @@ describe('ReportPanelComponent Theoretical / Implemented split (E1.1)', () => {
   });
 
   it('explains the split in the report header', () => {
-    const note = text(render([]).querySelector('[data-testid="report-split-note"]'));
+    const note = text(render({ T1: 'covered' }).querySelector('[data-testid="report-split-note"]'));
     expect(note).toContain("ATT&CK's reference mappings");
     expect(note).toContain('self-attested');
+    expect(note).toContain('partial');
   });
 
-  it('splits every tactic row into Theoretical and Implemented with no traffic-light colour', () => {
-    const el = render([['M3', 'implemented']]);
+  it('shows the partial card and the Proven count from the rollup', () => {
+    const el = render({ T1: 'partial', T2: 'partial', T4: 'proven', T5: 'stale' }, 2);
+    expect(text(el.querySelector('[data-testid="report-partial"]'))).toContain('partial (broad mitigation, not confirmed per technique)');
+    const overall = posture.rollup().overall;
+    const summary = el.querySelector('.summary-grid')!;
+    expect([num(summary, 'covered'), num(summary, 'partial'), num(summary, 'proven'), num(summary, 'stale')])
+      .toEqual([overall.covered, overall.partial, overall.proven, overall.stale]);
+    expect([overall.covered, overall.partial, overall.proven, overall.stale]).toEqual([0, 2, 1, 1]);
+  });
+
+  it('splits every tactic row into Theoretical and the posture buckets, with no traffic-light colour', () => {
+    const el = render({ T4: 'covered' }, 1);
     const table = el.querySelector('[data-testid="report-tactic-split"]')!;
     const headers = Array.from(table.querySelectorAll('th')).map(th => text(th));
-    expect(headers).toEqual(['Tactic', 'Total', 'Theoretical (mapped)', 'Implemented (self-attested)', 'No mitigation mapped']);
+    expect(headers).toEqual(['Tactic', 'Total', 'Theoretical (mapped)', 'Covered (self-attested)', 'partial', 'Proven', 'No mitigation mapped']);
     const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr => Array.from(tr.querySelectorAll('td')).map(td => text(td)));
     expect(rows).toEqual([
-      ['Execution', '3', '2 (67%)', '0 (0%)', 'T3'],
-      ['Persistence', '2', '1 (50%)', '1 (50%)', 'T5'],
+      ['Execution', '3', '2 (67%)', '0 of 3 (0%)', '0', '0 · stale 0', 'T3'],
+      ['Persistence', '2', '1 (50%)', '1 of 2 (50%)', '0', '0 · stale 0', 'T5'],
     ]);
     // Bars use the rung classes, not an inline green/amber/red background.
     for (const bar of Array.from(table.querySelectorAll<HTMLElement>('.mini-bar'))) {
@@ -143,17 +179,22 @@ describe('ReportPanelComponent Theoretical / Implemented split (E1.1)', () => {
     expect(table.querySelectorAll('.mini-bar--implemented').length).toBe(2);
   });
 
-  it('moves the Implemented half, and only it, when the owner marks a mitigation implemented', () => {
-    const el = render([]);
-    expect(text(el.querySelector('[data-testid="report-implemented"]'))).toContain('0%');
-    status$.next(new Map([['course-of-action--M1', 'implemented']]));
-    fixture.detectChanges();
-    expect(text(el.querySelector('[data-testid="report-implemented"]'))).toContain('40%');
-    expect(text(el.querySelector('[data-testid="report-theoretical"]'))).toContain('60%');
+  it('hides the posture columns of the tactic table on a fresh profile', () => {
+    const table = render({}).querySelector('[data-testid="report-tactic-split"]')!;
+    expect(Array.from(table.querySelectorAll('th')).map(th => text(th))).toEqual(['Tactic', 'Total', 'Theoretical (mapped)', 'No mitigation mapped']);
   });
 
-  it('exports separate Theoretical and Implemented CSV columns', async () => {
-    render([['M3', 'implemented']]);
+  it('moves the Covered count, and only it, when the posture states change', () => {
+    const el = render({ T1: 'covered' });
+    expect(num(el, 'covered')).toBe(1);
+    posture.set({ T1: 'covered', T2: 'covered' });
+    fixture.detectChanges();
+    expect(num(el.querySelector('.summary-grid')!, 'covered')).toBe(2);
+    expect(text(el.querySelector('[data-testid="report-known"]'))).toContain('60%');
+  });
+
+  it('fills the CSV Implemented column from the posture bucket; the header is unchanged', async () => {
+    render({ T1: 'covered', T2: 'partial', T4: 'proven', T5: 'stale' }, 1);
     let blob = null as Blob | null;
     spyOn(URL, 'createObjectURL').and.callFake((b: Blob | MediaSource) => { blob = b as Blob; return 'blob:stub'; });
     spyOn(URL, 'revokeObjectURL').and.stub();
@@ -162,9 +203,11 @@ describe('ReportPanelComponent Theoretical / Implemented split (E1.1)', () => {
     const lines = (await blob!.text()).split('\n');
     expect(lines[0]).toBe('Technique ID,Technique Name,Tactics,Platforms,Mitigations Mapped,Threat Groups,Theoretical: mitigation mapped,Implemented (self-attested)');
     const row = (id: string) => lines.find(l => l.startsWith(`"${id}",`))!.split(',').map(c => c.replace(/^"|"$/g, ''));
-    expect(row('T1').slice(-2)).toEqual(['Yes', 'No']);
+    expect(row('T1').slice(-2)).toEqual(['Yes', 'Yes']);
+    expect(row('T2').slice(-2)).toEqual(['Yes', 'Partial']);
     expect(row('T3').slice(-2)).toEqual(['No', 'No']);
     expect(row('T4').slice(-2)).toEqual(['Yes', 'Yes']);
+    expect(row('T5').slice(-2)).toEqual(['No', 'Yes']);
     expect(lines[0]).not.toMatch(/,Covered$/);
   });
 });
