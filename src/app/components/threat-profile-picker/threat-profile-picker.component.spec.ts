@@ -131,6 +131,20 @@ describe('ThreatProfilePickerComponent', () => {
     expect(component.selectedGroupIds.size).toBe(0);        // the other kind is cleared
   });
 
+  it('a profile$ re-emission of the SAME source keeps the user\'s open tab (regression, item 2)', () => {
+    component.mode = 'profile';
+    fixture.detectChanges();                 // seeded top-groups/20 from the beforeEach
+    component.setPreset('groups');           // user opens the Groups tab; nothing picked yet (groups does not persist)
+    expect(component.preset).toBe('groups');
+    profileSubject.next({ source: { kind: 'top-groups', n: 20 } });   // a domain switch / layer-load re-emit of the same stored source
+    fixture.detectChanges();
+    expect(component.preset).toBe('groups');                          // tab preserved, not snapped back to Top N
+    profileSubject.next({ source: { kind: 'campaigns', ids: ['campaign--ccc'] } });   // a genuine change elsewhere
+    fixture.detectChanges();
+    expect(component.preset).toBe('campaigns');                       // re-seeds on a different source
+    expect([...component.selectedCampaignIds]).toEqual(['campaign--ccc']);
+  });
+
   it('profile mode seeds preset, n, ids and layer from every stored source kind (item C)', () => {
     currentSource = { kind: 'top-groups', n: 7 };
     TestBed.resetTestingModule(); configure();

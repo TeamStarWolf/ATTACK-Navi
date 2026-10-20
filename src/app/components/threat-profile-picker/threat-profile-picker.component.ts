@@ -26,7 +26,7 @@ type Preset = 'top-groups' | 'all' | 'groups' | 'campaigns' | 'library-layer';
 interface SectorCategory { readonly label: string; readonly keywords: readonly string[]; }
 
 /**
- * Kept verbatim from assessment-wizard.component.ts:46-52 so the same sector click
+ * Kept verbatim from assessment-wizard.component.ts:49-54 so the same sector click
  * matches the same groups. P2-10 points the wizard at this picker and drops its copy;
  * threat-profile-picker.component.spec pins these against the wizard's table.
  */
@@ -78,6 +78,13 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
   selectedLayerFile: string | null = null;
 
   private subs = new Subscription();
+  /**
+   * The last source the picker seeded from or applied, as a stable string. A profile$
+   * re-emission with the same source (a domain switch, which emits null then the new
+   * domain, or a library-layer load finishing) must NOT re-run initFromProfile and reset
+   * the user's open tab / selection before they have picked anything.
+   */
+  private lastSource: string | null = null;
 
   constructor(
     private dataService: DataService,
@@ -95,8 +102,14 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
       this.preset = 'groups';
     } else if (this.mode === 'profile') {
       this.initFromProfile(this.threatProfile.current.source);
-      // Stay in sync if the shared profile changes elsewhere.
-      this.subs.add(this.threatProfile.profile$.subscribe((p) => { this.initFromProfile(p.source); this.cdr.markForCheck(); }));
+      // Stay in sync if the shared profile's SOURCE changes elsewhere, but ignore
+      // re-emissions of the same source (domain switch, layer load) so they do not
+      // reset the user's open tab before they have applied anything.
+      this.subs.add(this.threatProfile.profile$.subscribe((p) => {
+        if (this.serializeSource(p.source) === this.lastSource) return;
+        this.initFromProfile(p.source);
+        this.cdr.markForCheck();
+      }));
     }
     this.subs.add(this.dataService.domain$.subscribe((domain) => {
       this.groups = domain ? [...domain.groups].sort((a, b) => a.name.localeCompare(b.name)) : [];
@@ -126,6 +139,18 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
       case 'campaigns': for (const id of src.ids) this.selectedCampaignIds.add(id); break;
       case 'library-layer': this.selectedLayerFile = src.file; break;
       case 'all': break;
+    }
+    this.lastSource = this.serializeSource(src);
+  }
+
+  /** A stable string for a source, so profile$ re-emissions of the same source compare equal (ids order-independent). */
+  private serializeSource(src: ThreatProfileSource): string {
+    switch (src.kind) {
+      case 'top-groups': return `top-groups:${src.n}`;
+      case 'groups': return `groups:${[...src.ids].sort().join(',')}`;
+      case 'campaigns': return `campaigns:${[...src.ids].sort().join(',')}`;
+      case 'library-layer': return `library-layer:${src.file}`;
+      case 'all': return 'all';
     }
   }
 
@@ -219,14 +244,18 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
   /** Profile mode only: build the source from the current preset and persist it on the service. */
   private applyProfile(): void {
     if (this.mode !== 'profile') return;
+    let src: ThreatProfileSource | null = null;
     switch (this.preset) {
-      case 'top-groups': this.threatProfile.setSource({ kind: 'top-groups', n: this.clampTopN(this.topN) }); break;
-      case 'all': this.threatProfile.setSource({ kind: 'all' }); break;
-      case 'groups': this.threatProfile.setSource({ kind: 'groups', ids: [...this.selectedGroupIds] }); break;
-      case 'campaigns': this.threatProfile.setSource({ kind: 'campaigns', ids: [...this.selectedCampaignIds] }); break;
-      case 'library-layer':
-        if (this.selectedLayerFile) this.threatProfile.setSource({ kind: 'library-layer', file: this.selectedLayerFile });
-        break;
+      case 'top-groups': src = { kind: 'top-groups', n: this.clampTopN(this.topN) }; break;
+      case 'all': src = { kind: 'all' }; break;
+      case 'groups': src = { kind: 'groups', ids: [...this.selectedGroupIds] }; break;
+      case 'campaigns': src = { kind: 'campaigns', ids: [...this.selectedCampaignIds] }; break;
+      case 'library-layer': if (this.selectedLayerFile) src = { kind: 'library-layer', file: this.selectedLayerFile }; break;
     }
+    if (!src) return;
+    // Record before setSource: the service re-emits on profile$ synchronously, and the
+    // subscription above must treat that echo as the same source, not re-seed over it.
+    this.lastSource = this.serializeSource(src);
+    this.threatProfile.setSource(src);
   }
 }

@@ -20,18 +20,22 @@ function tinyDomain(): Domain {
   } as unknown as Domain;
 }
 
+// Mutable so a test can switch the named domain BEFORE domain$ emits null, which is what
+// proves build(null) reads the new domain rather than keeping the stale profile's (item 9).
+let currentAttackDomain: AttackDomain = 'enterprise';
+
 function makeService(domainSubject = new BehaviorSubject<Domain | null>(null), layerIds: readonly string[] = []): ThreatProfileService {
   const data = {
     domain$: domainSubject.asObservable(),
     getCurrentDomain: () => domainSubject.value,
-    getCurrentAttackDomain: () => 'enterprise' as AttackDomain,
+    getCurrentAttackDomain: () => currentAttackDomain,
   };
   const library = { layerTechniqueIds: (_file: string) => of(layerIds), manifest: [] as unknown[] };
   return new ThreatProfileService(data as unknown as DataService, library as unknown as LibraryLayerService);
 }
 
 describe('ThreatProfileService', () => {
-  beforeEach(() => localStorage.removeItem(KEY));
+  beforeEach(() => { localStorage.removeItem(KEY); currentAttackDomain = 'enterprise'; });
   afterEach(() => localStorage.removeItem(KEY));
 
   it('defaults to Top 20 groups by prevalence', () => {
@@ -94,9 +98,10 @@ describe('ThreatProfileService', () => {
     domain$.next(tinyDomain());
     svc.setSource({ kind: 'all' });
     expect(svc.current.parentTechniqueIds.has('t1')).toBeTrue();
-    domain$.next(null);   // a domain switch emits null before the new domain arrives
+    currentAttackDomain = 'mobile';   // the switch has already named the new domain
+    domain$.next(null);               // a domain switch emits null before the new domain arrives
     expect(svc.current.parentTechniqueIds.size).toBe(0);   // no stale cross-domain denominator
-    expect(svc.current.domain).toBe('enterprise');         // getCurrentAttackDomain names the new domain
+    expect(svc.current.domain).toBe('mobile');             // build(null) reads the NEW domain, not the stale profile's
   });
 
   it('resolves a library-layer source to the layer\'s techniques (not an empty profile)', () => {
