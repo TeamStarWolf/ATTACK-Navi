@@ -62,6 +62,13 @@ export interface DashboardStats {
 
   // Risk
   criticalRiskCount: number;  // high threat + no mitigation
+  /**
+   * KEV-mapped parent techniques with no defensive signal: an input of the
+   * legacy postureScore composite. Not rendered; exposed so the P2-01
+   * characterization baseline (legacy-risk-dim.spec.ts) reads the component's
+   * own count, which P2-09 changes.
+   */
+  kevExposedGapCount: number;
   cveExposedCount: number;
 
   // Trend (from last 2 snapshots)
@@ -383,6 +390,7 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
         withD3fendCount,
         detectionCoveragePct,
         criticalRiskCount,
+        kevExposedGapCount,
         cveExposedCount,
         coverageTrend,
         hasTrendData,
