@@ -1,11 +1,12 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, combineLatest, map, debounceTime, filter, take } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, combineLatest, map, debounceTime, filter, take } from 'rxjs';
 import { Technique } from '../models/technique';
 import { Mitigation } from '../models/mitigation';
 import { Domain } from '../models/domain';
-import { DataService } from './data.service';
+import { AttackDomain, DataService } from './data.service';
+import { AttackIdResolverService } from './attack-id-resolver.service';
 import { HEATMAP_MODES } from '../models/heatmap-modes';
 import { sameDataSource } from '../utils/data-source-names';
 
@@ -35,6 +36,43 @@ export function isSearchScope(value: string | null | undefined): value is Search
 }
 export function isImplStatus(value: string | null | undefined): value is ImplStatus {
   return !!value && (IMPL_STATUSES as readonly string[]).includes(value);
+}
+
+/**
+ * The name DataService gives each loaded Domain (Domain.name), per ATT&CK domain.
+ * applyUrlState waits for the domain with this name, and the not-in-domain toast
+ * names the domain with it.
+ */
+const ATTACK_DOMAIN_NAMES: Record<AttackDomain, string> = {
+  enterprise: 'Enterprise ATT&CK',
+  ics: 'ICS ATT&CK',
+  mobile: 'Mobile ATT&CK',
+  f3: 'F3 Fraud Framework',
+};
+
+/** Validates the `dom` URL param (#118's pattern: an unknown value is ignored). */
+export function isAttackDomain(value: string | null | undefined): value is AttackDomain {
+  return !!value && Object.prototype.hasOwnProperty.call(ATTACK_DOMAIN_NAMES, value);
+}
+
+/**
+ * The domain a technique id belongs to when its id convention says so without
+ * loading another bundle: ICS ids are T08xx, F3's own ids are Fxxxx. Any other id
+ * is ambiguous (Enterprise, Mobile and v19 ICS share the T1xxx range), so null.
+ */
+export function domainHintForAttackId(attackId: string): AttackDomain | null {
+  if (/^T08\d\d(\.\d{3})?$/.test(attackId)) return 'ics';
+  if (/^F\d{4}(\.\d{3})?$/.test(attackId)) return 'f3';
+  return null;
+}
+
+/** The toast a `tech` link raises when its id is not in the loaded domain. */
+export function techNotInDomainMessage(attackId: string, domain: AttackDomain): string {
+  const where = `${attackId} is not in ${ATTACK_DOMAIN_NAMES[domain]}.`;
+  const hint = domainHintForAttackId(attackId);
+  return hint && hint !== domain
+    ? `${where} Add dom=${hint} to the link or switch domain.`
+    : `${where} Check the id or switch domain.`;
 }
 
 export interface FilterStateSnapshot {
@@ -74,6 +112,20 @@ export class FilterService {
   cveTechniqueIds$: Observable<Set<string>> = this.cveTechniqueIdsSubject.asObservable();
   private techniqueSearchSubject = new BehaviorSubject<string>('');
   techniqueSearch$: Observable<string> = this.techniqueSearchSubject.asObservable();
+  /**
+   * Whether the technique drawer stays open across workspaces (E2.3). Not in the
+   * URL. Closing the drawer (selectTechnique(null), Escape, clearAll) unpins it.
+   */
+  private drawerPinnedSubject = new BehaviorSubject<boolean>(false);
+  readonly drawerPinned$: Observable<boolean> = this.drawerPinnedSubject.asObservable();
+  /** One-off messages about a shared link (a `tech` id not in the loaded domain); AppComponent toasts them. */
+  private urlNoticeSubject = new Subject<string>();
+  readonly urlNotice$: Observable<string> = this.urlNoticeSubject.asObservable();
+  /**
+   * A `tech` id read from the URL that waits for its domain to load. It is
+   * serialized meanwhile, so the first writer pass keeps it in the address bar.
+   */
+  private pendingUrlTechId: string | null = null;
 
   selectedTechnique$: Observable<Technique | null> = this.selectedTechniqueSubject.asObservable();
   activeMitigationFilters$: Observable<Mitigation[]> = this.activeMitigationFiltersSubject.asObservable();
@@ -106,7 +158,12 @@ export class FilterService {
   urlRelevantState$!: Observable<void>;
   private domainSnapshot: Domain | null = null;
 
-  constructor(private dataService: DataService) {
+  constructor(
+    private dataService: DataService,
+    // DI supplies the root resolver (DataService keeps it on the loaded domain);
+    // the default only serves callers that construct the service directly.
+    private attackIdResolver: AttackIdResolverService = new AttackIdResolverService(),
+  ) {
     this.highlightedTechniqueIds$ = combineLatest([
       this.activeMitigationFiltersSubject,
       this.dataService.domain$,
@@ -241,7 +298,13 @@ export class FilterService {
       this.techniqueSearchSubject,
       this.dataService.domain$,
       this.platformMultiSubject,
+      this.selectedTechniqueSubject,
     ]).pipe(debounceTime(300), map(() => void 0));
+  }
+
+  /** The ATT&CK domain on screen. A DataService stub without currentDomain$ reads as Enterprise. */
+  private currentAttackDomain(): AttackDomain {
+    return this.dataService.currentDomain$?.value ?? 'enterprise';
   }
 
   /**
@@ -250,6 +313,14 @@ export class FilterService {
    */
   applyUrlState(params: URLSearchParams): void {
     try {
+      // `dom` first: a link to an ICS technique must load ICS before `tech` is
+      // looked up. The switch starts now, before the wait below. There is no
+      // clearAll (a fresh boot has nothing to clear), so the rest of the link survives.
+      const dom = params.get('dom');
+      const current = this.currentAttackDomain();
+      const target: AttackDomain = isAttackDomain(dom) ? dom : current;
+      if (target !== current) this.dataService.switchDomain(target);
+
       const tq = params.get('tq') ?? '';
       if (tq) this.techniqueQuerySubject.next(tq);
       const pf = params.get('pf');
@@ -279,9 +350,16 @@ export class FilterService {
       const campAttackIds = (params.get('camp') ?? '').split(',').filter(Boolean);
 
       const techId = params.get('tech') ?? '';
+      this.pendingUrlTechId = techId || null;
 
       if (mitIds.length || grpIds.length || swAttackIds.length || campAttackIds.length || techId) {
-        this.dataService.domain$.pipe(filter(Boolean), take(1)).subscribe((domain) => {
+        // Wait for the TARGET domain, not the first emission: domain$ replays
+        // whatever is loaded (Enterprise, on a boot that is switching to ICS).
+        const targetName = ATTACK_DOMAIN_NAMES[target];
+        this.dataService.domain$.pipe(
+          filter((d): d is Domain => !!d && d.name === targetName),
+          take(1),
+        ).subscribe((domain) => {
           if (mitIds.length) {
             const mits = mitIds.map((id) => domain.mitigations.find((m) => m.attackId === id)).filter((m): m is Mitigation => m !== undefined);
             if (mits.length) this.activeMitigationFiltersSubject.next(mits);
@@ -298,11 +376,19 @@ export class FilterService {
             const ids = new Set(campAttackIds.map((id) => domain.campaigns.find((c) => c.attackId === id)?.id).filter((id): id is string => !!id));
             if (ids.size) this.activeCampaignIdsSubject.next(ids);
           }
-          // Auto-select technique from URL (tech=T1059.001)
-          if (techId) {
-            const technique = domain.techniques.find((t: Technique) => t.attackId === techId);
+          // Select the technique from the URL (tech=T1059.001). A retired id opens
+          // the technique that replaced it; an id the domain lacks selects nothing
+          // and says which domain to add. Skipped if the user selected meanwhile.
+          if (techId && this.pendingUrlTechId === techId) {
+            this.pendingUrlTechId = null;
+            // The resolver is the identity until a domain loads; DataService
+            // subscribed first, so it already holds THIS domain's map here.
+            const liveId = this.attackIdResolver.resolve(techId);
+            const technique = domain.techniques.find((t: Technique) => t.attackId === liveId);
             if (technique) {
               this.selectTechnique(technique);
+            } else {
+              this.urlNoticeSubject.next(techNotInDomainMessage(techId, target));
             }
           }
         });
@@ -314,7 +400,10 @@ export class FilterService {
    * Serialize the current shareable filter state to URL query params.
    * Same keys as the pre-router hash format (mit, tq, pf, plat, dim, sfm,
    * ds, heat, impl, scope, tsearch, grp, sw, camp) so old links stay valid
-   * through the legacy-hash shim.
+   * through the legacy-hash shim, plus (E2.3) `tech`, the open technique, and
+   * `dom`, the ATT&CK domain when it is not Enterprise. With `tech`, `heat`
+   * and `dom` are always written, so a pasted link carries its lens and domain
+   * even at the defaults.
    */
   serializeUrlState(): Record<string, string> {
     const domain = this.domainSnapshot;
@@ -331,8 +420,9 @@ export class FilterService {
     if (this.searchFilterModeSubject.value) params['sfm'] = '1';
     const ds = this.activeDataSourceSubject.value;
     if (ds) params['ds'] = ds;
+    const tech = this.selectedTechniqueSubject.value?.attackId ?? this.pendingUrlTechId;
     const heat = this.heatmapModeSubject.value;
-    if (heat !== DEFAULT_HEATMAP_MODE) params['heat'] = heat;
+    if (heat !== DEFAULT_HEATMAP_MODE || tech) params['heat'] = heat;
     const impl = this.implStatusFilterSubject.value;
     if (impl) params['impl'] = impl;
     const scope = this.searchScopeSubject.value;
@@ -356,11 +446,23 @@ export class FilterService {
         if (ids.length) params['camp'] = ids.join(',');
       }
     }
+    const attackDomain = this.currentAttackDomain();
+    if (attackDomain !== 'enterprise' || tech) params['dom'] = attackDomain;
+    if (tech) params['tech'] = tech;
     return params;
   }
 
   selectTechnique(technique: Technique | null): void {
+    // A selection made now supersedes a `tech` link still waiting for its domain.
+    this.pendingUrlTechId = null;
+    // Closing the drawer unpins it (the close button, Escape on the matrix or
+    // through HotkeysService, clearAll), so a later selection starts unpinned.
+    if (technique === null) this.drawerPinnedSubject.next(false);
     this.selectedTechniqueSubject.next(technique);
+  }
+
+  setDrawerPinned(p: boolean): void {
+    this.drawerPinnedSubject.next(p);
   }
 
   /** Replace entire mitigation filter with a single mitigation, or clear. */
@@ -511,7 +613,7 @@ export class FilterService {
   }
 
   clearAll(): void {
-    this.selectedTechniqueSubject.next(null);
+    this.selectTechnique(null);
     this.activeMitigationFiltersSubject.next([]);
     this.techniqueQuerySubject.next('');
     this.sortModeSubject.next('alpha');

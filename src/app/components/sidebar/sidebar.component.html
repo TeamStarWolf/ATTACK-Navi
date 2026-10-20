@@ -21,6 +21,7 @@
           <button class="close-btn" (click)="close()" title="Close">✕</button>
         </div>
         <div class="header-btns">
+          <button type="button" class="watchlist-btn pin-btn" (click)="togglePin()" [class.watched]="pinned" [attr.aria-pressed]="pinned" [attr.aria-label]="pinned ? 'Unpin drawer' : 'Pin drawer'" [title]="pinned ? 'Unpin drawer' : 'Pin drawer'">📌</button>
           <button class="watchlist-btn" (click)="toggleWatchlist()" [class.watched]="isWatched" [title]="isWatched ? 'Remove from watchlist' : 'Add to watchlist'">{{ isWatched ? '🔖' : '🏷️' }}</button>
           <button class="share-btn" (click)="shareTechnique()" [title]="shareCopied ? 'Copied!' : 'Copy share link'">{{ shareCopied ? '✓' : '🔗' }}</button>
           <button class="share-btn" (click)="copyMarkdown()" [title]="markdownCopied ? 'Copied!' : 'Copy as Markdown'">MD</button>

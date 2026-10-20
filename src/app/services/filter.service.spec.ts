@@ -2,8 +2,13 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
-import { DataService } from './data.service';
-import { DEFAULT_HEATMAP_MODE, FilterService } from './filter.service';
+import { AttackDomain, DataService } from './data.service';
+import { AttackIdResolverService } from './attack-id-resolver.service';
+import { Domain } from '../models/domain';
+import { Technique } from '../models/technique';
+import {
+  DEFAULT_HEATMAP_MODE, FilterService, domainHintForAttackId, isAttackDomain, techNotInDomainMessage,
+} from './filter.service';
 
 describe('FilterService', () => {
   let service: FilterService;
@@ -76,6 +81,38 @@ describe('FilterService', () => {
     });
   });
 
+  describe('drawer Pin (E2.3)', () => {
+    const tech = { id: 'attack-pattern--a', attackId: 'T1059', name: 'Command Interpreter' } as unknown as Technique;
+    const pinned = (): boolean => {
+      let v = false;
+      service.drawerPinned$.subscribe(p => (v = p)).unsubscribe();
+      return v;
+    };
+
+    it('starts unpinned, is set by setDrawerPinned and never reaches the URL', () => {
+      expect(pinned()).toBeFalse();
+      service.selectTechnique(tech);
+      service.setDrawerPinned(true);
+      expect(pinned()).toBeTrue();
+      expect(Object.keys(service.serializeUrlState())).not.toContain('pin');
+      service.setDrawerPinned(false);
+      expect(pinned()).toBeFalse();
+    });
+
+    it('closing the drawer unpins it (selectTechnique(null): close button, Escape; clearAll)', () => {
+      service.selectTechnique(tech);
+      service.setDrawerPinned(true);
+      service.selectTechnique({ ...tech, attackId: 'T1003' } as Technique);
+      expect(pinned()).toBeTrue(); // another technique keeps the pin
+      service.selectTechnique(null);
+      expect(pinned()).toBeFalse();
+      service.selectTechnique(tech);
+      service.setDrawerPinned(true);
+      service.clearAll();
+      expect(pinned()).toBeFalse();
+    });
+  });
+
   it('should reset advanced filter state in clearAll', () => {
     service.setHeatmapMode('risk');
     service.setImplStatusFilter('implemented');
@@ -95,5 +132,159 @@ describe('FilterService', () => {
     service.searchScope$.subscribe(value => expect(value).toBe('name'));
     service.searchFilterMode$.subscribe(value => expect(value).toBeFalse());
     service.cveTechniqueIds$.subscribe(value => expect(value.size).toBe(0));
+  });
+});
+
+// E2.3 (P2-04): tech= and dom= in the URL.
+describe('FilterService tech= and dom= (E2.3)', () => {
+  const NAMES: Record<AttackDomain, string> = {
+    enterprise: 'Enterprise ATT&CK', ics: 'ICS ATT&CK', mobile: 'Mobile ATT&CK', f3: 'F3 Fraud Framework',
+  };
+  const t = (attackId: string): Technique => ({ id: `attack-pattern--${attackId}`, attackId, name: attackId } as unknown as Technique);
+  const makeDomain = (key: AttackDomain, ids: string[]): Domain => ({
+    name: NAMES[key], techniques: ids.map(t), mitigations: [], groups: [], software: [], campaigns: [], dataComponents: [],
+  } as unknown as Domain);
+  const ENTERPRISE = makeDomain('enterprise', ['T1059', 'T1059.001', 'T1685']);
+  const ICS = makeDomain('ics', ['T0807', 'T0886']);
+
+  let domain$: BehaviorSubject<Domain | null>;
+  let currentDomain$: BehaviorSubject<AttackDomain>;
+  let switchDomain: jasmine.Spy;
+  let service: FilterService;
+
+  /** A DataService stub whose switchDomain behaves like the real one: domain$ goes null until the new domain loads. */
+  function stub(): Partial<DataService> {
+    return {
+      domain$, currentDomain$,
+      switchDomain: switchDomain.and.callFake((d: AttackDomain) => {
+        if (d === currentDomain$.value) return;
+        currentDomain$.next(d);
+        domain$.next(null);
+      }),
+    } as unknown as Partial<DataService>;
+  }
+
+  beforeEach(() => {
+    domain$ = new BehaviorSubject<Domain | null>(ENTERPRISE);
+    currentDomain$ = new BehaviorSubject<AttackDomain>('enterprise');
+    switchDomain = jasmine.createSpy('switchDomain');
+    TestBed.configureTestingModule({
+      providers: [FilterService, { provide: DataService, useFactory: stub }],
+    });
+    service = TestBed.inject(FilterService);
+  });
+
+  const apply = (query: string) => service.applyUrlState(new URLSearchParams(query));
+  const selected = (): Technique | null => {
+    let v: Technique | null = null;
+    service.selectedTechnique$.subscribe(x => (v = x)).unsubscribe();
+    return v;
+  };
+  const notices = (): string[] => {
+    const seen: string[] = [];
+    service.urlNotice$.subscribe(m => seen.push(m));
+    return seen;
+  };
+
+  it('tech and dom round-trip, Enterprise and ICS', () => {
+    service.selectTechnique(ENTERPRISE.techniques[1]);
+    const ent = service.serializeUrlState();
+    expect(ent).toEqual(jasmine.objectContaining({ tech: 'T1059.001', dom: 'enterprise' }));
+
+    const fresh = new FilterService(TestBed.inject(DataService), TestBed.inject(AttackIdResolverService));
+    fresh.applyUrlState(new URLSearchParams(ent));
+    expect(fresh.serializeUrlState()).toEqual(ent);
+
+    // ICS on screen: dom=ics is written even without a technique, and with one.
+    service.selectTechnique(null);
+    service.applyUrlState(new URLSearchParams('dom=ics'));
+    domain$.next(ICS);
+    expect(service.serializeUrlState()).toEqual({ dom: 'ics' });
+    service.selectTechnique(ICS.techniques[0]);
+    const ics = service.serializeUrlState();
+    expect(ics).toEqual({ heat: DEFAULT_HEATMAP_MODE, dom: 'ics', tech: 'T0807' });
+
+    // A fresh Enterprise boot applies the ICS link: it switches, then selects.
+    currentDomain$.next('enterprise');
+    domain$.next(ENTERPRISE);
+    const boot = new FilterService(TestBed.inject(DataService), TestBed.inject(AttackIdResolverService));
+    boot.applyUrlState(new URLSearchParams(ics));
+    domain$.next(ICS);
+    expect(boot.serializeUrlState()).toEqual(ics);
+  });
+
+  it('with tech, heat is serialized even at the default lens; without tech, neither heat nor dom (Enterprise)', () => {
+    expect(service.serializeUrlState()).toEqual({});
+    service.selectTechnique(ENTERPRISE.techniques[0]);
+    const params = service.serializeUrlState();
+    expect(params['heat']).toBe(DEFAULT_HEATMAP_MODE);
+    expect(params['dom']).toBe('enterprise');
+    service.setHeatmapMode('kev');
+    expect(service.serializeUrlState()['heat']).toBe('kev');
+    service.selectTechnique(null);
+    service.setHeatmapMode(DEFAULT_HEATMAP_MODE);
+    expect(service.serializeUrlState()).toEqual({});
+  });
+
+  it('a retired id selects the live technique (AttackIdResolverService)', () => {
+    TestBed.inject(AttackIdResolverService).setSupersededBy(new Map([['T1562.001', 'T1685']]));
+    apply('tech=T1562.001');
+    expect(selected()?.attackId).toBe('T1685');
+    expect(service.serializeUrlState()['tech']).toBe('T1685');
+  });
+
+  it('dom=ics&tech=T0807 switches domain once and selects T0807 after the ICS domain emits', () => {
+    const seen = notices();
+    apply('dom=ics&tech=T0807');
+    expect(switchDomain).toHaveBeenCalledOnceWith('ics');
+    expect(selected()).toBeNull();
+    // Until ICS loads, the pending tech and dom stay serialized.
+    expect(service.serializeUrlState()).toEqual(jasmine.objectContaining({ dom: 'ics', tech: 'T0807' }));
+    // A stale Enterprise emission is not the target domain.
+    domain$.next(ENTERPRISE);
+    expect(selected()).toBeNull();
+    domain$.next(ICS);
+    expect(selected()?.attackId).toBe('T0807');
+    expect(switchDomain).toHaveBeenCalledTimes(1);
+    expect(seen).toEqual([]);
+  });
+
+  it('an unknown tech raises the toast once and selects nothing', () => {
+    const seen = notices();
+    apply('tech=T0807');
+    expect(selected()).toBeNull();
+    expect(seen).toEqual(['T0807 is not in Enterprise ATT&CK. Add dom=ics to the link or switch domain.']);
+    domain$.next(ENTERPRISE);
+    expect(seen.length).toBe(1);
+    expect(service.serializeUrlState()['tech']).toBeUndefined();
+  });
+
+  it('ignores a dom value that is not an ATT&CK domain (#118 pattern) and applies the rest', () => {
+    apply('dom=bogus&tech=T1059.001&heat=kev');
+    apply('dom=constructor');
+    expect(switchDomain).not.toHaveBeenCalled();
+    expect(selected()?.attackId).toBe('T1059.001');
+    expect(service.getStateSnapshot().heatmapMode).toBe('kev');
+    expect(service.serializeUrlState()['dom']).toBe('enterprise');
+  });
+
+  it('a user selection made while a tech link waits wins over the link', () => {
+    apply('dom=ics&tech=T0807');
+    service.selectTechnique(ENTERPRISE.techniques[0]);
+    domain$.next(ICS);
+    expect(selected()?.attackId).toBe('T1059');
+  });
+
+  it('isAttackDomain, domainHintForAttackId and the toast text', () => {
+    expect(isAttackDomain('ics')).toBeTrue();
+    expect(isAttackDomain('ICS')).toBeFalse();
+    expect(isAttackDomain('toString')).toBeFalse();
+    expect(isAttackDomain(null)).toBeFalse();
+    expect(domainHintForAttackId('T0807')).toBe('ics');
+    expect(domainHintForAttackId('F1001')).toBe('f3');
+    expect(domainHintForAttackId('T1059.001')).toBeNull();
+    expect(techNotInDomainMessage('T0807', 'enterprise'))
+      .toBe('T0807 is not in Enterprise ATT&CK. Add dom=ics to the link or switch domain.');
+    expect(techNotInDomainMessage('T9999', 'ics')).toBe('T9999 is not in ICS ATT&CK. Check the id or switch domain.');
   });
 });

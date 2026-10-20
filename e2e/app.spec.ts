@@ -1,7 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { readFileSync } from 'node:fs';
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Browser, BrowserContext, Page } from '@playwright/test';
 
 const BASE = 'http://localhost:4200';
 
@@ -401,6 +401,44 @@ test.describe('ATT&CK Navi', () => {
     // so the layer's own entry (score badge) is rendered.
     await page.locator('#sb-sec-imported-layer').click();
     await expect(page.locator('.imported-layer-section')).toContainText('Score: 90');
+  });
+});
+
+// E2.3 (P2-04): the drawer writes tech= (with heat=) and dom= into the URL, so a
+// pasted link reopens the same technique, lens and domain. Each test opens the
+// link in a NEW browser context: nothing carries over from a previous visit.
+test.describe('E2.3: tech= and dom= share links', () => {
+  async function newVisitor(browser: Browser): Promise<{ context: BrowserContext; page: Page }> {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await hermetic(page);
+    await page.addInitScript(() => localStorage.setItem('onboarding-completed', 'true'));
+    return { context, page };
+  }
+
+  test('[AC] (query form) a pasted link reopens the same technique and lens in a new context', async ({ browser }) => {
+    const { context, page } = await newVisitor(browser);
+    try {
+      await page.goto(BASE + '/#/matrix?heat=kev&tech=T1059.001');
+      await expect(page.locator('.sidebar.open .sidebar-header .attack-id')).toHaveText('T1059.001', { timeout: ROUTE_TIMEOUT });
+      await expect(page.locator('.heatmap-btn')).toContainText('KEV');
+      // The URL writer's first pass (300 ms debounce) used to drop tech=.
+      await page.waitForTimeout(1000);
+      expect(new URL(page.url()).hash).toContain('tech=T1059.001');
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('an ICS technique link loads ICS and opens its drawer (dom=ics&tech=T0807)', async ({ browser }) => {
+    const { context, page } = await newVisitor(browser);
+    try {
+      await page.goto(BASE + '/#/matrix?dom=ics&tech=T0807');
+      await expect(page.locator('.domain-btn[title="ICS ATT&CK"]')).toHaveClass(/active/, { timeout: ROUTE_TIMEOUT });
+      await expect(page.locator('.sidebar.open .sidebar-header .attack-id')).toHaveText('T0807', { timeout: ROUTE_TIMEOUT });
+    } finally {
+      await context.close();
+    }
   });
 });
 
