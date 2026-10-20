@@ -5,6 +5,7 @@ $st-partial: var(--accent-warm);
 $st-failed: #ef4444;
 $st-no-tel: #6b7280;
 $st-untested: #9ca3af;
+$st-not-repro: #8b5cf6;   // the Navigator layer's 'not-reproducible' colour
 
 .vp-panel {
   background: var(--bg-elev, var(--bg-panel-strong));
@@ -53,7 +54,7 @@ $st-untested: #9ca3af;
 
 .vp-kpis {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--border-subtle, var(--border-subtle));
 }
 .vp-kpi {
@@ -67,6 +68,7 @@ $st-untested: #9ca3af;
   &[data-status="failed"]      { border-left-color: $st-failed; }
   &[data-status="no-telemetry"]{ border-left-color: $st-no-tel; }
   &[data-status="untested"]    { border-left-color: $st-untested; }
+  &[data-status="not-reproducible"] { border-left-color: $st-not-repro; }
 
   .vp-kpi-value {
     font-size: 22px; font-weight: 800; color: var(--text-main, #e6e8ee);
@@ -144,6 +146,7 @@ $st-untested: #9ca3af;
   &[data-status="failed"]      { border-left-color: $st-failed; }
   &[data-status="no-telemetry"]{ border-left-color: $st-no-tel; }
   &[data-status="untested"]    { border-left-color: $st-untested; }
+  &[data-status="not-reproducible"] { border-left-color: $st-not-repro; }
 
   .vp-tcard-head {
     display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
@@ -174,6 +177,7 @@ $st-untested: #9ca3af;
   &[data-status="failed"]      { background: rgba(239,68,68,0.18); color: $st-failed; }
   &[data-status="no-telemetry"]{ background: rgba(107,114,128,0.18); color: $st-no-tel; }
   &[data-status="untested"]    { background: rgba(156,163,175,0.18); color: $st-untested; }
+  &[data-status="not-reproducible"] { background: rgba(139,92,246,0.18); color: $st-not-repro; }
 }
 
 .vp-empty {
@@ -211,6 +215,7 @@ $st-untested: #9ca3af;
   &[data-status="failed"]      { border-left-color: $st-failed; }
   &[data-status="no-telemetry"]{ border-left-color: $st-no-tel; }
   &[data-status="untested"]    { border-left-color: $st-untested; }
+  &[data-status="not-reproducible"] { border-left-color: $st-not-repro; }
 
   .vp-evidence-head {
     display: flex; align-items: center; gap: 8px; flex-wrap: wrap;

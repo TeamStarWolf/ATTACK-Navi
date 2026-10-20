@@ -12,7 +12,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription, filter, take } from 'rxjs';
 import { DataService } from '../../services/data.service';
-import { ValidationService, ValidationRun, ValidationStatus } from '../../services/validation.service';
+import {
+  ValidationService, ValidationRun, ValidationStatus, VALIDATION_RUNS_V1_KEY, describeImportResult,
+} from '../../services/validation.service';
 import { EventLoggingService } from '../../services/event-logging.service';
 import { AtomicService } from '../../services/atomic.service';
 import { SigmaService } from '../../services/sigma.service';
@@ -21,6 +23,11 @@ import { LibraryService } from '../../services/library.service';
 import { TelemetryCoverageService, TelemetrySourceRow } from '../../services/telemetry-coverage.service';
 import { Domain } from '../../models/domain';
 import { Technique } from '../../models/technique';
+
+/** Whether a status is a recorded outcome (counted out of "Untested (in scope)"). */
+const RECORDED_STATUS: Record<ValidationStatus, boolean> = {
+  passed: true, partial: true, failed: true, 'no-telemetry': true, 'not-reproducible': true, untested: false,
+};
 
 interface TechniqueValidationCard {
   technique: Technique;
@@ -169,6 +176,27 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
     return this.techniqueCards.length;
   }
 
+  /**
+   * Runs with a recorded outcome: every status but 'untested'. Read from a
+   * Record over ValidationStatus, so a new status cannot be left out of the
+   * "Untested (in scope)" tile or the "Coverage so far" line.
+   */
+  get recordedCount(): number {
+    const counts = this.statusCounts;
+    return (Object.keys(RECORDED_STATUS) as ValidationStatus[])
+      .filter(s => RECORDED_STATUS[s])
+      .reduce((sum, s) => sum + (counts[s] ?? 0), 0);
+  }
+
+  /** v1 runs the copy-forward could not carry (design §5.11); they stay in the v1 key. */
+  get migrationNotice(): string | null {
+    const dropped = this.validationService.migrationDropped ?? [];
+    if (dropped.length === 0) return null;
+    const first = dropped.slice(0, 3).map(d => `row ${d.row}: ${d.reason}`).join('; ');
+    return `${dropped.length} stored run${dropped.length === 1 ? '' : 's'} from the previous format could not be carried over ` +
+      `(${first}${dropped.length > 3 ? '; …' : ''}). ${dropped.length === 1 ? 'It is' : 'They are'} kept unchanged in ${VALIDATION_RUNS_V1_KEY}.`;
+  }
+
   openRecordModal(card: TechniqueValidationCard): void {
     this.selectedTechnique = card.technique;
     this.formOperator = '';
@@ -235,14 +263,18 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
     this.downloadBlob(json, `validation-runs-${new Date().toISOString().split('T')[0]}.json`, 'application/json');
   }
 
+  /** The last import's per-source result ("manual: 1 added, 0 replaced"), shown under the header. */
+  importMessage: string | null = null;
+
   importRuns(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
     if (!file) return;
     file.text().then(text => {
       const result = this.validationService.importJson(text);
-      if (!result.ok) {
-        alert(`Import failed: ${result.error}`);
-      }
+      this.importMessage = describeImportResult(result);
+      input.value = '';
+      this.cdr.markForCheck();
     });
   }
 
@@ -287,7 +319,11 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
 
   // Helpers used in template
   statusLabel(s: ValidationStatus): string {
-    return { passed: 'PASS', failed: 'FAIL', partial: 'PARTIAL', 'no-telemetry': 'NO TELEMETRY', untested: 'UNTESTED' }[s];
+    const labels: Record<ValidationStatus, string> = {
+      passed: 'PASS', failed: 'FAIL', partial: 'PARTIAL', 'no-telemetry': 'NO TELEMETRY', untested: 'UNTESTED',
+      'not-reproducible': 'Not reproducible (patched target)',
+    };
+    return labels[s];
   }
 
   // Detections list and runs are useful in the runs/evidence tabs

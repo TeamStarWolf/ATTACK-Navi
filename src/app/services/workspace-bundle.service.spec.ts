@@ -22,7 +22,8 @@ describe('WorkspaceBundleService', () => {
     const bundle = service.exportBundle();
     cleanup();
     const applied = service.importBundle(bundle);
-    expect(applied).toBe(2);
+    // importBundle returns the keys it wrote (P2-02); their count is the old return value.
+    expect(applied).toEqual(['mitre-nav-tags-v1', 'mitre-nav-watchlist-v1']);
     expect(localStorage.getItem('mitre-nav-watchlist-v1')).toBe('["T1059"]');
     expect(localStorage.getItem('mitre-nav-tags-v1')).toBe('{"T1059":["quarterly"]}');
   });
@@ -54,7 +55,26 @@ describe('WorkspaceBundleService', () => {
       data: { 'misp_config': '{"apiKey":"evil"}', 'mitre-nav-watchlist-v1': '[]' },
     });
     const applied = service.importBundle(crafted);
-    expect(applied).toBe(1);
+    expect(applied).toEqual(['mitre-nav-watchlist-v1']);
     expect(localStorage.getItem('misp_config')).toBeNull();
+  });
+
+  it('bundles the v2 validation run store (P2-02)', () => {
+    expect(WorkspaceBundleService.BUNDLED_KEYS).toContain('navi.v2.validation-runs');
+    expect(WorkspaceBundleService.BUNDLED_KEYS).toContain('attacknavi.validation-runs.v1');
+    // P2-03's shared threat profile key stays bundled alongside the run store (design §10.5 merge order).
+    expect(WorkspaceBundleService.BUNDLED_KEYS).toContain('navi.v2.threat-profile');
+    expect(new Set(WorkspaceBundleService.BUNDLED_KEYS).size).toBe(WorkspaceBundleService.BUNDLED_KEYS.length);
+  });
+
+  it('importBundle returns the written keys, v2 run store included (P2-02)', () => {
+    const v2 = JSON.stringify({ schema: 2, tombstones: [], records: [] });
+    const written = service.importBundle(JSON.stringify({
+      format: 'attack-navi-workspace',
+      version: 1,
+      data: { 'navi.v2.validation-runs': v2, 'mitre-nav-tags-v1': '{}', 'not-a-bundled-key': 'x' },
+    }));
+    expect(written).toEqual(['navi.v2.validation-runs', 'mitre-nav-tags-v1']);
+    expect(localStorage.getItem('navi.v2.validation-runs')).toBe(v2);
   });
 });

@@ -8,7 +8,7 @@ import { AssetInventoryService } from '../../services/asset-inventory.service';
 import { CveService } from '../../services/cve.service';
 import { Cve2CapecService } from '../../services/cve2capec.service';
 import { ImplementationService } from '../../services/implementation.service';
-import { ValidationService } from '../../services/validation.service';
+import { ValidationService, type ValidationStatus } from '../../services/validation.service';
 import { TimelineService } from '../../services/timeline.service';
 
 interface CtemStage {
@@ -22,6 +22,20 @@ interface CtemStage {
   /** Status distribution chips (e.g. validation outcomes). */
   chips?: { label: string; count: number; cls: string }[];
 }
+
+/**
+ * The validation outcome chips, one per run status ('untested' runs have no outcome
+ * chip). A Record over ValidationStatus, so a new status cannot vanish from the
+ * distribution.
+ */
+const VALIDATION_CHIPS: Record<ValidationStatus, { label: string; cls: string } | null> = {
+  passed: { label: 'passed', cls: 'chip-pass' },
+  partial: { label: 'partial', cls: 'chip-warn' },
+  failed: { label: 'failed', cls: 'chip-fail' },
+  'no-telemetry': { label: 'no-telemetry', cls: 'chip-mute' },
+  'not-reproducible': { label: 'not reproducible (patched target)', cls: 'chip-mute' },
+  untested: null,
+};
 
 /**
  * CTEM board: the app's REAL data organized along Gartner's five Continuous
@@ -89,15 +103,14 @@ export class CtemPageComponent implements OnInit, OnDestroy {
           }));
 
         // Validation outcome distribution across recorded runs.
-        const valCounts = new Map<string, number>();
+        const valCounts = new Map<ValidationStatus, number>();
         for (const r of runs) valCounts.set(r.status, (valCounts.get(r.status) ?? 0) + 1);
-        const valChips = [
-          { label: 'passed', cls: 'chip-pass' },
-          { label: 'partial', cls: 'chip-warn' },
-          { label: 'failed', cls: 'chip-fail' },
-          { label: 'no-telemetry', cls: 'chip-mute' },
-        ].filter(c => (valCounts.get(c.label) ?? 0) > 0)
-          .map(c => ({ ...c, count: valCounts.get(c.label)! }));
+        const valChips = (Object.keys(VALIDATION_CHIPS) as ValidationStatus[])
+          .flatMap(s => {
+            const chip = VALIDATION_CHIPS[s];
+            const count = valCounts.get(s) ?? 0;
+            return chip && count > 0 ? [{ ...chip, count }] : [];
+          });
 
         // Mapped trend: latest snapshot vs the one before it, only when both
         // counted on the same basis (E1.7 changed it from mitigations only).
