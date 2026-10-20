@@ -1,6 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
+import { ValidationService } from './validation.service';
 
 /**
  * Full-workspace export/import: every piece of user work-product the app
@@ -36,6 +37,7 @@ export class WorkspaceBundleService {
     'attacknavi.telemetry-coverage.v1',
     'attacknavi.validation-runs.v1',
     'navi.v2.threat-profile',           // E2.6 shared threat profile (P2-03)
+    'navi.v2.validation-runs',         // the v2 run store (P2-02); authoritative when present (design §5.5)
     // Custom entities & plans
     'mitre-nav-custom-techniques-v1',
     'mitre-nav-custom-groups-v1',
@@ -76,11 +78,14 @@ export class WorkspaceBundleService {
   }
 
   /**
-   * Restores a bundle. Returns the number of keys applied. The caller should
-   * reload the app afterwards — services hydrate from storage at startup.
+   * Restores a bundle. Returns the keys it wrote (their count is the number of
+   * data sets applied). The caller should reload the app afterwards — services
+   * hydrate from storage at startup. The written-key list tells
+   * ValidationService whether the bundle carried the v2 run store, which is
+   * then authoritative over the v1 key (design §5.5).
    * @throws Error on an unrecognized or malformed payload.
    */
-  importBundle(json: string): number {
+  importBundle(json: string): string[] {
     let parsed: any;
     try {
       parsed = JSON.parse(json);
@@ -94,15 +99,16 @@ export class WorkspaceBundleService {
       throw new Error(`Unsupported bundle version: ${parsed.version}.`);
     }
     const allowed = new Set(WorkspaceBundleService.BUNDLED_KEYS);
-    let applied = 0;
+    const written: string[] = [];
     for (const [key, value] of Object.entries(parsed.data)) {
       // Only whitelisted keys — a crafted bundle can't write arbitrary storage.
       if (!allowed.has(key) || typeof value !== 'string') continue;
       const cleaned = key === 'mitre-nav-settings-v1' ? this.stripSecrets(value) : value;
       localStorage.setItem(key, cleaned);
-      applied++;
+      written.push(key);
     }
-    return applied;
+    ValidationService.applyBundleRestore(written);
+    return written;
   }
 
   downloadBundle(): void {
