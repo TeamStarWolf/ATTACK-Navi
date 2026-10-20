@@ -134,6 +134,7 @@ describe('threat-profile model', () => {
       TestBed.configureTestingModule({ providers: [{ provide: HttpClient, useValue: { get: () => of({}) } }] });
       domain = (TestBed.inject(DataService) as unknown as { parseBundle(b: unknown, n: string): Domain })
         .parseBundle(bundle, 'Enterprise ATT&CK');
+      TestBed.resetTestingModule();   // release the injected DataService so it does not leak into the next spec file (attack-id-currency.spec.ts:37)
     }, 120_000);
 
     it('Top 20 groups by prevalence cover 167 parent techniques', () => {
