@@ -6,6 +6,10 @@ import {
   OnDestroy,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
+  Signal,
+  computed,
+  inject,
+  signal,
 } from '@angular/core';
 
 import { Subscription, combineLatest } from 'rxjs';
@@ -16,26 +20,33 @@ import { DocumentationService, MitigationDoc } from '../../services/documentatio
 import { ReportConfigService, ReportSection } from '../../services/report-config.service';
 import { csvRow } from '../../utils/csv';
 import {
+  ReportSplit,
+  TacticSplit,
   computeReportSplit,
-  isTechniqueImplemented,
   isTechniqueMapped,
   REPORT_SPLIT_LABELS,
 } from '../../models/report-split';
+import { PostureService } from '../../services/posture.service';
+import { PROVEN } from '../../models/posture/posture-vocabulary';
+import type { PostureBucket } from '../../models/posture/posture.types';
 
 /**
- * One tactic row of the Theoretical / Implemented split. Theoretical is
- * reference mapping (Known); Implemented is owner-attested (Covered,
- * self-attested). See models/report-split.ts.
+ * One tactic row of the split: Known and its Theoretical sub-line from
+ * reference mapping, the posture buckets from PostureService.rollup. See
+ * models/report-split.ts.
  */
-interface TacticReport {
-  name: string;
-  total: number;
-  theoretical: number;
-  theoreticalPct: number;
-  implemented: number;
-  implementedPct: number;
+interface TacticReport extends TacticSplit {
   topGaps: string[];
 }
+
+/**
+ * The report-builder CSV's Implemented cell for one technique (P2-07): the
+ * same per-technique answer the posture card counts. 'Yes' for covered,
+ * proven and stale, 'Partial' for partial, 'No' otherwise.
+ */
+export const CSV_IMPLEMENTED_CELL: Readonly<Record<PostureBucket, 'Yes' | 'Partial' | 'No'>> = {
+  covered: 'Yes', proven: 'Yes', stale: 'Yes', partial: 'Partial', known: 'No', none: 'No',
+};
 
 interface RecommendedMit {
   attackId: string;
@@ -68,19 +79,30 @@ export class ReportPanelComponent implements OnInit, OnDestroy {
   reportDate = '';
 
   readonly labels = REPORT_SPLIT_LABELS;
+  readonly provenLabel = PROVEN;
 
-  totalTechniques = 0;
-  /** Known: parent techniques with at least one mitigation mapped (reference only). */
-  theoreticalTechniques = 0;
-  theoreticalPct = 0;
-  /** Covered (self-attested): parent techniques with a mapped mitigation marked implemented. */
-  implementedTechniques = 0;
-  implementedPct = 0;
+  private readonly posture = inject(PostureService);
+  /** Covered and Proven words render only when the owner has recorded data (§2.4). */
+  readonly ownerWords: Signal<boolean> = this.posture.ownerWords;
+  private readonly domainSig = signal<Domain | null>(null);
+  private readonly implementedMitigations = signal(0);
+  /**
+   * The split, recomputed from PostureService.rollup whenever the posture
+   * states change: the same numbers as the posture card, the Validation
+   * summary, the stats-bar and the HTML and PDF reports.
+   */
+  readonly split: Signal<ReportSplit | null> = computed(() => {
+    const domain = this.domainSig();
+    return domain ? computeReportSplit(domain, this.posture.rollup(), this.implementedMitigations()) : null;
+  });
+  /** Tactic rows of the split, with the first five unmapped techniques. */
+  readonly tacticStats: Signal<TacticReport[]> = computed(() =>
+    (this.split()?.byTactic ?? []).map(ts => ({ ...ts, topGaps: ts.unmappedIds.slice(0, 5) })));
+
   totalMitigations = 0;
   totalGroups = 0;
   totalCampaigns = 0;
 
-  tacticStats: TacticReport[] = [];
   topUncovered: Array<{ attackId: string; name: string; tactics: string }> = [];
   recommendedMits: RecommendedMit[] = [];
   documentedMits: DocumentedMit[] = [];
@@ -93,8 +115,6 @@ export class ReportPanelComponent implements OnInit, OnDestroy {
   allSections: ReportSection[] = [];
   configOpen = false;
 
-  /** Latest owner implementation statuses (mitigation STIX id to status). */
-  private statusMap: ReadonlyMap<string, ImplStatus> = new Map();
   private subs = new Subscription();
 
   constructor(
@@ -121,8 +141,10 @@ export class ReportPanelComponent implements OnInit, OnDestroy {
         this.docService.mitDocs$,
       ]).subscribe(([domain, statusMap, mitDocs]) => {
         this.domain = domain;
-        this.statusMap = statusMap;
-        if (!domain) return;
+        if (!domain) {
+          this.domainSig.set(null);
+          return;
+        }
 
         this.reportDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
         const parentTechs = domain.techniques.filter((t) => !t.isSubtechnique);
@@ -130,28 +152,12 @@ export class ReportPanelComponent implements OnInit, OnDestroy {
         this.totalGroups = domain.groups.length;
         this.totalCampaigns = domain.campaigns.length;
 
-        // Theoretical / Implemented split: one shared computation for the
-        // panel, the HTML export and the PDF report.
-        const split = computeReportSplit(domain, statusMap);
-        this.totalTechniques = split.total;
-        this.theoreticalTechniques = split.theoretical;
-        this.theoreticalPct = split.theoreticalPct;
-        this.implementedTechniques = split.implemented;
-        this.implementedPct = split.implementedPct;
-
-        // Impl summary
+        // Impl summary (mitigations by status). The split (one shared
+        // computation for the panel, the HTML export and the PDF report) takes
+        // the implemented mitigation count from it.
         this.implSummary = this.implService.summarize();
-
-        // Tactic stats
-        this.tacticStats = split.byTactic.map((ts) => ({
-          name: ts.name,
-          total: ts.total,
-          theoretical: ts.theoretical,
-          theoreticalPct: ts.theoreticalPct,
-          implemented: ts.implemented,
-          implementedPct: ts.implementedPct,
-          topGaps: ts.unmappedIds.slice(0, 5),
-        }));
+        this.implementedMitigations.set(this.implSummary['implemented'] ?? 0);
+        this.domainSig.set(domain);
 
         // Techniques with no mitigation mapped, by adversary use
         const uncoveredTechs = parentTechs
@@ -259,7 +265,8 @@ export class ReportPanelComponent implements OnInit, OnDestroy {
     if (!this.domain) return;
     // Theoretical (reference mapping) and Implemented (self-attested) are
     // separate columns: a mapped mitigation is never reported as implemented.
-    const statusMap = this.statusMap;
+    // The Implemented cell is the technique's posture bucket (P2-07), so a broad
+    // mitigation reads 'Partial' until the technique is confirmed.
     const rows = [
       `Technique ID,Technique Name,Tactics,Platforms,Mitigations Mapped,Threat Groups,${REPORT_SPLIT_LABELS.theoretical},${REPORT_SPLIT_LABELS.implemented}`,
     ];
@@ -274,7 +281,7 @@ export class ReportPanelComponent implements OnInit, OnDestroy {
         mitCount,
         groupCount,
         isTechniqueMapped(t) ? 'Yes' : 'No',
-        isTechniqueImplemented(this.domain, t, statusMap) ? 'Yes' : 'No',
+        CSV_IMPLEMENTED_CELL[this.posture.stateFor(t).bucket],
       ]));
     }
     const blob = new Blob([rows.join('\n')], { type: 'text/csv' });

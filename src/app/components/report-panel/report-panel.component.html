@@ -48,8 +48,12 @@
           <h1>MITRE ATT&amp;CK Mitigation Report</h1>
           <p class="report-date">Generated: {{ reportDate }}</p>
           <p class="report-split-note" data-testid="report-split-note">
-            <strong>{{ labels.theoreticalShort }}</strong> counts come from ATT&amp;CK's reference mappings and make no claim about your environment.
-            <strong>{{ labels.implementedShort }}</strong> counts come only from mitigations you marked implemented (self-attested, not validated).
+            <strong>{{ labels.known }}</strong> and <strong>{{ labels.theoreticalShort }}</strong> counts come from ATT&amp;CK's reference mappings and make no claim about your environment.
+            @if (ownerWords()) {
+              <strong>{{ labels.covered }}</strong> counts come only from data you recorded (self-attested, not validated); a broad mitigation counts as {{ labels.partial }}.
+            } @else {
+              {{ labels.fresh }}
+            }
           </p>
         </div>
 
@@ -58,16 +62,30 @@
           <section class="section" [style.order]="sectionOrder('exec-summary')">
             <h2>Executive Summary</h2>
             <div class="summary-grid">
-              <div class="summary-card theoretical" data-testid="report-theoretical">
-                <div class="card-num">{{ theoreticalPct }}%</div>
-                <div class="card-label">{{ labels.theoretical }}</div>
-                <div class="card-sub">{{ theoreticalTechniques }} / {{ totalTechniques }} techniques. {{ labels.theoreticalNote }}</div>
-              </div>
-              <div class="summary-card implemented" data-testid="report-implemented">
-                <div class="card-num">{{ implementedPct }}%</div>
-                <div class="card-label">{{ labels.implemented }}</div>
-                <div class="card-sub">{{ implementedTechniques }} / {{ totalTechniques }} techniques. {{ labels.implementedNote }}</div>
-              </div>
+              @if (split(); as s) {
+                <div class="summary-card theoretical" data-testid="report-known">
+                  <div class="card-num">{{ s.knownPct }}%</div>
+                  <div class="card-label">{{ labels.known }}</div>
+                  <div class="card-sub"><span data-posture="known-mapped">{{ s.known }}</span> / <span data-posture="known-total">{{ s.total }}</span> techniques. {{ labels.knownNote }}</div>
+                  <div class="card-sub" data-testid="report-theoretical">{{ labels.theoretical }}: {{ s.theoretical }} / {{ s.total }} techniques ({{ s.theoreticalPct }}%). {{ labels.theoreticalNote }}</div>
+                </div>
+                @if (ownerWords()) {
+                  <div class="summary-card implemented" data-testid="report-covered">
+                    <div class="card-num" data-posture="covered">{{ s.covered }}</div>
+                    <div class="card-label">{{ labels.covered }}</div>
+                    <div class="card-sub">{{ s.covered }} / {{ s.total }} techniques. {{ labels.coveredNote }}</div>
+                  </div>
+                  <div class="summary-card implemented" data-testid="report-partial">
+                    <div class="card-num" data-posture="partial">{{ s.partial }}</div>
+                    <div class="card-label">{{ labels.partialCard }}</div>
+                  </div>
+                  <div class="summary-card implemented" data-testid="report-proven">
+                    <div class="card-num" data-posture="proven">{{ s.proven }}</div>
+                    <div class="card-label">{{ provenLabel }}</div>
+                    <div class="card-sub">{{ labels.stale }}: <span data-posture="stale">{{ s.stale }}</span></div>
+                  </div>
+                }
+              }
               <div class="summary-card">
                 <div class="card-num">{{ totalMitigations }}</div>
                 <div class="card-label">Total Mitigations</div>
@@ -112,21 +130,25 @@
         <!-- Per-tactic coverage -->
         @if (isSectionVisible('coverage-by-tactic')) {
           <section class="section" [style.order]="sectionOrder('coverage-by-tactic')">
-            <h2>Theoretical vs Implemented by Tactic</h2>
-            <p class="section-desc">{{ labels.theoreticalShort }}: {{ labels.theoreticalNote }} {{ labels.implementedShort }}: {{ labels.implementedNote }}</p>
+            <h2>{{ ownerWords() ? 'Theoretical and Posture by Tactic' : 'Theoretical by Tactic' }}</h2>
+            <p class="section-desc">{{ labels.theoreticalShort }}: {{ labels.theoreticalNote }} @if (ownerWords()) { {{ labels.covered }}: {{ labels.coveredNote }} }</p>
             <table class="coverage-table" data-testid="report-tactic-split">
               <thead>
                 <tr>
                   <th>Tactic</th>
                   <th>Total</th>
                   <th>{{ labels.theoreticalShort }} (mapped)</th>
-                  <th>{{ labels.implemented }}</th>
+                  @if (ownerWords()) {
+                    <th>{{ labels.covered }}</th>
+                    <th>{{ labels.partial }}</th>
+                    <th>{{ provenLabel }}</th>
+                  }
                   <th>{{ labels.unmapped }}</th>
                 </tr>
               </thead>
               <tbody>
-                @for (ts of tacticStats; track ts.name) {
-                  <tr>
+                @for (ts of tacticStats(); track ts.name) {
+                  <tr [attr.data-tactic]="ts.shortname">
                     <td class="tactic-name-cell">{{ ts.name }}</td>
                     <td class="num-cell">{{ ts.total }}</td>
                     <td class="pct-cell">
@@ -135,12 +157,16 @@
                       </div>
                       <span class="pct-val">{{ ts.theoretical }} ({{ ts.theoreticalPct }}%)</span>
                     </td>
-                    <td class="pct-cell">
-                      <div class="mini-bar-wrap">
-                        <div class="mini-bar mini-bar--implemented" [style.width.%]="ts.implementedPct"></div>
-                      </div>
-                      <span class="pct-val">{{ ts.implemented }} ({{ ts.implementedPct }}%)</span>
-                    </td>
+                    @if (ownerWords()) {
+                      <td class="pct-cell">
+                        <div class="mini-bar-wrap">
+                          <div class="mini-bar mini-bar--implemented" [style.width.%]="ts.coveredPct"></div>
+                        </div>
+                        <span class="pct-val"><span data-posture="covered">{{ ts.covered }}</span> ({{ ts.coveredPct }}%)</span>
+                      </td>
+                      <td class="num-cell" data-posture="partial">{{ ts.partial }}</td>
+                      <td class="num-cell"><span data-posture="proven">{{ ts.proven }}</span> · {{ labels.stale }} <span data-posture="stale">{{ ts.stale }}</span></td>
+                    }
                     <td class="gaps-cell">{{ ts.topGaps.join(', ') }}</td>
                   </tr>
                 }

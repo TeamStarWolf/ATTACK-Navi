@@ -1,0 +1,33 @@
+<!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+     https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
+@let t = tally();
+<section class="posture-card" aria-labelledby="posture-card-title" data-testid="posture-card" [attr.data-scope]="scope">
+  <h3 class="posture-card-title" id="posture-card-title">Posture</h3>
+  <dl class="posture-card-rows">
+    <div class="pc-row pc-row--known">
+      <dt>Known: mapped</dt>
+      <dd><span data-posture="known-mapped">{{ t.mapped }}</span> of <span data-posture="known-total">{{ t.total }}</span></dd>
+    </div>
+    @if (ownerWords()) {
+      <div class="pc-row pc-row--covered">
+        <dt>Covered (self-attested)</dt>
+        <dd data-posture="covered">{{ t.covered }}</dd>
+      </div>
+      <div class="pc-row pc-row--partial">
+        <dt>partial</dt>
+        <dd data-posture="partial">{{ t.partial }}</dd>
+      </div>
+      <div class="pc-row pc-row--proven">
+        <dt>{{ provenLabel }}</dt>
+        <dd data-posture="proven">{{ t.proven }}</dd>
+      </div>
+      <div class="pc-row pc-row--stale">
+        <dt>stale</dt>
+        <dd data-posture="stale">{{ t.stale }}</dd>
+      </div>
+    }
+  </dl>
+  @if (!ownerWords()) {
+    <p class="posture-card-note">No data of yours recorded. Known counts reference mapping only.</p>
+  }
+</section>

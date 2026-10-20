@@ -1,12 +1,20 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { Injectable } from '@angular/core';
-import { ImplStatus } from './implementation.service';
+import { Injectable, Injector, inject } from '@angular/core';
+import { ImplStatus, ImplementationService } from './implementation.service';
 import { Domain } from '../models/domain';
+import { PostureService } from './posture.service';
 import { computeReportSplit, REPORT_SPLIT_LABELS } from '../models/report-split';
+import { PROVEN } from '../models/posture/posture-vocabulary';
+
+/** data-posture / data-split values (posture bucket keys) the equality spec reads. */
+const DATA = { covered: 'covered', partial: 'partial', proven: 'proven', stale: 'stale' } as const;
 
 @Injectable({ providedIn: 'root' })
 export class PdfReportService {
+  // Resolved when a report is built, so services that only hold this one (and
+  // their specs) do not construct the posture graph.
+  private readonly injector = inject(Injector);
 
   generateReport(domain: Domain, statusMap: Map<string, ImplStatus>): void {
     const html = this.buildReportHtml(domain, statusMap);
@@ -57,10 +65,14 @@ export class PdfReportService {
   private buildReportHtml(domain: Domain, statusMap: Map<string, ImplStatus>): string {
     const allTechs = domain.techniques;
     const parentTechs = allTechs.filter(t => !t.isSubtechnique);
-    // Theoretical (Known: reference mapping) vs Implemented (Covered,
-    // self-attested). Shared with the Report Builder panel and the HTML report.
+    // Known (reference mapping, with the Theoretical sub-line) and the posture
+    // buckets of PostureService.rollup. Shared with the Report Builder panel and
+    // the HTML report (P2-07).
     const L = REPORT_SPLIT_LABELS;
-    const split = computeReportSplit(domain, statusMap);
+    const posture = this.injector.get(PostureService);
+    const split = computeReportSplit(domain, posture.rollup(), this.injector.get(ImplementationService).summarize()['implemented']);
+    // Covered and Proven words render only when the owner has recorded data (§2.4).
+    const ownerWords = posture.ownerWords();
 
     // Tactic breakdown, lowest Theoretical share first
     const tacticStats = [...split.byTactic].sort((a, b) => a.theoreticalPct - b.theoreticalPct);
@@ -106,8 +118,12 @@ export class PdfReportService {
       <tr>
         <td>${this.esc(ts.name)}</td>
         <td style="text-align:center">${ts.total}</td>
-        <td style="text-align:center">${ts.theoretical} (${ts.theoreticalPct}%)</td>
-        <td style="text-align:center">${ts.implemented} (${ts.implementedPct}%)</td>
+        <td style="text-align:center">${ts.known}</td>
+        <td style="text-align:center">${ts.theoretical} (${ts.theoreticalPct}%)</td>${ownerWords ? `
+        <td style="text-align:center" data-posture="${DATA.covered}">${ts.covered}</td>
+        <td style="text-align:center" data-posture="${DATA.partial}">${ts.partial}</td>
+        <td style="text-align:center" data-posture="${DATA.proven}">${ts.proven}</td>
+        <td style="text-align:center" data-posture="${DATA.stale}">${ts.stale}</td>` : ''}
       </tr>`).join('');
 
     // Build gap rows
@@ -221,11 +237,15 @@ export class PdfReportService {
 
 <!-- Summary Stats -->
 <h2>Summary</h2>
-<p style="font-size:10px;color:#555"><strong>${L.theoreticalShort}</strong>: ${L.theoreticalNote} <strong>${L.implementedShort}</strong>: ${L.implementedNote}</p>
+<p style="font-size:10px;color:#555"><strong>${L.known}</strong>: ${L.knownNote} <strong>${L.theoreticalShort}</strong>: ${L.theoreticalNote}${ownerWords ? ` <strong>${L.covered}</strong>: ${L.coveredNote}` : ` ${L.fresh}`}</p>
 <div class="summary-grid no-break">
   <div class="summary-box">
-    <div class="num">${split.total}</div>
+    <div class="num" data-posture="known-total">${split.total}</div>
     <div class="lbl">Total Techniques</div>
+  </div>
+  <div class="summary-box">
+    <div class="num"><span data-posture="known-mapped">${split.known}</span> (${split.knownPct}%)</div>
+    <div class="lbl">${L.known}</div>
   </div>
   <div class="summary-box">
     <div class="num">${split.theoretical} (${split.theoreticalPct}%)</div>
@@ -234,11 +254,23 @@ export class PdfReportService {
   <div class="summary-box">
     <div class="num">${split.unmapped}</div>
     <div class="lbl">${L.unmapped}</div>
+  </div>${ownerWords ? `
+  <div class="summary-box">
+    <div class="num"><span data-posture="${DATA.covered}">${split.covered}</span> (${split.coveredPct}%)</div>
+    <div class="lbl">${L.covered}</div>
   </div>
   <div class="summary-box">
-    <div class="num">${split.implemented} (${split.implementedPct}%)</div>
-    <div class="lbl">${L.implemented}</div>
+    <div class="num" data-posture="${DATA.partial}">${split.partial}</div>
+    <div class="lbl">${L.partialCard}</div>
   </div>
+  <div class="summary-box">
+    <div class="num" data-posture="${DATA.proven}">${split.proven}</div>
+    <div class="lbl">${PROVEN}</div>
+  </div>
+  <div class="summary-box">
+    <div class="num" data-posture="${DATA.stale}">${split.stale}</div>
+    <div class="lbl">${L.stale}</div>
+  </div>` : ''}
 </div>
 
 <!-- Tactic Breakdown -->
@@ -248,8 +280,12 @@ export class PdfReportService {
     <tr>
       <th>Tactic</th>
       <th style="text-align:center">Total</th>
-      <th style="text-align:center">${L.theoreticalShort} (mapped)</th>
-      <th style="text-align:center">${L.implemented}</th>
+      <th style="text-align:center">${L.known}</th>
+      <th style="text-align:center">${L.theoreticalShort} (mitigation mapped)</th>${ownerWords ? `
+      <th style="text-align:center">${L.covered}</th>
+      <th style="text-align:center">${L.partial}</th>
+      <th style="text-align:center">${PROVEN}</th>
+      <th style="text-align:center">${L.stale}</th>` : ''}
     </tr>
   </thead>
   <tbody>${tacticRows}</tbody>

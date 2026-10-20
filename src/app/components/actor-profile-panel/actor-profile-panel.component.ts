@@ -1,6 +1,6 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, Signal, inject } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
@@ -8,7 +8,9 @@ import { FilterService } from '../../services/filter.service';
 import { PanelNavService } from '../../services/panel-nav.service';
 import { DataService } from '../../services/data.service';
 import { GraphFocusService } from '../../services/graph-focus.service';
-import { ImplementationService } from '../../services/implementation.service';
+import { PostureService } from '../../services/posture.service';
+import { postureBadge } from '../../models/posture/posture-vocabulary';
+import type { PostureBucket, PostureTally } from '../../models/posture/posture.types';
 import { ThreatGroup } from '../../models/group';
 import { AttackSoftware } from '../../models/software';
 import { Campaign } from '../../models/campaign';
@@ -20,12 +22,17 @@ interface GroupProfile {
   techniques: Technique[];
   software: AttackSoftware[];
   campaigns: Campaign[];
-  coveredCount: number;
-  uncoveredCount: number;
-  coveragePct: number;
   tacticBreakdown: { tactic: string; count: number }[];
-  topUncovered: Technique[];
 }
+
+/** The row dot of one technique (P2-07): its posture bucket, never a mitigation fold. */
+export type TechMark = 'yes' | 'partial' | 'no';
+
+const BUCKET_MARK: Readonly<Record<PostureBucket, TechMark>> = {
+  covered: 'yes', proven: 'yes', stale: 'yes', partial: 'partial', known: 'no', none: 'no',
+};
+
+const MARK_GLYPH: Readonly<Record<TechMark, string>> = { yes: '✅', partial: '◐', no: '🔴' };
 
 @Component({
   selector: 'app-actor-profile-panel',
@@ -41,16 +48,18 @@ export class ActorProfilePanelComponent implements OnInit, OnDestroy {
   filteredGroups: ThreatGroup[] = [];
   selectedProfile: GroupProfile | null = null;
   searchText = '';
-  implStatusMap = new Map<string, string>();
   viewTab: 'overview' | 'techniques' | 'software' | 'campaigns' = 'overview';
   private subs = new Subscription();
+
+  private readonly posture = inject(PostureService);
+  /** Covered and Proven words render only when the owner has recorded data (§2.4). */
+  readonly ownerWords: Signal<boolean> = this.posture.ownerWords;
 
   constructor(
     private filterService: FilterService,
     private panelNav: PanelNavService,
     private dataService: DataService,
     private graphFocus: GraphFocusService,
-    private implService: ImplementationService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -58,10 +67,6 @@ export class ActorProfilePanelComponent implements OnInit, OnDestroy {
     this.subs.add(this.dataService.domain$.subscribe(domain => {
       this.domain = domain;
       if (domain) this.loadGroups();
-      this.cdr.markForCheck();
-    }));
-    this.subs.add(this.implService.status$.subscribe(map => {
-      this.implStatusMap = map as Map<string, string>;
       this.cdr.markForCheck();
     }));
   }
@@ -85,18 +90,6 @@ export class ActorProfilePanelComponent implements OnInit, OnDestroy {
     const software = this.dataService.getSoftwareForGroup(group.id);
     const campaigns = this.dataService.getCampaignsForGroup(group.id);
 
-    const coveredIds = new Set<string>();
-    for (const [mitId, status] of this.implStatusMap.entries()) {
-      if (status === 'implemented') {
-        const techsForMit = this.dataService.getTechniquesForMitigation(mitId);
-        for (const t of techsForMit) coveredIds.add(t.id);
-      }
-    }
-
-    const coveredCount = techniques.filter(t => coveredIds.has(t.id)).length;
-    const uncoveredCount = techniques.length - coveredCount;
-    const coveragePct = techniques.length > 0 ? Math.round((coveredCount / techniques.length) * 100) : 0;
-
     const tacticMap = new Map<string, number>();
     for (const t of techniques) {
       for (const tac of t.tacticShortnames) {
@@ -107,12 +100,7 @@ export class ActorProfilePanelComponent implements OnInit, OnDestroy {
       .sort((a, b) => b[1] - a[1])
       .map(([tactic, count]) => ({ tactic, count }));
 
-    const topUncovered = techniques
-      .filter(t => !coveredIds.has(t.id))
-      .sort((a, b) => (b.mitigationCount ?? 0) - (a.mitigationCount ?? 0))
-      .slice(0, 10);
-
-    this.selectedProfile = { group, techniques, software, campaigns, coveredCount, uncoveredCount, coveragePct, tacticBreakdown, topUncovered };
+    this.selectedProfile = { group, techniques, software, campaigns, tacticBreakdown };
     this.viewTab = 'overview';
     this.cdr.markForCheck();
   }
@@ -137,14 +125,60 @@ export class ActorProfilePanelComponent implements OnInit, OnDestroy {
     this.panelNav.open('matrix', { keepTechniqueSelection: true });
   }
 
-  getTechCoverage(techId: string): boolean {
-    for (const [mitId, status] of this.implStatusMap.entries()) {
-      if (status === 'implemented') {
-        const techs = this.dataService.getTechniquesForMitigation(mitId);
-        if (techs.some(t => t.id === techId)) return true;
-      }
-    }
-    return false;
+  // ── Posture (S6, P2-07): counts from PostureService.tallyFor, never a
+  // percentage. These read signals, so the OnPush template refreshes whenever
+  // the posture states change.
+
+  /** The posture tally over the profile's techniques. */
+  tallyOf(p: GroupProfile): PostureTally {
+    return this.posture.tallyFor(p.techniques);
+  }
+
+  /**
+   * 'N of M techniques covered (self-attested), K partial', or on a profile
+   * with no owner data 'M techniques; no data of yours recorded'.
+   */
+  summaryLine(p: GroupProfile): string {
+    const m = p.techniques.length;
+    if (!this.ownerWords()) return `${m} techniques; no data of yours recorded`;
+    const t = this.tallyOf(p);
+    return `${t.covered} of ${m} techniques covered (self-attested), ${t.partial} partial`;
+  }
+
+  /** The Proven line, its words from the posture vocabulary. */
+  provenLine(p: GroupProfile): string {
+    const t = this.tallyOf(p);
+    const proven = postureBadge({ bucket: 'proven', qualifiers: [], proofScope: null, covered: [] });
+    const stale = postureBadge({ bucket: 'stale', qualifiers: [], proofScope: null, covered: [] });
+    return `${proven}: ${t.proven} · ${stale}: ${t.stale}`;
+  }
+
+  /** The number in the ring: Covered with owner data, else the technique count. */
+  ringCount(p: GroupProfile): number {
+    return this.ownerWords() ? this.tallyOf(p).covered : p.techniques.length;
+  }
+
+  /** The row dot from the technique's posture bucket. */
+  getTechCoverage(tech: Technique): TechMark {
+    return BUCKET_MARK[this.posture.stateFor(tech).bucket];
+  }
+
+  techGlyph(tech: Technique): string {
+    return MARK_GLYPH[this.getTechCoverage(tech)];
+  }
+
+  /** The partial dot's tooltip (the posture badge); null for the other dots. */
+  techTitle(tech: Technique): string | null {
+    const state = this.posture.stateFor(tech);
+    return state.bucket === 'partial' ? postureBadge(state) : null;
+  }
+
+  /** Up to ten techniques without a full mark, most mitigations mapped first. */
+  topExposed(p: GroupProfile): Technique[] {
+    return p.techniques
+      .filter(t => this.getTechCoverage(t) !== 'yes')
+      .sort((a, b) => (b.mitigationCount ?? 0) - (a.mitigationCount ?? 0))
+      .slice(0, 10);
   }
 
   ngOnDestroy(): void { this.subs.unsubscribe(); }

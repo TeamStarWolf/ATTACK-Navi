@@ -1,13 +1,29 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import {
+  Component, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges, ChangeDetectionStrategy, ChangeDetectorRef,
+  Signal, computed, inject, signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { Domain } from '../../models/domain';
-import { ImplementationService } from '../../services/implementation.service';
 import { TimelineService } from '../../services/timeline.service';
 import { PanelNavService } from '../../services/panel-nav.service';
 import { EnrichmentService } from '../../services/enrichment.service';
+import { PostureService } from '../../services/posture.service';
+import { PROVEN } from '../../models/posture/posture-vocabulary';
+
+/** The posture numbers the bar shows: parents only, plus the Covered count with sub-techniques. */
+export interface StatsBarPosture {
+  /** Parent techniques: the denominator of the parents-only tally. */
+  total: number;
+  covered: number;
+  partial: number;
+  proven: number;
+  stale: number;
+  /** Covered over parents and sub-techniques; shown only while includeSubtechniques is on. */
+  coveredWithSubs: number;
+}
 
 /** Snapshots on another count basis (mitigations only, before E1.7) stay out of the trend. */
 const TREND_BASIS = 'reference-mapped';
@@ -36,18 +52,33 @@ export class StatsBarComponent implements OnInit, OnChanges, OnDestroy {
   /** Known tier: techniques with >=1 defensive reference input mapped (EnrichmentService.mappedRollup). */
   mappedTechniques = 0;
   mappedPct = 0;
-  implementedPct = 0;
-  implementedCount = 0;
   totalMitigations = 0;
   totalRelationships = 0;
   tacticStats: TacticStat[] = [];
   includeSubtechniques = false;
   showTacticBars = true;
 
+  readonly provenLabel = PROVEN;
+
+  private readonly posture = inject(PostureService);
+  /** Covered and Proven words render only when the owner has recorded data (§2.4). */
+  readonly ownerWords: Signal<boolean> = this.posture.ownerWords;
+  private readonly subsOn = signal(false);
+  /**
+   * The Covered/partial tally, refreshed from PostureService.states (S12):
+   * parents only, the same numbers as the posture card and the report. With
+   * sub-techniques on, the Covered count over every technique is a second,
+   * labelled number.
+   */
+  readonly postureTally: Signal<StatsBarPosture> = computed(() => {
+    const o = this.posture.rollup().overall;
+    const coveredWithSubs = this.subsOn() ? this.posture.rollup({ includeSubtechniques: true }).overall.covered : o.covered;
+    return { total: o.total, covered: o.covered, partial: o.partial, proven: o.proven, stale: o.stale, coveredWithSubs };
+  });
+
   private subs = new Subscription();
 
   constructor(
-    private implService: ImplementationService,
     private cdr: ChangeDetectorRef,
     private timelineService: TimelineService,
     private panelNav: PanelNavService,
@@ -55,13 +86,6 @@ export class StatsBarComponent implements OnInit, OnChanges, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(
-      this.implService.status$.subscribe(() => {
-        this.recompute();
-        this.cdr.markForCheck();
-      }),
-    );
-
     this.subs.add(
       this.timelineService.snapshots$.subscribe(() => {
         this.cdr.markForCheck();
@@ -84,6 +108,7 @@ export class StatsBarComponent implements OnInit, OnChanges, OnDestroy {
 
   toggleSubtechniques(): void {
     this.includeSubtechniques = !this.includeSubtechniques;
+    this.subsOn.set(this.includeSubtechniques);
     this.recompute();
     this.cdr.markForCheck();
   }
@@ -139,20 +164,6 @@ export class StatsBarComponent implements OnInit, OnChanges, OnDestroy {
     let relCount = 0;
     this.domain.mitigationsByTechnique.forEach((rels) => (relCount += rels.length));
     this.totalRelationships = relCount;
-
-    // Implemented coverage
-    const statusMap = this.implService.getStatusMap();
-    const implementedTechIds = new Set<string>();
-    for (const [mitId, status] of statusMap.entries()) {
-      if (status === 'implemented') {
-        const techs = this.domain.techniquesByMitigation.get(mitId) ?? [];
-        for (const t of techs) {
-          if (!t.isSubtechnique) implementedTechIds.add(t.id);
-        }
-      }
-    }
-    this.implementedCount = implementedTechIds.size;
-    this.implementedPct = this.totalTechniques > 0 ? Math.round((this.implementedCount / this.totalTechniques) * 100) : 0;
 
     this.tacticStats = rollup.byTactic.map((t) => ({
       name: t.tacticName,

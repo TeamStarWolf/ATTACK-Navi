@@ -10,17 +10,27 @@
       <div class="coverage-bar" title="{{ mappedTechniques }}/{{ totalTechniques }} techniques mapped to ≥1 defensive reference (mitigation, detection content, control, D3FEND or Atomic). Known tier: reference, no claim about your estate.">
         <div class="coverage-fill" [style.width.%]="mappedPct"></div>
       </div>
-      @if (implementedCount > 0) {
-        <div class="coverage-bar impl-bar" [title]="implementedCount + '/' + totalTechniques + ' techniques with an implemented mitigation (self-attested)'">
-          <div class="coverage-fill impl-fill" [style.width.%]="implementedPct"></div>
+      @if (ownerWords()) {
+        @let p = postureTally();
+        <div class="coverage-bar impl-bar" [title]="'Covered (self-attested): ' + p.covered + ' of ' + p.total + ' parent techniques'">
+          <div class="coverage-fill impl-fill" [style.width.%]="p.total > 0 ? (p.covered / p.total) * 100 : 0"></div>
         </div>
       }
       <span class="coverage-sub">
-        {{ mappedTechniques }}/{{ totalTechniques }} mapped
-        @if (implementedCount > 0) {
-          · <span class="impl-sub">{{ implementedCount }} mitigations implemented</span>
-        }
+        <span data-posture="known-mapped">{{ mappedTechniques }}</span>/<span data-posture="known-total">{{ totalTechniques }}</span> mapped
       </span>
+      @if (ownerWords()) {
+        @let p = postureTally();
+        <span class="coverage-sub posture-sub" data-testid="stats-posture">
+          <span class="impl-sub">Covered (self-attested): <span data-posture="covered">{{ p.covered }}</span></span>
+          · partial: <span data-posture="partial">{{ p.partial }}</span>
+          · {{ provenLabel }}: <span data-posture="proven">{{ p.proven }}</span>
+          · stale: <span data-posture="stale">{{ p.stale }}</span>
+          @if (includeSubtechniques) {
+            · <span class="impl-sub" data-posture="covered-with-subs" title="Covered (self-attested) over parent techniques and sub-techniques">incl. sub-techniques: {{ p.coveredWithSubs }}</span>
+          }
+        </span>
+      }
     </div>
   </div>
 

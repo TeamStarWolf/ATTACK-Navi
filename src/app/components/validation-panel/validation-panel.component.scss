@@ -52,6 +52,8 @@ $st-not-repro: #8b5cf6;   // the Navigator layer's 'not-reproducible' colour
   &:hover { color: var(--text-main, #e6e8ee); }
 }
 
+.vp-posture { padding: 14px 18px 0; }
+
 .vp-kpis {
   display: grid;
   grid-template-columns: repeat(6, 1fr);

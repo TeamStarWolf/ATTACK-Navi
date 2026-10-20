@@ -1,129 +1,135 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 //
-// E1.1: the Report's Theoretical / Implemented split. Theoretical is
-// reference mapping (Known); Implemented is owner-attested (Covered,
-// self-attested). Nothing that is reference-only may read as implemented.
+// E1.1 and P2-07: the Report's split. Known: mapped and its Theoretical
+// sub-line come from reference mapping; Covered, partial, Proven and stale come
+// from the posture rollup the other count surfaces read. Nothing that is
+// reference-only may read as Covered. The old isTechniqueImplemented and
+// allMappedImplemented cases are gone with those functions (Revision 3): the
+// per-technique answer is PostureService.stateFor, asserted by
+// testing/posture-count-equality.spec.ts.
 
 import { Domain } from './domain';
 import { makeSplitDomain } from '../testing/report-split-fixture';
-import { ImplStatus } from '../services/implementation.service';
+import { makePostureStub } from '../testing/posture-stub';
+import type { PostureBucket } from './posture/posture.types';
 import {
   computeReportSplit,
-  isTechniqueImplemented,
   isTechniqueMapped,
   REPORT_SPLIT_LABELS,
 } from './report-split';
 
-const status = (entries: Array<[string, ImplStatus]>): Map<string, ImplStatus> =>
-  new Map(entries.map(([m, s]) => [`course-of-action--${m}`, s]));
+/** The rollup of the posture stub over the split fixture with these buckets. */
+function rollup(domain: Domain, buckets: Record<string, PostureBucket> = {}) {
+  return makePostureStub(() => domain, buckets).rollup();
+}
 
-describe('computeReportSplit (E1.1 Theoretical / Implemented)', () => {
+describe('computeReportSplit (E1.1 Theoretical sub-line, P2-07 posture rollup)', () => {
   it('counts Theoretical from reference mapping only, over parent techniques', () => {
-    const split = computeReportSplit(makeSplitDomain(), new Map());
+    const domain = makeSplitDomain();
+    const split = computeReportSplit(domain, rollup(domain), 0);
     expect(split.total).toBe(5);
     expect(split.theoretical).toBe(3);
     expect(split.theoreticalPct).toBe(60);
     expect(split.unmapped).toBe(2);
   });
 
-  it('reports 0 Implemented when the owner has recorded nothing, however much is mapped', () => {
-    const split = computeReportSplit(makeSplitDomain(), new Map());
-    expect(split.implemented).toBe(0);
-    expect(split.implementedPct).toBe(0);
-    expect(split.allMappedImplemented).toBe(0);
+  it('takes Known: mapped from the rollup, not from the mitigation count', () => {
+    const domain = makeSplitDomain();
+    const r = rollup(domain, { T3: 'known' });
+    const split = computeReportSplit(domain, r, 0);
+    expect(split.known).toBe(r.overall.mapped);
+    expect(split.known).toBe(4);
+    expect(split.knownPct).toBe(80);
+    expect(split.theoretical).withContext('the Theoretical sub-line still counts mitigations only').toBe(3);
+  });
+
+  it('reports 0 Covered, partial and Proven when the owner has recorded nothing, however much is mapped', () => {
+    const domain = makeSplitDomain();
+    const split = computeReportSplit(domain, rollup(domain), 0);
+    expect([split.covered, split.coveredPct, split.partial, split.proven, split.stale]).toEqual([0, 0, 0, 0, 0]);
     for (const t of split.byTactic) {
-      expect(t.implemented).withContext(t.name).toBe(0);
-      expect(t.implementedPct).withContext(t.name).toBe(0);
+      expect([t.covered, t.coveredPct, t.partial, t.proven, t.stale]).withContext(t.name).toEqual([0, 0, 0, 0, 0]);
     }
   });
 
-  it('counts a technique as Implemented only through a mapped mitigation marked implemented', () => {
-    const split = computeReportSplit(makeSplitDomain(), status([['M1', 'implemented']]));
-    // M1 maps to T1 and T2 (and the sub-technique, which never counts).
-    expect(split.implemented).toBe(2);
-    expect(split.implementedPct).toBe(40);
-    expect(split.implementedMitigations).toBe(1);
-    // T2's only mitigation is M1; T1 also has M2, which is not implemented.
-    expect(split.allMappedImplemented).toBe(1);
-  });
-
-  it('does not count planned, in-progress or not-started mitigations as Implemented', () => {
-    const split = computeReportSplit(makeSplitDomain(), status([
-      ['M1', 'planned'],
-      ['M2', 'in-progress'],
-      ['M3', 'not-started'],
-    ]));
-    expect(split.implemented).toBe(0);
-    expect(split.implementedMitigations).toBe(0);
-  });
-
-  it('never counts an unmapped technique as Implemented, even for an implemented mitigation id it lacks', () => {
+  it('copies every posture bucket of the rollup, overall and per tactic', () => {
     const domain = makeSplitDomain();
-    const all = status([['M1', 'implemented'], ['M2', 'implemented'], ['M3', 'implemented']]);
-    const split = computeReportSplit(domain, all);
-    expect(split.implemented).toBe(split.theoretical);
-    const t3 = domain.techniques.find(t => t.attackId === 'T3')!;
-    const t5 = domain.techniques.find(t => t.attackId === 'T5')!;
-    expect(isTechniqueImplemented(domain, t3, all)).toBeFalse();
-    expect(isTechniqueImplemented(domain, t5, all)).toBeFalse();
-    expect(isTechniqueMapped(t3)).toBeFalse();
+    const r = rollup(domain, { T1: 'covered', T2: 'partial', T4: 'proven', T5: 'stale' });
+    const split = computeReportSplit(domain, r, 2);
+    expect([split.covered, split.partial, split.proven, split.stale]).toEqual([1, 1, 1, 1]);
+    expect(split.coveredPct).toBe(20);
+    expect(split.implementedMitigations).toBe(2);
+    expect(split.byTactic.map(t => [t.name, t.covered, t.partial, t.proven, t.stale]))
+      .toEqual(r.byTactic.map(t => [t.tacticName, t.covered, t.partial, t.proven, t.stale]));
   });
 
-  it('keeps Implemented a subset of Theoretical for every status combination', () => {
+  it('keeps partial separate from Covered: a broad mitigation never adds to Covered', () => {
     const domain = makeSplitDomain();
-    const statuses: Array<ImplStatus | undefined> = [undefined, 'implemented', 'in-progress', 'planned', 'not-started'];
-    for (const a of statuses) {
-      for (const b of statuses) {
-        for (const c of statuses) {
-          const entries: Array<[string, ImplStatus]> = [];
-          if (a) entries.push(['M1', a]);
-          if (b) entries.push(['M2', b]);
-          if (c) entries.push(['M3', c]);
-          const split = computeReportSplit(domain, status(entries));
-          expect(split.implemented).toBeLessThanOrEqual(split.theoretical);
-          expect(split.allMappedImplemented).toBeLessThanOrEqual(split.implemented);
-          for (const t of split.byTactic) {
-            expect(t.implemented).toBeLessThanOrEqual(t.theoretical);
-          }
-        }
-      }
-    }
+    const split = computeReportSplit(domain, rollup(domain, { T1: 'partial', T2: 'partial', T4: 'partial' }), 1);
+    expect(split.covered).toBe(0);
+    expect(split.partial).toBe(3);
   });
 
-  it('leaves Theoretical unchanged when the owner changes implementation statuses', () => {
+  it('leaves Known and Theoretical unchanged when the posture changes', () => {
     const domain = makeSplitDomain();
-    const before = computeReportSplit(domain, new Map());
-    const after = computeReportSplit(domain, status([['M1', 'implemented'], ['M3', 'implemented']]));
-    expect(after.theoretical).toBe(before.theoretical);
-    expect(after.theoreticalPct).toBe(before.theoreticalPct);
-    expect(after.byTactic.map(t => t.theoretical)).toEqual(before.byTactic.map(t => t.theoretical));
-    expect(after.implemented).toBeGreaterThan(before.implemented);
+    const before = computeReportSplit(domain, rollup(domain), 0);
+    const after = computeReportSplit(domain, rollup(domain, { T1: 'covered', T4: 'proven' }), 2);
+    expect([after.known, after.theoretical, after.theoreticalPct]).toEqual([before.known, before.theoretical, before.theoreticalPct]);
+    expect(after.byTactic.map(t => [t.known, t.theoretical])).toEqual(before.byTactic.map(t => [t.known, t.theoretical]));
+    expect(after.covered).toBeGreaterThan(before.covered);
   });
 
   it('splits each tactic column and lists its unmapped techniques', () => {
-    const split = computeReportSplit(makeSplitDomain(), status([['M3', 'implemented']]));
+    const domain = makeSplitDomain();
+    const split = computeReportSplit(domain, rollup(domain, { T4: 'covered' }), 1);
     expect(split.byTactic).toEqual([
-      { name: 'Execution', total: 3, theoretical: 2, theoreticalPct: 67, implemented: 0, implementedPct: 0, unmappedIds: ['T3'] },
-      { name: 'Persistence', total: 2, theoretical: 1, theoreticalPct: 50, implemented: 1, implementedPct: 50, unmappedIds: ['T5'] },
+      {
+        name: 'Execution', shortname: 'execution', total: 3, known: 2, knownPct: 67, theoretical: 2, theoreticalPct: 67,
+        covered: 0, coveredPct: 0, partial: 0, proven: 0, stale: 0, unmappedIds: ['T3'],
+      },
+      {
+        name: 'Persistence', shortname: 'persistence', total: 2, known: 1, knownPct: 50, theoretical: 1, theoreticalPct: 50,
+        covered: 1, coveredPct: 50, partial: 0, proven: 0, stale: 0, unmappedIds: ['T5'],
+      },
     ]);
   });
 
+  it('matches tactic rows by shortname and falls back to zeros for a tactic the rollup lacks', () => {
+    const domain = makeSplitDomain();
+    const r = rollup(domain, { T4: 'covered' });
+    const split = computeReportSplit(domain, { ...r, byTactic: [...r.byTactic].reverse() }, 1);
+    expect(split.byTactic.map(t => t.covered)).toEqual([0, 1]);
+    const none = computeReportSplit(domain, { ...r, byTactic: [] }, 1);
+    expect(none.byTactic.map(t => [t.known, t.covered, t.partial, t.proven, t.stale])).toEqual([[0, 0, 0, 0, 0], [0, 0, 0, 0, 0]]);
+  });
+
   it('returns zeros, not NaN, for an empty domain', () => {
-    const empty = { techniques: [], tacticColumns: [], mitigationsByTechnique: new Map() } as unknown as Domain;
-    const split = computeReportSplit(empty, new Map());
+    const empty = { techniques: [], tacticColumns: [] } as unknown as Domain;
+    const split = computeReportSplit(empty, rollup(empty), 0);
     expect(split).toEqual(jasmine.objectContaining({
-      total: 0, theoretical: 0, theoreticalPct: 0, implemented: 0, implementedPct: 0, unmapped: 0,
+      total: 0, known: 0, knownPct: 0, theoretical: 0, theoreticalPct: 0, covered: 0, coveredPct: 0, partial: 0, unmapped: 0,
     }));
   });
 
-  it('labels Theoretical as reference mapping and Implemented as self-attested', () => {
+  it('isTechniqueMapped is the mitigation-count test of the Theoretical sub-line', () => {
+    const domain = makeSplitDomain();
+    expect(domain.techniques.filter(t => !t.isSubtechnique).filter(isTechniqueMapped).map(t => t.attackId)).toEqual(['T1', 'T2', 'T4']);
+  });
+
+  it('labels Known and Theoretical as reference mapping and Covered as self-attested', () => {
+    expect(REPORT_SPLIT_LABELS.known).toBe('Known: mapped');
     expect(REPORT_SPLIT_LABELS.theoretical).toMatch(/^Theoretical/);
     expect(REPORT_SPLIT_LABELS.theoretical).toContain('mapped');
     expect(REPORT_SPLIT_LABELS.theoreticalNote).toMatch(/reference/i);
+    expect(REPORT_SPLIT_LABELS.covered).toBe('Covered (self-attested)');
+    expect(REPORT_SPLIT_LABELS.partialCard).toBe('partial (broad mitigation, not confirmed per technique)');
+    // The CSV column header is unchanged.
     expect(REPORT_SPLIT_LABELS.implemented).toBe('Implemented (self-attested)');
-    // No Theoretical wording may read as implemented, covered or protected.
-    const theoreticalWords = [REPORT_SPLIT_LABELS.theoretical, REPORT_SPLIT_LABELS.theoreticalShort, REPORT_SPLIT_LABELS.theoreticalNote, REPORT_SPLIT_LABELS.unmapped].join(' ');
-    expect(theoreticalWords).not.toMatch(/implement|cover|protect|defend|risk/i);
+    // No Known or Theoretical wording may read as implemented, covered or protected.
+    const referenceWords = [REPORT_SPLIT_LABELS.known, REPORT_SPLIT_LABELS.knownNote, REPORT_SPLIT_LABELS.theoretical,
+      REPORT_SPLIT_LABELS.theoreticalShort, REPORT_SPLIT_LABELS.theoreticalNote, REPORT_SPLIT_LABELS.unmapped,
+      REPORT_SPLIT_LABELS.fresh].join(' ');
+    expect(referenceWords).not.toMatch(/implement|cover|protect|defend|risk/i);
   });
 });

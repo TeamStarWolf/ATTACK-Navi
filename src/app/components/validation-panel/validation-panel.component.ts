@@ -23,6 +23,7 @@ import { LibraryService } from '../../services/library.service';
 import { TelemetryCoverageService, TelemetrySourceRow } from '../../services/telemetry-coverage.service';
 import { Domain } from '../../models/domain';
 import { Technique } from '../../models/technique';
+import { PostureCardComponent } from '../posture-card/posture-card.component';
 
 /** Whether a status is a recorded outcome (counted out of "Untested (in scope)"). */
 const RECORDED_STATUS: Record<ValidationStatus, boolean> = {
@@ -42,7 +43,7 @@ interface TechniqueValidationCard {
 @Component({
   selector: 'app-validation-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PostureCardComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './validation-panel.component.html',
   styleUrls: ['./validation-panel.component.scss'],
