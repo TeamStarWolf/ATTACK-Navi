@@ -14,16 +14,16 @@ Counts and versions derived from the code. When a document states one of these n
 | Routed workspace tabs | 47 | child routes with `data.tab` in `src/app/pages/*/*.routes.ts` |
 | Library layers | 37 | `src/assets/data/library-layers/index.json` |
 | Lylat mission layers | 35 | `src/assets/data/lylat-mission-layers/index.json` |
-| Unit spec files | 207 | `src/**/*.spec.ts` |
+| Unit spec files | 215 | `src/**/*.spec.ts` |
 | Playwright spec files | 7 | `e2e/**/*.spec.ts` |
-| Script test files | 6 | `scripts/**/*.test.mjs` |
+| Script test files | 7 | `scripts/**/*.test.mjs` |
 | Proxy test files | 1 | `server/**/*.test.*` |
 | Angular | 22.2.2 | `package-lock.json` (`@angular/core`) |
 | TypeScript | 6.0.3 | `package-lock.json` |
 | RxJS | 7.8.2 | `package-lock.json` |
 | zone.js | 0.16.3 | `package-lock.json` |
 | Truth-vocabulary lint findings | 0 | `node scripts/lint-truth-vocab.mjs` (src/app templates and TS, README, docs) |
-| Truth-vocabulary allow directives | 2 | inline allow comments in those files, each with its reason |
+| Truth-vocabulary allow directives | 3 | inline allow comments in those files, each with its reason |
 
 Unit spec files are files, not test cases; Karma prints the test-case count for the commit it ran.
 
@@ -186,7 +186,7 @@ Read by `scripts/check-facts.mjs`.
   "routeFileWorkspaces": 8,
   "routedTabs": 47,
   "libraryLayers": 37,
-  "unitSpecs": 207,
+  "unitSpecs": 215,
   "angularMajor": 22,
   "typescriptMajor": 6,
   "bundleVersions": {
