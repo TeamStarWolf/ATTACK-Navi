@@ -23,6 +23,11 @@
         <p class="vp-import-msg vp-migration-msg" role="status">{{ migrationNotice }}</p>
       }
 
+      <!-- Summary header: the Detect > Coverage stand-in (Phase 2 design §1.7, §10.4 item 7) shows the same posture tally as the CTEM card. -->
+      <div class="vp-posture">
+        <app-posture-card scope="all" />
+      </div>
+
       <!-- KPI tiles -->
       <section class="vp-kpis">
         <div class="vp-kpi" data-status="passed">

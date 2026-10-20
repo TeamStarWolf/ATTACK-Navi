@@ -10,6 +10,7 @@ import { Cve2CapecService } from '../../services/cve2capec.service';
 import { ImplementationService } from '../../services/implementation.service';
 import { ValidationService, type ValidationStatus } from '../../services/validation.service';
 import { TimelineService } from '../../services/timeline.service';
+import { PostureCardComponent } from '../../components/posture-card/posture-card.component';
 
 interface CtemStage {
   n: number;
@@ -47,7 +48,7 @@ const VALIDATION_CHIPS: Record<ValidationStatus, { label: string; cls: string } 
 @Component({
   selector: 'app-ctem-page',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, PostureCardComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './ctem-page.component.html',
   styleUrl: './ctem-page.component.scss',

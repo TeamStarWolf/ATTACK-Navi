@@ -6,6 +6,9 @@ import { Domain } from '../models/domain';
 import { ImplStatus } from './implementation.service';
 import { DEFAULT_REPORT_CONFIG, ReportConfig } from './report-config.service';
 import { makeSplitDomain } from '../testing/report-split-fixture';
+import { PostureStub, makePostureStub, postureStubProvider } from '../testing/posture-stub';
+import { ImplementationService } from './implementation.service';
+import type { PostureBucket } from '../models/posture/posture.types';
 
 // Minimal Domain stub — buildHtml only touches these fields, and empty
 // collections still exercise every ungated section (exec summary, coverage by
@@ -26,6 +29,11 @@ function makeDomain(): Domain {
 describe('HtmlReportService', () => {
   let service: HtmlReportService;
   let lastBlob: Blob | null;
+  // The posture rollup and states the report reads (P2-07), over whatever
+  // domain the spec loads; a fresh profile until a spec sets buckets.
+  let loaded: Domain | null;
+  let posture: PostureStub;
+  let implementedMitigations: number;
 
   // Capture the Blob generateAndOpen hands to the browser, without opening a
   // window. Installed once per spec so it is safe to generate multiple reports.
@@ -46,7 +54,15 @@ describe('HtmlReportService', () => {
 
   beforeEach(() => {
     localStorage.removeItem('mitre-nav-settings-v1');
-    TestBed.configureTestingModule({});
+    loaded = null;
+    implementedMitigations = 0;
+    posture = makePostureStub(() => loaded);
+    TestBed.configureTestingModule({
+      providers: [
+        postureStubProvider(posture),
+        { provide: ImplementationService, useValue: { summarize: () => ({ implemented: implementedMitigations }) } },
+      ],
+    });
     service = TestBed.inject(HtmlReportService);
   });
 
@@ -67,7 +83,7 @@ describe('HtmlReportService', () => {
     service.generateAndOpen(makeDomain(), new Map());
     const html = await lastHtml();
     expect(html).toContain('Executive Summary');
-    expect(html).toContain('Theoretical vs Implemented by Tactic');
+    expect(html).toContain('Theoretical by Tactic');
     expect(html).toContain('Top 10 Techniques with No Mitigation Mapped');
     expect(html).toContain('Top 10 Techniques by Mitigations Mapped');
   });
@@ -94,7 +110,7 @@ describe('HtmlReportService', () => {
     service.generateAndOpen(makeDomain(), new Map(), config);
     const html = await lastHtml();
     // The hidden section title is gone...
-    expect(html).not.toContain('Theoretical vs Implemented by Tactic');
+    expect(html).not.toContain('Theoretical by Tactic');
     // ...while the still-visible sections remain.
     expect(html).toContain('Executive Summary');
     expect(html).toContain('Top 10 Techniques with No Mitigation Mapped');
@@ -185,7 +201,7 @@ describe('HtmlReportService', () => {
     expect(html).not.toMatch(/\son[a-z]+=/i);
   });
 
-  describe('Theoretical / Implemented split (E1.1)', () => {
+  describe('Known / posture split (E1.1, P2-07)', () => {
     function splitDomain(): Domain {
       const d = makeSplitDomain() as unknown as Record<string, unknown> & { techniques: Array<Record<string, unknown>> };
       for (const t of d.techniques) t['url'] = `https://attack.mitre.org/techniques/${t['attackId']}`;
@@ -196,40 +212,96 @@ describe('HtmlReportService', () => {
       } as unknown as Domain;
     }
 
+    /** Generate the report over the split fixture with these posture buckets. */
+    async function report(buckets: Record<string, PostureBucket>, implemented = 0): Promise<string> {
+      const domain = splitDomain();
+      loaded = domain;
+      posture.set(buckets);
+      implementedMitigations = implemented;
+      if (jasmine.isSpy(URL.createObjectURL)) lastBlob = null;
+      else installCaptureSpies();
+      service.generateAndOpen(domain, new Map());
+      return lastHtml();
+    }
+
     const block = (html: string, key: string): string => {
       const start = html.indexOf(`data-split="${key}"`);
       expect(start).withContext(key).toBeGreaterThan(-1);
       return html.slice(start, html.indexOf('</div>\n      </div>', start));
     };
+    const card = (html: string, key: string): number => {
+      const m = new RegExp(`<div class="stat-number"[^>]*data-posture="${key}">(\\d+)</div>`).exec(html);
+      expect(m).withContext(key).not.toBeNull();
+      return Number(m![1]);
+    };
 
-    it('reports the reference count as Theoretical and the owner count as Implemented (self-attested)', async () => {
-      installCaptureSpies();
-      service.generateAndOpen(splitDomain(), new Map<string, ImplStatus>([['course-of-action--M1', 'implemented']]));
-      const html = await lastHtml();
-      const theoretical = block(html, 'theoretical');
-      const implemented = block(html, 'implemented');
-      expect(theoretical).toContain('60%');
-      expect(theoretical).toContain('Theoretical: mitigation mapped');
-      expect(theoretical).toContain('3 of 5 parent techniques');
-      expect(implemented).toContain('40%');
-      expect(implemented).toContain('Implemented (self-attested)');
-      expect(implemented).toContain('2 of 5 parent techniques');
+    it('reports Known: mapped with the Theoretical sub-line, and Covered (self-attested) from the rollup', async () => {
+      const html = await report({ T1: 'covered', T2: 'covered' }, 1);
+      const known = block(html, 'known');
+      expect(known).toContain('60%');
+      expect(known).toContain('Known: mapped');
+      expect(known).toContain('Theoretical: mitigation mapped: 3 of 5 parent techniques (60%)');
+      const covered = block(html, 'covered');
+      expect(covered).toContain('40%');
+      expect(covered).toContain('Covered (self-attested)');
+      expect(covered).toContain('2 of <span data-posture="assessable">5</span> assessable parent techniques');
+      expect(card(html, 'covered')).toBe(2);
       expect(html).toContain('ATT&amp;CK Mitigation Report');
     });
 
-    it('shows 0% Implemented on a fresh profile, whatever the reference mapping says', async () => {
-      installCaptureSpies();
-      service.generateAndOpen(splitDomain(), new Map());
-      const html = await lastHtml();
-      expect(block(html, 'theoretical')).toContain('60%');
-      expect(block(html, 'implemented')).toContain('0%');
-      expect(block(html, 'implemented')).toContain('No implementation status recorded yet');
+    it('R16: the Covered donut, its line and the tactic bars divide by assessable; Known keeps every parent', async () => {
+      posture.exclude(['T3']);
+      const html = await report({ T1: 'covered', T2: 'covered' }, 1);
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const covered = doc.querySelector('[data-split="covered"]')!;
+      // 2 of 4 assessable (T3 excluded), not 2 of 5.
+      expect(covered.querySelector('[data-posture="assessable"]')!.textContent).toBe('4');
+      expect(covered.querySelector('[data-share-pct]')!.getAttribute('data-share-pct')).toBe('50');
+      expect(covered.textContent).toContain('2 of 4 assessable parent techniques');
+      expect(html).toContain('conic-gradient(#2563eb 0deg 180deg');
+      const known = doc.querySelector('[data-split="known"]')!;
+      expect(known.querySelector('[data-posture="known-total"]')!.textContent).toBe('5');
+      expect(known.textContent).toContain('60%');
+      const exec = doc.querySelector('.tactic-row[data-tactic="execution"]')!;
+      expect(exec.querySelector('[data-posture="assessable"]')!.textContent).toBe('2');
+      expect(exec.querySelector('[data-share-pct]')!.getAttribute('data-share-pct')).toBe('100');
+      expect(exec.textContent).toContain('2/3');
+      expect(doc.querySelector('[data-split="note"]')!.textContent).toContain('assessable');
+    });
+
+    it('shows Known only on a fresh profile, with no Covered or Proven words', async () => {
+      const html = await report({});
+      expect(block(html, 'known')).toContain('60%');
+      expect(html).not.toContain('data-split="covered"');
+      expect(html).not.toContain('data-posture="covered"');
+      expect(html).toContain('No data of yours recorded yet');
+      const visible = new DOMParser().parseFromString(html, 'text/html').body.textContent ?? '';
+      expect(visible).not.toMatch(/\bcovered\b|\bproven\b|\bdefended\b/i);
+    });
+
+    it("replaces the 'All mapped mitigations implemented' card with the rollup's partial count", async () => {
+      const html = await report({ T1: 'partial', T2: 'partial', T4: 'covered' }, 1);
+      expect(html).not.toContain('All mapped mitigations implemented');
+      expect(html).toContain('partial (broad mitigation, not confirmed per technique)');
+      expect(card(html, 'partial')).toBe(posture.rollup().overall.partial);
+      expect(card(html, 'partial')).toBe(2);
+      expect(card(html, 'covered')).toBe(1);
+    });
+
+    it('badges each table technique with postureBadge(stateFor(t))', async () => {
+      const html = await report({ T1: 'partial', T2: 'proven', T4: 'covered' });
+      const domain = loaded!;
+      for (const t of domain.techniques.filter(x => !x.isSubtechnique)) {
+        expect(service.techniqueBadge(t)).withContext(t.attackId).toContain(`data-bucket="${posture.stateFor(t).bucket}"`);
+      }
+      expect(service.techniqueBadge(domain.techniques[0])).toContain('Covered (self-attested, partial via M1)');
+      expect(html).toContain('<th>Posture</th>');
+      expect(html).not.toContain('Impl Status (self-attested)');
+      expect(html).not.toMatch(/badge-green">Implemented</);
     });
 
     it('drops every wording and colour that read reference mapping as implemented or safe', async () => {
-      installCaptureSpies();
-      service.generateAndOpen(splitDomain(), new Map());
-      const html = await lastHtml();
+      const html = await report({});
       for (const retired of ['Techniques Covered', 'Techniques at Risk', 'Technique Coverage', 'Fully Implemented',
         'Avg Mitigations / Covered Tech', 'ATT&amp;CK Coverage Report', 'Best Covered', 'Coverage Gaps', 'No coverage gaps']) {
         expect(html).withContext(retired).not.toContain(retired);
@@ -240,14 +312,14 @@ describe('HtmlReportService', () => {
       expect(html).not.toContain('linear-gradient(90deg,#ef4444');
     });
 
-    it('gives each tactic a Theoretical bar and an Implemented bar', async () => {
-      installCaptureSpies();
-      service.generateAndOpen(splitDomain(), new Map<string, ImplStatus>([['course-of-action--M3', 'implemented']]));
-      const html = await lastHtml();
-      expect(html).toContain('Theoretical vs Implemented by Tactic');
+    it('gives each tactic a Theoretical bar and, with owner data, a Covered bar', async () => {
+      const html = await report({ T4: 'covered' }, 1);
+      expect(html).toContain('Theoretical and Posture by Tactic');
       expect((html.match(/class="bar-fill bar-theoretical" style="width:\d+%"/g) ?? []).length).toBe(2);
       expect(html).toContain('class="bar-fill bar-implemented" style="width:50%"');
       expect(html).toContain('class="bar-fill bar-implemented" style="width:0%"');
+      const fresh = await report({});
+      expect(fresh).not.toContain('bar-fill bar-implemented');
     });
   });
 

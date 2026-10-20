@@ -12,6 +12,7 @@ import { SigmaService } from '../../services/sigma.service';
 import { SiemQueryService } from '../../services/siem-query.service';
 import { LibraryService } from '../../services/library.service';
 import { TelemetryCoverageService } from '../../services/telemetry-coverage.service';
+import { makePostureStub, postureStubProvider } from '../../testing/posture-stub';
 
 describe('ValidationPanelComponent', () => {
   let component: ValidationPanelComponent;
@@ -50,6 +51,8 @@ describe('ValidationPanelComponent', () => {
             toggle: jasmine.createSpy(),
             clearAll: jasmine.createSpy(),
         }},
+        // The summary header mounts the posture card (P2-07).
+        postureStubProvider(makePostureStub(() => null)),
       ],
     });
     fixture = TestBed.createComponent(ValidationPanelComponent);

@@ -1,15 +1,41 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { Injectable, inject } from '@angular/core';
+import { Injectable, Injector, inject } from '@angular/core';
 import { Domain } from '../models/domain';
-import { ImplStatus } from './implementation.service';
+import { Technique } from '../models/technique';
+import { ImplStatus, ImplementationService } from './implementation.service';
 import { ReportConfig, DEFAULT_REPORT_CONFIG } from './report-config.service';
 import { SettingsService } from './settings.service';
+import { PostureService } from './posture.service';
 import { computeReportSplit, REPORT_SPLIT_LABELS } from '../models/report-split';
+import { PROVEN, postureBadge } from '../models/posture/posture-vocabulary';
+import type { PostureBucket } from '../models/posture/posture.types';
+
+/** data-posture / data-split values (posture bucket keys) the equality spec reads. */
+const DATA = { covered: 'covered', partial: 'partial', proven: 'proven', stale: 'stale' } as const;
+
+/** Badge colour per posture bucket (the table's per-technique answer, P2-07). */
+const BUCKET_BADGE: Readonly<Record<PostureBucket, string>> = {
+  proven: 'badge-green', stale: 'badge-purple', covered: 'badge-blue', partial: 'badge-blue', known: 'badge-grey', none: 'badge-grey',
+};
 
 @Injectable({ providedIn: 'root' })
 export class HtmlReportService {
   private readonly settings = inject(SettingsService);
+  // Resolved when a report is built, so services that only hold this one (and
+  // their specs) do not construct the posture graph.
+  private readonly injector = inject(Injector);
+  private get posture(): PostureService { return this.injector.get(PostureService); }
+
+  /**
+   * One technique's posture badge for the report table: postureBadge of
+   * PostureService.stateFor, the same per-technique answer the posture card and
+   * the report split count (P2-07).
+   */
+  techniqueBadge(t: Technique): string {
+    const state = this.posture.stateFor(t);
+    return `<span class="badge ${BUCKET_BADGE[state.bucket]}" data-bucket="${state.bucket}">${this.esc(postureBadge(state))}</span>`;
+  }
 
   generateAndOpen(
     domain: Domain,
@@ -58,10 +84,14 @@ export class HtmlReportService {
     // ── Core data computation ──────────────────────────────────────────────────
     const allTechs = domain.techniques;
     const parentTechs = allTechs.filter(t => !t.isSubtechnique);
-    // Theoretical (Known: reference mapping) vs Implemented (Covered,
-    // self-attested). Shared with the Report Builder panel and the PDF report.
+    // Known (reference mapping, with the Theoretical sub-line) and the posture
+    // buckets of PostureService.rollup. Shared with the Report Builder panel and
+    // the PDF report (P2-07).
     const L = REPORT_SPLIT_LABELS;
-    const split = computeReportSplit(domain, implStatusMap);
+    const posture = this.posture;
+    const split = computeReportSplit(domain, posture.rollup(), this.injector.get(ImplementationService).summarize()['implemented']);
+    // Covered and Proven words render only when the owner has recorded data (§2.4).
+    const ownerWords = posture.ownerWords();
 
     // Avg mitigations mapped per mapped technique
     const totalMitRels = parentTechs.reduce((sum, t) => sum + t.mitigationCount, 0);
@@ -121,19 +151,6 @@ export class HtmlReportService {
 
     const generatedDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-    // ── Impl badge helper ──────────────────────────────────────────────────────
-    const implBadge = (techId: string): string => {
-      const rels = domain.mitigationsByTechnique.get(techId) ?? [];
-      if (rels.length === 0) return '';
-      const statuses = rels.map(r => implStatusMap.get(r.mitigation.id)).filter(Boolean) as ImplStatus[];
-      if (statuses.length === 0) return '<span class="badge badge-grey">Untracked</span>';
-      if (statuses.every(s => s === 'implemented')) return '<span class="badge badge-green">Implemented</span>';
-      if (statuses.some(s => s === 'implemented')) return '<span class="badge badge-blue">Partial</span>';
-      if (statuses.some(s => s === 'in-progress')) return '<span class="badge badge-blue">In Progress</span>';
-      if (statuses.some(s => s === 'planned')) return '<span class="badge badge-purple">Planned</span>';
-      return '<span class="badge badge-grey">Not Started</span>';
-    };
-
     // ── Status badge for mitigation table ─────────────────────────────────────
     const statusBadge = (status: string): string => {
       switch (status) {
@@ -145,14 +162,15 @@ export class HtmlReportService {
       }
     };
 
-    // ── Tactic bar chart rows: Theoretical (neutral) over Implemented (blue) ──
-    // No traffic-light colours: a reference mapping is not a pass mark.
+    // ── Tactic bar chart rows: Theoretical (neutral) over Covered (blue) ─────
+    // No traffic-light colours: a reference mapping is not a pass mark. The
+    // Covered bar renders only with owner data (§2.4).
     const tacticRows = tacticStats.map(ts => `
-      <div class="tactic-row">
+      <div class="tactic-row" data-tactic="${this.esc(ts.shortname)}">
         <div class="tactic-name">${this.esc(ts.name)}</div>
         <div class="tactic-bars">
-          <div class="bar-line"><span class="bar-key">${L.theoreticalShort}</span><div class="bar-container"><div class="bar-fill bar-theoretical" style="width:${ts.theoreticalPct}%"></div></div><span class="tactic-pct">${ts.theoreticalPct}%</span><span class="tactic-count">${ts.theoretical}/${ts.total}</span></div>
-          <div class="bar-line"><span class="bar-key">${L.implementedShort}</span><div class="bar-container"><div class="bar-fill bar-implemented" style="width:${ts.implementedPct}%"></div></div><span class="tactic-pct">${ts.implementedPct}%</span><span class="tactic-count">${ts.implemented}/${ts.total}</span></div>
+          <div class="bar-line"><span class="bar-key">${L.theoreticalShort}</span><div class="bar-container"><div class="bar-fill bar-theoretical" style="width:${ts.theoreticalPct}%"></div></div><span class="tactic-pct">${ts.theoreticalPct}%</span><span class="tactic-count">${ts.theoretical}/${ts.total}</span></div>${ownerWords ? `
+          <div class="bar-line"><span class="bar-key">${L.covered}</span><div class="bar-container"><div class="bar-fill bar-implemented" style="width:${ts.coveredPct}%"></div></div><span class="tactic-pct" data-share-pct="${ts.coveredPct}">${ts.coveredPct}%</span><span class="tactic-count" data-posture="${DATA.covered}">${ts.covered}</span><span class="tactic-count">/<span data-posture="assessable">${ts.assessable}</span> ${L.assessable} · ${L.partial} <span data-posture="${DATA.partial}">${ts.partial}</span> · ${PROVEN} <span data-posture="${DATA.proven}">${ts.proven}</span> · ${L.stale} <span data-posture="${DATA.stale}">${ts.stale}</span></span></div>` : ''}
         </div>
       </div>`).join('');
 
@@ -174,7 +192,7 @@ export class HtmlReportService {
         <td><a href="${this.safeHref(t.url)}" target="_blank" rel="noopener">${this.esc(t.attackId)}</a></td>
         <td>${this.esc(t.name)}</td>
         <td><span class="badge badge-blue">${t.mitigationCount}</span></td>
-        <td>${implBadge(t.id)}</td>
+        <td>${this.techniqueBadge(t)}</td>
       </tr>`).join('');
 
     // ── Mitigation status table (section 7) ───────────────────────────────────
@@ -227,9 +245,9 @@ export class HtmlReportService {
         </div>
       </div>` : '';
 
-    // ── Donut rings: Theoretical (neutral grey) and Implemented (blue) ────────
-    const theoreticalDeg = Math.round(split.theoreticalPct * 3.6);
-    const implementedDeg = Math.round(split.implementedPct * 3.6);
+    // ── Donut rings: Known (neutral grey) and Covered (blue) ──────────────────
+    const theoreticalDeg = Math.round(split.knownPct * 3.6);
+    const coveredDeg = Math.round(split.coveredPct * 3.6);
 
     // ── Full HTML ──────────────────────────────────────────────────────────────
     return `<!DOCTYPE html>
@@ -269,7 +287,7 @@ export class HtmlReportService {
     .coverage-ring-wrap { display: flex; align-items: center; gap: 40px; flex-wrap: wrap; }
     .donut { width: 120px; height: 120px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; }
     .donut-theoretical { background: conic-gradient(#64748b 0deg ${theoreticalDeg}deg, #e2e8f0 ${theoreticalDeg}deg 360deg); }
-    .donut-implemented { background: conic-gradient(#2563eb 0deg ${implementedDeg}deg, #e2e8f0 ${implementedDeg}deg 360deg); }
+    .donut-implemented { background: conic-gradient(#2563eb 0deg ${coveredDeg}deg, #e2e8f0 ${coveredDeg}deg 360deg); }
     .split-block { display: flex; align-items: center; gap: 16px; }
     .split-note { font-size: 13px; color: #4a5568; background: #f8fafc; border-left: 4px solid #64748b; padding: 10px 12px; margin-bottom: 20px; }
     .donut::after { content: ''; position: absolute; width: 80px; height: 80px; background: white; border-radius: 50%; }
@@ -352,27 +370,32 @@ ${(() => {
     'exec-summary': `
   <div class="section">
     <div class="section-title">Executive Summary</div>
-    <div class="split-note" data-split="note"><strong>${L.theoreticalShort}</strong>: ${L.theoreticalNote} <strong>${L.implementedShort}</strong>: ${L.implementedNote}</div>
+    <div class="split-note" data-split="note"><strong>${L.known}</strong>: ${L.knownNote} <strong>${L.theoreticalShort}</strong>: ${L.theoreticalNote}${ownerWords ? ` <strong>${L.covered}</strong>: ${L.coveredNote} ${L.assessableNote}` : ` ${L.fresh}`}</div>
     <div class="coverage-ring-wrap" style="margin-bottom:24px">
-      <div class="split-block" data-split="theoretical">
-        <div class="donut donut-theoretical"><span class="donut-label">${split.theoreticalPct}%</span></div>
+      <div class="split-block" data-split="known">
+        <div class="donut donut-theoretical"><span class="donut-label">${split.knownPct}%</span></div>
         <div>
-          <div style="font-size:18px;font-weight:700;color:#07101a;margin-bottom:4px">${L.theoretical}</div>
-          <div style="font-size:14px;color:#718096">${split.theoretical} of ${split.total} parent techniques have at least one mitigation mapped in ATT&amp;CK.</div>
+          <div style="font-size:18px;font-weight:700;color:#07101a;margin-bottom:4px">${L.known}</div>
+          <div style="font-size:14px;color:#718096"><span data-posture="known-mapped">${split.known}</span> of <span data-posture="known-total">${split.total}</span> parent techniques have at least one defensive reference mapped.</div>
+          <div style="font-size:13px;color:#718096;margin-top:4px" data-split="theoretical">${L.theoretical}: ${split.theoretical} of ${split.total} parent techniques (${split.theoreticalPct}%) have at least one mitigation mapped in ATT&amp;CK.</div>
         </div>
-      </div>
-      <div class="split-block" data-split="implemented">
-        <div class="donut donut-implemented"><span class="donut-label">${split.implementedPct}%</span></div>
+      </div>${ownerWords ? `
+      <div class="split-block" data-split="${DATA.covered}">
+        <div class="donut donut-implemented"><span class="donut-label" data-share-pct="${split.coveredPct}">${split.coveredPct}%</span></div>
         <div>
-          <div style="font-size:18px;font-weight:700;color:#07101a;margin-bottom:4px">${L.implemented}</div>
-          <div style="font-size:14px;color:#718096">${split.implemented} of ${split.total} parent techniques have a mapped mitigation you marked implemented${hasImplData ? ` (${split.implementedMitigations} mitigations marked implemented)` : '. No implementation status recorded yet'}.</div>
+          <div style="font-size:18px;font-weight:700;color:#07101a;margin-bottom:4px">${L.covered}</div>
+          <div style="font-size:14px;color:#718096">${split.covered} of <span data-posture="assessable">${split.assessable}</span> ${L.assessable} parent techniques${hasImplData ? ` (${split.implementedMitigations} mitigations marked implemented)` : ''}. ${L.partial}: ${split.partial}; ${PROVEN}: ${split.proven}; ${L.stale}: ${split.stale}.</div>
         </div>
-      </div>
+      </div>` : ''}
     </div>
     <div class="stat-grid">
       <div class="stat-card">
         <div class="stat-number">${split.total}</div>
         <div class="stat-label">Total Techniques</div>
+      </div>
+      <div class="stat-card" style="border-left-color:#64748b">
+        <div class="stat-number">${split.known}</div>
+        <div class="stat-label">${L.known}</div>
       </div>
       <div class="stat-card" style="border-left-color:#64748b">
         <div class="stat-number">${split.theoretical}</div>
@@ -381,15 +404,23 @@ ${(() => {
       <div class="stat-card" style="border-left-color:#94a3b8">
         <div class="stat-number">${split.unmapped}</div>
         <div class="stat-label">${L.unmapped}</div>
+      </div>${ownerWords ? `
+      <div class="stat-card" style="border-left-color:#2563eb">
+        <div class="stat-number" style="color:#1d4ed8" data-posture="${DATA.covered}">${split.covered}</div>
+        <div class="stat-label">${L.covered}</div>
       </div>
       <div class="stat-card" style="border-left-color:#2563eb">
-        <div class="stat-number" style="color:#1d4ed8">${split.implemented}</div>
-        <div class="stat-label">${L.implemented}</div>
+        <div class="stat-number" style="color:#1d4ed8" data-posture="${DATA.partial}">${split.partial}</div>
+        <div class="stat-label">${L.partialCard}</div>
       </div>
-      <div class="stat-card" style="border-left-color:#2563eb">
-        <div class="stat-number" style="color:#1d4ed8">${split.allMappedImplemented}</div>
-        <div class="stat-label">All mapped mitigations implemented (self-attested)</div>
+      <div class="stat-card" style="border-left-color:#15803d">
+        <div class="stat-number" style="color:#15803d" data-posture="${DATA.proven}">${split.proven}</div>
+        <div class="stat-label">${PROVEN}</div>
       </div>
+      <div class="stat-card" style="border-left-color:#7c3aed">
+        <div class="stat-number" style="color:#5b21b6" data-posture="${DATA.stale}">${split.stale}</div>
+        <div class="stat-label">${L.stale}</div>
+      </div>` : ''}
       <div class="stat-card" style="border-left-color:#64748b">
         <div class="stat-number">${avgMits}</div>
         <div class="stat-label">Avg Mitigations Mapped / Mapped Technique</div>
@@ -402,8 +433,8 @@ ${(() => {
   </div>`,
     'coverage-by-tactic': `
   <div class="section">
-    <div class="section-title">Theoretical vs Implemented by Tactic</div>
-    <div class="section-subtitle">Parent techniques only, highest Theoretical share first. ${L.theoreticalShort}: ${L.theoreticalNote} ${L.implementedShort}: ${L.implementedNote}</div>
+    <div class="section-title">${ownerWords ? 'Theoretical and Posture by Tactic' : 'Theoretical by Tactic'}</div>
+    <div class="section-subtitle">Parent techniques only, highest Theoretical share first. ${L.theoreticalShort}: ${L.theoreticalNote}${ownerWords ? ` ${L.covered}: ${L.coveredNote}` : ''}</div>
     ${tacticRows}
   </div>`,
     'impl-status': hasImplData ? `
@@ -432,14 +463,14 @@ ${(() => {
     'control-docs': `
   <div class="section">
     <div class="section-title">Top 10 Techniques by Mitigations Mapped</div>
-    <div class="section-subtitle">Techniques with the most mitigations mapped in ATT&amp;CK (Theoretical), with your implementation status (self-attested).</div>
+    <div class="section-subtitle">Techniques with the most mitigations mapped in ATT&amp;CK (Theoretical), with the posture of each technique (the same answer the summary counts).</div>
     <table>
       <thead>
         <tr>
           <th>ATT&amp;CK ID</th>
           <th>Technique</th>
           <th>Mitigations Mapped</th>
-          <th>Impl Status (self-attested)</th>
+          <th>Posture</th>
         </tr>
       </thead>
       <tbody>${bestRows}</tbody>

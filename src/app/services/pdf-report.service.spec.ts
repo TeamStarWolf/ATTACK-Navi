@@ -5,11 +5,15 @@ import { PdfReportService } from './pdf-report.service';
 import { Domain, TacticColumn } from '../models/domain';
 import { Technique } from '../models/technique';
 import { Tactic } from '../models/tactic';
-import { ImplStatus } from './implementation.service';
-import { MitigationRelationship } from '../models/mitigation';
+import { ImplStatus, ImplementationService } from './implementation.service';
+import { PostureStub, makePostureStub, postureStubProvider } from '../testing/posture-stub';
+import type { PostureBucket } from '../models/posture/posture.types';
 
 describe('PdfReportService', () => {
   let service: PdfReportService;
+  // The posture rollup the report reads (P2-07), over the loaded mock domain.
+  let loaded: Domain | null;
+  let posture: PostureStub;
 
   // Build a minimal mock Domain for testing
   function makeMockDomain(): Domain {
@@ -110,7 +114,14 @@ describe('PdfReportService', () => {
   }
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    loaded = null;
+    posture = makePostureStub(() => loaded);
+    TestBed.configureTestingModule({
+      providers: [
+        postureStubProvider(posture),
+        { provide: ImplementationService, useValue: { summarize: () => ({ implemented: 0 }) } },
+      ],
+    });
     service = TestBed.inject(PdfReportService);
   });
 
@@ -242,8 +253,10 @@ describe('PdfReportService', () => {
     expect(writtenHtml).toContain('16.1');
   });
 
-  describe('Theoretical / Implemented split (E1.1)', () => {
-    function capture(domain: Domain, statusMap: Map<string, ImplStatus>): string {
+  describe('Known / posture split (E1.1, P2-07)', () => {
+    function capture(domain: Domain, buckets: Record<string, PostureBucket>): string {
+      loaded = domain;
+      posture.set(buckets);
       let writtenHtml = '';
       const mockIframeDoc = {
         open: jasmine.createSpy('open'),
@@ -256,44 +269,51 @@ describe('PdfReportService', () => {
       spyOn(document, 'createElement').and.returnValue(mockIframe as any);
       spyOn(document.body, 'appendChild').and.stub();
       spyOn(document.body, 'removeChild').and.stub();
-      service.generateReport(domain, statusMap);
+      service.generateReport(domain, new Map<string, ImplStatus>());
       return writtenHtml;
     }
 
-    /** The mock domain with T1059's two mitigations wired into mitigationsByTechnique. */
-    function mappedDomain(): Domain {
-      const domain = makeMockDomain();
-      domain.mitigationsByTechnique.set('attack-pattern--1', [
-        { mitigation: { id: 'course-of-action--m1' } },
-        { mitigation: { id: 'course-of-action--m2' } },
-      ] as unknown as MitigationRelationship[]);
-      return domain;
-    }
-
-    it('labels the summary Theoretical and Implemented (self-attested), not Covered / Coverage', () => {
-      const html = capture(mappedDomain(), new Map());
+    it('labels the summary Known: mapped with the Theoretical sub-line; no Covered words on a fresh profile', () => {
+      const html = capture(makeMockDomain(), {});
+      expect(html).toContain('Known: mapped');
       expect(html).toContain('Theoretical: mitigation mapped');
-      expect(html).toContain('Implemented (self-attested)');
-      expect(html).toContain('<div class="num">1 (50%)</div>');
-      expect(html).toContain('<div class="num">0 (0%)</div>');
-      expect(html).not.toContain('<div class="lbl">Covered</div>');
+      expect(html).toContain('<div class="num"><span data-posture="known-mapped">1</span> (50%)</div>');
+      expect(html).toContain('<div class="num">1 (50%)</div>\n    <div class="lbl">Theoretical: mitigation mapped</div>');
+      expect(html).not.toContain('data-posture="covered"');
+      expect(html).toContain('No data of yours recorded yet');
+      const visible = new DOMParser().parseFromString(html, 'text/html').body.textContent ?? '';
+      expect(visible).not.toMatch(/\bcovered\b|\bproven\b|\bdefended\b/i);
       expect(html).not.toContain('<div class="lbl">Uncovered</div>');
       expect(html).not.toContain('<div class="lbl">Coverage</div>');
       expect(html).not.toContain('Coverage %');
       expect(html).not.toContain('Top Uncovered Techniques');
     });
 
-    it('counts Implemented only from mitigations the owner marked implemented', () => {
-      const planned = capture(mappedDomain(), new Map<string, ImplStatus>([['course-of-action--m1', 'planned']]));
-      expect(planned).not.toContain('<div class="num">1 (50%)</div>\n    <div class="lbl">Implemented (self-attested)</div>');
-      expect(planned).toContain('<div class="num">0 (0%)</div>\n    <div class="lbl">Implemented (self-attested)</div>');
+    it('takes Covered, partial, Proven and stale from the posture rollup', () => {
+      const html = capture(makeMockDomain(), { T1059: 'partial', T1190: 'proven' });
+      expect(html).toContain('<div class="num" data-share-pct="0"><span data-posture="covered">0</span> (0%)</div>\n    <div class="lbl">Covered (self-attested), of <span data-posture="assessable">2</span> assessable</div>');
+      expect(html).toContain('<div class="num" data-posture="partial">1</div>\n    <div class="lbl">partial (broad mitigation, not confirmed per technique)</div>');
+      expect(html).toContain('<div class="num" data-posture="proven">1</div>\n    <div class="lbl">Proven</div>');
+      expect(html).toContain('<div class="num" data-posture="stale">0</div>');
+    });
+
+    it('R16: the Covered share divides by assessable; the Total Techniques box keeps every parent', () => {
+      posture.exclude(['T1190']);
+      const html = capture(makeMockDomain(), { T1059: 'covered' });
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const grid = doc.querySelector('.summary-grid')!;
+      const o = posture.rollup().overall;
+      expect([o.total, o.assessable, o.covered]).toEqual([2, 1, 1]);
+      expect(grid.querySelector('[data-posture="known-total"]')!.textContent).toBe('2');
+      expect(grid.querySelector('[data-posture="assessable"]')!.textContent).toBe('1');
+      expect(grid.querySelector('[data-share-pct]')!.getAttribute('data-share-pct')).toBe('100');
+      expect(html).toContain('<span data-posture="covered">1</span> (100%)');
     });
 
     it('shows the split per tactic', () => {
-      const html = capture(mappedDomain(), new Map<string, ImplStatus>([['course-of-action--m2', 'implemented']]));
-      expect(html).toContain('<div class="num">1 (50%)</div>\n    <div class="lbl">Implemented (self-attested)</div>');
-      // The Execution column holds T1059 (mapped) and T1190 (not mapped).
-      expect(html).toContain('<td style="text-align:center">2</td>\n        <td style="text-align:center">1 (50%)</td>\n        <td style="text-align:center">1 (50%)</td>');
+      const html = capture(makeMockDomain(), { T1059: 'covered' });
+      // The Execution column holds T1059 (mapped, covered) and T1190 (not mapped).
+      expect(html).toContain('<td style="text-align:center">2</td>\n        <td style="text-align:center">1</td>\n        <td style="text-align:center">1 (50%)</td>\n        <td style="text-align:center" data-posture="covered">1</td>');
     });
   });
 });

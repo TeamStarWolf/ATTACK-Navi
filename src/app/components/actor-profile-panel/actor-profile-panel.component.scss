@@ -89,16 +89,18 @@
 }
 
 .coverage-ring {
-  --pct: 0;
+  // A count, never a percentage (P2-07, S6): a plain ring, no proportional fill.
   width: 64px; height: 64px; border-radius: 50%; flex-shrink: 0;
-  background: conic-gradient(var(--success) calc(var(--pct) * 1%), var(--border-subtle) 0);
+  background: var(--border-subtle);
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   position: relative;
   &::before { content: ''; position: absolute; inset: 8px; background: var(--bg-panel); border-radius: 50%; }
 }
 .coverage-pct { font-size: 13px; font-weight: 700; color: var(--text-main); position: relative; z-index: 1; line-height: 1; }
 .coverage-label { font-size: 8px; color: var(--text-faint); position: relative; z-index: 1; }
-.coverage-stats { display: flex; gap: 12px; }
+.coverage-stats { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.actor-posture-summary,
+.actor-posture-proven { flex-basis: 100%; margin: 0; font-size: 11px; color: var(--text-muted); }
 .cov-stat { display: flex; flex-direction: column; align-items: center; }
 .cov-val { font-size: 18px; font-weight: 700; color: var(--text-main); &.green { color: var(--success); } &.red { color: var(--danger); } }
 .cov-lbl { font-size: 9px; color: var(--text-faint); text-transform: uppercase; }
@@ -177,6 +179,7 @@
   display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 3px; cursor: pointer;
   &:hover { background: var(--bg-panel-strong); }
   &.covered { .tech-row-id { color: var(--success); } }
+  &.partial { .tech-row-id { color: var(--warning); } }
 }
 .tech-row-id { font-size: 10px; font-weight: 700; color: var(--danger); font-family: monospace; width: 80px; flex-shrink: 0; }
 .tech-row-name { font-size: 11px; color: var(--text-muted); flex: 1; }

@@ -59,13 +59,15 @@
         @if (viewTab === 'overview') {
           <div class="profile-overview">
             <div class="coverage-hero upgrade-section-block">
-              <div class="coverage-ring" [style]="'--pct: ' + selectedProfile.coveragePct">
-                <span class="coverage-pct">{{ selectedProfile.coveragePct }}%</span>
-                <span class="coverage-label">mitigated</span>
+              <div class="coverage-ring" data-testid="actor-ring" [attr.title]="denominatorNote(selectedProfile)">
+                <span class="coverage-pct">{{ ringCount(selectedProfile) }}</span>
+                <span class="coverage-label">{{ ownerWords() ? 'of ' + ringDenominator(selectedProfile) : 'techniques' }}</span>
               </div>
               <div class="coverage-stats">
-                <div class="cov-stat"><span class="cov-val green">{{ selectedProfile.coveredCount }}</span><span class="cov-lbl">implemented (self-attested)</span></div>
-                <div class="cov-stat"><span class="cov-val red">{{ selectedProfile.uncoveredCount }}</span><span class="cov-lbl">exposed</span></div>
+                <p class="actor-posture-summary" data-testid="actor-posture-summary" [attr.title]="denominatorNote(selectedProfile)">{{ summaryLine(selectedProfile) }}</p>
+                @if (ownerWords()) {
+                  <p class="actor-posture-proven" data-testid="actor-posture-proven">{{ provenLine(selectedProfile) }}</p>
+                }
                 <div class="cov-stat"><span class="cov-val">{{ selectedProfile.techniques.length }}</span><span class="cov-lbl">total TTPs</span></div>
               </div>
             </div>
@@ -85,10 +87,11 @@
               }
             </div>
 
-            @if (selectedProfile.topUncovered.length > 0) {
+            @let exposed = topExposed(selectedProfile);
+            @if (exposed.length > 0) {
               <div class="top-uncovered upgrade-section-block">
                 <div class="breakdown-label upgrade-section-title">🔴 Top exposed techniques:</div>
-                @for (t of selectedProfile.topUncovered; track t.id) {
+                @for (t of exposed; track t.id) {
                   <div class="uncov-item" (click)="selectTechnique(t)">
                     <span class="uncov-id">{{ t.attackId }}</span>
                     <span class="uncov-name">{{ t.name }}</span>
@@ -109,10 +112,10 @@
         @if (viewTab === 'techniques') {
           <div class="technique-list">
             @for (tech of selectedProfile.techniques; track tech.id) {
-              <div class="tech-row" [class.covered]="getTechCoverage(tech.id)" (click)="selectTechnique(tech)">
+              <div class="tech-row" [class.covered]="getTechCoverage(tech) === 'yes'" [class.partial]="getTechCoverage(tech) === 'partial'" (click)="selectTechnique(tech)">
                 <span class="tech-row-id">{{ tech.attackId }}</span>
                 <span class="tech-row-name">{{ tech.name }}</span>
-                <span class="tech-row-status">{{ getTechCoverage(tech.id) ? '✅' : '🔴' }}</span>
+                <span class="tech-row-status" [attr.data-mark]="getTechCoverage(tech)" [attr.title]="techTitle(tech)">{{ techGlyph(tech) }}</span>
               </div>
             }
           </div>
