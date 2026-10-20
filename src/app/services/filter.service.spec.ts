@@ -8,6 +8,7 @@ import { Domain } from '../models/domain';
 import { Technique } from '../models/technique';
 import {
   DEFAULT_HEATMAP_MODE, FilterService, domainHintForAttackId, isAttackDomain, techNotInDomainMessage,
+  URL_TECH_ID_PATTERN, normalizeUrlTechId,
 } from './filter.service';
 
 describe('FilterService', () => {
@@ -257,6 +258,64 @@ describe('FilterService tech= and dom= (E2.3)', () => {
     domain$.next(ENTERPRISE);
     expect(seen.length).toBe(1);
     expect(service.serializeUrlState()['tech']).toBeUndefined();
+  });
+
+  it('ignores a tech value outside URL_TECH_ID_PATTERN silently: no toast, no selection, nothing echoed', () => {
+    const seen = notices();
+    apply('tech=' + encodeURIComponent('Your session expired, call 555-0100'));
+    apply('tech=' + encodeURIComponent('T1059 <b>x</b>'));
+    apply('tech=T1059;drop');
+    domain$.next(ENTERPRISE);
+    expect(seen).toEqual([]);
+    expect(selected()).toBeNull();
+    expect(service.serializeUrlState()['tech']).toBeUndefined();
+  });
+
+  it('ignores a 40-character tech value', () => {
+    const seen = notices();
+    const long = 'T1059.001'.padEnd(40, '0');
+    expect(long.length).toBe(40);
+    apply('tech=' + long);
+    expect(seen).toEqual([]);
+    expect(selected()).toBeNull();
+    expect(service.serializeUrlState()['tech']).toBeUndefined();
+  });
+
+  it('a lower-case, padded tech id is normalised and selects the technique', () => {
+    apply('tech=' + encodeURIComponent(' t1059.001 '));
+    expect(selected()?.attackId).toBe('T1059.001');
+  });
+
+  it('the not-in-domain toast echoes the normalised id, never the raw param', () => {
+    const seen = notices();
+    apply('tech=' + encodeURIComponent('  t0807 '));
+    expect(selected()).toBeNull();
+    expect(seen).toEqual(['T0807 is not in Enterprise ATT&CK. Add dom=ics to the link or switch domain.']);
+  });
+
+  it('URL_TECH_ID_PATTERN and normalizeUrlTechId cover ATT&CK, sub-technique, F3 and ATLAS ids', () => {
+    for (const id of ['T1059', 'T1059.001', 'T0807', 'F1001', 'F1001.001', 'AML.T0051', 'AML.T0051.000', 'aml.t0051']) {
+      expect(URL_TECH_ID_PATTERN.test(id)).withContext(id).toBeTrue();
+    }
+    for (const id of ['', 'T105', 'T10590', 'T1059.01', 'T1059.0011', 'AML.F1001', 'X1059', 'T1059 ', 'Your session expired, call 555-0100']) {
+      expect(URL_TECH_ID_PATTERN.test(id)).withContext(id).toBeFalse();
+    }
+    expect(normalizeUrlTechId(' t1059.001 ')).toBe('T1059.001');
+    expect(normalizeUrlTechId('AML.T0051')).toBe('AML.T0051');
+    expect(normalizeUrlTechId('F1001')).toBe('F1001');
+    expect(normalizeUrlTechId('T1059'.padEnd(40, ' ') + 'x')).toBeNull();
+    expect(normalizeUrlTechId(null)).toBeNull();
+    expect(normalizeUrlTechId('Your session expired, call 555-0100')).toBeNull();
+  });
+
+  it('AML.T0051 and F1001 pass validation and reach the not-in-domain notice by their normalised id', () => {
+    const seen = notices();
+    apply('tech=aml.t0051');
+    apply('tech=F1001');
+    expect(seen).toEqual([
+      'AML.T0051 is not in Enterprise ATT&CK. Check the id or switch domain.',
+      'F1001 is not in Enterprise ATT&CK. Add dom=f3 to the link or switch domain.',
+    ]);
   });
 
   it('ignores a dom value that is not an ATT&CK domain (#118 pattern) and applies the rest', () => {
