@@ -34,7 +34,7 @@ The README's [Getting started](README.md#getting-started) section is the version
 
 ```bash
 git clone <repository-url>
-cd mitre-mitigation-navigator
+cd ATTACK-Navi
 npm ci
 ```
 
