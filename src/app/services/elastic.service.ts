@@ -84,7 +84,12 @@ export class ElasticService {
     return this.counts;
   }
 
-  /** Up to ten rule names for a technique, each with its permalink at the pinned commit. */
+  /**
+   * Up to ten rule names for a technique, each with its permalink at the pinned commit.
+   * No production caller: the drawer reads RuleCoverageSnapshotService.section() and
+   * ruleLinks() itself (it also needs the count, SHA, dates and error). Kept for API
+   * compatibility.
+   */
   fetchRulesForTechnique(attackId: string): Observable<RuleCoverageLink[]> {
     if (this.section) return of(ruleLinks(this.section, attackId));
     return this.snapshot.section('elastic').pipe(map(section => ruleLinks(section, attackId)));
