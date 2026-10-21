@@ -58,9 +58,13 @@ import { M365ControlsService } from '../../services/m365-controls.service';
 import { Cve2CapecService } from '../../services/cve2capec.service';
 import { PocExploitService } from '../../services/poc-exploit.service';
 import { EnrichmentService } from '../../services/enrichment.service';
-import { referenceDepthScore } from '../../models/reference-depth';
+import { type ReferenceDepthInputs, referenceDepthScore } from '../../models/reference-depth';
 import { PostureService } from '../../services/posture.service';
-import { LENS_NA_COLOR, isLensAvailable } from '../../models/heatmap-modes';
+import { LENS_NA_COLOR, type LensContext, heatmapModeDef, isLensAvailable } from '../../models/heatmap-modes';
+import { isRegistryLens, registryCell, registryColor } from '../../models/lens-registry';
+import type { PostureCellVM } from '../../models/posture/posture-ramp';
+import { postureBadge } from '../../models/posture/posture-vocabulary';
+import { ThemeService } from '../../services/theme.service';
 import type { AttackDomain } from '../../services/data.service';
 
 /**
@@ -298,6 +302,14 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
   private subs = new Subscription();
   /** Posture buckets for Sort by risk and Dim uncovered (P2-09, E2.1-d3). */
   private readonly posture = inject(PostureService);
+  /** The theme a registry lens colours for (P2-13). */
+  private readonly themeService = inject(ThemeService);
+  /**
+   * One PostureCellVM per technique STIX id while a registry-hosted lens is
+   * active (P2-13); empty on every legacy lens, so their cells get null.
+   * Rebuilt on a lens change and on every posture change, never per check.
+   */
+  private postureCells: ReadonlyMap<string, PostureCellVM> = new Map();
 
   constructor(
     private filterService: FilterService,
@@ -466,6 +478,8 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
       }
     }
     this.rebuildSearchMatches();
+    // A new domain input: a registry lens (P2-13) re-projects its cells.
+    this.refreshPostureCells(this.currentHeatmapMode);
   }
 
   ngOnInit(): void {
@@ -477,10 +491,18 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     // component is OnPush, re-checks the cells under either one.
     this.subs.add(
       this.posture.states$.subscribe(() => {
+        // A registry lens (P2-13) repaints from the new states too.
+        const registry = this.refreshPostureCells(this.currentHeatmapMode);
         const resort = this.sortMode === 'coverage';
-        if (!resort && !this.dimUncovered) return;
+        if (!resort && !this.dimUncovered && !registry) return;
         if (resort) this.rebuildSortedColumns();
         this.cdr.markForCheck();
+      }),
+    );
+    // A registry lens colours for the theme: repaint the minimap when it flips.
+    this.subs.add(
+      this.themeService.isLight$.subscribe(() => {
+        if (this.postureCells.size > 0) this.cdr.markForCheck();
       }),
     );
 
@@ -579,6 +601,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     this.subs.add(
       this.filterService.heatmapMode$.subscribe((mode) => {
         this.currentHeatmapMode = mode;
+        this.refreshPostureCells(mode);
         // KEV is not a Reference depth input, but the default lens still loads
         // it: the cells' KEV badge and the risk sort read the same scores.
         if (mode === 'kev' || mode === 'unified') {
@@ -741,13 +764,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
           // Coverage' composite mixed in are gone; the Threat lenses show them.
           // Weights and saturation points: models/reference-depth.ts.
           for (const tech of this.domain.techniques) {
-            const total = referenceDepthScore({
-              mitigations: tech.mitigationCount,
-              detectionContent: this.sigmaService.getRuleCount(tech.attackId) + this.carService.getLiveCount(tech.attackId),
-              controls: this.enrichment.controlCount(tech.attackId),
-              d3fend: this.d3fendService.getCountermeasures(tech.attackId).length,
-              atomic: this.atomicService.getTestCount(tech.attackId),
-            });
+            const total = referenceDepthScore(this.referenceDepthInputs(tech));
             this.unifiedScoreMap.set(tech.attackId, total);
           }
         } else if (mode === 'library' && this.domain) {
@@ -1668,8 +1685,66 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     return stops[stops.length - 1]?.color ?? zero;
   }
 
+  /** The saturating Known counts Reference depth scores (reference-depth.ts), also LensContext.knownCounts. */
+  private referenceDepthInputs(tech: Technique): ReferenceDepthInputs {
+    return {
+      mitigations: tech.mitigationCount,
+      detectionContent: this.sigmaService.getRuleCount(tech.attackId) + this.carService.getLiveCount(tech.attackId),
+      controls: this.enrichment.controlCount(tech.attackId),
+      d3fend: this.d3fendService.getCountermeasures(tech.attackId).length,
+      atomic: this.atomicService.getTestCount(tech.attackId),
+    };
+  }
+
+  /** What a registry-hosted lens reads (§2.5). The minimap passes colorblindSafe false, as it does for every lens today. */
+  private lensContext(): LensContext {
+    return {
+      posture: (t) => this.posture.stateFor(t),
+      known: (t) => this.enrichment.referenceDefenseSignals(t, this.domain),
+      knownCounts: (t) => this.referenceDepthInputs(t),
+      theme: this.themeService.isLight ? 'light' : 'dark',
+      colorblindSafe: false,
+    };
+  }
+
+  /**
+   * Rebuild the per-technique PostureCellVMs when `mode` is a registry-hosted
+   * lens, or drop them when it is not. True when a registry lens is active.
+   */
+  private refreshPostureCells(mode: HeatmapMode): boolean {
+    const def = heatmapModeDef(mode);
+    if (!isRegistryLens(def) || !this.domain) {
+      if (this.postureCells.size > 0) this.postureCells = new Map();
+      return isRegistryLens(def);
+    }
+    const ctx = this.lensContext();
+    const cells = new Map<string, PostureCellVM>();
+    for (const t of this.domain.techniques) {
+      const cell = registryCell(def, ctx, t);
+      cells.set(t.id, {
+        bucket: cell.bucket ?? 'none',
+        subStates: cell.subStates ?? [],
+        proofScope: cell.proofScope ?? null,
+        label: postureBadge(this.posture.stateFor(t)),
+      });
+    }
+    this.postureCells = cells;
+    return true;
+  }
+
+  /** The posture cell input for `tech` (P2-13): null on a legacy lens and for techniques outside the domain. */
+  postureCell(tech: Technique): PostureCellVM | null {
+    return this.postureCells.get(tech.id) ?? null;
+  }
+
   /** Returns the minimap cell background color for the currently active heatmap mode. */
   getCellColor(tech: Technique): string {
+    const def = heatmapModeDef(this.heatmapMode);
+    if (def?.color) {
+      // Registry-hosted lens (P2-13): the same colour function the cell and the legend call.
+      const ctx = this.lensContext();
+      return registryColor(def, registryCell(def, ctx, tech), ctx);
+    }
     switch (this.heatmapMode) {
       case 'coverage': {
         const colors = this.settingsService.getCoverageColors();

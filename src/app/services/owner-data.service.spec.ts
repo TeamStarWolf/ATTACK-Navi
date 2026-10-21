@@ -72,7 +72,7 @@ describe('owner data and the Prevalence banner (E1.5, D4)', () => {
 
     it('hides on every other lens, where its first words would be untrue', () => {
       const others = HEATMAP_MODES.map(m => m.value as HeatmapMode).filter(m => m !== 'frequency');
-      expect(others.length).toBe(32);
+      expect(others.length).toBe(33);
       for (const mode of others) {
         expect(showPrevalenceBanner(mode, false)).withContext(mode).toBeFalse();
       }

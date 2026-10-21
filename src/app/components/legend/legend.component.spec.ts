@@ -8,6 +8,10 @@ import { AttackDomain, DataService } from '../../services/data.service';
 import { SettingsService } from '../../services/settings.service';
 import { heatmapModeDef, lensAvailability } from '../../models/heatmap-modes';
 import { LensCardService } from '../../services/lens-card.service';
+import { ThemeService } from '../../services/theme.service';
+import { PostureStub, makePostureStub, postureStubProvider } from '../../testing/posture-stub';
+import { POSTURE_BUCKETS, postureFill, postureLegendStops } from '../../models/posture/posture-ramp';
+import type { Domain } from '../../models/domain';
 
 describe('LegendComponent', () => {
   let component: LegendComponent;
@@ -182,5 +186,130 @@ describe('LegendComponent', () => {
     expect(btn.getAttribute('aria-label')).toBe('What is the KEV lens?');
     btn.click();
     expect(cards.openMode()).toBe('kev');
+  });
+});
+
+// P2-13: the Posture lens's legend shows its stops, coloured by the lens's own
+// colour function in the current theme. Its stop labels and its question name
+// Covered and Proven, so they render only under hasOwnerWords(); a fresh
+// profile sees the ramp and 'No data of yours recorded' (§1.3).
+describe('LegendComponent: the Posture lens (P2-13)', () => {
+  let fixture: ComponentFixture<LegendComponent>;
+  let heatmapMode$: BehaviorSubject<HeatmapMode>;
+  let isLight$: BehaviorSubject<boolean>;
+  let posture: PostureStub;
+
+  const DOMAIN = {
+    techniques: [
+      { id: 'attack-pattern--1', attackId: 'T1001', isSubtechnique: false, mitigationCount: 2 },
+      { id: 'attack-pattern--2', attackId: 'T1002', isSubtechnique: false, mitigationCount: 0 },
+    ],
+    tacticColumns: [],
+  } as unknown as Domain;
+
+  const el = (): HTMLElement => fixture.nativeElement as HTMLElement;
+  const render = (): void => fixture.detectChanges();
+
+  /** Every string a reader sees or hears: the text, and title, aria-label, placeholder and alt. */
+  function visibleStrings(): string[] {
+    const out = [el().textContent ?? ''];
+    for (const node of Array.from(el().querySelectorAll('*'))) {
+      for (const attr of ['title', 'aria-label', 'placeholder', 'alt']) {
+        const v = node.getAttribute(attr);
+        if (v) out.push(v);
+      }
+    }
+    return out;
+  }
+
+  beforeEach(async () => {
+    localStorage.removeItem('mitre-nav-settings-v1');
+    heatmapMode$ = new BehaviorSubject<HeatmapMode>('posture');
+    isLight$ = new BehaviorSubject<boolean>(false);
+    posture = makePostureStub(() => DOMAIN);
+    await TestBed.configureTestingModule({
+      imports: [LegendComponent],
+      providers: [
+        { provide: FilterService, useValue: { heatmapMode$: heatmapMode$.asObservable() } },
+        { provide: DataService, useValue: {
+          currentDomain$: new BehaviorSubject<AttackDomain>('enterprise'),
+          domain$: new BehaviorSubject({ attackVersion: '19.2' }),
+          freshness$: new BehaviorSubject('bundled'),
+        } },
+        { provide: ThemeService, useValue: { isLight$, get isLight() { return isLight$.value; } } },
+        postureStubProvider(posture),
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(LegendComponent);
+    render();
+  });
+
+  it('fresh profile: shows the ramp and "No data of yours recorded", and no covered or proven string', () => {
+    expect(posture.ownerWords()).toBeFalse();
+    expect(el().querySelectorAll('.posture-stop .swatch').length).toBe(8);
+    expect(el().querySelectorAll('.stop-label').length).toBe(0);
+    expect(el().querySelector('.legend-no-data')!.textContent!.trim()).toBe('No data of yours recorded');
+    expect(el().querySelector('.legend-question')).toBeNull();
+    expect(el().querySelector('.rung-badge')!.textContent!.trim()).toBe('MIXED');
+    expect(el().querySelector('.legend-label')!.textContent!.trim()).toBe('Posture');
+    const hits = visibleStrings().filter(v => /\b(?:covered|proven)\b/i.test(v));
+    expect(hits).toEqual([]);
+  });
+
+  it('with owner data: names every stop from the vocabulary and asks the lens question', () => {
+    posture.set({ T1001: 'covered', T1002: 'proven' });
+    render();
+    expect(posture.ownerWords()).toBeTrue();
+    const labels = Array.from(el().querySelectorAll('.posture-stop .stop-label')).map(n => n.textContent!.trim());
+    expect(labels).toEqual(postureLegendStops('dark').map(s => s.label));
+    expect(el().querySelector('.legend-question')!.textContent!.trim()).toBe(heatmapModeDef('posture')!.question);
+    expect(el().querySelector('.legend-no-data')).toBeNull();
+  });
+
+  it('fills the swatches through the lens colour function, in the current theme', () => {
+    const fills = (): string[] => Array.from(el().querySelectorAll<HTMLElement>('.posture-stop .swatch'))
+      .slice(0, POSTURE_BUCKETS.length).map(n => n.style.backgroundColor);
+    const asRgb = (hex: string): string => {
+      const n = parseInt(hex.slice(1), 16);
+      return `rgb(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255})`;
+    };
+    expect(fills()).toEqual(POSTURE_BUCKETS.map(b => asRgb(postureFill(b, 'dark'))));
+    isLight$.next(true);
+    render();
+    expect(fills()).toEqual(POSTURE_BUCKETS.map(b => asRgb(postureFill(b, 'light'))));
+  });
+
+  it('marks partial, contradicted and not reproducible by pattern class, and the recorded detections with a check', () => {
+    const swatch = (key: string) => el().querySelector(`.posture-stop[data-stop="${key}"] .swatch`)!;
+    expect(swatch('partial').classList).toContain('posture-partial');
+    expect(swatch('contradicted').classList).toContain('posture-contradicted');
+    expect(swatch('not-reproducible').classList).toContain('posture-not-reproducible');
+    expect(swatch('covered').classList).not.toContain('posture-partial');
+    expect(swatch('proven').querySelector('.swatch-check')).not.toBeNull();
+    expect(swatch('stale').querySelector('.swatch-check')).not.toBeNull();
+    expect(swatch('covered').querySelector('.swatch-check')).toBeNull();
+  });
+
+  it('says how many proofs go stale within 7 days, only when some do', () => {
+    expect(el().querySelector('.legend-expiring')).toBeNull();
+    posture.set({ T1001: 'proven' });
+    posture.setExpiringSoon(3);
+    render();
+    expect(el().querySelector('.legend-expiring')!.textContent!.trim()).toBe('3 proofs go stale within 7 days');
+    posture.setExpiringSoon(1);
+    render();
+    expect(el().querySelector('.legend-expiring')!.textContent!.trim()).toBe('1 proof goes stale within 7 days');
+    posture.setExpiringSoon(0);
+    render();
+    expect(el().querySelector('.legend-expiring')).toBeNull();
+  });
+
+  it('leaves a legacy lens legend as it was', () => {
+    heatmapMode$.next('coverage');
+    render();
+    expect(el().querySelectorAll('.posture-stop').length).toBe(0);
+    expect(Array.from(el().querySelectorAll('.legend-stop .stop-label')).map(n => n.textContent!.trim()))
+      .toEqual(['0', '1', '2', '3', '4+']);
+    expect(el().querySelector('.legend-question')!.textContent!.trim()).toBe(heatmapModeDef('coverage')!.question);
   });
 });

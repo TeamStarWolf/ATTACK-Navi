@@ -64,7 +64,7 @@ The heatmap picker reads `HEATMAP_MODES` in `src/app/models/heatmap-modes.ts`. T
 | Vulnerabilities | KEV, CVE, EPSS, CVE Kill Chain, PoC Exploits |
 | Detections | Detection content available, Sigma Rules, Elastic Rules, Splunk Detections, Wazuh stock rules (curated), M365 Defender, CAR, Atomic |
 | Frameworks | D3FEND, Engage, NIST 800-53, VERIS Actions, CRI Profile, CSA CCM, M365 Controls, F3 Origin |
-| Coverage & Posture | Mitigations mapped, Status, Controls, Reference depth, Library Layer, Frequency |
+| Coverage & Posture | Mitigations mapped, Status, Controls, Reference depth, Library Layer, Frequency, Posture |
 
 Lens labels follow the Known / Covered / Proven vocabulary: Known means a public source maps or documents the technique, Covered means you have recorded something as deployed (self-attested), not shown to fire, and Proven means a named detection fired, or the technique was blocked, on a recorded date (no lens colours at this rung). <!-- truth-vocab-allow covered-unqualified,proven-only -- defines the vocabulary; not a rung claim about this app -->A lens built from reference data says 'mapped', 'available' or 'reference depth'. The `heat=` values in links are unchanged. Reference depth combines defensive reference inputs only (mitigations, detection content, CTID control mappings, D3FEND, Atomic); threat intel and KEV appear in the Threat Landscape and Vulnerabilities lenses instead.
 

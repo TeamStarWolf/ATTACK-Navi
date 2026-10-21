@@ -66,6 +66,39 @@
   }
 }
 
+// Posture stops (P2-13, posture-ramp.ts): taller swatches so the patterns the
+// cell draws (dashed, hatched outline, cross-hatch) and the check mark read.
+.posture-stop .swatch {
+  position: relative;
+  width: 24px;
+  height: 14px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &.posture-partial {
+    border: 2px dashed var(--accent);
+  }
+
+  &.posture-contradicted {
+    border: 2px solid transparent;
+    border-image: repeating-linear-gradient(45deg, #d55e00 0 2px, transparent 2px 4px) 2;
+  }
+
+  &.posture-not-reproducible {
+    background-image:
+      repeating-linear-gradient(45deg, rgb(128 128 128 / 55%) 0 1px, transparent 1px 4px),
+      repeating-linear-gradient(-45deg, rgb(128 128 128 / 55%) 0 1px, transparent 1px 4px);
+  }
+
+  .swatch-check {
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1;
+  }
+}
+
 .scale-arrow {
   font-size: 9px;
   color: var(--text-muted);
@@ -75,6 +108,8 @@
 }
 
 .legend-question,
+.legend-no-data,
+.legend-expiring,
 .legend-domain,
 .legend-na-reason,
 .legend-sources,

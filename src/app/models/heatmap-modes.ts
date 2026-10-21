@@ -5,16 +5,25 @@
 // runtime imports of its own, so the one runtime import below is cycle-free.
 import type { HeatmapMode } from '../services/filter.service';
 import type { AttackDomain } from '../services/data.service';
+import type { ReferenceDefenseSignals } from '../services/enrichment.service';
+import type { Technique } from './technique';
+import type { ReferenceDepthInputs } from './reference-depth';
+import type { PostureBucket, PostureState, PostureSubState, ProofScope } from './posture/posture.types';
 import { LENS_SOURCES, domainLabel, type LensSourceId } from './lens-sources';
+// Registry-hosted lenses (P2-13). posture-vocabulary and posture-ramp import
+// only types from this file, so these runtime imports are cycle-free too.
+import { lensLabel } from './posture/posture-vocabulary';
+import { postureColor, postureProject, postureRampStops } from './posture/posture-ramp';
 
 /**
  * The rung or dimension a lens's numbers belong to (product plan 4.1).
  * Known, Covered and Proven are the posture rungs; Threat (how much
  * adversaries care) and Exposure (reachable in your estate) are separate
  * dimensions that are never posture rungs, so they are named as such here
- * rather than being forced onto a rung.
+ * rather than being forced onto a rung. Mixed is the Posture lens's: each
+ * cell shows its own rung (plan 'rung: mixed', P2-13).
  */
-export type LensRung = 'Known' | 'Covered' | 'Proven' | 'Threat' | 'Exposure';
+export type LensRung = 'Known' | 'Covered' | 'Proven' | 'Threat' | 'Exposure' | 'Mixed';
 
 /** The qualifier a Covered lens always carries (4.1). */
 export type CoveredQualifier = 'self-attested' | 'range';
@@ -38,6 +47,28 @@ export interface LensRamp {
   readonly scale: LensScale;
   /** Same colours, in the same order, as the cell renderer (technique-cell) paints. */
   readonly stops: readonly LensRampStop[];
+}
+
+/** One technique's projection on a registry-hosted lens (§2.5). */
+export interface LensCell {
+  readonly score: number;
+  readonly bucket?: PostureBucket;
+  readonly subStates?: readonly PostureSubState[];
+  readonly proofScope?: ProofScope | null;
+  readonly implStop?: string;
+}
+
+/** What a registry-hosted lens may read to project and colour a technique (§2.5). */
+export interface LensContext {
+  /** PostureService.stateFor. */
+  readonly posture: (t: Technique) => PostureState;
+  /** The Known booleans (EnrichmentService.referenceDefenseSignals). */
+  readonly known: (t: Technique) => ReferenceDefenseSignals;
+  /** The saturating Known counts Reference depth scores (reference-depth.ts). */
+  readonly knownCounts: (t: Technique) => ReferenceDepthInputs;
+  readonly theme: 'dark' | 'light';
+  /** The technique cell passes the setting; the minimap passes false (today's behaviour). */
+  readonly colorblindSafe: boolean;
 }
 
 export interface HeatmapModeDef {
@@ -67,7 +98,18 @@ export interface HeatmapModeDef {
    * the reason names the sources and the domains they cover.
    */
   domainNote?: string;
+  /**
+   * Registry-hosted lenses only (P2-13). Absent: the legacy matrix
+   * switchboard scores the lens and the cell, minimap and legend each hold
+   * its colours.
+   */
+  project?: (ctx: LensContext, t: Technique) => LensCell;
+  /** One colour function for the cell, the minimap and the legend; present exactly when `project` is. */
+  color?: (cell: LensCell, ctx: Pick<LensContext, 'theme' | 'colorblindSafe'>) => string;
 }
+
+/** The registry entry type under its Phase 2 name (§2.5). */
+export type LensDefinition = HeatmapModeDef;
 
 const RELATIVE_LABELS = ['<25%', '25-49%', '50-74%', '75-100%'] as const;
 
@@ -85,6 +127,7 @@ function stops(scale: LensScale, pairs: ReadonlyArray<readonly [string, string]>
 
 const ALL_ATTACK: readonly AttackDomain[] = ['enterprise', 'ics', 'mobile'];
 const ENTERPRISE: readonly AttackDomain[] = ['enterprise'];
+const ALL_DOMAINS: readonly AttackDomain[] = ['enterprise', 'ics', 'mobile', 'f3'];
 
 /**
  * Single source of truth for every heatmap mode. The heatmap dropdown, the
@@ -339,6 +382,17 @@ export const HEATMAP_MODES: readonly HeatmapModeDef[] = [
     domainNote: 'it sorts CTID F3 fraud-framework ids by their T or F prefix, so it exists for CTID F3 only',
     zeroMeaning: 'No zero state: every F3 technique is either shared or fraud-native.',
     ramp: stops('categorical', [['#1565c0', 'shared w/ ATT&CK'], ['#6a1b9a', 'fraud-native']]) },
+
+  // Registry-hosted lenses (P2-13). Appended last so every older entry keeps
+  // its index; the cell, minimap and legend colour them through `color`.
+  { value: 'posture', label: lensLabel('posture'), short: 'Posture', group: 'Coverage & Posture',
+    question: 'What is covered (self-attested or range), and what has a recorded detection?',
+    rung: 'Mixed',
+    formula: 'Each technique shows its own rung from the data you recorded: a recorded detection (faded once older than its window), else Covered (self-attested or range) from implemented mitigations, declared controls, confirmations and range marks (partial when only a mitigation mapped to more techniques than the breadth threshold reaches it), else Known: mapped when reference data exists.',
+    domains: ALL_DOMAINS, sources: ['attack-bundle', 'workspace-local'],
+    zeroMeaning: 'No reference data is mapped and nothing of yours is recorded. Not known to us, not safe.',
+    ramp: { scale: 'categorical', stops: postureRampStops() },
+    project: postureProject, color: postureColor },
 ] as const;
 
 export const HEATMAP_GROUPS = ['Threat Landscape', 'Vulnerabilities', 'Detections', 'Frameworks', 'Coverage & Posture'] as const;
@@ -413,4 +467,5 @@ export const LENS_RUNG_MEANING: Readonly<Record<LensRung, string>> = {
   Proven: 'A named detection fired, or the technique was blocked, on a recorded date.',
   Threat: 'How much adversaries care about this. A threat dimension, never a posture rung.',
   Exposure: 'Whether this is reachable in your estate. An exposure dimension, never a posture rung.',
+  Mixed: 'Each cell shows its own rung: Known, Covered (self-attested or range) or a recorded detection.',
 };

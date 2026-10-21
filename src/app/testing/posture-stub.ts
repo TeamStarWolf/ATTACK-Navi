@@ -53,6 +53,9 @@ export interface PostureStub {
   /** Mark these attackIds excluded (out of `assessable` only). */
   exclude(attackIds: readonly string[]): void;
   readonly ownerWords: Signal<boolean>;
+  /** Fresh proofs within 7 days of their window (P2-13 legend); set with setExpiringSoon. */
+  readonly expiringSoon: Signal<number>;
+  setExpiringSoon(n: number): void;
   readonly states: Signal<ReadonlyMap<string, PostureState>>;
   stateFor(t: Pick<Technique, 'attackId' | 'mitigationCount'>): PostureState;
   tallyFor(ts: readonly Pick<Technique, 'attackId' | 'mitigationCount'>[]): ReturnType<typeof tallyPosture>;
@@ -67,6 +70,7 @@ export interface PostureStub {
 export function makePostureStub(domain: () => StubDomain | null, buckets: Readonly<Record<string, PostureBucket>> = {}): PostureStub {
   const table = signal<Readonly<Record<string, PostureBucket>>>(buckets);
   const excluded = signal<ReadonlySet<string>>(new Set());
+  const expiring = signal(0);
   const stateFor = (t: Pick<Technique, 'attackId' | 'mitigationCount'>): PostureState => {
     const mapped = (t.mitigationCount ?? 0) > 0;
     return stubState(t.attackId, table()[t.attackId] ?? (mapped ? 'known' : 'none'), mapped || table()[t.attackId] !== undefined,
@@ -82,6 +86,8 @@ export function makePostureStub(domain: () => StubDomain | null, buckets: Readon
     set: b => table.set(b),
     exclude: ids => excluded.set(new Set(ids)),
     ownerWords: computed(() => hasOwnerWords(states().values())),
+    expiringSoon: expiring.asReadonly(),
+    setExpiringSoon: n => expiring.set(n),
     states,
     stateFor,
     tallyFor,
