@@ -9,7 +9,10 @@
 // titles, palette match highlight, KEV numbers, score chips) now draw from
 // these tokens, so this spec is the floor they stand on; the e2e contrast spec
 // measures the rendered leaks themselves.
+import tinycolor from 'tinycolor2';
 import { Rgba, contrastRatio, over, parseColor, textContrast } from './contrast';
+import { hexToRgb } from '../models/cvd';
+import { POSTURE_BUCKETS, POSTURE_TOKENS } from '../models/posture/posture-ramp';
 
 const TEXT_TOKENS = [
   '--text-main',
@@ -90,4 +93,25 @@ describe('theme token contrast (plan E1.5)', () => {
       expect(textContrast(host.querySelector('span')!)).toBeGreaterThanOrEqual(MIN);
     }
   });
+});
+
+// P2-13: the Posture lens paints its cells from the posture ramp tokens, and
+// the cell draws its id and name on them. Text on every stop reads at 4.5:1 or
+// better in both themes, and the cell's own text rule (the better of black and
+// white, technique-cell ngOnChanges) lands on the token's text colour.
+describe('posture ramp text contrast (P2-13)', () => {
+  const rgba = (hex: string): Rgba => [...hexToRgb(hex), 1] as Rgba;
+
+  for (const theme of ['dark', 'light'] as const) {
+    it(`text on every posture stop is >= ${MIN}:1 in the ${theme} theme`, () => {
+      const failures: string[] = [];
+      for (const b of POSTURE_BUCKETS) {
+        const { fill, text } = POSTURE_TOKENS[theme][b];
+        const ratio = contrastRatio(rgba(text), rgba(fill));
+        if (ratio < MIN) failures.push(`${b} (${text} on ${fill}): ${ratio.toFixed(2)}:1`);
+        expect(tinycolor.mostReadable(fill, ['#000000', '#ffffff']).toHexString()).withContext(`${theme} ${b}`).toBe(text);
+      }
+      expect(failures).withContext(theme).toEqual([]);
+    });
+  }
 });

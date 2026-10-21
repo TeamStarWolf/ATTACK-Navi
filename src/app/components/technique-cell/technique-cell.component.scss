@@ -65,6 +65,8 @@
     padding: 3px 6px;
     letter-spacing: 0.3px;
   }
+
+  .tt-posture { margin-top: 5px; font-size: 10px; font-weight: 600; color: var(--text-main); line-height: 1.4; }
 }
 
 .tt-exposure {
@@ -127,6 +129,41 @@
   // E1.2: the active lens has no data for this domain (4.1 'n/a in this domain').
   &.lens-na {
     background-image: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 5px);
+  }
+
+  // Posture lens patterns (P2-13, posture-ramp.ts): drawn on top of the fill so
+  // a sub-state never depends on hue alone. Pseudo-elements, so the focus and
+  // search outlines still show.
+  // partial: the Known fill with a dashed blue outline (D16).
+  &.posture-partial::before {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    border: 2px dashed var(--accent);
+    border-radius: 7px;
+    pointer-events: none;
+  }
+
+  // contradicted: a vermilion hatched outline (Okabe-Ito vermilion).
+  &.posture-contradicted::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 3px solid transparent;
+    border-image: repeating-linear-gradient(45deg, #d55e00 0 3px, transparent 3px 6px) 3;
+    pointer-events: none;
+  }
+
+  // not reproducible: a grey cross-hatch (the n/a hatch is single-direction).
+  &.posture-not-reproducible {
+    background-image:
+      repeating-linear-gradient(45deg, rgb(128 128 128 / 55%) 0 1px, transparent 1px 6px),
+      repeating-linear-gradient(-45deg, rgb(128 128 128 / 55%) 0 1px, transparent 1px 6px);
+  }
+
+  .posture-check {
+    font-weight: 700;
+    line-height: 1;
   }
 
   &.search-dimmed {

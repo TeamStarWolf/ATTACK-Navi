@@ -1,6 +1,6 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, Injector, inject } from '@angular/core';
 
 import { Subscription } from 'rxjs';
 import { FilterService, HeatmapMode } from '../../services/filter.service';
@@ -10,6 +10,11 @@ import { SAFE_SEQ, SAFE_STATUS, SAFE_CONTROLS } from '../../models/safe-palette'
 import { HEATMAP_MODES, HeatmapModeDef, LensAvailability, LensRampStop, heatmapModeDef, lensAvailability, lensRungBadge } from '../../models/heatmap-modes';
 import { LensCardService } from '../../services/lens-card.service';
 import { LoadedBundleInfo, domainLabel, lensSourceVintage } from '../../models/lens-sources';
+import { isRegistryLens, registryColor } from '../../models/lens-registry';
+import { type PostureLegendStop, type PostureTheme, postureLegendStops } from '../../models/posture/posture-ramp';
+import type { PostureBucket } from '../../models/posture/posture.types';
+import { EXPIRING_SOON_DAYS, PostureService } from '../../services/posture.service';
+import { ThemeService } from '../../services/theme.service';
 
 /** The unified lens's colorblind-safe 6-stop viridis, mirroring technique-cell. */
 const SAFE_UNIFIED = ['#440154', '#414487', '#2a788e', '#22a884', '#7ad151', '#fde725'];
@@ -27,6 +32,11 @@ const SCALE_NOTE: Partial<Record<HeatmapModeDef['ramp']['scale'], string>> = {
  * for the current domain), the source line with each source's vintage, what
  * zero means, and a 'What is this lens?' button that opens the lens's
  * definition card.
+ *
+ * A registry-hosted posture lens (P2-13) shows its posture stops instead,
+ * coloured by the lens's own colour function. Its stop labels and question
+ * name Covered and Proven, so they render only under hasOwnerWords() (§1.3);
+ * a fresh profile sees the ramp and 'No data of yours recorded'.
  */
 @Component({
   selector: 'app-legend',
@@ -39,18 +49,44 @@ const SCALE_NOTE: Partial<Record<HeatmapModeDef['ramp']['scale'], string>> = {
         <span class="rung-badge" [attr.data-rung]="def.rung">{{ rungBadge }}</span>
         <span class="legend-label">{{ def.label }}</span>
         <div class="legend-scale">
-          @for (stop of stops; track stop.label) {
-            <div class="legend-stop">
-              <div class="swatch" [style.background]="stop.color"></div>
-              <span class="stop-label">{{ stop.label }}</span>
-            </div>
-          }
-          @if (scaleNote) {
-            <span class="scale-arrow">{{ scaleNote }}</span>
+          @if (postureStops; as pstops) {
+            @for (stop of pstops; track stop.key) {
+              <div class="legend-stop posture-stop" [attr.data-stop]="stop.key">
+                <div class="swatch"
+                     [class.posture-partial]="stop.patternClass === 'posture-partial'"
+                     [class.posture-contradicted]="stop.patternClass === 'posture-contradicted'"
+                     [class.posture-not-reproducible]="stop.patternClass === 'posture-not-reproducible'"
+                     [style.background-color]="stop.fill">
+                  @if (stop.check) {
+                    <span class="swatch-check" aria-hidden="true" [style.color]="stop.text">✓</span>
+                  }
+                </div>
+                @if (ownerWords) {
+                  <span class="stop-label">{{ stop.label }}</span>
+                }
+              </div>
+            }
+          } @else {
+            @for (stop of stops; track stop.label) {
+              <div class="legend-stop">
+                <div class="swatch" [style.background]="stop.color"></div>
+                <span class="stop-label">{{ stop.label }}</span>
+              </div>
+            }
+            @if (scaleNote) {
+              <span class="scale-arrow">{{ scaleNote }}</span>
+            }
           }
         </div>
       </div>
-      <p class="legend-question">{{ def.question }}</p>
+      @if (postureStops && !ownerWords) {
+        <p class="legend-no-data">No data of yours recorded</p>
+      } @else {
+        <p class="legend-question">{{ def.question }}</p>
+      }
+      @if (postureStops && expiringSoon > 0) {
+        <p class="legend-expiring" role="status">{{ expiringLine }}</p>
+      }
       @if (notInDomain) {
         <p class="legend-domain"><span class="swatch hatch" aria-hidden="true"></span>n/a for {{ domainName }} (no source data)</p>
         <p class="legend-na-reason">{{ availability.reason }}</p>
@@ -151,6 +187,47 @@ export class LegendComponent implements OnInit, OnDestroy {
     });
   }
 
+  private readonly injector = inject(Injector);
+  private readonly themeService = inject(ThemeService);
+  /** Injected on first use, so a legacy lens's legend needs no PostureService. */
+  private postureService: PostureService | null = null;
+
+  private get posture(): PostureService {
+    return (this.postureService ??= this.injector.get(PostureService));
+  }
+
+  /**
+   * The posture stops of a registry-hosted lens (P2-13), each filled through
+   * the lens's own colour function in the current theme; null on a legacy lens.
+   */
+  get postureStops(): PostureLegendStop[] | null {
+    const def = this.def;
+    if (!isRegistryLens(def)) return null;
+    const theme: PostureTheme = this.themeService.isLight ? 'light' : 'dark';
+    const ctx = { theme, colorblindSafe: this.settingsService.current.colorblindSafe };
+    return postureLegendStops(theme).map(stop => {
+      const bucket: PostureBucket = stop.patternClass && stop.key !== 'partial' ? 'known' : stop.key as PostureBucket;
+      return { ...stop, fill: registryColor(def, { score: 0, bucket }, ctx) };
+    });
+  }
+
+  /** Whether Covered and Proven words may render (PostureService.ownerWords, §2.4). */
+  get ownerWords(): boolean {
+    return this.posture.ownerWords();
+  }
+
+  /** Fresh proofs whose window closes within EXPIRING_SOON_DAYS (§7). */
+  get expiringSoon(): number {
+    return this.posture.expiringSoon();
+  }
+
+  get expiringLine(): string {
+    const n = this.expiringSoon;
+    return n === 1
+      ? `1 proof goes stale within ${EXPIRING_SOON_DAYS} days`
+      : `${n} proofs go stale within ${EXPIRING_SOON_DAYS} days`;
+  }
+
   private sub = new Subscription();
 
   constructor(
@@ -170,6 +247,9 @@ export class LegendComponent implements OnInit, OnDestroy {
     );
     this.sub.add(
       this.settingsService.settings$.subscribe(() => this.cdr.markForCheck()),
+    );
+    this.sub.add(
+      this.themeService.isLight$.subscribe(() => this.cdr.markForCheck()),
     );
     this.sub.add(
       this.dataService.currentDomain$.subscribe(domain => {

@@ -1,7 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 //
-// Characterization ("golden master") specs for the 33 heatmap lenses.
+// Characterization ("golden master") specs for the 34 heatmap lenses.
 //
 // For every mode in HEATMAP_MODES this spec builds a fresh MatrixComponent on
 // the fixed fixture domain (see lens-harness.ts), switches to that mode, and
@@ -14,11 +14,26 @@
 //   node scripts/update-lens-snapshots.mjs
 // (it runs this spec, collects the "[lens-snapshot]" lines a mismatching spec
 // logs, and rewrites the JSON). Never hand-edit the snapshot to make it pass.
+//
+// Frozen-hash guard (P2-13): the 33 lenses that existed before the LensRegistry
+// seam are frozen. __snapshots__/lens-snapshots.frozen.json holds one sha256
+// per frozen lens, computed by the update script (Node crypto) over that lens's
+// block of lens-snapshots.json exactly as the script writes it. The guard
+// recomputes the hash here (WebCrypto, spec-time only, never app code) over the
+// committed block and over a fresh render, so neither a regenerated snapshot
+// nor a rendering change can move a frozen lens unnoticed. The script refuses
+// to rewrite a frozen lens; an intended change to one deletes its key from the
+// frozen file by hand, in review.
+//
+// The Posture lens (P2-13) reads proof ages: the harness pins POSTURE_TODAY to
+// LENS_POSTURE_TODAY and seeds two runs dated relative to it (lens-harness.ts),
+// so its snapshot is stable under any real date.
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
 import SNAPSHOTS from './__snapshots__/lens-snapshots.json';
+import FROZEN_HASHES from './__snapshots__/lens-snapshots.frozen.json';
 import { MatrixComponent } from '../components/matrix/matrix.component';
 import { HEATMAP_MODES } from '../models/heatmap-modes';
 import { Domain } from '../models/domain';
@@ -27,9 +42,10 @@ import { DataService } from '../services/data.service';
 import { FilterService, HeatmapMode } from '../services/filter.service';
 import { ImplementationService } from '../services/implementation.service';
 import { SigmaService } from '../services/sigma.service';
+import { ValidationService } from '../services/validation.service';
 import {
-  IMPL_CYCLE, LENS_FIXTURE, controlsProvider, parseFixtureDomain, resetBrowserState,
-  signal, signalStubProviders, sortedMitigations,
+  IMPL_CYCLE, LENS_FIXTURE, controlsProvider, lensPostureTodayProvider, lensRunTechniques, parseFixtureDomain,
+  resetBrowserState, seedLensRuns, signal, signalStubProviders, sortedMitigations,
 } from './lens-harness';
 
 type Score = number | string | null;
@@ -37,6 +53,25 @@ type SnapshotEntry = [Score, string];
 type ModeSnapshot = Record<string, SnapshotEntry>;
 
 const COMMITTED = SNAPSHOTS as unknown as Record<string, ModeSnapshot>;
+const FROZEN = FROZEN_HASHES as unknown as Record<string, string>;
+
+/** The lenses that existed before the LensRegistry seam (P2-13): the first 33 registry entries. */
+const PRE_REGISTRY_MODES = 33;
+
+/**
+ * One lens's block of lens-snapshots.json, byte for byte as
+ * scripts/update-lens-snapshots.mjs writes it (keys sorted, one technique per line).
+ */
+function snapshotBlock(mode: string, snap: ModeSnapshot): string {
+  const entries = Object.keys(snap).sort().map(id => `    ${JSON.stringify(id)}: ${JSON.stringify(snap[id])}`);
+  return `  ${JSON.stringify(mode)}: {\n${entries.join(',\n')}\n  }`;
+}
+
+/** Hex sha256 of a UTF-8 string (WebCrypto; the script computes the same with Node crypto). */
+async function sha256(text: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
 /**
  * How to read a technique's score in each mode. Typed as a Record over the
@@ -78,6 +113,11 @@ const SCORE: Record<HeatmapMode, (m: MatrixComponent, t: Technique) => Score> = 
   'm365-controls': (m, t) => m.getM365ControlsScore(t),
   // F3 origin is a categorical lens: shared-with-ATT&CK (T-id) vs fraud-native.
   'f3-origin': (_m, t) => (t.attackId.startsWith('T') ? 'shared' : 'native'),
+  // Posture (P2-13): the bucket, then any sub-states, from the cell's PostureCellVM.
+  posture: (m, t) => {
+    const c = m.postureCell(t);
+    return c ? [c.bucket, ...c.subStates].join(' ') : null;
+  },
 };
 
 /** Lenses whose fixture snapshot is legitimately single-valued (see the spec below). */
@@ -100,67 +140,86 @@ function libraryLayerA(): { name: string; description: string; techniques: Array
 
 const round = (v: Score): Score => (typeof v === 'number' ? Math.round(v * 1e6) / 1e6 : v);
 
-describe('Heatmap lens characterization (33 modes, fixed fixture)', () => {
+interface LensBench {
+  domain: Domain;
+  matrix: MatrixComponent;
+  filter: FilterService;
+  http: HttpTestingController;
+}
+
+/** A fresh MatrixComponent on the fixture with the harness's user state, the run seed and the pinned posture day. */
+function buildBench(): LensBench {
+  resetBrowserState();
+  const domain = parseFixtureDomain();
+  TestBed.configureTestingModule({
+    imports: [MatrixComponent],
+    providers: [
+      provideHttpClient(withXhr()),
+      provideHttpClientTesting(),
+      ...signalStubProviders(),
+      controlsProvider(domain),
+      lensPostureTodayProvider(),
+    ],
+  });
+  // Score maps are computed in the class, not the template: render nothing.
+  TestBed.overrideTemplate(MatrixComponent, '');
+
+  // Real FilterService / DataService, with the fixture domain published.
+  (TestBed.inject(DataService) as unknown as { domainSubject: { next(d: Domain): void } }).domainSubject.next(domain);
+  const filter = TestBed.inject(FilterService);
+  const http = TestBed.inject(HttpTestingController);
+
+  // User state the status / exposure lenses read.
+  const impl = TestBed.inject(ImplementationService);
+  sortedMitigations(domain).forEach((m, i) => impl.setStatus(m.id, IMPL_CYCLE[i % IMPL_CYCLE.length]));
+  const groups = [...domain.groups].sort((a, b) => a.attackId.localeCompare(b.attackId));
+  for (const g of groups.slice(0, 3)) filter.toggleThreatGroup(g.id);
+  // The Posture lens's two runs (P2-13): the run store only.
+  seedLensRuns(TestBed.inject(ValidationService), domain);
+
+  const fixture = TestBed.createComponent(MatrixComponent);
+  fixture.componentRef.setInput('domain', domain);
+  fixture.detectChanges();
+  const matrix = fixture.componentInstance;
+
+  // The real LibraryLayerService asks for its manifest at construction.
+  http.expectOne('assets/data/library-layers/index.json').flush(LIBRARY_MANIFEST);
+  return { domain, matrix, filter, http };
+}
+
+/** [score, minimap colour] per fixture technique for `mode`, keyed and sorted by ATT&CK id. */
+function snapshotOn(bench: LensBench, mode: HeatmapMode): ModeSnapshot {
+  bench.filter.setHeatmapMode(mode);
+  if (mode === 'library') {
+    // Library mode with no user layer auto-selects manifest[0] and fetches it.
+    bench.http.expectOne(`assets/data/library-layers/${LIBRARY_MANIFEST[0].file}`).flush(libraryLayerA());
+  }
+  const out: ModeSnapshot = {};
+  const techs = [...bench.domain.techniques].sort((a, b) => a.attackId.localeCompare(b.attackId));
+  for (const t of techs) out[t.attackId] = [round(SCORE[mode](bench.matrix, t)), bench.matrix.getCellColor(t)];
+  return out;
+}
+
+describe('Heatmap lens characterization (34 modes, fixed fixture)', () => {
   let domain: Domain;
-  let matrix: MatrixComponent;
-  let filter: FilterService;
   let http: HttpTestingController;
+  let bench: LensBench;
 
   beforeEach(() => {
-    resetBrowserState();
-    domain = parseFixtureDomain();
-    TestBed.configureTestingModule({
-      imports: [MatrixComponent],
-      providers: [
-        provideHttpClient(withXhr()),
-        provideHttpClientTesting(),
-        ...signalStubProviders(),
-        controlsProvider(domain),
-      ],
-    });
-    // Score maps are computed in the class, not the template: render nothing.
-    TestBed.overrideTemplate(MatrixComponent, '');
-
-    // Real FilterService / DataService, with the fixture domain published.
-    (TestBed.inject(DataService) as unknown as { domainSubject: { next(d: Domain): void } }).domainSubject.next(domain);
-    filter = TestBed.inject(FilterService);
-    http = TestBed.inject(HttpTestingController);
-
-    // User state the status / exposure lenses read.
-    const impl = TestBed.inject(ImplementationService);
-    sortedMitigations(domain).forEach((m, i) => impl.setStatus(m.id, IMPL_CYCLE[i % IMPL_CYCLE.length]));
-    const groups = [...domain.groups].sort((a, b) => a.attackId.localeCompare(b.attackId));
-    for (const g of groups.slice(0, 3)) filter.toggleThreatGroup(g.id);
-
-    const fixture = TestBed.createComponent(MatrixComponent);
-    fixture.componentRef.setInput('domain', domain);
-    fixture.detectChanges();
-    matrix = fixture.componentInstance;
-
-    // The real LibraryLayerService asks for its manifest at construction.
-    http.expectOne('assets/data/library-layers/index.json').flush(LIBRARY_MANIFEST);
+    bench = buildBench();
+    ({ domain, http } = bench);
   });
 
   afterEach(() => {
     resetBrowserState();
   });
 
-  function snapshotOf(mode: HeatmapMode): ModeSnapshot {
-    filter.setHeatmapMode(mode);
-    if (mode === 'library') {
-      // Library mode with no user layer auto-selects manifest[0] and fetches it.
-      http.expectOne(`assets/data/library-layers/${LIBRARY_MANIFEST[0].file}`).flush(libraryLayerA());
-    }
-    const out: ModeSnapshot = {};
-    const techs = [...domain.techniques].sort((a, b) => a.attackId.localeCompare(b.attackId));
-    for (const t of techs) out[t.attackId] = [round(SCORE[mode](matrix, t)), matrix.getCellColor(t)];
-    return out;
-  }
+  const snapshotOf = (mode: HeatmapMode): ModeSnapshot => snapshotOn(bench, mode);
 
-  it('covers exactly the 33 modes in HEATMAP_MODES, with no stale snapshot', () => {
+  it('covers exactly the 34 modes in HEATMAP_MODES, with no stale snapshot', () => {
     const modes = HEATMAP_MODES.map(m => m.value);
-    expect(modes.length).toBe(33);
-    expect(new Set(modes).size).toBe(33);
+    expect(modes.length).toBe(34);
+    expect(new Set(modes).size).toBe(34);
     expect(Object.keys(SCORE).sort()).toEqual([...modes].sort());
     expect(Object.keys(COMMITTED).sort()).toEqual([...modes].sort());
   });
@@ -216,4 +275,51 @@ describe('Heatmap lens characterization (33 modes, fixed fixture)', () => {
     for (const def of HEATMAP_MODES) snapshotOf(def.value);
     expect(() => http.verify()).not.toThrow();
   });
+
+  it('frozen-hash guard: the 33 lenses that predate the registry are byte-identical (P2-13)', async () => {
+    const frozen = HEATMAP_MODES.slice(0, PRE_REGISTRY_MODES).map(m => m.value as string);
+    // The frozen set is exactly the 33 older entries, which kept their registry index.
+    expect(frozen.length).toBe(33);
+    expect(Object.keys(FROZEN).sort()).toEqual([...frozen].sort());
+    for (const mode of frozen) {
+      expect(FROZEN[mode]).withContext(mode).toMatch(/^[0-9a-f]{64}$/);
+      expect(await sha256(snapshotBlock(mode, COMMITTED[mode]))).withContext(`${mode}: committed snapshot`).toBe(FROZEN[mode]);
+      expect(await sha256(snapshotBlock(mode, snapshotOf(mode as HeatmapMode)))).withContext(`${mode}: rendered now`).toBe(FROZEN[mode]);
+    }
+  });
+
+  it('posture: the fixture shows known, partial, covered, proven and stale cells', () => {
+    const buckets = new Set(Object.values(COMMITTED['posture']).map(e => String(e[0]).split(' ')[0]));
+    for (const b of ['known', 'partial', 'covered', 'proven', 'stale']) expect(buckets).withContext(b).toContain(b);
+    const { fresh, stale } = lensRunTechniques(domain);
+    expect(String(COMMITTED['posture'][fresh.attackId][0]).split(' ')[0]).toBe('proven');
+    expect(String(COMMITTED['posture'][stale.attackId][0]).split(' ')[0]).toBe('stale');
+  });
+});
+
+// R14: the Posture snapshot never ages. The harness pins POSTURE_TODAY and
+// dates its runs relative to it, so the real clock is irrelevant: the same
+// committed snapshot holds with the clock set before, near and long after it.
+describe('Posture lens snapshot under any real date (P2-13, R14)', () => {
+  for (const real of ['2025-01-15T00:00:00.000Z', '2026-10-20T09:30:00.000Z', '2031-03-01T23:59:00.000Z']) {
+    describe(`real clock ${real}`, () => {
+      let bench: LensBench;
+
+      beforeEach(() => {
+        jasmine.clock().install();
+        jasmine.clock().mockDate(new Date(real));
+        bench = buildBench();
+      });
+
+      afterEach(() => {
+        jasmine.clock().uninstall();
+        resetBrowserState();
+      });
+
+      it('matches the committed posture snapshot', () => {
+        expect(new Date().toISOString()).toBe(real);
+        expect(snapshotOn(bench, 'posture')).toEqual(COMMITTED['posture']);
+      });
+    });
+  }
 });

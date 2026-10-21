@@ -8,13 +8,13 @@ Counts and versions derived from the code. When a document states one of these n
 
 | Fact | Value | Derived from |
 | :-- | --: | :-- |
-| Heatmap modes | 33 | `src/app/models/heatmap-modes.ts` (`HEATMAP_MODES`) |
+| Heatmap modes | 34 | `src/app/models/heatmap-modes.ts` (`HEATMAP_MODES`) |
 | Routed workspaces (top-level routes, redirects excluded) | 10 | `src/app/app.routes.ts` |
 | Workspaces that lazy-load a route file | 8 | `loadChildren` in `src/app/app.routes.ts` |
 | Routed workspace tabs | 47 | child routes with `data.tab` in `src/app/pages/*/*.routes.ts` |
 | Library layers | 37 | `src/assets/data/library-layers/index.json` |
 | Lylat mission layers | 35 | `src/assets/data/lylat-mission-layers/index.json` |
-| Unit spec files | 225 | `src/**/*.spec.ts` |
+| Unit spec files | 228 | `src/**/*.spec.ts` |
 | Playwright spec files | 7 | `e2e/**/*.spec.ts` |
 | Script test files | 8 | `scripts/**/*.test.mjs` |
 | Proxy test files | 1 | `server/**/*.test.*` |
@@ -75,6 +75,7 @@ Version is the `x_mitre_version` of the bundle's `x-mitre-collection` object.
 | 31 | `csa-ccm` | CSA CCM | Frameworks | Known |
 | 32 | `m365-controls` | M365 Ctl | Frameworks | Known |
 | 33 | `f3-origin` | F3 Origin | Frameworks | Known |
+| 34 | `posture` | Posture | Coverage & Posture | Mixed |
 
 ## Routes and tabs
 
@@ -181,12 +182,12 @@ Read by `scripts/check-facts.mjs`.
 
 <!-- facts-json
 {
-  "heatmapModes": 33,
+  "heatmapModes": 34,
   "routedWorkspaces": 10,
   "routeFileWorkspaces": 8,
   "routedTabs": 47,
   "libraryLayers": 37,
-  "unitSpecs": 225,
+  "unitSpecs": 228,
   "angularMajor": 22,
   "typescriptMajor": 6,
   "bundleVersions": {

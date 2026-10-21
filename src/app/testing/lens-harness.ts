@@ -10,7 +10,7 @@
 // heatmap lenses read (Sigma, CAR, Atomic, D3FEND, NIST, KEV, EPSS, ...) is a
 // stub whose per-technique count is a pure hash of (source, ATT&CK id). No
 // request leaves the browser and nothing depends on the order specs run in.
-import { Provider } from '@angular/core';
+import { Provider, signal as ngSignal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 
@@ -43,6 +43,9 @@ import { CveService } from '../services/cve.service';
 import { AssetInventoryService } from '../services/asset-inventory.service';
 import { UserLayerService } from '../services/user-layer.service';
 import { ControlsService } from '../services/controls.service';
+import { Technique } from '../models/technique';
+import { POSTURE_TODAY } from '../models/posture/posture-today';
+import { ValidationService } from '../services/validation.service';
 
 /** The raw fixture bundle (read-only; parse it with {@link parseFixtureDomain}). */
 export const LENS_FIXTURE: { objects: unknown[]; x_lens_fixture: { techniques: string[] } } =
@@ -233,4 +236,56 @@ export function controlsProvider(domain: Domain): Provider {
 export function resetBrowserState(): void {
   try { localStorage.clear(); } catch { /* storage unavailable: nothing to clear */ }
   try { sessionStorage.clear(); } catch { /* storage unavailable: nothing to clear */ }
+}
+
+// ─── Posture lens (P2-13, R14) ─────────────────────────────────────────────
+//
+// The Posture lens reads proof ages, so its snapshot would age with the real
+// date. The harness pins PostureService's day to LENS_POSTURE_TODAY and dates
+// its two seeded runs relative to it (one 10 days old, fresh; one 120 days
+// old, past the 90-day own-run window, stale), so the snapshot never ages.
+// The seed writes ONLY the validation-run store: the implementation and
+// controls stores the status and controls lenses read are never touched, and
+// no other lens reads runs (the frozen-hash guard in lens-snapshots.spec.ts
+// proves the 33 older lenses byte-identical with the seed in place).
+
+/** The day the lens harness pins posture to. */
+export const LENS_POSTURE_TODAY = new Date('2026-10-01T00:00:00.000Z');
+
+/** ISO timestamp `days` before LENS_POSTURE_TODAY. */
+export function daysBeforeLensToday(days: number): string {
+  return new Date(LENS_POSTURE_TODAY.getTime() - days * 86_400_000).toISOString();
+}
+
+/** Provides POSTURE_TODAY as the fixed LENS_POSTURE_TODAY signal. */
+export function lensPostureTodayProvider(): Provider {
+  return { provide: POSTURE_TODAY, useValue: ngSignal(LENS_POSTURE_TODAY) };
+}
+
+/** Ages of the two seeded runs, in days before LENS_POSTURE_TODAY. */
+export const LENS_RUN_AGES = { fresh: 10, stale: 120 } as const;
+
+/**
+ * The two techniques the seeded runs land on: the first two parent
+ * techniques of the fixture by ATT&CK id. Derived, never hard-coded.
+ */
+export function lensRunTechniques(domain: Domain): { fresh: Technique; stale: Technique } {
+  const parents = domain.techniques.filter(t => !t.isSubtechnique).sort((a, b) => a.attackId.localeCompare(b.attackId));
+  return { fresh: parents[0], stale: parents[1] };
+}
+
+/**
+ * Seeds the two runs through ValidationService.importJson (the run store
+ * only). Each passed with a named fired detection, so each is a qualifying
+ * own-run proof: the 10-day one fresh, the 120-day one stale.
+ */
+export function seedLensRuns(validation: ValidationService, domain: Domain): void {
+  const { fresh, stale } = lensRunTechniques(domain);
+  const result = validation.importJson(JSON.stringify({ runs: [
+    { id: 'lens-run-fresh', techniqueId: fresh.attackId, runDate: daysBeforeLensToday(LENS_RUN_AGES.fresh), status: 'passed',
+      attackResult: 'executed', detectionsFired: ['sigma:lens-fresh'] },
+    { id: 'lens-run-stale', techniqueId: stale.attackId, runDate: daysBeforeLensToday(LENS_RUN_AGES.stale), status: 'passed',
+      attackResult: 'executed', detectionsFired: ['sigma:lens-stale'] },
+  ] }));
+  if (!result.ok) throw new Error(`lens harness runs not imported: ${result.error ?? 'unknown'}`);
 }

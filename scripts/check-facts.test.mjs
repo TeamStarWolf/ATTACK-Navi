@@ -113,13 +113,13 @@ test('a FACTS.md that no longer matches the code makes HANDOFF.md disagree', () 
   try {
     mkdirSync(join(dir, 'docs'));
     const fresh = renderFacts(collectFacts(ROOT));
-    const stale = fresh.replace('"heatmapModes": 33', '"heatmapModes": 32');
-    assert.notEqual(stale, fresh, 'fixture assumes 33 heatmap modes; update the test if the code changed');
+    const stale = fresh.replace('"heatmapModes": 34', '"heatmapModes": 33');
+    assert.notEqual(stale, fresh, 'fixture assumes 34 heatmap modes; update the test if the code changed');
     writeFileSync(join(dir, 'docs/FACTS.md'), stale);
     copyFileSync(join(ROOT, 'HANDOFF.md'), join(dir, 'HANDOFF.md'));
     const r = spawnSync(process.execPath, [SCRIPT, '--root', dir, '--no-freshness', 'HANDOFF.md'], { encoding: 'utf8' });
     assert.equal(r.status, 1);
-    assert.match(r.stderr, /HANDOFF\.md:\d+: "33 heatmap modes" states 33 heatmap modes; docs\/FACTS\.md says 32/);
+    assert.match(r.stderr, /HANDOFF\.md:\d+: "34 heatmap modes" states 34 heatmap modes; docs\/FACTS\.md says 33/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
