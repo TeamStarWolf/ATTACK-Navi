@@ -37,8 +37,11 @@ import { TimelineService } from '../services/timeline.service';
 import { PanelNavService } from '../services/panel-nav.service';
 import { FilterService } from '../services/filter.service';
 import { DashboardConfigService } from '../services/dashboard-config.service';
+import { EmulationPlanService } from '../services/emulation-plan.service';
+import { LibraryLayerService } from '../services/library-layer.service';
 import { PostureCardComponent } from '../components/posture-card/posture-card.component';
 import { AssessmentWizardComponent } from '../components/assessment-wizard/assessment-wizard.component';
+import { ScenarioPanelComponent } from '../components/scenario-panel/scenario-panel.component';
 import { DashboardPanelComponent } from '../components/dashboard-panel/dashboard-panel.component';
 import { ActorProfilePanelComponent } from '../components/actor-profile-panel/actor-profile-panel.component';
 import { THREAT_WEIGHT_PROVIDER } from '../models/posture/threat-weight';
@@ -73,12 +76,15 @@ describe('threat-profile denominators move in one step (P2-10 [AC])', () => {
     resetBrowserState();
     domain = parseFixtureDomain();
     TestBed.configureTestingModule({
-      imports: [PostureCardComponent, AssessmentWizardComponent],
+      imports: [PostureCardComponent, AssessmentWizardComponent, ScenarioPanelComponent],
       providers: [
         provideHttpClient(withXhr()), provideHttpClientTesting(), provideRouter([]),
         ...signalStubProviders(),
         { provide: POSTURE_TODAY, useValue: signal(TODAY) },
         { provide: THREAT_WEIGHT_PROVIDER, useExisting: ThreatProfileService },
+        // scenario-panel deps (the overlay's rendered total is read below)
+        { provide: EmulationPlanService, useValue: { generatePlan: () => ({ steps: [] }), exportCalderaProfile: () => {} } },
+        { provide: LibraryLayerService, useValue: { manifest$: new BehaviorSubject([]), layerTechniqueIds: () => of([]), manifest: [] } },
         // Gap detection stubs (the lens-harness stubs answer different names); the gap
         // denominator is the profile, not detection counts, so 0/[] is fine.
         ...[SigmaService, ElasticService, SplunkContentService].map(t => ({ provide: t, useValue: { getRuleCount: () => 0 } })),
@@ -124,7 +130,17 @@ describe('threat-profile denominators move in one step (P2-10 [AC])', () => {
     expect(uniqueTechIds(wiz)).toBe(n);              // the actual step-3 technique set (deduped)
     expect(wiz.totalTechniques).toBe(n);
     expect(gapTotal()).toBe(n);
-    expect(threatSimTotal()).toBe(n);          // scenario + threat-simulation total
+    expect(threatSimTotal()).toBe(n);          // the threat-simulation service total
+
+    // The RENDERED scenario total on a mounted panel equals the same denominator.
+    const scenF = TestBed.createComponent(ScenarioPanelComponent);
+    const scen = scenF.componentInstance;
+    (scen as unknown as { domain: Domain }).domain = domain;
+    scen.profileSimResult = threatSim.simulate(domain);   // the profile sim over the new profile
+    scen.showThreatSim = true;
+    scenF.detectChanges();                                 // one pass renders the overlay
+    const renderedTotal = Number(((scenF.nativeElement as HTMLElement).querySelector('[data-sim="total"]')?.textContent ?? '').trim());
+    expect(renderedTotal).toBe(n);             // the rendered scenario total tracks parentTechniqueIds.size
   });
 
   it('Skip sets {kind:"all"}; the wizard/gap/card totals all equal the domain parent-technique count', () => {

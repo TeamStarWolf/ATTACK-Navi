@@ -46,6 +46,7 @@ interface ScenarioTechnique {
   technique: Technique;
   bucket: PostureBucket;
   outcome: ScenarioOutcome;
+  contradicted: boolean;   // the 'contradicted' sub-state: a gap even when otherwise covered (§10.4 item 13)
   mitigationCount: number;
   reasoning: string;
 }
@@ -161,9 +162,14 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
   private computeResult(group: ThreatGroup, domain: any): SimulationResult {
     const techniques: Technique[] = this.dataService.getTechniquesForGroup(group.id);
     const scenarioTechniques: ScenarioTechnique[] = techniques.map(tech => {
-      const bucket = this.posture.stateFor(tech).bucket;
+      const state = this.posture.stateFor(tech);
+      const bucket = state.bucket;
       const mitigationCount = (domain.mitigationsByTechnique?.get(tech.id) ?? []).length;
-      return { technique: tech, bucket, outcome: outcomeOf(bucket), mitigationCount, reasoning: this.reasoningFor(bucket, mitigationCount) };
+      return {
+        technique: tech, bucket, outcome: outcomeOf(bucket),
+        contradicted: state.subStates.includes('contradicted'),
+        mitigationCount, reasoning: this.reasoningFor(bucket, mitigationCount),
+      };
     });
 
     const count = (o: ScenarioOutcome) => scenarioTechniques.filter(t => t.outcome === o).length;
@@ -214,12 +220,20 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
     return list;
   }
 
-  /** Gaps to close: not yet covered/proven (none, known or partial), most-mapped first. */
+  /**
+   * Gaps to close (§10.4 item 13): bucket none or known, or the contradicted sub-state,
+   * most-mapped first. partial is NOT a gap (it is recorded, just not confirmed per technique).
+   */
   get remediationPlan(): ScenarioTechnique[] {
     if (!this.result) return [];
     return this.result.techniques
-      .filter(t => t.outcome === 'none' || t.outcome === 'known' || t.outcome === 'partial')
+      .filter(t => t.outcome === 'none' || t.outcome === 'known' || t.contradicted)
       .sort((a, b) => b.mitigationCount - a.mitigationCount);
+  }
+
+  /** Covered/Proven surfaces (outcome cards and the profile-simulation overlay) render only when true. */
+  get hasOwnerWords(): boolean {
+    return this.posture.ownerWords();
   }
 
   bucketLabel(o: ScenarioOutcome): string {

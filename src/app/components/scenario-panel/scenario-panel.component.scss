@@ -1289,6 +1289,31 @@ $unknown: var(--danger);
   gap: 10px;
 }
 
+// Per-bucket breakdown under the summary row (mirrors the ctem posture card).
+.sim-posture-rows {
+  margin: 12px 0 0;
+  display: grid;
+  gap: 4px;
+}
+
+.sim-posture-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 8px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border-subtle);
+
+  dt { color: var(--text-dim); }
+  dd { margin: 0; font-weight: 600; color: var(--text-main); }
+}
+
+.sim-fresh-note {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
 .sim-summary-card {
   flex: 1;
   display: flex;

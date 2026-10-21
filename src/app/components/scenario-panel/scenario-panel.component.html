@@ -275,21 +275,56 @@
                 <div class="sim-summary-row">
                   <div class="sim-summary-card">
                     <div class="sim-summary-value">{{ sim.coveragePercent }}%</div>
-                    <div class="sim-summary-label">Coverage</div>
+                    <div class="sim-summary-label">Recorded-posture share</div>
                   </div>
                   <div class="sim-summary-card">
                     <div class="sim-summary-value" [style.color]="sim.riskScore >= 70 ? '#f87171' : sim.riskScore >= 40 ? '#fbbf24' : '#4ade80'">{{ sim.riskScore }}</div>
                     <div class="sim-summary-label">Threat-weighted gap</div>
                   </div>
                   <div class="sim-summary-card">
-                    <div class="sim-summary-value">{{ sim.techniquesCovered }}/{{ sim.techniquesTotal }}</div>
-                    <div class="sim-summary-label">{{ outcomeLabel('covered') }}</div>
-                  </div>
-                  <div class="sim-summary-card">
                     <div class="sim-summary-value" style="color: #f97316;">{{ sim.gaps.length }}</div>
                     <div class="sim-summary-label">Gaps</div>
                   </div>
                 </div>
+
+                <!-- Per-bucket breakdown, equal number-for-number to the ctem posture card for this
+                     profile. total/Known/None always show; the Covered/partial/PROVEN/stale rows are
+                     owner data, gated under hasOwnerWords (R21, S7). -->
+                <dl class="sim-posture-rows" data-testid="sim-posture">
+                  <div class="sim-posture-row">
+                    <dt>profile techniques</dt>
+                    <dd data-sim="total">{{ sim.techniquesTotal }}</dd>
+                  </div>
+                  @if (hasOwnerWords) {
+                    <div class="sim-posture-row">
+                      <dt>{{ outcomeLabel('covered') }}</dt>
+                      <dd data-sim="covered">{{ sim.coveredCount }}</dd>
+                    </div>
+                    <div class="sim-posture-row">
+                      <dt>partial</dt>
+                      <dd data-sim="partial">{{ sim.partialCount }}</dd>
+                    </div>
+                    <div class="sim-posture-row">
+                      <dt>{{ outcomeLabel('proven') }}</dt>
+                      <dd data-sim="proven">{{ sim.provenCount }}</dd>
+                    </div>
+                    <div class="sim-posture-row">
+                      <dt>stale</dt>
+                      <dd data-sim="stale">{{ sim.staleCount }}</dd>
+                    </div>
+                  }
+                  <div class="sim-posture-row">
+                    <dt>{{ outcomeLabel('known') }}</dt>
+                    <dd data-sim="known">{{ sim.knownCount }}</dd>
+                  </div>
+                  <div class="sim-posture-row">
+                    <dt>{{ outcomeLabel('none') }}</dt>
+                    <dd data-sim="none">{{ sim.noneCount }}</dd>
+                  </div>
+                </dl>
+                @if (!hasOwnerWords) {
+                  <p class="sim-fresh-note" data-testid="sim-fresh-note">{{ freshMessage }}</p>
+                }
 
                 @if (threatSimTacticBars.length > 0) {
                   <div class="sim-tactic-section">

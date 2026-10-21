@@ -1,18 +1,22 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed, ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
+import { signal, WritableSignal } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { ScenarioPanelComponent } from './scenario-panel.component';
 import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
 import { PostureService } from '../../services/posture.service';
-import { ThreatSimulationService } from '../../services/threat-simulation.service';
 import { EmulationPlanService } from '../../services/emulation-plan.service';
 import { LibraryLayerService } from '../../services/library-layer.service';
 import { ThreatProfileService } from '../../services/threat-profile.service';
+import { AttackCveService } from '../../services/attack-cve.service';
+import { ExploitdbService } from '../../services/exploitdb.service';
+import { EpssService } from '../../services/epss.service';
+import { THREAT_WEIGHT_PROVIDER } from '../../models/posture/threat-weight';
 import { Technique } from '../../models/technique';
 import { ThreatGroup } from '../../models/group';
-import { PostureBucket } from '../../models/posture/posture.types';
+import { PostureBucket, PostureSubState } from '../../models/posture/posture.types';
 
 function tech(id: string, attackId: string): Technique {
   return {
@@ -33,10 +37,13 @@ describe('ScenarioPanelComponent (posture outcomes)', () => {
   let fixture: ComponentFixture<ScenarioPanelComponent>;
   let domain$: BehaviorSubject<any>;
   let buckets: Map<string, PostureBucket>;
+  let subStates: Map<string, PostureSubState[]>;
   let ownerWords: boolean;
+  let parentsSig: WritableSignal<ReadonlySet<string>>;
 
-  function configure(): void {
+  function configure(parentIds: string[] = ['t1', 't2']): void {
     domain$ = new BehaviorSubject<any>(DOMAIN);
+    parentsSig = signal<ReadonlySet<string>>(new Set(parentIds));
     TestBed.configureTestingModule({
       imports: [ScenarioPanelComponent],
       providers: [
@@ -49,10 +56,15 @@ describe('ScenarioPanelComponent (posture outcomes)', () => {
             getTechniquesForGroup: (id: string) => (id === GROUP.id ? [T1, T2] : []),
         } },
         { provide: PostureService, useValue: {
-            stateFor: (t: Technique) => ({ bucket: buckets.get(t.id) ?? 'none' }),
+            stateFor: (t: Technique) => ({ bucket: buckets.get(t.id) ?? 'none', subStates: subStates.get(t.id) ?? [], excluded: false }),
             ownerWords: () => ownerWords,
         } },
-        { provide: ThreatSimulationService, useValue: { simulate: () => ({ techniquesCovered: 0, techniquesTotal: 0, coveragePercent: 0, gaps: [], riskScore: 0, tacticBreakdown: [] }) } },
+        // The REAL profile-scoped ThreatSimulationService over a fixture, so the overlay
+        // exercises simulate() (item 5). Its gap/priority inputs are stubbed empty.
+        { provide: THREAT_WEIGHT_PROVIDER, useValue: { weight: () => 0, revision: signal(0), parents: parentsSig } },
+        { provide: AttackCveService, useValue: { getCvesForTechnique: () => [], getKevCvesForTechnique: () => [] } },
+        { provide: ExploitdbService, useValue: { hasExploits: () => false } },
+        { provide: EpssService, useValue: { getScore: () => null } },
         { provide: EmulationPlanService, useValue: { generatePlan: () => ({ steps: [] }), exportCalderaProfile: () => {} } },
         // embedded picker deps
         { provide: LibraryLayerService, useValue: { manifest$: new BehaviorSubject([]), layerTechniqueIds: () => new BehaviorSubject([]), manifest: [] } },
@@ -68,7 +80,7 @@ describe('ScenarioPanelComponent (posture outcomes)', () => {
     fixture.detectChanges();
   }
 
-  beforeEach(() => { buckets = new Map(); ownerWords = false; });
+  beforeEach(() => { buckets = new Map(); subStates = new Map(); ownerWords = false; });
 
   it('is created', () => {
     configure();
@@ -81,18 +93,25 @@ describe('ScenarioPanelComponent (posture outcomes)', () => {
     configure();
 
     component.onGroupPicked(GROUP.id);
-    tick(200);                          // flush the simulate() setTimeout
+    tick(200);                          // flush the single-sim setTimeout
+    fixture.detectChanges();
+    // Also run the profile simulation so the overlay renders and is scanned too (item 5).
+    component.runProfileSimulation();
+    tick(200);                          // flush the runProfileSimulation setTimeout
     fixture.detectChanges();
 
     expect(component.result!.hasOwnerWords).toBeFalse();
     expect(component.result!.covered).toBe(0);
     expect(component.result!.proven).toBe(0);
+    expect(component.profileSimResult).not.toBeNull();   // the overlay is mounted
 
     const host = fixture.nativeElement as HTMLElement;
-    // No Covered or Proven card is rendered.
+    // No Covered or Proven card is rendered (single-sim); no owner rows in the overlay.
     expect(host.querySelector('.outcome-covered')).toBeNull();
     expect(host.querySelector('.outcome-proven')).toBeNull();
-    // The fresh-profile prompt is shown.
+    expect(host.querySelector('[data-sim="covered"]')).toBeNull();
+    expect(host.querySelector('[data-sim="proven"]')).toBeNull();
+    // The fresh-profile prompt is shown (both the single-sim and the overlay carry it).
     expect(host.textContent).toContain('Record a run or mark a mitigation implemented');
     // No 'covered'/'proven' anywhere in visible text or in title/aria-label/placeholder/alt.
     expect(host.textContent!.toLowerCase()).not.toContain('covered');

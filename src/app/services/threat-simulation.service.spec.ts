@@ -10,13 +10,14 @@ import { EpssService } from './epss.service';
 import { THREAT_WEIGHT_PROVIDER } from '../models/posture/threat-weight';
 import { Domain } from '../models/domain';
 import { Technique } from '../models/technique';
-import { PostureBucket } from '../models/posture/posture.types';
+import { PostureBucket, PostureSubState } from '../models/posture/posture.types';
 
 // P2-12a reshaped the service: it is PROFILE-scoped, not per-actor. simulate(domain)
 // runs over the profile's parent techniques (THREAT_WEIGHT_PROVIDER.parents()), and a
 // technique is "covered" when its PostureService bucket is covered, proven OR stale
-// (P2-07's Yes rule — stale is aged Proven). partial and known are gaps, as is none;
-// reference-only content never counts as covered.
+// (P2-07's Yes rule — stale is aged Proven). §10.4 item 13: a GAP is bucket none or
+// known, or the contradicted sub-state; partial is NOT a gap (its own number) and
+// reference-only (known) never counts as covered.
 
 function tech(id: string, attackId: string, tactic: string): Technique {
   return {
@@ -27,19 +28,27 @@ function tech(id: string, attackId: string, tactic: string): Technique {
   };
 }
 
-// Five parent techniques in the profile. buckets: t1 covered, t2 proven, t3 stale,
-// t4 partial, t5 none → covered = 3 (covered+proven+stale), total = 5, coverage 60%,
-// gaps = 2 (t4 partial and t5 none are NOT covered).
+// Seven parent techniques in the profile:
+//   t1 covered, t2 proven, t3 stale    -> covered (covered + proven + stale)
+//   t4 partial                         -> NOT covered and NOT a gap (its own number, item 13)
+//   t5 none                            -> a gap
+//   t6 known                           -> reference-only: a gap, never covered (item 4)
+//   t7 covered + contradicted          -> covered in the %, but a gap via the contradicted sub-state
+// So techniquesCovered = 4 (t1,t2,t3,t7), total = 7, coverage 57%, gaps = 3 (t5,t6,t7).
 const TECHS = [
   tech('t1', 'T1001', 'execution'),
   tech('t2', 'T1002', 'execution'),
   tech('t3', 'T1003', 'persistence'),
   tech('t4', 'T1004', 'persistence'),
   tech('t5', 'T1005', 'discovery'),
+  tech('t6', 'T1006', 'discovery'),
+  tech('t7', 'T1007', 'execution'),
 ];
 const BUCKETS = new Map<string, PostureBucket>([
-  ['t1', 'covered'], ['t2', 'proven'], ['t3', 'stale'], ['t4', 'partial'], ['t5', 'none'],
+  ['t1', 'covered'], ['t2', 'proven'], ['t3', 'stale'], ['t4', 'partial'],
+  ['t5', 'none'], ['t6', 'known'], ['t7', 'covered'],
 ]);
+const SUBSTATES = new Map<string, PostureSubState[]>([['t7', ['contradicted']]]);
 const DOMAIN = { techniques: TECHS } as unknown as Domain;
 
 describe('ThreatSimulationService (profile-scoped)', () => {
@@ -49,7 +58,11 @@ describe('ThreatSimulationService (profile-scoped)', () => {
     TestBed.configureTestingModule({
       providers: [
         ThreatSimulationService,
-        { provide: PostureService, useValue: { stateFor: (t: Technique) => ({ bucket: BUCKETS.get(t.id) ?? 'none' }) } },
+        { provide: PostureService, useValue: { stateFor: (t: Technique) => ({
+            bucket: BUCKETS.get(t.id) ?? 'none',
+            subStates: SUBSTATES.get(t.id) ?? [],
+            excluded: false,
+        }) } },
         { provide: THREAT_WEIGHT_PROVIDER, useValue: { weight: () => 0, revision: signal(0), parents: signal(new Set(parentIds)) } },
         { provide: AttackCveService, useValue: { getCvesForTechnique: () => [], getKevCvesForTechnique: () => [] } },
         { provide: ExploitdbService, useValue: { hasExploits: () => false } },
@@ -59,21 +72,48 @@ describe('ThreatSimulationService (profile-scoped)', () => {
     service = TestBed.inject(ThreatSimulationService);
   }
 
-  it('total is the profile parent count; covered = covered + proven + stale; partial and none are gaps', () => {
-    configure(['t1', 't2', 't3', 't4', 't5']);
+  it('total = profile parent count; covered = covered+proven+stale; per-bucket counts mirror the card', () => {
+    configure(['t1', 't2', 't3', 't4', 't5', 't6', 't7']);
     const r = service.simulate(DOMAIN);
-    expect(r.techniquesTotal).toBe(5);        // the profile's five parent techniques
-    expect(r.techniquesCovered).toBe(3);      // t1 covered + t2 proven + t3 stale
-    expect(r.coveragePercent).toBe(60);       // 3 / 5
-    expect(r.gaps.length).toBe(2);            // t4 partial and t5 none are not covered
-    expect(r.gaps.map(g => g.technique.id).sort()).toEqual(['t4', 't5']);
+    expect(r.techniquesTotal).toBe(7);
+    expect(r.techniquesCovered).toBe(4);      // t1 covered + t2 proven + t3 stale + t7 covered
+    expect(r.coveragePercent).toBe(57);       // round(4/7*100)
+    expect(r.coveredCount).toBe(2);           // bucket covered: t1, t7
+    expect(r.provenCount).toBe(1);            // t2
+    expect(r.staleCount).toBe(1);             // t3
+    expect(r.partialCount).toBe(1);           // t4
+    expect(r.knownCount).toBe(1);             // t6
+    expect(r.noneCount).toBe(1);              // t5
+    expect(r.contradictedCount).toBe(1);      // t7
+  });
+
+  it('a gap is bucket none or known or contradicted; partial is NOT a gap (item 13)', () => {
+    configure(['t1', 't2', 't3', 't4', 't5', 't6', 't7']);
+    const r = service.simulate(DOMAIN);
+    expect(r.gaps.map(g => g.technique.id).sort()).toEqual(['t5', 't6', 't7']);
+    expect(r.gaps.some(g => g.technique.id === 't4')).toBeFalse();   // partial is not a gap
+  });
+
+  it('reference-only (known) is a gap, never counted as covered (item 4)', () => {
+    configure(['t1', 't6']);                    // one covered, one known
+    const r = service.simulate(DOMAIN);
+    expect(r.techniquesCovered).toBe(1);        // only t1; the known t6 never counts
+    expect(r.knownCount).toBe(1);
+    expect(r.gaps.map(g => g.technique.id)).toEqual(['t6']);   // known is the only gap
+  });
+
+  it('contradicted is a gap even when the bucket is covered', () => {
+    configure(['t7']);                          // covered bucket with a contradicted sub-state
+    const r = service.simulate(DOMAIN);
+    expect(r.techniquesCovered).toBe(1);        // still covered for the % (bucket covered)
+    expect(r.gaps.map(g => g.technique.id)).toEqual(['t7']);   // but a gap via contradicted
   });
 
   it('scopes to the profile: a smaller parent set gives a smaller total', () => {
-    configure(['t1', 't5']);                   // only two parents in the profile
+    configure(['t1', 't5']);                     // only two parents in the profile
     const r = service.simulate(DOMAIN);
     expect(r.techniquesTotal).toBe(2);
-    expect(r.techniquesCovered).toBe(1);       // t1 covered; t5 none is a gap
+    expect(r.techniquesCovered).toBe(1);         // t1 covered; t5 none is a gap
     expect(r.coveragePercent).toBe(50);
   });
 
@@ -87,13 +127,16 @@ describe('ThreatSimulationService (profile-scoped)', () => {
   });
 
   it('builds a tactic breakdown over the profile parents', () => {
-    configure(['t1', 't2', 't3', 't4', 't5']);
+    configure(['t1', 't2', 't3', 't4', 't5', 't6', 't7']);
     const r = service.simulate(DOMAIN);
     const execution = r.tacticBreakdown.find(t => t.tactic === 'execution')!;
-    expect(execution.total).toBe(2);           // t1, t2
-    expect(execution.covered).toBe(2);         // both covered/proven
+    expect(execution.total).toBe(3);           // t1, t2, t7
+    expect(execution.covered).toBe(3);         // all three in a covered bucket
     const persistence = r.tacticBreakdown.find(t => t.tactic === 'persistence')!;
     expect(persistence.total).toBe(2);         // t3 stale (covered) + t4 partial (not)
     expect(persistence.covered).toBe(1);
+    const discovery = r.tacticBreakdown.find(t => t.tactic === 'discovery')!;
+    expect(discovery.total).toBe(2);           // t5 none + t6 known
+    expect(discovery.covered).toBe(0);
   });
 });

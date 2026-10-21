@@ -20,6 +20,7 @@ import { EpssService } from './epss.service';
 import { Technique } from '../models/technique';
 import { Domain } from '../models/domain';
 import { PostureBucket } from '../models/posture/posture.types';
+import { tallyPosture } from '../models/posture/derive-posture';
 import { THREAT_WEIGHT_PROVIDER } from '../models/posture/threat-weight';
 
 // ─── Interfaces ────────────────────────────────────────────────────────────────
@@ -34,11 +35,20 @@ export interface SimulationGap {
 }
 
 export interface SimulationResult {
-  /** Techniques whose posture bucket is covered, proven or stale (P2-07's Yes rule). */
+  /** Techniques whose posture bucket is covered, proven or stale (P2-07's Yes rule); the % numerator. */
   techniquesCovered: number;
   /** The profile's parent-technique count (the §2.6 denominator). */
   techniquesTotal: number;
   coveragePercent: number;
+  // Per-bucket breakdown over the profile's parents, from tallyPosture — equal, number for
+  // number, to the ctem posture card for the same profile (no two-answer window, §2.6).
+  coveredCount: number;        // bucket 'covered'
+  partialCount: number;        // bucket 'partial' — its own number, never covered and never a gap
+  provenCount: number;         // bucket 'proven'
+  staleCount: number;          // bucket 'stale'
+  knownCount: number;          // bucket 'known' — reference mapping only (shown on a fresh profile)
+  noneCount: number;           // bucket 'none'
+  contradictedCount: number;   // the 'contradicted' sub-state — a gap (§10.4 item 13)
   gaps: SimulationGap[];
   riskScore: number;       // 0-100
   tacticBreakdown: { tactic: string; covered: number; total: number }[];
@@ -69,13 +79,21 @@ export class ThreatSimulationService {
     const techniques = domain.techniques.filter(t => parentIds.has(t.id));
     const techniquesTotal = techniques.length;
 
-    let techniquesCovered = 0;
+    // One state per technique; the tally gives the per-bucket breakdown the ctem card shows.
+    const states = techniques.map(t => this.posture.stateFor(t));
+    const tally = tallyPosture(states);
+    const techniquesCovered = tally.covered + tally.proven + tally.stale;
+
     const gaps: SimulationGap[] = [];
     const tacticMap = new Map<string, { covered: number; total: number }>();
 
-    for (const tech of techniques) {
-      const isCovered = COVERED_BUCKETS.has(this.posture.stateFor(tech).bucket);
-      if (isCovered) techniquesCovered++;
+    techniques.forEach((tech, i) => {
+      const state = states[i];
+      const isCovered = COVERED_BUCKETS.has(state.bucket);
+      // §10.4 item 13: a gap is bucket none or known, or the contradicted sub-state.
+      // partial is NOT a gap (and is not covered); reference-only (known) is a gap.
+      const isGap = state.bucket === 'none' || state.bucket === 'known'
+        || state.subStates.includes('contradicted');
 
       for (const tactic of tech.tacticShortnames) {
         if (!tacticMap.has(tactic)) tacticMap.set(tactic, { covered: 0, total: 0 });
@@ -84,7 +102,7 @@ export class ThreatSimulationService {
         if (isCovered) entry.covered++;
       }
 
-      if (!isCovered) {
+      if (isGap) {
         const kevCount = this.attackCveService.getKevCvesForTechnique(tech.attackId).length;
         const hasExploit = this.exploitdbService.hasExploits(tech.attackId);
 
@@ -106,7 +124,7 @@ export class ThreatSimulationService {
           priority: this.computePriority(kevCount, hasExploit, epssAvg),
         });
       }
-    }
+    });
 
     const coveragePercent = techniquesTotal > 0
       ? Math.round((techniquesCovered / techniquesTotal) * 100)
@@ -128,6 +146,13 @@ export class ThreatSimulationService {
       techniquesCovered,
       techniquesTotal,
       coveragePercent,
+      coveredCount: tally.covered,
+      partialCount: tally.partial,
+      provenCount: tally.proven,
+      staleCount: tally.stale,
+      knownCount: tally.known,
+      noneCount: tally.none,
+      contradictedCount: tally.contradicted,
       gaps: this.prioritizeGaps(gaps),
       riskScore,
       tacticBreakdown,
