@@ -2,9 +2,9 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Component } from '@angular/core';
 import { Location } from '@angular/common';
-import { TestBed, fakeAsync, flush, tick as fakeTick } from '@angular/core/testing';
+import { DeferBlockBehavior, TestBed, fakeAsync, flush, tick as fakeTick } from '@angular/core/testing';
 import { provideHttpClient, withXhr } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideLocationMocks } from '@angular/common/testing';
 import { NavigationEnd, provideRouter, Router } from '@angular/router';
 import { filter, firstValueFrom, take } from 'rxjs';
@@ -13,6 +13,7 @@ import { FilterService } from './services/filter.service';
 import { PanelNavService } from './services/panel-nav.service';
 import { ActorProfilePanelComponent } from './components/actor-profile-panel/actor-profile-panel.component';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
+import { DrawerWarmupComponent } from './components/drawer-warmup/drawer-warmup.component';
 import { DataService } from './services/data.service';
 import { HeatmapMode } from './services/filter.service';
 import { HotkeysService } from './services/hotkeys.service';
@@ -26,6 +27,8 @@ import { MatrixComponent } from './components/matrix/matrix.component';
 import { PostureCardComponent } from './components/posture-card/posture-card.component';
 import { Domain } from './models/domain';
 import { parseFixtureDomain, resetBrowserState } from './testing/lens-harness';
+import { THREAT_WEIGHT_PROVIDER } from './models/posture/threat-weight';
+import { ThreatProfileService } from './services/threat-profile.service';
 
 @Component({ standalone: true, template: '' })
 class Blank {}
@@ -482,5 +485,97 @@ describe('AppComponent: default-lens rule at boot (P2-19, E2.4)', () => {
     expect(TestBed.inject(FilterService).ownerDataPresent.value).toBeTrue();
     expect(heat()).toBe('frequency');
     expect(router.url).toContain('heat=frequency');
+  });
+});
+
+// The technique drawer loads in a @defer (on immediate) block, and DrawerWarmupComponent
+// sits in its old place so the data requests its construction started keep their place.
+describe('AppComponent: the technique drawer in @defer behind a warm-up', () => {
+  /** A warm-up that creates nothing, to show which requests the real one starts. */
+  @Component({ selector: 'app-drawer-warmup', standalone: true, template: '' })
+  class NoWarmup {}
+
+  /**
+   * The 18 requests the drawer's construction used to start at boot on the matrix
+   * (captured on main's development build by call stack): the services they come
+   * from are created by the warm-up now.
+   */
+  const DRAWER_BOOT_LOADS = [
+    'mappings/nist_800_53/', 'mappings/aws/', 'mappings/azure/', 'mappings/gcp/', 'mappings/veris/',
+    'mappings/cri_profile/', 'misp-galaxy/', 'sigma_attack_nav_coverage.json', 'rule-coverage-snapshot.json',
+    'cwe-catalog.json', 'technique-queries.json', 'mappings/csa_ccm/', 'mappings/m365/', 'CVE-2026.jsonl.gz',
+    'CVE-2025.jsonl.gz', 'Anthropic-Cybersecurity-Skills/', 'ThreatHunter-Playbook/', 'library-layers/index.json',
+  ];
+
+  async function configure(opts: { warmup: boolean; behavior: DeferBlockBehavior }): Promise<void> {
+    TestBed.configureTestingModule({
+      imports: [AppComponent],
+      providers: [
+        provideHttpClient(withXhr()),
+        provideHttpClientTesting(),
+        provideRouter([{ path: 'matrix', component: Blank }, { path: '**', component: Blank }]),
+        provideLocationMocks(),
+        // As app.config wires it: PostureService reaches the library layers through it.
+        { provide: THREAT_WEIGHT_PROVIDER, useExisting: ThreatProfileService },
+      ],
+      deferBlockBehavior: opts.behavior,
+    });
+    if (!opts.warmup) {
+      TestBed.overrideComponent(AppComponent, { remove: { imports: [DrawerWarmupComponent] }, add: { imports: [NoWarmup] } });
+    }
+    await TestBed.compileComponents();
+    resetBrowserState();
+    // The shell's global listeners (document keydown, OS theme) would outlive this TestBed.
+    spyOn(TestBed.inject(HotkeysService), 'init');
+    spyOn(TestBed.inject(ThemeService), 'init');
+  }
+
+  /** Boot the shell with the drawer's @defer block held back; the URLs requested by then. */
+  async function bootRequests(warmup: boolean): Promise<string[]> {
+    await configure({ warmup, behavior: DeferBlockBehavior.Manual });
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).querySelector('app-sidebar')).withContext('the drawer is not rendered').toBeNull();
+    const urls = TestBed.inject(HttpTestingController).match(() => true).map(r => r.request.url);
+    fixture.destroy();
+    TestBed.resetTestingModule();
+    resetBrowserState();
+    return urls;
+  }
+
+  it('the warm-up, not the drawer, starts every load the drawer construction used to start at boot', async () => {
+    const withWarmup = await bootRequests(true);
+    const withoutWarmup = await bootRequests(false);
+    for (const load of DRAWER_BOOT_LOADS) {
+      expect(withWarmup.filter(u => u.includes(load)).length).withContext(`${load} with the warm-up`).toBeGreaterThan(0);
+      expect(withoutWarmup.filter(u => u.includes(load)).length).withContext(`${load} without it`).toBe(0);
+    }
+  });
+
+  it('the drawer renders once its @defer block has loaded, closed, after the warm-up, and opens on a selection', async () => {
+    await configure({ warmup: true, behavior: DeferBlockBehavior.Playthrough });
+    const domain = parseFixtureDomain();
+    (TestBed.inject(DataService) as unknown as { domainSubject: { next(d: Domain): void } }).domainSubject.next(domain);
+    const technique = domain.techniques.find(t => t.attackId === 'T1078')!;
+    const fixture = TestBed.createComponent(AppComponent);
+    const el = fixture.nativeElement as HTMLElement;
+    fixture.detectChanges();
+    // First paint: the warm-up stands in the drawer's place; the drawer's code is still loading.
+    expect(el.querySelector('app-drawer-warmup')).not.toBeNull();
+    expect(el.querySelector('app-sidebar')).toBeNull();
+    // The trigger (on immediate) has fired; once the chunk is in, the drawer is there, closed.
+    // (Not whenStable: the boot's data requests stay pending on the testing backend.)
+    for (let i = 0; i < 100 && !el.querySelector('app-sidebar'); i++) {
+      await tick(20);
+      fixture.detectChanges();
+    }
+    expect(el.querySelector('app-sidebar #technique-drawer')).not.toBeNull();
+    expect(el.querySelector('app-drawer-warmup')!.compareDocumentPosition(el.querySelector('app-sidebar')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(el.querySelector('.sidebar.open')).toBeNull();
+    TestBed.inject(FilterService).selectTechnique(technique);
+    fixture.detectChanges();
+    expect(el.querySelector('.sidebar.open .sidebar-header .attack-id')?.textContent).toBe('T1078');
+    fixture.destroy();
+    resetBrowserState();
   });
 });

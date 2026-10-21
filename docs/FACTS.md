@@ -15,7 +15,7 @@ Counts and versions derived from the code. When a document states one of these n
 | Detail pages (top-level routes with a `:param`, not workspaces) | 1 | `src/app/app.routes.ts` |
 | Library layers | 37 | `src/assets/data/library-layers/index.json` |
 | Lylat mission layers | 35 | `src/assets/data/lylat-mission-layers/index.json` |
-| Unit spec files | 242 | `src/**/*.spec.ts` |
+| Unit spec files | 243 | `src/**/*.spec.ts` |
 | Playwright spec files | 11 | `e2e/**/*.spec.ts` |
 | Script test files | 10 | `scripts/**/*.test.mjs` |
 | Proxy test files | 1 | `server/**/*.test.*` |
@@ -189,7 +189,7 @@ Read by `scripts/check-facts.mjs`.
   "routedTabs": 47,
   "detailPages": 1,
   "libraryLayers": 37,
-  "unitSpecs": 242,
+  "unitSpecs": 243,
   "angularMajor": 22,
   "typescriptMajor": 6,
   "bundleVersions": {
