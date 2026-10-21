@@ -214,6 +214,10 @@
                       <div class="risk-more">+{{ stats.criticalRiskCount - 10 }} more critical-risk techniques</div>
                     }
                   }
+                  <!-- P2-09 (S8, §10.4 item 15): over all groups, not the threat profile -->
+                  <div class="widget-footer-note" data-critical-risk-scope>
+                    {{ stats.criticalRiskCount }} critical-risk techniques, used by any ATT&amp;CK group
+                  </div>
                 </div>
               </div>
             }
