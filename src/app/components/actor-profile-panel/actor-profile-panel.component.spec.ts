@@ -1,11 +1,13 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed, ComponentFixture } from '@angular/core/testing';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 import { provideRouter } from '@angular/router';
 import { ActorProfilePanelComponent } from './actor-profile-panel.component';
 import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
+import { LibraryLayerService } from '../../services/library-layer.service';
+import { ThreatProfileService } from '../../services/threat-profile.service';
 import { Domain } from '../../models/domain';
 import { ThreatGroup } from '../../models/group';
 import { Technique } from '../../models/technique';
@@ -28,6 +30,12 @@ describe('ActorProfilePanelComponent', () => {
             selectTechnique: jasmine.createSpy(),
         }},
         { provide: DataService, useValue: { domain$: new BehaviorSubject(null) }},
+        { provide: LibraryLayerService, useValue: { manifest$: new BehaviorSubject([]), layerTechniqueIds: () => of([]) } },
+        { provide: ThreatProfileService, useValue: {
+            current: { source: { kind: 'top-groups', n: 20 } },
+            profile$: new BehaviorSubject({ source: { kind: 'top-groups', n: 20 } }),
+            setSource: () => {},
+        }},
         postureStubProvider(makePostureStub(() => null)),
       ],
     });
@@ -40,8 +48,8 @@ describe('ActorProfilePanelComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('searchText starts empty', () => {
-    expect(component.searchText).toBe('');
+  it('starts with no selected profile', () => {
+    expect(component.selectedProfile).toBeNull();
   });
 });
 
@@ -55,7 +63,7 @@ describe('ActorProfilePanelComponent posture counts (S6, P2-07)', () => {
   const group = { id: 'intrusion-set--g1', attackId: 'G0001', name: 'Group One', aliases: [], description: '' } as unknown as ThreatGroup;
 
   function open(buckets: Record<string, PostureBucket>): HTMLElement {
-    const domain = { ...makeSplitDomain(), groups: [group] } as unknown as Domain;
+    const domain = { ...makeSplitDomain(), groups: [group], campaigns: [] } as unknown as Domain;
     techniques = domain.techniques;
     posture = makePostureStub(() => domain, buckets);
     TestBed.configureTestingModule({
@@ -65,9 +73,17 @@ describe('ActorProfilePanelComponent posture counts (S6, P2-07)', () => {
         { provide: FilterService, useValue: { toggleThreatGroup: jasmine.createSpy(), selectTechnique: jasmine.createSpy() } },
         { provide: DataService, useValue: {
             domain$: new BehaviorSubject(domain),
+            getCurrentDomain: () => domain,
+            getCurrentAttackDomain: () => 'enterprise',
             getTechniquesForGroup: () => techniques,
             getSoftwareForGroup: () => [],
             getCampaignsForGroup: () => [],
+        }},
+        { provide: LibraryLayerService, useValue: { manifest$: new BehaviorSubject([]), layerTechniqueIds: () => of([]) } },
+        { provide: ThreatProfileService, useValue: {
+            current: { source: { kind: 'top-groups', n: 20 } },
+            profile$: new BehaviorSubject({ source: { kind: 'top-groups', n: 20 } }),
+            setSource: () => {},
         }},
         postureStubProvider(posture),
       ],
@@ -148,5 +164,65 @@ describe('ActorProfilePanelComponent posture counts (S6, P2-07)', () => {
     fixture.detectChanges();
     expect(panel.topExposed(profile).map(t => t.attackId)).not.toContain('T2');
     expect(text(fixture.nativeElement.querySelector('[data-testid="actor-posture-summary"]'))).toBe('2 of 6 techniques covered (self-attested), 0 partial');
+  });
+});
+
+// P2-11 (E2.6-b2): browsing an actor must never touch the shared threat profile;
+// only the explicit "Add to profile" sets it, to exactly that one group.
+describe('ActorProfilePanelComponent threat profile (P2-11)', () => {
+  const group = { id: 'intrusion-set--g1', attackId: 'G0001', name: 'Group One', aliases: [], description: '' } as unknown as ThreatGroup;
+  let component: ActorProfilePanelComponent;
+  let fixture: ComponentFixture<ActorProfilePanelComponent>;
+  let setSource: jasmine.Spy;
+  let currentSource: { kind: string; ids?: string[]; n?: number };
+
+  function configure(): void {
+    currentSource = { kind: 'top-groups', n: 20 };
+    setSource = jasmine.createSpy('setSource').and.callFake((s) => { currentSource = s; });
+    const domain = { name: 'Enterprise ATT&CK', groups: [group], techniques: [], campaigns: [] } as unknown as Domain;
+    TestBed.configureTestingModule({
+      imports: [ActorProfilePanelComponent],
+      providers: [
+        provideRouter([]),
+        { provide: FilterService, useValue: { toggleThreatGroup: jasmine.createSpy(), selectTechnique: jasmine.createSpy() } },
+        { provide: DataService, useValue: {
+            domain$: new BehaviorSubject(domain),
+            getCurrentDomain: () => domain,
+            getCurrentAttackDomain: () => 'enterprise',
+            getTechniquesForGroup: () => [],
+            getSoftwareForGroup: () => [],
+            getCampaignsForGroup: () => [],
+        }},
+        { provide: LibraryLayerService, useValue: { manifest$: new BehaviorSubject([]), layerTechniqueIds: () => of([]) } },
+        { provide: ThreatProfileService, useValue: {
+            get current() { return { source: currentSource }; },
+            profile$: new BehaviorSubject({ source: currentSource }),
+            setSource,
+        }},
+        postureStubProvider(makePostureStub(() => domain)),
+      ],
+    });
+    fixture = TestBed.createComponent(ActorProfilePanelComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  }
+
+  // Mode guard: click a rendered picker item so dropping mode="single" would break this test.
+  it('browsing via a rendered picker item (single mode) never sets the profile', () => {
+    configure();
+    const item = (fixture.nativeElement as HTMLElement).querySelector('.tpp-item') as HTMLButtonElement | null;
+    expect(item).withContext('picker rendered a .tpp-item in single mode').toBeTruthy();
+    item!.click();
+    fixture.detectChanges();
+    expect(component.selectedProfile?.group.id).toBe('intrusion-set--g1');
+    expect(setSource).not.toHaveBeenCalled();
+    expect(currentSource).toEqual({ kind: 'top-groups', n: 20 });   // ThreatProfileService.current unchanged
+  });
+
+  it('"Add to profile" sets a groups source with exactly that group', () => {
+    configure();
+    component.addToProfile(group);
+    expect(setSource).toHaveBeenCalledOnceWith({ kind: 'groups', ids: ['intrusion-set--g1'] });
+    expect(currentSource).toEqual({ kind: 'groups', ids: ['intrusion-set--g1'] });
   });
 });

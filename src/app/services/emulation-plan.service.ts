@@ -179,22 +179,16 @@ export class EmulationPlanService {
    * Steps are ordered by kill chain phase (reconnaissance -> impact).
    */
   generatePlan(actorId: string, domain: Domain): EmulationPlan {
-    const group = domain.groups.find(g => g.id === actorId);
+    // Accept either a STIX intrusion-set id (what the shared picker emits) or an
+    // ATT&CK id (G####, legacy callers). A truly unknown id is a programming error
+    // and throws loudly, rather than silently returning an empty "Unknown" plan.
+    const group = domain.groups.find(g => g.id === actorId) ?? domain.groups.find(g => g.attackId === actorId);
     if (!group) {
-      return {
-        id: this.generateId(),
-        name: 'Unknown Actor Plan',
-        actorName: 'Unknown',
-        actorId,
-        description: 'Actor not found in current domain data.',
-        steps: [],
-        createdAt: new Date().toISOString(),
-        totalSteps: 0,
-      };
+      throw new Error(`generatePlan: no group with id or attackId "${actorId}" in the loaded domain`);
     }
 
-    // 1. Get all techniques used by this actor
-    const techniques = domain.techniquesByGroup?.get(actorId) ?? [];
+    // 1. Get all techniques used by this actor (techniquesByGroup is keyed by STIX id)
+    const techniques = domain.techniquesByGroup?.get(group.id) ?? [];
 
     // 2. Sort by the loaded domain's kill chain phase order
     const killChain = tacticOrderFor(domain);
