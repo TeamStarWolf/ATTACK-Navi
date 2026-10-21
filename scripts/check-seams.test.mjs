@@ -14,7 +14,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { DEFAULT_ALLOWLIST, checkSeams, generateAllowlist, readAllowlist, scanRule } from './check-seams.mjs';
+import { DEFAULT_ALLOWLIST, checkSeams, generateAllowlist, ownerExceptionsOf, readAllowlist, scanRule } from './check-seams.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SCRIPT = join(ROOT, 'scripts', 'check-seams.mjs');
@@ -63,9 +63,21 @@ test('this repository passes with its generated allow-list, and the list is exac
   for (const clean of ['stats-bar.component.ts', 'report-split.ts', 'actor-profile-panel.component.ts']) {
     assert.equal(listed.some((f) => f.endsWith(`/${clean}`)), false, `${clean} is clean after P2-07`);
   }
-  // one-picker (P2-12b): the list is exactly the grep, and every entry is annotated.
+  // one-picker (P2-12b): the list is exactly the grep plus the section 10.4 item 8
+  // owner exceptions (RP-F decision 12), and every entry is annotated.
   const listedOnePicker = allowlist.rules['one-picker'].entries.map((e) => e.file);
-  assert.deepEqual(listedOnePicker, scanRule(ROOT, 'one-picker').map((h) => h.file));
+  const grepAndOwner = [...new Set([...scanRule(ROOT, 'one-picker').map((h) => h.file), ...ownerExceptionsOf(ROOT, 'one-picker').map((h) => h.file)])].sort();
+  assert.deepEqual(listedOnePicker, grepAndOwner);
+  assert.deepEqual(listedOnePicker, [
+    'src/app/components/campaign-timeline-panel/campaign-timeline-panel.component.ts',
+    'src/app/components/software-panel/software-panel.component.ts',
+    'src/app/components/threat-intelligence-panel/threat-intelligence-panel.component.ts',
+    'src/app/components/threat-panel/threat-panel.component.ts',
+    'src/app/components/universal-search/universal-search.component.ts',
+  ], 'exactly the files section 10.4 item 8 names');
+  for (const e of allowlist.rules['one-picker'].entries) assert.equal(e.bucket, 'owner-exception', `${e.file} is an owner exception`);
+  // universal-search is caught by the alias join form, not only listed.
+  assert.ok(scanRule(ROOT, 'one-picker').some((h) => h.file.endsWith('/universal-search.component.ts')), 'universal-search matches the alias join form');
   assert.deepEqual(generateAllowlist(ROOT, allowlist).rules['one-picker'].entries, allowlist.rules['one-picker'].entries);
   for (const e of allowlist.rules['one-picker'].entries) {
     assert.ok(e.reason && e.removedBy && e.bucket, `${e.file} (one-picker) has a bucket, reason and removedBy`);
@@ -85,8 +97,71 @@ test('this repository passes with its generated allow-list, and the list is exac
   for (const clean of ['emulation-plan-panel.component.ts', 'emulation-plan-panel.component.html']) {
     assert.equal(listedSelect.some((f) => f.endsWith(`/${clean}`)), false, `${clean} selects through the shared picker`);
   }
-  // It leaves one-picker's patterns as decided (P2-17): domain.groups AND aliases.some( only.
-  assert.deepEqual(allowlist.rules['one-picker'].patterns, [String.raw`domain\.groups\b`, String.raw`\baliases\.some\(`]);
+  // one-picker's patterns: domain.groups AND an alias search, aliases.some( (P2-17) or
+  // the alias join form (RP-F decision 12).
+  assert.deepEqual(allowlist.rules['one-picker'].patterns, [
+    String.raw`domain\.groups\b`, String.raw`\baliases\.some\(|\baliases(?:\s*\?\?\s*\[\]\s*\))?\.join\(`,
+  ]);
+});
+
+// RP-F decision 12: the alias clause catches universal-search's join form, and the
+// section 10.4 item 8 files are listed as owner exceptions whether or not they match.
+test('one-picker: a planted rival using the alias join form fails; display-only code without domain.groups does not', () => {
+  const none = { rules: { 'one-picker': { entries: [] } } };
+  const JOIN_SEARCH = "const hits = this.domain.groups.filter(g => score(q, g.name, (g.aliases ?? []).join(' ')) > 0);\n";
+  const BARE_JOIN = "const hits = domain.groups.filter(g => (g.name + ' ' + g.aliases.join(' ')).toLowerCase().includes(q));\n";
+  for (const [name, text] of [['join', JOIN_SEARCH], ['bare', BARE_JOIN]]) {
+    withFixture({ [`src/app/components/${name}/${name}.component.ts`]: text }, none, (dir) => {
+      const r = run(dir);
+      assert.equal(r.status, 1, name);
+      assert.match(r.stderr, new RegExp(`one-picker: src/app/components/${name}/${name}\\.component\\.ts matches both regexes and is not on the allow-list`));
+    });
+  }
+  // The token the join form records, as the allow-list prints it.
+  withFixture({ 'src/app/components/join/join.component.ts': JOIN_SEARCH }, none, (dir) => {
+    assert.deepEqual(scanRule(dir, 'one-picker')[0].uses, { 'aliases ?? []).join(': 1, 'domain.groups': 1 });
+  });
+  // An alias join with no domain.groups read (a software or campaign list) is not a group picker.
+  withFixture({ 'src/app/components/sw/sw.component.ts': "const d = (sw.aliases ?? []).join(', ');\n" }, none, (dir) => {
+    assert.equal(run(dir).status, 0);
+  });
+});
+
+test('one-picker owner exceptions (section 10.4 item 8): listed even when not matching; missing or misfiled entries fail', () => {
+  const SOFTWARE = 'src/app/components/software-panel/software-panel.component.ts';
+  const owner = (file, extra = {}) => ({ file, uses: { 'aliases.some(': 1 }, bucket: 'owner-exception', reason: 'section 10.4 item 8', removedBy: 'stays', ...extra });
+  const text = 'const hits = list.filter(sw => sw.aliases.some(a => a.includes(q)));\n';
+  // A named file that matches no clause is not a stale entry.
+  withFixture({ [SOFTWARE]: text }, { rules: { 'one-picker': { entries: [owner(SOFTWARE)] } } }, (dir) => {
+    const r = run(dir);
+    assert.equal(r.status, 0, r.stderr);
+  });
+  // A named file missing from the list fails.
+  withFixture({ [SOFTWARE]: text }, { rules: { 'one-picker': { entries: [] } } }, (dir) => {
+    const r = run(dir);
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /software-panel\.component\.ts is an owner exception \(section 10\.4 item 8\) and is not on the allow-list/);
+  });
+  // An owner-exception entry for a file section 10.4 item 8 does not name fails, and as it
+  // matches nothing it is stale too.
+  withFixture({ 'src/app/components/other/other.component.ts': text }, { rules: { 'one-picker': { entries: [owner('src/app/components/other/other.component.ts')] } } }, (dir) => {
+    const r = run(dir);
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /other\.component\.ts is in bucket owner-exception but section 10\.4 item 8 does not name it/);
+    assert.match(r.stderr, /other\.component\.ts is on the allow-list but no longer matches/);
+  });
+  // --write adds a named file with its uses and empty annotations for a person to fill in.
+  withFixture({ [SOFTWARE]: text }, { rules: { 'one-picker': { entries: [] } } }, (dir) => {
+    const r = run(dir, '--write');
+    const written = JSON.parse(readFileSync(join(dir, DEFAULT_ALLOWLIST), 'utf8')).rules['one-picker'].entries;
+    assert.deepEqual(written, [{ file: SOFTWARE, uses: { 'aliases.some(': 1 }, bucket: '', reason: '', removedBy: '' }]);
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /software-panel\.component\.ts is listed without a reason or removedBy/);
+  });
+  // A named file that was deleted is stale like any other.
+  withFixture({}, { rules: { 'one-picker': { entries: [owner(SOFTWARE)] } } }, (dir) => {
+    assert.match(run(dir).stderr, /software-panel\.component\.ts is on the allow-list but no longer matches/);
+  });
 });
 
 test('a planted violation fails the CLI and is named', () => {

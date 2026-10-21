@@ -281,12 +281,30 @@
       ]
     },
     "one-picker": {
-      "summary": "a component outside threat-profile-picker reads domain.groups AND filters by alias (aliases.some())",
+      "summary": "a component outside threat-profile-picker reads domain.groups AND searches by alias (aliases.some() or the alias join form)",
       "patterns": [
         "domain\\.groups\\b",
-        "\\baliases\\.some\\("
+        "\\baliases\\.some\\(|\\baliases(?:\\s*\\?\\?\\s*\\[\\]\\s*\\))?\\.join\\("
       ],
       "entries": [
+        {
+          "file": "src/app/components/campaign-timeline-panel/campaign-timeline-panel.component.ts",
+          "uses": {
+            "aliases.some(": 1
+          },
+          "bucket": "owner-exception",
+          "reason": "The campaign timeline: builds its group colour map from groupsByTechnique and searches campaigns by name and alias to toggle the matrix campaign filter; it never chooses the threat profile. Matches no one-picker clause today (no domain.groups read); listed so any group list it grows stays an annotated exception. Owner-approved exception (section 10.4 item 8).",
+          "removedBy": "stays (owner decision, section 10.4 item 8)"
+        },
+        {
+          "file": "src/app/components/software-panel/software-panel.component.ts",
+          "uses": {
+            "aliases.some(": 1
+          },
+          "bucket": "owner-exception",
+          "reason": "The software list: searches software by name, ATT&CK id and alias to toggle the matrix software filter; it holds no group picker. Matches no one-picker clause today (no domain.groups read); listed so any group list it grows stays an annotated exception. Owner-approved exception (section 10.4 item 8).",
+          "removedBy": "stays (owner decision, section 10.4 item 8)"
+        },
         {
           "file": "src/app/components/threat-intelligence-panel/threat-intelligence-panel.component.ts",
           "uses": {
@@ -305,6 +323,16 @@
           },
           "bucket": "owner-exception",
           "reason": "The matrix group filter (Groups tab): searches the full group list by name, ATT&CK id and alias to toggle the matrix threat-group filter. Owner-approved exception (section 10.4 item 8: FilterService and threat-panel are the matrix group filter).",
+          "removedBy": "stays (owner decision, section 10.4 item 8)"
+        },
+        {
+          "file": "src/app/components/universal-search/universal-search.component.ts",
+          "uses": {
+            "aliases ?? []).join(": 3,
+            "domain.groups": 2
+          },
+          "bucket": "owner-exception",
+          "reason": "The universal search: scores groups by name, ATT&CK id and their aliases joined into one string ((g.aliases ?? []).join(\" \")) next to techniques, software and campaigns, to open a result; it never chooses the threat profile. Caught by the alias join form (RP-F decision 12). Owner-approved exception (section 10.4 item 8).",
           "removedBy": "stays (owner decision, section 10.4 item 8)"
         }
       ]

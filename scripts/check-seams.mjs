@@ -12,9 +12,12 @@
 //   removes it (or why it stays).
 //
 //   one-picker (P2-12b, E2.6): a file outside threat-profile-picker that reads
-//   domain.groups AND filters by alias (aliases.some(...)) is a rival group
-//   picker; it must be on the allow-list with a reason (§10.4 item 8). The
-//   rationale comment on the rule below records why alias, not name (P2-17).
+//   domain.groups AND searches by alias (aliases.some(...), or the alias join
+//   form `(g.aliases ?? []).join(...)`) is a rival group picker; it must be on
+//   the allow-list with a reason. The files section 10.4 item 8 names keep
+//   their own group lists by owner decision: each is listed and annotated
+//   whether or not it matches today (ownerExceptions below). The rationale
+//   comment on the rule below records why alias, not name (P2-17).
 //
 //   picker-select (RP-F item 3): a non-spec file outside threat-profile-picker
 //   that calls selectGroup( or selectCampaign(, the picker's selection
@@ -34,7 +37,10 @@
 //   - a matching file that is not listed (a new seam use for that rule);
 //   - a listed file that no longer matches (a stale entry: regenerate — the
 //     posture-rollup list shrinks as files move to PostureService, the
-//     one-picker list as rival pickers move to threat-profile-picker);
+//     one-picker list as rival pickers move to threat-profile-picker), unless
+//     it is one of the rule's ownerExceptions and still exists;
+//   - an ownerExceptions file that is not listed, or an 'owner-exception'
+//     entry that is not one of the rule's ownerExceptions;
 //   - a listed entry without a reason or removedBy.
 // A listed file whose uses changed passes with a note to regenerate.
 //
@@ -82,12 +88,32 @@ export const RULES = {
   // review-caught, not lint-caught: (1) a name-only group filter over
   // `domain.groups` and (2) a bare `<select>`/list of `domain.groups` with no
   // filter at all. (Decisions sheet: P2-17.)
+  // RP-F decision 12: the alias clause also covers the alias JOIN form, the
+  // aliases flattened into one search string, `(g.aliases ?? []).join(' ')`
+  // (universal-search scores groups that way), and its bare form
+  // `g.aliases.join(`. In this tree only universal-search joins aliases, so the
+  // clause keeps zero false positives.
+  // The files section 10.4 item 8 names (owner decision: they keep their own
+  // group lists) are ownerExceptions: each is listed with an annotation even
+  // where it matches no clause today (campaign-timeline-panel builds a group
+  // colour map from groupsByTechnique and searches campaigns by alias;
+  // software-panel searches software by alias), so a later change there stays
+  // an owner-approved, annotated exception instead of an unreviewed one.
+  // FilterService, also named there, holds the matrix group filter's state and
+  // no picker; the threat-panel entry covers that filter.
   'one-picker': {
-    summary: 'a component outside threat-profile-picker reads domain.groups AND filters by alias (aliases.some())',
+    summary: 'a component outside threat-profile-picker reads domain.groups AND searches by alias (aliases.some() or the alias join form)',
     exclude: /components\/threat-profile-picker\//,
     patterns: [
       /domain\.groups\b/g,
-      /\baliases\.some\(/g,
+      /\baliases\.some\(|\baliases(?:\s*\?\?\s*\[\]\s*\))?\.join\(/g,
+    ],
+    ownerExceptions: [
+      'src/app/components/campaign-timeline-panel/campaign-timeline-panel.component.ts',
+      'src/app/components/software-panel/software-panel.component.ts',
+      'src/app/components/threat-intelligence-panel/threat-intelligence-panel.component.ts',
+      'src/app/components/threat-panel/threat-panel.component.ts',
+      'src/app/components/universal-search/universal-search.component.ts',
     ],
   },
   // RP-F item 3: the picker's selection methods are called only inside the
@@ -150,6 +176,14 @@ function usesOf(text, patterns) {
   return Object.fromEntries([...counts].sort(([a], [b]) => a.localeCompare(b)));
 }
 
+/** The rule's ownerExceptions (section 10.4 item 8) that exist under `root`, each with its uses. */
+export function ownerExceptionsOf(root, rule) {
+  const { patterns, ownerExceptions = [] } = RULES[rule];
+  return ownerExceptions
+    .filter((file) => existsSync(join(root, file)))
+    .map((file) => ({ file, uses: usesOf(readFileSync(join(root, file), 'utf8'), patterns) }));
+}
+
 /** The files that match every regex of `rule`, each with its uses. */
 export function scanRule(root, rule) {
   const { patterns, exclude } = RULES[rule];
@@ -181,14 +215,24 @@ export function checkSeams(root, allowlist) {
     const entries = allowlist.rules?.[rule]?.entries ?? [];
     listed[rule] = entries;
     const hits = new Map(scanRule(root, rule).map((h) => [h.file, h]));
+    const owner = new Map(ownerExceptionsOf(root, rule).map((h) => [h.file, h]));
+    const named = new Set(RULES[rule].ownerExceptions ?? []);
     const byFile = new Map(entries.map((e) => [e.file, e]));
     for (const [file] of hits) {
       if (!byFile.has(file)) {
         problems.push(`${rule}: ${file} matches both regexes and is not on the allow-list: ${REMEDIES[rule] ?? 'remove the seam use'}, or run --write and give it a reason and removedBy`);
       }
     }
+    for (const [file] of owner) {
+      if (!byFile.has(file)) {
+        problems.push(`${rule}: ${file} is an owner exception (section 10.4 item 8) and is not on the allow-list: run --write and annotate it`);
+      }
+    }
     for (const e of entries) {
-      const hit = hits.get(e.file);
+      if (e.bucket === 'owner-exception' && !named.has(e.file)) {
+        problems.push(`${rule}: ${e.file} is in bucket owner-exception but section 10.4 item 8 does not name it (not in ownerExceptions)`);
+      }
+      const hit = hits.get(e.file) ?? owner.get(e.file);
       if (!hit) {
         problems.push(`${rule}: ${e.file} is on the allow-list but no longer matches both regexes (stale entry): run node scripts/check-seams.mjs --write so the list shrinks`);
         continue;
@@ -204,6 +248,13 @@ export function checkSeams(root, allowlist) {
   return { problems, notes, listed };
 }
 
+/** What a rule's allow-list holds: the files that match, plus its existing ownerExceptions; sorted by file. */
+function allowed(root, rule) {
+  const byFile = new Map(ownerExceptionsOf(root, rule).map((h) => [h.file, h]));
+  for (const h of scanRule(root, rule)) byFile.set(h.file, h);
+  return [...byFile.values()].sort((a, b) => (a.file < b.file ? -1 : a.file > b.file ? 1 : 0));
+}
+
 /** The allow-list regenerated from the tree, keeping the annotations of files that still match. */
 export function generateAllowlist(root, previous) {
   const out = { generatedBy: 'node scripts/check-seams.mjs --write', rules: {} };
@@ -212,7 +263,7 @@ export function generateAllowlist(root, previous) {
     out.rules[rule] = {
       summary: def.summary,
       patterns: def.patterns.map((re) => re.source),
-      entries: scanRule(root, rule).map(({ file, uses }) => {
+      entries: allowed(root, rule).map(({ file, uses }) => {
         const o = old.get(file) ?? {};
         return { file, uses, bucket: o.bucket ?? '', reason: o.reason ?? '', removedBy: o.removedBy ?? '' };
       }),
