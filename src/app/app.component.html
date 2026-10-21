@@ -23,8 +23,11 @@
   </div>
 </div>
 
-<!-- Sidebar (technique details): fixed on the right; the workspace makes room for it above 768 px -->
-<app-sidebar />
+<!-- Sidebar (technique details): fixed on the right; the workspace makes room for it above 768 px.
+     Not rendered on the technique detail page (#/technique/:domain/:id), which owns the evidence card (P2-18). -->
+@if (!drawerSuppressed()) {
+  <app-sidebar />
+}
 
 <!-- Gap view — overlay -->
 <app-gap-view #gapViewRef />

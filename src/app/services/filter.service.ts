@@ -43,7 +43,7 @@ export function isImplStatus(value: string | null | undefined): value is ImplSta
  * applyUrlState waits for the domain with this name, and the not-in-domain toast
  * names the domain with it.
  */
-const ATTACK_DOMAIN_NAMES: Record<AttackDomain, string> = {
+export const ATTACK_DOMAIN_NAMES: Record<AttackDomain, string> = {
   enterprise: 'Enterprise ATT&CK',
   ics: 'ICS ATT&CK',
   mobile: 'Mobile ATT&CK',

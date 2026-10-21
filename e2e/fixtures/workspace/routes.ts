@@ -79,6 +79,10 @@ export const CURRENT_ROUTES: readonly RouteRow[] = [
 
   { path: '/settings/preferences', host: 'app-settings-panel' },
   { path: '/settings/changelog', host: 'app-changelog-panel' },
+
+  // A detail page (P2-18): the route is technique/:domain/:id; this row is its
+  // example (redirects.spec.ts PARAM_EXAMPLES maps the parameterised path to it).
+  { path: '/technique/enterprise/T1059.001', host: 'app-technique-page' },
 ];
 
 export interface RedirectRow {
@@ -170,6 +174,7 @@ export const PLANNED_REDIRECTS: readonly PlannedRedirect[] = [
   { old: '/status', planned: '/settings/data', greenBy: 'P4' },
   { old: '/settings/preferences', planned: '/settings/preferences', greenBy: 'P4' },
   { old: '/settings/changelog', planned: '/settings/whats-new', greenBy: 'P4' },
+  { old: '/technique/enterprise/T1059.001', planned: '/technique/enterprise/T1059.001 (unchanged: the detail page, P2-18)', greenBy: 'P4' },
 ];
 
 /** Escape a hash path for use inside a RegExp. */

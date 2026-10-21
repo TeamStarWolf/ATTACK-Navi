@@ -205,6 +205,20 @@ describe('EnrichmentService', () => {
       };
     }
 
+    it('referenceDefenseCounts gives the count behind each signal (P2-18 evidence card)', () => {
+      const techs = fixture();
+      const t7 = techs.find(t => t.attackId === 'T7')!;
+      expect(service.referenceDefenseCounts(t7, domain)).toEqual({ mitigations: 1, sigma: 1, car: 0, controls: 1, d3fend: 1, atomic: 1 });
+      domain.mitigationsByTechnique.set('s8', arr(2) as never);
+      expect(service.referenceDefenseCounts(techs.find(t => t.attackId === 'T8')!, domain).mitigations).toBe(2);
+      for (const t of techs) {
+        const c = service.referenceDefenseCounts(t, domain);
+        expect(service.referenceDefenseSignals(t, domain)).withContext(t.attackId).toEqual({
+          mitigation: c.mitigations > 0, detection: c.sigma + c.car > 0, control: c.controls > 0, d3fend: c.d3fend > 0, atomic: c.atomic > 0,
+        });
+      }
+    });
+
     it('carries only the five defensive reference inputs (no threat-intel or CVE field)', () => {
       const r = service.referenceDefenseSignals(tech('T1', 's1', 1), domain);
       expect(Object.keys(r).sort()).toEqual(['atomic', 'control', 'd3fend', 'detection', 'mitigation']);

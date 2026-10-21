@@ -1,6 +1,6 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { Component, OnInit, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef, DestroyRef, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { NavigationEnd, NavigationStart, Router, RouterOutlet } from '@angular/router';
@@ -23,6 +23,18 @@ import { HelpOverlayService } from './services/help-overlay.service';
 import { ThemeService } from './services/theme.service';
 import { DrawerWidthService } from './services/drawer-width.service';
 
+/**
+ * The technique detail page (P2-18, S15): #/technique/:domain/:id. Its first
+ * path segment; the page owns the evidence card, so the drawer is not rendered there.
+ */
+export const TECHNIQUE_PAGE_SEGMENT = 'technique';
+
+/** True when `url` (a router URL) is the technique detail page, #/technique/:domain/:id. */
+export function isTechniquePageUrl(url: string): boolean {
+  const segments = url.split(/[?#]/)[0].split('/').filter(Boolean);
+  return segments.length === 3 && segments[0] === TECHNIQUE_PAGE_SEGMENT;
+}
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -43,6 +55,8 @@ export class AppComponent implements OnInit {
   protected helpOverlay = inject(HelpOverlayService);
   /** The open technique drawer takes its width from the workspace (above 768 px). */
   protected readonly drawer = inject(DrawerWidthService);
+  /** True on the technique detail page: AppComponent hides the drawer there (S15). */
+  protected readonly drawerSuppressed = signal(false);
   showToast = false;
   toastMessage = '';
   currentDomain: AttackDomain = 'enterprise';
@@ -98,8 +112,10 @@ export class AppComponent implements OnInit {
           this.pendingKeepSelection = this.shouldKeepSelection(
             e.navigationTrigger, this.router.getCurrentNavigation()?.extras?.state);
         } else if (e instanceof NavigationEnd) {
-          this.clearSelectionOnRouteChange(e.urlAfterRedirects ?? e.url, this.pendingKeepSelection);
+          const url = e.urlAfterRedirects ?? e.url;
+          this.clearSelectionOnRouteChange(url, this.pendingKeepSelection);
           this.pendingKeepSelection = false;
+          this.drawerSuppressed.set(isTechniquePageUrl(url));
         }
       });
   }
@@ -127,7 +143,9 @@ export class AppComponent implements OnInit {
    */
   private clearSelectionOnRouteChange(url: string, keep: boolean): void {
     const workspace = url.split(/[?#]/)[0].split('/').find(Boolean) ?? '';
-    if (this.lastWorkspace !== undefined && workspace !== this.lastWorkspace && !keep && !this.drawerPinned) {
+    // The technique page selects its own technique (P2-18): arriving there never clears it.
+    const ownsSelection = workspace === TECHNIQUE_PAGE_SEGMENT;
+    if (this.lastWorkspace !== undefined && workspace !== this.lastWorkspace && !keep && !this.drawerPinned && !ownsSelection) {
       this.filterService.selectTechnique(null);
     }
     this.lastWorkspace = workspace;
