@@ -45,16 +45,18 @@ describe('drawer width: pure helpers', () => {
     expect(parseStoredDrawerWidth('4000')).toBe(DRAWER_MAX_WIDTH);
   });
 
-  it('maps the separator keys: arrows 16 px, Shift 64 px, Home/End to the bounds', () => {
-    expect(drawerWidthForKey('ArrowLeft', false, 500, 1440)).toBe(484);
-    expect(drawerWidthForKey('ArrowRight', false, 500, 1440)).toBe(516);
-    expect(drawerWidthForKey('ArrowLeft', true, 500, 1440)).toBe(436);
-    expect(drawerWidthForKey('ArrowRight', true, 500, 1440)).toBe(564);
+  it('maps the separator keys like a left-edge splitter: ArrowLeft widens, ArrowRight narrows, Shift 64 px, Home/End to the bounds', () => {
+    // The handle is on the drawer's LEFT edge: ArrowLeft moves it left (wider),
+    // the same direction as a pointer drag to the left (WAI-ARIA APG splitter).
+    expect(drawerWidthForKey('ArrowLeft', false, 500, 1440)).toBe(516);
+    expect(drawerWidthForKey('ArrowRight', false, 500, 1440)).toBe(484);
+    expect(drawerWidthForKey('ArrowLeft', true, 500, 1440)).toBe(564);
+    expect(drawerWidthForKey('ArrowRight', true, 500, 1440)).toBe(436);
     expect(drawerWidthForKey('Home', false, 500, 1440)).toBe(DRAWER_MIN_WIDTH);
     expect(drawerWidthForKey('End', false, 500, 1440)).toBe(864);
     // Steps stop at the bounds.
-    expect(drawerWidthForKey('ArrowLeft', true, 330, 1440)).toBe(DRAWER_MIN_WIDTH);
-    expect(drawerWidthForKey('ArrowRight', true, 860, 1440)).toBe(864);
+    expect(drawerWidthForKey('ArrowRight', true, 330, 1440)).toBe(DRAWER_MIN_WIDTH);
+    expect(drawerWidthForKey('ArrowLeft', true, 860, 1440)).toBe(864);
   });
 
   it('ignores keys it does not use (Escape still reaches the global listener)', () => {
@@ -114,17 +116,28 @@ describe('DrawerWidthService', () => {
 
   it('handleKey applies the keyboard map and persists; unknown keys are not consumed', () => {
     const svc = create();
-    expect(svc.handleKey('ArrowLeft', false)).toBeTrue();
-    expect(svc.handleKey('ArrowLeft', false)).toBeTrue();
-    expect(svc.handleKey('ArrowLeft', false)).toBeTrue();
+    expect(svc.handleKey('ArrowRight', false)).toBeTrue();
+    expect(svc.handleKey('ArrowRight', false)).toBeTrue();
+    expect(svc.handleKey('ArrowRight', false)).toBeTrue();
     expect(svc.width()).toBe(DRAWER_DEFAULT_WIDTH - 48);
     expect(localStorage.getItem(DRAWER_WIDTH_KEY)).toBe(String(DRAWER_DEFAULT_WIDTH - 48));
+    expect(svc.handleKey('ArrowLeft', false)).toBeTrue();
+    expect(svc.width()).toBe(DRAWER_DEFAULT_WIDTH - 32);
     expect(svc.handleKey('End', false)).toBeTrue();
     expect(svc.width()).toBe(864);
     expect(svc.handleKey('Home', false)).toBeTrue();
     expect(svc.width()).toBe(DRAWER_MIN_WIDTH);
     expect(svc.handleKey('Escape', false)).toBeFalse();
     expect(svc.width()).toBe(DRAWER_MIN_WIDTH);
+  });
+
+  it('tracks whether the drawer is open (closed until the sidebar says so)', () => {
+    const svc = create();
+    expect(svc.open()).toBeFalse();
+    svc.setOpen(true);
+    expect(svc.open()).toBeTrue();
+    svc.setOpen(false);
+    expect(svc.open()).toBeFalse();
   });
 
   it('reset returns to the default and removes the stored key', () => {

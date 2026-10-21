@@ -55,17 +55,17 @@ describe('DrawerResizeHandleComponent', () => {
     expect(el.getAttribute('aria-valuemax')).toBe('864');
   });
 
-  it('ArrowLeft three times narrows by 48 px and updates aria-valuenow', () => {
-    for (let i = 0; i < 3; i++) expect(key('ArrowLeft').defaultPrevented).toBeTrue();
+  it('ArrowRight three times moves the separator right: narrower by 48 px, aria-valuenow follows', () => {
+    for (let i = 0; i < 3; i++) expect(key('ArrowRight').defaultPrevented).toBeTrue();
     expect(drawer.width()).toBe(DRAWER_DEFAULT_WIDTH - 48);
     expect(el.getAttribute('aria-valuenow')).toBe(String(DRAWER_DEFAULT_WIDTH - 48));
     expect(localStorage.getItem(DRAWER_WIDTH_KEY)).toBe(String(DRAWER_DEFAULT_WIDTH - 48));
   });
 
-  it('ArrowRight widens by 16 px, Shift by 64 px; Home and End go to the bounds', () => {
-    key('ArrowRight');
+  it('ArrowLeft moves the separator left (wider) by 16 px, Shift by 64 px; Home and End go to the bounds', () => {
+    key('ArrowLeft');
     expect(drawer.width()).toBe(DRAWER_DEFAULT_WIDTH + 16);
-    key('ArrowRight', { shiftKey: true });
+    key('ArrowLeft', { shiftKey: true });
     expect(drawer.width()).toBe(DRAWER_DEFAULT_WIDTH + 80);
     key('End');
     expect(el.getAttribute('aria-valuenow')).toBe('864');
@@ -77,6 +77,31 @@ describe('DrawerResizeHandleComponent', () => {
     expect(key('Escape').defaultPrevented).toBeFalse();
     expect(key('ArrowLeft', { ctrlKey: true }).defaultPrevented).toBeFalse();
     expect(drawer.width()).toBe(DRAWER_DEFAULT_WIDTH);
+  });
+
+  it('a key the separator handles does not reach document listeners (the matrix arrow-key focus); others still do', () => {
+    // The handle must be in the document for the event to bubble there (TestBed
+    // normally attaches the root already).
+    const attachedHere = !el.isConnected;
+    if (attachedHere) document.body.appendChild(el);
+    expect(el.isConnected).toBeTrue();
+    const seen: string[] = [];
+    const listener = (e: KeyboardEvent): void => { seen.push(e.key); };
+    document.addEventListener('keydown', listener);
+    try {
+      for (const k of ['ArrowLeft', 'ArrowRight', 'Home', 'End']) key(k);
+      expect(seen).toEqual([]);
+      key('ArrowRight', { shiftKey: true });
+      expect(seen).toEqual([]);
+      // Escape (closes the drawer), unused keys and modified arrows bubble on.
+      key('Escape');
+      key('ArrowUp');
+      key('ArrowLeft', { ctrlKey: true });
+      expect(seen).toEqual(['Escape', 'ArrowUp', 'ArrowLeft']);
+    } finally {
+      document.removeEventListener('keydown', listener);
+      if (attachedHere) el.remove();
+    }
   });
 
   it('pointer drag to the left widens live, persists once on release and blocks text selection', () => {

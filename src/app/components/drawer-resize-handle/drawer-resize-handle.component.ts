@@ -102,9 +102,16 @@ export class DrawerResizeHandleComponent implements OnDestroy {
     this.drawer.reset();
   }
 
+  /**
+   * A key the separator uses stays inside it: no default action and no bubbling
+   * to document-level shortcuts (the matrix moves its focused cell on the arrow
+   * keys). Keys it does not use, Escape included, bubble on as usual.
+   */
   onKeydown(event: KeyboardEvent): void {
     if (event.altKey || event.ctrlKey || event.metaKey) return;
-    if (this.drawer.handleKey(event.key, event.shiftKey)) event.preventDefault();
+    if (!this.drawer.handleKey(event.key, event.shiftKey)) return;
+    event.preventDefault();
+    event.stopPropagation();
   }
 
   ngOnDestroy(): void {

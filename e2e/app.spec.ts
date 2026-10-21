@@ -529,7 +529,25 @@ test.describe('shell: resizable drawer and collapsible rail', () => {
     await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
     if (!(await page.locator('.sidebar.open').isVisible())) await page.locator('.cell').first().click();
     await expect(page.locator('.sidebar.open .sidebar-header .attack-id')).toContainText(/T\d/, { timeout: 5000 });
+    // The drawer slides in (a 0.25 s transform transition). Wait until it has
+    // stopped, flush with the right edge, before anyone reads the handle's box:
+    // a mouse-down at a mid-slide position misses the handle.
+    await expect
+      .poll(
+        () =>
+          page.locator('.sidebar.open').evaluate((el) => {
+            const running = el.getAnimations().filter((a) => a.playState === 'running').length;
+            const right = Math.round(el.getBoundingClientRect().right);
+            return running === 0 && right === window.innerWidth;
+          }),
+        { timeout: 5000 },
+      )
+      .toBe(true);
   }
+
+  /** Text of the matrix's keyboard-focused cell(s); the matrix moves this on bare arrow keys. */
+  const focusedCells = (page: Page): Promise<string[]> =>
+    page.locator('.cell.focused').evaluateAll((els) => els.map((e) => (e.textContent ?? '').trim()));
 
   test('shell: drag, keyboard and double-click resize the technique drawer; the width persists', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
@@ -543,7 +561,14 @@ test.describe('shell: resizable drawer and collapsible rail', () => {
     await expect(handle).toHaveAttribute('aria-valuemax', '864');
     await expect(handle).toHaveAttribute('aria-valuenow', '460');
     await expect.poll(() => boxWidth(page, '.sidebar.open')).toBeCloseTo(460, 0);
+    // The open drawer takes its width from the workspace (it no longer covers the matrix).
     const workspaceBefore = await boxWidth(page, '.workspace-area');
+    const matrixBefore = await boxWidth(page, 'app-matrix');
+    const workspaceRight = async (): Promise<number> => {
+      const b = (await page.locator('.workspace-area').boundingBox())!;
+      return b.x + b.width;
+    };
+    expect(await workspaceRight()).toBeCloseTo(1440 - 460, 0);
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/drawer-default.png` });
 
     // Drag the handle 160 px to the left: the drawer widens by about 160 px.
@@ -563,10 +588,10 @@ test.describe('shell: resizable drawer and collapsible rail', () => {
     expect(await noHorizontalPageScroll(page)).toBe(true);
     const drawerBox = (await page.locator('.sidebar.open').boundingBox())!;
     expect(drawerBox.x + drawerBox.width).toBeCloseTo(1440, 0);
-    // The drawer overlays the workspace (as before): the matrix area keeps its box inside the viewport.
-    const workspaceBox = (await page.locator('.workspace-area').boundingBox())!;
-    expect(workspaceBox.width).toBeCloseTo(workspaceBefore, 0);
-    expect(workspaceBox.x + workspaceBox.width).toBeLessThanOrEqual(1440);
+    // The matrix area changes the opposite way: 160 px narrower, ending where the drawer starts.
+    await expect.poll(() => boxWidth(page, '.workspace-area')).toBeCloseTo(workspaceBefore - 160, 0);
+    await expect.poll(() => boxWidth(page, 'app-matrix')).toBeCloseTo(matrixBefore - 160, 0);
+    expect(await workspaceRight()).toBeCloseTo(drawerBox.x, 0);
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/drawer-dragged.png` });
 
     // Reload: the width persists (applied on the first render).
@@ -575,12 +600,20 @@ test.describe('shell: resizable drawer and collapsible rail', () => {
     await expect(handle).toHaveAttribute('aria-valuenow', '620');
     await expect.poll(() => boxWidth(page, '.sidebar.open')).toBeCloseTo(620, 0);
 
-    // Keyboard: ArrowLeft three times narrows by 48 px.
+    // Keyboard, like a left-edge splitter: ArrowRight moves the separator right
+    // (three presses narrow the drawer by 48 px), ArrowLeft moves it left (wider).
     await handle.focus();
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/drawer-handle-focus.png` });
-    for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowLeft');
+    const focusedBefore = await focusedCells(page);
+    for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowRight');
     await expect(handle).toHaveAttribute('aria-valuenow', '572');
     await expect.poll(() => boxWidth(page, '.sidebar.open')).toBeCloseTo(572, 0);
+    await page.keyboard.press('ArrowLeft');
+    await expect(handle).toHaveAttribute('aria-valuenow', '588');
+    await expect.poll(() => boxWidth(page, '.sidebar.open')).toBeCloseTo(588, 0);
+    // The arrows stayed in the handle: the matrix's keyboard focus did not move.
+    expect(await focusedCells(page)).toEqual(focusedBefore);
+    await expect(handle).toBeFocused();
 
     // Double-click resets to the default.
     await handle.dblclick();

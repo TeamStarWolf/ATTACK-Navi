@@ -40,8 +40,11 @@ export function parseStoredDrawerWidth(raw: string | null): number {
 }
 
 /**
- * The separator's keyboard map: ArrowLeft narrows and ArrowRight widens by
- * 16 px (64 px with Shift), Home goes to the minimum and End to the maximum.
+ * The separator's keyboard map. The handle sits on the drawer's LEFT edge, so
+ * the keys move it the way a pointer drag would (WAI-ARIA APG window splitter):
+ * ArrowLeft moves the separator left, which widens the drawer, and ArrowRight
+ * moves it right, which narrows it, by 16 px (64 px with Shift). Home goes to
+ * the minimum width and End to the maximum.
  * Returns the new width, or null for a key the handle does not use (so the
  * event keeps its default, and Escape still reaches the global listener).
  */
@@ -54,9 +57,9 @@ export function drawerWidthForKey(
   const step = shiftKey ? DRAWER_BIG_STEP : DRAWER_STEP;
   switch (key) {
     case 'ArrowLeft':
-      return clampDrawerWidth(current - step, viewportWidth);
-    case 'ArrowRight':
       return clampDrawerWidth(current + step, viewportWidth);
+    case 'ArrowRight':
+      return clampDrawerWidth(current - step, viewportWidth);
     case 'Home':
       return DRAWER_MIN_WIDTH;
     case 'End':
@@ -71,10 +74,12 @@ function currentViewportWidth(): number {
 }
 
 /**
- * Width of the technique drawer (the right-hand overlay opened by clicking a
+ * Width of the technique drawer (the right-hand panel opened by clicking a
  * cell). The preference is read synchronously when the service is created, so
  * the drawer's first render already has it (no flash on reload); the rendered
- * width is that preference clamped to the current viewport.
+ * width is that preference clamped to the current viewport. `open` mirrors the
+ * drawer's open state so the shell can give the workspace back the space the
+ * drawer takes (above 768 px the workspace narrows as the drawer widens).
  */
 @Injectable({ providedIn: 'root' })
 export class DrawerWidthService {
@@ -88,6 +93,8 @@ export class DrawerWidthService {
   readonly max = computed(() => drawerMaxWidth(this.viewport()));
   /** The width the drawer renders at. */
   readonly width = computed(() => clampDrawerWidth(this.preferred(), this.viewport()));
+  /** True while the drawer is open (set by the sidebar). */
+  readonly open = signal(false);
 
   constructor() {
     if (typeof window === 'undefined') return;
@@ -124,6 +131,11 @@ export class DrawerWidthService {
   reset(): void {
     this.preferred.set(DRAWER_DEFAULT_WIDTH);
     writePref(DRAWER_WIDTH_KEY, null);
+  }
+
+  /** Record whether the drawer is open (the sidebar calls this on every selection). */
+  setOpen(open: boolean): void {
+    this.open.set(open);
   }
 
   /** Re-read the viewport width (the resize listener calls the same thing). */

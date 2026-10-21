@@ -632,6 +632,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
         this.epssSub?.unsubscribe();
         this.technique = tech;
         this.open = tech !== null;
+        this.drawerWidth.setOpen(this.open);
         this.isCustomTechnique = tech !== null && (
           tech.id.startsWith('custom--') ||
           this.customTechniqueService.getAll().some(ct => ct.attackId === tech.attackId)
@@ -1241,6 +1242,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.drawerWidth.setOpen(false);
     this.subs.unsubscribe();
     this.atomicSub?.unsubscribe();
     this.sigmaSub?.unsubscribe();
