@@ -21,6 +21,7 @@ import type { Technique } from '../models/technique';
 import type { PostureState } from '../models/posture/posture.types';
 import { POSTURE_TODAY, createPostureToday, postureDay } from '../models/posture/posture-today';
 import { THREAT_WEIGHT_PROVIDER, allGroupsWeight } from '../models/posture/threat-weight';
+import { ThreatProfileService } from './threat-profile.service';
 import { type TechniqueRefKey, refForTechnique, techniqueRefKey } from '../models/technique-ref';
 import { type AttackDomain, DataService } from './data.service';
 import { ControlsService } from './controls.service';
@@ -442,6 +443,38 @@ describe('PostureService (P2-05, E2.1-c)', () => {
       });
       expect(seen).toEqual([false]);
       expect(posture.ownerWords()).toBeTrue();
+    });
+  });
+
+  // P2-10 reactive seam: with the real ThreatProfileService bound as the provider,
+  // a profile change must reach states().threatWeight in one change-detection pass.
+  describe('threat weight tracks the bound profile (P2-10)', () => {
+    let threatProfile: ThreatProfileService;
+    beforeEach(() => {
+      resetBrowserState();
+      domain = parseFixtureDomain();
+      TestBed.configureTestingModule({
+        providers: [
+          provideHttpClient(withXhr()), provideHttpClientTesting(),
+          ...signalStubProviders(),
+          { provide: POSTURE_TODAY, useValue: signal(TODAY) },
+          { provide: THREAT_WEIGHT_PROVIDER, useExisting: ThreatProfileService },
+        ],
+      });
+      load(domain, 'enterprise');
+      threatProfile = TestBed.inject(ThreatProfileService);
+      posture = TestBed.inject(PostureService);
+    });
+
+    it('setSource reaches states().threatWeight in one change-detection pass', () => {
+      const g = domain.groups[0];
+      const used = (domain.techniquesByGroup.get(g.id) ?? []).find(t => !t.isSubtechnique);
+      expect(used).withContext('fixture group 0 uses a parent technique').toBeTruthy();
+      void stateOf(used!).threatWeight;   // memoize the default-profile compute
+      threatProfile.setSource({ kind: 'groups', ids: [g.id] });
+      // states() recomputed from the narrowed profile: exactly one actor (g) uses `used`.
+      expect(stateOf(used!).threatWeight).toBe(1);
+      expect(threatProfile.weight(used!.id)).toBe(1);
     });
   });
 });

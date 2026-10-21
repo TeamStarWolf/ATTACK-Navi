@@ -225,17 +225,6 @@
           "removedBy": "stays (type match only)"
         },
         {
-          "file": "src/app/services/gap-analysis.service.ts",
-          "uses": {
-            "ImplementationService": 2,
-            "implService": 1,
-            "mitigationsByTechnique": 3
-          },
-          "bucket": "phase-2",
-          "reason": "Gap totals fold implemented mitigations over mitigationsByTechnique; P2-10 moves them to the shared picker with profile denominators read from PostureService.",
-          "removedBy": "P2-10"
-        },
-        {
           "file": "src/app/services/html-report.service.ts",
           "uses": {
             "ImplementationService": 2,

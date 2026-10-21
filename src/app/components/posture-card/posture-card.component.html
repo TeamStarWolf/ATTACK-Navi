@@ -3,6 +3,9 @@
 @let t = tally();
 <section class="posture-card" aria-labelledby="posture-card-title" data-testid="posture-card" [attr.data-scope]="scope">
   <h3 class="posture-card-title" id="posture-card-title">Posture</h3>
+  @if (scope === 'threat-relevant') {
+    <p class="posture-card-scope" data-testid="threat-relevant-line">threat-relevant techniques: <span data-posture="threat-relevant">{{ t.total }}</span></p>
+  }
   <dl class="posture-card-rows">
     <div class="pc-row pc-row--known">
       <dt>Known: mapped</dt>

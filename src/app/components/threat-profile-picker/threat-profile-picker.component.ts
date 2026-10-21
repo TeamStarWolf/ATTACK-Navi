@@ -26,9 +26,9 @@ type Preset = 'top-groups' | 'all' | 'groups' | 'campaigns' | 'library-layer';
 interface SectorCategory { readonly label: string; readonly keywords: readonly string[]; }
 
 /**
- * Kept verbatim from assessment-wizard.component.ts:49-54 so the same sector click
- * matches the same groups. P2-10 points the wizard at this picker and drops its copy;
- * threat-profile-picker.component.spec pins these against the wizard's table.
+ * The single source of the sector aid table (P2-10 moved it here and removed the
+ * wizard's copy, so the same sector click matches the same groups everywhere).
+ * threat-profile-picker.component.spec pins it against its own fixture.
  */
 const SECTOR_CATEGORIES: readonly SectorCategory[] = [
   { label: 'Financial', keywords: ['financial', 'banking', 'payment', 'fin'] },
