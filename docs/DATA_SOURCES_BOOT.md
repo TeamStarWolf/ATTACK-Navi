@@ -18,6 +18,16 @@ served from the IndexedDB cache). The toolbar shows `v19.2` (bundled) at ~2.5 s 
 flips to `v20.0` after the live STIX arrives (~15 s); the first GitHub request fires
 ~1.8 s after load.
 
+> **Changed since this capture (rule-coverage snapshot, 2026-10-21):** the Elastic
+> detection-rules, Splunk security_content and mdecrevoisier SIGMA-detection-rules tree
+> listings are no longer requested. Their rule coverage is read at build time from the rule
+> bodies at pinned commits (`scripts/build-rule-coverage-snapshot.mjs`) and shipped as
+> `src/assets/data/rule-coverage-snapshot.json`, fetched from the app's own origin. A cold
+> load should therefore make **3** unauthenticated `api.github.com` calls (the two KEV
+> `contents` calls and `trickest/cve`), not 6. The counts in this document are from the
+> earlier capture and have not been re-measured; `docs/MEASUREMENTS.md` will show the change
+> at its next `node scripts/measure.mjs` run.
+
 ### Measured (production build, Chrome headless, fresh profile, `networkidle` + 20 s)
 
 | Mode | Phase | raw.githubusercontent | api.github.com | other external |
@@ -50,15 +60,17 @@ primed revisit still spends **6** unauthenticated api calls, the same as a cold 
 ### `api.github.com` — unauthenticated, rate-limited (Phase-3 priority)
 
 6 anonymous REST calls per cold load share the **60 req/hr/IP** limit — the surface most
-worth pinning (replace with a build-time tree snapshot or a pinned release asset).
+worth pinning (replace with a build-time tree snapshot or a pinned release asset). As of the
+rule-coverage snapshot, the three rows marked *removed* are no longer requested (see the note
+above), leaving 3.
 
 | Endpoint | Issuing service |
 |---|---|
 | `/repos/center-for-threat-informed-defense/mappings-explorer/contents/mappings/kev` | `attack-cve.service.ts` |
 | `/repos/center-for-threat-informed-defense/mappings-explorer/contents/mappings/kev/attack-16.1` | `attack-cve.service.ts` (runtime-derived second call) |
-| `/repos/elastic/detection-rules/git/trees/main?recursive=1` | `elastic.service.ts` |
-| `/repos/mdecrevoisier/SIGMA-detection-rules/git/trees/main?recursive=1` | `sigma.service.ts` |
-| `/repos/splunk/security_content/git/trees/develop?recursive=1` | `splunk-content.service.ts` |
+| `/repos/elastic/detection-rules/git/trees/main?recursive=1` | `elastic.service.ts` (*removed*: bundled `rule-coverage-snapshot.json`) |
+| `/repos/mdecrevoisier/SIGMA-detection-rules/git/trees/main?recursive=1` | `sigma.service.ts` (*removed*: bundled `rule-coverage-snapshot.json`) |
+| `/repos/splunk/security_content/git/trees/develop?recursive=1` | `splunk-content.service.ts` (*removed*: bundled `rule-coverage-snapshot.json`) |
 | `/repos/trickest/cve/git/trees/main?recursive=1` | `poc-exploit.service.ts` |
 
 ### `raw.githubusercontent.com` — 27 blobs on boot (26 distinct; Sigma coverage fetched twice)
@@ -107,7 +119,8 @@ modes. Making cold boot quiet is Phase-3 pinning work, not a mode default.
 1. **Prioritise the 6 `api.github.com` endpoints** — unauthenticated, 60 req/hr shared;
    a cold load spends 6, and a primed revisit spends 6 as well (the IndexedDB cache drops
    only the raw `enterprise-attack.json`, never an api call). Pin to a build-time tree
-   snapshot or release asset.
+   snapshot or release asset. Done for Elastic, Splunk and mdecrevoisier SIGMA (the bundled
+   rule-coverage snapshot, pinned per commit and refreshed monthly by `refresh-data.yml`).
 2. **Pin the floating refs.** Every live source tracks a moving branch
    (`master`/`main`/`develop`), so content can shift under the app — record the exact
    commit/ref at build time (mirrors the bundled `BUNDLED_ATTACK_VERSION` discipline in

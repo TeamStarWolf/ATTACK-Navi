@@ -29,7 +29,7 @@ const INVENTORY_ROWS = [
   'CTID mappings (NIST 800-53, CRI, CSA CCM, VERIS, AWS, Azure, GCP, M365)',
   'CIS Controls',
   'Sigma coverage, CAR, Atomic, CAPEC, MISP galaxy, Engage',
-  'Elastic, Splunk, Sentinel (edoardogerosa)',
+  'Elastic, Splunk vendor rule trees',
   'M365 Defender hunting queries',
   'trickest PoC tree',
   'cwe-exploitation-anchor.json',

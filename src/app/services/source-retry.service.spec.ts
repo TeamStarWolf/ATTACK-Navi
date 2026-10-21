@@ -87,7 +87,8 @@ describe('SourceRetryService: Retry per source on the data-health view (E1.3)', 
   it('can retry every live source', () => {
     const live = SOURCE_DEFINITIONS.filter(d => d.kind === 'live' && !d.initialStatus).map(d => d.id);
     expect(live.filter(id => !(id in SOURCE_RETRY))).toEqual([]);
-    expect(live.length).toBeGreaterThan(40);
+    // 39 since the three rule-coverage sources became a bundled snapshot (no Retry: reload).
+    expect(live.length).toBeGreaterThan(35);
   });
 
   Object.keys(SOURCE_RETRY).forEach(id => {

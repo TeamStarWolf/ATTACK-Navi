@@ -61,13 +61,9 @@ const OFFLINE: Record<string, OfflineCase> = {
   'capec': { match: has('mitre/cti/master/capec/') },
   'misp-galaxy': { match: has('MISP/misp-galaxy/') },
   'engage': { match: has('mitre/engage/') },
-  'elastic-tree': { match: has('repos/elastic/detection-rules/') },
-  'splunk-tree': { match: has('repos/splunk/security_content/') },
-  'sentinel-attack-tree': { match: has('repos/edoardogerosa/sentinel-attack/') },
   'm365-hunting-queries': { match: has('Microsoft-365-Defender-Hunting-Queries') },
   'trickest-poc-tree': { match: has('repos/trickest/cve/'), needsCtid: true },
   'nuclei-tree': { match: has('repos/projectdiscovery/nuclei-templates/'), needsCtid: true },
-  'mdecrevoisier-sigma-tree': { match: has('repos/mdecrevoisier/SIGMA-detection-rules/') },
   'cyb3r-monk-hunting-tree': { match: has('repos/Cyb3r-Monk/Threat-Hunting-and-Detection/') },
   'evtx-samples-tree': { match: has('repos/mdecrevoisier/EVTX-to-MITRE-Attack/') },
   'payloads-tree': { match: has('repos/swisskyrepo/PayloadsAllTheThings/') },
@@ -82,7 +78,16 @@ const OFFLINE: Record<string, OfflineCase> = {
 /** Live sources with no request to block, and why. */
 const NOT_FETCHED: Record<string, string> = {
   'cis-controls': 'withdrawn upstream: the app makes no request (archived-upstream, never loaded)',
+  'sentinel-attack-tree': 'withdrawn upstream on 2024-11-28: the app makes no request (archived-upstream, never loaded)',
 };
+
+/**
+ * The bundled rule-coverage snapshot behind three sources (Elastic, Splunk and
+ * mdecrevoisier rule counts). They are not live any more: "offline" for them means the
+ * app's own file fails to load.
+ */
+const RULE_COVERAGE_SNAPSHOT = 'assets/data/rule-coverage-snapshot.json';
+const RULE_COVERAGE_IDS = ['elastic-tree', 'splunk-tree', 'mdecrevoisier-sigma-tree'];
 
 const CTID_CSV_URL = 'https://raw.githubusercontent.com/center-for-threat-informed-defense/attack_to_cve/master/Att%26ckToCveMappings.csv';
 const CTID_CSV = 'CVE ID,Primary Impact,Secondary Impact,Exploitation Technique,Uncategorized,Phase\nCVE-2021-44228,T1190,,T1059,,\n';
@@ -167,4 +172,31 @@ test.describe('E1.3: each live source forced offline shows failed, and its view 
       await expect(banner).toContainText(`${def.name} (failed)`);
     });
   }
+
+  test('the bundled rule-coverage snapshot not loading: its three sources show failed, with no Retry; the matrix names them', async ({ page }) => {
+    let blocked = 0;
+    await page.route(url => url.href.includes(RULE_COVERAGE_SNAPSHOT), route => {
+      blocked++;
+      return route.abort('internetdisconnected');
+    });
+    await page.goto(`${BASE}/#/status`);
+    for (const id of RULE_COVERAGE_IDS) {
+      const def = SOURCE_DEFINITIONS.find(d => d.id === id)!;
+      expect(def.kind, `${id} is bundled`).toBe('bundled');
+      const row = page.locator(`app-source-health tr[data-source-id="${id}"]`);
+      await expect(row).toHaveAttribute('data-status', 'failed', { timeout: ROUTE_TIMEOUT });
+      await expect(row.locator('.sh-detail')).toContainText('bundled snapshot missing');
+      // Shipped with the app: reloading the page asks for it again, so no Retry button.
+      await expect(row.getByRole('button')).toHaveCount(0);
+    }
+    expect(blocked, 'the app asked for its own snapshot file').toBeGreaterThan(0);
+
+    await page.evaluate(() => { window.location.hash = '#/matrix'; });
+    const banner = page.locator('app-source-banner [data-testid="source-banner"]');
+    await expect(banner).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    for (const id of RULE_COVERAGE_IDS) {
+      const def = SOURCE_DEFINITIONS.find(d => d.id === id)!;
+      await expect(banner.locator(`[data-testid="source-banner-failed"] [data-source-id="${id}"]`)).toContainText(`${def.name} (failed)`);
+    }
+  });
 });

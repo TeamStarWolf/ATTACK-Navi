@@ -28,7 +28,6 @@ import { NvdBulkService } from '../../services/nvd-bulk.service';
 import { Cve2CapecService } from '../../services/cve2capec.service';
 import { PocExploitService } from '../../services/poc-exploit.service';
 import { EvtxSamplesService } from '../../services/evtx-samples.service';
-import { SentinelRulesService } from '../../services/sentinel-rules.service';
 import { AnthropicSkillsService } from '../../services/anthropic-skills.service';
 import { ThreatHunterPlaybookService } from '../../services/threathunter-playbook.service';
 
@@ -47,7 +46,7 @@ describe('DataHealthComponent', () => {
     'nist', 'cri', 'cloud', 'veris', 'd3fend',
     'car', 'elastic', 'splunk', 'exploitdb', 'nuclei',
     'nvdBulk', 'cve2capec', 'pocExploit', 'evtxSamples',
-    'sentinelRules', 'anthropicSkills', 'threatHunterPlaybook',
+    'anthropicSkills', 'threatHunterPlaybook',
   ];
 
   function makeMockService(): { loaded$: BehaviorSubject<boolean> } {
@@ -105,7 +104,6 @@ describe('DataHealthComponent', () => {
         { provide: Cve2CapecService, useValue: mocks['cve2capec'] },
         { provide: PocExploitService, useValue: mocks['pocExploit'] },
         { provide: EvtxSamplesService, useValue: mocks['evtxSamples'] },
-        { provide: SentinelRulesService, useValue: mocks['sentinelRules'] },
         { provide: AnthropicSkillsService, useValue: mocks['anthropicSkills'] },
         { provide: ThreatHunterPlaybookService, useValue: mocks['threatHunterPlaybook'] },
       ],
@@ -122,13 +120,13 @@ describe('DataHealthComponent', () => {
 
   it('should show health dots for each service', () => {
     const dots = fixture.nativeElement.querySelectorAll('.health-dot');
-    expect(dots.length).toBe(24);
+    expect(dots.length).toBe(23);
   });
 
   it('should show dots in loading state initially', () => {
     // Every source starts loading, EPSS included: it is no longer hard-coded as up.
     const loadingDots = fixture.nativeElement.querySelectorAll('.dot-loading');
-    expect(loadingDots.length).toBe(24);
+    expect(loadingDots.length).toBe(23);
   });
 
   it('should transition dot to loaded state when service loads', () => {
@@ -137,7 +135,7 @@ describe('DataHealthComponent', () => {
     const loadedDots = fixture.nativeElement.querySelectorAll('.dot-loaded');
     expect(loadedDots.length).toBe(1);
     const loadingDots = fixture.nativeElement.querySelectorAll('.dot-loading');
-    expect(loadingDots.length).toBe(23);
+    expect(loadingDots.length).toBe(22);
   });
 
   it('runs the EPSS availability check instead of reporting EPSS up unconditionally (E1.3)', () => {
@@ -236,11 +234,29 @@ describe('DataHealthComponent', () => {
   });
 
   it('shows a source that answered with no rows as empty, not loaded and not loading', () => {
-    TestBed.inject(SourceRegistryService).succeed('elastic-tree', 0);
+    TestBed.inject(SourceRegistryService).succeed('nuclei-tree', 0);
     fixture.detectChanges();
     const empty = fixture.nativeElement.querySelector('.dot-empty');
     expect(empty).toBeTruthy();
-    expect(empty.getAttribute('title')).toContain('Elastic Rules: empty');
+    expect(empty.getAttribute('title')).toContain('Nuclei Templates: empty');
+  });
+
+  it('names the pinned snapshot (commit and dates) on a loaded Elastic or Splunk dot', () => {
+    const registry = TestBed.inject(SourceRegistryService);
+    registry.succeed('elastic-tree', 446, { version: 'snapshot of 2026-10-21, elastic/detection-rules@7115bb0 (commit 2026-10-21, main)' });
+    loadedSubjects['elastic'].next(true);
+    fixture.detectChanges();
+    const dot = [...fixture.nativeElement.querySelectorAll('.dot-loaded')] as HTMLElement[];
+    expect(dot.length).toBe(1);
+    expect(dot[0].getAttribute('title')).toBe(
+      'Elastic Rules: loaded - reference data, snapshot of 2026-10-21, elastic/detection-rules@7115bb0 (commit 2026-10-21, main)');
+  });
+
+  it("shows a bundled snapshot that did not load as failed with 'bundled snapshot missing'", () => {
+    TestBed.inject(SourceRegistryService).fail('splunk-tree', new Error('bundled snapshot missing (network error: assets/data/rule-coverage-snapshot.json)'));
+    fixture.detectChanges();
+    const failed = fixture.nativeElement.querySelector('.dot-failed');
+    expect(failed.getAttribute('title')).toContain('Splunk Content: failed - bundled snapshot missing');
   });
 
   it('keeps a multi-source entry out of the failed state while one of its sources still loads', () => {

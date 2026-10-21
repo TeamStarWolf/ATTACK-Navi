@@ -1,20 +1,23 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
-import { SourceRegistryService, TRUNCATED_LISTING } from './source-registry.service';
 
 export interface SentinelRule {
   filename: string;
   url: string;
 }
 
+/**
+ * Withdrawn source: the upstream rule repository this read (a community collection of
+ * Azure Sentinel ATT&CK rules) removed every rule on 2024-11-28 and now holds a handful
+ * of non-rule files, so there is nothing to fetch. Like CisControlsService, the service
+ * makes no request: the registry shows the source as withdrawn upstream (status
+ * 'archived-upstream', no rows) and loaded$ stays false. The surface stays so the
+ * technique drawer, which hides the section while the count is 0, needs no change.
+ */
 @Injectable({ providedIn: 'root' })
 export class SentinelRulesService {
-  private directCounts = new Map<string, number>();
-  private rulesMap = new Map<string, SentinelRule[]>();
-
   private loadedSubject = new BehaviorSubject<boolean>(false);
   readonly loaded$ = this.loadedSubject.asObservable();
 
@@ -24,88 +27,16 @@ export class SentinelRulesService {
   private coveredSubject = new BehaviorSubject<number>(0);
   readonly covered$ = this.coveredSubject.asObservable();
 
-  private loadRequested = false;
-
-  constructor(
-    private http: HttpClient,
-    private sources: SourceRegistryService = new SourceRegistryService(),
-  ) {}
-
-  /** Load again after a failed or empty load: the data-health Retry (E1.3). */
-  retry(): void {
-    this.loadRequested = false;
-    this.loadOnDemand();
-  }
-
-  /** Load on demand - only fetches once. */
+  /** Nothing to load: the upstream withdrew its rules. */
   loadOnDemand(): void {
-    if (this.loadRequested) return;
-    this.loadRequested = true;
-    this.sources.begin('sentinel-attack-tree');
-    this.http
-      .get<any>('https://api.github.com/repos/edoardogerosa/sentinel-attack/git/trees/master?recursive=1')
-      .subscribe({ next: (tree: any) => {
-        try {
-          this.ingestTree(tree);
-        } catch (err) {
-          // A parse error must not leave the source 'loading' forever.
-          this.sources.fail('sentinel-attack-tree', err);
-        }
-      }, error: err => this.sources.fail('sentinel-attack-tree', err) });
+    // Intentionally empty (withdrawn upstream on 2024-11-28).
   }
 
-  /**
-   * Count rule files whose path carries a technique id. The upstream removed its
-   * rules on 2024-11-28 and now holds a handful of non-rule files, so this finds
-   * none today and the source is recorded as 'empty', not 'loaded'.
-   */
-  private ingestTree(tree: any): void {
-    if (tree?.truncated === true) {
-      // A partial listing would under-count silently: report it, do not parse it.
-      this.sources.fail('sentinel-attack-tree', TRUNCATED_LISTING);
-      return;
-    }
-    if (tree?.tree) {
-      const techRegex = /T(\d{4}(?:\.\d{3})?)/;
-      let total = 0;
-      for (const item of tree.tree) {
-        if (item.type !== 'blob') continue;
-        const path: string = item.path ?? '';
-        if (!path.endsWith('.json') && !path.endsWith('.yaml') && !path.endsWith('.yml')) continue;
-        const match = path.match(techRegex);
-        if (!match) continue;
-        const id = 'T' + match[1];
-        const segments = path.split('/');
-        const filename = segments[segments.length - 1];
-        const url = `https://github.com/edoardogerosa/sentinel-attack/blob/master/${path}`;
-        const rule: SentinelRule = { filename, url };
-        this.directCounts.set(id, (this.directCounts.get(id) ?? 0) + 1);
-        if (!this.rulesMap.has(id)) {
-          this.rulesMap.set(id, []);
-        }
-        this.rulesMap.get(id)!.push(rule);
-        total++;
-      }
-      this.totalSubject.next(total);
-      this.coveredSubject.next(this.directCounts.size);
-    }
-    const rows = this.coveredSubject.value;
-    this.sources.succeed('sentinel-attack-tree', rows);
-    if (rows > 0) this.loadedSubject.next(true);
+  getRuleCount(_attackId: string): number {
+    return 0;
   }
 
-  getRuleCount(attackId: string): number {
-    const direct = this.directCounts.get(attackId) ?? 0;
-    if (attackId.includes('.')) return direct;
-    let sub = 0;
-    const prefix = attackId + '.';
-    for (const [id, count] of this.directCounts) {
-      if (id.startsWith(prefix)) sub += count;
-    }
-    return direct + sub;
-  }
-
-  getRulesForTechnique(attackId: string): SentinelRule[] {
-    return this.rulesMap.get(attackId) ?? [];
+  getRulesForTechnique(_attackId: string): SentinelRule[] {
+    return [];
   }
 }

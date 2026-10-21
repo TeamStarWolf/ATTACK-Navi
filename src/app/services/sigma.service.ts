@@ -1,27 +1,14 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
-import { catchError, map, shareReplay, switchMap, tap } from 'rxjs/operators';
-import { SourceRegistryService, TRUNCATED_LISTING, describeLoadError } from './source-registry.service';
+import { catchError, map, shareReplay, tap } from 'rxjs/operators';
+import { SourceRegistryService, describeLoadError } from './source-registry.service';
+import {
+  RuleCoverageSection, RuleCoverageSnapshotService, ruleLinks, snapshotError, snapshotVersion,
+} from './rule-coverage-snapshot.service';
 import { Technique } from '../models/technique';
-
-/** A Sigma rule file in the community repo: '.yml' or '.yaml' (the upstream uses '.yaml'). */
-function isSigmaRulePath(path: string | undefined): boolean {
-  return !!path && (path.endsWith('.yml') || path.endsWith('.yaml'));
-}
-
-/** The ATT&CK technique id a rule path carries, or null (the upstream's names carry none today). */
-function techniqueIdInPath(path: string): string | null {
-  const match = /T(\d{4}(?:\.\d{3})?)/.exec(path);
-  return match ? 'T' + match[1] : null;
-}
-
-/** A repo path made safe for a URL: each segment encoded, the '/' separators kept. */
-function encodePath(path: string): string {
-  return path.split('/').map(encodeURIComponent).join('/');
-}
 
 /**
  * The `author:` of every Sigma template this app generates. It names this
@@ -116,11 +103,15 @@ export class SigmaService {
   private communityCoveredSubject = new BehaviorSubject<number>(0);
   readonly communityCovered$ = this.communityCoveredSubject.asObservable();
 
-  constructor(
-    private http: HttpClient,
-    private sources: SourceRegistryService = new SourceRegistryService(),
-  ) {
+  private readonly http = inject(HttpClient);
+  private readonly sources = inject(SourceRegistryService);
+  private readonly snapshot = inject(RuleCoverageSnapshotService);
+
+  constructor() {
     this.loadLive();
+    // The community counts come from the bundled rule-coverage snapshot, a same-origin
+    // file the Elastic and Splunk lenses read at start-up too, so they load with it.
+    this.loadCommunityRules();
   }
 
   /**
@@ -176,98 +167,31 @@ export class SigmaService {
   }
 
   /**
-   * Fetch actual Sigma rule details for a technique from the community
-   * SIGMA-detection-rules repo. It matches the technique id against the file PATH,
-   * and the upstream names its files by behaviour ('windows-active_directory/
-   * win-ad-DSRM password changed.yaml') with the ids only inside the rule bodies,
-   * so for this upstream it finds nothing today.
-   * The GitHub code-search API used previously requires authentication and
-   * always returns 401 from a browser, so it never produced results.
-   * Results are cached per attackId.
+   * The community rules (mdecrevoisier/SIGMA-detection-rules) that name a technique:
+   * up to ten titles from the bundled rule-coverage snapshot, each linked to the file
+   * at the pinned commit. The snapshot is read from the rule bodies (attack.tNNNN
+   * tags), so no request goes to GitHub. Results are cached per attackId; a snapshot
+   * that did not load returns nothing for now and is not cached.
    */
   fetchRulesForTechnique(attackId: string): Observable<SigmaRuleDetail[]> {
     const cached = this.ruleDetailCache.get(attackId);
     if (cached) return of(cached);
 
-    return this.getCommunityRulePaths().pipe(
-      map(paths => {
-        const needle = attackId.toLowerCase();
-        return paths
-          .filter(p => p.toLowerCase().includes(needle))
-          .slice(0, 10)
-          .map(path => ({
-            path,
-            html_url: `https://github.com/mdecrevoisier/SIGMA-detection-rules/blob/main/${encodePath(path)}`,
-          }));
+    return this.communitySection().pipe(
+      map(section => {
+        const details: SigmaRuleDetail[] = ruleLinks(section, attackId).map(r => ({
+          title: r.name,
+          id: r.url,
+          status: '',
+          level: '',
+          description: '',
+          url: r.url,
+        }));
+        this.ruleDetailCache.set(attackId, details);
+        return details;
       }),
-      switchMap(items => {
-        if (items.length === 0) {
-          this.ruleDetailCache.set(attackId, []);
-          return of([] as SigmaRuleDetail[]);
-        }
-        // Fetch raw content for each file and extract front matter
-        const fetches = items.map(item => {
-          const rawUrl = `https://raw.githubusercontent.com/mdecrevoisier/SIGMA-detection-rules/main/${encodePath(item.path)}`;
-          return this.http.get(rawUrl, { responseType: 'text' }).pipe(
-            map(yaml => this.parseYamlFrontMatter(yaml, item.html_url)),
-            catchError(() => of(null as SigmaRuleDetail | null)),
-          );
-        });
-        // Combine all fetches
-        return new Observable<SigmaRuleDetail[]>(subscriber => {
-          const results: (SigmaRuleDetail | null)[] = [];
-          let completed = 0;
-          for (const fetch$ of fetches) {
-            fetch$.subscribe({
-              next: val => {
-                results.push(val);
-                completed++;
-                if (completed === fetches.length) {
-                  const details = results.filter((r): r is SigmaRuleDetail => r !== null);
-                  this.ruleDetailCache.set(attackId, details);
-                  subscriber.next(details);
-                  subscriber.complete();
-                }
-              },
-              error: () => {
-                results.push(null);
-                completed++;
-                if (completed === fetches.length) {
-                  const details = results.filter((r): r is SigmaRuleDetail => r !== null);
-                  this.ruleDetailCache.set(attackId, details);
-                  subscriber.next(details);
-                  subscriber.complete();
-                }
-              },
-            });
-          }
-        });
-      }),
-      catchError(() => {
-        // The rule list could not be fetched (recorded on the source registry): return
-        // nothing for now but do not cache it as "this technique has no rules".
-        return of([] as SigmaRuleDetail[]);
-      }),
+      catchError(() => of([] as SigmaRuleDetail[])),
     );
-  }
-
-  /** Extract title, id, status, level, description from Sigma YAML text. */
-  private parseYamlFrontMatter(yaml: string, htmlUrl: string): SigmaRuleDetail | null {
-    const getField = (field: string): string => {
-      const regex = new RegExp(`^${field}:\\s*(.+)$`, 'm');
-      const match = yaml.match(regex);
-      return match ? match[1].trim().replace(/^['"]|['"]$/g, '') : '';
-    };
-    const title = getField('title');
-    if (!title) return null;
-    return {
-      title,
-      id: getField('id'),
-      status: getField('status'),
-      level: getField('level'),
-      description: getField('description').slice(0, 200),
-      url: htmlUrl,
-    };
   }
 
   /**
@@ -302,71 +226,57 @@ export class SigmaService {
     return direct + sub;
   }
 
-  private communityRulePaths$?: Observable<string[]>;
+  private communitySection$?: Observable<RuleCoverageSection>;
 
   /**
-   * Cached list of rule paths ('.yml' and '.yaml'; the upstream uses '.yaml') in
-   * mdecrevoisier/SIGMA-detection-rules. The technique ids are not in the file
-   * names, so the row count recorded on the registry is the technique-matched
-   * subset of these paths (0 today, so the source reads 'empty'), never the number
-   * of paths: a listing of rules with no ids read from them is not 'loaded'.
+   * The mdecrevoisier section of the bundled rule-coverage snapshot, read once. The
+   * row count recorded on the registry is the number of techniques its rules name. A
+   * file that did not load, or a malformed section, is recorded as failed ('bundled
+   * snapshot missing'), never as empty, and is not cached, so the next call asks again.
    */
-  private getCommunityRulePaths(): Observable<string[]> {
-    if (!this.communityRulePaths$) {
+  private communitySection(): Observable<RuleCoverageSection> {
+    if (!this.communitySection$) {
       this.sources.begin('mdecrevoisier-sigma-tree');
-      this.communityRulePaths$ = this.http
-        .get<any>('https://api.github.com/repos/mdecrevoisier/SIGMA-detection-rules/git/trees/main?recursive=1')
-        .pipe(
-          map((tree: any) => {
-            // A partial listing would under-count silently: report it, do not parse it.
-            if (tree?.truncated === true) throw new Error(TRUNCATED_LISTING);
-            return ((tree?.tree ?? []) as Array<{ type: string; path?: string }>)
-              .filter(item => item.type === 'blob' && isSigmaRulePath(item.path))
-              .map(item => item.path as string);
-          }),
-          tap(paths => this.sources.succeed('mdecrevoisier-sigma-tree', paths.filter(p => techniqueIdInPath(p)).length)),
-          catchError(err => {
-            // Recorded as failed and not cached, so the next call retries; callers that
-            // need the list see the error rather than an empty rule set.
-            this.sources.fail('mdecrevoisier-sigma-tree', err);
-            this.communityRulePaths$ = undefined;
-            throw err;
-          }),
-          shareReplay(1),
-        );
+      this.communitySection$ = this.snapshot.section('mdecrevoisier').pipe(
+        tap(section => this.ingestCommunity(section)),
+        catchError(err => {
+          const reason = snapshotError(err);
+          this.sources.fail('mdecrevoisier-sigma-tree', reason);
+          this.communitySection$ = undefined;
+          throw reason;
+        }),
+        shareReplay(1),
+      );
     }
-    return this.communityRulePaths$;
+    return this.communitySection$;
   }
 
-  /** Load community Sigma rules from mdecrevoisier/SIGMA-detection-rules. */
+  private ingestCommunity(section: RuleCoverageSection): void {
+    const version = snapshotVersion(section);
+    const counts = new Map<string, number>();
+    for (const [id, t] of Object.entries(section.techniques)) {
+      if (t.count > 0) counts.set(id, t.count);
+    }
+    this.communityCounts = counts;
+    this.communityTotalSubject.next(section.ruleCount);
+    this.communityCoveredSubject.next(counts.size);
+    this.sources.succeed('mdecrevoisier-sigma-tree', counts.size, { version });
+    if (counts.size > 0) this.communityLoadedSubject.next(true);
+  }
+
+  /** Load the community Sigma rule counts (mdecrevoisier/SIGMA-detection-rules) from the bundled snapshot. */
   loadCommunityRules(): void {
     if (this.communityLoadedSubject.value) return;
-    // A failed listing is already recorded on the source registry; communityLoaded$ stays false.
-    this.getCommunityRulePaths().subscribe({ next: paths => {
-      let total = 0;
-      for (const path of paths) {
-        const id = techniqueIdInPath(path);
-        if (id) {
-          this.communityCounts.set(id, (this.communityCounts.get(id) ?? 0) + 1);
-          total++;
-        }
-      }
-      this.communityTotalSubject.next(total);
-      this.communityCoveredSubject.next(this.communityCounts.size);
-      if (total > 0) this.communityLoadedSubject.next(true);
-    }, error: () => undefined });
+    // A failure is recorded on the source registry; communityLoaded$ stays false.
+    this.communitySection().subscribe({ error: () => undefined });
   }
 
-  /** Community rule count for a technique. */
+  /**
+   * Community rules naming a technique. A parent's count is already the distinct rules
+   * naming it or any of its sub-techniques (the snapshot rolls them up).
+   */
   getCommunityRuleCount(techniqueId: string): number {
-    const direct = this.communityCounts.get(techniqueId) ?? 0;
-    if (techniqueId.includes('.')) return direct;
-    let sub = 0;
-    const prefix = techniqueId + '.';
-    for (const [id, count] of this.communityCounts) {
-      if (id.startsWith(prefix)) sub += count;
-    }
-    return direct + sub;
+    return this.communityCounts.get(techniqueId) ?? 0;
   }
 
   /**

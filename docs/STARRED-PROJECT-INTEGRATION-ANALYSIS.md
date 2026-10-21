@@ -62,7 +62,14 @@ Both shipped through pull requests to `main`; the original agent working branch 
 - **Integration:** Map Sysmon event types to ATT&CK data sources, show "Sysmon Coverage" in sidebar
 - **Effort:** Medium
 
-### 7. Sentinel ATT&CK Detection Rules
+### 7. Sentinel ATT&CK Detection Rules (withdrawn upstream; do not integrate)
+> **Withdrawn upstream (noted 2026-10-21):** the maintainer removed every rule from
+> `edoardogerosa/sentinel-attack` on 2024-11-28 ("Cleaned up deprecated components"); the
+> repository now holds a handful of non-rule files, so there is nothing to import. The app's
+> source registry lists it as withdrawn upstream (`sentinel-attack-tree` in
+> `src/app/services/source-inventory.ts`) and `sentinel-rules.service.ts` makes no request.
+> The recommendation below is kept as written for the record.
+
 - **Repo:** `edoardogerosa/sentinel-attack` (1,081★)
 - **What:** Azure Sentinel hunting queries and workbooks mapped to ATT&CK
 - **Integration:** Import Sentinel detection rule counts into existing M365/Sentinel integration

@@ -28,6 +28,8 @@ import { ZeekService } from './zeek.service';
 import { WazuhService } from './wazuh.service';
 import { Technique } from '../models/technique';
 import { parseFixtureDomain } from '../testing/lens-harness';
+import { RULE_COVERAGE_SNAPSHOT_URL } from './rule-coverage-snapshot.service';
+import { RULE_COVERAGE_FIXTURE } from '../testing/rule-coverage-fixture';
 
 function tech(attackId: string, name: string, tactics: string[], platforms: string[] = ['Windows']): Technique {
   return {
@@ -131,7 +133,9 @@ describe('synthetic export honesty (E1.6)', () => {
     sigma = TestBed.inject(SigmaService);
     zeek = TestBed.inject(ZeekService);
     http = TestBed.inject(HttpTestingController);
-    // The SigmaHQ coverage layer requested at construction is not under test.
+    // The community rules come from the bundled rule-coverage snapshot (a small fixture here);
+    // the SigmaHQ coverage layer requested at construction is not under test.
+    for (const req of http.match(RULE_COVERAGE_SNAPSHOT_URL)) req.flush(RULE_COVERAGE_FIXTURE);
     http.match(() => true);
     // The characterization fixture (a slice of the bundled Enterprise ATT&CK,
     // parsed by the production parser) plus one technique per pattern branch.
@@ -249,20 +253,14 @@ describe('synthetic export honesty (E1.6)', () => {
   });
 
   describe('curated and fetched content is not synthetic', () => {
-    it('a real community Sigma rule keeps its own title and level: high', () => {
+    it('a real community Sigma rule keeps its own title (from the bundled rule-coverage snapshot)', () => {
       let got: SigmaRuleDetail[] | undefined;
-      sigma.fetchRulesForTechnique('T1003.001').subscribe(r => (got = r));
-      http.expectOne(r => r.url.includes('/git/trees/main')).flush({
-        tree: [{ type: 'blob', path: 'windows/credential_access/T1003.001_lsass_access.yml' }],
-      });
-      http.expectOne(r => r.url.includes('T1003.001_lsass_access.yml')).flush(
-        "title: LSASS process memory access\nid: 0d894093-71bc-43c3-8c4d-ecfa28dcadc8\nstatus: stable\n"
-        + 'level: high\ndescription: Real rule body from the community repository\n',
-      );
-      expect(got?.length).toBe(1);
-      expect(got![0].title).toBe('LSASS process memory access');
-      expect(got![0].level).toBe('high');
+      sigma.fetchRulesForTechnique('T1484.002').subscribe(r => (got = r));
+      const real = RULE_COVERAGE_FIXTURE.sources.mdecrevoisier.techniques['T1484.002'].rules;
+      expect(got?.length).toBe(real.length);
+      expect(got![0].title).toBe(real[0].name);
       expect(got![0].title.startsWith(SIGMA_TEMPLATE_TITLE_PREFIX)).toBeFalse();
+      expect(got![0].level).not.toBe(SIGMA_TEMPLATE_LEVEL);
     });
 
     it('the Wazuh stock-rule table keeps its own levels and is never relabelled as a template', () => {
