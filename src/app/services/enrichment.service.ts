@@ -52,6 +52,16 @@ export interface ReferenceDefenseSignals {
   atomic: boolean;       // Atomic Red Team test
 }
 
+/** The counts behind ReferenceDefenseSignals (detection content is Sigma plus CAR). */
+export interface ReferenceDefenseCounts {
+  mitigations: number;   // ATT&CK mitigation relationships
+  sigma: number;         // SigmaHQ rules
+  car: number;           // MITRE CAR analytics
+  controls: number;      // CTID control-framework mappings (NIST/CRI/CIS/CSA/M365)
+  d3fend: number;        // D3FEND countermeasures
+  atomic: number;        // Atomic Red Team tests
+}
+
 /** Known-tier aggregate across a set of techniques (defensive reference inputs only). */
 export interface ReferenceDefenseTotals {
   total: number;
@@ -194,19 +204,30 @@ export class EnrichmentService {
     if (!tech) {
       return { mitigation: false, detection: false, control: false, d3fend: false, atomic: false };
     }
-    const id = tech.attackId;
-    const mitCount =
-      (tech.mitigationCount ?? 0) ||
-      this.len(() => domain?.mitigationsByTechnique?.get(tech.id));
-    const detection =
-      this.num(() => this.sigmaService.getRuleCount(id)) +
-      this.num(() => this.carService.getLiveCount(id));
+    const c = this.referenceDefenseCounts(tech, domain);
     return {
-      mitigation: mitCount > 0,
-      detection: detection > 0,
-      control: this.controlCount(id) > 0,
-      d3fend: this.len(() => this.d3fendService.getCountermeasures(id)) > 0,
-      atomic: this.num(() => this.atomicService.getTestCount(id)) > 0,
+      mitigation: c.mitigations > 0,
+      detection: c.sigma + c.car > 0,
+      control: c.controls > 0,
+      d3fend: c.d3fend > 0,
+      atomic: c.atomic > 0,
+    };
+  }
+
+  /**
+   * Known tier: the count behind each defensive reference input of one
+   * technique (the numbers {@link referenceDefenseSignals} tests against 0).
+   * The technique evidence card (P2-18) lists them with their sources.
+   */
+  referenceDefenseCounts(tech: Technique, domain?: Domain | null): ReferenceDefenseCounts {
+    const id = tech.attackId;
+    return {
+      mitigations: (tech.mitigationCount ?? 0) || this.len(() => domain?.mitigationsByTechnique?.get(tech.id)),
+      sigma: this.num(() => this.sigmaService.getRuleCount(id)),
+      car: this.num(() => this.carService.getLiveCount(id)),
+      controls: this.controlCount(id),
+      d3fend: this.len(() => this.d3fendService.getCountermeasures(id)),
+      atomic: this.num(() => this.atomicService.getTestCount(id)),
     };
   }
 

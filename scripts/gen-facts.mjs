@@ -116,15 +116,27 @@ function heatmapModes(root) {
   return { source: file, count: modes.length, modes };
 }
 
-function routes(root) {
+/** True when a route path has a `:param` segment ('technique/:domain/:id'). */
+export function isDetailPath(path) {
+  return typeof path === 'string' && path.split('/').some((seg) => seg.startsWith(':'));
+}
+
+export function routes(root) {
   const appFile = 'src/app/app.routes.ts';
   const top = topLevelObjects(exportedArray(read(root, appFile), 'routes', appFile));
   const workspaces = [];
+  const detailPages = [];
   const redirects = [];
   for (const o of top) {
     const path = ownString(o, 'path');
     if (ownHas(o, 'redirectTo')) { redirects.push({ path, to: ownString(o, 'redirectTo') }); continue; }
     const data = ownSub(o, 'data', '{');
+    // A top-level route with a :param is a DETAIL PAGE (P2-18, S15: #/technique/:domain/:id),
+    // one record of a workspace's data, never a workspace of its own.
+    if (isDetailPath(path)) {
+      detailPages.push({ path: `/${path}`, title: data ? ownString(data, 'title') : undefined });
+      continue;
+    }
     const ws = { path: `/${path}`, kind: ownHas(o, 'loadChildren') ? 'route file' : 'single component', title: data ? ownString(data, 'title') : undefined, tabs: [] };
     if (ws.kind === 'route file') {
       const m = /import\('\.\/(pages\/[^']+)'\)\.then\(\(?\w+\)?\s*=>\s*\w+\.(\w+)\)/.exec(o);
@@ -156,8 +168,10 @@ function routes(root) {
   return {
     source: [appFile, 'src/app/pages/*/*.routes.ts'],
     workspaces,
+    detailPages,
     redirects,
     workspaceCount: workspaces.length,
+    detailPageCount: detailPages.length,
     routeFileWorkspaceCount: workspaces.filter((w) => w.kind === 'route file').length,
     singleComponentWorkspaceCount: workspaces.filter((w) => w.kind === 'single component').length,
     tabCount: workspaces.reduce((n, w) => n + w.tabs.length, 0),
@@ -311,6 +325,7 @@ export function headline(f) {
     routedWorkspaces: f.routes.workspaceCount,
     routeFileWorkspaces: f.routes.routeFileWorkspaceCount,
     routedTabs: f.routes.tabCount,
+    detailPages: f.routes.detailPageCount,
     libraryLayers: f.libraryLayers.count,
     unitSpecs: f.specs.unitSpecFiles,
     angularMajor: f.toolchain.angularMajor,
@@ -333,6 +348,7 @@ export function renderFacts(f) {
   L.push(`| Routed workspaces (top-level routes, redirects excluded) | ${h.routedWorkspaces} | \`src/app/app.routes.ts\` |`);
   L.push(`| Workspaces that lazy-load a route file | ${h.routeFileWorkspaces} | \`loadChildren\` in \`src/app/app.routes.ts\` |`);
   L.push(`| Routed workspace tabs | ${h.routedTabs} | child routes with \`data.tab\` in \`src/app/pages/*/*.routes.ts\` |`);
+  L.push(`| Detail pages (top-level routes with a \`:param\`, not workspaces) | ${h.detailPages} | \`src/app/app.routes.ts\` |`);
   L.push(`| Library layers | ${h.libraryLayers} | \`${f.libraryLayers.source}\` |`);
   if (f.libraryLayers.lylatMissionLayers) L.push(`| Lylat mission layers | ${f.libraryLayers.lylatMissionLayers.count} | \`${f.libraryLayers.lylatMissionLayers.source}\` |`);
   L.push(`| Unit spec files | ${h.unitSpecs} | \`src/**/*.spec.ts\` |`);
@@ -369,6 +385,7 @@ export function renderFacts(f) {
     L.push(`| \`${w.path}\` | ${w.title ?? '-'} | ${w.kind === 'route file' ? `\`${w.routeFile}\`` : 'single component'} | ${tabs} |`);
   }
   L.push('');
+  L.push(`Detail pages: ${f.routes.detailPages.length ? f.routes.detailPages.map((d) => `\`${d.path}\`${d.title ? ` (${d.title})` : ''}`).join(', ') : 'none'}.`, '');
   L.push(`Redirects: ${f.routes.redirects.map((r) => `\`${r.path === '' ? "''" : r.path}\` → \`${r.to}\``).join(', ')}.`);
   if (f.routes.unreferencedRouteFiles.length) L.push('', `Route files under \`src/app/pages\` that \`app.routes.ts\` does not load: ${f.routes.unreferencedRouteFiles.map((p) => `\`${p}\``).join(', ')}.`);
   L.push('');

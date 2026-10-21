@@ -430,6 +430,33 @@ test.describe('E2.3: tech= and dom= share links', () => {
     }
   });
 
+  // P2-18 (E2.3-b): the page form of the same link. The technique page owns the
+  // evidence card, so the drawer is not rendered there; "Open in matrix" carries
+  // the selection to the matrix, whose drawer then opens on it.
+  test('[AC] (page form) a pasted link reopens the same technique in a new context', async ({ browser }) => {
+    const { context, page } = await newVisitor(browser);
+    try {
+      await page.goto(BASE + '/#/technique/enterprise/T1059.001');
+      const card = page.locator('app-technique-page [data-testid="evidence-card"]');
+      await expect(card).toBeVisible({ timeout: ROUTE_TIMEOUT });
+      await expect(page.locator('app-technique-page .tp-id')).toHaveText('T1059.001');
+      await expect(card.getByTestId('ev-why')).toContainText('Why this colour:');
+      await expect(card.getByTestId('ev-known')).toBeVisible();
+      await expect(card.getByTestId('ev-threat')).toBeVisible();
+      // A fresh profile: Known and Threat only, and no drawer on this route.
+      await expect(card.getByTestId('ev-proven')).toHaveCount(0);
+      await expect(card.getByTestId('ev-covered')).toHaveCount(0);
+      await expect(page.locator('app-sidebar')).toHaveCount(0);
+
+      await page.getByTestId('open-in-matrix').click();
+      await expect(page).toHaveURL(/#\/matrix\?(.*&)?tech=T1059\.001(&|$)/, { timeout: ROUTE_TIMEOUT });
+      await expect(page.locator('.sidebar.open .sidebar-header .attack-id')).toHaveText('T1059.001', { timeout: ROUTE_TIMEOUT });
+      await expect(page.locator('.sidebar.open [data-testid="evidence-card"]')).toBeVisible();
+    } finally {
+      await context.close();
+    }
+  });
+
   test('an ICS technique link loads ICS and opens its drawer (dom=ics&tech=T0807)', async ({ browser }) => {
     const { context, page } = await newVisitor(browser);
     try {

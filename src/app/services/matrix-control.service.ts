@@ -1,6 +1,6 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { Injectable } from '@angular/core';
+import { Injectable, Signal, signal } from '@angular/core';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 
 /** The slice of MatrixComponent's API that global chrome may drive. */
@@ -9,6 +9,26 @@ export interface MatrixApi {
   collapseAll(): void;
   toggleMultiSelectMode(): void;
   readonly multiSelectMode: boolean;
+}
+
+/**
+ * The matrix's score for the selected technique on the legacy lens on screen
+ * (P2-18): what the evidence card's "Why this colour" reads as
+ * 'score N of max M'. Legacy lenses are scored inside MatrixComponent only.
+ */
+export interface LegacyLensReadout {
+  /** STIX id of the technique. */
+  readonly techId: string;
+  /** The heatmap mode (lens id) the score belongs to. */
+  readonly mode: string;
+  readonly score: number;
+  /** The highest score in the loaded domain (or the top of an absolute ramp). */
+  readonly max: number;
+}
+
+function sameReadout(a: LegacyLensReadout | null, b: LegacyLensReadout | null): boolean {
+  if (a === null || b === null) return a === b;
+  return a.techId === b.techId && a.mode === b.mode && a.score === b.score && a.max === b.max;
 }
 
 /**
@@ -32,7 +52,22 @@ export class MatrixControlService {
     if (this.matrix === matrix) {
       this.matrix = null;
       this.multiSelectModeSubject.next(false);
+      this.readoutSig.set(null);
     }
+  }
+
+  private readonly readoutSig = signal<LegacyLensReadout | null>(null);
+  /** The matrix's legacy-lens score for the selected technique; null while no matrix has scored one. */
+  readonly legacyReadout: Signal<LegacyLensReadout | null> = this.readoutSig.asReadonly();
+
+  /** The matrix publishes its readout here; an unchanged readout writes nothing. */
+  publishReadout(readout: LegacyLensReadout | null): void {
+    if (!sameReadout(readout, this.readoutSig())) this.readoutSig.set(readout);
+  }
+
+  /** True when `readout` equals the published one (the matrix checks before it schedules a publish). */
+  isPublished(readout: LegacyLensReadout | null): boolean {
+    return sameReadout(readout, this.readoutSig());
   }
 
   get isAvailable(): boolean {

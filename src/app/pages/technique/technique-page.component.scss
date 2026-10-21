@@ -1,0 +1,64 @@
+/* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+   https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
+   Token-driven: both themes come from the role tokens. */
+:host { display: block; }
+
+.technique-page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.tp-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 0 12px;
+}
+
+.tp-domain,
+.tp-tactics {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.tp-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 650;
+  color: var(--text-primary);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  align-items: baseline;
+}
+
+.tp-id {
+  color: var(--accent);
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+
+  &:hover { text-decoration: underline; }
+}
+
+.tp-open-matrix {
+  align-self: flex-start;
+  margin-top: 6px;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+}
+
+.tp-state {
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.tp-empty p { margin: 8px 0; }
