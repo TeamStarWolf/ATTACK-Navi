@@ -38,13 +38,34 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const CODE_DIR = 'src/app';
 export const DEFAULT_ALLOWLIST = 'scripts/check-seams.allowlist.json';
 
-/** The rules. Each fails a file that matches every one of its regexes. */
+/**
+ * The rules. Each fails a file that matches every one of its regexes; a rule's
+ * optional `exclude` regex (tested against the repository-relative path) skips a
+ * file before it is read — used to let the one allowed implementation through.
+ */
 export const RULES = {
   'posture-rollup': {
     summary: 'mitigation-to-technique map AND the mitigation implementation store in one file',
     patterns: [
       /mitigationsByTechnique|techniquesByMitigation|getTechniquesForMitigation|getMitigationsForTechnique/g,
       /ImplementationService|implService|getStatusMap|ImplStatus/g,
+    ],
+  },
+  // E2.6 one-picker (P2-12b): only threat-profile-picker should offer a group
+  // picker that filters the full group list by name or alias; every other
+  // component selects groups through it (which emits STIX ids). A file that
+  // reads `domain.groups` AND filters by alias (`aliases.some(...)`) is a rival
+  // group/actor picker and must be on the allow-list with a reason (owner
+  // decision, §10.4 item 8). The alias filter is the discriminator: only groups,
+  // actors, software and campaigns carry aliases, so a technique-name filter
+  // (`t.name.toLowerCase().includes`) never trips the rule, while a real group
+  // picker always offers name-and-alias search. The picker itself is excluded.
+  'one-picker': {
+    summary: 'a component outside threat-profile-picker filters domain.groups by name or alias',
+    exclude: /components\/threat-profile-picker\//,
+    patterns: [
+      /domain\.groups\b/g,
+      /\baliases\.some\(/g,
     ],
   },
 };
@@ -82,9 +103,10 @@ function usesOf(text, patterns) {
 
 /** The files that match every regex of `rule`, each with its uses. */
 export function scanRule(root, rule) {
-  const { patterns } = RULES[rule];
+  const { patterns, exclude } = RULES[rule];
   const hits = [];
   for (const file of codeFiles(root)) {
+    if (exclude && exclude.test(file)) continue;
     const text = readFileSync(join(root, file), 'utf8');
     if (patterns.every((re) => new RegExp(re.source).test(text))) hits.push({ file, uses: usesOf(text, patterns) });
   }

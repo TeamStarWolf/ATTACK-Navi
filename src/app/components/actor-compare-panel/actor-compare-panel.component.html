@@ -29,29 +29,7 @@
               <button class="clear-btn" (click)="clearActorA()" title="Clear">✕</button>
             </div>
           } @else {
-            <div class="search-container">
-              <input
-                class="actor-search-input"
-                type="text"
-                placeholder="Search actors…"
-                [(ngModel)]="searchA"
-                (focus)="onSearchAFocus()"
-                (blur)="onSearchABlur()"
-              />
-              @if (showDropdownA) {
-                <div class="actor-dropdown">
-                  @for (g of filteredGroupsA; track g.id) {
-                    <div class="actor-option" (mousedown)="selectActorA(g)">
-                      <span class="option-id">{{ g.attackId }}</span>
-                      <span class="option-name">{{ g.name }}</span>
-                    </div>
-                  }
-                  @if (filteredGroupsA.length === 0) {
-                    <div class="option-empty">No groups match</div>
-                  }
-                </div>
-              }
-            </div>
+            <app-threat-profile-picker mode="single" (groupSelected)="onPickA($event)" />
           }
         </div>
 
@@ -70,29 +48,7 @@
               <button class="clear-btn" (click)="clearActorB()" title="Clear">✕</button>
             </div>
           } @else {
-            <div class="search-container">
-              <input
-                class="actor-search-input"
-                type="text"
-                placeholder="Search actors…"
-                [(ngModel)]="searchB"
-                (focus)="onSearchBFocus()"
-                (blur)="onSearchBBlur()"
-              />
-              @if (showDropdownB) {
-                <div class="actor-dropdown">
-                  @for (g of filteredGroupsB; track g.id) {
-                    <div class="actor-option" (mousedown)="selectActorB(g)">
-                      <span class="option-id">{{ g.attackId }}</span>
-                      <span class="option-name">{{ g.name }}</span>
-                    </div>
-                  }
-                  @if (filteredGroupsB.length === 0) {
-                    <div class="option-empty">No groups match</div>
-                  }
-                </div>
-              }
-            </div>
+            <app-threat-profile-picker mode="single" (groupSelected)="onPickB($event)" />
           }
         </div>
 

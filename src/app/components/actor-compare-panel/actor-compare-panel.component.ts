@@ -8,13 +8,12 @@ import {
   ChangeDetectorRef,
 } from '@angular/core';
 
-import { FormsModule } from '@angular/forms';
-import { Subscription, filter, take } from 'rxjs';
-import { FilterService } from '../../services/filter.service';
+import { Subscription } from 'rxjs';
 import { DataService } from '../../services/data.service';
 import { ThreatGroup } from '../../models/group';
 import { Technique } from '../../models/technique';
 import { Domain } from '../../models/domain';
+import { ThreatProfilePickerComponent } from '../threat-profile-picker/threat-profile-picker.component';
 
 export interface TechniqueRow {
   attackId: string;
@@ -26,7 +25,7 @@ export interface TechniqueRow {
 @Component({
   selector: 'app-actor-compare-panel',
   standalone: true,
-  imports: [FormsModule],
+  imports: [ThreatProfilePickerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './actor-compare-panel.component.html',
   styleUrl: './actor-compare-panel.component.scss',
@@ -36,21 +35,15 @@ export class ActorComparePanelComponent implements OnInit, OnDestroy {
   groups: ThreatGroup[] = [];
   actorA: ThreatGroup | null = null;
   actorB: ThreatGroup | null = null;
-  searchA = '';
-  searchB = '';
-  showDropdownA = false;
-  showDropdownB = false;
   activeTab: 'overlap' | 'unique-a' | 'unique-b' | 'matrix' = 'overlap';
 
   techniquesByGroup = new Map<string, Set<string>>();
   techniqueObjectsByAttackId = new Map<string, Technique>();
 
   private domain: Domain | null = null;
-  private mapBuilt = false;
   private subs = new Subscription();
 
   constructor(
-    private filterService: FilterService,
     private dataService: DataService,
     private cdr: ChangeDetectorRef,
   ) {}
@@ -63,15 +56,22 @@ export class ActorComparePanelComponent implements OnInit, OnDestroy {
     this.subs.unsubscribe();
   }
 
+  // Follow domain$ for life: the embedded pickers track the domain, so when it
+  // switches we rebuild the group index and drop any selection the new domain
+  // lacks, rather than comparing against a stale map.
   private loadData(): void {
-    this.dataService.domain$.pipe(filter(Boolean), take(1)).subscribe(domain => {
+    this.subs.add(this.dataService.domain$.subscribe(domain => {
       this.domain = domain;
+      if (!domain) { this.groups = []; this.actorA = null; this.actorB = null; this.cdr.markForCheck(); return; }
       this.groups = [...domain.groups].sort((a, b) => a.name.localeCompare(b.name));
+      this.techniqueObjectsByAttackId.clear();
       this.buildTechniqueObjectIndex(domain);
       this.buildTechniqueMap(domain);
-      this.mapBuilt = true;
+      const stillHere = (a: ThreatGroup | null) => a && domain.groups.some(g => g.id === a.id) ? a : null;
+      this.actorA = stillHere(this.actorA);
+      this.actorB = stillHere(this.actorB);
       this.cdr.markForCheck();
-    });
+    }));
   }
 
   private buildTechniqueObjectIndex(domain: Domain): void {
@@ -93,24 +93,6 @@ export class ActorComparePanelComponent implements OnInit, OnDestroy {
         this.techniquesByGroup.get(g.id)!.add(tech.attackId);
       }
     }
-  }
-
-  get filteredGroupsA(): ThreatGroup[] {
-    const q = this.searchA.trim().toLowerCase();
-    return this.groups.filter(g => {
-      if (this.actorB && g.id === this.actorB.id) return false;
-      if (!q) return true;
-      return g.name.toLowerCase().includes(q) || g.attackId.toLowerCase().includes(q);
-    });
-  }
-
-  get filteredGroupsB(): ThreatGroup[] {
-    const q = this.searchB.trim().toLowerCase();
-    return this.groups.filter(g => {
-      if (this.actorA && g.id === this.actorA.id) return false;
-      if (!q) return true;
-      return g.name.toLowerCase().includes(q) || g.attackId.toLowerCase().includes(q);
-    });
   }
 
   private getTechSetA(): Set<string> {
@@ -206,31 +188,26 @@ export class ActorComparePanelComponent implements OnInit, OnDestroy {
     }).filter(col => col.overlap.length > 0 || col.uniqueA.length > 0 || col.uniqueB.length > 0);
   }
 
-  selectActorA(group: ThreatGroup): void {
-    this.actorA = group;
-    this.searchA = '';
-    this.showDropdownA = false;
+  /** The shared picker (single mode) emits a STIX intrusion-set id; resolve it to the group. */
+  onPickA(stixId: string): void {
+    this.actorA = this.groups.find(g => g.id === stixId) ?? null;
     this.activeTab = 'overlap';
     this.cdr.markForCheck();
   }
 
-  selectActorB(group: ThreatGroup): void {
-    this.actorB = group;
-    this.searchB = '';
-    this.showDropdownB = false;
+  onPickB(stixId: string): void {
+    this.actorB = this.groups.find(g => g.id === stixId) ?? null;
     this.activeTab = 'overlap';
     this.cdr.markForCheck();
   }
 
   clearActorA(): void {
     this.actorA = null;
-    this.searchA = '';
     this.cdr.markForCheck();
   }
 
   clearActorB(): void {
     this.actorB = null;
-    this.searchB = '';
     this.cdr.markForCheck();
   }
 
@@ -244,21 +221,5 @@ export class ActorComparePanelComponent implements OnInit, OnDestroy {
 
   groupUrl(group: ThreatGroup): string {
     return group.url || `https://attack.mitre.org/groups/${group.attackId}/`;
-  }
-
-  onSearchAFocus(): void {
-    this.showDropdownA = true;
-  }
-
-  onSearchBFocus(): void {
-    this.showDropdownB = true;
-  }
-
-  onSearchABlur(): void {
-    setTimeout(() => { this.showDropdownA = false; this.cdr.markForCheck(); }, 150);
-  }
-
-  onSearchBBlur(): void {
-    setTimeout(() => { this.showDropdownB = false; this.cdr.markForCheck(); }, 150);
   }
 }

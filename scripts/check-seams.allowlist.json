@@ -279,6 +279,35 @@
           "removedBy": "E9.1 (fold: P2-14 decision, Addendum note 4)"
         }
       ]
+    },
+    "one-picker": {
+      "summary": "a component outside threat-profile-picker filters domain.groups by name or alias",
+      "patterns": [
+        "domain\\.groups\\b",
+        "\\baliases\\.some\\("
+      ],
+      "entries": [
+        {
+          "file": "src/app/components/threat-intelligence-panel/threat-intelligence-panel.component.ts",
+          "uses": {
+            "aliases.some(": 1,
+            "domain.groups": 1
+          },
+          "bucket": "owner-exception",
+          "reason": "The Threat Intel feed actor list: searches actors (groups) by name and alias in the feed, not a profile picker. Owner-approved exception (section 10.4 item 8: the feed list).",
+          "removedBy": "stays (owner decision, section 10.4 item 8)"
+        },
+        {
+          "file": "src/app/components/threat-panel/threat-panel.component.ts",
+          "uses": {
+            "aliases.some(": 1,
+            "domain.groups": 3
+          },
+          "bucket": "owner-exception",
+          "reason": "The matrix group filter (Groups tab): searches the full group list by name, ATT&CK id and alias to toggle the matrix threat-group filter. Owner-approved exception (section 10.4 item 8: FilterService and threat-panel are the matrix group filter).",
+          "removedBy": "stays (owner decision, section 10.4 item 8)"
+        }
+      ]
     }
   }
 }
