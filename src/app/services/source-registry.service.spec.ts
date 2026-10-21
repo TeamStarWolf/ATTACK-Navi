@@ -1,6 +1,6 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { SourceRegistryService, describeLoadError } from './source-registry.service';
 import { INVENTORY_ROW, LICENCE_NOTES, NOT_IN_INVENTORY, SOURCE_DEFINITIONS } from './source-inventory';
 import { REQUIRED_RECORDS_BY_ROW, SECTION_6_3_INVENTORY } from '../testing/source-inventory-6-3';
@@ -167,12 +167,49 @@ describe('SourceRegistryService', () => {
 
   describe('describeLoadError', () => {
     it('describes HTTP, network, Error and string failures', () => {
-      expect(describeLoadError(new HttpErrorResponse({ status: 0, url: 'https://x.test/' }))).toBe('network error (no response) from https://x.test/');
-      expect(describeLoadError(new HttpErrorResponse({ status: 404, statusText: 'Not Found' }))).toBe('HTTP 404 Not Found');
+      expect(describeLoadError(new HttpErrorResponse({ status: 0, url: 'https://x.test/' }))).toBe('network error: https://x.test/');
+      expect(describeLoadError(new HttpErrorResponse({ status: 0 }))).toBe('network error (no response)');
+      expect(describeLoadError(new HttpErrorResponse({ status: 503, statusText: 'Service Unavailable', url: 'https://x.test/a' })))
+        .toBe('HTTP 503 Service Unavailable from https://x.test/a');
       expect(describeLoadError(new Error('boom'))).toBe('boom');
       expect(describeLoadError('blocked')).toBe('blocked');
       expect(describeLoadError(new ProgressEvent('error'))).toBe('network error');
       expect(describeLoadError(undefined)).toBe('unknown error');
+    });
+
+    it('says a 404 means the branch or path moved, with the URL when there is one', () => {
+      const url = 'https://api.github.com/repos/o/r/git/trees/main?recursive=1';
+      expect(describeLoadError(new HttpErrorResponse({ status: 404, statusText: 'Not Found', url })))
+        .toBe(`not found (branch or path moved): ${url}`);
+      expect(describeLoadError(new HttpErrorResponse({ status: 404, statusText: 'Not Found' }))).toBe('not found (branch or path moved)');
+    });
+
+    describe('rate limits', () => {
+      const url = 'https://api.github.com/repos/o/r/git/trees/main?recursive=1';
+      const reset = Math.floor(new Date(2026, 9, 21, 7, 4).getTime() / 1000);
+      const limited = (status: number, headers: Record<string, string>, at: string | undefined = url) =>
+        new HttpErrorResponse({ status, statusText: status === 429 ? 'Too Many Requests' : 'Forbidden', url: at, headers: new HttpHeaders(headers) });
+
+      it('names a GitHub rate limit (403 or 429 with X-RateLimit-Remaining 0) and its reset time in local HH:MM', () => {
+        const expected = 'GitHub rate limit reached (60 requests per hour per address); resets at 07:04';
+        expect(describeLoadError(limited(403, { 'X-RateLimit-Remaining': '0', 'X-RateLimit-Reset': String(reset) }))).toBe(expected);
+        expect(describeLoadError(limited(429, { 'X-RateLimit-Remaining': '0', 'X-RateLimit-Reset': String(reset) }))).toBe(expected);
+      });
+
+      it('falls back to "GitHub rate limit reached" when the reset header is absent or unreadable', () => {
+        expect(describeLoadError(limited(403, { 'X-RateLimit-Remaining': '0' }))).toBe('GitHub rate limit reached');
+        expect(describeLoadError(limited(403, { 'X-RateLimit-Remaining': '0', 'X-RateLimit-Reset': 'soon' }))).toBe('GitHub rate limit reached');
+      });
+
+      it('keeps a plain 403 (quota left, or no rate-limit headers) as an HTTP error', () => {
+        expect(describeLoadError(limited(403, { 'X-RateLimit-Remaining': '12' }))).toBe(`HTTP 403 Forbidden from ${url}`);
+        expect(describeLoadError(limited(403, {}))).toBe(`HTTP 403 Forbidden from ${url}`);
+      });
+
+      it('does not claim the GitHub limit for another host', () => {
+        expect(describeLoadError(limited(429, { 'X-RateLimit-Remaining': '0', 'X-RateLimit-Reset': String(reset) }, 'https://x.test/a')))
+          .toBe('rate limit reached (HTTP 429); resets at 07:04: https://x.test/a');
+      });
     });
   });
 });

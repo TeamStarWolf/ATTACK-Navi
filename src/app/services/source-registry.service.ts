@@ -6,11 +6,49 @@ import { BehaviorSubject, Observable, distinctUntilChanged, map } from 'rxjs';
 import { DATA_PRESENT_STATUSES, SourceDefinition, SourceRecord } from '../models/source-record';
 import { SOURCE_DEFINITIONS } from './source-inventory';
 
-/** A short, human-readable reason for a failed load. */
+/** The reason recorded when a GitHub git/trees listing answers with truncated: true. */
+export const TRUNCATED_LISTING = 'listing truncated by GitHub; counts would be incomplete';
+
+/** HH:MM in the viewer's local time for an epoch-seconds header value, or null. */
+function localClock(epochSeconds: string | null): string | null {
+  const v = epochSeconds?.trim() ?? '';
+  if (!/^\d+$/.test(v)) return null;
+  const d = new Date(Number(v) * 1000);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+/** True for a GitHub (or unknown) host: the 60-per-hour wording applies only there. */
+function isGitHubUrl(url: string): boolean {
+  if (!url) return true;
+  try {
+    const host = new URL(url).hostname;
+    return host === 'github.com' || host.endsWith('.github.com') || host.endsWith('.githubusercontent.com');
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * A short, human-readable reason for a failed load. A rate-limited request (403 or
+ * 429 with X-RateLimit-Remaining: 0) says when the limit resets, from
+ * X-RateLimit-Reset in the viewer's local time; a 404 says the branch or path moved;
+ * status 0 is a network error. Each names the URL when the response carries one.
+ */
 export function describeLoadError(err: unknown): string {
   if (err instanceof HttpErrorResponse) {
-    if (err.status === 0) return `network error (no response)${err.url ? ` from ${err.url}` : ''}`;
-    return `HTTP ${err.status}${err.statusText ? ` ${err.statusText}` : ''}${err.url ? ` from ${err.url}` : ''}`;
+    const url = err.url ?? '';
+    if (err.status === 0) return url ? `network error: ${url}` : 'network error (no response)';
+    if ((err.status === 403 || err.status === 429) && err.headers?.get('X-RateLimit-Remaining')?.trim() === '0') {
+      const resets = localClock(err.headers.get('X-RateLimit-Reset'));
+      if (isGitHubUrl(url)) {
+        return resets
+          ? `GitHub rate limit reached (60 requests per hour per address); resets at ${resets}`
+          : 'GitHub rate limit reached';
+      }
+      return `rate limit reached (HTTP ${err.status})${resets ? `; resets at ${resets}` : ''}${url ? `: ${url}` : ''}`;
+    }
+    if (err.status === 404) return url ? `not found (branch or path moved): ${url}` : 'not found (branch or path moved)';
+    return `HTTP ${err.status}${err.statusText ? ` ${err.statusText}` : ''}${url ? ` from ${url}` : ''}`;
   }
   if (err instanceof Error) return err.message || err.name;
   if (typeof err === 'string' && err) return err;

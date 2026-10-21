@@ -4,7 +4,7 @@ import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
-import { SourceBannerComponent, missingSources } from './source-banner.component';
+import { EMPTY_SOURCE_DETAIL, SourceBannerComponent, missingSources } from './source-banner.component';
 import { SourceRegistryService } from '../../services/source-registry.service';
 import { DataService } from '../../services/data.service';
 
@@ -18,6 +18,10 @@ describe('SourceBannerComponent: view banner naming a missing source (E1.3)', ()
   let domain$: BehaviorSubject<string>;
 
   const banner = (): HTMLElement | null => fixture.nativeElement.querySelector('[data-testid="source-banner"]');
+  const group = (kind: 'failed' | 'empty'): HTMLElement | null =>
+    fixture.nativeElement.querySelector(`[data-testid="source-banner-${kind}"]`);
+  /** Text with runs of whitespace collapsed, as a reader sees it. */
+  const text = (el: Element | null): string => (el?.textContent ?? '').replace(/\s+/g, ' ').trim();
 
   async function go(url: string): Promise<void> {
     await fixture.ngZone!.run(() => router.navigateByUrl(url));
@@ -31,6 +35,7 @@ describe('SourceBannerComponent: view banner naming a missing source (E1.3)', ()
       providers: [
         provideRouter([
           { path: 'matrix', component: BlankComponent },
+          { path: 'dashboard/overview', component: BlankComponent },
           { path: 'exposure/cve', component: BlankComponent },
           { path: 'exposure/ssvc', component: BlankComponent },
           { path: 'coverage/compliance', component: BlankComponent },
@@ -62,9 +67,13 @@ describe('SourceBannerComponent: view banner naming a missing source (E1.3)', ()
     expect(el).not.toBeNull();
     expect(el.getAttribute('role')).toBe('status');
     expect(el.textContent).toContain('NIST NVD CVE API (failed)');
+    expect(text(el)).toContain('A source this view reads did not load: NIST NVD CVE API (failed): '
+      + 'HTTP 403 Forbidden from https://services.nvd.nist.gov/rest/json/cves/2.0.');
     const source = el.querySelector('[data-source-id="nvd"]')!;
     expect(source.getAttribute('title')).toContain('HTTP 403');
     expect(el.querySelector('a')!.getAttribute('href')).toBe('/status');
+    expect(text(el.querySelector('a'))).toBe('Data health and Retry');
+    expect(group('empty')).toBeNull();
   });
 
   it('names the stand-in in use when a failed source has one (the bundled KEV snapshot)', async () => {
@@ -83,20 +92,49 @@ describe('SourceBannerComponent: view banner naming a missing source (E1.3)', ()
     registry.fail('cisa-kev', 'network error (no response)');
     registry.fail('cisa-kev-snapshot', 'HTTP 404 Not Found');
     fixture.detectChanges();
-    expect(banner()!.textContent).toContain('CISA Known Exploited Vulnerabilities (failed), CISA KEV snapshot (bundled) (failed). ');
+    expect(text(banner())).toContain(
+      'CISA Known Exploited Vulnerabilities (failed): network error (no response) | CISA KEV snapshot (bundled) (failed): HTTP 404 Not Found.');
     expect(banner()!.textContent).not.toContain('using');
   });
 
-  it('names an empty source too, and counts every missing source', async () => {
+  it('mixed: a failed source did not load (with its reason and Retry); an empty one is incomplete data, apart', async () => {
     await go('/coverage/compliance');
     registry.succeed('ctid-csa-ccm', 0);
     registry.fail('ctid-aws', 'network error');
     fixture.detectChanges();
-    expect(banner()!.textContent).toContain('2 sources this view reads did not load');
-    expect(banner()!.textContent).toContain('CTID CSA CCM mapping (empty)');
-    expect(banner()!.textContent).toContain('CTID AWS mapping (failed)');
-    // Names are separated by a comma and a space, and the list ends with a full stop.
-    expect(banner()!.textContent).toContain('CTID CSA CCM mapping (empty), CTID AWS mapping (failed). ');
+    // One banner, one live region, two groups.
+    expect(fixture.nativeElement.querySelectorAll('[data-testid="source-banner"]').length).toBe(1);
+    expect(fixture.nativeElement.querySelectorAll('[role="status"]').length).toBe(1);
+    const failed = group('failed')!;
+    const empty = group('empty')!;
+    expect(text(failed)).toContain('Missing data');
+    expect(text(failed)).toContain('A source this view reads did not load: CTID AWS mapping (failed): network error.');
+    expect(text(failed)).not.toContain('CTID CSA CCM');
+    expect(text(failed.querySelector('a'))).toBe('Data health and Retry');
+    expect(text(empty)).toContain('Incomplete data');
+    expect(text(empty)).toContain(`A source this view reads ${EMPTY_SOURCE_DETAIL}: CTID CSA CCM mapping.`);
+    expect(text(empty)).not.toMatch(/did not load|failed|retry|\(empty\)/i);
+    // The Retry link is the failed group's; the empty group has none of its own.
+    expect(empty.querySelector('a')).toBeNull();
+    expect(empty.querySelector('[data-source-id="ctid-csa-ccm"]')!.getAttribute('title')).toBe(EMPTY_SOURCE_DETAIL);
+    expect(empty.querySelector('[data-source-id="ctid-csa-ccm"]')!.getAttribute('data-status')).toBe('empty');
+  });
+
+  it("empty only: 'Incomplete data', the 'no technique ids' wording, and no 'did not load' or Retry anywhere", async () => {
+    await go('/dashboard/overview');
+    registry.succeed('elastic-tree', 0);
+    registry.succeed('splunk-tree', 0);
+    fixture.detectChanges();
+    const el = banner()!;
+    expect(group('failed')).toBeNull();
+    expect(text(el)).toContain('Incomplete data');
+    expect(text(el)).toContain('Each of these 2 sources this view reads answered, but no technique ids could be read from it: '
+      + 'Elastic detection-rules (tree listing), Splunk security_content (tree listing).');
+    expect(text(el)).not.toMatch(/did not load|missing data|retry/i);
+    const links = el.querySelectorAll('a');
+    expect(links.length).toBe(1);
+    expect(text(links[0])).toBe('Data health');
+    expect(links[0].getAttribute('href')).toBe('/status');
   });
 
   it('does not show a source another route reads', async () => {
@@ -132,5 +170,6 @@ describe('SourceBannerComponent: view banner naming a missing source (E1.3)', ()
     registry.succeed('engage', 0);
     const out = missingSources(['engage', 'nope', 'capec', 'atomic-layer'], registry.all());
     expect(out.map(m => [m.id, m.status])).toEqual([['engage', 'empty'], ['capec', 'failed']]);
+    expect(out.map(m => m.detail)).toEqual([EMPTY_SOURCE_DETAIL, 'x']);
   });
 });

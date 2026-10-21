@@ -2,9 +2,11 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withXhr } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { SigmaService, SIGMA_GENERATOR_AUTHOR } from './sigma.service';
 import { Technique } from '../models/technique';
+import { SourceRegistryService, TRUNCATED_LISTING } from './source-registry.service';
+import TREES from '../../testing/fixtures/github-tree-listings.json';
 
 describe('SigmaService', () => {
   let service: SigmaService;
@@ -73,6 +75,103 @@ describe('SigmaService', () => {
           expect(line).toBe(`author: '${SIGMA_GENERATOR_AUTHOR}'`);
         }
       }
+    });
+  });
+  describe('community rule listing (mdecrevoisier/SIGMA-detection-rules)', () => {
+    const TREE_URL = 'https://api.github.com/repos/mdecrevoisier/SIGMA-detection-rules/git/trees/main?recursive=1';
+    let httpMock: HttpTestingController;
+    let registry: SourceRegistryService;
+
+    beforeEach(() => {
+      httpMock = TestBed.inject(HttpTestingController);
+      registry = TestBed.inject(SourceRegistryService);
+    });
+
+    const listingWith = (...extra: Array<{ path: string; type: string }>) =>
+      ({ ...TREES.mdecrevoisier.listing, tree: [...TREES.mdecrevoisier.listing.tree, ...extra] });
+
+    it("reads no technique id from the real '.yaml' listing: empty, rows 0, not 'loaded' with the path count", () => {
+      const listing = TREES.mdecrevoisier.listing;
+      expect(listing.tree.some(e => e.path === 'cloud-azure/azure-exchange-email rule breach (on behalf).yaml')).toBeTrue();
+      service.loadCommunityRules();
+      httpMock.expectOne(TREE_URL).flush(listing);
+      const record = registry.get('mdecrevoisier-sigma-tree');
+      expect(record.status).toBe('empty');
+      expect(record.rows).toBe(0);
+    });
+
+    it("synthetic: accepts '.yaml' and '.yml' and records the technique-matched count as rows, never the path count", () => {
+      service.loadCommunityRules();
+      httpMock.expectOne(TREE_URL).flush(listingWith(
+        { path: 'windows-os/win-os-T1059.001 synthetic.yaml', type: 'blob' },
+        { path: 'windows-os/win-os-T1003 synthetic.yml', type: 'blob' },
+      ));
+      expect(service.getCommunityRuleCount('T1059.001')).toBe(1);
+      expect(service.getCommunityRuleCount('T1003')).toBe(1);
+      const record = registry.get('mdecrevoisier-sigma-tree');
+      expect(record.status).toBe('loaded');
+      // 2 rule files carry an id; the listing holds 9 rule files.
+      expect(record.rows).toBe(2);
+    });
+
+    it('encodes each path segment in the rule links it builds', () => {
+      const path = 'cloud-azure/T1114 email rule (on behalf).yaml';
+      const encoded = 'cloud-azure/T1114%20email%20rule%20(on%20behalf).yaml';
+      let rules: Array<{ url: string }> = [];
+      service.fetchRulesForTechnique('T1114').subscribe(r => (rules = r));
+      httpMock.expectOne(TREE_URL).flush(listingWith({ path, type: 'blob' }));
+      httpMock.expectOne(`https://raw.githubusercontent.com/mdecrevoisier/SIGMA-detection-rules/main/${encoded}`)
+        .flush('title: Synthetic rule\nid: 1\nstatus: test\nlevel: low\n');
+      expect(rules.length).toBe(1);
+      expect(rules[0].url).toBe(`https://github.com/mdecrevoisier/SIGMA-detection-rules/blob/main/${encoded}`);
+    });
+
+    it('finds no rule for a technique in the real listing: it matches by path, and the names carry no ids', () => {
+      let rules: unknown[] | null = null;
+      service.fetchRulesForTechnique('T1114').subscribe(r => (rules = r));
+      httpMock.expectOne(TREE_URL).flush(TREES.mdecrevoisier.listing);
+      expect(rules as unknown).toEqual([]);
+    });
+
+    it('records a GitHub rate limit (403, X-RateLimit-Remaining 0) as failed, with the reset time', () => {
+      const reset = Math.floor(new Date(2026, 9, 21, 23, 59).getTime() / 1000);
+      service.loadCommunityRules();
+      httpMock.expectOne(TREE_URL).flush(
+        { message: 'API rate limit exceeded for 203.0.113.7.' },
+        { status: 403, statusText: 'Forbidden', headers: { 'X-RateLimit-Remaining': '0', 'X-RateLimit-Reset': String(reset) } },
+      );
+      expect(registry.get('mdecrevoisier-sigma-tree').status).toBe('failed');
+      expect(registry.get('mdecrevoisier-sigma-tree').lastError).toContain('GitHub rate limit reached');
+      expect(registry.get('mdecrevoisier-sigma-tree').lastError).toContain('resets at 23:59');
+    });
+
+    it('records a 404 and status 0 with distinct reasons', () => {
+      service.loadCommunityRules();
+      httpMock.expectOne(TREE_URL).flush({ message: 'Not Found' }, { status: 404, statusText: 'Not Found' });
+      expect(registry.get('mdecrevoisier-sigma-tree').lastError).toBe(`not found (branch or path moved): ${TREE_URL}`);
+      // Not cached after a failure: the next call asks again.
+      service.loadCommunityRules();
+      httpMock.expectOne(TREE_URL).error(new ProgressEvent('error'));
+      expect(registry.get('mdecrevoisier-sigma-tree').lastError).toBe(`network error: ${TREE_URL}`);
+    });
+
+    it('does not parse a truncated listing: failed, with the truncated wording, and no ids recorded', () => {
+      service.loadCommunityRules();
+      httpMock.expectOne(TREE_URL).flush({
+        ...listingWith({ path: 'windows-os/win-os-T1059.001 synthetic.yaml', type: 'blob' }),
+        truncated: true,
+      });
+      const record = registry.get('mdecrevoisier-sigma-tree');
+      expect(record.status).toBe('failed');
+      expect(record.lastError).toBe(TRUNCATED_LISTING);
+      expect(record.rows).toBeNull();
+      expect(service.getCommunityRuleCount('T1059.001')).toBe(0);
+    });
+
+    it('records a parse error as failed, not loading', () => {
+      service.loadCommunityRules();
+      httpMock.expectOne(TREE_URL).flush({ truncated: false, tree: 42 });
+      expect(registry.get('mdecrevoisier-sigma-tree').status).toBe('failed');
     });
   });
 });

@@ -77,7 +77,7 @@ describe('BriefingStripComponent: failures are announced to a screen reader (E1.
   it('says when a source came back empty', () => {
     registry.succeed('nvd', 0);
     fixture.detectChanges();
-    expect(text()).toContain('1 source returned no rows');
+    expect(text()).toContain('1 source answered with no technique ids');
   });
 
   it('announces the pending ATT&CK update offer, and the release in use after applying it', () => {

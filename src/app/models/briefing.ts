@@ -136,25 +136,54 @@ function nameList(names: string[]): string {
   return `${names.slice(0, BRIEFING_NAME_LIMIT).join(', ')} and ${more} more`;
 }
 
+/** At most this many characters of a failure reason are spelled out in the Briefing. */
+export const BRIEFING_REASON_LIMIT = 60;
+
+/**
+ * A failure reason kept short for the one-line Briefing: URLs and parenthetical asides
+ * are dropped ('GitHub rate limit reached; resets at 14:05', 'not found'); the view
+ * banner and the data-health view keep the full reason.
+ */
+export function shortReason(reason: string | null | undefined): string {
+  let r = (reason ?? '')
+    .replace(/(:\s*|\s+from\s+)?https?:\/\/\S+/g, '')
+    .replace(/\s*\([^)]*\)/g, '')
+    .replace(/\s+/g, ' ')
+    .replace(/[\s:;,.]+$/, '')
+    .trim();
+  if (r.length > BRIEFING_REASON_LIMIT) r = `${r.slice(0, BRIEFING_REASON_LIMIT - 3).trimEnd()}...`;
+  return r;
+}
+
+function failedName(r: SourceRecord): string {
+  const why = shortReason(r.lastError);
+  return why ? `${r.name} (${why})` : r.name;
+}
+
 function hasData(r: SourceRecord | undefined): boolean {
   return !!r && ['loaded', 'stale', 'archived-upstream'].includes(r.status) && (r.rows ?? 1) > 0;
 }
 
 /**
- * What the Briefing strip says, in order: failed sources, empty sources, the stand-in
- * snapshots in use ('using snapshot of <date>'), and the ATT&CK update on offer or in
- * use. An empty list means there is nothing to report.
+ * What the Briefing strip says, in order: sources that failed to load (each with a
+ * short reason), sources that answered with no technique ids (status 'empty': the
+ * request worked, nothing usable could be read from it, and a retry will not change
+ * that), the stand-in snapshots in use ('using snapshot of <date>'), and the ATT&CK
+ * update on offer or in use. Each group is its own sentence and appears only when it
+ * has members. An empty list means there is nothing to report.
  */
 export function briefingItems(records: readonly SourceRecord[], update: BriefingUpdate | null): BriefingItem[] {
   const items: BriefingItem[] = [];
   const failed = records.filter(r => r.status === 'failed');
   if (failed.length) {
-    const lead = failed.length === 1 ? '1 source failed' : `${failed.length} sources failed`;
-    items.push({ kind: 'failed', text: `${lead}: ${nameList(failed.map(r => r.name))}.` });
+    const lead = failed.length === 1 ? '1 source failed to load' : `${failed.length} sources failed to load`;
+    items.push({ kind: 'failed', text: `${lead}: ${nameList(failed.map(failedName))}.` });
   }
   const empty = records.filter(r => r.status === 'empty');
   if (empty.length) {
-    const lead = empty.length === 1 ? '1 source returned no rows' : `${empty.length} sources returned no rows`;
+    const lead = empty.length === 1
+      ? '1 source answered with no technique ids'
+      : `${empty.length} sources answered with no technique ids`;
     items.push({ kind: 'empty', text: `${lead}: ${nameList(empty.map(r => r.name))}.` });
   }
   const byId = new Map(records.map(r => [r.id, r]));
