@@ -76,6 +76,12 @@ export class PostureCardComponent {
   get scope(): PostureCardScope { return this.scopeSig(); }
 
   readonly provenLabel = PROVEN;
+  /**
+   * True until a domain is loaded (domain$ is null at boot and during a switch).
+   * The threat-relevant line then says it is loading instead of a transient
+   * 'threat-relevant techniques: 0' (RP-F item 6).
+   */
+  readonly domainLoading: Signal<boolean> = computed(() => this.domain() === null);
   readonly ownerWords: Signal<boolean> = this.posture.ownerWords;
 
   readonly tally: Signal<PostureCardTally> = computed(() => {

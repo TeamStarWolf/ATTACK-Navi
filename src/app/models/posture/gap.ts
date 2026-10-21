@@ -33,6 +33,13 @@ export const THREAT_GAP_TOGGLE_LABEL = 'Threat gaps: threat-relevant, posture No
 /** The legend line shown while the overlay is on (§1.16: exposure is Enterprise-only). */
 export const THREAT_GAP_EXPOSURE_NOTE = 'Exposure counts on Enterprise only';
 
+/**
+ * The legend's note while Threat gaps is on and the threat profile holds no
+ * techniques (an empty stored profile, tgap=1): the overlay then marks only what
+ * the asset inventory reaches, which read as "0 gaps" with no reason (RP-F item 6).
+ */
+export const THREAT_GAP_EMPTY_PROFILE_NOTE = 'No threat profile is set: it names no groups or campaigns, so only your asset inventory can mark a threat gap.';
+
 /** The View menu toggle for the My marks bar (AppSettings.cellDisplay.myMarks). */
 export const MY_MARKS_TOGGLE_LABEL = 'My marks';
 

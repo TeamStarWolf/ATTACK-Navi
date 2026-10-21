@@ -19,7 +19,7 @@ import type { LensLegendStop } from '../../models/posture/lens-ramps';
 import type { PostureBucket } from '../../models/posture/posture.types';
 import { EXPIRING_SOON_DAYS, PostureService } from '../../services/posture.service';
 import { ThemeService } from '../../services/theme.service';
-import { THREAT_GAP_EXPOSURE_NOTE, THREAT_GAP_TOGGLE_LABEL, threatGapThreshold } from '../../models/posture/gap';
+import { THREAT_GAP_EMPTY_PROFILE_NOTE, THREAT_GAP_EXPOSURE_NOTE, THREAT_GAP_TOGGLE_LABEL, threatGapThreshold } from '../../models/posture/gap';
 import { THREAT_WEIGHT_PROVIDER } from '../../models/posture/threat-weight';
 import type { ThreatWeightProvider } from '../../models/posture/posture.types';
 
@@ -105,6 +105,9 @@ const SCALE_NOTE: Partial<Record<HeatmapModeDef['ramp']['scale'], string>> = {
           <span class="swatch gap-ring" aria-hidden="true"></span>{{ threatGapLabel }}: used by {{ threatGapQ75 }} or more of the threat profile's groups or campaigns (its 75th percentile), or in your asset inventory
         </p>
         <p class="legend-threat-gaps-exposure">{{ threatGapExposureNote }}</p>
+        @if (threatProfileEmpty) {
+          <p class="legend-threat-gaps-empty" role="status">{{ threatGapEmptyNote }}</p>
+        }
       }
       <p class="legend-sources"><span class="meta-key">Sources:</span> {{ sourceLine }}</p>
       <div class="legend-foot">
@@ -144,6 +147,7 @@ export class LegendComponent implements OnInit, OnDestroy {
   threatGapOverlay = false;
   readonly threatGapLabel = THREAT_GAP_TOGGLE_LABEL;
   readonly threatGapExposureNote = THREAT_GAP_EXPOSURE_NOTE;
+  readonly threatGapEmptyNote = THREAT_GAP_EMPTY_PROFILE_NOTE;
 
   get rungBadge(): string {
     return lensRungBadge(this.def);
@@ -255,6 +259,18 @@ export class LegendComponent implements OnInit, OnDestroy {
     const tw = (this.threatWeightProvider ??= this.injector.get(THREAT_WEIGHT_PROVIDER));
     tw.revision();
     return threatGapThreshold(tw.parents(), id => tw.weight(id));
+  }
+
+  /**
+   * True when a domain is loaded and the threat profile holds no techniques (an
+   * empty stored profile): the Threat gaps legend then says no profile is set
+   * (RP-F item 6). While the domain loads the profile is empty too, so it waits.
+   */
+  get threatProfileEmpty(): boolean {
+    if (!this.attackVersion) return false;
+    const tw = (this.threatWeightProvider ??= this.injector.get(THREAT_WEIGHT_PROVIDER));
+    tw.revision();
+    return tw.parents().size === 0;
   }
 
   /** True when a stop's label names Covered or Proven (every Posture stop does; a P2-14 stop says so). */

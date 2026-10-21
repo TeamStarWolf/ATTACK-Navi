@@ -16,7 +16,7 @@ import { controlsLegendStops, statusLegendStops } from '../../models/posture/len
 import { hexToRgb } from '../../models/cvd';
 import { signal as ngSignal } from '@angular/core';
 import { THREAT_WEIGHT_PROVIDER } from '../../models/posture/threat-weight';
-import { THREAT_GAP_EXPOSURE_NOTE, THREAT_GAP_TOGGLE_LABEL } from '../../models/posture/gap';
+import { THREAT_GAP_EMPTY_PROFILE_NOTE, THREAT_GAP_EXPOSURE_NOTE, THREAT_GAP_TOGGLE_LABEL } from '../../models/posture/gap';
 
 /** '#rrggbb' as the browser reports a style colour. */
 const rgb = (hex: string): string => `rgb(${hexToRgb(hex).join(', ')})`;
@@ -453,5 +453,21 @@ describe('LegendComponent (Threat gaps overlay, P2-17)', () => {
     revision.update(n => n + 1);
     fixture.detectChanges();
     expect(el().querySelector('.legend-threat-gaps')!.textContent).toContain('used by 9 or more');
+  });
+
+  // RP-F item 6: tgap=1 with an empty stored profile marked 0 techniques with no note.
+  it('says no threat profile is set when the overlay is on and the profile holds no techniques', () => {
+    overlay$.next(true);
+    fixture.detectChanges();
+    expect(el().querySelector('.legend-threat-gaps-empty')).withContext('a profile with techniques: no note').toBeNull();
+    parents.set(new Set());
+    revision.update(n => n + 1);
+    fixture.detectChanges();
+    const note = el().querySelector('.legend-threat-gaps-empty')!;
+    expect(note.textContent!.trim()).toBe(THREAT_GAP_EMPTY_PROFILE_NOTE);
+    expect(note.getAttribute('role')).toBe('status');
+    overlay$.next(false);
+    fixture.detectChanges();
+    expect(el().querySelector('.legend-threat-gaps-empty')).withContext('overlay off: no note').toBeNull();
   });
 });

@@ -134,6 +134,37 @@ describe('PostureCardComponent (P2-07)', () => {
     expect(f.componentInstance.tally()).toEqual({ total: 0, assessable: 0, mapped: 0, covered: 0, partial: 0, proven: 0, stale: 0 });
   });
 
+  // RP-F item 6: the ctem board read 'threat-relevant techniques: 0' while the domain loaded.
+  it("scope 'threat-relevant' says it is loading, not 0, until the domain arrives", () => {
+    const d = makeSplitDomain();
+    const domain$ = new BehaviorSubject<Domain | null>(null);
+    TestBed.configureTestingModule({
+      imports: [PostureCardComponent],
+      providers: [
+        { provide: DataService, useValue: { domain$ } },
+        postureStubProvider(makePostureStub(() => domain$.value, {})),
+        threatWeightStub(d.techniques.filter(t => !t.isSubtechnique).map(t => t.id)),
+      ],
+    });
+    const f = TestBed.createComponent(PostureCardComponent);
+    f.componentRef.setInput('scope', 'threat-relevant');
+    f.detectChanges();
+    const el = f.nativeElement as HTMLElement;
+    const line = el.querySelector('[data-testid="threat-relevant-line"]')!;
+    expect(text(line)).toBe('threat-relevant techniques: loading the domain…');
+    expect(line.getAttribute('aria-busy')).toBe('true');
+    expect(el.querySelector('[data-posture="threat-relevant"]')).toBeNull();
+
+    domain$.next(d);
+    f.detectChanges();
+    expect(el.querySelector('[data-testid="threat-relevant-loading"]')).toBeNull();
+    expect(num(el, 'threat-relevant')).toBe(d.techniques.filter(t => !t.isSubtechnique).length);
+
+    domain$.next(null);   // a domain switch: null, then the new domain
+    f.detectChanges();
+    expect(el.querySelector('[data-testid="threat-relevant-loading"]')).not.toBeNull();
+  });
+
   it("scope 'threat-relevant' re-renders when the token's parents() signal changes", () => {
     const d = makeSplitDomain();
     const parents = signal<ReadonlySet<string>>(new Set([d.techniques.find(t => t.attackId === 'T1')!.id]));
