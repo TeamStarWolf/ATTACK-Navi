@@ -61,6 +61,15 @@ describe('lensExplain (P2-18): Why this colour', () => {
         .toBe('None: no reference data mapped and nothing of yours recorded');
     });
 
+    // RP-F round 1: a contradicted mark or a not-reproducible verdict is the owner's
+    // record, so the None line no longer says nothing of theirs is recorded.
+    it('None with a contradicted mark or an excluded technique does not say nothing is recorded', () => {
+      expect(postureExplain(state({ rung: 'none', bucket: 'none', knownSignals: 0, subStates: ['contradicted'] })))
+        .toBe('None: no reference data mapped; a later failed run contradicts the marks');
+      expect(postureExplain(state({ rung: 'none', bucket: 'none', knownSignals: 0, subStates: ['not-reproducible'], excluded: true })))
+        .toBe('None: no reference data mapped; not reproducible, so left out of the denominator');
+    });
+
     it('notes a contradicting run and an excluded technique', () => {
       const s = state({ subStates: ['contradicted', 'not-reproducible'], excluded: true });
       expect(postureExplain(s)).toBe(
@@ -113,6 +122,29 @@ describe('lensExplain (P2-18): Why this colour', () => {
       it('a Known-only technique points to the Known block with its family count', () => {
         const text = lensExplain(def('covered'), { score: 0, label: 'None' }, { state: state({}) });
         expect(text).toBe('None: no covered (self-attested or range) mark; see the Known block for its reference data (3 of 5 reference families)');
+        expect(text).not.toMatch(NOT_NOTHING);
+      });
+
+      // RP-F round 1: the card read 'None: nothing of yours reaches this technique; a
+      // later failed run contradicts the marks', contradicting itself.
+      it('a contradicted full mark says the mark is contradicted, not "nothing of yours"', () => {
+        const s = state({ rung: 'none', bucket: 'none', knownSignals: 0, subStates: ['contradicted'] });
+        const text = lensExplain(def('covered'), { score: 0, label: 'None' }, { state: s });
+        expect(text).toBe('None: a later failed run contradicts your covered (self-attested or range) marks');
+        expect(text).not.toMatch(NOT_NOTHING);
+      });
+
+      it('a contradicted mark with Known data names the contradiction once, then the Known block', () => {
+        const s = state({ rung: 'known', bucket: 'known', subStates: ['contradicted'] });
+        const text = lensExplain(def('covered'), { score: 0, label: 'None' }, { state: s });
+        expect(text).toBe('None: a later failed run contradicts your covered (self-attested or range) marks; see the Known block for its reference data (3 of 5 reference families)');
+        expect(text).not.toContain('no covered');
+      });
+
+      it('a not-reproducible verdict is named, not "nothing of yours"', () => {
+        const s = state({ rung: 'none', bucket: 'none', knownSignals: 0, subStates: ['not-reproducible'], excluded: true });
+        const text = lensExplain(def('covered'), { score: 0, label: 'None' }, { state: s });
+        expect(text).toBe('None: no covered (self-attested or range) mark; not reproducible, so left out of the denominator');
         expect(text).not.toMatch(NOT_NOTHING);
       });
 

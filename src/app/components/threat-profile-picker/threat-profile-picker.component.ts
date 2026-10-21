@@ -75,13 +75,19 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
   /**
    * single mode: the caller's current group (STIX id), so the list shows the selection
    * the caller holds after it clears it or loads a saved plan. The picker never emits
-   * for a change made here.
+   * for a change made here. Binding it opts in to the pressed state: without it a
+   * single-mode list shows no group pressed, because only the caller knows whether it
+   * still holds the group (RP-F round 1: the scenario panel dropped its actor on a
+   * domain switch while the picker kept the old id pressed).
    */
   @Input() set selectedGroupId(id: string | null | undefined) {
+    this.callerOwnsSelection = true;
     this.callerGroupId = id ?? null;
     this.syncCallerSelection();
   }
   private callerGroupId: string | null = null;
+  /** True once the caller binds selectedGroupId (single mode shows a pressed group only then). */
+  private callerOwnsSelection = false;
 
   /** single mode: the chosen group's STIX intrusion-set id (never a campaign). */
   @Output() groupSelected = new EventEmitter<string>();
@@ -227,9 +233,9 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  /** single mode: hold exactly the caller's group (selectedGroupId). */
+  /** single mode: hold exactly the caller's group (selectedGroupId), or none when the caller binds none. */
   private syncCallerSelection(): void {
-    if (this.mode !== 'single') return;
+    if (this.mode !== 'single' || !this.callerOwnsSelection) return;
     this.selectedGroupIds.clear();
     if (this.callerGroupId) this.selectedGroupIds.add(this.callerGroupId);
     this.cdr.markForCheck();
@@ -260,12 +266,16 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
 
   /**
    * Group selection. Every id is a STIX intrusion-set id (group.id), never a G#### attackId.
-   * In single mode it holds exactly the chosen group, so the list shows what was emitted.
+   * In single mode with a bound selectedGroupId it holds exactly the chosen group, so the
+   * list shows what was emitted until the caller's binding says otherwise; an unbound
+   * caller gets the emit only, and the list shows no group pressed.
    */
   selectGroup(g: ThreatGroup): void {
     if (this.mode === 'single') {
-      this.selectedGroupIds.clear();
-      this.selectedGroupIds.add(g.id);
+      if (this.callerOwnsSelection) {
+        this.selectedGroupIds.clear();
+        this.selectedGroupIds.add(g.id);
+      }
       this.groupSelected.emit(g.id);
       this.cdr.markForCheck();
       return;

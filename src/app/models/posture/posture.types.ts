@@ -102,6 +102,15 @@ export interface PostureInputs {
   readonly exposureWeight: number;
 }
 
+/**
+ * Why the threat profile holds no parent technique (RP-F item 6, round 1):
+ * - 'names-nothing': the stored source names no groups or campaigns;
+ * - 'resolving': no domain is loaded yet, or a library layer is still loading;
+ * - 'none-in-domain': the source names some, but none uses a technique in the
+ *   loaded domain (APT29 on dom=ics, or groups with no technique use in this release).
+ */
+export type ThreatProfileEmptyReason = 'names-nothing' | 'resolving' | 'none-in-domain';
+
 /** Weight seam: E2.1 ships an all-groups default; P2-10 binds ThreatProfileService. */
 export interface ThreatWeightProvider {
   weight(techniqueStixId: string): number;
@@ -109,4 +118,9 @@ export interface ThreatWeightProvider {
   readonly revision: Signal<number>;
   /** The profile's parent technique STIX ids — the threat-relevant denominator (§2.6). */
   readonly parents: Signal<ReadonlySet<string>>;
+  /**
+   * Why parents() is empty, or null while it is not. Optional: a provider without it
+   * gets no Threat gaps profile note (the legend never guesses the reason).
+   */
+  readonly emptyReason?: Signal<ThreatProfileEmptyReason | null>;
 }

@@ -185,8 +185,13 @@ describe('MatrixControlsComponent', () => {
       expect(Number(getComputedStyle(menu).zIndex)).toBeGreaterThan(100);   // above --z-rail (50) and --z-sidebar (100)
       const placed = component.viewMenuPlacement!;
       expect(placed).not.toBeNull();
-      expect(menu.style.left).toBe(`${placed.left}px`);
-      expect(menu.style.top).toBe(`${placed.top}px`);
+      // The browser serialises an inline length with fewer decimals than the
+      // float it was given (Linux Chrome: 70.90625 reads back as 70.9062px), so
+      // compare numbers, not strings.
+      expect(menu.style.left).toMatch(/px$/);
+      expect(menu.style.top).toMatch(/px$/);
+      expect(parseFloat(menu.style.left)).toBeCloseTo(placed.left, 2);
+      expect(parseFloat(menu.style.top)).toBeCloseTo(placed.top, 2);
       expect(placed.left).toBeGreaterThanOrEqual(Math.max(host.getBoundingClientRect().left, VIEW_MENU_MARGIN));
       const button = host.querySelector('.heatmap-btn')!.getBoundingClientRect();
       expect(placed).toEqual(placeViewMenu(button, host.getBoundingClientRect().left, { width: window.innerWidth, height: window.innerHeight }));

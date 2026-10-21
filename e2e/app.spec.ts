@@ -872,9 +872,20 @@ test.describe('E2.4: default-lens rule', () => {
 // the clicks. The menu is now fixed above the rail and clamped to the row and the
 // viewport. Every click below is a real pointer click: Playwright refuses it when
 // another element would receive it.
+//
+// RP-F round 1 (check-flaky): on the production build 2 of 6 runs timed out after
+// 5 s waiting for heat= to follow a pick. Timed in the page, the URL writer's
+// replaceUrl navigation took about 2 ms and no write was skipped; the 300 ms
+// debounce itself fired up to 6.3 s late, because the main thread is saturated for
+// several seconds after a data-loading lens (Campaigns, Intelligence, My Exposure)
+// is first picked shortly after boot. The URL is right, only late, so every step
+// waits LENS_STEP_TIMEOUT rather than 5 s: the check is still that heat= follows
+// each pick, without timing the lens's first data load.
+const LENS_STEP_TIMEOUT = process.env['CI'] ? 60000 : 30000;
+
 test.describe('View menu above the rail (RP-F item 5)', () => {
   test('[RP-F 5] at 1440x900 with the drawer open, every lens in the View menu takes a real click and the menu never lies over the rail', async ({ page }) => {
-    test.setTimeout(process.env['CI'] ? 300000 : 180000);
+    test.setTimeout(process.env['CI'] ? 600000 : 300000);
     await page.setViewportSize({ width: 1440, height: 900 });
     await openWorkspace(page);
     await page.goto(BASE + '/#/matrix?tech=T1059.001');
@@ -883,8 +894,8 @@ test.describe('View menu above the rail (RP-F item 5)', () => {
     expect(rail.width).toBeGreaterThan(200);
     const menu = page.locator('.views-menu');
     const openMenu = async () => {
-      await page.locator('.heatmap-btn').click();
-      await expect(menu).toBeVisible();
+      await page.locator('.heatmap-btn').click({ timeout: LENS_STEP_TIMEOUT });
+      await expect(menu).toBeVisible({ timeout: LENS_STEP_TIMEOUT });
     };
     await openMenu();
     const lenses = await menu.locator('.lens-item').evaluateAll(els => els.map(e => e.getAttribute('data-lens')!));
@@ -901,14 +912,14 @@ test.describe('View menu above the rail (RP-F item 5)', () => {
         // aria-disabled: Playwright's click() waits for an enabled element, so the real
         // click is the mouse at the button's centre after hover() has checked that this
         // button, not the rail or the drawer, receives pointer events there.
-        await button.hover({ timeout: 5000 });
+        await button.hover({ timeout: LENS_STEP_TIMEOUT });
         const b = (await button.boundingBox())!;
         await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
-        await expect(menu, `${lens}: a disabled lens keeps the menu open`).toBeVisible();
+        await expect(menu, `${lens}: a disabled lens keeps the menu open`).toBeVisible({ timeout: LENS_STEP_TIMEOUT });
       } else {
-        await button.click({ timeout: 5000 });
-        await expect(menu, `${lens}: picking a lens closes the menu`).toBeHidden();
-        await expect(page).toHaveURL(new RegExp(`[?&]heat=${lens}(&|$)`), { timeout: 5000 });
+        await button.click({ timeout: LENS_STEP_TIMEOUT });
+        await expect(menu, `${lens}: picking a lens closes the menu`).toBeHidden({ timeout: LENS_STEP_TIMEOUT });
+        await expect(page).toHaveURL(new RegExp(`[?&]heat=${lens}(&|$)`), { timeout: LENS_STEP_TIMEOUT });
       }
     }
     await expect(page.locator('.sidebar.open .sidebar-header .attack-id')).toHaveText('T1059.001');

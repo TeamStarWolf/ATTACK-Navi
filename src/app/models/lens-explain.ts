@@ -84,12 +84,24 @@ function proofExplain(state: PostureState, decayDays?: Readonly<Record<ProofScop
   return line;
 }
 
+const CONTRADICTED_NOTE = '; a later failed run contradicts the marks';
+const EXCLUDED_NOTE = '; not reproducible, so left out of the denominator';
+
 /** The notes every posture line ends with: a contradicting run, an excluded technique. */
 function postureNotes(state: PostureState): string {
   let notes = '';
-  if (state.subStates.includes('contradicted')) notes += '; a later failed run contradicts the marks';
-  if (state.excluded) notes += '; not reproducible, so left out of the denominator';
+  if (state.subStates.includes('contradicted')) notes += CONTRADICTED_NOTE;
+  if (state.excluded) notes += EXCLUDED_NOTE;
   return notes;
+}
+
+/**
+ * True when the owner has recorded something about the technique that holds no
+ * rung: a full mark a later failed run contradicts, or a not-reproducible verdict.
+ * A None line must not then say nothing of theirs is recorded (RP-F round 1).
+ */
+function ownerRecordWithoutRung(state: PostureState): boolean {
+  return state.subStates.includes('contradicted') || state.excluded;
 }
 
 /**
@@ -99,6 +111,7 @@ function postureNotes(state: PostureState): string {
  *   'Covered (self-attested, partial via M1038): reached only through a mitigation mapped to more techniques than the breadth threshold'
  *   'Known: mapped (3 of 5 reference families)'
  *   'None: no reference data mapped and nothing of yours recorded'
+ *   'None: no reference data mapped; a later failed run contradicts the marks'   (a contradicted mark or an excluded technique)
  */
 export function postureExplain(state: PostureState, decayDays?: Readonly<Record<ProofScope, number>>): string {
   switch (state.bucket) {
@@ -116,7 +129,8 @@ export function postureExplain(state: PostureState, decayDays?: Readonly<Record<
     case 'known':
       return `${postureBadge(state)} (${state.knownSignals} of ${KNOWN_FAMILY_COUNT} reference families)` + postureNotes(state);
     default:
-      return 'None: no reference data mapped and nothing of yours recorded' + postureNotes(state);
+      return (ownerRecordWithoutRung(state) ? 'None: no reference data mapped' : 'None: no reference data mapped and nothing of yours recorded')
+        + postureNotes(state);
   }
 }
 
@@ -127,19 +141,29 @@ export function postureExplain(state: PostureState, decayDays?: Readonly<Record<
  * nothing of the user's reaches the technique:
  *   'None: no covered (self-attested or range) mark; see the Proven block for its recorded result'
  *   'None: no covered (self-attested or range) mark; see the Known block for its reference data (3 of 5 reference families)'
- *   'None: nothing of yours reaches this technique'   (no run, no reference data)
+ *   'None: a later failed run contradicts your covered (self-attested or range) marks'   (RP-F round 1)
+ *   'None: no covered (self-attested or range) mark; not reproducible, so left out of the denominator'
+ *   'None: nothing of yours reaches this technique'   (no run, no reference data, no mark, no verdict)
+ * A contradicted full mark or a not-reproducible verdict is the owner's own record,
+ * so it is named instead of 'nothing of yours'; a contradicted mark is the head,
+ * never 'no covered mark' followed by a note about 'the marks'.
  * The Covered lens is only on screen while owner words may render
  * (lensOnScreen), so the Covered words here are always gated on hasOwnerWords.
  * A stale run counts: it is still listed in the Proven block.
  */
 function coveredNoneExplain(state: PostureState): string {
-  const head = 'None: no covered (self-attested or range) mark';
-  if (state.proof.length > 0) return `${head}; see the ${PROVEN} block for its recorded result` + postureNotes(state);
+  const contradicted = state.subStates.includes('contradicted');
+  const head = contradicted
+    ? 'None: a later failed run contradicts your covered (self-attested or range) marks'
+    : 'None: no covered (self-attested or range) mark';
+  const notes = state.excluded ? EXCLUDED_NOTE : '';
+  if (state.proof.length > 0) return `${head}; see the ${PROVEN} block for its recorded result` + notes;
   if (state.knownSignals > 0) {
     return `${head}; see the ${KNOWN_BLOCK} block for its reference data (${state.knownSignals} of ${KNOWN_FAMILY_COUNT} reference families)`
-      + postureNotes(state);
+      + notes;
   }
-  return 'None: nothing of yours reaches this technique' + postureNotes(state);
+  if (ownerRecordWithoutRung(state)) return head + notes;
+  return 'None: nothing of yours reaches this technique';
 }
 
 /** A registry lens other than Posture: its cell's own words, with the marks or proof behind them. */

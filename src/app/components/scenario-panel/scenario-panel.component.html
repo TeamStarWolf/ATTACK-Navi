@@ -18,7 +18,8 @@
           <div class="selector-header">
             <span class="selector-title">Single actor</span>
           </div>
-          <app-threat-profile-picker mode="single" (groupSelected)="onGroupPicked($event)" />
+          <app-threat-profile-picker mode="single" [selectedGroupId]="selectedGroup?.id ?? null"
+                                     (groupSelected)="onGroupPicked($event)" />
 
           <div class="selector-header profile-sim-header">
             <span class="selector-title">Profile simulation</span>

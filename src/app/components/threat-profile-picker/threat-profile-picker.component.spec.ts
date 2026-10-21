@@ -94,9 +94,11 @@ describe('ThreatProfilePickerComponent', () => {
     expect(component.showPresetTabs).toBeFalse();
   });
 
-  // RP-F item 3: single mode holds the chosen group, so the list shows what was emitted.
+  // RP-F item 3: single mode holds the chosen group, so the list shows what was emitted
+  // (for a caller that binds selectedGroupId, as the emulation and scenario panels do).
   it('single mode marks the chosen list item selected, and a second pick replaces it', () => {
     component.mode = 'single';
+    fixture.componentRef.setInput('selectedGroupId', null);
     fixture.detectChanges();
     component.selectGroup(component.groups[0]);
     fixture.detectChanges();
@@ -108,8 +110,25 @@ describe('ThreatProfilePickerComponent', () => {
     expect(items().map((b) => b.getAttribute('aria-pressed'))).toEqual(['false', 'true']);
   });
 
+  // RP-F round 1: a caller that does not bind selectedGroupId cannot clear the picker,
+  // so a pressed item could outlive the caller's selection (the scenario panel drops its
+  // actor on a domain switch). Without the binding no item is pressed; the emit still fires.
+  it('single mode without a bound selectedGroupId emits the pick but presses no item', () => {
+    component.mode = 'single';
+    fixture.detectChanges();
+    const emitted: string[] = [];
+    component.groupSelected.subscribe((id) => emitted.push(id));
+    const items = () => Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('.tpp-item'));
+    items()[1].click();
+    fixture.detectChanges();
+    expect(emitted).toEqual(['intrusion-set--bbb']);
+    expect(component.selectedGroupIds.size).toBe(0);
+    expect(items().map((b) => b.getAttribute('aria-pressed'))).toEqual(['false', 'false']);
+  });
+
   it('single mode quick picks: presets resolve by ATT&CK id, drive the picker selection and emit the STIX id', () => {
     component.mode = 'single';
+    fixture.componentRef.setInput('selectedGroupId', null);
     fixture.componentRef.setInput('quickPicks', [
       { label: 'Bee', attackId: 'G0002' },
       { label: 'Missing', attackId: 'G9999' },   // not in the domain: not shown
