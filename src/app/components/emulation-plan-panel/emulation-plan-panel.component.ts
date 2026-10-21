@@ -8,8 +8,7 @@ import {
   ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Subscription, filter, take } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
 import {
@@ -19,6 +18,7 @@ import {
 } from '../../services/emulation-plan.service';
 import { LibraryService } from '../../services/library.service';
 import { PanelNavService } from '../../services/panel-nav.service';
+import { ThreatProfilePickerComponent } from '../threat-profile-picker/threat-profile-picker.component';
 import { ThreatGroup } from '../../models/group';
 import { Domain } from '../../models/domain';
 
@@ -30,7 +30,7 @@ interface PhaseGroup {
 @Component({
   selector: 'app-emulation-plan-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, ThreatProfilePickerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './emulation-plan-panel.component.html',
   styleUrls: ['./emulation-plan-panel.component.scss'],
@@ -42,16 +42,25 @@ export class EmulationPlanPanelComponent implements OnInit, OnDestroy {
   groups: ThreatGroup[] = [];
 
   // UI state
-  groupSearch = '';
   selectedGroup: ThreatGroup | null = null;
   plan: EmulationPlan | null = null;
+  planError: string | null = null;
   phaseGroups: PhaseGroup[] = [];
   expandedSteps = new Set<number>();
   generating = false;
   savedPlans: EmulationPlan[] = [];
 
-  // Common-actor quick picks
-  readonly quickPicks: string[] = ['APT28', 'APT29', 'APT41', 'FIN7', 'Lazarus Group', 'Sandworm Team'];
+  // Common-actor quick picks, by ATT&CK id. Resolved to the loaded domain's STIX groups
+  // on each domain emission (no name/alias matching at click — P2-12's one-picker rule).
+  readonly quickPicks: readonly { label: string; attackId: string }[] = [
+    { label: 'APT28', attackId: 'G0007' },
+    { label: 'APT29', attackId: 'G0016' },
+    { label: 'APT41', attackId: 'G0096' },
+    { label: 'FIN7', attackId: 'G0046' },
+    { label: 'Lazarus Group', attackId: 'G0032' },
+    { label: 'Sandworm Team', attackId: 'G0034' },
+  ];
+  quickPickGroups: { label: string; group: ThreatGroup }[] = [];
 
   private subs = new Subscription();
 
@@ -65,7 +74,22 @@ export class EmulationPlanPanelComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.ensureGroupsLoaded();
+    // Follow domain$ for life (like the embedded picker): a domain switch must re-resolve
+    // the group list and the quick picks so a later pick lands on the current domain.
+    this.subs.add(this.dataService.domain$.subscribe(domain => {
+      this.domain = domain;
+      this.groups = domain ? [...domain.groups].sort((a, b) => a.name.localeCompare(b.name)) : [];
+      this.resolveQuickPicks();
+      // Keep the selection valid for the loaded domain: re-resolve by id, and if the group
+      // is gone, clear it and any plan so generatePlan can never run against a stale group
+      // (generatePlan now throws for an actor the domain lacks).
+      if (this.selectedGroup) {
+        const stillHere = this.groups.find(g => g.id === this.selectedGroup!.id) ?? null;
+        this.selectedGroup = stillHere;
+        if (!stillHere) { this.plan = null; this.phaseGroups = []; this.expandedSteps.clear(); this.planError = null; }
+      }
+      this.cdr.markForCheck();
+    }));
     this.savedPlans = this.emulationService.getSavedPlans();
   }
 
@@ -75,40 +99,24 @@ export class EmulationPlanPanelComponent implements OnInit, OnDestroy {
 
   // ─── Setup ────────────────────────────────────────────────────────────────
 
-  private ensureGroupsLoaded(): void {
-    if (this.groups.length > 0) return;
-    this.dataService.domain$.pipe(filter(Boolean), take(1)).subscribe(domain => {
-      this.domain = domain;
-      this.groups = [...domain.groups].sort((a, b) => a.name.localeCompare(b.name));
-      this.cdr.markForCheck();
-    });
+  /** Resolve each quick pick's ATT&CK id to the loaded domain's STIX group, dropping any absent. */
+  private resolveQuickPicks(): void {
+    const byAttackId = new Map(this.groups.map(g => [g.attackId, g]));
+    this.quickPickGroups = this.quickPicks
+      .map(qp => ({ label: qp.label, group: byAttackId.get(qp.attackId) }))
+      .filter((q): q is { label: string; group: ThreatGroup } => !!q.group);
   }
 
   // ─── Group selection ──────────────────────────────────────────────────────
 
-  get filteredGroups(): ThreatGroup[] {
-    const q = this.groupSearch.trim().toLowerCase();
-    if (!q) return this.groups.slice(0, 50);
-    return this.groups
-      .filter(g =>
-        g.name.toLowerCase().includes(q) ||
-        g.attackId.toLowerCase().includes(q) ||
-        g.aliases.some(a => a.toLowerCase().includes(q)),
-      )
-      .slice(0, 50);
-  }
-
-  pickQuickGroup(name: string): void {
-    const found = this.groups.find(g =>
-      g.name.toLowerCase() === name.toLowerCase() ||
-      g.aliases.some(a => a.toLowerCase() === name.toLowerCase()),
-    );
-    if (found) this.selectGroup(found);
+  /** The shared picker (single mode) emits a STIX intrusion-set id; resolve it to the group. */
+  onGroupPicked(stixId: string): void {
+    const group = this.groups.find(g => g.id === stixId);
+    if (group) this.selectGroup(group);
   }
 
   selectGroup(group: ThreatGroup): void {
     this.selectedGroup = group;
-    this.groupSearch = '';
     this.cdr.markForCheck();
   }
 
@@ -125,15 +133,26 @@ export class EmulationPlanPanelComponent implements OnInit, OnDestroy {
   generatePlan(): void {
     if (!this.selectedGroup || !this.domain) return;
     this.generating = true;
+    this.planError = null;
     this.cdr.markForCheck();
 
-    // Defer to next tick so the spinner renders
+    // Defer to next tick so the spinner renders.
     setTimeout(() => {
-      this.plan = this.emulationService.generatePlan(this.selectedGroup!.attackId, this.domain!);
-      this.phaseGroups = this.groupByPhase(this.plan.steps);
-      this.expandedSteps.clear();
-      this.generating = false;
-      this.cdr.markForCheck();
+      try {
+        // generatePlan resolves the actor by STIX id or ATT&CK id and throws if the loaded
+        // domain has neither. The picker gives us a STIX id, so the normal path never throws;
+        // the try/catch guards the stale-group edge so the button can't hang on "Generating…".
+        this.plan = this.emulationService.generatePlan(this.selectedGroup!.id, this.domain!);
+        this.phaseGroups = this.groupByPhase(this.plan.steps);
+        this.expandedSteps.clear();
+      } catch (e) {
+        this.plan = null;
+        this.phaseGroups = [];
+        this.planError = e instanceof Error ? e.message : 'Could not generate the plan.';
+      } finally {
+        this.generating = false;
+        this.cdr.markForCheck();
+      }
     }, 0);
   }
 

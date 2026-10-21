@@ -27,35 +27,16 @@
         <section class="emu-step-section">
           <h3 class="emu-step-label">Step 1 — Select a threat actor to emulate</h3>
 
-          <div class="emu-quick-picks">
-            <span class="emu-qp-label">Common picks:</span>
-            @for (qp of quickPicks; track qp) {
-              <button class="emu-qp-btn" (click)="pickQuickGroup(qp)">{{ qp }}</button>
-            }
-          </div>
-
-          <input type="search"
-                 class="emu-search"
-                 placeholder="Search by name, alias, or ATT&CK ID (e.g. APT29, Cozy Bear, G0016)…"
-                 [(ngModel)]="groupSearch" />
-
-          @if (groupSearch || filteredGroups.length > 0) {
-            <ul class="emu-group-list">
-              @for (g of filteredGroups; track g.attackId) {
-                <li>
-                  <button class="emu-group-row"
-                          [class.selected]="selectedGroup?.attackId === g.attackId"
-                          (click)="selectGroup(g)">
-                    <span class="emu-group-id">{{ g.attackId }}</span>
-                    <span class="emu-group-name">{{ g.name }}</span>
-                    @if (g.aliases.length > 0) {
-                      <span class="emu-group-aliases">{{ g.aliases.slice(0, 3).join(', ') }}</span>
-                    }
-                  </button>
-                </li>
+          @if (quickPickGroups.length > 0) {
+            <div class="emu-quick-picks">
+              <span class="emu-qp-label">Common picks:</span>
+              @for (qp of quickPickGroups; track qp.group.id) {
+                <button class="emu-qp-btn" (click)="selectGroup(qp.group)">{{ qp.label }}</button>
               }
-            </ul>
+            </div>
           }
+
+          <app-threat-profile-picker mode="single" (groupSelected)="onGroupPicked($event)" />
 
           @if (selectedGroup) {
             <div class="emu-selected-actor">
@@ -64,6 +45,10 @@
                 @if (generating) { Generating… } @else { Generate Plan → }
               </button>
             </div>
+          }
+
+          @if (planError) {
+            <div class="emu-plan-error" role="alert">{{ planError }}</div>
           }
 
           @if (savedPlans.length > 0) {

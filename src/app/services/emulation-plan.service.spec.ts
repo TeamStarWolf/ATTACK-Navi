@@ -116,6 +116,24 @@ describe('EmulationPlanService', () => {
       expect(plan.steps.map(s => s.tactic)).toEqual(['initial-access', 'stealth', 'defense-impairment', 'credential-access', 'impact']);
     });
 
+    // P2-11 contract: generatePlan resolves its arg by STIX id OR by attackId, so a legacy
+    // G#### caller lands on the same plan as the shared picker's STIX id, and a truly unknown
+    // id throws instead of silently returning an empty "Unknown" plan.
+    it('resolves an attackId (G####) to the same plan as its STIX id, step for step', () => {
+      const domain = v19Domain();
+      const byStix = service.generatePlan('intrusion-set--g1', domain);
+      const byAttackId = service.generatePlan('G0001', domain);
+      expect(byAttackId.steps).toEqual(byStix.steps);
+      expect(byAttackId.actorName).toBe(byStix.actorName);
+      expect(byAttackId.actorId).toBe(byStix.actorId);
+      expect(byAttackId.totalSteps).toBe(byStix.totalSteps);
+      expect(byAttackId.steps.length).toBeGreaterThan(0);
+    });
+
+    it('throws on an id that matches no group by STIX id or attackId', () => {
+      expect(() => service.generatePlan('intrusion-set--nope', v19Domain())).toThrowError(/no group with id or attackId/);
+    });
+
     it('labels phases with the domain tactic names instead of raw slugs', () => {
       const plan = service.generatePlan('intrusion-set--g1', v19Domain());
       expect(plan.steps.map(s => s.phase)).toEqual(['Initial Access', 'Stealth', 'Defense Impairment', 'Credential Access', 'Impact']);

@@ -24,44 +24,13 @@
   &:hover { background: var(--border-subtle); color: var(--text-main); }
 }
 
-.actor-search-bar {
-  display: flex; align-items: center; gap: 8px; padding: 8px 16px;
-  border-bottom: 1px solid var(--bg-hover); flex-shrink: 0;
-  .search-icon { color: var(--text-faint); font-size: 12px; }
-}
+/* .actor-search-bar / .search-icon removed with the browse list (P2-11; the shared picker owns selection). */
 
 .upgrade-section-block {
   border-radius: 20px;
 }
 
-.actor-search {
-  flex: 1; background: var(--bg-panel-strong); border: 1px solid var(--border-subtle); color: var(--text-main);
-  font-size: 12px; padding: 7px 12px; border-radius: 5px; outline: none;
-  &::placeholder { color: var(--text-faint); }
-  &:focus { border-color: var(--accent); }
-}
-.group-count { font-size: 10px; color: var(--text-faint); }
-.actor-list { flex: 1; overflow-y: auto; background: var(--bg-panel); }
-
-.actor-row {
-  display: flex; align-items: center; padding: 9px 16px;
-  border-bottom: 1px solid var(--bg-hover); cursor: pointer;
-  &:hover { background: var(--bg-panel-strong); }
-}
-.actor-row-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-
-.actor-row-id {
-  font-size: 11px; font-weight: 600; color: var(--accent); background: rgb(88 166 255 / 10%);
-  border-radius: 4px; padding: 1px 5px; font-family: monospace;
-}
-.actor-row-name { font-size: 12px; font-weight: 600; color: var(--text-main); }
-.actor-aliases { font-size: 10px; color: var(--text-faint); font-style: italic; }
-
-.filter-group-btn {
-  font-size: 11px; background: var(--bg-panel-strong); border: 1px solid var(--border-subtle); color: var(--text-muted);
-  border-radius: 5px; padding: 4px 10px; cursor: pointer;
-  &:hover { color: var(--text-main); }
-}
+/* .actor-search, .group-count, .actor-list, .actor-row*, .actor-aliases, .filter-group-btn removed with the browse list (P2-11). */
 
 .profile-tabs {
   display: flex; background: var(--bg-raised); border-bottom: 1px solid var(--border-subtle);
@@ -130,7 +99,6 @@
 
 .profile-actions { display: flex; gap: 8px; margin-top: 8px; }
 
-.actor-row-id,
 .uncov-id,
 .tech-row-id,
 .sw-id,
@@ -142,28 +110,19 @@
 }
 
 .back-btn,
-.filter-group-btn,
 .action-btn,
 .tab-count {
   border-radius: 999px;
 }
 
-.actor-search-bar.upgrade-section-block,
 .coverage-hero.upgrade-section-block,
 .tactic-breakdown.upgrade-section-block,
-.top-uncovered.upgrade-section-block,
-.actor-row.upgrade-section-block {
+.top-uncovered.upgrade-section-block {
   border-bottom: none;
 }
 
-.actor-list,
 .profile-body {
   padding: 10px;
-}
-
-.actor-row.upgrade-section-block {
-  margin-bottom: 8px;
-  padding: 12px 14px;
 }
 
 .action-btn {
