@@ -1,16 +1,26 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { Injectable, OnDestroy, Signal, signal } from '@angular/core';
+import { Injectable, OnDestroy, Signal, computed, signal } from '@angular/core';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { DataService } from './data.service';
 import { LibraryLayerService } from './library-layer.service';
 import { Domain } from '../models/domain';
 import { readV2, writeV2, V2Envelope } from '../models/storage-envelope';
 import type { ThreatProfileEmptyReason, ThreatWeightProvider } from '../models/posture/posture.types';
-import { ThreatProfile, ThreatProfileSource, LibraryLayerInput, resolveProfile, threatProfileEmptyReason } from '../models/threat-profile';
+import {
+  ThreatProfile, ThreatProfileSource, LibraryLayerInput, ProfileDomainGroups, ProfileGroupRef,
+  attackDomainOf, profileDomainNotice, resolveProfile, splitStoredGroups, threatProfileEmptyReason,
+} from '../models/threat-profile';
 
 const STORAGE_KEY = 'navi.v2.threat-profile';
 const DEFAULT_SOURCE: ThreatProfileSource = { kind: 'top-groups', n: 20 };
+
+/**
+ * The stored record. `groupNames` is a display hint only (STIX id to group name, for
+ * a groups source), written by setSource so a group the loaded domain lacks can still
+ * be named after a reload straight into that domain. It is never part of the source.
+ */
+type StoredRecord = ThreatProfileSource & V2Envelope & { readonly groupNames?: Readonly<Record<string, string>> };
 
 /**
  * A stored source is a ThreatProfileSource carrying the v2 envelope. Every kind's
@@ -83,11 +93,26 @@ export class ThreatProfileService implements OnDestroy, ThreatWeightProvider {
   readonly emptyReason: Signal<ThreatProfileEmptyReason | null> = this.emptyReasonSig.asReadonly();
   /** Whether the last profile was resolved against a loaded domain. */
   private domainLoaded = false;
+  /** The domain the last profile was resolved against (null while one loads). */
+  private lastDomain: Domain | null = null;
+  /**
+   * Group names by STIX id, learned from every domain loaded this session and from the
+   * stored record's name hint, so an absent group is named by its name, not its id.
+   */
+  private readonly groupNames = new Map<string, string>();
+  // The stored groups split against the loaded domain (a groups source only), kept in
+  // sync with profile$. A domain switch changes the split, never the stored source.
+  private readonly domainGroupsSig = signal<ProfileDomainGroups | null>(null);
+  readonly domainGroups: Signal<ProfileDomainGroups | null> = this.domainGroupsSig.asReadonly();
+  /** The one cross-domain sentence (profileDomainNotice), or null when no stored group is absent. */
+  readonly domainNotice: Signal<string | null> = computed(() => profileDomainNotice(this.domainGroupsSig()));
 
   constructor(private dataService: DataService, private libraryLayers: LibraryLayerService) {
     this.source = this.loadSource();
     const initial = this.dataService.getCurrentDomain();
     this.domainLoaded = !!initial;
+    this.lastDomain = initial;
+    this.learnNames(initial);
     this.profileSubject = new BehaviorSubject<ThreatProfile>(this.build(initial));
     this.profile$ = this.profileSubject.asObservable();
     // Re-resolve on every domain emission, INCLUDING null: a domain switch emits null
@@ -98,6 +123,7 @@ export class ThreatProfileService implements OnDestroy, ThreatWeightProvider {
       this.emptyReasonSig.set(threatProfileEmptyReason(
         this.source, p.parentTechniqueIds.size, this.domainLoaded,
         this.source.kind !== 'library-layer' || this.layerInput !== null));
+      this.domainGroupsSig.set(this.splitFor(this.lastDomain));
       this.revisionSig.update((n) => n + 1);
       this.parentsSig.set(p.parentTechniqueIds);
     }));
@@ -115,9 +141,45 @@ export class ThreatProfileService implements OnDestroy, ThreatWeightProvider {
     this.emit(this.dataService.getCurrentDomain());
   }
 
+  /**
+   * The stored groups `domain` carries (a groups source only; [] for every other kind,
+   * the 'all' profile included, and while no domain is loaded). Same membership rule
+   * as resolveProfile (splitStoredGroups).
+   */
+  presentGroups(domain: Domain | null): ProfileGroupRef[] {
+    return [...(this.splitFor(domain)?.present ?? [])];
+  }
+
+  /**
+   * The stored groups `domain` lacks, named (a groups source only; [] otherwise). They
+   * stay in the stored source: a domain switch never narrows the profile.
+   */
+  absentGroups(domain: Domain | null): ProfileGroupRef[] {
+    return [...(this.splitFor(domain)?.absent ?? [])];
+  }
+
+  /** The split behind presentGroups/absentGroups, or null when it does not apply. */
+  private splitFor(domain: Domain | null): ProfileDomainGroups | null {
+    const src = this.source;
+    if (!domain || src.kind !== 'groups') return null;
+    const { present, absentIds } = splitStoredGroups(src.ids, domain);
+    return {
+      domain: attackDomainOf(domain),
+      present: present.map((g) => ({ id: g.id, name: g.name })),
+      absent: absentIds.map((id) => ({ id, name: this.groupNames.get(id) ?? id })),
+    };
+  }
+
+  /** Remember every group name of a loaded domain (names only; nothing is stored). */
+  private learnNames(domain: Domain | null): void {
+    for (const g of domain?.groups ?? []) this.groupNames.set(g.id, g.name);
+  }
+
   /** Resolve against `domain` (null while one loads) and emit. */
   private emit(domain: Domain | null): void {
     this.domainLoaded = !!domain;
+    this.lastDomain = domain;
+    this.learnNames(domain);
     this.profileSubject.next(this.build(domain));
   }
 
@@ -160,17 +222,35 @@ export class ThreatProfileService implements OnDestroy, ThreatWeightProvider {
 
   private loadSource(): ThreatProfileSource {
     try {
-      const record = readV2<ThreatProfileSource>(STORAGE_KEY, isStoredSource).records[0];
-      return record ? sourceFromRecord(record) : DEFAULT_SOURCE;
+      const record = readV2<ThreatProfileSource>(STORAGE_KEY, isStoredSource).records[0] as StoredRecord | undefined;
+      if (!record) return DEFAULT_SOURCE;
+      this.learnStoredNames(record.groupNames);
+      return sourceFromRecord(record);
     } catch {
       return DEFAULT_SOURCE;
     }
   }
 
+  /** Read the stored name hint, skipping anything that is not a string-to-string entry (it may come from an imported bundle). */
+  private learnStoredNames(hint: unknown): void {
+    if (!hint || typeof hint !== 'object' || Array.isArray(hint)) return;
+    for (const [id, name] of Object.entries(hint as Record<string, unknown>)) {
+      if (typeof name === 'string' && name.length > 0 && !this.groupNames.has(id)) this.groupNames.set(id, name);
+    }
+  }
+
   private persist(src: ThreatProfileSource): void {
     const now = new Date().toISOString();
-    const record: ThreatProfileSource & V2Envelope = {
+    const names: Record<string, string> = Object.create(null);   // ids are data: no prototype keys
+    if (src.kind === 'groups') {
+      for (const id of src.ids) {
+        const name = this.groupNames.get(id);
+        if (name) names[id] = name;
+      }
+    }
+    const record: StoredRecord = {
       ...src,
+      ...(src.kind === 'groups' ? { groupNames: names } : {}),
       domain: this.dataService.getCurrentAttackDomain(),
       attackVersion: this.dataService.getCurrentDomain()?.attackVersion ?? 'unknown',
       source: 'manual',

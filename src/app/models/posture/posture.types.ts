@@ -123,4 +123,10 @@ export interface ThreatWeightProvider {
    * gets no Threat gaps profile note (the legend never guesses the reason).
    */
   readonly emptyReason?: Signal<ThreatProfileEmptyReason | null>;
+  /**
+   * The cross-domain notice ("1 of 2 groups present in ICS: FIN7; APT29 has no ICS
+   * use"), or null when every stored group is present in the loaded domain. Optional:
+   * a provider without it shows no notice. Read by <app-profile-domain-notice>.
+   */
+  readonly domainNotice?: Signal<string | null>;
 }

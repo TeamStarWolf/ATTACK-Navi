@@ -9,6 +9,8 @@
       <p class="posture-card-scope" data-testid="threat-relevant-line" aria-busy="true">threat-relevant techniques: <span data-testid="threat-relevant-loading">loading the domain…</span></p>
     } @else {
       <p class="posture-card-scope" data-testid="threat-relevant-line">threat-relevant techniques: <span data-posture="threat-relevant">{{ t.total }}</span></p>
+      <!-- RP-F decision 6: name the profile groups the loaded domain lacks (renders nothing otherwise). -->
+      <app-profile-domain-notice />
     }
   }
   <dl class="posture-card-rows">

@@ -18,6 +18,7 @@ import { PostureService } from '../../services/posture.service';
 import { THREAT_WEIGHT_PROVIDER } from '../../models/posture/threat-weight';
 import { tallyPosture } from '../../models/posture/derive-posture';
 import { PROVEN, postureBadge } from '../../models/posture/posture-vocabulary';
+import { ProfileDomainNoticeComponent } from '../profile-domain-notice/profile-domain-notice.component';
 
 export type PostureCardScope = 'all' | 'threat-relevant';
 
@@ -53,6 +54,7 @@ export interface PostureCardTally {
 @Component({
   selector: 'app-posture-card',
   standalone: true,
+  imports: [ProfileDomainNoticeComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './posture-card.component.html',
   styleUrl: './posture-card.component.scss',

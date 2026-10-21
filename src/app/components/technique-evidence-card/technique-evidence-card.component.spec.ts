@@ -5,7 +5,7 @@
 // seeded PostureState; a fresh profile shows Known and Threat only, with no
 // Covered or Proven words; "Why this colour" follows the lens on screen.
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { signal } from '@angular/core';
+import { WritableSignal, signal } from '@angular/core';
 import { BehaviorSubject, of } from 'rxjs';
 import { TechniqueEvidenceCardComponent } from './technique-evidence-card.component';
 import type { Technique } from '../../models/technique';
@@ -59,6 +59,15 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
   let heat: BehaviorSubject<HeatmapMode>;
   let confirm: jasmine.Spy;
   let kevLoaded: BehaviorSubject<boolean>;
+  // The drawer's threat-profile line (RP-F decision 6): the shared notice replaces the label.
+  let domainNotice: WritableSignal<string | null>;
+  let profileLabel: string;
+  let profileActors: string[];
+  beforeEach(() => {
+    domainNotice = signal<string | null>(null);
+    profileLabel = 'Top 20 groups by prevalence';
+    profileActors = ['APT28', 'APT29'];
+  });
 
   function render(s: PostureState, ownerWords: boolean, mode: HeatmapMode = 'frequency'): HTMLElement {
     heat = new BehaviorSubject<HeatmapMode>(mode);
@@ -89,7 +98,10 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
             referenceDefenseSignals: () => ({ mitigation: true, detection: true, control: false, d3fend: false, atomic: true }),
           },
         },
-        { provide: ThreatProfileService, useValue: { profile$: of({ label: 'Top 20 groups by prevalence', usedBy: () => ['APT28', 'APT29'] }) } },
+        {
+          provide: ThreatProfileService,
+          useValue: { profile$: of({ label: profileLabel, usedBy: () => profileActors }), domainNotice },
+        },
         {
           provide: CveService,
           useValue: { kevLoaded$: kevLoaded, kevTechScores$: of(new Map([['T1078', 2]])), isKev: (id: string) => id === 'CVE-2024-3400' },
@@ -239,6 +251,19 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
       'D3FEND countermeasures 0 MITRE D3FEND',
       'Atomic tests 4 Atomic Red Team',
     ]);
+  });
+
+  it('the threat-profile line says which stored groups the domain lacks, and is plain when none is absent (RP-F decision 6)', () => {
+    profileLabel = 'FIN7';            // what resolveProfile names a {APT29, FIN7} profile on ICS
+    profileActors = [];
+    domainNotice.set('1 of 2 groups present in ICS: FIN7; APT29 has no ICS use');
+    const el = render(state(), false);
+    const line = () => text(block(el, 'ev-threat')!.querySelector('[data-testid="ev-threat-profile"]'));
+    expect(line()).toBe('Threat profile (1 of 2 groups present in ICS: FIN7; APT29 has no ICS use): used by 0');
+
+    domainNotice.set(null);           // back on Enterprise: every group present, the line is the plain label
+    fixture.detectChanges();
+    expect(line()).toBe('Threat profile (FIN7): used by 0');
   });
 
   it('the Threat block names the profile actors, the bundle groups and the KEV-linked CVEs', () => {
