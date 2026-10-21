@@ -1,67 +1,56 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 //
-// How the four GitHub tree-listing sources are reported (fix/tree-listing-sources).
+// How the three rule-coverage sources are reported (feat/rule-coverage-snapshot).
 //
-// Elastic detection-rules, Splunk security_content, edoardogerosa/sentinel-attack and
-// mdecrevoisier SIGMA-detection-rules are read from unauthenticated GitHub git/trees
-// listings. The listings answer, but no technique id can be read from the file names,
-// so each source is 'empty'. This spec serves small real-shaped listings
-// (src/testing/fixtures/github-tree-listings.json, abridged from the real ones) through
-// page.route and checks what the matrix view says about them:
-//   1. a complete 200 with no ids: the banner lists them under 'Incomplete data' with
-//      the 'no technique ids' wording (kept to these four; any other empty source
-//      gets the generic 'nothing usable' wording) and no Retry, and the Briefing line
-//      says they answered with no technique ids;
-//   2. a GitHub rate limit (403, X-RateLimit-Remaining: 0, X-RateLimit-Reset): the
-//      banner says they did not load, with 'GitHub rate limit reached' and the time;
-//   3. a truncated listing: they did not load, 'listing truncated'.
+// Elastic detection-rules, Splunk security_content and mdecrevoisier
+// SIGMA-detection-rules are read from one bundled file,
+// src/assets/data/rule-coverage-snapshot.json, built from the rule bodies at pinned
+// commits by scripts/build-rule-coverage-snapshot.mjs. No request goes to GitHub for
+// them. This spec checks what the app says about them:
+//   1. the normal path: the file loads from the app's own origin, each source is
+//      'loaded' with rows above 0 and its pinned commit in the version, and the matrix
+//      lists none of them under 'Incomplete data' or as failed, and the Briefing line
+//      does not name them;
+//   2. the file missing (404, served through page.route): the banner says they did
+//      not load, with 'bundled snapshot missing', and never lists them as
+//      'Incomplete data'.
 // Every other source stays offline (the hermetic workspace), so the banner also has a
-// failed group; the checks below look inside the right group.
-import { readFileSync } from 'node:fs';
-import { Page, Route } from '@playwright/test';
+// failed group for those; the checks below look at these three only.
+import { Page } from '@playwright/test';
 import { test, expect, BASE, ROUTE_TIMEOUT } from './fixtures/workspace';
 import { SOURCE_DEFINITIONS } from '../src/app/services/source-inventory';
-import { TREE_LISTING_EMPTY_DETAIL, TREE_LISTING_SOURCE_IDS } from '../src/app/models/briefing';
 
-interface Listing { sha: string; url: string; tree: Array<{ path: string; type: string }>; truncated: boolean }
-type Key = 'elastic' | 'splunk' | 'sentinel' | 'mdecrevoisier';
-const TREES = JSON.parse(readFileSync('src/testing/fixtures/github-tree-listings.json', 'utf8')) as Record<Key, { listing: Listing }>;
-
-/** The four tree-listing sources: registry id, the request it makes, its fixture. */
-const TREE_SOURCES: ReadonlyArray<{ id: string; key: Key; match: string }> = [
-  { id: 'elastic-tree', key: 'elastic', match: 'api.github.com/repos/elastic/detection-rules/git/trees/' },
-  { id: 'splunk-tree', key: 'splunk', match: 'api.github.com/repos/splunk/security_content/git/trees/' },
-  { id: 'sentinel-attack-tree', key: 'sentinel', match: 'api.github.com/repos/edoardogerosa/sentinel-attack/git/trees/' },
-  { id: 'mdecrevoisier-sigma-tree', key: 'mdecrevoisier', match: 'api.github.com/repos/mdecrevoisier/SIGMA-detection-rules/git/trees/' },
-];
+const SNAPSHOT = 'assets/data/rule-coverage-snapshot.json';
+const IDS = ['elastic-tree', 'splunk-tree', 'mdecrevoisier-sigma-tree'] as const;
 const nameOf = (id: string): string => SOURCE_DEFINITIONS.find(d => d.id === id)!.name;
 
-/** GitHub's CORS headers on api.github.com: the rate-limit headers are exposed to the page. */
-const GITHUB_CORS = {
-  'access-control-allow-origin': '*',
-  'access-control-expose-headers': 'ETag, Link, Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset',
-};
-
-/** Answer each tree request (registered after the hermetic routes, so it wins) and count them. */
-async function serveTrees(page: Page, answer: (key: Key, route: Route) => Promise<void>): Promise<() => number> {
-  let served = 0;
-  for (const s of TREE_SOURCES) {
-    await page.route(url => url.href.includes(s.match), route => { served++; return answer(s.key, route); });
-  }
-  return () => served;
+/** Count the snapshot requests; optionally answer them with a 404. */
+async function watchSnapshot(page: Page, missing: boolean): Promise<{ requests: () => number; github: () => number }> {
+  let requests = 0;
+  let github = 0;
+  page.on('request', req => {
+    const url = req.url();
+    if (url.includes('api.github.com/repos/elastic/') || url.includes('api.github.com/repos/splunk/')
+      || url.includes('api.github.com/repos/mdecrevoisier/SIGMA-detection-rules') || url.includes('sentinel-attack')) {
+      github++;
+    }
+  });
+  await page.route(url => url.href.includes(SNAPSHOT), route => {
+    requests++;
+    return missing
+      ? route.fulfill({ status: 404, contentType: 'text/plain', body: 'Not Found' })
+      : route.continue();
+  });
+  return { requests: () => requests, github: () => github };
 }
 
-/** Load all four on the data-health view (two load on demand), wait for `status`, then open the matrix in-app. */
-async function loadThenOpenMatrix(page: Page, status: 'empty' | 'failed'): Promise<void> {
+/** Wait on the data-health view until each of the three settles in `status`, then open the matrix in-app. */
+async function settleThenOpenMatrix(page: Page, status: 'loaded' | 'failed'): Promise<void> {
   await page.goto(`${BASE}/#/status`);
-  for (const s of TREE_SOURCES) {
-    const row = page.locator(`app-source-health tr[data-source-id="${s.id}"]`);
+  for (const id of IDS) {
+    const row = page.locator(`app-source-health tr[data-source-id="${id}"]`);
     await expect(row).toBeAttached({ timeout: ROUTE_TIMEOUT });
-    await expect(row).not.toHaveAttribute('data-status', 'loading', { timeout: ROUTE_TIMEOUT });
-    if ((await row.getAttribute('data-status')) === 'pending') {
-      await row.getByRole('button', { name: `Load now: ${nameOf(s.id)}` }).click();
-    }
     await expect(row).toHaveAttribute('data-status', status, { timeout: ROUTE_TIMEOUT });
   }
   // In-app navigation keeps this session's source registry.
@@ -70,88 +59,46 @@ async function loadThenOpenMatrix(page: Page, status: 'empty' | 'failed'): Promi
 
 const banner = (page: Page) => page.locator('app-source-banner [data-testid="source-banner"]');
 
-test.describe('tree-listing sources say why they are empty or failed', () => {
-  test("a complete listing with no ids: 'Incomplete data', 'no technique ids', no Retry; the Briefing agrees", async ({ page }) => {
-    const served = await serveTrees(page, (key, route) =>
-      route.fulfill({ status: 200, contentType: 'application/json', headers: GITHUB_CORS, body: JSON.stringify(TREES[key].listing) }));
-    await loadThenOpenMatrix(page, 'empty');
+test.describe('rule coverage comes from a bundled, pinned snapshot', () => {
+  test('normal path: loaded with rows and the pinned commit; never Incomplete data or failed on the matrix', async ({ page }) => {
+    const seen = await watchSnapshot(page, false);
+    await settleThenOpenMatrix(page, 'loaded');
 
-    const empty = banner(page).locator('[data-testid="source-banner-empty"]');
-    await expect(empty).toBeVisible({ timeout: ROUTE_TIMEOUT });
-    await expect(empty).toContainText('Incomplete data');
-    // The 'no technique ids' wording: the lead when only tree listings are empty, else a mark on each.
-    await expect(empty).toContainText('no technique ids');
-    expect([...TREE_LISTING_SOURCE_IDS], 'the app and this spec name the same four tree listings')
-      .toEqual(TREE_SOURCES.map(s => s.id));
-    for (const s of TREE_SOURCES) {
-      const item = empty.locator(`[data-source-id="${s.id}"]`);
-      await expect(item).toContainText(nameOf(s.id));
-      await expect(item).toHaveAttribute('data-status', 'empty');
-      await expect(item).toHaveAttribute('title', TREE_LISTING_EMPTY_DETAIL);
-      // Not listed as a source that did not load.
-      await expect(banner(page).locator(`[data-testid="source-banner-failed"] [data-source-id="${s.id}"]`)).toHaveCount(0);
+    await page.evaluate(() => { window.location.hash = '#/status'; });
+    for (const id of IDS) {
+      const row = page.locator(`app-source-health tr[data-source-id="${id}"]`);
+      await expect(row).toHaveAttribute('data-status', 'loaded', { timeout: ROUTE_TIMEOUT });
+      expect(Number(await row.locator('.sh-rows').textContent()), `${id} rows`).toBeGreaterThan(0);
+      await expect(row).toContainText(/snapshot of \d{4}-\d{2}-\d{2}, [\w-]+\/[\w-]+@[0-9a-f]{7} \(commit \d{4}-\d{2}-\d{2}, \w+\)/);
+      await expect(row).toContainText('Reference data about a public rule repository at the pinned commit');
+      // Bundled with the app: no Retry button.
+      await expect(row.getByRole('button')).toHaveCount(0);
     }
-    await expect(empty).not.toContainText(/did not load|retry/i);
-    await expect(empty.getByRole('link')).toHaveCount(0);
-    await expect(empty.getByRole('button')).toHaveCount(0);
-
+    await page.evaluate(() => { window.location.hash = '#/matrix'; });
+    await expect(page.locator('app-matrix')).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    for (const id of IDS) {
+      await expect(banner(page).locator(`[data-source-id="${id}"]`)).toHaveCount(0);
+    }
     const live = page.getByTestId('briefing-live');
-    await expect(live).toContainText(/\d+ sources? answered with (no technique ids|nothing usable)/);
-    await expect(live).toContainText('no technique ids');
-    await expect(live).toContainText(nameOf('elastic-tree'));
-    expect(served(), 'each tree listing was requested from the fixture').toBeGreaterThanOrEqual(TREE_SOURCES.length);
+    await expect(live).toBeAttached({ timeout: ROUTE_TIMEOUT });
+    for (const id of IDS) await expect(live).not.toContainText(nameOf(id));
+    expect(seen.requests(), 'the snapshot was read from the app').toBeGreaterThan(0);
+    expect(seen.github(), 'no tree listing is requested from GitHub').toBe(0);
   });
 
-  test("a GitHub rate limit: the banner says 'did not load' with 'GitHub rate limit reached' and the reset time", async ({ page }) => {
-    const reset = Math.floor(Date.now() / 1000) + 37 * 60;
-    await serveTrees(page, (_key, route) => route.fulfill({
-      status: 403,
-      contentType: 'application/json',
-      headers: {
-        ...GITHUB_CORS,
-        'x-ratelimit-limit': '60',
-        'x-ratelimit-remaining': '0',
-        'x-ratelimit-used': '60',
-        'x-ratelimit-resource': 'core',
-        'x-ratelimit-reset': String(reset),
-      },
-      body: JSON.stringify({
-        message: "API rate limit exceeded for 203.0.113.7. (But here's the good news: Authenticated requests get a higher rate limit.)",
-        documentation_url: 'https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting',
-      }),
-    }));
-    await loadThenOpenMatrix(page, 'failed');
-    // The reset time in the browser's own time zone, as the app formats it.
-    const hhmm = await page.evaluate(r => {
-      const d = new Date(r * 1000);
-      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-    }, reset);
+  test("the file missing (404): 'did not load' with 'bundled snapshot missing', never Incomplete data", async ({ page }) => {
+    const seen = await watchSnapshot(page, true);
+    await settleThenOpenMatrix(page, 'failed');
 
     const failed = banner(page).locator('[data-testid="source-banner-failed"]');
     await expect(failed).toBeVisible({ timeout: ROUTE_TIMEOUT });
     await expect(failed).toContainText('did not load');
-    for (const s of TREE_SOURCES) {
-      const item = failed.locator(`[data-source-id="${s.id}"]`);
-      await expect(item).toContainText(`${nameOf(s.id)} (failed)`);
-      await expect(item).toContainText(`GitHub rate limit reached (60 requests per hour per address); resets at ${hhmm}`);
+    for (const id of IDS) {
+      const item = failed.locator(`[data-source-id="${id}"]`);
+      await expect(item).toContainText(`${nameOf(id)} (failed)`);
+      await expect(item).toContainText('bundled snapshot missing');
+      await expect(banner(page).locator(`[data-testid="source-banner-empty"] [data-source-id="${id}"]`)).toHaveCount(0);
     }
-    await expect(banner(page).locator('[data-testid="source-banner-empty"] [data-source-id="elastic-tree"]')).toHaveCount(0);
-  });
-
-  test("a truncated listing is not parsed: the banner says 'did not load', 'listing truncated'", async ({ page }) => {
-    await serveTrees(page, (key, route) => route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      headers: GITHUB_CORS,
-      body: JSON.stringify({ ...TREES[key].listing, truncated: true }),
-    }));
-    await loadThenOpenMatrix(page, 'failed');
-
-    const failed = banner(page).locator('[data-testid="source-banner-failed"]');
-    await expect(failed).toBeVisible({ timeout: ROUTE_TIMEOUT });
-    for (const s of TREE_SOURCES) {
-      await expect(failed.locator(`[data-source-id="${s.id}"]`))
-        .toContainText(`${nameOf(s.id)} (failed): listing truncated by GitHub; counts would be incomplete`);
-    }
+    expect(seen.requests()).toBeGreaterThan(0);
   });
 });

@@ -58,8 +58,12 @@ describe('route-sources: which sources each view banner watches (E1.3)', () => {
     for (const path of Object.keys(ROUTE_SOURCES)) {
       for (const domain of DOMAINS) for (const id of sourcesForRoute(path, domain)) watched.add(id);
     }
-    const live = SOURCE_DEFINITIONS.filter(d => d.kind === 'live').map(d => d.id);
+    // A source withdrawn upstream with no loader (sentinel-attack) makes no request, so it cannot fail on a view.
+    const live = SOURCE_DEFINITIONS
+      .filter(d => d.kind === 'live' && !(d.archivedUpstream && d.initialStatus === 'archived-upstream'))
+      .map(d => d.id);
     expect(live.filter(id => !watched.has(id))).toEqual([]);
+    expect(sourcesForRoute('/matrix', 'enterprise')).not.toContain('sentinel-attack-tree');
   });
 
   it('resolves the matrix\'s ATT&CK sources to the active domain only', () => {

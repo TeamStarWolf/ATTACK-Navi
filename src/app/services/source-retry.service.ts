@@ -24,7 +24,6 @@ import { CweService } from './cwe.service';
 import { D3fendService } from './d3fend.service';
 import { AttackDomain, DataService } from './data.service';
 import { DossierService } from './dossier.service';
-import { ElasticService } from './elastic.service';
 import { EngageService } from './engage.service';
 import { EpssService } from './epss.service';
 import { EvtxSamplesService } from './evtx-samples.service';
@@ -41,10 +40,8 @@ import { NucleiService } from './nuclei.service';
 import { NvdBulkService } from './nvd-bulk.service';
 import { PayloadsService } from './payloads.service';
 import { PocExploitService } from './poc-exploit.service';
-import { SentinelRulesService } from './sentinel-rules.service';
 import { SiemQueryService } from './siem-query.service';
 import { SigmaService } from './sigma.service';
-import { SplunkContentService } from './splunk-content.service';
 import { SsvcService } from './ssvc.service';
 import { ThreatHuntingService } from './threat-hunting.service';
 import { ThreatHunterPlaybookService } from './threathunter-playbook.service';
@@ -137,13 +134,9 @@ export const SOURCE_RETRY: Readonly<Record<string, RetryEntry>> = {
   'capec': { service: CapecService, run: (s: CapecService) => s.retry() },
   'misp-galaxy': { service: MispService, run: (s: MispService) => s.retry() },
   'engage': { service: EngageService, run: (s: EngageService) => s.retry() },
-  'elastic-tree': { service: ElasticService, run: (s: ElasticService) => s.retry() },
-  'splunk-tree': { service: SplunkContentService, run: (s: SplunkContentService) => s.retry() },
-  'sentinel-attack-tree': { service: SentinelRulesService, run: (s: SentinelRulesService) => s.retry() },
   'm365-hunting-queries': { service: M365DefenderService, run: (s: M365DefenderService) => s.retry() },
   'trickest-poc-tree': { service: PocExploitService, run: (s: PocExploitService) => s.retry() },
   'nuclei-tree': { service: NucleiService, run: (s: NucleiService) => s.retry() },
-  'mdecrevoisier-sigma-tree': { service: SigmaService, run: (s: SigmaService) => s.loadCommunityRules() },
   'cyb3r-monk-hunting-tree': { service: ThreatHuntingService, run: (s: ThreatHuntingService) => s.retry() },
   'evtx-samples-tree': { service: EvtxSamplesService, run: (s: EvtxSamplesService) => s.retry() },
   'payloads-tree': { service: PayloadsService, run: (s: PayloadsService) => s.retry() },
@@ -165,6 +158,12 @@ export const SOURCE_RETRY: Readonly<Record<string, RetryEntry>> = {
 /** Sources with nothing to retry, each with the reason the data-health view shows. */
 export const NO_RETRY_REASON: Readonly<Record<string, string>> = {
   'cis-controls': 'withdrawn upstream; nothing to fetch',
+  'sentinel-attack-tree': 'withdrawn upstream; nothing to fetch',
+  // Bundled with the app (src/assets/data/rule-coverage-snapshot.json): a Retry would
+  // fetch the same file again; a missing file is a deploy problem, and reloading the page asks for it again.
+  'elastic-tree': 'bundled snapshot shipped with the app; reload the page to read it again',
+  'splunk-tree': 'bundled snapshot shipped with the app; reload the page to read it again',
+  'mdecrevoisier-sigma-tree': 'bundled snapshot shipped with the app; reload the page to read it again',
   'lylat-mission-layers': 'shipped but read by no code path',
   'payloads-folder-map': 'compiled into the app',
   'offensive-tools': 'compiled into the app',

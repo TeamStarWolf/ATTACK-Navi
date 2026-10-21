@@ -69,6 +69,8 @@ const ROW_ATTACK = 'ATT&CK Enterprise / ICS / Mobile / F3 bundles';
 const ROW_CTID = 'CTID mappings (NIST 800-53, CRI, CSA CCM, VERIS, AWS, Azure, GCP, M365)';
 const ROW_CONTENT = 'Sigma coverage, CAR, Atomic, CAPEC, MISP galaxy, Engage';
 const ROW_VENDOR = 'Elastic, Splunk, Sentinel (edoardogerosa)';
+/** The Elastic and Splunk counts come from the bundled rule-coverage snapshot, read from rule bodies at a pinned commit. */
+const RULE_COVERAGE_PINNED = 'bundled snapshot of the rule bodies at a pinned commit; commit and date on the Status page';
 const ROW_CURATED = 'CAR seed, Wazuh stock-rule table (~22 ids), YARA, Zeek, Suricata, event-logging, IR playbooks';
 
 export const LENS_SOURCES: Readonly<Record<LensSourceId, LensSourceInfo>> = {
@@ -86,8 +88,8 @@ export const LENS_SOURCES: Readonly<Record<LensSourceId, LensSourceInfo>> = {
   'atomic': { name: 'Atomic Red Team', inventoryRow: ROW_CONTENT, delivery: 'runtime', pinned: null },
   'engage': { name: 'MITRE Engage', inventoryRow: ROW_CONTENT, delivery: 'runtime', pinned: null, note: 'archived upstream 2024-04' },
   'misp-galaxy': { name: 'MISP galaxy', inventoryRow: ROW_CONTENT, delivery: 'runtime', pinned: null },
-  'elastic': { name: 'Elastic detection-rules', inventoryRow: ROW_VENDOR, delivery: 'runtime', pinned: null },
-  'splunk': { name: 'Splunk security_content', inventoryRow: ROW_VENDOR, delivery: 'runtime', pinned: null },
+  'elastic': { name: 'Elastic detection-rules', inventoryRow: ROW_VENDOR, delivery: 'bundled', pinned: RULE_COVERAGE_PINNED },
+  'splunk': { name: 'Splunk security_content', inventoryRow: ROW_VENDOR, delivery: 'bundled', pinned: RULE_COVERAGE_PINNED },
   'm365-hunting': { name: 'M365 Defender hunting queries', inventoryRow: 'M365 Defender hunting queries', delivery: 'runtime', pinned: null, note: 'archived upstream 2022-02' },
   'wazuh-stock-rules': { name: 'Wazuh stock-rule table', inventoryRow: ROW_CURATED, delivery: 'in-code', pinned: 'curated in code', mappedVs: '19.2' },
   'd3fend-seed': { name: 'D3FEND seed', inventoryRow: 'D3FEND seed', delivery: 'in-code', pinned: 'pruned vs D3FEND 1.4.0', mappedVs: '19.2', note: 'per-technique live D3FEND API answers override the seed when fetched' },

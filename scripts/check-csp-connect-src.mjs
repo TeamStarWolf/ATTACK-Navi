@@ -23,7 +23,7 @@ const REQUIRED_CONNECT_SRC = [
   ['https://raw.githubusercontent.com', 'cve.service.ts', 'ATT&CK STIX, Engage, CAPEC, Sigma, Atomic, KEV mirror and other GitHub-hosted data'],
   ['https://api.first.org', 'epss.service.ts', 'EPSS scores'],
   ['https://services.nvd.nist.gov', 'cve.service.ts', 'NVD CVE lookups'],
-  ['https://api.github.com', 'elastic.service.ts', 'GitHub API listings (Elastic, Splunk, changelog)'],
+  ['https://api.github.com', 'changelog.service.ts', 'GitHub API listings (ATT&CK releases, tree listings)'],
   ['https://gitlab.com', 'exploitdb.service.ts', 'Exploit-DB index'],
   ['https://www.cisa.gov', 'cve.service.ts', 'CISA KEV catalog'],
   ['https://d3fend.mitre.org', 'd3fend.service.ts', 'D3FEND technique mappings'],

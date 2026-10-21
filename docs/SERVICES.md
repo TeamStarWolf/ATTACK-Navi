@@ -260,7 +260,7 @@ full list of 20 BehaviorSubjects and 7 derived observables.
 | | |
 |---|---|
 | **File** | `src/app/services/sigma.service.ts` |
-| **Data Source** | SigmaHQ Navigator layer JSON (GitHub); bundled logsource mappings |
+| **Data Source** | SigmaHQ Navigator layer JSON (GitHub); mdecrevoisier community rules from the rule-coverage snapshot |
 
 **Observables**
 
@@ -280,6 +280,71 @@ full list of 20 BehaviorSubjects and 7 derived observables.
 | `generateRuleForTechnique(tech)` | Generate a Sigma rule YAML for a technique |
 | `generateRulesForTechniques(techs)` | Batch generate rules as a single YAML string |
 | `exportRules(techs)` | Download generated rules as a `.yml` file |
+| `loadCommunityRules()` | Index the mdecrevoisier community rule counts from the rule-coverage snapshot (also run at start-up) |
+| `getCommunityRuleCount(techniqueId)` | Community rules naming a technique |
+| `fetchRulesForTechnique(attackId)` | Up to ten community rule titles with permalinks at the pinned commit, from the snapshot (no GitHub request) |
+
+**Dependencies:** `HttpClient`
+
+---
+
+### Rule-coverage snapshot (Elastic, Splunk, mdecrevoisier Sigma)
+
+Three detection-content sources come from one bundled file,
+`src/assets/data/rule-coverage-snapshot.json`, built from the rule **bodies** of three
+public rule repositories at pinned commits. The app used to list each repository through
+the unauthenticated `api.github.com` git/trees API and read technique ids from file
+paths; none of these repositories puts ids in file names, so every count was zero.
+
+| Source (registry id) | Repository, branch | Read from each rule | Licence (read from the upstream LICENSE) |
+|---|---|---|---|
+| Elastic (`elastic-tree`) | `elastic/detection-rules`, `main` | `rules/**/*.toml` except `rules/_deprecated/`: the `[rule]` name and every `id` in `[[rule.threat.technique]]` and `[[rule.threat.technique.subtechnique]]` (tactic ids are ignored) | Elastic License 2.0 (`Elastic-2.0`) |
+| Splunk (`splunk-tree`) | `splunk/security_content`, `develop` | `detections/**/*.yml` except `detections/deprecated/`: `name` and the `mitre_attack_id` list (top level today; `tags.mitre_attack_id` in older files) | Apache License 2.0 (`Apache-2.0`) |
+| mdecrevoisier Sigma (`mdecrevoisier-sigma-tree`) | `mdecrevoisier/SIGMA-detection-rules`, `main` | `**/*.yaml`: the first `title` and every `attack.tNNNN(.NNN)` tag, any case, normalised to `TNNNN.NNN` | CC0 1.0 Universal (`CC0-1.0`) |
+
+**Builder:** `scripts/build-rule-coverage-snapshot.mjs` (tests: `scripts/build-rule-coverage-snapshot.test.mjs`,
+fixtures in `scripts/fixtures/rule-coverage/`). It downloads each repository's tarball anonymously
+from `codeload.github.com` at the pinned SHA, gunzips it with `node:zlib` and reads the ustar
+stream by hand (pax and GNU long names, top-level directory removed); TOML and YAML fields are
+extracted line by line. No npm dependency.
+
+| Command | What it does |
+|---|---|
+| `node scripts/build-rule-coverage-snapshot.mjs` | Rebuild at the SHAs the committed file records (the `PINS` block when there is no file) |
+| `node scripts/build-rule-coverage-snapshot.mjs --check` | Rebuild and compare with the committed file; exit 1 on drift |
+| `node scripts/build-rule-coverage-snapshot.mjs --update-pins` | Move each pin to its branch head (`gh api repos/<o>/<r>/commits/<branch> --jq .sha`), rewrite `PINS`, build and write |
+
+**Pins.** The pin of record is the SHA inside the asset; the monthly `refresh-data.yml` runs
+`--update-pins` and its review PR carries only `src/assets/data/`, so a moved pin travels in the
+file. The script's `PINS` block is the starting point when no file exists.
+
+**Shape** (sorted keys, two-space indent, LF):
+`{ generated, sources: { elastic | splunk | mdecrevoisier: { owner, repo, branch, sha, commitDate, licence, ruleCount, techniqueCount, techniques: { "T1059.001": { count, rules: [{ name, path }] } } } } }`.
+`count` is the number of rules naming the technique; a parent's count is the distinct rules
+naming it or any of its sub-techniques. At most 10 rules are listed per technique (5 if the file
+would pass 1.5 MB). At the pins of 2026-10-21 the file is 1,082,708 bytes:
+
+| Source | Rules parsed | Name at least one technique | Techniques with a rule |
+|---|---|---|---|
+| Elastic | 2,131 | 2,049 | 446 |
+| Splunk | 2,169 | 2,138 | 396 |
+| mdecrevoisier | 353 | 349 | 125 |
+
+These are reference data about public rule repositories at a commit: a count says what the
+repository holds, not what runs in any environment.
+
+### RuleCoverageSnapshotService
+
+| | |
+|---|---|
+| **File** | `src/app/services/rule-coverage-snapshot.service.ts` |
+| **Data Source** | `assets/data/rule-coverage-snapshot.json` (fetched once, on first use; not in the JS bundle) |
+
+| Method / export | Description |
+|---|---|
+| `section(key)` | One source's section with the snapshot's `generated` date. Errors with `bundled snapshot missing (...)` when the file does not load, or `bundled snapshot missing or malformed: ...` when the section is unusable; the loaders record that as `failed`, never `empty` |
+| `rulePermalink(source, path)` | `https://github.com/<owner>/<repo>/blob/<sha>/<path>`, each segment encoded |
+| `snapshotVersion(section)` | The registry version line: `snapshot of <generated>, <owner>/<repo>@<sha7> (commit <date>, <branch>)` |
 
 **Dependencies:** `HttpClient`
 
@@ -290,26 +355,26 @@ full list of 20 BehaviorSubjects and 7 derived observables.
 | | |
 |---|---|
 | **File** | `src/app/services/elastic.service.ts` |
-| **Data Source** | Elastic detection-rules Navigator layer JSON (GitHub) |
-
-**URL:** `elastic/detection-rules/main/etc/attack-navigator-layer.json`
+| **Data Source** | Rule-coverage snapshot, `elastic` section (see above) |
 
 **Observables**
 
 | Name | Type | Description |
 |---|---|---|
-| `loaded$` | `Observable<boolean>` | True when layer is loaded |
-| `total$` | `Observable<number>` | Total Elastic detection rule count |
-| `covered$` | `Observable<number>` | Techniques with at least one Elastic rule |
+| `loaded$` | `Observable<boolean>` | True once the snapshot section is indexed |
+| `total$` | `Observable<number>` | Rules parsed from the repository at the pinned commit |
+| `covered$` | `Observable<number>` | Techniques named by at least one rule |
 
 **Key Methods**
 
 | Method | Description |
 |---|---|
-| `getRuleCount(attackId)` | Return the Elastic rule count for a technique |
+| `getRuleCount(attackId)` | Rules naming the technique (parents already rolled up in the snapshot) |
 | `getHeatScore(attackId)` | Alias for `getRuleCount` |
+| `getCounts()` | The technique-to-count map |
+| `fetchRulesForTechnique(attackId)` | Up to ten rule names with permalinks at the pinned commit |
 
-**Dependencies:** `HttpClient`
+**Dependencies:** `RuleCoverageSnapshotService`, `SourceRegistryService`
 
 ---
 
@@ -318,26 +383,22 @@ full list of 20 BehaviorSubjects and 7 derived observables.
 | | |
 |---|---|
 | **File** | `src/app/services/splunk-content.service.ts` |
-| **Data Source** | Splunk security_content Navigator layer JSON (GitHub) |
+| **Data Source** | Rule-coverage snapshot, `splunk` section (see above) |
 
-**URL:** `splunk/security_content/develop/dist/attack_navigator_layer.json`
+Same surface as `ElasticService` (`loaded$`, `total$`, `covered$`, `getRuleCount`,
+`getHeatScore`, `getCounts`, `fetchRulesForTechnique`), over Splunk detections.
 
-**Observables**
+**Dependencies:** `RuleCoverageSnapshotService`, `SourceRegistryService`
 
-| Name | Type | Description |
-|---|---|---|
-| `loaded$` | `Observable<boolean>` | True when layer is loaded |
-| `total$` | `Observable<number>` | Total Splunk content rule count |
-| `covered$` | `Observable<number>` | Techniques with at least one Splunk rule |
+---
 
-**Key Methods**
+### Retired: edoardogerosa/sentinel-attack
 
-| Method | Description |
-|---|---|
-| `getRuleCount(attackId)` | Return the Splunk rule count for a technique |
-| `getHeatScore(attackId)` | Alias for `getRuleCount` |
-
-**Dependencies:** `HttpClient`
+The upstream removed every rule on 2024-11-28 ("Cleaned up deprecated components") and now
+holds a handful of non-rule files. The `sentinel-attack-tree` source is marked withdrawn upstream
+(status `archived-upstream`, date 2024-11-28), like CIS Controls: `SentinelRulesService` is a stub
+that makes no request (kept because the technique drawer imports it), and the source is gone from
+the matrix's drawer sources, Retry, the data-health ribbon and the honesty spec's forced-failure cases.
 
 ---
 

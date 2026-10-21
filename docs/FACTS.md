@@ -16,7 +16,7 @@ Counts and versions derived from the code. When a document states one of these n
 | Lylat mission layers | 35 | `src/assets/data/lylat-mission-layers/index.json` |
 | Unit spec files | 234 | `src/**/*.spec.ts` |
 | Playwright spec files | 8 | `e2e/**/*.spec.ts` |
-| Script test files | 8 | `scripts/**/*.test.mjs` |
+| Script test files | 9 | `scripts/**/*.test.mjs` |
 | Proxy test files | 1 | `server/**/*.test.*` |
 | Angular | 22.2.2 | `package-lock.json` (`@angular/core`) |
 | TypeScript | 6.0.3 | `package-lock.json` |
@@ -111,6 +111,7 @@ Contents of `src/assets/data/`:
 - `src/assets/data/library-layers/` (38 files)
 - `src/assets/data/lylat-mission-layers/` (36 files)
 - `src/assets/data/mobile-attack.json`
+- `src/assets/data/rule-coverage-snapshot.json`
 - `src/assets/data/ssvc-decision-tables.json`
 
 ## Bundled KEV snapshot
@@ -130,15 +131,11 @@ URL literals in `src/app/**/*.ts` (specs excluded) on a data host (`api.first.or
 | `https://api.first.org/data/v1/epss` | `services/epss.service.ts`, `services/source-inventory.ts` |
 | `https://api.github.com/repos/Cyb3r-Monk/Threat-Hunting-and-Detection/git/trees/main?recursive=1` | `services/threat-hunting.service.ts` |
 | `https://api.github.com/repos/center-for-threat-informed-defense/mappings-explorer/contents/mappings/kev` | `services/attack-cve.service.ts` |
-| `https://api.github.com/repos/edoardogerosa/sentinel-attack/git/trees/master?recursive=1` | `services/sentinel-rules.service.ts` |
-| `https://api.github.com/repos/elastic/detection-rules/git/trees/main?recursive=1` | `services/elastic.service.ts` |
 | `https://api.github.com/repos/mdecrevoisier/EVTX-to-MITRE-Attack/git/trees/master?recursive=1` | `services/evtx-samples.service.ts` |
-| `https://api.github.com/repos/mdecrevoisier/SIGMA-detection-rules/git/trees/main?recursive=1` | `services/sigma.service.ts` |
 | `https://api.github.com/repos/microsoft/Microsoft-365-Defender-Hunting-Queries/git/trees/master?recursive=1` | `services/m365-defender.service.ts` |
 | `https://api.github.com/repos/mitre-attack/attack-stix-data/releases` | `services/source-inventory.ts` |
 | `https://api.github.com/repos/mitre-attack/attack-stix-data/releases?per_page=5` | `services/changelog.service.ts` |
 | `https://api.github.com/repos/projectdiscovery/nuclei-templates/git/trees/main?recursive=1` | `services/nuclei.service.ts` |
-| `https://api.github.com/repos/splunk/security_content/git/trees/develop?recursive=1` | `services/splunk-content.service.ts` |
 | `https://api.github.com/repos/swisskyrepo/PayloadsAllTheThings/git/trees/master?recursive=1` | `services/payloads.service.ts` |
 | `https://api.github.com/repos/trickest/cve/git/trees/main?recursive=1` | `services/poc-exploit.service.ts` |
 | `https://cveawg.mitre.org/api/cve` | `services/cisa-ssvc.service.ts`, `services/source-inventory.ts` |
@@ -164,7 +161,6 @@ URL literals in `src/app/**/*.ts` (specs excluded) on a data host (`api.first.or
 | `https://raw.githubusercontent.com/center-for-threat-informed-defense/mappings-explorer/main/mappings/nist_800_53/attack-16.1/nist_800_53-rev5/enterprise/nist_800_53-rev5_attack-16.1-enterprise.json` | `services/nist-mapping.service.ts` |
 | `https://raw.githubusercontent.com/center-for-threat-informed-defense/mappings-explorer/main/mappings/veris/attack-16.1/veris-1.4.0/enterprise/veris-1.4.0_attack-16.1-enterprise.json` | `services/veris.service.ts` |
 | `https://raw.githubusercontent.com/cisagov/kev-data/develop/known_exploited_vulnerabilities.json` | `services/cve.service.ts` |
-| `https://raw.githubusercontent.com/mdecrevoisier/SIGMA-detection-rules/main/…` | `services/sigma.service.ts` |
 | `https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/enterprise-attack/enterprise-attack.json` | `services/data.service.ts`, `services/source-inventory.ts` |
 | `https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/ics-attack/ics-attack.json` | `services/data.service.ts`, `services/source-inventory.ts` |
 | `https://raw.githubusercontent.com/mitre-attack/attack-stix-data/master/mobile-attack/mobile-attack.json` | `services/data.service.ts`, `services/source-inventory.ts` |

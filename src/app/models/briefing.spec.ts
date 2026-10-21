@@ -4,9 +4,6 @@ import {
   BRIEFING_ALL_CLEAR,
   BRIEFING_REASON_LIMIT,
   EMPTY_SOURCE_DETAIL,
-  TREE_LISTING_EMPTY_DETAIL,
-  TREE_LISTING_SOURCE_IDS,
-  emptyDetailOf,
   shortReason,
   aggregateSourceDot,
   briefingItems,
@@ -92,16 +89,9 @@ describe('briefing model (E1.4 vintage chip and Briefing strip)', () => {
       expect(briefingMessage(four)).not.toMatch(/did not load|failed|retry|returned no rows|technique ids/i);
     });
 
-    it("says 'no technique ids' only for the four tree listings, and marks a tree listing in a mixed list", () => {
-      expect(TREE_LISTING_SOURCE_IDS).toEqual(['elastic-tree', 'splunk-tree', 'sentinel-attack-tree', 'mdecrevoisier-sigma-tree']);
-      const trees = briefingItems(TREE_LISTING_SOURCE_IDS.map(id => rec(id, 'empty', { rows: 0 })), null);
-      expect(briefingMessage(trees)).toBe(
-        '4 sources answered with no technique ids: Source elastic-tree, Source splunk-tree, Source sentinel-attack-tree and 1 more.');
+    it('names an empty rule-coverage source like any other (the tree-listing wording retired with the bundled snapshot)', () => {
       const mixed = briefingItems([rec('cisa-kev', 'empty', { rows: 0 }), rec('elastic-tree', 'empty', { rows: 0 })], null);
-      expect(briefingMessage(mixed)).toBe(
-        '2 sources answered with nothing usable: Source cisa-kev, Source elastic-tree (no technique ids).');
-      expect(emptyDetailOf('elastic-tree')).toBe(TREE_LISTING_EMPTY_DETAIL);
-      expect(emptyDetailOf('epss')).toBe(EMPTY_SOURCE_DETAIL);
+      expect(briefingMessage(mixed)).toBe('2 sources answered with nothing usable: Source cisa-kev, Source elastic-tree.');
       expect(EMPTY_SOURCE_DETAIL).not.toContain('technique');
     });
 
