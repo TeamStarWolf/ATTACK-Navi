@@ -12,7 +12,7 @@ A build is published to GitHub Pages at <https://teamstarwolf.github.io/ATTACK-N
 
 ## Screenshots
 
-Captured on 2026-08-15 with `scripts/capture-screenshots.mjs`, in the dark theme; they predate several recent changes, including the toolbar rename to "ATT&CK Navi". The two images below are the current ones, and `screenshots/attack-navi-live.png` is the uncropped matrix capture from the same run.
+Captured from the production build with `scripts/capture-screenshots.mjs` in the dark theme, which also writes the full matrix view to `screenshots/attack-navi-live.png`; rerun the script to refresh them after UI changes.
 
 ![Matrix with the technique sidebar open for T1590](screenshots/live2.png)
 
@@ -105,7 +105,7 @@ Many mapping datasets are pinned to older ATT&CK releases: most CTID Mappings Ex
 | Elastic, Splunk and Microsoft 365 Defender counts | `elastic/detection-rules`, `splunk/security_content` and `microsoft/Microsoft-365-Defender-Hunting-Queries` |
 | Atomic Red Team tests | Red Canary Navigator layer for counts, per-technique YAML on demand |
 | CAR analytics | `mitre-attack/car` Navigator layer |
-| Hunting queries, Sentinel rules and log samples | OTRF ThreatHunter-Playbook, `edoardogerosa/sentinel-attack`, `mdecrevoisier/EVTX-to-MITRE-Attack`, `Cyb3r-Monk/Threat-Hunting-and-Detection` |
+| Hunting queries, Sentinel rules and log samples | OTRF ThreatHunter-Playbook, `edoardogerosa/sentinel-attack` (withdrawn upstream, no request), `mdecrevoisier/EVTX-to-MITRE-Attack`, `Cyb3r-Monk/Threat-Hunting-and-Detection` |
 | Control mappings | CTID Mappings Explorer: NIST 800-53 Rev5, AWS, Azure, GCP, CRI Profile v2.1 (Cyber Risk Institute), VERIS 1.4.0, CSA CCM 4.1, M365 controls |
 | Defensive techniques | D3FEND API (`d3fend.mitre.org`) |
 | Adversary engagement | MITRE Engage JSON (`mitre/engage`) |
@@ -114,7 +114,7 @@ Many mapping datasets are pinned to older ATT&CK releases: most CTID Mappings Ex
 | ATT&CK release notes | `attack-stix-data` GitHub releases |
 | Other sidebar content | `swisskyrepo/PayloadsAllTheThings`, `stamparm/ipsum`, `mukul975/Anthropic-Cybersecurity-Skills` |
 
-Several of these are community repositories rather than vendor or MITRE datasets; `mukul975/Anthropic-Cybersecurity-Skills` is one such community repository, not an Anthropic project, despite its name. The Elastic, Splunk and Microsoft 365 Defender counts come from GitHub tree listings and include only files whose path contains a technique ID, so they undercount. The Microsoft 365 Defender hunting query repository was archived by Microsoft in 2022.
+Several of these are community repositories rather than vendor or MITRE datasets; `mukul975/Anthropic-Cybersecurity-Skills` is one such community repository, not an Anthropic project, despite its name. The Elastic and Splunk counts, and the per-technique `mdecrevoisier/SIGMA-detection-rules` list, come from a build-time snapshot of the rule bodies at pinned commits (`src/assets/data/rule-coverage-snapshot.json`, built by `scripts/build-rule-coverage-snapshot.mjs`); the monthly `refresh-data.yml` workflow moves the pins, and the app sends no request to GitHub for them. They count rules in public repositories, not what runs in an environment. The Microsoft 365 Defender count still comes from a GitHub tree listing and is read from file and folder names. The Microsoft 365 Defender hunting query repository was archived by Microsoft in 2022, and `edoardogerosa/sentinel-attack` removed every rule upstream on 2024-11-28, so the app marks it withdrawn upstream and makes no request to it.
 
 ### Bundled with the app
 
@@ -161,9 +161,9 @@ Unit specs use Karma and Jasmine and sit next to the code they test as `*.spec.t
 
 ### Build
 
-`npm run build` writes a production build to `dist/mitre-mitigation-navigator/browser/`. The directory name comes from the Angular project name in `angular.json`, which predates the current project name. The initial bundle budget warns at 1.2 MB and fails at 2 MB. `src/index.html` uses `<base href="./">`; pass `--base-href` when you host under a fixed path.
+`npm run build` writes a production build to `dist/mitre-mitigation-navigator/browser/`. The directory name comes from the Angular project name in `angular.json`, which is still `mitre-mitigation-navigator`. The initial bundle budget warns at 1.2 MB and fails at 2 MB. `src/index.html` uses `<base href="./">`; pass `--base-href` when you host under a fixed path.
 
-Production builds register the Angular service worker configured in `ngsw-config.json`. For data requests it tries the network first and falls back to a cached response when a request fails or takes longer than 10 seconds (15 seconds for the APIs). Cached responses are kept for 24 hours for the `mitre-attack` GitHub repositories, 12 hours for raw files from the CTID, Red Canary, SigmaHQ, Elastic, Splunk and MISP organizations and from `mitre/cti`, and 6 hours for the FIRST and NVD APIs. Requests to other hosts are not cached.
+Production builds register the Angular service worker configured in `ngsw-config.json`. For data requests it tries the network first and falls back to a cached response when a request fails or takes longer than 10 seconds (15 seconds for the APIs). Cached responses are kept for 24 hours for the `mitre-attack` GitHub repositories, 12 hours for raw files from the CTID, Red Canary, SigmaHQ, Elastic, Splunk and MISP organizations and from `mitre/cti`, and 6 hours for the FIRST and NVD APIs. Requests to other hosts, including `api.github.com`, are not cached. The Elastic and Splunk entries in that list no longer match any request, because those counts are read from the bundled rule-coverage snapshot.
 
 ### npm scripts
 
@@ -283,7 +283,7 @@ Single-key shortcuts are ignored while you are typing in a field. When the matri
 - MISP event and attribute queries exist in `misp.service.ts` but nothing in the UI calls them. The MISP Events tab builds event templates locally.
 - Control mappings (NIST 800-53, cloud, CRI Profile, VERIS, CSA CCM and M365) are not translated through revoked-by relationships, so mappings to retired techniques such as the T1562 family do not appear on the techniques that replaced them.
 - CTID removed CIS Controls from Mappings Explorer as of ATT&CK v16, so the CIS Controls service has no source and loads empty.
-- CONTRIBUTING.md, ARCHITECTURE.md and docs/HEATMAPS.md have not been updated for some recent additions (for example ARCHITECTURE's theming section predates the OS-following theme). Where they disagree with `package.json` or the source, the code is correct.
+- docs/HEATMAPS.md documents 27 of the 36 heatmap modes in its summary table and detailed sections. The other nine (Library Layer, My Exposure, CVE Kill Chain, PoC Exploits, Wazuh stock rules, M365 Defender, CSA CCM, M365 Controls and F3 Origin) are listed only in the lens menu and defined in `src/app/models/heatmap-modes.ts`.
 
 ## Companion reference library
 
