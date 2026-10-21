@@ -4,10 +4,13 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ElasticService } from './elastic.service';
+import { SourceRegistryService, TRUNCATED_LISTING } from './source-registry.service';
+import TREES from '../../testing/fixtures/github-tree-listings.json';
 
 describe('ElasticService', () => {
   let service: ElasticService;
   let httpMock: HttpTestingController;
+  let registry: SourceRegistryService;
 
   // Service now scans the GitHub tree instead of fetching a pre-built layer
   const ELASTIC_TREE_URL =
@@ -23,6 +26,7 @@ describe('ElasticService', () => {
 
     service = TestBed.inject(ElasticService);
     httpMock = TestBed.inject(HttpTestingController);
+    registry = TestBed.inject(SourceRegistryService);
   });
 
   afterEach(() => {
@@ -187,14 +191,63 @@ describe('ElasticService', () => {
 
   // --- Live load from constructor (GitHub tree scan) ---
 
-  it('should ingest the live layer from the constructor HTTP call', () => {
-    // Service scans rules/*.toml paths and extracts technique IDs from filenames
-    flushLiveLoad({
-      tree: [
-        { path: 'rules/T1059_test.toml', type: 'blob' },
-      ],
-    });
+  it('reads no technique id from a real-shaped Elastic listing and records the source as empty, rows 0', () => {
+    // An abridged real listing: upstream files are named by behaviour
+    // ('rules/windows/collection_email_outlook_mailbox_via_com.toml') and keep the ids in the file body.
+    const listing = TREES.elastic.listing;
+    expect(listing.tree.some(e => e.path === 'rules/windows/collection_email_outlook_mailbox_via_com.toml')).toBeTrue();
+    flushLiveLoad(listing);
+    const record = registry.get('elastic-tree');
+    expect(record.status).toBe('empty');
+    expect(record.rows).toBe(0);
+    expect(record.lastError).toBeNull();
+    expect(service.getRuleCount('T1114')).toBe(0);
+  });
+
+  it('synthetic: counts a rule path that does carry a technique id (keeps the path regex covered)', () => {
+    flushLiveLoad({ truncated: false, tree: [{ path: 'rules/windows/T1059_synthetic.toml', type: 'blob' }] });
     expect(service.getRuleCount('T1059')).toBe(1);
+    expect(registry.get('elastic-tree').status).toBe('loaded');
+    expect(registry.get('elastic-tree').rows).toBe(1);
+  });
+
+  it('records a GitHub rate limit (403, X-RateLimit-Remaining 0) as failed, with the reset time', () => {
+    const reset = Math.floor(new Date(2026, 9, 21, 14, 5).getTime() / 1000);
+    httpMock.expectOne(ELASTIC_TREE_URL).flush(
+      { message: 'API rate limit exceeded for 203.0.113.7.' },
+      { status: 403, statusText: 'Forbidden', headers: { 'X-RateLimit-Remaining': '0', 'X-RateLimit-Reset': String(reset) } },
+    );
+    const record = registry.get('elastic-tree');
+    expect(record.status).toBe('failed');
+    expect(record.lastError).toBe('GitHub rate limit reached (60 requests per hour per address); resets at 14:05');
+  });
+
+  it('records a 404 as not found (branch or path moved), with the URL', () => {
+    httpMock.expectOne(ELASTIC_TREE_URL).flush({ message: 'Not Found' }, { status: 404, statusText: 'Not Found' });
+    expect(registry.get('elastic-tree').status).toBe('failed');
+    expect(registry.get('elastic-tree').lastError).toBe(`not found (branch or path moved): ${ELASTIC_TREE_URL}`);
+  });
+
+  it('records status 0 as a network error, with the URL', () => {
+    flushLiveLoad(null);
+    expect(registry.get('elastic-tree').status).toBe('failed');
+    expect(registry.get('elastic-tree').lastError).toBe(`network error: ${ELASTIC_TREE_URL}`);
+  });
+
+  it('does not parse a truncated listing: failed, with the truncated wording, and no ids recorded', () => {
+    flushLiveLoad({ truncated: true, tree: [{ path: 'rules/windows/T1059_synthetic.toml', type: 'blob' }] });
+    const record = registry.get('elastic-tree');
+    expect(record.status).toBe('failed');
+    expect(record.lastError).toBe(TRUNCATED_LISTING);
+    expect(record.rows).toBeNull();
+    expect(service.getRuleCount('T1059')).toBe(0);
+  });
+
+  it('records a parse error thrown inside the response handler as failed, not loading', () => {
+    // A listing whose tree is not a list makes the parser throw.
+    flushLiveLoad({ truncated: false, tree: 42 });
+    expect(registry.get('elastic-tree').status).toBe('failed');
+    expect(registry.get('elastic-tree').lastError).toContain('not iterable');
   });
 
   it('should handle constructor HTTP error gracefully', () => {
