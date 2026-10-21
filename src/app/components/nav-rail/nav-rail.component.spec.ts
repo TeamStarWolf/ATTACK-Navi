@@ -5,7 +5,7 @@ import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
-import { NavRailComponent } from './nav-rail.component';
+import { NAVRAIL_COLLAPSED_KEY, NavRailComponent, loadRailCollapsed, saveRailCollapsed } from './nav-rail.component';
 import { CveService } from '../../services/cve.service';
 import { DataService } from '../../services/data.service';
 
@@ -114,5 +114,124 @@ describe('NavRailComponent', () => {
     component.newVersionAvailable = true;
     component.onSettingsClick();
     expect(component.newVersionAvailable).toBe(false);
+  });
+});
+
+describe('NavRailComponent: icon-only collapse', () => {
+  let fixture: ComponentFixture<NavRailComponent>;
+  let host: HTMLElement;
+
+  const setup = async (wide = true): Promise<void> => {
+    const realMatchMedia = window.matchMedia.bind(window);
+    spyOn(window, 'matchMedia').and.callFake((q: string) =>
+      q === '(width > 768px)'
+        ? ({ matches: wide, media: q, addEventListener: () => {}, removeEventListener: () => {} } as unknown as MediaQueryList)
+        : realMatchMedia(q));
+    await TestBed.configureTestingModule({
+      imports: [NavRailComponent],
+      providers: [
+        provideHttpClient(withXhr()),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        { provide: CveService, useValue: { newKevCount$: new BehaviorSubject(0).asObservable() } },
+        { provide: DataService, useValue: { domain$: new BehaviorSubject(null) } },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(NavRailComponent);
+    fixture.detectChanges();
+    host = fixture.nativeElement as HTMLElement;
+  };
+
+  const toggle = (): HTMLButtonElement => host.querySelector('.rail-collapse-btn') as HTMLButtonElement;
+
+  beforeEach(() => localStorage.removeItem(NAVRAIL_COLLAPSED_KEY));
+  afterEach(() => localStorage.removeItem(NAVRAIL_COLLAPSED_KEY));
+
+  it('persists the collapsed state under one key; expanded removes it', () => {
+    expect(loadRailCollapsed()).toBeFalse();
+    saveRailCollapsed(true);
+    expect(localStorage.getItem(NAVRAIL_COLLAPSED_KEY)).toBe('1');
+    expect(loadRailCollapsed()).toBeTrue();
+    saveRailCollapsed(false);
+    expect(localStorage.getItem(NAVRAIL_COLLAPSED_KEY)).toBeNull();
+    localStorage.setItem(NAVRAIL_COLLAPSED_KEY, 'yes');
+    expect(loadRailCollapsed()).toBeFalse();
+  });
+
+  it('treats blocked storage as expanded', () => {
+    spyOn(Storage.prototype, 'getItem').and.throwError('SecurityError');
+    expect(loadRailCollapsed()).toBeFalse();
+  });
+
+  it('the toggle controls the rail nav and starts expanded', async () => {
+    await setup();
+    const btn = toggle();
+    const nav = host.querySelector('nav') as HTMLElement;
+    expect(nav.id).toBe('app-nav-rail');
+    expect(btn.getAttribute('aria-controls')).toBe('app-nav-rail');
+    expect(btn.getAttribute('aria-expanded')).toBe('true');
+    expect(btn.getAttribute('aria-label')).toBe('Collapse navigation');
+    expect(btn.getAttribute('title')).toBe('Collapse navigation');
+    expect(host.classList).not.toContain('collapsed');
+  });
+
+  it('collapsing shows icons with the workspace name as title and aria-label, and persists', async () => {
+    await setup();
+    toggle().click();
+    fixture.detectChanges();
+    const btn = toggle();
+    expect(btn.getAttribute('aria-expanded')).toBe('false');
+    expect(btn.getAttribute('aria-label')).toBe('Expand navigation');
+    expect(host.classList).toContain('collapsed');
+    expect(localStorage.getItem(NAVRAIL_COLLAPSED_KEY)).toBe('1');
+
+    const items = [...host.querySelectorAll('.nav-list a.nav-item')] as HTMLElement[];
+    expect(items.length).toBe(9);
+    for (const a of items) {
+      expect(a.getAttribute('title')).toBe(a.getAttribute('aria-label'));
+      expect(a.querySelector('.nav-icon svg')).toBeTruthy();
+    }
+    // Section groupings stay (as separators); Help and Settings stay at the bottom.
+    expect(host.querySelectorAll('.rail-section-label').length).toBe(3);
+    expect(host.querySelectorAll('.nav-items-bottom .nav-item').length).toBe(2);
+    // The viewpoint selector collapses to its icon.
+    expect(host.querySelector('app-viewpoint-selector')?.classList).toContain('compact');
+
+    toggle().click();
+    fixture.detectChanges();
+    expect(host.classList).not.toContain('collapsed');
+    expect(toggle().getAttribute('aria-expanded')).toBe('true');
+    expect(localStorage.getItem(NAVRAIL_COLLAPSED_KEY)).toBeNull();
+    expect(items[0].getAttribute('title')).toContain('drag to reorder');
+  });
+
+  it('applies a stored collapsed state on the first render', async () => {
+    localStorage.setItem(NAVRAIL_COLLAPSED_KEY, '1');
+    await setup();
+    expect(host.classList).toContain('collapsed');
+    expect(toggle().getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('keeps the bottom bar unchanged at 768 px or less, even when collapsed is stored', async () => {
+    localStorage.setItem(NAVRAIL_COLLAPSED_KEY, '1');
+    await setup(false);
+    expect(host.classList).not.toContain('collapsed');
+    expect(host.querySelector('app-viewpoint-selector')?.classList).not.toContain('compact');
+    const first = host.querySelector('.nav-list a.nav-item') as HTMLElement;
+    expect(first.getAttribute('title')).toContain('drag to reorder');
+  });
+
+  it('keeps the focus order: viewpoint, toggle, workspaces, Help, Settings', async () => {
+    await setup();
+    toggle().click();
+    fixture.detectChanges();
+    const focusables = [...host.querySelectorAll('button, a[href]')] as HTMLElement[];
+    expect(focusables[0].classList).toContain('vp-trigger');
+    expect(focusables[1].classList).toContain('rail-collapse-btn');
+    const labels = focusables.slice(2).map(el => el.getAttribute('aria-label'));
+    expect(labels).toEqual([
+      'Matrix', 'Exposure', 'Intel', 'Detect', 'Coverage',
+      'Dashboard', 'Reports', 'Library', 'Status', 'Keyboard shortcuts and help', 'Settings',
+    ]);
   });
 });

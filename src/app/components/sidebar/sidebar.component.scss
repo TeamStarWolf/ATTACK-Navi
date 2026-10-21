@@ -2536,7 +2536,9 @@
 
 /* Visual overhaul layer */
 .sidebar {
-  width: 460px;
+  /* --drawer-width is bound from DrawerWidthService (320 px to min(900 px, 60vw));
+     the 768 px query below keeps the full-width drawer on small screens. */
+  width: var(--drawer-width, 460px);
   background: var(--bg-elevated);
   border-left: 1px solid var(--line-soft);
   box-shadow: -12px 0 32px rgb(0 0 0 / 25%);

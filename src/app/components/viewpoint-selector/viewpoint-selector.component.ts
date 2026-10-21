@@ -11,6 +11,7 @@ import {
   QueryList,
   ViewChildren,
   inject,
+  input,
 } from '@angular/core';
 
 import { Subscription } from 'rxjs';
@@ -31,11 +32,20 @@ import { Viewpoint, ViewpointId, ViewpointService } from '../../services/viewpoi
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './viewpoint-selector.component.html',
   styleUrl: './viewpoint-selector.component.scss',
+  host: {
+    '[class.compact]': 'compact()',
+  },
 })
 export class ViewpointSelectorComponent implements OnInit, OnDestroy {
   private readonly viewpointService = inject(ViewpointService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly cdr = inject(ChangeDetectorRef);
+
+  /**
+   * Icon-only trigger for the collapsed nav rail. The trigger's aria-label and
+   * title already carry the viewpoint name, so nothing is lost to AT.
+   */
+  readonly compact = input(false);
 
   readonly viewpoints: Viewpoint[] = this.viewpointService.viewpoints;
   current: Viewpoint = this.viewpointService.current;

@@ -506,3 +506,174 @@ test.describe('E1.4: pinned ATT&CK, "Check for ATT&CK update"', () => {
     expect(liveRequests).toBe(2);
   });
 });
+
+// The owner's shell request: the technique drawer resizes from its inner (left)
+// edge and the left rail collapses to icons only; both persist per browser and
+// neither control exists in the <= 768 px bottom-bar layout.
+test.describe('shell: resizable drawer and collapsible rail', () => {
+  // Optional local screenshots for the PR (unset in CI).
+  const SHOTS = process.env['SHELL_SHOTS'];
+
+  test.beforeEach(async ({ page }) => {
+    await hermetic(page);
+    await page.addInitScript(() => localStorage.setItem('onboarding-completed', 'true'));
+  });
+
+  const boxWidth = async (page: Page, selector: string): Promise<number> =>
+    (await page.locator(selector).boundingBox())?.width ?? 0;
+
+  const noHorizontalPageScroll = (page: Page): Promise<boolean> =>
+    page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
+
+  async function openDrawer(page: Page): Promise<void> {
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+    if (!(await page.locator('.sidebar.open').isVisible())) await page.locator('.cell').first().click();
+    await expect(page.locator('.sidebar.open .sidebar-header .attack-id')).toContainText(/T\d/, { timeout: 5000 });
+  }
+
+  test('shell: drag, keyboard and double-click resize the technique drawer; the width persists', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(BASE + '/#/matrix');
+    await openDrawer(page);
+
+    const handle = page.getByRole('separator', { name: 'Resize technique panel' });
+    await expect(handle).toBeVisible();
+    await expect(handle).toHaveAttribute('aria-orientation', 'vertical');
+    await expect(handle).toHaveAttribute('aria-valuemin', '320');
+    await expect(handle).toHaveAttribute('aria-valuemax', '864');
+    await expect(handle).toHaveAttribute('aria-valuenow', '460');
+    await expect.poll(() => boxWidth(page, '.sidebar.open')).toBeCloseTo(460, 0);
+    const workspaceBefore = await boxWidth(page, '.workspace-area');
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/drawer-default.png` });
+
+    // Drag the handle 160 px to the left: the drawer widens by about 160 px.
+    const box = (await handle.boundingBox())!;
+    const x = box.x + box.width / 2;
+    const y = box.y + box.height / 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x - 80, y, { steps: 4 });
+    await page.mouse.move(x - 160, y, { steps: 4 });
+    await page.mouse.up();
+    await expect.poll(() => boxWidth(page, '.sidebar.open')).toBeGreaterThan(460 + 155);
+    expect(await boxWidth(page, '.sidebar.open')).toBeLessThan(460 + 165);
+    await expect(handle).toHaveAttribute('aria-valuenow', '620');
+    // The drag selected no text and the page gained no horizontal scroll.
+    expect(await page.evaluate(() => String(window.getSelection() ?? ''))).toBe('');
+    expect(await noHorizontalPageScroll(page)).toBe(true);
+    const drawerBox = (await page.locator('.sidebar.open').boundingBox())!;
+    expect(drawerBox.x + drawerBox.width).toBeCloseTo(1440, 0);
+    // The drawer overlays the workspace (as before): the matrix area keeps its box inside the viewport.
+    const workspaceBox = (await page.locator('.workspace-area').boundingBox())!;
+    expect(workspaceBox.width).toBeCloseTo(workspaceBefore, 0);
+    expect(workspaceBox.x + workspaceBox.width).toBeLessThanOrEqual(1440);
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/drawer-dragged.png` });
+
+    // Reload: the width persists (applied on the first render).
+    await page.reload();
+    await openDrawer(page);
+    await expect(handle).toHaveAttribute('aria-valuenow', '620');
+    await expect.poll(() => boxWidth(page, '.sidebar.open')).toBeCloseTo(620, 0);
+
+    // Keyboard: ArrowLeft three times narrows by 48 px.
+    await handle.focus();
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/drawer-handle-focus.png` });
+    for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowLeft');
+    await expect(handle).toHaveAttribute('aria-valuenow', '572');
+    await expect.poll(() => boxWidth(page, '.sidebar.open')).toBeCloseTo(572, 0);
+
+    // Double-click resets to the default.
+    await handle.dblclick();
+    await expect(handle).toHaveAttribute('aria-valuenow', '460');
+    await expect.poll(() => boxWidth(page, '.sidebar.open')).toBeCloseTo(460, 0);
+
+    // Pin and Escape still work.
+    const pin = page.locator('.sidebar.open .pin-btn');
+    await pin.click();
+    await expect(pin).toHaveAttribute('aria-pressed', 'true');
+    await pin.click();
+    await expect(pin).toHaveAttribute('aria-pressed', 'false');
+    await page.locator('.sidebar-header .technique-name').click();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.sidebar.open')).toBeHidden({ timeout: 3000 });
+  });
+
+  test('shell: the rail collapses to icons with titles, persists, and expands', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(BASE + '/#/matrix');
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+
+    const rail = page.locator('app-nav-rail');
+    const items = page.locator('#app-nav-rail .nav-list a.nav-item');
+    const railWide = await boxWidth(page, 'app-nav-rail');
+    const workspaceWide = await boxWidth(page, '.workspace-area');
+    expect(railWide).toBeCloseTo(260, 0);
+
+    const collapse = page.getByRole('button', { name: 'Collapse navigation' });
+    await expect(collapse).toHaveAttribute('aria-expanded', 'true');
+    await expect(collapse).toHaveAttribute('aria-controls', 'app-nav-rail');
+    await collapse.click();
+
+    const expand = page.getByRole('button', { name: 'Expand navigation' });
+    await expect(expand).toHaveAttribute('aria-expanded', 'false');
+    await expect(rail).toHaveClass(/collapsed/);
+    await expect.poll(() => boxWidth(page, 'app-nav-rail')).toBeLessThan(railWide - 150);
+    const railNarrow = await boxWidth(page, 'app-nav-rail');
+    // The main area gains the freed width.
+    await expect.poll(() => boxWidth(page, '.workspace-area')).toBeCloseTo(workspaceWide + railWide - railNarrow, 0);
+    expect(await noHorizontalPageScroll(page)).toBe(true);
+
+    // Icons stay, each with the workspace name as title and aria-label; labels are hidden.
+    await expect(items).toHaveCount(9);
+    for (let i = 0; i < 9; i++) {
+      const item = items.nth(i);
+      await expect(item.locator('.nav-icon svg')).toBeVisible();
+      await expect(item.locator('.nav-label')).toBeHidden();
+      const label = await item.getAttribute('aria-label');
+      expect(label).toBeTruthy();
+      await expect(item).toHaveAttribute('title', label!);
+    }
+    // Section groupings and the bottom Help / Settings remain; the viewpoint shows its icon.
+    await expect(page.locator('#app-nav-rail .rail-section-label')).toHaveCount(3);
+    await expect(page.getByRole('link', { name: 'Settings' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Keyboard shortcuts and help' })).toBeVisible();
+    await expect(page.locator('app-viewpoint-selector .vp-trigger .vp-icon')).toBeVisible();
+    await expect(page.locator('app-viewpoint-selector .vp-text')).toBeHidden();
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/rail-collapsed.png` });
+
+    // Reload: still collapsed.
+    await page.reload();
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+    await expect(page.getByRole('button', { name: 'Expand navigation' })).toHaveAttribute('aria-expanded', 'false');
+    expect(await boxWidth(page, 'app-nav-rail')).toBeCloseTo(railNarrow, 0);
+
+    // Expand: restored.
+    await page.getByRole('button', { name: 'Expand navigation' }).click();
+    await expect(page.getByRole('button', { name: 'Collapse navigation' })).toHaveAttribute('aria-expanded', 'true');
+    await expect.poll(() => boxWidth(page, 'app-nav-rail')).toBeCloseTo(railWide, 0);
+    await expect(items.first().locator('.nav-label')).toBeVisible();
+    await expect.poll(() => boxWidth(page, '.workspace-area')).toBeCloseTo(workspaceWide, 0);
+  });
+
+  test('shell: at the mobile width neither control is present and the bottom bar is unchanged', async ({ page }) => {
+    // Even with both preferences stored, the <= 768 px layout ignores them.
+    await page.addInitScript(() => {
+      localStorage.setItem('navrail-collapsed-v1', '1');
+      localStorage.setItem('technique-drawer-width-v1', '700');
+    });
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto(BASE + '/#/matrix?tech=T1059.001');
+    await expect(page.locator('.sidebar.open .sidebar-header .attack-id')).toHaveText('T1059.001', { timeout: ROUTE_TIMEOUT });
+
+    await expect(page.getByRole('separator', { name: 'Resize technique panel' })).toBeHidden();
+    expect(await boxWidth(page, '.sidebar.open')).toBeCloseTo(375, 0);
+
+    const rail = (await page.locator('app-nav-rail').boundingBox())!;
+    expect(rail.width).toBeCloseTo(375, 0);
+    expect(rail.height).toBeCloseTo(56, 0);
+    await expect(page.locator('app-nav-rail')).not.toHaveClass(/collapsed/);
+    await expect(page.locator('.rail-collapse-btn')).toBeHidden();
+    await expect(page.locator('#app-nav-rail .nav-list .nav-label').first()).toBeVisible();
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/mobile.png` });
+  });
+});
