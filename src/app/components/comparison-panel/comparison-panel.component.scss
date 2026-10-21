@@ -90,19 +90,22 @@
 .a-label { color: var(--danger); }
 .b-label { color: var(--accent); }
 
-.group-select {
-  width: 100%;
-  background: var(--bg-panel-strong);
-  color: var(--text-main);
-  border: 1px solid var(--border-subtle);
+/* Group selection is the shared threat-profile picker (P2-12b). */
+.selected-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 7px 8px;
+  background: var(--bg-panel-strong);
+  border: 1px solid var(--border-subtle);
   border-radius: 5px;
   font-size: 13px;
-  outline: none;
-  font-family: inherit;
 
-  &:focus {
-    border-color: var(--accent);
+  .sel-id { font-family: monospace; color: var(--accent); }
+  .sel-name { color: var(--text-main); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .clear-btn {
+    background: none; border: none; color: var(--text-faint); cursor: pointer; font-size: 13px;
+    &:hover { color: var(--text-main); }
   }
 }
 

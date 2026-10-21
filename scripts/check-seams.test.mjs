@@ -63,6 +63,17 @@ test('this repository passes with its generated allow-list, and the list is exac
   for (const clean of ['stats-bar.component.ts', 'report-split.ts', 'actor-profile-panel.component.ts']) {
     assert.equal(listed.some((f) => f.endsWith(`/${clean}`)), false, `${clean} is clean after P2-07`);
   }
+  // one-picker (P2-12b): the list is exactly the grep, and every entry is annotated.
+  const listedOnePicker = allowlist.rules['one-picker'].entries.map((e) => e.file);
+  assert.deepEqual(listedOnePicker, scanRule(ROOT, 'one-picker').map((h) => h.file));
+  assert.deepEqual(generateAllowlist(ROOT, allowlist).rules['one-picker'].entries, allowlist.rules['one-picker'].entries);
+  for (const e of allowlist.rules['one-picker'].entries) {
+    assert.ok(e.reason && e.removedBy && e.bucket, `${e.file} (one-picker) has a bucket, reason and removedBy`);
+  }
+  // The compare panels moved to the shared picker in P2-12b, so they are not rival pickers.
+  for (const onPicker of ['actor-compare-panel.component.ts', 'comparison-panel.component.ts', 'scenario-panel.component.ts']) {
+    assert.equal(listedOnePicker.some((f) => f.endsWith(`/${onPicker}`)), false, `${onPicker} is on the shared picker`);
+  }
 });
 
 test('a planted violation fails the CLI and is named', () => {
@@ -74,6 +85,24 @@ test('a planted violation fails the CLI and is named', () => {
     assert.equal(r.status, 1);
     assert.match(r.stderr, /src\/app\/components\/new\/new\.component\.ts matches both regexes and is not on the allow-list/);
     assert.doesNotMatch(r.stderr, /listed\.service\.ts/);
+  });
+});
+
+test('one-picker: a planted rival group picker fails; the threat-profile-picker itself is excluded', () => {
+  // A component outside the picker that filters domain.groups by alias is a rival picker.
+  const PICKER_COPY = 'const hits = domain.groups.filter(g => g.name.toLowerCase().includes(q) || g.aliases.some(a => a.toLowerCase().includes(q)));\n';
+  withFixture({ 'src/app/components/rival/rival.component.ts': PICKER_COPY }, { rules: { 'one-picker': { entries: [] } } }, (dir) => {
+    const r = run(dir);
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /one-picker: src\/app\/components\/rival\/rival\.component\.ts matches both regexes and is not on the allow-list/);
+  });
+  // The same code UNDER threat-profile-picker is excluded — it is the one allowed picker.
+  withFixture({ 'src/app/components/threat-profile-picker/threat-profile-picker.component.ts': PICKER_COPY }, { rules: { 'one-picker': { entries: [] } } }, (dir) => {
+    assert.equal(run(dir).status, 0);
+  });
+  // A technique-name filter plus a domain.groups STIX lookup is NOT a rival picker (no aliases.some).
+  withFixture({ 'src/app/components/graph/graph.component.ts': 'const t = list.filter(x => x.name.toLowerCase().includes(q)); const g = domain.groups.find(g => g.id === id);\n' }, { rules: { 'one-picker': { entries: [] } } }, (dir) => {
+    assert.equal(run(dir).status, 0);
   });
 });
 

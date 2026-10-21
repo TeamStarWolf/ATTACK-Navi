@@ -9,26 +9,36 @@
         <div class="selector-row">
           <div class="selector">
             <label class="sel-label a-label">Group A</label>
-            <select class="group-select" [(ngModel)]="selectedIdA" (change)="compute()">
-              <option value="">— Select group —</option>
-              @for (g of groups; track g.id) {
-                <option [value]="g.attackId">{{ g.attackId }} {{ g.name }}</option>
-              }
-            </select>
+            @if (groupA) {
+              <div class="selected-group">
+                <span class="sel-id">{{ groupA.attackId }}</span>
+                <span class="sel-name">{{ groupA.name }}</span>
+                <button class="clear-btn" (click)="clearA()" title="Clear">✕</button>
+              </div>
+            } @else {
+              <app-threat-profile-picker mode="single" (groupSelected)="onPickA($event)" />
+            }
           </div>
           <div class="vs-badge">VS</div>
           <div class="selector">
             <label class="sel-label b-label">Group B</label>
-            <select class="group-select" [(ngModel)]="selectedIdB" (change)="compute()">
-              <option value="">— Select group —</option>
-              @for (g of groups; track g.id) {
-                <option [value]="g.attackId">{{ g.attackId }} {{ g.name }}</option>
-              }
-            </select>
+            @if (groupB) {
+              <div class="selected-group">
+                <span class="sel-id">{{ groupB.attackId }}</span>
+                <span class="sel-name">{{ groupB.name }}</span>
+                <button class="clear-btn" (click)="clearB()" title="Clear">✕</button>
+              </div>
+            } @else {
+              <app-threat-profile-picker mode="single" (groupSelected)="onPickB($event)" />
+            }
           </div>
         </div>
 
-        @if (selectedIdA && selectedIdB && selectedIdA !== selectedIdB) {
+        <!-- Shown as soon as a techniques-less group is picked on either side, before the second pick. -->
+        @if (noUsesGroup) {
+          <p class="hint-msg" data-testid="no-uses">No technique uses recorded for {{ noUsesGroup.attackId }} in this ATT&amp;CK release.</p>
+        }
+        @if (groupA && groupB && groupA.id !== groupB.id) {
           <!-- Summary stats -->
           <div class="summary-row">
             <div class="stat-block a-color">
@@ -49,7 +59,7 @@
           <div class="comparison-grid">
             <!-- A only -->
             <div class="comp-col">
-              <div class="col-header a-header">{{ selectedIdA }} only</div>
+              <div class="col-header a-header">{{ groupA?.attackId }} only</div>
               <div class="tech-list">
                 @for (t of aOnly; track t.id) {
                   <button class="tech-chip a-chip" (click)="selectTechnique(t)" [title]="t.name">
@@ -77,7 +87,7 @@
 
             <!-- B only -->
             <div class="comp-col">
-              <div class="col-header b-header">{{ selectedIdB }} only</div>
+              <div class="col-header b-header">{{ groupB?.attackId }} only</div>
               <div class="tech-list">
                 @for (t of bOnly; track t.id) {
                   <button class="tech-chip b-chip" (click)="selectTechnique(t)" [title]="t.name">
@@ -92,10 +102,10 @@
 
           <!-- Filter buttons -->
           <div class="filter-actions">
-            <button class="filter-btn a-btn" (click)="filterByGroup(selectedIdA)">Filter matrix → {{ selectedIdA }}</button>
-            <button class="filter-btn b-btn" (click)="filterByGroup(selectedIdB)">Filter matrix → {{ selectedIdB }}</button>
+            <button class="filter-btn a-btn" (click)="filterByGroup(groupA)">Filter matrix → {{ groupA?.attackId }}</button>
+            <button class="filter-btn b-btn" (click)="filterByGroup(groupB)">Filter matrix → {{ groupB?.attackId }}</button>
           </div>
-        } @else if (selectedIdA && selectedIdB && selectedIdA === selectedIdB) {
+        } @else if (groupA && groupB && groupA.id === groupB.id) {
           <p class="hint-msg">Select two different groups to compare.</p>
         } @else {
           <p class="hint-msg">Select two threat groups above to see technique overlap.</p>
