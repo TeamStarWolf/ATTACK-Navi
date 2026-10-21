@@ -12,7 +12,7 @@ A build is published to GitHub Pages at <https://teamstarwolf.github.io/ATTACK-N
 
 ## Screenshots
 
-Captured on 2026-08-15 with `scripts/capture-screenshots.mjs`, in the dark theme; they predate several recent changes, including the toolbar rename to "ATT&CK Navi". The two images below are the current ones, and `screenshots/attack-navi-live.png` is the uncropped matrix capture from the same run.
+Captured from the production build with `scripts/capture-screenshots.mjs` in the dark theme, which also writes the full matrix view to `screenshots/attack-navi-live.png`; rerun the script to refresh them after UI changes.
 
 ![Matrix with the technique sidebar open for T1590](screenshots/live2.png)
 
