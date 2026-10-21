@@ -40,6 +40,16 @@
     color-mix(in srgb, var(--bg-base) 72%, transparent);
 }
 
+/* The open technique drawer (fixed, right edge) takes its width from the
+   workspace instead of covering it, so dragging the drawer wider narrows the
+   matrix by the same amount. At 768 px and below the drawer is full width and
+   still overlays (see the media query below). */
+@media (width > 768px) {
+  .workspace-area.drawer-open {
+    margin-right: var(--drawer-width, 460px);
+  }
+}
+
 .workspace-ribbon-actions {
   display: flex;
   flex-wrap: wrap;

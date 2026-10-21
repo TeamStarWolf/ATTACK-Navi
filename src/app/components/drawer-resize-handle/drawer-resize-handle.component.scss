@@ -1,0 +1,46 @@
+/* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+   https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
+
+   An 8 px hit area straddling the drawer's left border; the visible 2 px line
+   appears on hover, focus and while dragging only, so the closed-state chrome
+   is unchanged. */
+:host {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -4px;
+  width: 8px;
+  z-index: 5;
+  cursor: col-resize;
+  touch-action: none;
+  outline: none;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 3px;
+    width: 2px;
+    border-radius: 1px;
+    background: transparent;
+    transition: background 0.12s;
+  }
+}
+
+:host(:hover)::after,
+:host(.dragging)::after {
+  background: color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+:host(:focus-visible)::after {
+  background: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+/* The drawer is full width here: nothing to resize. */
+@media (width <= 768px) {
+  :host {
+    display: none;
+  }
+}

@@ -17,13 +17,13 @@
   <!-- Left nav rail -->
   <app-nav-rail (helpClick)="helpOverlay.toggle()" />
 
-  <!-- Workspace -->
-  <div class="workspace-area">
+  <!-- Workspace: narrows by the open drawer's width, so resizing the drawer resizes the matrix -->
+  <div class="workspace-area" [class.drawer-open]="drawer.open()" [style.--drawer-width]="drawer.width() + 'px'">
     <router-outlet />
   </div>
 </div>
 
-<!-- Sidebar (technique details) — fixed overlay -->
+<!-- Sidebar (technique details): fixed on the right; the workspace makes room for it above 768 px -->
 <app-sidebar />
 
 <!-- Gap view — overlay -->

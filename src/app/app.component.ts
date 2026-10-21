@@ -21,6 +21,7 @@ import { MatrixControlService } from './services/matrix-control.service';
 import { HotkeysService } from './services/hotkeys.service';
 import { HelpOverlayService } from './services/help-overlay.service';
 import { ThemeService } from './services/theme.service';
+import { DrawerWidthService } from './services/drawer-width.service';
 
 @Component({
   selector: 'app-root',
@@ -40,6 +41,8 @@ export class AppComponent implements OnInit {
   private hotkeys = inject(HotkeysService);
   private viewpoint = inject(ViewpointService);
   protected helpOverlay = inject(HelpOverlayService);
+  /** The open technique drawer takes its width from the workspace (above 768 px). */
+  protected readonly drawer = inject(DrawerWidthService);
   showToast = false;
   toastMessage = '';
   currentDomain: AttackDomain = 'enterprise';

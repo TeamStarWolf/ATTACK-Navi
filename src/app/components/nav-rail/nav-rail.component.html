@@ -1,7 +1,20 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-<nav class="nav-rail-inner" role="navigation" aria-label="Main navigation">
-  <app-viewpoint-selector class="rail-viewpoint" />
+<nav id="app-nav-rail" class="nav-rail-inner" role="navigation" aria-label="Main navigation">
+  <div class="rail-top">
+    <app-viewpoint-selector class="rail-viewpoint" [compact]="iconOnly()" />
+    <button
+      type="button"
+      class="rail-collapse-btn"
+      aria-controls="app-nav-rail"
+      [attr.aria-expanded]="!collapsed()"
+      [attr.aria-label]="collapsed() ? 'Expand navigation' : 'Collapse navigation'"
+      [title]="collapsed() ? 'Expand navigation' : 'Collapse navigation'"
+      (click)="toggleCollapsed()"
+    >
+      <app-icon class="rail-collapse-icon" name="chevron-right" [size]="16" aria-hidden="true" />
+    </button>
+  </div>
   <div class="nav-list">
     @for (section of sections; track section.key; let si = $index) {
       <div class="nav-section">
@@ -14,7 +27,7 @@
             [routerLink]="ws.route"
             routerLinkActive="active"
             queryParamsHandling="preserve"
-            [title]="ws.label + ' — drag to reorder within ' + section.label"
+            [title]="itemTitle(ws.label, section.label)"
             [attr.aria-label]="ws.label"
             draggable="true"
             (dragstart)="onDragStart(si, ii, $event)"
@@ -37,7 +50,7 @@
   </div>
 
   @if (isCustomOrder) {
-    <button class="rail-reset" type="button" (click)="resetOrder()" title="Restore the default workspace order">
+    <button class="rail-reset" type="button" (click)="resetOrder()" title="Restore the default workspace order" [attr.aria-label]="iconOnly() ? 'Reset order' : null">
       <app-icon name="refresh-cw" [size]="13" aria-hidden="true" />
       <span>Reset order</span>
     </button>

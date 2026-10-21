@@ -175,6 +175,25 @@
   margin-top: 1px;
 }
 
+/* Collapsed rail: the trigger shrinks to its icon; the menu keeps its full
+   width and opens to the right over the workspace. */
+:host(.compact) {
+  .vp-trigger {
+    justify-content: center;
+    padding: 8px 0;
+  }
+
+  .vp-text,
+  .vp-caret {
+    display: none;
+  }
+
+  .vp-menu {
+    right: auto;
+    width: 260px;
+  }
+}
+
 /* Mobile: the rail becomes a bottom bar — open the menu upward from the item. */
 @media (max-width: 768px) {
   .vp-menu {
