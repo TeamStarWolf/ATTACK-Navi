@@ -8,7 +8,7 @@ import {
   ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Subscription, filter, take } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
 import {
@@ -49,8 +49,17 @@ export class EmulationPlanPanelComponent implements OnInit, OnDestroy {
   generating = false;
   savedPlans: EmulationPlan[] = [];
 
-  // Common-actor quick picks
-  readonly quickPicks: string[] = ['APT28', 'APT29', 'APT41', 'FIN7', 'Lazarus Group', 'Sandworm Team'];
+  // Common-actor quick picks, by ATT&CK id. Resolved to the loaded domain's STIX groups
+  // on each domain emission (no name/alias matching at click — P2-12's one-picker rule).
+  readonly quickPicks: readonly { label: string; attackId: string }[] = [
+    { label: 'APT28', attackId: 'G0007' },
+    { label: 'APT29', attackId: 'G0016' },
+    { label: 'APT41', attackId: 'G0096' },
+    { label: 'FIN7', attackId: 'G0046' },
+    { label: 'Lazarus Group', attackId: 'G0032' },
+    { label: 'Sandworm Team', attackId: 'G0034' },
+  ];
+  quickPickGroups: { label: string; group: ThreatGroup }[] = [];
 
   private subs = new Subscription();
 
@@ -64,7 +73,14 @@ export class EmulationPlanPanelComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.ensureGroupsLoaded();
+    // Follow domain$ for life (like the embedded picker): a domain switch must re-resolve
+    // the group list and the quick picks so a later pick lands on the current domain.
+    this.subs.add(this.dataService.domain$.subscribe(domain => {
+      this.domain = domain;
+      this.groups = domain ? [...domain.groups].sort((a, b) => a.name.localeCompare(b.name)) : [];
+      this.resolveQuickPicks();
+      this.cdr.markForCheck();
+    }));
     this.savedPlans = this.emulationService.getSavedPlans();
   }
 
@@ -74,13 +90,12 @@ export class EmulationPlanPanelComponent implements OnInit, OnDestroy {
 
   // ─── Setup ────────────────────────────────────────────────────────────────
 
-  private ensureGroupsLoaded(): void {
-    if (this.groups.length > 0) return;
-    this.dataService.domain$.pipe(filter(Boolean), take(1)).subscribe(domain => {
-      this.domain = domain;
-      this.groups = [...domain.groups].sort((a, b) => a.name.localeCompare(b.name));
-      this.cdr.markForCheck();
-    });
+  /** Resolve each quick pick's ATT&CK id to the loaded domain's STIX group, dropping any absent. */
+  private resolveQuickPicks(): void {
+    const byAttackId = new Map(this.groups.map(g => [g.attackId, g]));
+    this.quickPickGroups = this.quickPicks
+      .map(qp => ({ label: qp.label, group: byAttackId.get(qp.attackId) }))
+      .filter((q): q is { label: string; group: ThreatGroup } => !!q.group);
   }
 
   // ─── Group selection ──────────────────────────────────────────────────────
@@ -89,14 +104,6 @@ export class EmulationPlanPanelComponent implements OnInit, OnDestroy {
   onGroupPicked(stixId: string): void {
     const group = this.groups.find(g => g.id === stixId);
     if (group) this.selectGroup(group);
-  }
-
-  pickQuickGroup(name: string): void {
-    const found = this.groups.find(g =>
-      g.name.toLowerCase() === name.toLowerCase() ||
-      g.aliases.some(a => a.toLowerCase() === name.toLowerCase()),
-    );
-    if (found) this.selectGroup(found);
   }
 
   selectGroup(group: ThreatGroup): void {

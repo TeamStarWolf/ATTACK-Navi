@@ -126,59 +126,7 @@
   }
 }
 
-.emu-search {
-  width: 100%;
-  background: var(--bg-main, var(--bg-panel));
-  border: 1px solid var(--border-subtle, var(--border-subtle));
-  color: var(--text-main, #e6e8ee);
-  padding: 10px 14px;
-  border-radius: 6px;
-  font-size: 13px;
-  outline: none;
-
-  &:focus { border-color: var(--accent, var(--accent)); }
-}
-
-.emu-group-list {
-  list-style: none;
-  padding: 0;
-  margin: 12px 0 0;
-  max-height: 320px;
-  overflow-y: auto;
-  border: 1px solid var(--border-subtle, var(--border-subtle));
-  border-radius: 6px;
-
-  .emu-group-row {
-    display: grid;
-    grid-template-columns: 70px 200px 1fr;
-    gap: 12px;
-    width: 100%;
-    align-items: center;
-    background: transparent;
-    border: none;
-    color: var(--text-main, #e6e8ee);
-    padding: 8px 12px;
-    cursor: pointer;
-    text-align: left;
-    border-bottom: 1px solid var(--border-subtle, var(--border-subtle));
-    font-size: 12.5px;
-
-    &:hover { background: rgba(78, 161, 255, 0.06); }
-    &.selected { background: rgba(78, 161, 255, 0.14); color: var(--accent, var(--accent)); }
-
-    .emu-group-id {
-      font-family: var(--font-mono, monospace);
-      color: var(--text-muted, #8b93a7);
-      font-size: 11px;
-    }
-    .emu-group-name { font-weight: 600; }
-    .emu-group-aliases {
-      color: var(--text-muted, #8b93a7);
-      font-size: 11px;
-      font-style: italic;
-    }
-  }
-}
+/* .emu-search and .emu-group-list removed with the bespoke group list (P2-11; the shared picker owns selection). */
 
 .emu-selected-actor {
   display: flex;

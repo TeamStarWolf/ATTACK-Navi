@@ -63,7 +63,7 @@ describe('ActorProfilePanelComponent posture counts (S6, P2-07)', () => {
   const group = { id: 'intrusion-set--g1', attackId: 'G0001', name: 'Group One', aliases: [], description: '' } as unknown as ThreatGroup;
 
   function open(buckets: Record<string, PostureBucket>): HTMLElement {
-    const domain = { ...makeSplitDomain(), groups: [group] } as unknown as Domain;
+    const domain = { ...makeSplitDomain(), groups: [group], campaigns: [] } as unknown as Domain;
     techniques = domain.techniques;
     posture = makePostureStub(() => domain, buckets);
     TestBed.configureTestingModule({
@@ -172,13 +172,14 @@ describe('ActorProfilePanelComponent posture counts (S6, P2-07)', () => {
 describe('ActorProfilePanelComponent threat profile (P2-11)', () => {
   const group = { id: 'intrusion-set--g1', attackId: 'G0001', name: 'Group One', aliases: [], description: '' } as unknown as ThreatGroup;
   let component: ActorProfilePanelComponent;
+  let fixture: ComponentFixture<ActorProfilePanelComponent>;
   let setSource: jasmine.Spy;
   let currentSource: { kind: string; ids?: string[]; n?: number };
 
   function configure(): void {
     currentSource = { kind: 'top-groups', n: 20 };
     setSource = jasmine.createSpy('setSource').and.callFake((s) => { currentSource = s; });
-    const domain = { name: 'Enterprise ATT&CK', groups: [group], techniques: [] } as unknown as Domain;
+    const domain = { name: 'Enterprise ATT&CK', groups: [group], techniques: [], campaigns: [] } as unknown as Domain;
     TestBed.configureTestingModule({
       imports: [ActorProfilePanelComponent],
       providers: [
@@ -201,16 +202,21 @@ describe('ActorProfilePanelComponent threat profile (P2-11)', () => {
         postureStubProvider(makePostureStub(() => domain)),
       ],
     });
-    const fixture = TestBed.createComponent(ActorProfilePanelComponent);
+    fixture = TestBed.createComponent(ActorProfilePanelComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   }
 
-  it('browsing an actor (picker → onGroupPicked → selectGroup) never sets the profile', () => {
+  // Mode guard: click a rendered picker item so dropping mode="single" would break this test.
+  it('browsing via a rendered picker item (single mode) never sets the profile', () => {
     configure();
-    component.onGroupPicked('intrusion-set--g1');
+    const item = (fixture.nativeElement as HTMLElement).querySelector('.tpp-item') as HTMLButtonElement | null;
+    expect(item).withContext('picker rendered a .tpp-item in single mode').toBeTruthy();
+    item!.click();
+    fixture.detectChanges();
     expect(component.selectedProfile?.group.id).toBe('intrusion-set--g1');
     expect(setSource).not.toHaveBeenCalled();
+    expect(currentSource).toEqual({ kind: 'top-groups', n: 20 });   // ThreatProfileService.current unchanged
   });
 
   it('"Add to profile" sets a groups source with exactly that group', () => {

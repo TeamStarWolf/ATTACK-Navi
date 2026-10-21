@@ -27,12 +27,14 @@
         <section class="emu-step-section">
           <h3 class="emu-step-label">Step 1 — Select a threat actor to emulate</h3>
 
-          <div class="emu-quick-picks">
-            <span class="emu-qp-label">Common picks:</span>
-            @for (qp of quickPicks; track qp) {
-              <button class="emu-qp-btn" (click)="pickQuickGroup(qp)">{{ qp }}</button>
-            }
-          </div>
+          @if (quickPickGroups.length > 0) {
+            <div class="emu-quick-picks">
+              <span class="emu-qp-label">Common picks:</span>
+              @for (qp of quickPickGroups; track qp.group.id) {
+                <button class="emu-qp-btn" (click)="selectGroup(qp.group)">{{ qp.label }}</button>
+              }
+            </div>
+          }
 
           <app-threat-profile-picker mode="single" (groupSelected)="onGroupPicked($event)" />
 

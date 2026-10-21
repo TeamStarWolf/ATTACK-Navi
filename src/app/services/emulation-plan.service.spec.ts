@@ -116,15 +116,22 @@ describe('EmulationPlanService', () => {
       expect(plan.steps.map(s => s.tactic)).toEqual(['initial-access', 'stealth', 'defense-impairment', 'credential-access', 'impact']);
     });
 
-    // Regression (P2-11): generatePlan looks the group up by STIX id (domain.groups.find(g => g.id === actorId)),
-    // so an attackId (G####) must NOT match — it yields the Unknown / 0-steps plan. This pins the STIX contract
-    // that the shared picker (single mode, emits group.id) now satisfies; the old panel passed the attackId.
-    it('returns the Unknown / 0-steps plan when given an attackId (G####) instead of a STIX id', () => {
-      const plan = service.generatePlan('G0001', v19Domain());
-      expect(plan.name).toBe('Unknown Actor Plan');
-      expect(plan.actorName).toBe('Unknown');
-      expect(plan.steps.length).toBe(0);
-      expect(plan.totalSteps).toBe(0);
+    // P2-11 contract: generatePlan resolves its arg by STIX id OR by attackId, so a legacy
+    // G#### caller lands on the same plan as the shared picker's STIX id, and a truly unknown
+    // id throws instead of silently returning an empty "Unknown" plan.
+    it('resolves an attackId (G####) to the same plan as its STIX id, step for step', () => {
+      const domain = v19Domain();
+      const byStix = service.generatePlan('intrusion-set--g1', domain);
+      const byAttackId = service.generatePlan('G0001', domain);
+      expect(byAttackId.steps).toEqual(byStix.steps);
+      expect(byAttackId.actorName).toBe(byStix.actorName);
+      expect(byAttackId.actorId).toBe(byStix.actorId);
+      expect(byAttackId.totalSteps).toBe(byStix.totalSteps);
+      expect(byAttackId.steps.length).toBeGreaterThan(0);
+    });
+
+    it('throws on an id that matches no group by STIX id or attackId', () => {
+      expect(() => service.generatePlan('intrusion-set--nope', v19Domain())).toThrowError(/no group with id or attackId/);
     });
 
     it('labels phases with the domain tactic names instead of raw slugs', () => {

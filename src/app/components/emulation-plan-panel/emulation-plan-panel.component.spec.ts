@@ -35,7 +35,7 @@ function domainFixture(): Domain {
   const tactics = [tactic('initial-access', 'Initial Access', 0), tactic('credential-access', 'Credential Access', 1)];
   const group = { id: 'intrusion-set--g1', attackId: 'G0001', name: 'Test Group', aliases: [], description: '' };
   return {
-    name: 'Enterprise ATT&CK', tactics, techniques: techs, groups: [group],
+    name: 'Enterprise ATT&CK', tactics, techniques: techs, groups: [group], campaigns: [],
     techniquesByGroup: new Map([[group.id, techs]]),
   } as unknown as Domain;
 }
@@ -85,9 +85,10 @@ describe('EmulationPlanPanelComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('exposes 6 quick-pick threat actors', () => {
+  it('exposes 6 quick picks by ATT&CK id (no name/alias matching)', () => {
     expect(component.quickPicks.length).toBe(6);
-    expect(component.quickPicks).toContain('APT29');
+    expect(component.quickPicks.map(q => q.label)).toContain('APT29');
+    expect(component.quickPicks.find(q => q.label === 'APT29')?.attackId).toBe('G0016');
   });
 
   it('starts with no selectedGroup or plan', () => {
@@ -100,12 +101,40 @@ describe('EmulationPlanPanelComponent', () => {
     expect(component.selectedGroup?.id).toBe('intrusion-set--g1');
   });
 
-  it('generates a real plan with steps when a group is picked via the shared picker (P2-11 STIX fix)', fakeAsync(() => {
-    component.onGroupPicked('intrusion-set--g1');
+  // Mode guard: drive the selection through a rendered picker item, so dropping mode="single"
+  // would break this test. generatePlan must receive the STIX id and the plan must have steps.
+  it('clicking a rendered picker item (single mode) drives generatePlan with the STIX id and yields steps', fakeAsync(() => {
+    const spy = spyOn(TestBed.inject(EmulationPlanService), 'generatePlan').and.callThrough();
+    const item = (fixture.nativeElement as HTMLElement).querySelector('.tpp-item') as HTMLButtonElement | null;
+    expect(item).withContext('picker rendered a .tpp-item in single mode').toBeTruthy();
+    item!.click();
+    fixture.detectChanges();
+    expect(component.selectedGroup?.id).toBe('intrusion-set--g1');
     component.generatePlan();
     tick(0);   // flush the spinner setTimeout
-    expect(component.plan).toBeTruthy();
-    expect(component.plan!.name).not.toBe('Unknown Actor Plan');
+    expect(spy).toHaveBeenCalledWith('intrusion-set--g1', jasmine.anything());
+    expect(component.plan!.steps.length).toBeGreaterThan(0);
+  }));
+
+  it('resolves quick picks to STIX groups by attackId on domain load', () => {
+    const data = TestBed.inject(DataService) as unknown as { domain$: BehaviorSubject<Domain | null> };
+    const apt29 = { id: 'intrusion-set--apt29', attackId: 'G0016', name: 'APT29', aliases: ['Cozy Bear'], description: '' };
+    data.domain$.next({ name: 'Enterprise ATT&CK', tactics: [], techniques: [], groups: [apt29], campaigns: [], techniquesByGroup: new Map() } as unknown as Domain);
+    fixture.detectChanges();
+    expect(component.quickPickGroups.find(q => q.label === 'APT29')?.group.id).toBe('intrusion-set--apt29');
+  });
+
+  it('re-resolves on a domain switch so a later pick targets the new domain (no take(1))', fakeAsync(() => {
+    const data = TestBed.inject(DataService) as unknown as { domain$: BehaviorSubject<Domain | null> };
+    const g2 = { id: 'intrusion-set--g2', attackId: 'G0002', name: 'New Group', aliases: [], description: '' };
+    const t2 = technique('T1059', 'Command and Scripting Interpreter', ['execution']);
+    data.domain$.next({ name: 'Enterprise ATT&CK', tactics: [tactic('execution', 'Execution', 0)], techniques: [t2], groups: [g2], campaigns: [], techniquesByGroup: new Map([[g2.id, [t2]]]) } as unknown as Domain);
+    fixture.detectChanges();
+    const spy = spyOn(TestBed.inject(EmulationPlanService), 'generatePlan').and.callThrough();
+    component.onGroupPicked('intrusion-set--g2');
+    component.generatePlan();
+    tick(0);
+    expect(spy).toHaveBeenCalledWith('intrusion-set--g2', jasmine.anything());
     expect(component.plan!.steps.length).toBeGreaterThan(0);
   }));
 });
