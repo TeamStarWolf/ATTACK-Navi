@@ -13,8 +13,9 @@ export interface SentinelRule {
  * Azure Sentinel ATT&CK rules) removed every rule on 2024-11-28 and now holds a handful
  * of non-rule files, so there is nothing to fetch. Like CisControlsService, the service
  * makes no request: the registry shows the source as withdrawn upstream (status
- * 'archived-upstream', no rows) and loaded$ stays false. The surface stays so the
- * technique drawer, which hides the section while the count is 0, needs no change.
+ * 'archived-upstream', no rows) and loaded$ stays false. The technique drawer no longer
+ * reads it (its Sentinel section was removed); the service stays as the owner the source
+ * inventory's withdrawn row names.
  */
 @Injectable({ providedIn: 'root' })
 export class SentinelRulesService {

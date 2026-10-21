@@ -1116,47 +1116,30 @@
           </section>
         }
 
-        <!-- SigmaHQ Live Rules -->
-        @if (sigmaRules.length > 0 || sigmaRulesFetching || sigmaCommunityCount > 0) {
-          <section class="sidebar-section sigma-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" id="sb-sec-sigma" (click)="toggleSection('sigma')">
-              <span class="section-chevron">{{ isSectionCollapsed('sigma') ? '▸' : '▾' }}</span>
-              &Sigma; Sigma Rules <span class="count-badge upgrade-section-count">{{ sigmaRules.length + sigmaCommunityCount }}</span>
-            </h4>
-            @if (!isSectionCollapsed('sigma')) {
-              <div class="sigma-source-counts">
-                <span class="sigma-source-label">SigmaHQ: {{ sigmaOfficialCount }} rules</span>
-                <span class="sigma-source-sep">|</span>
-                <span class="sigma-source-label community">Community: {{ sigmaCommunityCount }} rules</span>
-              </div>
-              @if (sigmaRulesFetching) {
-                <p class="atomic-live-hint">Loading rules from SigmaHQ...</p>
-              }
-              @for (rule of sigmaRules; track rule.id) {
-                <div class="car-item">
-                  <div class="car-header">
-                    <a [href]="rule.url" target="_blank" rel="noopener" class="car-id">{{ rule.title }}</a>
-                  </div>
-                  <div class="car-platforms">
-                    @if (rule.level) {
-                      <span class="car-platform">{{ rule.level }}</span>
-                    }
-                    @if (rule.status) {
-                      <span class="car-platform">{{ rule.status }}</span>
-                    }
-                  </div>
-                  @if (rule.description) {
-                    <p class="car-desc">{{ rule.description }}</p>
-                  }
-                </div>
-              }
-              <div class="sigma-links">
-                <a href="https://github.com/SigmaHQ/sigma" target="_blank" rel="noopener" class="framework-link">SigmaHQ on GitHub ↗</a>
-                <a href="https://github.com/mdecrevoisier/SIGMA-detection-rules" target="_blank" rel="noopener" class="framework-link community-link">Community Rules ↗</a>
-              </div>
+        <!-- Rule sources: Elastic, Splunk and community SIGMA rules at pinned commits -->
+        <section class="sidebar-section rule-sources-section upgrade-section-block" data-testid="rule-sources">
+          <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-rule-sources" [attr.aria-expanded]="!isSectionCollapsed('rule-sources')" (click)="toggleSection('rule-sources')">
+            <span class="section-chevron">{{ isSectionCollapsed('rule-sources') ? '▸' : '▾' }}</span>
+            Rule sources
+            @if (!ruleSourcesLoading) {
+              <span class="count-badge upgrade-section-count">{{ ruleSourcesTotal }}</span>
             }
-          </section>
-        }
+          </h4>
+          @if (!isSectionCollapsed('rule-sources')) {
+            <p class="atomic-live-hint">Rules in public repositories that name this technique, at the commit each snapshot pins: reference data, not rules running in your environment.</p>
+            @if (ruleSourcesLoading) {
+              <p class="atomic-live-hint">Reading the bundled rule snapshot...</p>
+            }
+            @for (src of ruleSources; track src.key) {
+              <app-rule-source-list [source]="src" />
+            }
+            @if (sigmaOfficialCount > 0) {
+              <p class="atomic-live-hint">SigmaHQ: {{ sigmaOfficialCount }} rules (count only).
+                <a href="https://github.com/SigmaHQ/sigma" target="_blank" rel="noopener" class="framework-link">SigmaHQ on GitHub ↗</a>
+              </p>
+            }
+          }
+        </section>
 
         <!-- Anthropic Cybersecurity Skills -->
         @if (anthropicSkillCount > 0) {
@@ -1211,25 +1194,6 @@
                 </div>
               }
               <a href="https://github.com/mdecrevoisier/EVTX-to-MITRE-Attack" target="_blank" rel="noopener" class="framework-link">EVTX-to-MITRE-Attack ↗</a>
-            }
-          </section>
-        }
-
-        <!-- Sentinel ATT&CK Detection Rules -->
-        @if (sentinelRuleCount > 0) {
-          <section class="sidebar-section sentinel-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-sentinel-rules" [attr.aria-expanded]="!isSectionCollapsed('sentinel-rules')" (click)="toggleSection('sentinel-rules')">
-              <span class="section-chevron">{{ isSectionCollapsed('sentinel-rules') ? '▸' : '▾' }}</span>
-              <span class="sentinel-icon">&#x1F6E1;</span> Sentinel Rules
-              <span class="count-badge upgrade-section-count sentinel-badge">{{ sentinelRuleCount }}</span>
-            </h4>
-            @if (!isSectionCollapsed('sentinel-rules')) {
-              @for (rule of sentinelRules; track rule.url) {
-                <div class="sentinel-item">
-                  <a [href]="rule.url" target="_blank" rel="noopener" class="sentinel-link">{{ rule.filename }}</a>
-                </div>
-              }
-              <a href="https://github.com/edoardogerosa/sentinel-attack" target="_blank" rel="noopener" class="framework-link">Sentinel ATT&CK ↗</a>
             }
           </section>
         }

@@ -5,7 +5,8 @@
 // representative techniques of the fixed fixture domain. The sidebar uses the
 // REAL services here (their bundled seed data, no network: requests stay
 // pending), so this pins the ATT&CK-derived sections and the seed-backed ones.
-// A section appearing or disappearing for these techniques fails a spec.
+// A section appearing or disappearing for these techniques fails a spec. The Rule
+// sources section renders for every technique (its snapshot request stays pending here).
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -25,15 +26,15 @@ import { parseFixtureDomain, resetBrowserState } from './lens-harness';
  */
 const EXPECTED: Record<string, string[]> = {
   T1003: ['annotation', 'subtechniques', 'datacomponents', 'procedures', 'tags', 'notes', 'threats', 'software',
-    'car', 'siem', 'c2', 'offensive-tools', 'mitigations', 'relgraph'],
+    'car', 'rule-sources', 'siem', 'c2', 'offensive-tools', 'mitigations', 'relgraph'],
   'T1003.001': ['annotation', 'datacomponents', 'procedures', 'tags', 'notes', 'threats', 'software', 'campaigns',
-    'car', 'siem', 'logging', 'bloodhound', 'c2', 'offensive-tools', 'mitigations', 'relgraph'],
+    'car', 'rule-sources', 'siem', 'logging', 'bloodhound', 'c2', 'offensive-tools', 'mitigations', 'relgraph'],
   T1082: ['annotation', 'datacomponents', 'procedures', 'tags', 'notes', 'threats', 'software', 'campaigns',
-    'siem', 'c2', 'mitigations', 'relgraph'],
+    'rule-sources', 'siem', 'c2', 'mitigations', 'relgraph'],
   T1078: ['annotation', 'subtechniques', 'datacomponents', 'procedures', 'tags', 'notes', 'threats', 'software',
-    'campaigns', 'd3fend', 'car', 'siem', 'logging', 'offensive-tools', 'wazuh-xdr', 'mitigations', 'relgraph'],
+    'campaigns', 'd3fend', 'car', 'rule-sources', 'siem', 'logging', 'offensive-tools', 'wazuh-xdr', 'mitigations', 'relgraph'],
   T1485: ['annotation', 'subtechniques', 'datacomponents', 'procedures', 'tags', 'notes', 'threats', 'software',
-    'campaigns', 'siem', 'wazuh-xdr', 'mitigations', 'relgraph'],
+    'campaigns', 'rule-sources', 'siem', 'wazuh-xdr', 'mitigations', 'relgraph'],
 };
 
 describe('Sidebar section presence (fixture domain, 5 techniques)', () => {

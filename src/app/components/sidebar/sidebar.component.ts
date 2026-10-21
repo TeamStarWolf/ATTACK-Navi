@@ -15,7 +15,7 @@ interface RelGraphData { nodes: GraphNode[]; links: GraphLink[]; }
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subscription, catchError, forkJoin, map, of } from 'rxjs';
 import { buildTechniqueShareUrl } from '../../utils/share-link';
 import { Technique } from '../../models/technique';
 import { Mitigation, MitigationRelationship } from '../../models/mitigation';
@@ -49,7 +49,7 @@ import { UserLayerService } from '../../services/user-layer.service';
 import { AttackNaviLayer, UserLayerTechnique } from '../../models/user-layer';
 import { WatchlistService } from '../../services/watchlist.service';
 import { MispService, MispGalaxyCluster, MispTag } from '../../services/misp.service';
-import { SigmaService, SigmaRuleDetail } from '../../services/sigma.service';
+import { SigmaService } from '../../services/sigma.service';
 import { OpenCtiService, OpenCtiIndicator } from '../../services/opencti.service';
 import { EpssService } from '../../services/epss.service';
 import { ExploitdbService } from '../../services/exploitdb.service';
@@ -74,7 +74,7 @@ import { PocExploitService } from '../../services/poc-exploit.service';
 import { AnthropicSkillsService } from '../../services/anthropic-skills.service';
 import { ThreatHunterPlaybookService } from '../../services/threathunter-playbook.service';
 import { EvtxSamplesService, EvtxSample } from '../../services/evtx-samples.service';
-import { SentinelRulesService, SentinelRule } from '../../services/sentinel-rules.service';
+import { RuleCoverageSnapshotService } from '../../services/rule-coverage-snapshot.service';
 
 import { LibraryCrossRefComponent } from '../library-cross-ref/library-cross-ref.component';
 import { ValidationStatusPillComponent } from '../validation-status-pill/validation-status-pill.component';
@@ -86,11 +86,14 @@ import { postureBadge } from '../../models/posture/posture-vocabulary';
 import { parseTechniqueRef, refForTechnique, techniqueRefKey } from '../../models/technique-ref';
 import { ctidDatasetUrl } from '../../services/ctid-links';
 import { TechniqueEvidenceCardComponent } from '../technique-evidence-card/technique-evidence-card.component';
+import {
+  RULE_SOURCE_KEYS, RuleSourceListComponent, type RuleSourceView, ruleSourceError, ruleSourceView,
+} from '../rule-source-list/rule-source-list.component';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, AttackTextPipe, LibraryCrossRefComponent, ValidationStatusPillComponent, DrawerResizeHandleComponent, TechniqueEvidenceCardComponent],
+  imports: [CommonModule, FormsModule, RouterLink, AttackTextPipe, LibraryCrossRefComponent, ValidationStatusPillComponent, DrawerResizeHandleComponent, TechniqueEvidenceCardComponent, RuleSourceListComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss',
@@ -172,9 +175,16 @@ export class SidebarComponent implements OnInit, OnDestroy {
   mispCluster: MispGalaxyCluster | null = null;
   mispTagCopied = false;
 
-  // Sigma Rules (live from SigmaHQ)
-  sigmaRules: SigmaRuleDetail[] = [];
-  sigmaRulesFetching = false;
+  // Rule sources: Elastic, Splunk and community SIGMA rules naming the technique at the
+  // commits the bundled rule-coverage snapshot pins (one view per source, in RULE_SOURCE_KEYS order).
+  ruleSources: RuleSourceView[] = [];
+  ruleSourcesLoading = false;
+  private readonly ruleCoverage = inject(RuleCoverageSnapshotService);
+
+  /** The three sources' counts added up, for the section badge. */
+  get ruleSourcesTotal(): number {
+    return this.ruleSources.reduce((sum, s) => sum + s.count, 0);
+  }
 
   // Microsoft 365 Defender Hunting Queries
   m365Queries: M365Query[] = [];
@@ -220,16 +230,11 @@ export class SidebarComponent implements OnInit, OnDestroy {
   m365Controls: M365Control[] = [];
   showAllM365Controls = false;
 
-  // Community Sigma rule count for current technique
-  sigmaCommunityCount = 0;
+  // SigmaHQ rule count for current technique (the live SigmaHQ layer: a count, no rule names)
   sigmaOfficialCount = 0;
 
   // EVTX Samples
   evtxSamples: EvtxSample[] = [];
-
-  // Sentinel Rules
-  sentinelRules: SentinelRule[] = [];
-  sentinelRuleCount = 0;
 
   // Anthropic Cybersecurity Skills
   anthropicSkillCount = 0;
@@ -272,10 +277,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
       { id: 'm365-controls', label: 'M365 Controls' }, { id: 'cri', label: 'CRI Profile' },
     ]},
     { label: 'Detections', sections: [
-      { id: 'sigma', label: 'Sigma' }, { id: 'car', label: 'CAR' },
+      { id: 'rule-sources', label: 'Rule sources' }, { id: 'car', label: 'CAR' },
       { id: 'atomic', label: 'Atomic' }, { id: 'd3fend', label: 'D3FEND' },
       { id: 'engage', label: 'Engage' }, { id: 'siem', label: 'SIEM Queries' },
-      { id: 'sentinel-rules', label: 'Sentinel' }, { id: 'm365', label: 'M365 Hunting' },
+      { id: 'm365', label: 'M365 Hunting' },
       { id: 'wazuh-xdr', label: 'Wazuh stock rules (curated)' }, { id: 'evtx-samples', label: 'EVTX Samples' },
     ]},
     { label: 'Offense & Hunting', sections: [
@@ -347,11 +352,11 @@ export class SidebarComponent implements OnInit, OnDestroy {
       'annotation', 'datasources', 'subtechniques', 'detection', 'datacomponents',
       'procedures', 'cve', 'nist', 'cloud', 'veris', 'cri', 'capec',
       'exploitdb', 'nuclei', 'tags', 'notes', 'threats', 'software',
-      'campaigns', 'd3fend', 'engage', 'car', 'atomic', 'misp', 'opencti', 'sigma',
+      'campaigns', 'd3fend', 'engage', 'car', 'atomic', 'misp', 'opencti', 'rule-sources',
       'custom', 'mitigations', 'relgraph', 'm365', 'siem', 'payloads', 'logging',
       'bloodhound', 'c2', 'ioc-feed', 'azure-identity', 'offensive-tools',
       'wazuh-xdr', 'threat-hunting', 'csa-ccm', 'm365-controls',
-      'kill-chain', 'poc-exploits', 'evtx-samples', 'sentinel-rules',
+      'kill-chain', 'poc-exploits', 'evtx-samples',
       'anthropic-skills', 'threathunter-playbook', 'imported-layer',
     ];
     for (const s of sections) this.collapsedSections.add(s);
@@ -380,7 +385,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     if (this.killChainEntries.length === 0) this.collapsedSections.add('kill-chain');
     if (this.pocCount === 0) this.collapsedSections.add('poc-exploits');
     if (!this.mispCluster) this.collapsedSections.add('misp');
-    if (this.sigmaRules.length === 0 && !this.sigmaRulesFetching) this.collapsedSections.add('sigma');
+    if (this.ruleSourcesTotal === 0 && !this.ruleSourcesLoading) this.collapsedSections.add('rule-sources');
     if (this.m365Queries.length === 0) this.collapsedSections.add('m365');
     if (this.siemQueries.length === 0) this.collapsedSections.add('siem');
     if (this.payloadRefs.length === 0) this.collapsedSections.add('payloads');
@@ -396,7 +401,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
     if (this.csaCcmControls.length === 0) this.collapsedSections.add('csa-ccm');
     if (this.m365Controls.length === 0) this.collapsedSections.add('m365-controls');
     if (this.evtxSamples.length === 0) this.collapsedSections.add('evtx-samples');
-    if (this.sentinelRules.length === 0) this.collapsedSections.add('sentinel-rules');
     if (this.anthropicSkillCount === 0) this.collapsedSections.add('anthropic-skills');
     if (this.playbookCount === 0) this.collapsedSections.add('threathunter-playbook');
     if (!this.technique?.detectionText) this.collapsedSections.add('detection');
@@ -560,7 +564,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   private subs = new Subscription();
   private atomicSub?: Subscription;
-  private sigmaSub?: Subscription;
+  private ruleSourcesSub?: Subscription;
   private openctiSub?: Subscription;
   private epssSub?: Subscription;
 
@@ -612,7 +616,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
     private anthropicSkillsService: AnthropicSkillsService,
     private threatHunterPlaybookService: ThreatHunterPlaybookService,
     private evtxSamplesService: EvtxSamplesService,
-    private sentinelRulesService: SentinelRulesService,
     private userLayerService: UserLayerService,
     private router: Router,
     private cdr: ChangeDetectorRef,
@@ -638,7 +641,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.subs.add(
       this.filterService.selectedTechnique$.subscribe((tech) => {
         this.atomicSub?.unsubscribe();
-        this.sigmaSub?.unsubscribe();
         this.openctiSub?.unsubscribe();
         this.epssSub?.unsubscribe();
         this.technique = tech;
@@ -681,24 +683,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
             }
           });
         }
-        // Sigma live rules
-        this.sigmaRules = [];
-        this.sigmaRulesFetching = false;
-        if (tech && this.sigmaService.getRuleCount(tech.attackId) > 0) {
-          const cached = this.sigmaService.getCachedRules(tech.attackId);
-          if (cached) {
-            this.sigmaRules = cached;
-          } else {
-            this.sigmaRulesFetching = true;
-            this.sigmaSub = this.sigmaService.fetchRulesForTechnique(tech.attackId).subscribe(rules => {
-              if (this.technique?.attackId === tech.attackId) {
-                this.sigmaRules = rules;
-                this.sigmaRulesFetching = false;
-                this.cdr.markForCheck();
-              }
-            });
-          }
-        }
+        // Rule sources (Elastic, Splunk, community SIGMA) from the shared bundled snapshot
+        this.loadRuleSources(tech);
         // Anthropic Cybersecurity Skills
         this.anthropicSkillCount = tech ? this.anthropicSkillsService.getSkillCount(tech.attackId) : 0;
         // ThreatHunter Playbook
@@ -764,24 +750,14 @@ export class SidebarComponent implements OnInit, OnDestroy {
         this.killChainEntries = tech ? this.cve2capecService.getChainForTechnique(tech.attackId) : [];
         this.showAllKillChain = false;
         this.pocCount = tech ? this.pocExploitService.getPocCount(tech.attackId) : 0;
-        // Community Sigma counts
+        // SigmaHQ count (live layer)
         this.sigmaOfficialCount = tech ? this.sigmaService.getRuleCount(tech.attackId) : 0;
-        this.sigmaCommunityCount = tech ? this.sigmaService.getCommunityRuleCount(tech.attackId) : 0;
         // EVTX Samples (load on demand)
         if (tech) {
           this.evtxSamplesService.loadOnDemand();
           this.evtxSamples = this.evtxSamplesService.getSamplesForTechnique(tech.attackId);
         } else {
           this.evtxSamples = [];
-        }
-        // Sentinel Rules (load on demand)
-        if (tech) {
-          this.sentinelRulesService.loadOnDemand();
-          this.sentinelRules = this.sentinelRulesService.getRulesForTechnique(tech.attackId);
-          this.sentinelRuleCount = this.sentinelRulesService.getRuleCount(tech.attackId);
-        } else {
-          this.sentinelRules = [];
-          this.sentinelRuleCount = 0;
         }
         this.copiedKql = '';
         this.copiedLoggingScript = false;
@@ -852,55 +828,21 @@ export class SidebarComponent implements OnInit, OnDestroy {
       }),
     );
 
-    // Refresh Sigma rules when Sigma layer finishes loading
+    // Refresh the SigmaHQ count when the SigmaHQ layer finishes loading
     this.subs.add(
       this.sigmaService.loaded$.subscribe((loaded) => {
         if (loaded && this.technique) {
-          const count = this.sigmaService.getRuleCount(this.technique.attackId);
-          if (count > 0 && this.sigmaRules.length === 0 && !this.sigmaRulesFetching) {
-            this.sigmaRulesFetching = true;
-            this.cdr.markForCheck();
-            this.subs.add(
-              this.sigmaService.fetchRulesForTechnique(this.technique.attackId).subscribe(rules => {
-                this.sigmaRules = rules;
-                this.sigmaRulesFetching = false;
-                this.cdr.markForCheck();
-              }),
-            );
-          }
-        }
-      }),
-    );
-
-    // Refresh community Sigma counts when loaded
-    this.subs.add(
-      this.sigmaService.communityLoaded$.subscribe((loaded) => {
-        if (loaded && this.technique) {
-          this.sigmaCommunityCount = this.sigmaService.getCommunityRuleCount(this.technique.attackId);
+          this.sigmaOfficialCount = this.sigmaService.getRuleCount(this.technique.attackId);
           this.cdr.markForCheck();
         }
       }),
     );
-
-    // Load community Sigma rules on demand (first sidebar open)
-    this.sigmaService.loadCommunityRules();
 
     // Refresh EVTX samples when loaded
     this.subs.add(
       this.evtxSamplesService.loaded$.subscribe((loaded) => {
         if (loaded && this.technique) {
           this.evtxSamples = this.evtxSamplesService.getSamplesForTechnique(this.technique.attackId);
-          this.cdr.markForCheck();
-        }
-      }),
-    );
-
-    // Refresh Sentinel rules when loaded
-    this.subs.add(
-      this.sentinelRulesService.loaded$.subscribe((loaded) => {
-        if (loaded && this.technique) {
-          this.sentinelRules = this.sentinelRulesService.getRulesForTechnique(this.technique.attackId);
-          this.sentinelRuleCount = this.sentinelRulesService.getRuleCount(this.technique.attackId);
           this.cdr.markForCheck();
         }
       }),
@@ -1263,9 +1205,33 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.drawerWidth.setOpen(false);
     this.subs.unsubscribe();
     this.atomicSub?.unsubscribe();
-    this.sigmaSub?.unsubscribe();
+    this.ruleSourcesSub?.unsubscribe();
     this.openctiSub?.unsubscribe();
     this.epssSub?.unsubscribe();
+  }
+
+  /**
+   * The Rule sources section for a technique: one view per source of the bundled
+   * rule-coverage snapshot. RuleCoverageSnapshotService fetches that file once for the
+   * whole app (the Elastic, Splunk and Sigma services read it at start), so opening the
+   * drawer makes no request of its own. A source whose section does not load shows its
+   * reason; the others still render.
+   */
+  private loadRuleSources(tech: Technique | null): void {
+    this.ruleSourcesSub?.unsubscribe();
+    this.ruleSources = [];
+    this.ruleSourcesLoading = tech !== null;
+    if (!tech) return;
+    const attackId = tech.attackId;
+    this.ruleSourcesSub = forkJoin(RULE_SOURCE_KEYS.map(key => this.ruleCoverage.section(key).pipe(
+      map(section => ruleSourceView(key, section, attackId)),
+      catchError(err => of(ruleSourceError(key, err))),
+    ))).subscribe(views => {
+      if (this.technique?.attackId !== attackId) return;
+      this.ruleSources = views;
+      this.ruleSourcesLoading = false;
+      this.cdr.markForCheck();
+    });
   }
 
   close(): void {

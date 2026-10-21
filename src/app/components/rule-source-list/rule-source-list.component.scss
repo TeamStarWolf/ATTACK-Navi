@@ -1,0 +1,64 @@
+// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+// https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
+:host { display: block; }
+
+.rule-source {
+  padding: 6px 0 8px;
+  border-bottom: 1px solid var(--bg-hover);
+}
+
+:host(:last-of-type) .rule-source { border-bottom: none; }
+
+.rs-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.rs-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.rs-count {
+  font-size: 10px;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.rs-rules {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rs-rules li { padding: 2px 0; }
+
+.rs-rule {
+  font-size: 11px;
+  color: var(--accent);
+  text-decoration: none;
+  word-break: break-word;
+  &:hover { text-decoration: underline; }
+}
+
+.rs-note {
+  margin: 2px 0;
+  font-size: 10px;
+  font-style: italic;
+  color: var(--text-faint);
+}
+
+.rs-prov {
+  margin: 4px 0 0;
+  font-size: 9px;
+  color: var(--text-faint);
+  a {
+    color: inherit;
+    font-family: 'IBM Plex Mono', monospace;
+    &:hover { color: var(--accent); }
+  }
+}

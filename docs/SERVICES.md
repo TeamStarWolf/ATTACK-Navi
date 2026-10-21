@@ -398,8 +398,9 @@ Same surface as `ElasticService` (`loaded$`, `total$`, `covered$`, `getRuleCount
 The upstream removed every rule on 2024-11-28 ("Cleaned up deprecated components") and now
 holds a handful of non-rule files. The `sentinel-attack-tree` source is marked withdrawn upstream
 (status `archived-upstream`, date 2024-11-28), like CIS Controls: `SentinelRulesService` is a stub
-that makes no request (kept because the technique drawer imports it), and the source is gone from
-the matrix's drawer sources, Retry, the data-health ribbon and the honesty spec's forced-failure cases.
+that makes no request (kept as the owner of the source inventory's withdrawn row), and the source is gone from
+the technique drawer (its Sentinel section was removed), the matrix's drawer sources, Retry, the data-health
+ribbon and the honesty spec's forced-failure cases.
 
 ---
 
