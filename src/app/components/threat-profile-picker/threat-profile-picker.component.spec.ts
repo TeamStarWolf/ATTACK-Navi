@@ -11,8 +11,18 @@ import { Domain } from '../../models/domain';
 import { ThreatGroup } from '../../models/group';
 import { Campaign } from '../../models/campaign';
 import { ThreatProfileSource } from '../../models/threat-profile';
-// Compare against the wizard's OWN exported table so a drift in either fails this spec (round 2, item D).
-import { SECTOR_CATEGORIES as WIZARD_SECTORS } from '../assessment-wizard/assessment-wizard.component';
+
+// The picker is the single source of the sector aid table (P2-10). This fixture mirrors the
+// expected content; the test compares the picker's runtime `component.sectors` against it, so
+// a drift in the picker's table fails the spec.
+const EXPECTED_SECTORS = [
+  { label: 'Financial', keywords: ['financial', 'banking', 'payment', 'fin'] },
+  { label: 'Government', keywords: ['government', 'military', 'defense', 'intelligence', 'political', 'embassy'] },
+  { label: 'Healthcare', keywords: ['health', 'hospital', 'medical', 'pharma'] },
+  { label: 'Technology', keywords: ['technology', 'software', 'tech', 'telecom', 'it '] },
+  { label: 'Energy', keywords: ['energy', 'oil', 'gas', 'nuclear', 'power', 'utility'] },
+  { label: 'Education', keywords: ['education', 'university', 'academic', 'research'] },
+];
 
 function grp(id: string, attackId: string, description: string): ThreatGroup {
   return { id, attackId, name: `grp-${attackId}`, description, url: '', aliases: [] };
@@ -202,9 +212,9 @@ describe('ThreatProfilePickerComponent', () => {
     expect(toggleThreatGroup).toHaveBeenCalledTimes(1);
   });
 
-  it('the sector aid table matches the wizard verbatim', () => {
+  it('the sector aid table matches the expected sector fixture', () => {
     fixture.detectChanges();
-    expect(component.sectors).toEqual(WIZARD_SECTORS);
+    expect(component.sectors).toEqual(EXPECTED_SECTORS);
   });
 
   it('the sector aid filters groups by their description keywords', () => {

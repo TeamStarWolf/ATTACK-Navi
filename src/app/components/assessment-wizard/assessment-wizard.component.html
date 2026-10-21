@@ -63,70 +63,14 @@
           <div class="step-body">
             <h2 class="step-title">Select Threat Profile</h2>
             <p class="step-desc">
-              Which threat actors are relevant to your organization? Select groups to scope the assessment, or skip to assess all techniques.
+              Which threat actors are relevant to your organization? Pick groups, campaigns, a Top-N preset or a library layer to scope the assessment — or skip to assess all techniques.
             </p>
 
-            <!-- Sector quick-picks -->
-            <div class="sector-bar">
-              @for (cat of sectorCategories; track cat.label) {
-                <button
-                  class="sector-chip"
-                  [class.active]="activeSectorFilter === cat.label"
-                  (click)="toggleSectorFilter(cat.label)"
-                >
-                  {{ cat.label }}
-                </button>
-              }
-            </div>
+            <app-threat-profile-picker mode="profile" />
 
-            <!-- Search -->
-            <div class="group-search-row">
-              <input
-                class="form-input"
-                type="text"
-                placeholder="Search threat groups..."
-                [(ngModel)]="groupSearchQuery"
-                (ngModelChange)="filterGroups()"
-              />
-              <button class="action-btn secondary" (click)="selectAllVisible()">Select All Visible</button>
-              <button class="action-btn secondary" (click)="clearGroups()">Clear</button>
-            </div>
-
-            <div class="group-info">
-              {{ selectedGroupIds.size }} groups selected
-              @if (filteredGroups.length !== allGroups.length) {
-                <span> ({{ filteredGroups.length }} shown)</span>
-              }
-            </div>
-
-            <!-- Group list -->
-            <div class="group-list">
-              @for (group of filteredGroups; track group.id) {
-                <button
-                  class="group-item"
-                  [class.selected]="selectedGroupIds.has(group.id)"
-                  (click)="toggleGroup(group.id)"
-                >
-                  <span class="group-id">{{ group.attackId }}</span>
-                  <span class="group-name">{{ group.name }}</span>
-                  @if (group.aliases.length > 0) {
-                    <span class="group-aliases">{{ group.aliases.slice(0, 3).join(', ') }}</span>
-                  }
-                </button>
-              }
-              @if (filteredGroups.length === 0) {
-                <div class="empty-state">No groups match your search.</div>
-              }
-            </div>
-
-            <!-- Skip option -->
+            <!-- Skip option: assess every technique -->
             <div class="skip-section">
-              <button
-                class="action-btn"
-                [class.primary]="skipGroupSelection"
-                [class.secondary]="!skipGroupSelection"
-                (click)="setSkipGroups()"
-              >
+              <button class="action-btn secondary" (click)="setSkipGroups()">
                 Assess all techniques (skip group selection)
               </button>
             </div>

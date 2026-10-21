@@ -15,7 +15,8 @@ import { PanelNavService } from '../../services/panel-nav.service';
 import { DataService } from '../../services/data.service';
 import { GapAnalysisService, GapAnalysisResult, PrioritizedGap } from '../../services/gap-analysis.service';
 import { LibraryService } from '../../services/library.service';
-import { ThreatGroup } from '../../models/group';
+import { ThreatProfileService } from '../../services/threat-profile.service';
+import { ThreatProfilePickerComponent } from '../threat-profile-picker/threat-profile-picker.component';
 import { Domain } from '../../models/domain';
 
 interface CoverageSourceRow {
@@ -29,7 +30,7 @@ interface CoverageSourceRow {
 @Component({
   selector: 'app-gap-analysis-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ThreatProfilePickerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './gap-analysis-panel.component.html',
   styleUrl: './gap-analysis-panel.component.scss',
@@ -38,11 +39,7 @@ export class GapAnalysisPanelComponent implements OnInit, OnDestroy {
   result: GapAnalysisResult | null = null;
   generating = false;
 
-  // Step 1 state
-  analyzeAll = false;
-  actorSearch = '';
-  selectedActorIds = new Set<string>();
-  allGroups: ThreatGroup[] = [];
+  // Step 1: the shared threat-profile picker (profile mode) scopes the analysis.
   private domain: Domain | null = null;
 
   // Step 2 state
@@ -60,6 +57,7 @@ export class GapAnalysisPanelComponent implements OnInit, OnDestroy {
     private gapService: GapAnalysisService,
     private cdr: ChangeDetectorRef,
     private libraryService: LibraryService,
+    private threatProfile: ThreatProfileService,
   ) {}
 
   /** Count of starred Library tools relevant to a technique's tactic. */
@@ -93,76 +91,15 @@ export class GapAnalysisPanelComponent implements OnInit, OnDestroy {
     this.subs.unsubscribe();
   }
 
-  // ─── Group loading ──────────────────────────────────────────────────────────
+  // ─── Domain loading ───────────────────────────────────────────────────────────
 
   private loadGroups(): void {
+    // The shared picker loads and lists the groups itself; the panel only needs the
+    // domain for generate(). The scope is the ThreatProfileService profile the picker edits.
     this.dataService.domain$.pipe(filter(Boolean), take(1)).subscribe(domain => {
       this.domain = domain;
-      this.allGroups = [...domain.groups].sort((a, b) => a.name.localeCompare(b.name));
       this.cdr.markForCheck();
     });
-  }
-
-  get filteredGroups(): ThreatGroup[] {
-    if (!this.actorSearch.trim()) return this.allGroups;
-    const q = this.actorSearch.toLowerCase();
-    return this.allGroups.filter(g =>
-      g.name.toLowerCase().includes(q) ||
-      g.attackId.toLowerCase().includes(q) ||
-      g.aliases.some(a => a.toLowerCase().includes(q)),
-    );
-  }
-
-  getGroupTechCount(groupId: string): number {
-    if (!this.domain) return 0;
-    return (this.domain.techniquesByGroup.get(groupId) ?? []).filter(t => !t.isSubtechnique).length;
-  }
-
-  // ─── Actor selection helpers ────────────────────────────────────────────────
-
-  toggleActor(id: string): void {
-    if (this.selectedActorIds.has(id)) {
-      this.selectedActorIds.delete(id);
-    } else {
-      this.selectedActorIds.add(id);
-    }
-    this.selectedActorIds = new Set(this.selectedActorIds); // trigger change detection
-  }
-
-  selectTop10(): void {
-    if (!this.domain) return;
-    const sorted = [...this.allGroups]
-      .map(g => ({ id: g.id, count: this.getGroupTechCount(g.id) }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
-    this.selectedActorIds = new Set(sorted.map(s => s.id));
-    this.cdr.markForCheck();
-  }
-
-  selectAptOnly(): void {
-    this.selectedActorIds = new Set(
-      this.allGroups
-        .filter(g => g.name.startsWith('APT') || g.aliases.some(a => a.startsWith('APT')))
-        .map(g => g.id),
-    );
-    this.cdr.markForCheck();
-  }
-
-  selectAllGroups(): void {
-    this.selectedActorIds = new Set(this.allGroups.map(g => g.id));
-    this.cdr.markForCheck();
-  }
-
-  clearSelection(): void {
-    this.selectedActorIds = new Set();
-    this.cdr.markForCheck();
-  }
-
-  onAnalyzeAllChange(): void {
-    if (this.analyzeAll) {
-      this.selectedActorIds = new Set();
-    }
-    this.cdr.markForCheck();
   }
 
   // ─── Report generation ──────────────────────────────────────────────────────
@@ -173,8 +110,7 @@ export class GapAnalysisPanelComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
     // Defer to next tick so the spinner renders before the sync computation blocks the thread
     setTimeout(() => {
-      const actorIds = this.analyzeAll ? [] : Array.from(this.selectedActorIds);
-      this.result = this.gapService.generateReport(this.domain!, actorIds);
+      this.result = this.gapService.generateReport(this.domain!, this.threatProfile.current);
       this.generating = false;
       this.buildDetectionSources();
       this.gapLimit = 20;
