@@ -1,7 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed } from '@angular/core/testing';
-import { EnrichmentService, mappedPct } from './enrichment.service';
+import { EnrichmentService, isUnrecordedGap, mappedPct } from './enrichment.service';
 import { SigmaService } from './sigma.service';
 import { CARService } from './car.service';
 import { AtomicService } from './atomic.service';
@@ -15,6 +15,7 @@ import { AttackCveService } from './attack-cve.service';
 import { Domain } from '../models/domain';
 import { Technique } from '../models/technique';
 import { hasAnySignal } from '../models/known-signals';
+import type { PostureBucket } from '../models/posture/posture.types';
 
 /** Mutable per-attackId fixtures the mocks read from. */
 const counts = {
@@ -111,6 +112,35 @@ describe('EnrichmentService', () => {
     // Both have threat pressure 4 (2 groups × 2); undefended is doubled.
     expect(service.riskScore(undefended, domain)).toBe(8);
     expect(service.riskScore(defended, domain)).toBe(4);
+  });
+
+  it('riskScore reads the posture bucket (P2-09): only Covered, Proven or stale owner data lowers an unrecorded gap', () => {
+    const undefended = tech('T3001', 's-3001', 0);
+    const defended = tech('T3002', 's-3002', 1);
+    domain.groupsByTechnique.set('s-3001', arr(2) as never);
+    domain.groupsByTechnique.set('s-3002', arr(2) as never);
+    // KEV 1 adds 3: exposure 7, doubled for a gap.
+    const doubled: PostureBucket[] = ['none', 'known', 'partial'];
+    const lowered: PostureBucket[] = ['covered', 'proven', 'stale'];
+    for (const b of doubled) expect(service.riskScore(undefended, domain, 1, b)).withContext(b).toBe(14);
+    for (const b of lowered) expect(service.riskScore(undefended, domain, 1, b)).withContext(b).toBe(7);
+    // The default bucket is the pre-posture answer.
+    expect(service.riskScore(undefended, domain, 1)).toBe(14);
+    // A technique with a defensive reference is never doubled, whatever its bucket.
+    for (const b of [...doubled, ...lowered]) expect(service.riskScore(defended, domain, 1, b)).withContext(b).toBe(7);
+  });
+
+  it('isUnrecordedGap: no defensive reference AND bucket not covered, proven or stale', () => {
+    const none = { mitigation: false, detection: false, atomic: false, d3fend: false, control: false, threatIntel: true, cve: true };
+    // An Atomic test is not a defensive reference here (hasDefensiveReference).
+    expect(isUnrecordedGap({ ...none, atomic: true }, 'known')).toBeTrue();
+    expect(isUnrecordedGap(none, 'none')).toBeTrue();
+    // Partial still counts (unlike the Threat gaps overlay rule, §10.4 item 13, P2-17).
+    expect(isUnrecordedGap(none, 'partial')).toBeTrue();
+    for (const b of ['covered', 'proven', 'stale'] as const) expect(isUnrecordedGap(none, b)).withContext(b).toBeFalse();
+    for (const k of ['mitigation', 'detection', 'd3fend', 'control'] as const) {
+      expect(isUnrecordedGap({ ...none, [k]: true }, 'none')).withContext(k).toBeFalse();
+    }
   });
 
   it('never throws when a service blows up — the signal is treated as absent', () => {
