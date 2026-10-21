@@ -6,6 +6,8 @@ import {
   Component,
   OnDestroy,
   OnInit,
+  Injector,
+  inject,
 } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
@@ -25,6 +27,12 @@ import { LensCardService } from '../../services/lens-card.service';
 import { PLATFORM_PILLS } from '../../components/toolbar/toolbar.component';
 import { Viewpoint, ViewpointService } from '../../services/viewpoint.service';
 import { distinctDataSourceNames, sameDataSource } from '../../utils/data-source-names';
+import { PostureService } from '../../services/posture.service';
+
+/** The impl= select's tooltip (P2-14, §6): what the four values match under the breadth guard. */
+export const IMPL_FILTER_TITLE = 'Filter by implementation status. Broad mitigations count as partial: '
+  + 'a technique implemented only through mitigations mapped to more techniques than the breadth threshold '
+  + '(Settings, 15 by default) matches none of these values, and Implemented matches full implementation only.';
 
 /**
  * Matrix-scoped controls row: technique + mitigation search, platform /
@@ -107,6 +115,20 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
   activeThreatGroupCount = 0;
 
   private subs = new Subscription();
+  private readonly injector = inject(Injector);
+
+  /**
+   * The impl= select's tooltip. While a value is selected it also names the
+   * techniques that are partial only (PostureService.implPartialOnly), which
+   * no value matches. PostureService is injected only then.
+   */
+  get implFilterTitle(): string {
+    if (!this.implStatusFilter) return IMPL_FILTER_TITLE;
+    const { count, via } = this.injector.get(PostureService).implPartialOnly();
+    if (count === 0) return IMPL_FILTER_TITLE;
+    const n = count === 1 ? '1 technique is' : `${count} techniques are`;
+    return `${IMPL_FILTER_TITLE} Now ${n} implemented, partial via ${via.join(', ')} and not shown as a match.`;
+  }
 
   constructor(
     private filterService: FilterService,

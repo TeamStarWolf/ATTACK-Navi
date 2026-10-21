@@ -252,7 +252,7 @@ describe('MatrixControlsComponent', () => {
         expect(btn.hasAttribute('aria-disabled')).withContext(def.value).toBeFalse();
         expect(btn.hasAttribute('aria-describedby')).withContext(def.value).toBeFalse();
       }
-      expect(el.querySelector('.lens-na-summary')!.textContent).toContain('23 of 34 lenses have no ICS ATT&CK data');
+      expect(el.querySelector('.lens-na-summary')!.textContent).toContain('23 of 36 lenses have no ICS ATT&CK data');
       expect(el.querySelector('.lens-na-summary')!.getAttribute('role')).toBe('status');
     });
 

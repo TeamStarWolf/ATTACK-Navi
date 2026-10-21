@@ -14,6 +14,14 @@ import { LENS_SOURCES, domainLabel, type LensSourceId } from './lens-sources';
 // only types from this file, so these runtime imports are cycle-free too.
 import { lensLabel } from './posture/posture-vocabulary';
 import { postureColor, postureProject, postureRampStops } from './posture/posture-ramp';
+// P2-14: the Proven and Covered lenses, and the status and controls lenses
+// re-derived through PostureService (lens-ramps.ts imports only types from here).
+import {
+  type LensLegendStop, controlsColor, controlsLegendStops, controlsProject, coveredColor, coveredLegendStops,
+  coveredProject, provenColor, provenLegendStops, provenProject, rampStopsOf, statusColor, statusLegendStops,
+  statusProject,
+} from './posture/lens-ramps';
+import type { ImplView } from '../services/posture-adapters';
 
 /**
  * The rung or dimension a lens's numbers belong to (product plan 4.1).
@@ -56,6 +64,8 @@ export interface LensCell {
   readonly subStates?: readonly PostureSubState[];
   readonly proofScope?: ProofScope | null;
   readonly implStop?: string;
+  /** The cell's words for aria-label and tooltip, when the lens names them (P2-14); else the posture label. */
+  readonly label?: string;
 }
 
 /** What a registry-hosted lens may read to project and colour a technique (§2.5). */
@@ -66,6 +76,8 @@ export interface LensContext {
   readonly known: (t: Technique) => ReferenceDefenseSignals;
   /** The saturating Known counts Reference depth scores (reference-depth.ts). */
   readonly knownCounts: (t: Technique) => ReferenceDepthInputs;
+  /** PostureService.implViewFor: the guarded best mitigation status (P2-14; the status lens). */
+  readonly implView: (t: Technique) => ImplView;
   readonly theme: 'dark' | 'light';
   /** The technique cell passes the setting; the minimap passes false (today's behaviour). */
   readonly colorblindSafe: boolean;
@@ -106,6 +118,12 @@ export interface HeatmapModeDef {
   project?: (ctx: LensContext, t: Technique) => LensCell;
   /** One colour function for the cell, the minimap and the legend; present exactly when `project` is. */
   color?: (cell: LensCell, ctx: Pick<LensContext, 'theme' | 'colorblindSafe'>) => string;
+  /**
+   * Registry-hosted lenses other than Posture (P2-14): the legend's stops in a
+   * theme, filled by the same colour function. Absent on Posture, whose legend
+   * is postureLegendStops.
+   */
+  legend?: (theme: 'dark' | 'light') => readonly LensLegendStop[];
 }
 
 /** The registry entry type under its Phase 2 name (§2.5). */
@@ -151,17 +169,19 @@ export const HEATMAP_MODES: readonly HeatmapModeDef[] = [
   { value: 'status', label: 'Status', short: 'Status', group: 'Coverage & Posture',
     question: 'What implementation status have you recorded for the mitigations of this technique?',
     rung: 'Covered', qualifier: 'self-attested',
-    formula: 'The best status you set on any ATT&CK mitigation mapped to the technique: implemented, then in progress, then planned, then not started.',
+    formula: 'The best status you set on any ATT&CK mitigation mapped to the technique, or on the technique itself: implemented, then in progress, then planned, then not started. A mitigation mapped to more techniques than the breadth threshold in Settings (15 by default) counts as partial, so a technique implemented only through such broad mitigations shows "implemented, partial via" the mitigation; confirming the technique makes it implemented.',
     domains: ALL_ATTACK, sources: ['attack-bundle', 'workspace-local'],
     zeroMeaning: 'No status is recorded for any mapped mitigation. Not known to us, not safe.',
-    ramp: stops('categorical', [['#90a4ae', 'none'], ['#e53935', 'not started'], ['#ff9800', 'in progress'], ['#2196f3', 'planned'], ['#4caf50', 'implemented']]) },
+    ramp: { scale: 'categorical', stops: rampStopsOf(statusLegendStops) },
+    project: statusProject, color: statusColor, legend: statusLegendStops },
   { value: 'controls', label: 'Controls', short: 'Controls', group: 'Coverage & Posture',
     question: 'Which techniques do the security controls you declared address?',
     rung: 'Covered', qualifier: 'self-attested',
-    formula: 'Covered (self-attested) when an implemented control you declared lists an ATT&CK mitigation mapped to the technique; planned when only planned controls do.',
+    formula: 'Covered (self-attested) when an implemented control you declared lists an ATT&CK mitigation mapped to the technique; partial when every such mitigation is mapped to more techniques than the breadth threshold in Settings (15 by default); planned when only planned controls do.',
     domains: ALL_ATTACK, sources: ['attack-bundle', 'workspace-local'],
     zeroMeaning: 'No declared control reaches this technique. Not known to us, not safe.',
-    ramp: stops('categorical', [['#1c2b30', 'none'], ['#1565c0', 'planned'], ['#00c853', 'covered']]) },
+    ramp: { scale: 'categorical', stops: rampStopsOf(controlsLegendStops) },
+    project: controlsProject, color: controlsColor, legend: controlsLegendStops },
   { value: 'unified', label: 'Reference depth', short: 'Reference depth', group: 'Coverage & Posture',
     question: 'How much defensive reference material is mapped to this technique, across frameworks?',
     rung: 'Known',
@@ -393,6 +413,26 @@ export const HEATMAP_MODES: readonly HeatmapModeDef[] = [
     zeroMeaning: 'No reference data is mapped and nothing of yours is recorded. Not known to us, not safe.',
     ramp: { scale: 'categorical', stops: postureRampStops() },
     project: postureProject, color: postureColor },
+
+  // P2-14 (E2.2-b), appended after Posture so every older entry keeps its index.
+  { value: 'proven', label: lensLabel('proven'),
+    short: 'Proven', // truth-vocab-allow proven-only -- the Proven lens short label; gen-facts reads it as a literal; the lens shows Proven-rung data only
+    group: 'Coverage & Posture',
+    question: 'Where has a named detection fired or blocked on a recorded date?',
+    rung: 'Proven',
+    formula: 'From the validation runs you recorded or imported: 3 when a named detection fired or blocked in production within its window, 2 when it did so in the range or in your own run, 1 when the newest such record is older than its window (range 90, production 180, own run 90 days), 0 otherwise. A check mark shows on every scored cell, and a lab badge when the best record is from the range.',
+    domains: ALL_DOMAINS, sources: ['attack-bundle', 'workspace-local'],
+    zeroMeaning: 'No named detection is recorded for this technique. Not known to us, not safe.',
+    ramp: { scale: 'categorical', stops: rampStopsOf(provenLegendStops) },
+    project: provenProject, color: provenColor, legend: provenLegendStops },
+  { value: 'covered', label: lensLabel('covered'), short: 'Covered (self-attested or range)', group: 'Coverage & Posture',
+    question: 'What have you declared or deployed for this technique, by your own statement or in the range?',
+    rung: 'Covered', qualifier: 'self-attested',
+    formula: 'From implemented mitigations, declared controls, confirmations, configured telemetry and range marks: 2 when one reaches the technique in full, 1 when only a mitigation or control mapped to more techniques than the breadth threshold in Settings (15 by default) reaches it (partial, drawn dashed), 0 otherwise. A later failed run removes the full marks it contradicts.',
+    domains: ALL_DOMAINS, sources: ['attack-bundle', 'workspace-local'],
+    zeroMeaning: 'Nothing of yours reaches this technique. Not known to us, not safe.',
+    ramp: { scale: 'categorical', stops: rampStopsOf(coveredLegendStops) },
+    project: coveredProject, color: coveredColor, legend: coveredLegendStops },
 ] as const;
 
 export const HEATMAP_GROUPS = ['Threat Landscape', 'Vulnerabilities', 'Detections', 'Frameworks', 'Coverage & Posture'] as const;

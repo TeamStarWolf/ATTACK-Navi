@@ -5,8 +5,10 @@
 // threat-gap counters (Phase 2 design §3 P2-09, E2.1-d3; R9, S8). P2-01 pinned
 // the LEGACY answers (the "before"); P2-09 makes the three read posture, so this
 // spec pins the "after" next to them and shows exactly which numbers moved.
-// P2-14 re-derives the status lens and impl= from PostureService and moves the
-// status pins; P2-09 leaves them as they are.
+// P2-14 re-derives the status lens and impl= from PostureService: the before
+// status pins stay as P2-01 pinned them (recomputed below from the legacy fold,
+// which no app code holds any more), and section statusAfter.<profile> pins
+// the after values on purpose (the breadth guard and the Covered ordinal ramp).
 //
 // Profiles, on the lens fixture (lens-harness.ts) with the real PostureService
 // and its stores, POSTURE_TODAY pinned to 2026-10-01:
@@ -35,7 +37,15 @@
 //   - dimmed: hasAnySignal false (threat-intel and CVE links kept a cell bright);
 //   - dashboard: criticalRiskCount and kevExposedGapCount over
 //     hasDefensiveReference alone;
-//   - statusStops and implImplemented: the status fold, unchanged by P2-09.
+//   - statusStops and implImplemented: the legacy status fold (best status over
+//     the mapped mitigations, no breadth guard, the old hexes), recomputed here.
+//
+// Status after (P2-14): section statusAfter.<profile>: each technique's status
+// stop and minimap colour on heat=status (PostureService.implViewFor, Covered
+// ordinal ramp) and the techniques impl=implemented keeps. A technique whose
+// only implemented mitigations are broader than the threshold (M1026, 16, in the
+// seeded profiles) shows 'implemented, partial via M1026' and leaves
+// impl=implemented; every other technique keeps its stop.
 //
 // After: section riskDimAfter.<profile>:
 //   - riskTop20: the matrix comparator over riskScore(tech, domain, kev,
@@ -68,7 +78,8 @@ import BASELINE from './__snapshots__/legacy-baseline.json';
 import { MatrixComponent } from '../components/matrix/matrix.component';
 import { DashboardPanelComponent } from '../components/dashboard-panel/dashboard-panel.component';
 import { Domain } from '../models/domain';
-import { HEATMAP_MODES } from '../models/heatmap-modes';
+import { type StatusStop, statusLegendStops, statusStop, statusStopLabel } from '../models/posture/lens-ramps';
+import { ImplementationService, type ImplStatus } from '../services/implementation.service';
 import { Technique } from '../models/technique';
 import type { PostureBucket } from '../models/posture/posture.types';
 import { refForTechnique, techniqueRefKey } from '../models/technique-ref';
@@ -85,7 +96,6 @@ import { SigmaService } from '../services/sigma.service';
 import { DataService } from '../services/data.service';
 import { EnrichmentService } from '../services/enrichment.service';
 import { FilterService } from '../services/filter.service';
-import type { ImplStatus } from '../services/implementation.service';
 import { PostureService } from '../services/posture.service';
 import { SourceRegistryService } from '../services/source-registry.service';
 import { TechniqueMarksService } from '../services/technique-marks.service';
@@ -107,6 +117,19 @@ function pin(path: string, actual: unknown): void {
 const STATUS_STOP: Record<ImplStatus | 'none', string> = {
   none: 'none', 'not-started': 'not started', 'in-progress': 'in progress', planned: 'planned', implemented: 'implemented',
 };
+
+/** The status lens's colours before P2-14 (heatmap-modes.ts at P2-13), by stop label: history for the before pins. */
+const LEGACY_STATUS_HEX: Record<string, string> = {
+  none: '#90a4ae', 'not started': '#e53935', 'in progress': '#ff9800', planned: '#2196f3', implemented: '#4caf50',
+};
+const LEGACY_RANK: Record<ImplStatus, number> = { implemented: 4, 'in-progress': 3, planned: 2, 'not-started': 1 };
+
+interface StatusAfter {
+  statusStops: Record<string, [string, string]>;
+  implImplemented: string[];
+}
+const statusAfterPin = (profile: string): StatusAfter | undefined =>
+  (BASELINE as unknown as { statusAfter?: Record<string, StatusAfter> }).statusAfter?.[profile];
 
 /** Buckets that record something of the owner's at Covered or above (independent of isUnrecordedGap). */
 const RECORDED: ReadonlySet<PostureBucket> = new Set<PostureBucket>(['covered', 'proven', 'stale']);
@@ -217,18 +240,41 @@ for (const profile of ['fresh', 'seeded', 'gapSeeded'] as const) {
       };
     }
 
-    /** The status fold (P2-14 moves it; P2-09 must not). */
-    function statusFold(): Pick<BeforeValues, 'statusStops' | 'implImplemented'> {
+    /**
+     * The legacy status fold, recomputed (P2-14 removed it from the matrix):
+     * the best status over the mapped mitigations, no breadth guard, painted
+     * with the pre-P2-14 hexes. History for the before pins.
+     */
+    function legacyStatusFold(): Pick<BeforeValues, 'statusStops' | 'implImplemented'> {
+      const all = [...domain.techniques].sort(byId);
+      const statusMap = TestBed.inject(ImplementationService).getStatusMap();
+      const statusStops: Record<string, [string, string]> = {};
+      const implImplemented: string[] = [];
+      for (const t of all) {
+        let best: ImplStatus | null = null;
+        for (const rel of domain.mitigationsByTechnique.get(t.id) ?? []) {
+          const s = statusMap.get(rel.mitigation.id);
+          if (s && (best === null || LEGACY_RANK[s] > LEGACY_RANK[best])) best = s;
+        }
+        const stop = STATUS_STOP[best ?? 'none'];
+        statusStops[t.attackId] = [stop, LEGACY_STATUS_HEX[stop]];
+        if (best === 'implemented') implImplemented.push(t.attackId);
+      }
+      return { statusStops, implImplemented };
+    }
+
+    /** The status lens and impl= after P2-14, read from the matrix (PostureService.implViewFor). */
+    function statusAfter(): StatusAfter {
       const all = [...domain.techniques].sort(byId);
       filter.setHeatmapMode('status');
-      const statusDef = HEATMAP_MODES.find(m => m.value === 'status')!;
-      const stopColours = new Map(statusDef.ramp.stops.map(s => [s.label, s.color]));
+      const fills = new Map(statusLegendStops('dark').map(s => [s.key, s.fill]));
       const statusStops: Record<string, [string, string]> = {};
       for (const t of all) {
-        const stop = STATUS_STOP[matrix.getTechniqueImplStatus(t) ?? 'none'];
+        const stop = matrix.postureCell(t)!.implStop as StatusStop;
+        expect(stop).withContext(t.attackId).toBe(statusStop(posture.implViewFor(t)));
         const colour = matrix.getCellColor(t);
-        expect(colour).withContext(`status colour of ${t.attackId} is its ramp stop`).toBe(stopColours.get(stop)!);
-        statusStops[t.attackId] = [stop, colour];
+        expect(colour).withContext(`status colour of ${t.attackId} is its ramp stop`).toBe(fills.get(stop)!);
+        statusStops[t.attackId] = [statusStopLabel(stop, matrix.getImplPartialVia(t)), colour];
       }
       // impl=implemented: the techniques the filter keeps; every other one is dimmed.
       filter.setImplStatusFilter('implemented');
@@ -294,14 +340,39 @@ for (const profile of ['fresh', 'seeded', 'gapSeeded'] as const) {
       expect(l.riskTop20).toEqual(pinned.riskTop20);
       expect(l.dimmed).toEqual(pinned.dimmed);
       expect(l.dashboard).toEqual(pinned.dashboard);
-      // The status fold is P2-14's; P2-09 leaves it exactly as pinned.
-      const fold = statusFold();
+      // The legacy status fold, recomputed: exactly as P2-01 pinned it.
+      const fold = legacyStatusFold();
       expect(fold.statusStops).toEqual(pinned.statusStops);
       expect(fold.implImplemented).toEqual(pinned.implImplemented);
       if (profile !== 'fresh') {
         expect(new Set(Object.values(fold.statusStops).map(s => s[0]))).toEqual(new Set(['none', 'implemented']));
       } else {
         expect(new Set(Object.values(fold.statusStops).map(s => s[0]))).toEqual(new Set(['none']));
+      }
+    });
+
+    it('status after (P2-14): pins the guarded status stops, the Covered ramp colours and impl=implemented', () => {
+      const legacy = legacyStatusFold();
+      const v = statusAfter();
+      pin(`statusAfter.${profile}`, v);
+      expect(statusAfterPin(profile)).withContext('statusAfter is pinned').toBeDefined();
+      const partial = Object.entries(v.statusStops).filter(([, [stop]]) => stop.startsWith('implemented, partial via ')).map(([id]) => id);
+      // A technique-level statement (a confirmation) counts on the guarded view; the legacy fold read mitigations only.
+      const confirmed = domain.techniques
+        .filter(t => posture.stateFor(t).covered.some(m => m.basis === 'technique-confirmed' && m.strength === 'full'))
+        .map(t => t.attackId);
+      // Only the partial techniques (which leave impl=implemented) and the confirmed ones (implemented) change stop.
+      for (const [id, [stop]] of Object.entries(v.statusStops)) {
+        if (partial.includes(id)) expect(legacy.statusStops[id][0]).withContext(id).toBe('implemented');
+        else if (confirmed.includes(id)) expect(stop).withContext(id).toBe('implemented');
+        else expect(stop).withContext(id).toBe(legacy.statusStops[id][0]);
+      }
+      expect(v.implImplemented).toEqual(sorted(new Set([...legacy.implImplemented.filter(id => !partial.includes(id)), ...confirmed])));
+      if (profile === 'fresh') {
+        expect(partial).toEqual([]);
+      } else {
+        expect(partial.length).toBeGreaterThan(0);
+        for (const id of partial) expect(v.statusStops[id][0]).toBe('implemented, partial via M1026');
       }
     });
 

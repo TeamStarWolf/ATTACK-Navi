@@ -8,6 +8,7 @@ import { Technique } from '../../models/technique';
 import { LENS_NA_COLOR } from '../../models/heatmap-modes';
 import { type PostureCellVM, postureFill } from '../../models/posture/posture-ramp';
 import { ThemeService } from '../../services/theme.service';
+import { provenColor, statusStopFill } from '../../models/posture/lens-ramps';
 
 const STUB_TECH = {
   id: 'attack-pattern--abc',
@@ -339,5 +340,49 @@ describe('TechniqueCellComponent: posture input (P2-13)', () => {
     expect(el.getAttribute('aria-label')).toBe('T1059: Command and Scripting Interpreter');
     expect([...el.classList].filter(c => c.startsWith('posture-'))).toEqual([]);
     expect(el.querySelector('.posture-check')).toBeNull();
+  });
+
+  // P2-14: the status lens is registry-hosted on the Covered ordinal ramp, so
+  // its status-colour cases moved here from the cell's own hex branch.
+  const STATUS_CASES: Array<[string, number]> = [
+    ['none', 0], ['not-started', 1], ['planned', 2], ['in-progress', 3], ['partial', 4], ['implemented', 5],
+  ];
+  for (const [stop, score] of STATUS_CASES) {
+    it(`status lens: the ${stop} stop paints its Covered-ramp fill`, () => {
+      const el = set({
+        technique: STUB_TECH, heatmapMode: 'status',
+        posture: { bucket: stop === 'partial' ? 'partial' : 'none', subStates: [], proofScope: null, label: `Status: ${stop}`, score, implStop: stop },
+      });
+      expect(component.bgColor).toBe(statusStopFill(stop as never, 'dark'));
+      expect(el.classList.contains('posture-partial')).toBe(stop === 'partial');
+      expect(el.querySelector('.posture-check')).toBeNull();
+    });
+  }
+
+  it('status lens ignores the colorblind-safe setting (the ordinal ramp is safe by default)', () => {
+    settings$.next({ colorblindSafe: true, cellDisplay: null });
+    set({ technique: STUB_TECH, heatmapMode: 'status', posture: { bucket: 'none', subStates: [], proofScope: null, label: 'x', score: 5, implStop: 'implemented' } });
+    expect(component.bgColor).toBe(statusStopFill('implemented', 'dark'));
+  });
+
+  it('coverage lens: the implementation dot names a partial implementation and dashes it', () => {
+    const el = set({ technique: STUB_TECH, heatmapMode: 'coverage', implStatus: 'implemented', implPartialVia: 'M1038' });
+    const dot = el.querySelector('.impl-dot') as HTMLElement;
+    expect(dot.getAttribute('title')).toBe('Status: implemented, partial via M1038');
+    expect(dot.classList).toContain('impl-dot-partial');
+    set({ implPartialVia: null });
+    expect(dot.getAttribute('title')).toBe('Status: implemented');
+    expect(component.implDotColor).toBe(statusStopFill('implemented', 'dark'));
+  });
+
+  it("proven lens: the check mark on every scored cell, and the 'lab' badge only on range proof", () => {
+    let el = set({ technique: STUB_TECH, heatmapMode: 'proven', posture: { bucket: 'proven', subStates: [], proofScope: 'range', label: 'x', score: 2 } });
+    expect(component.bgColor).toBe(provenColor({ score: 2 }, { theme: 'dark', colorblindSafe: false }));
+    expect(el.querySelector('.posture-check')).not.toBeNull();
+    expect(el.querySelector('.proof-lab-badge')!.textContent!.trim()).toBe('lab');
+    el = set({ posture: { bucket: 'proven', subStates: [], proofScope: 'own-run', label: 'x', score: 2 } });
+    expect(el.querySelector('.proof-lab-badge')).toBeNull();
+    el = set({ heatmapMode: 'posture', posture: { bucket: 'proven', subStates: [], proofScope: 'range', label: 'x' } });
+    expect(el.querySelector('.proof-lab-badge')).toBeNull();
   });
 });

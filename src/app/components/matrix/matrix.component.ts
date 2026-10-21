@@ -26,7 +26,6 @@ import { resolveTacticEntry, techniqueBelongsToColumn } from '../../services/att
 import { MatrixControlService } from '../../services/matrix-control.service';
 import { ImplementationService, ImplStatus } from '../../services/implementation.service';
 import { CveService } from '../../services/cve.service';
-import { ControlsService } from '../../services/controls.service';
 import { DocumentationService } from '../../services/documentation.service';
 import { D3fendService } from '../../services/d3fend.service';
 import { AtomicService } from '../../services/atomic.service';
@@ -63,6 +62,7 @@ import { PostureService } from '../../services/posture.service';
 import { LENS_NA_COLOR, type LensContext, heatmapModeDef, isLensAvailable } from '../../models/heatmap-modes';
 import { isRegistryLens, registryCell, registryColor } from '../../models/lens-registry';
 import { type PostureCellVM, postureCellLabel } from '../../models/posture/posture-ramp';
+import { type ControlStop, controlStop } from '../../models/posture/lens-ramps';
 import { ThemeService } from '../../services/theme.service';
 import type { AttackDomain } from '../../services/data.service';
 
@@ -176,11 +176,8 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
   heatmapMode: HeatmapMode = 'unified';
   implStatusFilter: string | null = null;
   searchFilterMode = false;
-  // per-technique "best" impl status (for status heatmap mode)
-  techniqueImplStatus = new Map<string, ImplStatus>();
-  // controls heatmap coverage
-  controlsCoveredIds = new Set<string>();
-  controlsPlannedIds = new Set<string>();
+  // The status and controls lenses, impl= and the implementation dot read
+  // PostureService (implViewFor, stateFor) since P2-14: no fold lives here.
   // technique notes for note indicator
   techNotes = new Map<string, string>();
   // KEV exposure scores: attackId -> count of KEV CVEs
@@ -313,7 +310,6 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
   constructor(
     private filterService: FilterService,
     private implService: ImplementationService,
-    private controlsService: ControlsService,
     private docService: DocumentationService,
     private cveService: CveService,
     private d3fendService: D3fendService,
@@ -490,10 +486,11 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     // component is OnPush, re-checks the cells under either one.
     this.subs.add(
       this.posture.states$.subscribe(() => {
-        // A registry lens (P2-13) repaints from the new states too.
+        // A registry lens (P2-13) repaints from the new states too, and impl=
+        // (P2-14) re-filters on the new implementation views.
         const registry = this.refreshPostureCells(this.currentHeatmapMode);
         const resort = this.sortMode === 'coverage';
-        if (!resort && !this.dimUncovered && !registry) return;
+        if (!resort && !this.dimUncovered && !registry && !this.implStatusFilter) return;
         if (resort) this.rebuildSortedColumns();
         this.cdr.markForCheck();
       }),
@@ -571,27 +568,12 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
         this.filterService.heatmapMode$,
         this.filterService.implStatusFilter$,
         this.implService.status$,
-      ]).subscribe(([mode, implFilter, statusMap]) => {
+      ]).subscribe(([mode, implFilter]) => {
         this.heatmapMode = mode;
         this.currentHeatmapMode = mode;
         this.implStatusFilter = implFilter;
-
-        // Build per-technique "best" impl status for status heatmap
-        this.techniqueImplStatus = new Map();
-        if (this.domain) {
-          const STATUS_RANK: Record<string, number> = { 'implemented': 4, 'in-progress': 3, 'planned': 2, 'not-started': 1 };
-          for (const tech of this.domain.techniques) {
-            const rels = this.domain.mitigationsByTechnique.get(tech.id) ?? [];
-            let best: ImplStatus | null = null;
-            let bestRank = 0;
-            for (const rel of rels) {
-              const s = statusMap.get(rel.mitigation.id);
-              if (s && (STATUS_RANK[s] ?? 0) > bestRank) { best = s; bestRank = STATUS_RANK[s]; }
-            }
-            if (best) this.techniqueImplStatus.set(tech.id, best);
-          }
-        }
-
+        // The status lens, impl= and the implementation dot read
+        // PostureService.implViewFor (P2-14), which follows the status store.
         this.cdr.markForCheck();
       }),
     );
@@ -920,22 +902,6 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
         this.techNotes = notes;
         this.cdr.markForCheck();
       }),
-    );
-
-    this.subs.add(
-      combineLatest([this.controlsService.controls$, this.filterService.heatmapMode$]).subscribe(
-        ([controls, mode]) => {
-          if (mode === 'controls' && this.domain) {
-            const { coveredIds, plannedIds } = this.controlsService.computeCoverage(controls, this.domain);
-            this.controlsCoveredIds = coveredIds;
-            this.controlsPlannedIds = plannedIds;
-          } else {
-            this.controlsCoveredIds = new Set();
-            this.controlsPlannedIds = new Set();
-          }
-          this.cdr.markForCheck();
-        },
-      ),
     );
 
     this.subs.add(
@@ -1701,6 +1667,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
       posture: (t) => this.posture.stateFor(t),
       known: (t) => this.enrichment.referenceDefenseSignals(t, this.domain),
       knownCounts: (t) => this.referenceDepthInputs(t),
+      implView: (t) => this.posture.implViewFor(t),
       theme: this.themeService.isLight ? 'light' : 'dark',
       colorblindSafe: false,
     };
@@ -1725,7 +1692,10 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
         bucket: cell.bucket ?? 'none',
         subStates: cell.subStates ?? [],
         proofScope: cell.proofScope ?? null,
-        label: postureCellLabel(this.posture.stateFor(t), windows),
+        // The Posture lens names the state; P2-14's lenses name their own stop and score.
+        label: cell.label ?? postureCellLabel(this.posture.stateFor(t), windows),
+        ...(def.value === 'posture' ? {} : { score: cell.score }),
+        ...(cell.implStop !== undefined ? { implStop: cell.implStop } : {}),
       });
     }
     this.postureCells = cells;
@@ -1753,20 +1723,6 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
       }
       case 'frequency':
         return this.getRelativeHeatColor(this.getFrequencyScore(tech), this.maxFrequencyScore, '#1c2a38', ['#1e3a5f', '#1565c0', '#0ea5e9', '#38bdf8']);
-      case 'status': {
-        const status = this.getTechniqueImplStatus(tech);
-        if (status === 'implemented') return '#4caf50';
-        if (status === 'in-progress') return '#ff9800';
-        if (status === 'planned') return '#2196f3';
-        if (status === 'not-started') return '#e53935';
-        return '#90a4ae';
-      }
-      case 'controls': {
-        const status = this.getControlStatus(tech);
-        if (status === 'covered') return '#00c853';
-        if (status === 'planned') return '#1565c0';
-        return '#1c2b30';
-      }
       case 'exposure':
         return this.getRelativeHeatColor(this.getExposureScore(tech), this.maxExposure, '#eceff1', ['#ffb74d', '#ff7043', '#e53935', '#b71c1c']);
       case 'software':
@@ -1907,22 +1863,38 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     return this.riskScores.get(t.id) ?? 0;
   }
 
+  /**
+   * The best implementation status of the technique through the breadth guard
+   * (PostureService.implViewFor, P2-14): 'implemented' also when only broad
+   * mitigations reach it, which getImplPartialVia then names.
+   */
   getTechniqueImplStatus(t: Technique): ImplStatus | null {
-    return this.techniqueImplStatus.get(t.id) ?? null;
+    return this.posture.implViewFor(t).status;
   }
 
+  /** The broad mitigation(s) a technique is implemented through only ('M1038'), else null (D16, §6). */
+  getImplPartialVia(t: Technique): string | null {
+    return this.posture.implViewFor(t).partialVia;
+  }
+
+  /**
+   * impl= (R1, §6): a technique matches a value only when its guarded view has
+   * exactly that status, and impl=implemented only when it is implemented in
+   * full; a technique implemented only through broad mitigations matches none
+   * of the four values (the filter's tooltip says so).
+   */
   isImplFiltered(t: Technique): boolean {
     if (!this.implStatusFilter) return false;
-    const status = this.techniqueImplStatus.get(t.id) ?? null;
-    return status !== this.implStatusFilter;
+    const view = this.posture.implViewFor(t);
+    if (view.status === 'implemented' && view.partialVia) return true;
+    return view.status !== this.implStatusFilter;
   }
 
   isSelected(t: Technique): boolean { return this.selectedTechniqueId === t.id; }
 
-  getControlStatus(t: Technique): 'covered' | 'planned' | 'none' {
-    if (this.controlsCoveredIds.has(t.id)) return 'covered';
-    if (this.controlsPlannedIds.has(t.id)) return 'planned';
-    return 'none';
+  /** The controls lens's stop (P2-14): the technique's guarded control marks in PostureService. */
+  getControlStatus(t: Technique): ControlStop {
+    return controlStop(this.posture.stateFor(t).covered);
   }
 
   trackByTacticId(_: number, col: TacticColumn): string { return col.tactic.id; }

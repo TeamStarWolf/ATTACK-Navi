@@ -11,7 +11,7 @@ import { HEATMAP_MODES } from '../models/heatmap-modes';
 import { sameDataSource } from '../utils/data-source-names';
 
 export type SortMode = 'alpha' | 'coverage';
-export type HeatmapMode = 'coverage' | 'exposure' | 'status' | 'controls' | 'software' | 'campaign' | 'risk' | 'kev' | 'd3fend' | 'atomic' | 'engage' | 'car' | 'cve' | 'detection' | 'frequency' | 'cri' | 'unified' | 'library' | 'sigma' | 'nist' | 'veris' | 'epss' | 'elastic' | 'splunk' | 'intelligence' | 'm365' | 'my-exposure' | 'wazuh' | 'csa-ccm' | 'm365-controls' | 'kill-chain' | 'poc-exploits' | 'f3-origin' | 'posture';
+export type HeatmapMode = 'coverage' | 'exposure' | 'status' | 'controls' | 'software' | 'campaign' | 'risk' | 'kev' | 'd3fend' | 'atomic' | 'engage' | 'car' | 'cve' | 'detection' | 'frequency' | 'cri' | 'unified' | 'library' | 'sigma' | 'nist' | 'veris' | 'epss' | 'elastic' | 'splunk' | 'intelligence' | 'm365' | 'my-exposure' | 'wazuh' | 'csa-ccm' | 'm365-controls' | 'kill-chain' | 'poc-exploits' | 'f3-origin' | 'posture' | 'proven' | 'covered';
 
 /**
  * The lens a fresh profile opens on (plan E1.5, decision D4): Prevalence, the

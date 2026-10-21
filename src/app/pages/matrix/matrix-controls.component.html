@@ -78,7 +78,7 @@
   </select>
 
   <!-- Impl status filter -->
-  <select class="filter-select" [(ngModel)]="implStatusFilter" (change)="onImplStatusFilterChange()" title="Filter by implementation status">
+  <select class="filter-select" [(ngModel)]="implStatusFilter" (change)="onImplStatusFilterChange()" [title]="implFilterTitle">
     <option value="">All statuses</option>
     @for (o of implStatusOptions; track o.value) {
       <option [value]="o.value">{{ o.label }}</option>

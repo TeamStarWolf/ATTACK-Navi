@@ -1,10 +1,12 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 //
-// The LensRegistry seam (Phase 2 design §2.5, §3 P2-13): exactly one lens is
-// registry-hosted, appended last; the 33 older entries keep their index and
-// stay legacy (no project, no color), so the matrix switchboard and the three
-// colour copies still serve them unchanged.
+// The LensRegistry seam (Phase 2 design §2.5, §3 P2-13, P2-14): Posture,
+// Proven and Covered are registry-hosted and appended last; of the 33 older
+// entries, status and controls moved into the registry in P2-14 (re-derived
+// through PostureService) and keep their index, and the other 31 stay legacy
+// (no project, no color), so the matrix switchboard and the colour copies
+// still serve them unchanged.
 import {
   HEATMAP_MODES, LENS_RUNG_MEANING, type LensContext, heatmapModeDef, isLensAvailable, lensAvailability, lensRungBadge,
 } from './heatmap-modes';
@@ -21,28 +23,33 @@ function ctx(bucket: Parameters<typeof stubState>[1], theme: 'dark' | 'light' = 
     posture: () => stubState('T1001', bucket),
     known: () => ({ mitigation: true, detection: false, control: false, d3fend: false, atomic: false }),
     knownCounts: () => ({ mitigations: 1, detectionContent: 0, controls: 0, d3fend: 0, atomic: 0 }),
+    implView: () => ({ status: null, partialVia: null }),
     theme,
     colorblindSafe: false,
   };
 }
 
 describe('LensRegistry seam (P2-13)', () => {
-  it('hosts exactly one lens, posture, appended after the 33 legacy entries', () => {
+  it('hosts status and controls in place and posture, proven and covered appended after the 33 older entries', () => {
     const hosted = HEATMAP_MODES.filter(isRegistryLens).map(m => m.value);
-    expect(hosted).toEqual(['posture']);
+    expect(hosted).toEqual(['status', 'controls', 'posture', 'proven', 'covered']);
+    expect(HEATMAP_MODES.findIndex(m => m.value === 'status')).toBe(1);
+    expect(HEATMAP_MODES.findIndex(m => m.value === 'controls')).toBe(2);
     expect(HEATMAP_MODES.findIndex(m => m.value === 'posture')).toBe(33);
-    for (const def of HEATMAP_MODES.slice(0, 33)) {
+    expect(HEATMAP_MODES.findIndex(m => m.value === 'proven')).toBe(34);
+    expect(HEATMAP_MODES.findIndex(m => m.value === 'covered')).toBe(35);
+    for (const def of HEATMAP_MODES.slice(0, 33).filter(d => d.value !== 'status' && d.value !== 'controls')) {
       expect(def.project).withContext(def.value).toBeUndefined();
       expect(def.color).withContext(def.value).toBeUndefined();
     }
   });
 
   it('is not fooled by a half-hosted or missing definition', () => {
-    const status = heatmapModeDef('status')!;
+    const coverage = heatmapModeDef('coverage')!;
     expect(isRegistryLens(undefined)).toBeFalse();
     expect(isRegistryLens(null)).toBeFalse();
-    expect(isRegistryLens(status)).toBeFalse();
-    expect(isRegistryLens({ ...status, project: () => ({ score: 0 }) })).toBeFalse();
+    expect(isRegistryLens(coverage)).toBeFalse();
+    expect(isRegistryLens({ ...coverage, project: () => ({ score: 0 }) })).toBeFalse();
   });
 
   it('refuses to project or colour a legacy lens', () => {

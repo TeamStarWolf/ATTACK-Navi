@@ -12,6 +12,11 @@ import { ThemeService } from '../../services/theme.service';
 import { PostureStub, makePostureStub, postureStubProvider } from '../../testing/posture-stub';
 import { POSTURE_BUCKETS, postureFill, postureLegendStops } from '../../models/posture/posture-ramp';
 import type { Domain } from '../../models/domain';
+import { controlsLegendStops, statusLegendStops } from '../../models/posture/lens-ramps';
+import { hexToRgb } from '../../models/cvd';
+
+/** '#rrggbb' as the browser reports a style colour. */
+const rgb = (hex: string): string => `rgb(${hexToRgb(hex).join(', ')})`;
 
 describe('LegendComponent', () => {
   let component: LegendComponent;
@@ -117,7 +122,24 @@ describe('LegendComponent', () => {
   it('should not show a scale note for categorical mode (status)', () => {
     show('status');
     expect(fixture.nativeElement.querySelector('.scale-arrow')).toBeFalsy();
-    expect(stopLabels()).toEqual(['none', 'not started', 'in progress', 'planned', 'implemented']);
+    // P2-14: the ordinal stops, with the breadth guard's partial stop between in progress and implemented.
+    expect(stopLabels()).toEqual(['none', 'not started', 'planned', 'in progress', 'implemented, partial via a broad mitigation', 'implemented']);
+  });
+
+  it('paints the status swatches from the lens colour function on the Covered ordinal ramp (P2-14)', () => {
+    show('status');
+    const stops = statusLegendStops('dark');
+    const swatches = Array.from(fixture.nativeElement.querySelectorAll('.legend-stop .swatch')) as HTMLElement[];
+    expect(swatches.length).toBe(6);
+    swatches.forEach((sw, i) => expect(sw.style.backgroundColor).withContext(stops[i].key).toBe(rgb(stops[i].fill)));
+    expect(swatches[4].classList).toContain('posture-partial');
+    expect(text('.legend-question')).toBe(heatmapModeDef('status')!.question);
+    // The colorblind-safe setting does not change an ordinal ramp that is safe by default.
+    TestBed.inject(SettingsService).update({ colorblindSafe: true });
+    fixture.detectChanges();
+    const safe = Array.from(fixture.nativeElement.querySelectorAll('.legend-stop .swatch')) as HTMLElement[];
+    safe.forEach((sw, i) => expect(sw.style.backgroundColor).toBe(rgb(stops[i].fill)));
+    TestBed.inject(SettingsService).update({ colorblindSafe: false });
   });
 
   it('paints coverage swatches from the heatmap colour theme, as the cells do', () => {
@@ -312,4 +334,41 @@ describe('LegendComponent: the Posture lens (P2-13)', () => {
       .toEqual(['0', '1', '2', '3', '4+']);
     expect(el().querySelector('.legend-question')!.textContent!.trim()).toBe(heatmapModeDef('coverage')!.question);
   });
+
+  // P2-14: the controls, Proven and Covered legends. Covered and Proven stop
+  // words render only under owner words; Proven and Covered say 'No data of
+  // yours recorded' on a fresh profile, Controls keeps its question.
+  it('controls: swatches from the lens colour function; Covered stop words only with owner data', () => {
+    heatmapMode$.next('controls');
+    render();
+    const stops = controlsLegendStops('dark');
+    const swatches = Array.from(el().querySelectorAll('.legend-stop .swatch')) as HTMLElement[];
+    expect(swatches.map(sw => sw.style.backgroundColor)).toEqual(stops.map(s => rgb(s.fill)));
+    expect(swatches[2].classList).toContain('posture-partial');
+    const labels = () => Array.from(el().querySelectorAll('.stop-label')).map(n => n.textContent!.trim());
+    expect(labels()).toEqual(['none', 'planned']);
+    expect(el().querySelector('.legend-question')!.textContent!.trim()).toBe(heatmapModeDef('controls')!.question);
+    posture.set({ T1001: 'covered' });
+    render();
+    expect(labels()).toEqual(['none', 'planned', 'Covered (self-attested), partial via a broad mitigation', 'Covered (self-attested)']);
+  });
+
+  for (const mode of ['proven', 'covered'] as const) {
+    it(`${mode}: a fresh profile sees the ramp and 'No data of yours recorded', and no covered or proven string`, () => {
+      heatmapMode$.next(mode);
+      render();
+      expect(el().querySelectorAll('.posture-stop .swatch').length).toBe(mode === 'proven' ? 4 : 3);
+      expect(el().querySelector('.legend-no-data')!.textContent!.trim()).toBe('No data of yours recorded');
+      // Only the zero stop's words show: 'no recorded detection' or 'none'.
+      expect(Array.from(el().querySelectorAll('.stop-label')).map(n => n.textContent!.trim()))
+        .toEqual([mode === 'proven' ? 'no recorded detection' : 'none']);
+      const hits = visibleStrings().filter(v => /(?:covered|proven)/i.test(v));
+      // The legend title is the lens label; every other covered or proven string waits for owner data.
+      expect(hits.every(h => h.includes(heatmapModeDef(mode)!.label))).withContext(hits.join(' | ')).toBeTrue();
+      posture.set({ T1001: 'proven' });
+      render();
+      expect(el().querySelector('.legend-no-data')).toBeNull();
+      expect(el().querySelector('.legend-question')!.textContent!.trim()).toBe(heatmapModeDef(mode)!.question);
+    });
+  }
 });

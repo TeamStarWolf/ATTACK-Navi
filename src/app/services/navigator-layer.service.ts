@@ -6,6 +6,9 @@ import { Domain } from '../models/domain';
 import { ImplStatus, ImplementationService } from './implementation.service';
 import { AnnotationService, TechniqueAnnotation } from './annotation.service';
 import { BrowserFileService } from './browser-file.service';
+import type { Technique } from '../models/technique';
+import { type ImplView, implView } from './posture-adapters';
+import { DEFAULT_POSTURE_RULES } from '../models/posture/derive-posture';
 
 /** Navigator metadata entry ({name, value} pairs shown in its tooltip). */
 interface NavigatorMetadata {
@@ -121,14 +124,18 @@ export class NavigatorLayerService {
     currentDomain: AttackDomain,
     statusMap: Map<string, ImplStatus>,
     annotations?: Map<string, TechniqueAnnotation>,
+    /**
+     * The guarded per-technique view (PostureService.implViewFor, P2-14) the
+     * colour and comment follow. The default applies the default breadth
+     * threshold to the status map alone.
+     */
+    implViewFor: (t: Technique) => ImplView = (t) =>
+      implView(t, statusMap, {
+        mitigationsByTechnique: domain.mitigationsByTechnique ?? new Map(),
+        techniquesByMitigation: domain.techniquesByMitigation ?? new Map(),
+      }, DEFAULT_POSTURE_RULES.mitigationBreadthThreshold, []),
   ): NavigatorLayer {
     const metadata = ATTACK_NAVIGATOR_DOMAIN_CONFIG[currentDomain];
-    const statusScore: Record<ImplStatus, number> = {
-      implemented: 4,
-      'in-progress': 3,
-      planned: 2,
-      'not-started': 1,
-    };
     const statusColor: Record<ImplStatus, string> = {
       implemented: '#00c853',
       'in-progress': '#1565c0',
@@ -136,29 +143,30 @@ export class NavigatorLayerService {
       'not-started': '#d32f2f',
     };
     const coverageColors = ['#d32f2f', '#ff9800', '#ffd54f', '#aed581', '#4caf50'];
+    /** Implemented only through broad mitigations (D16): between in progress and implemented. */
+    const partialColor = '#64b5f6';
 
     const techniques = domain.techniques.map((tech) => {
       const rels = domain.mitigationsByTechnique.get(tech.id) ?? [];
       const mitigationCount = rels.length;
-      let bestStatus: ImplStatus | null = null;
-      let bestScore = 0;
+      // The technique-level answer is the guarded view (D16, P2-14): a
+      // technique implemented only through broad mitigations is partial.
+      const view = implViewFor(tech);
+      const bestStatus: ImplStatus | null = view.status;
+      const partialVia = bestStatus === 'implemented' ? view.partialVia : null;
 
       // Exact per-mitigation statuses ride along in metadata so ATTACK-Navi
       // layers round-trip losslessly (the technique-level rollup is lossy).
       const mitStatusPairs: string[] = [];
       for (const rel of rels) {
         const status = statusMap.get(rel.mitigation.id);
-        if (status) {
-          mitStatusPairs.push(`${rel.mitigation.attackId}=${status}`);
-          if (statusScore[status] > bestScore) {
-            bestStatus = status;
-            bestScore = statusScore[status];
-          }
-        }
+        if (status) mitStatusPairs.push(`${rel.mitigation.attackId}=${status}`);
       }
 
       const note = annotations?.get(tech.attackId)?.note ?? '';
-      const baseComment = bestStatus ? `Status: ${bestStatus}` : `${mitigationCount} mitigation(s)`;
+      const baseComment = partialVia
+        ? `Status: implemented, partial via ${partialVia}`
+        : bestStatus ? `Status: ${bestStatus}` : `${mitigationCount} mitigation(s)`;
       const entryMetadata: NavigatorMetadata[] = [];
       if (mitStatusPairs.length) entryMetadata.push({ name: 'attack-navi:mitStatuses', value: mitStatusPairs.join(';') });
       if (note) entryMetadata.push({ name: 'attack-navi:note', value: note });
@@ -166,7 +174,7 @@ export class NavigatorLayerService {
       return {
         techniqueID: tech.attackId,
         tactic: tech.tacticShortnames[0] ?? '',
-        color: bestStatus ? statusColor[bestStatus] : coverageColors[Math.min(mitigationCount, 4)],
+        color: partialVia ? partialColor : bestStatus ? statusColor[bestStatus] : coverageColors[Math.min(mitigationCount, 4)],
         // Analyst notes travel in the comment (visible in Navigator's UI).
         comment: note ? `${baseComment}\n\n${note}` : baseComment,
         enabled: true,
@@ -192,6 +200,7 @@ export class NavigatorLayerService {
       },
       legendItems: [
         { label: 'Implemented', color: '#00c853' },
+        { label: 'Implemented, partial via a broad mitigation', color: partialColor },
         { label: 'In Progress', color: '#1565c0' },
         { label: 'Planned', color: '#ffa726' },
         { label: 'Not Started', color: '#d32f2f' },
@@ -207,8 +216,9 @@ export class NavigatorLayerService {
     statusMap: Map<string, ImplStatus>,
     browserFileService: BrowserFileService,
     annotations?: Map<string, TechniqueAnnotation>,
+    implViewFor?: (t: Technique) => ImplView,
   ): void {
-    browserFileService.downloadJson(this.buildLayer(domain, currentDomain, statusMap, annotations), 'attack-navigator-layer.json');
+    browserFileService.downloadJson(this.buildLayer(domain, currentDomain, statusMap, annotations, implViewFor), 'attack-navigator-layer.json');
   }
 
   /**

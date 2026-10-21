@@ -7,8 +7,9 @@
 // legend all call ONE colour function for it instead of holding three hex
 // copies. A lens without them is a legacy lens: the matrix switchboard scores
 // it and each surface keeps its own branch, byte for byte as before (the
-// frozen-hash guard in lens-snapshots.spec.ts proves the 33 legacy lenses
-// unchanged).
+// frozen-hash guard in lens-snapshots.spec.ts proves the 31 remaining legacy
+// lenses unchanged). Registry-hosted today: posture (P2-13); status and
+// controls, re-derived through PostureService, and proven and covered (P2-14).
 import type { Technique } from './technique';
 import type { LensCell, LensContext, LensDefinition } from './heatmap-modes';
 

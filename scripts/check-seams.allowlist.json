@@ -36,11 +36,11 @@
           "uses": {
             "ImplementationService": 2,
             "implService": 3,
-            "ImplStatus": 12,
-            "mitigationsByTechnique": 3
+            "ImplStatus": 4,
+            "mitigationsByTechnique": 2
           },
           "bucket": "phase-2",
-          "reason": "Status fold techniqueImplStatus and impl= (P2-14, implViewFor) and the bulk-set reverse rollup (P2-16). Stays listed after P2-16 with reason mitigation-level or export only (Addendum note 3).",
+          "reason": "The status lens, the controls lens and impl= read PostureService.implViewFor and stateFor since P2-14 (no fold here); left: the bulk-set reverse rollup (P2-16) and mitigation-level uses. Stays listed after P2-16 with reason mitigation-level or export only (Addendum note 3).",
           "removedBy": "P2-14, P2-16 (stays listed for mitigation-level uses)"
         },
         {
@@ -238,11 +238,12 @@
           "uses": {
             "ImplementationService": 3,
             "implService": 3,
-            "ImplStatus": 11,
-            "mitigationsByTechnique": 2
+            "ImplStatus": 10,
+            "mitigationsByTechnique": 4,
+            "techniquesByMitigation": 2
           },
           "bucket": "phase-2",
-          "reason": "The foreign-comment import writes every mitigation of a technique (a reverse rollup); P2-16 moves it to technique marks. The export fold and import parsing stay listed with reason mitigation-level or export only (Addendum notes 3 and 4).",
+          "reason": "The foreign-comment import writes every mitigation of a technique (a reverse rollup); P2-16 moves it to technique marks. The layer export's technique colour and comment follow implViewFor since P2-14 (Addendum note 4); the per-mitigation metadata export and import parsing stay listed with reason mitigation-level or export only (Addendum note 3).",
           "removedBy": "P2-16 (stays listed for export and import parsing)"
         },
         {
@@ -270,12 +271,12 @@
         {
           "file": "src/app/services/xlsx-export.service.ts",
           "uses": {
-            "ImplStatus": 5,
-            "mitigationsByTechnique": 1,
-            "techniquesByMitigation": 1
+            "ImplStatus": 4,
+            "mitigationsByTechnique": 2,
+            "techniquesByMitigation": 3
           },
           "bucket": "stays",
-          "reason": "XLSX export: Known mitigation-only sheets plus the Impl Status (best) column, a per-technique best-status fold that P2-14 routes through implViewFor or lists as a bounded export window (Addendum note 4). E9.1.",
+          "reason": "XLSX export: Known mitigation-only sheets; the Impl Status (best) column follows implViewFor since P2-14 (Addendum note 4), with a default-threshold implView over the status map when no view is passed. E9.1.",
           "removedBy": "E9.1 (fold: P2-14 decision, Addendum note 4)"
         }
       ]

@@ -166,6 +166,18 @@
     line-height: 1;
   }
 
+  // Proven lens (P2-14): a text badge when the best proof was recorded in the
+  // range, so the scope never depends on the fill alone.
+  .proof-lab-badge {
+    font-size: 8px;
+    font-weight: 700;
+    line-height: 1;
+    padding: 1px 3px;
+    border: 1px solid currentColor;
+    border-radius: 3px;
+    letter-spacing: 0.04em;
+  }
+
   &.search-dimmed {
     opacity: 0.15;
     filter: grayscale(0.8);
@@ -217,6 +229,11 @@
     border-radius: 50%;
     border: 1px solid rgb(255 255 255 / 50%);
     flex-shrink: 0;
+  }
+
+  // Implemented only through broad mitigations (D16, P2-14): dashed, as on the status lens.
+  .impl-dot.impl-dot-partial {
+    border: 1px dashed var(--accent);
   }
 
   .note-dot {

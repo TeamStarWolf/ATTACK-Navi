@@ -6,18 +6,30 @@ import { Subscription } from 'rxjs';
 import { FilterService, HeatmapMode } from '../../services/filter.service';
 import { SettingsService } from '../../services/settings.service';
 import { AttackDomain, DataService } from '../../services/data.service';
-import { SAFE_SEQ, SAFE_STATUS, SAFE_CONTROLS } from '../../models/safe-palette';
+import { SAFE_SEQ } from '../../models/safe-palette';
 import { HEATMAP_MODES, HeatmapModeDef, LensAvailability, LensRampStop, heatmapModeDef, lensAvailability, lensRungBadge } from '../../models/heatmap-modes';
 import { LensCardService } from '../../services/lens-card.service';
 import { LoadedBundleInfo, domainLabel, lensSourceVintage } from '../../models/lens-sources';
 import { isRegistryLens, registryColor } from '../../models/lens-registry';
 import { type PostureLegendStop, type PostureTheme, postureLegendStops } from '../../models/posture/posture-ramp';
+import type { LensLegendStop } from '../../models/posture/lens-ramps';
 import type { PostureBucket } from '../../models/posture/posture.types';
 import { EXPIRING_SOON_DAYS, PostureService } from '../../services/posture.service';
 import { ThemeService } from '../../services/theme.service';
 
 /** The unified lens's colorblind-safe 6-stop viridis, mirroring technique-cell. */
 const SAFE_UNIFIED = ['#440154', '#414487', '#2a788e', '#22a884', '#7ad151', '#fde725'];
+
+/** A registry lens's legend stop: the Posture lens's, or a P2-14 lens's (which says whether its words are owner words). */
+type RegistryLegendStop = PostureLegendStop | LensLegendStop;
+
+/**
+ * Registry lenses whose every number is the owner's Covered or Proven data:
+ * with no owner words they say 'No data of yours recorded' instead of the
+ * question (§1.3). Status and Controls keep the question: a planned status is
+ * data of yours, and their words are not rung words.
+ */
+const OWNER_DATA_LENSES: ReadonlySet<HeatmapMode> = new Set<HeatmapMode>(['posture', 'proven', 'covered']);
 
 /** Scale note shown after the stops, by ramp scale (none for categorical and threshold bands). */
 const SCALE_NOTE: Partial<Record<HeatmapModeDef['ramp']['scale'], string>> = {
@@ -33,10 +45,11 @@ const SCALE_NOTE: Partial<Record<HeatmapModeDef['ramp']['scale'], string>> = {
  * zero means, and a 'What is this lens?' button that opens the lens's
  * definition card.
  *
- * A registry-hosted posture lens (P2-13) shows its posture stops instead,
- * coloured by the lens's own colour function. Its stop labels and question
- * name Covered and Proven, so they render only under hasOwnerWords() (§1.3);
- * a fresh profile sees the ramp and 'No data of yours recorded'.
+ * A registry-hosted lens (P2-13, P2-14) shows its own stops instead,
+ * coloured by the lens's own colour function. Stop labels that name Covered
+ * or Proven render only under hasOwnerWords() (§1.3); on the Posture, Proven
+ * and Covered lenses a fresh profile sees the ramp and 'No data of yours
+ * recorded'.
  */
 @Component({
   selector: 'app-legend',
@@ -61,7 +74,7 @@ const SCALE_NOTE: Partial<Record<HeatmapModeDef['ramp']['scale'], string>> = {
                     <span class="swatch-check" aria-hidden="true" [style.color]="stop.text">✓</span>
                   }
                 </div>
-                @if (ownerWords) {
+                @if (!needsOwnerWords(stop) || ownerWords) {
                   <span class="stop-label">{{ stop.label }}</span>
                 }
               </div>
@@ -79,12 +92,12 @@ const SCALE_NOTE: Partial<Record<HeatmapModeDef['ramp']['scale'], string>> = {
           }
         </div>
       </div>
-      @if (postureStops && !ownerWords) {
+      @if (postureStops && ownerDataLens && !ownerWords) {
         <p class="legend-no-data">No data of yours recorded</p>
       } @else {
         <p class="legend-question">{{ def.question }}</p>
       }
-      @if (postureStops && expiringSoon > 0) {
+      @if (postureStops && ownerDataLens && expiringSoon > 0) {
         <p class="legend-expiring" role="status">{{ expiringLine }}</p>
       }
       @if (notInDomain) {
@@ -157,19 +170,12 @@ export class LegendComponent implements OnInit, OnDestroy {
 
   /**
    * Mirror the cell renderer's colorblind-safe mode: sequential scales show
-   * the viridis ramp (first stop = the mode's zero color), categorical
-   * status/controls show Okabe-Ito.
+   * the viridis ramp (first stop = the mode's zero color). Status and
+   * Controls are registry lenses since P2-14, on an ordinal ramp that is
+   * CVD-safe by default, so they never reach this.
    */
   private toSafeStops(def: HeatmapModeDef): readonly LensRampStop[] {
     const base = def.ramp.stops;
-    if (def.value === 'status') {
-      const order = ['none', 'not-started', 'in-progress', 'planned', 'implemented'];
-      return base.map((s, i) => ({ ...s, color: SAFE_STATUS[order[i]] ?? s.color }));
-    }
-    if (def.value === 'controls') {
-      const order = ['none', 'planned', 'covered'];
-      return base.map((s, i) => ({ ...s, color: SAFE_CONTROLS[order[i]] ?? s.color }));
-    }
     if (def.value === 'f3-origin') {
       // Okabe-Ito blue / reddish purple, mirroring the cell renderer.
       const safe = ['#0072b2', '#cc79a7'];
@@ -197,18 +203,29 @@ export class LegendComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * The posture stops of a registry-hosted lens (P2-13), each filled through
+   * The stops of a registry-hosted lens (P2-13, P2-14), each filled through
    * the lens's own colour function in the current theme; null on a legacy lens.
    */
-  get postureStops(): PostureLegendStop[] | null {
+  get postureStops(): RegistryLegendStop[] | null {
     const def = this.def;
     if (!isRegistryLens(def)) return null;
     const theme: PostureTheme = this.themeService.isLight ? 'light' : 'dark';
+    if (def.legend) return [...def.legend(theme)];
     const ctx = { theme, colorblindSafe: this.settingsService.current.colorblindSafe };
     return postureLegendStops(theme).map(stop => {
       const bucket: PostureBucket = stop.patternClass && stop.key !== 'partial' ? 'known' : stop.key as PostureBucket;
       return { ...stop, fill: registryColor(def, { score: 0, bucket }, ctx) };
     });
+  }
+
+  /** True when a stop's label names Covered or Proven (every Posture stop does; a P2-14 stop says so). */
+  needsOwnerWords(stop: RegistryLegendStop): boolean {
+    return !('ownerWords' in stop) || stop.ownerWords;
+  }
+
+  /** The Posture, Proven and Covered lenses show only the owner's data (see OWNER_DATA_LENSES). */
+  get ownerDataLens(): boolean {
+    return OWNER_DATA_LENSES.has(this.def.value);
   }
 
   /** Whether Covered and Proven words may render (PostureService.ownerWords, §2.4). */

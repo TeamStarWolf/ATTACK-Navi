@@ -50,14 +50,14 @@ function nonEmpty(v: unknown): boolean {
 describe('HEATMAP_MODES registry (E1.2 lens metadata)', () => {
   const FIELDS: (keyof HeatmapModeDef)[] = ['value', 'label', 'short', 'group', 'question', 'rung', 'formula', 'domains', 'sources', 'zeroMeaning', 'ramp'];
 
-  it('describes 34 of 34 modes with every field non-empty', () => {
-    expect(HEATMAP_MODES.length).toBe(34);
+  it('describes 36 of 36 modes with every field non-empty', () => {
+    expect(HEATMAP_MODES.length).toBe(36);
     const described = HEATMAP_MODES.filter((m) =>
       FIELDS.every((f) => nonEmpty(m[f])) && m.ramp.stops.length > 0 && m.ramp.stops.every((s) => nonEmpty(s.color) && nonEmpty(s.label)),
     );
     const missing = HEATMAP_MODES.filter((m) => !described.includes(m)).map((m) => m.value);
     expect(missing).withContext('modes with an empty field').toEqual([]);
-    expect(described.length).toBe(34);
+    expect(described.length).toBe(36);
   });
 
   it('keeps every heat= id (the committed lens snapshot ids)', () => {
@@ -134,7 +134,7 @@ describe('HEATMAP_MODES registry (E1.2 lens metadata)', () => {
     let mode = HEATMAP_MODES[0].value;
     const seen = new Set<string>();
     for (let i = 0; i < HEATMAP_MODES.length; i++) { seen.add(mode); mode = nextHeatmapMode(mode); }
-    expect(seen.size).toBe(34);
+    expect(seen.size).toBe(36);
     expect(mode).toBe(HEATMAP_MODES[0].value);
   });
 });
@@ -160,14 +160,14 @@ describe('lensSourceVintage (SEAM for E1.3 SourceRegistry)', () => {
   });
 });
 
-/** The heat= values in registry order: the 33 as they stood before the relabel, then 'posture' (P2-13, appended). */
+/** The heat= values in registry order: the 33 as they stood before the relabel, then 'posture' (P2-13), 'proven' and 'covered' (P2-14), appended. */
 const HEAT_VALUES = [
   'coverage', 'status', 'controls', 'unified', 'library', 'frequency',
   'risk', 'exposure', 'software', 'campaign', 'intelligence', 'my-exposure',
   'kev', 'cve', 'epss', 'kill-chain', 'poc-exploits',
   'detection', 'sigma', 'elastic', 'splunk', 'wazuh', 'm365', 'car', 'atomic',
   'd3fend', 'engage', 'nist', 'veris', 'cri', 'csa-ccm', 'm365-controls', 'f3-origin',
-  'posture',
+  'posture', 'proven', 'covered',
 ];
 
 describe('HEATMAP_MODES relabel (E1.1)', () => {
