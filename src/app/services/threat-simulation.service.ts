@@ -46,7 +46,8 @@ export interface SimulationResult {
   partialCount: number;        // bucket 'partial' — its own number, never covered and never a gap
   provenCount: number;         // bucket 'proven'
   staleCount: number;          // bucket 'stale'
-  knownCount: number;          // bucket 'known' — reference mapping only (shown on a fresh profile)
+  knownCount: number;          // bucket 'known' — reference mapping only (internal gap maths)
+  mappedCount: number;         // parents with a reference mapping (knownSignals > 0) — the ctem "Known: mapped" numerator
   noneCount: number;           // bucket 'none'
   contradictedCount: number;   // the 'contradicted' sub-state — a gap (§10.4 item 13)
   gaps: SimulationGap[];
@@ -83,6 +84,9 @@ export class ThreatSimulationService {
     const states = techniques.map(t => this.posture.stateFor(t));
     const tally = tallyPosture(states);
     const techniquesCovered = tally.covered + tally.proven + tally.stale;
+    // Mirrors the ctem posture card's "Known: mapped" numerator (knownSignals > 0),
+    // which is mapped-of-total, not the bucket-'known' count.
+    const mappedCount = states.filter(s => s.knownSignals > 0).length;
 
     const gaps: SimulationGap[] = [];
     const tacticMap = new Map<string, { covered: number; total: number }>();
@@ -151,6 +155,7 @@ export class ThreatSimulationService {
       provenCount: tally.proven,
       staleCount: tally.stale,
       knownCount: tally.known,
+      mappedCount,
       noneCount: tally.none,
       contradictedCount: tally.contradicted,
       gaps: this.prioritizeGaps(gaps),

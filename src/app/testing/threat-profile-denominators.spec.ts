@@ -6,7 +6,7 @@
 // posture-card "threat-relevant techniques: N" line all equal ThreatProfile.parentTechniqueIds.size.
 // The all-groups dashboard/actor denominators (§10.4 item 15) do NOT move with the profile —
 // asserted against the REAL DashboardPanelComponent and ActorProfilePanelComponent.
-import { TestBed } from '@angular/core/testing';
+import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { HttpClient, provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -131,16 +131,31 @@ describe('threat-profile denominators move in one step (P2-10 [AC])', () => {
     expect(wiz.totalTechniques).toBe(n);
     expect(gapTotal()).toBe(n);
     expect(threatSimTotal()).toBe(n);          // the threat-simulation service total
+  });
 
-    // The RENDERED scenario total on a mounted panel equals the same denominator.
+  it('the mounted scenario overlay is reactive: its rendered total follows setSource without re-running', () => {
+    const renderedSimTotal = (f: ComponentFixture<ScenarioPanelComponent>) =>
+      Number(((f.nativeElement as HTMLElement).querySelector('[data-sim="total"]')?.textContent ?? '').trim());
+    const withTechs = domain.groups.filter(g => (domain.techniquesByGroup.get(g.id) ?? []).length > 0);
+    expect(withTechs.length).toBeGreaterThanOrEqual(2);
+
+    // Open the overlay and run the profile simulation BEFORE the change, over {kind:'all'}.
+    threatProfile.setSource({ kind: 'all' });
     const scenF = TestBed.createComponent(ScenarioPanelComponent);
     const scen = scenF.componentInstance;
     (scen as unknown as { domain: Domain }).domain = domain;
-    scen.profileSimResult = threatSim.simulate(domain);   // the profile sim over the new profile
     scen.showThreatSim = true;
-    scenF.detectChanges();                                 // one pass renders the overlay
-    const renderedTotal = Number(((scenF.nativeElement as HTMLElement).querySelector('[data-sim="total"]')?.textContent ?? '').trim());
-    expect(renderedTotal).toBe(n);             // the rendered scenario total tracks parentTechniqueIds.size
+    scen.profileSimResult = threatSim.simulate(domain);
+    scenF.detectChanges();
+    const allTotal = threatProfile.current.parentTechniqueIds.size;
+    expect(renderedSimTotal(scenF)).toBe(allTotal);
+
+    // Narrow the shared profile; the open overlay must follow in one CD pass with NO re-run.
+    threatProfile.setSource({ kind: 'groups', ids: [withTechs[0].id, withTechs[1].id] });
+    scenF.detectChanges();
+    const n = threatProfile.current.parentTechniqueIds.size;
+    expect(n).toBeLessThan(allTotal);          // the two profiles differ, so a stale snapshot would fail here
+    expect(renderedSimTotal(scenF)).toBe(n);   // the rendered total tracked parentTechniqueIds.size reactively
   });
 
   it('Skip sets {kind:"all"}; the wizard/gap/card totals all equal the domain parent-technique count', () => {

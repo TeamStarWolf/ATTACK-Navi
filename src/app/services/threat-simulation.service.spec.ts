@@ -49,6 +49,9 @@ const BUCKETS = new Map<string, PostureBucket>([
   ['t5', 'none'], ['t6', 'known'], ['t7', 'covered'],
 ]);
 const SUBSTATES = new Map<string, PostureSubState[]>([['t7', ['contradicted']]]);
+// Reference mappings (knownSignals): "mapped" = count with >0, the ctem "Known: mapped" numerator.
+// 5 parents are reference-mapped (t1,t2,t3,t6,t7); t4/t5 are not. mapped differs from bucket-'known' (1).
+const KNOWN_SIGNALS = new Map<string, number>([['t1', 2], ['t2', 1], ['t3', 1], ['t6', 3], ['t7', 1]]);
 const DOMAIN = { techniques: TECHS } as unknown as Domain;
 
 describe('ThreatSimulationService (profile-scoped)', () => {
@@ -62,6 +65,7 @@ describe('ThreatSimulationService (profile-scoped)', () => {
             bucket: BUCKETS.get(t.id) ?? 'none',
             subStates: SUBSTATES.get(t.id) ?? [],
             excluded: false,
+            knownSignals: KNOWN_SIGNALS.get(t.id) ?? 0,
         }) } },
         { provide: THREAT_WEIGHT_PROVIDER, useValue: { weight: () => 0, revision: signal(0), parents: signal(new Set(parentIds)) } },
         { provide: AttackCveService, useValue: { getCvesForTechnique: () => [], getKevCvesForTechnique: () => [] } },
@@ -82,7 +86,8 @@ describe('ThreatSimulationService (profile-scoped)', () => {
     expect(r.provenCount).toBe(1);            // t2
     expect(r.staleCount).toBe(1);             // t3
     expect(r.partialCount).toBe(1);           // t4
-    expect(r.knownCount).toBe(1);             // t6
+    expect(r.knownCount).toBe(1);             // t6 (bucket 'known')
+    expect(r.mappedCount).toBe(5);            // t1,t2,t3,t6,t7 have knownSignals>0 — mapped-of-total, NOT bucket-known
     expect(r.noneCount).toBe(1);              // t5
     expect(r.contradictedCount).toBe(1);      // t7
   });

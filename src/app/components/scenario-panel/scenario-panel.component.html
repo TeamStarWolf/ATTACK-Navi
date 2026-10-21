@@ -262,7 +262,9 @@
             <div class="threat-sim-header">
               <span class="threat-sim-title">Profile simulation</span>
               <div class="threat-sim-header-actions">
-                <button class="sim-export-btn" (click)="exportSimulationCsv()" [disabled]="profileSimResult.gaps.length === 0" title="Export gaps as CSV">Export CSV</button>
+                @if (hasOwnerWords) {
+                  <button class="sim-export-btn" (click)="exportSimulationCsv()" [disabled]="profileSimResult.gaps.length === 0" title="Export gaps as CSV">Export CSV</button>
+                }
                 @if (selectedGroup) {
                   <button class="sim-export-btn caldera-export-btn" (click)="exportCalderaProfile()" title="Export Caldera adversary profile (YAML) for the selected actor">Export Caldera</button>
                 }
@@ -277,14 +279,17 @@
                     <div class="sim-summary-value">{{ sim.coveragePercent }}%</div>
                     <div class="sim-summary-label">Recorded-posture share</div>
                   </div>
-                  <div class="sim-summary-card">
-                    <div class="sim-summary-value" [style.color]="sim.riskScore >= 70 ? '#f87171' : sim.riskScore >= 40 ? '#fbbf24' : '#4ade80'">{{ sim.riskScore }}</div>
-                    <div class="sim-summary-label">Threat-weighted gap</div>
-                  </div>
-                  <div class="sim-summary-card">
-                    <div class="sim-summary-value" style="color: #f97316;">{{ sim.gaps.length }}</div>
-                    <div class="sim-summary-label">Gaps</div>
-                  </div>
+                  <!-- Threat-weighted gap and the gap count are owner-posture surfaces: hidden on a fresh profile. -->
+                  @if (hasOwnerWords) {
+                    <div class="sim-summary-card">
+                      <div class="sim-summary-value" [style.color]="sim.riskScore >= 70 ? '#f87171' : sim.riskScore >= 40 ? '#fbbf24' : '#4ade80'">{{ sim.riskScore }}</div>
+                      <div class="sim-summary-label">Threat-weighted gap</div>
+                    </div>
+                    <div class="sim-summary-card">
+                      <div class="sim-summary-value" style="color: #f97316;">{{ sim.gaps.length }}</div>
+                      <div class="sim-summary-label">Gaps</div>
+                    </div>
+                  }
                 </div>
 
                 <!-- Per-bucket breakdown, equal number-for-number to the ctem posture card for this
@@ -313,9 +318,10 @@
                       <dd data-sim="stale">{{ sim.staleCount }}</dd>
                     </div>
                   }
+                  <!-- Known row mirrors the ctem card exactly: mapped (knownSignals>0) of total, not bucket-'known'. -->
                   <div class="sim-posture-row">
                     <dt>{{ outcomeLabel('known') }}</dt>
-                    <dd data-sim="known">{{ sim.knownCount }}</dd>
+                    <dd><span data-sim="mapped">{{ sim.mappedCount }}</span> of <span data-sim="total-known">{{ sim.techniquesTotal }}</span></dd>
                   </div>
                   <div class="sim-posture-row">
                     <dt>{{ outcomeLabel('none') }}</dt>
@@ -326,7 +332,7 @@
                   <p class="sim-fresh-note" data-testid="sim-fresh-note">{{ freshMessage }}</p>
                 }
 
-                @if (threatSimTacticBars.length > 0) {
+                @if (hasOwnerWords && threatSimTacticBars.length > 0) {
                   <div class="sim-tactic-section">
                     <div class="sim-section-title">Recorded posture by tactic</div>
                     <div class="sim-tactic-bars">
@@ -343,6 +349,7 @@
                   </div>
                 }
 
+                @if (hasOwnerWords) {
                 @if (sim.gaps.length > 0) {
                   <div class="sim-gaps-section">
                     <div class="sim-section-title">Prioritized Gaps ({{ sim.gaps.length }})</div>
@@ -366,6 +373,7 @@
                   </div>
                 } @else {
                   <div class="sim-no-gaps">No gaps — every technique in the profile has recorded posture.</div>
+                }
                 }
               </div>
             }

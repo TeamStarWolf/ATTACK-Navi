@@ -38,12 +38,15 @@ describe('ScenarioPanelComponent (posture outcomes)', () => {
   let domain$: BehaviorSubject<any>;
   let buckets: Map<string, PostureBucket>;
   let subStates: Map<string, PostureSubState[]>;
+  let knownSignals: Map<string, number>;   // reference mappings per technique (ctem "Known: mapped" source)
   let ownerWords: boolean;
   let parentsSig: WritableSignal<ReadonlySet<string>>;
+  let revisionSig: WritableSignal<number>;
 
   function configure(parentIds: string[] = ['t1', 't2']): void {
     domain$ = new BehaviorSubject<any>(DOMAIN);
     parentsSig = signal<ReadonlySet<string>>(new Set(parentIds));
+    revisionSig = signal(0);
     TestBed.configureTestingModule({
       imports: [ScenarioPanelComponent],
       providers: [
@@ -56,12 +59,12 @@ describe('ScenarioPanelComponent (posture outcomes)', () => {
             getTechniquesForGroup: (id: string) => (id === GROUP.id ? [T1, T2] : []),
         } },
         { provide: PostureService, useValue: {
-            stateFor: (t: Technique) => ({ bucket: buckets.get(t.id) ?? 'none', subStates: subStates.get(t.id) ?? [], excluded: false }),
+            stateFor: (t: Technique) => ({ bucket: buckets.get(t.id) ?? 'none', subStates: subStates.get(t.id) ?? [], excluded: false, knownSignals: knownSignals.get(t.id) ?? 0 }),
             ownerWords: () => ownerWords,
         } },
         // The REAL profile-scoped ThreatSimulationService over a fixture, so the overlay
         // exercises simulate() (item 5). Its gap/priority inputs are stubbed empty.
-        { provide: THREAT_WEIGHT_PROVIDER, useValue: { weight: () => 0, revision: signal(0), parents: parentsSig } },
+        { provide: THREAT_WEIGHT_PROVIDER, useValue: { weight: () => 0, revision: revisionSig, parents: parentsSig } },
         { provide: AttackCveService, useValue: { getCvesForTechnique: () => [], getKevCvesForTechnique: () => [] } },
         { provide: ExploitdbService, useValue: { hasExploits: () => false } },
         { provide: EpssService, useValue: { getScore: () => null } },
@@ -80,7 +83,7 @@ describe('ScenarioPanelComponent (posture outcomes)', () => {
     fixture.detectChanges();
   }
 
-  beforeEach(() => { buckets = new Map(); subStates = new Map(); ownerWords = false; });
+  beforeEach(() => { buckets = new Map(); subStates = new Map(); knownSignals = new Map(); ownerWords = false; });
 
   it('is created', () => {
     configure();
@@ -111,6 +114,18 @@ describe('ScenarioPanelComponent (posture outcomes)', () => {
     expect(host.querySelector('.outcome-proven')).toBeNull();
     expect(host.querySelector('[data-sim="covered"]')).toBeNull();
     expect(host.querySelector('[data-sim="proven"]')).toBeNull();
+    // Item 1: the owner-posture overlay surfaces are all absent on a fresh profile.
+    expect(host.querySelector('[data-sim="partial"]')).toBeNull();
+    expect(host.querySelector('[data-sim="stale"]')).toBeNull();
+    expect(host.querySelector('.sim-tactic-section')).toBeNull();      // "Recorded posture by tactic" bars
+    expect(host.querySelector('.sim-gaps-section')).toBeNull();        // Prioritized Gaps list
+    expect(host.querySelector('.sim-no-gaps')).toBeNull();            // nor the "No gaps" else
+    expect(host.querySelector('[title="Export gaps as CSV"]')).toBeNull();   // nor the gaps CSV export (the Caldera plan export is not a posture surface)
+    expect(host.textContent).not.toContain('Threat-weighted gap');    // nor the risk/Gaps summary cards
+    // Item 1: what the fresh overlay SHOWS — total, the share %, Known (mapped of total), None, the prompt.
+    expect(host.querySelector('[data-sim="total"]')).not.toBeNull();
+    expect(host.querySelector('[data-sim="mapped"]')).not.toBeNull();
+    expect(host.querySelector('[data-sim="none"]')).not.toBeNull();
     // The fresh-profile prompt is shown (both the single-sim and the overlay carry it).
     expect(host.textContent).toContain('Record a run or mark a mitigation implemented');
     // No 'covered'/'proven' anywhere in visible text or in title/aria-label/placeholder/alt.
@@ -141,5 +156,42 @@ describe('ScenarioPanelComponent (posture outcomes)', () => {
     expect(host.querySelector('.outcome-proven')).not.toBeNull();
     // Labels come from scenarioOutcomeLabel() — 'Covered (self-attested or range)'.
     expect(host.textContent).toContain('Covered (self-attested or range)');
+  }));
+
+  it('the overlay Known row shows mapped-of-total (knownSignals>0), mirroring ctem, not bucket-known', fakeAsync(() => {
+    ownerWords = true;
+    buckets = new Map([['t1', 'covered'], ['t2', 'none']]);   // bucket-'known' count is 0 here
+    knownSignals = new Map([['t1', 2], ['t2', 0]]);           // one parent has a reference mapping
+    configure(['t1', 't2']);
+
+    component.runProfileSimulation();
+    tick(200);
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    // mapped = 1 (t1 has knownSignals>0), total = 2 — NOT the bucket-known count (0).
+    expect(host.querySelector('[data-sim="mapped"]')!.textContent!.trim()).toBe('1');
+    expect(host.querySelector('[data-sim="total-known"]')!.textContent!.trim()).toBe('2');
+    expect(component.profileSimResult!.mappedCount).toBe(1);
+    expect(component.profileSimResult!.knownCount).toBe(0);   // bucket-known differs from mapped
+  }));
+
+  it('the open overlay recomputes when the profile changes (reactive, not a stale snapshot)', fakeAsync(() => {
+    ownerWords = true;
+    buckets = new Map([['t1', 'covered'], ['t2', 'covered']]);
+    configure(['t1', 't2']);                        // profile = both parents
+
+    component.runProfileSimulation();
+    tick(200);
+    fixture.detectChanges();
+    expect(component.profileSimResult!.techniquesTotal).toBe(2);
+
+    // The shared profile narrows to one parent: parents() changes and revision() bumps.
+    parentsSig.set(new Set(['t1']));
+    revisionSig.set(revisionSig() + 1);
+    fixture.detectChanges();                        // flushes the effect
+
+    expect(component.profileSimResult!.techniquesTotal).toBe(1);   // overlay followed the profile, no re-click
+    expect((fixture.nativeElement as HTMLElement).querySelector('[data-sim="total"]')!.textContent!.trim()).toBe('1');
   }));
 });

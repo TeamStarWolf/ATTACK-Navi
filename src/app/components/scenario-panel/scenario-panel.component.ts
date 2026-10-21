@@ -20,6 +20,7 @@ import {
   OnDestroy,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
+  effect,
   inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -35,6 +36,7 @@ import { ThreatGroup } from '../../models/group';
 import { Technique } from '../../models/technique';
 import { PostureBucket } from '../../models/posture/posture.types';
 import { scenarioOutcomeLabel } from '../../models/posture/posture-vocabulary';
+import { THREAT_WEIGHT_PROVIDER } from '../../models/posture/threat-weight';
 import { csvRow } from '../../utils/csv';
 
 /** The scenario card / pill a bucket is counted under. 'stale' folds into 'proven' (aged Proven). */
@@ -104,6 +106,7 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
   private subs = new Subscription();
 
   private readonly posture = inject(PostureService);
+  private readonly threatWeight = inject(THREAT_WEIGHT_PROVIDER);
 
   constructor(
     private filterService: FilterService,
@@ -111,7 +114,18 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
     private threatSimService: ThreatSimulationService,
     private emulationPlanService: EmulationPlanService,
     private cdr: ChangeDetectorRef,
-  ) {}
+  ) {
+    // Keep the profile-simulation overlay in step with the shared profile: when the
+    // profile changes (revision() bumps), re-run the simulation while the overlay is
+    // open so its total and counts always agree with ctem (fixes the stale snapshot).
+    effect(() => {
+      this.threatWeight.revision();
+      if (this.showThreatSim && this.domain) {
+        this.profileSimResult = this.threatSimService.simulate(this.domain);
+        this.cdr.markForCheck();
+      }
+    });
+  }
 
   ngOnInit(): void {
     // Follow the loaded domain for the panel's life (a domain switch re-scopes both flows).
