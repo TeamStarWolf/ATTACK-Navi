@@ -8,7 +8,7 @@
 // scripts/lint-truth-vocab.mjs), which is why the Covered strings below are
 // whole literals rather than templates.
 import type { CoveredQualifier } from '../heatmap-modes';
-import type { CoveredMark, PostureState, ProofRecord, ProofScope } from './posture.types';
+import type { CoveredMark, PostureState, PostureSubState, ProofRecord, ProofScope } from './posture.types';
 
 // truth-vocab-allow-next-line proven-only -- the Proven-rung word; every caller passes Proven-rung data
 export const PROVEN = 'Proven';
@@ -84,6 +84,23 @@ export function postureBadge(s: Pick<PostureState, 'bucket' | 'qualifiers' | 'pr
     default:
       return 'None';
   }
+}
+
+/**
+ * What a contradicted cell adds to its aria-label and tooltip (RP-F decision
+ * 11), the way a stale cell names its age: a later failed run outranks the
+ * full marks, so the cell is drawn with the contradicted pattern and must say so.
+ */
+export const CONTRADICTED_WORDS = 'contradicted (a later failed run)';
+
+/**
+ * `label` with ', contradicted (a later failed run)' when the technique's state
+ * carries the 'contradicted' sub-state, else `label` unchanged:
+ *   'Known: mapped, contradicted (a later failed run)'
+ *   'Status: implemented, contradicted (a later failed run)'
+ */
+export function withContradicted(label: string, subStates: readonly PostureSubState[]): string {
+  return subStates.includes('contradicted') ? `${label}, ${CONTRADICTED_WORDS}` : label;
 }
 
 /** One proof line: 'Proven in range on 2026-09-14 by wazuh:990003 (alerted)'. */
