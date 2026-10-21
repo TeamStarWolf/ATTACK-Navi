@@ -6,6 +6,7 @@
 //
 //   Why this colour  lensExplain(def, cell) on the lens on screen
 //   Proven           each proof record: rule, date, source, outcome, lab, stale
+//   Runs without proof  each run of yours that yields no proof: status and date (RP-F decision 9)
 //   Covered          each mark: qualifier, basis, via; Confirm on a partial one
 //   Known            the five reference families with counts and sources
 //   Threat           the threat profile's actors using it; KEV-linked CVEs
@@ -182,6 +183,15 @@ export class TechniqueEvidenceCardComponent {
       };
     });
   });
+
+  /**
+   * The runs of yours on the technique that yield no proof (RP-F decision 9), newest
+   * first: 'untested on 2026-10-21 (source manual); failed on ...', or '' with none.
+   * The Proven block stays proof-only (P2-14); this line names each run's status
+   * and date, never a rung, so it renders whether or not owner words may render.
+   */
+  readonly runsWithoutProof = computed(() =>
+    this.state().runsWithoutProof.map(r => `${r.status} on ${r.date.slice(0, 10)} (source ${r.source})`).join('; '));
 
   /** The Covered block: every mark with its qualifier, basis and via. Empty while no owner words. */
   readonly coveredMarks = computed(() => {

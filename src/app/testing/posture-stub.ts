@@ -44,6 +44,7 @@ export function stubState(attackId: string, bucket: PostureBucket, mapped = buck
     threatWeight: 1,
     exposureWeight: 0,
     excluded,
+    runsWithoutProof: [],
   };
 }
 

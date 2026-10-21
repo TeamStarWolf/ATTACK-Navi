@@ -10,7 +10,7 @@ import { BehaviorSubject, of } from 'rxjs';
 import { TechniqueEvidenceCardComponent } from './technique-evidence-card.component';
 import type { Technique } from '../../models/technique';
 import type { Domain } from '../../models/domain';
-import type { CoveredMark, PostureState, ProofRecord } from '../../models/posture/posture.types';
+import type { CoveredMark, PostureState, ProofRecord, RunSummary } from '../../models/posture/posture.types';
 import { DEFAULT_POSTURE_RULES } from '../../models/posture/derive-posture';
 import { POSTURE_TODAY } from '../../models/posture/posture-today';
 import { heatmapModeDef } from '../../models/heatmap-modes';
@@ -50,7 +50,7 @@ const FULL_RANGE: CoveredMark = { qualifier: 'range', basis: 'range-detection-au
 function state(over: Partial<PostureState> = {}): PostureState {
   return {
     ref: 'attack/enterprise/T1078@19.2', rung: 'known', bucket: 'known', qualifiers: [], subStates: [], covered: [], proof: [],
-    proofScope: null, proofAge: null, knownSignals: 3, threatWeight: 1, exposureWeight: 0, excluded: false, ...over,
+    proofScope: null, proofAge: null, knownSignals: 3, threatWeight: 1, exposureWeight: 0, excluded: false, runsWithoutProof: [], ...over,
   };
 }
 
@@ -199,6 +199,43 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
     expect(text(block(el, 'ev-why'))).not.toContain('nothing of yours reaches this technique');
     expect(text(block(el, 'ev-why'))).toContain('Lens: Covered (self-attested or range)');
     expect(block(el, 'ev-proven')!.querySelectorAll('[data-testid="ev-proof"]').length).toBe(1);
+  });
+
+  // RP-F decision 9: a run of yours with no named rule (untested; failed; passed with no rule)
+  // is named on the card with its status and date, never as a rung; the Proven block stays proof-only.
+  describe('runs without proof (RP-F decision 9)', () => {
+    const UNTESTED: RunSummary = { runId: 'u1', status: 'untested', date: '2026-10-21T08:00:00.000Z', source: 'manual' };
+    const FAILED: RunSummary = { runId: 'f1', status: 'failed', date: '2026-10-19T08:00:00.000Z', source: 'manual' };
+    const T1069_NONE = state({ ref: 'attack/enterprise/T1069@19.2', rung: 'none', bucket: 'none', knownSignals: 0, runsWithoutProof: [UNTESTED] });
+    const RUNG_WORDS = /\bcovered\b|\bproven\b|\bdefended\b|\bvalidated\b/i;
+
+    it('an untested run on T1069 with no owner words: the None line names it, and no rung word reaches the card', () => {
+      const el = render(T1069_NONE, false, 'posture');
+      expect(text(block(el, 'ev-why'))).toContain(
+        'Why this colour: None: no reference data mapped; 1 run of yours recorded, latest untested on 2026-10-21; see Detection Validation');
+      expect(text(block(el, 'ev-why'))).not.toContain('nothing of yours recorded');
+      expect(text(block(el, 'ev-runs-without-proof'))).toBe('Runs without proof: untested on 2026-10-21 (source manual); see Detection Validation');
+      expect(block(el, 'ev-proven')).toBeNull();
+      expect(text(el)).not.toMatch(RUNG_WORDS);
+    });
+
+    it('with owner words the Proven block stays proof-only and the line lists every run, newest first', () => {
+      const el = render(state({ rung: 'none', bucket: 'none', knownSignals: 0, runsWithoutProof: [UNTESTED, FAILED] }), true, 'covered');
+      expect(text(block(el, 'ev-proven')!.querySelector('.ev-empty'))).toBe('No recorded detection for this technique.');
+      expect(block(el, 'ev-proven')!.querySelectorAll('[data-testid="ev-proof"]').length).toBe(0);
+      expect(text(block(el, 'ev-runs-without-proof')))
+        .toBe('Runs without proof: untested on 2026-10-21 (source manual); failed on 2026-10-19 (source manual); see Detection Validation');
+      expect(text(block(el, 'ev-why'))).toContain('Why this colour: None: no covered (self-attested or range) mark; '
+        + '2 runs of yours recorded, latest untested on 2026-10-21; see Detection Validation');
+      expect(text(block(el, 'ev-why'))).not.toContain('nothing of yours reaches this technique');
+    });
+
+    it('a technique with no runs renders no Runs without proof line: an empty user\'s card is unchanged', () => {
+      const el = render(state({ rung: 'none', bucket: 'none', knownSignals: 0 }), false, 'posture');
+      expect(block(el, 'ev-runs-without-proof')).toBeNull();
+      expect(text(block(el, 'ev-why'))).toContain('Why this colour: None: no reference data mapped and nothing of yours recorded');
+      expect(text(el)).not.toMatch(RUNG_WORDS);
+    });
   });
 
   it('the Proven block lists each record: rule, date, source, outcome, lab badge and stale', () => {
