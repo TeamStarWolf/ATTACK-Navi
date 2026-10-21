@@ -1,7 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed } from '@angular/core/testing';
-import { EnrichmentService, isThreatGap, mappedPct } from './enrichment.service';
+import { EnrichmentService, isUnrecordedGap, mappedPct } from './enrichment.service';
 import { SigmaService } from './sigma.service';
 import { CARService } from './car.service';
 import { AtomicService } from './atomic.service';
@@ -114,7 +114,7 @@ describe('EnrichmentService', () => {
     expect(service.riskScore(defended, domain)).toBe(4);
   });
 
-  it('riskScore reads the posture bucket (P2-09): only Covered, Proven or stale owner data lowers a threat gap', () => {
+  it('riskScore reads the posture bucket (P2-09): only Covered, Proven or stale owner data lowers an unrecorded gap', () => {
     const undefended = tech('T3001', 's-3001', 0);
     const defended = tech('T3002', 's-3002', 1);
     domain.groupsByTechnique.set('s-3001', arr(2) as never);
@@ -130,15 +130,16 @@ describe('EnrichmentService', () => {
     for (const b of [...doubled, ...lowered]) expect(service.riskScore(defended, domain, 1, b)).withContext(b).toBe(7);
   });
 
-  it('isThreatGap: no defensive reference AND bucket not covered, proven or stale', () => {
+  it('isUnrecordedGap: no defensive reference AND bucket not covered, proven or stale', () => {
     const none = { mitigation: false, detection: false, atomic: false, d3fend: false, control: false, threatIntel: true, cve: true };
     // An Atomic test is not a defensive reference here (hasDefensiveReference).
-    expect(isThreatGap({ ...none, atomic: true }, 'known')).toBeTrue();
-    expect(isThreatGap(none, 'none')).toBeTrue();
-    expect(isThreatGap(none, 'partial')).toBeTrue();
-    for (const b of ['covered', 'proven', 'stale'] as const) expect(isThreatGap(none, b)).withContext(b).toBeFalse();
+    expect(isUnrecordedGap({ ...none, atomic: true }, 'known')).toBeTrue();
+    expect(isUnrecordedGap(none, 'none')).toBeTrue();
+    // Partial still counts (unlike the Threat gaps overlay rule, §10.4 item 13, P2-17).
+    expect(isUnrecordedGap(none, 'partial')).toBeTrue();
+    for (const b of ['covered', 'proven', 'stale'] as const) expect(isUnrecordedGap(none, b)).withContext(b).toBeFalse();
     for (const k of ['mitigation', 'detection', 'd3fend', 'control'] as const) {
-      expect(isThreatGap({ ...none, [k]: true }, 'none')).withContext(k).toBeFalse();
+      expect(isUnrecordedGap({ ...none, [k]: true }, 'none')).withContext(k).toBeFalse();
     }
   });
 

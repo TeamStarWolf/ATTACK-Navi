@@ -30,7 +30,7 @@ import { MispService } from '../../services/misp.service';
 import { OpenCtiService } from '../../services/opencti.service';
 import { XlsxExportService } from '../../services/xlsx-export.service';
 import { CustomMitigationService } from '../../services/custom-mitigation.service';
-import { EnrichmentService, isThreatGap, mappedPct } from '../../services/enrichment.service';
+import { EnrichmentService, isUnrecordedGap, mappedPct } from '../../services/enrichment.service';
 import { KevEntry } from '../../models/cve';
 import { SourceRegistryService } from '../../services/source-registry.service';
 import { PostureService } from '../../services/posture.service';
@@ -63,13 +63,13 @@ export interface DashboardStats {
 
   // Risk
   /**
-   * Threat gaps (P2-09): parent techniques used by any ATT&CK group that are
+   * Unrecorded gaps (P2-09): parent techniques used by any ATT&CK group that are
    * wholly unmapped, with nothing of the owner's recorded at Covered or above
-   * (isThreatGap). Not bound to the threat profile (S8).
+   * (isUnrecordedGap). Not bound to the threat profile (S8).
    */
   criticalRiskCount: number;
   /**
-   * KEV-mapped parent techniques that are threat gaps (isThreatGap). Not
+   * KEV-mapped parent techniques that are unrecorded gaps (isUnrecordedGap). Not
    * rendered; exposed so legacy-risk-dim.spec.ts reads the component's own
    * count, pinned before and after P2-09.
    */
@@ -273,16 +273,16 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
       const detectionCoveragePct = mappedPct(ref.detection, totalTechniques);
 
       // Critical risk (P2-09, E2.1-d3; R9, S8): threat-relevant (used by any
-      // ATT&CK group, not the threat profile) techniques that are threat gaps:
+      // ATT&CK group, not the threat profile) techniques that are unrecorded gaps:
       // NO defensive reference input (no mitigation, detection, control or
       // D3FEND countermeasure; Atomic tests and CVE links don't count) AND
       // nothing of the owner's recorded at Covered or above (posture bucket not
       // covered, proven or stale). Fresh profile: unchanged.
-      const gap = (t: Technique) => isThreatGap(this.enrichment.signals(t, domain), this.posture.stateFor(t).bucket);
+      const gap = (t: Technique) => isUnrecordedGap(this.enrichment.signals(t, domain), this.posture.stateFor(t).bucket);
       const criticalRiskTechs = parentTechs.filter(t => (domain.groupsByTechnique.get(t.id)?.length ?? 0) > 0 && gap(t));
       const criticalRiskCount = criticalRiskTechs.length;
 
-      // KEV-exposed gaps: KEV-mapped techniques that are threat gaps.
+      // KEV-exposed gaps: KEV-mapped techniques that are unrecorded gaps.
       const kevExposedGapCount = parentTechs.filter(t =>
         this.attackCveService.getKevCvesForTechnique(t.attackId).length > 0 && gap(t)).length;
 

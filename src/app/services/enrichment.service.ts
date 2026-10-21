@@ -359,7 +359,7 @@ export class EnrichmentService {
   /**
    * Multi-signal risk score for "Sort by risk". Higher = riskier: threat
    * pressure (groups weighted 2×, plus software + campaigns) and KEV exposure,
-   * doubled when the technique is a threat gap (`isThreatGap`): no defensive
+   * doubled when the technique is an unrecorded gap (`isUnrecordedGap`): no defensive
    * reference input other than an Atomic test, and nothing of the owner's
    * recorded at Covered or above. `bucket` is the technique's posture bucket
    * (PostureService.stateFor; P2-09, E2.1-d3). The default 'none' gives the
@@ -373,7 +373,7 @@ export class EnrichmentService {
     const campaigns = this.len(() => domain?.campaignsByTechnique?.get(tech.id));
     const threat = groups * 2 + software + campaigns;
     const exposure = threat + (kevScore > 0 ? kevScore * 3 : 0);
-    return exposure * (isThreatGap(this.signals(tech, domain), bucket) ? 2 : 1);
+    return exposure * (isUnrecordedGap(this.signals(tech, domain), bucket) ? 2 : 1);
   }
 }
 
@@ -381,14 +381,20 @@ export class EnrichmentService {
 const OWNER_RECORDED: ReadonlySet<PostureBucket> = new Set<PostureBucket>(['covered', 'proven', 'stale']);
 
 /**
- * A threat gap (P2-09, E2.1-d3; R9, S8): wholly unmapped (no mitigation,
+ * An unrecorded gap (P2-09, E2.1-d3; R9, S8): wholly unmapped (no mitigation,
  * detection content, control mapping or D3FEND countermeasure, the Known test
- * `hasDefensiveReference`) AND nothing of the owner's recorded: the posture
- * bucket is not covered, proven or stale. A partial bucket is still a gap. The
- * risk sort doubles a gap's exposure; the dashboard's critical-risk and
- * KEV-exposed-gap counters count gaps. On a fresh profile every bucket is
- * 'none' or 'known', so this equals `!hasDefensiveReference(s)`.
+ * `hasDefensiveReference`) AND nothing of the owner's recorded at Covered or
+ * above: the posture bucket is not covered, proven or stale. A partial bucket
+ * still counts here. The risk sort doubles an unrecorded gap's exposure; the
+ * dashboard's critical-risk and KEV-exposed-gap counters count them. On a fresh
+ * profile every bucket is 'none' or 'known', so this equals
+ * `!hasDefensiveReference(s)`.
+ *
+ * This is NOT the "threat gap" of the Threat gaps overlay (design §10.4 item
+ * 13, P2-17: bucket None or Known only, plus contradicted; partial is not a
+ * gap). The two rules differ on partial and contradicted techniques; do not
+ * reuse this function for the overlay.
  */
-export function isThreatGap(s: SignalFamilies, bucket: PostureBucket): boolean {
+export function isUnrecordedGap(s: SignalFamilies, bucket: PostureBucket): boolean {
   return !hasDefensiveReference(s) && !OWNER_RECORDED.has(bucket);
 }

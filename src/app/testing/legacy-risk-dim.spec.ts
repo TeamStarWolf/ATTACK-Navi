@@ -13,17 +13,23 @@
 //   - fresh: no owner data of the user's (the fixture controls of
 //     controlsProvider reach only mitigated techniques, so they move no number;
 //     asserted below);
-//   - seeded: P2-07's seed composition (posture-seed.ts): M1047 and M1026
-//     implemented, one confirmed technique, one passed own run with a fired
-//     detection, one failed run after a mark, one not-reproducible run. The
-//     confirmed and the proven technique are the two highest-risk threat gaps;
-//     a separate spec shows P2-07's own picks (mitigated parents) move nothing.
+//   - seeded: P2-07's seed, exactly (posture-seed.ts; the picks of
+//     posture-count-equality.spec.ts): M1047 and M1026 implemented, one
+//     confirmed technique, one passed own run with a fired detection, one
+//     failed run after a mark, one not-reproducible run. Every pick that
+//     records Covered or above is a mitigated parent, so no P2-09 number moves:
+//     its after values equal the fresh after values;
+//   - gapSeeded: a third profile, P2-07's composition with the confirmation
+//     and the passed run moved to the two highest-risk unrecorded gaps (used by
+//     a group, no defensive reference). It shows the movement the design text
+//     asks of the seeded profile ("the covered and proven techniques leave the
+//     counters and drop in the risk order"), which P2-07's own seed cannot.
 //
 // Before: __snapshots__/legacy-baseline.json section riskDim.<profile>, as
 // P2-01 pinned it (fresh; seeded = M1047 and M1026 implemented). The legacy
 // answers read no owner data at all, so P2-01's seeded pin is also the before of
-// the fuller P2-07 seed; the first spec recomputes the legacy answers on each
-// profile and checks them against those pins, unchanged:
+// both fuller seeds (seeded and gapSeeded); the first spec recomputes the legacy
+// answers on each profile and checks them against those pins, unchanged:
 //   - riskTop20: Sort by risk, the first 20 parent techniques as [attackId,
 //     score], read with the pre-posture bucket ('none', riskScore's default);
 //   - dimmed: hasAnySignal false (threat-intel and CVE links kept a cell bright);
@@ -34,7 +40,7 @@
 // After: section riskDimAfter.<profile>:
 //   - riskTop20: the matrix comparator over riskScore(tech, domain, kev,
 //     bucket); a threat gap's exposure is doubled only while its bucket is not
-//     covered, proven or stale (isThreatGap);
+//     covered, proven or stale (isUnrecordedGap);
 //   - dimmed: matrix isDimmed with Dim uncovered on, which dims posture bucket
 //     'none'; newlyDimmed is dimmed minus the before set;
 //   - dashboard: criticalRiskCount and kevExposedGapCount read from
@@ -42,8 +48,9 @@
 //     unrendered), cross-checked by an independent recomputation.
 // Fresh: risk order and both counters equal the before pins; dim equals the
 // before set plus the techniques kept bright only by threat-intel or CVE links.
-// Seeded: the covered and the proven technique leave the counters and drop in
-// the risk order; nothing else moves.
+// Seeded (P2-07's seed): equal to fresh after; nothing moves.
+// GapSeeded: the covered and the proven technique leave the counters and drop
+// in the risk order; nothing else moves.
 //
 // The KEV-gap count is 0 on the fixture by construction (every KEV-mapped
 // technique has a defensive signal; the DARK_TECHNIQUES have no CVE signal), so
@@ -78,7 +85,7 @@ import { SigmaService } from '../services/sigma.service';
 import { DataService } from '../services/data.service';
 import { EnrichmentService } from '../services/enrichment.service';
 import { FilterService } from '../services/filter.service';
-import { ImplementationService, ImplStatus } from '../services/implementation.service';
+import type { ImplStatus } from '../services/implementation.service';
 import { PostureService } from '../services/posture.service';
 import { SourceRegistryService } from '../services/source-registry.service';
 import { TechniqueMarksService } from '../services/technique-marks.service';
@@ -101,7 +108,7 @@ const STATUS_STOP: Record<ImplStatus | 'none', string> = {
   none: 'none', 'not-started': 'not started', 'in-progress': 'in progress', planned: 'planned', implemented: 'implemented',
 };
 
-/** Buckets that record something of the owner's at Covered or above (independent of isThreatGap). */
+/** Buckets that record something of the owner's at Covered or above (independent of isUnrecordedGap). */
 const RECORDED: ReadonlySet<PostureBucket> = new Set<PostureBucket>(['covered', 'proven', 'stale']);
 
 interface DashboardValues { criticalRiskCount: number; kevExposedGapCount: number }
@@ -128,12 +135,13 @@ interface AfterValues {
   dashboard: DashboardValues;
 }
 
+/** P2-01 pinned fresh and seeded; the legacy answers read no owner data, so gapSeeded's before is seeded's. */
 const before = (profile: string): BeforeValues =>
-  (BASELINE as unknown as { riskDim: Record<string, BeforeValues> }).riskDim[profile];
+  (BASELINE as unknown as { riskDim: Record<string, BeforeValues> }).riskDim[profile === 'gapSeeded' ? 'seeded' : profile];
 const afterPin = (profile: string): AfterValues | undefined =>
   (BASELINE as unknown as { riskDimAfter?: Record<string, AfterValues> }).riskDimAfter?.[profile];
 
-for (const profile of ['fresh', 'seeded'] as const) {
+for (const profile of ['fresh', 'seeded', 'gapSeeded'] as const) {
   describe(`Risk sort, dim and threat-gap counters before and after posture, ${profile} profile (P2-09, E2.1-d3)`, () => {
     let domain: Domain;
     let matrix: MatrixComponent;
@@ -156,7 +164,7 @@ for (const profile of ['fresh', 'seeded'] as const) {
       (TestBed.inject(DataService) as unknown as { domainSubject: { next(d: Domain): void } }).domainSubject.next(domain);
       filter = TestBed.inject(FilterService);
       posture = TestBed.inject(PostureService);
-      picks = profile === 'seeded' ? seedPostureProfile(domain) : null;
+      picks = profile === 'fresh' ? null : seedPostureProfile(domain, profile);
       const fixture = TestBed.createComponent(MatrixComponent);
       fixture.componentRef.setInput('domain', domain);
       fixture.detectChanges();
@@ -290,7 +298,7 @@ for (const profile of ['fresh', 'seeded'] as const) {
       const fold = statusFold();
       expect(fold.statusStops).toEqual(pinned.statusStops);
       expect(fold.implImplemented).toEqual(pinned.implImplemented);
-      if (profile === 'seeded') {
+      if (profile !== 'fresh') {
         expect(new Set(Object.values(fold.statusStops).map(s => s[0]))).toEqual(new Set(['none', 'implemented']));
       } else {
         expect(new Set(Object.values(fold.statusStops).map(s => s[0]))).toEqual(new Set(['none']));
@@ -331,42 +339,37 @@ for (const profile of ['fresh', 'seeded'] as const) {
         // On this fixture they are exactly the techniques with no ATT&CK mitigation.
         expect(threatOnly).toEqual(sorted(DARK_TECHNIQUES));
       });
-
-      it("P2-07's own picks move nothing: owner data on a technique with a defensive reference never moves a P2-09 number", () => {
-        const freshAfter = pinnable(after());
-        // P2-07's seed as P2-07 picks it (posture-count-equality.spec.ts picks()).
-        const mitigation = (id: string) => domain.mitigations.find(m => m.attackId === id)!;
-        const parentIds = (id: string) => (domain.techniquesByMitigation.get(mitigation(id).id) ?? [])
-          .filter(t => !t.isSubtechnique).map(t => t.attackId).sort();
-        const m1047 = parentIds('M1047');
-        const m1026 = parentIds('M1026');
-        const only1047 = m1047.filter(id => !m1026.includes(id));
-        const only1026 = m1026.filter(id => !m1047.includes(id));
-        const untouched = parentsById().map(t => t.attackId).filter(id => !m1047.includes(id) && !m1026.includes(id));
-        const tech = (id: string) => domain.techniques.find(t => t.attackId === id)!;
-        const impl = TestBed.inject(ImplementationService);
-        impl.setStatus(mitigation('M1047').id, 'implemented');
-        impl.setStatus(mitigation('M1026').id, 'implemented');
-        expect(TestBed.inject(TechniqueMarksService).confirm(keyOf(tech(only1026[0])))).toBeTrue();
-        expect(TestBed.inject(ValidationService).importJson(JSON.stringify({ runs: [
-          { id: 'p207-pass', techniqueId: only1047[0], runDate: daysBeforeSeedToday(10), status: 'passed', attackResult: 'executed',
-            detectionsFired: ['sigma:p2-07'] },
-          { id: 'p207-fail', techniqueId: only1047[1], runDate: daysBeforeSeedToday(5), status: 'failed', attackResult: 'executed' },
-          { id: 'p207-nr', techniqueId: untouched[0], runDate: daysBeforeSeedToday(3), status: 'not-reproducible', attackResult: 'executed' },
-        ] })).ok).toBeTrue();
-        expect(posture.stateFor(tech(only1047[0])).bucket).toBe('proven');
-        expect(posture.stateFor(tech(only1026[0])).bucket).toBe('covered');
-        expect(pinnable(after())).toEqual(freshAfter);
-      });
-    } else {
-      it('seeded: the covered and the proven technique leave the counters and drop in the risk order; nothing else moves', () => {
+    } else if (profile === 'seeded') {
+      it("seeded (P2-07's seed, exactly): owner data on mitigated parents moves no P2-09 number; after equals fresh after", () => {
         const s = picks!;
-        const v = after();
-        const pinned = before('seeded');
+        // P2-07's picks (posture-count-equality.spec.ts picks()): proof only1047[0],
+        // failed only1047[1], confirmed only1026[0], notReproducible untouched[0].
+        expect([s.confirmed, s.proof, s.failed, s.notReproducible].map(t => t.attackId))
+          .withContext("P2-07's picks: confirmed, proof, failed, not reproducible").toEqual(['T1003', 'T1021', 'T1578', 'T1001']);
+        expect(posture.stateFor(s.confirmed).bucket).toBe('covered');
+        expect(posture.stateFor(s.proof).bucket).toBe('proven');
+        expect(posture.stateFor(s.failed).subStates).toContain('contradicted');
+        expect(posture.stateFor(s.notReproducible).excluded).toBeTrue();
+        const enrichment = TestBed.inject(EnrichmentService);
+        for (const t of [s.confirmed, s.proof]) {
+          expect(hasDefensiveReference(enrichment.signals(t, domain))).withContext(`${t.attackId} is a mapped parent`).toBeTrue();
+        }
         const freshAfter = afterPin('fresh');
         expect(freshAfter).withContext('the fresh after values are pinned').toBeDefined();
+        expect(pinnable(after())).toEqual(freshAfter!);
+        expect(afterPin('seeded')).withContext('the seeded pin equals the fresh pin').toEqual(freshAfter!);
+      });
+    } else {
+      it('gapSeeded: the covered and the proven technique leave the counters and drop in the risk order; nothing else moves', () => {
+        const s = picks!;
+        const v = after();
+        const pinned = before(profile);
+        const freshAfter = afterPin('fresh');
+        expect(freshAfter).withContext('the fresh after values are pinned').toBeDefined();
+        // Confirmed and proof: the two highest-risk unrecorded gaps; failed and
+        // not reproducible: P2-07's picks.
         expect([s.confirmed, s.proof, s.failed, s.notReproducible].map(t => t.attackId))
-          .withContext('the seed picks: confirmed, proof, failed, not reproducible').toEqual(['T1007', 'T1082', 'T1021', 'T1001']);
+          .withContext('the gapSeeded picks: confirmed, proof, failed, not reproducible').toEqual(['T1007', 'T1082', 'T1578', 'T1001']);
         expect(posture.stateFor(s.confirmed).bucket).toBe('covered');
         expect(posture.stateFor(s.proof).bucket).toBe('proven');
         expect(posture.stateFor(s.failed).subStates).toContain('contradicted');
@@ -430,6 +433,46 @@ for (const profile of ['fresh', 'seeded'] as const) {
       expect(TestBed.inject(TechniqueMarksService).confirm(keyOf(probe))).toBeTrue();
       expect(posture.stateFor(probe).bucket).toBe('covered');
       expect(dimmedNow()).toBeFalse();
+    });
+
+    it('the OnPush matrix re-checks on a posture change under Dim uncovered alone, and re-sorts only under Sort by risk', () => {
+      const cdr = (matrix as unknown as { cdr: { markForCheck(): void } }).cdr;
+      const mark = spyOn(cdr, 'markForCheck').and.callThrough();
+      const resort = spyOn(matrix as unknown as { rebuildSortedColumns(): void }, 'rebuildSortedColumns').and.callThrough();
+      const probe = darkProbe();
+      const settle = () => { TestBed.tick(); mark.calls.reset(); resort.calls.reset(); };
+      let n = 0;
+      const postureChange = () => {
+        expect(TestBed.inject(ValidationService).importJson(JSON.stringify({ runs: [
+          { id: `p209-cd-${++n}`, techniqueId: probe.attackId, runDate: daysBeforeSeedToday(n), status: 'not-reproducible',
+            attackResult: 'executed' },
+        ] })).ok).toBeTrue();
+        TestBed.tick();
+      };
+      filter.setSortMode('alpha');
+      settle();
+
+      // Neither on: a posture change asks for nothing.
+      expect(matrix.dimUncovered).toBeFalse();
+      postureChange();
+      expect(mark).not.toHaveBeenCalled();
+      expect(resort).not.toHaveBeenCalled();
+
+      // Dim uncovered alone (sort alpha): re-check, no re-sort.
+      filter.toggleDimUncovered();
+      settle();
+      postureChange();
+      expect(mark).toHaveBeenCalled();
+      expect(resort).not.toHaveBeenCalled();
+      filter.toggleDimUncovered();
+
+      // Sort by risk: re-sort and re-check.
+      filter.setSortMode('coverage');
+      settle();
+      postureChange();
+      expect(resort).toHaveBeenCalled();
+      expect(mark).toHaveBeenCalled();
+      filter.setSortMode('alpha');
     });
 
     it('the counters and the risk sort can see a stale proof: it leaves the counters and loses its doubling', () => {

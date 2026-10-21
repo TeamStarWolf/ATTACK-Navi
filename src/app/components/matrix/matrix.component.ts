@@ -472,12 +472,14 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     this.matrixControl.register(this);
     this.el.nativeElement.addEventListener('wheel', this.wheelListener, { passive: false });
 
-    // Sort by risk reads the posture bucket (P2-09): owner data recorded while
-    // the matrix is open re-sorts it.
+    // Sort by risk and Dim uncovered read the posture bucket (P2-09): owner data
+    // recorded while the matrix is open re-sorts it (risk sort only) and, as the
+    // component is OnPush, re-checks the cells under either one.
     this.subs.add(
       this.posture.states$.subscribe(() => {
-        if (this.sortMode !== 'coverage') return;
-        this.rebuildSortedColumns();
+        const resort = this.sortMode === 'coverage';
+        if (!resort && !this.dimUncovered) return;
+        if (resort) this.rebuildSortedColumns();
         this.cdr.markForCheck();
       }),
     );
@@ -1312,7 +1314,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
         techniques = [...techniques, ...customForTactic];
         if (this.sortMode === 'coverage') {
           // "Sort by risk": highest multi-signal risk first (threat pressure +
-          // KEV exposure, doubled for a threat gap: wholly unmapped with nothing
+          // KEV exposure, doubled for an unrecorded gap: wholly unmapped with nothing
           // of the owner's recorded at Covered or above, P2-09), not fewest
           // mitigations.
           const risk = new Map(techniques.map(t => [t, this.enrichment.riskScore(
