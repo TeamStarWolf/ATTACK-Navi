@@ -6,7 +6,7 @@
 // pinned separately by src/app/testing/lens-snapshots.spec.ts; this file pins
 // what the matrix renders and how it reacts to the user.
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { signal as ngSignal } from '@angular/core';
+import { NgZone, signal as ngSignal } from '@angular/core';
 import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
@@ -237,6 +237,23 @@ describe('MatrixComponent (rendered, My marks and Threat gaps, P2-17)', () => {
   const parents = ngSignal<ReadonlySet<string>>(new Set());
   let weight: (id: string) => number = () => 0;
 
+  /**
+   * Console calls carrying NG0101 (ApplicationRef.tick is called recursively). The ErrorHandler
+   * reports it as console.error('ERROR', err) and the spec still passes, so every spec in this
+   * block asserts the count is zero in afterEach.
+   */
+  let ng0101: () => unknown[][];
+
+  /**
+   * The application tick after a store or profile write, run INSIDE the NgZone. TestBed.tick() is a
+   * bare ApplicationRef.tick(); called from the test body it runs outside the zone, and flushing the
+   * root effect behind PostureService.states$ (toObservable, created in the zone) then enters and
+   * leaves the zone at depth 0. That leave emits onMicrotaskEmpty, the zone scheduler starts a
+   * second tick while the first is still running, and Angular logs NG0101. In the app every tick
+   * already starts inside the zone, which is what this helper reproduces.
+   */
+  const appTick = (): void => TestBed.inject(NgZone).run(() => TestBed.tick());
+
   const build = (seed: () => void = () => undefined): void => {
     seed();
     fixture = TestBed.createComponent(MatrixComponent);
@@ -262,9 +279,16 @@ describe('MatrixComponent (rendered, My marks and Threat gaps, P2-17)', () => {
     });
     (TestBed.inject(DataService) as unknown as { domainSubject: { next(d: Domain): void } }).domainSubject.next(domain);
     filter = TestBed.inject(FilterService);
+    const error = spyOn(console, 'error').and.callThrough();
+    const warn = spyOn(console, 'warn').and.callThrough();
+    ng0101 = () => [...error.calls.allArgs(), ...warn.calls.allArgs()]
+      .filter(args => args.some(a => String((a as { message?: unknown })?.message ?? a).includes('NG0101')));
   });
 
-  afterEach(() => resetBrowserState());
+  afterEach(() => {
+    expect(ng0101()).withContext('NG0101: ApplicationRef.tick is called recursively').toEqual([]);
+    resetBrowserState();
+  });
 
   /** The distinct techniques whose cells hold `selector` (a technique in several tactics has a cell in each). */
   const idsWith = (selector: string): string[] =>
@@ -303,11 +327,11 @@ describe('MatrixComponent (rendered, My marks and Threat gaps, P2-17)', () => {
     build();
     expect(markedIds()).toEqual([]);
     implementM1047();
-    TestBed.tick();
+    appTick();
     fixture.detectChanges();
     expect(markedIds('covered').length).toBe(13);
     TestBed.inject(ImplementationService).setStatus(m1047().id, null);
-    TestBed.tick();
+    appTick();
     fixture.detectChanges();
     expect(markedIds()).toEqual([]);
   });
@@ -372,7 +396,7 @@ describe('MatrixComponent (rendered, My marks and Threat gaps, P2-17)', () => {
     weight = (id: string) => (id === target ? 50 : 0);
     parents.set(new Set([target]));
     revision.update(n => n + 1);
-    TestBed.tick();
+    appTick();
     fixture.detectChanges();
     expect(fixture.componentInstance.threatGapQ75()).toBe(50);
     expect(q75Before).not.toBe(50);
@@ -380,6 +404,38 @@ describe('MatrixComponent (rendered, My marks and Threat gaps, P2-17)', () => {
     const expected = domain.techniques.filter(t => isThreatGap(posture.stateFor(t), 50)).map(t => t.id).sort();
     expect(after).toEqual(expected);
     expect(after).not.toEqual(before);
+  });
+
+  it('no recursive tick: both overlays on with marked cells, then a mark and a profile change, log no NG0101', () => {
+    build(implementM1047);
+    filter.setHeatmapMode('posture');
+    filter.setThreatGapOverlay(true);
+    fixture.detectChanges();
+    appTick();
+    expect(markedIds('covered').length).toBe(13);
+    expect(outlinedIds().length).toBeGreaterThan(0);
+    // A second mark, then clearing it: each store write is followed by the application tick.
+    const m1047Ids = new Set((domain.techniquesByMitigation.get(m1047().id) ?? []).map(t => t.id));
+    const second = domain.mitigations.find(m => m.attackId !== 'M1047'
+      && (domain.techniquesByMitigation.get(m.id) ?? []).some(t => !m1047Ids.has(t.id)))!;
+    TestBed.inject(ImplementationService).setStatus(second.id, 'implemented');
+    appTick();
+    fixture.detectChanges();
+    expect(markedIds().length).toBeGreaterThan(13);
+    TestBed.inject(ImplementationService).setStatus(second.id, null);
+    appTick();
+    fixture.detectChanges();
+    expect(markedIds('covered').length).toBe(13);
+    // A threat profile change with both overlays still on.
+    const parentIds = domain.techniques.filter(t => !t.isSubtechnique).map(t => t.id);
+    weight = (id: string) => (id === parentIds[0] ? 50 : 0);
+    parents.set(new Set([parentIds[0]]));
+    revision.update(n => n + 1);
+    appTick();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.threatGapQ75()).toBe(50);
+    expect(markedIds('covered').length).toBe(13);
+    expect(ng0101()).withContext('NG0101 during the overlay updates').toEqual([]);
   });
 
   it('ICS: the exposure term is 0 for every technique (exposure is Enterprise only)', () => {
