@@ -276,6 +276,19 @@
                     <span class="checkbox-desc">🔖 indicator when a technique is on the watchlist</span>
                   </div>
                 </label>
+
+                <label class="checkbox-item">
+                  <input
+                    type="checkbox"
+                    class="my-marks-setting"
+                    [(ngModel)]="settings.cellDisplay.myMarks"
+                    (ngModelChange)="onDisplayChange()"
+                  />
+                  <div class="checkbox-info">
+                    <span class="checkbox-label">Show my marks</span>
+                    <span class="checkbox-desc">A bar on the left of each cell you have marked or recorded a run for, whatever the lens</span>
+                  </div>
+                </label>
               </div>
             </div>
 

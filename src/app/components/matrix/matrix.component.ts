@@ -10,6 +10,7 @@ import {
   OnChanges,
   HostListener,
   HostBinding,
+  computed,
   inject,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -65,6 +66,8 @@ import { LENS_NA_COLOR, type LensContext, heatmapModeDef, isLensAvailable } from
 import { SCORE_ONLY_LENSES, isPostureCellLens, isRegistryLens, registryCell, registryColor } from '../../models/lens-registry';
 import { type PostureCellVM, postureCellLabel } from '../../models/posture/posture-ramp';
 import { type ControlStop, controlStop } from '../../models/posture/lens-ramps';
+import { type MyMarkBucket, isThreatGap, myMarkBucket, threatGapThreshold } from '../../models/posture/gap';
+import { THREAT_WEIGHT_PROVIDER } from '../../models/posture/threat-weight';
 import { ThemeService } from '../../services/theme.service';
 import type { AttackDomain } from '../../services/data.service';
 
@@ -98,6 +101,13 @@ export const TACTIC_HEADER_COLORS: Record<string, string> = {
   'positioning': '#3b2f5c',
   'monetization': '#5a3a00',
 };
+
+/** True when two maps hold the same keys with the same values. */
+function sameEntries<K, V>(a: ReadonlyMap<K, V>, b: ReadonlyMap<K, V>): boolean {
+  if (a.size !== b.size) return false;
+  for (const [k, v] of a) if (b.get(k) !== v) return false;
+  return true;
+}
 
 @Component({
   selector: 'app-matrix',
@@ -316,6 +326,30 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
    * the minimap read the same scores they did.
    */
   private scoreCells: ReadonlyMap<string, number> = new Map();
+  /**
+   * The threat-weight seam (P2-17): the THREAT_WEIGHT_PROVIDER token only,
+   * never ThreatProfileService (Addendum note 2).
+   */
+  private readonly threatWeight = inject(THREAT_WEIGHT_PROVIDER);
+  /**
+   * The Threat gaps threshold: the 75th percentile of the profile's non-zero
+   * weights, at least 1 (models/posture/gap.ts). Tracks the provider's
+   * revision and parent set, so it recomputes when the profile changes.
+   */
+  readonly threatGapQ75 = computed(() => {
+    this.threatWeight.revision();
+    return threatGapThreshold(this.threatWeight.parents(), id => this.threatWeight.weight(id));
+  });
+  /** The Threat gaps overlay is on (FilterService.threatGapOverlay$, URL tgap=1). */
+  threatGapOverlay = false;
+  /**
+   * The My marks bucket per technique STIX id (P2-17), and the techniques the
+   * Threat gaps overlay outlines (empty while it is off). Rebuilt on every
+   * posture change, domain input and overlay toggle, never per check, and
+   * on every lens: neither touches the lens colour.
+   */
+  private myMarks: ReadonlyMap<string, MyMarkBucket> = new Map();
+  private threatGaps: ReadonlySet<string> = new Set();
 
   constructor(
     private filterService: FilterService,
@@ -485,6 +519,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     this.rebuildSearchMatches();
     // A new domain input: a registry lens (P2-13) re-projects its cells.
     this.refreshPostureCells(this.currentHeatmapMode);
+    this.refreshOverlays();
   }
 
   ngOnInit(): void {
@@ -499,9 +534,20 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
         // A registry lens (P2-13) repaints from the new states too, and impl=
         // (P2-14) re-filters on the new implementation views.
         const registry = this.refreshPostureCells(this.currentHeatmapMode);
+        // My marks and Threat gaps (P2-17) follow the new states on every lens.
+        const overlays = this.refreshOverlays();
         const resort = this.sortMode === 'coverage';
-        if (!resort && !this.dimUncovered && !registry && !this.implStatusFilter) return;
+        if (!resort && !this.dimUncovered && !registry && !overlays && !this.implStatusFilter) return;
         if (resort) this.rebuildSortedColumns();
+        this.cdr.markForCheck();
+      }),
+    );
+    // The Threat gaps overlay (P2-17): a session toggle, tgap=1 in the URL.
+    this.subs.add(
+      this.filterService.threatGapOverlay$.subscribe((on) => {
+        if (on === this.threatGapOverlay) return;
+        this.threatGapOverlay = on;
+        this.refreshOverlays();
         this.cdr.markForCheck();
       }),
     );
@@ -1730,6 +1776,40 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     const scores = new Map<string, number>();
     for (const t of this.domain.techniques) scores.set(t.attackId, registryCell(def, ctx, t).score);
     this.scoreCells = scores;
+  }
+
+  /**
+   * Rebuild the My marks buckets and, while the overlay is on, the Threat gaps
+   * set from PostureService (P2-17). True when either changed, so the caller
+   * knows the OnPush cells need a check; an unchanged rebuild asks for none.
+   */
+  private refreshOverlays(): boolean {
+    const marks = new Map<string, MyMarkBucket>();
+    const gaps = new Set<string>();
+    if (this.domain) {
+      const q75 = this.threatGapOverlay ? this.threatGapQ75() : 0;
+      for (const t of this.domain.techniques) {
+        const state = this.posture.stateFor(t);
+        const bucket = myMarkBucket(state);
+        if (bucket) marks.set(t.id, bucket);
+        if (this.threatGapOverlay && isThreatGap(state, q75)) gaps.add(t.id);
+      }
+    }
+    const changed = !sameEntries(marks, this.myMarks) || gaps.size !== this.threatGaps.size
+      || [...gaps].some(id => !this.threatGaps.has(id));
+    this.myMarks = marks;
+    this.threatGaps = gaps;
+    return changed;
+  }
+
+  /** The My marks input for `tech` (P2-17): its bucket, or null (none, known, or outside the domain). */
+  myMarkFor(tech: Technique): MyMarkBucket | null {
+    return this.myMarks.get(tech.id) ?? null;
+  }
+
+  /** The Threat gaps input for `tech` (P2-17): false while the overlay is off. */
+  threatGapFor(tech: Technique): boolean {
+    return this.threatGaps.has(tech.id);
   }
 
   /** The posture cell input for `tech` (P2-13): null on a legacy lens and for techniques outside the domain. */

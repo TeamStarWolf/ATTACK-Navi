@@ -6,6 +6,7 @@
 // pinned separately by src/app/testing/lens-snapshots.spec.ts; this file pins
 // what the matrix renders and how it reacts to the user.
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { signal as ngSignal } from '@angular/core';
 import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
@@ -16,6 +17,12 @@ import { DataService } from '../../services/data.service';
 import { FilterService } from '../../services/filter.service';
 import { HEATMAP_MODES, LENS_NA_COLOR, unavailableLenses } from '../../models/heatmap-modes';
 import { ValidationService } from '../../services/validation.service';
+import { ImplementationService } from '../../services/implementation.service';
+import { PostureService } from '../../services/posture.service';
+import { SettingsService } from '../../services/settings.service';
+import { THREAT_WEIGHT_PROVIDER } from '../../models/posture/threat-weight';
+import { isThreatGap } from '../../models/posture/gap';
+import SNAPSHOTS from '../../testing/__snapshots__/lens-snapshots.json';
 import {
   LENS_RUN_AGES, controlsProvider, lensPostureTodayProvider, lensRunTechniques, parseFixtureDomain, resetBrowserState,
   seedLensRuns, signal, signalStubProviders,
@@ -214,5 +221,172 @@ describe('MatrixComponent (rendered, Posture lens, stale cell)', () => {
     const { fresh } = lensRunTechniques(domain);
     expect(cellOf(fresh).getAttribute('aria-label')).toBe(`${fresh.attackId}: ${fresh.name}, Proven (your run)`);
     expect(tooltipOf(fresh)).toBe('Proven (your run)');
+  });
+});
+
+// P2-17 (E2.2-d): the My marks bar and the Threat gaps outline sit on top of
+// every lens and never change its colour. No controls seed here, so the only
+// marks are the ones each spec records.
+describe('MatrixComponent (rendered, My marks and Threat gaps, P2-17)', () => {
+  let domain: Domain;
+  let fixture: ComponentFixture<MatrixComponent>;
+  let filter: FilterService;
+  let host: HTMLElement;
+  /** A stand-in for the bound threat profile: the token's three members, all reactive. */
+  const revision = ngSignal(0);
+  const parents = ngSignal<ReadonlySet<string>>(new Set());
+  let weight: (id: string) => number = () => 0;
+
+  const build = (seed: () => void = () => undefined): void => {
+    seed();
+    fixture = TestBed.createComponent(MatrixComponent);
+    fixture.componentRef.setInput('domain', domain);
+    fixture.detectChanges();
+    host = fixture.nativeElement as HTMLElement;
+  };
+
+  beforeEach(() => {
+    resetBrowserState();
+    domain = parseFixtureDomain();
+    // The all-groups weight over every parent: the shape of the default profile.
+    weight = (id: string) => domain.groupsByTechnique.get(id)?.length ?? 0;
+    parents.set(new Set(domain.techniques.filter(t => !t.isSubtechnique).map(t => t.id)));
+    TestBed.configureTestingModule({
+      imports: [MatrixComponent],
+      providers: [
+        provideHttpClient(withXhr()),
+        provideHttpClientTesting(),
+        ...signalStubProviders(),
+        { provide: THREAT_WEIGHT_PROVIDER, useValue: { revision, parents, weight: (id: string) => weight(id) } },
+      ],
+    });
+    (TestBed.inject(DataService) as unknown as { domainSubject: { next(d: Domain): void } }).domainSubject.next(domain);
+    filter = TestBed.inject(FilterService);
+  });
+
+  afterEach(() => resetBrowserState());
+
+  /** The distinct techniques whose cells hold `selector` (a technique in several tactics has a cell in each). */
+  const idsWith = (selector: string): string[] =>
+    [...new Set([...host.querySelectorAll(selector)].map(e => e.closest('[data-tech-id]')!.getAttribute('data-tech-id')!))].sort();
+  /** How many rendered cells belong to `ids`. */
+  const cellCount = (ids: readonly string[]): number =>
+    [...host.querySelectorAll('[data-tech-id]')].filter(e => ids.includes(e.getAttribute('data-tech-id')!)).length;
+  const markedIds = (bucket?: string): string[] => idsWith(bucket ? `.my-mark[data-bucket="${bucket}"]` : '.my-mark');
+  const outlinedIds = (): string[] => idsWith('.threat-gap-outline');
+  const m1047 = () => domain.mitigations.find(m => m.attackId === 'M1047')!;
+  const implementM1047 = () => TestBed.inject(ImplementationService).setStatus(m1047().id, 'implemented');
+  const frequencySnapshot = (SNAPSHOTS as unknown as Record<string, Record<string, [unknown, string]>>)['frequency'];
+
+  it('[AC] My marks visible on the Prevalence lens: exactly the 13 cells of M1047 carry a covered bar, and getCellColor is unchanged', () => {
+    build(implementM1047);
+    filter.setHeatmapMode('frequency');
+    fixture.detectChanges();
+    expect(filter.getStateSnapshot().heatmapMode).toBe('frequency');
+    const expected = (domain.techniquesByMitigation.get(m1047().id) ?? []).map(t => t.id).sort();
+    expect(expected.length).toBe(13);   // §1.17: M1047 maps 13 fixture techniques (8 parents), under the D16 threshold of 15
+    expect(markedIds('covered')).toEqual(expected);
+    expect(markedIds()).toEqual(expected);
+    // Every cell of those 13 techniques (one per tactic column it sits in) has the bar; no other cell does.
+    expect(host.querySelectorAll('.my-mark[data-bucket="covered"]').length).toBe(cellCount(expected));
+    expect(host.querySelectorAll('.my-mark').length).toBe(cellCount(expected));
+    // The minimap colour is the committed Prevalence snapshot, technique for technique.
+    const matrix = fixture.componentInstance;
+    for (const t of domain.techniques) {
+      expect(matrix.getCellColor(t)).withContext(t.attackId).toBe(frequencySnapshot[t.attackId][1]);
+    }
+    const cellHost = host.querySelector(`[data-tech-id="${expected[0]}"] app-technique-cell`)!;
+    expect(cellHost.querySelector('.my-mark')!.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('follows the store: recording and clearing the mark adds and removes the bars', () => {
+    build();
+    expect(markedIds()).toEqual([]);
+    implementM1047();
+    TestBed.tick();
+    fixture.detectChanges();
+    expect(markedIds('covered').length).toBe(13);
+    TestBed.inject(ImplementationService).setStatus(m1047().id, null);
+    TestBed.tick();
+    fixture.detectChanges();
+    expect(markedIds()).toEqual([]);
+  });
+
+  it('draws the bar on every lens, and hides it when the My marks setting is off', () => {
+    build(implementM1047);
+    for (const mode of ['frequency', 'coverage', 'posture', 'kev', 'unified'] as const) {
+      filter.setHeatmapMode(mode);
+      fixture.detectChanges();
+      expect(markedIds('covered').length).withContext(mode).toBe(13);
+    }
+    const settings = TestBed.inject(SettingsService);
+    settings.update({ cellDisplay: { ...settings.current.cellDisplay, myMarks: false } });
+    fixture.detectChanges();
+    expect(markedIds()).toEqual([]);
+  });
+
+  it('fresh profile: no .my-mark and no threat-gap outline anywhere, on any lens', () => {
+    build();
+    for (const mode of ['frequency', 'posture', 'coverage', 'unified', 'status'] as const) {
+      filter.setHeatmapMode(mode);
+      fixture.detectChanges();
+      expect(host.querySelectorAll('.my-mark').length).withContext(mode).toBe(0);
+      expect(host.querySelectorAll('.threat-gap-outline').length).withContext(mode).toBe(0);
+    }
+  });
+
+  it('Threat gaps: outlines exactly the predicate set, never a marked M1047 cell, and the lens colour is unchanged', () => {
+    build(implementM1047);
+    filter.setHeatmapMode('frequency');
+    fixture.detectChanges();
+    const before = domain.techniques.map(t => fixture.componentInstance.getCellColor(t));
+    expect(outlinedIds()).toEqual([]);
+    filter.setThreatGapOverlay(true);
+    fixture.detectChanges();
+    const posture = TestBed.inject(PostureService);
+    const q75 = fixture.componentInstance.threatGapQ75();
+    const expected = domain.techniques.filter(t => isThreatGap(posture.stateFor(t), q75)).map(t => t.id).sort();
+    expect(expected.length).toBeGreaterThan(0);
+    expect(outlinedIds()).toEqual(expected);
+    expect(host.querySelectorAll('.threat-gap-outline').length).toBe(cellCount(expected));
+    const marked = new Set(markedIds());
+    expect(outlinedIds().filter(id => marked.has(id))).toEqual([]);
+    expect(domain.techniques.map(t => fixture.componentInstance.getCellColor(t))).toEqual(before);
+    const gap = host.querySelector(`[data-tech-id="${expected[0]}"] .cell`)!;
+    expect(gap.getAttribute('aria-label')).toMatch(/, threat gap$/);
+    filter.setThreatGapOverlay(false);
+    fixture.detectChanges();
+    expect(outlinedIds()).toEqual([]);
+  });
+
+  it('Threat gaps: a threat profile change moves q75 and the outlines', () => {
+    build();
+    filter.setThreatGapOverlay(true);
+    fixture.detectChanges();
+    const posture = TestBed.inject(PostureService);
+    const before = outlinedIds();
+    const q75Before = fixture.componentInstance.threatGapQ75();
+    // One-technique profile: its weight alone sets q75; every other weight is 0.
+    const parentIds = domain.techniques.filter(t => !t.isSubtechnique).map(t => t.id);
+    const target = parentIds[parentIds.length - 1];
+    weight = (id: string) => (id === target ? 50 : 0);
+    parents.set(new Set([target]));
+    revision.update(n => n + 1);
+    TestBed.tick();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.threatGapQ75()).toBe(50);
+    expect(q75Before).not.toBe(50);
+    const after = outlinedIds();
+    const expected = domain.techniques.filter(t => isThreatGap(posture.stateFor(t), 50)).map(t => t.id).sort();
+    expect(after).toEqual(expected);
+    expect(after).not.toEqual(before);
+  });
+
+  it('ICS: the exposure term is 0 for every technique (exposure is Enterprise only)', () => {
+    build();
+    const posture = TestBed.inject(PostureService);
+    expect([...posture.states().values()].some(st => st.exposureWeight > 0)).withContext('enterprise').toBeTrue();
+    (TestBed.inject(DataService) as unknown as { currentDomain$: { next(d: string): void } }).currentDomain$.next('ics');
+    expect([...posture.states().values()].every(st => st.exposureWeight === 0)).withContext('ics').toBeTrue();
   });
 });

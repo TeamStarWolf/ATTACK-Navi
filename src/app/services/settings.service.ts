@@ -50,6 +50,9 @@ export interface AppSettings {
     exposureBadge: boolean; softwareBadge: boolean; campaignBadge: boolean;
     metricBadge: boolean;   // the mode-gated d3fend/atomic/cri badge
     noteDot: boolean; annotationDot: boolean; watchIndicator: boolean;
+    // My marks (P2-17): the 3 px bar on every cell the owner has marked, whatever
+    // the lens. Deep-merged on load, so an older stored object gains it as true.
+    myMarks: boolean;
   };
 
   // Posture rules (Phase 2 design §6, §7; P2-05). D16: a mitigation mapped to
@@ -117,6 +120,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     exposureBadge: true, softwareBadge: true, campaignBadge: true,
     metricBadge: true,
     noteDot: true, annotationDot: true, watchIndicator: true,
+    myMarks: true,
   },
   posture: DEFAULT_POSTURE,
 };

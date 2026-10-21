@@ -28,6 +28,7 @@ import {
   type PostureCellVM, type PostureTheme, postureHasCheck, postureLensCell, posturePatterns,
 } from '../../models/posture/posture-ramp';
 import { provenLabBadge, statusStop, statusStopFill, statusStopLabel } from '../../models/posture/lens-ramps';
+import { type MyMarkBucket, myMarkFill } from '../../models/posture/gap';
 import { ThemeService } from '../../services/theme.service';
 
 @Component({
@@ -39,7 +40,7 @@ import { ThemeService } from '../../services/theme.service';
     <div
       class="cell"
       role="button"
-      [attr.aria-label]="technique.attackId + ': ' + technique.name + (posture ? ', ' + posture.label : '')"
+      [attr.aria-label]="technique.attackId + ': ' + technique.name + (posture ? ', ' + posture.label : '') + (threatGap ? ', threat gap' : '')"
       tabindex="0"
       [class.sub]="technique.isSubtechnique"
       [class.highlighted]="isHighlighted"
@@ -58,6 +59,12 @@ import { ThemeService } from '../../services/theme.service';
       (keydown.enter)="selected.emit(technique)"
       (keydown.space)="$event.preventDefault(); selected.emit(technique)"
     >
+      @if (myMark && showMyMarks) {
+        <span class="my-mark" aria-hidden="true" [attr.data-bucket]="myMark" [style.--my-mark-color]="myMarkColor"></span>
+      }
+      @if (threatGap) {
+        <span class="threat-gap-outline" aria-hidden="true"></span>
+      }
       @if (showTechniqueId) {
         <span class="id">{{ technique.attackId }}</span>
       }
@@ -179,6 +186,14 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
    * on every other lens. The matrix builds it once per posture change.
    */
   @Input() posture: PostureCellVM | null = null;
+  /**
+   * My marks (P2-17): the technique's bucket when the owner has a mark that
+   * holds, or 'contradicted'; null for none and known. Drawn as a 3 px left bar
+   * on every lens; the lens colour is untouched.
+   */
+  @Input() myMark: MyMarkBucket | null = null;
+  /** Threat gaps overlay (P2-17): draw the 2 px amber inset outline (models/posture/gap.ts). */
+  @Input() threatGap = false;
   @Input() implStatus: ImplStatus | null = null;
   /** The broad mitigation(s) the technique is implemented through only (D16, P2-14); null when full or none. */
   @Input() implPartialVia: string | null = null;
@@ -258,6 +273,8 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
   showNoteDot = true;
   showAnnotationDot = true;
   showWatchIndicator = true;
+  /** AppSettings.cellDisplay.myMarks (P2-17), default true. */
+  showMyMarks = true;
 
   @Output() selected = new EventEmitter<Technique>();
 
@@ -273,6 +290,8 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
   postureContradicted = false;
   postureNotReproducible = false;
   postureCheck = false;
+  /** The My marks bar's colour: the bucket's posture ramp token in the current theme. */
+  myMarkColor = '';
   showTooltip = false;
   tooltipX = 0;
   tooltipY = 0;
@@ -295,6 +314,7 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
         this.showNoteDot = cd.noteDot;
         this.showAnnotationDot = cd.annotationDot;
         this.showWatchIndicator = cd.watchIndicator;
+        this.showMyMarks = cd.myMarks !== false;
       }
       this.ngOnChanges();
       this.cdr.markForCheck();
@@ -406,6 +426,7 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
     this.postureContradicted = patterns.includes('contradicted');
     this.postureNotReproducible = patterns.includes('not-reproducible');
     this.postureCheck = registry && !!this.posture && postureHasCheck(this.posture.bucket);
+    this.myMarkColor = this.myMark ? myMarkFill(this.myMark, this.theme) : '';
   }
 
   @HostListener('mouseenter', ['$event'])

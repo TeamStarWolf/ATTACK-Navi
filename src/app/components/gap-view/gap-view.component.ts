@@ -166,7 +166,7 @@ interface GapGroup {
         <div class="gap-panel" (click)="$event.stopPropagation()">
           <header class="gap-header">
             <div>
-              <h2 class="gap-title">Mitigation Gaps</h2>
+              <h2 class="gap-title">Unmapped techniques</h2>
               <p class="gap-subtitle">{{ totalCount }} technique{{ totalCount !== 1 ? 's' : '' }} with no mapped mitigations</p>
             </div>
             <div class="gap-header-actions">
@@ -181,7 +181,7 @@ interface GapGroup {
 
           <div class="gap-body">
             @if (groups.length === 0) {
-              <div class="gap-empty">All techniques have at least one mitigation — great coverage!</div>
+              <div class="gap-empty">Every technique has at least one ATT&amp;CK mitigation mapped.</div>
             } @else {
               @for (group of groups; track group.tacticName) {
                 <div class="gap-group">
