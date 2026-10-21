@@ -73,6 +73,7 @@ describe('MatrixControlsComponent', () => {
             activeDataSource$: new BehaviorSubject(null),
             implStatusFilter$: new BehaviorSubject(null),
             heatmapMode$: new BehaviorSubject('coverage'),
+            ownerDataPresent: new BehaviorSubject(false),
             sortMode$: new BehaviorSubject('alpha'),
             dimUncovered$: new BehaviorSubject(false),
             threatGapOverlay$: new BehaviorSubject(false),
@@ -109,6 +110,28 @@ describe('MatrixControlsComponent', () => {
 
   it('is created', () => {
     expect(component).toBeTruthy();
+  });
+
+  // P2-19: the View button is highlighted when the lens is not the effective
+  // default (Posture with owner data, else Prevalence).
+  it('highlights the View button against the effective default lens (P2-19)', () => {
+    const filter = TestBed.inject(FilterService) as unknown as {
+      heatmapMode$: BehaviorSubject<HeatmapMode>; ownerDataPresent: BehaviorSubject<boolean>;
+    };
+    const active = (): boolean => {
+      fixture.detectChanges();
+      return (fixture.nativeElement.querySelector('.heatmap-btn') as HTMLElement).classList.contains('active');
+    };
+    filter.heatmapMode$.next('frequency');
+    expect(component.defaultHeatmapMode).toBe(DEFAULT_HEATMAP_MODE);
+    expect(active()).withContext('frequency, no owner data').toBeFalse();
+    filter.heatmapMode$.next('posture');
+    expect(active()).withContext('posture, no owner data').toBeTrue();
+    filter.ownerDataPresent.next(true);
+    expect(component.defaultHeatmapMode).toBe('posture');
+    expect(active()).withContext('posture, owner data').toBeFalse();
+    filter.heatmapMode$.next('frequency');
+    expect(active()).withContext('frequency, owner data').toBeTrue();
   });
 
   it('renders the technique search with the canonical placeholder', () => {

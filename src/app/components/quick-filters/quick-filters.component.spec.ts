@@ -23,6 +23,7 @@ describe('QuickFiltersComponent', () => {
             setHeatmapMode: jasmine.createSpy(),
             setImplStatusFilter: jasmine.createSpy(),
             setActivePanel: jasmine.createSpy(),
+            defaultLens: 'frequency',
         }},
         { provide: ImplementationService, useValue: { status$: new BehaviorSubject(new Map()) }},
         { provide: DataService, useValue: { domain$: new BehaviorSubject(null) }},
@@ -36,6 +37,17 @@ describe('QuickFiltersComponent', () => {
 
   it('is created', () => {
     expect(component).toBeTruthy();
+  });
+
+  // P2-19: clearing a preset returns to the effective default lens.
+  it('clearPreset returns to the effective default lens (posture with owner data)', () => {
+    const filter = TestBed.inject(FilterService) as unknown as { defaultLens: string; setHeatmapMode: jasmine.Spy };
+    component.clearPreset();
+    expect(filter.setHeatmapMode).toHaveBeenCalledWith('frequency');
+    filter.defaultLens = 'posture';
+    component.clearPreset();
+    expect(filter.setHeatmapMode).toHaveBeenCalledWith('posture');
+    expect(component.activePreset).toBeNull();
   });
 
   // Post-Phase-1 QA (R9c repair): the 'detection' heatmap this preset switches

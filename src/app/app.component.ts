@@ -2,11 +2,13 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Component, OnInit, ViewChild, ChangeDetectionStrategy, ChangeDetectorRef, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { take } from 'rxjs';
 
 import { NavigationEnd, NavigationStart, Router, RouterOutlet } from '@angular/router';
 import { DataService, AttackDomain } from './services/data.service';
 import { Domain } from './models/domain';
-import { FilterService } from './services/filter.service';
+import { DEFAULT_HEATMAP_MODE, FilterService } from './services/filter.service';
+import { OwnerDataService } from './services/owner-data.service';
 import { ViewpointService } from './services/viewpoint.service';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
 import { ToolbarComponent } from './components/toolbar/toolbar.component';
@@ -52,6 +54,7 @@ export class AppComponent implements OnInit {
   private readonly router = inject(Router);
   private hotkeys = inject(HotkeysService);
   private viewpoint = inject(ViewpointService);
+  private readonly ownerData = inject(OwnerDataService);
   protected helpOverlay = inject(HelpOverlayService);
   /** The open technique drawer takes its width from the workspace (above 768 px). */
   protected readonly drawer = inject(DrawerWidthService);
@@ -84,12 +87,37 @@ export class AppComponent implements OnInit {
     this.filterService.urlNotice$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((message) => this.showToastMessage(message, 6000));
+    // The URL writer needs D4 to know whether heat=frequency may be left out
+    // (P2-19). The first emission is synchronous, so it is set before the writer starts.
+    this.ownerData.hasOwnerData$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((has) => this.filterService.ownerDataPresent.next(has));
     // Restore the saved viewpoint's lens before the URL writer starts, and let
     // it defer to an explicit `heat` deep link (handled inside restore()).
     this.viewpoint.restore();
+    this.applyDefaultLensRule();
     this.urlStateService.init();
     this.themeService.init();
     this.hotkeys.init();
+  }
+
+  /**
+   * The default-lens rule (Phase 2 design §3 P2-19, E2.4; D4, §10.4 items 3
+   * and 4). Runs once, at boot, after viewpoint.restore() and before the URL
+   * reader. Precedence: an explicit heat= (the reader applies it after this),
+   * then a specialist viewpoint's lens, then D4's Posture, then frequency. It
+   * reads OwnerDataService.defaultLens$'s synchronous first emission, so it
+   * never waits for a domain (no race, R11). Owner data that first appears
+   * later in the session changes the default on the next boot only: the lens
+   * on screen is never switched under the user.
+   */
+  private applyDefaultLensRule(): void {
+    if (this.viewpoint.urlHasHeatParam()) return;
+    const stored = this.viewpoint.storedDefaultLens();
+    if (stored !== null && stored !== DEFAULT_HEATMAP_MODE) return;
+    let lens = DEFAULT_HEATMAP_MODE;
+    this.ownerData.defaultLens$.pipe(take(1)).subscribe((l) => (lens = l));
+    if (lens !== DEFAULT_HEATMAP_MODE) this.filterService.setHeatmapMode(lens);
   }
 
   /**

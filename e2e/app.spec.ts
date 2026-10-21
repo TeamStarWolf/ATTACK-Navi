@@ -2,6 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { readFileSync } from 'node:fs';
 import { test, expect, Browser, BrowserContext, Page } from '@playwright/test';
+import { openWorkspace } from './fixtures/workspace';
 
 const BASE = 'http://localhost:4200';
 
@@ -762,5 +763,28 @@ test.describe('shell: resizable drawer and collapsible rail', () => {
     await expect(page.locator('.rail-collapse-btn')).toBeHidden();
     await expect(page.locator('#app-nav-rail .nav-list .nav-label').first()).toBeVisible();
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/mobile.png` });
+  });
+});
+
+// P2-19 (E2.4): the default-lens rule. A profile with one recorded validation
+// run (D4) opens #/matrix on Posture, and the link names it. The fresh-profile
+// half (Prevalence, no heat=) is journey 4 in journeys.spec.ts, unchanged.
+test.describe('E2.4: default-lens rule', () => {
+  const oneRun = JSON.stringify({
+    schema: 2, tombstones: [],
+    records: [{
+      id: 'e2e-p2-19-run', techniqueId: 'T1059.001', runDate: '2026-10-01T00:00:00.000Z', status: 'passed', attackResult: 'executed',
+      source: 'manual', domain: null, attackVersion: 'unknown', createdAt: '2026-10-01T00:00:00.000Z', updatedAt: '2026-10-01T00:00:00.000Z',
+      techniqueRef: null, outcomes: [], proofScope: 'own-run', statusFromSource: false,
+    }],
+  });
+
+  test('[AC] one recorded run switches the default to Posture: the View button shows Posture and the URL has heat=posture', async ({ page }) => {
+    await openWorkspace(page, { seed: { 'navi.v2.validation-runs': oneRun } });
+    await page.goto(BASE + '/#/matrix');
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+    await expect(page.locator('.heatmap-btn')).toContainText('Posture');
+    await expect(page).toHaveURL(/#\/matrix\?(.*&)?heat=posture(&|$)/, { timeout: 5000 });
+    await expect(page.locator('.first-glance-banner')).toHaveCount(0);
   });
 });

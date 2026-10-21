@@ -1,13 +1,13 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { TestBed } from '@angular/core/testing';
+import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
 import { AttackDomain, DataService } from './data.service';
 import { AttackIdResolverService } from './attack-id-resolver.service';
 import { Domain } from '../models/domain';
 import { Technique } from '../models/technique';
 import {
-  DEFAULT_HEATMAP_MODE, FilterService, domainHintForAttackId, isAttackDomain, techNotInDomainMessage,
+  DEFAULT_HEATMAP_MODE, FilterService, domainHintForAttackId, effectiveDefaultLens, isAttackDomain, techNotInDomainMessage,
   URL_TECH_ID_PATTERN, normalizeUrlTechId,
 } from './filter.service';
 
@@ -44,6 +44,55 @@ describe('FilterService', () => {
       expect(service.serializeUrlState()['heat']).toBe('unified');
       service.setHeatmapMode('frequency');
       expect(service.serializeUrlState()['heat']).toBeUndefined();
+    });
+  });
+
+  // P2-19 (E2.4): the default-lens rule. DEFAULT_HEATMAP_MODE stays
+  // 'frequency'; owner data (D4) makes Posture the effective default.
+  describe('default-lens rule (P2-19)', () => {
+    it('effectiveDefaultLens is posture with owner data, else frequency; DEFAULT_HEATMAP_MODE stays frequency', () => {
+      expect(DEFAULT_HEATMAP_MODE).toBe('frequency');
+      expect(effectiveDefaultLens(false)).toBe('frequency');
+      expect(effectiveDefaultLens(true)).toBe('posture');
+    });
+
+    it('ownerDataPresent starts false and picks defaultLens', () => {
+      expect(service.ownerDataPresent.value).toBeFalse();
+      expect(service.defaultLens).toBe('frequency');
+      service.ownerDataPresent.next(true);
+      expect(service.defaultLens).toBe('posture');
+    });
+
+    it('heat is left out only for frequency with no owner data and no tech; with owner data every lens is written, posture included', () => {
+      expect(service.serializeUrlState()['heat']).toBeUndefined();
+      service.ownerDataPresent.next(true);
+      expect(service.serializeUrlState()['heat']).toBe('frequency');
+      service.setHeatmapMode('posture');
+      expect(service.serializeUrlState()['heat']).toBe('posture');
+      service.ownerDataPresent.next(false);
+      expect(service.serializeUrlState()['heat']).toBe('posture');
+    });
+
+    it('ownerDataPresent joins urlRelevantState$', fakeAsync(() => {
+      let emissions = 0;
+      const sub = service.urlRelevantState$.subscribe(() => emissions++);
+      tick(300);
+      expect(emissions).toBe(1);
+      service.ownerDataPresent.next(true);
+      tick(300);
+      expect(emissions).toBe(2);
+      sub.unsubscribe();
+    }));
+
+    it('clearAll returns to the effective default: posture with owner data, frequency without', () => {
+      service.ownerDataPresent.next(true);
+      service.setHeatmapMode('kev');
+      service.clearAll();
+      expect(service.getStateSnapshot().heatmapMode).toBe('posture');
+      service.ownerDataPresent.next(false);
+      service.setHeatmapMode('kev');
+      service.clearAll();
+      expect(service.getStateSnapshot().heatmapMode).toBe('frequency');
     });
   });
 
