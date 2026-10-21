@@ -5,9 +5,10 @@
 // TechniqueCellComponent paints for heat=unified (Reference depth) on every
 // fixture technique, with colorblindSafe off and on. The lens snapshots
 // (lens-snapshots.json) hold only the matrix/minimap copy (getCellColor), which
-// has no colour-blind branch; the cell's computeUnifiedColor switches to
-// viridis under colorblindSafe. P2-15 moves unified into the LensRegistry and
-// must keep both columns byte-identical.
+// has no colour-blind branch; the cell's computeUnifiedColor switched to
+// viridis under colorblindSafe. P2-15 moved unified into the LensRegistry (the
+// cell now paints through the unified def's `color`, the score is its
+// `project`) and keeps both columns byte-identical.
 //
 // Pinned in __snapshots__/legacy-baseline.json, section unifiedCellColour, as
 // { attackId: [score, colour off, colour on] }, on the fresh profile; the seeded
@@ -23,6 +24,8 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 
 import BASELINE from './__snapshots__/legacy-baseline.json';
 import { MatrixComponent } from '../components/matrix/matrix.component';
+import { heatmapModeDef } from '../models/heatmap-modes';
+import { registryCell } from '../models/lens-registry';
 import { TechniqueCellComponent } from '../components/technique-cell/technique-cell.component';
 import { Domain } from '../models/domain';
 import { DataService } from '../services/data.service';
@@ -76,7 +79,7 @@ for (const profile of ['fresh', 'seeded'] as const) {
       const out: Colours = {};
       const techs = [...domain.techniques].sort((a, b) => a.attackId.localeCompare(b.attackId));
       for (const t of techs) {
-        const score = matrix.getUnifiedScore(t);
+        const score = registryCell(heatmapModeDef('unified')!, matrix.lensContext(), t).score;
         const cell = TestBed.createComponent(TechniqueCellComponent);
         cell.componentRef.setInput('technique', t);
         cell.componentRef.setInput('heatmapMode', 'unified');

@@ -57,10 +57,10 @@ import { M365ControlsService } from '../../services/m365-controls.service';
 import { Cve2CapecService } from '../../services/cve2capec.service';
 import { PocExploitService } from '../../services/poc-exploit.service';
 import { EnrichmentService } from '../../services/enrichment.service';
-import { type ReferenceDepthInputs, referenceDepthScore } from '../../models/reference-depth';
+import type { ReferenceDepthInputs } from '../../models/reference-depth';
 import { PostureService } from '../../services/posture.service';
 import { LENS_NA_COLOR, type LensContext, heatmapModeDef, isLensAvailable } from '../../models/heatmap-modes';
-import { isRegistryLens, registryCell, registryColor } from '../../models/lens-registry';
+import { SCORE_ONLY_LENSES, isPostureCellLens, isRegistryLens, registryCell, registryColor } from '../../models/lens-registry';
 import { type PostureCellVM, postureCellLabel } from '../../models/posture/posture-ramp';
 import { type ControlStop, controlStop } from '../../models/posture/lens-ramps';
 import { ThemeService } from '../../services/theme.service';
@@ -206,8 +206,6 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
   // Detection coverage scores (CAR + Atomic + D3FEND combined): attackId -> weighted score
   detectionScoreMap = new Map<string, number>();
   maxDetectionScore = 1;
-  // Reference depth (heat=unified): attackId -> 0–100 defensive-reference composite
-  unifiedScoreMap = new Map<string, number>();
   // Sigma rule scores: attackId -> rule count
   sigmaScoreMap = new Map<string, number>();
   maxSigmaScore = 1;
@@ -306,6 +304,14 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
    * Rebuilt on a lens change and on every posture change, never per check.
    */
   private postureCells: ReadonlyMap<string, PostureCellVM> = new Map();
+  /**
+   * The projected score per technique ATT&CK id while a score-only registry
+   * lens is active (P2-15: Reference depth, SCORE_ONLY_LENSES); empty on every
+   * other lens. Rebuilt from the lens's own `project` on each lens emission,
+   * the moments the deleted inline unifiedScoreMap was filled, so the cell and
+   * the minimap read the same scores they did.
+   */
+  private scoreCells: ReadonlyMap<string, number> = new Map();
 
   constructor(
     private filterService: FilterService,
@@ -583,6 +589,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
       this.filterService.heatmapMode$.subscribe((mode) => {
         this.currentHeatmapMode = mode;
         this.refreshPostureCells(mode);
+        this.refreshScoreCells(mode);
         // KEV is not a Reference depth input, but the default lens still loads
         // it: the cells' KEV badge and the risk sort read the same scores.
         if (mode === 'kev' || mode === 'unified') {
@@ -731,6 +738,10 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
           }
           this.maxCriScore = this.criScoreMap.size > 0 ? Math.max(...this.criScoreMap.values()) : 1;
         } else if (mode === 'unified' && this.domain) {
+          // Reset only (P2-15): Reference depth is scored by its registry
+          // `project` (refreshScoreCells above), but entering it still resets
+          // these four score maps exactly as before, so no other lens sees a
+          // stale map.
           this.softwareScores = new Map();
           this.maxSoftware = 1;
           this.campaignScores = new Map();
@@ -738,16 +749,6 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
           this.riskScores = new Map();
           this.maxRisk = 1;
           this.sigmaScoreMap = new Map();
-          this.unifiedScoreMap = new Map();
-          // Reference depth (Known rung): defensive reference inputs only -
-          // mitigations, detection content (Sigma + CAR), CTID control mappings,
-          // D3FEND and Atomic. The threat-intel and KEV terms the old 'Unified
-          // Coverage' composite mixed in are gone; the Threat lenses show them.
-          // Weights and saturation points: models/reference-depth.ts.
-          for (const tech of this.domain.techniques) {
-            const total = referenceDepthScore(this.referenceDepthInputs(tech));
-            this.unifiedScoreMap.set(tech.attackId, total);
-          }
         } else if (mode === 'library' && this.domain) {
           // A user-imported layer takes precedence: color by its own per-technique
           // scores/gradient (picking a curated layer from the View menu unloads it,
@@ -1553,8 +1554,9 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     return this.detectionScoreMap.get(t.attackId) ?? 0;
   }
 
-  getUnifiedScore(t: Technique): number {
-    return this.unifiedScoreMap.get(t.attackId) ?? 0;
+  /** The score of a score-only registry lens (P2-15: Reference depth) for `t`; 0 on every other lens. */
+  lensScore(t: Technique): number {
+    return this.scoreCells.get(t.attackId) ?? 0;
   }
 
   getSigmaScore(t: Technique): number {
@@ -1642,14 +1644,6 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     return colors[0];
   }
 
-  private getThresholdHeatColor(score: number, zero: string, stops: Array<{ limit: number; color: string }>): string {
-    if (score === 0) return zero;
-    for (const stop of stops) {
-      if (score <= stop.limit) return stop.color;
-    }
-    return stops[stops.length - 1]?.color ?? zero;
-  }
-
   /** The saturating Known counts Reference depth scores (reference-depth.ts), also LensContext.knownCounts. */
   private referenceDepthInputs(tech: Technique): ReferenceDepthInputs {
     return {
@@ -1661,8 +1655,12 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     };
   }
 
-  /** What a registry-hosted lens reads (§2.5). The minimap passes colorblindSafe false, as it does for every lens today. */
-  private lensContext(): LensContext {
+  /**
+   * What a registry-hosted lens reads (§2.5). The minimap passes colorblindSafe
+   * false, as it does for every lens today. Public so specs can project a
+   * technique as the matrix does: registryCell(def, matrix.lensContext(), t).
+   */
+  lensContext(): LensContext {
     return {
       posture: (t) => this.posture.stateFor(t),
       known: (t) => this.enrichment.referenceDefenseSignals(t, this.domain),
@@ -1679,9 +1677,9 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
    */
   private refreshPostureCells(mode: HeatmapMode): boolean {
     const def = heatmapModeDef(mode);
-    if (!isRegistryLens(def) || !this.domain) {
+    if (!isPostureCellLens(def) || !this.domain) {
       if (this.postureCells.size > 0) this.postureCells = new Map();
-      return isRegistryLens(def);
+      return isPostureCellLens(def);
     }
     const ctx = this.lensContext();
     const windows = this.posture.decayDays();
@@ -1702,6 +1700,24 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     return true;
   }
 
+  /**
+   * Rebuild the per-technique scores when `mode` is a score-only registry lens
+   * (P2-15: Reference depth, defensive reference inputs only: mitigations,
+   * detection content, CTID control mappings, D3FEND and Atomic; weights in
+   * models/reference-depth.ts), or drop them on any other lens.
+   */
+  private refreshScoreCells(mode: HeatmapMode): void {
+    const def = heatmapModeDef(mode);
+    if (!isRegistryLens(def) || !SCORE_ONLY_LENSES.has(def.value) || !this.domain) {
+      if (this.scoreCells.size > 0) this.scoreCells = new Map();
+      return;
+    }
+    const ctx = this.lensContext();
+    const scores = new Map<string, number>();
+    for (const t of this.domain.techniques) scores.set(t.attackId, registryCell(def, ctx, t).score);
+    this.scoreCells = scores;
+  }
+
   /** The posture cell input for `tech` (P2-13): null on a legacy lens and for techniques outside the domain. */
   postureCell(tech: Technique): PostureCellVM | null {
     return this.postureCells.get(tech.id) ?? null;
@@ -1712,8 +1728,10 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     const def = heatmapModeDef(this.heatmapMode);
     if (def?.color) {
       // Registry-hosted lens (P2-13): the same colour function the cell and the legend call.
+      // A score-only lens (P2-15) colours the score the cell is given, from scoreCells.
       const ctx = this.lensContext();
-      return registryColor(def, registryCell(def, ctx, tech), ctx);
+      const cell = SCORE_ONLY_LENSES.has(def.value) ? { score: this.lensScore(tech) } : registryCell(def, ctx, tech);
+      return registryColor(def, cell, ctx);
     }
     switch (this.heatmapMode) {
       case 'coverage': {
@@ -1747,15 +1765,6 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
         return this.getRelativeHeatColor(this.getDetectionScore(tech), this.maxDetectionScore, '#1a2332', ['#0c2d2d', '#0d5e5e', '#0e8a7a', '#10b981']);
       case 'cri':
         return this.getRelativeHeatColor(this.getCriScore(tech), this.maxCriScore, '#1a0a2e', ['#ce93d8', '#ab47bc', '#8e24aa', '#6a1b9a']);
-      case 'unified':
-        return this.getThresholdHeatColor(this.getUnifiedScore(tech), '#0e1b30', [
-          { limit: 15, color: '#0e1b30' },
-          { limit: 30, color: '#143a5c' },
-          { limit: 50, color: '#1f6aa8' },
-          { limit: 65, color: '#2f95d8' },
-          { limit: 80, color: '#38bdf8' },
-          { limit: Number.POSITIVE_INFINITY, color: '#a78bfa' },
-        ]);
       case 'library':
         return this.getLibraryColorOverride(tech)
           ?? this.getRelativeHeatColor(this.getLibraryScore(tech), this.maxLibraryScore, '#12122a', ['#1e3a5f', '#2f6ab0', '#38bdf8', '#a78bfa']);

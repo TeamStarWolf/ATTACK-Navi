@@ -23,7 +23,7 @@ import { ImplStatus } from '../../services/implementation.service';
 import { TechniqueAnnotation } from '../../services/annotation.service';
 import { SettingsService } from '../../services/settings.service';
 import { LENS_NA_COLOR, heatmapModeDef } from '../../models/heatmap-modes';
-import { registryColor } from '../../models/lens-registry';
+import { SCORE_ONLY_LENSES, registryColor } from '../../models/lens-registry';
 import {
   type PostureCellVM, type PostureTheme, postureHasCheck, postureLensCell, posturePatterns,
 } from '../../models/posture/posture-ramp';
@@ -206,6 +206,7 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
   @Input() maxFrequencyScore = 1;
   @Input() criScore = 0;
   @Input() maxCriScore = 1;
+  /** Reference depth (heat=unified), 0-100: the unified lens's registry projection (P2-15), coloured by its `color`. */
   @Input() unifiedScore = 0;
   @Input() sigmaScore = 0;
   @Input() maxSigmaScore = 1;
@@ -320,7 +321,9 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
       this.bgColor = LENS_NA_COLOR;
     } else if (def?.color) {
       // Registry-hosted lens (P2-13): the one colour function the minimap and legend also call.
-      this.bgColor = registryColor(def, postureLensCell(this.posture), {
+      // A score-only lens (P2-15: Reference depth) colours its score input; it has no posture.
+      const cell = SCORE_ONLY_LENSES.has(def.value) ? { score: this.unifiedScore } : postureLensCell(this.posture);
+      this.bgColor = registryColor(def, cell, {
         theme: this.theme, colorblindSafe: this.settingsService.current.colorblindSafe,
       });
     } else if (this.heatmapMode === 'exposure') {
@@ -352,8 +355,6 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
     } else if (this.heatmapMode === 'library') {
       this.bgColor = this.libraryColorOverride
         ?? this.computeRelativeColor(this.libraryScore, this.maxLibraryScore, '#12122a', ['#1e3a5f', '#2f6ab0', '#38bdf8', '#a78bfa']);
-    } else if (this.heatmapMode === 'unified') {
-      this.bgColor = this.computeUnifiedColor(this.unifiedScore);
     } else if (this.heatmapMode === 'sigma') {
       this.bgColor = this.computeRelativeColor(this.sigmaScore, this.maxSigmaScore, '#0a1a1a', ['#0d4a3a', '#0d7a5e', '#0ea87a', '#10b981']);
     } else if (this.heatmapMode === 'nist') {
@@ -478,27 +479,5 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
     if (epss < 0.05) return ramp[1];
     if (epss < 0.20) return ramp[2];
     return ramp[3];
-  }
-
-  /** Reference depth (heat=unified): 0–100 defensive-reference composite. Low = little mapped, high = deep. */
-  computeUnifiedColor(score: number): string {
-    if (this.settingsService.current.colorblindSafe) {
-      // 6-stop viridis: monotonic luminance keeps low→high readable.
-      if (score <= 15) return '#440154';
-      if (score <= 30) return '#414487';
-      if (score <= 50) return '#2a788e';
-      if (score <= 65) return '#22a884';
-      if (score <= 80) return '#7ad151';
-      return '#fde725';
-    }
-    // ATT&CK-brand ramp: dim navy (little reference mapped) -> sky -> violet
-    // (deepest reference). Higher score = more reference material = brighter;
-    // it is a Known-rung number, not a statement about deployed defense.
-    if (score <= 15) return '#0e1b30';
-    if (score <= 30) return '#143a5c';
-    if (score <= 50) return '#1f6aa8';
-    if (score <= 65) return '#2f95d8';
-    if (score <= 80) return '#38bdf8';
-    return '#a78bfa';
   }
 }

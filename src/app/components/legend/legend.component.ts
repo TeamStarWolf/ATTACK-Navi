@@ -7,19 +7,18 @@ import { FilterService, HeatmapMode } from '../../services/filter.service';
 import { SettingsService } from '../../services/settings.service';
 import { AttackDomain, DataService } from '../../services/data.service';
 import { SAFE_SEQ } from '../../models/safe-palette';
-import { HEATMAP_MODES, HeatmapModeDef, LensAvailability, LensRampStop, heatmapModeDef, lensAvailability, lensRungBadge } from '../../models/heatmap-modes';
+import {
+  HEATMAP_MODES, HeatmapModeDef, LensAvailability, LensRampStop, REFERENCE_DEPTH_STOP_SCORES, heatmapModeDef, lensAvailability, lensRungBadge,
+} from '../../models/heatmap-modes';
 import { LensCardService } from '../../services/lens-card.service';
 import { LoadedBundleInfo, domainLabel, lensSourceVintage } from '../../models/lens-sources';
-import { NO_OWNER_DATA_LINE, OWNER_DATA_LENSES, OWNER_WORD_LENSES, isRegistryLens, registryColor } from '../../models/lens-registry';
+import { NO_OWNER_DATA_LINE, OWNER_DATA_LENSES, OWNER_WORD_LENSES, isPostureCellLens, registryColor } from '../../models/lens-registry';
 import { DEFAULT_HEATMAP_MODE } from '../../services/filter.service';
 import { type PostureLegendStop, type PostureTheme, postureLegendStops } from '../../models/posture/posture-ramp';
 import type { LensLegendStop } from '../../models/posture/lens-ramps';
 import type { PostureBucket } from '../../models/posture/posture.types';
 import { EXPIRING_SOON_DAYS, PostureService } from '../../services/posture.service';
 import { ThemeService } from '../../services/theme.service';
-
-/** The unified lens's colorblind-safe 6-stop viridis, mirroring technique-cell. */
-const SAFE_UNIFIED = ['#440154', '#414487', '#2a788e', '#22a884', '#7ad151', '#fde725'];
 
 /** A registry lens's legend stop: the Posture lens's, or a P2-14 lens's (which says whether its words are owner words). */
 type RegistryLegendStop = PostureLegendStop | LensLegendStop;
@@ -39,7 +38,8 @@ const SCALE_NOTE: Partial<Record<HeatmapModeDef['ramp']['scale'], string>> = {
  * definition card.
  *
  * A registry-hosted lens (P2-13, P2-14) shows its own stops instead,
- * coloured by the lens's own colour function. Stop labels that name Covered
+ * coloured by the lens's own colour function; Reference depth (P2-15) keeps
+ * its band stops and fills them through its colour function. Stop labels that name Covered
  * or Proven render only under hasOwnerWords() (§1.3); on the Posture, Proven
  * and Covered lenses a fresh profile sees the ramp and 'No data of yours
  * recorded'.
@@ -170,6 +170,13 @@ export class LegendComponent implements OnInit, OnDestroy {
       const colors = this.settingsService.getCoverageColors();
       return def.ramp.stops.map((s, i) => ({ ...s, color: colors[Math.min(i, colors.length - 1)] ?? s.color }));
     }
+    if (def.value === 'unified') {
+      // Reference depth is a score-only registry lens (P2-15): each band's stop
+      // is filled by the lens's own colour function, the one the cell and the
+      // minimap call, which turns to viridis under colorblind-safe itself.
+      const ctx = { theme: this.themeService.isLight ? 'light' as const : 'dark' as const, colorblindSafe: this.settingsService.current.colorblindSafe };
+      return def.ramp.stops.map((s, i) => ({ ...s, color: registryColor(def, { score: REFERENCE_DEPTH_STOP_SCORES[i] }, ctx) }));
+    }
     if (!this.settingsService.current.colorblindSafe) return def.ramp.stops;
     return this.toSafeStops(def);
   }
@@ -186,9 +193,6 @@ export class LegendComponent implements OnInit, OnDestroy {
       // Okabe-Ito blue / reddish purple, mirroring the cell renderer.
       const safe = ['#0072b2', '#cc79a7'];
       return base.map((s, i) => ({ ...s, color: safe[i] ?? s.color }));
-    }
-    if (def.value === 'unified') {
-      return base.map((s, i) => ({ ...s, color: SAFE_UNIFIED[Math.min(i, SAFE_UNIFIED.length - 1)] }));
     }
     // Relative and EPSS bands: keep the zero stop, map the rest onto the viridis ramp.
     const steps = base.length - 1;
@@ -210,11 +214,13 @@ export class LegendComponent implements OnInit, OnDestroy {
 
   /**
    * The stops of a registry-hosted lens (P2-13, P2-14), each filled through
-   * the lens's own colour function in the current theme; null on a legacy lens.
+   * the lens's own colour function in the current theme; null on a legacy lens
+   * and on Reference depth (P2-15), a score-only registry lens whose legend
+   * keeps its ramp's band stops (see stops).
    */
   get postureStops(): RegistryLegendStop[] | null {
     const def = this.def;
-    if (!isRegistryLens(def)) return null;
+    if (!isPostureCellLens(def)) return null;
     const theme: PostureTheme = this.themeService.isLight ? 'light' : 'dark';
     if (def.legend) return [...def.legend(theme)];
     const ctx = { theme, colorblindSafe: this.settingsService.current.colorblindSafe };

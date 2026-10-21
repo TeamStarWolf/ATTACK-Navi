@@ -7,7 +7,8 @@ import type { HeatmapMode } from '../services/filter.service';
 import type { AttackDomain } from '../services/data.service';
 import type { ReferenceDefenseSignals } from '../services/enrichment.service';
 import type { Technique } from './technique';
-import type { ReferenceDepthInputs } from './reference-depth';
+// reference-depth has no imports of its own, so this runtime import is cycle-free.
+import { type ReferenceDepthInputs, referenceDepthScore } from './reference-depth';
 import type { PostureBucket, PostureState, PostureSubState, ProofScope } from './posture/posture.types';
 import { LENS_SOURCES, domainLabel, type LensSourceId } from './lens-sources';
 // Registry-hosted lenses (P2-13). posture-vocabulary and posture-ramp import
@@ -143,6 +144,43 @@ function stops(scale: LensScale, pairs: ReadonlyArray<readonly [string, string]>
   return { scale, stops: pairs.map(([color, label]) => ({ color, label })) };
 }
 
+// ─── Reference depth (heat=unified) in the registry (P2-15, E2.2-c) ────────
+//
+// The six bands of the 0-100 Reference depth score. Each band is an inclusive
+// upper bound, the ATT&CK-brand colour and the colorblind-safe 6-stop viridis
+// colour (monotonic luminance keeps low to high readable). They are the values
+// TechniqueCellComponent.computeUnifiedColor painted (both branches) and that
+// the minimap's threshold copy in MatrixComponent.getCellColor painted (brand
+// colours only) before P2-15; both now call referenceDepthColor.
+const REFERENCE_DEPTH_STOPS: ReadonlyArray<{ readonly max: number; readonly color: string; readonly safe: string; readonly label: string }> = [
+  { max: 15, color: '#0e1b30', safe: '#440154', label: '0-15' },
+  { max: 30, color: '#143a5c', safe: '#414487', label: '16-30' },
+  { max: 50, color: '#1f6aa8', safe: '#2a788e', label: '31-50' },
+  { max: 65, color: '#2f95d8', safe: '#22a884', label: '51-65' },
+  { max: 80, color: '#38bdf8', safe: '#7ad151', label: '66-80' },
+  { max: 100, color: '#a78bfa', safe: '#fde725', label: '81-100' },
+];
+
+/** One score inside each Reference depth band, in ramp order (each band's upper bound): the legend colours its stops with these. */
+export const REFERENCE_DEPTH_STOP_SCORES: readonly number[] = REFERENCE_DEPTH_STOPS.map((b) => b.max);
+
+/** The Reference depth lens's projection (§2.5 `project`): the 0-100 score of the technique's saturating Known counts. */
+export function referenceDepthProject(ctx: Pick<LensContext, 'knownCounts'>, t: Technique): LensCell {
+  return { score: referenceDepthScore(ctx.knownCounts(t)) };
+}
+
+/**
+ * The Reference depth lens's colour (§2.5 `color`): the band the score falls
+ * in, viridis when `colorblindSafe` is on. Low = little reference material
+ * mapped, high = deep; a Known-rung number, not a statement about deployed
+ * defence. The theme does not change it. A score above 100 or not a number
+ * takes the top band, as both pre-registry copies did.
+ */
+export function referenceDepthColor(cell: LensCell, ctx: Pick<LensContext, 'theme' | 'colorblindSafe'>): string {
+  const band = REFERENCE_DEPTH_STOPS.find((b) => cell.score <= b.max) ?? REFERENCE_DEPTH_STOPS[REFERENCE_DEPTH_STOPS.length - 1];
+  return ctx.colorblindSafe ? band.safe : band.color;
+}
+
 const ALL_ATTACK: readonly AttackDomain[] = ['enterprise', 'ics', 'mobile'];
 const ENTERPRISE: readonly AttackDomain[] = ['enterprise'];
 const ALL_DOMAINS: readonly AttackDomain[] = ['enterprise', 'ics', 'mobile', 'f3'];
@@ -189,7 +227,8 @@ export const HEATMAP_MODES: readonly HeatmapModeDef[] = [
     domains: ENTERPRISE,
     sources: ['attack-bundle', 'sigmahq', 'car', 'car-seed', 'ctid-nist-800-53', 'ctid-cri', 'cis-controls', 'ctid-csa-ccm', 'ctid-m365', 'd3fend-seed', 'atomic'],
     zeroMeaning: 'A low band means little reference material is mapped. Not known to us, not safe.',
-    ramp: stops('threshold', [['#0e1b30', '0-15'], ['#143a5c', '16-30'], ['#1f6aa8', '31-50'], ['#2f95d8', '51-65'], ['#38bdf8', '66-80'], ['#a78bfa', '81-100']]) },
+    ramp: stops('threshold', REFERENCE_DEPTH_STOPS.map((b) => [b.color, b.label] as const)),
+    project: referenceDepthProject, color: referenceDepthColor },
   { value: 'library', label: 'Library Layer', short: 'Library', group: 'Coverage & Posture',
     question: 'How does the active layer score this technique?',
     rung: 'Known',
