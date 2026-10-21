@@ -400,7 +400,9 @@ describe('ValidationService', () => {
       expect(res.ok).toBeTrue();
       expect(rangeRuns(service).length).toBe(first);
       expect(first).toBe(8);
-      expect(res.bySource['lylat-range:SYNTH-MISSION-A']).toEqual({ added: 0, replaced: 8 });
+      // replace-by-source counts every prior run of the source as replaced and
+      // every incoming run as added; the stored denominator stays 8 (no doubling).
+      expect(res.bySource['lylat-range:SYNTH-MISSION-A']).toEqual({ added: 8, replaced: 8 });
     });
 
     it('refuses a privacy-leaking file and stores nothing', () => {
