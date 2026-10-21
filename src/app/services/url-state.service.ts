@@ -1,7 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable, inject } from '@angular/core';
-import { NavigationEnd, Router } from '@angular/router';
+import { NavigationCancel, NavigationEnd, NavigationError, NavigationSkipped, Router } from '@angular/router';
 import { filter, take } from 'rxjs';
 import { FilterService } from './filter.service';
 
@@ -16,7 +16,9 @@ import { FilterService } from './filter.service';
  * Reader: applies query params once, on the router's first NavigationEnd.
  * Writer: re-serializes on every (debounced) filter change with
  * `replaceUrl: true`, so filter edits never spam browser history. A
- * last-written guard prevents reader/writer feedback loops.
+ * last-written guard prevents reader/writer feedback loops. A write that
+ * lands during an in-flight navigation is held, not dropped: it runs once that
+ * navigation settles, so the last filter change always reaches the URL.
  */
 @Injectable({ providedIn: 'root' })
 export class UrlStateService {
@@ -25,6 +27,8 @@ export class UrlStateService {
 
   private lastWritten: string | null = null;
   private started = false;
+  /** A state change arrived while a navigation was in flight and is not in the URL yet. */
+  private writePending = false;
 
   /** Called once from AppComponent.ngOnInit. */
   init(): void {
@@ -57,20 +61,36 @@ export class UrlStateService {
 
   /** Writer: serialize filter state into query params on every change. */
   private startWriter(): void {
-    this.filterService.urlRelevantState$.subscribe(() => {
-      // Never write over an in-flight navigation (e.g. a user click on a
-      // lazy route racing a filter debounce) — a cancelled navigation loses
-      // the user's destination. Skipped writes self-heal: lastWritten stays
-      // unset, so the next state emission re-serializes.
-      if (this.router.getCurrentNavigation() !== null) return;
-      const params = this.filterService.serializeUrlState();
-      const serialized = new URLSearchParams(params).toString();
-      if (serialized === this.lastWritten) return;
-      this.lastWritten = serialized;
-      const tree = this.router.parseUrl(this.router.url);
-      tree.queryParams = params;
-      void this.router.navigateByUrl(tree, { replaceUrl: true });
-    });
+    this.filterService.urlRelevantState$.subscribe(() => this.writeState());
+    // A write skipped during a navigation is retried when that navigation
+    // settles (RP-F 5 follow-up). Without this the last lens pick, if it
+    // landed mid-navigation, never reached heat= until some later state
+    // change. The router clears getCurrentNavigation() only after it emits
+    // NavigationEnd, so the retry runs on the next macrotask.
+    this.router.events
+      .pipe(filter((e) => e instanceof NavigationEnd || e instanceof NavigationCancel
+        || e instanceof NavigationError || e instanceof NavigationSkipped))
+      .subscribe(() => {
+        if (this.writePending) setTimeout(() => this.writeState(), 0);
+      });
+  }
+
+  private writeState(): void {
+    // Never write over an in-flight navigation (e.g. a user click on a lazy
+    // route racing a filter debounce): a cancelled navigation loses the
+    // user's destination. The write is held and retried once it settles.
+    if (this.router.getCurrentNavigation() !== null) {
+      this.writePending = true;
+      return;
+    }
+    this.writePending = false;
+    const params = this.filterService.serializeUrlState();
+    const serialized = new URLSearchParams(params).toString();
+    if (serialized === this.lastWritten) return;
+    this.lastWritten = serialized;
+    const tree = this.router.parseUrl(this.router.url);
+    tree.queryParams = params;
+    void this.router.navigateByUrl(tree, { replaceUrl: true });
   }
 
   /** Full current URL — the hash already carries route + filter state. */

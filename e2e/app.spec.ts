@@ -881,6 +881,12 @@ test.describe('E2.4: default-lens rule', () => {
 // is first picked shortly after boot. The URL is right, only late, so every step
 // waits LENS_STEP_TIMEOUT rather than 5 s: the check is still that heat= follows
 // each pick, without timing the lens's first data load.
+//
+// RP-F round 2: a write whose debounce fired during an in-flight navigation was
+// dropped until the next state change, so a pick with no later change could leave
+// heat= stale whatever the timeout. UrlStateService now holds that write and runs
+// it when the navigation settles (unit-tested in url-state.service.spec.ts), so the
+// timeout above only absorbs the late debounce.
 const LENS_STEP_TIMEOUT = process.env['CI'] ? 60000 : 30000;
 
 test.describe('View menu above the rail (RP-F item 5)', () => {
