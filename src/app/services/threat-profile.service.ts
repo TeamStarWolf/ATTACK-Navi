@@ -166,13 +166,20 @@ export class ThreatProfileService implements OnDestroy, ThreatWeightProvider {
     return {
       domain: attackDomainOf(domain),
       present: present.map((g) => ({ id: g.id, name: g.name })),
-      absent: absentIds.map((id) => ({ id, name: this.groupNames.get(id) ?? id })),
+      absent: absentIds.map((id) => ({ id, name: this.groupNames.get(id) ?? this.groupNames.get(id.toUpperCase()) ?? id })),
     };
   }
 
-  /** Remember every group name of a loaded domain (names only; nothing is stored). */
+  /**
+   * Remember every group name of a loaded domain (names only; nothing is stored),
+   * by STIX id and by ATT&CK id, so an absent group stored under its ATT&CK id is
+   * named too (RP-F decision 13).
+   */
   private learnNames(domain: Domain | null): void {
-    for (const g of domain?.groups ?? []) this.groupNames.set(g.id, g.name);
+    for (const g of domain?.groups ?? []) {
+      this.groupNames.set(g.id, g.name);
+      if (g.attackId) this.groupNames.set(g.attackId.toUpperCase(), g.name);
+    }
   }
 
   /** Resolve against `domain` (null while one loads) and emit. */
@@ -244,7 +251,7 @@ export class ThreatProfileService implements OnDestroy, ThreatWeightProvider {
     const names: Record<string, string> = Object.create(null);   // ids are data: no prototype keys
     if (src.kind === 'groups') {
       for (const id of src.ids) {
-        const name = this.groupNames.get(id);
+        const name = this.groupNames.get(id) ?? this.groupNames.get(id.toUpperCase());
         if (name) names[id] = name;
       }
     }

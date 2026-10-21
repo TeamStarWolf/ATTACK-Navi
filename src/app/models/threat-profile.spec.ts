@@ -135,6 +135,14 @@ describe('threat-profile model', () => {
       expect(split.absentIds).toEqual(['g-x', 'g-y']);
     });
 
+    it('splitStoredGroups resolves a stored ATT&CK id (any case) as well as a STIX id (RP-F decision 13)', () => {
+      const d = emptyDomain({ groups: [group('g-b', 'G0002'), group('g-a', 'G0001')] });
+      const split = splitStoredGroups(['G0001', 'g0002', 'G9999', 'g-a'], d);
+      expect(split.present.map((g) => g.id)).toEqual(['g-b', 'g-a']);
+      expect(split.absentIds).toEqual(['G9999']);
+      expect(resolveProfile({ kind: 'groups', ids: ['G0001'] }, d).groupIds).toEqual(['g-a']);
+    });
+
     it('resolveProfile counts only the present groups (the same rule) and keeps the source as stored', () => {
       const d = emptyDomain({ groups: [group('g-a', 'G0001')] });
       const p = resolveProfile({ kind: 'groups', ids: ['g-a', 'g-gone'] }, d);

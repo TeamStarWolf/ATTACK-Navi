@@ -83,20 +83,25 @@ export const ATTACK_DOMAIN_SHORT_LABEL: Readonly<Record<AttackDomain, string>> =
 
 /**
  * THE membership rule for a stored group list against a domain: a stored id is
- * present when the domain's groups carry it, absent otherwise. resolveProfile and
- * ThreatProfileService.presentGroups/absentGroups both use this, so the profile the
- * surfaces count and the notice that names the absent groups never disagree.
- * `present` keeps the domain's order (the order resolveProfile has always used);
- * `absentIds` keeps the stored order, without duplicates.
+ * present when the domain's groups carry it, by STIX id or by ATT&CK id (G0016,
+ * any case: a profile stored with ATT&CK ids must not read "has no Enterprise
+ * use" for a group that is there, RP-F decision 13), absent otherwise.
+ * resolveProfile and ThreatProfileService.presentGroups/absentGroups both use
+ * this, so the profile the surfaces count and the notice that names the absent
+ * groups never disagree. `present` keeps the domain's order (the order
+ * resolveProfile has always used), each group once even when stored under both
+ * ids; `absentIds` keeps the stored order, without duplicates.
  */
 export function splitStoredGroups(
   ids: readonly string[],
   domain: Pick<Domain, 'groups'>,
 ): { readonly present: readonly ThreatGroup[]; readonly absentIds: readonly string[] } {
   const wanted = new Set(ids);
-  const present = domain.groups.filter((g) => wanted.has(g.id));
+  const wantedAttack = new Set(ids.map((id) => id.toUpperCase()));
+  const present = domain.groups.filter((g) => wanted.has(g.id) || (!!g.attackId && wantedAttack.has(g.attackId.toUpperCase())));
   const inDomain = new Set(present.map((g) => g.id));
-  const absentIds = [...wanted].filter((id) => !inDomain.has(id));
+  const inDomainAttack = new Set(present.filter((g) => !!g.attackId).map((g) => g.attackId.toUpperCase()));
+  const absentIds = [...wanted].filter((id) => !inDomain.has(id) && !inDomainAttack.has(id.toUpperCase()));
   return { present, absentIds };
 }
 
