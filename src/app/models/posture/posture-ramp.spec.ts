@@ -122,7 +122,7 @@ describe('posture stop words and legend stops', () => {
     expect(def.ramp.scale).toBe('categorical');
     expect(def.ramp.stops).toEqual(postureRampStops());
     expect(def.ramp.stops.map(s => s.color)).toEqual(POSTURE_BUCKETS.map(b => postureFill(b, 'dark')));
-    expect(HEATMAP_MODES[HEATMAP_MODES.length - 1]).toBe(def);
+    expect(HEATMAP_MODES[33]).toBe(def);   // appended by P2-13; P2-14 appends proven and covered after it
   });
 });
 

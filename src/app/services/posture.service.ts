@@ -219,8 +219,44 @@ export class PostureService {
     return tallyPosture(techs.map(t => this.stateFor(t)));
   }
 
+  /**
+   * The guarded implementation view of every technique of the loaded domain,
+   * keyed by STIX id (P2-14): what the status lens, impl= and the exports
+   * read, computed once per store, settings or domain change.
+   */
+  readonly implViews: Signal<ReadonlyMap<string, ImplView>> = computed(() => {
+    const domain = this.domain();
+    const out = new Map<string, ImplView>();
+    if (!domain) return out;
+    const impl = this.impl();
+    const threshold = this.threshold();
+    const marks = this.marksByTechnique();
+    for (const t of domain.techniques) {
+      out.set(t.id, implView(t, impl, domain, threshold, (marks.get(t.id) ?? []).map(m => m.status)));
+    }
+    return out;
+  });
+
+  /**
+   * Techniques of the loaded domain whose only implemented mitigations are
+   * broad (D16): 'implemented, partial via' on the status lens, matched by no
+   * impl= value (P2-14). With the distinct broad mitigations, sorted.
+   */
+  readonly implPartialOnly: Signal<{ readonly count: number; readonly via: readonly string[] }> = computed(() => {
+    let count = 0;
+    const via = new Set<string>();
+    for (const v of this.implViews().values()) {
+      if (v.status !== 'implemented' || !v.partialVia) continue;
+      count++;
+      for (const m of v.partialVia.split(', ')) via.add(m);
+    }
+    return { count, via: [...via].sort() };
+  });
+
   /** Guarded mitigation-implementation view per technique, for the status lens and impl= (P2-14). */
   implViewFor(t: Technique): ImplView {
+    const cached = this.implViews().get(t.id);
+    if (cached) return cached;
     const domain = this.domain();
     if (!domain) return { status: null, partialVia: null };
     const statuses = (this.marksByTechnique().get(t.id) ?? []).map(m => m.status);

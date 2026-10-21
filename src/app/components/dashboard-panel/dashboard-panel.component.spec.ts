@@ -24,6 +24,7 @@ import { MispService } from '../../services/misp.service';
 import { OpenCtiService } from '../../services/opencti.service';
 import { EnrichmentService } from '../../services/enrichment.service';
 import { SourceRegistryService } from '../../services/source-registry.service';
+import { XlsxExportService } from '../../services/xlsx-export.service';
 import { type PostureStub, makePostureStub, postureStubProvider } from '../../testing/posture-stub';
 
 function technique(attackId: string, name: string, tactic: string, mitigationCount = 0): Technique {
@@ -304,5 +305,18 @@ describe('DashboardPanelComponent', () => {
     expect(component.todTechnique).not.toBeNull();
     expect(component.todTechnique!.isSubtechnique).toBeFalse();
     expect(DOMAIN.techniques).toContain(component.todTechnique!);
+  });
+  it("the workbook's 'Impl Status (best)' column reads PostureService.implViewFor (P2-14), so Settings > Posture rules apply", () => {
+    const view = { status: 'implemented' as const, partialVia: null };
+    const implViewFor = jasmine.createSpy('implViewFor').and.returnValue(view);
+    (posture as unknown as { implViewFor: jasmine.Spy }).implViewFor = implViewFor;
+    (TestBed.inject(ImplementationService) as unknown as { getStatusMap: () => Map<string, string> }).getStatusMap = () => new Map();
+    const exportWorkbook = spyOn(TestBed.inject(XlsxExportService), 'exportWorkbook').and.resolveTo();
+    component.exportCsv();
+    expect(exportWorkbook).toHaveBeenCalledTimes(1);
+    const passed = exportWorkbook.calls.mostRecent().args[4];
+    expect(typeof passed).toBe('function');
+    expect(passed(T1059)).toBe(view);
+    expect(implViewFor).toHaveBeenCalledOnceWith(T1059);
   });
 });

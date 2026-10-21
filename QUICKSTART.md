@@ -76,7 +76,7 @@ THREAT badge.
 
 The matrix toolbar has a lens button, "View and explore options", that shows the active
 lens short label ("Frequency" by default) and opens a menu to switch the matrix coloring
-or change sorting and filtering. There are 34 lenses. With no viewpoint set, the menu
+or change sorting and filtering. There are 36 lenses. With no viewpoint set, the menu
 groups are Threat Landscape, Vulnerabilities, Detections, Frameworks and Coverage &
 Posture; Frequency is listed under Coverage & Posture but carries the THREAT badge. Each
 lens carries a rung, shown as its legend badge, so before reading a color open the legend

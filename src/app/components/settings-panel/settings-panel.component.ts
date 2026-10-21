@@ -6,6 +6,9 @@ import {
   OnDestroy,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
+  Signal,
+  computed,
+  inject,
 } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
@@ -20,6 +23,9 @@ import { MispService } from '../../services/misp.service';
 import { TaxiiService, TaxiiServerConfig, TaxiiCollection } from '../../services/taxii.service';
 import { ImportSummary } from '../../services/stix-collection.service';
 import { csvRow } from '../../utils/csv';
+import { HEATMAP_MODES } from '../../models/heatmap-modes';
+import { isRegistryLens, lensNameVisible } from '../../models/lens-registry';
+import { PostureService } from '../../services/posture.service';
 
 @Component({
   selector: 'app-settings-panel',
@@ -44,6 +50,19 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
     { id: 'monochrome', label: 'Monochrome' },
     { id: 'accessible', label: 'High Contrast' },
   ];
+
+  private readonly postureService = inject(PostureService);
+
+  // The lenses the Colorblind-safe toggle leaves alone: the registry-hosted
+  // lenses, whose ramps are CVD-safe by design (P2-14). Read from the lens
+  // registry with the menu labels, so the description names each lens the way
+  // the lens picker does. The Proven and Covered lenses are named only once
+  // owner data exists (lensNameVisible over PostureService.ownerWords, §10.4
+  // item 14): an empty user never sees a rung word here.
+  readonly cvdOwnRampLenses: Signal<string> = computed(() => {
+    const ownerWords = this.postureService.ownerWords();
+    return HEATMAP_MODES.filter(m => isRegistryLens(m) && lensNameVisible(m, ownerWords)).map(m => m.label).join(', ');
+  });
 
   get themes(): { id: string; label: string; colors: string[] }[] {
     return this.themeLabels.map(t => ({ ...t, colors: this.settingsService.COLOR_THEMES[t.id] ?? [] }));

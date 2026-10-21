@@ -5,15 +5,11 @@ import { Domain } from '../models/domain';
 import { ImplStatus, IMPL_STATUS_LABELS } from './implementation.service';
 import { CustomMitigation } from './custom-mitigation.service';
 import { CoverageSnapshot, snapshotBasisLabel } from './timeline.service';
+import type { Technique } from '../models/technique';
+import type { ImplView } from './posture-adapters';
+import { statusStop, statusStopLabel } from '../models/posture/lens-ramps';
 
 type XLSX = typeof import('xlsx-js-style');
-
-const STATUS_RANK: Record<string, number> = {
-  'implemented': 4,
-  'in-progress': 3,
-  'planned': 2,
-  'not-started': 1,
-};
 
 @Injectable({ providedIn: 'root' })
 export class XlsxExportService {
@@ -23,6 +19,13 @@ export class XlsxExportService {
     implStatusMap: Map<string, ImplStatus>,
     customMitigations: CustomMitigation[],
     snapshots: CoverageSnapshot[],
+    /**
+     * The guarded per-technique view (PostureService.implViewFor, P2-14) the
+     * 'Impl Status (best)' column follows. Required, with no default: a default
+     * would ignore Settings > Posture rules and the technique marks, so every
+     * caller passes PostureService's own view.
+     */
+    implViewFor: (t: Technique) => ImplView,
   ): Promise<void> {
     try {
       const XLSX = await import('xlsx-js-style');
@@ -30,8 +33,8 @@ export class XlsxExportService {
       const wb = XLSX.utils.book_new();
 
       XLSX.utils.book_append_sheet(wb, this.buildOverviewSheet(XLSX, domain, implStatusMap, customMitigations), 'Overview');
-      XLSX.utils.book_append_sheet(wb, this.buildTechniquesSheet(XLSX, domain, implStatusMap, false), 'Techniques');
-      XLSX.utils.book_append_sheet(wb, this.buildTechniquesSheet(XLSX, domain, implStatusMap, true), 'Subtechniques');
+      XLSX.utils.book_append_sheet(wb, this.buildTechniquesSheet(XLSX, domain, implViewFor, false), 'Techniques');
+      XLSX.utils.book_append_sheet(wb, this.buildTechniquesSheet(XLSX, domain, implViewFor, true), 'Subtechniques');
       XLSX.utils.book_append_sheet(wb, this.buildMitigationsSheet(XLSX, domain, implStatusMap), 'Mitigations');
       XLSX.utils.book_append_sheet(wb, this.buildCoverageByTacticSheet(XLSX, domain), 'Coverage by Tactic');
       XLSX.utils.book_append_sheet(wb, this.buildGapsSheet(XLSX, domain), 'Gaps');
@@ -105,7 +108,7 @@ export class XlsxExportService {
   private buildTechniquesSheet(
     XLSX: XLSX,
     domain: Domain,
-    implStatusMap: Map<string, ImplStatus>,
+    implViewFor: (t: Technique) => ImplView,
     subtechsOnly: boolean,
   ): any {
     const headers = [
@@ -116,16 +119,12 @@ export class XlsxExportService {
     const filtered = domain.techniques.filter(t => t.isSubtechnique === subtechsOnly);
 
     const dataRows = filtered.map(tech => {
-      const rels = domain.mitigationsByTechnique.get(tech.id) ?? [];
-      let bestStatus = '';
-      let bestRank = 0;
-      for (const rel of rels) {
-        const s = implStatusMap.get(rel.mitigation.id);
-        if (s && (STATUS_RANK[s] ?? 0) > bestRank) {
-          bestRank = STATUS_RANK[s];
-          bestStatus = s;
-        }
-      }
+      // Impl Status (best): the guarded view (D16, P2-14). A technique
+      // implemented only through broad mitigations reads
+      // 'implemented, partial via M1038', as on the status lens.
+      const view = implViewFor(tech);
+      const stop = statusStop(view);
+      const bestStatus = stop === 'partial' ? statusStopLabel(stop, view.partialVia) : (view.status ?? '');
 
       // Find parent attackId
       let parentAttackId = '';

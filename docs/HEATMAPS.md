@@ -1,6 +1,6 @@
 # Heatmap Modes Reference
 
-> Reference for the heatmap coloring modes (lenses) in ATTACK-Navi. There are 34 today; the authoritative count is the Heatmap modes row in [FACTS.md](FACTS.md). The Detailed Mode Documentation below covers the original 24 and the Posture lens (25); the other lenses added since are listed in the lens menu and defined in `src/app/models/heatmap-modes.ts`.
+> Reference for the heatmap coloring modes (lenses) in ATTACK-Navi. There are 36 today; the authoritative count is the Heatmap modes row in [FACTS.md](FACTS.md). The Detailed Mode Documentation below covers the original 24, the Posture lens (25) and the two lenses P2-14 added (26, 27); the other lenses added since are listed in the lens menu and defined in `src/app/models/heatmap-modes.ts`.
 > Each mode recolors every technique cell in the matrix to visualize a different security dimension.
 
 ---
@@ -15,8 +15,8 @@
 | 4 | `frequency` | Frequency | Groups | Gradient (5) | `Domain.groupsByTechnique` | Total unique threat groups using this technique |
 | 5 | `software` | Software | Software | Gradient (5) | `Domain.softwareByTechnique` | Count of ATT&CK software entries using this technique |
 | 6 | `campaign` | Campaign | Campaigns | Gradient (5) | `Domain.campaignsByTechnique` | Count of ATT&CK campaigns using this technique |
-| 7 | `status` | Status | Status | Categorical (5) | `ImplementationService.status$` | Best implementation status across a technique's mitigations |
-| 8 | `controls` | Controls | Controls | Categorical (3) | `ControlsService` | Whether a declared security control reaches the technique: covered (self-attested), planned or none |
+| 7 | `status` | Status | Status | Categorical (6) | `PostureService.implViewFor` via the lens's own `project` | Best implementation status across a technique's mitigations and the technique itself, through the breadth guard: `implemented, partial via Mxxxx` when only broad mitigations are implemented |
+| 8 | `controls` | Controls | Controls | Categorical (4) | `PostureService.stateFor` (control marks) via the lens's own `project` | Whether a declared security control reaches the technique: covered (self-attested), partial (only a broad mitigation behind it), planned or none |
 | 9 | `kev` | KEV | KEV CVEs | Gradient (4) | `CveService.kevTechScores$` | Count of CISA KEV CVEs mapped to this technique |
 | 10 | `d3fend` | D3FEND | D3FEND | Gradient (5) | `D3fendService` | Count of D3FEND countermeasure techniques |
 | 11 | `atomic` | Atomic | Atomic Tests | Gradient (5) | `AtomicService` | Count of Atomic Red Team test cases |
@@ -34,6 +34,8 @@
 | 23 | `splunk` | Splunk Detections | Splunk Detections | Gradient (5) | `SplunkContentService` | Count of Splunk Security Content detections |
 | 24 | `intelligence` | Intelligence | Intel Signals | Gradient (5) | Computed (MISP + groups) | `hasMisp (0/1) + threatGroupCount` |
 | 25 | `posture` | Posture | Posture | Categorical (6 + 2 patterns) | `PostureService.stateFor` via the lens's own `project` | Each technique's own posture bucket: `none`, `known`, `partial`, `covered`, `stale` or `proven` |
+| 26 | `proven` | Proven | Proven | Categorical (4) | `PostureService.stateFor` via the lens's own `project` | Where a named detection fired or blocked on a recorded date: 3 production, 2 range or your own run, 1 older than its window, 0 none <!-- truth-vocab-allow proven-only -- names the Proven lens --> |
+| 27 | `covered` | Covered (self-attested or range) | Covered (self-attested or range) | Categorical (3) | `PostureService.stateFor` via the lens's own `project` | 2 when a full mark (self-attested or range) reaches the technique, 1 when only a broad mitigation or control does (partial), 0 otherwise |
 
 ---
 
@@ -45,7 +47,7 @@ When a user selects a heatmap mode, the following seven-step pipeline executes:
 
 **File:** `src/app/pages/matrix/matrix-controls.component.ts`
 
-The matrix controls read the `HEATMAP_MODES` table from `src/app/models/heatmap-modes.ts` (34 lenses, grouped by `HEATMAP_GROUPS`) and render the lens menu. When the user picks a lens it calls `FilterService.setHeatmapMode(mode)`.
+The matrix controls read the `HEATMAP_MODES` table from `src/app/models/heatmap-modes.ts` (36 lenses, grouped by `HEATMAP_GROUPS`) and render the lens menu. When the user picks a lens it calls `FilterService.setHeatmapMode(mode)`.
 
 ### Step 2: State Broadcast (FilterService)
 
@@ -90,7 +92,7 @@ A **What is this lens?** button in the legend, a **?** next to every lens in the
 
 ### Step 6b: Lenses without data for the loaded domain
 
-A lens is available in a domain exactly when that domain is in its `domains` list (`lensAvailability()` in `heatmap-modes.ts`). In any other domain the lens menu disables it (`aria-disabled`, with a stated reason such as 'Sigma Rules is n/a for ICS ATT&CK: its sources (SigmaHQ coverage) have data for Enterprise ATT&CK only.' linked by `aria-describedby`), and if it is the active lens the matrix paints every cell in the neutral, hatched n/a colour (`LENS_NA_COLOR`, in no ramp) instead of the lens's zero colour, the minimap does the same, and a status banner on the matrix page states the reason. On ICS that is 23 of the 34 lenses today. The lens snapshots (`MatrixComponent.getCellColor`) are unaffected: they characterize each lens's own scoring.
+A lens is available in a domain exactly when that domain is in its `domains` list (`lensAvailability()` in `heatmap-modes.ts`). In any other domain the lens menu disables it (`aria-disabled`, with a stated reason such as 'Sigma Rules is n/a for ICS ATT&CK: its sources (SigmaHQ coverage) have data for Enterprise ATT&CK only.' linked by `aria-describedby`), and if it is the active lens the matrix paints every cell in the neutral, hatched n/a colour (`LENS_NA_COLOR`, in no ramp) instead of the lens's zero colour, the minimap does the same, and a status banner on the matrix page states the reason. On ICS that is 23 of the 36 lenses today. The lens snapshots (`MatrixComponent.getCellColor`) are unaffected: they characterize each lens's own scoring.
 
 ### Step 7: Cell Color Fallback (MatrixComponent.getCellColor)
 
@@ -102,7 +104,7 @@ For the `coverage` and `frequency` modes, `MatrixComponent.getCellColor()` provi
 
 ## Adding a New Heatmap Mode
 
-To add a heatmap mode (34 exist today), modify these files in order:
+To add a heatmap mode (36 exist today), modify these files in order:
 
 1. **`src/app/services/filter.service.ts`** -- Add the new mode string to the `HeatmapMode` union type.
 
@@ -213,11 +215,11 @@ To add a heatmap mode (34 exist today), modify these files in order:
 | **Display Label** | Status |
 | **Icon** | (checkmark) |
 | **Legend Label** | Status |
-| **Data Source** | `ImplementationService.status$` |
-| **Score Computation** | Categorical. For each technique, examines all mapped mitigations and takes the "best" implementation status using a rank order: implemented (4) > in-progress (3) > planned (2) > not-started (1) > none (0). |
-| **Color Scale** | `#90a4ae` (none) -> `#e53935` (not-started !) -> `#ff9800` (in-progress) -> `#2196f3` (planned) -> `#4caf50` (implemented) |
-| **Scale Type** | Categorical (no gradient interpolation) |
-| **Use Case** | Track implementation progress across the matrix. Quickly see which techniques have at least one implemented mitigation (green), which are in progress (orange), and which have no implementation started (red). Essential for program management reporting. |
+| **Data Source** | `PostureService.implViewFor`, through the lens's own `project` and `color` (`src/app/models/posture/lens-ramps.ts`); registry-hosted since P2-14 |
+| **Score Computation** | Categorical. For each technique, the best status over its mapped mitigations and any status set on the technique itself (a confirmation, a bulk set, the wizard), in the rank order implemented > in-progress > planned > not-started > none, through the breadth guard (D16): a mitigation mapped to more techniques than the threshold in Settings > Posture rules (15 by default) counts as partial, so a technique whose only implemented mitigations are broad shows the stop `implemented, partial via Mxxxx` between in-progress and implemented. A confirmed technique shows implemented. |
+| **Color Scale** | The blue ordinal ramp shared with the `covered` lens: from the surface (none) through not started, planned, in progress and `implemented, partial via Mxxxx` (also drawn with a dashed outline) to implemented. Luminance rises with the stop, and neighbouring stops differ by at least 1.2:1 under protanopia, deuteranopia and tritanopia, so the colorblind-safe setting does not change it. |
+| **Scale Type** | Categorical (ordinal) |
+| **Use Case** | Track implementation progress across the matrix. The `impl=` filter reads the same guarded view: `impl=implemented` matches full implementation only, and a technique implemented only through broad mitigations matches none of the four values (the filter's tooltip says so). |
 
 ---
 
@@ -228,10 +230,10 @@ To add a heatmap mode (34 exist today), modify these files in order:
 | **Display Label** | Controls |
 | **Icon** | (lock) |
 | **Legend Label** | Controls |
-| **Data Source** | `ControlsService` |
-| **Score Computation** | Categorical (3 states). Checks whether the technique has at least one security control marked "implemented" (covered, self-attested), at least one marked "planned" (planned), or none at all. |
-| **Color Scale** | `#1c2b30` (none) -> `#1565c0` (planned) -> `#00c853` (covered, self-attested) |
-| **Scale Type** | Categorical |
+| **Data Source** | `PostureService.stateFor` (the control marks), through the lens's own `project` and `color`; registry-hosted since P2-14 |
+| **Score Computation** | Categorical (4 states). Covered (self-attested) when an implemented control lists a mitigation of the technique within the breadth threshold; partial when every such mitigation is broader than the threshold (D16, drawn dashed); planned when only planned controls reach it; none otherwise. |
+| **Color Scale** | The blue ordinal ramp shared with the `covered` lens: none (the surface) -> planned -> partial -> covered (self-attested) |
+| **Scale Type** | Categorical (ordinal) |
 | **Use Case** | Visualize which techniques are addressed by your organization's security control inventory. Pair with the Controls panel to manage control-to-technique mappings across NIST 800-53, CIS, ISO 27001, and custom frameworks. |
 
 ---
@@ -481,9 +483,38 @@ To add a heatmap mode (34 exist today), modify these files in order:
 
 ---
 
+<!-- truth-vocab-allow-next-line proven-only -- names the Proven lens -->
+### 26. Proven (`proven`)
+
+| Property | Value |
+|----------|-------|
+| **Display Label** | `Proven` (from `lensLabel('proven')`; the short label is the same literal) |
+| **Rung** | `Proven` |
+| **Data Source** | `PostureService.stateFor`, through the lens's own `project` and `color` (`src/app/models/posture/lens-ramps.ts`) |
+| **Score Computation** | Categorical. From the validation runs you recorded or imported, the technique's best record of a named detection that fired or blocked: 3 when the record is from production and within its window, 2 when it is from the range or your own run and within its window, 1 when the newest record is older than its window (range 90, production 180, own run 90 days; bucket `stale`), 0 when there is no named detection. A run without a named detection never scores here. |
+| **Color Scale** | An ordinal ramp from the surface toward the Posture lens's teal: 0 the surface, 1 the Posture lens's `stale` fill, 2 the teal mixed 25% toward the surface, 3 the teal. Every scored cell shows a check mark, and a `lab` text badge when the best record is from the range. |
+| **Scale Type** | Categorical (ordinal) |
+| **Use Case** | See where a named detection has fired or blocked, and how fresh and how close to production that record is. Offered only once data of yours exists (`lensNameVisible` in `src/app/models/lens-registry.ts`): on a fresh profile the lens picker does not list it, and a `heat=proven` link opens the default lens instead. |
+
+---
+
+### 27. Covered (self-attested or range) (`covered`)
+
+| Property | Value |
+|----------|-------|
+| **Display Label** | Covered (self-attested or range) |
+| **Rung** | `Covered`, qualifier `self-attested` |
+| **Data Source** | `PostureService.stateFor` (the CoveredMarks), through the lens's own `project` and `color` |
+| **Score Computation** | Categorical. 2 when a full mark reaches the technique (an implemented mitigation within the breadth threshold, an implemented control, a confirmation, configured telemetry or a range mark) and no later failed run contradicts it; 1 when only partial marks do (a mitigation or control mapped to more techniques than the threshold, D16), drawn with a dashed outline; 0 otherwise. Planned marks score 0. |
+| **Color Scale** | The blue ordinal ramp shared with the `status` and `controls` lenses: 0 the surface, 1 the blue mixed 40% toward the surface with the dashed outline, 2 the blue. |
+| **Scale Type** | Categorical (ordinal) |
+| **Use Case** | The Covered (self-attested or range) rung on its own, without the proof the Posture lens layers on top. Raising the breadth threshold in Settings > Posture rules turns a broad mitigation's partial cells full here and on the Status lens. Offered only once data of yours exists, as lens 26 (`proven`) is: on a fresh profile the lens picker does not list it, and a `heat=covered` link opens the default lens instead. |
+
+---
+
 ## Color Scale Design Principles
 
-The 34 heatmap modes follow these design conventions:
+The 36 heatmap modes follow these design conventions:
 
 1. **Dark backgrounds for zero**: All gradient scales use a very dark color (#0a--#1a range) for zero-score cells, maintaining matrix readability.
 
@@ -493,7 +524,7 @@ The 34 heatmap modes follow these design conventions:
 
 4. **Green = coverage/health**: Coverage, Detection, Sigma, and Elastic modes use green tones for positive-coverage framing.
 
-5. **Categorical modes**: Only `status` (5 discrete states) and `controls` (3 discrete states) use categorical scales. All others use continuous gradients.
+5. **Categorical modes**: `status` (6 ordinal states), `controls` (4), `posture` (6 buckets and 2 patterns), `proven` (4) and `covered` (3) use categorical scales; the five registry-hosted ones share ordinal ramps that are CVD-safe by default. All others use continuous gradients.
 
 6. **Consistent bucket labels**: Gradient modes use numeric ranges (0, 1--2, 3--5, 6--10, 11+) or semantic labels (low, med, high, critical) with 4--5 stops.
 

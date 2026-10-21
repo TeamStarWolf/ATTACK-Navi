@@ -8,7 +8,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -241,4 +241,18 @@ test('targets: src/app templates and non-spec TS, README and docs markdown', () 
 test('this repository lints clean (E1.1: lint reports 0 violations)', () => {
   const { findings } = lintRepo(ROOT);
   assert.deepEqual(findings.map(f => `${f.file}:${f.line}:${f.col} ${f.rule} "${f.match}"`), []);
+});
+
+// P2-14 (Revision 3): gen-facts writes the modes table's Short-label and Rung
+// cells as code spans, so the generated docs/FACTS.md needs no allow (it cannot
+// carry one) and the Proven lens's row reads `Proven` in both, never 'undefined'.
+test('docs/FACTS.md lints clean with no allow, and the proven row is code spans (P2-14)', () => {
+  const text = readFileSync(join(ROOT, 'docs', 'FACTS.md'), 'utf8');
+  const { findings, directives } = lintText(text, 'md', 'docs/FACTS.md');
+  assert.deepEqual(findings, []);
+  assert.equal(directives?.length ?? 0, 0);
+  const row = text.split(/\r?\n/).find(l => l.includes('| `proven` |'));
+  assert.ok(row, 'docs/FACTS.md has a proven row');
+  assert.match(row, /^\| \d+ \| `proven` \| `Proven` \| Coverage & Posture \| `Proven` \|$/);
+  assert.ok(!/undefined/.test(text.split('## Heatmap modes')[1].split('## ')[0]), 'no undefined cell in the modes table');
 });
