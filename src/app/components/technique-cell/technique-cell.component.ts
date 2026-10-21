@@ -16,7 +16,7 @@ import {
 import { Subscription } from 'rxjs';
 
 import tinycolor from 'tinycolor2';
-import { SAFE_SEQ, SAFE_STATUS, SAFE_CONTROLS } from '../../models/safe-palette';
+import { SAFE_SEQ } from '../../models/safe-palette';
 import { Technique } from '../../models/technique';
 import { HeatmapMode } from '../../services/filter.service';
 import { ImplStatus } from '../../services/implementation.service';
@@ -27,6 +27,7 @@ import { registryColor } from '../../models/lens-registry';
 import {
   type PostureCellVM, type PostureTheme, postureHasCheck, postureLensCell, posturePatterns,
 } from '../../models/posture/posture-ramp';
+import { provenLabBadge, statusStop, statusStopFill, statusStopLabel } from '../../models/posture/lens-ramps';
 import { ThemeService } from '../../services/theme.service';
 
 @Component({
@@ -63,14 +64,18 @@ import { ThemeService } from '../../services/theme.service';
       @if (postureCheck) {
         <span class="posture-check" aria-hidden="true">✓</span>
       }
+      @if (proofLab) {
+        <span class="proof-lab-badge" aria-hidden="true">lab</span>
+      }
       @if (showTechniqueName) {
         <span class="name">{{ technique.name }}</span>
       }
       @if (heatmapMode === 'coverage' && implStatus) {
         <span
           class="impl-dot"
+          [class.impl-dot-partial]="!!implPartialVia"
           [style.background]="implDotColor"
-          [title]="'Status: ' + implStatus"
+          [title]="'Status: ' + implDotLabel"
         ></span>
       }
       @if (hasNote && showNoteDot) {
@@ -175,12 +180,13 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
    */
   @Input() posture: PostureCellVM | null = null;
   @Input() implStatus: ImplStatus | null = null;
+  /** The broad mitigation(s) the technique is implemented through only (D16, P2-14); null when full or none. */
+  @Input() implPartialVia: string | null = null;
   @Input() maxExposure = 1;
   @Input() maxSoftware = 1;
   @Input() maxCampaign = 1;
   @Input() riskScore = 0;
   @Input() maxRisk = 1;
-  @Input() controlStatus: 'covered' | 'planned' | 'none' = 'none';
   @Input() hasNote = false;
   @Input() kevScore = 0;
   @Input() maxKev = 1;
@@ -257,6 +263,10 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
   bgColor = '#ffffff';
   textColor = '#000000';
   implDotColor = '';
+  /** The implementation dot's words: the status stop, 'implemented, partial via M1038' when broad only (P2-14). */
+  implDotLabel = '';
+  /** The Proven lens's 'lab' badge: the best proof was recorded in the range (P2-14). */
+  proofLab = false;
   /** Posture lens patterns and mark (P2-13): drawn on top of the fill, never by hue alone. */
   posturePartial = false;
   postureContradicted = false;
@@ -319,10 +329,6 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
       this.bgColor = this.computeExposureColor(this.softwareScore, this.maxSoftware);
     } else if (this.heatmapMode === 'campaign') {
       this.bgColor = this.computeCampaignColor(this.campaignScore, this.maxCampaign);
-    } else if (this.heatmapMode === 'status') {
-      this.bgColor = this.computeStatusColor(this.implStatus);
-    } else if (this.heatmapMode === 'controls') {
-      this.bgColor = this.computeControlColor(this.controlStatus);
     } else if (this.heatmapMode === 'risk') {
       this.bgColor = this.computeRiskColor(this.riskScore, this.maxRisk);
     } else if (this.heatmapMode === 'kev') {
@@ -389,7 +395,11 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
     this.textColor = tinycolor
       .mostReadable(this.bgColor, ['#000000', '#ffffff'])
       .toHexString();
-    this.implDotColor = this.implStatus ? this.computeStatusColor(this.implStatus) : '';
+    // The coverage lens's implementation dot shares the status lens's stops (P2-14).
+    const dotStop = statusStop({ status: this.implStatus, partialVia: this.implPartialVia });
+    this.implDotColor = this.implStatus ? statusStopFill(dotStop, this.theme) : '';
+    this.implDotLabel = this.implStatus ? statusStopLabel(dotStop, this.implPartialVia) : '';
+    this.proofLab = registry && this.heatmapMode === 'proven' && !!this.posture && provenLabBadge(postureLensCell(this.posture));
     const patterns = registry && this.posture ? posturePatterns(this.posture) : [];
     this.posturePartial = patterns.includes('partial');
     this.postureContradicted = patterns.includes('contradicted');
@@ -437,17 +447,6 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
     return this.computeRelativeColor(score, max, '#eceff1', ['#ce93d8', '#ab47bc', '#7b1fa2', '#4a148c']);
   }
 
-  private computeControlColor(status: 'covered' | 'planned' | 'none'): string {
-    if (this.settingsService.current.colorblindSafe) {
-      return SAFE_CONTROLS[status] ?? SAFE_CONTROLS['none'];
-    }
-    switch (status) {
-      case 'covered': return '#00c853';
-      case 'planned': return '#1565c0';
-      default: return '#1c2b30';
-    }
-  }
-
   private computeRiskColor(score: number, max: number): string {
     return this.computeRelativeColor(score, max, '#eceff1', ['#ff7043', '#e53935', '#b71c1c', '#4a0000']);
   }
@@ -463,19 +462,6 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
       return shared ? '#0072b2' : '#cc79a7'; // Okabe-Ito blue / reddish purple
     }
     return shared ? '#1565c0' : '#6a1b9a';
-  }
-
-  private computeStatusColor(status: ImplStatus | null): string {
-    if (this.settingsService.current.colorblindSafe) {
-      return SAFE_STATUS[status ?? 'none'] ?? SAFE_STATUS['none'];
-    }
-    switch (status) {
-      case 'implemented': return '#4caf50';
-      case 'in-progress': return '#ff9800';
-      case 'planned': return '#2196f3';
-      case 'not-started': return '#e53935';
-      default: return '#90a4ae'; // no status
-    }
   }
 
   computeCriColor(score: number, max: number): string {

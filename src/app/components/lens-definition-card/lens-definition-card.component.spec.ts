@@ -69,7 +69,7 @@ describe('LensDefinitionCardComponent', () => {
     expect(dialog()).toBeNull();
   });
 
-  it('describes every one of the 34 lenses: question, rung, formula, sources with vintage, domains, zero meaning', () => {
+  it('describes every one of the 36 lenses: question, rung, formula, sources with vintage, domains, zero meaning', () => {
     for (const def of HEATMAP_MODES) {
       openFor(def.value);
       expect(text('#lens-card-title')).withContext(def.value).toBe(def.label);

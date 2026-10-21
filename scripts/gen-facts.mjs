@@ -82,7 +82,12 @@ function ownText(obj) {
 function ownString(obj, key) {
   const own = ownText(obj);
   const m = new RegExp(`(?:^|[,{\\s])${key}\\s*:\\s*'([^']*)'`).exec(own);
-  return m ? m[1] : undefined;
+  if (!m) return undefined;
+  // ownText blanks bracketed text even inside a string literal and keeps every
+  // offset, so the literal is read back from the original object text (P2-14:
+  // the Covered lens's short label 'Covered (self-attested or range)').
+  const start = m.index + m[0].length - m[1].length - 1;
+  return obj.slice(start, start + m[1].length);
 }
 
 function ownHas(obj, key) {
@@ -352,7 +357,9 @@ export function renderFacts(f) {
 
   L.push('## Heatmap modes', '');
   L.push('| # | Id | Short label | Group | Rung |', '| --: | :-- | :-- | :-- | :-- |');
-  f.heatmap.modes.forEach((m, i) => L.push(`| ${i + 1} | \`${m.id}\` | ${m.short} | ${m.group} | ${m.rung} |`));
+  // Short label and Rung are code spans (P2-14): the truth-vocabulary lint skips code spans, so a rung
+  // word such as the Proven lens's short label needs no allow in this generated file (it cannot carry one).
+  f.heatmap.modes.forEach((m, i) => L.push(`| ${i + 1} | \`${m.id}\` | \`${m.short}\` | ${m.group} | \`${m.rung}\` |`));
   L.push('');
 
   L.push('## Routes and tabs', '');

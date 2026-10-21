@@ -2,7 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 //
 // Regenerates src/app/testing/__snapshots__/lens-snapshots.json, the committed
-// score maps of the 34 heatmap lenses (see src/app/testing/lens-snapshots.spec.ts).
+// score maps of the 36 heatmap lenses (see src/app/testing/lens-snapshots.spec.ts).
 //
 // Karma specs run in the browser and cannot write files, so the spec logs one
 // machine-readable line per lens whose map differs from the snapshot:
@@ -34,9 +34,13 @@ import { createHash } from 'node:crypto';
 const SNAPSHOT = 'src/app/testing/__snapshots__/lens-snapshots.json';
 const FROZEN = 'src/app/testing/__snapshots__/lens-snapshots.frozen.json';
 const SPEC = 'src/app/testing/lens-snapshots.spec.ts';
-const EXPECTED_MODES = 34;
-/** Lenses hosted by the LensRegistry seam (P2-13): not frozen. Every other lens is. */
-const REGISTRY_MODES = new Set(['posture']);
+const EXPECTED_MODES = 36;
+/**
+ * Lenses hosted by the LensRegistry seam: not frozen. Every other lens is.
+ * P2-13 added posture; P2-14 added proven and covered and moved status and
+ * controls into the registry (their frozen keys deleted in that reviewed change).
+ */
+const REGISTRY_MODES = new Set(['posture', 'status', 'controls', 'proven', 'covered']);
 
 // One fixed command line (no user input is interpolated); a shell resolves npx on Windows.
 const run = spawnSync(`npx ng test --watch=false --browsers=ChromeHeadless --include=${SPEC}`, {

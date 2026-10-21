@@ -611,6 +611,9 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
         this.implService.getStatusMap(),
         this.customMitService.all,
         this.timelineService.getAll(),
+        // The guarded view (P2-14): the 'Impl Status (best)' column follows
+        // Settings > Posture rules and the technique marks, as on the status lens.
+        (t) => this.posture.implViewFor(t),
       );
     });
   }

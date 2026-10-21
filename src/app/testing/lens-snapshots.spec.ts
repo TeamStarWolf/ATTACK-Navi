@@ -1,7 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 //
-// Characterization ("golden master") specs for the 34 heatmap lenses.
+// Characterization ("golden master") specs for the 36 heatmap lenses.
 //
 // For every mode in HEATMAP_MODES this spec builds a fresh MatrixComponent on
 // the fixed fixture domain (see lens-harness.ts), switches to that mode, and
@@ -15,8 +15,10 @@
 // (it runs this spec, collects the "[lens-snapshot]" lines a mismatching spec
 // logs, and rewrites the JSON). Never hand-edit the snapshot to make it pass.
 //
-// Frozen-hash guard (P2-13): the 33 lenses that existed before the LensRegistry
-// seam are frozen. __snapshots__/lens-snapshots.frozen.json holds one sha256
+// Frozen-hash guard (P2-13, P2-14): the 33 lenses that existed before the
+// LensRegistry seam are frozen, except status and controls, which P2-14 moves
+// into the registry on purpose (their keys were deleted from the frozen file in
+// that reviewed change), so 31 are frozen. __snapshots__/lens-snapshots.frozen.json holds one sha256
 // per frozen lens, computed by the update script (Node crypto) over that lens's
 // block of lens-snapshots.json exactly as the script writes it. The guard
 // recomputes the hash here (WebCrypto, spec-time only, never app code) over the
@@ -57,6 +59,9 @@ const FROZEN = FROZEN_HASHES as unknown as Record<string, string>;
 
 /** The lenses that existed before the LensRegistry seam (P2-13): the first 33 registry entries. */
 const PRE_REGISTRY_MODES = 33;
+
+/** Pre-registry lenses P2-14 re-derives through PostureService on purpose: unfrozen in that reviewed change. */
+const REDERIVED_MODES: ReadonlySet<string> = new Set(['status', 'controls']);
 
 /**
  * One lens's block of lens-snapshots.json, byte for byte as
@@ -118,6 +123,14 @@ const SCORE: Record<HeatmapMode, (m: MatrixComponent, t: Technique) => Score> = 
     const c = m.postureCell(t);
     return c ? [c.bucket, ...c.subStates].join(' ') : null;
   },
+  // Proven (P2-14): 3 production / 2 range or own run / 1 stale / 0, plus 'lab' where the best proof is range.
+  proven: (m, t) => {
+    const c = m.postureCell(t);
+    if (!c) return null;
+    return c.proofScope === 'range' && (c.score ?? 0) > 0 ? `${c.score} lab` : c.score ?? null;
+  },
+  // Covered (self-attested or range) (P2-14): 2 full / 1 partial / 0.
+  covered: (m, t) => m.postureCell(t)?.score ?? null,
 };
 
 /** Lenses whose fixture snapshot is legitimately single-valued (see the spec below). */
@@ -200,7 +213,7 @@ function snapshotOn(bench: LensBench, mode: HeatmapMode): ModeSnapshot {
   return out;
 }
 
-describe('Heatmap lens characterization (34 modes, fixed fixture)', () => {
+describe('Heatmap lens characterization (36 modes, fixed fixture)', () => {
   let domain: Domain;
   let http: HttpTestingController;
   let bench: LensBench;
@@ -216,10 +229,10 @@ describe('Heatmap lens characterization (34 modes, fixed fixture)', () => {
 
   const snapshotOf = (mode: HeatmapMode): ModeSnapshot => snapshotOn(bench, mode);
 
-  it('covers exactly the 34 modes in HEATMAP_MODES, with no stale snapshot', () => {
+  it('covers exactly the 36 modes in HEATMAP_MODES, with no stale snapshot', () => {
     const modes = HEATMAP_MODES.map(m => m.value);
-    expect(modes.length).toBe(34);
-    expect(new Set(modes).size).toBe(34);
+    expect(modes.length).toBe(36);
+    expect(new Set(modes).size).toBe(36);
     expect(Object.keys(SCORE).sort()).toEqual([...modes].sort());
     expect(Object.keys(COMMITTED).sort()).toEqual([...modes].sort());
   });
@@ -276,10 +289,14 @@ describe('Heatmap lens characterization (34 modes, fixed fixture)', () => {
     expect(() => http.verify()).not.toThrow();
   });
 
-  it('frozen-hash guard: the 33 lenses that predate the registry are byte-identical (P2-13)', async () => {
-    const frozen = HEATMAP_MODES.slice(0, PRE_REGISTRY_MODES).map(m => m.value as string);
-    // The frozen set is exactly the 33 older entries, which kept their registry index.
-    expect(frozen.length).toBe(33);
+  it('frozen-hash guard: the 31 lenses that predate the registry and P2-14 leaves alone are byte-identical (P2-13, P2-14)', async () => {
+    const older = HEATMAP_MODES.slice(0, PRE_REGISTRY_MODES).map(m => m.value as string);
+    // The 33 older entries kept their registry index; status and controls are re-derived on purpose.
+    expect(older.length).toBe(33);
+    expect(older.filter(m => REDERIVED_MODES.has(m)).sort()).toEqual(['controls', 'status']);
+    const frozen = older.filter(m => !REDERIVED_MODES.has(m));
+    expect(frozen.length).toBe(31);
+    expect(frozen).toContain('unified');
     expect(Object.keys(FROZEN).sort()).toEqual([...frozen].sort());
     for (const mode of frozen) {
       expect(FROZEN[mode]).withContext(mode).toMatch(/^[0-9a-f]{64}$/);

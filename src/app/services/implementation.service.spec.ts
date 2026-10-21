@@ -28,6 +28,7 @@ import { CustomMitigationService } from './custom-mitigation.service';
 import { NavigatorLayerService } from './navigator-layer.service';
 import { AnnotationService } from './annotation.service';
 import { UserLayerService } from './user-layer.service';
+import { makePostureStub, postureStubProvider } from '../testing/posture-stub';
 import { Domain } from '../models/domain';
 import { Mitigation } from '../models/mitigation';
 
@@ -279,6 +280,8 @@ describe('ImplementationService CSV import (P2-06)', () => {
             getConfig: () => ({ url: '', apiKey: '', orgId: '', mode: 'direct', proxyUrl: '', connected: false }),
         } },
         { provide: TaxiiService, useValue: { servers$: new BehaviorSubject([]) } },
+        // The settings panel reads PostureService.ownerWords (P2-14 repair round 1); this stub DataService cannot feed the real one.
+        postureStubProvider(makePostureStub(() => null)),
       ],
     });
     TestBed.inject(SettingsService).reset();

@@ -1,6 +1,6 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { Injectable, inject } from '@angular/core';
+import { Injectable, Injector, inject } from '@angular/core';
 import { AttackDomain, DataService } from './data.service';
 import { Domain } from '../models/domain';
 import { FilterService, HeatmapMode } from './filter.service';
@@ -18,6 +18,9 @@ import { DerivedStatus, NavigatorLayerService } from './navigator-layer.service'
 import { AnnotationService } from './annotation.service';
 import { UserLayerService } from './user-layer.service';
 import { csvRow } from '../utils/csv';
+import type { Technique } from '../models/technique';
+import type { ImplView } from './posture-adapters';
+import { PostureService } from './posture.service';
 
 /**
  * All matrix/report export and import actions, extracted from AppComponent so
@@ -42,6 +45,14 @@ export class ExportActionsService {
   private readonly navigatorLayerService = inject(NavigatorLayerService);
   private readonly annotationService = inject(AnnotationService);
   private readonly userLayerService = inject(UserLayerService);
+  private readonly injector = inject(Injector);
+
+  /**
+   * The guarded per-technique implementation view the XLSX 'Impl Status (best)'
+   * column and the Navigator layer export follow (PostureService.implViewFor,
+   * P2-14; Addendum note 4). PostureService is injected on first export.
+   */
+  private readonly implViewFor = (t: Technique): ImplView => this.injector.get(PostureService).implViewFor(t);
 
   private domain: Domain | null = null;
   private currentDomain: AttackDomain = 'enterprise';
@@ -170,6 +181,7 @@ export class ExportActionsService {
       this.implService.getStatusMap(),
       this.customMitService.all,
       this.timelineService.getAll(),
+      this.implViewFor,
     );
   }
 
@@ -355,7 +367,10 @@ export class ExportActionsService {
 
   exportNavigatorLayer(): void {
     if (!this.domain) return;
-    this.navigatorLayerService.downloadLayer(this.domain, this.currentDomain, this.implService.getStatusMap(), this.browserFileService, this.annotationService.all);
+    this.navigatorLayerService.downloadLayer(
+      this.domain, this.currentDomain, this.implService.getStatusMap(), this.browserFileService, this.annotationService.all,
+      this.implViewFor,
+    );
   }
 
   openInNavigator(): void {

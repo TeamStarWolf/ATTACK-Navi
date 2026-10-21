@@ -6,7 +6,8 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { MatrixPageComponent } from './matrix-page.component';
 import { DataService } from '../../services/data.service';
-import { FilterService } from '../../services/filter.service';
+import { DEFAULT_HEATMAP_MODE, FilterService, HeatmapMode } from '../../services/filter.service';
+import { PostureService } from '../../services/posture.service';
 import { LensCardService } from '../../services/lens-card.service';
 import { heatmapModeDef, lensAvailability } from '../../models/heatmap-modes';
 import { BehaviorSubject, of } from 'rxjs';
@@ -114,6 +115,72 @@ describe('MatrixPageComponent', () => {
     it('planned-only: banner', () => {
       const fixture = render(d => localStorage.setItem('mitre-nav-impl-v1', JSON.stringify([[m1047(d), 'planned']])));
       expect(bannerOf(fixture.nativeElement)).toBeTruthy();
+    });
+  });
+
+  // Design §10.4 item 14: the Proven and Covered lenses are not named for an
+  // empty user, so a heat=proven or heat=covered link opened with no owner
+  // data moves to the default lens (lensOnScreen). It waits for the domain:
+  // before one loads, ownerWords() is false for every profile.
+  describe('heat=proven and heat=covered need owner data (§10.4 item 14)', () => {
+    function mount(seed: (d: Domain) => void) {
+      TestBed.resetTestingModule();
+      resetBrowserState();
+      const domain = parseFixtureDomain();
+      seed(domain);
+      TestBed.configureTestingModule({
+        imports: [MatrixPageComponent],
+        providers: [provideHttpClient(withXhr()), provideHttpClientTesting(), provideRouter([])],
+      });
+      TestBed.overrideTemplate(MatrixComponent, '');
+      const fixture = TestBed.createComponent(MatrixPageComponent);
+      fixture.detectChanges();
+      const loadDomain = (): void => {
+        (TestBed.inject(DataService) as unknown as { domainSubject: { next(d: Domain): void } }).domainSubject.next(domain);
+        TestBed.tick();
+        fixture.detectChanges();
+      };
+      const setLens = (mode: HeatmapMode): void => {
+        TestBed.inject(FilterService).setHeatmapMode(mode);
+        TestBed.tick();
+        fixture.detectChanges();
+      };
+      return { fixture, loadDomain, setLens };
+    }
+    const m1047 = (d: Domain) => d.mitigations.find(m => m.attackId === 'M1047')!.id;
+    const implementedControl = (d: Domain) => localStorage.setItem('mitre-nav-controls-v1', JSON.stringify([{
+      id: 'c1', name: 'EDR policy', framework: 'Custom', controlRef: 'c1', description: '', mitigationIds: [m1047(d)], status: 'implemented',
+    }]));
+
+    afterEach(() => resetBrowserState());
+
+    for (const mode of ['proven', 'covered'] as const) {
+      it(`an empty user on heat=${mode} moves to the default lens once the domain loads`, () => {
+        const { fixture, loadDomain, setLens } = mount(() => undefined);
+        setLens(mode);
+        expect(fixture.componentInstance.heatmapMode).withContext('no domain yet: left alone').toBe(mode);
+        loadDomain();
+        expect(fixture.componentInstance.heatmapMode).toBe(DEFAULT_HEATMAP_MODE);
+        setLens(mode);
+        expect(fixture.componentInstance.heatmapMode).withContext('picked again with no owner data').toBe(DEFAULT_HEATMAP_MODE);
+      });
+
+      it(`with owner data, heat=${mode} stays`, () => {
+        const { fixture, loadDomain, setLens } = mount(implementedControl);
+        setLens(mode);
+        loadDomain();
+        expect(TestBed.inject(PostureService).ownerWords()).toBeTrue();
+        expect(fixture.componentInstance.heatmapMode).toBe(mode);
+      });
+    }
+
+    it('leaves every other lens alone for an empty user, Posture included', () => {
+      const { fixture, loadDomain, setLens } = mount(() => undefined);
+      loadDomain();
+      for (const mode of ['posture', 'status', 'controls', 'unified'] as const) {
+        setLens(mode);
+        expect(fixture.componentInstance.heatmapMode).withContext(mode).toBe(mode);
+      }
     });
   });
 

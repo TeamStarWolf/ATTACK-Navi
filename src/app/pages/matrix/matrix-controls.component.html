@@ -78,7 +78,7 @@
   </select>
 
   <!-- Impl status filter -->
-  <select class="filter-select" [(ngModel)]="implStatusFilter" (change)="onImplStatusFilterChange()" title="Filter by implementation status">
+  <select class="filter-select" [(ngModel)]="implStatusFilter" (change)="onImplStatusFilterChange()" [title]="implFilterTitle">
     <option value="">All statuses</option>
     @for (o of implStatusOptions; track o.value) {
       <option [value]="o.value">{{ o.label }}</option>
@@ -108,7 +108,7 @@
                         [class.unavailable]="!fs.available"
                         [attr.aria-disabled]="fs.available ? null : 'true'"
                         [attr.aria-describedby]="fs.available ? null : 'lens-na-featured-' + mode.value"
-                        [title]="fs.reason ?? mode.question"
+                        [title]="lensTitle(mode, fs)"
                         (click)="setHeatmap(mode.value)">
                   {{ mode.label }}
                   @if (!fs.available) {
@@ -125,7 +125,7 @@
         <div class="heatmap-groups">
           @if (disabledLensCount > 0) {
             <p class="lens-na-summary" role="status">
-              {{ disabledLensCount }} of {{ heatmapModes.length }} lenses have no {{ domainName }} data and are disabled; each says why. Use ? for a lens's definition.
+              {{ disabledLensCount }} of {{ pickerModeCount }} lenses have no {{ domainName }} data and are disabled; each says why. Use ? for a lens's definition.
             </p>
           }
           @for (group of heatmapGroups; track group) {
@@ -139,7 +139,7 @@
                             [class.unavailable]="!ls.available"
                             [attr.aria-disabled]="ls.available ? null : 'true'"
                             [attr.aria-describedby]="ls.available ? null : 'lens-na-' + m.value"
-                            [title]="ls.reason ?? m.question"
+                            [title]="lensTitle(m, ls)"
                             (click)="setHeatmap(m.value)">
                       {{ m.label }}
                       @if (!ls.available) {

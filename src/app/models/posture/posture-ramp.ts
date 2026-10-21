@@ -104,8 +104,12 @@ export interface PostureCellVM {
   readonly bucket: PostureBucket;
   readonly subStates: readonly PostureSubState[];
   readonly proofScope: ProofScope | null;
-  /** postureCellLabel(state, windows): the words for aria-label and tooltip. */
+  /** postureCellLabel(state, windows), or the lens's own cell words (P2-14): for aria-label and tooltip. */
   readonly label: string;
+  /** The lens's score when it is not the Posture score (P2-14: Proven, Covered, Status, Controls). */
+  readonly score?: number;
+  /** The lens's categorical stop (P2-14: Status, Controls). */
+  readonly implStop?: string;
 }
 
 /**
@@ -160,7 +164,10 @@ export function postureColor(cell: LensCell, ctx: Pick<LensContext, 'theme' | 'c
 /** The LensCell a technique cell rebuilds from its PostureCellVM input (null: no state yet, 'none'). */
 export function postureLensCell(vm: PostureCellVM | null): LensCell {
   if (!vm) return { score: 0, bucket: 'none', subStates: [], proofScope: null };
-  return { score: POSTURE_SCORE[vm.bucket], bucket: vm.bucket, subStates: vm.subStates, proofScope: vm.proofScope };
+  return {
+    score: vm.score ?? POSTURE_SCORE[vm.bucket], bucket: vm.bucket, subStates: vm.subStates, proofScope: vm.proofScope,
+    ...(vm.implStop !== undefined ? { implStop: vm.implStop } : {}),
+  };
 }
 
 /**

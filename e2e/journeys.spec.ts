@@ -181,6 +181,32 @@ test.describe('journey 4, Honesty: empty user', () => {
     await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => undefined);
     expect(await bannedStringsOnPage(page, forbiddenStrings)).toEqual([]);
   });
+
+  // The route scans run with the View menu closed and never name a lens in the
+  // URL. The Proven and Covered lenses are named for a rung, so an empty user
+  // is never offered them (design §10.4 item 14): a heat= link to either opens
+  // the default lens, and the open lens picker and the legend name neither.
+  // 'proven' is scanned here as well as the shared list. The onboarding dialog
+  // is skipped so the View button can be clicked; the profile is still empty.
+  test.describe('lens picker and legend', () => {
+    test.use({ workspace: { skipOnboarding: true } });
+    for (const mode of ['proven', 'covered']) {
+      test(`DOM scan #/matrix?heat=${mode} with the View menu and legend open`, greenBy('P2 (P2-14)'), async ({ page }) => {
+        await page.addInitScript(() => localStorage.setItem('matrix-context-strip', 'open'));
+        await page.goto(`${BASE}/#/matrix?heat=${mode}`);
+        await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+        const viewButton = page.locator('.heatmap-btn');
+        await expect(viewButton).toContainText('Frequency');
+        await expect(page.locator('app-legend .legend-label')).toHaveText('Frequency');
+        await viewButton.click();
+        await expect(page.locator('.heatmap-mode-btn').first()).toBeVisible();
+        await expect(page.locator('.lens-item[data-lens="posture"]')).toHaveCount(1);
+        await expect(page.locator('.lens-item[data-lens="proven"], .lens-item[data-lens="covered"]')).toHaveCount(0);
+        await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => undefined);
+        expect(await bannedStringsOnPage(page, [...forbiddenStrings, 'proven'])).toEqual([]);
+      });
+    }
+  });
 });
 
 // Journey 1, the KEV-down branch (plan P1 row E1.3: "the KEV-down branch of journey 1
@@ -421,6 +447,8 @@ test.describe('lens availability (plan E1.2)', () => {
     await expect(page.locator('.cell.lens-na')).toHaveCount(cells);
 
     // The lens menu disables the 23 lenses without ICS data, each with its reason.
+    // This profile has no owner data, so the menu offers 34 of the 36 lenses:
+    // the Proven and Covered lenses wait for data of yours (§10.4 item 14).
     await page.locator('.heatmap-btn').click();
     await expect(page.locator('.lens-na-summary')).toContainText('23 of 34 lenses have no ICS ATT&CK data');
     const disabled = page.locator('.heatmap-groups .heatmap-mode-btn[aria-disabled="true"]');

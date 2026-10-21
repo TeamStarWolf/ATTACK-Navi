@@ -8,13 +8,13 @@ Counts and versions derived from the code. When a document states one of these n
 
 | Fact | Value | Derived from |
 | :-- | --: | :-- |
-| Heatmap modes | 34 | `src/app/models/heatmap-modes.ts` (`HEATMAP_MODES`) |
+| Heatmap modes | 36 | `src/app/models/heatmap-modes.ts` (`HEATMAP_MODES`) |
 | Routed workspaces (top-level routes, redirects excluded) | 10 | `src/app/app.routes.ts` |
 | Workspaces that lazy-load a route file | 8 | `loadChildren` in `src/app/app.routes.ts` |
 | Routed workspace tabs | 47 | child routes with `data.tab` in `src/app/pages/*/*.routes.ts` |
 | Library layers | 37 | `src/assets/data/library-layers/index.json` |
 | Lylat mission layers | 35 | `src/assets/data/lylat-mission-layers/index.json` |
-| Unit spec files | 231 | `src/**/*.spec.ts` |
+| Unit spec files | 232 | `src/**/*.spec.ts` |
 | Playwright spec files | 8 | `e2e/**/*.spec.ts` |
 | Script test files | 8 | `scripts/**/*.test.mjs` |
 | Proxy test files | 1 | `server/**/*.test.*` |
@@ -23,7 +23,7 @@ Counts and versions derived from the code. When a document states one of these n
 | RxJS | 7.8.2 | `package-lock.json` |
 | zone.js | 0.16.3 | `package-lock.json` |
 | Truth-vocabulary lint findings | 0 | `node scripts/lint-truth-vocab.mjs` (src/app templates and TS, README, docs) |
-| Truth-vocabulary allow directives | 3 | inline allow comments in those files, each with its reason |
+| Truth-vocabulary allow directives | 7 | inline allow comments in those files, each with its reason |
 
 Unit spec files are files, not test cases; Karma prints the test-case count for the commit it ran.
 
@@ -42,40 +42,42 @@ Version is the `x_mitre_version` of the bundle's `x-mitre-collection` object.
 
 | # | Id | Short label | Group | Rung |
 | --: | :-- | :-- | :-- | :-- |
-| 1 | `coverage` | Mitigations mapped | Coverage & Posture | Known |
-| 2 | `status` | Status | Coverage & Posture | Covered self-attested |
-| 3 | `controls` | Controls | Coverage & Posture | Covered self-attested |
-| 4 | `unified` | Reference depth | Coverage & Posture | Known |
-| 5 | `library` | Library | Coverage & Posture | Known |
-| 6 | `frequency` | Frequency | Coverage & Posture | Threat |
-| 7 | `risk` | Threat-weighted gap | Threat Landscape | Threat |
-| 8 | `exposure` | Selected adversaries | Threat Landscape | Threat |
-| 9 | `software` | Software | Threat Landscape | Threat |
-| 10 | `campaign` | Campaign | Threat Landscape | Threat |
-| 11 | `intelligence` | Intelligence | Threat Landscape | Threat |
-| 12 | `my-exposure` | My Exposure | Threat Landscape | Exposure |
-| 13 | `kev` | KEV | Vulnerabilities | Threat |
-| 14 | `cve` | CVE | Vulnerabilities | Threat |
-| 15 | `epss` | EPSS | Vulnerabilities | Threat |
-| 16 | `kill-chain` | Kill Chain | Vulnerabilities | Threat |
-| 17 | `poc-exploits` | PoC | Vulnerabilities | Threat |
-| 18 | `detection` | Detection content | Detections | Known |
-| 19 | `sigma` | Sigma | Detections | Known |
-| 20 | `elastic` | Elastic | Detections | Known |
-| 21 | `splunk` | Splunk | Detections | Known |
-| 22 | `wazuh` | Wazuh stock rules | Detections | Known |
-| 23 | `m365` | M365 | Detections | Known |
-| 24 | `car` | CAR | Detections | Known |
-| 25 | `atomic` | Atomic | Detections | Known |
-| 26 | `d3fend` | D3FEND | Frameworks | Known |
-| 27 | `engage` | Engage | Frameworks | Known |
-| 28 | `nist` | NIST | Frameworks | Known |
-| 29 | `veris` | VERIS | Frameworks | Known |
-| 30 | `cri` | CRI | Frameworks | Known |
-| 31 | `csa-ccm` | CSA CCM | Frameworks | Known |
-| 32 | `m365-controls` | M365 Ctl | Frameworks | Known |
-| 33 | `f3-origin` | F3 Origin | Frameworks | Known |
-| 34 | `posture` | Posture | Coverage & Posture | Mixed |
+| 1 | `coverage` | `Mitigations mapped` | Coverage & Posture | `Known` |
+| 2 | `status` | `Status` | Coverage & Posture | `Covered self-attested` |
+| 3 | `controls` | `Controls` | Coverage & Posture | `Covered self-attested` |
+| 4 | `unified` | `Reference depth` | Coverage & Posture | `Known` |
+| 5 | `library` | `Library` | Coverage & Posture | `Known` |
+| 6 | `frequency` | `Frequency` | Coverage & Posture | `Threat` |
+| 7 | `risk` | `Threat-weighted gap` | Threat Landscape | `Threat` |
+| 8 | `exposure` | `Selected adversaries` | Threat Landscape | `Threat` |
+| 9 | `software` | `Software` | Threat Landscape | `Threat` |
+| 10 | `campaign` | `Campaign` | Threat Landscape | `Threat` |
+| 11 | `intelligence` | `Intelligence` | Threat Landscape | `Threat` |
+| 12 | `my-exposure` | `My Exposure` | Threat Landscape | `Exposure` |
+| 13 | `kev` | `KEV` | Vulnerabilities | `Threat` |
+| 14 | `cve` | `CVE` | Vulnerabilities | `Threat` |
+| 15 | `epss` | `EPSS` | Vulnerabilities | `Threat` |
+| 16 | `kill-chain` | `Kill Chain` | Vulnerabilities | `Threat` |
+| 17 | `poc-exploits` | `PoC` | Vulnerabilities | `Threat` |
+| 18 | `detection` | `Detection content` | Detections | `Known` |
+| 19 | `sigma` | `Sigma` | Detections | `Known` |
+| 20 | `elastic` | `Elastic` | Detections | `Known` |
+| 21 | `splunk` | `Splunk` | Detections | `Known` |
+| 22 | `wazuh` | `Wazuh stock rules` | Detections | `Known` |
+| 23 | `m365` | `M365` | Detections | `Known` |
+| 24 | `car` | `CAR` | Detections | `Known` |
+| 25 | `atomic` | `Atomic` | Detections | `Known` |
+| 26 | `d3fend` | `D3FEND` | Frameworks | `Known` |
+| 27 | `engage` | `Engage` | Frameworks | `Known` |
+| 28 | `nist` | `NIST` | Frameworks | `Known` |
+| 29 | `veris` | `VERIS` | Frameworks | `Known` |
+| 30 | `cri` | `CRI` | Frameworks | `Known` |
+| 31 | `csa-ccm` | `CSA CCM` | Frameworks | `Known` |
+| 32 | `m365-controls` | `M365 Ctl` | Frameworks | `Known` |
+| 33 | `f3-origin` | `F3 Origin` | Frameworks | `Known` |
+| 34 | `posture` | `Posture` | Coverage & Posture | `Mixed` |
+| 35 | `proven` | `Proven` | Coverage & Posture | `Proven` |
+| 36 | `covered` | `Covered (self-attested or range)` | Coverage & Posture | `Covered self-attested` |
 
 ## Routes and tabs
 
@@ -182,12 +184,12 @@ Read by `scripts/check-facts.mjs`.
 
 <!-- facts-json
 {
-  "heatmapModes": 34,
+  "heatmapModes": 36,
   "routedWorkspaces": 10,
   "routeFileWorkspaces": 8,
   "routedTabs": 47,
   "libraryLayers": 37,
-  "unitSpecs": 231,
+  "unitSpecs": 232,
   "angularMajor": 22,
   "typescriptMajor": 6,
   "bundleVersions": {
