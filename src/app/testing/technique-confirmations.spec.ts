@@ -41,8 +41,10 @@ import { StatsBarComponent } from '../components/stats-bar/stats-bar.component';
 import type { Domain } from '../models/domain';
 import type { Mitigation } from '../models/mitigation';
 import type { PostureBucket } from '../models/posture/posture.types';
+import { postureBadge } from '../models/posture/posture-vocabulary';
 import { computeReportSplit } from '../models/report-split';
 import type { Technique } from '../models/technique';
+import type { TechniqueRefKey } from '../models/technique-ref';
 import { type AttackDomain, DataService } from '../services/data.service';
 import { FilterService, type HeatmapMode } from '../services/filter.service';
 import { HtmlReportService } from '../services/html-report.service';
@@ -51,7 +53,8 @@ import { NavigatorLayerService } from '../services/navigator-layer.service';
 import { OwnerDataService } from '../services/owner-data.service';
 import { PostureService } from '../services/posture.service';
 import { TechniqueMarksService } from '../services/technique-marks.service';
-import { lensPostureTodayProvider, resetBrowserState } from './lens-harness';
+import { ValidationService } from '../services/validation.service';
+import { daysBeforeLensToday, lensPostureTodayProvider, resetBrowserState } from './lens-harness';
 
 /** The rung words a fresh profile must never render (§1.3). */
 const OWNER_WORDS = /\bcovered\b|\bproven\b|\bdefended\b/i;
@@ -403,6 +406,76 @@ describe('[AC] Technique confirmations go live: drawer Confirm, bulk set and Nav
       impl.setStatus(mitigation('M1038', 79).id, 'planned');
       const host = open('T1059.001');
       expect(host.querySelector('[data-testid="mit-posture-row"]')).toBeNull();
+    });
+
+    // The row's text is postureBadge() of the technique's own state, so the
+    // drawer cannot give a second answer when another source covers it (§2.4, §4.1).
+    /** The M1038 row of T1059.001: badge text, its partial class and which control it offers. */
+    function m1038Row(): { text: string; partial: boolean; confirm: boolean; unconfirm: boolean } {
+      const r = row(open('T1059.001'), 'M1038');
+      const badge = r.querySelector('[data-testid="mit-posture-badge"]');
+      expect(badge).withContext('M1038 badge').not.toBeNull();
+      return {
+        text: text(badge),
+        partial: badge!.classList.contains('partial'),
+        confirm: r.querySelector('[data-testid="mit-confirm"]') !== null,
+        unconfirm: r.querySelector('[data-testid="mit-unconfirm"]') !== null,
+      };
+    }
+    /** The answer every other surface gives for T1059.001: its state's badge, and the report's. */
+    function otherSurfaces(): { state: string; report: string; bucket: string } {
+      const t = tech('T1059.001');
+      const report = new DOMParser().parseFromString(TestBed.inject(HtmlReportService).techniqueBadge(t), 'text/html').body.textContent ?? '';
+      return { state: postureBadge(posture.stateFor(t)), report, bucket: posture.stateFor(t).bucket };
+    }
+    const t1059001Ref = () => 'attack/enterprise/T1059.001@' + bundled.attackVersion as TechniqueRefKey;
+
+    it('an implemented layer mark makes the row read the covered state the report shows, with no Confirm', () => {
+      impl.setStatus(mitigation('M1038', 79).id, 'implemented');
+      expect(marks.replaceSource('layer:Vendor A', [{ ref: t1059001Ref(), status: 'implemented' }])).toBe(1);
+      const other = otherSurfaces();
+      expect(other.bucket).toBe('covered');
+      const r = m1038Row();
+      expect(r.text).toBe(other.state);
+      expect(r.text).toBe(other.report);
+      expect(r.text).not.toContain('partial');
+      expect(r.partial).toBeFalse();
+      expect(r.confirm).withContext('no Confirm on a technique that is already covered').toBeFalse();
+      expect(r.unconfirm).withContext('no Unconfirm without a manual mark').toBeFalse();
+    });
+
+    it('Unconfirm with a layer mark in place leaves the row on the covered state, not the partial text', () => {
+      impl.setStatus(mitigation('M1038', 79).id, 'implemented');
+      expect(m1038Row().confirm).toBeTrue();
+      (row(open('T1059.001'), 'M1038').querySelector('[data-testid="mit-confirm"]') as HTMLButtonElement).click();
+      drawer.detectChanges();
+      marks.replaceSource('layer:Vendor A', [{ ref: t1059001Ref(), status: 'implemented' }]);
+      let r = m1038Row();
+      expect([r.text, r.confirm, r.unconfirm]).toEqual([otherSurfaces().state, false, true]);
+      (row(open('T1059.001'), 'M1038').querySelector('[data-testid="mit-unconfirm"]') as HTMLButtonElement).click();
+      drawer.detectChanges();
+      expect(marks.all.map(m => m.source)).toEqual(['layer:Vendor A']);
+      r = m1038Row();
+      expect(otherSurfaces().bucket).toBe('covered');
+      expect([r.text, r.partial, r.confirm, r.unconfirm]).toEqual([otherSurfaces().state, false, false, false]);
+    });
+
+    it('a confirmed technique with a fresh range run reads the proven badge the report shows, still with Unconfirm', () => {
+      impl.setStatus(mitigation('M1038', 79).id, 'implemented');
+      (row(open('T1059.001'), 'M1038').querySelector('[data-testid="mit-confirm"]') as HTMLButtonElement).click();
+      drawer.detectChanges();
+      const imported = TestBed.inject(ValidationService).importJson(JSON.stringify({ runs: [
+        { id: 'p2-16-proof', techniqueId: 'T1059.001', runDate: daysBeforeLensToday(10), status: 'passed',
+          attackResult: 'executed', detectionsFired: ['sigma:p2-16-proof'] },
+      ] }));
+      expect(imported.ok).toBeTrue();
+      const other = otherSurfaces();
+      expect(other.bucket).toBe('proven');
+      const r = m1038Row();
+      expect(r.text).toBe(other.state);
+      expect(r.text).toBe(other.report);
+      expect(r.text).not.toBe('Covered (self-attested)');
+      expect([r.partial, r.confirm, r.unconfirm]).toEqual([false, false, true]);
     });
   });
 

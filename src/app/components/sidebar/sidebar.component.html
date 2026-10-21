@@ -1753,17 +1753,17 @@
                     <div class="mit-posture-row" data-testid="mit-posture-row">
                       <span
                         class="mit-posture-badge"
-                        [class.partial]="!badge.confirmed"
+                        [class.partial]="badge.partial"
                         data-testid="mit-posture-badge"
                       >{{ badge.text }}</span>
-                      @if (badge.confirmed) {
+                      @if (badge.canUnconfirm) {
                         <button
                           class="mit-confirm-btn"
                           data-testid="mit-unconfirm"
                           (click)="unconfirmTechnique()"
                           title="Remove this technique's own confirmation; the mitigation's status is unchanged"
                         >Unconfirm</button>
-                      } @else {
+                      } @else if (badge.canConfirm) {
                         <button
                           class="mit-confirm-btn"
                           data-testid="mit-confirm"

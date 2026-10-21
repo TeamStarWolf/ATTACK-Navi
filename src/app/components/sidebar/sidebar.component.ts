@@ -83,7 +83,6 @@ import { DrawerWidthService } from '../../services/drawer-width.service';
 import { PostureService } from '../../services/posture.service';
 import { type TechniqueMarkRecord, TechniqueMarksService } from '../../services/technique-marks.service';
 import { postureBadge } from '../../models/posture/posture-vocabulary';
-import type { CoveredMark } from '../../models/posture/posture.types';
 import { parseTechniqueRef, refForTechnique, techniqueRefKey } from '../../models/technique-ref';
 import { ctidDatasetUrl } from '../../services/ctid-links';
 
@@ -1325,25 +1324,26 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * The posture badge of one mitigation row (P2-16, E2.1-e; design §6, D16).
-   * Shown only when this implemented mitigation is broader than the breadth
-   * threshold, i.e. the technique's posture state holds a partial
+   * The posture badge of one mitigation row (P2-16, E2.1-e; design §2.4, §6, D16).
+   * The row shows only when this implemented mitigation is broader than the
+   * breadth threshold, i.e. the technique's posture state holds a partial
    * 'mitigation-implemented' mark through it, so a fresh profile renders none.
-   * Unconfirmed: 'Covered (self-attested, partial via Mxxxx)' with Confirm;
-   * confirmed (the technique holds an implemented 'manual' mark):
-   * 'Covered (self-attested)' with Unconfirm. Text only from postureBadge().
+   * The text is postureBadge() of the technique's own PostureState, so the
+   * drawer gives the same answer as the matrix, the posture card and the report
+   * badge (a layer mark or a range proof shows here as it does there).
+   * Confirm is offered only while that state is partial; Unconfirm while the
+   * technique holds an implemented 'manual' mark.
    */
-  mitigationPostureBadge(mitigation: Mitigation): { text: string; confirmed: boolean } | null {
+  mitigationPostureBadge(mitigation: Mitigation): { text: string; partial: boolean; canConfirm: boolean; canUnconfirm: boolean } | null {
     const tech = this.technique;
     if (!tech || !this.posture.ownerWords()) return null;
-    const mark: CoveredMark | undefined = this.posture.stateFor(tech).covered.find(m =>
+    const state = this.posture.stateFor(tech);
+    const gate = state.covered.some(m =>
       m.basis === 'mitigation-implemented' && m.strength === 'partial' && m.via === mitigation.attackId);
-    if (!mark) return null;
-    const confirmed = this.manualMark(tech)?.status === 'implemented';
-    const text = confirmed
-      ? postureBadge({ bucket: 'covered', qualifiers: ['self-attested'], proofScope: null, covered: [] })
-      : postureBadge({ bucket: 'partial', qualifiers: [], proofScope: null, covered: [mark] });
-    return { text, confirmed };
+    if (!gate) return null;
+    const partial = state.bucket === 'partial';
+    const canUnconfirm = this.manualMark(tech)?.status === 'implemented';
+    return { text: postureBadge(state), partial, canConfirm: partial && !canUnconfirm, canUnconfirm };
   }
 
   /** Confirm for this technique: a 'technique-confirmed' mark (source 'manual') naming the broad mitigation. */
