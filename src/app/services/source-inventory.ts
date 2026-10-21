@@ -24,7 +24,7 @@ export const INVENTORY_ROW = {
   ctidMappings: 'CTID mappings (NIST 800-53, CRI, CSA CCM, VERIS, AWS, Azure, GCP, M365)',
   cis: 'CIS Controls',
   referenceRuntime: 'Sigma coverage, CAR, Atomic, CAPEC, MISP galaxy, Engage',
-  vendorRuleTrees: 'Elastic, Splunk, Sentinel (edoardogerosa)',
+  vendorRuleTrees: 'Elastic, Splunk vendor rule trees',
   m365Hunting: 'M365 Defender hunting queries',
   trickest: 'trickest PoC tree',
   nuclei: 'Nuclei templates',
@@ -67,6 +67,25 @@ export const BUNDLED_KEV_SNAPSHOT = {
   commit: '6a392940c663b52271fa4e6aa7b39995b18c9a71',
 } as const;
 
+/**
+ * The bundled rule-coverage snapshot (src/assets/data/rule-coverage-snapshot.json), built
+ * by scripts/build-rule-coverage-snapshot.mjs from the rule bodies of three public rule
+ * repositories, each pinned to a commit. The commit SHA, its date and the generation
+ * date live in the file, which the monthly refresh-data.yml rebuilds, so they are not
+ * repeated here: each loader writes them into its record's version when the file loads,
+ * in the KEV snapshot's wording ('snapshot of <generated>, <owner>/<repo>@<sha> (commit
+ * <date>, <branch>)'). This static line is what the record says before that.
+ */
+function ruleCoverageVersion(branch: string): string {
+  return `pinned snapshot of ${branch} (commit and dates are read from the bundled file when it loads)`;
+}
+
+/** The honesty line of the three rule-coverage records. */
+export const RULE_COVERAGE_NOTE =
+  'Reference data about a public rule repository at the pinned commit: the number of its rules that name each '
+  + 'technique, read from the rule bodies by scripts/build-rule-coverage-snapshot.mjs. It says what the repository '
+  + 'holds, not what runs in your environment.';
+
 /** Licence notes, keyed by the id each SourceDefinition carries. */
 export const LICENCE_NOTES: Record<LicenceNoteId, LicenceNote> = {
   'attack': { licence: 'ATT&CK licence (MITRE)', notice: 'THIRD_PARTY_NOTICES.md section 1.1' },
@@ -85,6 +104,8 @@ export const LICENCE_NOTES: Record<LicenceNoteId, LicenceNote> = {
   'atomic-mit': { licence: 'MIT License', notice: 'THIRD_PARTY_NOTICES.md section 2' },
   'sigma-drl-1.1': { licence: 'Detection Rule License 1.1', notice: 'THIRD_PARTY_NOTICES.md section 2' },
   'mdecrevoisier-cc0': { licence: 'CC0 1.0 Universal', notice: 'THIRD_PARTY_NOTICES.md section 2' },
+  // Bundled data belongs in section 1 ('Content bundled in this repository'); section 2 is for runtime fetches.
+  'mdecrevoisier-snapshot-cc0': { licence: 'CC0 1.0 Universal', notice: 'not yet in THIRD_PARTY_NOTICES.md section 1 (the bundled rule-coverage snapshot; section 2 lists this repository only for runtime fetches, which no longer happen)' },
   'otrf-mit': { licence: 'MIT License', notice: 'THIRD_PARTY_NOTICES.md section 2' },
   'misp-cc0-mit': { licence: 'CC0 1.0 Universal or MIT-style', notice: 'THIRD_PARTY_NOTICES.md section 2' },
   'trickest-mit': { licence: 'MIT License', notice: 'THIRD_PARTY_NOTICES.md section 2' },
@@ -93,10 +114,10 @@ export const LICENCE_NOTES: Record<LicenceNoteId, LicenceNote> = {
   'payloads-mit': { licence: 'MIT License', notice: 'THIRD_PARTY_NOTICES.md section 2' },
   'mukul975-apache-2.0': { licence: 'Apache License 2.0', notice: 'THIRD_PARTY_NOTICES.md section 2' },
   'exploitdb-terms': { licence: "Exploit-DB's own terms", notice: 'THIRD_PARTY_NOTICES.md section 2' },
-  'elastic-license-2.0': { licence: 'Elastic License 2.0', notice: 'THIRD_PARTY_NOTICES.md section 1.8 (runtime tree listing not yet in section 2)' },
-  'splunk-apache-2.0': { licence: 'Apache License 2.0', notice: 'THIRD_PARTY_NOTICES.md section 1.8 (runtime tree listing not yet in section 2)' },
+  'elastic-license-2.0': { licence: 'Elastic License 2.0', notice: 'THIRD_PARTY_NOTICES.md section 1.8 (query library only; the bundled rule-coverage snapshot is not yet in section 1)' },
+  'splunk-apache-2.0': { licence: 'Apache License 2.0', notice: 'THIRD_PARTY_NOTICES.md section 1.8 (query library only; the bundled rule-coverage snapshot is not yet in section 1)' },
   'm365-hunting-mit': { licence: 'MIT License', notice: 'THIRD_PARTY_NOTICES.md section 1.8 (runtime tree listing not yet in section 2)' },
-  'sentinel-attack-mit': { licence: 'MIT License (per GitHub)', notice: 'not yet in THIRD_PARTY_NOTICES.md' },
+  'sentinel-attack-withdrawn-mit': { licence: 'MIT License (per GitHub)', notice: 'not yet in THIRD_PARTY_NOTICES.md' },
   'cyb3r-monk-bsd-3': { licence: 'BSD 3-Clause (per GitHub)', notice: 'not yet in THIRD_PARTY_NOTICES.md' },
   'nuclei-mit': { licence: 'MIT License (per GitHub)', notice: 'not yet in THIRD_PARTY_NOTICES.md' },
   'query-library': { licence: 'project work; reproduced upstream rules keep their licence', notice: 'THIRD_PARTY_NOTICES.md section 1.8' },
@@ -299,21 +320,26 @@ export const SOURCE_DEFINITIONS: readonly SourceDefinition[] = [
     note: 'Upstream last pushed 2024-04-01; the repository is not archived on GitHub.',
   },
   {
-    id: 'elastic-tree', name: 'Elastic detection-rules (tree listing)', kind: 'live', version: 'main, unpinned',
+    id: 'elastic-tree', name: 'Elastic detection-rules (pinned snapshot)', kind: 'bundled',
+    version: ruleCoverageVersion('main'),
     upstream: 'https://github.com/elastic/detection-rules', licence: 'elastic-license-2.0',
     inventoryRow: R.vendorRuleTrees, owner: 'services/elastic.service.ts',
-    note: 'Technique ids are read from file paths, which rarely carry them; an empty result is reported as empty.',
+    note: RULE_COVERAGE_NOTE,
   },
   {
-    id: 'splunk-tree', name: 'Splunk security_content (tree listing)', kind: 'live', version: 'develop, unpinned',
+    id: 'splunk-tree', name: 'Splunk security_content (pinned snapshot)', kind: 'bundled',
+    version: ruleCoverageVersion('develop'),
     upstream: 'https://github.com/splunk/security_content', licence: 'splunk-apache-2.0',
     inventoryRow: R.vendorRuleTrees, owner: 'services/splunk-content.service.ts',
-    note: 'Technique ids are read from file paths, which rarely carry them; an empty result is reported as empty.',
+    note: RULE_COVERAGE_NOTE,
   },
   {
-    id: 'sentinel-attack-tree', name: 'edoardogerosa/sentinel-attack (tree listing)', kind: 'live', version: 'master, unpinned',
-    upstream: 'https://github.com/edoardogerosa/sentinel-attack', licence: 'sentinel-attack-mit',
-    inventoryRow: R.vendorRuleTrees, owner: 'services/sentinel-rules.service.ts', onDemand: true,
+    id: 'sentinel-attack-tree', name: 'edoardogerosa/sentinel-attack (withdrawn)', kind: 'live',
+    version: 'none (every rule removed upstream on 2024-11-28)',
+    upstream: 'https://github.com/edoardogerosa/sentinel-attack', licence: 'sentinel-attack-withdrawn-mit',
+    inventoryRow: R.vendorRuleTrees, owner: 'services/sentinel-rules.service.ts',
+    initialStatus: 'archived-upstream', archivedUpstream: '2024-11-28',
+    note: 'Source withdrawn upstream: the maintainer removed every rule on 2024-11-28 ("Cleaned up deprecated components"); the repository holds no rules, so the service loads nothing.',
   },
   {
     id: 'm365-hunting-queries', name: 'Microsoft 365 Defender hunting queries (tree listing)', kind: 'live',
@@ -332,9 +358,11 @@ export const SOURCE_DEFINITIONS: readonly SourceDefinition[] = [
     inventoryRow: R.nuclei, owner: 'services/nuclei.service.ts', onDemand: true,
   },
   {
-    id: 'mdecrevoisier-sigma-tree', name: 'mdecrevoisier SIGMA-detection-rules (tree listing)', kind: 'live', version: 'main, unpinned',
-    upstream: 'https://github.com/mdecrevoisier/SIGMA-detection-rules', licence: 'mdecrevoisier-cc0',
-    inventoryRow: R.communityHunting, owner: 'services/sigma.service.ts', onDemand: true,
+    id: 'mdecrevoisier-sigma-tree', name: 'mdecrevoisier SIGMA-detection-rules (pinned snapshot)', kind: 'bundled',
+    version: ruleCoverageVersion('main'),
+    upstream: 'https://github.com/mdecrevoisier/SIGMA-detection-rules', licence: 'mdecrevoisier-snapshot-cc0',
+    inventoryRow: R.communityHunting, owner: 'services/sigma.service.ts',
+    note: RULE_COVERAGE_NOTE,
   },
   {
     id: 'cyb3r-monk-hunting-tree', name: 'Cyb3r-Monk Threat-Hunting-and-Detection (tree listing)', kind: 'live', version: 'main, unpinned',

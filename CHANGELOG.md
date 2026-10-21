@@ -5,6 +5,23 @@ All notable changes to ATTACK-Navi are documented here.
 ## Unreleased
 
 ### Changed
+- **Elastic, Splunk and mdecrevoisier Sigma rule counts come from the rule bodies,
+  as a pinned build-time snapshot.** These three sources used to list GitHub trees
+  and read technique ids from file names, which carry none, so their lenses were
+  always empty. `scripts/build-rule-coverage-snapshot.mjs` now reads the rules
+  themselves (Elastic `[[rule.threat.technique]]` ids, Splunk `mitre_attack_id`,
+  mdecrevoisier `attack.tNNNN` tags) from each repository's tarball at a pinned
+  commit and writes `src/assets/data/rule-coverage-snapshot.json` (2,131 Elastic
+  rules over 446 techniques, 2,169 Splunk detections over 396, 353 mdecrevoisier
+  rules over 125, at the 2026-10-21 pins). The monthly `refresh-data.yml` moves
+  the pins and rebuilds it. The Elastic and Splunk lenses now show counts, the
+  drawer's community Sigma list shows rule titles linked to the file at the pinned
+  commit, and the data-health view names the commit and dates. The counts are
+  reference data about public repositories, not what runs in an environment. No
+  request goes to `api.github.com` for these three any more.
+- **edoardogerosa/sentinel-attack retired.** The upstream removed every rule on
+  2024-11-28; the source is marked withdrawn upstream (like CIS Controls) and makes
+  no request.
 - **Bundled ICS and Mobile ATT&CK moved to v19.2**, matching the Enterprise
   snapshot (release files from `mitre-attack/attack-stix-data`), and the bundled
   CTID F3 snapshot moved to 1.2. ICS 19.2 adds 23 techniques (the T0843/T0846/T0873

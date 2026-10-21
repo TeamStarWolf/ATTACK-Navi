@@ -6,9 +6,6 @@ import { BehaviorSubject, Observable, distinctUntilChanged, map } from 'rxjs';
 import { DATA_PRESENT_STATUSES, SourceDefinition, SourceRecord } from '../models/source-record';
 import { SOURCE_DEFINITIONS } from './source-inventory';
 
-/** The reason recorded when a GitHub git/trees listing answers with truncated: true. */
-export const TRUNCATED_LISTING = 'listing truncated by GitHub; counts would be incomplete';
-
 /** HH:MM in the viewer's local time for an epoch-seconds header value, or null. */
 function localClock(epochSeconds: string | null): string | null {
   const v = epochSeconds?.trim() ?? '';

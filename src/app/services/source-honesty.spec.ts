@@ -50,7 +50,6 @@ import { NucleiService } from './nuclei.service';
 import { NvdBulkService } from './nvd-bulk.service';
 import { PayloadsService } from './payloads.service';
 import { PocExploitService } from './poc-exploit.service';
-import { SentinelRulesService } from './sentinel-rules.service';
 import { SiemQueryService } from './siem-query.service';
 import { SigmaService } from './sigma.service';
 import { SplunkContentService } from './splunk-content.service';
@@ -136,7 +135,6 @@ const CASES: HonestyCase[] = [
   { id: 'engage', service: EngageService, loaded: s => current(s.loaded$) },
   { id: 'elastic-tree', service: ElasticService, loaded: s => current(s.loaded$) },
   { id: 'splunk-tree', service: SplunkContentService, loaded: s => current(s.loaded$) },
-  { id: 'sentinel-attack-tree', service: SentinelRulesService, start: s => s.loadOnDemand(), loaded: s => current(s.loaded$) },
   { id: 'm365-hunting-queries', service: M365DefenderService, start: s => s.loadOnDemand(), loaded: s => current(s.loaded$) },
   { id: 'trickest-poc-tree', service: PocExploitService, loaded: s => current(s.loaded$) },
   { id: 'nuclei-tree', service: NucleiService, start: s => s.loadOnDemand(), loaded: s => current(s.loaded$) },
@@ -168,6 +166,7 @@ const CASES: HonestyCase[] = [
  */
 const NO_LOADER: Record<string, string> = {
   'cis-controls': 'withdrawn upstream: no request is made (status archived-upstream, loaded$ false)',
+  'sentinel-attack-tree': 'withdrawn upstream on 2024-11-28: no request is made (status archived-upstream, loaded$ false)',
   'lylat-mission-layers': 'shipped but read by no code path',
   'payloads-folder-map': 'compiled into the code',
   'offensive-tools': 'compiled into the code',
@@ -228,7 +227,9 @@ describe('source honesty: a failed loader never reports loaded (E1.3)', () => {
   it('covers every live source', () => {
     const live = SOURCE_DEFINITIONS.filter(d => d.kind === 'live' && !(d.id in NO_LOADER)).map(d => d.id);
     expect(live.filter(id => !CASES.some(c => c.id === id))).toEqual([]);
-    expect(live.length).toBeGreaterThan(40);
+    // 39 since the Elastic, Splunk and mdecrevoisier rule counts became a bundled snapshot
+    // and sentinel-attack was withdrawn upstream (they were 4 of the earlier 43).
+    expect(live.length).toBeGreaterThan(35);
   });
 
   CASES.forEach((c, i) => {

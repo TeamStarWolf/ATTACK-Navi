@@ -4,286 +4,126 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { SplunkContentService } from './splunk-content.service';
-import { SourceRegistryService, TRUNCATED_LISTING } from './source-registry.service';
-import TREES from '../../testing/fixtures/github-tree-listings.json';
+import { SourceRegistryService } from './source-registry.service';
+import { RULE_COVERAGE_SNAPSHOT_URL } from './rule-coverage-snapshot.service';
+import { RULE_COVERAGE_FIXTURE } from '../testing/rule-coverage-fixture';
 
-describe('SplunkContentService', () => {
+describe('SplunkContentService (bundled rule-coverage snapshot)', () => {
   let service: SplunkContentService;
-  let httpMock: HttpTestingController;
+  let http: HttpTestingController;
   let registry: SourceRegistryService;
-
-  // Service now scans the GitHub tree instead of fetching a pre-built layer
-  const SPLUNK_TREE_URL =
-    'https://api.github.com/repos/splunk/security_content/git/trees/develop?recursive=1';
+  const SECTION = RULE_COVERAGE_FIXTURE.sources.splunk;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({
-      providers: [
-        provideHttpClient(withXhr()),
-        provideHttpClientTesting(),
-      ],
-    });
-
+    TestBed.configureTestingModule({ providers: [provideHttpClient(withXhr()), provideHttpClientTesting()] });
     service = TestBed.inject(SplunkContentService);
-    httpMock = TestBed.inject(HttpTestingController);
+    http = TestBed.inject(HttpTestingController);
     registry = TestBed.inject(SourceRegistryService);
   });
 
-  afterEach(() => {
-    httpMock.verify();
+  // Only the bundled asset is requested: no api.github.com tree listing any more.
+  afterEach(() => http.verify());
+
+  const current = <T>(obs: { subscribe(fn: (v: T) => void): { unsubscribe(): void } }): T => {
+    let v!: T;
+    obs.subscribe(x => (v = x)).unsubscribe();
+    return v;
+  };
+
+  it('asks for the bundled asset at start-up and counts nothing before it arrives', () => {
+    expect(registry.get('splunk-tree').status).toBe('loading');
+    expect(service.getRuleCount('T1059')).toBe(0);
+    http.expectOne(RULE_COVERAGE_SNAPSHOT_URL).flush(RULE_COVERAGE_FIXTURE);
   });
 
-  // Helper: flush the live load request that fires in the constructor.
-  // Pass null to simulate an HTTP error; pass a tree object to simulate success.
-  function flushLiveLoad(tree: any = null): void {
-    const req = httpMock.expectOne(SPLUNK_TREE_URL);
-    if (tree === null) {
-      req.error(new ProgressEvent('error'));
-    } else {
-      req.flush(tree);
+  it('builds the technique-to-count map from its section; the count is the full number, not the listed rules', () => {
+    http.expectOne(RULE_COVERAGE_SNAPSHOT_URL).flush(RULE_COVERAGE_FIXTURE);
+    for (const [id, t] of Object.entries(SECTION.techniques)) {
+      expect(service.getRuleCount(id)).withContext(id).toBe(t.count);
+      expect(service.getHeatScore(id)).withContext(id).toBe(t.count);
+      expect(t.rules.length).toBeLessThan(t.count);
     }
-  }
-
-  // --- getRuleCount() ---
-
-  it('should return 0 before any layer is loaded', () => {
-    expect(service.getRuleCount('T1059')).toBe(0);
-    flushLiveLoad(null);
-  });
-
-  it('should return the correct count after ingestLayer', () => {
-    flushLiveLoad(null);
-    service.ingestLayer({
-      techniques: [
-        { techniqueID: 'T1059', score: 5 },
-        { techniqueID: 'T1078', score: 3 },
-      ],
-    });
-    expect(service.getRuleCount('T1059')).toBe(5);
-    expect(service.getRuleCount('T1078')).toBe(3);
-  });
-
-  it('should return 0 for a technique not in the layer', () => {
-    flushLiveLoad(null);
-    service.ingestLayer({
-      techniques: [
-        { techniqueID: 'T1059', score: 5 },
-      ],
-    });
     expect(service.getRuleCount('T9999')).toBe(0);
+    expect(service.getCounts().size).toBe(3);
+    expect(current<boolean>(service.loaded$)).toBeTrue();
+    expect(current<number>(service.total$)).toBe(SECTION.ruleCount);
+    expect(current<number>(service.covered$)).toBe(3);
   });
 
-  // --- getHeatScore() ---
-
-  it('should return the same value as getRuleCount (alias)', () => {
-    flushLiveLoad(null);
-    service.ingestLayer({
-      techniques: [
-        { techniqueID: 'T1059', score: 7 },
-      ],
-    });
-    expect(service.getHeatScore('T1059')).toBe(service.getRuleCount('T1059'));
+  it('does not add sub-technique counts to the parent again (the snapshot already rolled them up)', () => {
+    http.expectOne(RULE_COVERAGE_SNAPSHOT_URL).flush(RULE_COVERAGE_FIXTURE);
+    expect(service.getRuleCount('T1059')).toBe(SECTION.techniques['T1059'].count);
   });
 
-  // --- ingestLayer() ---
-
-  it('should parse a Navigator layer and update loaded$', () => {
-    flushLiveLoad(null);
-    service.ingestLayer({
-      techniques: [
-        { techniqueID: 'T1059', score: 5 },
-      ],
-    });
-    let loaded = false;
-    service.loaded$.subscribe(val => { loaded = val; });
-    expect(loaded).toBeTrue();
+  it('records the source loaded with rows = techniques and the pinned commit in its version', () => {
+    http.expectOne(RULE_COVERAGE_SNAPSHOT_URL).flush(RULE_COVERAGE_FIXTURE);
+    const r = registry.get('splunk-tree');
+    expect(r.status).toBe('loaded');
+    expect(r.rows).toBe(3);
+    expect(r.version).toBe(`snapshot of 2026-10-21, ${SECTION.owner}/${SECTION.repo}@${SECTION.sha.slice(0, 7)} (commit ${SECTION.commitDate.slice(0, 10)}, ${SECTION.branch})`);
   });
 
-  it('should update total$ with the sum of all scores', () => {
-    flushLiveLoad(null);
-    service.ingestLayer({
-      techniques: [
-        { techniqueID: 'T1059', score: 5 },
-        { techniqueID: 'T1078', score: 3 },
-      ],
-    });
-    let total = 0;
-    service.total$.subscribe(val => { total = val; });
-    expect(total).toBe(8);
+  it('lists rule names with permalinks at the pinned commit', () => {
+    http.expectOne(RULE_COVERAGE_SNAPSHOT_URL).flush(RULE_COVERAGE_FIXTURE);
+    let rules: Array<{ name: string; url: string }> = [];
+    service.fetchRulesForTechnique('T1059').subscribe(r => (rules = r));
+    expect(rules.map(r => r.name)).toEqual(SECTION.techniques['T1059'].rules.map(r => r.name));
+    expect(rules[0].url).toBe(`https://github.com/${SECTION.owner}/${SECTION.repo}/blob/${SECTION.sha}/${SECTION.techniques['T1059'].rules[0].path}`);
+    let none: unknown[] = [1];
+    service.fetchRulesForTechnique('T9999').subscribe(r => (none = r));
+    expect(none).toEqual([]);
   });
 
-  it('should update covered$ with the count of covered techniques', () => {
-    flushLiveLoad(null);
-    service.ingestLayer({
-      techniques: [
-        { techniqueID: 'T1059', score: 5 },
-        { techniqueID: 'T1078', score: 3 },
-        { techniqueID: 'T1190', score: 0 },
-      ],
-    });
-    let covered = 0;
-    service.covered$.subscribe(val => { covered = val; });
-    expect(covered).toBe(2);
+  it("fetchRulesForTechnique before the asset has arrived waits for it", () => {
+    let rules: unknown[] | null = null;
+    service.fetchRulesForTechnique('T1059').subscribe(r => (rules = r));
+    expect(rules).toBeNull();
+    http.expectOne(RULE_COVERAGE_SNAPSHOT_URL).flush(RULE_COVERAGE_FIXTURE);
+    expect((rules as unknown as unknown[]).length).toBe(2);
   });
 
-  it('should skip entries with score <= 0', () => {
-    flushLiveLoad(null);
-    service.ingestLayer({
-      techniques: [
-        { techniqueID: 'T1059', score: 0 },
-        { techniqueID: 'T1078', score: -1 },
-      ],
-    });
+  it("a missing asset (404) is failed with 'bundled snapshot missing', never empty; nothing claims loaded", () => {
+    http.expectOne(RULE_COVERAGE_SNAPSHOT_URL).flush('Not Found', { status: 404, statusText: 'Not Found' });
+    const r = registry.get('splunk-tree');
+    expect(r.status).toBe('failed');
+    // The app's own file: a 404 means it is not in this build, not GitHub's 'branch or path moved'.
+    expect(r.lastError).toBe(`bundled snapshot missing (not in this build (HTTP 404): ${RULE_COVERAGE_SNAPSHOT_URL})`);
+    expect(r.lastError).not.toContain('branch or path moved');
+    expect(r.rows).toBeNull();
+    expect(current<boolean>(service.loaded$)).toBeFalse();
     expect(service.getRuleCount('T1059')).toBe(0);
-    expect(service.getRuleCount('T1078')).toBe(0);
   });
 
-  it('should skip entries without a techniqueID', () => {
-    flushLiveLoad(null);
-    service.ingestLayer({
-      techniques: [
-        { techniqueID: '', score: 5 },
-        { techniqueID: 'T1059', score: 3 },
-      ],
-    });
-    expect(service.getRuleCount('T1059')).toBe(3);
-  });
-
-  // --- Parent technique rollup ---
-
-  it('should roll up subtechnique counts to the parent technique', () => {
-    flushLiveLoad(null);
-    service.ingestLayer({
-      techniques: [
-        { techniqueID: 'T1059', score: 2 },
-        { techniqueID: 'T1059.001', score: 3 },
-        { techniqueID: 'T1059.002', score: 4 },
-      ],
-    });
-    expect(service.getRuleCount('T1059')).toBe(9);
-  });
-
-  it('should not roll up parent counts to subtechniques', () => {
-    flushLiveLoad(null);
-    service.ingestLayer({
-      techniques: [
-        { techniqueID: 'T1059', score: 2 },
-        { techniqueID: 'T1059.001', score: 3 },
-      ],
-    });
-    expect(service.getRuleCount('T1059.001')).toBe(3);
-  });
-
-  it('should roll up to parent even when parent has no direct score', () => {
-    flushLiveLoad(null);
-    service.ingestLayer({
-      techniques: [
-        { techniqueID: 'T1059.001', score: 3 },
-        { techniqueID: 'T1059.002', score: 4 },
-      ],
-    });
-    expect(service.getRuleCount('T1059')).toBe(7);
-  });
-
-  // --- Live load from constructor (GitHub tree scan) ---
-
-  it('reads no technique id from a real-shaped Splunk listing and records the source as empty, rows 0', () => {
-    // An abridged real listing: upstream files are named by behaviour
-    // ('detections/application/aws_bedrock_claude_excessive_use_of_tokens.yml') and keep the ids in the file body.
-    const listing = TREES.splunk.listing;
-    expect(listing.tree.some(e => e.path === 'detections/application/aws_bedrock_claude_excessive_use_of_tokens.yml')).toBeTrue();
-    flushLiveLoad(listing);
-    const record = registry.get('splunk-tree');
-    expect(record.status).toBe('empty');
-    expect(record.rows).toBe(0);
-    expect(record.lastError).toBeNull();
-    expect(service.getRuleCount('T1114')).toBe(0);
-  });
-
-  it('synthetic: counts a rule path that does carry a technique id (keeps the path regex covered)', () => {
-    flushLiveLoad({ truncated: false, tree: [{ path: 'detections/endpoint/T1059_synthetic.yml', type: 'blob' }] });
-    expect(service.getRuleCount('T1059')).toBe(1);
-    expect(registry.get('splunk-tree').status).toBe('loaded');
-    expect(registry.get('splunk-tree').rows).toBe(1);
-  });
-
-  it('records a GitHub rate limit (403, X-RateLimit-Remaining 0) as failed, with the reset time', () => {
-    const reset = Math.floor(new Date(2026, 9, 21, 14, 5).getTime() / 1000);
-    httpMock.expectOne(SPLUNK_TREE_URL).flush(
-      { message: 'API rate limit exceeded for 203.0.113.7.' },
-      { status: 403, statusText: 'Forbidden', headers: { 'X-RateLimit-Remaining': '0', 'X-RateLimit-Reset': String(reset) } },
-    );
-    const record = registry.get('splunk-tree');
-    expect(record.status).toBe('failed');
-    expect(record.lastError).toBe('GitHub rate limit reached (60 requests per hour per address); resets at 14:05');
-  });
-
-  it('records a 404 as not found (branch or path moved), with the URL', () => {
-    httpMock.expectOne(SPLUNK_TREE_URL).flush({ message: 'Not Found' }, { status: 404, statusText: 'Not Found' });
+  it('an unreachable asset (status 0) is failed with the network reason', () => {
+    http.expectOne(RULE_COVERAGE_SNAPSHOT_URL).error(new ProgressEvent('error'));
     expect(registry.get('splunk-tree').status).toBe('failed');
-    expect(registry.get('splunk-tree').lastError).toBe(`not found (branch or path moved): ${SPLUNK_TREE_URL}`);
+    expect(registry.get('splunk-tree').lastError).toBe(`bundled snapshot missing (network error: ${RULE_COVERAGE_SNAPSHOT_URL})`);
   });
 
-  it('records status 0 as a network error, with the URL', () => {
-    flushLiveLoad(null);
-    expect(registry.get('splunk-tree').status).toBe('failed');
-    expect(registry.get('splunk-tree').lastError).toBe(`network error: ${SPLUNK_TREE_URL}`);
+  it("a malformed asset is failed with 'bundled snapshot missing or malformed', never empty", () => {
+    http.expectOne(RULE_COVERAGE_SNAPSHOT_URL).flush({ generated: '2026-10-21', sources: {} });
+    const r = registry.get('splunk-tree');
+    expect(r.status).toBe('failed');
+    expect(r.lastError).toBe("bundled snapshot missing or malformed: no 'splunk' section");
+    expect(current<boolean>(service.loaded$)).toBeFalse();
   });
 
-  it('does not parse a truncated listing: failed, with the truncated wording, and no ids recorded', () => {
-    flushLiveLoad({ truncated: true, tree: [{ path: 'detections/endpoint/T1059_synthetic.yml', type: 'blob' }] });
-    const record = registry.get('splunk-tree');
-    expect(record.status).toBe('failed');
-    expect(record.lastError).toBe(TRUNCATED_LISTING);
-    expect(record.rows).toBeNull();
-    expect(service.getRuleCount('T1059')).toBe(0);
+  it('a section with a wrongly typed field is failed by name, never with a TypeError', () => {
+    const broken = { ...RULE_COVERAGE_FIXTURE, sources: { ...RULE_COVERAGE_FIXTURE.sources, splunk: { ...SECTION, commitDate: 42 } } };
+    http.expectOne(RULE_COVERAGE_SNAPSHOT_URL).flush(broken);
+    const r = registry.get('splunk-tree');
+    expect(r.status).toBe('failed');
+    expect(r.lastError).toBe("bundled snapshot missing or malformed: 'splunk' has no commit date");
+    expect(current<boolean>(service.loaded$)).toBeFalse();
   });
 
-  it('records a parse error thrown inside the response handler as failed, not loading', () => {
-    // A listing whose tree is not a list makes the parser throw.
-    flushLiveLoad({ truncated: false, tree: 42 });
-    expect(registry.get('splunk-tree').status).toBe('failed');
-    expect(registry.get('splunk-tree').lastError).toContain('not iterable');
-  });
-
-  it('should handle constructor HTTP error gracefully', () => {
-    flushLiveLoad(null);
-    expect(service.getRuleCount('T1059')).toBe(0);
-  });
-
-  it('should clear old counts when ingestLayer is called again', () => {
-    flushLiveLoad(null);
-    service.ingestLayer({
-      techniques: [
-        { techniqueID: 'T1059', score: 5 },
-      ],
-    });
-    expect(service.getRuleCount('T1059')).toBe(5);
-
-    service.ingestLayer({
-      techniques: [
-        { techniqueID: 'T1078', score: 3 },
-      ],
-    });
-    expect(service.getRuleCount('T1059')).toBe(0);
-    expect(service.getRuleCount('T1078')).toBe(3);
-  });
-
-  it('should handle empty techniques array', () => {
-    flushLiveLoad(null);
-    service.ingestLayer({ techniques: [] });
-    let total = 0;
-    service.total$.subscribe(val => { total = val; });
-    expect(total).toBe(0);
-  });
-
-  it('should handle missing score (default to 0, skipped)', () => {
-    flushLiveLoad(null);
-    service.ingestLayer({
-      techniques: [
-        { techniqueID: 'T1059' } as any,
-      ],
-    });
+  it('a null technique entry is failed by name, never with a TypeError', () => {
+    const techniques = { ...SECTION.techniques, T1003: null };
+    const broken = { ...RULE_COVERAGE_FIXTURE, sources: { ...RULE_COVERAGE_FIXTURE.sources, splunk: { ...SECTION, techniques } } };
+    http.expectOne(RULE_COVERAGE_SNAPSHOT_URL).flush(broken);
+    const r = registry.get('splunk-tree');
+    expect(r.status).toBe('failed');
+    expect(r.lastError).toBe("bundled snapshot missing or malformed: 'splunk' technique T1003 is not an object");
     expect(service.getRuleCount('T1059')).toBe(0);
   });
 });

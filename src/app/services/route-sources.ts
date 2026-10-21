@@ -55,7 +55,6 @@ const TECHNIQUE_DRAWER_SOURCES = [
   'atomic-tests',
   'd3fend-technique-api',
   'mdecrevoisier-sigma-tree',
-  'sentinel-attack-tree',
   'nuclei-tree',
   'exploitdb',
   'cyb3r-monk-hunting-tree',

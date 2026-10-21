@@ -25,7 +25,6 @@ import { NvdBulkService } from '../../services/nvd-bulk.service';
 import { Cve2CapecService } from '../../services/cve2capec.service';
 import { PocExploitService } from '../../services/poc-exploit.service';
 import { EvtxSamplesService } from '../../services/evtx-samples.service';
-import { SentinelRulesService } from '../../services/sentinel-rules.service';
 import { AnthropicSkillsService } from '../../services/anthropic-skills.service';
 import { ThreatHunterPlaybookService } from '../../services/threathunter-playbook.service';
 import { SourceRegistryService } from '../../services/source-registry.service';
@@ -133,7 +132,6 @@ export class DataHealthComponent implements OnInit, OnDestroy {
     private cve2capecService: Cve2CapecService,
     private pocExploitService: PocExploitService,
     private evtxSamplesService: EvtxSamplesService,
-    private sentinelRulesService: SentinelRulesService,
     private anthropicSkillsService: AnthropicSkillsService,
     private threatHunterPlaybookService: ThreatHunterPlaybookService,
     private cdr: ChangeDetectorRef,
@@ -176,7 +174,9 @@ export class DataHealthComponent implements OnInit, OnDestroy {
     // `ids` name the SourceRegistry records behind an entry (E1.3): a loader that fails
     // no longer reports loaded, so the registry is what turns its dot red (or grey when
     // the source answered with nothing) instead of leaving it pulsing "loading".
-    const sources: { name: string; loaded$: any; failed$?: Observable<string | null>; ids?: string[] }[] = [
+    // `loadedDetail` (optional) is the tooltip detail of a loaded entry: for the bundled
+    // rule-coverage snapshot, the pinned commit and the dates the loader recorded.
+    const sources: { name: string; loaded$: any; failed$?: Observable<string | null>; ids?: string[]; loadedDetail?: () => string | undefined }[] = [
       { name: 'Atomic Red Team', loaded$: this.atomicService.loaded$, ids: ['atomic-layer'] },
       { name: 'Sigma Rules', loaded$: this.sigmaService.loaded$, ids: ['sigmahq-coverage'] },
       { name: 'ATT&CK CVE', loaded$: this.attackCveService.loaded$, ids: ['ctid-attack-to-cve', 'ctid-kev'] },
@@ -188,8 +188,8 @@ export class DataHealthComponent implements OnInit, OnDestroy {
       { name: 'VERIS', loaded$: this.verisService.loaded$, ids: ['ctid-veris'] },
       { name: 'D3FEND', loaded$: this.d3fendService.loaded$, ids: ['d3fend-ontology'] },
       { name: 'CAR Analytics', loaded$: this.carService.loaded$, ids: ['car-layer'] },
-      { name: 'Elastic Rules', loaded$: this.elasticService.loaded$, ids: ['elastic-tree'] },
-      { name: 'Splunk Content', loaded$: this.splunkContentService.loaded$, ids: ['splunk-tree'] },
+      { name: 'Elastic Rules', loaded$: this.elasticService.loaded$, ids: ['elastic-tree'], loadedDetail: () => this.snapshotDetail('elastic-tree') },
+      { name: 'Splunk Content', loaded$: this.splunkContentService.loaded$, ids: ['splunk-tree'], loadedDetail: () => this.snapshotDetail('splunk-tree') },
       { name: 'ExploitDB', loaded$: this.exploitdbService.loaded$, ids: ['exploitdb'] },
       { name: 'Nuclei Templates', loaded$: this.nucleiService.loaded$, ids: ['nuclei-tree'] },
       // A real availability check (E1.3), recorded on the 'epss' source; no longer a hard-coded true.
@@ -218,7 +218,6 @@ export class DataHealthComponent implements OnInit, OnDestroy {
       { name: 'CVE2CAPEC', loaded$: this.cve2capecService.loaded$, ids: ['cve2capec-runtime'] },
       { name: 'PoC Exploits', loaded$: this.pocExploitService.loaded$, ids: ['trickest-poc-tree'] },
       { name: 'EVTX Samples', loaded$: this.evtxSamplesService.loaded$, ids: ['evtx-samples-tree'] },
-      { name: 'Sentinel Rules', loaded$: this.sentinelRulesService.loaded$, ids: ['sentinel-attack-tree'] },
       { name: 'Anthropic Skills', loaded$: this.anthropicSkillsService.loaded$, ids: ['anthropic-skills-layer'] },
       { name: 'ThreatHunter Playbook', loaded$: this.threatHunterPlaybookService.loaded$, ids: ['threathunter-playbook'] },
     ];
@@ -230,7 +229,10 @@ export class DataHealthComponent implements OnInit, OnDestroy {
         src.loaded$.subscribe((loaded: boolean) => {
           // A failed or empty source keeps its colour until its own verdict clears (a retry started).
           if (!loaded && (this.entries[i].status === 'failed' || this.entries[i].status === 'empty')) return;
-          this.entries[i] = { name: src.name, status: loaded ? 'loaded' : 'loading' };
+          const detail = loaded ? src.loadedDetail?.() : undefined;
+          this.entries[i] = detail
+            ? { name: src.name, status: 'loaded', detail }
+            : { name: src.name, status: loaded ? 'loaded' : 'loading' };
           if (loaded) this.markRefreshed();
           this.cdr.markForCheck();
         }),
@@ -271,6 +273,12 @@ export class DataHealthComponent implements OnInit, OnDestroy {
       this.updateLabel();
       this.cdr.markForCheck();
     }, 30_000);
+  }
+
+  /** The pinned snapshot a loaded rule-coverage record names (its version, set from the bundled file). */
+  private snapshotDetail(id: string): string | undefined {
+    const version = this.sources.get(id).version;
+    return version?.startsWith('snapshot of ') ? `reference data, ${version}` : undefined;
   }
 
   refreshAll(): void {

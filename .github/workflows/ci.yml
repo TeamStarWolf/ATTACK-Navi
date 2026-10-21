@@ -56,6 +56,11 @@ jobs:
       # scripts/build-kev-snapshot.mjs writes, and the one the registry names.
       # No network: the builder's fetch is not exercised here.
       - run: node --test scripts/build-kev-snapshot.test.mjs
+      # The bundled rule-coverage snapshot is sound and in its serialised form;
+      # the tar reader and the three rule parsers run on committed fixtures and
+      # --check catches a tampered file. No network here either: the rebuild
+      # against the pinned tarballs is `node scripts/build-rule-coverage-snapshot.mjs --check`.
+      - run: node --test scripts/build-rule-coverage-snapshot.test.mjs
       # Headline facts (plan E0): docs/FACTS.md must still match the code, and the
       # gated docs (README, ARCHITECTURE, HANDOFF, QUICKSTART) must match it, so a
       # stale count or version fails the PR instead of landing. Its own tests run

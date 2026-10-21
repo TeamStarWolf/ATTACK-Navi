@@ -1,128 +1,92 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject } from 'rxjs';
-import { SourceRegistryService, TRUNCATED_LISTING } from './source-registry.service';
+import { Injectable, inject } from '@angular/core';
+import { BehaviorSubject, Observable, map, of } from 'rxjs';
+import { SourceRegistryService } from './source-registry.service';
+import {
+  RuleCoverageLink, RuleCoverageSection, RuleCoverageSnapshotService, ruleLinks, snapshotError, snapshotVersion,
+} from './rule-coverage-snapshot.service';
 
-
-interface NavigatorLayer {
-  name?: string;
-  domain?: string;
-  techniques: Array<{
-    techniqueID: string;
-    score?: number;
-    tactic?: string;
-  }>;
-}
-
+/**
+ * Elastic detection-rules, as reference data: how many rules in elastic/detection-rules
+ * name each ATT&CK technique, read from the rule bodies ([[rule.threat.technique]] ids)
+ * at a pinned commit by scripts/build-rule-coverage-snapshot.mjs and shipped in
+ * src/assets/data/rule-coverage-snapshot.json. A count says what the public repository
+ * holds at that commit, not what runs in any environment.
+ */
 @Injectable({ providedIn: 'root' })
 export class ElasticService {
-  private directCounts = new Map<string, number>();
+  private readonly snapshot = inject(RuleCoverageSnapshotService);
+  private readonly sources = inject(SourceRegistryService);
+
+  private counts = new Map<string, number>();
+  private section: RuleCoverageSection | null = null;
 
   private loadedSubject = new BehaviorSubject<boolean>(false);
   readonly loaded$ = this.loadedSubject.asObservable();
 
+  /** Rules parsed from the repository at the pinned commit. */
   private totalSubject = new BehaviorSubject<number>(0);
   readonly total$ = this.totalSubject.asObservable();
 
+  /** Techniques named by at least one rule. */
   private coveredSubject = new BehaviorSubject<number>(0);
   readonly covered$ = this.coveredSubject.asObservable();
 
-  constructor(
-    private http: HttpClient,
-    private sources: SourceRegistryService = new SourceRegistryService(),
-  ) {
-    this.loadLive();
+  constructor() {
+    this.load();
   }
 
-  /** Load again after a failed or empty load: the data-health Retry (E1.3). */
-  retry(): void {
-    this.loadLive();
-  }
-
-  private loadLive(): void {
-    // Elastic no longer publishes a pre-built Navigator layer at the old path.
-    // Scan the GitHub tree for .toml rule files and read technique IDs from the paths.
-    // Upstream rule files are named by behaviour (rules/windows/collection_email_
-    // outlook_mailbox_via_com.toml) and keep the ids in the file body, so this
-    // finds none today and the source is recorded as 'empty', not 'loaded'.
+  private load(): void {
     this.sources.begin('elastic-tree');
-    this.http.get<any>('https://api.github.com/repos/elastic/detection-rules/git/trees/main?recursive=1')
-      .subscribe({ next: (tree: any) => {
+    this.snapshot.section('elastic').subscribe({
+      next: section => {
         try {
-          this.ingestTree(tree);
+          this.ingest(section);
         } catch (err) {
-          // A parse error must not leave the source 'loading' forever.
-          this.sources.fail('elastic-tree', err);
+          this.sources.fail('elastic-tree', snapshotError(err));
         }
-      }, error: err => this.sources.fail('elastic-tree', err) });
+      },
+      error: err => this.sources.fail('elastic-tree', err),
+    });
   }
 
-  private ingestTree(tree: any): void {
-    if (tree?.truncated === true) {
-      // A partial listing would under-count silently: report it, do not parse it.
-      this.sources.fail('elastic-tree', TRUNCATED_LISTING);
-      return;
+  private ingest(section: RuleCoverageSection): void {
+    // Everything that can throw runs before any state changes, so a bad section leaves nothing behind.
+    const version = snapshotVersion(section);
+    const counts = new Map<string, number>();
+    for (const [id, t] of Object.entries(section.techniques)) {
+      if (t.count > 0) counts.set(id, t.count);
     }
-    if (tree?.tree) {
-      const counts = new Map<string, number>();
-      const techRegex = /[Tt](1\d{3}(?:\.\d{3})?)/;
-      for (const item of tree.tree) {
-        if (item.path?.startsWith('rules/') && item.path?.endsWith('.toml')) {
-          const match = item.path.match(techRegex);
-          if (match) {
-            const id = 'T' + match[1];
-            counts.set(id, (counts.get(id) ?? 0) + 1);
-          }
-        }
-      }
-      if (counts.size > 0) {
-        const layer: NavigatorLayer = { techniques: [] };
-        for (const [id, score] of counts) {
-          layer.techniques.push({ techniqueID: id, score });
-        }
-        this.ingestLayer(layer);
-      }
-    }
-    const rows = this.coveredSubject.value;
-    this.sources.succeed('elastic-tree', rows);
-    if (rows > 0) this.loadedSubject.next(true);
+    this.counts = counts;
+    this.section = section;
+    this.totalSubject.next(section.ruleCount);
+    this.coveredSubject.next(counts.size);
+    this.sources.succeed('elastic-tree', counts.size, { version });
+    if (counts.size > 0) this.loadedSubject.next(true);
   }
 
-  /** Ingest a Navigator layer JSON with techniques[].techniqueID and techniques[].score. */
-  ingestLayer(layer: NavigatorLayer): void {
-    this.directCounts.clear();
-    let total = 0;
-    let covered = 0;
-    for (const entry of layer.techniques ?? []) {
-      const id = entry.techniqueID;
-      const score = entry.score ?? 0;
-      if (!id || score <= 0) continue;
-      this.directCounts.set(id, score);
-      total += score;
-      covered++;
-    }
-    this.totalSubject.next(total);
-    this.coveredSubject.next(covered);
-    this.loadedSubject.next(true);
-  }
-
-  /** Rule count for a technique, with parent technique rollup. */
+  /**
+   * Rules naming a technique. A parent's count is already the distinct rules naming it
+   * or any of its sub-techniques (the snapshot rolls them up), so nothing is added here.
+   */
   getRuleCount(attackId: string): number {
-    if (this.directCounts.size === 0) return 0;
-    const direct = this.directCounts.get(attackId) ?? 0;
-    if (attackId.includes('.')) return direct;
-    let sub = 0;
-    const prefix = attackId + '.';
-    for (const [id, count] of this.directCounts) {
-      if (id.startsWith(prefix)) sub += count;
-    }
-    return direct + sub;
+    return this.counts.get(attackId) ?? 0;
   }
 
   /** Alias used by matrix heatmap. */
   getHeatScore(attackId: string): number {
     return this.getRuleCount(attackId);
+  }
+
+  /** Every technique with its rule count (techniqueId to count). */
+  getCounts(): ReadonlyMap<string, number> {
+    return this.counts;
+  }
+
+  /** Up to ten rule names for a technique, each with its permalink at the pinned commit. */
+  fetchRulesForTechnique(attackId: string): Observable<RuleCoverageLink[]> {
+    if (this.section) return of(ruleLinks(this.section, attackId));
+    return this.snapshot.section('elastic').pipe(map(section => ruleLinks(section, attackId)));
   }
 }
