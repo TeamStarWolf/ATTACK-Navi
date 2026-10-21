@@ -59,6 +59,8 @@ import { PocExploitService } from '../../services/poc-exploit.service';
 import { EnrichmentService } from '../../services/enrichment.service';
 import type { ReferenceDepthInputs } from '../../models/reference-depth';
 import { PostureService } from '../../services/posture.service';
+import { TechniqueMarksService } from '../../services/technique-marks.service';
+import { refForTechnique, techniqueRefKey } from '../../models/technique-ref';
 import { LENS_NA_COLOR, type LensContext, heatmapModeDef, isLensAvailable } from '../../models/heatmap-modes';
 import { SCORE_ONLY_LENSES, isPostureCellLens, isRegistryLens, registryCell, registryColor } from '../../models/lens-registry';
 import { type PostureCellVM, postureCellLabel } from '../../models/posture/posture-ramp';
@@ -296,6 +298,8 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
   private subs = new Subscription();
   /** Posture buckets for Sort by risk and Dim uncovered (P2-09, E2.1-d3). */
   private readonly posture = inject(PostureService);
+  /** Bulk set writes technique marks (P2-16, E2.1-e). */
+  private readonly techniqueMarks = inject(TechniqueMarksService);
   /** The theme a registry lens colours for (P2-13). */
   private readonly themeService = inject(ThemeService);
   /**
@@ -1361,13 +1365,23 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     this.cdr.markForCheck();
   }
 
+  /**
+   * Bulk set (P2-16, E2.1-e): one technique mark (source 'manual') per
+   * selected technique, through TechniqueMarksService; null clears that mark.
+   * Mitigation statuses are never written here: the old reverse rollup (every
+   * mitigation of every selected technique) changed techniques that were not
+   * selected, through each mitigation's other mappings (design §1 fact 20).
+   */
   bulkSetStatus(status: ImplStatus | null): void {
-    for (const techId of this.selectedTechIds) {
-      const tech = this.domain?.techniques.find(t => t.id === techId);
-      if (!tech) continue;
-      const mits = this.domain!.mitigationsByTechnique.get(techId) ?? [];
-      for (const mr of mits) {
-        this.implService.setStatus(mr.mitigation.id, status);
+    const domain = this.domain;
+    if (domain) {
+      const byId = new Map(domain.techniques.map(t => [t.id, t] as const));
+      for (const techId of this.selectedTechIds) {
+        const tech = byId.get(techId);
+        if (!tech) continue;
+        const ref = techniqueRefKey(refForTechnique(tech, this.attackDomain, domain.attackVersion));
+        if (status === null) this.techniqueMarks.clear(ref);
+        else this.techniqueMarks.confirm(ref, { status });
       }
     }
     this.selectedTechIds.clear();

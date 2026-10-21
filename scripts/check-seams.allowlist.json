@@ -35,13 +35,13 @@
           "file": "src/app/components/matrix/matrix.component.ts",
           "uses": {
             "ImplementationService": 2,
-            "implService": 3,
+            "implService": 2,
             "ImplStatus": 4,
-            "mitigationsByTechnique": 2
+            "mitigationsByTechnique": 1
           },
-          "bucket": "phase-2",
-          "reason": "The status lens, the controls lens and impl= read PostureService.implViewFor and stateFor since P2-14 (no fold here); left: the bulk-set reverse rollup (P2-16) and mitigation-level uses. Stays listed after P2-16 with reason mitigation-level or export only (Addendum note 3).",
-          "removedBy": "P2-14, P2-16 (stays listed for mitigation-level uses)"
+          "bucket": "stays",
+          "reason": "Mitigation-level or export only (Addendum note 3): the status$ subscription repaints cells after a status write, the cell tooltip reads mitigationsByTechnique for its mitigation count, and bulkSetStatus keeps the ImplStatus signature. Since P2-16 the bulk set writes technique marks (TechniqueMarksService), never mitigation statuses; the status lens, the controls lens and impl= read PostureService (P2-14).",
+          "removedBy": "stays (mitigation-level or export only; P2-14 and P2-16 removed the folds)"
         },
         {
           "file": "src/app/components/priority-panel/priority-panel.component.ts",
@@ -104,9 +104,9 @@
             "implService": 5,
             "ImplStatus": 8
           },
-          "bucket": "phase-2",
-          "reason": "Sidebar mitigation rows set mitigation status (P2-16: technique marks, qualifier badge and Confirm). Its other mitigation lists are display-only: lists mitigations, does not count techniques (Addendum note 3).",
-          "removedBy": "P2-16 (other lists stay listed)"
+          "bucket": "stays",
+          "reason": "Mitigation-level or export only (Addendum note 3): the drawer mitigation rows and the All-mitigations strip set the status of the mitigation the user clicks, and getMitigationsForTechnique lists mitigations without counting techniques. Since P2-16 the technique answer on a broad mitigation row is the posture badge with Confirm and Unconfirm, which write technique marks (TechniqueMarksService).",
+          "removedBy": "stays (mitigation-level or export only; P2-16 added the badge and Confirm)"
         },
         {
           "file": "src/app/components/sigma-export/sigma-export.component.ts",
@@ -236,15 +236,15 @@
         {
           "file": "src/app/services/navigator-layer.service.ts",
           "uses": {
-            "ImplementationService": 3,
-            "implService": 3,
+            "ImplementationService": 2,
+            "implService": 2,
             "ImplStatus": 10,
-            "mitigationsByTechnique": 4,
+            "mitigationsByTechnique": 3,
             "techniquesByMitigation": 2
           },
-          "bucket": "phase-2",
-          "reason": "The foreign-comment import writes every mitigation of a technique (a reverse rollup); P2-16 moves it to technique marks. The layer export's technique colour and comment follow implViewFor since P2-14 (Addendum note 4); the per-mitigation metadata export and import parsing stay listed with reason mitigation-level or export only (Addendum note 3).",
-          "removedBy": "P2-16 (stays listed for export and import parsing)"
+          "bucket": "stays",
+          "reason": "Mitigation-level or export only (Addendum note 3): the layer export (technique colour and comment through implViewFor since P2-14, per-mitigation attack-navi:mitStatuses metadata) and the exact restore of that metadata on import. Since P2-16 a foreign comment writes one technique mark per technique under layer:<name> (replaceSource), never a mitigation status.",
+          "removedBy": "stays (mitigation-level or export only; P2-16 removed the reverse rollup)"
         },
         {
           "file": "src/app/services/posture-adapters.ts",

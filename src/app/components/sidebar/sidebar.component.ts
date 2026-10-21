@@ -80,6 +80,11 @@ import { LibraryCrossRefComponent } from '../library-cross-ref/library-cross-ref
 import { ValidationStatusPillComponent } from '../validation-status-pill/validation-status-pill.component';
 import { DrawerResizeHandleComponent } from '../drawer-resize-handle/drawer-resize-handle.component';
 import { DrawerWidthService } from '../../services/drawer-width.service';
+import { PostureService } from '../../services/posture.service';
+import { type TechniqueMarkRecord, TechniqueMarksService } from '../../services/technique-marks.service';
+import { postureBadge } from '../../models/posture/posture-vocabulary';
+import type { CoveredMark } from '../../models/posture/posture.types';
+import { parseTechniqueRef, refForTechnique, techniqueRefKey } from '../../models/technique-ref';
 import { ctidDatasetUrl } from '../../services/ctid-links';
 
 @Component({
@@ -112,6 +117,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
   open = false;
   /** Drawer width (px), resizable from its left edge and persisted per browser. */
   protected readonly drawerWidth = inject(DrawerWidthService);
+  /** The drawer's mitigation-row badge reads the technique's posture state (P2-16, E2.1-e). */
+  private readonly posture = inject(PostureService);
+  /** Confirm and Unconfirm write the technique's own mark (source 'manual'). */
+  private readonly techniqueMarks = inject(TechniqueMarksService);
+  /** Every stored technique mark, kept for the row's confirmed state. */
+  private marks: readonly TechniqueMarkRecord[] = [];
   /** The drawer stays open across workspaces while pinned (FilterService.drawerPinned$). */
   pinned = false;
   isCustomTechnique = false;
@@ -828,6 +839,13 @@ export class SidebarComponent implements OnInit, OnDestroy {
     );
 
     this.subs.add(
+      this.techniqueMarks.marks$.subscribe((marks) => {
+        this.marks = marks;
+        this.cdr.markForCheck();
+      }),
+    );
+
+    this.subs.add(
       this.docService.mitDocs$.subscribe((docs) => {
         this.mitDocs = docs;
         this.cdr.markForCheck();
@@ -1304,6 +1322,55 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   getImplStatus(mitigationId: string): ImplStatus | null {
     return this.implStatusMap.get(mitigationId) ?? null;
+  }
+
+  /**
+   * The posture badge of one mitigation row (P2-16, E2.1-e; design §6, D16).
+   * Shown only when this implemented mitigation is broader than the breadth
+   * threshold, i.e. the technique's posture state holds a partial
+   * 'mitigation-implemented' mark through it, so a fresh profile renders none.
+   * Unconfirmed: 'Covered (self-attested, partial via Mxxxx)' with Confirm;
+   * confirmed (the technique holds an implemented 'manual' mark):
+   * 'Covered (self-attested)' with Unconfirm. Text only from postureBadge().
+   */
+  mitigationPostureBadge(mitigation: Mitigation): { text: string; confirmed: boolean } | null {
+    const tech = this.technique;
+    if (!tech || !this.posture.ownerWords()) return null;
+    const mark: CoveredMark | undefined = this.posture.stateFor(tech).covered.find(m =>
+      m.basis === 'mitigation-implemented' && m.strength === 'partial' && m.via === mitigation.attackId);
+    if (!mark) return null;
+    const confirmed = this.manualMark(tech)?.status === 'implemented';
+    const text = confirmed
+      ? postureBadge({ bucket: 'covered', qualifiers: ['self-attested'], proofScope: null, covered: [] })
+      : postureBadge({ bucket: 'partial', qualifiers: [], proofScope: null, covered: [mark] });
+    return { text, confirmed };
+  }
+
+  /** Confirm for this technique: a 'technique-confirmed' mark (source 'manual') naming the broad mitigation. */
+  confirmTechnique(mitigation: Mitigation): void {
+    const tech = this.technique;
+    const domain = this.dataService.getCurrentDomain();
+    if (!tech || !domain) return;
+    const ref = techniqueRefKey(refForTechnique(tech, this.dataService.getCurrentAttackDomain(), domain.attackVersion));
+    this.techniqueMarks.confirm(ref, { via: mitigation.attackId });
+  }
+
+  /** Unconfirm: clears the technique's 'manual' mark; the mitigation's status is untouched. */
+  unconfirmTechnique(): void {
+    const tech = this.technique;
+    const mark = tech ? this.manualMark(tech) : undefined;
+    if (mark) this.techniqueMarks.clear(mark.ref, 'manual');
+  }
+
+  /** The 'manual' mark stored for `tech` in the loaded domain (any ATT&CK version of its ref). */
+  private manualMark(tech: Technique): TechniqueMarkRecord | undefined {
+    const domainId = this.dataService.getCurrentAttackDomain();
+    const want = refForTechnique(tech, domainId, '');
+    return this.marks.find(m => {
+      if (m.source !== 'manual') return false;
+      const ref = parseTechniqueRef(m.ref);
+      return ref !== null && ref.framework === want.framework && ref.domain === want.domain && ref.id === want.id;
+    });
   }
 
   filterByGroup(group: ThreatGroup): void {

@@ -5,14 +5,17 @@ import { BrowserFileService } from './browser-file.service';
 import { ImplementationService } from './implementation.service';
 import { NavigatorLayerService, detectStatusKeyword } from './navigator-layer.service';
 import { type ImplView, implView } from './posture-adapters';
+import { TECHNIQUE_MARKS_KEY, TechniqueMarksService } from './technique-marks.service';
 import type { ImplStatus } from './implementation.service';
 import type { Technique } from '../models/technique';
 
 describe('NavigatorLayerService', () => {
   let service: NavigatorLayerService;
   let implService: jasmine.SpyObj<ImplementationService>;
+  let marks: TechniqueMarksService;
 
   beforeEach(() => {
+    localStorage.removeItem(TECHNIQUE_MARKS_KEY);
     implService = jasmine.createSpyObj<ImplementationService>('ImplementationService', ['setStatus']);
     TestBed.configureTestingModule({
       providers: [
@@ -22,7 +25,10 @@ describe('NavigatorLayerService', () => {
       ],
     });
     service = TestBed.inject(NavigatorLayerService);
+    marks = TestBed.inject(TechniqueMarksService);
   });
+
+  afterEach(() => localStorage.removeItem(TECHNIQUE_MARKS_KEY));
 
   it('builds navigator layers with domain-specific metadata', () => {
     const layer = service.buildLayer({
@@ -42,6 +48,7 @@ describe('NavigatorLayerService', () => {
   });
 
   const foreignDomain = () => ({
+    attackVersion: '18',
     techniques: [{ id: 'tech-1', attackId: 'T0801' }],
     mitigationsByTechnique: new Map([['tech-1', [{ mitigation: { id: 'mit-1', attackId: 'M0801' } }]]]),
   } as any);
@@ -51,24 +58,24 @@ describe('NavigatorLayerService', () => {
     techniques: [{ techniqueID: 'T0801', comment, enabled }],
   });
 
-  it('derives implementation statuses from navigator comments only when the caller opts in', async () => {
+  it('derives a technique mark from a navigator comment only when the caller opts in, never a mitigation status (P2-16)', async () => {
     // Default: the guess is reported, not written.
-    const preview = await service.importLayer(foreignLayer('Status: implemented'), foreignDomain(), implService);
+    const preview = await service.importLayer(foreignLayer('Status: implemented'), foreignDomain(), implService, undefined, { attackDomain: 'ics' });
     expect(preview.layerName).toBe('Imported Layer');
     expect(preview.resolvedCount).toBe(1);
-    expect(preview.derivedStatuses).toEqual([jasmine.objectContaining({
-      techniqueId: 'T0801', mitigationId: 'mit-1', mitigationAttackId: 'M0801', status: 'implemented',
-    })]);
-    expect(preview.statusesApplied).toBe(0);
+    expect(preview.derivedStatuses).toEqual([{ techniqueId: 'T0801', status: 'implemented', comment: 'Status: implemented' }]);
+    expect([preview.statusesApplied, preview.marksApplied]).toEqual([0, 0]);
     expect(implService.setStatus).not.toHaveBeenCalled();
+    expect(marks.all).toEqual([]);
 
-    // Opted in: the same guess is written.
+    // Opted in: the same guess becomes one technique mark under layer:<name>; no mitigation status.
     const applied = await service.importLayer(
       foreignLayer('Status: implemented'), foreignDomain(), implService, undefined,
-      { deriveStatusesFromComments: true },
+      { deriveStatusesFromComments: true, attackDomain: 'ics' },
     );
-    expect(applied.statusesApplied).toBe(1);
-    expect(implService.setStatus).toHaveBeenCalledWith('mit-1', 'implemented');
+    expect([applied.statusesApplied, applied.marksApplied]).toEqual([0, 1]);
+    expect(implService.setStatus).not.toHaveBeenCalled();
+    expect(marks.all.map(m => [m.ref, m.status, m.source])).toEqual([['attack/ics/T0801@18', 'implemented', 'layer:Imported Layer']]);
   });
 
   it('never reads a negated or unrelated keyword as a status', async () => {
@@ -117,10 +124,11 @@ describe('NavigatorLayerService', () => {
       foreignLayer('implemented'), foreignDomain(), implService, annotationService,
       { dryRun: true, deriveStatusesFromComments: true },
     );
-    expect(result.statusesApplied).toBe(1);
+    expect([result.statusesApplied, result.marksApplied]).toEqual([0, 1]);
     expect(result.notesApplied).toBe(1);
     expect(implService.setStatus).not.toHaveBeenCalled();
     expect(annotationService.setAnnotation).not.toHaveBeenCalled();
+    expect(marks.all).toEqual([]);
   });
 
   // ── Technique-id resolution against the loaded release ────────────────
