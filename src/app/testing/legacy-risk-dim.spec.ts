@@ -39,8 +39,8 @@
 //
 // After: section riskDimAfter.<profile>:
 //   - riskTop20: the matrix comparator over riskScore(tech, domain, kev,
-//     bucket); a threat gap's exposure is doubled only while its bucket is not
-//     covered, proven or stale (isUnrecordedGap);
+//     bucket); an unrecorded gap's exposure is doubled only while its bucket
+//     is not covered, proven or stale (isUnrecordedGap);
 //   - dimmed: matrix isDimmed with Dim uncovered on, which dims posture bucket
 //     'none'; newlyDimmed is dimmed minus the before set;
 //   - dashboard: criticalRiskCount and kevExposedGapCount read from
