@@ -50,30 +50,6 @@
   }
 }
 
-.workspace-ribbon-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.ribbon-chip {
-  border-radius: 999px;
-  border: 1px solid var(--line-soft);
-  background: var(--bg-soft);
-  color: var(--text-main);
-  font-size: 11px;
-  font-weight: 600;
-  padding: 8px 12px;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, transform 0.15s, color 0.15s;
-
-  &:hover {
-    background: rgb(255 255 255 / 10%);
-    border-color: var(--line-strong);
-    transform: translateY(-1px);
-  }
-}
-
 .toast-notification {
   position: fixed;
   bottom: 24px;
@@ -92,17 +68,6 @@
   backdrop-filter: blur(18px);
   animation: fadeInUp 0.2s ease;
   white-space: nowrap;
-}
-
-@media (width <= 900px) {
-  .workspace-ribbon {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .workspace-ribbon-sub {
-    white-space: normal;
-  }
 }
 
 @keyframes fadeInUp {

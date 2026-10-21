@@ -33,8 +33,19 @@
 <app-gap-view #gapViewRef />
 
 <!-- Global overlays -->
-<app-keyboard-help />
-<app-universal-search />
+<!-- The shortcuts overlay renders nothing until opened and HelpOverlayService.open$ replays
+     an open request, so it also loads right after first paint. -->
+@defer (on immediate) {
+  <app-keyboard-help />
+}
+<!-- The palette renders nothing until opened and CommandPaletteService.open$ replays an
+     open request, so its code (and the export services) loads right after first paint.
+     app-palette-warmup, in its old place, creates the root services it used to create
+     first, in the same order, so no data request moves. -->
+<app-palette-warmup />
+@defer (on immediate) {
+  <app-universal-search />
+}
 
 @if (showToast) {
   <div class="toast-notification">{{ toastMessage }}</div>
