@@ -8,9 +8,11 @@ import {
   HostListener,
   OnInit,
   ViewChild,
+  effect,
   inject,
+  untracked,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule, TitleCasePipe } from '@angular/common';
 import { AttackDomain, DataService } from '../../services/data.service';
 import { Domain } from '../../models/domain';
@@ -29,6 +31,7 @@ import { LensAvailability, heatmapModeDef, lensAvailability } from '../../models
 import { SourceBannerComponent } from '../../components/source-banner/source-banner.component';
 import { OwnerDataService, PREVALENCE_BANNER_TEXT, showPrevalenceBanner } from '../../services/owner-data.service';
 import { PostureService } from '../../services/posture.service';
+import { lensOnScreen } from '../../models/lens-registry';
 import {
   TacticSummaryComponent,
   TacticSummaryData,
@@ -81,6 +84,24 @@ export class MatrixPageComponent implements OnInit {
   /** The exact D4 predicate (OwnerDataService.hasOwnerData$, P2-05). */
   ownerDataExists = false;
   readonly prevalenceBannerText = PREVALENCE_BANNER_TEXT;
+
+  private readonly heatmapMode$$ = toSignal(this.filterService.heatmapMode$, { initialValue: DEFAULT_HEATMAP_MODE });
+  private readonly domain$$ = toSignal(this.dataService.domain$, { initialValue: null });
+
+  /**
+   * The Proven and Covered lenses may not be named while no owner data exists
+   * (lensNameVisible, design §10.4 item 14). A heat=proven or heat=covered
+   * link opened by an empty user, or owner data cleared while one of those
+   * lenses is on, moves the matrix to the default lens. It waits for the
+   * domain: before it loads PostureService has no states, so ownerWords() is
+   * false for every profile and would move an owner's lens too.
+   */
+  protected readonly ownerWordLensFallback = effect(() => {
+    const mode = this.heatmapMode$$();
+    if (!this.domain$$()) return;
+    const onScreen = lensOnScreen(mode, this.posture.ownerWords(), DEFAULT_HEATMAP_MODE);
+    if (onScreen !== mode) untracked(() => this.filterService.setHeatmapMode(onScreen));
+  });
 
   /**
    * The one-line Prevalence banner (plan E1.5, decision D4; Phase 2 design

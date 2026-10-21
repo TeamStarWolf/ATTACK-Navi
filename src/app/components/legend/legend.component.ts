@@ -10,7 +10,8 @@ import { SAFE_SEQ } from '../../models/safe-palette';
 import { HEATMAP_MODES, HeatmapModeDef, LensAvailability, LensRampStop, heatmapModeDef, lensAvailability, lensRungBadge } from '../../models/heatmap-modes';
 import { LensCardService } from '../../services/lens-card.service';
 import { LoadedBundleInfo, domainLabel, lensSourceVintage } from '../../models/lens-sources';
-import { isRegistryLens, registryColor } from '../../models/lens-registry';
+import { NO_OWNER_DATA_LINE, OWNER_DATA_LENSES, OWNER_WORD_LENSES, isRegistryLens, registryColor } from '../../models/lens-registry';
+import { DEFAULT_HEATMAP_MODE } from '../../services/filter.service';
 import { type PostureLegendStop, type PostureTheme, postureLegendStops } from '../../models/posture/posture-ramp';
 import type { LensLegendStop } from '../../models/posture/lens-ramps';
 import type { PostureBucket } from '../../models/posture/posture.types';
@@ -22,14 +23,6 @@ const SAFE_UNIFIED = ['#440154', '#414487', '#2a788e', '#22a884', '#7ad151', '#f
 
 /** A registry lens's legend stop: the Posture lens's, or a P2-14 lens's (which says whether its words are owner words). */
 type RegistryLegendStop = PostureLegendStop | LensLegendStop;
-
-/**
- * Registry lenses whose every number is the owner's Covered or Proven data:
- * with no owner words they say 'No data of yours recorded' instead of the
- * question (§1.3). Status and Controls keep the question: a planned status is
- * data of yours, and their words are not rung words.
- */
-const OWNER_DATA_LENSES: ReadonlySet<HeatmapMode> = new Set<HeatmapMode>(['posture', 'proven', 'covered']);
 
 /** Scale note shown after the stops, by ramp scale (none for categorical and threshold bands). */
 const SCALE_NOTE: Partial<Record<HeatmapModeDef['ramp']['scale'], string>> = {
@@ -93,7 +86,7 @@ const SCALE_NOTE: Partial<Record<HeatmapModeDef['ramp']['scale'], string>> = {
         </div>
       </div>
       @if (postureStops && ownerDataLens && !ownerWords) {
-        <p class="legend-no-data">No data of yours recorded</p>
+        <p class="legend-no-data">{{ noOwnerDataLine }}</p>
       } @else {
         <p class="legend-question">{{ def.question }}</p>
       }
@@ -121,9 +114,22 @@ export class LegendComponent implements OnInit, OnDestroy {
   private attackVersion = '';
   private freshness: LoadedBundleInfo['freshness'] = null;
 
+  /**
+   * The lens on screen. While no owner data exists the Proven and Covered
+   * lenses may not be named (lensNameVisible, design §10.4 item 14), so a
+   * heat=proven or heat=covered link shows the default lens's legend until
+   * the matrix page moves the lens there (lensOnScreen). PostureService is
+   * read only for those two lenses.
+   */
   get def(): HeatmapModeDef {
-    return heatmapModeDef(this.heatmapMode) ?? HEATMAP_MODES[0];
+    const def = heatmapModeDef(this.heatmapMode) ?? HEATMAP_MODES[0];
+    if (OWNER_WORD_LENSES.has(def.value) && !this.ownerWords) {
+      return heatmapModeDef(DEFAULT_HEATMAP_MODE)!;
+    }
+    return def;
   }
+
+  readonly noOwnerDataLine = NO_OWNER_DATA_LINE;
 
   get rungBadge(): string {
     return lensRungBadge(this.def);
@@ -143,7 +149,7 @@ export class LegendComponent implements OnInit, OnDestroy {
 
   /** Open the '?' definition card for the active lens (E1.2). */
   openDefinition(event: Event): void {
-    this.lensCards.open(this.heatmapMode, event.currentTarget);
+    this.lensCards.open(this.def.value, event.currentTarget);
   }
 
   get domainName(): string {

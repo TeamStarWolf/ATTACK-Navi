@@ -10,7 +10,10 @@
 import {
   HEATMAP_MODES, LENS_RUNG_MEANING, type LensContext, heatmapModeDef, isLensAvailable, lensAvailability, lensRungBadge,
 } from './heatmap-modes';
-import { OWNER_WORD_LENSES, isRegistryLens, lensNameVisible, registryCell, registryColor } from './lens-registry';
+import {
+  NO_OWNER_DATA_LINE, OWNER_DATA_LENSES, OWNER_WORD_LENSES, isRegistryLens, lensNameVisible, lensOnScreen, lensQuestion, registryCell,
+  registryColor,
+} from './lens-registry';
 import type { Technique } from './technique';
 import { lensLabel } from './posture/posture-vocabulary';
 import { POSTURE_SCORE, postureFill } from './posture/posture-ramp';
@@ -120,6 +123,33 @@ describe('lensNameVisible', () => {
   it('never hides a lens whose label carries no rung word', () => {
     for (const m of HEATMAP_MODES.filter(x => !/covered|proven/i.test(x.label))) {
       expect(lensNameVisible(m, false)).withContext(m.value).toBeTrue();
+    }
+  });
+});
+
+describe('lensOnScreen', () => {
+  it('shows the fallback for Proven and Covered with no owner data, and the lens itself otherwise', () => {
+    for (const m of HEATMAP_MODES) {
+      const hidden = OWNER_WORD_LENSES.has(m.value);
+      expect(lensOnScreen(m.value, false, 'frequency')).withContext(m.value).toBe(hidden ? 'frequency' : m.value);
+      expect(lensOnScreen(m.value, true, 'frequency')).withContext(m.value).toBe(m.value);
+    }
+  });
+});
+
+describe('lensQuestion', () => {
+  it('titles an owner-data lens with NO_OWNER_DATA_LINE while no owner data exists', () => {
+    for (const m of HEATMAP_MODES) {
+      const expected = OWNER_DATA_LENSES.has(m.value) ? NO_OWNER_DATA_LINE : m.question;
+      expect(lensQuestion(m, false)).withContext(m.value).toBe(expected);
+      expect(lensQuestion(m, true)).withContext(m.value).toBe(m.question);
+    }
+    expect([...OWNER_DATA_LENSES].sort()).toEqual(['covered', 'posture', 'proven']);
+  });
+
+  it('never titles a lens with a rung word for an empty user', () => {
+    for (const m of HEATMAP_MODES) {
+      expect(lensQuestion(m, false)).withContext(m.value).not.toMatch(/\b(?:covered|proven)\b/i);
     }
   });
 });

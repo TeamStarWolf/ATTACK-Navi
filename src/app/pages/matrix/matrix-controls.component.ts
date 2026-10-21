@@ -28,6 +28,7 @@ import { PLATFORM_PILLS } from '../../components/toolbar/toolbar.component';
 import { Viewpoint, ViewpointService } from '../../services/viewpoint.service';
 import { distinctDataSourceNames, sameDataSource } from '../../utils/data-source-names';
 import { PostureService } from '../../services/posture.service';
+import { lensNameVisible, lensOnScreen, lensQuestion } from '../../models/lens-registry';
 
 /** The impl= select's tooltip (P2-14, §6): what the four values match under the breadth guard. */
 export const IMPL_FILTER_TITLE = 'Filter by implementation status. Broad mitigations count as partial: '
@@ -217,10 +218,39 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void { this.subs.unsubscribe(); }
 
-  get heatmapShort(): string { return heatmapShortLabel(this.heatmapMode); }
+  /**
+   * Whether Covered and Proven words may render (PostureService.ownerWords,
+   * §1.3). The picker, the View button and the lens count read it, so the
+   * Proven and Covered lenses are offered and named only once owner data
+   * exists (design §10.4 item 14: rung words never appear for an empty user).
+   */
+  private get ownerWords(): boolean {
+    return this.injector.get(PostureService).ownerWords();
+  }
 
-  modesForGroup(group: string) {
-    return this.heatmapModes.filter(m => m.group === group);
+  /** The View button's lens name: the default lens's while the active one may not be named (lensOnScreen). */
+  get heatmapShort(): string {
+    return heatmapShortLabel(lensOnScreen(this.heatmapMode, this.ownerWords, DEFAULT_HEATMAP_MODE));
+  }
+
+  /** The lenses the picker offers: every lens, less the Proven and Covered lenses until owner data exists. */
+  get pickerModes(): HeatmapModeDef[] {
+    const ownerWords = this.ownerWords;
+    return this.heatmapModes.filter((m) => lensNameVisible(m, ownerWords));
+  }
+
+  /** How many lenses the picker offers (the lens-count line). */
+  get pickerModeCount(): number {
+    return this.pickerModes.length;
+  }
+
+  /** A lens button's title: why it is disabled, else its question (lensQuestion: no Covered word for an empty user). */
+  lensTitle(m: HeatmapModeDef, state: LensAvailability): string {
+    return state.reason ?? lensQuestion(m, this.ownerWords);
+  }
+
+  modesForGroup(group: string): HeatmapModeDef[] {
+    return this.pickerModes.filter(m => m.group === group);
   }
 
   /** True when a non-neutral viewpoint is active (analyst = today's default). */
@@ -232,8 +262,9 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
   get featuredModeDefs(): HeatmapModeDef[] {
     const vp = this.currentViewpoint;
     if (!vp) return [];
+    const offered = this.pickerModes;
     return vp.featuredLenses
-      .map((v) => this.heatmapModes.find((m) => m.value === v))
+      .map((v) => offered.find((m) => m.value === v))
       .filter((m): m is HeatmapModeDef => !!m);
   }
 

@@ -494,7 +494,7 @@ To add a heatmap mode (36 exist today), modify these files in order:
 | **Score Computation** | Categorical. From the validation runs you recorded or imported, the technique's best record of a named detection that fired or blocked: 3 when the record is from production and within its window, 2 when it is from the range or your own run and within its window, 1 when the newest record is older than its window (range 90, production 180, own run 90 days; bucket `stale`), 0 when there is no named detection. A run without a named detection never scores here. |
 | **Color Scale** | An ordinal ramp from the surface toward the Posture lens's teal: 0 the surface, 1 the Posture lens's `stale` fill, 2 the teal mixed 25% toward the surface, 3 the teal. Every scored cell shows a check mark, and a `lab` text badge when the best record is from the range. |
 | **Scale Type** | Categorical (ordinal) |
-| **Use Case** | See where a named detection has fired or blocked, and how fresh and how close to production that record is. On a fresh profile every cell scores 0 and the legend says "No data of yours recorded". |
+| **Use Case** | See where a named detection has fired or blocked, and how fresh and how close to production that record is. Offered only once data of yours exists (`lensNameVisible` in `src/app/models/lens-registry.ts`): on a fresh profile the lens picker does not list it, and a `heat=proven` link opens the default lens instead. |
 
 ---
 
@@ -508,7 +508,7 @@ To add a heatmap mode (36 exist today), modify these files in order:
 | **Score Computation** | Categorical. 2 when a full mark reaches the technique (an implemented mitigation within the breadth threshold, an implemented control, a confirmation, configured telemetry or a range mark) and no later failed run contradicts it; 1 when only partial marks do (a mitigation or control mapped to more techniques than the threshold, D16), drawn with a dashed outline; 0 otherwise. Planned marks score 0. |
 | **Color Scale** | The blue ordinal ramp shared with the `status` and `controls` lenses: 0 the surface, 1 the blue mixed 40% toward the surface with the dashed outline, 2 the blue. |
 | **Scale Type** | Categorical (ordinal) |
-| **Use Case** | The Covered (self-attested or range) rung on its own, without the proof the Posture lens layers on top. Raising the breadth threshold in Settings > Posture rules turns a broad mitigation's partial cells full here and on the Status lens. |
+| **Use Case** | The Covered (self-attested or range) rung on its own, without the proof the Posture lens layers on top. Raising the breadth threshold in Settings > Posture rules turns a broad mitigation's partial cells full here and on the Status lens. Offered only once data of yours exists, as lens 26 (`proven`) is: on a fresh profile the lens picker does not list it, and a `heat=covered` link opens the default lens instead. |
 
 ---
 

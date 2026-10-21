@@ -3,7 +3,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
 import { LegendComponent } from './legend.component';
-import { FilterService, HeatmapMode } from '../../services/filter.service';
+import { DEFAULT_HEATMAP_MODE, FilterService, HeatmapMode } from '../../services/filter.service';
 import { AttackDomain, DataService } from '../../services/data.service';
 import { SettingsService } from '../../services/settings.service';
 import { heatmapModeDef, lensAvailability } from '../../models/heatmap-modes';
@@ -353,20 +353,31 @@ describe('LegendComponent: the Posture lens (P2-13)', () => {
     expect(labels()).toEqual(['none', 'planned', 'Covered (self-attested), partial via a broad mitigation', 'Covered (self-attested)']);
   });
 
+  // Design §10.4 item 14: the Proven and Covered lenses are not named for an
+  // empty user, so on a fresh profile heat=proven or heat=covered shows the
+  // default lens's legend (lensOnScreen) until the matrix page moves the lens.
   for (const mode of ['proven', 'covered'] as const) {
-    it(`${mode}: a fresh profile sees the ramp and 'No data of yours recorded', and no covered or proven string`, () => {
+    it(`${mode}: a fresh profile sees the default lens's legend and no covered or proven string`, () => {
       heatmapMode$.next(mode);
       render();
-      expect(el().querySelectorAll('.posture-stop .swatch').length).toBe(mode === 'proven' ? 4 : 3);
-      expect(el().querySelector('.legend-no-data')!.textContent!.trim()).toBe('No data of yours recorded');
-      // Only the zero stop's words show: 'no recorded detection' or 'none'.
-      expect(Array.from(el().querySelectorAll('.stop-label')).map(n => n.textContent!.trim()))
-        .toEqual([mode === 'proven' ? 'no recorded detection' : 'none']);
-      const hits = visibleStrings().filter(v => /(?:covered|proven)/i.test(v));
-      // The legend title is the lens label; every other covered or proven string waits for owner data.
-      expect(hits.every(h => h.includes(heatmapModeDef(mode)!.label))).withContext(hits.join(' | ')).toBeTrue();
+      expect(el().querySelector('.legend-label')!.textContent!.trim()).toBe(heatmapModeDef(DEFAULT_HEATMAP_MODE)!.label);
+      expect(el().querySelector('.legend')!.getAttribute('aria-label')).toBe('Legend: ' + heatmapModeDef(DEFAULT_HEATMAP_MODE)!.label);
+      expect(el().querySelector('.legend-question')!.textContent!.trim()).toBe(heatmapModeDef(DEFAULT_HEATMAP_MODE)!.question);
+      expect(el().querySelector('.posture-stop')).toBeNull();
+      const hits = visibleStrings().filter(v => /\b(?:covered|proven)\b/i.test(v));
+      expect(hits).withContext(hits.join(' | ')).toEqual([]);
+      const cards = TestBed.inject(LensCardService);
+      (el().querySelector('.lens-help-btn') as HTMLButtonElement).click();
+      expect(cards.openMode()).toBe(DEFAULT_HEATMAP_MODE);
+      cards.close();
+    });
+
+    it(`${mode}: with owner data, names the lens, shows its ramp and asks its question`, () => {
+      heatmapMode$.next(mode);
       posture.set({ T1001: 'proven' });
       render();
+      expect(el().querySelector('.legend-label')!.textContent!.trim()).toBe(heatmapModeDef(mode)!.label);
+      expect(el().querySelectorAll('.posture-stop .swatch').length).toBe(mode === 'proven' ? 4 : 3);
       expect(el().querySelector('.legend-no-data')).toBeNull();
       expect(el().querySelector('.legend-question')!.textContent!.trim()).toBe(heatmapModeDef(mode)!.question);
     });

@@ -13,6 +13,9 @@
 import type { Technique } from './technique';
 import type { LensCell, LensContext, LensDefinition } from './heatmap-modes';
 
+/** A lens id (HeatmapMode), as a LensDefinition carries it. */
+export type LensMode = LensDefinition['value'];
+
 /** A registry-hosted lens: one that projects and colours itself. */
 export type RegistryLens = LensDefinition & Required<Pick<LensDefinition, 'project' | 'color'>>;
 
@@ -37,10 +40,39 @@ export function registryColor(def: LensDefinition, cell: LensCell, ctx: Pick<Len
  * The lenses whose menu label is itself a rung word (the Proven and Covered
  * lenses). Their names may render only when PostureService.ownerWords() is
  * true (§1.3; design §10.4 item 14: rung words never appear for an empty user).
+ * One rule for every surface that names a lens: the heatmap-mode picker
+ * (MatrixControlsComponent), the View button and the legend (lensOnScreen),
+ * the matrix page's fallback for a heat= link, and the settings sentence.
  */
 export const OWNER_WORD_LENSES: ReadonlySet<string> = new Set(['proven', 'covered']);
 
 /** Whether `def`'s name may render: always, unless it is an owner-word lens and no owner data exists. */
 export function lensNameVisible(def: Pick<LensDefinition, 'value'>, ownerWords: boolean): boolean {
   return ownerWords || !OWNER_WORD_LENSES.has(def.value);
+}
+
+/**
+ * The lens to put on screen for `mode`: `mode` itself, or `fallback` (the
+ * default lens) while its name may not render. A link with heat=covered or
+ * heat=proven, opened with no owner data, shows the default lens instead.
+ */
+export function lensOnScreen(mode: LensMode, ownerWords: boolean, fallback: LensMode): LensMode {
+  return lensNameVisible({ value: mode }, ownerWords) ? mode : fallback;
+}
+
+/**
+ * Registry lenses whose every number is the owner's Covered or Proven data
+ * (Posture, Proven, Covered). With no owner words they are titled
+ * NO_OWNER_DATA_LINE instead of their question (§1.3): the Posture question
+ * names Covered. Status and Controls keep the question: a planned status is
+ * data of yours, and their words are not rung words.
+ */
+export const OWNER_DATA_LENSES: ReadonlySet<string> = new Set(['posture', 'proven', 'covered']);
+
+/** What an owner-data lens says in place of its question while no owner data exists. */
+export const NO_OWNER_DATA_LINE = 'No data of yours recorded';
+
+/** The line a lens is titled with: its question, or NO_OWNER_DATA_LINE on an owner-data lens with no owner words. */
+export function lensQuestion(def: Pick<LensDefinition, 'value' | 'question'>, ownerWords: boolean): string {
+  return ownerWords || !OWNER_DATA_LENSES.has(def.value) ? def.question : NO_OWNER_DATA_LINE;
 }
