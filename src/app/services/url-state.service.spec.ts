@@ -196,10 +196,36 @@ describe('UrlStateService: a write skipped during a navigation', () => {
     void router.navigateByUrl('/');
     tick(400);
     tick();
-    const navigateSpy = spyOn(router, 'navigateByUrl').and.callThrough();
+    // Count writer passes directly: an unconditional retry would re-run
+    // writeState() after /slow settles, and that pass returns early (the
+    // serialized state equals lastWritten), so a navigation count could not
+    // tell the two apart. With no held write the router events schedule none.
+    const writer = service as unknown as { writeState(): void };
+    const writeSpy = spyOn(writer, 'writeState').and.callThrough();
     void router.navigateByUrl('/slow');
-    tick(1000);
+    tick(1000); // the guard resolves: NavigationEnd
+    tick(); // any retry macrotask would run here
+    expect(router.url.startsWith('/slow')).toBeTrue();
+    expect(writeSpy).not.toHaveBeenCalled();
+  }));
+
+  it('runs the held write exactly once when the navigation settles', fakeAsync(() => {
+    service.init();
+    void router.navigateByUrl('/');
+    tick(400);
     tick();
-    expect(navigateSpy.calls.count()).toBe(1); // only the /slow navigation itself
+    const writer = service as unknown as { writeState(): void };
+    void router.navigateByUrl('/slow');
+    tick(10);
+    filterService.setHeatmapMode('kev');
+    const writeSpy = spyOn(writer, 'writeState').and.callThrough();
+    tick(400); // the debounced write fires mid-navigation and is held
+    expect(writeSpy).toHaveBeenCalledTimes(1);
+    tick(1000); // NavigationEnd schedules the retry
+    tick();
+    // The held pass, then exactly one retry (which writes heat=kev); the
+    // replaceUrl navigation the retry starts does not schedule another.
+    expect(writeSpy).toHaveBeenCalledTimes(2);
+    expect(query()['heat']).toBe('kev');
   }));
 });
