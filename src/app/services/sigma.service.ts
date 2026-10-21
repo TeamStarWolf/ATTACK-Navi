@@ -4,8 +4,24 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { catchError, map, shareReplay, switchMap, tap } from 'rxjs/operators';
-import { SourceRegistryService, describeLoadError } from './source-registry.service';
+import { SourceRegistryService, TRUNCATED_LISTING, describeLoadError } from './source-registry.service';
 import { Technique } from '../models/technique';
+
+/** A Sigma rule file in the community repo: '.yml' or '.yaml' (the upstream uses '.yaml'). */
+function isSigmaRulePath(path: string | undefined): boolean {
+  return !!path && (path.endsWith('.yml') || path.endsWith('.yaml'));
+}
+
+/** The ATT&CK technique id a rule path carries, or null (the upstream's names carry none today). */
+function techniqueIdInPath(path: string): string | null {
+  const match = /T(\d{4}(?:\.\d{3})?)/.exec(path);
+  return match ? 'T' + match[1] : null;
+}
+
+/** A repo path made safe for a URL: each segment encoded, the '/' separators kept. */
+function encodePath(path: string): string {
+  return path.split('/').map(encodeURIComponent).join('/');
+}
 
 /**
  * The `author:` of every Sigma template this app generates. It names this
@@ -161,7 +177,10 @@ export class SigmaService {
 
   /**
    * Fetch actual Sigma rule details for a technique from the community
-   * SIGMA-detection-rules repo (files are named by ATT&CK technique id).
+   * SIGMA-detection-rules repo. It matches the technique id against the file PATH,
+   * and the upstream names its files by behaviour ('windows-active_directory/
+   * win-ad-DSRM password changed.yaml') with the ids only inside the rule bodies,
+   * so for this upstream it finds nothing today.
    * The GitHub code-search API used previously requires authentication and
    * always returns 401 from a browser, so it never produced results.
    * Results are cached per attackId.
@@ -178,7 +197,7 @@ export class SigmaService {
           .slice(0, 10)
           .map(path => ({
             path,
-            html_url: `https://github.com/mdecrevoisier/SIGMA-detection-rules/blob/main/${path}`,
+            html_url: `https://github.com/mdecrevoisier/SIGMA-detection-rules/blob/main/${encodePath(path)}`,
           }));
       }),
       switchMap(items => {
@@ -188,7 +207,7 @@ export class SigmaService {
         }
         // Fetch raw content for each file and extract front matter
         const fetches = items.map(item => {
-          const rawUrl = `https://raw.githubusercontent.com/mdecrevoisier/SIGMA-detection-rules/main/${item.path}`;
+          const rawUrl = `https://raw.githubusercontent.com/mdecrevoisier/SIGMA-detection-rules/main/${encodePath(item.path)}`;
           return this.http.get(rawUrl, { responseType: 'text' }).pipe(
             map(yaml => this.parseYamlFrontMatter(yaml, item.html_url)),
             catchError(() => of(null as SigmaRuleDetail | null)),
@@ -285,19 +304,27 @@ export class SigmaService {
 
   private communityRulePaths$?: Observable<string[]>;
 
-  /** Cached list of .yml rule paths in mdecrevoisier/SIGMA-detection-rules. */
+  /**
+   * Cached list of rule paths ('.yml' and '.yaml'; the upstream uses '.yaml') in
+   * mdecrevoisier/SIGMA-detection-rules. The technique ids are not in the file
+   * names, so the row count recorded on the registry is the technique-matched
+   * subset of these paths (0 today, so the source reads 'empty'), never the number
+   * of paths: a listing of rules with no ids read from them is not 'loaded'.
+   */
   private getCommunityRulePaths(): Observable<string[]> {
     if (!this.communityRulePaths$) {
       this.sources.begin('mdecrevoisier-sigma-tree');
       this.communityRulePaths$ = this.http
         .get<any>('https://api.github.com/repos/mdecrevoisier/SIGMA-detection-rules/git/trees/main?recursive=1')
         .pipe(
-          map((tree: any) =>
-            ((tree?.tree ?? []) as Array<{ type: string; path?: string }>)
-              .filter(item => item.type === 'blob' && !!item.path?.endsWith('.yml'))
-              .map(item => item.path as string),
-          ),
-          tap(paths => this.sources.succeed('mdecrevoisier-sigma-tree', paths.length)),
+          map((tree: any) => {
+            // A partial listing would under-count silently: report it, do not parse it.
+            if (tree?.truncated === true) throw new Error(TRUNCATED_LISTING);
+            return ((tree?.tree ?? []) as Array<{ type: string; path?: string }>)
+              .filter(item => item.type === 'blob' && isSigmaRulePath(item.path))
+              .map(item => item.path as string);
+          }),
+          tap(paths => this.sources.succeed('mdecrevoisier-sigma-tree', paths.filter(p => techniqueIdInPath(p)).length)),
           catchError(err => {
             // Recorded as failed and not cached, so the next call retries; callers that
             // need the list see the error rather than an empty rule set.
@@ -316,12 +343,10 @@ export class SigmaService {
     if (this.communityLoadedSubject.value) return;
     // A failed listing is already recorded on the source registry; communityLoaded$ stays false.
     this.getCommunityRulePaths().subscribe({ next: paths => {
-      const techRegex = /T(\d{4}(?:\.\d{3})?)/;
       let total = 0;
       for (const path of paths) {
-        const match = path.match(techRegex);
-        if (match) {
-          const id = 'T' + match[1];
+        const id = techniqueIdInPath(path);
+        if (id) {
           this.communityCounts.set(id, (this.communityCounts.get(id) ?? 0) + 1);
           total++;
         }

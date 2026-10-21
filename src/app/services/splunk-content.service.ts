@@ -3,7 +3,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
-import { SourceRegistryService } from './source-registry.service';
+import { SourceRegistryService, TRUNCATED_LISTING } from './source-registry.service';
 
 
 interface NavigatorLayer {
@@ -43,34 +43,52 @@ export class SplunkContentService {
 
   private loadLive(): void {
     // Splunk no longer publishes a unified Navigator layer.
-    // Scan the GitHub tree for .yml detection files and extract technique IDs.
+    // Scan the GitHub tree for .yml detection files and read technique IDs from the paths.
+    // Upstream detection files are named by behaviour (detections/application/
+    // aws_bedrock_claude_excessive_use_of_tokens.yml) and keep the ids in the file body
+    // (tags.mitre_attack_id), so this finds none today and the source is recorded as
+    // 'empty', not 'loaded'.
     this.sources.begin('splunk-tree');
     this.http.get<any>('https://api.github.com/repos/splunk/security_content/git/trees/develop?recursive=1')
       .subscribe({ next: (tree: any) => {
-        if (tree?.tree) {
-          const counts = new Map<string, number>();
-          const techRegex = /[Tt](1\d{3}(?:\.\d{3})?)/;
-          for (const item of tree.tree) {
-            if (item.path?.startsWith('detections/') && item.path?.endsWith('.yml')) {
-              const match = item.path.match(techRegex);
-              if (match) {
-                const id = 'T' + match[1];
-                counts.set(id, (counts.get(id) ?? 0) + 1);
-              }
-            }
-          }
-          if (counts.size > 0) {
-            const layer: NavigatorLayer = { techniques: [] };
-            for (const [id, score] of counts) {
-              layer.techniques.push({ techniqueID: id, score });
-            }
-            this.ingestLayer(layer);
+        try {
+          this.ingestTree(tree);
+        } catch (err) {
+          // A parse error must not leave the source 'loading' forever.
+          this.sources.fail('splunk-tree', err);
+        }
+      }, error: err => this.sources.fail('splunk-tree', err) });
+  }
+
+  private ingestTree(tree: any): void {
+    if (tree?.truncated === true) {
+      // A partial listing would under-count silently: report it, do not parse it.
+      this.sources.fail('splunk-tree', TRUNCATED_LISTING);
+      return;
+    }
+    if (tree?.tree) {
+      const counts = new Map<string, number>();
+      const techRegex = /[Tt](1\d{3}(?:\.\d{3})?)/;
+      for (const item of tree.tree) {
+        if (item.path?.startsWith('detections/') && item.path?.endsWith('.yml')) {
+          const match = item.path.match(techRegex);
+          if (match) {
+            const id = 'T' + match[1];
+            counts.set(id, (counts.get(id) ?? 0) + 1);
           }
         }
-        const rows = this.coveredSubject.value;
-        this.sources.succeed('splunk-tree', rows);
-        if (rows > 0) this.loadedSubject.next(true);
-      }, error: err => this.sources.fail('splunk-tree', err) });
+      }
+      if (counts.size > 0) {
+        const layer: NavigatorLayer = { techniques: [] };
+        for (const [id, score] of counts) {
+          layer.techniques.push({ techniqueID: id, score });
+        }
+        this.ingestLayer(layer);
+      }
+    }
+    const rows = this.coveredSubject.value;
+    this.sources.succeed('splunk-tree', rows);
+    if (rows > 0) this.loadedSubject.next(true);
   }
 
   /** Ingest a Navigator layer JSON with techniques[].techniqueID and techniques[].score. */

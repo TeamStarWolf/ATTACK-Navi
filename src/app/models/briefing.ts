@@ -136,26 +136,89 @@ function nameList(names: string[]): string {
   return `${names.slice(0, BRIEFING_NAME_LIMIT).join(', ')} and ${more} more`;
 }
 
+/** At most this many characters of a failure reason are spelled out in the Briefing. */
+export const BRIEFING_REASON_LIMIT = 60;
+
+/**
+ * A failure reason kept short for the one-line Briefing: URLs and parenthetical asides
+ * are dropped ('GitHub rate limit reached; resets at 14:05', 'not found'); the view
+ * banner and the data-health view keep the full reason.
+ */
+export function shortReason(reason: string | null | undefined): string {
+  let r = (reason ?? '')
+    .replace(/(:\s*|\s+from\s+)?https?:\/\/\S+/g, '')
+    .replace(/\s*\([^)]*\)/g, '')
+    .replace(/\s+/g, ' ')
+    .replace(/[\s:;,.]+$/, '')
+    .trim();
+  if (r.length > BRIEFING_REASON_LIMIT) r = `${r.slice(0, BRIEFING_REASON_LIMIT - 3).trimEnd()}...`;
+  return r;
+}
+
+function failedName(r: SourceRecord): string {
+  const why = shortReason(r.lastError);
+  return why ? `${r.name} (${why})` : r.name;
+}
+
+/**
+ * What an 'empty' record means for most sources: the request worked and the source
+ * answered, but nothing usable could be read from it (no rows, CVEs, scores or links,
+ * depending on the source). It is not a failed load, so the banner offers no Retry
+ * for it; the data-health view still lists the source.
+ */
+export const EMPTY_SOURCE_DETAIL = 'answered, but nothing usable could be read from it';
+
+/**
+ * The four GitHub tree listings read only for technique ids in rule file paths.
+ * Their 'empty' means the listing loaded in full but no path carried a technique id.
+ */
+export const TREE_LISTING_SOURCE_IDS: readonly string[] = [
+  'elastic-tree', 'splunk-tree', 'sentinel-attack-tree', 'mdecrevoisier-sigma-tree',
+];
+
+/** What 'empty' means for a tree listing (TREE_LISTING_SOURCE_IDS). */
+export const TREE_LISTING_EMPTY_DETAIL = 'answered, but no technique ids could be read from it';
+
+/** The short form of TREE_LISTING_EMPTY_DETAIL, shown after a tree listing's name in a mixed list. */
+export const TREE_LISTING_EMPTY_NOTE = 'no technique ids';
+
+/** True for the four tree-listing sources (TREE_LISTING_SOURCE_IDS). */
+export function isTreeListing(id: string): boolean {
+  return TREE_LISTING_SOURCE_IDS.includes(id);
+}
+
+/** What an 'empty' record of this source means: the tree-listing wording for the four tree listings, the generic one otherwise. */
+export function emptyDetailOf(id: string): string {
+  return isTreeListing(id) ? TREE_LISTING_EMPTY_DETAIL : EMPTY_SOURCE_DETAIL;
+}
+
 function hasData(r: SourceRecord | undefined): boolean {
   return !!r && ['loaded', 'stale', 'archived-upstream'].includes(r.status) && (r.rows ?? 1) > 0;
 }
 
 /**
- * What the Briefing strip says, in order: failed sources, empty sources, the stand-in
- * snapshots in use ('using snapshot of <date>'), and the ATT&CK update on offer or in
- * use. An empty list means there is nothing to report.
+ * What the Briefing strip says, in order: sources that failed to load (each with a
+ * short reason), sources that answered with nothing usable (status 'empty': the
+ * request worked, but nothing usable could be read from it; "no technique ids" when
+ * every one of them is a tree listing, and a tree listing in a mixed list is marked
+ * so), the stand-in snapshots in use ('using snapshot of <date>'), and the ATT&CK
+ * update on offer or in use. Each group is its own sentence and appears only when it
+ * has members. An empty list means there is nothing to report.
  */
 export function briefingItems(records: readonly SourceRecord[], update: BriefingUpdate | null): BriefingItem[] {
   const items: BriefingItem[] = [];
   const failed = records.filter(r => r.status === 'failed');
   if (failed.length) {
-    const lead = failed.length === 1 ? '1 source failed' : `${failed.length} sources failed`;
-    items.push({ kind: 'failed', text: `${lead}: ${nameList(failed.map(r => r.name))}.` });
+    const lead = failed.length === 1 ? '1 source failed to load' : `${failed.length} sources failed to load`;
+    items.push({ kind: 'failed', text: `${lead}: ${nameList(failed.map(failedName))}.` });
   }
   const empty = records.filter(r => r.status === 'empty');
   if (empty.length) {
-    const lead = empty.length === 1 ? '1 source returned no rows' : `${empty.length} sources returned no rows`;
-    items.push({ kind: 'empty', text: `${lead}: ${nameList(empty.map(r => r.name))}.` });
+    const allTree = empty.every(r => isTreeListing(r.id));
+    const what = allTree ? TREE_LISTING_EMPTY_NOTE : 'nothing usable';
+    const lead = empty.length === 1 ? `1 source answered with ${what}` : `${empty.length} sources answered with ${what}`;
+    const names = empty.map(r => (!allTree && isTreeListing(r.id) ? `${r.name} (${TREE_LISTING_EMPTY_NOTE})` : r.name));
+    items.push({ kind: 'empty', text: `${lead}: ${nameList(names)}.` });
   }
   const byId = new Map(records.map(r => [r.id, r]));
   for (const standIn of records) {

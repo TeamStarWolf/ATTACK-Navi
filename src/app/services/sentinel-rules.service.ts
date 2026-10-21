@@ -3,7 +3,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
-import { SourceRegistryService } from './source-registry.service';
+import { SourceRegistryService, TRUNCATED_LISTING } from './source-registry.service';
 
 export interface SentinelRule {
   filename: string;
@@ -45,34 +45,53 @@ export class SentinelRulesService {
     this.http
       .get<any>('https://api.github.com/repos/edoardogerosa/sentinel-attack/git/trees/master?recursive=1')
       .subscribe({ next: (tree: any) => {
-        if (tree?.tree) {
-          const techRegex = /T(\d{4}(?:\.\d{3})?)/;
-          let total = 0;
-          for (const item of tree.tree) {
-            if (item.type !== 'blob') continue;
-            const path: string = item.path ?? '';
-            if (!path.endsWith('.json') && !path.endsWith('.yaml') && !path.endsWith('.yml')) continue;
-            const match = path.match(techRegex);
-            if (!match) continue;
-            const id = 'T' + match[1];
-            const segments = path.split('/');
-            const filename = segments[segments.length - 1];
-            const url = `https://github.com/edoardogerosa/sentinel-attack/blob/master/${path}`;
-            const rule: SentinelRule = { filename, url };
-            this.directCounts.set(id, (this.directCounts.get(id) ?? 0) + 1);
-            if (!this.rulesMap.has(id)) {
-              this.rulesMap.set(id, []);
-            }
-            this.rulesMap.get(id)!.push(rule);
-            total++;
-          }
-          this.totalSubject.next(total);
-          this.coveredSubject.next(this.directCounts.size);
+        try {
+          this.ingestTree(tree);
+        } catch (err) {
+          // A parse error must not leave the source 'loading' forever.
+          this.sources.fail('sentinel-attack-tree', err);
         }
-        const rows = this.coveredSubject.value;
-        this.sources.succeed('sentinel-attack-tree', rows);
-        if (rows > 0) this.loadedSubject.next(true);
       }, error: err => this.sources.fail('sentinel-attack-tree', err) });
+  }
+
+  /**
+   * Count rule files whose path carries a technique id. The upstream removed its
+   * rules on 2024-11-28 and now holds a handful of non-rule files, so this finds
+   * none today and the source is recorded as 'empty', not 'loaded'.
+   */
+  private ingestTree(tree: any): void {
+    if (tree?.truncated === true) {
+      // A partial listing would under-count silently: report it, do not parse it.
+      this.sources.fail('sentinel-attack-tree', TRUNCATED_LISTING);
+      return;
+    }
+    if (tree?.tree) {
+      const techRegex = /T(\d{4}(?:\.\d{3})?)/;
+      let total = 0;
+      for (const item of tree.tree) {
+        if (item.type !== 'blob') continue;
+        const path: string = item.path ?? '';
+        if (!path.endsWith('.json') && !path.endsWith('.yaml') && !path.endsWith('.yml')) continue;
+        const match = path.match(techRegex);
+        if (!match) continue;
+        const id = 'T' + match[1];
+        const segments = path.split('/');
+        const filename = segments[segments.length - 1];
+        const url = `https://github.com/edoardogerosa/sentinel-attack/blob/master/${path}`;
+        const rule: SentinelRule = { filename, url };
+        this.directCounts.set(id, (this.directCounts.get(id) ?? 0) + 1);
+        if (!this.rulesMap.has(id)) {
+          this.rulesMap.set(id, []);
+        }
+        this.rulesMap.get(id)!.push(rule);
+        total++;
+      }
+      this.totalSubject.next(total);
+      this.coveredSubject.next(this.directCounts.size);
+    }
+    const rows = this.coveredSubject.value;
+    this.sources.succeed('sentinel-attack-tree', rows);
+    if (rows > 0) this.loadedSubject.next(true);
   }
 
   getRuleCount(attackId: string): number {

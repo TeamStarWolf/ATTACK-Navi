@@ -8,13 +8,14 @@ import { DATA_PRESENT_STATUSES, SourceRecord } from '../../models/source-record'
 import { DataService } from '../../services/data.service';
 import { SourceRegistryService } from '../../services/source-registry.service';
 import { sourcesForRoute } from '../../services/route-sources';
+import { EMPTY_SOURCE_DETAIL, TREE_LISTING_EMPTY_NOTE, emptyDetailOf, isTreeListing } from '../../models/briefing';
 
-/** A source this view reads that did not load. */
+/** A source this view reads that did not load ('failed') or loaded nothing usable ('empty'). */
 export interface MissingSource {
   id: string;
   name: string;
   status: 'failed' | 'empty';
-  /** Why: the recorded error, or what 'empty' means. */
+  /** Why: the recorded error for 'failed'; for 'empty', emptyDetailOf(id) (models/briefing.ts). */
   detail: string;
   /** The stand-in that loaded in its place (a source whose fallbackFor names this one), with its version. */
   fallback?: string;
@@ -34,7 +35,7 @@ export function missingSources(ids: readonly string[], records: readonly SourceR
       id: r.id,
       name: r.name,
       status: r.status as 'failed' | 'empty',
-      detail: r.status === 'failed' ? (r.lastError ?? 'the request failed') : 'the source answered with no usable rows',
+      detail: r.status === 'failed' ? (r.lastError ?? 'the request failed') : emptyDetailOf(r.id),
       ...(fallback ? { fallback } : {}),
     });
   };
@@ -52,8 +53,11 @@ export function missingSources(ids: readonly string[], records: readonly SourceR
 
 /**
  * The shared view banner (E1.3): on any route, names each source that route reads
- * (route-sources.ts) when its SourceRecord is 'failed' or 'empty', with the reason,
- * and links to the data-health view where each source has a Retry. It renders
+ * (route-sources.ts) when its SourceRecord is 'failed' or 'empty'. The two are told
+ * apart: a failed source "did not load", with the recorded reason, and the link offers
+ * data health and Retry; an empty source answered but nothing usable could be read
+ * from it ("no technique ids" for the four tree listings), under "Incomplete data",
+ * with no Retry (the request itself worked; data health still lists it). It renders
  * nothing while every source the route reads is loaded, loading or not requested.
  */
 @Component({
@@ -62,18 +66,40 @@ export function missingSources(ids: readonly string[], records: readonly SourceR
   imports: [RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (missing.length) {
+    @if (failed.length || empty.length) {
       <div class="source-banner" role="status" data-testid="source-banner">
-        <span class="sb-label">Missing data</span>
-        <span class="sb-text">
-          {{ missing.length === 1 ? 'A source this view reads did not load:' : missing.length + ' sources this view reads did not load:' }}
-          @for (m of missing; track m.id; let last = $last) {
-            <span class="sb-source" [attr.data-source-id]="m.id" [attr.data-status]="m.status" [title]="m.detail"
-              >{{ m.name }} ({{ m.status }}){{ m.fallback ? ' - using ' + m.fallback : '' }}{{ last ? '. ' : ', ' }}</span>
-          }
-          Results that use them are incomplete.
-        </span>
-        <a class="sb-link" routerLink="/status">Data health and Retry</a>
+        @if (failed.length) {
+          <div class="sb-group" data-testid="source-banner-failed">
+            <span class="sb-label">Missing data</span>
+            <div class="sb-text">
+              {{ failed.length === 1 ? 'A source this view reads did not load:' : failed.length + ' sources this view reads did not load:' }}
+              @for (m of failed; track m.id; let last = $last) {
+                <span class="sb-source" [attr.data-source-id]="m.id" data-status="failed" [title]="m.detail"
+                  ><span class="sb-name">{{ m.name }} (failed)</span>: {{ m.detail }}{{ m.fallback ? '; using ' + m.fallback : '' }}{{ last ? '.' : ' | ' }}</span>
+              }
+              Results that use them are incomplete.
+            </div>
+            <a class="sb-link" routerLink="/status">Data health and Retry</a>
+          </div>
+        }
+        @if (empty.length) {
+          <div class="sb-group" data-testid="source-banner-empty">
+            <span class="sb-label">Incomplete data</span>
+            <div class="sb-text">
+              {{ empty.length === 1
+                ? 'A source this view reads ' + emptyDetail + ':'
+                : 'Each of these ' + empty.length + ' sources this view reads ' + emptyDetail + ':' }}
+              @for (m of empty; track m.id; let last = $last) {
+                <span class="sb-source" [attr.data-source-id]="m.id" data-status="empty" [title]="m.detail"
+                  ><span class="sb-name">{{ m.name }}</span>{{ m.detail !== emptyDetail && isTree(m.id) ? ' (' + treeNote + ')' : '' }}{{ last ? '.' : ', ' }}</span>
+              }
+              Results that use them are incomplete.
+            </div>
+            @if (!failed.length) {
+              <a class="sb-link" routerLink="/status">Data health</a>
+            }
+          </div>
+        }
       </div>
     }
   `,
@@ -81,9 +107,8 @@ export function missingSources(ids: readonly string[], records: readonly SourceR
     :host { display: block; flex-shrink: 0; }
     .source-banner {
       display: flex;
-      align-items: baseline;
-      flex-wrap: wrap;
-      gap: var(--space-1) var(--space-3);
+      flex-direction: column;
+      gap: var(--space-1);
       margin: var(--space-2) var(--space-3);
       padding: var(--space-2) var(--space-3);
       border: 1px solid var(--border-subtle);
@@ -93,6 +118,13 @@ export function missingSources(ids: readonly string[], records: readonly SourceR
       color: var(--text-primary);
       font-size: var(--text-sm);
       line-height: 1.45;
+    }
+    .sb-group {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: var(--space-1) var(--space-3);
+      min-width: 0;
     }
     .sb-label {
       font-weight: 650;
@@ -105,8 +137,9 @@ export function missingSources(ids: readonly string[], records: readonly SourceR
       min-width: 0;
       max-height: 4.5em;
       overflow-y: auto;
+      overflow-wrap: anywhere;
     }
-    .sb-source { font-weight: 600; }
+    .sb-name { font-weight: 600; }
     .sb-link {
       color: var(--text-primary);
       text-decoration: underline;
@@ -121,7 +154,20 @@ export class SourceBannerComponent implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly destroyRef = inject(DestroyRef);
 
+  /**
+   * The lead of the empty group: the detail every listed empty source shares (the
+   * tree-listing wording when all are tree listings), else the generic one, with each
+   * tree listing then marked "(no technique ids)".
+   */
+  emptyDetail = EMPTY_SOURCE_DETAIL;
+  readonly treeNote = TREE_LISTING_EMPTY_NOTE;
+  readonly isTree = isTreeListing;
+
   missing: MissingSource[] = [];
+  /** Sources that did not load: shown with their reason and a Retry link. */
+  failed: MissingSource[] = [];
+  /** Sources that answered with nothing usable: shown apart, with no Retry. */
+  empty: MissingSource[] = [];
 
   ngOnInit(): void {
     const url$ = this.router.events.pipe(
@@ -133,6 +179,10 @@ export class SourceBannerComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(([url, domain, records]) => {
         this.missing = missingSources(sourcesForRoute(url, domain), records);
+        this.failed = this.missing.filter(m => m.status === 'failed');
+        this.empty = this.missing.filter(m => m.status === 'empty');
+        const details = new Set(this.empty.map(m => m.detail));
+        this.emptyDetail = details.size === 1 ? [...details][0] : EMPTY_SOURCE_DETAIL;
         this.cdr.markForCheck();
       });
   }

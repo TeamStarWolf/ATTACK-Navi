@@ -1,0 +1,442 @@
+{
+  "_note": "Abridged real GitHub git/trees listings (recursive=1), fetched 2026-10-21. Each tree keeps a handful of the upstream's real entries, unchanged; the full listings are much longer (elastic 3525, splunk 4366, sentinel 8, mdecrevoisier 380 entries) and none of their rule paths carries an ATT&CK technique id.",
+  "elastic": {
+    "repo": "elastic/detection-rules",
+    "ref": "main",
+    "listing": {
+      "sha": "002bd250cfc9e461e707d618dcd273e36bb623c1",
+      "url": "https://api.github.com/repos/elastic/detection-rules/git/trees/002bd250cfc9e461e707d618dcd273e36bb623c1",
+      "tree": [
+        {
+          "path": "README.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "f5901ccc88ee72d5362dfad5795e2e3ff8989b04",
+          "size": 11709,
+          "url": "https://api.github.com/repos/elastic/detection-rules/git/blobs/f5901ccc88ee72d5362dfad5795e2e3ff8989b04"
+        },
+        {
+          "path": "detection_rules",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "5a26f91eac6e40537daf530b3506b00df29e85c9",
+          "url": "https://api.github.com/repos/elastic/detection-rules/git/trees/5a26f91eac6e40537daf530b3506b00df29e85c9"
+        },
+        {
+          "path": "detection_rules/etc",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "8e42575ac00050746922a0115339fbe07cf1fe2a",
+          "url": "https://api.github.com/repos/elastic/detection-rules/git/trees/8e42575ac00050746922a0115339fbe07cf1fe2a"
+        },
+        {
+          "path": "detection_rules/etc/api_schemas",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "a396186be98fb0ed0fb675734c5c6d2c460587a7",
+          "url": "https://api.github.com/repos/elastic/detection-rules/git/trees/a396186be98fb0ed0fb675734c5c6d2c460587a7"
+        },
+        {
+          "path": "detection_rules/etc/api_schemas/7.14",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "c172747e2c20ff76519c81bb3977faf193eab226",
+          "url": "https://api.github.com/repos/elastic/detection-rules/git/trees/c172747e2c20ff76519c81bb3977faf193eab226"
+        },
+        {
+          "path": "detection_rules/etc/api_schemas/7.14/7.14.threshold.json",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "a1dee6fb728df21f7b0da9c501435b4810b5bb28",
+          "size": 8460,
+          "url": "https://api.github.com/repos/elastic/detection-rules/git/blobs/a1dee6fb728df21f7b0da9c501435b4810b5bb28"
+        },
+        {
+          "path": "rules",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "b8087153bca6434e8dd5a277e081a276427d911f",
+          "url": "https://api.github.com/repos/elastic/detection-rules/git/trees/b8087153bca6434e8dd5a277e081a276427d911f"
+        },
+        {
+          "path": "rules/_deprecated",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "30b147d08b48d0fa9870b71d4dd708c4575a8415",
+          "url": "https://api.github.com/repos/elastic/detection-rules/git/trees/30b147d08b48d0fa9870b71d4dd708c4575a8415"
+        },
+        {
+          "path": "rules/_deprecated/apm_null_user_agent.toml",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "e5590972b727f6d577d63ea010bc826be291a7d1",
+          "size": 1466,
+          "url": "https://api.github.com/repos/elastic/detection-rules/git/blobs/e5590972b727f6d577d63ea010bc826be291a7d1"
+        },
+        {
+          "path": "rules/integrations",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "1c2fc1b79c6a33716ce84c642e86038df6015826",
+          "url": "https://api.github.com/repos/elastic/detection-rules/git/trees/1c2fc1b79c6a33716ce84c642e86038df6015826"
+        },
+        {
+          "path": "rules/integrations/aws",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "b860968210fbf6c85577390407a6c8bdc2878197",
+          "url": "https://api.github.com/repos/elastic/detection-rules/git/trees/b860968210fbf6c85577390407a6c8bdc2878197"
+        },
+        {
+          "path": "rules/integrations/aws/persistence_bedrock_foundation_model_access_enabled_or_entitlement_granted.toml",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "f4c13f49982289c276bb8587ba7e6f1f5463bb9d",
+          "size": 8053,
+          "url": "https://api.github.com/repos/elastic/detection-rules/git/blobs/f4c13f49982289c276bb8587ba7e6f1f5463bb9d"
+        },
+        {
+          "path": "rules/integrations/kubernetes",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "1298c76419773692ccee6819b41e6ab4a876728f",
+          "url": "https://api.github.com/repos/elastic/detection-rules/git/trees/1298c76419773692ccee6819b41e6ab4a876728f"
+        },
+        {
+          "path": "rules/integrations/kubernetes/credential_access_kubernetes_secrets_list_cluster_and_sensitive_namespaces.toml",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "1a05f5bc5358dd92eab8063d9eba4c07bba599af",
+          "size": 3714,
+          "url": "https://api.github.com/repos/elastic/detection-rules/git/blobs/1a05f5bc5358dd92eab8063d9eba4c07bba599af"
+        },
+        {
+          "path": "rules/linux",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "1a30991c79b730cdb24e6fbf9f6479b58371e225",
+          "url": "https://api.github.com/repos/elastic/detection-rules/git/trees/1a30991c79b730cdb24e6fbf9f6479b58371e225"
+        },
+        {
+          "path": "rules/linux/impact_potential_linux_ransomware_note_detected.toml",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "87e7e2f39646fbe8c6d31b01cd9cdbbce4c24587",
+          "size": 9205,
+          "url": "https://api.github.com/repos/elastic/detection-rules/git/blobs/87e7e2f39646fbe8c6d31b01cd9cdbbce4c24587"
+        },
+        {
+          "path": "rules/windows",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "2ea68ef5685730043fc76902bdd9934a84349857",
+          "url": "https://api.github.com/repos/elastic/detection-rules/git/trees/2ea68ef5685730043fc76902bdd9934a84349857"
+        },
+        {
+          "path": "rules/windows/collection_email_outlook_mailbox_via_com.toml",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "52b091bd8170d79c309d1ade387f243ea3adc8fb",
+          "size": 7636,
+          "url": "https://api.github.com/repos/elastic/detection-rules/git/blobs/52b091bd8170d79c309d1ade387f243ea3adc8fb"
+        },
+        {
+          "path": "rules/windows/credential_access_adidns_wildcard.toml",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "7664cb25dc072c0a9d6848475f4ee4a68bb23ede",
+          "size": 12797,
+          "url": "https://api.github.com/repos/elastic/detection-rules/git/blobs/7664cb25dc072c0a9d6848475f4ee4a68bb23ede"
+        }
+      ],
+      "truncated": false
+    }
+  },
+  "splunk": {
+    "repo": "splunk/security_content",
+    "ref": "develop",
+    "listing": {
+      "sha": "678e76c5f36f6fadd93a1eaa0d82c1dbe273c486",
+      "url": "https://api.github.com/repos/splunk/security_content/git/trees/678e76c5f36f6fadd93a1eaa0d82c1dbe273c486",
+      "tree": [
+        {
+          "path": "README.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "340b89cf32317031ff372d745f85a042eeeee492",
+          "size": 11160,
+          "url": "https://api.github.com/repos/splunk/security_content/git/blobs/340b89cf32317031ff372d745f85a042eeeee492"
+        },
+        {
+          "path": "dashboards",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "84d1f5792cc4bbfbc686bc60889c03b520f23e35",
+          "url": "https://api.github.com/repos/splunk/security_content/git/trees/84d1f5792cc4bbfbc686bc60889c03b520f23e35"
+        },
+        {
+          "path": "dashboards/rmm_software_tracking.yml",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "d7e45fbd4ffe0e6ca2141d113c9226b8c844fb94",
+          "size": 310,
+          "url": "https://api.github.com/repos/splunk/security_content/git/blobs/d7e45fbd4ffe0e6ca2141d113c9226b8c844fb94"
+        },
+        {
+          "path": "detections",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "bb96540de6a00ec062fd8311fd2c4c0d69166c8f",
+          "url": "https://api.github.com/repos/splunk/security_content/git/trees/bb96540de6a00ec062fd8311fd2c4c0d69166c8f"
+        },
+        {
+          "path": "detections/application",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "5702db827acea267fd80e46a6b5b8ca43e3dfda1",
+          "url": "https://api.github.com/repos/splunk/security_content/git/trees/5702db827acea267fd80e46a6b5b8ca43e3dfda1"
+        },
+        {
+          "path": "detections/application/aws_bedrock_claude_cross_region_possible_inference_abuse.yml",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "ceb99790901ca48b1d3823f5199be0dbca7aeb5b",
+          "size": 4630,
+          "url": "https://api.github.com/repos/splunk/security_content/git/blobs/ceb99790901ca48b1d3823f5199be0dbca7aeb5b"
+        },
+        {
+          "path": "detections/application/aws_bedrock_claude_excessive_use_of_tokens.yml",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "20242b216124c03b41ba4cd72edf1657bdfdd650",
+          "size": 4427,
+          "url": "https://api.github.com/repos/splunk/security_content/git/blobs/20242b216124c03b41ba4cd72edf1657bdfdd650"
+        },
+        {
+          "path": "detections/cloud",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "fd5f66806eb1e2162ee11605a619bf604fe0e58f",
+          "url": "https://api.github.com/repos/splunk/security_content/git/trees/fd5f66806eb1e2162ee11605a619bf604fe0e58f"
+        },
+        {
+          "path": "detections/cloud/o365_new_mfa_method_registered.yml",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "b205609d03c1df7decd2b8593611ba42e2f6589e",
+          "size": 4043,
+          "url": "https://api.github.com/repos/splunk/security_content/git/blobs/b205609d03c1df7decd2b8593611ba42e2f6589e"
+        },
+        {
+          "path": "detections/endpoint",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "08083299e7302bcfb41c54e866659c7ebfcead26",
+          "url": "https://api.github.com/repos/splunk/security_content/git/trees/08083299e7302bcfb41c54e866659c7ebfcead26"
+        },
+        {
+          "path": "detections/endpoint/linux_malformed_auth_entry.yml",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "79a8ec4f7f87b70701dfa5adf324ec0f7f1860b2",
+          "size": 3562,
+          "url": "https://api.github.com/repos/splunk/security_content/git/blobs/79a8ec4f7f87b70701dfa5adf324ec0f7f1860b2"
+        },
+        {
+          "path": "detections/endpoint/windows_chromium_process_with_disabled_extensions.yml",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "02e22cb660077357c446082e820ef88c9ad4180f",
+          "size": 4892,
+          "url": "https://api.github.com/repos/splunk/security_content/git/blobs/02e22cb660077357c446082e820ef88c9ad4180f"
+        },
+        {
+          "path": "detections/endpoint/windows_processes_killed_by_industroyer2_malware.yml",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "b63dcd7aab5677048ad43e03774812ca9f5d9e3f",
+          "size": 3389,
+          "url": "https://api.github.com/repos/splunk/security_content/git/blobs/b63dcd7aab5677048ad43e03774812ca9f5d9e3f"
+        }
+      ],
+      "truncated": false
+    }
+  },
+  "sentinel": {
+    "repo": "edoardogerosa/sentinel-attack",
+    "ref": "master",
+    "listing": {
+      "sha": "979fb468cd0b0fed01e1328cd95da8b99cde78b1",
+      "url": "https://api.github.com/repos/edoardogerosa/sentinel-attack/git/trees/979fb468cd0b0fed01e1328cd95da8b99cde78b1",
+      "tree": [
+        {
+          "path": ".gitignore",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "42e736147c3602621bec9f1c5b1bd6cafdca0d23",
+          "size": 245,
+          "url": "https://api.github.com/repos/edoardogerosa/sentinel-attack/git/blobs/42e736147c3602621bec9f1c5b1bd6cafdca0d23"
+        },
+        {
+          "path": "CODE_OF_CONDUCT.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "37eaeee9a4af714ba8fdf60225891d653ee491fc",
+          "size": 3217,
+          "url": "https://api.github.com/repos/edoardogerosa/sentinel-attack/git/blobs/37eaeee9a4af714ba8fdf60225891d653ee491fc"
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "479b4fc83b5e49ff408e379c9a5ddf85db94bfef",
+          "size": 1085,
+          "url": "https://api.github.com/repos/edoardogerosa/sentinel-attack/git/blobs/479b4fc83b5e49ff408e379c9a5ddf85db94bfef"
+        },
+        {
+          "path": "LICENSE.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "5e42745968c07720e8715761aaedc0cd8ac125e2",
+          "size": 1076,
+          "url": "https://api.github.com/repos/edoardogerosa/sentinel-attack/git/blobs/5e42745968c07720e8715761aaedc0cd8ac125e2"
+        },
+        {
+          "path": "README.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "e0fa7ed1bd37d7303d0232b7a916d45f63e4a3fb",
+          "size": 2369,
+          "url": "https://api.github.com/repos/edoardogerosa/sentinel-attack/git/blobs/e0fa7ed1bd37d7303d0232b7a916d45f63e4a3fb"
+        },
+        {
+          "path": "Sysmon-OSSEM.txt",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "95d8cb52772b540c5e80040e417514c82263aa93",
+          "size": 15268,
+          "url": "https://api.github.com/repos/edoardogerosa/sentinel-attack/git/blobs/95d8cb52772b540c5e80040e417514c82263aa93"
+        },
+        {
+          "path": "docs",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "37b9c38e2f1e31a6b55edd269686dc1e07038434",
+          "url": "https://api.github.com/repos/edoardogerosa/sentinel-attack/git/trees/37b9c38e2f1e31a6b55edd269686dc1e07038434"
+        },
+        {
+          "path": "docs/DEFCON_attacking_the_sentinel.pdf",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "48a0f7115a993ac0b3e672ff3f8bb7592dbde7e8",
+          "size": 1401049,
+          "url": "https://api.github.com/repos/edoardogerosa/sentinel-attack/git/blobs/48a0f7115a993ac0b3e672ff3f8bb7592dbde7e8"
+        }
+      ],
+      "truncated": false
+    }
+  },
+  "mdecrevoisier": {
+    "repo": "mdecrevoisier/SIGMA-detection-rules",
+    "ref": "main",
+    "listing": {
+      "sha": "d61408af8769c74c96296b7ccc92d4bc3abb15af",
+      "url": "https://api.github.com/repos/mdecrevoisier/SIGMA-detection-rules/git/trees/d61408af8769c74c96296b7ccc92d4bc3abb15af",
+      "tree": [
+        {
+          "path": "README.md",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "1309bc6953919879335611ea7a4b979cf5495a77",
+          "size": 41094,
+          "url": "https://api.github.com/repos/mdecrevoisier/SIGMA-detection-rules/git/blobs/1309bc6953919879335611ea7a4b979cf5495a77"
+        },
+        {
+          "path": "cloud-azure",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "a371445422c88ba4126070d76f10c686073fbb67",
+          "url": "https://api.github.com/repos/mdecrevoisier/SIGMA-detection-rules/git/trees/a371445422c88ba4126070d76f10c686073fbb67"
+        },
+        {
+          "path": "cloud-azure/azure-active-directory-new federated trust added.yaml",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "51848dbddec9a0fd04566a1ad117b082638f00d5",
+          "size": 908,
+          "url": "https://api.github.com/repos/mdecrevoisier/SIGMA-detection-rules/git/blobs/51848dbddec9a0fd04566a1ad117b082638f00d5"
+        },
+        {
+          "path": "cloud-azure/azure-exchange-email rule breach (on behalf).yaml",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "0c0a90b29a3285cf92891e31a600866be43db3c4",
+          "size": 1262,
+          "url": "https://api.github.com/repos/mdecrevoisier/SIGMA-detection-rules/git/blobs/0c0a90b29a3285cf92891e31a600866be43db3c4"
+        },
+        {
+          "path": "windows-active_directory",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "53f39a47749f5dbdf2aec51b950b7fec3572c41e",
+          "url": "https://api.github.com/repos/mdecrevoisier/SIGMA-detection-rules/git/trees/53f39a47749f5dbdf2aec51b950b7fec3572c41e"
+        },
+        {
+          "path": "windows-active_directory/win-ad-DSRM password changed.yaml",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "8b21bbcf6c6fa051f8d756a12b3701c734adc3ce",
+          "size": 1016,
+          "url": "https://api.github.com/repos/mdecrevoisier/SIGMA-detection-rules/git/blobs/8b21bbcf6c6fa051f8d756a12b3701c734adc3ce"
+        },
+        {
+          "path": "windows-active_directory/win-ad-user account created by a computer account.yaml",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "92cbded9b108a9373e4854244eaea37fc83c39fb",
+          "size": 881,
+          "url": "https://api.github.com/repos/mdecrevoisier/SIGMA-detection-rules/git/blobs/92cbded9b108a9373e4854244eaea37fc83c39fb"
+        },
+        {
+          "path": "windows-lsass",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "b77a257dad3521cc0cd4a6c55bfdb846bc55b0e9",
+          "url": "https://api.github.com/repos/mdecrevoisier/SIGMA-detection-rules/git/trees/b77a257dad3521cc0cd4a6c55bfdb846bc55b0e9"
+        },
+        {
+          "path": "windows-lsass/win-os-LSASS credential dump with LSASSY (share).yaml",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "839b54c14005f19067c31a1ab4373fb791622042",
+          "size": 800,
+          "url": "https://api.github.com/repos/mdecrevoisier/SIGMA-detection-rules/git/blobs/839b54c14005f19067c31a1ab4373fb791622042"
+        },
+        {
+          "path": "windows-os",
+          "mode": "040000",
+          "type": "tree",
+          "sha": "26ca51ee7177451e5ccb51711ad31d90efb87ba2",
+          "url": "https://api.github.com/repos/mdecrevoisier/SIGMA-detection-rules/git/trees/26ca51ee7177451e5ccb51711ad31d90efb87ba2"
+        },
+        {
+          "path": "windows-os/win-os-event log cleared (native).yaml",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "a3001b36f8ff49f7e4389c6d61d25f611aa80e93",
+          "size": 770,
+          "url": "https://api.github.com/repos/mdecrevoisier/SIGMA-detection-rules/git/blobs/a3001b36f8ff49f7e4389c6d61d25f611aa80e93"
+        },
+        {
+          "path": "windows-os/win-os-winlogon process contact to C2 (network).yaml",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "abe0423bbc2fea028313d315127aaff647b7af2a",
+          "size": 772,
+          "url": "https://api.github.com/repos/mdecrevoisier/SIGMA-detection-rules/git/blobs/abe0423bbc2fea028313d315127aaff647b7af2a"
+        }
+      ],
+      "truncated": false
+    }
+  }
+}
