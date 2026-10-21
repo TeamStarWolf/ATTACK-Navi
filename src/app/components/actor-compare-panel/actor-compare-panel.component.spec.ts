@@ -92,8 +92,25 @@ describe('ActorComparePanelComponent', () => {
     expect(component.uniqueToBIds).toEqual([]);
   });
 
+  it('refuses a self-comparison when the same group is picked in both pickers', () => {
+    fixture.debugElement.queryAll(By.css('app-threat-profile-picker'))[0]
+      .queryAll(By.css('.tpp-item'))[0].nativeElement.click();   // Alpha in A
+    fixture.detectChanges();
+    // Picker A is now the selected display; pick Alpha again in the remaining picker (B).
+    fixture.debugElement.queryAll(By.css('app-threat-profile-picker'))[0]
+      .queryAll(By.css('.tpp-item'))[0].nativeElement.click();   // Alpha in B
+    fixture.detectChanges();
+    expect(component.actorA?.id).toBe('intrusion-set--a');
+    expect(component.actorB?.id).toBe('intrusion-set--a');
+    expect(component.sameGroup).toBeTrue();
+    expect(fixture.debugElement.query(By.css('[data-testid="same-group"]'))).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('.venn-diagram'))).toBeNull();   // no self-overlap shown
+  });
+
   it('drops a selection the new domain lacks on a domain switch', () => {
-    component.onPickA('intrusion-set--a');
+    fixture.debugElement.queryAll(By.css('app-threat-profile-picker'))[0]
+      .queryAll(By.css('.tpp-item'))[0].nativeElement.click();   // Alpha, via the rendered picker
+    fixture.detectChanges();
     expect(component.actorA?.id).toBe('intrusion-set--a');
     domain$.next({
       name: 'ICS ATT&CK', groups: [group('intrusion-set--c', 'G9001', 'Gamma')], techniques: [], campaigns: [],

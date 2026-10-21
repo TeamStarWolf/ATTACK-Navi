@@ -84,8 +84,31 @@ describe('ComparisonPanelComponent', () => {
     expect(component.bOnly).toEqual([]);
   });
 
+  it('resolves a group with no technique uses (not dropped) and shows the no-uses state', () => {
+    const GNT = group('intrusion-set--nt', 'G0003', 'NoTech');
+    domain$.next({
+      name: 'Enterprise ATT&CK', groups: [GA, GNT], techniques: [T1, T2], campaigns: [], tacticColumns: [],
+      groupsByTechnique: new Map([['t1', [GA]], ['t2', [GA]]]),      // GNT maps nothing
+      techniquesByGroup: new Map([['intrusion-set--a', [T1, T2]]]),  // GNT absent -> no techniques
+    } as unknown as Domain);
+    fixture.detectChanges();
+    // Groups sort by name: Alpha, NoTech. Pick NoTech in A — it must resolve, not drop.
+    fixture.debugElement.queryAll(By.css('app-threat-profile-picker'))[0]
+      .queryAll(By.css('.tpp-item'))[1].nativeElement.click();
+    fixture.detectChanges();
+    expect(component.groupA?.id).toBe('intrusion-set--nt');
+    // Pick Alpha in B (the remaining picker), so a different group is selected.
+    fixture.debugElement.queryAll(By.css('app-threat-profile-picker'))[0]
+      .queryAll(By.css('.tpp-item'))[0].nativeElement.click();
+    fixture.detectChanges();
+    expect(component.groupB?.id).toBe('intrusion-set--a');
+    expect(fixture.debugElement.query(By.css('[data-testid="no-uses"]'))).toBeTruthy();
+  });
+
   it('drops a selection the new domain lacks on a domain switch', () => {
-    component.onPickA('intrusion-set--a');
+    fixture.debugElement.queryAll(By.css('app-threat-profile-picker'))[0]
+      .queryAll(By.css('.tpp-item'))[0].nativeElement.click();   // Alpha, via the rendered picker
+    fixture.detectChanges();
     expect(component.groupA?.id).toBe('intrusion-set--a');
     domain$.next({
       name: 'ICS ATT&CK', groups: [group('intrusion-set--c', 'G9001', 'Gamma')], techniques: [], campaigns: [], tacticColumns: [],

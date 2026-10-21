@@ -6,7 +6,7 @@
       <div class="panel-header">
         <div class="header-left">
           <span class="panel-title">Threat Actor Comparison</span>
-          @if (actorA && actorB) {
+          @if (actorA && actorB && !sameGroup) {
             <span class="header-subtitle">
               {{ overlapIds.length }} shared techniques · {{ unionSize }} total
             </span>
@@ -59,7 +59,7 @@
           <div class="loader-spinner"></div>
           <p>Loading threat group data…</p>
         </div>
-      } @else if (actorA && actorB) {
+      } @else if (actorA && actorB && !sameGroup) {
 
         <!-- Stats Bar -->
         <div class="stats-bar">
@@ -322,6 +322,13 @@
 
         </div>
 
+      } @else if (sameGroup) {
+        <!-- Same group picked in both: a self-comparison is refused. -->
+        <div class="prompt-state" data-testid="same-group">
+          <div class="prompt-icon">⚖️</div>
+          <p class="prompt-title">Select two different actors to compare.</p>
+          <p class="prompt-hint">Actor A and Actor B are the same group ({{ actorA?.attackId }}); pick a different group for one side.</p>
+        </div>
       } @else {
         <!-- Prompt when actors not selected -->
         <div class="prompt-state">

@@ -281,7 +281,7 @@
       ]
     },
     "one-picker": {
-      "summary": "a component outside threat-profile-picker filters domain.groups by name or alias",
+      "summary": "a component outside threat-profile-picker reads domain.groups AND filters by alias (aliases.some())",
       "patterns": [
         "domain\\.groups\\b",
         "\\baliases\\.some\\("

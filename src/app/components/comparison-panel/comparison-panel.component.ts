@@ -40,15 +40,15 @@ export class ComparisonPanelComponent implements OnInit, OnDestroy {
     this.subs.add(this.dataService.domain$.subscribe(d => {
       this.domain = d;
       if (d) {
-        const groupMap = new Map<string, ThreatGroup>();
-        for (const [, gs] of d.groupsByTechnique) {
-          for (const g of gs) groupMap.set(g.id, g);
-        }
-        this.groups = [...groupMap.values()].sort((a, b) => a.name.localeCompare(b.name));
-        // Drop a selection the new domain lacks, so compare never runs stale.
-        const stillHere = (g: ThreatGroup | null) => g && groupMap.has(g.id) ? g : null;
-        this.groupA = stillHere(this.groupA);
-        this.groupB = stillHere(this.groupB);
+        // Every group in the domain, not only those with technique 'uses' relationships
+        // (groupsByTechnique drops the handful that map no techniques, e.g. DragonOK),
+        // so the shared picker's STIX id always resolves here.
+        this.groups = [...d.groups].sort((a, b) => a.name.localeCompare(b.name));
+        // Re-resolve a kept selection from the NEW domain's groups so compare never runs
+        // against a stale domain object; a selection the new domain lacks is dropped.
+        const reResolve = (g: ThreatGroup | null) => g ? (d.groups.find(x => x.id === g.id) ?? null) : null;
+        this.groupA = reResolve(this.groupA);
+        this.groupB = reResolve(this.groupB);
       } else {
         this.groups = []; this.groupA = null; this.groupB = null;
       }
@@ -103,6 +103,15 @@ export class ComparisonPanelComponent implements OnInit, OnDestroy {
   get overlapPct(): number {
     const total = this.aOnly.length + this.both.length + this.bOnly.length;
     return total > 0 ? Math.round((this.both.length / total) * 100) : 0;
+  }
+
+  /** A selected group the loaded release records no technique 'uses' for; it still resolves and selects. */
+  get noUsesGroup(): ThreatGroup | null {
+    if (!this.domain) return null;
+    for (const g of [this.groupA, this.groupB]) {
+      if (g && (this.domain.techniquesByGroup.get(g.id)?.length ?? 0) === 0) return g;
+    }
+    return null;
   }
 
   selectTechnique(tech: Technique): void {

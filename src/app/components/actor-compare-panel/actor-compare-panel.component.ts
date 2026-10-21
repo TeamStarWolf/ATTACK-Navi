@@ -67,9 +67,11 @@ export class ActorComparePanelComponent implements OnInit, OnDestroy {
       this.techniqueObjectsByAttackId.clear();
       this.buildTechniqueObjectIndex(domain);
       this.buildTechniqueMap(domain);
-      const stillHere = (a: ThreatGroup | null) => a && domain.groups.some(g => g.id === a.id) ? a : null;
-      this.actorA = stillHere(this.actorA);
-      this.actorB = stillHere(this.actorB);
+      // Re-resolve a kept selection from the NEW domain's groups (never keep the stale
+      // object); a selection the new domain lacks is dropped.
+      const reResolve = (a: ThreatGroup | null) => a ? (domain.groups.find(g => g.id === a.id) ?? null) : null;
+      this.actorA = reResolve(this.actorA);
+      this.actorB = reResolve(this.actorB);
       this.cdr.markForCheck();
     }));
   }
@@ -134,6 +136,11 @@ export class ActorComparePanelComponent implements OnInit, OnDestroy {
     const union = this.unionSize;
     if (!union) return 0;
     return Math.round((this.overlapIds.length / union) * 100);
+  }
+
+  /** Both pickers resolved to the same group — a self-comparison, which the panel refuses. */
+  get sameGroup(): boolean {
+    return !!(this.actorA && this.actorB && this.actorA.id === this.actorB.id);
   }
 
   get techCountA(): number {
