@@ -282,7 +282,7 @@ full list of 20 BehaviorSubjects and 7 derived observables.
 | `exportRules(techs)` | Download generated rules as a `.yml` file |
 | `loadCommunityRules()` | Index the mdecrevoisier community rule counts from the rule-coverage snapshot (also run at start-up) |
 | `getCommunityRuleCount(techniqueId)` | Community rules naming a technique |
-| `fetchRulesForTechnique(attackId)` | Up to ten community rule titles with permalinks at the pinned commit, from the snapshot (no GitHub request) |
+| `fetchRulesForTechnique(attackId)` | Up to ten community rule titles with permalinks at the pinned commit, from the snapshot (no GitHub request). No production caller: the drawer reads `RuleCoverageSnapshotService` itself (see below); kept, with `getCachedRules(attackId)` and its cache, for API compatibility |
 
 **Dependencies:** `HttpClient`
 
@@ -338,16 +338,28 @@ repository holds, not what runs in any environment.
 | | |
 |---|---|
 | **File** | `src/app/services/rule-coverage-snapshot.service.ts` |
-| **Data Source** | `assets/data/rule-coverage-snapshot.json` (fetched once, on first use; not in the JS bundle) |
+| **Data Source** | `assets/data/rule-coverage-snapshot.json` (fetched once, on first use, and kept after a successful load; after a failed load the next reader asks again, because `shareReplay` resets on error; not in the JS bundle) |
 
 | Method / export | Description |
 |---|---|
 | `section(key)` | One source's section with the snapshot's `generated` date. Errors with `bundled snapshot missing (...)` when the file does not load (a 404 reads `not in this build (HTTP 404): <url>`, since the file comes from the app's own origin, not GitHub), or `bundled snapshot missing or malformed: ...` when the section is unusable. Every field a loader reads is checked first (`branch`, `commitDate`, `licence`, `ruleCount`, `techniqueCount`, and each technique's id, `count` and `rules[].name/path`), so a malformed file is named rather than failing with a TypeError; the loaders record it as `failed`, never `empty` |
 | `snapshotError(err)` | Words any error a loader still meets while reading a section as `bundled snapshot missing or malformed: ...` |
 | `rulePermalink(source, path)` | `https://github.com/<owner>/<repo>/blob/<sha>/<path>`, each segment encoded |
+| `ruleLinks(section, attackId)` | The rules a section lists for a technique, as `{ name, url }` with `rulePermalink` URLs |
 | `snapshotVersion(section)` | The registry version line: `snapshot of <generated>, <owner>/<repo>@<sha7> (commit <date>, <branch>)` |
 
 **Dependencies:** `HttpClient`
+
+**The drawer reads this service directly.** The technique drawer's Rule sources section
+(`SidebarComponent`, one `RuleSourceListComponent` per source) calls `section(key)` and
+`ruleLinks()` for Elastic, Splunk and mdecrevoisier rather than each service's
+`fetchRulesForTechnique`, because it also shows the count, the pinned SHA, the commit and
+snapshot dates and a per-source error, which those methods do not return. The permalinks come
+from the same `rulePermalink()`. `ElasticService.fetchRulesForTechnique`,
+`SplunkContentService.fetchRulesForTechnique` and `SigmaService.fetchRulesForTechnique` /
+`getCachedRules` therefore have no production caller; they are kept for API compatibility and
+their specs still exercise them. A section that does not load shows its reason, and the section
+header badge reads `not loaded` (all three) or `<total>, N of 3 not loaded` (some), never a `0`.
 
 ---
 
@@ -373,7 +385,7 @@ repository holds, not what runs in any environment.
 | `getRuleCount(attackId)` | Rules naming the technique (parents already rolled up in the snapshot) |
 | `getHeatScore(attackId)` | Alias for `getRuleCount` |
 | `getCounts()` | The technique-to-count map |
-| `fetchRulesForTechnique(attackId)` | Up to ten rule names with permalinks at the pinned commit |
+| `fetchRulesForTechnique(attackId)` | Up to ten rule names with permalinks at the pinned commit. No production caller (the drawer reads `RuleCoverageSnapshotService` itself); kept for API compatibility |
 
 **Dependencies:** `RuleCoverageSnapshotService`, `SourceRegistryService`
 
@@ -387,7 +399,8 @@ repository holds, not what runs in any environment.
 | **Data Source** | Rule-coverage snapshot, `splunk` section (see above) |
 
 Same surface as `ElasticService` (`loaded$`, `total$`, `covered$`, `getRuleCount`,
-`getHeatScore`, `getCounts`, `fetchRulesForTechnique`), over Splunk detections.
+`getHeatScore`, `getCounts`, `fetchRulesForTechnique`), over Splunk detections. Its
+`fetchRulesForTechnique` likewise has no production caller and is kept for API compatibility.
 
 **Dependencies:** `RuleCoverageSnapshotService`, `SourceRegistryService`
 
@@ -398,8 +411,9 @@ Same surface as `ElasticService` (`loaded$`, `total$`, `covered$`, `getRuleCount
 The upstream removed every rule on 2024-11-28 ("Cleaned up deprecated components") and now
 holds a handful of non-rule files. The `sentinel-attack-tree` source is marked withdrawn upstream
 (status `archived-upstream`, date 2024-11-28), like CIS Controls: `SentinelRulesService` is a stub
-that makes no request (kept because the technique drawer imports it), and the source is gone from
-the matrix's drawer sources, Retry, the data-health ribbon and the honesty spec's forced-failure cases.
+that makes no request (kept as the owner of the source inventory's withdrawn row), and the source is gone from
+the technique drawer (its Sentinel section was removed), the matrix's drawer sources, Retry, the data-health
+ribbon and the honesty spec's forced-failure cases.
 
 ---
 
