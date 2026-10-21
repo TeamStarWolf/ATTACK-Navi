@@ -279,6 +279,27 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** The last range import's result; shown under the header, separate from importMessage. */
+  rangeImportMessage: string | null = null;
+
+  /**
+   * Load a Lylat range validated-detections export (P2-20). The file is read
+   * locally through FileReader only — nothing is fetched and no URL is touched —
+   * and handed to ValidationService.importRangeContract, which validates it,
+   * applies the privacy check and replaces each mission's range runs.
+   */
+  importRangeResults(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return Promise.resolve();
+    return file.text().then(text => {
+      const result = this.validationService.importRangeContract(text);
+      this.rangeImportMessage = result.ok ? describeImportResult(result) : (result.error ?? 'Import failed.');
+      input.value = '';
+      this.cdr.markForCheck();
+    });
+  }
+
   private downloadJson(value: unknown, filename: string): void {
     this.downloadBlob(JSON.stringify(value, null, 2), filename, 'application/json');
   }

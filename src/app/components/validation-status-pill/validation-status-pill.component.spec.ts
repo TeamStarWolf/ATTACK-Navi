@@ -57,4 +57,39 @@ describe('ValidationStatusPillComponent', () => {
     expect(component.statusLabel('failed')).toBe('FAIL');
     expect(component.statusLabel('partial')).toBe('PARTIAL');
   });
+
+  function rangeRun(detectionRef: string): any {
+    return {
+      id: 'lylat:SYNTH-MISSION-A:0', techniqueId: 'T1558.003', status: 'passed',
+      detectionsExpected: [detectionRef], detectionsFired: [detectionRef], runDate: '2026-10-18',
+      proofScope: 'range', source: 'lylat-range:SYNTH-MISSION-A', statusFromSource: true,
+      outcomes: [{ detectionRef, outcome: 'alerted', coverageState: 'validated' }],
+    };
+  }
+
+  it('marks a range-scoped run as lab-proven and lists its rule ids', () => {
+    const runs = [rangeRun('wazuh:990001'), rangeRun('wazuh:990002')];
+    validation.forTechnique.and.returnValue(runs);
+    validation.latestFor.and.returnValue(runs[0]);
+    component.attackId = 'T1558.003';
+    fixture.detectChanges();
+
+    expect(component.labProven).toBeTrue();
+    expect(component.labRuleRefs).toEqual(['wazuh:990001', 'wazuh:990002']);
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('lab');
+    expect(text).toContain('wazuh:990001');
+  });
+
+  it('does not mark an own-run manual record as lab-proven', () => {
+    const manual = { ...rangeRun('sigma:a'), proofScope: 'own-run', source: 'manual', outcomes: [] };
+    validation.forTechnique.and.returnValue([manual]);
+    validation.latestFor.and.returnValue(manual);
+    component.attackId = 'T1558.003';
+    fixture.detectChanges();
+
+    expect(component.labProven).toBeFalse();
+    expect(component.labRuleRefs).toEqual([]);
+    expect((fixture.nativeElement as HTMLElement).textContent ?? '').not.toContain('range-validated');
+  });
 });

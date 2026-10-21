@@ -6,7 +6,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
-import { ValidationService, ValidationRun, ValidationStatus } from '../../services/validation.service';
+import { ValidationService, ValidationRunV2, ValidationStatus } from '../../services/validation.service';
 import { PanelNavService } from '../../services/panel-nav.service';
 
 const STATUS_LABEL: Record<ValidationStatus, string> = {
@@ -31,10 +31,19 @@ const STATUS_LABEL: Record<ValidationStatus, string> = {
       @if (latest) {
         <div class="vsp-row">
           <span class="vsp-status" [attr.data-status]="latest.status">{{ statusLabel(latest.status) }}</span>
+          @if (labProven) {
+            <span class="vsp-lab" title="Validated against a published Lylat range build">lab</span>
+          }
           <span class="vsp-meta">
             {{ latest.detectionsFired.length }} of {{ latest.detectionsExpected.length }} detection rules fired
           </span>
         </div>
+        @if (labRuleRefs.length) {
+          <div class="vsp-row vsp-rules">
+            range-validated rules:
+            @for (ref of labRuleRefs; track ref) { <code class="vsp-rule">{{ ref }}</code> }
+          </div>
+        }
         <div class="vsp-row vsp-when">
           last run {{ latest.runDate | date:'short' }}
           @if (latest.operator) { · by {{ latest.operator }} }
@@ -78,6 +87,20 @@ const STATUS_LABEL: Record<ValidationStatus, string> = {
     }
     .vsp-when { color: var(--text-muted, #8b93a7); font-size: 11px; margin-top: 2px; }
     .vsp-meta { color: var(--text-muted, #8b93a7); }
+    .vsp-lab {
+      font-size: 9.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 2px 7px; border-radius: 4px; flex-shrink: 0;
+      background: rgba(16,185,129,0.14); color: #10b981; border: 1px solid rgba(16,185,129,0.4);
+    }
+    .vsp-rules {
+      flex-wrap: wrap; gap: 5px; margin-top: 4px;
+      font-size: 11px; color: var(--text-muted, #8b93a7);
+    }
+    .vsp-rule {
+      font-family: var(--font-mono, ui-monospace, monospace); font-size: 10.5px;
+      padding: 1px 5px; border-radius: 3px;
+      background: rgba(16,185,129,0.08); color: #10b981;
+    }
     .vsp-empty {
       display: flex; align-items: center; gap: 8px;
       font-size: 12px; color: var(--text-muted, #8b93a7); margin: 0;
@@ -108,8 +131,8 @@ export class ValidationStatusPillComponent implements OnInit, OnChanges, OnDestr
   private cdr = inject(ChangeDetectorRef);
   private sub?: Subscription;
 
-  latest: ValidationRun | null = null;
-  allRuns: ValidationRun[] = [];
+  latest: ValidationRunV2 | null = null;
+  allRuns: ValidationRunV2[] = [];
 
   ngOnInit(): void {
     this.sub = this.validation.runs$.subscribe(() => {
@@ -134,6 +157,23 @@ export class ValidationStatusPillComponent implements OnInit, OnChanges, OnDestr
     }
     this.allRuns = this.validation.forTechnique(this.attackId);
     this.latest = this.validation.latestFor(this.attackId);
+  }
+
+  /** The latest run is range-scoped proof: it was validated against a published range build. */
+  get labProven(): boolean {
+    return this.latest?.proofScope === 'range' && (this.latest.status === 'passed' || this.latest.status === 'partial');
+  }
+
+  /** The detection rule ids validated in a range run, newest first, de-duplicated. */
+  get labRuleRefs(): string[] {
+    const seen = new Set<string>();
+    for (const run of this.allRuns) {
+      if (run.proofScope !== 'range') continue;
+      for (const o of run.outcomes ?? []) {
+        if (o.detectionRef) seen.add(o.detectionRef);
+      }
+    }
+    return [...seen];
   }
 
   openValidationPanel(): void {
