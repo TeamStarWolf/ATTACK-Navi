@@ -29,9 +29,9 @@
 // this file imports only types from it.
 import type { Technique } from '../technique';
 import type { LensCell, LensContext, LensRampStop } from '../heatmap-modes';
-import type { PostureBucket, PostureSubState, ProofScope } from './posture.types';
+import type { PostureBucket, PostureState, PostureSubState, ProofScope } from './posture.types';
 import { hexContrast, mixHex } from '../cvd';
-import { PROVEN, scenarioOutcomeLabel } from './posture-vocabulary';
+import { PROVEN, postureBadge, scenarioOutcomeLabel } from './posture-vocabulary';
 
 export type PostureTheme = 'dark' | 'light';
 
@@ -104,8 +104,24 @@ export interface PostureCellVM {
   readonly bucket: PostureBucket;
   readonly subStates: readonly PostureSubState[];
   readonly proofScope: ProofScope | null;
-  /** postureBadge(state): the words for aria-label and tooltip. */
+  /** postureCellLabel(state, windows): the words for aria-label and tooltip. */
   readonly label: string;
+}
+
+/**
+ * The words of one posture cell, for its aria-label and tooltip (§7 Decay,
+ * Rendering): postureBadge(state), except that a stale cell names its proof
+ * age and the decay window it passed, as "Proven (your run), stale (120 days;
+ * window 90)". `windows` are the D10 windows the state was derived with
+ * (PostureService.decayDays). A stale state with no scope or age (never
+ * produced by derivePosture) falls back to the badge.
+ */
+export function postureCellLabel(
+  s: Pick<PostureState, 'bucket' | 'qualifiers' | 'proofScope' | 'proofAge' | 'covered'>,
+  windows: Readonly<Record<ProofScope, number>>,
+): string {
+  if (s.bucket !== 'stale' || s.proofScope === null || s.proofAge === null) return postureBadge(s);
+  return `${postureBadge({ ...s, bucket: 'proven' })}, stale (${s.proofAge} days; window ${windows[s.proofScope]})`;
 }
 
 /** The fill of a bucket in a theme. */

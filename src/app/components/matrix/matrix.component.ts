@@ -62,8 +62,7 @@ import { type ReferenceDepthInputs, referenceDepthScore } from '../../models/ref
 import { PostureService } from '../../services/posture.service';
 import { LENS_NA_COLOR, type LensContext, heatmapModeDef, isLensAvailable } from '../../models/heatmap-modes';
 import { isRegistryLens, registryCell, registryColor } from '../../models/lens-registry';
-import type { PostureCellVM } from '../../models/posture/posture-ramp';
-import { postureBadge } from '../../models/posture/posture-vocabulary';
+import { type PostureCellVM, postureCellLabel } from '../../models/posture/posture-ramp';
 import { ThemeService } from '../../services/theme.service';
 import type { AttackDomain } from '../../services/data.service';
 
@@ -1718,6 +1717,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
       return isRegistryLens(def);
     }
     const ctx = this.lensContext();
+    const windows = this.posture.decayDays();
     const cells = new Map<string, PostureCellVM>();
     for (const t of this.domain.techniques) {
       const cell = registryCell(def, ctx, t);
@@ -1725,7 +1725,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
         bucket: cell.bucket ?? 'none',
         subStates: cell.subStates ?? [],
         proofScope: cell.proofScope ?? null,
-        label: postureBadge(this.posture.stateFor(t)),
+        label: postureCellLabel(this.posture.stateFor(t), windows),
       });
     }
     this.postureCells = cells;

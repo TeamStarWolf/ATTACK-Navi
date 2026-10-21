@@ -6,11 +6,11 @@
 import { HEATMAP_MODES, LENS_NA_COLOR, heatmapModeDef } from '../heatmap-modes';
 import { hexContrast, mixHex } from '../cvd';
 import type { Technique } from '../technique';
-import { PROVEN, scenarioOutcomeLabel } from './posture-vocabulary';
+import { PROVEN, postureBadge, scenarioOutcomeLabel } from './posture-vocabulary';
 import {
   POSTURE_BUCKETS, POSTURE_PATTERN_CLASS, POSTURE_SCORE, POSTURE_SURFACE, POSTURE_TOKENS, STALE_MIX, type PostureTheme,
   postureColor, postureFill, postureHasCheck, postureLegendStops, postureLensCell, posturePatterns, postureProject,
-  postureRampStops, postureStopLabel,
+  postureCellLabel, postureRampStops, postureStopLabel,
 } from './posture-ramp';
 import { stubState } from '../../testing/posture-stub';
 
@@ -123,5 +123,28 @@ describe('posture stop words and legend stops', () => {
     expect(def.ramp.stops).toEqual(postureRampStops());
     expect(def.ramp.stops.map(s => s.color)).toEqual(POSTURE_BUCKETS.map(b => postureFill(b, 'dark')));
     expect(HEATMAP_MODES[HEATMAP_MODES.length - 1]).toBe(def);
+  });
+});
+
+// §7 Decay, Rendering: a stale cell's aria-label and tooltip read
+// "stale (N days; window W)"; every other cell reads postureBadge(state).
+describe('posture cell label (§7)', () => {
+  const WINDOWS = { range: 90, production: 180, 'own-run': 90 } as const;
+
+  it('names the proof age and the decay window on a stale cell', () => {
+    const s = stubState('T1078', 'stale');
+    expect(s.proofAge).toBe(120);
+    expect(postureCellLabel(s, WINDOWS)).toBe(`${PROVEN} (your run), stale (120 days; window 90)`);
+    expect(postureCellLabel({ ...s, proofScope: 'production', proofAge: 200 }, WINDOWS)).toBe(`${PROVEN} in production, stale (200 days; window 180)`);
+    expect(postureCellLabel({ ...s, proofScope: 'range', proofAge: 95 }, { ...WINDOWS, range: 30 })).toBe(`${PROVEN} in range, stale (95 days; window 30)`);
+  });
+
+  it('is the badge on every other bucket, and on a stale state with no age', () => {
+    for (const bucket of POSTURE_BUCKETS.filter(b => b !== 'stale')) {
+      const s = stubState('T1078', bucket);
+      expect(postureCellLabel(s, WINDOWS)).withContext(bucket).toBe(postureBadge(s));
+    }
+    const ageless = { ...stubState('T1078', 'stale'), proofAge: null };
+    expect(postureCellLabel(ageless, WINDOWS)).toBe(postureBadge(ageless));
   });
 });

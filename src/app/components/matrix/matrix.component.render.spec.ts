@@ -15,8 +15,10 @@ import { Technique } from '../../models/technique';
 import { DataService } from '../../services/data.service';
 import { FilterService } from '../../services/filter.service';
 import { HEATMAP_MODES, LENS_NA_COLOR, unavailableLenses } from '../../models/heatmap-modes';
+import { ValidationService } from '../../services/validation.service';
 import {
-  controlsProvider, parseFixtureDomain, resetBrowserState, signal, signalStubProviders,
+  LENS_RUN_AGES, controlsProvider, lensPostureTodayProvider, lensRunTechniques, parseFixtureDomain, resetBrowserState,
+  seedLensRuns, signal, signalStubProviders,
 } from '../../testing/lens-harness';
 
 describe('MatrixComponent (rendered, fixture domain)', () => {
@@ -156,5 +158,61 @@ describe('MatrixComponent (rendered, fixture domain)', () => {
       const naCells = host.querySelectorAll('.cell.lens-na').length;
       expect(naCells > 0).withContext(def.value).toBe(def.value === 'f3-origin');
     }
+  });
+});
+
+// §7 Decay, Rendering (P2-13): on the Posture lens a stale cell's aria-label
+// and tooltip name its proof age and the window it passed, "stale (N days;
+// window W)". The harness pins POSTURE_TODAY and seeds one fresh and one
+// stale own run (120 days old on the default 90-day own-run window).
+describe('MatrixComponent (rendered, Posture lens, stale cell)', () => {
+  let domain: Domain;
+  let fixture: ComponentFixture<MatrixComponent>;
+  let host: HTMLElement;
+
+  beforeEach(() => {
+    resetBrowserState();
+    domain = parseFixtureDomain();
+    TestBed.configureTestingModule({
+      imports: [MatrixComponent],
+      providers: [
+        provideHttpClient(withXhr()),
+        provideHttpClientTesting(),
+        ...signalStubProviders(),
+        controlsProvider(domain),
+        lensPostureTodayProvider(),
+      ],
+    });
+    (TestBed.inject(DataService) as unknown as { domainSubject: { next(d: Domain): void } }).domainSubject.next(domain);
+    seedLensRuns(TestBed.inject(ValidationService), domain);
+    fixture = TestBed.createComponent(MatrixComponent);
+    fixture.componentRef.setInput('domain', domain);
+    fixture.detectChanges();
+    TestBed.inject(FilterService).setHeatmapMode('posture');
+    fixture.detectChanges();
+    host = fixture.nativeElement as HTMLElement;
+  });
+
+  afterEach(() => resetBrowserState());
+
+  const cellOf = (t: Technique) => host.querySelector(`[data-tech-id="${t.id}"] .cell`) as HTMLElement;
+  const tooltipOf = (t: Technique): string => {
+    const cellHost = host.querySelector(`[data-tech-id="${t.id}"] app-technique-cell`) as HTMLElement;
+    cellHost.dispatchEvent(new MouseEvent('mouseenter', { clientX: 10, clientY: 10 }));
+    fixture.detectChanges();
+    return cellHost.querySelector('.tt-posture')!.textContent!.trim();
+  };
+
+  it('names the proof age and the decay window on a stale cell, in the aria-label and the tooltip', () => {
+    const { stale } = lensRunTechniques(domain);
+    const words = `stale (${LENS_RUN_AGES.stale} days; window 90)`;
+    expect(cellOf(stale).getAttribute('aria-label')).toBe(`${stale.attackId}: ${stale.name}, Proven (your run), ${words}`);
+    expect(tooltipOf(stale)).toBe(`Proven (your run), ${words}`);
+  });
+
+  it('keeps the plain badge on a fresh proof', () => {
+    const { fresh } = lensRunTechniques(domain);
+    expect(cellOf(fresh).getAttribute('aria-label')).toBe(`${fresh.attackId}: ${fresh.name}, Proven (your run)`);
+    expect(tooltipOf(fresh)).toBe('Proven (your run)');
   });
 });

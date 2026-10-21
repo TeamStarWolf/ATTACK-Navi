@@ -10,8 +10,8 @@
 import { Provider, Signal, computed, signal } from '@angular/core';
 import type { Domain } from '../models/domain';
 import type { Technique } from '../models/technique';
-import type { CoveredMark, PostureBucket, PostureState, ProofRecord } from '../models/posture/posture.types';
-import { tallyPosture } from '../models/posture/derive-posture';
+import type { CoveredMark, PostureBucket, PostureState, ProofRecord, ProofScope } from '../models/posture/posture.types';
+import { DEFAULT_POSTURE_RULES, tallyPosture } from '../models/posture/derive-posture';
 import { hasOwnerWords } from '../models/posture/posture-vocabulary';
 import { PostureService, type PostureRollup } from '../services/posture.service';
 
@@ -56,6 +56,8 @@ export interface PostureStub {
   /** Fresh proofs within 7 days of their window (P2-13 legend); set with setExpiringSoon. */
   readonly expiringSoon: Signal<number>;
   setExpiringSoon(n: number): void;
+  /** The default D10 windows (a stale stub state is 120 days old on the 90-day own-run window). */
+  readonly decayDays: Signal<Readonly<Record<ProofScope, number>>>;
   readonly states: Signal<ReadonlyMap<string, PostureState>>;
   stateFor(t: Pick<Technique, 'attackId' | 'mitigationCount'>): PostureState;
   tallyFor(ts: readonly Pick<Technique, 'attackId' | 'mitigationCount'>[]): ReturnType<typeof tallyPosture>;
@@ -88,6 +90,7 @@ export function makePostureStub(domain: () => StubDomain | null, buckets: Readon
     ownerWords: computed(() => hasOwnerWords(states().values())),
     expiringSoon: expiring.asReadonly(),
     setExpiringSoon: n => expiring.set(n),
+    decayDays: signal(DEFAULT_POSTURE_RULES.decayDays).asReadonly(),
     states,
     stateFor,
     tallyFor,
