@@ -23,6 +23,9 @@ import { ThreatProfileSource } from '../../models/threat-profile';
 type PickerMode = 'profile' | 'single' | 'multi-local';
 type Preset = 'top-groups' | 'all' | 'groups' | 'campaigns' | 'library-layer';
 
+/** A single-mode quick-select preset: a button label and the group's ATT&CK id (resolved to its STIX id per domain). */
+export interface PickerQuickPick { readonly label: string; readonly attackId: string; }
+
 interface SectorCategory { readonly label: string; readonly keywords: readonly string[]; }
 
 /**
@@ -57,6 +60,34 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
   @Input() mode: PickerMode = 'profile';
   /** Default N for the Top-N preset. */
   @Input() topN = 20;
+  /**
+   * single mode: quick-select presets rendered above the group list (the emulation
+   * panel's Common picks, RP-F item 3). A preset goes through selectGroup like a click
+   * on its list item, so the list's selected state and the caller's selection agree;
+   * a preset whose ATT&CK id the loaded domain lacks is not shown.
+   */
+  @Input() set quickPicks(picks: readonly PickerQuickPick[] | null | undefined) {
+    this.quickPickInput = picks ?? [];
+    this.resolveQuickPicks();
+  }
+  get quickPicks(): readonly PickerQuickPick[] { return this.quickPickInput; }
+  private quickPickInput: readonly PickerQuickPick[] = [];
+  /**
+   * single mode: the caller's current group (STIX id), so the list shows the selection
+   * the caller holds after it clears it or loads a saved plan. The picker never emits
+   * for a change made here. Binding it opts in to the pressed state: without it a
+   * single-mode list shows no group pressed, because only the caller knows whether it
+   * still holds the group (RP-F round 1: the scenario panel dropped its actor on a
+   * domain switch while the picker kept the old id pressed).
+   */
+  @Input() set selectedGroupId(id: string | null | undefined) {
+    this.callerOwnsSelection = true;
+    this.callerGroupId = id ?? null;
+    this.syncCallerSelection();
+  }
+  private callerGroupId: string | null = null;
+  /** True once the caller binds selectedGroupId (single mode shows a pressed group only then). */
+  private callerOwnsSelection = false;
 
   /** single mode: the chosen group's STIX intrusion-set id (never a campaign). */
   @Output() groupSelected = new EventEmitter<string>();
@@ -71,6 +102,8 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
   groups: ThreatGroup[] = [];
   campaigns: Campaign[] = [];
   layers: LibraryLayerMeta[] = [];
+  /** quickPicks resolved to the loaded domain's groups by ATT&CK id (no name or alias matching). */
+  quickPickGroups: { readonly label: string; readonly group: ThreatGroup }[] = [];
 
   /** Group and campaign selections are kept apart so a profile source never mixes id kinds. */
   readonly selectedGroupIds = new Set<string>();
@@ -100,6 +133,7 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     if (this.mode === 'single') {
       this.preset = 'groups';
+      this.syncCallerSelection();
     } else if (this.mode === 'profile') {
       this.initFromProfile(this.threatProfile.current.source);
       // Stay in sync if the shared profile's SOURCE changes elsewhere, but ignore
@@ -114,6 +148,7 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
     this.subs.add(this.dataService.domain$.subscribe((domain) => {
       this.groups = domain ? [...domain.groups].sort((a, b) => a.name.localeCompare(b.name)) : [];
       this.campaigns = domain ? [...domain.campaigns].sort((a, b) => a.name.localeCompare(b.name)) : [];
+      this.resolveQuickPicks();
       this.cdr.markForCheck();
     }));
     // Injecting LibraryLayerService triggers its own manifest load; we only subscribe.
@@ -198,10 +233,51 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  /** Group selection. Every id is a STIX intrusion-set id (group.id), never a G#### attackId. */
+  /** single mode: hold exactly the caller's group (selectedGroupId), or none when the caller binds none. */
+  private syncCallerSelection(): void {
+    if (this.mode !== 'single' || !this.callerOwnsSelection) return;
+    this.selectedGroupIds.clear();
+    if (this.callerGroupId) this.selectedGroupIds.add(this.callerGroupId);
+    this.cdr.markForCheck();
+  }
+
+  /** Resolve each quick pick's ATT&CK id to the loaded domain's group, dropping any the domain lacks. */
+  private resolveQuickPicks(): void {
+    const byAttackId = new Map(this.groups.map((g) => [g.attackId, g]));
+    this.quickPickGroups = this.quickPicks
+      .map((qp) => ({ label: qp.label, group: byAttackId.get(qp.attackId) }))
+      .filter((q): q is { label: string; group: ThreatGroup } => !!q.group);
+  }
+
+  /**
+   * A quick-select preset (single mode): clear the search and sector aid so the chosen
+   * group's list item is on screen, then select it exactly as a click on that item does.
+   */
+  pickQuick(g: ThreatGroup): void {
+    this.searchText = '';
+    this.activeSector = null;
+    this.selectGroup(g);
+  }
+
+  /** True when `g` is the group selected in single mode (the preset's pressed state). */
+  isSelected(g: ThreatGroup): boolean {
+    return this.selectedGroupIds.has(g.id);
+  }
+
+  /**
+   * Group selection. Every id is a STIX intrusion-set id (group.id), never a G#### attackId.
+   * In single mode with a bound selectedGroupId it holds exactly the chosen group, so the
+   * list shows what was emitted until the caller's binding says otherwise; an unbound
+   * caller gets the emit only, and the list shows no group pressed.
+   */
   selectGroup(g: ThreatGroup): void {
     if (this.mode === 'single') {
+      if (this.callerOwnsSelection) {
+        this.selectedGroupIds.clear();
+        this.selectedGroupIds.add(g.id);
+      }
       this.groupSelected.emit(g.id);
+      this.cdr.markForCheck();
       return;
     }
     if (this.selectedGroupIds.has(g.id)) this.selectedGroupIds.delete(g.id);

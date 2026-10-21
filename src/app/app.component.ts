@@ -109,7 +109,10 @@ export class AppComponent implements OnInit {
    * reads OwnerDataService.defaultLens$'s synchronous first emission, so it
    * never waits for a domain (no race, R11). Owner data that first appears
    * later in the session changes the default on the next boot only: the lens
-   * on screen is never switched under the user.
+   * on screen is never switched under the user. A heat= that names no
+   * registered lens (heat=bogus, an empty heat=) is not an explicit choice:
+   * urlHasHeatParam reads it as absent, so this rule still runs and the
+   * writer then replaces the invalid key with the lens chosen here (RP-F item 1).
    */
   private applyDefaultLensRule(): void {
     if (this.viewpoint.urlHasHeatParam()) return;

@@ -176,6 +176,31 @@ describe('ScenarioPanelComponent (posture outcomes)', () => {
     expect(component.profileSimResult!.knownCount).toBe(0);   // bucket-known differs from mapped
   }));
 
+  // RP-F round 1: the single-actor picker keeps a picked group pressed, so it must follow
+  // the panel's actor. A domain switch emits null first and the panel drops its actor;
+  // the picker used to keep the old STIX id (shared across domains) pressed regardless.
+  it('the single-actor picker shows the panel actor pressed, and none after a domain switch drops it', fakeAsync(() => {
+    configure();
+    const el = fixture.nativeElement as HTMLElement;
+    const singlePicker = (): HTMLElement => el.querySelector('app-threat-profile-picker')!;   // the first one is mode="single"
+    const pressed = (): string[] => Array.from(singlePicker().querySelectorAll('.tpp-item[aria-pressed="true"]'))
+      .map((b) => b.querySelector('.tpp-item-id')!.textContent!.trim());
+    expect(pressed()).toEqual([]);
+
+    singlePicker().querySelector<HTMLButtonElement>('.tpp-item')!.click();
+    tick(200);
+    fixture.detectChanges();
+    expect(component.selectedGroup).toBe(GROUP);
+    expect(pressed()).toEqual(['G0001']);
+
+    domain$.next(null);          // a domain switch: null first, the panel drops its actor
+    fixture.detectChanges();
+    domain$.next(DOMAIN);        // and back: the same STIX id exists again
+    fixture.detectChanges();
+    expect(component.selectedGroup).toBeNull();
+    expect(pressed()).withContext('the picker agrees with the panel: no actor').toEqual([]);
+  }));
+
   it('the open overlay recomputes when the profile changes (reactive, not a stale snapshot)', fakeAsync(() => {
     ownerWords = true;
     buckets = new Map([['t1', 'covered'], ['t2', 'covered']]);

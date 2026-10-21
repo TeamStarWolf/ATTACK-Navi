@@ -19,7 +19,7 @@ import type { LensLegendStop } from '../../models/posture/lens-ramps';
 import type { PostureBucket } from '../../models/posture/posture.types';
 import { EXPIRING_SOON_DAYS, PostureService } from '../../services/posture.service';
 import { ThemeService } from '../../services/theme.service';
-import { THREAT_GAP_EXPOSURE_NOTE, THREAT_GAP_TOGGLE_LABEL, threatGapThreshold } from '../../models/posture/gap';
+import { THREAT_GAP_EXPOSURE_NOTE, THREAT_GAP_TOGGLE_LABEL, threatGapProfileNote, threatGapThreshold } from '../../models/posture/gap';
 import { THREAT_WEIGHT_PROVIDER } from '../../models/posture/threat-weight';
 import type { ThreatWeightProvider } from '../../models/posture/posture.types';
 
@@ -105,6 +105,9 @@ const SCALE_NOTE: Partial<Record<HeatmapModeDef['ramp']['scale'], string>> = {
           <span class="swatch gap-ring" aria-hidden="true"></span>{{ threatGapLabel }}: used by {{ threatGapQ75 }} or more of the threat profile's groups or campaigns (its 75th percentile), or in your asset inventory
         </p>
         <p class="legend-threat-gaps-exposure">{{ threatGapExposureNote }}</p>
+        @if (threatProfileNote; as note) {
+          <p class="legend-threat-gaps-empty" role="status">{{ note }}</p>
+        }
       }
       <p class="legend-sources"><span class="meta-key">Sources:</span> {{ sourceLine }}</p>
       <div class="legend-foot">
@@ -255,6 +258,19 @@ export class LegendComponent implements OnInit, OnDestroy {
     const tw = (this.threatWeightProvider ??= this.injector.get(THREAT_WEIGHT_PROVIDER));
     tw.revision();
     return threatGapThreshold(tw.parents(), id => tw.weight(id));
+  }
+
+  /**
+   * The Threat gaps legend's note when the threat profile holds no technique in the
+   * loaded domain (RP-F item 6), from the provider's emptyReason, never from the
+   * parent count alone: a profile that is set can hold no technique in this domain,
+   * and one still resolving says nothing yet. Null while the domain loads.
+   */
+  get threatProfileNote(): string | null {
+    if (!this.attackVersion) return null;
+    const tw = (this.threatWeightProvider ??= this.injector.get(THREAT_WEIGHT_PROVIDER));
+    tw.revision();
+    return threatGapProfileNote(tw.emptyReason?.() ?? null, this.domain, this.domainName);
   }
 
   /** True when a stop's label names Covered or Proven (every Posture stop does; a P2-14 stop says so). */

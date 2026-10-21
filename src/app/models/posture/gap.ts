@@ -24,7 +24,8 @@
 // (posture-ramp.ts): partial (dashed, in the Covered blue), covered, proven,
 // stale, and contradicted (the Posture lens's vermilion). None and known get
 // no bar, so a fresh profile renders exactly what it did before.
-import type { PostureBucket, PostureState } from './posture.types';
+import type { PostureBucket, PostureState, ThreatProfileEmptyReason } from './posture.types';
+import type { AttackDomain } from '../../services/data.service';
 import { POSTURE_TOKENS, type PostureTheme } from './posture-ramp';
 
 /** The View menu toggle's words (exact; gap.spec pins them). */
@@ -32,6 +33,43 @@ export const THREAT_GAP_TOGGLE_LABEL = 'Threat gaps: threat-relevant, posture No
 
 /** The legend line shown while the overlay is on (§1.16: exposure is Enterprise-only). */
 export const THREAT_GAP_EXPOSURE_NOTE = 'Exposure counts on Enterprise only';
+
+/**
+ * The legend's note while Threat gaps is on and the stored threat profile names no
+ * groups or campaigns, on Enterprise: the overlay then marks only what the asset
+ * inventory reaches, which read as "0 gaps" with no reason (RP-F item 6).
+ */
+export const THREAT_GAP_EMPTY_PROFILE_NOTE = 'No threat profile is set: it names no groups or campaigns, so only your asset inventory can mark a threat gap.';
+
+/**
+ * The legend's note while Threat gaps is on and the threat profile holds no
+ * technique in the loaded domain, or null when there is nothing true to add
+ * (RP-F item 6, round 1). The reason comes from the stored source
+ * (ThreatWeightProvider.emptyReason), never from the parent count alone: a profile
+ * that is set can hold no technique in this domain (APT29 on dom=ics), and one that
+ * is still resolving says nothing yet. Exposure counts only on Enterprise
+ * (THREAT_GAP_EXPOSURE_NOTE), so off Enterprise no technique can be a threat gap and
+ * the asset-inventory clause would be false there.
+ *   'names-nothing', Enterprise:  THREAT_GAP_EMPTY_PROFILE_NOTE
+ *   'names-nothing', ICS:         'No threat profile is set: it names no groups or campaigns, so no technique is a threat gap in ICS ATT&CK.'
+ *   'none-in-domain', ICS:        'The threat profile has no ICS ATT&CK technique in this release, so no technique is a threat gap in ICS ATT&CK.'
+ *   'none-in-domain', Enterprise: 'The threat profile has no Enterprise ATT&CK technique in this release, so only your asset inventory can mark a threat gap.'
+ */
+export function threatGapProfileNote(
+  reason: ThreatProfileEmptyReason | null,
+  domain: AttackDomain,
+  domainName: string,
+): string | null {
+  if (reason === null || reason === 'resolving') return null;
+  if (reason === 'names-nothing' && domain === 'enterprise') return THREAT_GAP_EMPTY_PROFILE_NOTE;
+  const head = reason === 'names-nothing'
+    ? 'No threat profile is set: it names no groups or campaigns'
+    : `The threat profile has no ${domainName} technique in this release`;
+  const tail = domain === 'enterprise'
+    ? 'so only your asset inventory can mark a threat gap.'
+    : `so no technique is a threat gap in ${domainName}.`;
+  return `${head}, ${tail}`;
+}
 
 /** The View menu toggle for the My marks bar (AppSettings.cellDisplay.myMarks). */
 export const MY_MARKS_TOGGLE_LABEL = 'My marks';

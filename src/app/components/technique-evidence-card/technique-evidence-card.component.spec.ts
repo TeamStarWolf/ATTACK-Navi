@@ -24,6 +24,7 @@ import { CveService } from '../../services/cve.service';
 import { AttackCveService } from '../../services/attack-cve.service';
 import { SettingsService } from '../../services/settings.service';
 import { TechniqueMarksService } from '../../services/technique-marks.service';
+import { SourceRegistryService } from '../../services/source-registry.service';
 
 const TECH = {
   id: 'attack-pattern--t1078', attackId: 'T1078', name: 'Valid Accounts', mitigationCount: 8,
@@ -144,6 +145,31 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
     expect(text(block(el, 'ev-why'))).toContain('not scored on the matrix in this session;');
   });
 
+  // RP-F item 6: with the SigmaHQ layer down every cell scores 0 and the card read
+  // 'score 0 of max 1', which looks like "no rules"; it says n/a and why instead.
+  it('the Sigma lens reads n/a, not 0 of max 1, while the SigmaHQ coverage layer failed to load', () => {
+    const el = render(state(), false, 'sigma');
+    const sources = TestBed.inject(SourceRegistryService);
+    sources.fail('sigmahq-coverage', 'network error');
+    TestBed.inject(MatrixControlService).publishReadout({ techId: TECH.id, mode: 'sigma', score: 0, max: 1 });
+    fixture.detectChanges();
+    expect(text(block(el, 'ev-why'))).toContain('Why this colour: n/a: SigmaHQ coverage layer did not load (network error), so no count is known');
+    expect(text(block(el, 'ev-why'))).not.toContain('of max');
+    expect(text(block(el, 'ev-why'))).toContain('Lens: Sigma Rules');
+
+    sources.succeed('sigmahq-coverage', 120);   // a later load: the matrix score is the answer again
+    TestBed.inject(MatrixControlService).publishReadout({ techId: TECH.id, mode: 'sigma', score: 2, max: 9 });
+    fixture.detectChanges();
+    expect(text(block(el, 'ev-why'))).toContain(`Why this colour: score 2 of max 9: ${heatmapModeDef('sigma')!.formula}`);
+  });
+
+  it('a failed layer of another lens does not mark Sigma n/a, and Sigma n/a does not leak to other lenses', () => {
+    const el = render(state(), false, 'frequency');
+    TestBed.inject(SourceRegistryService).fail('sigmahq-coverage', 'network error');
+    fixture.detectChanges();
+    expect(text(block(el, 'ev-why'))).toContain('Why this colour: score 3 of max 6');
+  });
+
   it('Why this colour on Posture, Proven and Covered reads the seeded PostureState', () => {
     const proven = state({ rung: 'proven', bucket: 'proven', proof: [OWN_PROOF], proofScope: 'own-run', proofAge: 1 });
     const el = render(proven, true, 'posture');
@@ -155,8 +181,12 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
 
     heat.next('covered');
     fixture.detectChanges();
-    expect(text(block(el, 'ev-why'))).toContain('Why this colour: None: nothing of yours reaches this technique');
+    // RP-F item 2: no covered mark, but the same card's Proven block lists the run,
+    // so the line points there instead of saying nothing of yours reaches the technique.
+    expect(text(block(el, 'ev-why'))).toContain('Why this colour: None: no covered (self-attested or range) mark; see the Proven block for its recorded result');
+    expect(text(block(el, 'ev-why'))).not.toContain('nothing of yours reaches this technique');
     expect(text(block(el, 'ev-why'))).toContain('Lens: Covered (self-attested or range)');
+    expect(block(el, 'ev-proven')!.querySelectorAll('[data-testid="ev-proof"]').length).toBe(1);
   });
 
   it('the Proven block lists each record: rule, date, source, outcome, lab badge and stale', () => {

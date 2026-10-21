@@ -4,6 +4,8 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  ElementRef,
+  HostListener,
   OnDestroy,
   OnInit,
   Injector,
@@ -36,6 +38,43 @@ import { MY_MARKS_TOGGLE_LABEL, THREAT_GAP_TOGGLE_LABEL } from '../../models/pos
 export const IMPL_FILTER_TITLE = 'Filter by implementation status. Broad mitigations count as partial: '
   + 'a technique implemented only through mitigations mapped to more techniques than the breadth threshold '
   + '(Settings, 15 by default) matches none of these values, and Implemented matches full implementation only.';
+
+/** The View menu's width when the viewport has room for it (two lens columns). */
+export const VIEW_MENU_WIDTH = 660;
+/** The View menu's distance from the viewport's edges, and from its button. */
+export const VIEW_MENU_MARGIN = 8;
+
+/** Where the View menu is drawn: viewport coordinates for its position: fixed box. */
+export interface ViewMenuPlacement {
+  readonly left: number;
+  readonly top: number;
+  readonly width: number;
+  readonly maxHeight: number;
+}
+
+/**
+ * Place the View menu (RP-F item 5). It is position: fixed, so the workspace's
+ * overflow: hidden no longer clips it and its z-index sits above the rail and the
+ * drawer. Right-aligned under its button like before, then clamped: never left
+ * of `minLeft` (the controls row's own left edge, which is the rail's right edge
+ * on desktop, so the menu never lies over the rail), never past the viewport's
+ * right edge, and no taller than the viewport below the button. With the drawer
+ * open at 1440x900 the button wraps to the row's left end, and the old
+ * right-aligned absolute menu started at x = -277, under the rail.
+ */
+export function placeViewMenu(
+  anchor: { readonly right: number; readonly bottom: number },
+  minLeft: number,
+  viewport: { readonly width: number; readonly height: number },
+): ViewMenuPlacement {
+  const lo = Math.max(minLeft, VIEW_MENU_MARGIN);
+  const hi = Math.max(lo, viewport.width - VIEW_MENU_MARGIN);
+  const width = Math.min(VIEW_MENU_WIDTH, hi - lo);
+  const left = Math.min(Math.max(anchor.right - width, lo), hi - width);
+  const top = anchor.bottom + 4;
+  const maxHeight = Math.max(160, Math.min(viewport.height * 0.85, viewport.height - top - VIEW_MENU_MARGIN));
+  return { left, top, width, maxHeight };
+}
 
 /**
  * Matrix-scoped controls row: technique + mitigation search, platform /
@@ -89,6 +128,9 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
 
   // View menu
   showViewMenu = false;
+  /** The open View menu's fixed placement (placeViewMenu); null while it is closed. */
+  viewMenuPlacement: ViewMenuPlacement | null = null;
+  private readonly host: ElementRef<HTMLElement> = inject(ElementRef);
   /** Active viewpoint — drives the pinned "featured lenses" group in the menu. */
   currentViewpoint: Viewpoint | null = null;
   heatmapMode: HeatmapMode = DEFAULT_HEATMAP_MODE;
@@ -357,7 +399,25 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
   // ── View menu ───────────────────────────────────────────────
   toggleViewMenu(): void {
     this.showViewMenu = !this.showViewMenu;
+    this.viewMenuPlacement = this.showViewMenu ? this.measureViewMenu() : null;
     this.cdr.markForCheck();
+  }
+
+  /** Keep the open View menu inside the viewport and off the rail when the window resizes. */
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    if (!this.showViewMenu) return;
+    this.viewMenuPlacement = this.measureViewMenu();
+    this.cdr.markForCheck();
+  }
+
+  /** The View menu's placement from its button and this row's left edge (placeViewMenu). */
+  private measureViewMenu(): ViewMenuPlacement | null {
+    const el = this.host.nativeElement;
+    const button = el.querySelector<HTMLElement>('.heatmap-btn');
+    if (!button || typeof window === 'undefined') return null;
+    const b = button.getBoundingClientRect();
+    return placeViewMenu(b, el.getBoundingClientRect().left, { width: window.innerWidth, height: window.innerHeight });
   }
 
   /** Pick a lens. A lens with no data for the domain on screen is disabled: the click does nothing. */

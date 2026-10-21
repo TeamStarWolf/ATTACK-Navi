@@ -5,6 +5,7 @@ import { LibraryLayerMeta } from '../services/library-layer.service';
 import { Domain } from './domain';
 import { ThreatGroup } from './group';
 import { Technique } from './technique';
+import type { ThreatProfileEmptyReason } from './posture/posture.types';
 
 /** How a threat profile is defined. Every id is a STIX id (never a G#### attackId). */
 export type ThreatProfileSource =
@@ -13,6 +14,25 @@ export type ThreatProfileSource =
   | { kind: 'campaigns'; ids: readonly string[] }   // STIX campaign ids
   | { kind: 'library-layer'; file: string }         // library-layers manifest name; T#### resolved to STIX via domain
   | { kind: 'all' };
+
+/**
+ * Why a resolved profile holds no parent technique, or null when it holds some
+ * (ThreatWeightProvider.emptyReason, RP-F item 6 round 1). Keyed on the stored
+ * source, not on the parent count alone: an empty parent set also comes from a
+ * profile that IS set, while a domain or a library layer loads, or when its
+ * groups or campaigns use no technique in the loaded domain.
+ */
+export function threatProfileEmptyReason(
+  src: ThreatProfileSource,
+  parentCount: number,
+  domainLoaded: boolean,
+  layerLoaded: boolean,
+): ThreatProfileEmptyReason | null {
+  if (parentCount > 0) return null;
+  if ((src.kind === 'groups' || src.kind === 'campaigns') && src.ids.length === 0) return 'names-nothing';
+  if (!domainLoaded || (src.kind === 'library-layer' && !layerLoaded)) return 'resolving';
+  return 'none-in-domain';
+}
 
 export interface ThreatProfile {
   readonly source: ThreatProfileSource;

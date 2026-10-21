@@ -24,6 +24,16 @@
     </label>
   }
 
+  @if (!showPresetTabs && quickPickGroups.length > 0) {
+    <div class="tpp-quick" role="group" aria-label="Common picks">
+      <span class="tpp-quick-label">Common picks:</span>
+      @for (qp of quickPickGroups; track qp.group.id) {
+        <button type="button" class="tpp-quick-btn" [class.selected]="isSelected(qp.group)"
+                [attr.aria-pressed]="isSelected(qp.group)" (click)="pickQuick(qp.group)">{{ qp.label }}</button>
+      }
+    </div>
+  }
+
   @if (!showPresetTabs || preset === 'groups') {
     <div class="tpp-search">
       <input type="search" [(ngModel)]="searchText" placeholder="Search groups by name, ID or alias"

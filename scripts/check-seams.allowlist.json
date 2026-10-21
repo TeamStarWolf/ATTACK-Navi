@@ -308,6 +308,23 @@
           "removedBy": "stays (owner decision, section 10.4 item 8)"
         }
       ]
+    },
+    "picker-select": {
+      "summary": "a file outside threat-profile-picker calls selectGroup( or selectCampaign( (the picker's selection methods)",
+      "patterns": [
+        "\\bselect(?:Group|Campaign)\\("
+      ],
+      "entries": [
+        {
+          "file": "src/app/components/actor-profile-panel/actor-profile-panel.component.ts",
+          "uses": {
+            "selectGroup(": 2
+          },
+          "bucket": "stays",
+          "reason": "Its own browse handler happens to be named selectGroup: onGroupPicked, the handler of the shared picker's (groupSelected) output, calls it to open the actor's profile. It has no preset buttons or group list of its own, so it is not a second selection path; the picker is the only way to choose the actor.",
+          "removedBy": "stays (the handler of the picker output, not a rival selection path)"
+        }
+      ]
     }
   }
 }
