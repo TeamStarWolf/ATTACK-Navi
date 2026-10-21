@@ -18,7 +18,8 @@ import { BehaviorSubject } from 'rxjs';
 
 import { MatrixComponent } from '../components/matrix/matrix.component';
 import { Domain } from '../models/domain';
-import { HEATMAP_MODES } from '../models/heatmap-modes';
+import { HEATMAP_MODES, heatmapModeDef } from '../models/heatmap-modes';
+import { registryCell, registryColor } from '../models/lens-registry';
 import { REFERENCE_DEPTH_TERMS, ReferenceDepthInputs, referenceDepthScore } from '../models/reference-depth';
 import { CveService } from '../services/cve.service';
 import { DataService } from '../services/data.service';
@@ -95,7 +96,8 @@ describe('Reference depth (heat=unified) is a defensive-reference composite', ()
 
     function depthMap(): Record<string, number> {
       filter.setHeatmapMode('unified');
-      return Object.fromEntries(sorted().map(t => [t.attackId, matrix.getUnifiedScore(t)]));
+      // P2-15: the score is the unified lens's registry projection, as the matrix computes it.
+      return Object.fromEntries(sorted().map(t => [t.attackId, registryCell(heatmapModeDef('unified')!, matrix.lensContext(), t).score]));
     }
 
     function frequencyMap(): Record<string, number> {
@@ -147,7 +149,54 @@ describe('Reference depth (heat=unified) is a defensive-reference composite', ()
       for (const t of dark) domain.groupsByTechnique.set(t.id, [...domain.groups]);
       kev$.next(new Map(dark.map(t => [t.attackId, 9] as [string, number])));
       depthMap();
-      for (const t of dark) expect(matrix.getUnifiedScore(t)).withContext(t.attackId).toBe(0);
+      for (const t of dark) expect(registryCell(heatmapModeDef('unified')!, matrix.lensContext(), t).score).withContext(t.attackId).toBe(0);
+    });
+
+    it('the cell and the minimap read the registry projection, and no technique gets a posture cell (P2-15)', () => {
+      const before = depthMap();
+      const def = heatmapModeDef('unified')!;
+      for (const t of sorted()) {
+        expect(matrix.lensScore(t)).withContext(t.attackId).toBe(before[t.attackId]);
+        expect(matrix.getCellColor(t)).withContext(t.attackId).toBe(registryColor(def, { score: before[t.attackId] }, { theme: 'dark', colorblindSafe: false }));
+        expect(matrix.postureCell(t)).withContext(t.attackId).toBeNull();
+      }
+      // Any other lens drops the scores.
+      frequencyMap();
+      expect(sorted().every(t => matrix.lensScore(t) === 0)).toBeTrue();
+    });
+
+    // P2-15: Reference depth moved into the registry, but the matrix keeps its
+    // mode === 'unified' switchboard branch as a reset-only branch, so a lens
+    // shown after it never reads a stale software, campaign, risk or Sigma map.
+    it('entering Reference depth still resets the software, campaign, risk and Sigma maps (reset-only branch)', () => {
+      const snapshot = () => ({ scores: [...matrix.softwareScores].sort(), max: matrix.maxSoftware });
+      filter.setHeatmapMode('software');
+      const freshSoftware = snapshot();
+      expect(freshSoftware.scores.length).withContext('the fixture has software uses').toBeGreaterThan(0);
+
+      // Stale values in all four maps, then Reference depth.
+      matrix.campaignScores.set('stale', 9);
+      matrix.maxCampaign = 9;
+      matrix.riskScores.set('stale', 9);
+      matrix.maxRisk = 9;
+      matrix.sigmaScoreMap.set('stale', 9);
+      filter.setHeatmapMode('unified');
+      expect(matrix.softwareScores.size).toBe(0);
+      expect(matrix.maxSoftware).toBe(1);
+      expect(matrix.campaignScores.size).toBe(0);
+      expect(matrix.maxCampaign).toBe(1);
+      expect(matrix.riskScores.size).toBe(0);
+      expect(matrix.maxRisk).toBe(1);
+      expect(matrix.sigmaScoreMap.size).toBe(0);
+
+      // unified -> software -> unified leaves the software map as reset, and the
+      // next software load equals the fresh one.
+      filter.setHeatmapMode('software');
+      expect(snapshot()).toEqual(freshSoftware);
+      filter.setHeatmapMode('unified');
+      expect(snapshot()).toEqual({ scores: [], max: 1 });
+      filter.setHeatmapMode('software');
+      expect(snapshot()).toEqual(freshSoftware);
     });
   });
 });

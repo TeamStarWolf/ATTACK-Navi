@@ -7,9 +7,10 @@
 // legend all call ONE colour function for it instead of holding three hex
 // copies. A lens without them is a legacy lens: the matrix switchboard scores
 // it and each surface keeps its own branch, byte for byte as before (the
-// frozen-hash guard in lens-snapshots.spec.ts proves the 31 remaining legacy
-// lenses unchanged). Registry-hosted today: posture (P2-13); status and
-// controls, re-derived through PostureService, and proven and covered (P2-14).
+// frozen-hash guard in lens-snapshots.spec.ts proves the 31 frozen lenses, the
+// 30 remaining legacy ones and unified, unchanged). Registry-hosted today: posture (P2-13); status and
+// controls, re-derived through PostureService, and proven and covered (P2-14);
+// unified (Reference depth, P2-15), a score-only lens (SCORE_ONLY_LENSES).
 import type { Technique } from './technique';
 import type { LensCell, LensContext, LensDefinition } from './heatmap-modes';
 
@@ -22,6 +23,21 @@ export type RegistryLens = LensDefinition & Required<Pick<LensDefinition, 'proje
 /** True when `def` projects and colours itself (both functions present). */
 export function isRegistryLens(def: LensDefinition | undefined | null): def is RegistryLens {
   return !!def && typeof def.project === 'function' && typeof def.color === 'function';
+}
+
+/**
+ * Registry lenses whose cell is a plain score with no posture state (P2-15:
+ * Reference depth, a Known-rung number). The matrix gives them no
+ * PostureCellVM, so the cell draws no posture label, pattern or check mark;
+ * the legend keeps their ramp stops (not the posture stops); and their colour
+ * follows the Colorblind-safe setting, so Settings does not list them among
+ * the lenses that keep their own ramps.
+ */
+export const SCORE_ONLY_LENSES: ReadonlySet<string> = new Set(['unified']);
+
+/** True when `def` is a registry lens whose cell carries a posture state (every registry lens but SCORE_ONLY_LENSES). */
+export function isPostureCellLens(def: LensDefinition | undefined | null): def is RegistryLens {
+  return isRegistryLens(def) && !SCORE_ONLY_LENSES.has(def.value);
 }
 
 /** One technique's cell on a registry lens. Throws for a legacy lens, which has no projection. */

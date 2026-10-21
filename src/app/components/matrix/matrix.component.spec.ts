@@ -10,6 +10,8 @@ import { Domain, TacticColumn } from '../../models/domain';
 import { Tactic } from '../../models/tactic';
 import { Technique } from '../../models/technique';
 import { AttackNaviLayer } from '../../models/user-layer';
+import { heatmapModeDef } from '../../models/heatmap-modes';
+import { registryCell } from '../../models/lens-registry';
 import { DEFAULT_HEATMAP_MODE, FilterService } from '../../services/filter.service';
 import { LibraryLayerService, LibraryLayerMeta } from '../../services/library-layer.service';
 import { UserLayerService } from '../../services/user-layer.service';
@@ -251,12 +253,14 @@ describe('MatrixComponent', () => {
   it('unified score rewards a technique with more defensive signals', () => {
     // Reference depth scores are computed while its lens is on screen.
     filterService.setHeatmapMode('unified');
-    const strong = component.getUnifiedScore(T_WELL_MITIGATED);
-    const weak = component.getUnifiedScore(T_UNMITIGATED);
+    // P2-15: the score is the unified lens's registry projection.
+    const depth = (t: Technique) => registryCell(heatmapModeDef('unified')!, component.lensContext(), t).score;
+    const strong = depth(T_WELL_MITIGATED);
+    const weak = depth(T_UNMITIGATED);
     expect(strong).toBeGreaterThan(weak);
     // Nothing is mapped to T9003 and it has no mitigations: it must not score
     // above the equally-bare T9002.
-    expect(component.getUnifiedScore(T_IMPACT)).toBe(weak);
+    expect(depth(T_IMPACT)).toBe(weak);
   });
 
   describe('library heatmap mode', () => {
