@@ -8,8 +8,10 @@
 // (`via: 'M1038'`), and which source wrote it: 'manual' (Confirm, bulk set)
 // or 'layer:<name>' (a Navigator layer import).
 //
-// P2-05 ships the store and its read API only. No UI writes to it until P2-16
-// (the drawer Confirm, bulk set and the Navigator import move here then).
+// P2-05 shipped the store and its read API. Since P2-16 (E2.1-e) the UI writes
+// it: the drawer's Confirm and Unconfirm (confirm/clear, 'manual'), the matrix
+// bulk set (confirm/clear, 'manual') and the Navigator foreign-comment import
+// (replaceSource, 'layer:<name>'). None of them writes a mitigation status.
 // PostureService reads `marks$`; OwnerDataService counts implemented marks (D4).
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';

@@ -1,6 +1,6 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { AttackDomain, ATTACK_NAVIGATOR_DOMAIN_CONFIG } from './data.service';
 import { Domain } from '../models/domain';
 import { ImplStatus, ImplementationService } from './implementation.service';
@@ -9,6 +9,8 @@ import { BrowserFileService } from './browser-file.service';
 import type { Technique } from '../models/technique';
 import { type ImplView, implView } from './posture-adapters';
 import { DEFAULT_POSTURE_RULES } from '../models/posture/derive-posture';
+import { refForTechnique, techniqueRefKey } from '../models/technique-ref';
+import { type TechniqueMark, TechniqueMarksService } from './technique-marks.service';
 
 /** Navigator metadata entry ({name, value} pairs shown in its tooltip). */
 interface NavigatorMetadata {
@@ -26,13 +28,15 @@ interface NavigatorTechniqueEntry {
   metadata: NavigatorMetadata[];
 }
 
-/** One mitigation status that comment-keyword detection derived for a foreign layer. */
+/**
+ * One technique mark that comment-keyword detection derived for a foreign
+ * layer (P2-16, E2.1-e): the technique's own status, written as a technique
+ * mark with source `layer:<layer name>`. It never names a mitigation: the
+ * comment is about the technique, so no mitigation status is derived from it.
+ */
 export interface DerivedStatus {
   /** ATT&CK id of the technique whose comment drove the detection. */
   techniqueId: string;
-  /** Mitigation STIX id (ImplementationService key). */
-  mitigationId: string;
-  mitigationAttackId: string;
   status: ImplStatus;
   /** The comment the status was read from (for the preview). */
   comment: string;
@@ -40,14 +44,17 @@ export interface DerivedStatus {
 
 export interface LayerImportOptions {
   /**
-   * Foreign layers (no `attack-navi:*` metadata) can only GUESS statuses from
-   * free-text comments, and a guess sets EVERY mitigation of that technique.
-   * Off by default — comments become notes only. Callers should preview with
-   * `dryRun` and ask before turning this on.
+   * Foreign layers (no `attack-navi:*` metadata) can only GUESS a status from
+   * a free-text comment. A guess becomes one technique mark for that
+   * technique, with source `layer:<layer name>` (P2-16); mitigation statuses
+   * are never derived. Off by default: comments become notes only. Callers
+   * should preview with `dryRun` and ask before turning this on.
    */
   deriveStatusesFromComments?: boolean;
-  /** Compute the result without writing any status or note. */
+  /** Compute the result without writing any status, mark or note. */
   dryRun?: boolean;
+  /** The loaded domain's id, for the technique marks' refs (default 'enterprise'). */
+  attackDomain?: AttackDomain;
 }
 
 export interface LayerImportResult {
@@ -63,10 +70,13 @@ export interface LayerImportResult {
   remapped: Array<{ from: string; to: string }>;
   /** Ids that match nothing in the loaded domain (other domain, typo, or retired with no replacement). */
   unresolvedIds: string[];
+  /** Exact per-mitigation statuses restored from `attack-navi:mitStatuses` (our own layers only). */
   statusesApplied: number;
+  /** Technique marks derived from foreign comments (written under `layer:<name>` when opted in). */
+  marksApplied: number;
   notesApplied: number;
   /**
-   * Statuses keyword detection derived from foreign-layer comments. Populated
+   * Technique marks keyword detection derived from foreign-layer comments. Populated
    * whenever a match exists, even when not applied (opted out or dryRun), so
    * the caller can show a preview.
    */
@@ -117,8 +127,16 @@ interface NavigatorLayer {
   legendItems: Array<{ label: string; color: string }>;
 }
 
+/** The technique-marks source of a layer import: `layer:<name>`, the name trimmed ('unnamed' when blank). */
+export function layerMarkSource(layerName: string): `layer:${string}` {
+  const name = layerName.trim();
+  return `layer:${name === '' ? 'unnamed' : name}`;
+}
+
 @Injectable({ providedIn: 'root' })
 export class NavigatorLayerService {
+  private readonly techniqueMarks = inject(TechniqueMarksService);
+
   buildLayer(
     domain: Domain,
     currentDomain: AttackDomain,
@@ -227,9 +245,12 @@ export class NavigatorLayerService {
    *   notes from `attack-navi:*` metadata entries.
    * - Foreign layers' comments become analyst notes — but only on techniques
    *   that don't already have a note (imports never clobber existing analyst
-   *   work). Deriving mitigation statuses from those comments is a guess, so
+   *   work). A status keyword in a comment is a guess about that technique, so
    *   it is reported in `derivedStatuses` and only written when the caller
-   *   opts in with `deriveStatusesFromComments` (disabled entries never count).
+   *   opts in with `deriveStatusesFromComments` (disabled entries never count),
+   *   as technique marks with source `layer:<layer name>` that replace the
+   *   marks an earlier import of the same layer wrote (replace-by-source,
+   *   P2-16). It never writes a mitigation status.
    * - Technique ids are matched against the loaded domain, following retired
    *   ids through `Domain.supersededBy`; what did and did not resolve is
    *   reported so the caller never claims more than was applied.
@@ -281,9 +302,11 @@ export class NavigatorLayerService {
 
     const write = !options.dryRun;
     const deriveStatuses = options.deriveStatusesFromComments === true;
+    const attackDomain = options.attackDomain ?? 'enterprise';
     let statusesApplied = 0;
     let notesApplied = 0;
     const derivedStatuses: DerivedStatus[] = [];
+    const marks: TechniqueMark[] = [];
     const resolvedIds = new Set<string>();
     const remapped: Array<{ from: string; to: string }> = [];
     const validStatuses = new Set<ImplStatus>(['implemented', 'in-progress', 'planned', 'not-started']);
@@ -324,21 +347,12 @@ export class NavigatorLayerService {
         // 2) Foreign layers: an anchored, non-negated status keyword in the
         //    comment. A disabled row is hidden in Navigator, so it says
         //    nothing about the analyst's controls.
+        //    The keyword is the technique's own status: one technique mark,
+        //    never a status on each of its mitigations (P2-16).
         const status = detectStatusKeyword(entry.comment);
         if (status) {
-          for (const rel of domain.mitigationsByTechnique.get(tech.id) ?? []) {
-            derivedStatuses.push({
-              techniqueId: tech.attackId,
-              mitigationId: rel.mitigation.id,
-              mitigationAttackId: rel.mitigation.attackId,
-              status,
-              comment: entry.comment.trim(),
-            });
-            if (deriveStatuses) {
-              if (write) implService.setStatus(rel.mitigation.id, status);
-              statusesApplied++;
-            }
-          }
+          derivedStatuses.push({ techniqueId: tech.attackId, status, comment: entry.comment.trim() });
+          marks.push({ ref: techniqueRefKey(refForTechnique(tech, attackDomain, domain.attackVersion ?? '')), status });
         }
       }
 
@@ -367,13 +381,26 @@ export class NavigatorLayerService {
     });
 
     const layer = parsed as { name?: unknown };
+    const layerName = typeof layer.name === 'string' ? layer.name : 'unnamed';
+    // Replace-by-source: this layer's marks replace the marks an earlier import
+    // of the same layer wrote; 'manual' and every other layer's marks stay.
+    // A layer with no keyword and no earlier marks writes nothing.
+    let marksApplied = 0;
+    if (deriveStatuses) {
+      const source = layerMarkSource(layerName);
+      if (!write) marksApplied = marks.length;
+      else if (marks.length > 0 || this.techniqueMarks.all.some(m => m.source === source)) {
+        marksApplied = this.techniqueMarks.replaceSource(source, marks);
+      }
+    }
     return {
-      layerName: typeof layer.name === 'string' ? layer.name : 'unnamed',
+      layerName,
       techniqueIdCount: layerMap.size,
       resolvedCount: layerMap.size - unresolvedIds.length,
       remapped,
       unresolvedIds,
       statusesApplied,
+      marksApplied,
       notesApplied,
       derivedStatuses,
     };

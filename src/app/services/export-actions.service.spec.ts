@@ -12,6 +12,7 @@ import { ExportActionsService } from './export-actions.service';
 import { FilterService } from './filter.service';
 import { ImplementationService } from './implementation.service';
 import { NavigatorLayerService } from './navigator-layer.service';
+import { TechniqueMarksService } from './technique-marks.service';
 import { USER_LAYER_DB_NAME, UserLayerService } from './user-layer.service';
 
 /**
@@ -31,7 +32,7 @@ describe('ExportActionsService.importNavigatorLayer', () => {
   let alertSpy: jasmine.Spy;
   let dbName: string;
 
-  const STORAGE_KEYS = ['mitre-nav-impl-v1', 'mitre-nav-annotations-v1'];
+  const STORAGE_KEYS = ['mitre-nav-impl-v1', 'mitre-nav-annotations-v1', 'navi.v2.technique-marks'];
 
   /** The parts of a loaded Enterprise 19.2 Domain this flow reads. */
   function makeDomain(): Domain {
@@ -234,18 +235,22 @@ describe('ExportActionsService.importNavigatorLayer', () => {
     expect(lastAlert()).toContain('could not be saved to this browser');
   });
 
-  it('comment-derived statuses are previewed and written only when the analyst confirms', async () => {
+  it('comment-derived technique marks are previewed and written only when the analyst confirms; no mitigation status (P2-16)', async () => {
     pickTextFile.and.resolveTo(layerJson([{ techniqueID: 'T1059', comment: 'Status: implemented' }]));
+    const marks = TestBed.inject(TechniqueMarksService);
 
     confirmSpy.and.returnValue(false);
     await service.importNavigatorLayer();
 
     expect(confirmSpy).toHaveBeenCalledTimes(1);
     const preview = confirmSpy.calls.mostRecent().args[0] as string;
-    expect(preview).toContain('Set 2 mitigation status(es) on 1 technique(s)');
-    expect(preview).toContain('T1059: 2 mitigation(s) -> implemented');
+    expect(preview).toContain('Mark 1 technique(s) from comment keywords?');
+    expect(preview).toContain('T1059 -> implemented');
     expect(preview).toContain('"Status: implemented"');
+    expect(preview).toContain('technique marks from layer "Vendor Coverage"');
+    expect(preview).toContain('Mitigation statuses are not changed.');
     expect(implService.getStatusMap().size).toBe(0);
+    expect(marks.all).toEqual([]);
     let text = lastAlert();
     expect(text).toContain('0 statuses and 1 notes applied');
     expect(text).toContain('Comment-derived statuses were not applied');
@@ -254,10 +259,11 @@ describe('ExportActionsService.importNavigatorLayer', () => {
     confirmSpy.and.returnValue(true);
     await service.importNavigatorLayer();
 
-    expect(implService.getStatus('mit-1')).toBe('implemented');
-    expect(implService.getStatus('mit-2')).toBe('implemented');
+    expect(implService.getStatusMap().size).toBe(0);
+    expect(marks.all.map(m => [m.ref, m.status, m.source])).toEqual([['attack/enterprise/T1059@19.2', 'implemented', 'layer:Vendor Coverage']]);
     text = lastAlert();
-    expect(text).toContain('2 statuses and 0 notes applied');
+    expect(text).toContain('0 statuses and 0 notes applied');
+    expect(text).toContain('1 technique mark(s) recorded from layer "Vendor Coverage"; mitigation statuses unchanged.');
     expect(text).not.toContain('were not applied');
   });
 
