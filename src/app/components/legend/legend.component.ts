@@ -19,6 +19,9 @@ import type { LensLegendStop } from '../../models/posture/lens-ramps';
 import type { PostureBucket } from '../../models/posture/posture.types';
 import { EXPIRING_SOON_DAYS, PostureService } from '../../services/posture.service';
 import { ThemeService } from '../../services/theme.service';
+import { THREAT_GAP_EXPOSURE_NOTE, THREAT_GAP_TOGGLE_LABEL, threatGapThreshold } from '../../models/posture/gap';
+import { THREAT_WEIGHT_PROVIDER } from '../../models/posture/threat-weight';
+import type { ThreatWeightProvider } from '../../models/posture/posture.types';
 
 /** A registry lens's legend stop: the Posture lens's, or a P2-14 lens's (which says whether its words are owner words). */
 type RegistryLegendStop = PostureLegendStop | LensLegendStop;
@@ -97,6 +100,12 @@ const SCALE_NOTE: Partial<Record<HeatmapModeDef['ramp']['scale'], string>> = {
         <p class="legend-domain"><span class="swatch hatch" aria-hidden="true"></span>n/a for {{ domainName }} (no source data)</p>
         <p class="legend-na-reason">{{ availability.reason }}</p>
       }
+      @if (threatGapOverlay) {
+        <p class="legend-threat-gaps">
+          <span class="swatch gap-ring" aria-hidden="true"></span>{{ threatGapLabel }}: used by {{ threatGapQ75 }} or more of the threat profile's groups or campaigns (its 75th percentile), or in your asset inventory
+        </p>
+        <p class="legend-threat-gaps-exposure">{{ threatGapExposureNote }}</p>
+      }
       <p class="legend-sources"><span class="meta-key">Sources:</span> {{ sourceLine }}</p>
       <div class="legend-foot">
         <p class="legend-zero">{{ def.zeroMeaning }}</p>
@@ -130,6 +139,11 @@ export class LegendComponent implements OnInit, OnDestroy {
   }
 
   readonly noOwnerDataLine = NO_OWNER_DATA_LINE;
+
+  /** The Threat gaps overlay is on (P2-17): the legend names it and its threshold. */
+  threatGapOverlay = false;
+  readonly threatGapLabel = THREAT_GAP_TOGGLE_LABEL;
+  readonly threatGapExposureNote = THREAT_GAP_EXPOSURE_NOTE;
 
   get rungBadge(): string {
     return lensRungBadge(this.def);
@@ -230,6 +244,19 @@ export class LegendComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** Injected on first use: the threat-weight token only, never ThreatProfileService (P2-17). */
+  private threatWeightProvider: ThreatWeightProvider | null = null;
+
+  /**
+   * The Threat gaps threshold (models/posture/gap.ts), read through the
+   * provider's revision and parent set, so a profile change shows the new one.
+   */
+  get threatGapQ75(): number {
+    const tw = (this.threatWeightProvider ??= this.injector.get(THREAT_WEIGHT_PROVIDER));
+    tw.revision();
+    return threatGapThreshold(tw.parents(), id => tw.weight(id));
+  }
+
   /** True when a stop's label names Covered or Proven (every Posture stop does; a P2-14 stop says so). */
   needsOwnerWords(stop: RegistryLegendStop): boolean {
     return !('ownerWords' in stop) || stop.ownerWords;
@@ -276,6 +303,12 @@ export class LegendComponent implements OnInit, OnDestroy {
     );
     this.sub.add(
       this.settingsService.settings$.subscribe(() => this.cdr.markForCheck()),
+    );
+    this.sub.add(
+      this.filterService.threatGapOverlay$.subscribe(on => {
+        this.threatGapOverlay = on;
+        this.cdr.markForCheck();
+      }),
     );
     this.sub.add(
       this.themeService.isLight$.subscribe(() => this.cdr.markForCheck()),

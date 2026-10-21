@@ -117,6 +117,12 @@ export class FilterService {
   private techniqueQuerySubject = new BehaviorSubject<string>('');
   private sortModeSubject = new BehaviorSubject<SortMode>('alpha');
   private dimUncoveredSubject = new BehaviorSubject<boolean>(false);
+  /**
+   * The Threat gaps overlay (P2-17, E2.2-d): a session toggle, written to the
+   * URL as tgap=1 and never stored. It outlines threat-relevant techniques
+   * with no mark of the owner's that holds (models/posture/gap.ts).
+   */
+  private threatGapOverlaySubject = new BehaviorSubject<boolean>(false);
   private platformFilterSubject = new BehaviorSubject<string | null>(null);
   private hiddenTacticIdsSubject = new BehaviorSubject<Set<string>>(new Set());
   private searchScopeSubject = new BehaviorSubject<SearchScope>('name');
@@ -153,6 +159,7 @@ export class FilterService {
   techniqueQuery$: Observable<string> = this.techniqueQuerySubject.asObservable();
   sortMode$: Observable<SortMode> = this.sortModeSubject.asObservable();
   dimUncovered$: Observable<boolean> = this.dimUncoveredSubject.asObservable();
+  threatGapOverlay$: Observable<boolean> = this.threatGapOverlaySubject.asObservable();
   platformFilter$: Observable<string | null> = this.platformFilterSubject.asObservable();
   hiddenTacticIds$: Observable<Set<string>> = this.hiddenTacticIdsSubject.asObservable();
   searchScope$: Observable<SearchScope> = this.searchScopeSubject.asObservable();
@@ -308,6 +315,7 @@ export class FilterService {
       this.techniqueQuerySubject,
       this.platformFilterSubject,
       this.dimUncoveredSubject,
+      this.threatGapOverlaySubject,
       this.activeDataSourceSubject,
       this.activeThreatGroupIdsSubject,
       this.activeSoftwareIdsSubject,
@@ -349,6 +357,8 @@ export class FilterService {
       const plat = params.get('plat');
       if (plat) this.platformMultiSubject.next(new Set(plat.split(',').filter(Boolean)));
       if (params.get('dim') === '1') this.dimUncoveredSubject.next(true);
+      // #118's pattern: only tgap=1 turns the overlay on; any other value is ignored.
+      if (params.get('tgap') === '1') this.threatGapOverlaySubject.next(true);
       if (params.get('sfm') === '1') this.searchFilterModeSubject.next(true);
       const ds = params.get('ds');
       if (ds) this.activeDataSourceSubject.next(ds);
@@ -424,7 +434,8 @@ export class FilterService {
    * Serialize the current shareable filter state to URL query params.
    * Same keys as the pre-router hash format (mit, tq, pf, plat, dim, sfm,
    * ds, heat, impl, scope, tsearch, grp, sw, camp) so old links stay valid
-   * through the legacy-hash shim, plus (E2.3) `tech`, the open technique, and
+   * through the legacy-hash shim, plus (P2-17) `tgap=1`, the Threat gaps
+   * overlay, (E2.3) `tech`, the open technique, and
    * `dom`, the ATT&CK domain when it is not Enterprise. With `tech`, `heat`
    * and `dom` are always written, so a pasted link carries its lens and domain
    * even at the defaults.
@@ -441,6 +452,7 @@ export class FilterService {
     const platMulti = this.platformMultiSubject.value;
     if (platMulti.size) params['plat'] = [...platMulti].join(',');
     if (this.dimUncoveredSubject.value) params['dim'] = '1';
+    if (this.threatGapOverlaySubject.value) params['tgap'] = '1';
     if (this.searchFilterModeSubject.value) params['sfm'] = '1';
     const ds = this.activeDataSourceSubject.value;
     if (ds) params['ds'] = ds;
@@ -516,6 +528,15 @@ export class FilterService {
 
   toggleDimUncovered(): void {
     this.dimUncoveredSubject.next(!this.dimUncoveredSubject.value);
+  }
+
+  /** Turn the Threat gaps overlay on or off (P2-17). */
+  setThreatGapOverlay(on: boolean): void {
+    this.threatGapOverlaySubject.next(on);
+  }
+
+  toggleThreatGapOverlay(): void {
+    this.threatGapOverlaySubject.next(!this.threatGapOverlaySubject.value);
   }
 
   setPlatformFilter(platform: string | null): void {

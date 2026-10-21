@@ -14,6 +14,9 @@ import { POSTURE_BUCKETS, postureFill, postureLegendStops } from '../../models/p
 import type { Domain } from '../../models/domain';
 import { controlsLegendStops, statusLegendStops } from '../../models/posture/lens-ramps';
 import { hexToRgb } from '../../models/cvd';
+import { signal as ngSignal } from '@angular/core';
+import { THREAT_WEIGHT_PROVIDER } from '../../models/posture/threat-weight';
+import { THREAT_GAP_EXPOSURE_NOTE, THREAT_GAP_TOGGLE_LABEL } from '../../models/posture/gap';
 
 /** '#rrggbb' as the browser reports a style colour. */
 const rgb = (hex: string): string => `rgb(${hexToRgb(hex).join(', ')})`;
@@ -41,7 +44,7 @@ describe('LegendComponent', () => {
     await TestBed.configureTestingModule({
       imports: [LegendComponent],
       providers: [
-        { provide: FilterService, useValue: { heatmapMode$: heatmapMode$.asObservable() } },
+        { provide: FilterService, useValue: { heatmapMode$: heatmapMode$.asObservable(), threatGapOverlay$: new BehaviorSubject(false) } },
         { provide: DataService, useValue: { currentDomain$, domain$, freshness$ } },
       ],
     }).compileComponents();
@@ -252,7 +255,7 @@ describe('LegendComponent: the Posture lens (P2-13)', () => {
     await TestBed.configureTestingModule({
       imports: [LegendComponent],
       providers: [
-        { provide: FilterService, useValue: { heatmapMode$: heatmapMode$.asObservable() } },
+        { provide: FilterService, useValue: { heatmapMode$: heatmapMode$.asObservable(), threatGapOverlay$: new BehaviorSubject(false) } },
         { provide: DataService, useValue: {
           currentDomain$: new BehaviorSubject<AttackDomain>('enterprise'),
           domain$: new BehaviorSubject({ attackVersion: '19.2' }),
@@ -382,4 +385,73 @@ describe('LegendComponent: the Posture lens (P2-13)', () => {
       expect(el().querySelector('.legend-question')!.textContent!.trim()).toBe(heatmapModeDef(mode)!.question);
     });
   }
+});
+
+// P2-17: while the Threat gaps overlay is on, the legend names it, states its
+// threshold (q75 from the THREAT_WEIGHT_PROVIDER token, recomputed when the
+// profile's revision moves) and says exposure counts on Enterprise only, on
+// every domain, ICS included, where the exposure term is 0 (§1.16).
+describe('LegendComponent (Threat gaps overlay, P2-17)', () => {
+  let fixture: ComponentFixture<LegendComponent>;
+  let overlay$: BehaviorSubject<boolean>;
+  let currentDomain$: BehaviorSubject<AttackDomain>;
+  const revision = ngSignal(0);
+  const parents = ngSignal<ReadonlySet<string>>(new Set());
+  let weights: Record<string, number> = {};
+
+  beforeEach(async () => {
+    localStorage.removeItem('mitre-nav-settings-v1');
+    overlay$ = new BehaviorSubject(false);
+    currentDomain$ = new BehaviorSubject<AttackDomain>('enterprise');
+    weights = { a: 1, b: 2, c: 3, d: 4 };
+    parents.set(new Set(Object.keys(weights)));
+    await TestBed.configureTestingModule({
+      imports: [LegendComponent],
+      providers: [
+        { provide: FilterService, useValue: { heatmapMode$: new BehaviorSubject<HeatmapMode>('frequency'), threatGapOverlay$: overlay$ } },
+        { provide: DataService, useValue: {
+          currentDomain$, domain$: new BehaviorSubject({ attackVersion: '19.2' }), freshness$: new BehaviorSubject('bundled'),
+        } },
+        { provide: THREAT_WEIGHT_PROVIDER, useValue: { revision, parents, weight: (id: string) => weights[id] ?? 0 } },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(LegendComponent);
+    fixture.detectChanges();
+  });
+
+  const el = (): HTMLElement => fixture.nativeElement as HTMLElement;
+
+  it('shows nothing about Threat gaps while the overlay is off', () => {
+    expect(el().querySelector('.legend-threat-gaps')).toBeNull();
+    expect(el().textContent).not.toContain(THREAT_GAP_EXPOSURE_NOTE);
+  });
+
+  it('names the overlay, its threshold and the Enterprise-only exposure line when on', () => {
+    overlay$.next(true);
+    fixture.detectChanges();
+    const line = el().querySelector('.legend-threat-gaps')!.textContent!.replace(/\s+/g, ' ').trim();
+    expect(line).toContain(THREAT_GAP_TOGGLE_LABEL);
+    // Weights 1 2 3 4: nearest-rank 75th percentile = 3.
+    expect(line).toContain('used by 3 or more');
+    expect(el().querySelector('.legend-threat-gaps-exposure')!.textContent!.trim()).toBe('Exposure counts on Enterprise only');
+  });
+
+  it('ICS: the legend line renders (the exposure term is 0 there)', () => {
+    currentDomain$.next('ics');
+    overlay$.next(true);
+    fixture.detectChanges();
+    expect(el().querySelector('.legend-threat-gaps')).not.toBeNull();
+    expect(el().querySelector('.legend-threat-gaps-exposure')!.textContent!.trim()).toBe(THREAT_GAP_EXPOSURE_NOTE);
+  });
+
+  it('recomputes the threshold when the threat profile changes (provider revision)', () => {
+    overlay$.next(true);
+    fixture.detectChanges();
+    expect(el().querySelector('.legend-threat-gaps')!.textContent).toContain('used by 3 or more');
+    weights = { x: 9 };
+    parents.set(new Set(['x']));
+    revision.update(n => n + 1);
+    fixture.detectChanges();
+    expect(el().querySelector('.legend-threat-gaps')!.textContent).toContain('used by 9 or more');
+  });
 });
