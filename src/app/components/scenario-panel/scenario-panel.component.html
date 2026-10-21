@@ -7,142 +7,69 @@
         <div class="header-left">
           <span class="panel-icon">🎭</span>
           <span class="panel-title">Threat Scenario Simulator</span>
-          <span class="header-subtitle">Simulate an attack and assess your readiness</span>
+          <span class="header-subtitle">Simulate an attack and assess your posture</span>
         </div>
       </div>
 
       <div class="panel-body">
 
-        <!-- Left: Group Selector -->
+        <!-- Left: pickers -->
         <div class="group-selector upgrade-section-block">
           <div class="selector-header">
-            <span class="selector-title">Threat Actor</span>
-            @if (groups.length > 0) {
-              <span class="group-count">{{ groups.length }} groups</span>
-            }
+            <span class="selector-title">Single actor</span>
           </div>
+          <app-threat-profile-picker mode="single" (groupSelected)="onGroupPicked($event)" />
 
-          <div class="search-wrap">
-            <input
-              class="group-search"
-              type="text"
-              placeholder="Search groups…"
-              [(ngModel)]="groupSearch"
-            />
+          <div class="selector-header profile-sim-header">
+            <span class="selector-title">Profile simulation</span>
           </div>
-
-          @if (groups.length === 0) {
-            <div class="selector-loading">
-              <div class="mini-spinner"></div>
-              <span>Loading groups…</span>
-            </div>
-          } @else {
-            <div class="group-list">
-              @for (group of filteredGroups; track group.id) {
-                <div class="group-item-row">
-                  <input
-                    type="checkbox"
-                    class="group-checkbox"
-                    [checked]="isGroupSelected(group)"
-                    (click)="$event.stopPropagation(); toggleGroupSelection(group)"
-                    title="Select for multi-actor simulation"
-                  />
-                  <button
-                    class="group-item"
-                    [class.selected]="selectedGroup?.id === group.id"
-                    (click)="selectGroup(group)"
-                  >
-                    <span class="group-attack-id">{{ group.attackId }}</span>
-                    <span class="group-name">{{ group.name }}</span>
-                    @if (group.aliases.length > 0) {
-                      <span class="group-alias">{{ group.aliases[0] }}</span>
-                    }
-                  </button>
-                </div>
-              }
-              @if (filteredGroups.length === 0) {
-                <div class="no-groups">No groups match "{{ groupSearch }}"</div>
-              }
-            </div>
-          }
-
-          <!-- Multi-select simulate button -->
-          @if (selectedGroupIds.size > 0) {
-            <div class="sim-action-bar">
-              <span class="sim-selected-count">{{ selectedGroupIds.size }} selected</span>
-              <button
-                class="sim-run-btn"
-                (click)="runThreatSimulation()"
-                [disabled]="isSimulating"
-              >
-                @if (isSimulating) {
-                  <span class="mini-spinner"></span> Simulating...
-                } @else {
-                  Simulate
-                }
-              </button>
-              <button class="sim-clear-btn" (click)="selectedGroupIds.clear()">Clear</button>
-            </div>
-          }
+          <p class="selector-hint">Pick the profile below, then simulate your posture across every group it covers.</p>
+          <app-threat-profile-picker mode="profile" />
+          <div class="sim-action-bar">
+            <button class="sim-run-btn" (click)="runProfileSimulation()" [disabled]="isSimulating">
+              @if (isSimulating) { <span class="mini-spinner"></span> Simulating… } @else { Simulate profile }
+            </button>
+          </div>
         </div>
 
-        <!-- Right: Results -->
+        <!-- Right: single-actor results -->
         <div class="results-area">
 
           @if (!selectedGroup && !isSimulating) {
             <div class="empty-state">
               <div class="empty-icon">🎭</div>
-              <div class="empty-title">Select a Threat Actor</div>
-              <div class="empty-desc">Choose a threat group from the left to simulate their attack against your mapped mitigations and their implementation status (self-attested).</div>
+              <div class="empty-title">Select a threat actor</div>
+              <div class="empty-desc">Choose a group on the left to simulate their techniques against your recorded posture.</div>
             </div>
           }
 
-          @if (isSimulating) {
+          @if (isSimulating && selectedGroup) {
             <div class="simulating-state">
               <div class="sim-spinner"></div>
-              <div class="sim-text">Simulating {{ selectedGroup?.name }} attack…</div>
-              <div class="sim-sub">Evaluating {{ selectedGroup?.attackId }} techniques against your mitigations</div>
+              <div class="sim-text">Simulating {{ selectedGroup.name }}…</div>
             </div>
           }
 
           @if (result && !isSimulating) {
 
-            <!-- Result header -->
             <div class="result-header upgrade-section-block">
               <div class="result-group-info">
                 <span class="result-attack-id">{{ result.group.attackId }}</span>
                 <span class="result-group-name">{{ result.group.name }}</span>
-                <span class="result-subtitle">{{ result.techniques.length }} techniques analyzed</span>
+                <span class="result-subtitle">{{ result.total }} techniques analysed</span>
               </div>
-              <div class="result-risk-badge risk-{{ result.overallRisk }}">
-                {{ result.overallRisk | uppercase }} RISK
-              </div>
+              <div class="result-share-badge">{{ result.knownOnlyShare }}% Known-only share</div>
             </div>
 
             <!-- Tab bar -->
             <div class="tab-bar">
-              <button
-                class="tab-btn"
-                [class.active]="activeTab === 'summary'"
-                (click)="activeTab = 'summary'"
-              >Summary</button>
-              <button
-                class="tab-btn"
-                [class.active]="activeTab === 'techniques'"
-                (click)="activeTab = 'techniques'"
-              >
-                Techniques
-                <span class="tab-badge">{{ result.techniques.length }}</span>
+              <button class="tab-btn" [class.active]="activeTab === 'summary'" (click)="activeTab = 'summary'">Summary</button>
+              <button class="tab-btn" [class.active]="activeTab === 'techniques'" (click)="activeTab = 'techniques'">
+                Techniques <span class="tab-badge">{{ result.total }}</span>
               </button>
-              <button
-                class="tab-btn"
-                [class.active]="activeTab === 'plan'"
-                (click)="activeTab = 'plan'"
-              >
+              <button class="tab-btn" [class.active]="activeTab === 'plan'" (click)="activeTab = 'plan'">
                 Remediation Plan
-                @if (remediationPlan.length > 0) {
-                  <span class="tab-badge tab-badge-warn">{{ remediationPlan.length }}</span>
-                }
+                @if (remediationPlan.length > 0) { <span class="tab-badge tab-badge-warn">{{ remediationPlan.length }}</span> }
               </button>
             </div>
 
@@ -152,125 +79,80 @@
               @if (activeTab === 'summary') {
                 <div class="summary-tab">
 
-                  <!-- Outcome cards -->
+                  @if (!result.hasOwnerWords) {
+                    <div class="fresh-note upgrade-note-block">{{ freshMessage }}</div>
+                  }
+
+                  <!-- Outcome cards: Covered & Proven only when there are owner words -->
                   <div class="outcome-cards">
-                    <div class="outcome-card outcome-blocked upgrade-section-block">
-                      <div class="outcome-count">{{ result.blockedCount }}</div>
-                      <div class="outcome-label">Blocked</div>
-                      <div class="outcome-desc">Well mitigated</div>
+                    @if (result.hasOwnerWords) {
+                      <div class="outcome-card outcome-proven upgrade-section-block">
+                        <div class="outcome-count">{{ result.proven }}</div>
+                        <div class="outcome-label">{{ outcomeLabel('proven') }}</div>
+                      </div>
+                      <div class="outcome-card outcome-covered upgrade-section-block">
+                        <div class="outcome-count">{{ result.covered }}</div>
+                        <div class="outcome-label">{{ outcomeLabel('covered') }}</div>
+                      </div>
+                    }
+                    <div class="outcome-card outcome-known upgrade-section-block">
+                      <div class="outcome-count">{{ result.known }}</div>
+                      <div class="outcome-label">{{ outcomeLabel('known') }}</div>
                     </div>
-                    <div class="outcome-card outcome-detected upgrade-section-block">
-                      <div class="outcome-count">{{ result.detectedCount }}</div>
-                      <div class="outcome-label">Detected</div>
-                      <div class="outcome-desc">Partially mitigated, or detection content mapped</div>
-                    </div>
-                    <div class="outcome-card outcome-vulnerable upgrade-section-block">
-                      <div class="outcome-count">{{ result.vulnerableCount }}</div>
-                      <div class="outcome-label">Vulnerable</div>
-                      <div class="outcome-desc">Quick wins available</div>
-                    </div>
-                    <div class="outcome-card outcome-unknown upgrade-section-block">
-                      <div class="outcome-count">{{ result.unknownCount }}</div>
-                      <div class="outcome-label">Unknown</div>
-                      <div class="outcome-desc">No coverage</div>
+                    <div class="outcome-card outcome-none upgrade-section-block">
+                      <div class="outcome-count">{{ result.none }}</div>
+                      <div class="outcome-label">{{ outcomeLabel('none') }}</div>
                     </div>
                   </div>
 
-                  <!-- Score + Donut -->
+                  @if (result.hasOwnerWords && result.partial > 0) {
+                    <div class="partial-note">partial (counted on its own, not rolled up): {{ result.partial }}</div>
+                  }
+
+                  <!-- Donut + Known-only share -->
                   <div class="score-section upgrade-section-block">
                     <div class="donut-wrap">
                       <div class="donut" [style.background]="donutGradient">
-                        <div class="donut-inner">
-                          <span class="donut-score">{{ result.overallScore }}</span>
-                        </div>
+                        <div class="donut-inner"><span class="donut-score">{{ result.total }}</span></div>
                       </div>
                       <div class="donut-legend">
-                        <div class="legend-item">
-                          <span class="legend-dot dot-blocked"></span>
-                          <span class="legend-text">Blocked ({{ result.blockedCount }})</span>
-                        </div>
-                        <div class="legend-item">
-                          <span class="legend-dot dot-detected"></span>
-                          <span class="legend-text">Detected ({{ result.detectedCount }})</span>
-                        </div>
-                        <div class="legend-item">
-                          <span class="legend-dot dot-vulnerable"></span>
-                          <span class="legend-text">Vulnerable ({{ result.vulnerableCount }})</span>
-                        </div>
-                        <div class="legend-item">
-                          <span class="legend-dot dot-unknown"></span>
-                          <span class="legend-text">Unknown ({{ result.unknownCount }})</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="score-details">
-                      <div class="score-title">Readiness Score</div>
-                      <div class="score-value score-grade-{{ scoreGrade }}">{{ result.overallScore }}<span class="score-max">/100</span></div>
-                      <div class="score-bar-wrap">
-                        <div class="score-bar">
-                          <div
-                            class="score-bar-fill grade-fill-{{ scoreGrade }}"
-                            [style.width.%]="result.overallScore"
-                          ></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Key Finding -->
-                  <div class="key-finding upgrade-note-block">
-                    <div class="finding-icon">🔍</div>
-                    <div class="finding-text">
-                      @if (result.unknownCount > 0 || result.vulnerableCount > 0) {
-                        <strong>{{ result.unknownCount + result.vulnerableCount }} critical gap{{ (result.unknownCount + result.vulnerableCount) !== 1 ? 's' : '' }} found.</strong>
-                        {{ result.group.name }} would likely succeed with
-                        <strong>{{ result.vulnerableCount + result.unknownCount }} of {{ result.techniques.length }}</strong> techniques.
-                        @if (remediationPlan.length > 0) {
-                          Implementing {{ remediationPlan.length }} quick-win mitigation{{ remediationPlan.length !== 1 ? 's' : '' }} could improve your score by ~{{ remediationScoreImpact }} points.
+                        @if (result.hasOwnerWords) {
+                          <div class="legend-item"><span class="legend-dot dot-proven"></span><span class="legend-text">{{ outcomeLabel('proven') }} ({{ result.proven }})</span></div>
+                          <div class="legend-item"><span class="legend-dot dot-covered"></span><span class="legend-text">{{ outcomeLabel('covered') }} ({{ result.covered }})</span></div>
+                          <div class="legend-item"><span class="legend-dot dot-partial"></span><span class="legend-text">partial ({{ result.partial }})</span></div>
                         }
-                      } @else {
-                        <strong>No gap found.</strong> Every {{ result.group.name }} technique has an implemented mitigation (self-attested) or mapped detection content. Keep mitigations up to date.
-                      }
+                        <div class="legend-item"><span class="legend-dot dot-known"></span><span class="legend-text">{{ outcomeLabel('known') }} ({{ result.known }})</span></div>
+                        <div class="legend-item"><span class="legend-dot dot-none"></span><span class="legend-text">{{ outcomeLabel('none') }} ({{ result.none }})</span></div>
+                      </div>
+                    </div>
+                    <div class="score-details">
+                      <div class="score-title">Known-only share</div>
+                      <div class="score-value">{{ result.knownOnlyShare }}<span class="score-max">%</span></div>
+                      <div class="score-bar-wrap"><div class="score-bar"><div class="score-bar-fill" [style.width.%]="result.knownOnlyShare"></div></div></div>
+                      <div class="score-note">Techniques mapped by a public source but not recorded as deployed.</div>
                     </div>
                   </div>
 
-                  <!-- Radar Chart: Coverage by Tactic -->
+                  <!-- Radar: owner-covered share by tactic -->
                   @if (radarData.length >= 3) {
                     <div class="radar-section upgrade-section-block">
-                      <h4 class="radar-title">Coverage by Tactic</h4>
+                      <h4 class="radar-title">Recorded posture by tactic</h4>
                       <svg width="240" height="240" viewBox="0 0 240 240" class="radar-svg">
-                        <!-- Grid circles -->
                         @for (ring of [0.25, 0.5, 0.75, 1.0]; track ring) {
                           <circle cx="120" cy="120" [attr.r]="90 * ring" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
                         }
-                        <!-- Grid lines from center to each axis -->
                         @for (coord of radarSvgCoords; track coord.tactic) {
-                          <line [attr.x1]="120" [attr.y1]="120"
-                                [attr.x2]="coord.gridX" [attr.y2]="coord.gridY"
-                                stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+                          <line [attr.x1]="120" [attr.y1]="120" [attr.x2]="coord.gridX" [attr.y2]="coord.gridY" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
                         }
-                        <!-- Coverage polygon -->
                         @if (radarSvgPath) {
                           <path [attr.d]="radarSvgPath" fill="rgba(88,166,255,0.2)" stroke="#58a6ff" stroke-width="1.5"/>
                         }
-                        <!-- Data points -->
                         @for (coord of radarSvgCoords; track coord.tactic) {
                           <circle [attr.cx]="coord.x" [attr.cy]="coord.y" r="3" fill="#58a6ff"/>
                         }
-                        <!-- Tactic labels -->
                         @for (coord of radarSvgCoords; track coord.tactic) {
-                          <text [attr.x]="coord.labelX" [attr.y]="coord.labelY"
-                                text-anchor="middle" dominant-baseline="middle"
-                                font-size="7" fill="rgba(255,255,255,0.5)">
-                            {{ coord.tactic | slice:0:6 }}
-                          </text>
+                          <text [attr.x]="coord.labelX" [attr.y]="coord.labelY" text-anchor="middle" dominant-baseline="middle" font-size="7" fill="rgba(255,255,255,0.5)">{{ coord.tactic | slice:0:6 }}</text>
                         }
-                        <!-- Ring percentage labels -->
-                        <text x="122" y="33" font-size="7" fill="rgba(255,255,255,0.3)">100%</text>
-                        <text x="122" y="53" font-size="7" fill="rgba(255,255,255,0.3)">75%</text>
-                        <text x="122" y="73" font-size="7" fill="rgba(255,255,255,0.3)">50%</text>
-                        <text x="122" y="93" font-size="7" fill="rgba(255,255,255,0.3)">25%</text>
                       </svg>
                     </div>
                   }
@@ -281,42 +163,18 @@
               <!-- Techniques Tab -->
               @if (activeTab === 'techniques') {
                 <div class="techniques-tab">
-
-                  <!-- Filter pills + search -->
                   <div class="filter-row">
                     <div class="filter-pills upgrade-action-strip">
-                      <button
-                        class="pill"
-                        [class.active]="filterOutcome === 'all'"
-                        (click)="filterOutcome = 'all'; searchText = ''"
-                      >All ({{ result.techniques.length }})</button>
-                      <button
-                        class="pill pill-unknown"
-                        [class.active]="filterOutcome === 'unknown'"
-                        (click)="filterOutcome = 'unknown'"
-                      >Unknown ({{ result.unknownCount }})</button>
-                      <button
-                        class="pill pill-vulnerable"
-                        [class.active]="filterOutcome === 'vulnerable'"
-                        (click)="filterOutcome = 'vulnerable'"
-                      >Vulnerable ({{ result.vulnerableCount }})</button>
-                      <button
-                        class="pill pill-detected"
-                        [class.active]="filterOutcome === 'detected'"
-                        (click)="filterOutcome = 'detected'"
-                      >Detected ({{ result.detectedCount }})</button>
-                      <button
-                        class="pill pill-blocked"
-                        [class.active]="filterOutcome === 'blocked'"
-                        (click)="filterOutcome = 'blocked'"
-                      >Blocked ({{ result.blockedCount }})</button>
+                      <button class="pill" [class.active]="filterBucket === 'all'" (click)="filterBucket = 'all'; searchText = ''">All ({{ result.total }})</button>
+                      <button class="pill pill-none" [class.active]="filterBucket === 'none'" (click)="filterBucket = 'none'">{{ outcomeLabel('none') }} ({{ result.none }})</button>
+                      <button class="pill pill-known" [class.active]="filterBucket === 'known'" (click)="filterBucket = 'known'">{{ outcomeLabel('known') }} ({{ result.known }})</button>
+                      @if (result.hasOwnerWords) {
+                        <button class="pill pill-partial" [class.active]="filterBucket === 'partial'" (click)="filterBucket = 'partial'">partial ({{ result.partial }})</button>
+                        <button class="pill pill-covered" [class.active]="filterBucket === 'covered'" (click)="filterBucket = 'covered'">{{ outcomeLabel('covered') }} ({{ result.covered }})</button>
+                        <button class="pill pill-proven" [class.active]="filterBucket === 'proven'" (click)="filterBucket = 'proven'">{{ outcomeLabel('proven') }} ({{ result.proven }})</button>
+                      }
                     </div>
-                    <input
-                      class="tech-search"
-                      type="text"
-                      placeholder="Search…"
-                      [(ngModel)]="searchText"
-                    />
+                    <input class="tech-search" type="text" placeholder="Search…" [(ngModel)]="searchText" />
                   </div>
 
                   <div class="table-wrap">
@@ -327,125 +185,69 @@
                           <th>Name</th>
                           <th class="tactic-col">Tactic</th>
                           <th class="outcome-col">Outcome</th>
-                          <th class="risk-col">Risk</th>
-                          <th class="mit-col">Impl. Mits</th>
+                          <th class="mit-col">Mapped mits</th>
                           <th class="reasoning-col">Reasoning</th>
                         </tr>
                       </thead>
                       <tbody>
                         @for (st of filteredTechniques; track st.technique.id) {
-                          <tr
-                            class="tech-row"
-                            (click)="selectTechnique(st)"
-                            title="Click to view technique details"
-                          >
+                          <tr class="tech-row" (click)="selectTechnique(st)" title="Open technique details">
                             <td class="tech-id">
-                              <a
-                                [href]="attackUrl(st.technique.attackId)"
-                                target="_blank"
-                                rel="noopener"
-                                (click)="$event.stopPropagation()"
-                              >{{ st.technique.attackId }}</a>
+                              <a [href]="attackUrl(st.technique.attackId)" target="_blank" rel="noopener" (click)="$event.stopPropagation()">{{ st.technique.attackId }}</a>
                             </td>
                             <td class="tech-name">{{ st.technique.name }}</td>
                             <td class="tech-tactic">{{ st.technique.tacticShortnames[0] }}</td>
                             <td class="tech-outcome">
-                              <span class="outcome-badge outcome-badge-{{ st.outcome }}">
-                                {{ st.outcome | uppercase }}
-                              </span>
-                            </td>
-                            <td class="tech-risk">
-                              <span class="risk-badge risk-badge-{{ st.riskLevel }}">
-                                {{ st.riskLevel | uppercase }}
-                              </span>
+                              <span class="outcome-badge outcome-badge-{{ st.outcome }}">{{ bucketLabel(st.outcome) }}</span>
                             </td>
                             <td class="tech-mits">
-                              @if (st.mitigationCount > 0) {
-                                <span class="mit-count">
-                                  <span class="mit-impl">{{ st.implementedMitigations }}</span>
-                                  <span class="mit-sep">/</span>
-                                  <span class="mit-total">{{ st.mitigationCount }}</span>
-                                </span>
-                              } @else {
-                                <span class="mit-zero">—</span>
-                              }
+                              @if (st.mitigationCount > 0) { <span class="mit-total">{{ st.mitigationCount }}</span> } @else { <span class="mit-zero">—</span> }
                             </td>
                             <td class="tech-reasoning">{{ st.reasoning }}</td>
                           </tr>
                         }
                         @if (filteredTechniques.length === 0) {
-                          <tr>
-                            <td colspan="7" class="empty-cell">No techniques match your filter.</td>
-                          </tr>
+                          <tr><td colspan="6" class="empty-cell">No techniques match your filter.</td></tr>
                         }
                       </tbody>
                     </table>
                   </div>
-
                 </div>
               }
 
               <!-- Remediation Plan Tab -->
               @if (activeTab === 'plan') {
                 <div class="plan-tab">
-
                   @if (remediationPlan.length === 0) {
                     <div class="plan-empty">
                       <div class="plan-empty-icon">✅</div>
-                      <div class="plan-empty-title">No Quick Wins Needed</div>
-                      <div class="plan-empty-desc">
-                        Every {{ result.group.name }} technique with a mapped mitigation has at least one marked implemented (self-attested). Consider expanding detection capabilities.
-                      </div>
+                      <div class="plan-empty-title">No open gaps</div>
+                      <div class="plan-empty-desc">Every {{ result.group.name }} technique already has recorded posture.</div>
                     </div>
                   } @else {
                     <div class="plan-intro upgrade-section-block">
                       <div class="plan-intro-text">
-                        To improve your readiness score, implement mitigations for these <strong>{{ remediationPlan.length }}</strong> technique{{ remediationPlan.length !== 1 ? 's' : '' }}. Techniques are ordered by available mitigations (most coverage first = biggest impact).
-                      </div>
-                      <div class="plan-impact-badge">
-                        +~{{ remediationScoreImpact }} pts potential improvement
+                        These <strong>{{ remediationPlan.length }}</strong> technique{{ remediationPlan.length !== 1 ? 's' : '' }} are not yet recorded as deployed, ordered by available mitigations (most mapped first).
                       </div>
                     </div>
-
                     <div class="plan-list">
                       @for (st of remediationPlan; track st.technique.id; let i = $index) {
-                        <div class="plan-item" [class.plan-item-critical]="st.riskLevel === 'critical'">
+                        <div class="plan-item">
                           <div class="plan-rank">{{ i + 1 }}</div>
                           <div class="plan-info">
                             <div class="plan-name">{{ st.technique.name }}</div>
                             <div class="plan-meta">
                               <span class="plan-id">{{ st.technique.attackId }}</span>
-                              @if (st.technique.tacticShortnames[0]) {
-                                <span class="plan-tactic">{{ st.technique.tacticShortnames[0] }}</span>
-                              }
-                              <span class="plan-outcome outcome-badge-{{ st.outcome }}">{{ st.outcome }}</span>
+                              @if (st.technique.tacticShortnames[0]) { <span class="plan-tactic">{{ st.technique.tacticShortnames[0] }}</span> }
+                              <span class="plan-outcome outcome-badge-{{ st.outcome }}">{{ bucketLabel(st.outcome) }}</span>
                             </div>
-                            <div class="plan-mits-avail">
-                              {{ st.mitigationCount }} mitigation{{ st.mitigationCount !== 1 ? 's' : '' }} available to implement
-                            </div>
+                            <div class="plan-mits-avail">{{ st.mitigationCount }} mitigation{{ st.mitigationCount !== 1 ? 's' : '' }} mapped</div>
                           </div>
-                          <div class="plan-actions">
-                            <div class="plan-mit-badge">
-                              <span class="plan-mit-num">{{ st.mitigationCount }}</span>
-                              <span class="plan-mit-label">mits</span>
-                            </div>
-                            <button
-                              class="plan-action-btn"
-                              (click)="selectTechnique(st)"
-                              title="Open in sidebar"
-                            >
-                              View →
-                            </button>
-                          </div>
+                          <button class="plan-action-btn" (click)="selectTechnique(st)" title="Open in sidebar">View →</button>
                         </div>
                       }
                     </div>
-
-                    <div class="plan-footer">
-                      Addressing these {{ remediationPlan.length }} technique{{ remediationPlan.length !== 1 ? 's' : '' }} would improve your score by approximately <strong>{{ remediationScoreImpact }} points</strong>.
-                    </div>
                   }
-
                 </div>
               }
 
@@ -454,81 +256,91 @@
 
         </div>
 
-        <!-- Threat Simulation Results Overlay -->
-        @if (showThreatSim && threatSimResults.length > 0 && !isSimulating) {
+        <!-- Profile simulation overlay (one profile result; no actor tabs) -->
+        @if (showThreatSim && profileSimResult && !isSimulating) {
           <div class="threat-sim-overlay">
             <div class="threat-sim-header">
-              <span class="threat-sim-title">Threat Simulation Results</span>
+              <span class="threat-sim-title">Profile simulation</span>
               <div class="threat-sim-header-actions">
-                <button
-                  class="sim-export-btn"
-                  (click)="exportSimulationCsv()"
-                  [disabled]="!activeThreatSimResult || activeThreatSimResult.gaps.length === 0"
-                  title="Export gaps as CSV"
-                >Export CSV</button>
-                <button
-                  class="sim-export-btn caldera-export-btn"
-                  (click)="exportCalderaProfile()"
-                  [disabled]="!selectedGroup"
-                  title="Export Caldera adversary profile (YAML)"
-                >Export Caldera</button>
+                @if (hasOwnerWords) {
+                  <button class="sim-export-btn" (click)="exportSimulationCsv()" [disabled]="profileSimResult.gaps.length === 0" title="Export gaps as CSV">Export CSV</button>
+                }
+                @if (selectedGroup) {
+                  <button class="sim-export-btn caldera-export-btn" (click)="exportCalderaProfile()" title="Export Caldera adversary profile (YAML) for the selected actor">Export Caldera</button>
+                }
                 <button class="sim-close-btn" (click)="closeThreatSim()">Close</button>
               </div>
             </div>
 
-            <!-- Actor tabs (if multiple) -->
-            @if (threatSimResults.length > 1) {
-              <div class="sim-actor-tabs">
-                @for (r of threatSimResults; track r.actor.id) {
-                  <button
-                    class="sim-actor-tab"
-                    [class.active]="activeThreatSimResult?.actor?.id === r.actor.id"
-                    (click)="selectThreatSimResult(r)"
-                  >
-                    <span class="sim-actor-tab-name">{{ r.actor.name }}</span>
-                    <span class="sim-actor-tab-score" [style.color]="r.riskScore >= 70 ? '#f87171' : r.riskScore >= 40 ? '#fbbf24' : '#4ade80'">{{ r.riskScore }}</span>
-                  </button>
-                }
-              </div>
-            }
-
-            @if (activeThreatSimResult; as sim) {
+            @if (profileSimResult; as sim) {
               <div class="sim-result-body">
-
-                <!-- Summary cards -->
                 <div class="sim-summary-row">
                   <div class="sim-summary-card">
                     <div class="sim-summary-value">{{ sim.coveragePercent }}%</div>
-                    <div class="sim-summary-label">Coverage</div>
+                    <div class="sim-summary-label">Recorded-posture share</div>
                   </div>
-                  <div class="sim-summary-card">
-                    <div class="sim-summary-value" [style.color]="sim.riskScore >= 70 ? '#f87171' : sim.riskScore >= 40 ? '#fbbf24' : '#4ade80'">{{ sim.riskScore }}</div>
-                    <div class="sim-summary-label">Threat-weighted gap</div>
-                  </div>
-                  <div class="sim-summary-card">
-                    <div class="sim-summary-value">{{ sim.techniquesCovered }}/{{ sim.techniquesTotal }}</div>
-                    <div class="sim-summary-label">Covered (self-attested)</div>
-                  </div>
-                  <div class="sim-summary-card">
-                    <div class="sim-summary-value" style="color: #f97316;">{{ sim.gaps.length }}</div>
-                    <div class="sim-summary-label">Gaps</div>
-                  </div>
+                  <!-- Threat-weighted gap and the gap count are owner-posture surfaces: hidden on a fresh profile. -->
+                  @if (hasOwnerWords) {
+                    <div class="sim-summary-card">
+                      <div class="sim-summary-value" [style.color]="sim.riskScore >= 70 ? '#f87171' : sim.riskScore >= 40 ? '#fbbf24' : '#4ade80'">{{ sim.riskScore }}</div>
+                      <div class="sim-summary-label">Threat-weighted gap</div>
+                    </div>
+                    <div class="sim-summary-card">
+                      <div class="sim-summary-value" style="color: #f97316;">{{ sim.gaps.length }}</div>
+                      <div class="sim-summary-label">Gaps</div>
+                    </div>
+                  }
                 </div>
 
-                <!-- Tactic breakdown bars -->
-                @if (threatSimTacticBars.length > 0) {
+                <!-- Per-bucket breakdown, equal number-for-number to the ctem posture card for this
+                     profile. total/Known/None always show; the Covered/partial/PROVEN/stale rows are
+                     owner data, gated under hasOwnerWords (R21, S7). -->
+                <dl class="sim-posture-rows" data-testid="sim-posture">
+                  <div class="sim-posture-row">
+                    <dt>profile techniques</dt>
+                    <dd data-sim="total">{{ sim.techniquesTotal }}</dd>
+                  </div>
+                  @if (hasOwnerWords) {
+                    <div class="sim-posture-row">
+                      <dt>{{ outcomeLabel('covered') }}</dt>
+                      <dd data-sim="covered">{{ sim.coveredCount }}</dd>
+                    </div>
+                    <div class="sim-posture-row">
+                      <dt>partial</dt>
+                      <dd data-sim="partial">{{ sim.partialCount }}</dd>
+                    </div>
+                    <div class="sim-posture-row">
+                      <dt>{{ outcomeLabel('proven') }}</dt>
+                      <dd data-sim="proven">{{ sim.provenCount }}</dd>
+                    </div>
+                    <div class="sim-posture-row">
+                      <dt>stale</dt>
+                      <dd data-sim="stale">{{ sim.staleCount }}</dd>
+                    </div>
+                  }
+                  <!-- Known row mirrors the ctem card exactly: mapped (knownSignals>0) of total, not bucket-'known'. -->
+                  <div class="sim-posture-row">
+                    <dt>{{ outcomeLabel('known') }}</dt>
+                    <dd><span data-sim="mapped">{{ sim.mappedCount }}</span> of <span data-sim="total-known">{{ sim.techniquesTotal }}</span></dd>
+                  </div>
+                  <div class="sim-posture-row">
+                    <dt>{{ outcomeLabel('none') }}</dt>
+                    <dd data-sim="none">{{ sim.noneCount }}</dd>
+                  </div>
+                </dl>
+                @if (!hasOwnerWords) {
+                  <p class="sim-fresh-note" data-testid="sim-fresh-note">{{ freshMessage }}</p>
+                }
+
+                @if (hasOwnerWords && threatSimTacticBars.length > 0) {
                   <div class="sim-tactic-section">
-                    <div class="sim-section-title">Coverage by Tactic</div>
+                    <div class="sim-section-title">Recorded posture by tactic</div>
                     <div class="sim-tactic-bars">
                       @for (tb of threatSimTacticBars; track tb.tactic) {
                         <div class="sim-tactic-row">
                           <span class="sim-tactic-name">{{ tb.tactic }}</span>
                           <div class="sim-tactic-bar-track">
-                            <div
-                              class="sim-tactic-bar-fill"
-                              [style.width.%]="tb.pct"
-                              [style.background]="tb.pct >= 75 ? '#4ade80' : tb.pct >= 40 ? '#fbbf24' : '#f87171'"
-                            ></div>
+                            <div class="sim-tactic-bar-fill" [style.width.%]="tb.pct" [style.background]="tb.pct >= 75 ? '#4ade80' : tb.pct >= 40 ? '#fbbf24' : '#f87171'"></div>
                           </div>
                           <span class="sim-tactic-pct">{{ tb.covered }}/{{ tb.total }}</span>
                         </div>
@@ -537,13 +349,13 @@
                   </div>
                 }
 
-                <!-- Prioritized gap list -->
+                @if (hasOwnerWords) {
                 @if (sim.gaps.length > 0) {
                   <div class="sim-gaps-section">
                     <div class="sim-section-title">Prioritized Gaps ({{ sim.gaps.length }})</div>
                     <div class="sim-gap-list">
                       @for (gap of sim.gaps; track gap.technique.id; let i = $index) {
-                        <div class="sim-gap-item" (click)="selectTechnique({ technique: gap.technique, outcome: 'vulnerable', mitigationCount: 0, implementedMitigations: 0, hasDetection: false, riskLevel: gap.priority, reasoning: '' })">
+                        <div class="sim-gap-item" (click)="selectGapTechnique(gap.technique)">
                           <span class="sim-gap-rank">{{ i + 1 }}</span>
                           <span class="sim-gap-priority" [style.color]="priorityColor(gap.priority)">{{ gap.priority | uppercase }}</span>
                           <div class="sim-gap-info">
@@ -551,32 +363,23 @@
                             <span class="sim-gap-meta">{{ gap.technique.attackId }} &middot; {{ gap.tactic }}</span>
                           </div>
                           <div class="sim-gap-indicators">
-                            @if (gap.kevCount > 0) {
-                              <span class="sim-gap-badge sim-badge-kev" title="KEV CVEs">KEV:{{ gap.kevCount }}</span>
-                            }
-                            @if (gap.hasExploit) {
-                              <span class="sim-gap-badge sim-badge-exploit" title="Has exploit code">EXP</span>
-                            }
-                            @if (gap.epssAvg !== null) {
-                              <span class="sim-gap-badge sim-badge-epss" title="Avg EPSS score">{{ (gap.epssAvg * 100) | number:'1.1-1' }}%</span>
-                            }
+                            @if (gap.kevCount > 0) { <span class="sim-gap-badge sim-badge-kev" title="KEV CVEs">KEV:{{ gap.kevCount }}</span> }
+                            @if (gap.hasExploit) { <span class="sim-gap-badge sim-badge-exploit" title="Has exploit code">EXP</span> }
+                            @if (gap.epssAvg !== null) { <span class="sim-gap-badge sim-badge-epss" title="Avg EPSS score">{{ (gap.epssAvg * 100) | number:'1.1-1' }}%</span> }
                           </div>
                         </div>
                       }
                     </div>
                   </div>
                 } @else {
-                  <div class="sim-no-gaps">
-                    No coverage gaps found -- all techniques are mitigated.
-                  </div>
+                  <div class="sim-no-gaps">No gaps — every technique in the profile has recorded posture.</div>
                 }
-
+                }
               </div>
             }
           </div>
         }
 
       </div>
-
 
 </section>
