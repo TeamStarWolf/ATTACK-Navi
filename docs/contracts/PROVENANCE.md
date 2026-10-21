@@ -6,8 +6,7 @@ Navi relies on, so a change on either side is caught by CI rather than in
 production. A copy never carries live data; the data arrives at runtime, locally,
 from the file a person imports.
 
-<!-- truth-vocab-allow-next-line proven-only -- the schema filename; its rows are the range-Proven detections, each carrying its own date and source -->
-## lylat-validated-detections.schema.json
+## `lylat-validated-detections.schema.json`
 
 | | |
 |---|---|

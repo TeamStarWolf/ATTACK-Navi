@@ -5,7 +5,7 @@
 // `lylat-validated-detections/1` (Phase 2 design §3 P2-20, E2.5-a). A range
 // export lists, per mission, the detection rules that fired (or blocked) against
 // a technique during a validated, published range run. Navi imports it LOCALLY
-// (FileReader only; never leaves the browser) as range-scoped Proven evidence.
+// (FileReader only; never leaves the browser) as range-scoped evidence.
 //
 // This module is the pure contract layer: the row/export types, a dependency-free
 // strict validator (no ajv), the client-side privacy regex, and the mapping to

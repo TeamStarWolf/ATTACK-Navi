@@ -31,9 +31,8 @@ const STATUS_LABEL: Record<ValidationStatus, string> = {
       @if (latest) {
         <div class="vsp-row">
           <span class="vsp-status" [attr.data-status]="latest.status">{{ statusLabel(latest.status) }}</span>
-          @if (labProven) {
-            <!-- truth-vocab-allow-next-line proven-only -- labProven gates this to proofScope 'range'; the run carries its date and source -->
-            <span class="vsp-lab" title="Validated against a published Lylat range build">lab</span>
+          @if (labRange) {
+            <span class="vsp-lab" title="Exercised against a published Lylat range build">lab</span>
           }
           <span class="vsp-meta">
             {{ latest.detectionsFired.length }} of {{ latest.detectionsExpected.length }} detection rules fired
@@ -41,8 +40,7 @@ const STATUS_LABEL: Record<ValidationStatus, string> = {
         </div>
         @if (labRuleRefs.length) {
           <div class="vsp-row vsp-rules">
-            <!-- truth-vocab-allow-next-line proven-only -- labRuleRefs holds only range-Proven rule ids; each is validated by the imported range run -->
-            range-validated rules:
+            range-run rules:
             @for (ref of labRuleRefs; track ref) { <code class="vsp-rule">{{ ref }}</code> }
           </div>
         }
@@ -161,12 +159,12 @@ export class ValidationStatusPillComponent implements OnInit, OnChanges, OnDestr
     this.latest = this.validation.latestFor(this.attackId);
   }
 
-  /** The latest run is range-scoped proof: it was validated against a published range build. */
-  get labProven(): boolean {
+  /** The latest run is range-scoped: proofScope 'range' with a scored status. */
+  get labRange(): boolean {
     return this.latest?.proofScope === 'range' && (this.latest.status === 'passed' || this.latest.status === 'partial');
   }
 
-  /** The detection rule ids validated in a range run, newest first, de-duplicated. */
+  /** The detection rule ids seen in a range run, newest first, de-duplicated. */
   get labRuleRefs(): string[] {
     const seen = new Set<string>();
     for (const run of this.allRuns) {

@@ -67,29 +67,29 @@ describe('ValidationStatusPillComponent', () => {
     };
   }
 
-  it('marks a range-scoped run as lab-proven and lists its rule ids', () => {
+  it('marks a range-scoped run with the lab badge and lists its rule ids', () => {
     const runs = [rangeRun('wazuh:990001'), rangeRun('wazuh:990002')];
     validation.forTechnique.and.returnValue(runs);
     validation.latestFor.and.returnValue(runs[0]);
     component.attackId = 'T1558.003';
     fixture.detectChanges();
 
-    expect(component.labProven).toBeTrue();
+    expect(component.labRange).toBeTrue();
     expect(component.labRuleRefs).toEqual(['wazuh:990001', 'wazuh:990002']);
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(text).toContain('lab');
     expect(text).toContain('wazuh:990001');
   });
 
-  it('does not mark an own-run manual record as lab-proven', () => {
+  it('does not show the lab badge for an own-run manual record', () => {
     const manual = { ...rangeRun('sigma:a'), proofScope: 'own-run', source: 'manual', outcomes: [] };
     validation.forTechnique.and.returnValue([manual]);
     validation.latestFor.and.returnValue(manual);
     component.attackId = 'T1558.003';
     fixture.detectChanges();
 
-    expect(component.labProven).toBeFalse();
+    expect(component.labRange).toBeFalse();
     expect(component.labRuleRefs).toEqual([]);
-    expect((fixture.nativeElement as HTMLElement).textContent ?? '').not.toContain('range-validated');
+    expect((fixture.nativeElement as HTMLElement).textContent ?? '').not.toContain('range-run rules');
   });
 });
