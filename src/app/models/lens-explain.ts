@@ -15,11 +15,14 @@
 // truth-vocabulary lint needs no allow here.
 import type { LensCell, LensDefinition } from './heatmap-modes';
 import type { CoveredBasis, CoveredMark, PostureState, ProofRecord, ProofScope } from './posture/posture.types';
-import { postureBadge } from './posture/posture-vocabulary';
+import { PROVEN, postureBadge } from './posture/posture-vocabulary';
 import { SCORE_ONLY_LENSES } from './lens-registry';
 
 /** The five Known reference families (EnrichmentService.referenceSignalCount). */
 export const KNOWN_FAMILY_COUNT = 5;
+
+/** The evidence card's Known block, as the Covered lens's None line names it. */
+const KNOWN_BLOCK = 'Known';
 
 /** What lensExplain reads besides the lens and its cell. */
 export interface LensExplainContext {
@@ -117,6 +120,28 @@ export function postureExplain(state: PostureState, decayDays?: Readonly<Record<
   }
 }
 
+/**
+ * The Covered lens on a technique with no covered mark (RP-F item 2). The cell
+ * is None on this lens, but the same card can list a recorded run or Known
+ * reference data, so the line says which block holds it rather than claiming
+ * nothing of the user's reaches the technique:
+ *   'None: no covered (self-attested or range) mark; see the Proven block for its recorded result'
+ *   'None: no covered (self-attested or range) mark; see the Known block for its reference data (3 of 5 reference families)'
+ *   'None: nothing of yours reaches this technique'   (no run, no reference data)
+ * The Covered lens is only on screen while owner words may render
+ * (lensOnScreen), so the Covered words here are always gated on hasOwnerWords.
+ * A stale run counts: it is still listed in the Proven block.
+ */
+function coveredNoneExplain(state: PostureState): string {
+  const head = 'None: no covered (self-attested or range) mark';
+  if (state.proof.length > 0) return `${head}; see the ${PROVEN} block for its recorded result` + postureNotes(state);
+  if (state.knownSignals > 0) {
+    return `${head}; see the ${KNOWN_BLOCK} block for its reference data (${state.knownSignals} of ${KNOWN_FAMILY_COUNT} reference families)`
+      + postureNotes(state);
+  }
+  return 'None: nothing of yours reaches this technique' + postureNotes(state);
+}
+
 /** A registry lens other than Posture: its cell's own words, with the marks or proof behind them. */
 function registryExplain(def: LensDefinition, cell: LensCell, ctx: LensExplainContext): string {
   const { state } = ctx;
@@ -131,7 +156,7 @@ function registryExplain(def: LensDefinition, cell: LensCell, ctx: LensExplainCo
     if (cell.score === 1) {
       return `${cell.label}: reached only through a mitigation or control mapped to more techniques than the breadth threshold`;
     }
-    return 'None: nothing of yours reaches this technique' + postureNotes(state);
+    return coveredNoneExplain(state);
   }
   return cell.label ?? `score ${formatScore(cell.score)}`;
 }

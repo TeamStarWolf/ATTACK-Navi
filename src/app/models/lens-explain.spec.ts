@@ -81,8 +81,45 @@ describe('lensExplain (P2-18): Why this colour', () => {
         .toBe('Covered (self-attested or range) from mitigation implemented via M1036');
       expect(lensExplain(def('covered'), { score: 1, label: 'Covered (self-attested or range), partial via M1038' }, { state: PARTIAL_STATE }))
         .toBe('Covered (self-attested or range), partial via M1038: reached only through a mitigation or control mapped to more techniques than the breadth threshold');
-      expect(lensExplain(def('covered'), { score: 0, label: 'None' }, { state: state({}) }))
+      expect(lensExplain(def('covered'), { score: 0, label: 'None' }, { state: state({ rung: 'none', bucket: 'none', knownSignals: 0 }) }))
         .toBe('None: nothing of yours reaches this technique');
+    });
+
+    // RP-F item 2: the Covered lens on a technique with no covered mark used to say
+    // 'nothing of yours reaches this technique' while the same card's Proven block
+    // listed a run. It now names the block that holds the evidence.
+    describe('Covered, no covered mark (RP-F item 2)', () => {
+      const NOT_NOTHING = /nothing of yours reaches this technique/;
+
+      it('a Proven technique (fresh run) points to the Proven block', () => {
+        const text = lensExplain(def('covered'), { score: 0, label: 'None' }, { state: PROVEN_STATE });
+        expect(text).toBe('None: no covered (self-attested or range) mark; see the Proven block for its recorded result');
+        expect(text).not.toMatch(NOT_NOTHING);
+      });
+
+      it('a stale-run technique points to the Proven block too', () => {
+        const stale = state({ rung: 'proven', bucket: 'stale', subStates: ['stale'], proof: [{ ...RUN, date: '2026-01-02' }], proofScope: 'own-run', proofAge: 290 });
+        const text = lensExplain(def('covered'), { score: 0, label: 'None' }, { state: stale });
+        expect(text).toBe('None: no covered (self-attested or range) mark; see the Proven block for its recorded result');
+        expect(text).not.toMatch(NOT_NOTHING);
+      });
+
+      it('a run with no reference data still points to the Proven block, and keeps the posture notes', () => {
+        const s = state({ rung: 'proven', bucket: 'proven', proof: [RUN], proofScope: 'own-run', knownSignals: 0, excluded: true });
+        expect(lensExplain(def('covered'), { score: 0, label: 'None' }, { state: s }))
+          .toBe('None: no covered (self-attested or range) mark; see the Proven block for its recorded result; not reproducible, so left out of the denominator');
+      });
+
+      it('a Known-only technique points to the Known block with its family count', () => {
+        const text = lensExplain(def('covered'), { score: 0, label: 'None' }, { state: state({}) });
+        expect(text).toBe('None: no covered (self-attested or range) mark; see the Known block for its reference data (3 of 5 reference families)');
+        expect(text).not.toMatch(NOT_NOTHING);
+      });
+
+      it('a technique with nothing keeps the old wording, which is true there', () => {
+        expect(lensExplain(def('covered'), { score: 0, label: 'None' }, { state: state({ rung: 'none', bucket: 'none', knownSignals: 0 }) }))
+          .toBe('None: nothing of yours reaches this technique');
+      });
     });
 
     it('status and controls read their cell label', () => {

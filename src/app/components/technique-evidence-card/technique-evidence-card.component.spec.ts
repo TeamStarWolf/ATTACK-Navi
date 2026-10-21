@@ -155,8 +155,12 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
 
     heat.next('covered');
     fixture.detectChanges();
-    expect(text(block(el, 'ev-why'))).toContain('Why this colour: None: nothing of yours reaches this technique');
+    // RP-F item 2: no covered mark, but the same card's Proven block lists the run,
+    // so the line points there instead of saying nothing of yours reaches the technique.
+    expect(text(block(el, 'ev-why'))).toContain('Why this colour: None: no covered (self-attested or range) mark; see the Proven block for its recorded result');
+    expect(text(block(el, 'ev-why'))).not.toContain('nothing of yours reaches this technique');
     expect(text(block(el, 'ev-why'))).toContain('Lens: Covered (self-attested or range)');
+    expect(block(el, 'ev-proven')!.querySelectorAll('[data-testid="ev-proof"]').length).toBe(1);
   });
 
   it('the Proven block lists each record: rule, date, source, outcome, lab badge and stale', () => {
