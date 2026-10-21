@@ -37,6 +37,21 @@ export function replaceSource<T extends V2Envelope>(existing: readonly T[], inco
 }
 
 /**
+ * Replace a source's records only WITHIN the domains `incoming` carries: drop
+ * records of `source` whose domain is among the incoming records' domains, keep
+ * that source's records in every other domain, then append `incoming`. The Lylat
+ * range import keys each file to the one domain loaded at import (R6 §3), so
+ * loading each domain and re-importing the same mission ACCUMULATES it across
+ * domains instead of the later import deleting the earlier domain's rows (P2-20).
+ * Empty `incoming` drops nothing. Only the range path uses this; `manual` and
+ * `layer:` keep their own merge rules.
+ */
+export function replaceSourceInDomains<T extends V2Envelope>(existing: readonly T[], incoming: readonly T[], source: SourceId): T[] {
+  const domains = new Set<RefDomain | null>(incoming.map(r => r.domain));
+  return [...existing.filter(r => !(r.source === source && domains.has(r.domain))), ...incoming];
+}
+
+/**
  * Upsert by `id` (manual runs): never deletes. An incoming record replaces the
  * existing one with its id in place; a new id is appended. When `incoming`
  * repeats an id, the last one wins.

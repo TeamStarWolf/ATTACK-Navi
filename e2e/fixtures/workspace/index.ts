@@ -102,9 +102,18 @@ export interface SampleOrg {
   note: string;
   assets: Array<{ id: string; name: string; vendor: string; product: string; version: string; cves: string[] }>;
   vmJourney: { cve: string; affectedAssetIds: string[] };
+  /**
+   * Journey 3 imports a real Lylat validated-detections contract. Rather than
+   * carry a second copy of the rows, the fixture points at the canonical file the
+   * unit tests and the CI contract check already guard, with the facts the journey
+   * asserts so a drift in either place is caught.
+   */
   rangeContract: {
+    fixture: string;
     mission: string;
-    rows: Array<{ mission_id: string; technique_id: string; result: string; detection: string; run_at: string }>;
+    rowCount: number;
+    techniqueCount: number;
+    firstRule: string;
   };
   ctiReport: { title: string; text: string; expected: Array<{ technique_id: string; sentence: string }> };
   share: { hash: string };
@@ -114,6 +123,27 @@ export interface SampleOrg {
 /** Read the sample org from disk (the spec files run with the repo root as cwd). */
 export function loadSampleOrg(): SampleOrg {
   return JSON.parse(readFileSync(join(__dirname, 'sample-org.json'), 'utf8')) as SampleOrg;
+}
+
+/** One row of the Lylat validated-detections contract the journey imports. */
+export interface RangeFixtureRow {
+  mission_id: string;
+  technique_ref: { domain: string; id: string; attack_version: string };
+  detection_ref: string;
+  coverage_state: string;
+  outcome: string;
+}
+
+export interface RangeFixture {
+  schema: string;
+  range_build_ref?: string;
+  generated_at: string;
+  rows: RangeFixtureRow[];
+}
+
+/** The canonical contract fixture the range-import journey loads (rangeContract.fixture). */
+export function loadRangeFixture(org: SampleOrg = loadSampleOrg()): RangeFixture {
+  return JSON.parse(readFileSync(org.rangeContract.fixture, 'utf8')) as RangeFixture;
 }
 
 /**

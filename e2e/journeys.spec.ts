@@ -17,7 +17,7 @@
 // that has drifted from what its script promises.
 import { readFileSync } from 'node:fs';
 import { Page } from '@playwright/test';
-import { test, expect, loadSampleOrg, BASE, ROUTE_TIMEOUT } from './fixtures/workspace';
+import { test, expect, loadSampleOrg, loadRangeFixture, BASE, ROUTE_TIMEOUT } from './fixtures/workspace';
 import { CURRENT_ROUTES } from './fixtures/workspace/routes';
 
 /** Annotation shown next to each pending journey in the report. */
@@ -45,12 +45,55 @@ test.describe('acceptance journeys (plan Appendix C)', () => {
     // 4. Export SPL; assert the output contains no TODO.
   });
 
-  test.fixme('journey 3, Purple: range import', greenBy('P2 (fixture), P6 (vendored)'), async () => {
-    // 1. Import the synthetic 8-row fixture contract (sample-org.json rangeContract,
-    //    6 distinct techniques).
-    // 2. Assert 6 Proven-in-range cells, each with the lab badge.
-    // 3. Open #/mission/CORNERIA-ROOT-01; assert it renders.
-    // 4. Open the T1558.003 drawer; assert it lists 'validated, wazuh:100821'.
+  // Steps 1, 2 and 4 are live (P2-20, E2.5-a): the range contract is imported
+  // locally through the UI and lights the proven lens. Step 3 (the per-mission
+  // page) is a P6 feature and stays fixme below.
+  test('journey 3, Purple: range import, lab cells and rule ids', greenBy('P2 (E2.5)'), async ({ page }) => {
+    const org = loadSampleOrg();
+
+    // 1. Import the synthetic 8-row / 6-technique contract through "Import range
+    //    results" — a local FileReader read, never a URL. The control is disabled
+    //    until a domain has loaded (range rows key to the loaded domain at import),
+    //    so wait for it to ENABLE: that is the domain-loaded marker.
+    await page.goto(`${BASE}/#/detect/validation`);
+    await expect(page.locator('app-validation-panel')).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    await expect(page.locator('#vp-import-range')).toBeEnabled({ timeout: ROUTE_TIMEOUT });
+    await page.locator('#vp-import-range').setInputFiles(org.rangeContract.fixture);
+    await expect(page.locator('.vp-import-msg')).toContainText(`lylat-range:${org.rangeContract.mission}`);
+
+    // 2. The proven lens lights the six range-validated TECHNIQUES, each with the lab
+    //    badge. Navigate with a fresh load (goto + reload, not a same-document hash
+    //    goto) so the matrix boots clean and re-reads the persisted store. A technique
+    //    that sits in several tactics renders one cell per tactic, so assert the
+    //    DISTINCT technique ids under a lab badge cover exactly the fixture's six ids
+    //    — a raw cell count would over-count the multi-tactic ones. Read each cell's
+    //    ATT&CK id from its aria-label ("T1558.003: …"), not data-tech-id (a STIX id).
+    await page.goto(`${BASE}/#/matrix?heat=proven`);
+    await page.reload();
+    await expect(page).toHaveURL(/#\/matrix\?.*heat=proven/);
+    await expect(page.locator('.matrix-wrapper')).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    await expect(page.locator('.proof-lab-badge').first()).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    const fixtureIds = [...new Set(loadRangeFixture(org).rows.map((r) => r.technique_ref.id))].sort();
+    expect(fixtureIds).toHaveLength(6);
+    const badgedIds = await page.$$eval('.cell:has(.proof-lab-badge)', (els) =>
+      [...new Set(els.map((e) => (e.getAttribute('aria-label') ?? '').split(':')[0].trim()).filter(Boolean))].sort());
+    expect(badgedIds).toEqual(fixtureIds);
+
+    // 4. The T1558.003 drawer lists the two range-validated rule ids. Fresh load
+    //    again so the drawer opens from the URL on a clean boot.
+    await page.goto(`${BASE}/#/matrix?heat=proven&tech=T1558.003`);
+    await page.reload();
+    await expect(page.locator('.sidebar.open')).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    await expect(page.locator('.sidebar-header .attack-id')).toContainText('T1558.003');
+    const pill = page.locator('app-validation-status-pill');
+    await expect(pill).toContainText('lab');
+    await expect(pill).toContainText(org.rangeContract.firstRule);
+    await expect(pill).toContainText('wazuh:990002');
+  });
+
+  test.fixme('journey 3, Purple: per-mission page (P6)', greenBy('P6'), async () => {
+    // 3. Open the mission page for SYNTH-MISSION-A; assert it renders the mission's
+    //    validated detections. The per-mission page is a P6 (library) feature.
   });
 
   // Journey 4 is live in the 'journey 4, Honesty: empty user' block below:
@@ -384,7 +427,7 @@ test.describe('shared fixture workspace', () => {
       if (id) live.add(id);
     }
     const used = new Set([
-      ...org.rangeContract.rows.map(r => r.technique_id),
+      ...loadRangeFixture(org).rows.map(r => r.technique_ref.id),
       ...org.ctiReport.expected.map(e => e.technique_id),
       'T1059.001', // journeys 5 and 7
     ]);
@@ -392,12 +435,21 @@ test.describe('shared fixture workspace', () => {
   });
 
   test('the range contract is the 8-row, 6-technique contract journey 3 promises', () => {
-    const rows = org.rangeContract.rows;
+    const fixture = loadRangeFixture(org);
+    const rows = fixture.rows;
+    // The pointer in sample-org.json and the canonical fixture must agree.
+    expect(rows).toHaveLength(org.rangeContract.rowCount);
     expect(rows).toHaveLength(8);
-    expect(new Set(rows.map(r => r.technique_id)).size).toBe(6);
-    expect(rows.every(r => r.mission_id === 'CORNERIA-ROOT-01')).toBe(true);
+    expect(new Set(rows.map(r => r.technique_ref.id)).size).toBe(org.rangeContract.techniqueCount);
+    expect(new Set(rows.map(r => r.technique_ref.id)).size).toBe(6);
+    expect(rows.every(r => r.mission_id === org.rangeContract.mission)).toBe(true);
+    expect(rows.every(r => r.mission_id === 'SYNTH-MISSION-A')).toBe(true);
     expect(rows).toContainEqual(
-      expect.objectContaining({ technique_id: 'T1558.003', result: 'validated', detection: 'wazuh:100821' }),
+      expect.objectContaining({
+        technique_ref: expect.objectContaining({ id: 'T1558.003' }),
+        coverage_state: 'validated',
+        detection_ref: org.rangeContract.firstRule,
+      }),
     );
   });
 

@@ -13,6 +13,7 @@ import {
   fingerprint,
   readV2,
   replaceSource,
+  replaceSourceInDomains,
   upsertById,
   writeV2,
 } from '../models/storage-envelope';
@@ -23,6 +24,7 @@ import {
   refForTechnique,
   techniqueRefKey,
 } from '../models/technique-ref';
+import { validateLylatExport, lylatRowsToRuns } from '../contracts/lylat-validated-detections';
 
 export type ValidationStatus = 'passed' | 'failed' | 'partial' | 'no-telemetry' | 'untested' | 'not-reproducible';
 
@@ -69,6 +71,7 @@ export interface ValidationOutcome {
   readonly coverageState?: 'validated' | 'telemetry-observed' | 'detection-authored' | 'deployed';
   readonly negativeControl?: 'blocked-on-hardened' | 'detection-only' | 'not-reproducible';
   readonly evidenceRef?: string;        // opaque; never a URL (evidenceLinks stays URLs)
+  readonly sourceAttackVersion?: string; // the ATT&CK version the source named for this row; provenance only, never the run key (R6 §3)
 }
 
 /** A run in the v2 store: the v1 fields plus the storage envelope (§2.3) and the proof fields. */
@@ -180,6 +183,7 @@ function sanitizeOutcome(x: unknown): ValidationOutcome | null {
   if (oneOf(COVERAGE_STATES, x['coverageState'])) o.coverageState = x['coverageState'];
   if (oneOf(NEGATIVE_CONTROLS, x['negativeControl'])) o.negativeControl = x['negativeControl'];
   if (typeof x['evidenceRef'] === 'string') o.evidenceRef = x['evidenceRef'];
+  if (typeof x['sourceAttackVersion'] === 'string') o.sourceAttackVersion = x['sourceAttackVersion'];
   return o;
 }
 
@@ -651,6 +655,72 @@ export class ValidationService {
     return this.merge(new Map<SourceId, typeof group>([[source, group]]), dropped);
   }
 
+  /**
+   * Load a Lylat `lylat-validated-detections/1` file (P2-20). The text is parsed,
+   * validated against the contract (structure, enums, patterns and the privacy
+   * regex — a hit refuses the whole file, nothing reaches the store), then every
+   * row is resolved and keyed at import to the LOADED domain (so an imported run
+   * keys exactly like a manual run), grouped by its `lylat-range:<mission>`
+   * source, and committed in a SINGLE atomic merge that replaces each mission's
+   * source. One `runs$` emission results, so every reactive reader (the Proven
+   * lens, PostureService) updates in-session without a reload.
+   *
+   * Atlas rows, rows whose technique does not resolve, and rows whose technique
+   * is not in the loaded domain land in `dropped` — each against its EXPORT row
+   * index, so the reader can find the row. The file never travels through a URL;
+   * callers pass the text they read.
+   */
+  importRangeContract(text: string): ImportResult {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text);
+    } catch (err) {
+      return { ok: false, bySource: {}, dropped: [], error: String(err) };
+    }
+    if (!isObj(parsed) || parsed['schema'] !== LYLAT_CONTRACT_SCHEMA) {
+      return { ok: false, bySource: {}, dropped: [], error: `Not a ${LYLAT_CONTRACT_SCHEMA} file.` };
+    }
+    // Range rows are resolved and keyed to the LOADED domain at import. With no
+    // domain loaded every row would key to nothing and silently drop, so refuse
+    // the whole file and ask the reader to wait (the panel disables the control
+    // until a domain is loaded; this is the service-side backstop).
+    if (this.loaded() === null) {
+      return { ok: false, bySource: {}, dropped: [], error: 'ATT&CK data still loading — load a domain, then import range results.' };
+    }
+    const v = validateLylatExport(parsed);
+    if (!v.ok) {
+      const shown = v.errors.slice(0, 5).join('; ');
+      const more = v.errors.length > 5 ? ` (+${v.errors.length - 5} more)` : '';
+      return { ok: false, bySource: {}, dropped: [], error: `Invalid range results file: ${shown}${more}` };
+    }
+    const resolve = (id: string) => this.resolver.resolve(id);
+    const loaded = this.loaded();
+    const domainId = loaded ? loaded.id : this.data.getCurrentAttackDomain();
+    const domainVersion = loaded?.version ?? '';
+    // The loaded domain's technique ids (resolved), so a well-formed id that names
+    // no technique of this domain is skipped. A bundle that lists no techniques
+    // (never the real app) does not gate — keeps the pure validator the authority.
+    const current = this.data.getCurrentDomain() as { techniques?: { attackId: string }[] } | null;
+    const known = new Set((current?.techniques ?? []).map(t => resolve(t.attackId)));
+    const isKnown = (id: string) => known.size === 0 || known.has(id);
+
+    const { bySource, skipped } = lylatRowsToRuns(v.value, resolve, domainId, domainVersion, isKnown);
+    const dropped: ImportResult['dropped'] = [...skipped];
+    // Sanitise every mapped run (tracking its export row for any drop), then
+    // commit all missions at once: one store write, one emission (atomic).
+    const groups = new Map<SourceId, { row: number; run: ValidationRunV2 }[]>();
+    for (const [source, tagged] of bySource) {
+      const group: { row: number; run: ValidationRunV2 }[] = [];
+      for (const { row, run } of tagged) {
+        const r = sanitizeRun(run, source);
+        if ('reason' in r) dropped.push({ row, reason: r.reason });
+        else group.push({ row, run: r.run });
+      }
+      if (group.length > 0) groups.set(source, group);
+    }
+    return this.merge(groups, dropped);
+  }
+
   /** Apply grouped rows: 'manual' upserts by id, every other source replaces itself. One commit. */
   private merge(
     groups: ReadonlyMap<SourceId, readonly { row: number; run: ValidationRunV2 }[]>,
@@ -661,7 +731,22 @@ export class ValidationService {
     // Replacing sources first, so an id a replaced source gives up is free for the rows after it.
     const order = [...groups.keys()].sort((a, b) => Number(a === 'manual') - Number(b === 'manual'));
     for (const source of order) {
-      const owner = new Map(records.filter(r => r.source !== source).map(r => [r.id, r.source]));
+      const isRange = source.startsWith('lylat-range:');
+      // The domain(s) this import replaces within `source`: for a range source the
+      // single loaded domain its rows are keyed to (replaceSourceInDomains keeps
+      // the source's rows in every OTHER domain — P2-20 accumulate).
+      const incomingDomains = isRange
+        ? new Set((groups.get(source) ?? []).map(({ run }) => run.domain))
+        : null;
+      // Ids owned by records this import will NOT replace, so an incoming id that
+      // collides with one is dropped, never silently overwritten. For a range
+      // source that is every other source PLUS this source's rows in other domains
+      // (which survive the domain-scoped replace); otherwise every other source.
+      const owner = new Map(
+        records
+          .filter(r => r.source !== source || (isRange && !incomingDomains!.has(r.domain)))
+          .map(r => [r.id, r.source]),
+      );
       const seen = new Set<string>();
       const incoming: ValidationRunV2[] = [];
       for (const { row, run } of groups.get(source) ?? []) {
@@ -681,6 +766,13 @@ export class ValidationService {
         const replaced = [...ids].filter(id => existing.has(id)).length;
         bySource[source] = { added: ids.size - replaced, replaced };
         records = upsertById(records, incoming);
+      } else if (isRange) {
+        // Replace only this mission's rows in the loaded domain, so importing each
+        // domain in turn accumulates the mission rather than the later domain's
+        // import deleting the earlier one (P2-20). Each run id carries its domain
+        // (lylat:<mission>:<domain>:<i>), so an id can never collide across domains.
+        bySource[source] = { added: incoming.length, replaced: records.filter(r => r.source === source && incomingDomains!.has(r.domain)).length };
+        records = replaceSourceInDomains(records, incoming, source);
       } else {
         bySource[source] = { added: incoming.length, replaced: records.filter(r => r.source === source).length };
         records = replaceSource(records, incoming, source);
