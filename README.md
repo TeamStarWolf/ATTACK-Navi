@@ -161,7 +161,7 @@ Unit specs use Karma and Jasmine and sit next to the code they test as `*.spec.t
 
 ### Build
 
-`npm run build` writes a production build to `dist/mitre-mitigation-navigator/browser/`. The directory name comes from the Angular project name in `angular.json`, which is still `mitre-mitigation-navigator`. The initial bundle budget warns at 1,236 kB and fails at 2 MB. `src/index.html` uses `<base href="./">`; pass `--base-href` when you host under a fixed path.
+`npm run build` writes a production build to `dist/mitre-mitigation-navigator/browser/`. The directory name comes from the Angular project name in `angular.json`, which is still `mitre-mitigation-navigator`. The initial bundle budget warns at 1.2 MB and fails at 2 MB. `src/index.html` uses `<base href="./">`; pass `--base-href` when you host under a fixed path.
 
 Production builds register the Angular service worker configured in `ngsw-config.json`. For data requests it tries the network first and falls back to a cached response when a request fails or takes longer than 10 seconds (15 seconds for the APIs). Cached responses are kept for 24 hours for the `mitre-attack` GitHub repositories, 12 hours for raw files from the CTID, Red Canary, SigmaHQ, Elastic, Splunk and MISP organizations and from `mitre/cti`, and 6 hours for the FIRST and NVD APIs. Requests to other hosts, including `api.github.com`, are not cached. The Elastic and Splunk entries in that list no longer match any request, because those counts are read from the bundled rule-coverage snapshot.
 

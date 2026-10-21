@@ -24,9 +24,16 @@
 </div>
 
 <!-- Sidebar (technique details): fixed on the right; the workspace makes room for it above 768 px.
-     Not rendered on the technique detail page (#/technique/:domain/:id), which owns the evidence card (P2-18). -->
+     Not rendered on the technique detail page (#/technique/:domain/:id), which owns the evidence card (P2-18).
+     Its code loads in a @defer block right after first paint, long before the ATT&CK bundle a technique
+     needs, so the drawer is there (closed) for the first selection, as before. app-drawer-warmup, in its
+     old place, creates the root services the drawer's construction created, in the same order, so no
+     data request moves. -->
 @if (!drawerSuppressed()) {
-  <app-sidebar />
+  <app-drawer-warmup />
+  @defer (on immediate) {
+    <app-sidebar />
+  }
 }
 
 <!-- Gap view — overlay -->
