@@ -34,10 +34,11 @@
           </div>
         </div>
 
+        <!-- Shown as soon as a techniques-less group is picked on either side, before the second pick. -->
+        @if (noUsesGroup) {
+          <p class="hint-msg" data-testid="no-uses">No technique uses recorded for {{ noUsesGroup.attackId }} in this ATT&amp;CK release.</p>
+        }
         @if (groupA && groupB && groupA.id !== groupB.id) {
-          @if (noUsesGroup) {
-            <p class="hint-msg" data-testid="no-uses">No technique uses recorded for {{ noUsesGroup.attackId }} in this ATT&amp;CK release.</p>
-          }
           <!-- Summary stats -->
           <div class="summary-row">
             <div class="stat-block a-color">

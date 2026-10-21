@@ -23,10 +23,12 @@
 // matches with empty annotations, which the check then rejects until a person
 // fills them in (so a new seam use is a reviewed diff, never silent).
 //
-// The check fails on:
-//   - a matching file that is not listed (a new seam use);
-//   - a listed file that no longer matches (a stale entry: regenerate, so the
-//     list shrinks as files move to PostureService);
+// Both rules (posture-rollup and one-picker) are checked every run, each with
+// its own allow-list entries. The check fails on, for either rule:
+//   - a matching file that is not listed (a new seam use for that rule);
+//   - a listed file that no longer matches (a stale entry: regenerate — the
+//     posture-rollup list shrinks as files move to PostureService, the
+//     one-picker list as rival pickers move to threat-profile-picker);
 //   - a listed entry without a reason or removedBy.
 // A listed file whose uses changed passes with a note to regenerate.
 //
@@ -82,6 +84,15 @@ export const RULES = {
       /\baliases\.some\(/g,
     ],
   },
+};
+
+// The remedy printed when a file matches a rule but is not on its allow-list.
+// Per rule, because the fix differs: posture-rollup is about reading posture
+// through the one service; one-picker is about selecting groups through the one
+// picker. Either way, a legitimate exception is recorded with --write + a reason.
+const REMEDIES = {
+  'posture-rollup': 'read posture through PostureService',
+  'one-picker': 'select groups through threat-profile-picker',
 };
 
 const posix = (p) => p.split(sep).join('/');
@@ -149,7 +160,7 @@ export function checkSeams(root, allowlist) {
     const byFile = new Map(entries.map((e) => [e.file, e]));
     for (const [file] of hits) {
       if (!byFile.has(file)) {
-        problems.push(`${rule}: ${file} matches both regexes and is not on the allow-list: read posture through PostureService, or run --write and give it a reason and removedBy`);
+        problems.push(`${rule}: ${file} matches both regexes and is not on the allow-list: ${REMEDIES[rule] ?? 'remove the seam use'}, or run --write and give it a reason and removedBy`);
       }
     }
     for (const e of entries) {

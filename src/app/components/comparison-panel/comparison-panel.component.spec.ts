@@ -105,6 +105,24 @@ describe('ComparisonPanelComponent', () => {
     expect(fixture.debugElement.query(By.css('[data-testid="no-uses"]'))).toBeTruthy();
   });
 
+  it('shows the no-uses note after picking a techniques-less group in A alone (before B)', () => {
+    const GNT = group('intrusion-set--nt', 'G0003', 'NoTech');
+    domain$.next({
+      name: 'Enterprise ATT&CK', groups: [GA, GNT], techniques: [T1, T2], campaigns: [], tacticColumns: [],
+      groupsByTechnique: new Map([['t1', [GA]], ['t2', [GA]]]),      // GNT maps nothing
+      techniquesByGroup: new Map([['intrusion-set--a', [T1, T2]]]),  // GNT absent -> no techniques
+    } as unknown as Domain);
+    fixture.detectChanges();
+    // Groups sort by name: Alpha, NoTech. Pick NoTech in A ONLY; do not pick B.
+    fixture.debugElement.queryAll(By.css('app-threat-profile-picker'))[0]
+      .queryAll(By.css('.tpp-item'))[1].nativeElement.click();
+    fixture.detectChanges();
+    expect(component.groupA?.id).toBe('intrusion-set--nt');
+    expect(component.groupB).toBeNull();
+    // The note must appear before the second pick, so the user knows the comparison will be empty.
+    expect(fixture.debugElement.query(By.css('[data-testid="no-uses"]'))).toBeTruthy();
+  });
+
   it('drops a selection the new domain lacks on a domain switch', () => {
     fixture.debugElement.queryAll(By.css('app-threat-profile-picker'))[0]
       .queryAll(By.css('.tpp-item'))[0].nativeElement.click();   // Alpha, via the rendered picker
