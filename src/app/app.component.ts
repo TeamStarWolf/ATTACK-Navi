@@ -18,6 +18,7 @@ import { KeyboardHelpComponent } from './components/keyboard-help/keyboard-help.
 import { NavRailComponent } from './components/nav-rail/nav-rail.component';
 import { OnboardingComponent } from './components/onboarding/onboarding.component';
 import { UniversalSearchComponent } from './components/universal-search/universal-search.component';
+import { PaletteWarmupComponent } from './components/palette-warmup/palette-warmup.component';
 import { UrlStateService } from './services/url-state.service';
 import { MatrixControlService } from './services/matrix-control.service';
 import { HotkeysService } from './services/hotkeys.service';
@@ -40,7 +41,7 @@ export function isTechniquePageUrl(url: string): boolean {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, SidebarComponent, ToolbarComponent, BriefingStripComponent, GapViewComponent, KeyboardHelpComponent, NavRailComponent, OnboardingComponent, UniversalSearchComponent],
+  imports: [RouterOutlet, SidebarComponent, ToolbarComponent, BriefingStripComponent, GapViewComponent, KeyboardHelpComponent, NavRailComponent, OnboardingComponent, UniversalSearchComponent, PaletteWarmupComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
