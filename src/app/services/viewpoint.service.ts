@@ -3,7 +3,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { DEFAULT_HEATMAP_MODE, FilterService, HeatmapMode } from './filter.service';
+import { DEFAULT_HEATMAP_MODE, FilterService, HeatmapMode, isHeatmapMode } from './filter.service';
 
 /** A security role the whole app can be viewed through. */
 export type ViewpointId =
@@ -219,13 +219,20 @@ export class ViewpointService {
    * router query params inside the hash (e.g. `#/matrix?heat=kev`), so check
    * both the hash's query string and any plain search string. The
    * default-lens rule (AppComponent, P2-19) reads it too.
+   *
+   * Only a value that names a registered lens (isHeatmapMode) counts. An
+   * invalid or empty heat= (`heat=bogus`, `heat=`) is not a lens choice: the
+   * URL reader ignores it (FilterService.applyUrlState), so it reads here as
+   * ABSENT and the viewpoint's lens and the default-lens rule (D4) still run
+   * (RP-F item 1). Otherwise an invalid key pinned Frequency and the writer
+   * then wrote heat=frequency into every reshare.
    */
   urlHasHeatParam(): boolean {
     try {
-      if (new URLSearchParams(window.location.search).has('heat')) return true;
+      if (isHeatmapMode(new URLSearchParams(window.location.search).get('heat'))) return true;
       const hash = window.location.hash || '';
       const q = hash.indexOf('?');
-      if (q >= 0 && new URLSearchParams(hash.slice(q + 1)).has('heat')) return true;
+      if (q >= 0 && isHeatmapMode(new URLSearchParams(hash.slice(q + 1)).get('heat'))) return true;
       return false;
     } catch {
       return false;

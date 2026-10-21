@@ -787,4 +787,34 @@ test.describe('E2.4: default-lens rule', () => {
     await expect(page).toHaveURL(/#\/matrix\?(.*&)?heat=posture(&|$)/, { timeout: 5000 });
     await expect(page.locator('.first-glance-banner')).toHaveCount(0);
   });
+
+  // RP-F item 1: an invalid or empty heat= is not a lens choice, so D4 still
+  // runs. Each link is a fresh navigation (about:blank first): the app does not
+  // re-read heat= on an in-session hash-only change.
+  for (const link of ['#/matrix?heat=bogus', '#/matrix?heat=']) {
+    test(`[RP-F 1] one recorded run and a pasted ${link}: Posture, heat=posture, no banner`, async ({ page }) => {
+      await openWorkspace(page, { seed: { 'navi.v2.validation-runs': oneRun } });
+      await page.goto('about:blank');
+      await page.goto(BASE + '/' + link);
+      await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+      await expect(page.locator('.heatmap-btn')).toContainText('Posture');
+      await expect(page).toHaveURL(/#\/matrix\?(.*&)?heat=posture(&|$)/, { timeout: 5000 });
+      expect(new URL(page.url()).hash).not.toContain('heat=frequency');
+      await expect(page.locator('.first-glance-banner')).toHaveCount(0);
+    });
+  }
+
+  test('[RP-F 1] one recorded run and a pasted #/technique/enterprise/T1059.001?heat=bogus: the page explains Posture and the link says heat=posture', async ({ page }) => {
+    await openWorkspace(page, { seed: { 'navi.v2.validation-runs': oneRun } });
+    await page.goto('about:blank');
+    await page.goto(BASE + '/#/technique/enterprise/T1059.001?heat=bogus');
+    const card = page.locator('app-technique-page [data-testid="evidence-card"]');
+    await expect(card).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    await expect(card.getByTestId('ev-why')).toContainText('Lens: Posture');
+    await expect(page).toHaveURL(/#\/technique\/enterprise\/T1059\.001\?(.*&)?heat=posture(&|$)/, { timeout: 5000 });
+    expect(new URL(page.url()).hash).not.toContain('heat=frequency');
+    await page.getByTestId('open-in-matrix').click();
+    await expect(page).toHaveURL(/#\/matrix\?(.*&)?heat=posture(&|$)/, { timeout: ROUTE_TIMEOUT });
+    await expect(page.locator('.heatmap-btn')).toContainText('Posture');
+  });
 });

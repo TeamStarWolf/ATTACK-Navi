@@ -151,6 +151,23 @@ describe('ViewpointService', () => {
     expect(service.urlHasHeatParam()).toBeTrue();
   });
 
+  // RP-F item 1: only a registered lens is an explicit heat; an invalid or empty value reads as absent.
+  it('urlHasHeatParam reads an invalid or empty heat as absent', () => {
+    for (const hash of ['#/matrix?heat=bogus', '#/matrix?heat=', '#/matrix?heat', '#/technique/enterprise/T1059.001?heat=bogus', '#/matrix?heat=KEV']) {
+      window.location.hash = hash;
+      expect(service.urlHasHeatParam()).withContext(hash).toBeFalse();
+    }
+    window.location.hash = '#/technique/enterprise/T1059.001?heat=posture';
+    expect(service.urlHasHeatParam()).toBeTrue();
+  });
+
+  it('restore applies the stored lens when the heat in the URL is invalid', () => {
+    window.location.hash = '#/matrix?heat=bogus';
+    localStorage.setItem(STORAGE_KEY, 'red');
+    service.restore();
+    expect(filterService.setHeatmapMode).toHaveBeenCalledOnceWith('atomic');
+  });
+
   it('restore swallows a localStorage read that throws', () => {
     const getItem = spyOn(Storage.prototype, 'getItem').and.throwError('blocked');
     expect(() => service.restore()).not.toThrow();
