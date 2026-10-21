@@ -6,7 +6,7 @@
 // posture-card "threat-relevant techniques: N" line all equal ThreatProfile.parentTechniqueIds.size.
 // The all-groups dashboard/actor denominators (§10.4 item 15) do NOT move with the profile —
 // asserted against the REAL DashboardPanelComponent and ActorProfilePanelComponent.
-import { TestBed } from '@angular/core/testing';
+import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { HttpClient, provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -17,6 +17,8 @@ import { Technique } from '../models/technique';
 import { AttackDomain, DataService } from '../services/data.service';
 import { ThreatProfileService } from '../services/threat-profile.service';
 import { GapAnalysisService } from '../services/gap-analysis.service';
+import { ThreatSimulationService } from '../services/threat-simulation.service';
+import { EpssService } from '../services/epss.service';
 import { SigmaService } from '../services/sigma.service';
 import { ElasticService } from '../services/elastic.service';
 import { SplunkContentService } from '../services/splunk-content.service';
@@ -35,8 +37,11 @@ import { TimelineService } from '../services/timeline.service';
 import { PanelNavService } from '../services/panel-nav.service';
 import { FilterService } from '../services/filter.service';
 import { DashboardConfigService } from '../services/dashboard-config.service';
+import { EmulationPlanService } from '../services/emulation-plan.service';
+import { LibraryLayerService } from '../services/library-layer.service';
 import { PostureCardComponent } from '../components/posture-card/posture-card.component';
 import { AssessmentWizardComponent } from '../components/assessment-wizard/assessment-wizard.component';
+import { ScenarioPanelComponent } from '../components/scenario-panel/scenario-panel.component';
 import { DashboardPanelComponent } from '../components/dashboard-panel/dashboard-panel.component';
 import { ActorProfilePanelComponent } from '../components/actor-profile-panel/actor-profile-panel.component';
 import { THREAT_WEIGHT_PROVIDER } from '../models/posture/threat-weight';
@@ -56,6 +61,7 @@ describe('threat-profile denominators move in one step (P2-10 [AC])', () => {
   let domain: Domain;
   let threatProfile: ThreatProfileService;
   let gap: GapAnalysisService;
+  let threatSim: ThreatSimulationService;
 
   function load(d: Domain, id: AttackDomain): void {
     const ds = TestBed.inject(DataService) as unknown as {
@@ -70,30 +76,38 @@ describe('threat-profile denominators move in one step (P2-10 [AC])', () => {
     resetBrowserState();
     domain = parseFixtureDomain();
     TestBed.configureTestingModule({
-      imports: [PostureCardComponent, AssessmentWizardComponent],
+      imports: [PostureCardComponent, AssessmentWizardComponent, ScenarioPanelComponent],
       providers: [
         provideHttpClient(withXhr()), provideHttpClientTesting(), provideRouter([]),
         ...signalStubProviders(),
         { provide: POSTURE_TODAY, useValue: signal(TODAY) },
         { provide: THREAT_WEIGHT_PROVIDER, useExisting: ThreatProfileService },
+        // scenario-panel deps (the overlay's rendered total is read below)
+        { provide: EmulationPlanService, useValue: { generatePlan: () => ({ steps: [] }), exportCalderaProfile: () => {} } },
+        { provide: LibraryLayerService, useValue: { manifest$: new BehaviorSubject([]), layerTechniqueIds: () => of([]), manifest: [] } },
         // Gap detection stubs (the lens-harness stubs answer different names); the gap
         // denominator is the profile, not detection counts, so 0/[] is fine.
         ...[SigmaService, ElasticService, SplunkContentService].map(t => ({ provide: t, useValue: { getRuleCount: () => 0 } })),
         { provide: M365DefenderService, useValue: { getQueriesForTechnique: () => [] } },
         { provide: AtomicService, useValue: { getTestCount: () => 0 } },
         { provide: CARService, useValue: { getAnalytics: () => [] } },
-        { provide: AttackCveService, useValue: { getKevCvesForTechnique: () => [] } },
-        { provide: ExploitdbService, useValue: { getExploitCount: () => 0 } },
+        { provide: AttackCveService, useValue: { getKevCvesForTechnique: () => [], getCvesForTechnique: () => [] } },
+        { provide: ExploitdbService, useValue: { getExploitCount: () => 0, hasExploits: () => false } },
+        { provide: EpssService, useValue: { getScore: () => null } },
       ],
     });
     load(domain, 'enterprise');
     threatProfile = TestBed.inject(ThreatProfileService);
     gap = TestBed.inject(GapAnalysisService);
+    threatSim = TestBed.inject(ThreatSimulationService);
   });
 
   afterEach(() => resetBrowserState());
 
   const gapTotal = () => gap.generateReport(domain, threatProfile.current).summary.totalTechniques;
+  // The scenario panel's profile simulation reads this same total (simulate().techniquesTotal),
+  // so one assertion covers both the scenario and threat-simulation totals.
+  const threatSimTotal = () => threatSim.simulate(domain).techniquesTotal;
 
   it('one setSource, one CD pass: the mounted card line and the wizard step-3 set equal parentTechniqueIds.size', () => {
     // Mount ONE card and ONE wizard BEFORE the change.
@@ -116,6 +130,32 @@ describe('threat-profile denominators move in one step (P2-10 [AC])', () => {
     expect(uniqueTechIds(wiz)).toBe(n);              // the actual step-3 technique set (deduped)
     expect(wiz.totalTechniques).toBe(n);
     expect(gapTotal()).toBe(n);
+    expect(threatSimTotal()).toBe(n);          // the threat-simulation service total
+  });
+
+  it('the mounted scenario overlay is reactive: its rendered total follows setSource without re-running', () => {
+    const renderedSimTotal = (f: ComponentFixture<ScenarioPanelComponent>) =>
+      Number(((f.nativeElement as HTMLElement).querySelector('[data-sim="total"]')?.textContent ?? '').trim());
+    const withTechs = domain.groups.filter(g => (domain.techniquesByGroup.get(g.id) ?? []).length > 0);
+    expect(withTechs.length).toBeGreaterThanOrEqual(2);
+
+    // Open the overlay and run the profile simulation BEFORE the change, over {kind:'all'}.
+    threatProfile.setSource({ kind: 'all' });
+    const scenF = TestBed.createComponent(ScenarioPanelComponent);
+    const scen = scenF.componentInstance;
+    (scen as unknown as { domain: Domain }).domain = domain;
+    scen.showThreatSim = true;
+    scen.profileSimResult = threatSim.simulate(domain);
+    scenF.detectChanges();
+    const allTotal = threatProfile.current.parentTechniqueIds.size;
+    expect(renderedSimTotal(scenF)).toBe(allTotal);
+
+    // Narrow the shared profile; the open overlay must follow in one CD pass with NO re-run.
+    threatProfile.setSource({ kind: 'groups', ids: [withTechs[0].id, withTechs[1].id] });
+    scenF.detectChanges();
+    const n = threatProfile.current.parentTechniqueIds.size;
+    expect(n).toBeLessThan(allTotal);          // the two profiles differ, so a stale snapshot would fail here
+    expect(renderedSimTotal(scenF)).toBe(n);   // the rendered total tracked parentTechniqueIds.size reactively
   });
 
   it('Skip sets {kind:"all"}; the wizard/gap/card totals all equal the domain parent-technique count', () => {
@@ -137,6 +177,7 @@ describe('threat-profile denominators move in one step (P2-10 [AC])', () => {
     expect(uniqueTechIds(wiz)).toBe(domainParents);
     expect(gapTotal()).toBe(domainParents);
     expect(cardLine(cardF)).toBe(domainParents);
+    expect(threatSimTotal()).toBe(domainParents);   // scenario + threat-simulation total
   });
 });
 
