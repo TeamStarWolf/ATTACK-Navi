@@ -228,7 +228,7 @@ Detection coverage answers the question "can we see this technique?" The Navigat
    - Detection source breakdown
 
 3. **Review per-technique detection content.** Select any technique on the matrix. The sidebar shows:
-   - **Rule sources** (always present; open it to expand): for Elastic detection-rules, Splunk security_content and mdecrevoisier SIGMA, the number of rules naming the technique at the pinned commit, up to ten rule names linked to the rule file at that commit, and the pinned commit; a SigmaHQ line with the rule count only. These are rules in public repositories, not rules running in your environment
+   - **Rule sources** (always present; open it to expand): for Elastic detection-rules, Splunk security_content and mdecrevoisier SIGMA, the number of rules naming the technique at the pinned commit, up to ten rule names linked to the rule file at that commit, and the pinned commit; and, when SigmaHQ tags rules with the technique, a SigmaHQ line with the rule count only. These are rules in public repositories, not rules running in your environment
    - **CAR Detection Analytics** with descriptions, when CAR maps the technique
    - **Detected By**: the ATT&CK data components that provide visibility
 

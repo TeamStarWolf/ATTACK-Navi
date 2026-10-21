@@ -145,8 +145,9 @@ control mappings for NIST 800-53, CRI Profile, VERIS, CSA CCM and cloud provider
 Rule sources section is always present: for Elastic detection-rules, Splunk security_content
 and mdecrevoisier SIGMA it gives the number of rules that name the technique at a pinned
 commit, up to ten rule names each linked to the rule file at that commit, and the pinned
-commit and snapshot date; SigmaHQ appears there as a rule count only. These are rules in
-public repositories (reference data), not rules running in your environment.
+commit and snapshot date; and, when SigmaHQ tags rules with the technique, a SigmaHQ line
+with the rule count only. These are rules in public repositories (reference data), not
+rules running in your environment.
 
 For offensive work the sidebar also has CAPEC, ExploitDB, Nuclei, PoC Exploits, Payloads,
 C2, BloodHound, Offensive tools, EVTX samples and ThreatHunter Playbook sections, again
