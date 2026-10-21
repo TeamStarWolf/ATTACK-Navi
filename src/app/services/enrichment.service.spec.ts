@@ -14,6 +14,7 @@ import { M365ControlsService } from './m365-controls.service';
 import { AttackCveService } from './attack-cve.service';
 import { Domain } from '../models/domain';
 import { Technique } from '../models/technique';
+import { hasAnySignal } from '../models/known-signals';
 
 /** Mutable per-attackId fixtures the mocks read from. */
 const counts = {
@@ -78,47 +79,9 @@ describe('EnrichmentService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('treats a technique with zero of every signal as NOT enriched', () => {
-    expect(service.isEnriched(tech('T1000', 's-1000'), domain)).toBe(false);
-  });
-
-  it('counts a mitigation-only technique as enriched', () => {
-    expect(service.isEnriched(tech('T1001', 's-1001', 2), domain)).toBe(true);
-  });
-
-  it('counts a detection-only (no mitigation) technique as enriched', () => {
-    counts.sigma.set('T1002', 3);
-    expect(service.isEnriched(tech('T1002', 's-1002', 0), domain)).toBe(true);
-  });
-
-  it('counts a control-only technique as enriched', () => {
-    counts.cis.set('T1003', 1);
-    expect(service.isEnriched(tech('T1003', 's-1003', 0), domain)).toBe(true);
-  });
-
-  it('counts a threat-intel-only technique as enriched', () => {
-    const t = tech('T1004', 's-1004', 0);
-    domain.groupsByTechnique.set('s-1004', arr(2) as never);
-    expect(service.isEnriched(t, domain)).toBe(true);
-  });
-
-  it('counts a CVE-only technique as enriched', () => {
-    counts.cve.set('T1005', 1);
-    expect(service.isEnriched(tech('T1005', 's-1005', 0), domain)).toBe(true);
-  });
-
-  it('hasDefensiveSignal excludes atomic / threat-intel / cve', () => {
-    counts.atomic.set('T1006', 5);
-    counts.cve.set('T1006', 5);
-    const t = tech('T1006', 's-1006', 0);
-    domain.groupsByTechnique.set('s-1006', arr(3) as never);
-    // Enriched (atomic + cve + threat-intel) but NOT defended.
-    expect(service.isEnriched(t, domain)).toBe(true);
-    expect(service.hasDefensiveSignal(t, domain)).toBe(false);
-    // Add a real control → now defended.
-    counts.nist.set('T1006', 1);
-    expect(service.hasDefensiveSignal(t, domain)).toBe(true);
-  });
+  // P2-08: the isEnriched and hasDefensiveSignal cases moved to
+  // models/known-signals.spec.ts with the pure hasAnySignal and
+  // hasDefensiveReference that replaced them.
 
   it('totals + coverage aggregate the enriched fraction, not the mitigation fraction', () => {
     counts.sigma.set('T2', 1);   // detection only
@@ -167,8 +130,8 @@ describe('EnrichmentService', () => {
       ],
     });
     const s = TestBed.inject(EnrichmentService);
-    expect(() => s.isEnriched(tech('T9', 's9', 0), emptyDomain())).not.toThrow();
-    expect(s.isEnriched(tech('T9', 's9', 0), emptyDomain())).toBe(false);
+    expect(() => s.signals(tech('T9', 's9', 0), emptyDomain())).not.toThrow();
+    expect(hasAnySignal(s.signals(tech('T9', 's9', 0), emptyDomain()))).toBe(false);
     // The Known-tier entry points are guarded the same way.
     expect(() => s.referenceDefenseSignals(tech('T9', 's9', 0), emptyDomain())).not.toThrow();
     expect(s.isReferenceMapped(tech('T9', 's9', 0), emptyDomain())).toBe(false);
@@ -240,7 +203,7 @@ describe('EnrichmentService', () => {
       expect(service.isReferenceMapped(tech('M0', 'sm0'), domain)).withContext('nothing').toBe(false);
     });
 
-    it('does not count a threat-only or CVE-only technique as mapped (isEnriched still does)', () => {
+    it('does not count a threat-only or CVE-only technique as mapped (hasAnySignal still does)', () => {
       const groupOnly = tech('T4001', 's-4001');
       domain.groupsByTechnique.set('s-4001', arr(5) as never);
       domain.softwareByTechnique.set('s-4001', arr(2) as never);
@@ -248,7 +211,7 @@ describe('EnrichmentService', () => {
       counts.cve.set('T4002', 7);
       const cveOnly = tech('T4002', 's-4002');
       for (const t of [groupOnly, cveOnly]) {
-        expect(service.isEnriched(t, domain)).withContext(`${t.attackId} threat side`).toBe(true);
+        expect(hasAnySignal(service.signals(t, domain))).withContext(`${t.attackId} threat side`).toBe(true);
         expect(service.isReferenceMapped(t, domain)).withContext(`${t.attackId} Known tier`).toBe(false);
       }
     });
@@ -297,7 +260,7 @@ describe('EnrichmentService', () => {
       expect(softwareSpy).not.toHaveBeenCalled();
       expect(campaignSpy).not.toHaveBeenCalled();
       // Sanity: the Threat-side composite does read them.
-      service.isEnriched(techs[8], domain);
+      service.signals(techs[8], domain);
       expect(cveSpy).toHaveBeenCalled();
       expect(groupSpy).toHaveBeenCalled();
     });

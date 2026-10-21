@@ -24,19 +24,22 @@ import { MispService } from '../../services/misp.service';
 import { OpenCtiService } from '../../services/opencti.service';
 import { EnrichmentService } from '../../services/enrichment.service';
 import { SourceRegistryService } from '../../services/source-registry.service';
+import { type PostureStub, makePostureStub, postureStubProvider } from '../../testing/posture-stub';
 
-function technique(attackId: string, name: string, tactic: string): Technique {
+function technique(attackId: string, name: string, tactic: string, mitigationCount = 0): Technique {
   return {
     id: `attack-pattern--${attackId}`, attackId, name, description: 'desc', url: '',
     tacticShortnames: [tactic], isSubtechnique: attackId.includes('.'), parentId: null,
-    subtechniques: [], mitigationCount: 0, platforms: [], dataSources: [], detectionText: '',
+    subtechniques: [], mitigationCount, platforms: [], dataSources: [], detectionText: '',
     defenseBypassed: [], permissionsRequired: [], effectivePermissions: [], systemRequirements: [],
     impactType: [], remoteSupport: false, capecIds: [],
   };
 }
 
-const T1003 = technique('T1003', 'OS Credential Dumping', 'credential-access');
-const T1059 = technique('T1059', 'Command and Scripting Interpreter', 'execution');
+// mitigationCount matches mitigationsByTechnique below: the posture stub's
+// Known 'mapped' follows it, so the rollup maps T1003 and T1059 (= ENRICHED).
+const T1003 = technique('T1003', 'OS Credential Dumping', 'credential-access', 3);
+const T1059 = technique('T1059', 'Command and Scripting Interpreter', 'execution', 1);
 const T1059_001 = technique('T1059.001', 'PowerShell', 'execution');
 const T1190 = technique('T1190', 'Exploit Public-Facing Application', 'initial-access');
 const T1566 = technique('T1566', 'Phishing', 'initial-access');
@@ -74,7 +77,8 @@ describe('DashboardPanelComponent', () => {
   let status$: BehaviorSubject<Map<string, string>>;
   let atomicLoaded$: BehaviorSubject<boolean>;
   let widgets$: BehaviorSubject<DashboardWidget[]>;
-  let totalsSpy: jasmine.Spy;
+  let refTotalsSpy: jasmine.Spy;
+  let posture: PostureStub;
   let snapshots: Array<{ coveragePct: number; basis?: 'reference-mapped' }>;
 
   beforeEach(() => {
@@ -83,11 +87,10 @@ describe('DashboardPanelComponent', () => {
     atomicLoaded$ = new BehaviorSubject<boolean>(false);
     widgets$ = new BehaviorSubject(WIDGETS);
     const loaded = () => new BehaviorSubject<boolean>(false);
-    totalsSpy = jasmine.createSpy('totals').and.returnValue({
-      // Threat side: enriched also counts T1190's group and CVE links, so it
-      // differs from the Known-tier mapped count (2) the headline must show.
-      total: 4, enriched: 3, mitigation: 2, detection: 1, atomic: 0, d3fend: 0, control: 1, threatIntel: 2, cve: 1, defended: 2,
-    });
+    refTotalsSpy = jasmine.createSpy('referenceDefenseTotals').and.returnValue(
+      { total: 4, mapped: 2, mitigation: 2, detection: 1, control: 1, d3fend: 0, atomic: 0 });
+    // P2-08: the Known numbers come from PostureService.rollup (the stub maps T1003 and T1059).
+    posture = makePostureStub(() => DOMAIN as never);
 
     TestBed.configureTestingModule({
       imports: [DashboardPanelComponent],
@@ -97,24 +100,15 @@ describe('DashboardPanelComponent', () => {
         { provide: DataService, useValue: { domain$: new BehaviorSubject(DOMAIN) } },
         { provide: PanelNavService, useValue: { open: jasmine.createSpy('open') } },
         { provide: EnrichmentService, useValue: {
-            totals: totalsSpy,
-            isEnriched: (t: Technique) => ENRICHED.has(t.attackId),
-            hasDefensiveSignal: (t: Technique) => ENRICHED.has(t.attackId),
-            // Known tier: T1003 and T1059 have a defensive reference input.
-            mappedRollup: () => {
-              const count = (ts: Technique[]) => {
-                const mapped = ts.filter(t => ENRICHED.has(t.attackId)).length;
-                return { total: ts.length, mapped, pct: ts.length ? Math.round((mapped / ts.length) * 100) : 0 };
-              };
-              return {
-                overall: count(DOMAIN.techniques.filter(t => !t.isSubtechnique)),
-                byTactic: DOMAIN.tacticColumns.map(c => ({
-                  tacticId: c.tactic.id, tacticName: c.tactic.name, shortname: c.tactic.shortname, ...count(c.techniques),
-                })),
-              };
-            },
-            referenceDefenseTotals: () => ({ total: 4, mapped: 2, mitigation: 2, detection: 1, control: 1, d3fend: 0, atomic: 0 }),
+            // P2-08: the counters read hasDefensiveReference(signals(t)); only T1003 and T1059 have a
+            // defensive reference input (the deleted hasDefensiveSignal answered ENRICHED.has).
+            signals: (t: Technique) => ({
+              mitigation: ENRICHED.has(t.attackId), detection: false, atomic: false, d3fend: false, control: false,
+              threatIntel: t.attackId === 'T1190', cve: t.attackId === 'T1190',
+            }),
+            referenceDefenseTotals: refTotalsSpy,
         } },
+        postureStubProvider(posture),
         { provide: ImplementationService, useValue: {
             status$,
             summarize: () => ({ implemented: 2, 'in-progress': 1, planned: 1, 'not-started': 0, untracked: 2 }),
@@ -162,8 +156,25 @@ describe('DashboardPanelComponent', () => {
     expect(s.splunkRuleCount).toBe(4);
     expect(s.threatGroupCount).toBe(2);
     expect(s.avgMitigations).toBe(2);                // (3 + 1) / 2 covered techniques
-    // 0.2*0.5 + 0.2*0.25 + 0.2*0.25 + 0.15*0 + 0.15*0.75 + 0.10*0.75 = 38.75 -> 39
-    expect(s.postureScore).toBe(39);
+    expect(s.kevExposedGapCount).toBe(1);            // T1190: KEV-mapped, undefended
+    // P2-08: the hidden legacy composite (postureScore, hidden since E1.5) is deleted.
+    expect('postureScore' in s).toBeFalse();
+  });
+
+  it('the Mapped Summary widget mounts the posture card: Known only on a fresh profile, Covered and Proven lines with data of yours', () => {
+    const widget = () => (fixture.nativeElement as HTMLElement).querySelector('.widget-coverage-summary') as HTMLElement;
+    const card = () => widget().querySelector('app-posture-card') as HTMLElement;
+    const n = (key: string) => card().querySelector(`[data-posture="${key}"]`)?.textContent?.trim() ?? null;
+    expect(card()).not.toBeNull();
+    expect([n('known-mapped'), n('known-total')]).toEqual(['2', '4']);
+    expect(n('covered')).toBeNull();
+    expect(widget().textContent).not.toMatch(/\bcovered\b|\bproven\b/i);
+
+    posture.set({ T1003: 'covered', T1059: 'proven' });
+    fixture.detectChanges();
+    expect([n('known-mapped'), n('known-total'), n('covered'), n('partial'), n('proven'), n('stale')]).toEqual(['2', '4', '1', '0', '1', '0']);
+    // No Known number moves: the widget's tiles and the card agree.
+    expect(component.stats!.coveredTechniques).toBe(2);
   });
 
   it('orders the tactic breakdown worst-first and reads the trend from the last two snapshots', () => {
@@ -213,9 +224,9 @@ describe('DashboardPanelComponent', () => {
   });
 
   it('rebuilds the stats when implementation status changes', () => {
-    const before = totalsSpy.calls.count();
+    const before = refTotalsSpy.calls.count();
     status$.next(new Map([['course-of-action--x', 'implemented']]));
-    expect(totalsSpy.calls.count()).toBe(before + 1);
+    expect(refTotalsSpy.calls.count()).toBe(before + 1);
   });
 
   it('tracks data-source health as each loader reports in', () => {
@@ -272,8 +283,8 @@ describe('DashboardPanelComponent', () => {
   // E1.5: no risk verdict and no letter grade on reference data (plan 4.1);
   // the header names the rung instead, whatever the numbers are.
   it('shows the Known rung badge, never a risk verdict or a grade', () => {
-    for (const postureScore of [95, 70, 40, 5]) {
-      component.stats = { ...component.stats!, postureScore, criticalRiskCount: postureScore > 50 ? 0 : 80 };
+    for (const criticalRiskCount of [0, 3, 40, 80]) {
+      component.stats = { ...component.stats!, criticalRiskCount };
       fixture.detectChanges();
       const el: HTMLElement = fixture.nativeElement;
       const header = el.querySelector('.dashboard-header') as HTMLElement;

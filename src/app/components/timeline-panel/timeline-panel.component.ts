@@ -6,6 +6,9 @@ import {
   OnDestroy,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
+  Signal,
+  computed,
+  inject,
 } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
@@ -13,7 +16,9 @@ import { Subscription, filter, take } from 'rxjs';
 import { DataService } from '../../services/data.service';
 import { ImplementationService } from '../../services/implementation.service';
 import { TimelineService, CoverageSnapshot, snapshotBasisLabel } from '../../services/timeline.service';
-import { EnrichmentService } from '../../services/enrichment.service';
+import { PostureService } from '../../services/posture.service';
+import type { PostureTally } from '../../models/posture/posture.types';
+import { POSTURE_LINE_LABELS } from '../posture-card/posture-card.component';
 
 interface TrendPoint {
   snapshot: CoverageSnapshot;
@@ -56,11 +61,20 @@ export class TimelinePanelComponent implements OnInit, OnDestroy {
   private subs = new Subscription();
   private successTimer: ReturnType<typeof setTimeout> | null = null;
 
+  private readonly posture = inject(PostureService);
+  readonly ownerWords: Signal<boolean> = this.posture.ownerWords;
+  /**
+   * The rollup's Covered / partial / Proven / stale now, shown only under
+   * ownerWords(). A snapshot still records the Known count only (its basis is
+   * unchanged, P2-08).
+   */
+  readonly postureNow: Signal<PostureTally> = computed(() => this.posture.rollup().overall);
+  readonly labels = POSTURE_LINE_LABELS;
+
   constructor(
     private dataService: DataService,
     private implService: ImplementationService,
     private timelineService: TimelineService,
-    private enrichment: EnrichmentService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -91,10 +105,13 @@ export class TimelinePanelComponent implements OnInit, OnDestroy {
 
   takeSnapshot(): void {
     if (!this.newLabel.trim()) return;
-    this.dataService.domain$.pipe(filter(Boolean), take(1)).subscribe(domain => {
+    // Waits for a loaded domain, as before; the rollup reads the same one.
+    this.dataService.domain$.pipe(filter(Boolean), take(1)).subscribe(() => {
       const implMap = this.implService.getStatusMap();
       // Known tier ('mapped', E1.7): the rollup every summary surface shows.
-      this.timelineService.takeSnapshot(this.newLabel, this.enrichment.mappedRollup(domain), implMap, this.newNotes);
+      // PostureService.rollup (P2-08) carries mappedRollup's Known numbers
+      // unchanged, and the snapshot keeps its 'mapped' basis.
+      this.timelineService.takeSnapshot(this.newLabel, this.posture.rollup(), implMap, this.newNotes);
       this.newLabel = '';
       this.newNotes = '';
       this.snapshotSuccess = true;

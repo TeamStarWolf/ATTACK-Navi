@@ -36,6 +36,16 @@
     <div class="roadmap-known" data-testid="roadmap-mapped" title="Known tier: techniques with ≥1 mitigation, detection content, control mapping, D3FEND countermeasure or Atomic test. Reference, no claim about your estate.">
       <strong>{{ mapped.mapped }} / {{ mapped.total }}</strong> techniques mapped ({{ mapped.pct }}%) to ≥1 defensive reference
     </div>
+    <!-- Posture (P2-08): PostureService.rollup() over parent techniques, only with data of yours recorded -->
+    @if (ownerWords()) {
+      @let p = postureOverall();
+      <div class="roadmap-known" data-testid="roadmap-posture">
+        {{ labels.covered }}: <strong><span data-posture="covered">{{ p.covered }}</span> of <span data-posture="assessable">{{ p.assessable }}</span></strong> assessable
+        · {{ labels.partial }}: <span data-posture="partial">{{ p.partial }}</span>
+        · {{ labels.proven }}: <span data-posture="proven">{{ p.proven }}</span>
+        · {{ labels.stale }}: <span data-posture="stale">{{ p.stale }}</span>
+      </div>
+    }
 
     <div class="roadmap-body">
       @for (item of sortedRoadmap; track item.mitigation.id; let i = $index) {

@@ -58,6 +58,7 @@ import { Cve2CapecService } from '../../services/cve2capec.service';
 import { PocExploitService } from '../../services/poc-exploit.service';
 import { EnrichmentService } from '../../services/enrichment.service';
 import { referenceDepthScore } from '../../models/reference-depth';
+import { hasAnySignal } from '../../models/known-signals';
 import { LENS_NA_COLOR, isLensAvailable } from '../../models/heatmap-modes';
 import type { AttackDomain } from '../../services/data.service';
 
@@ -1768,8 +1769,9 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     }
     if (this.hasDataSourceFilter && this.dataSourceIds && !this.dataSourceIds.has(t.id) && !t.subtechniques.some((s) => this.dataSourceIds!.has(s.id))) return true;
     // "Dim uncovered" = dim techniques with NO enrichment of any kind (no
-    // cross-framework signal), not merely those lacking a mitigation.
-    if (this.dimUncovered && !this.enrichment.isEnriched(t, this.domain)) return true;
+    // cross-framework signal), not merely those lacking a mitigation. P2-09
+    // makes it dim posture bucket 'none'.
+    if (this.dimUncovered && !hasAnySignal(this.enrichment.signals(t, this.domain))) return true;
     if (this.hasTechniqueSearch) {
       if (this.matchedIds.has(t.id)) return false;
       if (t.subtechniques.some((s) => this.matchedIds.has(s.id))) return false;

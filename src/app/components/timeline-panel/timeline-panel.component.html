@@ -61,6 +61,18 @@
           <button class="quick-btn" (click)="newLabel = 'Post-audit'">Post-audit</button>
           <button class="quick-btn" (click)="newLabel = 'After patch'">After patch</button>
         </div>
+        <!-- Posture now (P2-08): PostureService.rollup() over parent techniques, only with data of yours
+             recorded. Snapshots record the Known count only. -->
+        @if (ownerWords()) {
+          @let p = postureNow();
+          <div class="quick-labels" data-testid="timeline-posture">
+            <span class="quick-label-hint">Now (not recorded in snapshots):</span>
+            <span>{{ labels.covered }}: <span data-posture="covered">{{ p.covered }}</span> of <span data-posture="assessable">{{ p.assessable }}</span> assessable</span>
+            <span>· {{ labels.partial }}: <span data-posture="partial">{{ p.partial }}</span></span>
+            <span>· {{ labels.proven }}: <span data-posture="proven">{{ p.proven }}</span></span>
+            <span>· {{ labels.stale }}: <span data-posture="stale">{{ p.stale }}</span></span>
+          </div>
+        }
       </div>
 
       <!-- Tabs -->

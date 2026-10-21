@@ -105,6 +105,11 @@
                       <div class="mini-stat-label">Control mapped</div>
                     </div>
                   </div>
+                  <!-- P2-08: the one posture tally (PostureService.rollup), the same numbers as the CTEM card;
+                       Covered and Proven lines render only with data of yours (hasOwnerWords). -->
+                  <div class="widget-posture">
+                    <app-posture-card scope="all" />
+                  </div>
                   @if (stats.hasTrendData) {
                     <div class="widget-footer-note" [class]="stats.coverageTrend >= 0 ? 'trend-up' : 'trend-down'">
                       {{ trendSign(stats.coverageTrend) }}{{ stats.coverageTrend | number:'1.0-0' }}% vs last snapshot
