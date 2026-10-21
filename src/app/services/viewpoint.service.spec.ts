@@ -98,7 +98,8 @@ describe('ViewpointService', () => {
     service.restore();
 
     expect(service.current.id).toBe('red');
-    expect(filterService.setHeatmapMode).toHaveBeenCalledOnceWith('atomic');
+    // RP-F decision 10: restored at boot, the lens is a default, not a lens pick.
+    expect(filterService.setHeatmapMode).toHaveBeenCalledOnceWith('atomic', { explicit: false });
     expect(navSpy).not.toHaveBeenCalled();
   });
 
@@ -165,7 +166,7 @@ describe('ViewpointService', () => {
     window.location.hash = '#/matrix?heat=bogus';
     localStorage.setItem(STORAGE_KEY, 'red');
     service.restore();
-    expect(filterService.setHeatmapMode).toHaveBeenCalledOnceWith('atomic');
+    expect(filterService.setHeatmapMode).toHaveBeenCalledOnceWith('atomic', { explicit: false });
   });
 
   it('restore swallows a localStorage read that throws', () => {

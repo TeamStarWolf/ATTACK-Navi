@@ -63,14 +63,78 @@ describe('FilterService', () => {
       expect(service.defaultLens).toBe('posture');
     });
 
-    it('heat is left out only for frequency with no owner data and no tech; with owner data every lens is written, posture included', () => {
+    it('heat is left out for frequency with no owner data and no tech; with owner data every chosen lens is written, posture included', () => {
       expect(service.serializeUrlState()['heat']).toBeUndefined();
       service.ownerDataPresent.next(true);
-      expect(service.serializeUrlState()['heat']).toBe('frequency');
+      // RP-F decision 10: Prevalence that is only the default is not written once owner data exists.
+      expect(service.serializeUrlState()['heat']).toBeUndefined();
       service.setHeatmapMode('posture');
       expect(service.serializeUrlState()['heat']).toBe('posture');
+      service.setHeatmapMode('frequency');
+      expect(service.serializeUrlState()['heat']).toBe('frequency');
+      service.setHeatmapMode('posture');
       service.ownerDataPresent.next(false);
       expect(service.serializeUrlState()['heat']).toBe('posture');
+    });
+
+    // RP-F decision 10: owner data that first appears in a session (a bulk set, a run)
+    // while Prevalence is on screen only as the D4 default must not pin heat=frequency:
+    // heat stays absent, so a reload runs D4 and boots Posture. A chosen Prevalence is
+    // still written and so honoured on reload.
+    describe('the ownerDataPresent transition (RP-F decision 10)', () => {
+      it('the default Prevalence: heat stays absent before and after owner data appears', () => {
+        expect(service.lensExplicit).toBeFalse();
+        expect(service.serializeUrlState()['heat']).toBeUndefined();
+        service.ownerDataPresent.next(true);
+        expect(service.getStateSnapshot().heatmapMode).toBe('frequency');
+        expect(service.serializeUrlState()['heat']).toBeUndefined();
+      });
+
+      it('a Prevalence chosen through the View menu (setHeatmapMode): heat=frequency once owner data appears', () => {
+        service.setHeatmapMode('frequency');
+        expect(service.lensExplicit).toBeTrue();
+        expect(service.serializeUrlState()['heat']).toBeUndefined();
+        service.ownerDataPresent.next(true);
+        expect(service.serializeUrlState()['heat']).toBe('frequency');
+      });
+
+      it('a pasted heat=frequency is a choice; an invalid heat= is not', () => {
+        service.applyUrlState(new URLSearchParams('heat=bogus'));
+        service.ownerDataPresent.next(true);
+        expect(service.lensExplicit).toBeFalse();
+        expect(service.serializeUrlState()['heat']).toBeUndefined();
+        service.applyUrlState(new URLSearchParams('heat=frequency'));
+        expect(service.lensExplicit).toBeTrue();
+        expect(service.serializeUrlState()['heat']).toBe('frequency');
+      });
+
+      it('a default applied with { explicit: false } and clearAll are not choices', () => {
+        service.setHeatmapMode('frequency');
+        service.setHeatmapMode('frequency', { explicit: false });
+        service.ownerDataPresent.next(true);
+        expect(service.serializeUrlState()['heat']).toBeUndefined();
+        service.setHeatmapMode('frequency');
+        service.ownerDataPresent.next(false);
+        service.clearAll();
+        expect(service.lensExplicit).toBeFalse();
+        service.ownerDataPresent.next(true);
+        expect(service.serializeUrlState()['heat']).toBeUndefined();
+      });
+
+      it('with a technique open: heat=frequency without owner data (unchanged); absent once owner data appears, unless chosen', () => {
+        service.selectTechnique({ id: 'attack-pattern--a', attackId: 'T1059', name: 'Command Interpreter' } as unknown as Technique);
+        expect(service.serializeUrlState()['heat']).toBe('frequency');
+        service.ownerDataPresent.next(true);
+        expect(service.serializeUrlState()['heat']).toBeUndefined();
+        service.setHeatmapMode('frequency');
+        expect(service.serializeUrlState()['heat']).toBe('frequency');
+      });
+
+      it('a restored snapshot names a chosen lens', () => {
+        service.ownerDataPresent.next(true);
+        service.restoreStateSnapshot({ heatmapMode: 'frequency' });
+        expect(service.serializeUrlState()['heat']).toBe('frequency');
+      });
     });
 
     it('ownerDataPresent joins urlRelevantState$', fakeAsync(() => {

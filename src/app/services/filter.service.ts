@@ -151,6 +151,20 @@ export class FilterService {
    * changes the lens on screen.
    */
   readonly ownerDataPresent = new BehaviorSubject<boolean>(false);
+  /**
+   * Whether the lens on screen was chosen, not defaulted (RP-F decision 10):
+   * true after a lens pick (the View menu and every other setHeatmapMode caller),
+   * a valid pasted heat= (applyUrlState) or a restored snapshot; false at boot,
+   * after clearAll and after a default applied with { explicit: false } (a
+   * stored viewpoint's lens restored at boot, the owner-word fallback, a
+   * cleared preset). serializeUrlState reads it:
+   * with owner data, Prevalence is written as heat=frequency only when it was
+   * chosen, so owner data that first appears in a session leaves heat= absent
+   * and a reload runs D4 (Posture). The lens itself lives only in the URL and
+   * the viewpoint, so this flag travels the same way: a written heat= is read
+   * back as a choice.
+   */
+  private heatmapLensExplicit = false;
   private implStatusFilterSubject = new BehaviorSubject<string | null>(null);
   private searchFilterModeSubject = new BehaviorSubject<boolean>(false);
   searchFilterMode$: Observable<boolean> = this.searchFilterModeSubject.asObservable();
@@ -392,7 +406,7 @@ export class FilterService {
       // mode's loaders, so each enumerated param is validated and otherwise ignored;
       // the next URL write then serializes only the valid state.
       const heat = params.get('heat');
-      if (isHeatmapMode(heat)) this.heatmapModeSubject.next(heat);
+      if (isHeatmapMode(heat)) this.setHeatmapMode(heat);
       const impl = params.get('impl');
       if (isImplStatus(impl)) this.implStatusFilterSubject.next(impl);
       const scope = params.get('scope');
@@ -463,9 +477,11 @@ export class FilterService {
    * overlay, (E2.3) `tech`, the open technique, and
    * `dom`, the ATT&CK domain when it is not Enterprise. With `tech`, `heat`
    * and `dom` are always written, so a pasted link carries its lens and domain
-   * even at the defaults. `heat` is left out only for Prevalence with no owner
+   * even at the defaults. `heat` is left out for Prevalence with no owner
    * data and no `tech` (P2-19): with owner data a link without heat= would
-   * open Posture, so every lens, heat=posture included, is written.
+   * open Posture, so every lens, heat=posture included, is written, except
+   * Prevalence that is only the default and was never chosen (RP-F decision
+   * 10: owner data that appears in a session must not pin heat=frequency).
    */
   serializeUrlState(): Record<string, string> {
     const domain = this.domainSnapshot;
@@ -485,7 +501,11 @@ export class FilterService {
     if (ds) params['ds'] = ds;
     const tech = this.selectedTechniqueSubject.value?.attackId ?? this.pendingUrlTechId;
     const heat = this.heatmapModeSubject.value;
-    if (heat !== DEFAULT_HEATMAP_MODE || this.ownerDataPresent.value || tech) params['heat'] = heat;
+    // Prevalence is the D4 default. Without owner data it is left out unless a
+    // technique is open; with owner data it is written only when chosen (RP-F
+    // decision 10), so a reload runs D4 and boots Posture instead of pinning it.
+    const writeDefault = this.ownerDataPresent.value ? this.heatmapLensExplicit : !!tech;
+    if (heat !== DEFAULT_HEATMAP_MODE || writeDefault) params['heat'] = heat;
     const impl = this.implStatusFilterSubject.value;
     if (impl) params['impl'] = impl;
     const scope = this.searchScopeSubject.value;
@@ -629,8 +649,20 @@ export class FilterService {
     this.activeDataSourceSubject.next(name);
   }
 
-  setHeatmapMode(mode: HeatmapMode): void {
+  /**
+   * Put `mode` on screen. A lens pick is a choice (the default); a caller that
+   * applies a default (a stored viewpoint's lens at boot, the owner-word
+   * fallback, a reset) passes { explicit: false }, so Prevalence set that way is not
+   * written as heat=frequency once owner data exists (RP-F decision 10).
+   */
+  setHeatmapMode(mode: HeatmapMode, opts: { explicit?: boolean } = {}): void {
+    this.heatmapLensExplicit = opts.explicit ?? true;
     this.heatmapModeSubject.next(mode);
+  }
+
+  /** Whether the lens on screen was chosen rather than defaulted (RP-F decision 10). */
+  get lensExplicit(): boolean {
+    return this.heatmapLensExplicit;
   }
 
   setImplStatusFilter(status: string | null): void {
@@ -699,7 +731,7 @@ export class FilterService {
     this.activeSoftwareIdsSubject.next(new Set());
     this.activeCampaignIdsSubject.next(new Set());
     this.activeDataSourceSubject.next(null);
-    this.heatmapModeSubject.next(this.defaultLens);
+    this.setHeatmapMode(this.defaultLens, { explicit: false });
     this.implStatusFilterSubject.next(null);
     this.searchFilterModeSubject.next(false);
     this.cveTechniqueIdsSubject.next(new Set());
@@ -724,7 +756,7 @@ export class FilterService {
 
   restoreStateSnapshot(state: Partial<FilterStateSnapshot> | null | undefined): void {
     if (!state) return;
-    if (state.heatmapMode) this.heatmapModeSubject.next(state.heatmapMode as HeatmapMode);
+    if (state.heatmapMode) this.setHeatmapMode(state.heatmapMode as HeatmapMode);
     if (state.platformFilter !== undefined) this.platformFilterSubject.next(state.platformFilter);
     if (state.sortMode) this.sortModeSubject.next(state.sortMode as SortMode);
     if (typeof state.dimUncovered === 'boolean') this.dimUncoveredSubject.next(state.dimUncovered);

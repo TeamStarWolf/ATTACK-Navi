@@ -171,7 +171,8 @@ export class ViewpointService {
     if (!vp) return;
     this.viewpointSubject.next(vp);
     if (!this.urlHasHeatParam()) {
-      this.filterService.setHeatmapMode(vp.defaultLens);
+      // Restored at boot, the viewpoint's lens is a default, not a lens pick (RP-F decision 10).
+      this.filterService.setHeatmapMode(vp.defaultLens, { explicit: false });
     }
   }
 
