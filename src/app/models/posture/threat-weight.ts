@@ -26,9 +26,12 @@ export const THREAT_WEIGHT_PROVIDER = new InjectionToken<ThreatWeightProvider>('
     const data = inject(DataService);
     // The all-groups weight only changes with the loaded domain, which PostureService
     // already tracks, so revision is constant here (P2-10 binds the reactive profile).
+    // `parents` is empty: the default is not a profile, so a card mounted without the
+    // bound token shows a threat-relevant count of 0 (only ctem mounts that scope).
     return {
       weight: (techniqueStixId: string) => allGroupsWeight(data.getCurrentDomain(), techniqueStixId),
       revision: signal(0),
+      parents: signal<ReadonlySet<string>>(new Set()),
     };
   },
 });

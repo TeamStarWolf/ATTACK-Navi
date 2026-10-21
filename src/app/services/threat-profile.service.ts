@@ -72,6 +72,10 @@ export class ThreatProfileService implements OnDestroy, ThreatWeightProvider {
   // BehaviorSubject service (§10.4 item 9), this is only the seam's signal bridge.
   private readonly revisionSig = signal(0);
   readonly revision: Signal<number> = this.revisionSig.asReadonly();
+  // The profile's parent technique ids, kept in sync with profile$ so the posture card
+  // (and P2-17/P2-12) can read the threat-relevant denominator through the token signal.
+  private readonly parentsSig = signal<ReadonlySet<string>>(new Set());
+  readonly parents: Signal<ReadonlySet<string>> = this.parentsSig.asReadonly();
 
   constructor(private dataService: DataService, private libraryLayers: LibraryLayerService) {
     this.source = this.loadSource();
@@ -81,7 +85,10 @@ export class ThreatProfileService implements OnDestroy, ThreatWeightProvider {
     // first (data.service), and leaving the old profile up would show a cross-domain
     // denominator while getCurrentAttackDomain() already names the new domain.
     this.sub = this.dataService.domain$.subscribe((domain) => this.profileSubject.next(this.build(domain)));
-    this.sub.add(this.profile$.subscribe(() => this.revisionSig.update((n) => n + 1)));
+    this.sub.add(this.profile$.subscribe((p) => {
+      this.revisionSig.update((n) => n + 1);
+      this.parentsSig.set(p.parentTechniqueIds);
+    }));
     this.loadLayerIfNeeded();
   }
 

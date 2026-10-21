@@ -15,6 +15,7 @@ import { ChangeDetectionStrategy, Component, Input, Signal, computed, inject, si
 import { toSignal } from '@angular/core/rxjs-interop';
 import { DataService } from '../../services/data.service';
 import { PostureService } from '../../services/posture.service';
+import { THREAT_WEIGHT_PROVIDER } from '../../models/posture/threat-weight';
 import { tallyPosture } from '../../models/posture/derive-posture';
 import { PROVEN, postureBadge } from '../../models/posture/posture-vocabulary';
 
@@ -59,12 +60,17 @@ export interface PostureCardTally {
 export class PostureCardComponent {
   private readonly posture = inject(PostureService);
   private readonly domain = toSignal(inject(DataService).domain$, { initialValue: null });
+  // P2-10: the threat-relevant scope counts the profile's parent techniques
+  // (parentTechniqueIds is THE denominator, §2.6), read through the shared
+  // THREAT_WEIGHT_PROVIDER token so the card stays decoupled from ThreatProfileService;
+  // `parents` is a signal, so the tally recomputes on setSource.
+  private readonly threatWeight = inject(THREAT_WEIGHT_PROVIDER);
   private readonly scopeSig = signal<PostureCardScope>('all');
 
   /**
    * 'all': every parent technique (the rollup, subs off). 'threat-relevant':
-   * the parents with a threat weight above 0 (all ATT&CK groups until P2-10
-   * binds the threat profile).
+   * the parent techniques of the shared threat profile (parentTechniqueIds, §2.6),
+   * so the count equals the profile denominator for every profile kind.
    */
   @Input() set scope(v: PostureCardScope | null | undefined) { this.scopeSig.set(v ?? 'all'); }
   get scope(): PostureCardScope { return this.scopeSig(); }
@@ -77,8 +83,9 @@ export class PostureCardComponent {
       const o = this.posture.rollup().overall;
       return { total: o.total, assessable: o.assessable, mapped: o.mapped, covered: o.covered, partial: o.partial, proven: o.proven, stale: o.stale };
     }
-    const parents = (this.domain()?.techniques ?? []).filter(t => !t.isSubtechnique);
-    const states = parents.map(t => this.posture.stateFor(t)).filter(s => s.threatWeight > 0);
+    const inProfile = this.threatWeight.parents();
+    const parents = (this.domain()?.techniques ?? []).filter(t => !t.isSubtechnique && inProfile.has(t.id));
+    const states = parents.map(t => this.posture.stateFor(t));
     const t = tallyPosture(states);
     // Known 'mapped' is referenceSignalCount > 0, the same test as isReferenceMapped.
     const mapped = states.filter(s => s.knownSignals > 0).length;

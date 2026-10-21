@@ -5,34 +5,41 @@
 // Proven / stale over every parent technique, from PostureService.rollup;
 // Covered and Proven words only when PostureService.ownerWords() is true.
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Provider, signal } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { PostureCardComponent } from './posture-card.component';
 import { DataService } from '../../services/data.service';
+import { THREAT_WEIGHT_PROVIDER } from '../../models/posture/threat-weight';
 import { Domain } from '../../models/domain';
-import type { PostureBucket, PostureState } from '../../models/posture/posture.types';
+import type { PostureBucket } from '../../models/posture/posture.types';
 import { makeSplitDomain } from '../../testing/report-split-fixture';
 import { PostureStub, makePostureStub, postureStubProvider } from '../../testing/posture-stub';
+
+/** A THREAT_WEIGHT_PROVIDER stand-in whose profile holds the given parent STIX ids. */
+function threatWeightStub(parentTechniqueIds: readonly string[]): Provider {
+  return { provide: THREAT_WEIGHT_PROVIDER, useValue: { weight: () => 0, revision: signal(0), parents: signal(new Set(parentTechniqueIds)) } };
+}
 
 describe('PostureCardComponent (P2-07)', () => {
   let fixture: ComponentFixture<PostureCardComponent>;
   let posture: PostureStub;
   let domain: Domain;
 
-  function render(buckets: Record<string, PostureBucket>, scope?: 'all' | 'threat-relevant', weightless: string[] = []): HTMLElement {
+  // `threatRelevant` is the parent attackIds in the shared profile; the threat-relevant
+  // scope counts exactly those (by STIX id). Default (undefined): every parent technique.
+  function render(buckets: Record<string, PostureBucket>, scope?: 'all' | 'threat-relevant', threatRelevant?: string[]): HTMLElement {
     domain = makeSplitDomain();
     posture = makePostureStub(() => domain, buckets);
-    const stateFor = posture.stateFor;
-    // A threat weight of 0 for the named techniques, 1 for the rest.
-    const weighted = {
-      ...posture,
-      stateFor: (t: Parameters<PostureStub['stateFor']>[0]): PostureState =>
-        ({ ...stateFor(t), threatWeight: weightless.includes(t.attackId) ? 0 : 1 }),
-    };
+    const parentIds = (threatRelevant === undefined
+      ? domain.techniques.filter(t => !t.isSubtechnique)
+      : domain.techniques.filter(t => threatRelevant.includes(t.attackId))
+    ).map(t => t.id);
     TestBed.configureTestingModule({
       imports: [PostureCardComponent],
       providers: [
         { provide: DataService, useValue: { domain$: new BehaviorSubject(domain) } },
-        postureStubProvider(weighted as PostureStub),
+        postureStubProvider(posture),
+        threatWeightStub(parentIds),
       ],
     });
     fixture = TestBed.createComponent(PostureCardComponent);
@@ -83,8 +90,8 @@ describe('PostureCardComponent (P2-07)', () => {
     expect(text(el.querySelector('.pc-row--covered dd'))).toBe('1 of 4 assessable');
   });
 
-  it("scope 'threat-relevant' takes assessable from the weighted states", () => {
-    const el = render({ T1: 'covered' }, 'threat-relevant', ['T4', 'T5']);
+  it("scope 'threat-relevant' takes assessable from the profile's parent techniques", () => {
+    const el = render({ T1: 'covered' }, 'threat-relevant', ['T1', 'T2', 'T3']);
     posture.exclude(['T2']);
     fixture.detectChanges();
     expect([num(el, 'known-total'), num(el, 'assessable')]).toEqual([3, 2]);
@@ -98,9 +105,9 @@ describe('PostureCardComponent (P2-07)', () => {
     expect(num(el, 'covered')).toBe(2);
   });
 
-  it("scope 'threat-relevant' tallies only the parents with a threat weight", () => {
-    const el = render({ T1: 'covered', T2: 'partial', T4: 'covered' }, 'threat-relevant', ['T4', 'T5']);
-    // T1, T2, T3 remain: T1 covered, T2 partial; T1 and T2 mapped.
+  it("scope 'threat-relevant' tallies only the parents in the profile", () => {
+    const el = render({ T1: 'covered', T2: 'partial', T4: 'covered' }, 'threat-relevant', ['T1', 'T2', 'T3']);
+    // Profile = T1, T2, T3: T1 covered, T2 partial; T1 and T2 mapped. T4 (covered) is out of profile.
     expect([num(el, 'known-mapped'), num(el, 'known-total'), num(el, 'covered'), num(el, 'partial'), num(el, 'proven')]).toEqual([2, 3, 1, 1, 0]);
     expect(el.querySelector('[data-testid="posture-card"]')!.getAttribute('data-scope')).toBe('threat-relevant');
   });
@@ -118,6 +125,7 @@ describe('PostureCardComponent (P2-07)', () => {
       providers: [
         { provide: DataService, useValue: { domain$: new BehaviorSubject(null) } },
         postureStubProvider(makePostureStub(() => null)),
+        threatWeightStub([]),
       ],
     });
     const f = TestBed.createComponent(PostureCardComponent);

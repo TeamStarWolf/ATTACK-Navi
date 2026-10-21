@@ -97,23 +97,27 @@ describe('threat-profile denominators move in one step (P2-10 [AC])', () => {
   }
 
   it('wizard, gap, ctem threat-relevant line and parentTechniqueIds.size agree and move together', () => {
-    // Group profiles: every parent in parentTechniqueIds is used by a selected group,
-    // so it carries a threat weight and the card counts exactly that set. (A 'all'
-    // profile would add group-less parents that carry no weight, so group profiles are
-    // the clean cross-surface comparison.)
     const withTechs = domain.groups.filter(g => (domain.techniquesByGroup.get(g.id) ?? []).length > 0);
     expect(withTechs.length).withContext('fixture has >= 2 groups with techniques').toBeGreaterThanOrEqual(2);
     const [a, b] = withTechs;
 
-    threatProfile.setSource({ kind: 'groups', ids: [a.id, b.id] });
-    const n = threatProfile.current.parentTechniqueIds.size;
-    expect(n).toBeGreaterThan(0);
-    expect([wizardTotal(), gapTotal(), cardThreatRelevant()]).toEqual([n, n, n]);
+    // The card counts the profile's parentTechniqueIds (§2.6, THE denominator), so every
+    // surface equals parentTechniqueIds.size for EVERY profile kind — including Skip's 'all'.
+    const agree = (): number => {
+      const n = threatProfile.current.parentTechniqueIds.size;
+      expect([wizardTotal(), gapTotal(), cardThreatRelevant()]).toEqual([n, n, n]);
+      return n;
+    };
 
-    // A different profile: every surface moves to the new same number (0 for no groups).
+    threatProfile.setSource({ kind: 'groups', ids: [a.id, b.id] });
+    expect(agree()).toBeGreaterThan(0);
+
+    // {kind:'all'} is the wizard's Skip default: group-less parents are in the denominator too.
+    threatProfile.setSource({ kind: 'all' });
+    expect(agree()).toBeGreaterThan(0);
+
     threatProfile.setSource({ kind: 'groups', ids: [] });
-    expect(threatProfile.current.parentTechniqueIds.size).toBe(0);
-    expect([wizardTotal(), gapTotal(), cardThreatRelevant()]).toEqual([0, 0, 0]);
+    expect(agree()).toBe(0);
   });
 
   it('the all-groups dashboard and actor denominators do NOT move with the profile (§10.4 item 15)', () => {

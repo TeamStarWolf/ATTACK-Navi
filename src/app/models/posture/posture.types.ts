@@ -107,4 +107,6 @@ export interface ThreatWeightProvider {
   weight(techniqueStixId: string): number;
   /** Changes whenever weight() answers may change, so PostureService.states can track it. */
   readonly revision: Signal<number>;
+  /** The profile's parent technique STIX ids — the threat-relevant denominator (§2.6). */
+  readonly parents: Signal<ReadonlySet<string>>;
 }
