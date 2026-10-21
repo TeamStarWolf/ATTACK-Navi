@@ -1,0 +1,27 @@
+{
+  "schema": "lylat-validated-detections/1",
+  "range_build_ref": "b2c3d4e5f6a7",
+  "generated_at": "2026-10-20T09:15:00Z",
+  "rows": [
+    {
+      "mission_id": "SYNTH-MISSION-B",
+      "technique_ref": { "domain": "enterprise", "id": "T1053.005", "attack_version": "19.2" },
+      "detection_ref": "sigma:990101",
+      "coverage_state": "validated",
+      "outcome": "alerted",
+      "negative_control": "detection-only",
+      "validated_at": "2026-10-20",
+      "evidence_ref": "SYNTH-MISSION-B-step1"
+    },
+    {
+      "mission_id": "SYNTH-MISSION-B",
+      "technique_ref": { "domain": "enterprise", "id": "T1548.002", "attack_version": "19.2" },
+      "detection_ref": "sigma:990102",
+      "coverage_state": "validated",
+      "outcome": "blocked",
+      "negative_control": "blocked-on-hardened",
+      "validated_at": "2026-10-20",
+      "evidence_ref": "SYNTH-MISSION-B-step2"
+    }
+  ]
+}

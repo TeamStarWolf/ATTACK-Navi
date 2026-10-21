@@ -6,7 +6,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
-import { ValidationService, ValidationRun, ValidationStatus } from '../../services/validation.service';
+import { ValidationService, ValidationRunV2, ValidationStatus } from '../../services/validation.service';
 import { PanelNavService } from '../../services/panel-nav.service';
 
 const STATUS_LABEL: Record<ValidationStatus, string> = {
@@ -31,10 +31,21 @@ const STATUS_LABEL: Record<ValidationStatus, string> = {
       @if (latest) {
         <div class="vsp-row">
           <span class="vsp-status" [attr.data-status]="latest.status">{{ statusLabel(latest.status) }}</span>
+          @if (labRange) {
+            <span class="vsp-lab" title="Exercised against a published Lylat range build">lab</span>
+          }
           <span class="vsp-meta">
             {{ latest.detectionsFired.length }} of {{ latest.detectionsExpected.length }} detection rules fired
           </span>
         </div>
+        @if (labProofRecords.length) {
+          <div class="vsp-row vsp-rules">
+            range-run rules:
+            @for (rec of labProofRecords; track rec.ref) {
+              <code class="vsp-rule">{{ rec.ref }} <span class="vsp-rule-date">{{ rec.date | date:'mediumDate' }}</span></code>
+            }
+          </div>
+        }
         <div class="vsp-row vsp-when">
           last run {{ latest.runDate | date:'short' }}
           @if (latest.operator) { · by {{ latest.operator }} }
@@ -78,6 +89,21 @@ const STATUS_LABEL: Record<ValidationStatus, string> = {
     }
     .vsp-when { color: var(--text-muted, #8b93a7); font-size: 11px; margin-top: 2px; }
     .vsp-meta { color: var(--text-muted, #8b93a7); }
+    .vsp-lab {
+      font-size: 9.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 2px 7px; border-radius: 4px; flex-shrink: 0;
+      background: rgba(16,185,129,0.14); color: #10b981; border: 1px solid rgba(16,185,129,0.4);
+    }
+    .vsp-rules {
+      flex-wrap: wrap; gap: 5px; margin-top: 4px;
+      font-size: 11px; color: var(--text-muted, #8b93a7);
+    }
+    .vsp-rule {
+      font-family: var(--font-mono, ui-monospace, monospace); font-size: 10.5px;
+      padding: 1px 5px; border-radius: 3px;
+      background: rgba(16,185,129,0.08); color: #10b981;
+    }
+    .vsp-rule-date { color: var(--text-muted, #8b93a7); font-weight: 400; }
     .vsp-empty {
       display: flex; align-items: center; gap: 8px;
       font-size: 12px; color: var(--text-muted, #8b93a7); margin: 0;
@@ -108,8 +134,8 @@ export class ValidationStatusPillComponent implements OnInit, OnChanges, OnDestr
   private cdr = inject(ChangeDetectorRef);
   private sub?: Subscription;
 
-  latest: ValidationRun | null = null;
-  allRuns: ValidationRun[] = [];
+  latest: ValidationRunV2 | null = null;
+  allRuns: ValidationRunV2[] = [];
 
   ngOnInit(): void {
     this.sub = this.validation.runs$.subscribe(() => {
@@ -134,6 +160,31 @@ export class ValidationStatusPillComponent implements OnInit, OnChanges, OnDestr
     }
     this.allRuns = this.validation.forTechnique(this.attackId);
     this.latest = this.validation.latestFor(this.attackId);
+  }
+
+  /** The latest run is range-scoped: proofScope 'range' with a scored status. */
+  get labRange(): boolean {
+    return this.latest?.proofScope === 'range' && (this.latest.status === 'passed' || this.latest.status === 'partial');
+  }
+
+  /**
+   * The range-run detection records — each detection ref with the date it was
+   * validated — newest first, one entry per ref (keeping its newest date). Each
+   * entry is data-bound (ref + date), so the lint reads it as evidence, not a claim.
+   */
+  get labProofRecords(): { ref: string; date: string }[] {
+    const newest = new Map<string, string>();
+    for (const run of this.allRuns) {
+      if (run.proofScope !== 'range') continue;
+      for (const o of run.outcomes ?? []) {
+        if (!o.detectionRef) continue;
+        const prev = newest.get(o.detectionRef);
+        if (prev === undefined || run.runDate > prev) newest.set(o.detectionRef, run.runDate);
+      }
+    }
+    return [...newest.entries()]
+      .map(([ref, date]) => ({ ref, date }))
+      .sort((a, b) => (a.date === b.date ? a.ref.localeCompare(b.ref) : a.date < b.date ? 1 : -1));
   }
 
   openValidationPanel(): void {
