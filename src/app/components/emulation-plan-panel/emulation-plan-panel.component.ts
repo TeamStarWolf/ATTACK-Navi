@@ -44,6 +44,7 @@ export class EmulationPlanPanelComponent implements OnInit, OnDestroy {
   // UI state
   selectedGroup: ThreatGroup | null = null;
   plan: EmulationPlan | null = null;
+  planError: string | null = null;
   phaseGroups: PhaseGroup[] = [];
   expandedSteps = new Set<number>();
   generating = false;
@@ -79,6 +80,14 @@ export class EmulationPlanPanelComponent implements OnInit, OnDestroy {
       this.domain = domain;
       this.groups = domain ? [...domain.groups].sort((a, b) => a.name.localeCompare(b.name)) : [];
       this.resolveQuickPicks();
+      // Keep the selection valid for the loaded domain: re-resolve by id, and if the group
+      // is gone, clear it and any plan so generatePlan can never run against a stale group
+      // (generatePlan now throws for an actor the domain lacks).
+      if (this.selectedGroup) {
+        const stillHere = this.groups.find(g => g.id === this.selectedGroup!.id) ?? null;
+        this.selectedGroup = stillHere;
+        if (!stillHere) { this.plan = null; this.phaseGroups = []; this.expandedSteps.clear(); this.planError = null; }
+      }
       this.cdr.markForCheck();
     }));
     this.savedPlans = this.emulationService.getSavedPlans();
@@ -124,18 +133,26 @@ export class EmulationPlanPanelComponent implements OnInit, OnDestroy {
   generatePlan(): void {
     if (!this.selectedGroup || !this.domain) return;
     this.generating = true;
+    this.planError = null;
     this.cdr.markForCheck();
 
-    // Defer to next tick so the spinner renders
+    // Defer to next tick so the spinner renders.
     setTimeout(() => {
-      // Pass the STIX intrusion-set id: emulation-plan.service looks the group up by
-      // domain.groups.find(g => g.id === actorId) and techniquesByGroup.get(actorId),
-      // both STIX-keyed. Passing attackId (G####) returned "Unknown Actor Plan" / 0 steps.
-      this.plan = this.emulationService.generatePlan(this.selectedGroup!.id, this.domain!);
-      this.phaseGroups = this.groupByPhase(this.plan.steps);
-      this.expandedSteps.clear();
-      this.generating = false;
-      this.cdr.markForCheck();
+      try {
+        // generatePlan resolves the actor by STIX id or ATT&CK id and throws if the loaded
+        // domain has neither. The picker gives us a STIX id, so the normal path never throws;
+        // the try/catch guards the stale-group edge so the button can't hang on "Generating…".
+        this.plan = this.emulationService.generatePlan(this.selectedGroup!.id, this.domain!);
+        this.phaseGroups = this.groupByPhase(this.plan.steps);
+        this.expandedSteps.clear();
+      } catch (e) {
+        this.plan = null;
+        this.phaseGroups = [];
+        this.planError = e instanceof Error ? e.message : 'Could not generate the plan.';
+      } finally {
+        this.generating = false;
+        this.cdr.markForCheck();
+      }
     }, 0);
   }
 

@@ -47,6 +47,10 @@
             </div>
           }
 
+          @if (planError) {
+            <div class="emu-plan-error" role="alert">{{ planError }}</div>
+          }
+
           @if (savedPlans.length > 0) {
             <div class="emu-saved">
               <h4>Saved plans</h4>

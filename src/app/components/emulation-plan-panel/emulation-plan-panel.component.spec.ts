@@ -17,6 +17,7 @@ import { SplunkContentService } from '../../services/splunk-content.service';
 import { Domain } from '../../models/domain';
 import { Technique } from '../../models/technique';
 import { Tactic } from '../../models/tactic';
+import { ThreatGroup } from '../../models/group';
 
 const STORAGE_KEY = 'mitre-nav-emulation-plans';
 
@@ -136,5 +137,26 @@ describe('EmulationPlanPanelComponent', () => {
     tick(0);
     expect(spy).toHaveBeenCalledWith('intrusion-set--g2', jasmine.anything());
     expect(component.plan!.steps.length).toBeGreaterThan(0);
+  }));
+
+  it('clears a stale selection and its plan when the domain switches to one without it (1a)', fakeAsync(() => {
+    const data = TestBed.inject(DataService) as unknown as { domain$: BehaviorSubject<Domain | null> };
+    component.onGroupPicked('intrusion-set--g1');
+    component.generatePlan();
+    tick(0);
+    expect(component.plan).toBeTruthy();
+    data.domain$.next({ name: 'ICS ATT&CK', tactics: [], techniques: [], groups: [], campaigns: [], techniquesByGroup: new Map() } as unknown as Domain);
+    fixture.detectChanges();
+    expect(component.selectedGroup).toBeNull();
+    expect(component.plan).toBeNull();
+  }));
+
+  it('generatePlan on a stale group resets generating and surfaces an error instead of hanging (1b)', fakeAsync(() => {
+    // Force a selection the loaded domain does not contain, bypassing the 1a guard.
+    component.selectedGroup = { id: 'intrusion-set--gone', attackId: 'G9999', name: 'Gone', aliases: [], description: '' } as unknown as ThreatGroup;
+    expect(() => { component.generatePlan(); tick(0); }).not.toThrow();
+    expect(component.generating).toBeFalse();
+    expect(component.plan).toBeNull();
+    expect(component.planError).toBeTruthy();
   }));
 });
