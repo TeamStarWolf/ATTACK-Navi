@@ -70,7 +70,7 @@ describe('Lylat validated-detections contract (P2-20)', () => {
     expect(run!.source).toBe('lylat-range:SYNTH-MISSION-A');
     expect(run!.proofScope).toBe('range');
     expect(run!.statusFromSource).toBeTrue();
-    expect(run!.id).toBe('lylat:SYNTH-MISSION-A:4');
+    expect(run!.id).toBe('lylat:SYNTH-MISSION-A:enterprise:4');   // id carries the loaded domain (P2-20 R4)
   });
 
   it('maps the fixture to 8 runs over 6 techniques, a technique with two rules keeping both', () => {

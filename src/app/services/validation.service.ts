@@ -731,7 +731,22 @@ export class ValidationService {
     // Replacing sources first, so an id a replaced source gives up is free for the rows after it.
     const order = [...groups.keys()].sort((a, b) => Number(a === 'manual') - Number(b === 'manual'));
     for (const source of order) {
-      const owner = new Map(records.filter(r => r.source !== source).map(r => [r.id, r.source]));
+      const isRange = source.startsWith('lylat-range:');
+      // The domain(s) this import replaces within `source`: for a range source the
+      // single loaded domain its rows are keyed to (replaceSourceInDomains keeps
+      // the source's rows in every OTHER domain — P2-20 accumulate).
+      const incomingDomains = isRange
+        ? new Set((groups.get(source) ?? []).map(({ run }) => run.domain))
+        : null;
+      // Ids owned by records this import will NOT replace, so an incoming id that
+      // collides with one is dropped, never silently overwritten. For a range
+      // source that is every other source PLUS this source's rows in other domains
+      // (which survive the domain-scoped replace); otherwise every other source.
+      const owner = new Map(
+        records
+          .filter(r => r.source !== source || (isRange && !incomingDomains!.has(r.domain)))
+          .map(r => [r.id, r.source]),
+      );
       const seen = new Set<string>();
       const incoming: ValidationRunV2[] = [];
       for (const { row, run } of groups.get(source) ?? []) {
@@ -751,13 +766,12 @@ export class ValidationService {
         const replaced = [...ids].filter(id => existing.has(id)).length;
         bySource[source] = { added: ids.size - replaced, replaced };
         records = upsertById(records, incoming);
-      } else if (source.startsWith('lylat-range:')) {
-        // Range source: replace only this mission's rows IN the loaded domain, so
-        // importing each domain in turn accumulates the mission rather than the
-        // later domain's import deleting the earlier one (P2-20). `incoming` is
-        // single-domain (every row is keyed to the one loaded domain).
-        const domains = new Set(incoming.map(r => r.domain));
-        bySource[source] = { added: incoming.length, replaced: records.filter(r => r.source === source && domains.has(r.domain)).length };
+      } else if (isRange) {
+        // Replace only this mission's rows in the loaded domain, so importing each
+        // domain in turn accumulates the mission rather than the later domain's
+        // import deleting the earlier one (P2-20). Each run id carries its domain
+        // (lylat:<mission>:<domain>:<i>), so an id can never collide across domains.
+        bySource[source] = { added: incoming.length, replaced: records.filter(r => r.source === source && incomingDomains!.has(r.domain)).length };
         records = replaceSourceInDomains(records, incoming, source);
       } else {
         bySource[source] = { added: incoming.length, replaced: records.filter(r => r.source === source).length };

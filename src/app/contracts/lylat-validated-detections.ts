@@ -264,7 +264,7 @@ export function lylatRowsToRuns(
       sourceAttackVersion: row.technique_ref.attack_version,
     };
     const run: ValidationRunV2 = {
-      id: `lylat:${row.mission_id}:${i}`,
+      id: `lylat:${row.mission_id}:${domainId}:${i}`,
       techniqueId,
       techniqueName: '',
       runDate: row.validated_at,

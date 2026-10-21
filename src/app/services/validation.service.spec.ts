@@ -566,8 +566,43 @@ describe('ValidationService', () => {
       expect(mixRuns().length).toBe(3);                              // still 3: 2 enterprise replaced in place, 1 ics kept
       expect(mixRuns().filter(r => r.domain === 'enterprise').length).toBe(2);
       expect(JSON.stringify(mixRuns().filter(r => r.domain === 'ics'))).toBe(icsBefore);
-      expect(service.all.find(r => r.id === `lylat:${mixMission}:0`)!.detectionsExpected).toEqual(['wazuh:999']);
+      expect(service.all.find(r => r.id === `lylat:${mixMission}:enterprise:0`)!.detectionsExpected).toEqual(['wazuh:999']);
       expect(rc.bySource[`lylat-range:${mixMission}`]).toEqual({ added: 2, replaced: 2 }); // only the 2 enterprise replaced
+    });
+
+    it('[AC item 1] a domain-keyed run id never collides across domains; delete hits one domain only', () => {
+      // A re-export with a NEW Enterprise row inserted at the front shifts the
+      // original rows down, so without the domain in the id the re-import's
+      // Enterprise run at index 1 would collide with the ICS run keyed at the
+      // original index 1 (lylat:MISSION-MIX:1 stored twice). The domain segment
+      // (lylat:<mission>:<domain>:<i>) stops it.
+      const mixedFront = (firstDet: string) => contract([
+        cRow(mixMission, 'T1047', firstDet, 9),                         // inserted Enterprise row at the front
+        cRow(mixMission, 'T1059.001', 'wazuh:700', 0),
+        { ...cRow(mixMission, 'T0883', 'wazuh:701', 1), technique_ref: { domain: 'ics', id: 'T0883', attack_version: '19.2' } },
+        cRow(mixMission, 'T1003.001', 'wazuh:702', 2),
+      ]);
+
+      loadDomain('enterprise', '19.2'); service.importRangeContract(mixed('wazuh:700'));   // [E,I,E] under Enterprise
+      loadDomain('ics', '19.2');        service.importRangeContract(mixed('wazuh:700'));   // + the ICS row
+      loadDomain('enterprise', '19.2'); const rc = service.importRangeContract(mixedFront('wazuh:700'));
+      expect(rc.ok).toBeTrue();
+
+      const ids = mixRuns().map(r => r.id);
+      expect(new Set(ids).size).toBe(ids.length);                        // (i) every stored id unique across domains
+      expect(ids).toContain(`lylat:${mixMission}:ics:1`);                // the ICS run keeps its domain-keyed id
+      expect(ids).toContain(`lylat:${mixMission}:enterprise:1`);         // the re-import's Enterprise row at the same index
+      expect(ids.every(id => id !== `lylat:${mixMission}:1`)).toBeTrue();// the pre-fix collision shape is gone
+      expect(mixRuns().filter(r => r.domain === 'enterprise').length).toBe(3);
+      expect(mixRuns().filter(r => r.domain === 'ics').length).toBe(1);
+
+      // (ii) deleting the Enterprise run at index 1 leaves the ICS run at the same
+      // index intact — pre-fix, delete(lylat:MISSION-MIX:1) removed both and
+      // tombstoned the shared id.
+      service.delete(`lylat:${mixMission}:enterprise:1`);
+      expect(mixRuns().find(r => r.id === `lylat:${mixMission}:ics:1`)).toBeDefined();
+      expect(mixRuns().filter(r => r.domain === 'ics').length).toBe(1);
+      expect(mixRuns().filter(r => r.domain === 'enterprise').length).toBe(2);
     });
 
     it('refuses a privacy-leaking file and stores nothing', () => {
