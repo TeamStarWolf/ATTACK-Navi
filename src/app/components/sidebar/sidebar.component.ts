@@ -1272,7 +1272,11 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.filterService.selectTechnique(null);
   }
 
-  /** "Full page" (P2-18): the technique's own page, #/technique/<domain>/<id>, which owns the evidence card. */
+  /**
+   * "Full page" (P2-18): the technique's own page, #/technique/<domain>/<id>, which owns the evidence card.
+   * The template preserves the current query (heat=, dom=, tech=, filters), so a copied page link reopens
+   * the same lens; the URL writer does not rewrite in-session when the filter state is unchanged.
+   */
   get fullPageLink(): string[] | null {
     return this.technique ? ['/technique', this.dataService.getCurrentAttackDomain(), this.technique.attackId] : null;
   }

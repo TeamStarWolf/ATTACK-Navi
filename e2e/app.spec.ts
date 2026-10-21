@@ -432,15 +432,20 @@ test.describe('E2.3: tech= and dom= share links', () => {
 
   // P2-18 (E2.3-b): the page form of the same link. The technique page owns the
   // evidence card, so the drawer is not rendered there; "Open in matrix" carries
-  // the selection to the matrix, whose drawer then opens on it.
-  test('[AC] (page form) a pasted link reopens the same technique in a new context', async ({ browser }) => {
+  // the selection and the lens to the matrix, whose drawer then opens on it, and
+  // the drawer's "Full page" link carries the lens back (round 1: it used to drop
+  // the query, so a copied page link reopened the default lens).
+  test('[AC] (page form) a pasted link reopens the same technique and lens in a new context', async ({ browser }) => {
     const { context, page } = await newVisitor(browser);
+    let pageLink = '';
     try {
-      await page.goto(BASE + '/#/technique/enterprise/T1059.001');
+      await page.goto(BASE + '/#/technique/enterprise/T1059.001?heat=coverage');
       const card = page.locator('app-technique-page [data-testid="evidence-card"]');
       await expect(card).toBeVisible({ timeout: ROUTE_TIMEOUT });
       await expect(page.locator('app-technique-page .tp-id')).toHaveText('T1059.001');
-      await expect(card.getByTestId('ev-why')).toContainText('Why this colour:');
+      const why = card.getByTestId('ev-why');
+      await expect(why).toContainText('Lens: Mitigations mapped');
+      await expect(why).toContainText(/Why this colour: score \d+ of max \d+: /);
       await expect(card.getByTestId('ev-known')).toBeVisible();
       await expect(card.getByTestId('ev-threat')).toBeVisible();
       // A fresh profile: Known and Threat only, and no drawer on this route.
@@ -450,10 +455,32 @@ test.describe('E2.3: tech= and dom= share links', () => {
 
       await page.getByTestId('open-in-matrix').click();
       await expect(page).toHaveURL(/#\/matrix\?(.*&)?tech=T1059\.001(&|$)/, { timeout: ROUTE_TIMEOUT });
+      await expect(page).toHaveURL(/#\/matrix\?(.*&)?heat=coverage(&|$)/);
+      await expect(page.locator('.heatmap-btn')).toContainText('Mitigations mapped');
       await expect(page.locator('.sidebar.open .sidebar-header .attack-id')).toHaveText('T1059.001', { timeout: ROUTE_TIMEOUT });
       await expect(page.locator('.sidebar.open [data-testid="evidence-card"]')).toBeVisible();
+
+      // The drawer's "Full page" link is the page link a user copies: it keeps the lens.
+      const fullPage = page.getByTestId('drawer-full-page');
+      await expect(fullPage).toHaveAttribute('href', /^#\/technique\/enterprise\/T1059\.001\?(.*&)?heat=coverage(&|$)/);
+      pageLink = (await fullPage.getAttribute('href'))!;
+      await fullPage.click();
+      await expect(page).toHaveURL(/#\/technique\/enterprise\/T1059\.001\?(.*&)?heat=coverage(&|$)/, { timeout: ROUTE_TIMEOUT });
+      await expect(page.locator('app-technique-page [data-testid="ev-why"]')).toContainText('Lens: Mitigations mapped', { timeout: ROUTE_TIMEOUT });
     } finally {
       await context.close();
+    }
+
+    // That copied link, pasted into a new context, reopens the same technique and lens.
+    const second = await newVisitor(browser);
+    try {
+      await second.page.goto(BASE + '/' + pageLink);
+      const card = second.page.locator('app-technique-page [data-testid="evidence-card"]');
+      await expect(card).toBeVisible({ timeout: ROUTE_TIMEOUT });
+      await expect(second.page.locator('app-technique-page .tp-id')).toHaveText('T1059.001');
+      await expect(card.getByTestId('ev-why')).toContainText('Lens: Mitigations mapped');
+    } finally {
+      await second.context.close();
     }
   });
 

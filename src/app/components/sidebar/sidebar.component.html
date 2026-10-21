@@ -32,7 +32,7 @@
           <button class="collapse-all-btn" (click)="collapseAll()" title="Collapse all sections">⊟</button>
           <button class="expand-rel-btn" (click)="expandRelevant()" title="Expand sections with data">⊞</button>
           @if (fullPageLink; as link) {
-            <a class="full-page-link" data-testid="drawer-full-page" [routerLink]="link" title="Open this technique on its own page">Full page</a>
+            <a class="full-page-link" data-testid="drawer-full-page" [routerLink]="link" queryParamsHandling="preserve" title="Open this technique on its own page">Full page</a>
           }
         </div>
       </header>

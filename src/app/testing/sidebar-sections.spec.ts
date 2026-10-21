@@ -9,7 +9,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { provideLocationMocks } from '@angular/common/testing';
 
 import { SidebarComponent } from '../components/sidebar/sidebar.component';
@@ -99,6 +99,16 @@ describe('Sidebar section presence (fixture domain, 5 techniques)', () => {
     expect(card.querySelector('[data-testid="ev-why"]')!.textContent).toContain('Why this colour:');
     // The header's "Full page" link opens the technique page.
     expect(host.querySelector('[data-testid="drawer-full-page"]')!.getAttribute('href')).toBe('/technique/enterprise/T1078');
+  });
+
+  // P2-18 round 1: the page link keeps the current query, so a copied "Full page" link reopens the same lens.
+  it('the "Full page" link carries the current lens (heat=) and the rest of the query', async () => {
+    await TestBed.inject(Router).navigateByUrl('/?heat=coverage&dom=enterprise&tech=T1078');
+    // The navigation has ended before the drawer renders its link (no whenStable: the seed requests stay pending).
+    sectionsFor('T1078');
+    const href = (fixture.nativeElement as HTMLElement).querySelector('[data-testid="drawer-full-page"]')!.getAttribute('href')!;
+    expect(href.split('?')[0]).toBe('/technique/enterprise/T1078');
+    expect(new URLSearchParams(href.split('?')[1] ?? '').get('heat')).toBe('coverage');
   });
 
   it('renders nothing until a technique is selected', () => {

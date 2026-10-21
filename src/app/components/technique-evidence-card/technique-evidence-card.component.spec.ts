@@ -115,7 +115,7 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
     expect(block(el, 'ev-known')).not.toBeNull();
     expect(block(el, 'ev-threat')).not.toBeNull();
     expect(text(el)).not.toMatch(/\bcovered\b|\bproven\b|\bdefended\b|\bvalidated\b/i);
-    for (const attr of ['title', 'aria-label']) {
+    for (const attr of ['title', 'aria-label', 'placeholder', 'alt']) {
       for (const node of Array.from(el.querySelectorAll(`[${attr}]`))) {
         expect(node.getAttribute(attr)).not.toMatch(/\bcovered\b|\bproven\b|\bdefended\b/i);
       }
