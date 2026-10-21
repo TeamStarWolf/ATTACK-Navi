@@ -1,20 +1,19 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 //
-// P2-10 [AC]: changing the shared threat profile updates every denominator in one
-// step (design §3 P2-10, S8). setSource moves the wizard total, the gap-analysis
-// total, the ctem posture-card "threat-relevant techniques: N" line and
-// ThreatProfile.parentTechniqueIds.size to the SAME number; the all-groups
-// dashboard/actor denominators (§10.4 item 15) do not move. The reactive-seam half
-// (the card recomputes on setSource) is proven in posture.service.spec; here we
-// pin the equality across surfaces.
+// P2-10 [AC]: changing the shared threat profile moves every profile denominator in one
+// step (design §3 P2-10, S8) — the wizard step-3 set, the gap-analysis total and the ctem
+// posture-card "threat-relevant techniques: N" line all equal ThreatProfile.parentTechniqueIds.size.
+// The all-groups dashboard/actor denominators (§10.4 item 15) do NOT move with the profile —
+// asserted against the REAL DashboardPanelComponent and ActorProfilePanelComponent.
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { HttpClient, provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 import { Domain } from '../models/domain';
+import { Technique } from '../models/technique';
 import { AttackDomain, DataService } from '../services/data.service';
 import { ThreatProfileService } from '../services/threat-profile.service';
 import { GapAnalysisService } from '../services/gap-analysis.service';
@@ -26,21 +25,38 @@ import { AtomicService } from '../services/atomic.service';
 import { CARService } from '../services/car.service';
 import { AttackCveService } from '../services/attack-cve.service';
 import { ExploitdbService } from '../services/exploitdb.service';
+import { D3fendService } from '../services/d3fend.service';
+import { CveService } from '../services/cve.service';
+import { MispService } from '../services/misp.service';
+import { OpenCtiService } from '../services/opencti.service';
+import { EnrichmentService } from '../services/enrichment.service';
+import { ImplementationService } from '../services/implementation.service';
+import { TimelineService } from '../services/timeline.service';
+import { PanelNavService } from '../services/panel-nav.service';
+import { FilterService } from '../services/filter.service';
+import { DashboardConfigService } from '../services/dashboard-config.service';
 import { PostureCardComponent } from '../components/posture-card/posture-card.component';
 import { AssessmentWizardComponent } from '../components/assessment-wizard/assessment-wizard.component';
-import { THREAT_WEIGHT_PROVIDER, allGroupsWeight } from '../models/posture/threat-weight';
+import { DashboardPanelComponent } from '../components/dashboard-panel/dashboard-panel.component';
+import { ActorProfilePanelComponent } from '../components/actor-profile-panel/actor-profile-panel.component';
+import { THREAT_WEIGHT_PROVIDER } from '../models/posture/threat-weight';
 import { POSTURE_TODAY } from '../models/posture/posture-today';
-import { resolveProfile } from '../models/threat-profile';
+import { ThreatGroup } from '../models/group';
 import { parseFixtureDomain, resetBrowserState, signalStubProviders } from './lens-harness';
+import { makePostureStub, postureStubProvider } from './posture-stub';
 
 const TODAY = new Date('2026-10-01T00:00:00.000Z');
+const cardLine = (f: { nativeElement: unknown }): number =>
+  Number(((f.nativeElement as HTMLElement).querySelector('[data-posture="threat-relevant"]')?.textContent ?? '').trim());
+const uniqueTechIds = (wiz: AssessmentWizardComponent): number =>
+  new Set(wiz.tacticAssessments.flatMap(ta => ta.techniques.map(t => t.id))).size;
 
+// ─── A. Profile denominators move together in one change-detection pass ──────────────
 describe('threat-profile denominators move in one step (P2-10 [AC])', () => {
   let domain: Domain;
   let threatProfile: ThreatProfileService;
   let gap: GapAnalysisService;
 
-  /** Load a domain the way DataService publishes one (matches posture.service.spec). */
   function load(d: Domain, id: AttackDomain): void {
     const ds = TestBed.inject(DataService) as unknown as {
       attackDomain: AttackDomain; currentDomain$: { next(v: AttackDomain): void }; domainSubject: { next(v: Domain | null): void };
@@ -59,11 +75,9 @@ describe('threat-profile denominators move in one step (P2-10 [AC])', () => {
         provideHttpClient(withXhr()), provideHttpClientTesting(), provideRouter([]),
         ...signalStubProviders(),
         { provide: POSTURE_TODAY, useValue: signal(TODAY) },
-        // The seam P2-10 wires: the shared profile is the threat-weight source.
         { provide: THREAT_WEIGHT_PROVIDER, useExisting: ThreatProfileService },
-        // Gap-analysis detection stubs (the lens-harness stubs answer different method
-        // names). These make generateReport() run; its denominator is the profile, not
-        // detection counts, so returning 0/[] does not affect totalTechniques.
+        // Gap detection stubs (the lens-harness stubs answer different names); the gap
+        // denominator is the profile, not detection counts, so 0/[] is fine.
         ...[SigmaService, ElasticService, SplunkContentService].map(t => ({ provide: t, useValue: { getRuleCount: () => 0 } })),
         { provide: M365DefenderService, useValue: { getQueriesForTechnique: () => [] } },
         { provide: AtomicService, useValue: { getTestCount: () => 0 } },
@@ -79,67 +93,160 @@ describe('threat-profile denominators move in one step (P2-10 [AC])', () => {
 
   afterEach(() => resetBrowserState());
 
-  /** The rendered ctem posture-card "threat-relevant techniques: N" line. */
-  function cardThreatRelevant(): number {
-    const f = TestBed.createComponent(PostureCardComponent);
-    f.componentRef.setInput('scope', 'threat-relevant');
-    f.detectChanges();
-    const el = (f.nativeElement as HTMLElement).querySelector('[data-posture="threat-relevant"]');
-    return Number((el?.textContent ?? '').trim());
-  }
-  /** The wizard's step-3 denominator getter. */
-  function wizardTotal(): number {
-    return TestBed.createComponent(AssessmentWizardComponent).componentInstance.totalTechniques;
-  }
-  /** The gap-analysis report's total-techniques denominator. */
-  function gapTotal(): number {
-    return gap.generateReport(domain, threatProfile.current).summary.totalTechniques;
-  }
+  const gapTotal = () => gap.generateReport(domain, threatProfile.current).summary.totalTechniques;
 
-  it('wizard, gap, ctem threat-relevant line and parentTechniqueIds.size agree and move together', () => {
+  it('one setSource, one CD pass: the mounted card line and the wizard step-3 set equal parentTechniqueIds.size', () => {
+    // Mount ONE card and ONE wizard BEFORE the change.
+    const cardF = TestBed.createComponent(PostureCardComponent);
+    cardF.componentRef.setInput('scope', 'threat-relevant');
+    cardF.detectChanges();
+    const wiz = TestBed.createComponent(AssessmentWizardComponent).componentInstance;
+    (wiz as unknown as { domain: Domain }).domain = domain;
+
     const withTechs = domain.groups.filter(g => (domain.techniquesByGroup.get(g.id) ?? []).length > 0);
     expect(withTechs.length).withContext('fixture has >= 2 groups with techniques').toBeGreaterThanOrEqual(2);
-    const [a, b] = withTechs;
 
-    // The card counts the profile's parentTechniqueIds (§2.6, THE denominator), so every
-    // surface equals parentTechniqueIds.size for EVERY profile kind — including Skip's 'all'.
-    const agree = (): number => {
-      const n = threatProfile.current.parentTechniqueIds.size;
-      expect([wizardTotal(), gapTotal(), cardThreatRelevant()]).toEqual([n, n, n]);
-      return n;
-    };
+    threatProfile.setSource({ kind: 'groups', ids: [withTechs[0].id, withTechs[1].id] });
+    cardF.detectChanges();                                             // ONE pass reflects the new profile
+    (wiz as unknown as { buildAssessment(): void }).buildAssessment(); // wizard rebuilds step 3
 
-    threatProfile.setSource({ kind: 'groups', ids: [a.id, b.id] });
-    expect(agree()).toBeGreaterThan(0);
-
-    // {kind:'all'} is the wizard's Skip default: group-less parents are in the denominator too.
-    threatProfile.setSource({ kind: 'all' });
-    expect(agree()).toBeGreaterThan(0);
-
-    threatProfile.setSource({ kind: 'groups', ids: [] });
-    expect(agree()).toBe(0);
+    const n = threatProfile.current.parentTechniqueIds.size;
+    expect(n).toBeGreaterThan(0);
+    expect(cardLine(cardF)).toBe(n);                 // rendered ctem line
+    expect(uniqueTechIds(wiz)).toBe(n);              // the actual step-3 technique set (deduped)
+    expect(wiz.totalTechniques).toBe(n);
+    expect(gapTotal()).toBe(n);
   });
 
-  it('the all-groups dashboard and actor denominators do NOT move with the profile (§10.4 item 15)', () => {
-    const parents = domain.techniques.filter(t => !t.isSubtechnique);
-    // dashboard criticalRisk "threat-relevant" = parents used by any ATT&CK group (R4 §3; dashboard-panel:261-266).
-    const dashCount = () => parents.filter(t => allGroupsWeight(domain, t.id) > 0).length;
-    // actor-profile per-actor total = techniquesByGroup(actor).length (R4 §3; actor-profile-panel:84).
-    const actor = domain.groups[0];
-    const actorTotal = () => (domain.techniquesByGroup.get(actor.id) ?? []).length;
+  it('Skip sets {kind:"all"}; the wizard/gap/card totals all equal the domain parent-technique count', () => {
+    const wiz = TestBed.createComponent(AssessmentWizardComponent).componentInstance;
+    (wiz as unknown as { domain: Domain }).domain = domain;
 
-    threatProfile.setSource({ kind: 'all' });
-    const d1 = dashCount();
-    const a1 = actorTotal();
-    expect(d1).toBeGreaterThan(0);
+    wiz.setSkipGroups();   // → ThreatProfileService.setSource({kind:'all'})
+    expect(threatProfile.current.source).toEqual({ kind: 'all' });
 
-    threatProfile.setSource({ kind: 'groups', ids: [] });
-    expect(dashCount()).toBe(d1);     // all-groups count is profile-independent
-    expect(actorTotal()).toBe(a1);
+    const domainParents = domain.techniques.filter(t => !t.isSubtechnique).length;
+    expect(threatProfile.current.parentTechniqueIds.size).toBe(domainParents);
+
+    (wiz as unknown as { buildAssessment(): void }).buildAssessment();
+    const cardF = TestBed.createComponent(PostureCardComponent);
+    cardF.componentRef.setInput('scope', 'threat-relevant');
+    cardF.detectChanges();
+
+    expect(wiz.totalTechniques).toBe(domainParents);
+    expect(uniqueTechIds(wiz)).toBe(domainParents);
+    expect(gapTotal()).toBe(domainParents);
+    expect(cardLine(cardF)).toBe(domainParents);
   });
 });
 
-// The measured Top-20 default on the real bundled Enterprise 19.2, recorded for the PR body.
+// ─── B. The all-groups dashboard & actor denominators do NOT move (§10.4 item 15) ────
+describe('all-groups denominators are profile-independent (P2-10 §10.4 item 15)', () => {
+  // The dashboard reads groupsByTechnique/KEV/enrichment, never the token, so binding the
+  // profile and changing it leaves criticalRiskCount/kevExposedGapCount unmoved. Fixture
+  // mirrors dashboard-panel.component.spec (which this never edits).
+  const tech = (attackId: string, tactic: string, mitigationCount = 0): Technique => ({
+    id: `attack-pattern--${attackId}`, attackId, name: attackId, description: '', url: '',
+    tacticShortnames: [tactic], isSubtechnique: attackId.includes('.'), parentId: null, subtechniques: [],
+    mitigationCount, platforms: [], dataSources: [], detectionText: '', defenseBypassed: [],
+    permissionsRequired: [], effectivePermissions: [], systemRequirements: [], impactType: [],
+    remoteSupport: false, capecIds: [],
+  });
+  const T1003 = tech('T1003', 'credential-access', 3);
+  const T1059 = tech('T1059', 'execution', 1);
+  const T1190 = tech('T1190', 'initial-access');
+  const T1566 = tech('T1566', 'initial-access');
+  const ENRICHED = new Set(['T1003', 'T1059']);
+  const col = (shortname: string, name: string, techniques: Technique[]) => ({
+    tactic: { id: `x-mitre-tactic--${shortname}`, attackId: 'TA0000', name, shortname, description: '', url: '', order: 0 },
+    techniques,
+  });
+  const g0 = { id: 'intrusion-set--g0', attackId: 'G0001', name: 'G0001', aliases: [] } as unknown as ThreatGroup;
+  const DOMAIN = {
+    name: 'Enterprise ATT&CK', attackVersion: '19.2',
+    techniques: [T1003, T1059, T1190, T1566],
+    mitigations: [{}, {}], groups: [g0],
+    tacticColumns: [col('initial-access', 'Initial Access', [T1190, T1566]), col('execution', 'Execution', [T1059]), col('credential-access', 'Credential Access', [T1003])],
+    groupsByTechnique: new Map([[T1190.id, [{}]], [T1003.id, [{}, {}]]]),
+    mitigationsByTechnique: new Map([[T1003.id, [{}, {}, {}]], [T1059.id, [{}]]]),
+    techniquesByGroup: new Map([[g0.id, [T1190, T1566]]]),
+  } as unknown as Domain;
+
+  let threatProfile: ThreatProfileService;
+  let status$: BehaviorSubject<Map<string, string>>;
+
+  beforeEach(() => {
+    resetBrowserState();
+    status$ = new BehaviorSubject(new Map<string, string>());
+    const loaded = () => new BehaviorSubject<boolean>(false);
+    const dataStub = {
+      domain$: new BehaviorSubject(DOMAIN), currentDomain$: new BehaviorSubject<AttackDomain>('enterprise'),
+      getCurrentDomain: () => DOMAIN, getCurrentAttackDomain: (): AttackDomain => 'enterprise',
+      getTechniquesForGroup: (id: string) => (DOMAIN.techniquesByGroup.get(id) ?? []),
+      getSoftwareForGroup: () => [], getCampaignsForGroup: () => [],
+    };
+    TestBed.configureTestingModule({
+      imports: [DashboardPanelComponent, ActorProfilePanelComponent],
+      providers: [
+        provideHttpClient(withXhr()), provideHttpClientTesting(), provideRouter([]),
+        { provide: DataService, useValue: dataStub },
+        { provide: THREAT_WEIGHT_PROVIDER, useExisting: ThreatProfileService },
+        postureStubProvider(makePostureStub(() => DOMAIN as never)),
+        { provide: PanelNavService, useValue: { open: () => undefined } },
+        { provide: FilterService, useValue: { toggleThreatGroup: () => undefined, selectTechnique: () => undefined } },
+        { provide: EnrichmentService, useValue: {
+            signals: (t: Technique) => ({ mitigation: ENRICHED.has(t.attackId), detection: false, atomic: false, d3fend: false, control: false, threatIntel: t.attackId === 'T1190', cve: t.attackId === 'T1190' }),
+            referenceDefenseTotals: () => ({ total: 4, mapped: 2, mitigation: 2, detection: 1, control: 1, d3fend: 0, atomic: 0 }),
+        } },
+        { provide: ImplementationService, useValue: { status$, summarize: () => ({ implemented: 0, 'in-progress': 0, planned: 0, 'not-started': 0, untracked: 0 }) } },
+        { provide: TimelineService, useValue: { getAll: () => [] } },
+        { provide: AttackCveService, useValue: { loaded$: loaded(), getKevCvesForTechnique: (id: string) => (id === 'T1190' ? [{ cveId: 'CVE-2024-0001' }] : []), getCvesForTechnique: () => [] } },
+        { provide: CARService, useValue: { loaded$: loaded(), getAnalytics: () => [] } },
+        { provide: AtomicService, useValue: { loaded$: loaded(), getTestCount: () => 0 } },
+        { provide: D3fendService, useValue: { loaded$: loaded(), getCountermeasures: () => [] } },
+        { provide: DashboardConfigService, useValue: { widgets$: new BehaviorSubject([{ id: 'gap-summary', label: 'Gaps', icon: '', visible: true, order: 0 }]) } },
+        { provide: SigmaService, useValue: { loaded$: loaded(), getRuleCount: () => 0 } },
+        { provide: ElasticService, useValue: { loaded$: loaded(), getRuleCount: () => 0 } },
+        { provide: SplunkContentService, useValue: { loaded$: loaded(), getRuleCount: () => 0 } },
+        { provide: CveService, useValue: { getKevEntry: () => undefined } },
+        { provide: MispService, useValue: { loaded$: loaded(), total$: new BehaviorSubject(0) } },
+        { provide: OpenCtiService, useValue: { connected$: new BehaviorSubject(false) } },
+      ],
+    });
+    threatProfile = TestBed.inject(ThreatProfileService);
+  });
+
+  afterEach(() => resetBrowserState());
+
+  it('dashboard criticalRiskCount and kevExposedGapCount stay fixed across a profile change', () => {
+    const f = TestBed.createComponent(DashboardPanelComponent);
+    f.detectChanges();
+    const before = { crit: f.componentInstance.stats!.criticalRiskCount, kev: f.componentInstance.stats!.kevExposedGapCount };
+    expect(before.crit).toBe(1);   // T1190: used by a group, undefended
+    expect(before.kev).toBe(1);    // T1190: KEV-mapped, undefended
+
+    threatProfile.setSource({ kind: 'groups', ids: [] });   // narrow the profile to nothing
+    status$.next(new Map());                                 // force a stats rebuild
+    f.detectChanges();
+    expect(f.componentInstance.stats!.criticalRiskCount).toBe(before.crit);
+    expect(f.componentInstance.stats!.kevExposedGapCount).toBe(before.kev);
+  });
+
+  it('actor-profile per-actor total stays fixed across a profile change', () => {
+    const f = TestBed.createComponent(ActorProfilePanelComponent);
+    f.detectChanges();
+    f.componentInstance.selectGroup(g0);
+    const before = f.componentInstance.selectedProfile!.techniques.length;
+    expect(before).toBe(2);   // g0 uses T1190, T1566
+
+    threatProfile.setSource({ kind: 'groups', ids: [] });
+    f.componentInstance.selectGroup(g0);
+    f.detectChanges();
+    expect(f.componentInstance.selectedProfile!.techniques.length).toBe(before);
+  });
+});
+
+// ─── C. Top-20 default: the service default and the rendered ctem line are 167 ───────
 describe('Top-20 default threat-relevant count on bundled Enterprise 19.2 (P2-10)', () => {
   let domain: Domain;
   beforeAll(async () => {
@@ -147,10 +254,34 @@ describe('Top-20 default threat-relevant count on bundled Enterprise 19.2 (P2-10
     TestBed.configureTestingModule({ providers: [{ provide: HttpClient, useValue: { get: () => of({}) } }] });
     domain = (TestBed.inject(DataService) as unknown as { parseBundle(b: unknown, n: string): Domain })
       .parseBundle(bundle, 'Enterprise ATT&CK');
-    TestBed.resetTestingModule();   // release the injected DataService (cross-spec leak guard)
+    TestBed.resetTestingModule();
   }, 120_000);
 
-  it('Top 20 groups by prevalence weight 167 parent techniques', () => {
-    expect(resolveProfile({ kind: 'top-groups', n: 20 }, domain).parentTechniqueIds.size).toBe(167);
+  afterEach(() => resetBrowserState());
+
+  it("the service's default profile and the rendered ctem threat-relevant line are both 167", () => {
+    resetBrowserState();
+    const dataStub = {
+      domain$: new BehaviorSubject(domain), currentDomain$: new BehaviorSubject<AttackDomain>('enterprise'),
+      getCurrentDomain: () => domain, getCurrentAttackDomain: (): AttackDomain => 'enterprise',
+    };
+    TestBed.configureTestingModule({
+      imports: [PostureCardComponent],
+      providers: [
+        provideHttpClient(withXhr()), provideHttpClientTesting(),
+        { provide: DataService, useValue: dataStub },
+        { provide: THREAT_WEIGHT_PROVIDER, useExisting: ThreatProfileService },
+        postureStubProvider(makePostureStub(() => domain as never)),
+      ],
+    });
+    // The service, right after construction, defaults to Top-20 by prevalence.
+    const threatProfile = TestBed.inject(ThreatProfileService);
+    expect(threatProfile.current.source).toEqual({ kind: 'top-groups', n: 20 });
+    expect(threatProfile.current.parentTechniqueIds.size).toBe(167);
+
+    const f = TestBed.createComponent(PostureCardComponent);
+    f.componentRef.setInput('scope', 'threat-relevant');
+    f.detectChanges();
+    expect(cardLine(f)).toBe(167);
   });
 });

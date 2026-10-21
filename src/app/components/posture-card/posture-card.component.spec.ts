@@ -133,4 +133,28 @@ describe('PostureCardComponent (P2-07)', () => {
     f.detectChanges();
     expect(f.componentInstance.tally()).toEqual({ total: 0, assessable: 0, mapped: 0, covered: 0, partial: 0, proven: 0, stale: 0 });
   });
+
+  it("scope 'threat-relevant' re-renders when the token's parents() signal changes", () => {
+    const d = makeSplitDomain();
+    const parents = signal<ReadonlySet<string>>(new Set([d.techniques.find(t => t.attackId === 'T1')!.id]));
+    const stub = makePostureStub(() => d, {});
+    TestBed.configureTestingModule({
+      imports: [PostureCardComponent],
+      providers: [
+        { provide: DataService, useValue: { domain$: new BehaviorSubject(d) } },
+        postureStubProvider(stub),
+        { provide: THREAT_WEIGHT_PROVIDER, useValue: { weight: () => 0, revision: signal(0), parents } },
+      ],
+    });
+    const f = TestBed.createComponent(PostureCardComponent);
+    f.componentRef.setInput('scope', 'threat-relevant');
+    f.detectChanges();
+    const line = () => Number(((f.nativeElement as HTMLElement).querySelector('[data-posture="threat-relevant"]')?.textContent ?? '').trim());
+    expect(line()).toBe(1);
+
+    const allParents = d.techniques.filter(t => !t.isSubtechnique);
+    parents.set(new Set(allParents.map(t => t.id)));   // a real signal change
+    f.detectChanges();
+    expect(line()).toBe(allParents.length);
+  });
 });

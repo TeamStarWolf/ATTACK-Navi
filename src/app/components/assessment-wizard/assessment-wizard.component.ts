@@ -38,21 +38,8 @@ interface TechniqueAssessment {
   epssMax: number;
 }
 
-interface SectorCategory {
-  label: string;
-  keywords: string[];
-}
-
-// Exported so threat-profile-picker.component.spec can compare the picker's copy against
-// this table and fail on drift (P2-03 round 2, item D). P2-10 removes the picker's copy.
-export const SECTOR_CATEGORIES: SectorCategory[] = [
-  { label: 'Financial', keywords: ['financial', 'banking', 'payment', 'fin'] },
-  { label: 'Government', keywords: ['government', 'military', 'defense', 'intelligence', 'political', 'embassy'] },
-  { label: 'Healthcare', keywords: ['health', 'hospital', 'medical', 'pharma'] },
-  { label: 'Technology', keywords: ['technology', 'software', 'tech', 'telecom', 'it '] },
-  { label: 'Energy', keywords: ['energy', 'oil', 'gas', 'nuclear', 'power', 'utility'] },
-  { label: 'Education', keywords: ['education', 'university', 'academic', 'research'] },
-];
+// The sector aid table now lives only in ThreatProfilePickerComponent (P2-10); the wizard
+// uses the picker, so it no longer defines or exports the table.
 
 @Component({
   selector: 'app-assessment-wizard',
@@ -298,13 +285,15 @@ export class AssessmentWizardComponent implements OnDestroy {
   }
 
   private updateProgress(): void {
-    this.ratedTechniques = this.tacticAssessments.reduce(
-      (sum, ta) => sum + ta.techniques.filter(t => !!t.status).length, 0,
-    );
-    // ratedTechniques counts per-tactic occurrences; a multi-tactic technique can push
-    // it past the unique parent total, so cap the bar at 100%.
+    // Count UNIQUE technique ids: a multi-tactic technique appears in tacticAssessments
+    // once per tactic, but totalTechniques is the unique parent count (parentTechniqueIds).
+    const rated = new Set<string>();
+    for (const ta of this.tacticAssessments) {
+      for (const t of ta.techniques) if (t.status) rated.add(t.id);
+    }
+    this.ratedTechniques = rated.size;
     this.assessmentProgress = this.totalTechniques > 0
-      ? Math.min(100, Math.round((this.ratedTechniques / this.totalTechniques) * 100))
+      ? Math.round((this.ratedTechniques / this.totalTechniques) * 100)
       : 0;
   }
 
@@ -312,15 +301,16 @@ export class AssessmentWizardComponent implements OnDestroy {
 
   private computeResults(): void {
     this.totalAssessed = this.totalTechniques;
-    this.coverageCount = 0;
 
+    // Unique covered technique ids, so coverageCount <= totalAssessed (a multi-tactic
+    // technique is counted once); keeps coveragePercent <= 100 and uncoveredFraction >= 0.
+    const covered = new Set<string>();
     for (const ta of this.tacticAssessments) {
       for (const tech of ta.techniques) {
-        if (tech.status === 'implemented' || tech.status === 'in-progress') {
-          this.coverageCount++;
-        }
+        if (tech.status === 'implemented' || tech.status === 'in-progress') covered.add(tech.id);
       }
     }
+    this.coverageCount = covered.size;
 
     this.coveragePercent = this.totalAssessed > 0
       ? Math.round((this.coverageCount / this.totalAssessed) * 100)
