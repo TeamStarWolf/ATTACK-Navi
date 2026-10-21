@@ -60,6 +60,15 @@ export const RULES = {
   // actors, software and campaigns carry aliases, so a technique-name filter
   // (`t.name.toLowerCase().includes`) never trips the rule, while a real group
   // picker always offers name-and-alias search. The picker itself is excluded.
+  // Why alias and not name: this is a seam guard, not a security control; a
+  // name-based clause cannot tell a group-name filter from a technique-name
+  // filter without false positives, and false positives erode the allow-list
+  // until it means nothing. The alias clause has zero false positives and
+  // catches the form every removed rival actually took (name+alias search copied
+  // from the real picker). Two rival forms it CANNOT catch are accepted as
+  // review-caught, not lint-caught: (1) a name-only group filter over
+  // `domain.groups` and (2) a bare `<select>`/list of `domain.groups` with no
+  // filter at all. (Decisions sheet: P2-17.)
   'one-picker': {
     summary: 'a component outside threat-profile-picker filters domain.groups by name or alias',
     exclude: /components\/threat-profile-picker\//,
