@@ -53,7 +53,9 @@ test.describe('cross-domain threat profile (RP-F decision 6)', () => {
     await expect(absent).toHaveCount(1);
     await expect(absent).toContainText('APT29');
     await expect(absent).toContainText('has no ICS use');
-    await expect(absent).toHaveAttribute('aria-pressed', 'true');   // kept in the selection, dimmed
+    await expect(absent).toHaveAttribute('aria-pressed', 'true');   // kept in the selection
+    await expect(absent).toHaveCSS('opacity', '1');                  // marked by a dashed rail, never faded below AA contrast
+    await expect(absent).toHaveCSS('border-left-style', 'dashed');
     expect(await storedIds(page)).toEqual(ids);
 
     // The drawer line carries the same sentence (in-session navigation keeps ICS loaded).

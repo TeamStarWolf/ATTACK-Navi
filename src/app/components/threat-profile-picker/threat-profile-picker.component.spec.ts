@@ -347,7 +347,7 @@ describe('ThreatProfilePickerComponent', () => {
       fixture.detectChanges();
     });
 
-    it('the header shows the shared sentence and lists the absent group pressed, dimmed, "has no <Domain> use"', () => {
+    it('the header shows the shared sentence and lists the absent group pressed, marked, "has no <Domain> use"', () => {
       expect(host().querySelector('[data-testid="profile-domain-notice"]')!.textContent!.trim()).toBe(NOTICE);
       const rows = absentButtons();
       expect(rows.length).toBe(1);
@@ -355,6 +355,51 @@ describe('ThreatProfilePickerComponent', () => {
       expect(rows[0].classList).toContain('tpp-item--absent');
       expect(rows[0].getAttribute('aria-pressed')).toBe('true');
     });
+
+    // WCAG 2 relative luminance / contrast of an rgb()/rgba() colour composited over an opaque background.
+    const rgba = (c: string): number[] => {
+      const m = c.match(/rgba?\(([^)]+)\)/);
+      if (!m) throw new Error(`unparsed colour ${c}`);
+      const p = m[1].split(/[\s,/]+/).filter(Boolean).map(Number);
+      return [p[0], p[1], p[2], p.length > 3 ? p[3] : 1];
+    };
+    const lum = ([r, g, b]: number[]) => {
+      const ch = (v: number) => { const x = v / 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; };
+      return 0.2126 * ch(r) + 0.7152 * ch(g) + 0.0722 * ch(b);
+    };
+    const over = (fg: number[], bg: number[], alpha: number) => fg.slice(0, 3).map((v, i) => v * alpha + bg[i] * (1 - alpha));
+    const ratio = (a: number[], b: number[]) => { const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x); return (hi + 0.05) / (lo + 0.05); };
+    /** Contrast of `el`'s text against the row background, counting opacity on every ancestor up to the component host. */
+    const textContrast = (el: Element, row: Element): number => {
+      let alpha = 1;
+      for (let n: Element | null = el; n && n !== host(); n = n.parentElement) alpha *= Number(getComputedStyle(n).opacity);
+      const page = rgba(getComputedStyle(document.body).getPropertyValue('--bg-base').trim().replace(/^#(..)(..)(..)$/,
+        (_x, r, g, b) => `rgb(${parseInt(r, 16)}, ${parseInt(g, 16)}, ${parseInt(b, 16)})`));
+      const rowBg = rgba(getComputedStyle(row).backgroundColor);
+      const bg = over(rowBg, page, rowBg[3]);
+      const fg = rgba(getComputedStyle(el).color);
+      return ratio(over(fg, bg, fg[3] * alpha), bg);
+    };
+
+    for (const theme of ['dark', 'light'] as const) {
+      it(`every label on an absent row keeps >= 4.5:1 contrast, pressed and unpressed (${theme} theme, WCAG AA)`, () => {
+        document.body.classList.toggle('light-mode', theme === 'light');
+        try {
+          for (const pressed of [true, false]) {
+            if (!pressed) { (absentButtons()[0] as HTMLButtonElement).click(); fixture.detectChanges(); }
+            const row = absentButtons()[0];
+            expect(row.getAttribute('aria-pressed')).toBe(String(pressed));
+            expect(Number(getComputedStyle(row).opacity)).withContext('no whole-row opacity').toBe(1);
+            for (const sel of ['.tpp-item-name', '.tpp-item-id']) {
+              const c = textContrast(row.querySelector(sel)!, row);
+              expect(c).withContext(`${sel} ${theme} pressed=${pressed}: ${c.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
+            }
+          }
+        } finally {
+          document.body.classList.remove('light-mode');
+        }
+      });
+    }
 
     it('toggling a present group keeps the absent one in the stored selection (never dropped)', () => {
       component.selectGroup(component.groups.find((g) => g.id === 'intrusion-set--bbb')!);

@@ -112,7 +112,7 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
   selectedLayerFile: string | null = null;
   /**
    * profile mode: stored groups the loaded domain lacks (ThreatProfileService.absentGroups),
-   * listed dimmed under the notice and still selectable. One deselected here stays listed
+   * listed under the notice (dashed rail, muted name, full contrast) and still selectable. One deselected here stays listed
    * (unpressed) until the next domain load, so it can be picked again; none is ever
    * dropped from the selection by a domain switch.
    */
@@ -178,7 +178,7 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
     this.subs.unsubscribe();
   }
 
-  /** profile mode: add the service's current absent groups to the dimmed list (no duplicates). */
+  /** profile mode: add the service's current absent groups to the absent list (no duplicates). */
   private mergeAbsent(): void {
     if (this.mode !== 'profile') return;
     const shown = new Set(this.absentShown.map((r) => r.id));

@@ -139,8 +139,17 @@
   }
 }
 
-/* profile mode: stored groups the loaded domain lacks, dimmed but still selectable (RP-F decision 6). */
-.tpp-absent .tpp-item--absent { opacity: 0.6; }
+/* profile mode: stored groups the loaded domain lacks, set apart but still selectable (RP-F decision 6).
+   Marked by a dashed left rail and the muted text token, never by opacity: these rows are live,
+   pressable buttons, so the name and the "has no <Domain> use" label keep >= 4.5:1 (WCAG AA) in
+   both themes. The picker spec guards the ratio. */
+.tpp-absent .tpp-item--absent {
+  border-left: 2px dashed var(--text-faint);
+
+  .tpp-item-name { color: var(--text-muted); font-style: italic; }
+
+  &.selected { border-left-color: var(--accent); box-shadow: none; }
+}
 
 .tpp-empty {
   padding: 8px 10px;
