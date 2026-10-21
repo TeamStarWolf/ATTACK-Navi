@@ -1122,7 +1122,17 @@
             <span class="section-chevron">{{ isSectionCollapsed('rule-sources') ? '▸' : '▾' }}</span>
             Rule sources
             @if (!ruleSourcesLoading) {
-              <span class="count-badge upgrade-section-count">{{ ruleSourcesTotal }}</span>
+              @if (ruleSourcesFailed === 0) {
+                <span class="count-badge upgrade-section-count">{{ ruleSourcesTotal }}</span>
+              } @else if (ruleSourcesFailed === ruleSources.length) {
+                <!-- Nothing loaded: no count to show, and never a 0 that reads as "no rule names it". -->
+                <span class="count-badge upgrade-section-count rs-badge-failed" data-state="not-loaded"
+                      title="The bundled rule snapshot did not load; the section says why">not loaded</span>
+              } @else {
+                <!-- Some loaded: their total, and how many sources it leaves out. -->
+                <span class="count-badge upgrade-section-count rs-badge-failed" data-state="partial"
+                      [title]="'Total of the sources that loaded; ' + ruleSourcesFailed + ' of ' + ruleSources.length + ' did not load'">{{ ruleSourcesTotal }}, {{ ruleSourcesFailed }} of {{ ruleSources.length }} not loaded</span>
+              }
             }
           </h4>
           @if (!isSectionCollapsed('rule-sources')) {

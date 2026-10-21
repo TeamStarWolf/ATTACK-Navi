@@ -84,7 +84,12 @@ export class SplunkContentService {
     return this.counts;
   }
 
-  /** Up to ten detection names for a technique, each with its permalink at the pinned commit. */
+  /**
+   * Up to ten detection names for a technique, each with its permalink at the pinned commit.
+   * No production caller: the drawer reads RuleCoverageSnapshotService.section() and
+   * ruleLinks() itself (it also needs the count, SHA, dates and error). Kept for API
+   * compatibility.
+   */
   fetchRulesForTechnique(attackId: string): Observable<RuleCoverageLink[]> {
     if (this.section) return of(ruleLinks(this.section, attackId));
     return this.snapshot.section('splunk').pipe(map(section => ruleLinks(section, attackId)));

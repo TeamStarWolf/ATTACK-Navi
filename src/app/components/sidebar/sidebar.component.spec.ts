@@ -221,6 +221,62 @@ describe('SidebarComponent: Rule sources (Elastic, Splunk, mdecrevoisier SIGMA a
       expect(s.querySelector('[data-testid="rule-source-empty"]')).toBeNull();
       expect(s.querySelector('[data-testid="rule-source-provenance"]')).toBeNull();
     }
+    // The header badge says the snapshot did not load; it never reads 0 ("no rule names it").
+    const badge = () => host().querySelector('#sb-sec-rule-sources .count-badge');
+    expect(text(badge())).toBe('not loaded');
+    expect(badge()!.getAttribute('data-state')).toBe('not-loaded');
+    // "Expand sections with data" keeps a failed section open, so its reason stays in view.
+    const cmp = fixture.componentInstance;
+    cmp.expandRelevant();
+    fixture.detectChanges();
+    expect(host().querySelector('#sb-sec-rule-sources')!.getAttribute('aria-expanded')).toBe('true');
+    expect(host().querySelectorAll('[data-testid="rule-source-error"]').length).toBe(3);
+    // After a failed load the next technique opened asks again (shareReplay resets on error),
+    // and a load that now succeeds shows the counts.
+    open('T1114');
+    flushSnapshot();
+    fixture.detectChanges();
+    expect(host().querySelectorAll('[data-testid="rule-source-error"]').length).toBe(0);
+    expect(text(badge())).toBe('11');
+    expect(badge()!.getAttribute('data-state')).toBeNull();
+  });
+
+  it('a partly malformed snapshot: the badge totals the sources that loaded and says one did not', () => {
+    const doc = JSON.parse(JSON.stringify(RULE_COVERAGE_FIXTURE));
+    delete doc.sources.splunk.sha;
+    snapshotRequests()[0].flush(doc);
+    open('T1059');
+    expect(text(bySource('splunk').querySelector('[data-testid="rule-source-error"]')))
+      .toBe("Not loaded: bundled snapshot missing or malformed: 'splunk' names no repository or commit");
+    expect(bySource('splunk').querySelector('[data-testid="rule-source-count"]')).toBeNull();
+    expect(text(bySource('elastic').querySelector('[data-testid="rule-source-count"]'))).toBe('323 rules');
+    expect(text(bySource('mdecrevoisier').querySelector('[data-testid="rule-source-count"]'))).toBe('7 rules');
+    const badge = host().querySelector('#sb-sec-rule-sources .count-badge')!;
+    // Elastic + mdecrevoisier only, and the badge says the total leaves Splunk out.
+    expect(text(badge)).toBe(`${323 + 7}, 1 of 3 not loaded`);
+    expect(badge.getAttribute('data-state')).toBe('partial');
+    expect(badge.getAttribute('title')).toBe('Total of the sources that loaded; 1 of 3 did not load');
+    // A technique the loaded sources do not name: total 0, yet the section stays open on expand.
+    open('T1082');
+    expect(text(host().querySelector('#sb-sec-rule-sources .count-badge'))).toBe('0, 1 of 3 not loaded');
+    const cmp = fixture.componentInstance;
+    cmp.expandRelevant();
+    fixture.detectChanges();
+    expect(host().querySelector('#sb-sec-rule-sources')!.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('"Expand sections with data" collapses the section only when every source loaded and none names the technique', () => {
+    flushSnapshot();
+    open('T1082');
+    expect(text(host().querySelector('#sb-sec-rule-sources .count-badge'))).toBe('0');
+    const cmp = fixture.componentInstance;
+    cmp.expandRelevant();
+    fixture.detectChanges();
+    expect(host().querySelector('#sb-sec-rule-sources')!.getAttribute('aria-expanded')).toBe('false');
+    open('T1059');
+    cmp.expandRelevant();
+    fixture.detectChanges();
+    expect(host().querySelector('#sb-sec-rule-sources')!.getAttribute('aria-expanded')).toBe('true');
   });
 
   it('has no Sentinel section, jump chip or text, and the Rule sources chip opens its section', () => {

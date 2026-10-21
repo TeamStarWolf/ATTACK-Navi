@@ -181,9 +181,19 @@ export class SidebarComponent implements OnInit, OnDestroy {
   ruleSourcesLoading = false;
   private readonly ruleCoverage = inject(RuleCoverageSnapshotService);
 
-  /** The three sources' counts added up, for the section badge. */
+  /**
+   * The counts of the sources that loaded, added up, for the section badge. A source
+   * whose section did not load is left out: it has no count, not a count of 0. The
+   * badge says how many were left out (ruleSourcesFailed), so a partial total never
+   * reads as complete.
+   */
   get ruleSourcesTotal(): number {
-    return this.ruleSources.reduce((sum, s) => sum + s.count, 0);
+    return this.ruleSources.reduce((sum, s) => sum + (s.error ? 0 : s.count), 0);
+  }
+
+  /** Sources whose section did not load (their reason shows in the section body). */
+  get ruleSourcesFailed(): number {
+    return this.ruleSources.filter(s => s.error).length;
   }
 
   // Microsoft 365 Defender Hunting Queries
@@ -385,7 +395,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
     if (this.killChainEntries.length === 0) this.collapsedSections.add('kill-chain');
     if (this.pocCount === 0) this.collapsedSections.add('poc-exploits');
     if (!this.mispCluster) this.collapsedSections.add('misp');
-    if (this.ruleSourcesTotal === 0 && !this.ruleSourcesLoading) this.collapsedSections.add('rule-sources');
+    // A source that did not load is not an empty result: keep the section open so its reason shows.
+    if (this.ruleSourcesTotal === 0 && this.ruleSourcesFailed === 0 && !this.ruleSourcesLoading) this.collapsedSections.add('rule-sources');
     if (this.m365Queries.length === 0) this.collapsedSections.add('m365');
     if (this.siemQueries.length === 0) this.collapsedSections.add('siem');
     if (this.payloadRefs.length === 0) this.collapsedSections.add('payloads');
@@ -1213,9 +1224,16 @@ export class SidebarComponent implements OnInit, OnDestroy {
   /**
    * The Rule sources section for a technique: one view per source of the bundled
    * rule-coverage snapshot. RuleCoverageSnapshotService fetches that file once for the
-   * whole app (the Elastic, Splunk and Sigma services read it at start), so opening the
-   * drawer makes no request of its own. A source whose section does not load shows its
-   * reason; the others still render.
+   * whole app (the Elastic, Splunk and Sigma services read it at start), so after a
+   * successful load opening the drawer makes no request of its own. After a failed load
+   * it does: the service's shareReplay resets on error, so each technique opened asks
+   * for the same-origin file again (and shows it loaded if it now does). A source whose
+   * section does not load shows its reason; the others still render.
+   *
+   * The drawer reads section() and ruleLinks() itself rather than each service's
+   * fetchRulesForTechnique, because it also needs the count, the pinned SHA, the dates
+   * and the per-source error, which those methods do not return. The permalinks come
+   * from the same rulePermalink().
    */
   private loadRuleSources(tech: Technique | null): void {
     this.ruleSourcesSub?.unsubscribe();

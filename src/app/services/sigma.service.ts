@@ -161,7 +161,10 @@ export class SigmaService {
     return this.directCounts;
   }
 
-  /** Returns cached rule details for a technique, if available. */
+  /**
+   * Returns cached rule details for a technique, if available. Like
+   * fetchRulesForTechnique below, no production caller: kept for API compatibility.
+   */
   getCachedRules(attackId: string): SigmaRuleDetail[] | undefined {
     return this.ruleDetailCache.get(attackId);
   }
@@ -172,6 +175,9 @@ export class SigmaService {
    * at the pinned commit. The snapshot is read from the rule bodies (attack.tNNNN
    * tags), so no request goes to GitHub. Results are cached per attackId; a snapshot
    * that did not load returns nothing for now and is not cached.
+   * No production caller: the technique drawer reads RuleCoverageSnapshotService.section()
+   * and ruleLinks() itself (it also needs the count, SHA, dates and error). Kept for API
+   * compatibility.
    */
   fetchRulesForTechnique(attackId: string): Observable<SigmaRuleDetail[]> {
     const cached = this.ruleDetailCache.get(attackId);
