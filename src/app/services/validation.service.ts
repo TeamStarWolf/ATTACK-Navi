@@ -23,6 +23,7 @@ import {
   refForTechnique,
   techniqueRefKey,
 } from '../models/technique-ref';
+import { validateLylatExport, lylatRowsToRuns } from '../contracts/lylat-validated-detections';
 
 export type ValidationStatus = 'passed' | 'failed' | 'partial' | 'no-telemetry' | 'untested' | 'not-reproducible';
 
@@ -649,6 +650,48 @@ export class ValidationService {
       return { ok: false, bySource: {}, dropped, error: 'No valid rows; nothing was replaced.' };
     }
     return this.merge(new Map<SourceId, typeof group>([[source, group]]), dropped);
+  }
+
+  /**
+   * Load a Lylat `lylat-validated-detections/1` file (P2-20). The text is parsed,
+   * validated against the contract (structure, enums, patterns and the privacy
+   * regex — a hit refuses the whole file, nothing reaches the store), then each
+   * row is resolved and keyed at import, grouped by its `lylat-range:<mission>`
+   * source and replaced source-by-source. Atlas rows and rows whose technique
+   * does not resolve in the loaded domain land in `dropped` with a reason. The
+   * file never travels through a URL; callers pass the text they read.
+   */
+  importRangeContract(text: string): ImportResult {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text);
+    } catch (err) {
+      return { ok: false, bySource: {}, dropped: [], error: String(err) };
+    }
+    if (!isObj(parsed) || parsed['schema'] !== LYLAT_CONTRACT_SCHEMA) {
+      return { ok: false, bySource: {}, dropped: [], error: `Not a ${LYLAT_CONTRACT_SCHEMA} file.` };
+    }
+    const v = validateLylatExport(parsed);
+    if (!v.ok) {
+      const shown = v.errors.slice(0, 5).join('; ');
+      const more = v.errors.length > 5 ? ` (+${v.errors.length - 5} more)` : '';
+      return { ok: false, bySource: {}, dropped: [], error: `Invalid range results file: ${shown}${more}` };
+    }
+    const resolve = (id: string) => this.resolver.resolve(id);
+    const domainVersion = this.loaded()?.version ?? '';
+    const { bySource, skipped } = lylatRowsToRuns(v.value, resolve, domainVersion);
+    const result: ImportResult = { ok: true, bySource: {}, dropped: [...skipped] };
+    for (const [source, runs] of bySource) {
+      const r = this.importRows(runs, source);
+      if (!r.ok) {
+        result.ok = false;
+        if (r.error) result.error = r.error;
+      }
+      for (const [s, counts] of Object.entries(r.bySource)) result.bySource[s] = counts;
+      result.dropped.push(...r.dropped);
+    }
+    result.dropped.sort((a, b) => a.row - b.row);
+    return result;
   }
 
   /** Apply grouped rows: 'manual' upserts by id, every other source replaces itself. One commit. */

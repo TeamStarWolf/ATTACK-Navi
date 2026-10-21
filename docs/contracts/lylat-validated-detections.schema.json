@@ -1,0 +1,121 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://teamstarwolf.github.io/ATTACK-Navi/contracts/lylat-validated-detections.schema.json",
+  "title": "Lylat validated-detections export, version 1",
+  "description": "A range export of the detection rules that fired, or blocked, against a technique during a validated, published range run. ATTACK-Navi imports it locally as range-scoped Proven evidence. This is ATTACK-Navi's own consumer copy, a provisional structural pin; see PROVENANCE.md.",
+  "x-navi-pin": "provisional",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "generated_at", "rows"],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "lylat-validated-detections/1",
+      "description": "The contract version tag."
+    },
+    "range_build_ref": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{7,40}$",
+      "description": "The range build the run was validated against, a git-style short or full hex id. Required once the export carries any rows."
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$",
+      "description": "When the export was produced, RFC 3339 date-time."
+    },
+    "rows": {
+      "type": "array",
+      "description": "One row per validated detection against a technique in a mission.",
+      "items": { "$ref": "#/definitions/row" }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": ["rows"],
+        "properties": { "rows": { "minItems": 1 } }
+      },
+      "then": {
+        "required": ["range_build_ref"]
+      }
+    }
+  ],
+  "definitions": {
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mission_id",
+        "technique_ref",
+        "detection_ref",
+        "coverage_state",
+        "outcome",
+        "negative_control",
+        "validated_at",
+        "evidence_ref"
+      ],
+      "properties": {
+        "mission_id": {
+          "type": "string",
+          "pattern": "^[A-Z0-9][A-Z0-9-]*$",
+          "description": "The mission the detection was validated in. An opaque upper-case id, never a host or path."
+        },
+        "technique_ref": { "$ref": "#/definitions/technique_ref" },
+        "detection_ref": {
+          "type": "string",
+          "pattern": "^(wazuh|sigma|auditd|splunk|falcon|defender|elastic|car|zeek):[A-Za-z0-9._-]+$",
+          "description": "The detection that fired, as <source>:<id>. The id only, never a rule body or query."
+        },
+        "coverage_state": {
+          "type": "string",
+          "enum": ["validated", "telemetry-observed", "detection-authored", "deployed"],
+          "description": "How far the detection was taken for this technique."
+        },
+        "outcome": {
+          "type": "string",
+          "enum": ["alerted", "blocked", "logged", "none"],
+          "description": "What the detection did when the technique ran."
+        },
+        "negative_control": {
+          "type": "string",
+          "enum": ["blocked-on-hardened", "detection-only", "not-reproducible"],
+          "description": "The negative control recorded for the run."
+        },
+        "validated_at": {
+          "type": "string",
+          "format": "date",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "description": "The date the detection was validated, YYYY-MM-DD."
+        },
+        "evidence_ref": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+          "description": "An opaque reference to the run evidence, never a host, path or URL."
+        }
+      }
+    },
+    "technique_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["domain", "id", "attack_version"],
+      "properties": {
+        "domain": {
+          "type": "string",
+          "enum": ["enterprise", "ics", "mobile", "atlas"],
+          "description": "The technique's ATT&CK (or ATLAS) domain."
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^(T[0-9]{4}(\\.[0-9]{3})?|AML\\.T[0-9]{4}(\\.[0-9]{3})?)$",
+          "description": "The technique id: T#### / T####.### for ATT&CK, AML.T#### / AML.T####.### for ATLAS."
+        },
+        "attack_version": {
+          "type": "string",
+          "pattern": "^[0-9]+(\\.[0-9]+)*$",
+          "description": "The ATT&CK (or ATLAS) version the id was written under, dotted digits."
+        }
+      }
+    }
+  }
+}
