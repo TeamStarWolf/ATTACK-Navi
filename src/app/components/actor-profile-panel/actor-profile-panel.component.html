@@ -15,27 +15,7 @@
 
     <!-- Group list view -->
     @if (!selectedProfile) {
-      <div class="actor-search-bar upgrade-section-block">
-        <span class="search-icon">🔎</span>
-        <input type="text" class="actor-search" placeholder="Search groups, aliases…" [(ngModel)]="searchText" (input)="filterGroups()" />
-        <span class="group-count">{{ filteredGroups.length }} groups</span>
-      </div>
-      <div class="actor-list">
-        @for (group of filteredGroups; track group.id) {
-          <div class="actor-row upgrade-section-block" (click)="selectGroup(group)">
-            <div class="actor-row-main">
-              <span class="actor-row-id">{{ group.attackId }}</span>
-              <span class="actor-row-name">{{ group.name }}</span>
-              @if (group.aliases.length > 0) {
-                <span class="actor-aliases">aka {{ group.aliases.slice(0,3).join(', ') }}</span>
-              }
-            </div>
-            <div class="actor-row-actions">
-              <button class="filter-group-btn" (click)="$event.stopPropagation(); filterByGroup(group)" title="Filter matrix to this group">→ Matrix</button>
-            </div>
-          </div>
-        }
-      </div>
+      <app-threat-profile-picker mode="single" (groupSelected)="onGroupPicked($event)" />
     }
 
     <!-- Profile view -->
@@ -101,7 +81,8 @@
             }
 
             <div class="profile-actions upgrade-action-strip">
-              <button class="action-btn primary" (click)="filterByGroup(selectedProfile.group)">→ Highlight in Matrix</button>
+              <button class="action-btn primary" (click)="addToProfile(selectedProfile.group)" title="Set the shared threat profile to this group">＋ Add to profile</button>
+              <button class="action-btn" (click)="filterByGroup(selectedProfile.group)">→ Highlight in Matrix</button>
               <button class="action-btn" (click)="viewInGraph(selectedProfile.group)">🕸️ View in Graph</button>
               <a [href]="'https://attack.mitre.org/groups/' + selectedProfile.group.attackId" target="_blank" rel="noopener" class="action-btn">ATT&amp;CK ↗</a>
             </div>

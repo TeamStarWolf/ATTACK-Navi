@@ -34,28 +34,7 @@
             }
           </div>
 
-          <input type="search"
-                 class="emu-search"
-                 placeholder="Search by name, alias, or ATT&CK ID (e.g. APT29, Cozy Bear, G0016)…"
-                 [(ngModel)]="groupSearch" />
-
-          @if (groupSearch || filteredGroups.length > 0) {
-            <ul class="emu-group-list">
-              @for (g of filteredGroups; track g.attackId) {
-                <li>
-                  <button class="emu-group-row"
-                          [class.selected]="selectedGroup?.attackId === g.attackId"
-                          (click)="selectGroup(g)">
-                    <span class="emu-group-id">{{ g.attackId }}</span>
-                    <span class="emu-group-name">{{ g.name }}</span>
-                    @if (g.aliases.length > 0) {
-                      <span class="emu-group-aliases">{{ g.aliases.slice(0, 3).join(', ') }}</span>
-                    }
-                  </button>
-                </li>
-              }
-            </ul>
-          }
+          <app-threat-profile-picker mode="single" (groupSelected)="onGroupPicked($event)" />
 
           @if (selectedGroup) {
             <div class="emu-selected-actor">

@@ -2,11 +2,12 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, Signal, inject } from '@angular/core';
 
-import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
 import { PanelNavService } from '../../services/panel-nav.service';
 import { DataService } from '../../services/data.service';
+import { ThreatProfileService } from '../../services/threat-profile.service';
+import { ThreatProfilePickerComponent } from '../threat-profile-picker/threat-profile-picker.component';
 import { GraphFocusService } from '../../services/graph-focus.service';
 import { PostureService } from '../../services/posture.service';
 import { postureBadge } from '../../models/posture/posture-vocabulary';
@@ -37,7 +38,7 @@ const MARK_GLYPH: Readonly<Record<TechMark, string>> = { yes: 'âœ…', partial: 'â
 @Component({
   selector: 'app-actor-profile-panel',
   standalone: true,
-  imports: [FormsModule],
+  imports: [ThreatProfilePickerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './actor-profile-panel.component.html',
   styleUrl: './actor-profile-panel.component.scss',
@@ -45,9 +46,7 @@ const MARK_GLYPH: Readonly<Record<TechMark, string>> = { yes: 'âœ…', partial: 'â
 export class ActorProfilePanelComponent implements OnInit, OnDestroy {
   domain: Domain | null = null;
   allGroups: ThreatGroup[] = [];
-  filteredGroups: ThreatGroup[] = [];
   selectedProfile: GroupProfile | null = null;
-  searchText = '';
   viewTab: 'overview' | 'techniques' | 'software' | 'campaigns' = 'overview';
   private subs = new Subscription();
 
@@ -60,6 +59,7 @@ export class ActorProfilePanelComponent implements OnInit, OnDestroy {
     private panelNav: PanelNavService,
     private dataService: DataService,
     private graphFocus: GraphFocusService,
+    private threatProfile: ThreatProfileService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -74,15 +74,17 @@ export class ActorProfilePanelComponent implements OnInit, OnDestroy {
   private loadGroups(): void {
     if (!this.domain) return;
     this.allGroups = [...this.domain.groups].sort((a, b) => a.name.localeCompare(b.name));
-    this.filterGroups();
   }
 
-  filterGroups(): void {
-    const q = this.searchText.toLowerCase();
-    this.filteredGroups = q
-      ? this.allGroups.filter(g => g.name.toLowerCase().includes(q) || g.attackId.toLowerCase().includes(q) || (g.aliases ?? []).some(a => a.toLowerCase().includes(q)))
-      : this.allGroups;
-    this.cdr.markForCheck();
+  /** The shared picker (single mode) emits a STIX intrusion-set id; resolve it and browse. */
+  onGroupPicked(stixId: string): void {
+    const group = this.allGroups.find(g => g.id === stixId);
+    if (group) this.selectGroup(group);
+  }
+
+  /** Browsing an actor never sets the shared profile; this explicit action sets it to exactly that group. */
+  addToProfile(group: ThreatGroup): void {
+    this.threatProfile.setSource({ kind: 'groups', ids: [group.id] });
   }
 
   selectGroup(group: ThreatGroup): void {

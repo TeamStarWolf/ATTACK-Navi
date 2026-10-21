@@ -8,7 +8,6 @@ import {
   ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { Subscription, filter, take } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
@@ -19,6 +18,7 @@ import {
 } from '../../services/emulation-plan.service';
 import { LibraryService } from '../../services/library.service';
 import { PanelNavService } from '../../services/panel-nav.service';
+import { ThreatProfilePickerComponent } from '../threat-profile-picker/threat-profile-picker.component';
 import { ThreatGroup } from '../../models/group';
 import { Domain } from '../../models/domain';
 
@@ -30,7 +30,7 @@ interface PhaseGroup {
 @Component({
   selector: 'app-emulation-plan-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, ThreatProfilePickerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './emulation-plan-panel.component.html',
   styleUrls: ['./emulation-plan-panel.component.scss'],
@@ -42,7 +42,6 @@ export class EmulationPlanPanelComponent implements OnInit, OnDestroy {
   groups: ThreatGroup[] = [];
 
   // UI state
-  groupSearch = '';
   selectedGroup: ThreatGroup | null = null;
   plan: EmulationPlan | null = null;
   phaseGroups: PhaseGroup[] = [];
@@ -86,16 +85,10 @@ export class EmulationPlanPanelComponent implements OnInit, OnDestroy {
 
   // ─── Group selection ──────────────────────────────────────────────────────
 
-  get filteredGroups(): ThreatGroup[] {
-    const q = this.groupSearch.trim().toLowerCase();
-    if (!q) return this.groups.slice(0, 50);
-    return this.groups
-      .filter(g =>
-        g.name.toLowerCase().includes(q) ||
-        g.attackId.toLowerCase().includes(q) ||
-        g.aliases.some(a => a.toLowerCase().includes(q)),
-      )
-      .slice(0, 50);
+  /** The shared picker (single mode) emits a STIX intrusion-set id; resolve it to the group. */
+  onGroupPicked(stixId: string): void {
+    const group = this.groups.find(g => g.id === stixId);
+    if (group) this.selectGroup(group);
   }
 
   pickQuickGroup(name: string): void {
@@ -108,7 +101,6 @@ export class EmulationPlanPanelComponent implements OnInit, OnDestroy {
 
   selectGroup(group: ThreatGroup): void {
     this.selectedGroup = group;
-    this.groupSearch = '';
     this.cdr.markForCheck();
   }
 
@@ -129,7 +121,10 @@ export class EmulationPlanPanelComponent implements OnInit, OnDestroy {
 
     // Defer to next tick so the spinner renders
     setTimeout(() => {
-      this.plan = this.emulationService.generatePlan(this.selectedGroup!.attackId, this.domain!);
+      // Pass the STIX intrusion-set id: emulation-plan.service looks the group up by
+      // domain.groups.find(g => g.id === actorId) and techniquesByGroup.get(actorId),
+      // both STIX-keyed. Passing attackId (G####) returned "Unknown Actor Plan" / 0 steps.
+      this.plan = this.emulationService.generatePlan(this.selectedGroup!.id, this.domain!);
       this.phaseGroups = this.groupByPhase(this.plan.steps);
       this.expandedSteps.clear();
       this.generating = false;
