@@ -22,6 +22,17 @@ export type HeatmapMode = 'coverage' | 'exposure' | 'status' | 'controls' | 'sof
  * A link without heat= opens this lens.
  */
 export const DEFAULT_HEATMAP_MODE: HeatmapMode = 'frequency';
+
+/**
+ * The default-lens rule (Phase 2 design §3 P2-19, E2.4; decision D4, §10.4
+ * item 3): Posture once the user has owner data (OwnerDataService.hasOwnerData,
+ * the exact D4 predicate), else DEFAULT_HEATMAP_MODE. Precedence at boot is an
+ * explicit heat=, then a specialist viewpoint's lens, then this, then
+ * frequency (AppComponent.applyDefaultLensRule).
+ */
+export function effectiveDefaultLens(hasOwnerData: boolean): HeatmapMode {
+  return hasOwnerData ? 'posture' : DEFAULT_HEATMAP_MODE;
+}
 export type SearchScope = 'name' | 'full';
 export const SEARCH_SCOPES: readonly SearchScope[] = ['name', 'full'];
 /** Mitigation implementation statuses the `impl` filter (and URL param) may take. */
@@ -132,6 +143,14 @@ export class FilterService {
   private activeCampaignIdsSubject = new BehaviorSubject<Set<string>>(new Set());
   private activeDataSourceSubject = new BehaviorSubject<string | null>(null);
   private heatmapModeSubject = new BehaviorSubject<HeatmapMode>(DEFAULT_HEATMAP_MODE);
+  /**
+   * Whether the user has owner data (D4, OwnerDataService.hasOwnerData$), set
+   * by AppComponent. It picks the effective default lens (effectiveDefaultLens)
+   * and decides whether heat=frequency may be left out of the URL; it joins
+   * urlRelevantState$, so the link is rewritten when it changes. It never
+   * changes the lens on screen.
+   */
+  readonly ownerDataPresent = new BehaviorSubject<boolean>(false);
   private implStatusFilterSubject = new BehaviorSubject<string | null>(null);
   private searchFilterModeSubject = new BehaviorSubject<boolean>(false);
   searchFilterMode$: Observable<boolean> = this.searchFilterModeSubject.asObservable();
@@ -328,7 +347,13 @@ export class FilterService {
       this.dataService.domain$,
       this.platformMultiSubject,
       this.selectedTechniqueSubject,
+      this.ownerDataPresent,
     ]).pipe(debounceTime(300), map(() => void 0));
+  }
+
+  /** The lens a reset returns to: Posture with owner data, else Prevalence (effectiveDefaultLens, P2-19). */
+  get defaultLens(): HeatmapMode {
+    return effectiveDefaultLens(this.ownerDataPresent.value);
   }
 
   /** The ATT&CK domain on screen. A DataService stub without currentDomain$ reads as Enterprise. */
@@ -438,7 +463,9 @@ export class FilterService {
    * overlay, (E2.3) `tech`, the open technique, and
    * `dom`, the ATT&CK domain when it is not Enterprise. With `tech`, `heat`
    * and `dom` are always written, so a pasted link carries its lens and domain
-   * even at the defaults.
+   * even at the defaults. `heat` is left out only for Prevalence with no owner
+   * data and no `tech` (P2-19): with owner data a link without heat= would
+   * open Posture, so every lens, heat=posture included, is written.
    */
   serializeUrlState(): Record<string, string> {
     const domain = this.domainSnapshot;
@@ -458,7 +485,7 @@ export class FilterService {
     if (ds) params['ds'] = ds;
     const tech = this.selectedTechniqueSubject.value?.attackId ?? this.pendingUrlTechId;
     const heat = this.heatmapModeSubject.value;
-    if (heat !== DEFAULT_HEATMAP_MODE || tech) params['heat'] = heat;
+    if (heat !== DEFAULT_HEATMAP_MODE || this.ownerDataPresent.value || tech) params['heat'] = heat;
     const impl = this.implStatusFilterSubject.value;
     if (impl) params['impl'] = impl;
     const scope = this.searchScopeSubject.value;
@@ -672,7 +699,7 @@ export class FilterService {
     this.activeSoftwareIdsSubject.next(new Set());
     this.activeCampaignIdsSubject.next(new Set());
     this.activeDataSourceSubject.next(null);
-    this.heatmapModeSubject.next(DEFAULT_HEATMAP_MODE);
+    this.heatmapModeSubject.next(this.defaultLens);
     this.implStatusFilterSubject.next(null);
     this.searchFilterModeSubject.next(false);
     this.cveTechniqueIdsSubject.next(new Set());

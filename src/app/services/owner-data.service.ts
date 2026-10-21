@@ -2,7 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable, inject } from '@angular/core';
 import { Observable, combineLatest, distinctUntilChanged, map, shareReplay } from 'rxjs';
-import { HeatmapMode } from './filter.service';
+import { HeatmapMode, effectiveDefaultLens } from './filter.service';
 import { ImplStatus, ImplementationService } from './implementation.service';
 import { TechniqueMarksService } from './technique-marks.service';
 import { ValidationService } from './validation.service';
@@ -101,4 +101,12 @@ export class OwnerDataService {
     distinctUntilChanged(),
     shareReplay({ bufferSize: 1, refCount: true }),
   );
+
+  /**
+   * The default lens D4 picks (P2-19, effectiveDefaultLens): 'posture' while
+   * owner data exists, else 'frequency'. Synchronous first emission, like
+   * hasOwnerData$, so AppComponent reads the right answer at boot before any
+   * domain loads.
+   */
+  readonly defaultLens$: Observable<HeatmapMode> = this.hasOwnerData$.pipe(map(effectiveDefaultLens));
 }

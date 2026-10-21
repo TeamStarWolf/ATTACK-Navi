@@ -14,7 +14,7 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { Mitigation } from '../../models/mitigation';
 import { Technique } from '../../models/technique';
-import { DEFAULT_HEATMAP_MODE, FilterService, HeatmapMode, SearchScope, SortMode } from '../../services/filter.service';
+import { DEFAULT_HEATMAP_MODE, FilterService, HeatmapMode, SearchScope, SortMode, effectiveDefaultLens } from '../../services/filter.service';
 import { AttackDomain, DataService } from '../../services/data.service';
 import { MatrixControlService } from '../../services/matrix-control.service';
 import { AttackCveService } from '../../services/attack-cve.service';
@@ -92,8 +92,12 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
   /** Active viewpoint — drives the pinned "featured lenses" group in the menu. */
   currentViewpoint: Viewpoint | null = null;
   heatmapMode: HeatmapMode = DEFAULT_HEATMAP_MODE;
-  /** The first-visit lens (E1.5, D4); the View button is highlighted when any other lens is on. */
-  readonly defaultHeatmapMode = DEFAULT_HEATMAP_MODE;
+  /**
+   * The effective default lens (P2-19, effectiveDefaultLens): Posture once
+   * owner data exists, else the first-visit lens (E1.5, D4). The View button
+   * is highlighted when any other lens is on.
+   */
+  defaultHeatmapMode: HeatmapMode = DEFAULT_HEATMAP_MODE;
   /** The ATT&CK domain on screen; lenses without data for it are disabled with a reason (E1.2). */
   attackDomain: AttackDomain = 'enterprise';
   /** Availability of every lens in attackDomain, rebuilt when the domain changes. */
@@ -181,6 +185,10 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
     this.subs.add(this.filterService.activeDataSource$.subscribe((ds) => { this.rawDataSource = ds; this.selectedDataSource = this.resolveDs(ds); this.cdr.markForCheck(); }));
     this.subs.add(this.filterService.implStatusFilter$.subscribe((s) => { this.implStatusFilter = s ?? ''; this.cdr.markForCheck(); }));
     this.subs.add(this.filterService.heatmapMode$.subscribe((m) => { this.heatmapMode = m; this.cdr.markForCheck(); }));
+    this.subs.add(this.filterService.ownerDataPresent.subscribe((has) => {
+      this.defaultHeatmapMode = effectiveDefaultLens(has);
+      this.cdr.markForCheck();
+    }));
     this.subs.add(this.libraryLayerService.manifest$.subscribe((list) => { this.libraryLayers = list; this.cdr.markForCheck(); }));
     this.subs.add(this.libraryLayerService.manifestLoaded$.subscribe((v) => { this.libraryManifestLoaded = v; this.cdr.markForCheck(); }));
     this.subs.add(this.libraryLayerService.manifestError$.subscribe((e) => { this.libraryManifestError = e; this.cdr.markForCheck(); }));

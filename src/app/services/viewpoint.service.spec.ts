@@ -127,6 +127,30 @@ describe('ViewpointService', () => {
     expect(filterService.setHeatmapMode).not.toHaveBeenCalled();
   });
 
+  // P2-19 (§10.4 item 4): the default-lens rule reads the stored viewpoint's lens.
+  it('storedDefaultLens: null with nothing or an invalid value stored, else the stored viewpoint lens', () => {
+    expect(service.storedDefaultLens()).toBeNull();
+    localStorage.setItem(STORAGE_KEY, 'bogus');
+    expect(service.storedDefaultLens()).toBeNull();
+    localStorage.setItem(STORAGE_KEY, 'analyst');
+    expect(service.storedDefaultLens()).toBe('frequency');
+    localStorage.setItem(STORAGE_KEY, 'red');
+    expect(service.storedDefaultLens()).toBe('atomic');
+    expect(filterService.setHeatmapMode).not.toHaveBeenCalled();
+  });
+
+  it('storedDefaultLens reads a throwing localStorage as nothing stored', () => {
+    const getItem = spyOn(Storage.prototype, 'getItem').and.throwError('blocked');
+    expect(service.storedDefaultLens()).toBeNull();
+    getItem.and.callThrough();
+  });
+
+  it('urlHasHeatParam sees an explicit heat in the hash query', () => {
+    expect(service.urlHasHeatParam()).toBeFalse();
+    window.location.hash = '#/matrix?heat=kev';
+    expect(service.urlHasHeatParam()).toBeTrue();
+  });
+
   it('restore swallows a localStorage read that throws', () => {
     const getItem = spyOn(Storage.prototype, 'getItem').and.throwError('blocked');
     expect(() => service.restore()).not.toThrow();
