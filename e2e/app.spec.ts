@@ -485,6 +485,39 @@ test.describe('E2.3: tech= and dom= share links', () => {
     }
   });
 
+  // RP-F item 4: the page's domain switch clears the filters, which reset the lens
+  // after the URL reader applied heat=. The page now re-applies the pasted lens, so a
+  // non-Enterprise technique link keeps it and "Open in matrix" carries it. The writer
+  // adds tech= once the technique is selected, so its arrival marks the rewritten URL.
+  for (const [dom, id, heat, label] of [
+    ['ics', 'T0883', 'coverage', 'Mitigations mapped'],
+    ['ics', 'T0883', 'kev', 'KEV'],
+    ['mobile', 'T1404', 'coverage', 'Mitigations mapped'],
+  ] as const) {
+    test(`[RP-F 4] a pasted #/technique/${dom}/${id}?heat=${heat} keeps its lens, and Open in matrix carries it`, async ({ browser }) => {
+      const { context, page } = await newVisitor(browser);
+      try {
+        await page.goto('about:blank');
+        await page.goto(`${BASE}/#/technique/${dom}/${id}?heat=${heat}`);
+        const card = page.locator('app-technique-page [data-testid="evidence-card"]');
+        await expect(card).toBeVisible({ timeout: ROUTE_TIMEOUT });
+        await expect(page.locator('app-technique-page .tp-id')).toHaveText(id);
+        await expect(card.getByTestId('ev-why')).toContainText(`Lens: ${label}`);
+        await expect(page).toHaveURL(new RegExp(`[?&]tech=${id}(&|$)`), { timeout: ROUTE_TIMEOUT });
+        await expect(page).toHaveURL(new RegExp(`#/technique/${dom}/${id}\\?(.*&)?heat=${heat}(&|$)`));
+        expect(new URL(page.url()).hash).not.toContain('heat=frequency');
+
+        await page.getByTestId('open-in-matrix').click();
+        await expect(page).toHaveURL(new RegExp(`#/matrix\\?(.*&)?heat=${heat}(&|$)`), { timeout: ROUTE_TIMEOUT });
+        await expect(page).toHaveURL(new RegExp(`[?&]dom=${dom}(&|$)`));
+        await expect(page.locator('.heatmap-btn')).toContainText(label);
+        await expect(page.locator('.sidebar.open .sidebar-header .attack-id')).toHaveText(id, { timeout: ROUTE_TIMEOUT });
+      } finally {
+        await context.close();
+      }
+    });
+  }
+
   test('an ICS technique link loads ICS and opens its drawer (dom=ics&tech=T0807)', async ({ browser }) => {
     const { context, page } = await newVisitor(browser);
     try {
@@ -786,5 +819,115 @@ test.describe('E2.4: default-lens rule', () => {
     await expect(page.locator('.heatmap-btn')).toContainText('Posture');
     await expect(page).toHaveURL(/#\/matrix\?(.*&)?heat=posture(&|$)/, { timeout: 5000 });
     await expect(page.locator('.first-glance-banner')).toHaveCount(0);
+  });
+
+  // RP-F item 1: an invalid or empty heat= is not a lens choice, so D4 still
+  // runs. Each link is a fresh navigation (about:blank first): the app does not
+  // re-read heat= on an in-session hash-only change.
+  for (const link of ['#/matrix?heat=bogus', '#/matrix?heat=']) {
+    test(`[RP-F 1] one recorded run and a pasted ${link}: Posture, heat=posture, no banner`, async ({ page }) => {
+      await openWorkspace(page, { seed: { 'navi.v2.validation-runs': oneRun } });
+      await page.goto('about:blank');
+      await page.goto(BASE + '/' + link);
+      await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+      await expect(page.locator('.heatmap-btn')).toContainText('Posture');
+      await expect(page).toHaveURL(/#\/matrix\?(.*&)?heat=posture(&|$)/, { timeout: 5000 });
+      expect(new URL(page.url()).hash).not.toContain('heat=frequency');
+      await expect(page.locator('.first-glance-banner')).toHaveCount(0);
+    });
+  }
+
+  test('[RP-F 4] one recorded run and a pasted #/technique/ics/T0883?heat=status: Status survives the domain switch, not Posture', async ({ page }) => {
+    await openWorkspace(page, { seed: { 'navi.v2.validation-runs': oneRun } });
+    await page.goto('about:blank');
+    await page.goto(BASE + '/#/technique/ics/T0883?heat=status');
+    const card = page.locator('app-technique-page [data-testid="evidence-card"]');
+    await expect(card).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    await expect(card.getByTestId('ev-why')).toContainText('Lens: Status');
+    await expect(page).toHaveURL(/[?&]tech=T0883(&|$)/, { timeout: ROUTE_TIMEOUT });
+    await expect(page).toHaveURL(/#\/technique\/ics\/T0883\?(.*&)?heat=status(&|$)/);
+    await page.getByTestId('open-in-matrix').click();
+    await expect(page).toHaveURL(/#\/matrix\?(.*&)?heat=status(&|$)/, { timeout: ROUTE_TIMEOUT });
+    await expect(page.locator('.heatmap-btn')).toContainText('Status');
+  });
+
+  test('[RP-F 1] one recorded run and a pasted #/technique/enterprise/T1059.001?heat=bogus: the page explains Posture and the link says heat=posture', async ({ page }) => {
+    await openWorkspace(page, { seed: { 'navi.v2.validation-runs': oneRun } });
+    await page.goto('about:blank');
+    await page.goto(BASE + '/#/technique/enterprise/T1059.001?heat=bogus');
+    const card = page.locator('app-technique-page [data-testid="evidence-card"]');
+    await expect(card).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    await expect(card.getByTestId('ev-why')).toContainText('Lens: Posture');
+    await expect(page).toHaveURL(/#\/technique\/enterprise\/T1059\.001\?(.*&)?heat=posture(&|$)/, { timeout: 5000 });
+    expect(new URL(page.url()).hash).not.toContain('heat=frequency');
+    await page.getByTestId('open-in-matrix').click();
+    await expect(page).toHaveURL(/#\/matrix\?(.*&)?heat=posture(&|$)/, { timeout: ROUTE_TIMEOUT });
+    await expect(page.locator('.heatmap-btn')).toContainText('Posture');
+  });
+});
+
+// RP-F item 5: with the technique drawer open at 1440x900 the View button wraps to
+// the controls row's left end, and the right-aligned absolute menu opened at
+// x = -277: clipped by the workspace and under the 260 px rail, whose labels took
+// the clicks. The menu is now fixed above the rail and clamped to the row and the
+// viewport. Every click below is a real pointer click: Playwright refuses it when
+// another element would receive it.
+//
+// RP-F round 1 (check-flaky): on the production build 2 of 6 runs timed out after
+// 5 s waiting for heat= to follow a pick. Timed in the page, the URL writer's
+// replaceUrl navigation took about 2 ms and no write was skipped; the 300 ms
+// debounce itself fired up to 6.3 s late, because the main thread is saturated for
+// several seconds after a data-loading lens (Campaigns, Intelligence, My Exposure)
+// is first picked shortly after boot. The URL is right, only late, so every step
+// waits LENS_STEP_TIMEOUT rather than 5 s: the check is still that heat= follows
+// each pick, without timing the lens's first data load.
+//
+// RP-F round 2: a write whose debounce fired during an in-flight navigation was
+// dropped until the next state change, so a pick with no later change could leave
+// heat= stale whatever the timeout. UrlStateService now holds that write and runs
+// it when the navigation settles (unit-tested in url-state.service.spec.ts), so the
+// timeout above only absorbs the late debounce.
+const LENS_STEP_TIMEOUT = process.env['CI'] ? 60000 : 30000;
+
+test.describe('View menu above the rail (RP-F item 5)', () => {
+  test('[RP-F 5] at 1440x900 with the drawer open, every lens in the View menu takes a real click and the menu never lies over the rail', async ({ page }) => {
+    test.setTimeout(process.env['CI'] ? 600000 : 300000);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openWorkspace(page);
+    await page.goto(BASE + '/#/matrix?tech=T1059.001');
+    await expect(page.locator('.sidebar.open .sidebar-header .attack-id')).toHaveText('T1059.001', { timeout: ROUTE_TIMEOUT });
+    const rail = (await page.locator('app-nav-rail').boundingBox())!;
+    expect(rail.width).toBeGreaterThan(200);
+    const menu = page.locator('.views-menu');
+    const openMenu = async () => {
+      await page.locator('.heatmap-btn').click({ timeout: LENS_STEP_TIMEOUT });
+      await expect(menu).toBeVisible({ timeout: LENS_STEP_TIMEOUT });
+    };
+    await openMenu();
+    const lenses = await menu.locator('.lens-item').evaluateAll(els => els.map(e => e.getAttribute('data-lens')!));
+    expect(lenses.length).toBeGreaterThan(30);
+    for (const lens of lenses) {
+      if (!(await menu.isVisible())) await openMenu();
+      const box = (await menu.boundingBox())!;
+      expect(box.x, `${lens}: the menu's left edge clears the rail`).toBeGreaterThanOrEqual(rail.x + rail.width);
+      expect(box.x + box.width, `${lens}: inside the viewport`).toBeLessThanOrEqual(1440);
+      expect(box.y + box.height, `${lens}: inside the viewport`).toBeLessThanOrEqual(900);
+      const button = menu.locator(`.lens-item[data-lens="${lens}"] .heatmap-mode-btn`);
+      const disabled = (await button.getAttribute('aria-disabled')) === 'true';
+      if (disabled) {
+        // aria-disabled: Playwright's click() waits for an enabled element, so the real
+        // click is the mouse at the button's centre after hover() has checked that this
+        // button, not the rail or the drawer, receives pointer events there.
+        await button.hover({ timeout: LENS_STEP_TIMEOUT });
+        const b = (await button.boundingBox())!;
+        await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+        await expect(menu, `${lens}: a disabled lens keeps the menu open`).toBeVisible({ timeout: LENS_STEP_TIMEOUT });
+      } else {
+        await button.click({ timeout: LENS_STEP_TIMEOUT });
+        await expect(menu, `${lens}: picking a lens closes the menu`).toBeHidden({ timeout: LENS_STEP_TIMEOUT });
+        await expect(page).toHaveURL(new RegExp(`[?&]heat=${lens}(&|$)`), { timeout: LENS_STEP_TIMEOUT });
+      }
+    }
+    await expect(page.locator('.sidebar.open .sidebar-header .attack-id')).toHaveText('T1059.001');
   });
 });

@@ -432,6 +432,46 @@ describe('AppComponent: default-lens rule at boot (P2-19, E2.4)', () => {
     expect(router.url).toContain('heat=kev');
   });
 
+  // RP-F item 1: a heat= that names no registered lens is not an explicit lens
+  // choice. It used to stop the rule (the key existed), boot Frequency with the
+  // banner hidden and rewrite the link to heat=frequency, pinning it on every reshare.
+  for (const bad of ['bogus', ''] as const) {
+    it(`an invalid heat=${bad} with one recorded run still runs D4: posture, heat=posture in the URL, no banner`, async () => {
+      configure(oneRun);
+      window.location.hash = `#/matrix?heat=${bad}`;
+      boot();
+      expect(heat()).withContext('the rule treats the invalid heat as absent').toBe('posture');
+      await router.navigateByUrl(`/matrix?heat=${bad}`);
+      await tick(400);
+      expect(heat()).toBe('posture');
+      expect(router.url).toContain('heat=posture');
+      expect(router.url).not.toContain('heat=frequency');
+      expect(router.url).not.toContain('bogus');
+      expect(bannerShown()).toBeFalse();
+    });
+
+    it(`an invalid heat=${bad} with no owner data: frequency with the banner, and the invalid key is dropped`, async () => {
+      configure(nothing);
+      window.location.hash = `#/matrix?heat=${bad}`;
+      boot();
+      await router.navigateByUrl(`/matrix?heat=${bad}`);
+      await tick(400);
+      expect(heat()).toBe('frequency');
+      expect(router.url).not.toContain('heat=');
+      expect(bannerShown()).toBeTrue();
+    });
+  }
+
+  it("an invalid heat=bogus does not stand a stored specialist viewpoint aside: red gives 'atomic'", async () => {
+    configure(d => () => { implementedM1047(d)(); localStorage.setItem(VIEWPOINT_KEY, 'red'); });
+    window.location.hash = '#/matrix?heat=bogus';
+    boot();
+    await router.navigateByUrl('/matrix?heat=bogus');
+    await tick(400);
+    expect(heat()).toBe('atomic');
+    expect(router.url).toContain('heat=atomic');
+  });
+
   it('owner data recorded later in the session never switches the lens on screen; the link then names it', async () => {
     configure(nothing);
     await bootAt();

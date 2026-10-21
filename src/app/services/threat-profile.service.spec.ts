@@ -1,6 +1,6 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { BehaviorSubject, of } from 'rxjs';
+import { BehaviorSubject, Subject, of } from 'rxjs';
 import { ThreatProfileService } from './threat-profile.service';
 import { DataService, AttackDomain } from './data.service';
 import { LibraryLayerService } from './library-layer.service';
@@ -111,6 +111,61 @@ describe('ThreatProfileService', () => {
     svc.setSource({ kind: 'library-layer', file: 'x.json' });
     expect(svc.current.source.kind).toBe('library-layer');
     expect(svc.current.parentTechniqueIds.has('t1')).toBeTrue();
+  });
+
+  // RP-F round 1: the Threat gaps legend keyed its "No threat profile is set" note on
+  // an empty parents(); emptyReason says WHY it is empty, from the stored source.
+  describe('emptyReason (RP-F round 1)', () => {
+    it('is null while the profile holds techniques', () => {
+      const domain$ = new BehaviorSubject<Domain | null>(tinyDomain());
+      const svc = makeService(domain$);
+      svc.setSource({ kind: 'groups', ids: ['g1'] });
+      expect(svc.parents().size).toBe(1);
+      expect(svc.emptyReason()).toBeNull();
+    });
+
+    it('names-nothing for a groups or campaigns source with no ids, loaded domain or not', () => {
+      const domain$ = new BehaviorSubject<Domain | null>(null);
+      const svc = makeService(domain$);
+      svc.setSource({ kind: 'groups', ids: [] });
+      expect(svc.emptyReason()).toBe('names-nothing');
+      domain$.next(tinyDomain());
+      expect(svc.emptyReason()).toBe('names-nothing');
+      svc.setSource({ kind: 'campaigns', ids: [] });
+      expect(svc.emptyReason()).toBe('names-nothing');
+    });
+
+    it('none-in-domain for a set profile whose groups use no technique in the loaded domain (APT29 on ICS)', () => {
+      const domain$ = new BehaviorSubject<Domain | null>(tinyDomain());
+      const svc = makeService(domain$);
+      svc.setSource({ kind: 'groups', ids: ['intrusion-set--not-here'] });
+      expect(svc.parents().size).toBe(0);
+      expect(svc.emptyReason()).toBe('none-in-domain');
+    });
+
+    it('resolving while a domain switch emits null, then the loaded answer', () => {
+      const domain$ = new BehaviorSubject<Domain | null>(tinyDomain());
+      const svc = makeService(domain$);
+      svc.setSource({ kind: 'groups', ids: ['g1'] });
+      domain$.next(null);
+      expect(svc.emptyReason()).toBe('resolving');
+      domain$.next(tinyDomain());
+      expect(svc.emptyReason()).toBeNull();
+    });
+
+    it('resolving while a library layer has not loaded, not "names nothing"', () => {
+      const domain$ = new BehaviorSubject<Domain | null>(tinyDomain());
+      const layer$ = new Subject<readonly string[]>();
+      const data = { domain$: domain$.asObservable(), getCurrentDomain: () => domain$.value, getCurrentAttackDomain: () => currentAttackDomain };
+      const library = { layerTechniqueIds: (_file: string) => layer$.asObservable(), manifest: [] as unknown[] };
+      const svc = new ThreatProfileService(data as unknown as DataService, library as unknown as LibraryLayerService);
+      svc.setSource({ kind: 'library-layer', file: 'x.json' });
+      expect(svc.emptyReason()).toBe('resolving');
+      layer$.next(['T1']);
+      expect(svc.emptyReason()).toBeNull();
+      layer$.next(['T9999']);   // a layer with no technique in this domain
+      expect(svc.emptyReason()).toBe('none-in-domain');
+    });
   });
 
   it('round-trips sources that carry n, ids and file', () => {

@@ -97,7 +97,9 @@
       🎨 {{ heatmapShort }}{{ activeLensUnavailable ? ' (n/a)' : '' }} ▾
     </button>
     @if (showViewMenu) {
-      <div class="views-menu view-panel" (click)="$event.stopPropagation()">
+      <div class="views-menu view-panel" (click)="$event.stopPropagation()"
+           [style.left.px]="viewMenuPlacement?.left" [style.top.px]="viewMenuPlacement?.top"
+           [style.width.px]="viewMenuPlacement?.width" [style.max-height.px]="viewMenuPlacement?.maxHeight">
         @if (hasFeaturedLenses && currentViewpoint) {
           <div class="featured-lenses" role="group" [attr.aria-label]="'Featured lenses for ' + currentViewpoint.label">
             <div class="views-menu-header featured-header">★ For {{ currentViewpoint.label }}</div>

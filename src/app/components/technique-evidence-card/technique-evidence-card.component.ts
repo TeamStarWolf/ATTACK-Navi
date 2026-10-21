@@ -35,8 +35,19 @@ import { CveService } from '../../services/cve.service';
 import { AttackCveService } from '../../services/attack-cve.service';
 import { SettingsService } from '../../services/settings.service';
 import { TechniqueMarksService } from '../../services/technique-marks.service';
+import { SourceRegistryService } from '../../services/source-registry.service';
 
 const DAY_MS = 86_400_000;
+
+/**
+ * Legacy lenses whose whole score is one runtime layer (SourceRegistry id). When
+ * that layer failed to load, every cell scores 0 and the card would say
+ * 'score 0 of max 1', a number that reads as "no rules"; it says n/a and why
+ * instead (RP-F item 6). Sigma: the SigmaHQ coverage layer.
+ */
+export const LENS_LOAD_SOURCES: Readonly<Partial<Record<string, string>>> = {
+  sigma: 'sigmahq-coverage',
+};
 /** KEV-linked CVE ids listed by name; the count covers the rest. */
 const KEV_LISTED = 5;
 
@@ -79,6 +90,8 @@ export class TechniqueEvidenceCardComponent {
   private readonly settings = inject(SettingsService);
   private readonly marks = inject(TechniqueMarksService);
   private readonly today = inject(POSTURE_TODAY);
+  private readonly sources = inject(SourceRegistryService);
+  private readonly sourceRecords = toSignal(this.sources.records$, { initialValue: this.sources.all() });
 
   private readonly domain = toSignal(this.data.domain$, { initialValue: null });
   private readonly domainId = toSignal(this.data.currentDomain$, { initialValue: this.data.getCurrentAttackDomain() });
@@ -111,6 +124,8 @@ export class TechniqueEvidenceCardComponent {
     const state = this.state();
     const availability = lensAvailability(def, this.domainId());
     if (!availability.available) return { lens: def.label, text: `n/a in this domain: ${availability.reason}` };
+    const failed = this.failedLayer(def.value);
+    if (failed) return { lens: def.label, text: `n/a: ${failed.name} did not load (${failed.lastError ?? 'unknown error'}), so no count is known` };
     let cell: LensCell | null = null;
     let max: number | null = null;
     if (def.project) {
@@ -126,6 +141,14 @@ export class TechniqueEvidenceCardComponent {
     }
     return { lens: def.label, text: lensExplain(def, cell, { state, max, decayDays: this.posture.decayDays() }) };
   });
+
+  /** The failed runtime layer a lens's whole score depends on (LENS_LOAD_SOURCES), or null. */
+  private failedLayer(mode: string): { name: string; lastError: string | null } | null {
+    const id = LENS_LOAD_SOURCES[mode];
+    if (!id) return null;
+    const record = this.sourceRecords().find(r => r.id === id);
+    return record?.status === 'failed' ? { name: record.name, lastError: record.lastError } : null;
+  }
 
   /** The Known reference families: count and source of each, and how many are mapped. */
   readonly known = computed(() => {

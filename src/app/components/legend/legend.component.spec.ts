@@ -16,7 +16,8 @@ import { controlsLegendStops, statusLegendStops } from '../../models/posture/len
 import { hexToRgb } from '../../models/cvd';
 import { signal as ngSignal } from '@angular/core';
 import { THREAT_WEIGHT_PROVIDER } from '../../models/posture/threat-weight';
-import { THREAT_GAP_EXPOSURE_NOTE, THREAT_GAP_TOGGLE_LABEL } from '../../models/posture/gap';
+import { THREAT_GAP_EMPTY_PROFILE_NOTE, THREAT_GAP_EXPOSURE_NOTE, THREAT_GAP_TOGGLE_LABEL } from '../../models/posture/gap';
+import type { ThreatProfileEmptyReason } from '../../models/posture/posture.types';
 
 /** '#rrggbb' as the browser reports a style colour. */
 const rgb = (hex: string): string => `rgb(${hexToRgb(hex).join(', ')})`;
@@ -397,6 +398,7 @@ describe('LegendComponent (Threat gaps overlay, P2-17)', () => {
   let currentDomain$: BehaviorSubject<AttackDomain>;
   const revision = ngSignal(0);
   const parents = ngSignal<ReadonlySet<string>>(new Set());
+  const emptyReason = ngSignal<ThreatProfileEmptyReason | null>(null);
   let weights: Record<string, number> = {};
 
   beforeEach(async () => {
@@ -405,6 +407,7 @@ describe('LegendComponent (Threat gaps overlay, P2-17)', () => {
     currentDomain$ = new BehaviorSubject<AttackDomain>('enterprise');
     weights = { a: 1, b: 2, c: 3, d: 4 };
     parents.set(new Set(Object.keys(weights)));
+    emptyReason.set(null);
     await TestBed.configureTestingModule({
       imports: [LegendComponent],
       providers: [
@@ -412,7 +415,7 @@ describe('LegendComponent (Threat gaps overlay, P2-17)', () => {
         { provide: DataService, useValue: {
           currentDomain$, domain$: new BehaviorSubject({ attackVersion: '19.2' }), freshness$: new BehaviorSubject('bundled'),
         } },
-        { provide: THREAT_WEIGHT_PROVIDER, useValue: { revision, parents, weight: (id: string) => weights[id] ?? 0 } },
+        { provide: THREAT_WEIGHT_PROVIDER, useValue: { revision, parents, emptyReason, weight: (id: string) => weights[id] ?? 0 } },
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(LegendComponent);
@@ -453,5 +456,62 @@ describe('LegendComponent (Threat gaps overlay, P2-17)', () => {
     revision.update(n => n + 1);
     fixture.detectChanges();
     expect(el().querySelector('.legend-threat-gaps')!.textContent).toContain('used by 9 or more');
+  });
+
+  /** Empty the profile for `reason`, as ThreatProfileService does (reason first, then the revision bump). */
+  const emptyProfile = (reason: ThreatProfileEmptyReason): void => {
+    emptyReason.set(reason);
+    parents.set(new Set());
+    revision.update(n => n + 1);
+    fixture.detectChanges();
+  };
+  const note = (): string | null => el().querySelector('.legend-threat-gaps-empty')?.textContent!.trim() ?? null;
+
+  // RP-F item 6: tgap=1 with an empty stored profile marked 0 techniques with no note.
+  it('says no threat profile is set when the overlay is on and the stored profile names nothing', () => {
+    overlay$.next(true);
+    fixture.detectChanges();
+    expect(el().querySelector('.legend-threat-gaps-empty')).withContext('a profile with techniques: no note').toBeNull();
+    emptyProfile('names-nothing');
+    expect(note()).toBe(THREAT_GAP_EMPTY_PROFILE_NOTE);
+    expect(el().querySelector('.legend-threat-gaps-empty')!.getAttribute('role')).toBe('status');
+    overlay$.next(false);
+    fixture.detectChanges();
+    expect(el().querySelector('.legend-threat-gaps-empty')).withContext('overlay off: no note').toBeNull();
+  });
+
+  // RP-F round 1: the note was keyed on parents().size, so a profile that IS set but
+  // holds no technique here ({APT29} on dom=ics), or one still resolving, read "No
+  // threat profile is set", and the asset-inventory clause was false off Enterprise.
+  it('a set profile with no technique in this domain says so, and off Enterprise drops the asset-inventory clause', () => {
+    currentDomain$.next('ics');
+    overlay$.next(true);
+    emptyProfile('none-in-domain');
+    expect(note()).toBe('The threat profile has no ICS ATT&CK technique in this release, so no technique is a threat gap in ICS ATT&CK.');
+    expect(note()).not.toContain('No threat profile is set');
+    expect(note()).not.toContain('asset inventory');
+  });
+
+  it('an empty stored profile off Enterprise does not claim the asset inventory can mark a gap', () => {
+    currentDomain$.next('mobile');
+    overlay$.next(true);
+    emptyProfile('names-nothing');
+    expect(note()).toBe('No threat profile is set: it names no groups or campaigns, so no technique is a threat gap in Mobile ATT&CK.');
+  });
+
+  it('on Enterprise a set profile with no technique keeps the asset-inventory clause, which is true there', () => {
+    overlay$.next(true);
+    emptyProfile('none-in-domain');
+    expect(note()).toBe('The threat profile has no Enterprise ATT&CK technique in this release, so only your asset inventory can mark a threat gap.');
+  });
+
+  it('says nothing while the profile resolves (a library layer loading) or when the provider gives no reason', () => {
+    overlay$.next(true);
+    emptyProfile('resolving');
+    expect(note()).toBeNull();
+    emptyReason.set(null);
+    revision.update(n => n + 1);
+    fixture.detectChanges();
+    expect(note()).withContext('empty parents with no reason: no guess').toBeNull();
   });
 });

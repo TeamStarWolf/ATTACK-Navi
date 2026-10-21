@@ -6,8 +6,8 @@ import { DataService } from './data.service';
 import { LibraryLayerService } from './library-layer.service';
 import { Domain } from '../models/domain';
 import { readV2, writeV2, V2Envelope } from '../models/storage-envelope';
-import type { ThreatWeightProvider } from '../models/posture/posture.types';
-import { ThreatProfile, ThreatProfileSource, LibraryLayerInput, resolveProfile } from '../models/threat-profile';
+import type { ThreatProfileEmptyReason, ThreatWeightProvider } from '../models/posture/posture.types';
+import { ThreatProfile, ThreatProfileSource, LibraryLayerInput, resolveProfile, threatProfileEmptyReason } from '../models/threat-profile';
 
 const STORAGE_KEY = 'navi.v2.threat-profile';
 const DEFAULT_SOURCE: ThreatProfileSource = { kind: 'top-groups', n: 20 };
@@ -76,16 +76,28 @@ export class ThreatProfileService implements OnDestroy, ThreatWeightProvider {
   // (and P2-17/P2-12) can read the threat-relevant denominator through the token signal.
   private readonly parentsSig = signal<ReadonlySet<string>>(new Set());
   readonly parents: Signal<ReadonlySet<string>> = this.parentsSig.asReadonly();
+  // Why parents() is empty (RP-F item 6, round 1), so the Threat gaps legend can say
+  // something true: an empty source, a profile still resolving, or one with no
+  // technique in the loaded domain. Set before the revision bump it travels with.
+  private readonly emptyReasonSig = signal<ThreatProfileEmptyReason | null>(null);
+  readonly emptyReason: Signal<ThreatProfileEmptyReason | null> = this.emptyReasonSig.asReadonly();
+  /** Whether the last profile was resolved against a loaded domain. */
+  private domainLoaded = false;
 
   constructor(private dataService: DataService, private libraryLayers: LibraryLayerService) {
     this.source = this.loadSource();
-    this.profileSubject = new BehaviorSubject<ThreatProfile>(this.build(this.dataService.getCurrentDomain()));
+    const initial = this.dataService.getCurrentDomain();
+    this.domainLoaded = !!initial;
+    this.profileSubject = new BehaviorSubject<ThreatProfile>(this.build(initial));
     this.profile$ = this.profileSubject.asObservable();
     // Re-resolve on every domain emission, INCLUDING null: a domain switch emits null
     // first (data.service), and leaving the old profile up would show a cross-domain
     // denominator while getCurrentAttackDomain() already names the new domain.
-    this.sub = this.dataService.domain$.subscribe((domain) => this.profileSubject.next(this.build(domain)));
+    this.sub = this.dataService.domain$.subscribe((domain) => this.emit(domain));
     this.sub.add(this.profile$.subscribe((p) => {
+      this.emptyReasonSig.set(threatProfileEmptyReason(
+        this.source, p.parentTechniqueIds.size, this.domainLoaded,
+        this.source.kind !== 'library-layer' || this.layerInput !== null));
       this.revisionSig.update((n) => n + 1);
       this.parentsSig.set(p.parentTechniqueIds);
     }));
@@ -100,7 +112,13 @@ export class ThreatProfileService implements OnDestroy, ThreatWeightProvider {
     this.source = src;
     this.persist(src);
     this.loadLayerIfNeeded();   // clears or (re)loads the layer input, then re-emits
-    this.profileSubject.next(this.build(this.dataService.getCurrentDomain()));
+    this.emit(this.dataService.getCurrentDomain());
+  }
+
+  /** Resolve against `domain` (null while one loads) and emit. */
+  private emit(domain: Domain | null): void {
+    this.domainLoaded = !!domain;
+    this.profileSubject.next(this.build(domain));
   }
 
   weight(techniqueStixId: string): number {
@@ -136,7 +154,7 @@ export class ThreatProfileService implements OnDestroy, ThreatWeightProvider {
     this.layerSub = this.libraryLayers.layerTechniqueIds(file).subscribe((ids) => {
       const meta = this.libraryLayers.manifest.find((m) => m.file === file) ?? { file, name: file, description: '' };
       this.layerInput = { meta, techniques: ids.map((techniqueID) => ({ techniqueID })) };
-      this.profileSubject.next(this.build(this.dataService.getCurrentDomain()));
+      this.emit(this.dataService.getCurrentDomain());
     });
   }
 
