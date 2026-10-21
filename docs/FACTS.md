@@ -14,7 +14,7 @@ Counts and versions derived from the code. When a document states one of these n
 | Routed workspace tabs | 47 | child routes with `data.tab` in `src/app/pages/*/*.routes.ts` |
 | Library layers | 37 | `src/assets/data/library-layers/index.json` |
 | Lylat mission layers | 35 | `src/assets/data/lylat-mission-layers/index.json` |
-| Unit spec files | 234 | `src/**/*.spec.ts` |
+| Unit spec files | 235 | `src/**/*.spec.ts` |
 | Playwright spec files | 8 | `e2e/**/*.spec.ts` |
 | Script test files | 9 | `scripts/**/*.test.mjs` |
 | Proxy test files | 1 | `server/**/*.test.*` |
@@ -185,7 +185,7 @@ Read by `scripts/check-facts.mjs`.
   "routeFileWorkspaces": 8,
   "routedTabs": 47,
   "libraryLayers": 37,
-  "unitSpecs": 234,
+  "unitSpecs": 235,
   "angularMajor": 22,
   "typescriptMajor": 6,
   "bundleVersions": {
