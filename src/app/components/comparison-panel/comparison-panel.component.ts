@@ -2,7 +2,6 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 
-import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
 import { PanelNavService } from '../../services/panel-nav.service';
@@ -10,16 +9,12 @@ import { DataService } from '../../services/data.service';
 import { Domain } from '../../models/domain';
 import { ThreatGroup } from '../../models/group';
 import { Technique } from '../../models/technique';
-
-interface CompTechnique {
-  tech: Technique;
-  side: 'a-only' | 'both' | 'b-only';
-}
+import { ThreatProfilePickerComponent } from '../threat-profile-picker/threat-profile-picker.component';
 
 @Component({
   selector: 'app-comparison-panel',
   standalone: true,
-  imports: [FormsModule],
+  imports: [ThreatProfilePickerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './comparison-panel.component.html',
   styleUrl: './comparison-panel.component.scss',
@@ -27,8 +22,8 @@ interface CompTechnique {
 export class ComparisonPanelComponent implements OnInit, OnDestroy {
   domain: Domain | null = null;
   groups: ThreatGroup[] = [];
-  selectedIdA = '';
-  selectedIdB = '';
+  groupA: ThreatGroup | null = null;
+  groupB: ThreatGroup | null = null;
   aOnly: Technique[] = [];
   both: Technique[] = [];
   bOnly: Technique[] = [];
@@ -44,13 +39,18 @@ export class ComparisonPanelComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.subs.add(this.dataService.domain$.subscribe(d => {
       this.domain = d;
-      // Collect all unique groups from domain
       if (d) {
-        const groupMap = new Map<string, ThreatGroup>();
-        for (const [, gs] of d.groupsByTechnique) {
-          for (const g of gs) groupMap.set(g.id, g);
-        }
-        this.groups = [...groupMap.values()].sort((a, b) => a.name.localeCompare(b.name));
+        // Every group in the domain, not only those with technique 'uses' relationships
+        // (groupsByTechnique drops the handful that map no techniques, e.g. DragonOK),
+        // so the shared picker's STIX id always resolves here.
+        this.groups = [...d.groups].sort((a, b) => a.name.localeCompare(b.name));
+        // Re-resolve a kept selection from the NEW domain's groups so compare never runs
+        // against a stale domain object; a selection the new domain lacks is dropped.
+        const reResolve = (g: ThreatGroup | null) => g ? (d.groups.find(x => x.id === g.id) ?? null) : null;
+        this.groupA = reResolve(this.groupA);
+        this.groupB = reResolve(this.groupB);
+      } else {
+        this.groups = []; this.groupA = null; this.groupB = null;
       }
       this.compute();
       this.cdr.markForCheck();
@@ -59,20 +59,30 @@ export class ComparisonPanelComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void { this.subs.unsubscribe(); }
 
+  /** The shared picker (single mode) emits a STIX intrusion-set id. */
+  onPickA(stixId: string): void {
+    this.groupA = this.groups.find(g => g.id === stixId) ?? null;
+    this.compute();
+    this.cdr.markForCheck();
+  }
+
+  onPickB(stixId: string): void {
+    this.groupB = this.groups.find(g => g.id === stixId) ?? null;
+    this.compute();
+    this.cdr.markForCheck();
+  }
+
+  clearA(): void { this.groupA = null; this.compute(); this.cdr.markForCheck(); }
+  clearB(): void { this.groupB = null; this.compute(); this.cdr.markForCheck(); }
+
   compute(): void {
-    if (!this.domain || !this.selectedIdA || !this.selectedIdB || this.selectedIdA === this.selectedIdB) {
+    if (!this.domain || !this.groupA || !this.groupB || this.groupA.id === this.groupB.id) {
       this.aOnly = []; this.both = []; this.bOnly = [];
       return;
     }
-    // Get technique STIX ids used by each group using techniquesByGroup map
-    // techniquesByGroup maps group.id (STIX id) to Technique[]
-    // But selectedIdA/B are attackId (G-prefix). Need to find the STIX id.
-    const groupA = this.groups.find(g => g.attackId === this.selectedIdA);
-    const groupB = this.groups.find(g => g.attackId === this.selectedIdB);
-    if (!groupA || !groupB) { this.aOnly = []; this.both = []; this.bOnly = []; return; }
-
-    const techsA = new Set((this.domain.techniquesByGroup.get(groupA.id) ?? []).map(t => t.id));
-    const techsB = new Set((this.domain.techniquesByGroup.get(groupB.id) ?? []).map(t => t.id));
+    // techniquesByGroup is keyed by group STIX id; the pickers give us STIX ids.
+    const techsA = new Set((this.domain.techniquesByGroup.get(this.groupA.id) ?? []).map(t => t.id));
+    const techsB = new Set((this.domain.techniquesByGroup.get(this.groupB.id) ?? []).map(t => t.id));
 
     const allIds = new Set([...techsA, ...techsB]);
     const aOnly: Technique[] = [], both: Technique[] = [], bOnly: Technique[] = [];
@@ -88,7 +98,6 @@ export class ComparisonPanelComponent implements OnInit, OnDestroy {
     this.aOnly = aOnly.sort((a, b) => a.attackId.localeCompare(b.attackId));
     this.both = both.sort((a, b) => a.attackId.localeCompare(b.attackId));
     this.bOnly = bOnly.sort((a, b) => a.attackId.localeCompare(b.attackId));
-    this.cdr.markForCheck();
   }
 
   get overlapPct(): number {
@@ -96,16 +105,22 @@ export class ComparisonPanelComponent implements OnInit, OnDestroy {
     return total > 0 ? Math.round((this.both.length / total) * 100) : 0;
   }
 
+  /** A selected group the loaded release records no technique 'uses' for; it still resolves and selects. */
+  get noUsesGroup(): ThreatGroup | null {
+    if (!this.domain) return null;
+    for (const g of [this.groupA, this.groupB]) {
+      if (g && (this.domain.techniquesByGroup.get(g.id)?.length ?? 0) === 0) return g;
+    }
+    return null;
+  }
+
   selectTechnique(tech: Technique): void {
     this.filterService.selectTechnique(tech);
   }
 
-  filterByGroup(attackId: string): void {
-    if (!this.domain) return;
-    const g = this.groups.find(g => g.attackId === attackId);
-    if (g) {
-      this.filterService.toggleThreatGroup(g.id);
-      this.panelNav.open('threats');
-    }
+  filterByGroup(group: ThreatGroup | null): void {
+    if (!group) return;
+    this.filterService.toggleThreatGroup(group.id);
+    this.panelNav.open('threats');
   }
 }
