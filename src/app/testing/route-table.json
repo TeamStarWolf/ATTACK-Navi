@@ -1,0 +1,868 @@
+{
+  "generatedFrom": "origin/main 95428e8, before the bundle-budget trims (flattenRoutes in app.routes.spec.ts, run in Karma)",
+  "routes": [
+    {
+      "path": "/",
+      "kind": "redirect",
+      "pathMatch": "full",
+      "redirectTo": "matrix",
+      "guards": [],
+      "data": null,
+      "title": null
+    },
+    {
+      "path": "/matrix",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "title": "Matrix",
+        "icon": "grid",
+        "reuse": true
+      },
+      "title": null
+    },
+    {
+      "path": "/detect",
+      "kind": "loadChildren",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": null,
+      "title": null
+    },
+    {
+      "path": "/detect",
+      "kind": "component",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "title": "Detection",
+        "icon": "radar"
+      },
+      "title": null
+    },
+    {
+      "path": "/detect",
+      "kind": "redirect",
+      "pathMatch": "full",
+      "redirectTo": "detections",
+      "guards": [],
+      "data": null,
+      "title": null
+    },
+    {
+      "path": "/detect/detections",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Detections",
+        "icon": "microscope"
+      },
+      "title": null
+    },
+    {
+      "path": "/detect/sigma",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Sigma",
+        "icon": "sigma"
+      },
+      "title": null
+    },
+    {
+      "path": "/detect/siem",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "SIEM",
+        "icon": "zap"
+      },
+      "title": null
+    },
+    {
+      "path": "/detect/yara",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "YARA",
+        "icon": "file-code"
+      },
+      "title": null
+    },
+    {
+      "path": "/detect/validation",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Validation",
+        "icon": "search-check"
+      },
+      "title": null
+    },
+    {
+      "path": "/detect/data-sources",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Data Sources",
+        "icon": "antenna"
+      },
+      "title": null
+    },
+    {
+      "path": "/detect/purple-team",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Purple Team",
+        "icon": "blend"
+      },
+      "title": null
+    },
+    {
+      "path": "/exposure",
+      "kind": "loadChildren",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": null,
+      "title": null
+    },
+    {
+      "path": "/exposure",
+      "kind": "component",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "title": "Exposure",
+        "icon": "shield-alert"
+      },
+      "title": null
+    },
+    {
+      "path": "/exposure",
+      "kind": "redirect",
+      "pathMatch": "full",
+      "redirectTo": "cve",
+      "guards": [],
+      "data": null,
+      "title": null
+    },
+    {
+      "path": "/exposure/cve",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "CVE",
+        "icon": "bug"
+      },
+      "title": null
+    },
+    {
+      "path": "/exposure/risk",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Risk",
+        "icon": "trending-down"
+      },
+      "title": null
+    },
+    {
+      "path": "/exposure/kill-chain",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Kill Chain",
+        "icon": "link-2"
+      },
+      "title": null
+    },
+    {
+      "path": "/exposure/graph",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Graph",
+        "icon": "share-2"
+      },
+      "title": null
+    },
+    {
+      "path": "/exposure/gap-analysis",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Gap Analysis",
+        "icon": "crosshair"
+      },
+      "title": null
+    },
+    {
+      "path": "/exposure/priority",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Priority",
+        "icon": "arrow-up"
+      },
+      "title": null
+    },
+    {
+      "path": "/exposure/ssvc",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "SSVC",
+        "icon": "scale"
+      },
+      "title": null
+    },
+    {
+      "path": "/exposure/dossier",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Dossier",
+        "icon": "file-text"
+      },
+      "title": null
+    },
+    {
+      "path": "/exposure/what-if",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "What-If",
+        "icon": "sparkles"
+      },
+      "title": null
+    },
+    {
+      "path": "/exposure/ctem",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "CTEM",
+        "icon": "compass"
+      },
+      "title": null
+    },
+    {
+      "path": "/dashboard",
+      "kind": "loadChildren",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": null,
+      "title": null
+    },
+    {
+      "path": "/dashboard",
+      "kind": "component",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "title": "Dashboard",
+        "icon": "layout-dashboard"
+      },
+      "title": null
+    },
+    {
+      "path": "/dashboard",
+      "kind": "redirect",
+      "pathMatch": "full",
+      "redirectTo": "overview",
+      "guards": [],
+      "data": null,
+      "title": null
+    },
+    {
+      "path": "/dashboard/overview",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Overview",
+        "icon": "layout-dashboard"
+      },
+      "title": null
+    },
+    {
+      "path": "/dashboard/analytics",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Analytics",
+        "icon": "chart-line"
+      },
+      "title": null
+    },
+    {
+      "path": "/intel",
+      "kind": "loadChildren",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": null,
+      "title": null
+    },
+    {
+      "path": "/intel",
+      "kind": "component",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "title": "Threat Intel",
+        "icon": "users"
+      },
+      "title": null
+    },
+    {
+      "path": "/intel",
+      "kind": "redirect",
+      "pathMatch": "full",
+      "redirectTo": "groups",
+      "guards": [],
+      "data": null,
+      "title": null
+    },
+    {
+      "path": "/intel/groups",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Groups",
+        "icon": "users"
+      },
+      "title": null
+    },
+    {
+      "path": "/intel/actors",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Actors",
+        "icon": "user-search"
+      },
+      "title": null
+    },
+    {
+      "path": "/intel/compare",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Compare",
+        "icon": "scale"
+      },
+      "title": null
+    },
+    {
+      "path": "/intel/scenarios",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Scenarios",
+        "icon": "drama",
+        "reuse": true
+      },
+      "title": null
+    },
+    {
+      "path": "/intel/emulation",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Emulation",
+        "icon": "swords",
+        "reuse": true
+      },
+      "title": null
+    },
+    {
+      "path": "/intel/campaigns",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Campaigns",
+        "icon": "calendar-range"
+      },
+      "title": null
+    },
+    {
+      "path": "/intel/software",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Software",
+        "icon": "package"
+      },
+      "title": null
+    },
+    {
+      "path": "/intel/feeds",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Feeds",
+        "icon": "brain"
+      },
+      "title": null
+    },
+    {
+      "path": "/coverage",
+      "kind": "loadChildren",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": null,
+      "title": null
+    },
+    {
+      "path": "/coverage",
+      "kind": "component",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "title": "Coverage",
+        "icon": "shield-check"
+      },
+      "title": null
+    },
+    {
+      "path": "/coverage",
+      "kind": "redirect",
+      "pathMatch": "full",
+      "redirectTo": "assessment",
+      "guards": [],
+      "data": null,
+      "title": null
+    },
+    {
+      "path": "/coverage/assessment",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Assessment",
+        "icon": "compass",
+        "reuse": true
+      },
+      "title": null
+    },
+    {
+      "path": "/coverage/controls",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Controls",
+        "icon": "lock"
+      },
+      "title": null
+    },
+    {
+      "path": "/coverage/custom-mitigations",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Custom Mitigations",
+        "icon": "building"
+      },
+      "title": null
+    },
+    {
+      "path": "/coverage/compliance",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Compliance",
+        "icon": "scroll-text"
+      },
+      "title": null
+    },
+    {
+      "path": "/coverage/diff",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Diff",
+        "icon": "git-compare"
+      },
+      "title": null
+    },
+    {
+      "path": "/coverage/timeline",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Timeline",
+        "icon": "calendar"
+      },
+      "title": null
+    },
+    {
+      "path": "/coverage/target",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Target",
+        "icon": "target"
+      },
+      "title": null
+    },
+    {
+      "path": "/coverage/assets",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Assets",
+        "icon": "monitor"
+      },
+      "title": null
+    },
+    {
+      "path": "/library",
+      "kind": "loadChildren",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": null,
+      "title": null
+    },
+    {
+      "path": "/library",
+      "kind": "component",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "title": "Library",
+        "icon": "layers"
+      },
+      "title": null
+    },
+    {
+      "path": "/library",
+      "kind": "redirect",
+      "pathMatch": "full",
+      "redirectTo": "workbench",
+      "guards": [],
+      "data": null,
+      "title": null
+    },
+    {
+      "path": "/library/workbench",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Workbench",
+        "icon": "layers",
+        "reuse": true
+      },
+      "title": null
+    },
+    {
+      "path": "/library/layers",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Layers",
+        "icon": "layers"
+      },
+      "title": null
+    },
+    {
+      "path": "/library/collections",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Collections",
+        "icon": "box"
+      },
+      "title": null
+    },
+    {
+      "path": "/library/comparison",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Comparison",
+        "icon": "git-compare"
+      },
+      "title": null
+    },
+    {
+      "path": "/library/roadmap",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Roadmap",
+        "icon": "map"
+      },
+      "title": null
+    },
+    {
+      "path": "/library/watchlist",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Watchlist",
+        "icon": "bookmark"
+      },
+      "title": null
+    },
+    {
+      "path": "/library/tags",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Tags",
+        "icon": "tag"
+      },
+      "title": null
+    },
+    {
+      "path": "/reports",
+      "kind": "loadChildren",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": null,
+      "title": null
+    },
+    {
+      "path": "/reports",
+      "kind": "component",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "title": "Reports",
+        "icon": "file-text"
+      },
+      "title": null
+    },
+    {
+      "path": "/reports",
+      "kind": "redirect",
+      "pathMatch": "full",
+      "redirectTo": "builder",
+      "guards": [],
+      "data": null,
+      "title": null
+    },
+    {
+      "path": "/reports/builder",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Report Builder",
+        "icon": "file-text",
+        "reuse": true
+      },
+      "title": null
+    },
+    {
+      "path": "/reports/playbooks",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "IR Playbooks",
+        "icon": "siren"
+      },
+      "title": null
+    },
+    {
+      "path": "/reports/exports",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Export Hub",
+        "icon": "download"
+      },
+      "title": null
+    },
+    {
+      "path": "/status",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "title": "Status",
+        "icon": "monitor"
+      },
+      "title": null
+    },
+    {
+      "path": "/technique/:domain/:id",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "title": "Technique"
+      },
+      "title": null
+    },
+    {
+      "path": "/settings",
+      "kind": "loadChildren",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": null,
+      "title": null
+    },
+    {
+      "path": "/settings",
+      "kind": "component",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "title": "Settings",
+        "icon": "settings"
+      },
+      "title": null
+    },
+    {
+      "path": "/settings",
+      "kind": "redirect",
+      "pathMatch": "full",
+      "redirectTo": "preferences",
+      "guards": [],
+      "data": null,
+      "title": null
+    },
+    {
+      "path": "/settings/preferences",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Preferences",
+        "icon": "settings"
+      },
+      "title": null
+    },
+    {
+      "path": "/settings/changelog",
+      "kind": "loadComponent",
+      "pathMatch": null,
+      "redirectTo": null,
+      "guards": [],
+      "data": {
+        "tab": "Changelog",
+        "icon": "scroll-text"
+      },
+      "title": null
+    },
+    {
+      "path": "/**",
+      "kind": "redirect",
+      "pathMatch": null,
+      "redirectTo": "matrix",
+      "guards": [],
+      "data": null,
+      "title": null
+    }
+  ]
+}
