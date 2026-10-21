@@ -871,6 +871,37 @@
   &.active { font-weight: 700; }
 }
 
+// Posture badge of a broad implemented mitigation (P2-16): partial is dashed, confirmed solid
+.mit-posture-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.mit-posture-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  color: var(--text-main);
+  &.partial { border-style: dashed; color: var(--text-muted); }
+}
+
+.mit-confirm-btn {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-panel-strong);
+  color: var(--text-main);
+  cursor: pointer;
+  &:hover { border-color: var(--accent); }
+}
+
 // Doc toggle
 .doc-toggle-btn {
   margin-top: 8px;

@@ -1748,6 +1748,32 @@
                     }
                   </div>
 
+                  <!-- Posture badge (P2-16): an implemented mitigation broader than the breadth threshold -->
+                  @if (mitigationPostureBadge(rel.mitigation); as badge) {
+                    <div class="mit-posture-row" data-testid="mit-posture-row">
+                      <span
+                        class="mit-posture-badge"
+                        [class.partial]="badge.partial"
+                        data-testid="mit-posture-badge"
+                      >{{ badge.text }}</span>
+                      @if (badge.canUnconfirm) {
+                        <button
+                          class="mit-confirm-btn"
+                          data-testid="mit-unconfirm"
+                          (click)="unconfirmTechnique()"
+                          title="Remove this technique's own confirmation; the mitigation's status is unchanged"
+                        >Unconfirm</button>
+                      } @else if (badge.canConfirm) {
+                        <button
+                          class="mit-confirm-btn"
+                          data-testid="mit-confirm"
+                          (click)="confirmTechnique(rel.mitigation)"
+                          title="This mitigation maps to many techniques; confirm it is in place for this technique"
+                        >Confirm for this technique</button>
+                      }
+                    </div>
+                  }
+
                   @if (rel.description) {
                     <div class="rel-desc-wrap" [class.expanded]="isRelDescExpanded(rel.mitigation.id)">
                       <p class="rel-description" [innerHTML]="rel.description | attackText"></p>

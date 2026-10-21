@@ -281,19 +281,21 @@ export class ExportActionsService {
     const lines: string[] = [];
     if (checkDomain) {
       try {
-        // Preview first: a foreign layer's comments can only GUESS mitigation
-        // statuses, so they are written only after the analyst sees exactly
-        // what would change and says yes. Notes never need the opt-in (they
-        // only land on techniques without a note).
+        // Preview first: a foreign layer's comments can only GUESS a
+        // technique's status, so the technique marks are written only after
+        // the analyst sees exactly what would change and says yes (P2-16:
+        // technique marks under layer:<name>, never mitigation statuses).
+        // Notes never need the opt-in (they only land on techniques without a note).
+        const attackDomain = this.currentDomain;
         const preview = await this.navigatorLayerService.importLayer(
           json, checkDomain, this.implService, this.annotationService,
-          { dryRun: true, deriveStatusesFromComments: true },
+          { dryRun: true, deriveStatusesFromComments: true, attackDomain },
         );
         const derive = preview.derivedStatuses.length > 0
-          && confirm(this.describeDerivedStatuses(preview.derivedStatuses));
+          && confirm(this.describeDerivedStatuses(preview.derivedStatuses, preview.layerName));
         const applied = await this.navigatorLayerService.importLayer(
           json, checkDomain, this.implService, this.annotationService,
-          { deriveStatusesFromComments: derive },
+          { deriveStatusesFromComments: derive, attackDomain },
         );
         const release = `${checkDomain.name} v${checkDomain.attackVersion || '?'}`;
         lines.push(`${applied.resolvedCount} of ${applied.techniqueIdCount} technique ids resolved in ${release}.`);
@@ -302,6 +304,9 @@ export class ExportActionsService {
           lines.push(`${applied.remapped.length} retired id(s) mapped to their replacement (${sample}${applied.remapped.length > 3 ? ', …' : ''}).`);
         }
         lines.push(`${applied.statusesApplied} statuses and ${applied.notesApplied} notes applied; matrix colored by this layer.`);
+        if (derive) {
+          lines.push(`${applied.marksApplied} technique mark(s) recorded from layer "${applied.layerName}"; mitigation statuses unchanged.`);
+        }
         if (preview.derivedStatuses.length && !derive) {
           lines.push('Comment-derived statuses were not applied (comments kept as notes only).');
         }
@@ -317,24 +322,18 @@ export class ExportActionsService {
     alert([`Layer "${layer.name}" imported and saved (${layer.techniques.length} technique entries).`, ...lines, ...warnings].join('\n'));
   }
 
-  /** The confirm text shown before comment-derived statuses are written. */
-  private describeDerivedStatuses(derived: DerivedStatus[]): string {
-    const byTechnique = new Map<string, DerivedStatus[]>();
-    for (const d of derived) {
-      const list = byTechnique.get(d.techniqueId) ?? [];
-      list.push(d);
-      byTechnique.set(d.techniqueId, list);
-    }
-    const sample = [...byTechnique.entries()].slice(0, 8).map(([techniqueId, list]) =>
-      `  ${techniqueId}: ${list.length} mitigation(s) -> ${list[0].status}  ("${list[0].comment.slice(0, 60)}")`);
-    const more = byTechnique.size > 8 ? [`  … and ${byTechnique.size - 8} more technique(s)`] : [];
+  /** The confirm text shown before comment-derived technique marks are written (P2-16). */
+  private describeDerivedStatuses(derived: DerivedStatus[], layerName: string): string {
+    const sample = derived.slice(0, 8).map(d => `  ${d.techniqueId} -> ${d.status}  ("${d.comment.slice(0, 60)}")`);
+    const more = derived.length > 8 ? [`  … and ${derived.length - 8} more technique(s)`] : [];
     return [
       'This layer has no ATTACK-Navi status metadata, so statuses can only be guessed from its comments.',
-      `Set ${derived.length} mitigation status(es) on ${byTechnique.size} technique(s) from comment keywords?`,
+      `Mark ${derived.length} technique(s) from comment keywords?`,
       ...sample,
       ...more,
       '',
-      'OK applies them to your implementation tracking. Cancel keeps the comments as notes only.',
+      `OK records them as technique marks from layer "${layerName}" (importing this layer again replaces them). ` +
+        'Mitigation statuses are not changed. Cancel keeps the comments as notes only.',
     ].join('\n');
   }
 
