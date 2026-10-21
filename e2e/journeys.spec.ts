@@ -52,27 +52,37 @@ test.describe('acceptance journeys (plan Appendix C)', () => {
     const org = loadSampleOrg();
 
     // 1. Import the synthetic 8-row / 6-technique contract through "Import range
-    //    results" — a local FileReader read, never a URL.
+    //    results" — a local FileReader read, never a URL. The control is disabled
+    //    until a domain has loaded (range rows key to the loaded domain at import),
+    //    so wait for it to ENABLE: that is the domain-loaded marker.
     await page.goto(`${BASE}/#/detect/validation`);
     await expect(page.locator('app-validation-panel')).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    await expect(page.locator('#vp-import-range')).toBeEnabled({ timeout: ROUTE_TIMEOUT });
     await page.locator('#vp-import-range').setInputFiles(org.rangeContract.fixture);
     await expect(page.locator('.vp-import-msg')).toContainText(`lylat-range:${org.rangeContract.mission}`);
 
     // 2. The proven lens lights the six range-validated TECHNIQUES, each with the lab
-    //    badge. A technique that sits in several tactics renders one cell per tactic,
-    //    so assert the DISTINCT technique ids under a lab badge cover exactly the
-    //    fixture's six ids — a raw cell count would over-count the multi-tactic ones.
+    //    badge. Navigate with a fresh load (goto + reload, not a same-document hash
+    //    goto) so the matrix boots clean and re-reads the persisted store. A technique
+    //    that sits in several tactics renders one cell per tactic, so assert the
+    //    DISTINCT technique ids under a lab badge cover exactly the fixture's six ids
+    //    — a raw cell count would over-count the multi-tactic ones. Read each cell's
+    //    ATT&CK id from its aria-label ("T1558.003: …"), not data-tech-id (a STIX id).
     await page.goto(`${BASE}/#/matrix?heat=proven`);
+    await page.reload();
     await expect(page).toHaveURL(/#\/matrix\?.*heat=proven/);
     await expect(page.locator('.matrix-wrapper')).toBeVisible({ timeout: ROUTE_TIMEOUT });
-    await expect(page.locator('.proof-lab-badge').first()).toBeVisible();
+    await expect(page.locator('.proof-lab-badge').first()).toBeVisible({ timeout: ROUTE_TIMEOUT });
     const fixtureIds = [...new Set(loadRangeFixture(org).rows.map((r) => r.technique_ref.id))].sort();
-    const badgedIds = await page.$$eval('[data-tech-id]:has(.proof-lab-badge)', (els) =>
-      [...new Set(els.map((e) => e.getAttribute('data-tech-id')))].sort());
+    expect(fixtureIds).toHaveLength(6);
+    const badgedIds = await page.$$eval('.cell:has(.proof-lab-badge)', (els) =>
+      [...new Set(els.map((e) => (e.getAttribute('aria-label') ?? '').split(':')[0].trim()).filter(Boolean))].sort());
     expect(badgedIds).toEqual(fixtureIds);
 
-    // 4. The T1558.003 drawer lists the two range-validated rule ids.
+    // 4. The T1558.003 drawer lists the two range-validated rule ids. Fresh load
+    //    again so the drawer opens from the URL on a clean boot.
     await page.goto(`${BASE}/#/matrix?heat=proven&tech=T1558.003`);
+    await page.reload();
     await expect(page.locator('.sidebar.open')).toBeVisible({ timeout: ROUTE_TIMEOUT });
     await expect(page.locator('.sidebar-header .attack-id')).toContainText('T1558.003');
     const pill = page.locator('app-validation-status-pill');

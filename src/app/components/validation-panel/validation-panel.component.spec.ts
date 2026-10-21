@@ -109,6 +109,28 @@ describe('ValidationPanelComponent', () => {
     expect(input.value).toBe('');
   });
 
+  // Round 2 (item 1): "Import range results" is disabled until a domain loads,
+  // because range rows are keyed to the loaded domain at import; a cold import
+  // would key to nothing and silently drop every row.
+  it('disables "Import range results" until a domain is loaded', () => {
+    const el: HTMLElement = fixture.nativeElement;
+    const input = () => el.querySelector('#vp-import-range') as HTMLInputElement;
+    const label = () => el.querySelector('label[for="vp-import-range"]')!;
+
+    expect(component.domainLoaded).toBeFalse();
+    expect(input().disabled).toBeTrue();
+    expect(label().getAttribute('aria-disabled')).toBe('true');
+    expect(label().getAttribute('title')).toContain('ATT&CK data still loading');
+
+    // A domain arrives: the control enables.
+    (TestBed.inject(DataService) as unknown as { domain$: BehaviorSubject<unknown> }).domain$
+      .next({ name: 'Enterprise ATT&CK', techniques: [] });
+    rerender();
+    expect(component.domainLoaded).toBeTrue();
+    expect(input().disabled).toBeFalse();
+    expect(label().getAttribute('aria-disabled')).toBe('false');
+  });
+
   it('importRangeResults surfaces the error from a refused file', async () => {
     const svc = TestBed.inject(ValidationService) as unknown as { importRangeContract: jasmine.Spy };
     svc.importRangeContract = jasmine.createSpy('importRangeContract').and.returnValue(

@@ -178,6 +178,15 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * True once a domain has loaded. The "Import range results" control is disabled
+   * until then: range rows are keyed to the loaded domain at import (P2-20), so a
+   * cold import would key to nothing and silently drop every row.
+   */
+  get domainLoaded(): boolean {
+    return this.domain !== null;
+  }
+
+  /**
    * Runs with a recorded outcome: every status but 'untested'. Read from a
    * Record over ValidationStatus, so a new status cannot be left out of the
    * "Untested (in scope)" tile or the "Coverage so far" line.

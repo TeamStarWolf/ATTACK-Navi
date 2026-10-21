@@ -11,8 +11,8 @@
       "outcome": "alerted",
       "negative_control": "detection-only",
       "validated_at": "2026-10-18",
-      "evidence_ref": "SYNTH-MISSION-A-step1",
-      "hostname": "dc01.synth.local"
+      "evidence_ref": "SYNTH-MISSION-A-step1"
     }
-  ]
+  ],
+  "hostname": "dc01.synth.local"
 }

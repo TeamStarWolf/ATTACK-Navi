@@ -12,8 +12,12 @@
         <div class="vp-head-actions">
           <input type="file" accept="application/json" (change)="importRuns($event)" id="vp-import-runs" style="display:none">
           <label for="vp-import-runs" class="vp-btn">Import JSON</label>
-          <input type="file" accept="application/json" (change)="importRangeResults($event)" id="vp-import-range" style="display:none">
-          <label for="vp-import-range" class="vp-btn" title="Load a Lylat range results export (read locally as range-scoped evidence)">Import range results</label>
+          <input type="file" accept="application/json" (change)="importRangeResults($event)" id="vp-import-range" style="display:none" [disabled]="!domainLoaded">
+          <label for="vp-import-range" class="vp-btn"
+                 [attr.aria-disabled]="!domainLoaded"
+                 [style.opacity]="domainLoaded ? null : '0.55'"
+                 [style.cursor]="domainLoaded ? null : 'not-allowed'"
+                 [title]="domainLoaded ? 'Load a Lylat range results export (read locally as range-scoped evidence)' : 'ATT&CK data still loading — range results can be imported once the matrix has loaded'">Import range results</label>
           <button class="vp-btn" (click)="exportRuns()">Export Runs JSON</button>
           <button class="vp-btn" (click)="exportNavigatorLayer()">Export ATT&amp;CK Layer</button>
         </div>

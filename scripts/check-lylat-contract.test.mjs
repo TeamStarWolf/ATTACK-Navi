@@ -64,13 +64,27 @@ test('the pinned hash in PROVENANCE matches the schema', () => {
 
 test('the canonical projection ignores prose and identity but tracks structure', () => {
   const s = schema();
-  // $id / description / comment / $comment do not change the hash.
+  // $id / title / description / comment / $comment / x-navi-pin do not change the hash.
   assert.equal(schemaHash({ ...s, description: 'anything else' }), schemaHash(s));
   assert.equal(schemaHash({ ...s, $id: 'urn:x', comment: 'c', $comment: 'c' }), schemaHash(s));
+  // round 2 (item 10): title and the Navi-only x-navi-pin marker are dropped too,
+  // so flipping the pin to 'stable' or retitling the schema does not move the hash.
+  assert.equal(schemaHash({ ...s, title: 'A totally different title', 'x-navi-pin': 'stable' }), schemaHash(s));
   // a real structural change does.
   assert.notEqual(schemaHash({ ...s, type: 'array' }), schemaHash(s));
   // keys are sorted, so key order in source does not matter.
   assert.deepEqual(canonicalize({ b: 1, a: 2 }), { a: 2, b: 1 });
+});
+
+test('the validator refuses an impossible calendar date (round 2, item 9)', () => {
+  const s = schema();
+  const fixture = JSON.parse(readFileSync(join(ROOT, FIXTURE_PATH), 'utf8'));
+  // 2026-02-30 matches the date regex but is not a real day: refused in a row
+  // `validated_at` (format: date) and in the export `generated_at` (date-time).
+  const badDay = { ...fixture, rows: [{ ...fixture.rows[0], validated_at: '2026-02-30' }] };
+  assert.ok(validateExport(s, badDay).some(e => e.includes('/validated_at')), 'impossible validated_at should fail');
+  const badGen = { ...fixture, generated_at: '2026-02-30T00:00:00Z' };
+  assert.ok(validateExport(s, badGen).some(e => e.includes('/generated_at')), 'impossible generated_at should fail');
 });
 
 test('the privacy sweep fires on the three free-id fields only', () => {

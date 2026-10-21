@@ -21,6 +21,7 @@ import INVALID_BAD_ENUM from '../../testing/fixtures/lylat/invalid/bad-enum.json
 import INVALID_IP from '../../testing/fixtures/lylat/invalid/ip-evidence.json';
 import INVALID_MISSING_BUILD from '../../testing/fixtures/lylat/invalid/missing-build-ref.json';
 import INVALID_EXTRA_REF from '../../testing/fixtures/lylat/invalid/extra-key-technique-ref.json';
+import INVALID_EXTRA_ROW from '../../testing/fixtures/lylat/invalid/extra-key-row.json';
 import INVALID_AT_SIGN from '../../testing/fixtures/lylat/invalid/at-sign-evidence.json';
 
 const IDENTITY = (id: string) => id;
@@ -129,6 +130,18 @@ describe('Lylat validated-detections contract (P2-20)', () => {
     expect(skipped[0].reason).toContain('atlas');
   });
 
+  // Round 2 (item 4): v1 keys every run to the one loaded domain, so a row for a
+  // different ATT&CK domain (a mobile row while Enterprise is loaded) is skipped
+  // with a clear reason, BEFORE the technique-existence check, not stored unkeyed.
+  it('skips a row whose domain is not the loaded domain', () => {
+    const e = oneRow({ domain: 'mobile', id: 'T1409', attack_version: '19.2' });
+    expect(validateLylatExport(e).ok).toBeTrue();            // well-formed per the schema
+    const { bySource, skipped } = lylatRowsToRuns(e, IDENTITY, 'enterprise', '19.2', KNOWS_ALL);
+    expect(bySource.size).toBe(0);
+    expect(skipped.length).toBe(1);
+    expect(skipped[0].reason).toContain('row domain mobile is not the loaded domain');
+  });
+
   it('maps coverage_state and outcome to the documented status', () => {
     const passed = FIXTURE.rows[0] as unknown as Parameters<typeof statusForRow>[0];
     expect(statusForRow(passed)).toBe('passed');
@@ -158,7 +171,7 @@ describe('Lylat validated-detections contract (P2-20)', () => {
   // in parity with the CI schema check that runs the same corpus.
   it('accepts the fixture and rejects every invalid-corpus file (parity with CI)', () => {
     expect(validateLylatExport(FIXTURE).ok).toBeTrue();
-    for (const bad of [INVALID_HOSTNAME, INVALID_BAD_ENUM, INVALID_IP, INVALID_MISSING_BUILD, INVALID_EXTRA_REF, INVALID_AT_SIGN]) {
+    for (const bad of [INVALID_HOSTNAME, INVALID_BAD_ENUM, INVALID_IP, INVALID_MISSING_BUILD, INVALID_EXTRA_REF, INVALID_EXTRA_ROW, INVALID_AT_SIGN]) {
       expect(validateLylatExport(bad).ok).toBeFalse();
     }
   });
@@ -167,5 +180,24 @@ describe('Lylat validated-detections contract (P2-20)', () => {
     expect(validateLylatExport({ schema: 'something-else' }).ok).toBeFalse();
     expect(validateLylatExport(null).ok).toBeFalse();
     expect(validateLylatExport([]).ok).toBeFalse();
+  });
+
+  // Round 2 (item 9): an impossible calendar date that still matches the regex
+  // (2026-02-30) is refused, not silently rolled over by Date.parse — in both
+  // the row `validated_at` (format date) and the export `generated_at` (date-time).
+  it('refuses an impossible calendar date in validated_at and generated_at', () => {
+    const base = oneRow({ domain: 'enterprise', id: 'T1059.001', attack_version: '19.2' });
+    const badDay = {
+      ...base,
+      rows: [{ ...base.rows[0], validated_at: '2026-02-30' }],
+    } as unknown as LylatExportV1;
+    const r1 = validateLylatExport(badDay);
+    expect(r1.ok).toBeFalse();
+    if (!r1.ok) expect(r1.errors.some((e) => e.includes('validated_at'))).toBeTrue();
+
+    const badGen = { ...base, generated_at: '2026-02-30T00:00:00Z' } as unknown as LylatExportV1;
+    const r2 = validateLylatExport(badGen);
+    expect(r2.ok).toBeFalse();
+    if (!r2.ok) expect(r2.errors.some((e) => e.includes('generated_at'))).toBeTrue();
   });
 });

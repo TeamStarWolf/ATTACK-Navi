@@ -15,6 +15,7 @@ import { fingerprint } from '../models/storage-envelope';
 import { runMatches } from '../models/posture/run-match';
 import LYLAT_FIXTURE from '../../testing/fixtures/lylat/validated-detections.fixture.json';
 import LYLAT_INVALID_IP from '../../testing/fixtures/lylat/invalid/ip-evidence.json';
+import LYLAT_INVALID_HOSTNAME from '../../testing/fixtures/lylat/invalid/hostname.json';
 
 const STORAGE_KEY = VALIDATION_RUNS_V2_KEY;
 
@@ -430,6 +431,43 @@ describe('ValidationService', () => {
       expect(res.dropped).toEqual([{ row: 1, reason: jasmine.stringContaining('not a technique of the loaded') }]);
     });
 
+    // Round 2 (item 4): a row for a different ATT&CK domain than the loaded one
+    // (a mobile row while Enterprise is loaded) is dropped by row with a clear
+    // reason — v1 keys every run to the one loaded domain.
+    it('[AC] drops a row whose domain is not the loaded domain, keyed to its export row', () => {
+      const mobileRow = { ...cRow('MISSION-A', 'T1409', 'wazuh:9', 1), technique_ref: { domain: 'mobile', id: 'T1409', attack_version: '19.2' } };
+      const res = service.importRangeContract(contract([cRow('MISSION-A', 'T1059.001', 'wazuh:1', 0), mobileRow]));
+      expect(res.ok).toBeTrue();
+      expect(service.all.map(r => r.techniqueId)).toEqual(['T1059.001']);
+      expect(res.dropped).toEqual([{ row: 1, reason: jasmine.stringContaining('row domain mobile is not the loaded domain') }]);
+    });
+
+    // Round 2 (item 1): with no domain loaded, the import is refused outright
+    // ("ATT&CK data still loading") rather than keying every row to nothing and
+    // silently dropping them. Nothing is stored.
+    it('refuses the whole import when no domain is loaded, storing nothing', () => {
+      fakeData.loaded = null;
+      const res = service.importRangeContract(text());
+      expect(res.ok).toBeFalse();
+      expect(res.error).toContain('ATT&CK data still loading');
+      expect(service.all).toEqual([]);
+    });
+
+    // Round 2 (item 8): a multi-mission file whose LATER mission carries an invalid
+    // row fails validation as a whole, so the entire file is refused and nothing —
+    // not even the valid earlier mission — is stored.
+    it('refuses the whole file when a later mission has an invalid row, storing nothing', () => {
+      const bad = { ...cRow('MISSION-B', 'T1003.001', 'wazuh:3', 2), coverage_state: 'not-a-state' };
+      const res = service.importRangeContract(contract([
+        cRow('MISSION-A', 'T1059.001', 'wazuh:1', 0),
+        cRow('MISSION-A', 'T1087.002', 'wazuh:2', 1),
+        bad,
+      ]));
+      expect(res.ok).toBeFalse();
+      expect(res.error).toContain('Invalid range results');
+      expect(service.all).toEqual([]);
+    });
+
     // AC4 (atomic): a multi-mission file commits in ONE emission, and every drop is
     // reported against the row index the reader sees in the export (not a per-group one).
     it('[AC] imports every mission in one atomic commit, dropping by export row index', () => {
@@ -450,21 +488,28 @@ describe('ValidationService', () => {
       expect(service.all.filter(r => r.source === 'lylat-range:MISSION-B').map(r => r.techniqueId)).toEqual(['T1003.001']);
     });
 
-    // A refused file leaves pre-existing manual AND range runs byte-for-byte untouched.
+    // A refused file leaves pre-existing manual AND range runs byte-for-byte
+    // untouched. hostname.json is refused STRUCTURALLY (a top-level extra key), a
+    // different refusal path from the privacy-regex one below.
     it('a refused file stores nothing and leaves existing manual and range runs intact', () => {
       service.record({ ...baseRun, techniqueId: 'T1003.001' });
       service.importRows([rangeRow('r1', 'T1110')], 'lylat-range:mission-x');
       const before = JSON.stringify(service.all);
-      const res = service.importRangeContract(JSON.stringify(LYLAT_INVALID_IP));
+      const res = service.importRangeContract(JSON.stringify(LYLAT_INVALID_HOSTNAME));
       expect(res.ok).toBeFalse();
       expect(JSON.stringify(service.all)).toBe(before);
     });
 
-    // R7, in full: re-importing mission A replaces only A; mission B's ten runs and
-    // the manual run are untouched.
+    // R7, in full (round 2, item 7): start from an 8-row mission A and a separate
+    // 2-row mission B (10 runs total) plus a manual run; re-importing mission A
+    // replaces only A — mission B's two runs and the manual run are byte-for-byte
+    // untouched.
     it('[AC-R7] re-importing one mission replaces only it, leaving other missions and manual runs', () => {
-      const bRows = Array.from({ length: 10 }, (_, i) => cRow('MISSION-B', 'T1003.001', `wazuh:${100 + i}`, i));
-      service.importRangeContract(contract([cRow('MISSION-A', 'T1059.001', 'wazuh:1', 0), ...bRows]));
+      const aRows = Array.from({ length: 8 }, (_, i) => cRow('MISSION-A', 'T1059.001', `wazuh:${200 + i}`, i));
+      const bRows = Array.from({ length: 2 }, (_, i) => cRow('MISSION-B', 'T1003.001', `wazuh:${300 + i}`, 8 + i));
+      service.importRangeContract(contract([...aRows, ...bRows]));       // 10 runs: 8 A + 2 B
+      expect(service.all.filter(r => r.source === 'lylat-range:MISSION-A').length).toBe(8);
+      expect(service.all.filter(r => r.source === 'lylat-range:MISSION-B').length).toBe(2);
       service.record({ ...baseRun, techniqueId: 'T1021.002' });
       const missionBBefore = JSON.stringify(service.all.filter(r => r.source === 'lylat-range:MISSION-B'));
       const manualBefore = JSON.stringify(service.all.filter(r => r.source === 'manual'));

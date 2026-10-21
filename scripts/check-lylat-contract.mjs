@@ -34,11 +34,13 @@ export const INVALID_DIR = 'src/testing/fixtures/lylat/invalid';
 const PRIVACY_RE = /[/\\@\s]|[0-9]{1,3}(\.[0-9]{1,3}){3}/;
 const PRIVACY_FIELDS = ['detection_ref', 'evidence_ref', 'mission_id'];
 
-// Keys dropped from the canonical projection: identity and prose that may differ
-// between the producer's copy and ours without changing the structure.
-const DROPPED_KEYS = new Set(['$id', 'description', 'comment', '$comment']);
+// Keys dropped from the canonical projection: identity, prose and Navi-only
+// annotations that may differ between the producer's copy and ours without
+// changing the structure. `title` and `description` are prose, `$id` is identity,
+// and `x-navi-pin` is Navi's own provisional marker (absent from the producer).
+const DROPPED_KEYS = new Set(['$id', 'title', 'description', 'comment', '$comment', 'x-navi-pin']);
 
-/** Recursively sort object keys and drop identity/prose keys. Arrays keep order. */
+/** Recursively sort object keys and drop identity/prose/Navi-only keys. Arrays keep order. */
 export function canonicalize(node) {
   if (Array.isArray(node)) return node.map(canonicalize);
   if (node && typeof node === 'object') {

@@ -213,6 +213,9 @@ export interface LylatMapResult {
  *
  * A row is skipped (with a reason, carrying its EXPORT row index) when:
  *   - its domain is `atlas` (no ATT&CK domain in Navi today);
+ *   - its domain is not the LOADED domain — v1 keys every run to the one loaded
+ *     domain (R6 §3), so a row for a different ATT&CK domain cannot be keyed now
+ *     and is skipped; load that domain and re-import to bring those rows in;
  *   - its id does not resolve to a parseable technique ref in `domainId`;
  *   - `isKnown(id)` is false — the resolved id is well-formed but is not a
  *     technique of the loaded domain (e.g. a retired or future id). Manual runs
@@ -234,6 +237,10 @@ export function lylatRowsToRuns(
   e.rows.forEach((row, i) => {
     if (row.technique_ref.domain === 'atlas') {
       skipped.push({ row: i, reason: `atlas technique ${row.technique_ref.id}: no ATT&CK domain in Navi today` });
+      return;
+    }
+    if (row.technique_ref.domain !== domainId) {
+      skipped.push({ row: i, reason: `row domain ${row.technique_ref.domain} is not the loaded domain (${domainId})` });
       return;
     }
     const source = `lylat-range:${row.mission_id}` as const;

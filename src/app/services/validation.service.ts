@@ -679,6 +679,13 @@ export class ValidationService {
     if (!isObj(parsed) || parsed['schema'] !== LYLAT_CONTRACT_SCHEMA) {
       return { ok: false, bySource: {}, dropped: [], error: `Not a ${LYLAT_CONTRACT_SCHEMA} file.` };
     }
+    // Range rows are resolved and keyed to the LOADED domain at import. With no
+    // domain loaded every row would key to nothing and silently drop, so refuse
+    // the whole file and ask the reader to wait (the panel disables the control
+    // until a domain is loaded; this is the service-side backstop).
+    if (this.loaded() === null) {
+      return { ok: false, bySource: {}, dropped: [], error: 'ATT&CK data still loading — load a domain, then import range results.' };
+    }
     const v = validateLylatExport(parsed);
     if (!v.ok) {
       const shown = v.errors.slice(0, 5).join('; ');
