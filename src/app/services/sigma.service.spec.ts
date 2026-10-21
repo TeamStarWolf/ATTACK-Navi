@@ -100,11 +100,15 @@ describe('SigmaService', () => {
       expect(record.rows).toBe(0);
     });
 
-    it("synthetic: accepts '.yaml' and '.yml' and records the technique-matched count as rows, never the path count", () => {
+    it("synthetic (the one id-bearing positive): accepts '.yaml' and '.yml', records the technique-matched count as rows, never the path count, and encodes each path segment in the rule links", () => {
+      // Synthetic paths: no real file name in the upstream carries a technique id. The
+      // spaces and parentheses mirror real names such as '... (on behalf).yaml'.
+      const yml = 'windows-os/win-os-T1003 synthetic (on behalf).yml';
+      const ymlEncoded = 'windows-os/win-os-T1003%20synthetic%20(on%20behalf).yml';
       service.loadCommunityRules();
       httpMock.expectOne(TREE_URL).flush(listingWith(
         { path: 'windows-os/win-os-T1059.001 synthetic.yaml', type: 'blob' },
-        { path: 'windows-os/win-os-T1003 synthetic.yml', type: 'blob' },
+        { path: yml, type: 'blob' },
       ));
       expect(service.getCommunityRuleCount('T1059.001')).toBe(1);
       expect(service.getCommunityRuleCount('T1003')).toBe(1);
@@ -112,18 +116,15 @@ describe('SigmaService', () => {
       expect(record.status).toBe('loaded');
       // 2 rule files carry an id; the listing holds 9 rule files.
       expect(record.rows).toBe(2);
-    });
 
-    it('encodes each path segment in the rule links it builds', () => {
-      const path = 'cloud-azure/T1114 email rule (on behalf).yaml';
-      const encoded = 'cloud-azure/T1114%20email%20rule%20(on%20behalf).yaml';
+      // The same cached listing (no second request) builds the rule links, each segment encoded.
       let rules: Array<{ url: string }> = [];
-      service.fetchRulesForTechnique('T1114').subscribe(r => (rules = r));
-      httpMock.expectOne(TREE_URL).flush(listingWith({ path, type: 'blob' }));
-      httpMock.expectOne(`https://raw.githubusercontent.com/mdecrevoisier/SIGMA-detection-rules/main/${encoded}`)
+      service.fetchRulesForTechnique('T1003').subscribe(r => (rules = r));
+      httpMock.expectNone(TREE_URL);
+      httpMock.expectOne(`https://raw.githubusercontent.com/mdecrevoisier/SIGMA-detection-rules/main/${ymlEncoded}`)
         .flush('title: Synthetic rule\nid: 1\nstatus: test\nlevel: low\n');
       expect(rules.length).toBe(1);
-      expect(rules[0].url).toBe(`https://github.com/mdecrevoisier/SIGMA-detection-rules/blob/main/${encoded}`);
+      expect(rules[0].url).toBe(`https://github.com/mdecrevoisier/SIGMA-detection-rules/blob/main/${ymlEncoded}`);
     });
 
     it('finds no rule for a technique in the real listing: it matches by path, and the names carry no ids', () => {

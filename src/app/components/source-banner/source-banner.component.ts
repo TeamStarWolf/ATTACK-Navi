@@ -8,20 +8,14 @@ import { DATA_PRESENT_STATUSES, SourceRecord } from '../../models/source-record'
 import { DataService } from '../../services/data.service';
 import { SourceRegistryService } from '../../services/source-registry.service';
 import { sourcesForRoute } from '../../services/route-sources';
-
-/**
- * What an 'empty' record means: the request worked and the source answered, but
- * nothing usable could be read from it. A retry gets the same answer, so the banner
- * offers no Retry for it.
- */
-export const EMPTY_SOURCE_DETAIL = 'answered, but no technique ids could be read from it';
+import { EMPTY_SOURCE_DETAIL, TREE_LISTING_EMPTY_NOTE, emptyDetailOf, isTreeListing } from '../../models/briefing';
 
 /** A source this view reads that did not load ('failed') or loaded nothing usable ('empty'). */
 export interface MissingSource {
   id: string;
   name: string;
   status: 'failed' | 'empty';
-  /** Why: the recorded error for 'failed', EMPTY_SOURCE_DETAIL for 'empty'. */
+  /** Why: the recorded error for 'failed'; for 'empty', emptyDetailOf(id) (models/briefing.ts). */
   detail: string;
   /** The stand-in that loaded in its place (a source whose fallbackFor names this one), with its version. */
   fallback?: string;
@@ -41,7 +35,7 @@ export function missingSources(ids: readonly string[], records: readonly SourceR
       id: r.id,
       name: r.name,
       status: r.status as 'failed' | 'empty',
-      detail: r.status === 'failed' ? (r.lastError ?? 'the request failed') : EMPTY_SOURCE_DETAIL,
+      detail: r.status === 'failed' ? (r.lastError ?? 'the request failed') : emptyDetailOf(r.id),
       ...(fallback ? { fallback } : {}),
     });
   };
@@ -61,9 +55,10 @@ export function missingSources(ids: readonly string[], records: readonly SourceR
  * The shared view banner (E1.3): on any route, names each source that route reads
  * (route-sources.ts) when its SourceRecord is 'failed' or 'empty'. The two are told
  * apart: a failed source "did not load", with the recorded reason, and the link offers
- * data health and Retry; an empty source answered but no technique ids could be read
- * from it, under "Incomplete data", with no Retry (a retry gets the same answer). It
- * renders nothing while every source the route reads is loaded, loading or not requested.
+ * data health and Retry; an empty source answered but nothing usable could be read
+ * from it ("no technique ids" for the four tree listings), under "Incomplete data",
+ * with no Retry (the request itself worked; data health still lists it). It renders
+ * nothing while every source the route reads is loaded, loading or not requested.
  */
 @Component({
   selector: 'app-source-banner',
@@ -96,7 +91,7 @@ export function missingSources(ids: readonly string[], records: readonly SourceR
                 : 'Each of these ' + empty.length + ' sources this view reads ' + emptyDetail + ':' }}
               @for (m of empty; track m.id; let last = $last) {
                 <span class="sb-source" [attr.data-source-id]="m.id" data-status="empty" [title]="m.detail"
-                  ><span class="sb-name">{{ m.name }}</span>{{ last ? '.' : ', ' }}</span>
+                  ><span class="sb-name">{{ m.name }}</span>{{ m.detail !== emptyDetail && isTree(m.id) ? ' (' + treeNote + ')' : '' }}{{ last ? '.' : ', ' }}</span>
               }
               Results that use them are incomplete.
             </div>
@@ -159,7 +154,14 @@ export class SourceBannerComponent implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly emptyDetail = EMPTY_SOURCE_DETAIL;
+  /**
+   * The lead of the empty group: the detail every listed empty source shares (the
+   * tree-listing wording when all are tree listings), else the generic one, with each
+   * tree listing then marked "(no technique ids)".
+   */
+  emptyDetail = EMPTY_SOURCE_DETAIL;
+  readonly treeNote = TREE_LISTING_EMPTY_NOTE;
+  readonly isTree = isTreeListing;
 
   missing: MissingSource[] = [];
   /** Sources that did not load: shown with their reason and a Retry link. */
@@ -179,6 +181,8 @@ export class SourceBannerComponent implements OnInit {
         this.missing = missingSources(sourcesForRoute(url, domain), records);
         this.failed = this.missing.filter(m => m.status === 'failed');
         this.empty = this.missing.filter(m => m.status === 'empty');
+        const details = new Set(this.empty.map(m => m.detail));
+        this.emptyDetail = details.size === 1 ? [...details][0] : EMPTY_SOURCE_DETAIL;
         this.cdr.markForCheck();
       });
   }

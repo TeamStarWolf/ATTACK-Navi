@@ -160,15 +160,48 @@ function failedName(r: SourceRecord): string {
   return why ? `${r.name} (${why})` : r.name;
 }
 
+/**
+ * What an 'empty' record means for most sources: the request worked and the source
+ * answered, but nothing usable could be read from it (no rows, CVEs, scores or links,
+ * depending on the source). It is not a failed load, so the banner offers no Retry
+ * for it; the data-health view still lists the source.
+ */
+export const EMPTY_SOURCE_DETAIL = 'answered, but nothing usable could be read from it';
+
+/**
+ * The four GitHub tree listings read only for technique ids in rule file paths.
+ * Their 'empty' means the listing loaded in full but no path carried a technique id.
+ */
+export const TREE_LISTING_SOURCE_IDS: readonly string[] = [
+  'elastic-tree', 'splunk-tree', 'sentinel-attack-tree', 'mdecrevoisier-sigma-tree',
+];
+
+/** What 'empty' means for a tree listing (TREE_LISTING_SOURCE_IDS). */
+export const TREE_LISTING_EMPTY_DETAIL = 'answered, but no technique ids could be read from it';
+
+/** The short form of TREE_LISTING_EMPTY_DETAIL, shown after a tree listing's name in a mixed list. */
+export const TREE_LISTING_EMPTY_NOTE = 'no technique ids';
+
+/** True for the four tree-listing sources (TREE_LISTING_SOURCE_IDS). */
+export function isTreeListing(id: string): boolean {
+  return TREE_LISTING_SOURCE_IDS.includes(id);
+}
+
+/** What an 'empty' record of this source means: the tree-listing wording for the four tree listings, the generic one otherwise. */
+export function emptyDetailOf(id: string): string {
+  return isTreeListing(id) ? TREE_LISTING_EMPTY_DETAIL : EMPTY_SOURCE_DETAIL;
+}
+
 function hasData(r: SourceRecord | undefined): boolean {
   return !!r && ['loaded', 'stale', 'archived-upstream'].includes(r.status) && (r.rows ?? 1) > 0;
 }
 
 /**
  * What the Briefing strip says, in order: sources that failed to load (each with a
- * short reason), sources that answered with no technique ids (status 'empty': the
- * request worked, nothing usable could be read from it, and a retry will not change
- * that), the stand-in snapshots in use ('using snapshot of <date>'), and the ATT&CK
+ * short reason), sources that answered with nothing usable (status 'empty': the
+ * request worked, but nothing usable could be read from it; "no technique ids" when
+ * every one of them is a tree listing, and a tree listing in a mixed list is marked
+ * so), the stand-in snapshots in use ('using snapshot of <date>'), and the ATT&CK
  * update on offer or in use. Each group is its own sentence and appears only when it
  * has members. An empty list means there is nothing to report.
  */
@@ -181,10 +214,11 @@ export function briefingItems(records: readonly SourceRecord[], update: Briefing
   }
   const empty = records.filter(r => r.status === 'empty');
   if (empty.length) {
-    const lead = empty.length === 1
-      ? '1 source answered with no technique ids'
-      : `${empty.length} sources answered with no technique ids`;
-    items.push({ kind: 'empty', text: `${lead}: ${nameList(empty.map(r => r.name))}.` });
+    const allTree = empty.every(r => isTreeListing(r.id));
+    const what = allTree ? TREE_LISTING_EMPTY_NOTE : 'nothing usable';
+    const lead = empty.length === 1 ? `1 source answered with ${what}` : `${empty.length} sources answered with ${what}`;
+    const names = empty.map(r => (!allTree && isTreeListing(r.id) ? `${r.name} (${TREE_LISTING_EMPTY_NOTE})` : r.name));
+    items.push({ kind: 'empty', text: `${lead}: ${nameList(names)}.` });
   }
   const byId = new Map(records.map(r => [r.id, r]));
   for (const standIn of records) {

@@ -77,7 +77,9 @@ describe('BriefingStripComponent: failures are announced to a screen reader (E1.
   it('says when a source came back empty', () => {
     registry.succeed('nvd', 0);
     fixture.detectChanges();
-    expect(text()).toContain('1 source answered with no technique ids');
+    // NVD is not read for technique ids: the generic wording, no technique-id claim.
+    expect(text()).toContain('1 source answered with nothing usable');
+    expect(text()).not.toContain('technique ids');
   });
 
   it('announces the pending ATT&CK update offer, and the release in use after applying it', () => {

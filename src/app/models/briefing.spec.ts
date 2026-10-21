@@ -3,6 +3,10 @@
 import {
   BRIEFING_ALL_CLEAR,
   BRIEFING_REASON_LIMIT,
+  EMPTY_SOURCE_DETAIL,
+  TREE_LISTING_EMPTY_DETAIL,
+  TREE_LISTING_SOURCE_IDS,
+  emptyDetailOf,
   shortReason,
   aggregateSourceDot,
   briefingItems,
@@ -78,13 +82,27 @@ describe('briefing model (E1.4 vintage chip and Briefing strip)', () => {
       expect(shortReason(null)).toBe('');
     });
 
-    it('names sources that answered with no technique ids, apart from failed ones, with no reason or retry wording', () => {
+    it('names sources that answered with nothing usable, apart from failed ones, with no reason, retry or technique-id wording', () => {
+      // Not tree listings (an empty KEV, EPSS or NVD answer reads this way): no claim about technique ids.
       const one = briefingItems([rec('a', 'empty', { rows: 0 })], null);
       expect(one.map(i => i.kind)).toEqual(['empty']);
-      expect(briefingMessage(one)).toBe('1 source answered with no technique ids: Source a.');
+      expect(briefingMessage(one)).toBe('1 source answered with nothing usable: Source a.');
       const four = briefingItems(['a', 'b', 'c', 'd'].map(id => rec(id, 'empty', { rows: 0 })), null);
-      expect(briefingMessage(four)).toBe('4 sources answered with no technique ids: Source a, Source b, Source c and 1 more.');
-      expect(briefingMessage(four)).not.toMatch(/did not load|failed|retry|returned no rows/i);
+      expect(briefingMessage(four)).toBe('4 sources answered with nothing usable: Source a, Source b, Source c and 1 more.');
+      expect(briefingMessage(four)).not.toMatch(/did not load|failed|retry|returned no rows|technique ids/i);
+    });
+
+    it("says 'no technique ids' only for the four tree listings, and marks a tree listing in a mixed list", () => {
+      expect(TREE_LISTING_SOURCE_IDS).toEqual(['elastic-tree', 'splunk-tree', 'sentinel-attack-tree', 'mdecrevoisier-sigma-tree']);
+      const trees = briefingItems(TREE_LISTING_SOURCE_IDS.map(id => rec(id, 'empty', { rows: 0 })), null);
+      expect(briefingMessage(trees)).toBe(
+        '4 sources answered with no technique ids: Source elastic-tree, Source splunk-tree, Source sentinel-attack-tree and 1 more.');
+      const mixed = briefingItems([rec('cisa-kev', 'empty', { rows: 0 }), rec('elastic-tree', 'empty', { rows: 0 })], null);
+      expect(briefingMessage(mixed)).toBe(
+        '2 sources answered with nothing usable: Source cisa-kev, Source elastic-tree (no technique ids).');
+      expect(emptyDetailOf('elastic-tree')).toBe(TREE_LISTING_EMPTY_DETAIL);
+      expect(emptyDetailOf('epss')).toBe(EMPTY_SOURCE_DETAIL);
+      expect(EMPTY_SOURCE_DETAIL).not.toContain('technique');
     });
 
     it('says the failed and the empty groups as two sentences when both exist', () => {
@@ -96,7 +114,7 @@ describe('briefing model (E1.4 vintage chip and Briefing strip)', () => {
       ], null);
       expect(items.map(i => i.kind)).toEqual(['failed', 'empty']);
       expect(briefingMessage(items)).toBe(
-        '1 source failed to load: Source f1 (network error). 2 sources answered with no technique ids: Source e1, Source e2.');
+        '1 source failed to load: Source f1 (network error). 2 sources answered with nothing usable: Source e1, Source e2.');
     });
 
     it("adds 'using snapshot of <date>' only when the stand-in holds data and its source failed", () => {

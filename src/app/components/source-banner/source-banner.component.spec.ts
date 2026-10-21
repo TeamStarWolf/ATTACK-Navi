@@ -4,7 +4,8 @@ import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
-import { EMPTY_SOURCE_DETAIL, SourceBannerComponent, missingSources } from './source-banner.component';
+import { SourceBannerComponent, missingSources } from './source-banner.component';
+import { EMPTY_SOURCE_DETAIL, TREE_LISTING_EMPTY_DETAIL } from '../../models/briefing';
 import { SourceRegistryService } from '../../services/source-registry.service';
 import { DataService } from '../../services/data.service';
 
@@ -120,7 +121,31 @@ describe('SourceBannerComponent: view banner naming a missing source (E1.3)', ()
     expect(empty.querySelector('[data-source-id="ctid-csa-ccm"]')!.getAttribute('data-status')).toBe('empty');
   });
 
-  it("empty only: 'Incomplete data', the 'no technique ids' wording, and no 'did not load' or Retry anywhere", async () => {
+  it('an empty source that is not a tree listing (KEV, EPSS) gets the generic wording, never a technique-id claim', async () => {
+    await go('/exposure/cve');
+    registry.succeed('cisa-kev', 0);
+    registry.succeed('epss', 0);
+    fixture.detectChanges();
+    const empty = group('empty')!;
+    expect(text(empty)).toContain(`Each of these 2 sources this view reads ${EMPTY_SOURCE_DETAIL}: `);
+    expect(text(empty)).toContain('answered, but nothing usable could be read from it');
+    expect(text(banner())).not.toContain('technique ids');
+    expect(empty.querySelector('[data-source-id="cisa-kev"]')!.getAttribute('title')).toBe(EMPTY_SOURCE_DETAIL);
+  });
+
+  it("a tree listing and another empty source together: the generic lead, and the tree listing marked '(no technique ids)'", async () => {
+    await go('/dashboard/overview');
+    registry.succeed('misp-galaxy', 0);
+    registry.succeed('elastic-tree', 0);
+    fixture.detectChanges();
+    const empty = group('empty')!;
+    expect(text(empty)).toContain(`Each of these 2 sources this view reads ${EMPTY_SOURCE_DETAIL}: `);
+    expect(text(empty.querySelector('[data-source-id="elastic-tree"]'))).toBe('Elastic detection-rules (tree listing) (no technique ids).');
+    expect(text(empty.querySelector('[data-source-id="misp-galaxy"]'))).not.toContain('technique ids');
+    expect(empty.querySelector('[data-source-id="elastic-tree"]')!.getAttribute('title')).toBe(TREE_LISTING_EMPTY_DETAIL);
+  });
+
+  it("empty only: 'Incomplete data', the 'no technique ids' wording for tree listings, and no 'did not load' or Retry anywhere", async () => {
     await go('/dashboard/overview');
     registry.succeed('elastic-tree', 0);
     registry.succeed('splunk-tree', 0);
@@ -171,5 +196,8 @@ describe('SourceBannerComponent: view banner naming a missing source (E1.3)', ()
     const out = missingSources(['engage', 'nope', 'capec', 'atomic-layer'], registry.all());
     expect(out.map(m => [m.id, m.status])).toEqual([['engage', 'empty'], ['capec', 'failed']]);
     expect(out.map(m => m.detail)).toEqual([EMPTY_SOURCE_DETAIL, 'x']);
+    registry.succeed('sentinel-attack-tree', 0);
+    expect(missingSources(['sentinel-attack-tree', 'engage'], registry.all()).map(m => m.detail))
+      .toEqual([TREE_LISTING_EMPTY_DETAIL, EMPTY_SOURCE_DETAIL]);
   });
 });

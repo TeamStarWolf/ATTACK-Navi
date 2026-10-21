@@ -10,8 +10,9 @@
 // (src/testing/fixtures/github-tree-listings.json, abridged from the real ones) through
 // page.route and checks what the matrix view says about them:
 //   1. a complete 200 with no ids: the banner lists them under 'Incomplete data' with
-//      the 'no technique ids' wording and no Retry, and the Briefing line says they
-//      answered with no technique ids;
+//      the 'no technique ids' wording (kept to these four; any other empty source
+//      gets the generic 'nothing usable' wording) and no Retry, and the Briefing line
+//      says they answered with no technique ids;
 //   2. a GitHub rate limit (403, X-RateLimit-Remaining: 0, X-RateLimit-Reset): the
 //      banner says they did not load, with 'GitHub rate limit reached' and the time;
 //   3. a truncated listing: they did not load, 'listing truncated'.
@@ -21,6 +22,7 @@ import { readFileSync } from 'node:fs';
 import { Page, Route } from '@playwright/test';
 import { test, expect, BASE, ROUTE_TIMEOUT } from './fixtures/workspace';
 import { SOURCE_DEFINITIONS } from '../src/app/services/source-inventory';
+import { TREE_LISTING_EMPTY_DETAIL, TREE_LISTING_SOURCE_IDS } from '../src/app/models/briefing';
 
 interface Listing { sha: string; url: string; tree: Array<{ path: string; type: string }>; truncated: boolean }
 type Key = 'elastic' | 'splunk' | 'sentinel' | 'mdecrevoisier';
@@ -77,11 +79,15 @@ test.describe('tree-listing sources say why they are empty or failed', () => {
     const empty = banner(page).locator('[data-testid="source-banner-empty"]');
     await expect(empty).toBeVisible({ timeout: ROUTE_TIMEOUT });
     await expect(empty).toContainText('Incomplete data');
-    await expect(empty).toContainText('answered, but no technique ids could be read from it');
+    // The 'no technique ids' wording: the lead when only tree listings are empty, else a mark on each.
+    await expect(empty).toContainText('no technique ids');
+    expect([...TREE_LISTING_SOURCE_IDS], 'the app and this spec name the same four tree listings')
+      .toEqual(TREE_SOURCES.map(s => s.id));
     for (const s of TREE_SOURCES) {
       const item = empty.locator(`[data-source-id="${s.id}"]`);
       await expect(item).toContainText(nameOf(s.id));
       await expect(item).toHaveAttribute('data-status', 'empty');
+      await expect(item).toHaveAttribute('title', TREE_LISTING_EMPTY_DETAIL);
       // Not listed as a source that did not load.
       await expect(banner(page).locator(`[data-testid="source-banner-failed"] [data-source-id="${s.id}"]`)).toHaveCount(0);
     }
@@ -90,7 +96,8 @@ test.describe('tree-listing sources say why they are empty or failed', () => {
     await expect(empty.getByRole('button')).toHaveCount(0);
 
     const live = page.getByTestId('briefing-live');
-    await expect(live).toContainText(/\d+ sources? answered with no technique ids/);
+    await expect(live).toContainText(/\d+ sources? answered with (no technique ids|nothing usable)/);
+    await expect(live).toContainText('no technique ids');
     await expect(live).toContainText(nameOf('elastic-tree'));
     expect(served(), 'each tree listing was requested from the fixture').toBeGreaterThanOrEqual(TREE_SOURCES.length);
   });
