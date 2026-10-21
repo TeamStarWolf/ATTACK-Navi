@@ -216,9 +216,9 @@ Detection coverage answers the question "can we see this technique?" The Navigat
 
 1. **Check detection heatmaps.** Use the toolbar heatmap mode selector to cycle through detection overlays:
    - **sigma** -- Colors techniques by Sigma rule count from SigmaHQ
-   - **elastic** -- Colors techniques by Elastic detection rule count
-   - **splunk** -- Colors techniques by Splunk content pack coverage
-   - **detection** -- Composite detection heatmap combining all sources
+   - **elastic** -- Colors techniques by the number of rules in elastic/detection-rules whose threat mapping names the technique or a sub-technique, read from a snapshot bundled at a pinned commit
+   - **splunk** -- Colors techniques by the number of detections in splunk/security_content whose `mitre_attack_id` names the technique or a sub-technique, read from the same bundled snapshot
+   - **detection** -- "Detection content available": Sigma rules x 3 + D3FEND countermeasures x 2 + CAR analytics x 2 + Atomic tests x 1 (Elastic and Splunk are not part of it)
    - **car** -- Colors techniques by MITRE CAR analytic availability
 
 2. **Open the Detection panel.** Click the **Detect** item in the nav rail (under Analysis). This panel shows:
@@ -227,12 +227,10 @@ Detection coverage answers the question "can we see this technique?" The Navigat
    - Techniques with no detection coverage (gaps)
    - Detection source breakdown
 
-3. **Review per-technique detection.** Select any technique on the matrix. The sidebar Detection section shows:
-   - Sigma rule count for this technique
-   - Elastic rule count
-   - Splunk content count
-   - CAR analytics with descriptions
-   - Data components that provide visibility
+3. **Review per-technique detection content.** Select any technique on the matrix. The sidebar shows:
+   - **Rule sources** (always present; open it to expand): for Elastic detection-rules, Splunk security_content and mdecrevoisier SIGMA, the number of rules naming the technique at the pinned commit, up to ten rule names linked to the rule file at that commit, and the pinned commit; a SigmaHQ line with the rule count only. These are rules in public repositories, not rules running in your environment
+   - **CAR Detection Analytics** with descriptions, when CAR maps the technique
+   - **Detected By**: the ATT&CK data components that provide visibility
 
 4. **Generate Sigma rules.** Open the **SIGMA** panel from the nav rail (under Tools). Select a technique to generate a template Sigma rule based on the technique's ATT&CK data sources and detection descriptions. Export the rule as YAML.
 
@@ -568,7 +566,7 @@ The reporting workflow covers all export capabilities: CSV and XLSX spreadsheets
 | `engage` | MITRE Engage activity coverage |
 | `car` | MITRE CAR analytic coverage |
 | `cve` | CVE count per technique |
-| `detection` | Composite detection coverage |
+| `detection` | Detection content available (Sigma, D3FEND, CAR and Atomic, weighted) |
 | `frequency` | Technique usage frequency across groups (default) |
 | `cri` | CRI Profile control coverage |
 | `unified` | Blended multi-factor heatmap |
@@ -576,8 +574,8 @@ The reporting workflow covers all export capabilities: CSV and XLSX spreadsheets
 | `nist` | NIST 800-53 control count |
 | `veris` | VERIS action category mapping |
 | `epss` | EPSS exploitation probability |
-| `elastic` | Elastic detection rule count |
-| `splunk` | Splunk content pack coverage |
+| `elastic` | Elastic rules naming the technique (bundled snapshot at a pinned commit) |
+| `splunk` | Splunk detections naming the technique (bundled snapshot at a pinned commit) |
 | `intelligence` | Threat intelligence data density |
 
 ### Keyboard Shortcuts

@@ -12,8 +12,8 @@ All notable changes to ATTACK-Navi are documented here.
   themselves (Elastic `[[rule.threat.technique]]` ids, Splunk `mitre_attack_id`,
   mdecrevoisier `attack.tNNNN` tags) from each repository's tarball at a pinned
   commit and writes `src/assets/data/rule-coverage-snapshot.json` (2,131 Elastic
-  rules over 446 techniques, 2,169 Splunk detections over 396, 353 mdecrevoisier
-  rules over 125, at the 2026-10-21 pins). The monthly `refresh-data.yml` moves
+  rules naming 446 technique and sub-technique ids, 2,169 Splunk detections naming
+  396, 353 mdecrevoisier rules naming 125, at the 2026-10-21 pins). The monthly `refresh-data.yml` moves
   the pins and rebuilds it. The Elastic and Splunk lenses now show counts, the
   drawer's community Sigma list shows rule titles linked to the file at the pinned
   commit, and the data-health view names the commit and dates. The counts are
@@ -34,8 +34,12 @@ All notable changes to ATTACK-Navi are documented here.
   counts (a rule naming two techniques counts twice). The technique drawer's Rule
   sources section lists Elastic and Splunk rule names with pinned permalinks as
   well as the mdecrevoisier ones. `docs/HEATMAPS.md`, `docs/SERVICES.md` (with the
-  upstream licences) and `docs/STARRED-PROJECT-INTEGRATION-ANALYSIS.md`
-  (sentinel-attack no longer a candidate) follow.
+  upstream licences, including the MIT-derived rules Elastic's `NOTICE.txt` names),
+  `docs/STARRED-PROJECT-INTEGRATION-ANALYSIS.md` (sentinel-attack no longer a
+  candidate), `docs/CONFIGURATION.md` (what `api.github.com` is still used for),
+  `QUICKSTART.md` (the drawer's Rule sources section; the GitHub rate limit no longer
+  zeroes Elastic, Splunk or community Sigma) and `WORKFLOWS.md` (the detection lenses
+  and the drawer) follow.
 - **Bundled ICS and Mobile ATT&CK moved to v19.2**, matching the Enterprise
   snapshot (release files from `mitre-attack/attack-stix-data`), and the bundled
   CTID F3 snapshot moved to 1.2. ICS 19.2 adds 23 techniques (the T0843/T0846/T0873
