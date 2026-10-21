@@ -12,11 +12,17 @@ import {
 import { routes } from './app.routes';
 import { AppTitleStrategy } from './services/app-title.strategy';
 import { AppRouteReuseStrategy } from './services/route-reuse.strategy';
+import { THREAT_WEIGHT_PROVIDER } from './models/posture/threat-weight';
+import { ThreatProfileService } from './services/threat-profile.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideHttpClient(withXhr()),
+    // P2-10: the shared threat profile is the app's threat-weight source, so the
+    // posture card's threat-relevant scope and PostureService count the profile's
+    // groups (not every ATT&CK group, the E2.1 default in threat-weight.ts).
+    { provide: THREAT_WEIGHT_PROVIDER, useExisting: ThreatProfileService },
     // Hash routing: GitHub Pages serves only index.html, and the relative
     // <base href="./"> breaks path-based deep links — the hash keeps every
     // real HTTP request at the app root. Filter state lives in query params

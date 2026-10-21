@@ -8,12 +8,14 @@ import { DataService } from '../../services/data.service';
 import { ImplementationService } from '../../services/implementation.service';
 import { CveService } from '../../services/cve.service';
 import { EpssService } from '../../services/epss.service';
+import { ThreatProfileService } from '../../services/threat-profile.service';
 
 describe('AssessmentWizardComponent', () => {
   let component: AssessmentWizardComponent;
   let fixture: ComponentFixture<AssessmentWizardComponent>;
 
   beforeEach(() => {
+    const emptyProfile = { source: { kind: 'top-groups' as const, n: 20 }, parentTechniqueIds: new Set<string>() };
     TestBed.configureTestingModule({
       imports: [AssessmentWizardComponent],
       providers: [
@@ -25,6 +27,11 @@ describe('AssessmentWizardComponent', () => {
         { provide: ImplementationService, useValue: { status$: new BehaviorSubject(new Map()) }},
         { provide: CveService, useValue: { kev$: new BehaviorSubject([]), getCachedCves: () => [] } },
         { provide: EpssService, useValue: { fetchScores: () => ({ subscribe: () => {} }) } },
+        { provide: ThreatProfileService, useValue: {
+            get current() { return emptyProfile; },
+            profile$: new BehaviorSubject(emptyProfile),
+            setSource: jasmine.createSpy(),
+        }},
       ],
     });
     fixture = TestBed.createComponent(AssessmentWizardComponent);

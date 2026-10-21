@@ -25,47 +25,15 @@
       @if (!result) {
         <div class="step-section">
           <h3 class="step-label">Step 1 — Select Threat Profile</h3>
+          <p class="step-hint">
+            Pick the groups, campaigns, a Top-N preset or a library layer to scope the analysis,
+            or choose "All techniques". The gap denominator follows this profile.
+          </p>
 
-          <div class="toggle-row">
-            <label class="toggle-label">
-              <input type="checkbox" [(ngModel)]="analyzeAll" (ngModelChange)="onAnalyzeAllChange()" />
-              Analyze all techniques (no actor filter)
-            </label>
-          </div>
-
-          @if (!analyzeAll) {
-            <div class="quick-picks">
-              <button class="btn btn-sm btn-outline" (click)="selectTop10()">Top 10 by Technique Count</button>
-              <button class="btn btn-sm btn-outline" (click)="selectAptOnly()">APT Groups Only</button>
-              <button class="btn btn-sm btn-outline" (click)="selectAllGroups()">All Groups</button>
-              <button class="btn btn-sm btn-outline" (click)="clearSelection()">Clear</button>
-            </div>
-
-            <div class="actor-search">
-              <input type="text" class="search-input" placeholder="Search threat groups..."
-                     [(ngModel)]="actorSearch" />
-            </div>
-
-            <div class="actor-list">
-              @for (group of filteredGroups; track group.id) {
-                <label class="actor-item" [class.selected]="selectedActorIds.has(group.id)">
-                  <input type="checkbox"
-                         [checked]="selectedActorIds.has(group.id)"
-                         (change)="toggleActor(group.id)" />
-                  <span class="actor-name">{{ group.name }}</span>
-                  <span class="actor-id">{{ group.attackId }}</span>
-                  <span class="actor-count">{{ getGroupTechCount(group.id) }} techniques</span>
-                </label>
-              }
-            </div>
-
-            <div class="selection-summary">
-              {{ selectedActorIds.size }} group(s) selected
-            </div>
-          }
+          <app-threat-profile-picker mode="profile" />
 
           <button class="btn btn-primary generate-btn"
-                  [disabled]="generating || (!analyzeAll && selectedActorIds.size === 0)"
+                  [disabled]="generating"
                   (click)="generate()">
             @if (generating) {
               Generating...

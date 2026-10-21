@@ -3,6 +3,7 @@
 import { Injectable } from '@angular/core';
 import { Domain } from '../models/domain';
 import { Technique } from '../models/technique';
+import { ThreatProfile } from '../models/threat-profile';
 import { DataService } from './data.service';
 import { SigmaService } from './sigma.service';
 import { ElasticService } from './elastic.service';
@@ -14,7 +15,6 @@ import { AttackCveService } from './attack-cve.service';
 import { CveService } from './cve.service';
 import { EpssService } from './epss.service';
 import { ExploitdbService } from './exploitdb.service';
-import { ImplementationService } from './implementation.service';
 import { csvRow } from '../utils/csv';
 
 // ─── Interfaces ────────────────────────────────────────────────────────────────
@@ -89,36 +89,21 @@ export class GapAnalysisService {
     private cveService: CveService,
     private epssService: EpssService,
     private exploitdbService: ExploitdbService,
-    private implService: ImplementationService,
   ) {}
 
   // ─── Main report generator ──────────────────────────────────────────────────
 
-  generateReport(domain: Domain, actorIds: string[]): GapAnalysisResult {
-    // Determine techniques in scope
+  generateReport(domain: Domain, profile: ThreatProfile): GapAnalysisResult {
+    // Techniques in scope come from the shared threat profile (P2-10). parentTechniqueIds
+    // rolls sub-technique usage up to the parent, so a group whose only use of a technique
+    // is a sub-technique is no longer silently dropped (R4 §3); 'all' covers every parent.
     const parentTechniques = domain.techniques.filter(t => !t.isSubtechnique);
-    let techniquesInScope: Technique[];
+    const techniquesInScope = parentTechniques.filter(t => profile.parentTechniqueIds.has(t.id));
 
-    if (actorIds.length === 0) {
-      // Analyze all techniques
-      techniquesInScope = parentTechniques;
-    } else {
-      // Get techniques used by selected actors
-      const techStixIds = new Set<string>();
-      for (const actorId of actorIds) {
-        const techs = domain.techniquesByGroup.get(actorId) ?? [];
-        for (const t of techs) {
-          if (!t.isSubtechnique) techStixIds.add(t.id);
-        }
-      }
-      techniquesInScope = parentTechniques.filter(t => techStixIds.has(t.id));
-    }
-
-    // Get actor names for the report
-    const selectedActors = actorIds.map(id => {
-      const group = domain.groups.find(g => g.id === id);
-      return group?.name ?? id;
-    });
+    // Actor names for the report: the profile's groups, or none for the 'all' profile.
+    const selectedActors = profile.source.kind === 'all'
+      ? []
+      : profile.groupIds.map(id => domain.groups.find(g => g.id === id)?.name ?? id);
 
     // Compute per-technique metrics
     const techMetrics = techniquesInScope.map(t => this.computeTechniqueMetrics(t, domain));

@@ -1,11 +1,12 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { Injectable, OnDestroy } from '@angular/core';
+import { Injectable, OnDestroy, Signal, signal } from '@angular/core';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { DataService } from './data.service';
 import { LibraryLayerService } from './library-layer.service';
 import { Domain } from '../models/domain';
 import { readV2, writeV2, V2Envelope } from '../models/storage-envelope';
+import type { ThreatWeightProvider } from '../models/posture/posture.types';
 import { ThreatProfile, ThreatProfileSource, LibraryLayerInput, resolveProfile } from '../models/threat-profile';
 
 const STORAGE_KEY = 'navi.v2.threat-profile';
@@ -55,7 +56,7 @@ function sourceFromRecord(r: ThreatProfileSource & V2Envelope): ThreatProfileSou
 }
 
 @Injectable({ providedIn: 'root' })
-export class ThreatProfileService implements OnDestroy {
+export class ThreatProfileService implements OnDestroy, ThreatWeightProvider {
   private source: ThreatProfileSource;
   /** The resolved layer input for a `library-layer` source; null until it loads. */
   private layerInput: LibraryLayerInput | null = null;
@@ -63,6 +64,14 @@ export class ThreatProfileService implements OnDestroy {
   private profileSubject: BehaviorSubject<ThreatProfile>;
   readonly profile$: Observable<ThreatProfile>;
   private readonly sub: Subscription;
+
+  // THREAT_WEIGHT_PROVIDER revision (P2-10): a signal bumped on every profile$
+  // emission (domain switch, setSource, layer load), so PostureService.states —
+  // which reads weight() imperatively — tracks the profile and recomputes. The
+  // bump happens in a subscription, never inside a computed; the service stays a
+  // BehaviorSubject service (§10.4 item 9), this is only the seam's signal bridge.
+  private readonly revisionSig = signal(0);
+  readonly revision: Signal<number> = this.revisionSig.asReadonly();
 
   constructor(private dataService: DataService, private libraryLayers: LibraryLayerService) {
     this.source = this.loadSource();
@@ -72,6 +81,7 @@ export class ThreatProfileService implements OnDestroy {
     // first (data.service), and leaving the old profile up would show a cross-domain
     // denominator while getCurrentAttackDomain() already names the new domain.
     this.sub = this.dataService.domain$.subscribe((domain) => this.profileSubject.next(this.build(domain)));
+    this.sub.add(this.profile$.subscribe(() => this.revisionSig.update((n) => n + 1)));
     this.loadLayerIfNeeded();
   }
 

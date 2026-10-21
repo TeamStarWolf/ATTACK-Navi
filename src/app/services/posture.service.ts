@@ -133,6 +133,8 @@ export class PostureService {
     const out = new Map<TechniqueRefKey, PostureState>();
     if (!domain) return out;
     this.knownRevision();
+    this.threatWeight.revision();   // track the threat-weight source (P2-10: the bound profile) so a profile change recomputes states
+
     const domainId = this.domainId();
     const rules = this.rules();
     const now = this.today();

@@ -5,7 +5,7 @@
 // PostureService reads a technique's threat weight only through
 // THREAT_WEIGHT_PROVIDER and never imports ThreatProfileService: E2.1 ships
 // the all-groups default below, and P2-10 binds the shared threat profile.
-import { InjectionToken, inject } from '@angular/core';
+import { InjectionToken, inject, signal } from '@angular/core';
 import type { Domain } from '../domain';
 import { DataService } from '../../services/data.service';
 import type { ThreatWeightProvider } from './posture.types';
@@ -24,6 +24,11 @@ export const THREAT_WEIGHT_PROVIDER = new InjectionToken<ThreatWeightProvider>('
   providedIn: 'root',
   factory: (): ThreatWeightProvider => {
     const data = inject(DataService);
-    return { weight: (techniqueStixId: string) => allGroupsWeight(data.getCurrentDomain(), techniqueStixId) };
+    // The all-groups weight only changes with the loaded domain, which PostureService
+    // already tracks, so revision is constant here (P2-10 binds the reactive profile).
+    return {
+      weight: (techniqueStixId: string) => allGroupsWeight(data.getCurrentDomain(), techniqueStixId),
+      revision: signal(0),
+    };
   },
 });

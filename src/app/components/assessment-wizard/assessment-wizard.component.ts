@@ -16,9 +16,9 @@ import { SettingsService } from '../../services/settings.service';
 import { ImplementationService, ImplStatus } from '../../services/implementation.service';
 import { CveService } from '../../services/cve.service';
 import { EpssService, EpssScore } from '../../services/epss.service';
+import { ThreatProfileService } from '../../services/threat-profile.service';
+import { ThreatProfilePickerComponent } from '../threat-profile-picker/threat-profile-picker.component';
 import { Domain } from '../../models/domain';
-import { Technique } from '../../models/technique';
-import { ThreatGroup } from '../../models/group';
 import { csvRow } from '../../utils/csv';
 
 interface TacticAssessment {
@@ -57,7 +57,7 @@ export const SECTOR_CATEGORIES: SectorCategory[] = [
 @Component({
   selector: 'app-assessment-wizard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ThreatProfilePickerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './assessment-wizard.component.html',
   styleUrl: './assessment-wizard.component.scss',
@@ -75,21 +75,23 @@ export class AssessmentWizardComponent implements OnDestroy {
     { value: 'f3', label: 'F3 Fraud Framework', desc: 'CTID\'s Fight Financial Fraud framework — fraud techniques plus the ATT&CK techniques fraud actors reuse. CTID publishes no mitigation mappings yet, so coverage scoring relies on your own statuses.' },
   ];
 
-  // Step 2 — Threat profile
+  // Step 2 — Threat profile. The shared picker edits ThreatProfileService; the
+  // resulting profile scopes step 3 and supplies the denominator.
   domain: Domain | null = null;
-  allGroups: ThreatGroup[] = [];
-  filteredGroups: ThreatGroup[] = [];
-  selectedGroupIds = new Set<string>();
-  groupSearchQuery = '';
-  activeSectorFilter: string | null = null;
-  skipGroupSelection = false;
-  readonly sectorCategories = SECTOR_CATEGORIES;
 
   // Step 3 — Rate implementation
   tacticAssessments: TacticAssessment[] = [];
   assessmentProgress = 0;
-  totalTechniques = 0;
   ratedTechniques = 0;
+
+  /**
+   * The assessment denominator: the profile's parent techniques, rolled up so a
+   * parent reached only through a sub-technique is included (R4 §3). Reactive, so
+   * it tracks the shared profile in one change-detection pass.
+   */
+  get totalTechniques(): number {
+    return this.threatProfile.current.parentTechniqueIds.size;
+  }
 
   // Step 4 — Results
   coverageCount = 0;
@@ -113,6 +115,7 @@ export class AssessmentWizardComponent implements OnDestroy {
     private epssService: EpssService,
     private cdr: ChangeDetectorRef,
     private settingsService: SettingsService,
+    private threatProfile: ThreatProfileService,
   ) {}
 
   ngOnDestroy(): void {
@@ -162,7 +165,7 @@ export class AssessmentWizardComponent implements OnDestroy {
   canGoNext(): boolean {
     switch (this.currentStep) {
       case 1: return !!this.selectedDomain;
-      case 2: return this.skipGroupSelection || this.selectedGroupIds.size > 0;
+      case 2: return true;   // the shared picker always holds a profile (default Top 20)
       case 3: return true;
       case 4: return true;
       default: return false;
@@ -183,72 +186,17 @@ export class AssessmentWizardComponent implements OnDestroy {
     this.subs.add(
       this.dataService.domain$.pipe(filter(Boolean), take(1)).subscribe(domain => {
         this.domain = domain;
-        this.allGroups = [...domain.groups].sort((a, b) => a.name.localeCompare(b.name));
-        this.filteredGroups = this.allGroups;
         this.cdr.markForCheck();
       }),
     );
   }
 
   // ─── Step 2: Threat profile ────────────────────────────────────────────────
-
-  filterGroups(): void {
-    const q = this.groupSearchQuery.toLowerCase().trim();
-    let groups = this.allGroups;
-
-    if (this.activeSectorFilter) {
-      const category = SECTOR_CATEGORIES.find(c => c.label === this.activeSectorFilter);
-      if (category) {
-        groups = groups.filter(g => {
-          const desc = g.description.toLowerCase();
-          return category.keywords.some(kw => desc.includes(kw));
-        });
-      }
-    }
-
-    if (q) {
-      groups = groups.filter(g =>
-        g.name.toLowerCase().includes(q) ||
-        g.attackId.toLowerCase().includes(q) ||
-        g.aliases.some(a => a.toLowerCase().includes(q)),
-      );
-    }
-
-    this.filteredGroups = groups;
-    this.cdr.markForCheck();
-  }
-
-  toggleSectorFilter(label: string): void {
-    this.activeSectorFilter = this.activeSectorFilter === label ? null : label;
-    this.filterGroups();
-  }
-
-  toggleGroup(groupId: string): void {
-    if (this.selectedGroupIds.has(groupId)) {
-      this.selectedGroupIds.delete(groupId);
-    } else {
-      this.selectedGroupIds.add(groupId);
-    }
-    this.skipGroupSelection = false;
-    this.cdr.markForCheck();
-  }
-
-  selectAllVisible(): void {
-    for (const g of this.filteredGroups) {
-      this.selectedGroupIds.add(g.id);
-    }
-    this.skipGroupSelection = false;
-    this.cdr.markForCheck();
-  }
-
-  clearGroups(): void {
-    this.selectedGroupIds.clear();
-    this.cdr.markForCheck();
-  }
+  // The shared <app-threat-profile-picker mode="profile"> edits ThreatProfileService.
+  // "Skip" sets the profile to every technique.
 
   setSkipGroups(): void {
-    this.skipGroupSelection = true;
-    this.selectedGroupIds.clear();
+    this.threatProfile.setSource({ kind: 'all' });
     this.cdr.markForCheck();
   }
 
@@ -257,19 +205,10 @@ export class AssessmentWizardComponent implements OnDestroy {
   private buildAssessment(): void {
     if (!this.domain) return;
 
-    // Determine which techniques to include
-    let techniqueIds: Set<string>;
-    if (this.skipGroupSelection) {
-      techniqueIds = new Set(this.domain.techniques.filter(t => !t.isSubtechnique).map(t => t.id));
-    } else {
-      techniqueIds = new Set<string>();
-      for (const gid of this.selectedGroupIds) {
-        const techs = this.domain.techniquesByGroup.get(gid) ?? [];
-        for (const t of techs) {
-          if (!t.isSubtechnique) techniqueIds.add(t.id);
-        }
-      }
-    }
+    // The techniques to rate are the shared profile's parent techniques, rolled up
+    // so a parent reached only through a sub-technique is included ({kind:'all'} is
+    // every parent). R4 §3; matches the totalTechniques getter.
+    const techniqueIds = new Set(this.threatProfile.current.parentTechniqueIds);
 
     // Build KEV technique set from kevTechScores$ snapshot
     const kevTechIds = new Set<string>();
@@ -315,7 +254,6 @@ export class AssessmentWizardComponent implements OnDestroy {
         expanded: this.settingsService.current.expandSectionsByDefault,
       }));
 
-    this.totalTechniques = this.tacticAssessments.reduce((sum, ta) => sum + ta.techniques.length, 0);
     this.updateProgress();
     this.cdr.markForCheck();
   }
@@ -363,8 +301,10 @@ export class AssessmentWizardComponent implements OnDestroy {
     this.ratedTechniques = this.tacticAssessments.reduce(
       (sum, ta) => sum + ta.techniques.filter(t => !!t.status).length, 0,
     );
+    // ratedTechniques counts per-tactic occurrences; a multi-tactic technique can push
+    // it past the unique parent total, so cap the bar at 100%.
     this.assessmentProgress = this.totalTechniques > 0
-      ? Math.round((this.ratedTechniques / this.totalTechniques) * 100)
+      ? Math.min(100, Math.round((this.ratedTechniques / this.totalTechniques) * 100))
       : 0;
   }
 

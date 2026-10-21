@@ -5,6 +5,7 @@
 // the Known / Covered / Proven rungs of plan 4.1. Types only; the derivation is
 // derive-posture.ts, the D16 breadth guard mitigation-rollup.ts and the display
 // words posture-vocabulary.ts.
+import type { Signal } from '@angular/core';
 import type { CoveredQualifier } from '../heatmap-modes';
 import type { SourceId } from '../storage-envelope';
 import type { TechniqueRefKey } from '../technique-ref';
@@ -104,4 +105,6 @@ export interface PostureInputs {
 /** Weight seam: E2.1 ships an all-groups default; P2-10 binds ThreatProfileService. */
 export interface ThreatWeightProvider {
   weight(techniqueStixId: string): number;
+  /** Changes whenever weight() answers may change, so PostureService.states can track it. */
+  readonly revision: Signal<number>;
 }
