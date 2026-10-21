@@ -358,7 +358,7 @@ snapshot dates and a per-source error, which those methods do not return. The pe
 from the same `rulePermalink()`. `ElasticService.fetchRulesForTechnique`,
 `SplunkContentService.fetchRulesForTechnique` and `SigmaService.fetchRulesForTechnique` /
 `getCachedRules` therefore have no production caller; they are kept for API compatibility and
-stay covered by their specs. A section that does not load shows its reason, and the section
+their specs still exercise them. A section that does not load shows its reason, and the section
 header badge reads `not loaded` (all three) or `<total>, N of 3 not loaded` (some), never a `0`.
 
 ---
