@@ -77,6 +77,7 @@ describe('DashboardPanelComponent', () => {
   let component: DashboardPanelComponent;
   let status$: BehaviorSubject<Map<string, string>>;
   let atomicLoaded$: BehaviorSubject<boolean>;
+  let elasticLoaded$: BehaviorSubject<boolean>;
   let widgets$: BehaviorSubject<DashboardWidget[]>;
   let refTotalsSpy: jasmine.Spy;
   let posture: PostureStub;
@@ -86,6 +87,7 @@ describe('DashboardPanelComponent', () => {
     snapshots = [{ coveragePct: 40 }, { coveragePct: 50 }];
     status$ = new BehaviorSubject(new Map<string, string>());
     atomicLoaded$ = new BehaviorSubject<boolean>(false);
+    elasticLoaded$ = new BehaviorSubject<boolean>(false);
     widgets$ = new BehaviorSubject(WIDGETS);
     const loaded = () => new BehaviorSubject<boolean>(false);
     refTotalsSpy = jasmine.createSpy('referenceDefenseTotals').and.returnValue(
@@ -125,7 +127,7 @@ describe('DashboardPanelComponent', () => {
         { provide: D3fendService, useValue: { loaded$: loaded(), getCountermeasures: () => [] } },
         { provide: DashboardConfigService, useValue: { widgets$ } },
         { provide: SigmaService, useValue: { loaded$: loaded(), getRuleCount: (id: string) => (id === 'T1059' ? 5 : 0) } },
-        { provide: ElasticService, useValue: { loaded$: loaded(), getRuleCount: () => 0 } },
+        { provide: ElasticService, useValue: { loaded$: elasticLoaded$, getRuleCount: () => 0 } },
         { provide: SplunkContentService, useValue: { loaded$: loaded(), getRuleCount: () => 1 } },
         { provide: CveService, useValue: { getKevEntry: () => undefined } },
         { provide: MispService, useValue: { loaded$: loaded(), total$: new BehaviorSubject(12) } },
@@ -264,10 +266,31 @@ describe('DashboardPanelComponent', () => {
     it('renders a source that answered with 0 rows (Elastic) as an empty row, not "loading"', () => {
       TestBed.inject(SourceRegistryService).succeed('elastic-tree', 0);
       fixture.detectChanges();
-      const elastic = row('Elastic Rules');
+      const elastic = row('Elastic detection-rules (pinned snapshot)');
       expect(elastic.querySelector('.health-status')!.textContent!.trim()).toBe('empty');
       expect(elastic.querySelector('.health-dot')!.classList).toContain('dot-empty');
       expect(elastic.querySelector('.health-dot')!.classList).not.toContain('dot-loading');
+    });
+
+    it('names the Elastic and Splunk rows as the source inventory does, not by the retired tree names', () => {
+      const names = [...fixture.nativeElement.querySelectorAll('.health-name')].map((n: Element) => n.textContent!.trim());
+      expect(names).toContain('Elastic detection-rules (pinned snapshot)');
+      expect(names).toContain('Splunk security_content (pinned snapshot)');
+      for (const retired of ['Elastic Rules', 'Splunk Content', 'elastic-tree', 'splunk-tree']) {
+        expect(names).withContext(retired).not.toContain(retired);
+      }
+      expect(names.join(' ')).not.toMatch(/sentinel/i);
+    });
+
+    it('names the pinned snapshot (kind, commit and dates) on a loaded Elastic row', () => {
+      TestBed.inject(SourceRegistryService).succeed('elastic-tree', 446,
+        { version: 'snapshot of 2026-10-21, elastic/detection-rules@7115bb0 (commit 2026-10-21, main)' });
+      elasticLoaded$.next(true);
+      fixture.detectChanges();
+      const elastic = row('Elastic detection-rules (pinned snapshot)');
+      expect(elastic.querySelector('.health-status')!.textContent!.trim()).toBe('loaded');
+      expect(elastic.getAttribute('title')).toBe('Elastic detection-rules (pinned snapshot): loaded (reference data; bundled'
+        + ' snapshot of 2026-10-21, elastic/detection-rules@7115bb0 (commit 2026-10-21, main))');
     });
 
     it('keeps a two-source entry out of the failed state while one of its sources has data', () => {
@@ -279,6 +302,27 @@ describe('DashboardPanelComponent', () => {
       fixture.detectChanges();
       expect(row('ATT&CK CVE').querySelector('.health-status')!.textContent!.trim()).toBe('failed');
     });
+  });
+
+  // The detection cards add up per-technique counts, so a rule naming two techniques counts
+  // twice: they are labelled as rule links, never as a number of rules.
+  it('labels the detection cards as summed rule links and says the Elastic and Splunk counts are a pinned snapshot', () => {
+    widgets$.next([...WIDGETS, { id: 'detection-summary', label: 'Detection Content', icon: '', visible: true, order: 4 }]);
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    const cards = [...el.querySelectorAll('.det-card')].map(c => ({
+      value: c.querySelector('.det-value')!.textContent!.trim(),
+      label: c.querySelector('.det-label')!.textContent!.trim(),
+    }));
+    expect(cards).toEqual([
+      { value: '5', label: 'Sigma rule links' },
+      { value: '0', label: 'Elastic rule links' },
+      { value: '4', label: 'Splunk rule links' },
+    ]);
+    const note = el.querySelector('[data-testid="detection-links-note"]')!.textContent!.replace(/\s+/g, ' ').trim();
+    expect(note).toContain('a rule that names two techniques counts twice');
+    expect(note).toContain('bundled rule snapshot pinned to a commit');
+    expect(note).toContain('not rules running in your environment');
   });
 
   // E1.5: no risk verdict and no letter grade on reference data (plan 4.1);
