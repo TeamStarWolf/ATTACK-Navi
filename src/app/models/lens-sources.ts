@@ -68,7 +68,7 @@ export interface LensSourceInfo {
 const ROW_ATTACK = 'ATT&CK Enterprise / ICS / Mobile / F3 bundles';
 const ROW_CTID = 'CTID mappings (NIST 800-53, CRI, CSA CCM, VERIS, AWS, Azure, GCP, M365)';
 const ROW_CONTENT = 'Sigma coverage, CAR, Atomic, CAPEC, MISP galaxy, Engage';
-const ROW_VENDOR = 'Elastic, Splunk, Sentinel (edoardogerosa)';
+const ROW_VENDOR = 'Elastic, Splunk vendor rule trees';
 /** The Elastic and Splunk counts come from the bundled rule-coverage snapshot, read from rule bodies at a pinned commit. */
 const RULE_COVERAGE_PINNED = 'bundled snapshot of the rule bodies at a pinned commit; commit and date on the Status page';
 const ROW_CURATED = 'CAR seed, Wazuh stock-rule table (~22 ids), YARA, Zeek, Suricata, event-logging, IR playbooks';

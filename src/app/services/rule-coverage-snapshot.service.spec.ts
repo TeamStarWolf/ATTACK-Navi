@@ -12,7 +12,8 @@ import { SplunkContentService } from './splunk-content.service';
 import { SigmaService } from './sigma.service';
 import { SourceRegistryService } from './source-registry.service';
 import { SourceRetryService } from './source-retry.service';
-import { RULE_COVERAGE_NOTE } from './source-inventory';
+import { INVENTORY_ROW, LICENCE_NOTES, RULE_COVERAGE_NOTE, SOURCE_DEFINITIONS } from './source-inventory';
+import { LENS_SOURCES } from '../models/lens-sources';
 import { RULE_COVERAGE_FIXTURE } from '../testing/rule-coverage-fixture';
 
 describe('RuleCoverageSnapshotService', () => {
@@ -246,5 +247,15 @@ describe('rule coverage from the bundled snapshot: lenses, drawer, registry and 
     expect(r.note).toContain('Source withdrawn upstream');
     expect(registry.hasData('sentinel-attack-tree')).toBeFalse();
     http.verify();
+  });
+
+  it('names Sentinel only on the withdrawn inventory row and its licence note, never as a live vendor tree', () => {
+    expect(INVENTORY_ROW.vendorRuleTrees).not.toMatch(/sentinel/i);
+    expect(LENS_SOURCES.elastic.inventoryRow).not.toMatch(/sentinel/i);
+    expect(LENS_SOURCES.splunk.inventoryRow).not.toMatch(/sentinel/i);
+    const naming = SOURCE_DEFINITIONS.filter(d => /sentinel/i.test(`${d.id} ${d.name} ${d.inventoryRow}`)).map(d => d.id);
+    expect(naming).toEqual(['sentinel-attack-tree']);
+    expect(SOURCE_DEFINITIONS.find(d => d.id === 'sentinel-attack-tree')!.name).toContain('(withdrawn)');
+    expect(Object.keys(LICENCE_NOTES).filter(k => /sentinel/i.test(k))).toEqual(['sentinel-attack-withdrawn-mit']);
   });
 });

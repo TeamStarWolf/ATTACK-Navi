@@ -28,7 +28,7 @@ export const SECTION_6_3_INVENTORY: readonly InventoryRow[] = [
   { source: 'CTID mappings (NIST 800-53, CRI, CSA CCM, VERIS, AWS, Azure, GCP, M365)', today: 'runtime, mapped vs ATT&CK 16.1 / 17.1' },
   { source: 'CIS Controls', today: 'loads empty; CTID removed the source' },
   { source: 'Sigma coverage, CAR, Atomic, CAPEC, MISP galaxy, Engage', today: 'runtime' },
-  { source: 'Elastic, Splunk, Sentinel (edoardogerosa)', today: 'Elastic and Splunk: pinned build-time snapshot of rule bodies; Sentinel withdrawn upstream 2024-11-28' },
+  { source: 'Elastic, Splunk vendor rule trees', today: 'pinned build-time snapshot of rule bodies' },
   { source: 'M365 Defender hunting queries', today: 'archived 2022-02' },
   { source: 'trickest PoC tree', today: 'runtime tree' },
   { source: 'Nuclei templates', today: 'runtime tree' },
@@ -61,7 +61,7 @@ export const REQUIRED_RECORDS_BY_ROW: Readonly<Record<string, readonly string[]>
     'ctid-nist-800-53', 'ctid-cri-profile', 'ctid-csa-ccm', 'ctid-veris', 'ctid-aws', 'ctid-azure', 'ctid-gcp', 'ctid-m365',
   ],
   'Sigma coverage, CAR, Atomic, CAPEC, MISP galaxy, Engage': ['sigmahq-coverage', 'car-layer', 'atomic-layer', 'capec', 'misp-galaxy', 'engage'],
-  'Elastic, Splunk, Sentinel (edoardogerosa)': ['elastic-tree', 'splunk-tree'],
+  'Elastic, Splunk vendor rule trees': ['elastic-tree', 'splunk-tree'],
   'mdecrevoisier Sigma, Threat-Hunting': ['mdecrevoisier-sigma-tree', 'cyb3r-monk-hunting-tree'],
   'PayloadsAllTheThings, ExploitDB, offensive tools': ['payloads-tree', 'exploitdb', 'offensive-tools'],
   'CAR seed, Wazuh stock-rule table (~22 ids), YARA, Zeek, Suricata, event-logging, IR playbooks': [

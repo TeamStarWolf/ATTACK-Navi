@@ -67,7 +67,7 @@ export type LicenceNoteId =
   | 'elastic-license-2.0'
   | 'splunk-apache-2.0'
   | 'm365-hunting-mit'
-  | 'sentinel-attack-mit'
+  | 'sentinel-attack-withdrawn-mit'
   | 'cyb3r-monk-bsd-3'
   | 'nuclei-mit'
   | 'query-library'
