@@ -24,17 +24,16 @@ import { SOURCE_DEFINITIONS } from '../src/app/services/source-inventory';
 const SNAPSHOT = 'assets/data/rule-coverage-snapshot.json';
 const IDS = ['elastic-tree', 'splunk-tree', 'mdecrevoisier-sigma-tree'] as const;
 const nameOf = (id: string): string => SOURCE_DEFINITIONS.find(d => d.id === id)!.name;
+/** The api.github.com paths the four sources used to list (matched on the parsed URL, not a substring). */
+const FORMER_TREE_PATHS = /^\/repos\/(elastic\/detection-rules|splunk\/security_content|mdecrevoisier\/SIGMA-detection-rules|edoardogerosa\/sentinel-attack)\//;
 
 /** Count the snapshot requests; optionally answer them with a 404. */
 async function watchSnapshot(page: Page, missing: boolean): Promise<{ requests: () => number; github: () => number }> {
   let requests = 0;
   let github = 0;
   page.on('request', req => {
-    const url = req.url();
-    if (url.includes('api.github.com/repos/elastic/') || url.includes('api.github.com/repos/splunk/')
-      || url.includes('api.github.com/repos/mdecrevoisier/SIGMA-detection-rules') || url.includes('sentinel-attack')) {
-      github++;
-    }
+    const { hostname, pathname } = new URL(req.url());
+    if (hostname === 'api.github.com' && FORMER_TREE_PATHS.test(pathname)) github++;
   });
   await page.route(url => url.href.includes(SNAPSHOT), route => {
     requests++;
@@ -96,7 +95,9 @@ test.describe('rule coverage comes from a bundled, pinned snapshot', () => {
     for (const id of IDS) {
       const item = failed.locator(`[data-source-id="${id}"]`);
       await expect(item).toContainText(`${nameOf(id)} (failed)`);
-      await expect(item).toContainText('bundled snapshot missing');
+      await expect(item).toContainText('bundled snapshot missing (not in this build (HTTP 404)');
+      // The app's own file: GitHub's 'branch or path moved' wording does not apply.
+      await expect(item).not.toContainText('branch or path moved');
       await expect(banner(page).locator(`[data-testid="source-banner-empty"] [data-source-id="${id}"]`)).toHaveCount(0);
     }
     expect(seen.requests()).toBeGreaterThan(0);

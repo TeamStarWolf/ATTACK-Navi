@@ -381,3 +381,19 @@ test('the monthly refresh moves the pins and rebuilds the file before it detects
   assert.ok(step > 0, 'refresh-data.yml runs --update-pins');
   assert.ok(step < wf.indexOf('name: Detect changes'), 'before the change detection, so the review PR carries the file');
 });
+
+test('the verbatim upstream fixtures travel with their licence terms', () => {
+  const readme = read(`${FIX}/README.md`);
+  const terms = [
+    // [fixture, licence file, what identifyLicence must read from it]
+    ['elastic-rule.toml', 'licenses/elastic-detection-rules-LICENSE.txt', 'Elastic-2.0'],
+    ['splunk-detection.yml', 'licenses/splunk-security_content-LICENSE', 'Apache-2.0'],
+  ];
+  for (const [fixture, licence, spdx] of terms) {
+    assert.match(readme, new RegExp(`\`${fixture.replace('.', '\.')}\``), `${fixture} is listed`);
+    assert.ok(readme.includes(`(${licence})`), `the README links ${licence}`);
+    assert.equal(identifyLicence(read(`${FIX}/${licence}`)), spdx, `${licence} holds the ${spdx} terms`);
+  }
+  assert.match(read(`${FIX}/licenses/elastic-detection-rules-NOTICE.txt`), /^Detection Rules\nCopyright \d{4} Elasticsearch B\.V\./);
+  assert.match(readme, /CC0 1\.0 Universal/);
+});

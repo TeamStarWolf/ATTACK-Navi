@@ -135,7 +135,7 @@ describe('SourceBannerComponent: view banner naming a missing source (E1.3)', ()
 
   it('a rule-coverage source whose bundled snapshot did not load: did not load, with the reason, never Incomplete data', async () => {
     await go('/dashboard/overview');
-    registry.fail('elastic-tree', new Error('bundled snapshot missing (not found (branch or path moved): assets/data/rule-coverage-snapshot.json)'));
+    registry.fail('elastic-tree', new Error('bundled snapshot missing (not in this build (HTTP 404): assets/data/rule-coverage-snapshot.json)'));
     fixture.detectChanges();
     expect(group('empty')).toBeNull();
     const failed = group('failed')!;

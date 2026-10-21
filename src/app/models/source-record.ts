@@ -55,6 +55,7 @@ export type LicenceNoteId =
   | 'atomic-mit'
   | 'sigma-drl-1.1'
   | 'mdecrevoisier-cc0'
+  | 'mdecrevoisier-snapshot-cc0'
   | 'otrf-mit'
   | 'misp-cc0-mit'
   | 'trickest-mit'

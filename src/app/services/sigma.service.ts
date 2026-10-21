@@ -5,7 +5,9 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { catchError, map, shareReplay, tap } from 'rxjs/operators';
 import { SourceRegistryService, describeLoadError } from './source-registry.service';
-import { RuleCoverageSection, RuleCoverageSnapshotService, ruleLinks, snapshotVersion } from './rule-coverage-snapshot.service';
+import {
+  RuleCoverageSection, RuleCoverageSnapshotService, ruleLinks, snapshotError, snapshotVersion,
+} from './rule-coverage-snapshot.service';
 import { Technique } from '../models/technique';
 
 /**
@@ -238,9 +240,10 @@ export class SigmaService {
       this.communitySection$ = this.snapshot.section('mdecrevoisier').pipe(
         tap(section => this.ingestCommunity(section)),
         catchError(err => {
-          this.sources.fail('mdecrevoisier-sigma-tree', err);
+          const reason = snapshotError(err);
+          this.sources.fail('mdecrevoisier-sigma-tree', reason);
           this.communitySection$ = undefined;
-          throw err;
+          throw reason;
         }),
         shareReplay(1),
       );

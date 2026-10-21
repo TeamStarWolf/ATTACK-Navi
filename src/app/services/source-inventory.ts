@@ -104,6 +104,8 @@ export const LICENCE_NOTES: Record<LicenceNoteId, LicenceNote> = {
   'atomic-mit': { licence: 'MIT License', notice: 'THIRD_PARTY_NOTICES.md section 2' },
   'sigma-drl-1.1': { licence: 'Detection Rule License 1.1', notice: 'THIRD_PARTY_NOTICES.md section 2' },
   'mdecrevoisier-cc0': { licence: 'CC0 1.0 Universal', notice: 'THIRD_PARTY_NOTICES.md section 2' },
+  // Bundled data belongs in section 1 ('Content bundled in this repository'); section 2 is for runtime fetches.
+  'mdecrevoisier-snapshot-cc0': { licence: 'CC0 1.0 Universal', notice: 'not yet in THIRD_PARTY_NOTICES.md section 1 (the bundled rule-coverage snapshot; section 2 lists this repository only for runtime fetches, which no longer happen)' },
   'otrf-mit': { licence: 'MIT License', notice: 'THIRD_PARTY_NOTICES.md section 2' },
   'misp-cc0-mit': { licence: 'CC0 1.0 Universal or MIT-style', notice: 'THIRD_PARTY_NOTICES.md section 2' },
   'trickest-mit': { licence: 'MIT License', notice: 'THIRD_PARTY_NOTICES.md section 2' },
@@ -112,8 +114,8 @@ export const LICENCE_NOTES: Record<LicenceNoteId, LicenceNote> = {
   'payloads-mit': { licence: 'MIT License', notice: 'THIRD_PARTY_NOTICES.md section 2' },
   'mukul975-apache-2.0': { licence: 'Apache License 2.0', notice: 'THIRD_PARTY_NOTICES.md section 2' },
   'exploitdb-terms': { licence: "Exploit-DB's own terms", notice: 'THIRD_PARTY_NOTICES.md section 2' },
-  'elastic-license-2.0': { licence: 'Elastic License 2.0', notice: 'THIRD_PARTY_NOTICES.md section 1.8 (the bundled rule-coverage snapshot is not yet in section 2)' },
-  'splunk-apache-2.0': { licence: 'Apache License 2.0', notice: 'THIRD_PARTY_NOTICES.md section 1.8 (the bundled rule-coverage snapshot is not yet in section 2)' },
+  'elastic-license-2.0': { licence: 'Elastic License 2.0', notice: 'THIRD_PARTY_NOTICES.md section 1.8 (query library only; the bundled rule-coverage snapshot is not yet in section 1)' },
+  'splunk-apache-2.0': { licence: 'Apache License 2.0', notice: 'THIRD_PARTY_NOTICES.md section 1.8 (query library only; the bundled rule-coverage snapshot is not yet in section 1)' },
   'm365-hunting-mit': { licence: 'MIT License', notice: 'THIRD_PARTY_NOTICES.md section 1.8 (runtime tree listing not yet in section 2)' },
   'sentinel-attack-mit': { licence: 'MIT License (per GitHub)', notice: 'not yet in THIRD_PARTY_NOTICES.md' },
   'cyb3r-monk-bsd-3': { licence: 'BSD 3-Clause (per GitHub)', notice: 'not yet in THIRD_PARTY_NOTICES.md' },
@@ -358,7 +360,7 @@ export const SOURCE_DEFINITIONS: readonly SourceDefinition[] = [
   {
     id: 'mdecrevoisier-sigma-tree', name: 'mdecrevoisier SIGMA-detection-rules (pinned snapshot)', kind: 'bundled',
     version: ruleCoverageVersion('main'),
-    upstream: 'https://github.com/mdecrevoisier/SIGMA-detection-rules', licence: 'mdecrevoisier-cc0',
+    upstream: 'https://github.com/mdecrevoisier/SIGMA-detection-rules', licence: 'mdecrevoisier-snapshot-cc0',
     inventoryRow: R.communityHunting, owner: 'services/sigma.service.ts',
     note: RULE_COVERAGE_NOTE,
   },

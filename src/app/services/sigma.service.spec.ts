@@ -9,6 +9,18 @@ import { SourceRegistryService } from './source-registry.service';
 import { RULE_COVERAGE_SNAPSHOT_URL } from './rule-coverage-snapshot.service';
 import { RULE_COVERAGE_FIXTURE } from '../testing/rule-coverage-fixture';
 
+/**
+ * A request for the community rules at runtime, which no longer happens: the tree listing
+ * (api.github.com), a rule file (raw.githubusercontent.com/mdecrevoisier/...) or a tarball
+ * (codeload.github.com). Matched on the parsed URL's exact host name, never a substring.
+ */
+const toGitHub = (req: { url: string }): boolean => {
+  const { hostname, pathname } = new URL(req.url, 'http://localhost/');
+  return hostname === 'api.github.com'
+    || hostname === 'codeload.github.com'
+    || (hostname === 'raw.githubusercontent.com' && pathname.startsWith('/mdecrevoisier/'));
+};
+
 describe('SigmaService', () => {
   let service: SigmaService;
 
@@ -107,14 +119,14 @@ describe('SigmaService', () => {
       // loadCommunityRules (the drawer calls it) asks for nothing more once loaded.
       service.loadCommunityRules();
       httpMock.expectNone(RULE_COVERAGE_SNAPSHOT_URL);
-      httpMock.expectNone(req => req.url.includes('api.github.com'));
+      httpMock.expectNone(toGitHub);
     });
 
     it('lists rule titles with permalinks at the pinned commit, each segment encoded, and caches them; no raw file is fetched', () => {
       flushSnapshot();
       let rules: Array<{ title: string; url: string; id: string }> = [];
       service.fetchRulesForTechnique('T1484.002').subscribe(r => (rules = r));
-      httpMock.expectNone(req => req.url.includes('mdecrevoisier') || req.url.includes('api.github.com'));
+      httpMock.expectNone(toGitHub);
       const want = SECTION.techniques['T1484.002'].rules;
       expect(rules.map(r => r.title)).toEqual(want.map(r => r.name));
       const encoded = want[0].path.split('/').map(encodeURIComponent).join('/');
@@ -127,7 +139,7 @@ describe('SigmaService', () => {
       flushSnapshot('Not Found', { status: 404, statusText: 'Not Found' });
       const record = registry.get('mdecrevoisier-sigma-tree');
       expect(record.status).toBe('failed');
-      expect(record.lastError).toContain('bundled snapshot missing');
+      expect(record.lastError).toBe(`bundled snapshot missing (not in this build (HTTP 404): ${RULE_COVERAGE_SNAPSHOT_URL})`);
       expect(service.getCommunityRuleCount('T1059')).toBe(0);
       let rules: unknown[] | null = null;
       service.fetchRulesForTechnique('T1059').subscribe(r => (rules = r));
@@ -140,6 +152,24 @@ describe('SigmaService', () => {
       flushSnapshot({ generated: '2026-10-21', sources: { mdecrevoisier: { ...SECTION, techniques: {} } } });
       expect(registry.get('mdecrevoisier-sigma-tree').status).toBe('failed');
       expect(registry.get('mdecrevoisier-sigma-tree').lastError).toBe("bundled snapshot missing or malformed: 'mdecrevoisier' lists no techniques");
+    });
+
+    it('a wrongly typed field is failed by name, never with a TypeError', () => {
+      flushSnapshot({ generated: '2026-10-21', sources: { mdecrevoisier: { ...SECTION, ruleCount: '353' } } });
+      expect(registry.get('mdecrevoisier-sigma-tree').status).toBe('failed');
+      expect(registry.get('mdecrevoisier-sigma-tree').lastError).toBe("bundled snapshot missing or malformed: 'mdecrevoisier' has no rule count");
+      expect(service.getCommunityRuleCount('T1059')).toBe(0);
+    });
+
+    it('a null technique entry is failed by name, and the drawer gets no rules', () => {
+      flushSnapshot({ generated: '2026-10-21', sources: { mdecrevoisier: { ...SECTION, techniques: { ...SECTION.techniques, T1003: null } } } });
+      expect(registry.get('mdecrevoisier-sigma-tree').lastError).toBe("bundled snapshot missing or malformed: 'mdecrevoisier' technique T1003 is not an object");
+      // The file arrived, so it is not asked for again; the drawer's list stays empty.
+      let rules: unknown[] | null = null;
+      service.fetchRulesForTechnique('T1059').subscribe(r => (rules = r));
+      httpMock.expectNone(RULE_COVERAGE_SNAPSHOT_URL);
+      expect(rules as unknown).toEqual([]);
+      expect(registry.get('mdecrevoisier-sigma-tree').status).toBe('failed');
     });
   });
 });

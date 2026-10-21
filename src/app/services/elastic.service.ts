@@ -4,7 +4,7 @@ import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable, map, of } from 'rxjs';
 import { SourceRegistryService } from './source-registry.service';
 import {
-  RuleCoverageLink, RuleCoverageSection, RuleCoverageSnapshotService, ruleLinks, snapshotVersion,
+  RuleCoverageLink, RuleCoverageSection, RuleCoverageSnapshotService, ruleLinks, snapshotError, snapshotVersion,
 } from './rule-coverage-snapshot.service';
 
 /**
@@ -44,7 +44,7 @@ export class ElasticService {
         try {
           this.ingest(section);
         } catch (err) {
-          this.sources.fail('elastic-tree', err);
+          this.sources.fail('elastic-tree', snapshotError(err));
         }
       },
       error: err => this.sources.fail('elastic-tree', err),

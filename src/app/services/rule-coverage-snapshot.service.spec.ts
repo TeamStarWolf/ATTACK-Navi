@@ -5,7 +5,7 @@ import { provideHttpClient, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import {
   RULE_COVERAGE_SNAPSHOT_URL, RuleCoverageSection, RuleCoverageSnapshotService, SNAPSHOT_MISSING,
-  ruleLinks, rulePermalink, snapshotVersion,
+  ruleLinks, rulePermalink, snapshotError, snapshotVersion,
 } from './rule-coverage-snapshot.service';
 import { ElasticService } from './elastic.service';
 import { SplunkContentService } from './splunk-content.service';
@@ -42,8 +42,8 @@ describe('RuleCoverageSnapshotService', () => {
     let error = '';
     service.section('elastic').subscribe({ error: e => (error = e.message) });
     http.expectOne(RULE_COVERAGE_SNAPSHOT_URL).flush('Not Found', { status: 404, statusText: 'Not Found' });
-    expect(error.startsWith(SNAPSHOT_MISSING)).toBeTrue();
-    expect(error).toContain('not found');
+    // The app's own file: a 404 says it is not in this build, not GitHub's 'branch or path moved'.
+    expect(error).toBe(`${SNAPSHOT_MISSING} (not in this build (HTTP 404): ${RULE_COVERAGE_SNAPSHOT_URL})`);
 
     let repo = '';
     service.section('elastic').subscribe(s => (repo = s.repo));
@@ -67,6 +67,50 @@ describe('RuleCoverageSnapshotService', () => {
     }
     expect(errors.length).toBe(cases.length);
     for (const e of errors) expect(e.startsWith(`${SNAPSHOT_MISSING} or malformed: `)).withContext(e).toBeTrue();
+  });
+
+  it('every field a reader touches is checked, so a malformed section is named and never reaches a loader', () => {
+    const E = RULE_COVERAGE_FIXTURE.sources.elastic;
+    const T = E.techniques['T1059'];
+    const cases: Array<[Record<string, unknown>, string]> = [
+      [{ branch: undefined }, "'elastic' names no branch"],
+      [{ branch: 7 }, "'elastic' names no branch"],
+      [{ commitDate: 42 }, "'elastic' has no commit date"],
+      [{ commitDate: '21 October' }, "'elastic' has no commit date"],
+      [{ licence: null }, "'elastic' names no licence"],
+      [{ ruleCount: '2131' }, "'elastic' has no rule count"],
+      [{ ruleCount: -1 }, "'elastic' has no rule count"],
+      [{ techniqueCount: undefined }, "'elastic' has no technique count"],
+      [{ techniques: [] }, "'elastic' lists no techniques"],
+      [{ techniques: { ...E.techniques, T1003: null } }, "'elastic' technique T1003 is not an object"],
+      [{ techniques: { ...E.techniques, T1003: { rules: [] } } }, "'elastic' technique T1003 has no rule count"],
+      [{ techniques: { ...E.techniques, T1003: { count: 1 } } }, "'elastic' technique T1003 has no rule list"],
+      [{ techniques: { ...E.techniques, T1003: { count: 1, rules: [null] } } }, "'elastic' technique T1003 lists a rule without a name or path"],
+      [{ techniques: { ...E.techniques, T1003: { count: 1, rules: [{ name: 'x' }] } } }, "'elastic' technique T1003 lists a rule without a name or path"],
+      [{ techniques: { TA0002: T } }, "'elastic' technique key 'TA0002' is not an ATT&CK technique id"],
+    ];
+    for (const [change, reason] of cases) {
+      const fresh = TestBed.runInInjectionContext(() => new RuleCoverageSnapshotService());
+      let error = '';
+      fresh.section('elastic').subscribe({ next: () => (error = 'loaded'), error: e => (error = e.message) });
+      http.expectOne(RULE_COVERAGE_SNAPSHOT_URL).flush({ generated: '2026-10-21', sources: { elastic: { ...E, ...change } } });
+      expect(error).withContext(JSON.stringify(change)).toBe(`${SNAPSHOT_MISSING} or malformed: ${reason}`);
+    }
+  });
+
+  it('a response that is not JSON is named as such, not as a GitHub path problem', () => {
+    let error = '';
+    service.section('elastic').subscribe({ error: e => (error = e.message) });
+    http.expectOne(RULE_COVERAGE_SNAPSHOT_URL).error(new ProgressEvent('error'), { status: 200, statusText: 'OK' });
+    expect(error).toBe(`${SNAPSHOT_MISSING} (not valid JSON: ${RULE_COVERAGE_SNAPSHOT_URL})`);
+  });
+
+  it('snapshotError words any reader error as a missing or malformed snapshot, once', () => {
+    expect(snapshotError(new TypeError("Cannot read properties of null (reading 'count')")).message)
+      .toBe(`${SNAPSHOT_MISSING} or malformed: Cannot read properties of null (reading 'count')`);
+    const already = new Error(`${SNAPSHOT_MISSING} or malformed: 'elastic' lists no techniques`);
+    expect(snapshotError(already)).toBe(already);
+    expect(snapshotError('odd').message).toBe(`${SNAPSHOT_MISSING} or malformed: odd`);
   });
 
   it('builds permalinks at the pinned commit, each path segment encoded', () => {

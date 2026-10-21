@@ -86,7 +86,9 @@ describe('ElasticService (bundled rule-coverage snapshot)', () => {
     http.expectOne(RULE_COVERAGE_SNAPSHOT_URL).flush('Not Found', { status: 404, statusText: 'Not Found' });
     const r = registry.get('elastic-tree');
     expect(r.status).toBe('failed');
-    expect(r.lastError).toBe(`bundled snapshot missing (not found (branch or path moved): ${RULE_COVERAGE_SNAPSHOT_URL})`);
+    // The app's own file: a 404 means it is not in this build, not GitHub's 'branch or path moved'.
+    expect(r.lastError).toBe(`bundled snapshot missing (not in this build (HTTP 404): ${RULE_COVERAGE_SNAPSHOT_URL})`);
+    expect(r.lastError).not.toContain('branch or path moved');
     expect(r.rows).toBeNull();
     expect(current<boolean>(service.loaded$)).toBeFalse();
     expect(service.getRuleCount('T1059')).toBe(0);
@@ -106,9 +108,22 @@ describe('ElasticService (bundled rule-coverage snapshot)', () => {
     expect(current<boolean>(service.loaded$)).toBeFalse();
   });
 
-  it('an error while indexing a section is failed, not left loading', () => {
+  it('a section with a wrongly typed field is failed by name, never with a TypeError', () => {
     const broken = { ...RULE_COVERAGE_FIXTURE, sources: { ...RULE_COVERAGE_FIXTURE.sources, elastic: { ...SECTION, commitDate: 42 } } };
     http.expectOne(RULE_COVERAGE_SNAPSHOT_URL).flush(broken);
-    expect(registry.get('elastic-tree').status).toBe('failed');
+    const r = registry.get('elastic-tree');
+    expect(r.status).toBe('failed');
+    expect(r.lastError).toBe("bundled snapshot missing or malformed: 'elastic' has no commit date");
+    expect(current<boolean>(service.loaded$)).toBeFalse();
+  });
+
+  it('a null technique entry is failed by name, never with a TypeError', () => {
+    const techniques = { ...SECTION.techniques, T1003: null };
+    const broken = { ...RULE_COVERAGE_FIXTURE, sources: { ...RULE_COVERAGE_FIXTURE.sources, elastic: { ...SECTION, techniques } } };
+    http.expectOne(RULE_COVERAGE_SNAPSHOT_URL).flush(broken);
+    const r = registry.get('elastic-tree');
+    expect(r.status).toBe('failed');
+    expect(r.lastError).toBe("bundled snapshot missing or malformed: 'elastic' technique T1003 is not an object");
+    expect(service.getRuleCount('T1059')).toBe(0);
   });
 });

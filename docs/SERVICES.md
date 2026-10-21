@@ -342,7 +342,8 @@ repository holds, not what runs in any environment.
 
 | Method / export | Description |
 |---|---|
-| `section(key)` | One source's section with the snapshot's `generated` date. Errors with `bundled snapshot missing (...)` when the file does not load, or `bundled snapshot missing or malformed: ...` when the section is unusable; the loaders record that as `failed`, never `empty` |
+| `section(key)` | One source's section with the snapshot's `generated` date. Errors with `bundled snapshot missing (...)` when the file does not load (a 404 reads `not in this build (HTTP 404): <url>`, since the file comes from the app's own origin, not GitHub), or `bundled snapshot missing or malformed: ...` when the section is unusable. Every field a loader reads is checked first (`branch`, `commitDate`, `licence`, `ruleCount`, `techniqueCount`, and each technique's id, `count` and `rules[].name/path`), so a malformed file is named rather than failing with a TypeError; the loaders record it as `failed`, never `empty` |
+| `snapshotError(err)` | Words any error a loader still meets while reading a section as `bundled snapshot missing or malformed: ...` |
 | `rulePermalink(source, path)` | `https://github.com/<owner>/<repo>/blob/<sha>/<path>`, each segment encoded |
 | `snapshotVersion(section)` | The registry version line: `snapshot of <generated>, <owner>/<repo>@<sha7> (commit <date>, <branch>)` |
 
