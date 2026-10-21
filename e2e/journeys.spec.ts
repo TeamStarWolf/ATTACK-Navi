@@ -422,7 +422,7 @@ test.describe('lens availability (plan E1.2)', () => {
 
     // The lens menu disables the 23 lenses without ICS data, each with its reason.
     await page.locator('.heatmap-btn').click();
-    await expect(page.locator('.lens-na-summary')).toContainText('23 of 33 lenses have no ICS ATT&CK data');
+    await expect(page.locator('.lens-na-summary')).toContainText('23 of 34 lenses have no ICS ATT&CK data');
     const disabled = page.locator('.heatmap-groups .heatmap-mode-btn[aria-disabled="true"]');
     await expect(disabled).toHaveCount(23);
     for (const btn of await disabled.all()) {

@@ -1,6 +1,6 @@
 # Heatmap Modes Reference
 
-> Reference for the heatmap coloring modes (lenses) in ATTACK-Navi. There are 33 today; the authoritative count is the Heatmap modes row in [FACTS.md](FACTS.md). The Detailed Mode Documentation below covers the original 24; the lenses added since are listed in the lens menu and defined in `src/app/models/heatmap-modes.ts`.
+> Reference for the heatmap coloring modes (lenses) in ATTACK-Navi. There are 34 today; the authoritative count is the Heatmap modes row in [FACTS.md](FACTS.md). The Detailed Mode Documentation below covers the original 24 and the Posture lens (25); the other lenses added since are listed in the lens menu and defined in `src/app/models/heatmap-modes.ts`.
 > Each mode recolors every technique cell in the matrix to visualize a different security dimension.
 
 ---
@@ -33,6 +33,7 @@
 | 22 | `elastic` | Elastic Rules | Elastic Rules | Gradient (5) | `ElasticService` | Count of Elastic Detection Rules |
 | 23 | `splunk` | Splunk Detections | Splunk Detections | Gradient (5) | `SplunkContentService` | Count of Splunk Security Content detections |
 | 24 | `intelligence` | Intelligence | Intel Signals | Gradient (5) | Computed (MISP + groups) | `hasMisp (0/1) + threatGroupCount` |
+| 25 | `posture` | Posture | Posture | Categorical (6 + 2 patterns) | `PostureService.stateFor` via the lens's own `project` | Each technique's own posture bucket: `none`, `known`, `partial`, `covered`, `stale` or `proven` |
 
 ---
 
@@ -44,7 +45,7 @@ When a user selects a heatmap mode, the following seven-step pipeline executes:
 
 **File:** `src/app/pages/matrix/matrix-controls.component.ts`
 
-The matrix controls read the `HEATMAP_MODES` table from `src/app/models/heatmap-modes.ts` (33 lenses, grouped by `HEATMAP_GROUPS`) and render the lens menu. When the user picks a lens it calls `FilterService.setHeatmapMode(mode)`.
+The matrix controls read the `HEATMAP_MODES` table from `src/app/models/heatmap-modes.ts` (34 lenses, grouped by `HEATMAP_GROUPS`) and render the lens menu. When the user picks a lens it calls `FilterService.setHeatmapMode(mode)`.
 
 ### Step 2: State Broadcast (FilterService)
 
@@ -89,7 +90,7 @@ A **What is this lens?** button in the legend, a **?** next to every lens in the
 
 ### Step 6b: Lenses without data for the loaded domain
 
-A lens is available in a domain exactly when that domain is in its `domains` list (`lensAvailability()` in `heatmap-modes.ts`). In any other domain the lens menu disables it (`aria-disabled`, with a stated reason such as 'Sigma Rules is n/a for ICS ATT&CK: its sources (SigmaHQ coverage) have data for Enterprise ATT&CK only.' linked by `aria-describedby`), and if it is the active lens the matrix paints every cell in the neutral, hatched n/a colour (`LENS_NA_COLOR`, in no ramp) instead of the lens's zero colour, the minimap does the same, and a status banner on the matrix page states the reason. On ICS that is 23 of the 33 lenses today. The lens snapshots (`MatrixComponent.getCellColor`) are unaffected: they characterize each lens's own scoring.
+A lens is available in a domain exactly when that domain is in its `domains` list (`lensAvailability()` in `heatmap-modes.ts`). In any other domain the lens menu disables it (`aria-disabled`, with a stated reason such as 'Sigma Rules is n/a for ICS ATT&CK: its sources (SigmaHQ coverage) have data for Enterprise ATT&CK only.' linked by `aria-describedby`), and if it is the active lens the matrix paints every cell in the neutral, hatched n/a colour (`LENS_NA_COLOR`, in no ramp) instead of the lens's zero colour, the minimap does the same, and a status banner on the matrix page states the reason. On ICS that is 23 of the 34 lenses today. The lens snapshots (`MatrixComponent.getCellColor`) are unaffected: they characterize each lens's own scoring.
 
 ### Step 7: Cell Color Fallback (MatrixComponent.getCellColor)
 
@@ -101,7 +102,7 @@ For the `coverage` and `frequency` modes, `MatrixComponent.getCellColor()` provi
 
 ## Adding a New Heatmap Mode
 
-To add a heatmap mode (33 exist today), modify these files in order:
+To add a heatmap mode (34 exist today), modify these files in order:
 
 1. **`src/app/services/filter.service.ts`** -- Add the new mode string to the `HeatmapMode` union type.
 
@@ -465,9 +466,24 @@ To add a heatmap mode (33 exist today), modify these files in order:
 
 ---
 
+### 25. Posture (`posture`)
+
+| Property | Value |
+|----------|-------|
+| **Display Label** | Posture |
+| **Rung** | Mixed: each cell shows its own rung |
+| **Legend Label** | Posture |
+| **Data Source** | `PostureService.stateFor`, through the lens's own `project` and `color` (`src/app/models/lens-registry.ts`, `src/app/models/posture/posture-ramp.ts`); the first registry-hosted lens, so the matrix switchboard has no branch for it |
+| **Score Computation** | Categorical. The technique's posture bucket from your recorded data: a recorded detection (bucket `proven`, or `stale` once older than its window), else Covered (self-attested or range) from implemented mitigations, declared controls, confirmations and range marks (bucket `covered`, or `partial` when only a mitigation mapped to more techniques than the breadth threshold reaches it), else `known` when reference data exists, else `none`. |
+| **Color Scale** | An ordinal ramp kept as theme tokens: `none` is the surface, `known` a neutral blue-grey, `covered` blue, `proven` teal with a check mark; `partial` is the Known fill with a dashed blue outline, `stale` the teal mixed 50% toward the surface with the check mark kept. Two sub-state patterns: a vermilion hatched outline (`contradicted`) and a grey cross-hatch (`not-reproducible`). Contrast from the surface rises `none` < `known` < `covered` < `proven` under protanopia, deuteranopia and tritanopia in both themes, so the colorblind-safe setting does not change it. |
+| **Scale Type** | Categorical (ordinal) |
+| **Use Case** | One view of what you have recorded per technique. On a fresh profile it shows only `known` and `none`, and its legend shows the ramp without stop words and says "No data of yours recorded". The legend also counts the proofs that go stale within 7 days. |
+
+---
+
 ## Color Scale Design Principles
 
-The 33 heatmap modes follow these design conventions:
+The 34 heatmap modes follow these design conventions:
 
 1. **Dark backgrounds for zero**: All gradient scales use a very dark color (#0a--#1a range) for zero-score cells, maintaining matrix readability.
 

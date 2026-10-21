@@ -11,6 +11,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   HostListener,
+  inject,
 } from '@angular/core';
 import { Subscription } from 'rxjs';
 
@@ -21,7 +22,12 @@ import { HeatmapMode } from '../../services/filter.service';
 import { ImplStatus } from '../../services/implementation.service';
 import { TechniqueAnnotation } from '../../services/annotation.service';
 import { SettingsService } from '../../services/settings.service';
-import { LENS_NA_COLOR } from '../../models/heatmap-modes';
+import { LENS_NA_COLOR, heatmapModeDef } from '../../models/heatmap-modes';
+import { registryColor } from '../../models/lens-registry';
+import {
+  type PostureCellVM, type PostureTheme, postureHasCheck, postureLensCell, posturePatterns,
+} from '../../models/posture/posture-ramp';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-technique-cell',
@@ -32,7 +38,7 @@ import { LENS_NA_COLOR } from '../../models/heatmap-modes';
     <div
       class="cell"
       role="button"
-      [attr.aria-label]="technique.attackId + ': ' + technique.name"
+      [attr.aria-label]="technique.attackId + ': ' + technique.name + (posture ? ', ' + posture.label : '')"
       tabindex="0"
       [class.sub]="technique.isSubtechnique"
       [class.highlighted]="isHighlighted"
@@ -42,6 +48,9 @@ import { LENS_NA_COLOR } from '../../models/heatmap-modes';
       [class.search-dimmed]="hasActiveSearch && !isSearchMatch"
       [class.search-highlighted]="hasActiveSearch && isSearchMatch"
       [class.lens-na]="lensUnavailable"
+      [class.posture-partial]="posturePartial"
+      [class.posture-contradicted]="postureContradicted"
+      [class.posture-not-reproducible]="postureNotReproducible"
       [style.background-color]="bgColor"
       [style.color]="textColor"
       (click)="selected.emit(technique)"
@@ -50,6 +59,9 @@ import { LENS_NA_COLOR } from '../../models/heatmap-modes';
     >
       @if (showTechniqueId) {
         <span class="id">{{ technique.attackId }}</span>
+      }
+      @if (postureCheck) {
+        <span class="posture-check" aria-hidden="true">✓</span>
       }
       @if (showTechniqueName) {
         <span class="name">{{ technique.name }}</span>
@@ -134,6 +146,9 @@ import { LENS_NA_COLOR } from '../../models/heatmap-modes';
         @if (technique.isSubtechnique) {
           <div class="tt-sub-badge">Sub-technique</div>
         }
+        @if (posture) {
+          <div class="tt-posture">{{ posture.label }}</div>
+        }
       </div>
     }
   `,
@@ -154,6 +169,11 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
    * never reads as a real zero.
    */
   @Input() lensUnavailable = false;
+  /**
+   * This technique's posture on a registry-hosted posture lens (P2-13); null
+   * on every other lens. The matrix builds it once per posture change.
+   */
+  @Input() posture: PostureCellVM | null = null;
   @Input() implStatus: ImplStatus | null = null;
   @Input() maxExposure = 1;
   @Input() maxSoftware = 1;
@@ -237,11 +257,19 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
   bgColor = '#ffffff';
   textColor = '#000000';
   implDotColor = '';
+  /** Posture lens patterns and mark (P2-13): drawn on top of the fill, never by hue alone. */
+  posturePartial = false;
+  postureContradicted = false;
+  postureNotReproducible = false;
+  postureCheck = false;
   showTooltip = false;
   tooltipX = 0;
   tooltipY = 0;
 
   private settingsSub = new Subscription();
+  private readonly themeService = inject(ThemeService);
+  /** The theme a registry lens colours for; follows ThemeService. */
+  private theme: PostureTheme = 'dark';
 
   constructor(private cdr: ChangeDetectorRef, private settingsService: SettingsService) {}
 
@@ -260,6 +288,15 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
       this.ngOnChanges();
       this.cdr.markForCheck();
     });
+    this.settingsSub.add(
+      this.themeService.isLight$.subscribe((light) => {
+        const theme: PostureTheme = light ? 'light' : 'dark';
+        if (theme === this.theme) return;
+        this.theme = theme;
+        this.ngOnChanges();
+        this.cdr.markForCheck();
+      }),
+    );
   }
 
   ngOnDestroy(): void {
@@ -267,8 +304,15 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   ngOnChanges(): void {
+    const def = heatmapModeDef(this.heatmapMode);
+    const registry = !this.lensUnavailable && !!def?.color;
     if (this.lensUnavailable) {
       this.bgColor = LENS_NA_COLOR;
+    } else if (def?.color) {
+      // Registry-hosted lens (P2-13): the one colour function the minimap and legend also call.
+      this.bgColor = registryColor(def, postureLensCell(this.posture), {
+        theme: this.theme, colorblindSafe: this.settingsService.current.colorblindSafe,
+      });
     } else if (this.heatmapMode === 'exposure') {
       this.bgColor = this.computeExposureColor(this.exposureScore, this.maxExposure);
     } else if (this.heatmapMode === 'software') {
@@ -346,6 +390,11 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
       .mostReadable(this.bgColor, ['#000000', '#ffffff'])
       .toHexString();
     this.implDotColor = this.implStatus ? this.computeStatusColor(this.implStatus) : '';
+    const patterns = registry && this.posture ? posturePatterns(this.posture) : [];
+    this.posturePartial = patterns.includes('partial');
+    this.postureContradicted = patterns.includes('contradicted');
+    this.postureNotReproducible = patterns.includes('not-reproducible');
+    this.postureCheck = registry && !!this.posture && postureHasCheck(this.posture.bucket);
   }
 
   @HostListener('mouseenter', ['$event'])

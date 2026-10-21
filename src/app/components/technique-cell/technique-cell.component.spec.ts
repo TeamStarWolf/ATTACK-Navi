@@ -6,6 +6,8 @@ import { TechniqueCellComponent } from './technique-cell.component';
 import { SettingsService } from '../../services/settings.service';
 import { Technique } from '../../models/technique';
 import { LENS_NA_COLOR } from '../../models/heatmap-modes';
+import { type PostureCellVM, postureFill } from '../../models/posture/posture-ramp';
+import { ThemeService } from '../../services/theme.service';
 
 const STUB_TECH = {
   id: 'attack-pattern--abc',
@@ -246,5 +248,96 @@ describe('TechniqueCellComponent', () => {
       expect(component.lensUnavailable).toBeFalse();
       expect(el.querySelector('.cell')!.classList).not.toContain('lens-na');
     });
+  });
+});
+
+// P2-13: the one new cell input. On a registry-hosted lens the cell paints the
+// lens's own colour for its posture, draws the sub-state patterns and the check
+// mark, and names the posture in its aria-label and tooltip; on every legacy
+// lens the input is null and the cell renders exactly as before.
+describe('TechniqueCellComponent: posture input (P2-13)', () => {
+  let fixture: ComponentFixture<TechniqueCellComponent>;
+  let component: TechniqueCellComponent;
+  let settings$: BehaviorSubject<any>;
+  let isLight$: BehaviorSubject<boolean>;
+
+  const vm = (bucket: PostureCellVM['bucket'], subStates: PostureCellVM['subStates'] = [], label = 'Known: mapped'): PostureCellVM =>
+    ({ bucket, subStates, proofScope: bucket === 'proven' || bucket === 'stale' ? 'own-run' : null, label });
+
+  function set(inputs: Record<string, unknown>): HTMLElement {
+    for (const [k, v] of Object.entries(inputs)) fixture.componentRef.setInput(k, v);
+    fixture.detectChanges();
+    return (fixture.nativeElement as HTMLElement).querySelector('.cell') as HTMLElement;
+  }
+
+  beforeEach(() => {
+    settings$ = new BehaviorSubject<any>({ colorblindSafe: false, cellDisplay: null });
+    isLight$ = new BehaviorSubject<boolean>(false);
+    TestBed.configureTestingModule({
+      imports: [TechniqueCellComponent],
+      providers: [
+        { provide: SettingsService, useValue: {
+          settings$, get current() { return settings$.value; }, getCoverageColors: () => ['#111111', '#222222', '#333333', '#444444', '#555555'],
+        } },
+        { provide: ThemeService, useValue: { isLight$, get isLight() { return isLight$.value; } } },
+      ],
+    });
+    fixture = TestBed.createComponent(TechniqueCellComponent);
+    component = fixture.componentInstance;
+  });
+
+  it('paints the posture ramp fill for its bucket, in the current theme', () => {
+    set({ technique: STUB_TECH, heatmapMode: 'posture', posture: vm('covered', [], 'Covered (self-attested)') });
+    expect(component.bgColor).toBe(postureFill('covered', 'dark'));
+    isLight$.next(true);
+    expect(component.bgColor).toBe(postureFill('covered', 'light'));
+  });
+
+  it('ignores the colorblind-safe setting on Posture (safe by default)', () => {
+    set({ technique: STUB_TECH, heatmapMode: 'posture', posture: vm('proven', [], 'Proven (your run)') });
+    const before = component.bgColor;
+    settings$.next({ colorblindSafe: true, cellDisplay: null });
+    expect(component.bgColor).toBe(before);
+  });
+
+  it('draws the check mark on recorded detections and names the posture, stale included', () => {
+    let el = set({ technique: STUB_TECH, heatmapMode: 'posture', posture: vm('stale', ['stale'], 'Proven (your run) (stale)') });
+    expect(el.querySelector('.posture-check')).not.toBeNull();
+    expect(el.getAttribute('aria-label')).toBe('T1059: Command and Scripting Interpreter, Proven (your run) (stale)');
+    expect(el.getAttribute('aria-label')).toContain('stale');
+    el = set({ posture: vm('known') });
+    expect(el.querySelector('.posture-check')).toBeNull();
+  });
+
+  it('shows the posture label in its tooltip', () => {
+    set({ technique: STUB_TECH, heatmapMode: 'posture', posture: vm('stale', ['stale'], 'Proven (your run) (stale)') });
+    component.onMouseEnter(new MouseEvent('mouseenter', { clientX: 10, clientY: 10 }));
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).querySelector('.tt-posture')!.textContent!.trim()).toBe('Proven (your run) (stale)');
+  });
+
+  it('marks partial, contradicted and not reproducible with their pattern classes', () => {
+    let el = set({ technique: STUB_TECH, heatmapMode: 'posture', posture: vm('partial', ['partial']) });
+    expect(el.classList).toContain('posture-partial');
+    expect(component.bgColor).toBe(postureFill('known', 'dark'));
+    el = set({ posture: vm('known', ['contradicted']) });
+    expect(el.classList).toContain('posture-contradicted');
+    expect(el.classList).not.toContain('posture-partial');
+    el = set({ posture: vm('covered', ['not-reproducible']) });
+    expect(el.classList).toContain('posture-not-reproducible');
+  });
+
+  it('paints the n/a hatch, not a posture colour, when the lens is unavailable', () => {
+    const el = set({ technique: STUB_TECH, heatmapMode: 'posture', posture: vm('partial', ['partial']), lensUnavailable: true });
+    expect(component.bgColor).toBe(LENS_NA_COLOR);
+    expect(el.classList).not.toContain('posture-partial');
+  });
+
+  it('a legacy lens with no posture input renders as before: same colour, same aria-label, no posture marks', () => {
+    const el = set({ technique: STUB_TECH, heatmapMode: 'coverage' });
+    expect(component.bgColor).toBe('#444444');
+    expect(el.getAttribute('aria-label')).toBe('T1059: Command and Scripting Interpreter');
+    expect([...el.classList].filter(c => c.startsWith('posture-'))).toEqual([]);
+    expect(el.querySelector('.posture-check')).toBeNull();
   });
 });

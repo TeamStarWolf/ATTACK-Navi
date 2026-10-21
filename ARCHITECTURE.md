@@ -136,7 +136,7 @@ Computed via `combineLatest` + `map` in the constructor:
 
 > **Note (v0.8.0):** the former `ActivePanel` type union no longer exists — panel navigation is
 > the router's job now (see §8). `HeatmapMode` remains a string union, but the labels, groups, and
-> short names for all 33 modes are centralized in `src/app/models/heatmap-modes.ts` (the single
+> short names for all 34 modes are centralized in `src/app/models/heatmap-modes.ts` (the single
 > source consumed by the picker, cycling logic and the legend, which also reads each lens's rung,
 > question, sources and ramp from it).
 

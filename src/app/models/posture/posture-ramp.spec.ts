@@ -1,0 +1,150 @@
+// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+// https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
+//
+// The Posture lens's ramp tokens, projection and stop words (P2-13). The CVD
+// guarantee itself is posture-ramp.cvd.spec.ts.
+import { HEATMAP_MODES, LENS_NA_COLOR, heatmapModeDef } from '../heatmap-modes';
+import { hexContrast, mixHex } from '../cvd';
+import type { Technique } from '../technique';
+import { PROVEN, postureBadge, scenarioOutcomeLabel } from './posture-vocabulary';
+import {
+  POSTURE_BUCKETS, POSTURE_PATTERN_CLASS, POSTURE_SCORE, POSTURE_SURFACE, POSTURE_TOKENS, STALE_MIX, type PostureTheme,
+  postureColor, postureFill, postureHasCheck, postureLegendStops, postureLensCell, posturePatterns, postureProject,
+  postureCellLabel, postureRampStops, postureStopLabel,
+} from './posture-ramp';
+import { stubState } from '../../testing/posture-stub';
+
+const THEMES: readonly PostureTheme[] = ['dark', 'light'];
+const T = { id: 'attack-pattern--1', attackId: 'T1001' } as Technique;
+
+describe('posture ramp tokens (P2-13)', () => {
+  it('none is the surface, partial is the Known fill, stale is proven mixed 50% toward the surface', () => {
+    for (const theme of THEMES) {
+      expect(postureFill('none', theme)).toBe(POSTURE_SURFACE[theme]);
+      expect(postureFill('partial', theme)).toBe(postureFill('known', theme));
+      expect(STALE_MIX).toBe(0.5);
+      expect(postureFill('stale', theme)).toBe(mixHex(postureFill('proven', theme), POSTURE_SURFACE[theme], 0.5));
+      expect(postureFill('stale', theme)).not.toBe(postureFill('proven', theme));
+    }
+  });
+
+  it('gives every bucket a fill and a text colour in both themes, distinct per ordinal hue', () => {
+    for (const theme of THEMES) {
+      const t = POSTURE_TOKENS[theme];
+      expect(Object.keys(t).sort()).toEqual([...POSTURE_BUCKETS].sort());
+      const hues = new Set([t.none.fill, t.known.fill, t.covered.fill, t.proven.fill, t.stale.fill]);
+      expect(hues.size).withContext(theme).toBe(5);
+      for (const b of POSTURE_BUCKETS) expect(['#000000', '#ffffff']).toContain(t[b].text);
+    }
+  });
+
+  it('picks the text colour that reads better on each fill', () => {
+    for (const theme of THEMES) {
+      for (const b of POSTURE_BUCKETS) {
+        const { fill, text } = POSTURE_TOKENS[theme][b];
+        const other = text === '#000000' ? '#ffffff' : '#000000';
+        expect(hexContrast(fill, text)).withContext(`${theme} ${b}`).toBeGreaterThanOrEqual(hexContrast(fill, other));
+      }
+    }
+  });
+
+  it('never uses the n/a colour, which stays the lensUnavailable hatch', () => {
+    const fills = THEMES.flatMap(theme => POSTURE_BUCKETS.map(b => postureFill(b, theme).toLowerCase()));
+    expect(fills).not.toContain(LENS_NA_COLOR.toLowerCase());
+  });
+});
+
+describe('posture projection and colour (§2.5)', () => {
+  it('projects the technique\'s own state through ctx.posture', () => {
+    const state = { ...stubState('T1001', 'stale'), subStates: ['stale' as const] };
+    const cell = postureProject({ posture: () => state }, T);
+    expect(cell).toEqual({ score: POSTURE_SCORE.stale, bucket: 'stale', subStates: ['stale'], proofScope: 'own-run' });
+  });
+
+  it('orders the score by rung, with stale below fresh proof', () => {
+    const order = [...POSTURE_BUCKETS].sort((a, b) => POSTURE_SCORE[a] - POSTURE_SCORE[b]);
+    expect(order).toEqual(['none', 'known', 'partial', 'covered', 'stale', 'proven']);
+  });
+
+  it('colours by bucket and theme, and ignores the colorblind-safe setting (safe by default)', () => {
+    for (const theme of THEMES) {
+      for (const b of POSTURE_BUCKETS) {
+        const cell = { score: POSTURE_SCORE[b], bucket: b };
+        expect(postureColor(cell, { theme, colorblindSafe: false })).toBe(postureFill(b, theme));
+        expect(postureColor(cell, { theme, colorblindSafe: true })).toBe(postureFill(b, theme));
+      }
+    }
+    expect(postureColor({ score: 0 }, { theme: 'dark', colorblindSafe: false })).toBe(POSTURE_SURFACE.dark);
+  });
+
+  it('rebuilds a LensCell from the cell input, and none for no input', () => {
+    expect(postureLensCell(null)).toEqual({ score: 0, bucket: 'none', subStates: [], proofScope: null });
+    expect(postureLensCell({ bucket: 'proven', subStates: [], proofScope: 'range', label: 'x' }))
+      .toEqual({ score: POSTURE_SCORE.proven, bucket: 'proven', subStates: [], proofScope: 'range' });
+  });
+
+  it('draws patterns for partial, contradicted and not reproducible, and the check mark on recorded detections', () => {
+    expect(posturePatterns({ bucket: 'partial', subStates: ['partial', 'contradicted', 'not-reproducible'] }))
+      .toEqual(['partial', 'contradicted', 'not-reproducible']);
+    expect(posturePatterns({ bucket: 'known', subStates: ['planned', 'telemetry-observed'] })).toEqual([]);
+    expect(POSTURE_BUCKETS.filter(postureHasCheck)).toEqual(['proven', 'stale']);
+  });
+});
+
+describe('posture stop words and legend stops', () => {
+  it('takes every rung word from the vocabulary module, Covered always with its qualifier', () => {
+    expect(postureStopLabel('none')).toBe(scenarioOutcomeLabel('none'));
+    expect(postureStopLabel('known')).toBe(scenarioOutcomeLabel('known'));
+    expect(postureStopLabel('covered')).toBe(scenarioOutcomeLabel('covered'));
+    expect(postureStopLabel('partial')).toBe(`${scenarioOutcomeLabel('covered')}, partial`);
+    expect(postureStopLabel('proven')).toBe(PROVEN);
+    expect(postureStopLabel('stale')).toBe(`${PROVEN} (stale)`);
+    for (const key of [...POSTURE_BUCKETS, 'contradicted', 'not-reproducible'] as const) {
+      expect(postureStopLabel(key)).not.toMatch(/\bcovered\b(?!\s*\((?:self-attested|range))/i);
+    }
+  });
+
+  it('lists the six buckets then the two sub-state patterns, with their pattern classes', () => {
+    for (const theme of THEMES) {
+      const stops = postureLegendStops(theme);
+      expect(stops.map(s => s.key)).toEqual([...POSTURE_BUCKETS, 'contradicted', 'not-reproducible']);
+      expect(stops.map(s => s.patternClass)).toEqual([
+        null, null, POSTURE_PATTERN_CLASS.partial, null, null, null,
+        POSTURE_PATTERN_CLASS.contradicted, POSTURE_PATTERN_CLASS['not-reproducible'],
+      ]);
+      expect(stops.filter(s => s.check).map(s => s.key)).toEqual(['proven', 'stale']);
+      for (const s of stops.slice(0, 6)) expect(s.fill).toBe(postureFill(s.key as typeof POSTURE_BUCKETS[number], theme));
+    }
+  });
+
+  it('is the registry\'s ramp for the posture lens (dark fills, the minimap\'s starting theme)', () => {
+    const def = heatmapModeDef('posture')!;
+    expect(def.ramp.scale).toBe('categorical');
+    expect(def.ramp.stops).toEqual(postureRampStops());
+    expect(def.ramp.stops.map(s => s.color)).toEqual(POSTURE_BUCKETS.map(b => postureFill(b, 'dark')));
+    expect(HEATMAP_MODES[HEATMAP_MODES.length - 1]).toBe(def);
+  });
+});
+
+// §7 Decay, Rendering: a stale cell's aria-label and tooltip read
+// "stale (N days; window W)"; every other cell reads postureBadge(state).
+describe('posture cell label (§7)', () => {
+  const WINDOWS = { range: 90, production: 180, 'own-run': 90 } as const;
+
+  it('names the proof age and the decay window on a stale cell', () => {
+    const s = stubState('T1078', 'stale');
+    expect(s.proofAge).toBe(120);
+    expect(postureCellLabel(s, WINDOWS)).toBe(`${PROVEN} (your run), stale (120 days; window 90)`);
+    expect(postureCellLabel({ ...s, proofScope: 'production', proofAge: 200 }, WINDOWS)).toBe(`${PROVEN} in production, stale (200 days; window 180)`);
+    expect(postureCellLabel({ ...s, proofScope: 'range', proofAge: 95 }, { ...WINDOWS, range: 30 })).toBe(`${PROVEN} in range, stale (95 days; window 30)`);
+  });
+
+  it('is the badge on every other bucket, and on a stale state with no age', () => {
+    for (const bucket of POSTURE_BUCKETS.filter(b => b !== 'stale')) {
+      const s = stubState('T1078', bucket);
+      expect(postureCellLabel(s, WINDOWS)).withContext(bucket).toBe(postureBadge(s));
+    }
+    const ageless = { ...stubState('T1078', 'stale'), proofAge: null };
+    expect(postureCellLabel(ageless, WINDOWS)).toBe(postureBadge(ageless));
+  });
+});

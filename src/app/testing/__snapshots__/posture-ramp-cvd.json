@@ -1,0 +1,60 @@
+{
+  "dark": {
+    "protanopia": {
+      "surface": "#17181b",
+      "none": "#17181b",
+      "known": "#454b5d",
+      "partial": "#454b5d",
+      "covered": "#3a79d4",
+      "proven": "#bdb7a5",
+      "stale": "#696760"
+    },
+    "deuteranopia": {
+      "surface": "#17181b",
+      "none": "#17181b",
+      "known": "#41485c",
+      "partial": "#41485c",
+      "covered": "#0b6ace",
+      "proven": "#a9a9a8",
+      "stale": "#5e5f62"
+    },
+    "tritanopia": {
+      "surface": "#171819",
+      "none": "#171819",
+      "known": "#344f51",
+      "partial": "#344f51",
+      "covered": "#008695",
+      "proven": "#00c7bb",
+      "stale": "#00706a"
+    }
+  },
+  "light": {
+    "protanopia": {
+      "surface": "#ffffff",
+      "none": "#ffffff",
+      "known": "#c9ccd7",
+      "partial": "#c9ccd7",
+      "covered": "#6d95e3",
+      "proven": "#757267",
+      "stale": "#b8b7b4"
+    },
+    "deuteranopia": {
+      "surface": "#ffffff",
+      "none": "#ffffff",
+      "known": "#c6cad6",
+      "partial": "#c6cad6",
+      "covered": "#5b89de",
+      "proven": "#686869",
+      "stale": "#adafb5"
+    },
+    "tritanopia": {
+      "surface": "#ffffff",
+      "none": "#ffffff",
+      "known": "#bfcecf",
+      "partial": "#bfcecf",
+      "covered": "#00a1ad",
+      "proven": "#007c75",
+      "stale": "#74bfba"
+    }
+  }
+}

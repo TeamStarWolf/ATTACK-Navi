@@ -20,7 +20,7 @@ import { Observable } from 'rxjs';
 import type { Domain } from '../models/domain';
 import type { Technique } from '../models/technique';
 import type {
-  CoveredMark, PostureInputs, PostureRules, PostureState, PostureTally, ProofRecord, RunVerdict,
+  CoveredMark, PostureInputs, PostureRules, PostureState, PostureTally, ProofRecord, ProofScope, RunVerdict,
 } from '../models/posture/posture.types';
 import { DEFAULT_POSTURE_RULES, derivePosture, tallyPosture } from '../models/posture/derive-posture';
 import { hasOwnerWords } from '../models/posture/posture-vocabulary';
@@ -179,6 +179,9 @@ export class PostureService {
 
   /** Implementation-map keys that name no mitigation or technique: listed, never deleted. */
   readonly unmatched: Signal<readonly UnmatchedKey[]> = computed(() => this.implResult().unmatched);
+
+  /** The D10 proof windows (days) the states are derived with; a stale cell names its window (§7). */
+  readonly decayDays: Signal<Readonly<Record<ProofScope, number>>> = computed(() => this.rules().decayDays);
 
   /** Fresh proofs within EXPIRING_SOON_DAYS of their window (§7). */
   readonly expiringSoon: Signal<number> = computed(() => {
