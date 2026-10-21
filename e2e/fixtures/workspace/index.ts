@@ -70,6 +70,12 @@ export interface WorkspaceOptions {
    * Journey 4 ("fresh profile") turns this off.
    */
   skipOnboarding: boolean;
+  /**
+   * localStorage entries (key to raw string value) written before the app
+   * boots, on every document load, e.g. one validation run under
+   * 'navi.v2.validation-runs' (P2-19). Omitted: storage starts empty.
+   */
+  seed?: Record<string, string>;
 }
 
 export const DEFAULT_WORKSPACE: WorkspaceOptions = { skipOnboarding: true };
@@ -80,6 +86,11 @@ export async function openWorkspace(page: Page, options: Partial<WorkspaceOption
   await hermetic(page);
   if (opts.skipOnboarding) {
     await page.addInitScript(() => localStorage.setItem('onboarding-completed', 'true'));
+  }
+  if (opts.seed && Object.keys(opts.seed).length) {
+    await page.addInitScript((entries: Record<string, string>) => {
+      for (const [key, value] of Object.entries(entries)) localStorage.setItem(key, value);
+    }, opts.seed);
   }
 }
 

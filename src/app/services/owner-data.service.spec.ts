@@ -145,6 +145,16 @@ describe('owner data and the Prevalence banner (E1.5, D4)', () => {
       expect(seen).toEqual([false, true]);
     });
 
+    it('defaultLens$ (P2-19): frequency without owner data, posture with it, synchronously', () => {
+      const lenses: HeatmapMode[] = [];
+      service.defaultLens$.subscribe(l => lenses.push(l));
+      expect(lenses).withContext('synchronous first emission').toEqual(['frequency']);
+      runs.next([{ id: 'r1', techniqueId: 'T1059.001' } as ValidationRun]);
+      expect(lenses).toEqual(['frequency', 'posture']);
+      runs.next([]);
+      expect(lenses).toEqual(['frequency', 'posture', 'frequency']);
+    });
+
     it('keeps the display counts shape (every implementation status counts there)', () => {
       const counts: unknown[] = [];
       service.counts$.subscribe(c => counts.push(c));

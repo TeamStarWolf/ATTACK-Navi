@@ -167,19 +167,22 @@ export class ViewpointService {
    * route). Nothing stored → stay `analyst` and do nothing.
    */
   restore(): void {
-    let storedId: string | null = null;
-    try {
-      storedId = localStorage.getItem(STORAGE_KEY);
-    } catch {
-      storedId = null;
-    }
-    if (!storedId) return;
-    const vp = this.viewpoints.find((v) => v.id === storedId);
+    const vp = this.storedViewpoint();
     if (!vp) return;
     this.viewpointSubject.next(vp);
     if (!this.urlHasHeatParam()) {
       this.filterService.setHeatmapMode(vp.defaultLens);
     }
+  }
+
+  /**
+   * The stored viewpoint's lens, or null when no valid viewpoint is stored.
+   * The default-lens rule (P2-19, §10.4 item 4) reads it: a specialist
+   * viewpoint's lens beats D4's Posture; the analyst viewpoint
+   * (DEFAULT_HEATMAP_MODE) does not.
+   */
+  storedDefaultLens(): HeatmapMode | null {
+    return this.storedViewpoint()?.defaultLens ?? null;
   }
 
   /** True when `mode` is one of the active viewpoint's featured lenses. */
@@ -189,6 +192,18 @@ export class ViewpointService {
 
   private byId(id: ViewpointId): Viewpoint {
     return this.viewpoints.find((v) => v.id === id) ?? this.viewpoints[0];
+  }
+
+  /** The valid viewpoint in localStorage, if any (storage errors read as none). */
+  private storedViewpoint(): Viewpoint | null {
+    let storedId: string | null = null;
+    try {
+      storedId = localStorage.getItem(STORAGE_KEY);
+    } catch {
+      storedId = null;
+    }
+    if (!storedId) return null;
+    return this.viewpoints.find((v) => v.id === storedId) ?? null;
   }
 
   private persist(id: ViewpointId): void {
@@ -202,9 +217,10 @@ export class ViewpointService {
   /**
    * Does the current URL carry an explicit `heat` lens? Filter state lives in
    * router query params inside the hash (e.g. `#/matrix?heat=kev`), so check
-   * both the hash's query string and any plain search string.
+   * both the hash's query string and any plain search string. The
+   * default-lens rule (AppComponent, P2-19) reads it too.
    */
-  private urlHasHeatParam(): boolean {
+  urlHasHeatParam(): boolean {
     try {
       if (new URLSearchParams(window.location.search).has('heat')) return true;
       const hash = window.location.hash || '';
