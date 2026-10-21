@@ -11,16 +11,20 @@ import { OpenCtiService } from '../../services/opencti.service';
 import { MispService } from '../../services/misp.service';
 import { TaxiiService } from '../../services/taxii.service';
 import { lensLabel } from '../../models/posture/posture-vocabulary';
+import { makePostureStub, postureStubProvider, type PostureStub } from '../../testing/posture-stub';
 
 describe('SettingsPanelComponent', () => {
   let fixture: ComponentFixture<SettingsPanelComponent>;
   let component: SettingsPanelComponent;
   let settingsService: SettingsService;
   let domain$: BehaviorSubject<unknown>;
+  let posture: PostureStub;
 
   beforeEach(() => {
     localStorage.removeItem('mitre-nav-settings-v1');
     domain$ = new BehaviorSubject<unknown>(null);
+    // One technique, no owner data: ownerWords() is false until a spec sets a bucket.
+    posture = makePostureStub(() => ({ techniques: [{ attackId: 'T1', mitigationCount: 1 }], tacticColumns: [] }) as never);
     TestBed.configureTestingModule({
       imports: [SettingsPanelComponent],
       providers: [
@@ -39,6 +43,7 @@ describe('SettingsPanelComponent', () => {
             getConfig: () => ({ url: '', apiKey: '', orgId: '', mode: 'direct', proxyUrl: '', connected: false }),
         } },
         { provide: TaxiiService, useValue: { servers$: new BehaviorSubject([]) } },
+        postureStubProvider(posture),
       ],
     });
     settingsService = TestBed.inject(SettingsService);
@@ -91,17 +96,48 @@ describe('SettingsPanelComponent', () => {
   // P2-14 round 2: SAFE_STATUS / SAFE_CONTROLS are gone, so the toggle no longer
   // swaps the status lens to Okabe-Ito; its description must say which lenses keep
   // their own ramps instead of claiming every mode changes.
-  it('the colorblind-safe description names the lenses that keep their own ramps', () => {
+  function cvdDescription(): string {
     const labels = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.checkbox-item'));
     const item = labels.find(l => l.querySelector('.checkbox-label')?.textContent?.trim() === 'Colorblind-safe heatmaps');
     expect(item).withContext('colorblind-safe toggle').toBeDefined();
-    const desc = item!.querySelector('.checkbox-desc')!.textContent ?? '';
+    return item!.querySelector('.checkbox-desc')!.textContent ?? '';
+  }
+
+  it('the colorblind-safe description names the lenses that keep their own ramps', () => {
+    const desc = cvdDescription();
     expect(desc).toContain('Sequential heatmap modes use viridis');
     expect(desc).not.toContain('All heatmap modes');
     expect(desc).not.toContain('Okabe-Ito (status)');
+  });
+
+  // P2-14 repair round 1 (journey 4, §10.4 item 14): rung words never render for
+  // an empty user, so the Proven and Covered lenses are named only once owner
+  // data exists, the same rule the legend and posture surfaces follow.
+  it('with no owner data names Status, Controls and Posture, and no rung word', () => {
+    expect(posture.ownerWords()).toBeFalse();
+    const desc = cvdDescription();
+    const named = desc.slice(desc.indexOf('own colorblind-safe ramps:'));
+    expect(named).toContain(`Status, Controls, ${lensLabel('posture')}`);
+    expect(desc).not.toContain(lensLabel('covered'));
+    expect(desc).not.toContain(lensLabel('proven'));
+    expect(desc.toLowerCase()).not.toContain('covered');
+    expect(desc.toLowerCase()).not.toContain('proven');
+  });
+
+  it('names the Proven and Covered lenses once owner data exists, and drops them when it goes', () => {
+    posture.set({ T1: 'covered' });
+    fixture.detectChanges();
+    expect(posture.ownerWords()).toBeTrue();
+    let desc = cvdDescription();
     for (const name of ['Status', 'Controls', lensLabel('covered'), lensLabel('proven'), lensLabel('posture')]) {
       expect(desc).withContext(name).toContain(name);
     }
+
+    posture.set({});
+    fixture.detectChanges();
+    desc = cvdDescription();
+    expect(desc).not.toContain(lensLabel('covered'));
+    expect(desc).not.toContain(lensLabel('proven'));
   });
 
   it('resetToDefaults restores the shipped defaults', () => {

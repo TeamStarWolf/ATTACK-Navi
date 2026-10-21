@@ -10,7 +10,7 @@
 import {
   HEATMAP_MODES, LENS_RUNG_MEANING, type LensContext, heatmapModeDef, isLensAvailable, lensAvailability, lensRungBadge,
 } from './heatmap-modes';
-import { isRegistryLens, registryCell, registryColor } from './lens-registry';
+import { OWNER_WORD_LENSES, isRegistryLens, lensNameVisible, registryCell, registryColor } from './lens-registry';
 import type { Technique } from './technique';
 import { lensLabel } from './posture/posture-vocabulary';
 import { POSTURE_SCORE, postureFill } from './posture/posture-ramp';
@@ -98,5 +98,28 @@ describe('the Posture lens definition (P2-13)', () => {
 
   it('reads the ATT&CK bundle and your workspace', () => {
     expect([...def.sources]).toEqual(['attack-bundle', 'workspace-local']);
+  });
+});
+
+// P2-14 repair round 1 (§10.4 item 14): a lens whose name is a rung word is
+// named only once owner data exists; every other lens is always named.
+describe('lensNameVisible', () => {
+  it('hides exactly the Proven and Covered lenses without owner data', () => {
+    expect([...OWNER_WORD_LENSES].sort()).toEqual(['covered', 'proven']);
+    const hidden = HEATMAP_MODES.filter(m => !lensNameVisible(m, false)).map(m => m.value).sort();
+    expect(hidden).toEqual(['covered', 'proven']);
+    for (const m of HEATMAP_MODES.filter(x => !lensNameVisible(x, false))) {
+      expect(m.label).withContext(m.value).toMatch(/^(Covered|Proven)/);
+    }
+  });
+
+  it('names every lens once owner data exists', () => {
+    expect(HEATMAP_MODES.every(m => lensNameVisible(m, true))).toBeTrue();
+  });
+
+  it('never hides a lens whose label carries no rung word', () => {
+    for (const m of HEATMAP_MODES.filter(x => !/covered|proven/i.test(x.label))) {
+      expect(lensNameVisible(m, false)).withContext(m.value).toBeTrue();
+    }
   });
 });

@@ -32,3 +32,15 @@ export function registryColor(def: LensDefinition, cell: LensCell, ctx: Pick<Len
   if (!def.color) throw new Error(`lens '${def.value}' is not registry-hosted (no color)`);
   return def.color(cell, ctx);
 }
+
+/**
+ * The lenses whose menu label is itself a rung word (the Proven and Covered
+ * lenses). Their names may render only when PostureService.ownerWords() is
+ * true (§1.3; design §10.4 item 14: rung words never appear for an empty user).
+ */
+export const OWNER_WORD_LENSES: ReadonlySet<string> = new Set(['proven', 'covered']);
+
+/** Whether `def`'s name may render: always, unless it is an owner-word lens and no owner data exists. */
+export function lensNameVisible(def: Pick<LensDefinition, 'value'>, ownerWords: boolean): boolean {
+  return ownerWords || !OWNER_WORD_LENSES.has(def.value);
+}
