@@ -865,3 +865,52 @@ test.describe('E2.4: default-lens rule', () => {
     await expect(page.locator('.heatmap-btn')).toContainText('Posture');
   });
 });
+
+// RP-F item 5: with the technique drawer open at 1440x900 the View button wraps to
+// the controls row's left end, and the right-aligned absolute menu opened at
+// x = -277: clipped by the workspace and under the 260 px rail, whose labels took
+// the clicks. The menu is now fixed above the rail and clamped to the row and the
+// viewport. Every click below is a real pointer click: Playwright refuses it when
+// another element would receive it.
+test.describe('View menu above the rail (RP-F item 5)', () => {
+  test('[RP-F 5] at 1440x900 with the drawer open, every lens in the View menu takes a real click and the menu never lies over the rail', async ({ page }) => {
+    test.setTimeout(process.env['CI'] ? 300000 : 180000);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openWorkspace(page);
+    await page.goto(BASE + '/#/matrix?tech=T1059.001');
+    await expect(page.locator('.sidebar.open .sidebar-header .attack-id')).toHaveText('T1059.001', { timeout: ROUTE_TIMEOUT });
+    const rail = (await page.locator('app-nav-rail').boundingBox())!;
+    expect(rail.width).toBeGreaterThan(200);
+    const menu = page.locator('.views-menu');
+    const openMenu = async () => {
+      await page.locator('.heatmap-btn').click();
+      await expect(menu).toBeVisible();
+    };
+    await openMenu();
+    const lenses = await menu.locator('.lens-item').evaluateAll(els => els.map(e => e.getAttribute('data-lens')!));
+    expect(lenses.length).toBeGreaterThan(30);
+    for (const lens of lenses) {
+      if (!(await menu.isVisible())) await openMenu();
+      const box = (await menu.boundingBox())!;
+      expect(box.x, `${lens}: the menu's left edge clears the rail`).toBeGreaterThanOrEqual(rail.x + rail.width);
+      expect(box.x + box.width, `${lens}: inside the viewport`).toBeLessThanOrEqual(1440);
+      expect(box.y + box.height, `${lens}: inside the viewport`).toBeLessThanOrEqual(900);
+      const button = menu.locator(`.lens-item[data-lens="${lens}"] .heatmap-mode-btn`);
+      const disabled = (await button.getAttribute('aria-disabled')) === 'true';
+      if (disabled) {
+        // aria-disabled: Playwright's click() waits for an enabled element, so the real
+        // click is the mouse at the button's centre after hover() has checked that this
+        // button, not the rail or the drawer, receives pointer events there.
+        await button.hover({ timeout: 5000 });
+        const b = (await button.boundingBox())!;
+        await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+        await expect(menu, `${lens}: a disabled lens keeps the menu open`).toBeVisible();
+      } else {
+        await button.click({ timeout: 5000 });
+        await expect(menu, `${lens}: picking a lens closes the menu`).toBeHidden();
+        await expect(page).toHaveURL(new RegExp(`[?&]heat=${lens}(&|$)`), { timeout: 5000 });
+      }
+    }
+    await expect(page.locator('.sidebar.open .sidebar-header .attack-id')).toHaveText('T1059.001');
+  });
+});

@@ -178,21 +178,27 @@
 }
 
 .views-menu {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
+  /* Fixed, placed by placeViewMenu (matrix-controls.component.ts) from its button
+     and this row's left edge (RP-F item 5): the workspace's overflow: hidden used
+     to clip the absolute menu, and with the drawer open at 1440x900 it opened
+     behind the 260 px rail, whose labels took the clicks. Fixed escapes the clip
+     (no ancestor sets a transform), the overlay z-index sits above the rail
+     (--z-rail) and the drawer (--z-sidebar), and the placement keeps it off the
+     rail and inside the viewport. The values below are the fallbacks the inline
+     placement overrides. */
+  position: fixed;
   /* Wide two-column layout: with 32 modes a single 420px column ran ~600px
      tall and hid most options behind a near-invisible scroll on short
      windows. Two columns keep everything on screen at once. */
   width: 660px;
-  max-width: calc(100vw - 24px);
+  max-width: calc(100vw - 16px);
   max-height: 85vh;
   overflow-y: auto;
   background: var(--bg-surface);
   border: 1px solid var(--border-default);
   border-radius: 10px;
   box-shadow: var(--shadow-lg);
-  z-index: 300;
+  z-index: var(--z-overlay);
   padding: 12px;
 }
 

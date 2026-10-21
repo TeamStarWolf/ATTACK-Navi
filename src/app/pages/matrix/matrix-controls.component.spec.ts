@@ -3,7 +3,7 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
 import { signal, WritableSignal } from '@angular/core';
-import { IMPL_FILTER_TITLE, MatrixControlsComponent } from './matrix-controls.component';
+import { IMPL_FILTER_TITLE, MatrixControlsComponent, VIEW_MENU_MARGIN, VIEW_MENU_WIDTH, placeViewMenu } from './matrix-controls.component';
 import { PostureService } from '../../services/posture.service';
 import { DEFAULT_HEATMAP_MODE, FilterService, HeatmapMode } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
@@ -144,6 +144,62 @@ describe('MatrixControlsComponent', () => {
     fixture.detectChanges();
     const buttons = fixture.nativeElement.querySelectorAll('.heatmap-mode-btn');
     expect(buttons.length).toBe(HEATMAP_MODES.length);
+  });
+
+  // RP-F item 5: with the drawer open at 1440x900 the View button wraps to the row's
+  // left end; the right-aligned absolute menu opened at x = -277, clipped by the
+  // workspace and under the 260 px rail, whose labels took the clicks.
+  describe('View menu placement (RP-F item 5)', () => {
+    const RAIL_RIGHT = 260;
+
+    it('the RP-F geometry: the menu starts at the row (the rail edge), not under the rail', () => {
+      const p = placeViewMenu({ right: 382.84, bottom: 165.94 }, RAIL_RIGHT, { width: 1440, height: 900 });
+      expect(p.left).toBe(RAIL_RIGHT);
+      expect(p.width).toBe(VIEW_MENU_WIDTH);
+      expect(p.left + p.width).toBeLessThanOrEqual(1440 - VIEW_MENU_MARGIN);
+      expect(p.top).toBeCloseTo(169.94, 2);
+      expect(p.top + p.maxHeight).toBeLessThanOrEqual(900 - VIEW_MENU_MARGIN);
+    });
+
+    it('still right-aligns under its button when there is room (unchanged look)', () => {
+      const p = placeViewMenu({ right: 1200, bottom: 100 }, RAIL_RIGHT, { width: 1440, height: 900 });
+      expect(p.left + p.width).toBe(1200);
+      expect(p.width).toBe(VIEW_MENU_WIDTH);
+    });
+
+    it('never runs past the viewport right edge, and narrows to fit between the row and the edge', () => {
+      const p = placeViewMenu({ right: 1430, bottom: 100 }, 900, { width: 1440, height: 900 });
+      expect(p.left).toBe(900);
+      expect(p.left + p.width).toBe(1440 - VIEW_MENU_MARGIN);
+      const phone = placeViewMenu({ right: 360, bottom: 120 }, 0, { width: 375, height: 812 });
+      expect(phone.left).toBe(VIEW_MENU_MARGIN);
+      expect(phone.left + phone.width).toBe(375 - VIEW_MENU_MARGIN);
+    });
+
+    it('opening the menu places it fixed from the button, and a window resize re-places it', () => {
+      const host = fixture.nativeElement as HTMLElement;
+      component.toggleViewMenu();
+      fixture.detectChanges();
+      const menu = host.querySelector<HTMLElement>('.views-menu')!;
+      expect(getComputedStyle(menu).position).toBe('fixed');
+      expect(Number(getComputedStyle(menu).zIndex)).toBeGreaterThan(100);   // above --z-rail (50) and --z-sidebar (100)
+      const placed = component.viewMenuPlacement!;
+      expect(placed).not.toBeNull();
+      expect(menu.style.left).toBe(`${placed.left}px`);
+      expect(menu.style.top).toBe(`${placed.top}px`);
+      expect(placed.left).toBeGreaterThanOrEqual(Math.max(host.getBoundingClientRect().left, VIEW_MENU_MARGIN));
+      const button = host.querySelector('.heatmap-btn')!.getBoundingClientRect();
+      expect(placed).toEqual(placeViewMenu(button, host.getBoundingClientRect().left, { width: window.innerWidth, height: window.innerHeight }));
+
+      component.viewMenuPlacement = null;
+      window.dispatchEvent(new Event('resize'));
+      expect(component.viewMenuPlacement).withContext('re-placed on resize while open').not.toBeNull();
+
+      component.toggleViewMenu();
+      expect(component.viewMenuPlacement).withContext('cleared on close').toBeNull();
+      window.dispatchEvent(new Event('resize'));
+      expect(component.viewMenuPlacement).withContext('a closed menu is not placed').toBeNull();
+    });
   });
 
   it('gap view request goes through MatrixControlService', () => {
