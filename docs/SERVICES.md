@@ -302,6 +302,24 @@ paths; none of these repositories puts ids in file names, so every count was zer
 | Splunk (`splunk-tree`) | `splunk/security_content`, `develop` | `detections/**/*.yml` except `detections/deprecated/`: `name` and the `mitre_attack_id` list (top level today; `tags.mitre_attack_id` in older files) | Apache License 2.0 (`Apache-2.0`) |
 | mdecrevoisier Sigma (`mdecrevoisier-sigma-tree`) | `mdecrevoisier/SIGMA-detection-rules`, `main` | `**/*.yaml`: the first `title` and every `attack.tNNNN(.NNN)` tag, any case, normalised to `TNNNN.NNN` | CC0 1.0 Universal (`CC0-1.0`) |
 
+**Licences and notices.** The builder reads each licence from the upstream's own licence file
+in the tarball at the pin, never assumes it, and records it in the section's `licence` field.
+At the 2026-10-21 pins: `elastic/detection-rules` ships `LICENSE.txt`, the Elastic License 2.0,
+and a `NOTICE.txt` that says the repository bundles rules based on two MIT-licensed projects,
+`BlueTeamLabs/sentinel-attack` and `FSecureLABS/leonidas`, names those six rules and carries
+both MIT licence texts. The snapshot lists at least two of them by name ("Potential
+Modification of Accessibility Binaries" and "Potential Application Shimming via Sdbinst"),
+so the Elastic section is Elastic License 2.0 data that includes MIT-derived rule names, and
+a formal notice for it must carry that MIT attribution as well as the Elastic License 2.0.
+`splunk/security_content` ships `LICENSE`, the Apache License 2.0;
+`mdecrevoisier/SIGMA-detection-rules` ships `LICENSE.md`, CC0 1.0 Universal. The snapshot
+holds rule names, repository paths and technique ids, not rule logic. `THIRD_PARTY_NOTICES.md`
+does not yet list the bundled snapshot in its section 1 (content bundled in this repository).
+The owner's open notices pull request (#164) changes only the CVE2CAPEC entry, so landing it
+does not add this notice: the snapshot's notice is a separate follow-up after #164 lands.
+This paragraph is a pointer, not that notice. `LICENCE_NOTES` in
+`src/app/services/source-inventory.ts` records each licence and where its notice stands.
+
 **Builder:** `scripts/build-rule-coverage-snapshot.mjs` (tests: `scripts/build-rule-coverage-snapshot.test.mjs`,
 fixtures in `scripts/fixtures/rule-coverage/`). It downloads each repository's tarball anonymously
 from `codeload.github.com` at the pinned SHA, gunzips it with `node:zlib` and reads the ustar
@@ -324,7 +342,7 @@ file. The script's `PINS` block is the starting point when no file exists.
 naming it or any of its sub-techniques. At most 10 rules are listed per technique (5 if the file
 would pass 1.5 MB). At the pins of 2026-10-21 the file is 1,082,708 bytes:
 
-| Source | Rules parsed | Name at least one technique | Techniques with a rule |
+| Source | Rules parsed | Name at least one technique | Technique and sub-technique ids with a rule |
 |---|---|---|---|
 | Elastic | 2,131 | 2,049 | 446 |
 | Splunk | 2,169 | 2,138 | 396 |

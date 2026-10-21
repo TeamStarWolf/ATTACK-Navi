@@ -139,11 +139,15 @@ or name (PowerShell) in the top bar. The "Reference sources mapped" card is a Kn
 The sidebar collects what public sources record about a technique, as collapsible sections
 that appear when they have content: ATT&CK mitigations and the status you set; Detected By
 (data sources); detection content in CAR Detection Analytics, Wazuh stock rules (curated),
-Atomic Red Team Tests, SIEM Queries, and Sigma Rules, Microsoft 365 Defender and Sentinel
-Rules when those are present; CVE and KEV links and EPSS scores; D3FEND countermeasures
-and MITRE Engage activities; and control mappings for NIST 800-53, CRI Profile, VERIS, CSA
-CCM and cloud providers. Elastic and Splunk appear as rule counts rather than as their own
-sections.
+Atomic Red Team Tests, SIEM Queries and Microsoft 365 Defender when those are present;
+CVE and KEV links and EPSS scores; D3FEND countermeasures and MITRE Engage activities; and
+control mappings for NIST 800-53, CRI Profile, VERIS, CSA CCM and cloud providers. The
+Rule sources section is always present: for Elastic detection-rules, Splunk security_content
+and mdecrevoisier SIGMA it gives the number of rules that name the technique at a pinned
+commit, up to ten rule names each linked to the rule file at that commit, and the pinned
+commit and snapshot date; and, when SigmaHQ tags rules with the technique, a SigmaHQ line
+with the rule count only. These are rules in public repositories (reference data), not
+rules running in your environment.
 
 For offensive work the sidebar also has CAPEC, ExploitDB, Nuclei, PoC Exploits, Payloads,
 C2, BloodHound, Offensive tools, EVTX samples and ThreatHunter Playbook sections, again
@@ -228,11 +232,14 @@ browsers; desktop Firefox does not offer one.
 
 Several datasets load from `api.github.com` without authentication, which GitHub limits to
 60 requests per hour per IP. After a few loads, or behind a shared corporate IP, that
-limit is reached and sources fail, including Elastic, Splunk, community Sigma, PoC
-exploits, M365 hunting queries, Sentinel rules, Nuclei, PayloadsAllTheThings, EVTX
-samples, Cyb3r-Monk hunts and the CTID KEV mapping. Their counts then read zero, which
-means "not loaded", not "no content", and Gap Analysis counts fewer techniques as
-detected. A MISSING DATA banner above the matrix names the failed sources and carries one
+limit is reached and sources fail: PoC exploits, M365 hunting queries, Nuclei,
+PayloadsAllTheThings, EVTX samples, Cyb3r-Monk hunts and the CTID KEV mapping. Their
+counts then read zero, which means "not loaded", not "no content", and Gap Analysis counts
+fewer techniques under "Detected" (it reads the M365 hunting queries). The limit does not
+affect the Elastic, Splunk and community Sigma (mdecrevoisier) rule counts, which come
+from a snapshot bundled with the app, or the Sentinel rules, which were withdrawn
+upstream and are not fetched. A MISSING DATA banner above the matrix names the failed
+sources and carries one
 "Data health and Retry" link to the Status page, where the per-source Retry buttons live.
 Wait for the hourly reset, then Retry there; the app has no way to raise the anonymous
 GitHub limit, so there is no other mitigation in the hosted build.
@@ -287,11 +294,14 @@ self-recorded. No lens colors the matrix at the Proven rung. <!-- truth-vocab-al
 
 Enterprise, ICS and Mobile ATT&CK and the CTID F3 Fraud Framework are bundled. The app
 also bundles fallbacks it uses when a live source is unavailable (a CISA KEV snapshot, a
-D3FEND seed, a CVE-to-technique map, a CWE catalog and SSVC decision tables); the "Bundled
-data assets" section of docs/FACTS.md lists them. D3FEND, the CTID mappings, Sigma,
-Elastic, Splunk, Atomic Red Team, Galeax CVE2CAPEC, CISA KEV, FIRST EPSS, NVD and others
-are fetched from their upstream sources at runtime. THIRD_PARTY_NOTICES.md lists every
-source with its license and terms, and the Status workspace shows which sources loaded.
+D3FEND seed, a CVE-to-technique map, a CWE catalog and SSVC decision tables) and a
+rule-coverage snapshot of the Elastic, Splunk and mdecrevoisier Sigma rule repositories at
+pinned commits, the only source of those rule counts; the "Bundled data assets" section of
+docs/FACTS.md lists them. D3FEND, the CTID mappings, Sigma, Atomic Red Team, Galeax
+CVE2CAPEC, CISA KEV, FIRST EPSS, NVD and others are fetched from their upstream sources at
+runtime. THIRD_PARTY_NOTICES.md lists the sources with their licenses and terms, except
+the bundled rule-coverage snapshot, whose notice is still to be added (docs/SERVICES.md
+says where it stands), and the Status workspace shows which sources loaded.
 
 For the ATT&CK data in `src/assets/data`: © 2026 The MITRE Corporation. This work is
 reproduced and distributed with the permission of The MITRE Corporation. MITRE ATT&CK® is

@@ -37,6 +37,13 @@ Both shipped through pull requests to `main`; the original agent working branch 
 - **Integration:** Merge counts into existing `sigma.service.ts` — supplementary detection coverage
 - **Effort:** Low — same YAML format, parse `tags` for technique IDs
 
+> **Shipped differently on `main` (2026-10-21):** the rules are read from their `attack.tNNNN`
+> tags at a pinned commit into the bundled `src/assets/data/rule-coverage-snapshot.json`
+> (`scripts/build-rule-coverage-snapshot.mjs`, refreshed monthly by `refresh-data.yml`). The
+> technique drawer's Rule sources section lists them (count, up to ten titles linked at the
+> pinned commit). The counts are not merged into the Sigma Rules lens, which reads the SigmaHQ
+> coverage layer only.
+
 ### 3. EVTX Samples + Event Log Mindmap
 - **Repos:** `mdecrevoisier/EVTX-to-MITRE-Attack` (621★) + `Microsoft-eventlog-mindmap` (1,092★)
 - **What:** 270+ EVTX samples mapped to ATT&CK + comprehensive Windows event log reference
@@ -62,18 +69,8 @@ Both shipped through pull requests to `main`; the original agent working branch 
 - **Integration:** Map Sysmon event types to ATT&CK data sources, show "Sysmon Coverage" in sidebar
 - **Effort:** Medium
 
-### 7. Sentinel ATT&CK Detection Rules (withdrawn upstream; do not integrate)
-> **Withdrawn upstream (noted 2026-10-21):** the maintainer removed every rule from
-> `edoardogerosa/sentinel-attack` on 2024-11-28 ("Cleaned up deprecated components"); the
-> repository now holds a handful of non-rule files, so there is nothing to import. The app's
-> source registry lists it as withdrawn upstream (`sentinel-attack-tree` in
-> `src/app/services/source-inventory.ts`) and `sentinel-rules.service.ts` makes no request.
-> The recommendation below is kept as written for the record.
-
-- **Repo:** `edoardogerosa/sentinel-attack` (1,081★)
-- **What:** Azure Sentinel hunting queries and workbooks mapped to ATT&CK
-- **Integration:** Import Sentinel detection rule counts into existing M365/Sentinel integration
-- **Effort:** Low — extends existing `m365-defender.service.ts`
+> Item 7 of the April 2026 survey (`edoardogerosa/sentinel-attack`) is no longer a candidate:
+> the repository was withdrawn upstream. See [Withdrawn upstream](#withdrawn-upstream-not-candidates) below.
 
 ### 8. ThreatHunter Playbook
 - **Repo:** `OTRF/ThreatHunter-Playbook` (4,527★)
@@ -153,6 +150,20 @@ Both shipped through pull requests to `main`; the original agent working branch 
 
 ---
 
+## Withdrawn upstream (not candidates)
+
+### Sentinel ATT&CK Detection Rules (`edoardogerosa/sentinel-attack`)
+
+Do not integrate. The maintainer removed every rule from the repository on 2024-11-28
+("Cleaned up deprecated components"); it now holds a handful of non-rule files, so there is
+nothing to import. The April 2026 survey (1,081 stars then) listed it in P1 as a low-effort
+import of Sentinel rule counts; that recommendation is withdrawn. The app's source registry
+lists the source as withdrawn upstream (`sentinel-attack-tree` in
+`src/app/services/source-inventory.ts`, status `archived-upstream`), `sentinel-rules.service.ts`
+makes no request, and the technique drawer has no Sentinel section.
+
+---
+
 ## Author Repo Summary
 
 | Author/Org | Public Repos | Relevant Repos | Highlights |
@@ -177,4 +188,4 @@ Both shipped through pull requests to `main`; the original agent working branch 
 | **ebranca** | 2 | 1 | owasp-pysec (stale) |
 
 **Total repos scanned:** 200+ across 18 accounts
-**Integration candidates identified:** 32 repos across 4 priority tiers
+**Integration candidates identified:** 32 repos across 4 priority tiers (April 2026; `edoardogerosa/sentinel-attack` has since been withdrawn upstream and is no longer one)

@@ -498,7 +498,7 @@ The files are envsubst templates: replace `${PROXY_UPSTREAM}`, `${NGINX_RESOLVER
 |--------|----------|
 | `'self'` | bundled snapshots and the `/api/` proxy route |
 | `https://raw.githubusercontent.com` | ATT&CK STIX bundles, MITRE Engage, CAPEC, Sigma, Atomic Red Team, KEV mirror and other GitHub-hosted data |
-| `https://api.github.com` | GitHub API listings (Elastic, Splunk, changelog) |
+| `https://api.github.com` | GitHub API listings: ATT&CK releases (changelog), CTID KEV mappings, and the tree listings that remain (M365 hunting queries, PoC index, Nuclei, PayloadsAllTheThings, EVTX samples, Cyb3r-Monk hunts). Elastic, Splunk and mdecrevoisier Sigma read the bundled rule-coverage snapshot and make no request here |
 | `https://gitlab.com` | Exploit-DB index |
 | `https://api.first.org` | EPSS scores |
 | `https://services.nvd.nist.gov` | NVD CVE lookups |
