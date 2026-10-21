@@ -8,8 +8,9 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, mkdtempSync, mkdirSync, writeFileSync, cpSync, rmSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import {
@@ -30,6 +31,30 @@ test('the repository passes the contract check', () => {
 test('the CLI exits 0 on this repository', () => {
   const r = spawnSync(process.execPath, [SCRIPT], { encoding: 'utf8' });
   assert.equal(r.status, 0, r.stderr);
+});
+
+test('the CLI process exits non-zero on every invalid-corpus file (promoted to the fixture)', () => {
+  // Each negative, put where the valid fixture belongs, must fail the CLI end-to-end:
+  // the schema, PROVENANCE and the real negative corpus are copied unchanged, so the
+  // only thing that can make the process exit non-zero is the invalid fixture itself.
+  const invalid = readdirSync(join(ROOT, INVALID_DIR)).filter(f => f.endsWith('.json')).sort();
+  assert.ok(invalid.length >= 4);
+  for (const file of invalid) {
+    const root = mkdtempSync(join(tmpdir(), 'lylat-contract-'));
+    try {
+      mkdirSync(join(root, 'docs', 'contracts'), { recursive: true });
+      mkdirSync(join(root, 'src', 'testing', 'fixtures', 'lylat'), { recursive: true });
+      cpSync(join(ROOT, SCHEMA_PATH), join(root, SCHEMA_PATH));
+      cpSync(join(ROOT, PROVENANCE_PATH), join(root, PROVENANCE_PATH));
+      cpSync(join(ROOT, INVALID_DIR), join(root, INVALID_DIR), { recursive: true });
+      // the invalid file now stands in for the valid fixture the CLI expects to pass
+      writeFileSync(join(root, FIXTURE_PATH), readFileSync(join(ROOT, INVALID_DIR, file)));
+      const r = spawnSync(process.execPath, [SCRIPT, '--root', root], { encoding: 'utf8' });
+      assert.notEqual(r.status, 0, `CLI should reject ${file} as the fixture, but exited 0`);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  }
 });
 
 test('the pinned hash in PROVENANCE matches the schema', () => {

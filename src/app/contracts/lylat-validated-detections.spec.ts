@@ -20,8 +20,11 @@ import INVALID_HOSTNAME from '../../testing/fixtures/lylat/invalid/hostname.json
 import INVALID_BAD_ENUM from '../../testing/fixtures/lylat/invalid/bad-enum.json';
 import INVALID_IP from '../../testing/fixtures/lylat/invalid/ip-evidence.json';
 import INVALID_MISSING_BUILD from '../../testing/fixtures/lylat/invalid/missing-build-ref.json';
+import INVALID_EXTRA_REF from '../../testing/fixtures/lylat/invalid/extra-key-technique-ref.json';
+import INVALID_AT_SIGN from '../../testing/fixtures/lylat/invalid/at-sign-evidence.json';
 
 const IDENTITY = (id: string) => id;
+const KNOWS_ALL = () => true;
 
 /** A single-row export built around `ref`, otherwise valid and privacy-clean. */
 function oneRow(ref: { domain: string; id: string; attack_version: string }): LylatExportV1 {
@@ -45,8 +48,8 @@ function oneRow(ref: { domain: string; id: string; attack_version: string }): Ly
 }
 
 function allRuns(e: LylatExportV1) {
-  const { bySource, skipped } = lylatRowsToRuns(e, IDENTITY, '19.2');
-  return { runs: [...bySource.values()].flat(), bySource, skipped };
+  const { bySource, skipped } = lylatRowsToRuns(e, IDENTITY, 'enterprise', '19.2', KNOWS_ALL);
+  return { runs: [...bySource.values()].flat().map((t) => t.run), bySource, skipped };
 }
 
 describe('Lylat validated-detections contract (P2-20)', () => {
@@ -91,6 +94,31 @@ describe('Lylat validated-detections contract (P2-20)', () => {
     expect(skipped[0].reason).toContain('does not resolve');
   });
 
+  // AC2 (domain existence): a well-formed id that parses but is not a technique
+  // of the loaded domain (a retired or future id) is skipped at import, never
+  // stored as a run for a technique the matrix has no cell for.
+  it('skips a well-formed id that is not a technique of the loaded domain', () => {
+    const e = oneRow({ domain: 'enterprise', id: 'T9999.999', attack_version: '19.2' });
+    expect(validateLylatExport(e).ok).toBeTrue(); // well-formed per the schema
+    const known = new Set(['T1059.001']); // T9999.999 is not a technique of the domain
+    const { bySource, skipped } = lylatRowsToRuns(e, IDENTITY, 'enterprise', '19.2', (id) => known.has(id));
+    expect(bySource.size).toBe(0);
+    expect(skipped.length).toBe(1);
+    expect(skipped[0].reason).toContain('not a technique of the loaded');
+  });
+
+  // AC3 (version): an imported run is keyed with the LOADED domain version, exactly
+  // like a manual run, regardless of the version the row names; the row's version
+  // is kept only as provenance on the outcome.
+  it('keys with the loaded domain version and keeps the row version as provenance', () => {
+    const e = oneRow({ domain: 'enterprise', id: 'T1059.001', attack_version: '18.0' });
+    const { bySource } = lylatRowsToRuns(e, IDENTITY, 'enterprise', '19.2', KNOWS_ALL);
+    const run = [...bySource.values()].flat()[0].run;
+    expect(run.techniqueRef).toBe('attack/enterprise/T1059.001@19.2'); // loaded 19.2, not the row's 18.0
+    expect(run.attackVersion).toBe('19.2');
+    expect(run.outcomes[0].sourceAttackVersion).toBe('18.0');
+  });
+
   // AC5: an ATLAS technique has no ATT&CK domain in Navi today, so its row is skipped.
   it('skips an ATLAS row', () => {
     const e = oneRow({ domain: 'atlas', id: 'AML.T0051', attack_version: '19.2' });
@@ -130,7 +158,7 @@ describe('Lylat validated-detections contract (P2-20)', () => {
   // in parity with the CI schema check that runs the same corpus.
   it('accepts the fixture and rejects every invalid-corpus file (parity with CI)', () => {
     expect(validateLylatExport(FIXTURE).ok).toBeTrue();
-    for (const bad of [INVALID_HOSTNAME, INVALID_BAD_ENUM, INVALID_IP, INVALID_MISSING_BUILD]) {
+    for (const bad of [INVALID_HOSTNAME, INVALID_BAD_ENUM, INVALID_IP, INVALID_MISSING_BUILD, INVALID_EXTRA_REF, INVALID_AT_SIGN]) {
       expect(validateLylatExport(bad).ok).toBeFalse();
     }
   });

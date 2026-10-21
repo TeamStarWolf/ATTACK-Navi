@@ -477,4 +477,74 @@ describe('PostureService (P2-05, E2.1-c)', () => {
       expect(threatProfile.weight(used!.id)).toBe(1);
     });
   });
+
+  // Range-import posture (P2-20, E2.5-a): importRangeContract must drive the same
+  // reactive signals a manual record() drives, and the posture layer counts one
+  // state per distinct technique (the per-tactic repetition is a matrix concern).
+  describe('range import (P2-20)', () => {
+    const LYLAT_IDS = ['T1558.003', 'T1087.002', 'T1078.002', 'T1059.001', 'T1003.001', 'T1021.002'];
+    let validation: ValidationService;
+
+    /** Boot PostureService over a tiny Enterprise domain of the fixture's techniques. */
+    function bootRange(today: Date): void {
+      resetBrowserState();
+      domain = tinyDomain('ent', '19.2', LYLAT_IDS);
+      TestBed.configureTestingModule({
+        providers: [
+          provideHttpClient(withXhr()), provideHttpClientTesting(),
+          ...signalStubProviders(),
+          { provide: POSTURE_TODAY, useValue: signal(today) },
+        ],
+      });
+      load(domain, 'enterprise');
+      validation = TestBed.inject(ValidationService);
+      posture = TestBed.inject(PostureService);
+    }
+
+    /** A valid contract over the given techniques, each validated `ageDays` before `today`. */
+    function contractFor(today: Date, rows: readonly { id: string; ageDays: number }[]): string {
+      const dateOf = (ageDays: number) => new Date(today.getTime() - ageDays * 86_400_000).toISOString().slice(0, 10);
+      return JSON.stringify({
+        schema: 'lylat-validated-detections/1', range_build_ref: 'a1b2c3d', generated_at: today.toISOString(),
+        rows: rows.map((r, i) => ({
+          mission_id: 'SYNTH-MISSION-A',
+          technique_ref: { domain: 'enterprise', id: r.id, attack_version: '19.2' },
+          detection_ref: `wazuh:${990001 + i}`, coverage_state: 'validated', outcome: 'alerted',
+          negative_control: 'detection-only', validated_at: dateOf(r.ageDays), evidence_ref: `SYNTH-MISSION-A-step${i}`,
+        })),
+      });
+    }
+
+    // Item 1: the Proven lens/posture update in-session, no reload — the import path
+    // emits on the same runs$ a manual record() does, and PostureService tracks it.
+    it('[AC] importRangeContract makes a technique read proven in the same session', () => {
+      const today = new Date('2026-10-21T00:00:00.000Z');
+      bootRange(today);
+      const key = keyOf({ attackId: 'T1059.001' });
+      expect(posture.states().get(key)!.bucket).not.toBe('proven');
+
+      const res = validation.importRangeContract(contractFor(today, LYLAT_IDS.map(id => ({ id, ageDays: 2 }))));
+      expect(res.ok).toBeTrue();
+
+      // Same posture instance — no rebuild/reload. states() recomputed off runs$.
+      const s = posture.states().get(key)!;
+      expect(s.bucket).toBe('proven');
+      expect(s.proofScope).toBe('range');
+    });
+
+    // Items 6/12 [AC]: one posture state per DISTINCT technique (never per tactic),
+    // fresh range proofs are proven and a proof aged past the 90-day range window
+    // is stale — counted under the pinned POSTURE_TODAY.
+    it('[AC] counts distinct range-proof techniques: five proven (fresh), one stale (aged)', () => {
+      const today = new Date('2026-10-21T00:00:00.000Z');
+      bootRange(today);
+      const ages = LYLAT_IDS.map((id, i) => ({ id, ageDays: i === 0 ? 120 : 10 })); // one past the 90-day window
+      expect(validation.importRangeContract(contractFor(today, ages)).ok).toBeTrue();
+
+      const rangeStates = [...posture.states().values()].filter(s => s.proofScope === 'range');
+      expect(rangeStates.length).toBe(6); // one per distinct technique
+      expect(rangeStates.filter(s => s.bucket === 'proven').length).toBe(5);
+      expect(rangeStates.filter(s => s.bucket === 'stale').length).toBe(1);
+    });
+  });
 });

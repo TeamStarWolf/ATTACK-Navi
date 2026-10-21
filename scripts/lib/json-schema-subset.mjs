@@ -43,7 +43,9 @@ function validateDate(value) {
 }
 
 function validateDateTime(value) {
-  return DATE_TIME.test(value) && !Number.isNaN(Date.parse(value));
+  // Round-trip the calendar date in the leading YYYY-MM-DD so an impossible day
+  // (e.g. 2026-02-30T..) is refused, not silently rolled over by Date.parse.
+  return DATE_TIME.test(value) && validateDate(value.slice(0, 10)) && !Number.isNaN(Date.parse(value));
 }
 
 function check(schema, value, path, root, errors) {

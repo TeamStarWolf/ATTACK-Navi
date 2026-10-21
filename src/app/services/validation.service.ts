@@ -70,6 +70,7 @@ export interface ValidationOutcome {
   readonly coverageState?: 'validated' | 'telemetry-observed' | 'detection-authored' | 'deployed';
   readonly negativeControl?: 'blocked-on-hardened' | 'detection-only' | 'not-reproducible';
   readonly evidenceRef?: string;        // opaque; never a URL (evidenceLinks stays URLs)
+  readonly sourceAttackVersion?: string; // the ATT&CK version the source named for this row; provenance only, never the run key (R6 §3)
 }
 
 /** A run in the v2 store: the v1 fields plus the storage envelope (§2.3) and the proof fields. */
@@ -181,6 +182,7 @@ function sanitizeOutcome(x: unknown): ValidationOutcome | null {
   if (oneOf(COVERAGE_STATES, x['coverageState'])) o.coverageState = x['coverageState'];
   if (oneOf(NEGATIVE_CONTROLS, x['negativeControl'])) o.negativeControl = x['negativeControl'];
   if (typeof x['evidenceRef'] === 'string') o.evidenceRef = x['evidenceRef'];
+  if (typeof x['sourceAttackVersion'] === 'string') o.sourceAttackVersion = x['sourceAttackVersion'];
   return o;
 }
 
@@ -655,11 +657,17 @@ export class ValidationService {
   /**
    * Load a Lylat `lylat-validated-detections/1` file (P2-20). The text is parsed,
    * validated against the contract (structure, enums, patterns and the privacy
-   * regex — a hit refuses the whole file, nothing reaches the store), then each
-   * row is resolved and keyed at import, grouped by its `lylat-range:<mission>`
-   * source and replaced source-by-source. Atlas rows and rows whose technique
-   * does not resolve in the loaded domain land in `dropped` with a reason. The
-   * file never travels through a URL; callers pass the text they read.
+   * regex — a hit refuses the whole file, nothing reaches the store), then every
+   * row is resolved and keyed at import to the LOADED domain (so an imported run
+   * keys exactly like a manual run), grouped by its `lylat-range:<mission>`
+   * source, and committed in a SINGLE atomic merge that replaces each mission's
+   * source. One `runs$` emission results, so every reactive reader (the Proven
+   * lens, PostureService) updates in-session without a reload.
+   *
+   * Atlas rows, rows whose technique does not resolve, and rows whose technique
+   * is not in the loaded domain land in `dropped` — each against its EXPORT row
+   * index, so the reader can find the row. The file never travels through a URL;
+   * callers pass the text they read.
    */
   importRangeContract(text: string): ImportResult {
     let parsed: unknown;
@@ -678,20 +686,31 @@ export class ValidationService {
       return { ok: false, bySource: {}, dropped: [], error: `Invalid range results file: ${shown}${more}` };
     }
     const resolve = (id: string) => this.resolver.resolve(id);
-    const domainVersion = this.loaded()?.version ?? '';
-    const { bySource, skipped } = lylatRowsToRuns(v.value, resolve, domainVersion);
-    const result: ImportResult = { ok: true, bySource: {}, dropped: [...skipped] };
-    for (const [source, runs] of bySource) {
-      const r = this.importRows(runs, source);
-      if (!r.ok) {
-        result.ok = false;
-        if (r.error) result.error = r.error;
+    const loaded = this.loaded();
+    const domainId = loaded ? loaded.id : this.data.getCurrentAttackDomain();
+    const domainVersion = loaded?.version ?? '';
+    // The loaded domain's technique ids (resolved), so a well-formed id that names
+    // no technique of this domain is skipped. A bundle that lists no techniques
+    // (never the real app) does not gate — keeps the pure validator the authority.
+    const current = this.data.getCurrentDomain() as { techniques?: { attackId: string }[] } | null;
+    const known = new Set((current?.techniques ?? []).map(t => resolve(t.attackId)));
+    const isKnown = (id: string) => known.size === 0 || known.has(id);
+
+    const { bySource, skipped } = lylatRowsToRuns(v.value, resolve, domainId, domainVersion, isKnown);
+    const dropped: ImportResult['dropped'] = [...skipped];
+    // Sanitise every mapped run (tracking its export row for any drop), then
+    // commit all missions at once: one store write, one emission (atomic).
+    const groups = new Map<SourceId, { row: number; run: ValidationRunV2 }[]>();
+    for (const [source, tagged] of bySource) {
+      const group: { row: number; run: ValidationRunV2 }[] = [];
+      for (const { row, run } of tagged) {
+        const r = sanitizeRun(run, source);
+        if ('reason' in r) dropped.push({ row, reason: r.reason });
+        else group.push({ row, run: r.run });
       }
-      for (const [s, counts] of Object.entries(r.bySource)) result.bySource[s] = counts;
-      result.dropped.push(...r.dropped);
+      if (group.length > 0) groups.set(source, group);
     }
-    result.dropped.sort((a, b) => a.row - b.row);
-    return result;
+    return this.merge(groups, dropped);
   }
 
   /** Apply grouped rows: 'manual' upserts by id, every other source replaces itself. One commit. */

@@ -58,11 +58,18 @@ test.describe('acceptance journeys (plan Appendix C)', () => {
     await page.locator('#vp-import-range').setInputFiles(org.rangeContract.fixture);
     await expect(page.locator('.vp-import-msg')).toContainText(`lylat-range:${org.rangeContract.mission}`);
 
-    // 2. The proven lens lights exactly six range-validated cells, each with the lab badge.
+    // 2. The proven lens lights the six range-validated TECHNIQUES, each with the lab
+    //    badge. A technique that sits in several tactics renders one cell per tactic,
+    //    so assert the DISTINCT technique ids under a lab badge cover exactly the
+    //    fixture's six ids — a raw cell count would over-count the multi-tactic ones.
     await page.goto(`${BASE}/#/matrix?heat=proven`);
     await expect(page).toHaveURL(/#\/matrix\?.*heat=proven/);
     await expect(page.locator('.matrix-wrapper')).toBeVisible({ timeout: ROUTE_TIMEOUT });
-    await expect(page.locator('.proof-lab-badge')).toHaveCount(org.rangeContract.techniqueCount);
+    await expect(page.locator('.proof-lab-badge').first()).toBeVisible();
+    const fixtureIds = [...new Set(loadRangeFixture(org).rows.map((r) => r.technique_ref.id))].sort();
+    const badgedIds = await page.$$eval('[data-tech-id]:has(.proof-lab-badge)', (els) =>
+      [...new Set(els.map((e) => e.getAttribute('data-tech-id')))].sort());
+    expect(badgedIds).toEqual(fixtureIds);
 
     // 4. The T1558.003 drawer lists the two range-validated rule ids.
     await page.goto(`${BASE}/#/matrix?heat=proven&tech=T1558.003`);

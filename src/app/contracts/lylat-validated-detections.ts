@@ -76,11 +76,13 @@ const PAT = {
 } as const;
 
 /**
- * The privacy regex (producer validate.py parity): a hit on a path separator,
- * `@`, any whitespace, or a dotted-quad IP. Run ONLY over the three free-id
- * fields — detection_ref, evidence_ref and mission_id — which are the only places
- * a capture could leak a host, path, user or address; every other field is
- * pattern- or format-locked, so it cannot carry one.
+ * The privacy regex (the producer's import-time privacy scan, mirrored here): a
+ * hit on a path separator, `@`, any whitespace, or a dotted-quad IP. Run ONLY
+ * over the three free-id fields — detection_ref, evidence_ref and mission_id.
+ * Those three are already pattern-locked by the schema; the regex is a second,
+ * defence-in-depth sweep over exactly the fields whose patterns still admit a
+ * character that could encode a host, path, user or address. Every other field
+ * is enum- or format-locked to a shape that cannot carry one.
  */
 export const LYLAT_PRIVACY_RE = /[/\\@\s]|[0-9]{1,3}(\.[0-9]{1,3}){3}/;
 const PRIVACY_FIELDS = ['detection_ref', 'evidence_ref', 'mission_id'] as const;
@@ -97,7 +99,9 @@ function isValidDateOnly(s: string): boolean {
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
 }
 function isValidDateTime(s: string): boolean {
-  return PAT.dateTime.test(s) && !Number.isNaN(Date.parse(s));
+  // Round-trip the calendar date in the leading YYYY-MM-DD so an impossible day
+  // (e.g. 2026-02-30T..) is refused, not silently rolled over by Date.parse.
+  return PAT.dateTime.test(s) && isValidDateOnly(s.slice(0, 10)) && !Number.isNaN(Date.parse(s));
 }
 
 const ROW_KEYS = ['mission_id', 'technique_ref', 'detection_ref', 'coverage_state', 'outcome', 'negative_control', 'validated_at', 'evidence_ref'];
@@ -183,8 +187,12 @@ export function statusForRow(row: LylatRowV1): ValidationStatus {
 }
 
 export interface LylatMapResult {
-  /** Runs grouped by their v2 source (`lylat-range:<mission_id>`), one group per mission. */
-  readonly bySource: Map<`lylat-range:${string}`, ValidationRunV2[]>;
+  /**
+   * Runs grouped by their v2 source (`lylat-range:<mission_id>`), one group per
+   * mission; each run is tagged with its EXPORT row index so a later drop
+   * (sanitise, id conflict) is reported against the row the reader sees.
+   */
+  readonly bySource: Map<`lylat-range:${string}`, { readonly row: number; readonly run: ValidationRunV2 }[]>;
   /** Rows not mapped (e.g. an atlas technique with no Navi domain), with the reason. */
   readonly skipped: { readonly row: number; readonly reason: string }[];
 }
@@ -193,24 +201,34 @@ export interface LylatMapResult {
  * Map a validated export to v2 runs grouped by mission source. Status is SET here
  * (ValidationService.importRows stores it under a `lylat-range:` source, which
  * forces proofScope 'range' and statusFromSource true, so update() never
- * recomputes it). Each row's technique is RESOLVED and KEYED at import through the
- * same refForTechnique/techniqueRefKey a manual run uses (keyed by the row's own
- * domain + attack_version), so an imported run is indistinguishable from a manual
- * run in key shape; version mismatches are reconciled at read time, not dropped
- * (R6 §3). `resolve` maps a retired id to its live one; `domainVersion` is the
- * loaded bundle's version, a fallback when the row omits a usable one. Rows are
- * skipped (with a reason) when the technique is atlas (no Navi domain today) or
- * does not resolve to a parseable technique ref.
+ * recomputes it).
  *
- * This builds plain v2-shaped objects; ValidationService.importRows re-sanitises
- * them through the same allowlist, so a field this misses is dropped, not trusted.
+ * Each row's technique is RESOLVED and KEYED at import through the SAME
+ * refForTechnique/techniqueRefKey the manual-run path (ValidationService.keyFor)
+ * uses, with the SAME `domainId` and `domainVersion` — the loaded bundle's, not
+ * the row's. So an imported run's key is byte-identical to a manual run of that
+ * technique (R6 §3), and the matcher (which ignores version) lines them up. The
+ * row's own `attack_version` is kept as provenance on the outcome
+ * (`sourceAttackVersion`), never used for the key.
+ *
+ * A row is skipped (with a reason, carrying its EXPORT row index) when:
+ *   - its domain is `atlas` (no ATT&CK domain in Navi today);
+ *   - its id does not resolve to a parseable technique ref in `domainId`;
+ *   - `isKnown(id)` is false — the resolved id is well-formed but is not a
+ *     technique of the loaded domain (e.g. a retired or future id). Manual runs
+ *     only ever name a loaded-domain technique, so an imported run must too.
+ *
+ * This builds plain v2-shaped objects; ValidationService re-sanitises them
+ * through the same allowlist, so a field this misses is dropped, not trusted.
  */
 export function lylatRowsToRuns(
   e: LylatExportV1,
   resolve: (id: string) => string,
+  domainId: AttackDomain,
   domainVersion: string,
+  isKnown: (attackId: string) => boolean,
 ): LylatMapResult {
-  const bySource = new Map<`lylat-range:${string}`, ValidationRunV2[]>();
+  const bySource = new Map<`lylat-range:${string}`, { row: number; run: ValidationRunV2 }[]>();
   const skipped: { row: number; reason: string }[] = [];
 
   e.rows.forEach((row, i) => {
@@ -220,10 +238,13 @@ export function lylatRowsToRuns(
     }
     const source = `lylat-range:${row.mission_id}` as const;
     const techniqueId = resolve(row.technique_ref.id);
-    const version = row.technique_ref.attack_version || domainVersion || 'unknown';
-    const refKey = techniqueRefKey(refForTechnique({ attackId: techniqueId }, row.technique_ref.domain as AttackDomain, version));
+    const refKey = techniqueRefKey(refForTechnique({ attackId: techniqueId }, domainId, domainVersion));
     if (parseTechniqueRef(refKey) === null) {
-      skipped.push({ row: i, reason: `technique ${row.technique_ref.id} does not resolve to a known technique ref (${row.technique_ref.domain})` });
+      skipped.push({ row: i, reason: `technique ${row.technique_ref.id} does not resolve to a known technique ref (${domainId})` });
+      return;
+    }
+    if (!isKnown(techniqueId)) {
+      skipped.push({ row: i, reason: `technique ${techniqueId} is not a technique of the loaded ${domainId} domain` });
       return;
     }
     const fired = row.outcome === 'alerted' || row.outcome === 'blocked';
@@ -233,6 +254,7 @@ export function lylatRowsToRuns(
       coverageState: row.coverage_state,
       negativeControl: row.negative_control,
       evidenceRef: row.evidence_ref,
+      sourceAttackVersion: row.technique_ref.attack_version,
     };
     const run: ValidationRunV2 = {
       id: `lylat:${row.mission_id}:${i}`,
@@ -252,9 +274,10 @@ export function lylatRowsToRuns(
       evidenceLinks: [],
       notes: '',
       status: statusForRow(row),
-      // v2 envelope + proof fields (importRows re-derives source/proofScope/statusFromSource):
-      domain: row.technique_ref.domain,
-      attackVersion: version,
+      // v2 envelope + proof fields keyed to the LOADED domain (importRows
+      // re-derives source/proofScope/statusFromSource):
+      domain: domainId,
+      attackVersion: domainVersion,
       source,
       createdAt: e.generated_at,
       updatedAt: e.generated_at,
@@ -265,7 +288,7 @@ export function lylatRowsToRuns(
       missionId: row.mission_id,
     };
     const group = bySource.get(source) ?? [];
-    group.push(run);
+    group.push({ row: i, run });
     bySource.set(source, group);
   });
 

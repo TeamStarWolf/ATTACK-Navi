@@ -38,10 +38,12 @@ const STATUS_LABEL: Record<ValidationStatus, string> = {
             {{ latest.detectionsFired.length }} of {{ latest.detectionsExpected.length }} detection rules fired
           </span>
         </div>
-        @if (labRuleRefs.length) {
+        @if (labProofRecords.length) {
           <div class="vsp-row vsp-rules">
             range-run rules:
-            @for (ref of labRuleRefs; track ref) { <code class="vsp-rule">{{ ref }}</code> }
+            @for (rec of labProofRecords; track rec.ref) {
+              <code class="vsp-rule">{{ rec.ref }} <span class="vsp-rule-date">{{ rec.date | date:'mediumDate' }}</span></code>
+            }
           </div>
         }
         <div class="vsp-row vsp-when">
@@ -101,6 +103,7 @@ const STATUS_LABEL: Record<ValidationStatus, string> = {
       padding: 1px 5px; border-radius: 3px;
       background: rgba(16,185,129,0.08); color: #10b981;
     }
+    .vsp-rule-date { color: var(--text-muted, #8b93a7); font-weight: 400; }
     .vsp-empty {
       display: flex; align-items: center; gap: 8px;
       font-size: 12px; color: var(--text-muted, #8b93a7); margin: 0;
@@ -164,16 +167,24 @@ export class ValidationStatusPillComponent implements OnInit, OnChanges, OnDestr
     return this.latest?.proofScope === 'range' && (this.latest.status === 'passed' || this.latest.status === 'partial');
   }
 
-  /** The detection rule ids seen in a range run, newest first, de-duplicated. */
-  get labRuleRefs(): string[] {
-    const seen = new Set<string>();
+  /**
+   * The range-run detection records — each detection ref with the date it was
+   * validated — newest first, one entry per ref (keeping its newest date). Each
+   * entry is data-bound (ref + date), so the lint reads it as evidence, not a claim.
+   */
+  get labProofRecords(): { ref: string; date: string }[] {
+    const newest = new Map<string, string>();
     for (const run of this.allRuns) {
       if (run.proofScope !== 'range') continue;
       for (const o of run.outcomes ?? []) {
-        if (o.detectionRef) seen.add(o.detectionRef);
+        if (!o.detectionRef) continue;
+        const prev = newest.get(o.detectionRef);
+        if (prev === undefined || run.runDate > prev) newest.set(o.detectionRef, run.runDate);
       }
     }
-    return [...seen];
+    return [...newest.entries()]
+      .map(([ref, date]) => ({ ref, date }))
+      .sort((a, b) => (a.date === b.date ? a.ref.localeCompare(b.ref) : a.date < b.date ? 1 : -1));
   }
 
   openValidationPanel(): void {

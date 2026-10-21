@@ -1,0 +1,17 @@
+{
+  "schema": "lylat-validated-detections/1",
+  "range_build_ref": "a1b2c3d4e5f6",
+  "generated_at": "2026-10-18T14:30:00Z",
+  "rows": [
+    {
+      "mission_id": "SYNTH-MISSION-A",
+      "technique_ref": { "domain": "enterprise", "id": "T1558.003", "attack_version": "19.2" },
+      "detection_ref": "wazuh:990001",
+      "coverage_state": "validated",
+      "outcome": "alerted",
+      "negative_control": "detection-only",
+      "validated_at": "2026-10-18",
+      "evidence_ref": "svc@host-account"
+    }
+  ]
+}

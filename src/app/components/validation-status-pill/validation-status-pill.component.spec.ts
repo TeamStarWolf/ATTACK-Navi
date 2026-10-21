@@ -58,27 +58,34 @@ describe('ValidationStatusPillComponent', () => {
     expect(component.statusLabel('partial')).toBe('PARTIAL');
   });
 
-  function rangeRun(detectionRef: string): any {
+  function rangeRun(detectionRef: string, runDate = '2026-10-18'): any {
     return {
-      id: 'lylat:SYNTH-MISSION-A:0', techniqueId: 'T1558.003', status: 'passed',
-      detectionsExpected: [detectionRef], detectionsFired: [detectionRef], runDate: '2026-10-18',
+      id: `lylat:SYNTH-MISSION-A:${detectionRef}`, techniqueId: 'T1558.003', status: 'passed',
+      detectionsExpected: [detectionRef], detectionsFired: [detectionRef], runDate,
       proofScope: 'range', source: 'lylat-range:SYNTH-MISSION-A', statusFromSource: true,
       outcomes: [{ detectionRef, outcome: 'alerted', coverageState: 'validated' }],
     };
   }
 
-  it('marks a range-scoped run with the lab badge and lists its rule ids', () => {
-    const runs = [rangeRun('wazuh:990001'), rangeRun('wazuh:990002')];
+  it('marks a range-scoped run with the lab badge and lists each proof record with its date, newest first', () => {
+    // Deliberately out of order: the older run is listed first in the input.
+    const runs = [rangeRun('wazuh:990001', '2026-10-18'), rangeRun('wazuh:990002', '2026-10-20')];
     validation.forTechnique.and.returnValue(runs);
-    validation.latestFor.and.returnValue(runs[0]);
+    validation.latestFor.and.returnValue(runs[1]);
     component.attackId = 'T1558.003';
     fixture.detectChanges();
 
     expect(component.labRange).toBeTrue();
-    expect(component.labRuleRefs).toEqual(['wazuh:990001', 'wazuh:990002']);
+    // Each entry is a record (ref + the date it was validated), newest first.
+    expect(component.labProofRecords).toEqual([
+      { ref: 'wazuh:990002', date: '2026-10-20' },
+      { ref: 'wazuh:990001', date: '2026-10-18' },
+    ]);
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(text).toContain('lab');
     expect(text).toContain('wazuh:990001');
+    expect(text).toContain('wazuh:990002');
+    expect(text).toContain('Oct 20, 2026'); // the date renders beside the ref
   });
 
   it('does not show the lab badge for an own-run manual record', () => {
@@ -89,7 +96,7 @@ describe('ValidationStatusPillComponent', () => {
     fixture.detectChanges();
 
     expect(component.labRange).toBeFalse();
-    expect(component.labRuleRefs).toEqual([]);
+    expect(component.labProofRecords).toEqual([]);
     expect((fixture.nativeElement as HTMLElement).textContent ?? '').not.toContain('range-run rules');
   });
 });
