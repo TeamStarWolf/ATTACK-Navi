@@ -212,7 +212,7 @@ describe('ThreatProfilePickerComponent', () => {
     expect(toggleThreatGroup).toHaveBeenCalledTimes(1);
   });
 
-  it('the sector aid table matches the wizard verbatim', () => {
+  it('the sector aid table matches the expected sector fixture', () => {
     fixture.detectChanges();
     expect(component.sectors).toEqual(EXPECTED_SECTORS);
   });
