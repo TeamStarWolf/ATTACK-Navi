@@ -6,8 +6,7 @@ import { ImplStatus, IMPL_STATUS_LABELS } from './implementation.service';
 import { CustomMitigation } from './custom-mitigation.service';
 import { CoverageSnapshot, snapshotBasisLabel } from './timeline.service';
 import type { Technique } from '../models/technique';
-import { type ImplView, implView } from './posture-adapters';
-import { DEFAULT_POSTURE_RULES } from '../models/posture/derive-posture';
+import type { ImplView } from './posture-adapters';
 import { statusStop, statusStopLabel } from '../models/posture/lens-ramps';
 
 type XLSX = typeof import('xlsx-js-style');
@@ -21,14 +20,12 @@ export class XlsxExportService {
     customMitigations: CustomMitigation[],
     snapshots: CoverageSnapshot[],
     /**
-     * The guarded per-technique view (PostureService.implViewFor, P2-14). The
-     * default applies the default breadth threshold to the status map alone.
+     * The guarded per-technique view (PostureService.implViewFor, P2-14) the
+     * 'Impl Status (best)' column follows. Required, with no default: a default
+     * would ignore Settings > Posture rules and the technique marks, so every
+     * caller passes PostureService's own view.
      */
-    implViewFor: (t: Technique) => ImplView = (t) =>
-      implView(t, implStatusMap, {
-        mitigationsByTechnique: domain.mitigationsByTechnique ?? new Map(),
-        techniquesByMitigation: domain.techniquesByMitigation ?? new Map(),
-      }, DEFAULT_POSTURE_RULES.mitigationBreadthThreshold, []),
+    implViewFor: (t: Technique) => ImplView,
   ): Promise<void> {
     try {
       const XLSX = await import('xlsx-js-style');

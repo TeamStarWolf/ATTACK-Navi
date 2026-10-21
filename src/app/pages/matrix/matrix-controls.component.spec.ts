@@ -2,7 +2,9 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
-import { MatrixControlsComponent } from './matrix-controls.component';
+import { signal, WritableSignal } from '@angular/core';
+import { IMPL_FILTER_TITLE, MatrixControlsComponent } from './matrix-controls.component';
+import { PostureService } from '../../services/posture.service';
 import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
 import { HttpClient } from '@angular/common/http';
@@ -24,6 +26,8 @@ describe('MatrixControlsComponent', () => {
     activeFile$: BehaviorSubject<string | null>;
     setActive: jasmine.Spy;
   };
+  /** PostureService.implPartialOnly, the only member the impl= tooltip reads (P2-14). */
+  let partialOnly: WritableSignal<{ count: number; via: string[] }>;
   let userLayerStub: {
     activeLayer$: BehaviorSubject<{ id: string; name: string; description: string } | null>;
     activeLayer: { id: string; name: string; description: string } | null;
@@ -31,6 +35,7 @@ describe('MatrixControlsComponent', () => {
   };
 
   beforeEach(() => {
+    partialOnly = signal<{ count: number; via: string[] }>({ count: 0, via: [] });
     libraryStub = {
       manifest$: new BehaviorSubject<{ file: string; name: string; description: string }[]>([]),
       manifestLoaded$: new BehaviorSubject(false),
@@ -75,6 +80,7 @@ describe('MatrixControlsComponent', () => {
         { provide: AttackCveService, useValue: { getMappingForCve: () => null }},
         { provide: LibraryLayerService, useValue: libraryStub },
         { provide: UserLayerService, useValue: userLayerStub },
+        { provide: PostureService, useValue: { implPartialOnly: partialOnly } },
         { provide: ViewpointService, useValue: {
             viewpoint$: new BehaviorSubject({
               id: 'analyst', label: 'Analyst', short: 'Analyst', icon: 'compass',
@@ -364,6 +370,53 @@ describe('MatrixControlsComponent', () => {
         fixture.detectChanges();
         expect(select.value).toBe('macos:unifiedlog');
       });
+    });
+  });
+  describe('impl= tooltip (P2-14, breadth guard)', () => {
+    const implSelect = (): HTMLSelectElement => {
+      const el = Array.from(fixture.nativeElement.querySelectorAll('select.filter-select') as NodeListOf<HTMLSelectElement>)
+        .find((s) => s.title.startsWith('Filter by implementation status'));
+      if (!el) throw new Error('impl= select not rendered');
+      return el;
+    };
+    const setFilter = (v: string | null): void => {
+      (TestBed.inject(FilterService) as any).implStatusFilter$.next(v);
+      fixture.detectChanges();
+    };
+
+    it('says broad mitigations count as partial and that Implemented matches full implementation only', () => {
+      expect(IMPL_FILTER_TITLE).toContain('Broad mitigations count as partial');
+      expect(IMPL_FILTER_TITLE).toContain('matches none of these values');
+      expect(IMPL_FILTER_TITLE).toContain('Implemented matches full implementation only');
+      expect(component.implFilterTitle).toBe(IMPL_FILTER_TITLE);
+      expect(implSelect().title).toBe(IMPL_FILTER_TITLE);
+    });
+
+    it('keeps the base text with no value selected, even while partial-only techniques exist', () => {
+      partialOnly.set({ count: 4, via: ['M1038'] });
+      setFilter(null);
+      expect(component.implFilterTitle).toBe(IMPL_FILTER_TITLE);
+      expect(implSelect().title).toBe(IMPL_FILTER_TITLE);
+    });
+
+    it('keeps the base text with a value selected when no technique is partial only', () => {
+      setFilter('implemented');
+      expect(component.implFilterTitle).toBe(IMPL_FILTER_TITLE);
+    });
+
+    it('names the partial-only techniques and their broad mitigations while a value is selected', () => {
+      partialOnly.set({ count: 79, via: ['M1026', 'M1038'] });
+      setFilter('implemented');
+      const expected = `${IMPL_FILTER_TITLE} Now 79 techniques are implemented, partial via M1026, M1038 and not shown as a match.`;
+      expect(component.implFilterTitle).toBe(expected);
+      expect(implSelect().title).toBe(expected);
+    });
+
+    it('uses the singular for one partial-only technique', () => {
+      partialOnly.set({ count: 1, via: ['M1038'] });
+      setFilter('in-progress');
+      expect(component.implFilterTitle)
+        .toBe(`${IMPL_FILTER_TITLE} Now 1 technique is implemented, partial via M1038 and not shown as a match.`);
     });
   });
 });

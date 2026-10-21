@@ -272,11 +272,10 @@
           "file": "src/app/services/xlsx-export.service.ts",
           "uses": {
             "ImplStatus": 4,
-            "mitigationsByTechnique": 2,
-            "techniquesByMitigation": 3
+            "techniquesByMitigation": 1
           },
           "bucket": "stays",
-          "reason": "XLSX export: Known mitigation-only sheets; the Impl Status (best) column follows implViewFor since P2-14 (Addendum note 4), with a default-threshold implView over the status map when no view is passed. E9.1.",
+          "reason": "XLSX export: Known mitigation-only sheets; the Impl Status (best) column follows the implViewFor every caller must pass (PostureService.implViewFor; ExportActionsService and the dashboard) since P2-14 (Addendum note 4). E9.1.",
           "removedBy": "E9.1 (fold: P2-14 decision, Addendum note 4)"
         }
       ]

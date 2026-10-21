@@ -213,7 +213,7 @@ ATTACK-Navi follows the operating system's light or dark setting (`prefers-color
 
 This palette colors only the **Mitigations mapped** (coverage) lens: `getCoverageColors` is read just by that lens's cell and legend rendering (`matrix.component.ts` `case 'coverage'`, `technique-cell.component.ts`, `legend.component.ts`). Every other lens has its own fixed ramp in `heatmap-modes.ts`, and the default lens is the one labelled **Frequency** (its first-visit banner describes it as adversary prevalence), so changing the theme shows nothing until you switch to the Mitigations mapped lens.
 
-A separate **Colorblind-safe heatmaps** toggle on the same tab replaces every lens's ramp with Viridis (sequential) and Okabe-Ito (status), regardless of the theme chosen.
+A separate **Colorblind-safe heatmaps** toggle on the same tab replaces the other lenses' ramps with Viridis (sequential) and Okabe-Ito (categorical), regardless of the theme chosen. The `status`, `controls`, `covered`, `proven` and `posture` lenses keep their own ramps: those are colorblind-safe by design, so the toggle does not change them.
 
 One caveat: the swatch you click and the ramp the matrix applies are defined in two places and currently disagree. "High Contrast" shows a red-to-green swatch (`#cc0000` to `#003300`, `settings-panel.component.ts`) but applies the Viridis ramp (`#440154` to `#fde725`, `settings.service.ts` and `safe-palette.ts`), the opposite palette; "Blue/Orange" shows `#1d4ed8` to `#92400e` but applies `#1d4ed8, #2563eb, #0ea5e9, #f59e0b, #d97706`; and Default's second step is `#e65100` in the swatch versus `#b45309` applied. A follow-up code change will render the swatches from the same definition the matrix uses, and this note will go when it lands.
 

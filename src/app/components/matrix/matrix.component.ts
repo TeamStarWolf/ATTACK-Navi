@@ -1892,7 +1892,14 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
 
   isSelected(t: Technique): boolean { return this.selectedTechniqueId === t.id; }
 
-  /** The controls lens's stop (P2-14): the technique's guarded control marks in PostureService. */
+  /**
+   * The controls lens's stop (P2-14): the technique's guarded control marks in
+   * PostureService. Test seam only: no template binds it since the controls lens
+   * moved into the registry (the cell renders through the lens's own `project`
+   * and `color`). The lens-snapshot harness (lens-snapshots.spec.ts) reads the
+   * controls score through it and status-lens-guard.spec.ts asserts the partial
+   * stop; delete it with those two callers.
+   */
   getControlStatus(t: Technique): ControlStop {
     return controlStop(this.posture.stateFor(t).covered);
   }

@@ -4,6 +4,9 @@ import { TestBed } from '@angular/core/testing';
 import { BrowserFileService } from './browser-file.service';
 import { ImplementationService } from './implementation.service';
 import { NavigatorLayerService, detectStatusKeyword } from './navigator-layer.service';
+import { type ImplView, implView } from './posture-adapters';
+import type { ImplStatus } from './implementation.service';
+import type { Technique } from '../models/technique';
 
 describe('NavigatorLayerService', () => {
   let service: NavigatorLayerService;
@@ -248,5 +251,63 @@ describe('NavigatorLayerService', () => {
     }), roundTripDomain(), implService, annotationService);
 
     expect(annotationService.setAnnotation).not.toHaveBeenCalled();
+  });
+  // ── Breadth guard (P2-14, Addendum note 4) ─────────────────────────────
+
+  describe('the guarded view (D16): a technique implemented only through a broad mitigation', () => {
+    /** M1038 mapped to 79 techniques (threshold 15 by default); T1078 is also reached by the narrow M1032. */
+    const broadDomain = () => {
+      const tech = (attackId: string) => ({ id: `tech-${attackId}`, attackId, tacticShortnames: ['execution'] });
+      const m1038 = { id: 'mit-1038', attackId: 'M1038' };
+      const m1032 = { id: 'mit-1032', attackId: 'M1032' };
+      const t1059 = tech('T1059');
+      const t1078 = tech('T1078');
+      const all = [t1059, t1078, ...Array.from({ length: 77 }, (_, i) => tech(`T9${String(i + 1).padStart(3, '0')}`))];
+      return {
+        name: 'Enterprise ATT&CK', attackVersion: '19', techniques: all, mitigations: [m1038, m1032],
+        mitigationsByTechnique: new Map(all.map(t => [t.id, t === t1078
+          ? [{ mitigation: m1038 }, { mitigation: m1032 }] : [{ mitigation: m1038 }]])),
+        techniquesByMitigation: new Map([[m1038.id, all], [m1032.id, [t1078]]]),
+      } as any;
+    };
+    const statuses = new Map<string, ImplStatus>([['mit-1038', 'implemented'], ['mit-1032', 'implemented']]);
+    const entry = (layer: { techniques: Array<{ techniqueID: string; comment?: string; color?: string }> }, id: string) =>
+      layer.techniques.find(t => t.techniqueID === id)!;
+    const viewFor = (d: any, threshold: number, marks: Record<string, ImplStatus[]> = {}) =>
+      (t: Technique): ImplView => implView(t, statuses, d, threshold, marks[t.attackId] ?? []);
+
+    it("M1038 implemented, threshold 15: T1059 'Status: implemented, partial via M1038' in #64b5f6; T1078 'Status: implemented'", () => {
+      const d = broadDomain();
+      expect(d.techniquesByMitigation.get('mit-1038').length).toBe(79);
+      for (const layer of [service.buildLayer(d, 'enterprise', statuses), service.buildLayer(d, 'enterprise', statuses, undefined, viewFor(d, 15))]) {
+        expect(entry(layer, 'T1059').comment).toBe('Status: implemented, partial via M1038');
+        expect(entry(layer, 'T1059').color).toBe('#64b5f6');
+        expect(entry(layer, 'T1078').comment).toBe('Status: implemented');
+        expect(entry(layer, 'T1078').color).toBe('#00c853');
+        expect(layer.legendItems).toContain(jasmine.objectContaining({ color: '#64b5f6' }));
+      }
+    });
+
+    it("threshold 100 (Settings > Posture rules) or a technique mark: T1059 'Status: implemented' in #00c853", () => {
+      const d = broadDomain();
+      const raised = service.buildLayer(d, 'enterprise', statuses, undefined, viewFor(d, 100));
+      expect(entry(raised, 'T1059').comment).toBe('Status: implemented');
+      expect(entry(raised, 'T1059').color).toBe('#00c853');
+      const marked = service.buildLayer(d, 'enterprise', statuses, undefined, viewFor(d, 15, { T1059: ['implemented'] }));
+      expect(entry(marked, 'T1059').comment).toBe('Status: implemented');
+      expect(entry(marked, 'T1059').color).toBe('#00c853');
+      expect(entry(marked, 'T9001').comment).toBe('Status: implemented, partial via M1038');
+    });
+
+    it('round-trips the exact statuses and never reads the partial comment as a note or a guessed status', async () => {
+      const d = broadDomain();
+      const annotationService = jasmine.createSpyObj('AnnotationService', ['setAnnotation', 'getAnnotation']);
+      annotationService.getAnnotation.and.returnValue(undefined);
+      const layer = service.buildLayer(d, 'enterprise', statuses);
+      const result = await service.importLayer(JSON.stringify(layer), d, implService, annotationService, { deriveStatusesFromComments: true });
+      expect(implService.setStatus).toHaveBeenCalledWith('mit-1038', 'implemented');
+      expect(result.derivedStatuses).toEqual([]);
+      expect(annotationService.setAnnotation).not.toHaveBeenCalled();
+    });
   });
 });

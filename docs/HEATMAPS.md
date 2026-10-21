@@ -506,7 +506,7 @@ To add a heatmap mode (36 exist today), modify these files in order:
 | **Rung** | `Covered`, qualifier `self-attested` |
 | **Data Source** | `PostureService.stateFor` (the CoveredMarks), through the lens's own `project` and `color` |
 | **Score Computation** | Categorical. 2 when a full mark reaches the technique (an implemented mitigation within the breadth threshold, an implemented control, a confirmation, configured telemetry or a range mark) and no later failed run contradicts it; 1 when only partial marks do (a mitigation or control mapped to more techniques than the threshold, D16), drawn with a dashed outline; 0 otherwise. Planned marks score 0. |
-| **Color Scale** | The blue ordinal ramp shared with the `covered` lens: 0 the surface, 1 the blue mixed 40% toward the surface with the dashed outline, 2 the blue. |
+| **Color Scale** | The blue ordinal ramp shared with the `status` and `controls` lenses: 0 the surface, 1 the blue mixed 40% toward the surface with the dashed outline, 2 the blue. |
 | **Scale Type** | Categorical (ordinal) |
 | **Use Case** | The Covered (self-attested or range) rung on its own, without the proof the Posture lens layers on top. Raising the breadth threshold in Settings > Posture rules turns a broad mitigation's partial cells full here and on the Status lens. |
 
