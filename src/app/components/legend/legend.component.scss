@@ -165,3 +165,31 @@
     color: var(--text-primary);
   }
 }
+
+// Threat gaps overlay (P2-17): the 2 px amber inset outline the cells draw.
+.legend-threat-gaps,
+.legend-threat-gaps-exposure {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+
+.legend-threat-gaps {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  .gap-ring {
+    display: inline-block;
+    flex-shrink: 0;
+    width: 22px;
+    height: 10px;
+    border-radius: 3px;
+    box-shadow: inset 0 0 0 2px #f59e0b;
+  }
+}
+
+:host-context(body.light-mode) .legend-threat-gaps .gap-ring {
+  box-shadow: inset 0 0 0 2px #b45309;
+}

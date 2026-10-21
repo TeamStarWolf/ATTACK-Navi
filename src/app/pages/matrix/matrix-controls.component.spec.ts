@@ -16,6 +16,8 @@ import { UserLayerService } from '../../services/user-layer.service';
 import { HEATMAP_MODES, heatmapModeDef, heatmapShortLabel, lensAvailability, unavailableLenses } from '../../models/heatmap-modes';
 import { NO_OWNER_DATA_LINE } from '../../models/lens-registry';
 import { LensCardService } from '../../services/lens-card.service';
+import { SettingsService } from '../../services/settings.service';
+import { THREAT_GAP_TOGGLE_LABEL } from '../../models/posture/gap';
 
 describe('MatrixControlsComponent', () => {
   let component: MatrixControlsComponent;
@@ -73,9 +75,11 @@ describe('MatrixControlsComponent', () => {
             heatmapMode$: new BehaviorSubject('coverage'),
             sortMode$: new BehaviorSubject('alpha'),
             dimUncovered$: new BehaviorSubject(false),
+            threatGapOverlay$: new BehaviorSubject(false),
             activeThreatGroupIds$: new BehaviorSubject(new Set()),
             setTechniqueQuery: jasmine.createSpy(),
             setHeatmapMode: jasmine.createSpy(),
+            toggleThreatGapOverlay: jasmine.createSpy('toggleThreatGapOverlay'),
         }},
         { provide: DataService, useValue: { domain$: new BehaviorSubject(null), currentDomain$: new BehaviorSubject('enterprise') }},
         { provide: MatrixControlService, useValue: {
@@ -123,6 +127,69 @@ describe('MatrixControlsComponent', () => {
     const svc = TestBed.inject(MatrixControlService) as any;
     component.onGapView();
     expect(svc.requestGapView).toHaveBeenCalled();
+  });
+
+  // P2-17: the legacy Gap view keeps its behaviour under an honest name, and
+  // the two overlay toggles sit with the matrix display toggles (no new menu).
+  describe('My marks and Threat gaps toggles; Unmapped techniques (P2-17)', () => {
+    const menu = (): HTMLElement => {
+      component.toggleViewMenu();
+      fixture.detectChanges();
+      return fixture.nativeElement.querySelector('.views-menu') as HTMLElement;
+    };
+    const matrixGroup = (m: HTMLElement): HTMLElement =>
+      m.querySelector('.my-marks-toggle')!.closest('.view-actions') as HTMLElement;
+
+    beforeEach(() => localStorage.removeItem('mitre-nav-settings-v1'));
+    afterEach(() => localStorage.removeItem('mitre-nav-settings-v1'));
+
+    it("relabels the Gap view entry 'Unmapped techniques (no ATT&CK mitigation)' and keeps its action", () => {
+      const m = menu();
+      const btn = m.querySelector('.unmapped-view-btn') as HTMLButtonElement;
+      expect(btn.textContent!.trim()).toBe('⚠ Unmapped techniques (no ATT&CK mitigation)');
+      expect(m.textContent).not.toContain('Gap view');
+      btn.click();
+      expect((TestBed.inject(MatrixControlService) as any).requestGapView).toHaveBeenCalled();
+    });
+
+    it('puts both toggles in the Matrix display toggles, with their exact labels', () => {
+      const group = matrixGroup(menu());
+      expect(group.querySelector('.threat-gaps-toggle')).not.toBeNull();
+      expect(group.querySelector('.unmapped-view-btn')).not.toBeNull();
+      expect(group.querySelector('.my-marks-toggle')!.textContent!.trim()).toBe('My marks');
+      expect(group.querySelector('.threat-gaps-toggle')!.textContent!.trim()).toBe(THREAT_GAP_TOGGLE_LABEL);
+      expect(group.querySelector('.threat-gaps-toggle')!.textContent!.trim())
+        .toBe('Threat gaps: threat-relevant, posture None, Known only or contradicted');
+    });
+
+    it('Threat gaps toggles the session overlay and reflects it', () => {
+      const filter = TestBed.inject(FilterService) as any;
+      const m = menu();
+      const btn = m.querySelector('.threat-gaps-toggle') as HTMLButtonElement;
+      expect(btn.getAttribute('aria-pressed')).toBe('false');
+      btn.click();
+      expect(filter.toggleThreatGapOverlay).toHaveBeenCalledTimes(1);
+      filter.threatGapOverlay$.next(true);
+      fixture.detectChanges();
+      expect(btn.classList).toContain('active');
+      expect(btn.getAttribute('aria-pressed')).toBe('true');
+    });
+
+    it('My marks flips AppSettings.cellDisplay.myMarks (default on) and keeps the other cell settings', () => {
+      const settings = TestBed.inject(SettingsService);
+      expect(settings.current.cellDisplay.myMarks).toBeTrue();
+      const m = menu();
+      const btn = m.querySelector('.my-marks-toggle') as HTMLButtonElement;
+      expect(btn.getAttribute('aria-pressed')).toBe('true');
+      btn.click();
+      fixture.detectChanges();
+      expect(settings.current.cellDisplay.myMarks).toBeFalse();
+      expect(settings.current.cellDisplay.noteDot).toBeTrue();
+      expect(btn.getAttribute('aria-pressed')).toBe('false');
+      btn.click();
+      fixture.detectChanges();
+      expect(settings.current.cellDisplay.myMarks).toBeTrue();
+    });
   });
 
   it('shows no pinned featured group for the neutral analyst viewpoint', () => {

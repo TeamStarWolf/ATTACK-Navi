@@ -297,3 +297,45 @@
 .ann-green { background: #4ade80; }
 .ann-blue { background: #60a5fa; }
 
+
+// My marks (P2-17, models/posture/gap.ts): a 3 px bar on the left edge of a
+// cell the owner has marked, on every lens. The colour is the bucket's posture
+// ramp token (set as --my-mark-color); partial is dashed and contradicted is
+// hatched, so neither depends on hue alone. It sits over the fill and never
+// changes it.
+.my-mark {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  border-top-left-radius: inherit;
+  border-bottom-left-radius: inherit;
+  background: var(--my-mark-color);
+  pointer-events: none;
+  z-index: 1;
+
+  &[data-bucket='partial'] {
+    background: repeating-linear-gradient(180deg, var(--my-mark-color) 0 4px, transparent 4px 7px);
+  }
+
+  &[data-bucket='contradicted'] {
+    background: repeating-linear-gradient(180deg, var(--my-mark-color) 0 2px, transparent 2px 4px);
+  }
+}
+
+// Threat gaps (P2-17): a 2 px amber inset outline on a threat-relevant
+// technique whose posture is None, Known only or contradicted. An element of
+// its own, so the Posture lens's ::before and ::after patterns still show.
+.threat-gap-outline {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 2px #f59e0b;
+  pointer-events: none;
+  z-index: 1;
+}
+
+:host-context(body.light-mode) .threat-gap-outline {
+  box-shadow: inset 0 0 0 2px #b45309;
+}

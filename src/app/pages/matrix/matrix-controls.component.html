@@ -205,7 +205,11 @@
               <button class="menu-action" [class.active]="dimUncovered" (click)="toggleDimUncovered()">
                 👁 {{ dimUncovered ? 'Show all' : 'Dim unmapped' }}
               </button>
-              <button class="menu-action" (click)="onGapView(); showViewMenu = false">⚠ Gap view</button>
+              <button class="menu-action my-marks-toggle" [class.active]="myMarks" [attr.aria-pressed]="myMarks"
+                      (click)="toggleMyMarks()">{{ myMarksLabel }}</button>
+              <button class="menu-action threat-gaps-toggle" [class.active]="threatGapOverlay" [attr.aria-pressed]="threatGapOverlay"
+                      (click)="toggleThreatGaps()">{{ threatGapLabel }}</button>
+              <button class="menu-action unmapped-view-btn" (click)="onGapView(); showViewMenu = false">⚠ Unmapped techniques (no ATT&amp;CK mitigation)</button>
               <button class="menu-action" [class.active]="multiSelectMode" (click)="onToggleMultiSelect(); showViewMenu = false">
                 ☑ {{ multiSelectMode ? 'Exit multi-select' : 'Multi-select' }}
               </button>

@@ -338,6 +338,7 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
       s.cellDisplay.noteDot !== saved.cellDisplay.noteDot ||
       s.cellDisplay.annotationDot !== saved.cellDisplay.annotationDot ||
       s.cellDisplay.watchIndicator !== saved.cellDisplay.watchIndicator ||
+      s.cellDisplay.myMarks !== saved.cellDisplay.myMarks ||
       s.heatmapColorTheme !== saved.heatmapColorTheme ||
       s.orgName !== saved.orgName
     );

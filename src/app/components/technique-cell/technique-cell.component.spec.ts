@@ -9,6 +9,7 @@ import { LENS_NA_COLOR } from '../../models/heatmap-modes';
 import { type PostureCellVM, postureFill } from '../../models/posture/posture-ramp';
 import { ThemeService } from '../../services/theme.service';
 import { provenColor, statusStopFill } from '../../models/posture/lens-ramps';
+import { myMarkFill } from '../../models/posture/gap';
 
 const STUB_TECH = {
   id: 'attack-pattern--abc',
@@ -23,6 +24,7 @@ const STUB_TECH = {
 type CellDisplay = {
   exposureBadge: boolean; softwareBadge: boolean; campaignBadge: boolean;
   metricBadge: boolean; noteDot: boolean; annotationDot: boolean; watchIndicator: boolean;
+  myMarks?: boolean;
 };
 
 function makeSettings(cellDisplay: Partial<CellDisplay> = {}): any {
@@ -384,5 +386,78 @@ describe('TechniqueCellComponent: posture input (P2-13)', () => {
     expect(el.querySelector('.proof-lab-badge')).toBeNull();
     el = set({ heatmapMode: 'posture', posture: { bucket: 'proven', subStates: [], proofScope: 'range', label: 'x' } });
     expect(el.querySelector('.proof-lab-badge')).toBeNull();
+  });
+});
+
+// P2-17: the My marks bar and the Threat gaps outline sit over any lens fill.
+describe('TechniqueCellComponent: My marks and Threat gaps (P2-17)', () => {
+  let fixture: ComponentFixture<TechniqueCellComponent>;
+  let component: TechniqueCellComponent;
+  let settings$: BehaviorSubject<any>;
+  let isLight$: BehaviorSubject<boolean>;
+
+  function set(inputs: Record<string, unknown>): HTMLElement {
+    for (const [k, v] of Object.entries(inputs)) fixture.componentRef.setInput(k, v);
+    fixture.detectChanges();
+    return (fixture.nativeElement as HTMLElement).querySelector('.cell') as HTMLElement;
+  }
+
+  beforeEach(() => {
+    settings$ = new BehaviorSubject<any>(makeSettings());
+    isLight$ = new BehaviorSubject<boolean>(false);
+    TestBed.configureTestingModule({
+      imports: [TechniqueCellComponent],
+      providers: [
+        { provide: SettingsService, useValue: {
+          settings$, get current() { return settings$.value; }, getCoverageColors: () => ['#111111', '#222222', '#333333', '#444444', '#555555'],
+        } },
+        { provide: ThemeService, useValue: { isLight$, get isLight() { return isLight$.value; } } },
+      ],
+    });
+    fixture = TestBed.createComponent(TechniqueCellComponent);
+    component = fixture.componentInstance;
+  });
+
+  it('renders neither by default: same fill, same aria-label', () => {
+    const el = set({ technique: STUB_TECH, heatmapMode: 'frequency' });
+    expect(el.querySelector('.my-mark')).toBeNull();
+    expect(el.querySelector('.threat-gap-outline')).toBeNull();
+    expect(el.getAttribute('aria-label')).toBe('T1059: Command and Scripting Interpreter');
+  });
+
+  it('draws the bar with its bucket and posture token colour, over an unchanged lens fill', () => {
+    let el = set({ technique: STUB_TECH, heatmapMode: 'frequency', frequencyScore: 2, maxFrequencyScore: 4 });
+    const fill = component.bgColor;
+    el = set({ myMark: 'covered' });
+    const bar = el.querySelector('.my-mark') as HTMLElement;
+    expect(bar.getAttribute('data-bucket')).toBe('covered');
+    expect(bar.getAttribute('aria-hidden')).toBe('true');
+    expect(bar.style.getPropertyValue('--my-mark-color')).toBe(myMarkFill('covered', 'dark'));
+    expect(component.bgColor).toBe(fill);
+    isLight$.next(true);
+    fixture.detectChanges();
+    expect(bar.style.getPropertyValue('--my-mark-color')).toBe(myMarkFill('covered', 'light'));
+    el = set({ myMark: 'partial' });
+    expect(el.querySelector('.my-mark')!.getAttribute('data-bucket')).toBe('partial');
+    el = set({ myMark: null });
+    expect(el.querySelector('.my-mark')).toBeNull();
+  });
+
+  it('hides the bar when AppSettings.cellDisplay.myMarks is false', () => {
+    let el = set({ technique: STUB_TECH, heatmapMode: 'coverage', myMark: 'proven' });
+    expect(el.querySelector('.my-mark')).not.toBeNull();
+    settings$.next(makeSettings({ myMarks: false }));
+    fixture.detectChanges();
+    el = (fixture.nativeElement as HTMLElement).querySelector('.cell') as HTMLElement;
+    expect(el.querySelector('.my-mark')).toBeNull();
+  });
+
+  it('draws the threat-gap outline and says so in the aria-label, fill unchanged', () => {
+    let el = set({ technique: STUB_TECH, heatmapMode: 'frequency', frequencyScore: 1, maxFrequencyScore: 4 });
+    const fill = component.bgColor;
+    el = set({ threatGap: true });
+    expect(el.querySelector('.threat-gap-outline')!.getAttribute('aria-hidden')).toBe('true');
+    expect(el.getAttribute('aria-label')).toBe('T1059: Command and Scripting Interpreter, threat gap');
+    expect(component.bgColor).toBe(fill);
   });
 });

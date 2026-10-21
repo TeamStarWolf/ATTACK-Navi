@@ -29,6 +29,8 @@ import { Viewpoint, ViewpointService } from '../../services/viewpoint.service';
 import { distinctDataSourceNames, sameDataSource } from '../../utils/data-source-names';
 import { PostureService } from '../../services/posture.service';
 import { lensNameVisible, lensOnScreen, lensQuestion } from '../../models/lens-registry';
+import { SettingsService } from '../../services/settings.service';
+import { MY_MARKS_TOGGLE_LABEL, THREAT_GAP_TOGGLE_LABEL } from '../../models/posture/gap';
 
 /** The impl= select's tooltip (P2-14, §6): what the four values match under the breadth guard. */
 export const IMPL_FILTER_TITLE = 'Filter by implementation status. Broad mitigations count as partial: '
@@ -112,11 +114,17 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
   activeUserLayer: AttackNaviLayer | null = null;
   sortMode: SortMode = 'alpha';
   dimUncovered = false;
+  /** The two P2-17 display toggles: My marks (a setting) and Threat gaps (a session toggle, tgap=1). */
+  myMarks = true;
+  threatGapOverlay = false;
+  readonly myMarksLabel = MY_MARKS_TOGGLE_LABEL;
+  readonly threatGapLabel = THREAT_GAP_TOGGLE_LABEL;
   multiSelectMode = false;
   activeThreatGroupCount = 0;
 
   private subs = new Subscription();
   private readonly injector = inject(Injector);
+  private readonly settingsService = inject(SettingsService);
 
   /**
    * The impl= select's tooltip. While a value is selected it also names the
@@ -180,6 +188,8 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
     this.subs.add(this.userLayerService.activeLayer$.subscribe((l) => { this.activeUserLayer = l; this.cdr.markForCheck(); }));
     this.subs.add(this.filterService.sortMode$.subscribe((m) => { this.sortMode = m; this.cdr.markForCheck(); }));
     this.subs.add(this.filterService.dimUncovered$.subscribe((v) => { this.dimUncovered = v; this.cdr.markForCheck(); }));
+    this.subs.add(this.filterService.threatGapOverlay$.subscribe((v) => { this.threatGapOverlay = v; this.cdr.markForCheck(); }));
+    this.subs.add(this.settingsService.settings$.subscribe((s) => { this.myMarks = s.cellDisplay?.myMarks !== false; this.cdr.markForCheck(); }));
     this.subs.add(this.filterService.activeThreatGroupIds$.subscribe((ids) => { this.activeThreatGroupCount = ids.size; this.cdr.markForCheck(); }));
     this.subs.add(this.matrixControl.multiSelectMode$.subscribe((v) => { this.multiSelectMode = v; this.cdr.markForCheck(); }));
     this.subs.add(this.viewpointService.viewpoint$.subscribe((vp) => { this.currentViewpoint = vp; this.cdr.markForCheck(); }));
@@ -373,6 +383,12 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
 
   toggleSort(): void { this.filterService.setSortMode(this.sortMode === 'alpha' ? 'coverage' : 'alpha'); }
   toggleDimUncovered(): void { this.filterService.toggleDimUncovered(); }
+  /** My marks (P2-17): flips AppSettings.cellDisplay.myMarks, the same setting as the settings panel's checkbox. */
+  toggleMyMarks(): void {
+    const cellDisplay = this.settingsService.current.cellDisplay;
+    this.settingsService.update({ cellDisplay: { ...cellDisplay, myMarks: !this.myMarks } });
+  }
+  toggleThreatGaps(): void { this.filterService.toggleThreatGapOverlay(); }
   onExpandAll(): void { this.matrixControl.expandAll(); }
   onCollapseAll(): void { this.matrixControl.collapseAll(); }
   onToggleMultiSelect(): void { this.matrixControl.toggleMultiSelect(); }

@@ -74,6 +74,34 @@ describe('FilterService', () => {
       service.techniqueQuery$.subscribe(v => expect(v).toBe('T1059')).unsubscribe();
     });
 
+    // P2-17: the Threat gaps overlay is a session toggle carried as tgap=1.
+    it('round-trips tgap=1 and ignores any other tgap value', () => {
+      const overlay = (): boolean => {
+        let v = false;
+        service.threatGapOverlay$.subscribe(o => (v = o)).unsubscribe();
+        return v;
+      };
+      expect(overlay()).toBeFalse();
+      expect(service.serializeUrlState()['tgap']).toBeUndefined();
+      for (const bad of ['tgap=0', 'tgap=true', 'tgap=yes', 'tgap=', 'tgap=11', 'tgap=%201']) {
+        apply(bad);
+        expect(overlay()).withContext(bad).toBeFalse();
+        expect(service.serializeUrlState()['tgap']).withContext(bad).toBeUndefined();
+      }
+      apply('tgap=1&heat=kev');
+      expect(overlay()).toBeTrue();
+      const params = service.serializeUrlState();
+      expect(params['tgap']).toBe('1');
+      service.toggleThreatGapOverlay();
+      expect(overlay()).toBeFalse();
+      expect(service.serializeUrlState()['tgap']).toBeUndefined();
+      service.applyUrlState(new URLSearchParams(params));
+      expect(overlay()).toBeTrue();
+      expect(service.serializeUrlState()).toEqual(params);
+      service.setThreatGapOverlay(false);
+      expect(overlay()).toBeFalse();
+    });
+
     it('does not serialize a value that was rejected', () => {
       apply('heat=bogus&scope=everything');
       const params = service.serializeUrlState();
