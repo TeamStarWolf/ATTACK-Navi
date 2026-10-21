@@ -6,6 +6,10 @@ import {
   ChangeDetectorRef,
   OnInit,
   OnDestroy,
+  Signal,
+  computed,
+  inject,
+  signal,
 } from '@angular/core';
 
 import { Subscription } from 'rxjs';
@@ -13,7 +17,9 @@ import { Tactic } from '../../models/tactic';
 import { Technique } from '../../models/technique';
 import { ImplementationService, ImplStatus } from '../../services/implementation.service';
 import { EnrichmentService, MappedCount } from '../../services/enrichment.service';
+import { PostureService, type PostureRollup } from '../../services/posture.service';
 import { Domain } from '../../models/domain';
+import { POSTURE_LINE_LABELS } from '../posture-card/posture-card.component';
 
 export interface TacticSummaryData {
   tactic: Tactic;
@@ -36,11 +42,20 @@ export class TacticSummaryComponent implements OnInit, OnDestroy {
   visible = false;
   /**
    * Known tier ('mapped', E1.7): this tactic's parent techniques with >=1
-   * defensive reference input, from the same EnrichmentService.mappedCount()
-   * that mappedRollup() runs per tactic column. Never counts threat-intel or
-   * CVE links. P2 seam: PostureService's tactic rollup replaces it.
+   * defensive reference input, from this tactic's row of
+   * PostureService.rollup() (P2-08), whose Known numbers are mappedRollup's.
+   * Never counts threat-intel or CVE links.
    */
   mappedStats: MappedCount = { total: 0, mapped: 0, pct: 0 };
+  private readonly posture = inject(PostureService);
+  private readonly tacticId = signal<string | null>(null);
+  /** The same rollup row's Covered / partial / Proven / stale, shown only under ownerWords(). */
+  readonly postureStats: Signal<PostureRollup['byTactic'][number] | null> = computed(() => {
+    const id = this.tacticId();
+    return id === null ? null : this.posture.rollup().byTactic.find((r) => r.tacticId === id) ?? null;
+  });
+  readonly ownerWords: Signal<boolean> = this.posture.ownerWords;
+  readonly labels = POSTURE_LINE_LABELS;
   /** Most-mapped techniques, ranked by how many of the five reference inputs they have. */
   topMapped: Array<Technique & { referenceCount: number }> = [];
 
@@ -68,7 +83,13 @@ export class TacticSummaryComponent implements OnInit, OnDestroy {
 
   show(data: TacticSummaryData, event: MouseEvent): void {
     this.data = data;
-    this.mappedStats = this.enrichment.mappedCount(data.parentTechniques, data.domain);
+    this.tacticId.set(data.tactic.id);
+    const row = this.postureStats();
+    // The tactic column of the loaded domain; before PostureService sees that
+    // domain, the Known count comes from the same oracle the rollup reads.
+    this.mappedStats = row
+      ? { total: row.total, mapped: row.mapped, pct: row.pct }
+      : this.enrichment.mappedCount(data.parentTechniques, data.domain);
     this.topMapped = [...data.parentTechniques]
       .map((t) => ({ ...t, referenceCount: this.enrichment.referenceSignalCount(t, data.domain) }))
       .filter((t) => t.referenceCount > 0)
@@ -83,6 +104,7 @@ export class TacticSummaryComponent implements OnInit, OnDestroy {
     this.visible = false;
     this.data = null;
     this.mappedStats = { total: 0, mapped: 0, pct: 0 };
+    this.tacticId.set(null);
     this.topMapped = [];
     this.cdr.markForCheck();
   }

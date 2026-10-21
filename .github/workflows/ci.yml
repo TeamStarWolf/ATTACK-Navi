@@ -63,6 +63,13 @@ jobs:
       - run: node --test scripts/check-facts.test.mjs
       - run: node scripts/gen-facts.mjs --check
       - run: node scripts/check-facts.mjs
+      # Seam check (Phase 2 design P2-08, §4.2): no file outside PostureService
+      # may join a mitigation-to-technique map with the implementation store
+      # unless it is on the generated allow-list with a reason and the PR or
+      # epic that removes it; a stale entry fails, so the list only shrinks.
+      # Its own tests run first; one of them plants a violation and expects exit 1.
+      - run: node --test scripts/check-seams.test.mjs
+      - run: node scripts/check-seams.mjs
       # --code-coverage writes coverage/attack-navi/coverage-summary.json
       # (karma.conf.js json-summary reporter) for the branch gate below.
       - run: npx ng test --no-watch --browsers=ChromeHeadless --code-coverage

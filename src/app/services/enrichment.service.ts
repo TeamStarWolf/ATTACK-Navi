@@ -3,6 +3,7 @@
 import { Injectable } from '@angular/core';
 import { Domain } from '../models/domain';
 import { Technique } from '../models/technique';
+import { hasDefensiveReference } from '../models/known-signals';
 import { SigmaService } from './sigma.service';
 import { CARService } from './car.service';
 import { AtomicService } from './atomic.service';
@@ -116,10 +117,12 @@ export interface EnrichmentTotals {
  *   and `referenceDefenseTotals()` read the defensive reference inputs only
  *   (mitigations, detection content, CTID controls, D3FEND, Atomic). Any count
  *   that describes defense uses these.
- * - Threat side: `isEnriched()`, `signals()`, `signalCount()`, `totals()` and
- *   `coverage()` also mix in threat-intel links (groups, software, campaigns)
- *   and CVE mappings, so they rise when adversaries use a technique. They are
- *   kept for Threat-side counts only, never for a defensive summary.
+ * - Threat side: `signals()`, `signalCount()`, `totals()` and `coverage()`
+ *   also mix in threat-intel links (groups, software, campaigns) and CVE
+ *   mappings, so they rise when adversaries use a technique. They are kept for
+ *   Threat-side counts only, never for a defensive summary. The yes/no tests
+ *   over `signals()` are the pure `hasAnySignal()` and `hasDefensiveReference()`
+ *   in models/known-signals.ts (P2-08 retired isEnriched and hasDefensiveSignal).
  *
  * Every service call is guarded: missing or unloaded data yields `false`,
  * never a throw.
@@ -315,24 +318,6 @@ export class EnrichmentService {
     };
   }
 
-  /**
-   * Threat side only. True when a technique carries ANY of the seven signal
-   * families, including threat-intel links (groups, software, campaigns) and
-   * CVE mappings. Those two inputs describe adversary interest, so this rises
-   * when a group starts using a technique; it must not feed a defensive or
-   * 'mapped' count. Use `isReferenceMapped()` / `referenceDefenseTotals()`
-   * (Known tier) for those. Kept for Threat-side counts only: the six summary
-   * surfaces moved off it to `mappedRollup()` in E1.7, and PostureService
-   * replaces their counts with Known / Covered / Proven in P2.
-   */
-  isEnriched(tech: Technique, domain?: Domain | null): boolean {
-    const s = this.signals(tech, domain);
-    return (
-      s.mitigation || s.detection || s.atomic ||
-      s.d3fend || s.control || s.threatIntel || s.cve
-    );
-  }
-
   /** How many of the 7 signal families a technique carries (breadth of coverage). */
   signalCount(tech: Technique, domain?: Domain | null): number {
     const s = this.signals(tech, domain);
@@ -340,19 +325,6 @@ export class EnrichmentService {
       (s.mitigation ? 1 : 0) + (s.detection ? 1 : 0) + (s.atomic ? 1 : 0) +
       (s.d3fend ? 1 : 0) + (s.control ? 1 : 0) + (s.threatIntel ? 1 : 0) + (s.cve ? 1 : 0)
     );
-  }
-
-  /**
-   * Whether a technique has a genuine DEFENSIVE signal (mitigation, detection,
-   * control, or D3FEND countermeasure). Excludes atomic tests, threat-intel and
-   * CVE links, which describe exposure/validation rather than a control. Used to
-   * flag critical-risk gaps (threat-relevant but wholly undefended). Narrower
-   * than `isReferenceMapped()`, which also counts Atomic tests as Known-tier
-   * reference content.
-   */
-  hasDefensiveSignal(tech: Technique, domain?: Domain | null): boolean {
-    const s = this.signals(tech, domain);
-    return s.mitigation || s.detection || s.control || s.d3fend;
   }
 
   /** Aggregate signal-family counts across a set of techniques in one pass. */
@@ -386,7 +358,9 @@ export class EnrichmentService {
   /**
    * Multi-signal risk score for "Sort by risk". Higher = riskier: threat
    * pressure (groups weighted 2×, plus software + campaigns) and KEV exposure,
-   * doubled when the technique has NO defensive signal of any kind.
+   * doubled when the technique has no defensive reference input other than an
+   * Atomic test (`hasDefensiveReference`, models/known-signals.ts). P2-09 makes
+   * it read posture.
    */
   riskScore(tech: Technique, domain?: Domain | null, kevScore = 0): number {
     if (!tech) return 0;
@@ -395,6 +369,6 @@ export class EnrichmentService {
     const campaigns = this.len(() => domain?.campaignsByTechnique?.get(tech.id));
     const threat = groups * 2 + software + campaigns;
     const exposure = threat + (kevScore > 0 ? kevScore * 3 : 0);
-    return exposure * (this.hasDefensiveSignal(tech, domain) ? 1 : 2);
+    return exposure * (hasDefensiveReference(this.signals(tech, domain)) ? 1 : 2);
   }
 }

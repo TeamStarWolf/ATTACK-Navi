@@ -1,0 +1,319 @@
+{
+  "generatedBy": "node scripts/check-seams.mjs --write",
+  "rules": {
+    "posture-rollup": {
+      "summary": "mitigation-to-technique map AND the mitigation implementation store in one file",
+      "patterns": [
+        "mitigationsByTechnique|techniquesByMitigation|getTechniquesForMitigation|getMitigationsForTechnique",
+        "ImplementationService|implService|getStatusMap|ImplStatus"
+      ],
+      "entries": [
+        {
+          "file": "src/app/components/analytics-panel/analytics-panel.component.ts",
+          "uses": {
+            "ImplementationService": 2,
+            "implService": 4,
+            "mitigationsByTechnique": 1
+          },
+          "bucket": "known-surface",
+          "reason": "implService.summarize() gives mitigations by status; the mitigation ranking by group reach is mitigation-level. Known numbers read PostureService.rollup since P2-08. Removed by E9.3 (plan:892); the ranking goes to E7.2 (plan:862).",
+          "removedBy": "E9.3 (ranking to E7.2)"
+        },
+        {
+          "file": "src/app/components/dashboard-panel/dashboard-panel.component.ts",
+          "uses": {
+            "getStatusMap": 2,
+            "ImplementationService": 2,
+            "implService": 5,
+            "mitigationsByTechnique": 2
+          },
+          "bucket": "known-surface",
+          "reason": "Implementation-counts tile counts mitigations by status; the status map is passed through to the HTML report and XLSX export; mitigationsByTechnique feeds two Known lookups (average mitigations per technique, technique of the day). None counts techniques as implemented; Known numbers read PostureService.rollup since P2-08. Dashboard tiles fold into Home (plan:466,813).",
+          "removedBy": "E4.2"
+        },
+        {
+          "file": "src/app/components/matrix/matrix.component.ts",
+          "uses": {
+            "ImplementationService": 2,
+            "implService": 3,
+            "ImplStatus": 12,
+            "mitigationsByTechnique": 3
+          },
+          "bucket": "phase-2",
+          "reason": "Status fold techniqueImplStatus and impl= (P2-14, implViewFor) and the bulk-set reverse rollup (P2-16). Stays listed after P2-16 with reason mitigation-level or export only (Addendum note 3).",
+          "removedBy": "P2-14, P2-16 (stays listed for mitigation-level uses)"
+        },
+        {
+          "file": "src/app/components/priority-panel/priority-panel.component.ts",
+          "uses": {
+            "ImplementationService": 2,
+            "implService": 3,
+            "ImplStatus": 4,
+            "mitigationsByTechnique": 1,
+            "techniquesByMitigation": 1
+          },
+          "bucket": "stays",
+          "reason": "Ranks mitigations to do next from the status map and techniquesByMitigation; mitigation-level; E7.2.",
+          "removedBy": "E7.2"
+        },
+        {
+          "file": "src/app/components/report-panel/report-panel.component.ts",
+          "uses": {
+            "ImplementationService": 2,
+            "implService": 3,
+            "ImplStatus": 2,
+            "mitigationsByTechnique": 4,
+            "techniquesByMitigation": 1
+          },
+          "bucket": "known-surface",
+          "reason": "implService.summarize() gives mitigations by status; the recommended-mitigations list ranks not-yet-implemented mitigations through statusMap and techniquesByMitigation. Both mitigation-level; the split and the CSV Implemented column moved in P2-07. Report-panel becomes the ReportService UI (plan:447).",
+          "removedBy": "E5.4/E9.1"
+        },
+        {
+          "file": "src/app/components/roadmap-panel/roadmap-panel.component.ts",
+          "uses": {
+            "getMitigationsForTechnique": 1,
+            "getStatusMap": 1,
+            "getTechniquesForMitigation": 1,
+            "ImplementationService": 2,
+            "implService": 4,
+            "ImplStatus": 5,
+            "techniquesByMitigation": 2
+          },
+          "bucket": "known-surface",
+          "reason": "setStatus writes mitigation status by design; the roadmap and auto-roadmap score mitigations through getTechniquesForMitigation, techniquesByMitigation and the status map, including the per-mitigation uncovered count (any mapped mitigation implemented; Addendum note 4). Known numbers read PostureService.rollup since P2-08. E5.5 is the single which-mitigation-next ranker (plan:456).",
+          "removedBy": "E5.5"
+        },
+        {
+          "file": "src/app/components/scenario-panel/scenario-panel.component.ts",
+          "uses": {
+            "getStatusMap": 1,
+            "ImplementationService": 2,
+            "implService": 2,
+            "mitigationsByTechnique": 1
+          },
+          "bucket": "phase-2",
+          "reason": "Scenario outcomes use the legacy implemented fold (getStatusMap over mitigationsByTechnique); P2-12 gives them PostureService numerators (bounded window, design 4.1).",
+          "removedBy": "P2-12"
+        },
+        {
+          "file": "src/app/components/settings-panel/settings-panel.component.ts",
+          "uses": {
+            "getStatusMap": 1,
+            "ImplementationService": 2,
+            "implService": 5,
+            "techniquesByMitigation": 1
+          },
+          "bucket": "stays",
+          "reason": "Implementation data block: import, export and reset of the mitigation status map; mitigation-level exports by design.",
+          "removedBy": "stays (mitigation-level by design)"
+        },
+        {
+          "file": "src/app/components/sidebar/sidebar.component.ts",
+          "uses": {
+            "getMitigationsForTechnique": 2,
+            "ImplementationService": 2,
+            "implService": 5,
+            "ImplStatus": 8
+          },
+          "bucket": "phase-2",
+          "reason": "Sidebar mitigation rows set mitigation status (P2-16: technique marks, qualifier badge and Confirm). Its other mitigation lists are display-only: lists mitigations, does not count techniques (Addendum note 3).",
+          "removedBy": "P2-16 (other lists stay listed)"
+        },
+        {
+          "file": "src/app/components/sigma-export/sigma-export.component.ts",
+          "uses": {
+            "ImplementationService": 2,
+            "implService": 2,
+            "techniquesByMitigation": 2
+          },
+          "bucket": "stays",
+          "reason": "Filters exported rules by implemented mitigation; does not count techniques; E6.2.",
+          "removedBy": "E6.2"
+        },
+        {
+          "file": "src/app/components/tactic-summary/tactic-summary.component.ts",
+          "uses": {
+            "ImplementationService": 2,
+            "implService": 2,
+            "ImplStatus": 2,
+            "mitigationsByTechnique": 2
+          },
+          "bucket": "known-surface",
+          "reason": "implStats counts the distinct mitigations of a tactic by status (mitigationsByTechnique plus status$). Mitigation-level; the Known count and the posture lines read PostureService.rollup since P2-08. Becomes TacticRollup on PostureService in E9.3 (plan:467,892).",
+          "removedBy": "E9.3"
+        },
+        {
+          "file": "src/app/components/target-panel/target-panel.component.ts",
+          "uses": {
+            "ImplementationService": 2,
+            "implService": 1,
+            "techniquesByMitigation": 1
+          },
+          "bucket": "stays",
+          "reason": "Mitigation targets by reach; mitigation-level; E7.2.",
+          "removedBy": "E7.2"
+        },
+        {
+          "file": "src/app/components/whatif-panel/whatif-panel.component.ts",
+          "uses": {
+            "ImplementationService": 2,
+            "implService": 2,
+            "ImplStatus": 2,
+            "mitigationsByTechnique": 1,
+            "techniquesByMitigation": 2
+          },
+          "bucket": "stays",
+          "reason": "Hypothetical projections: what marking a mitigation implemented would change. Not a statement of current posture; E7.2.",
+          "removedBy": "E7.2"
+        },
+        {
+          "file": "src/app/components/yara-export/yara-export.component.ts",
+          "uses": {
+            "getStatusMap": 1,
+            "ImplementationService": 2,
+            "implService": 2,
+            "techniquesByMitigation": 2
+          },
+          "bucket": "stays",
+          "reason": "Filters exported rules by implemented mitigation; does not count techniques; E6.2.",
+          "removedBy": "E6.2"
+        },
+        {
+          "file": "src/app/models/posture/mitigation-rollup.ts",
+          "uses": {
+            "ImplStatus": 3,
+            "techniquesByMitigation": 3
+          },
+          "bucket": "seam",
+          "reason": "The pure D16 breadth-guard rollup (P2-01) the adapters call: an implemented mitigation marks its techniques, full or partial. Part of the seam; 100% branch-gated in CI.",
+          "removedBy": "stays (the seam)"
+        },
+        {
+          "file": "src/app/services/compliance-mapper.service.ts",
+          "uses": {
+            "ImplementationService": 2,
+            "implService": 2,
+            "ImplStatus": 3,
+            "mitigationsByTechnique": 1
+          },
+          "bucket": "stays",
+          "reason": "getControlStatus is a control-level aggregate of mitigation statuses (controls implemented (attested), plan:157,371): mitigation-level by design, not a technique count. E6.7 (Rate your posture, plan:849) revisits it.",
+          "removedBy": "E6.7"
+        },
+        {
+          "file": "src/app/services/export-actions.service.ts",
+          "uses": {
+            "getStatusMap": 7,
+            "ImplementationService": 2,
+            "implService": 12,
+            "mitigationsByTechnique": 3,
+            "techniquesByMitigation": 1
+          },
+          "bucket": "stays",
+          "reason": "Passes the status map to the CSV, XLSX, PNG and report exporters; mitigation-level exports by design.",
+          "removedBy": "stays (mitigation-level by design)"
+        },
+        {
+          "file": "src/app/services/filter.service.ts",
+          "uses": {
+            "ImplStatus": 5,
+            "techniquesByMitigation": 1
+          },
+          "bucket": "stays",
+          "reason": "The impl= mitigation-status filter: matches only through the ImplStatus type and a techniquesByMitigation lookup for the mitigation filter; it counts nothing.",
+          "removedBy": "stays (type match only)"
+        },
+        {
+          "file": "src/app/services/gap-analysis.service.ts",
+          "uses": {
+            "ImplementationService": 2,
+            "implService": 1,
+            "mitigationsByTechnique": 3
+          },
+          "bucket": "phase-2",
+          "reason": "Gap totals fold implemented mitigations over mitigationsByTechnique; P2-10 moves them to the shared picker with profile denominators read from PostureService.",
+          "removedBy": "P2-10"
+        },
+        {
+          "file": "src/app/services/html-report.service.ts",
+          "uses": {
+            "ImplementationService": 2,
+            "ImplStatus": 3,
+            "techniquesByMitigation": 1
+          },
+          "bucket": "known-surface",
+          "reason": "Mitigation status table: each mitigation with its mapped parent count, from the status map passed in. Mitigation-level, counts no technique as implemented; the technique badge and the split moved to PostureService in P2-07. E9.1 retires html-report.service (plan:890).",
+          "removedBy": "E9.1"
+        },
+        {
+          "file": "src/app/services/matrix-export.service.ts",
+          "uses": {
+            "ImplStatus": 5,
+            "mitigationsByTechnique": 1
+          },
+          "bucket": "stays",
+          "reason": "PNG export; its heat=status colour uses the best-status fold over mitigationsByTechnique, which P2-14 routes through implViewFor or lists as a bounded export window (Addendum note 4). E9.1.",
+          "removedBy": "E9.1 (fold: P2-14 decision, Addendum note 4)"
+        },
+        {
+          "file": "src/app/services/navigator-layer.service.ts",
+          "uses": {
+            "ImplementationService": 3,
+            "implService": 3,
+            "ImplStatus": 11,
+            "mitigationsByTechnique": 2
+          },
+          "bucket": "phase-2",
+          "reason": "The foreign-comment import writes every mitigation of a technique (a reverse rollup); P2-16 moves it to technique marks. The export fold and import parsing stay listed with reason mitigation-level or export only (Addendum notes 3 and 4).",
+          "removedBy": "P2-16 (stays listed for export and import parsing)"
+        },
+        {
+          "file": "src/app/services/posture-adapters.ts",
+          "uses": {
+            "ImplStatus": 10,
+            "mitigationsByTechnique": 2,
+            "techniquesByMitigation": 6
+          },
+          "bucket": "seam",
+          "reason": "PostureService store adapters (P2-05): implementationAdapter and implView turn mitigation statuses into Covered marks over techniquesByMitigation with the D16 breadth guard. Part of the seam.",
+          "removedBy": "stays (the seam)"
+        },
+        {
+          "file": "src/app/services/posture.service.ts",
+          "uses": {
+            "ImplementationService": 2,
+            "ImplStatus": 2,
+            "techniquesByMitigation": 2
+          },
+          "bucket": "seam",
+          "reason": "PostureService: the one place the mitigation status store and the mitigation-to-technique map are joined into one PostureState per technique (P2-05). Every other surface reads it; this file is what the rule protects.",
+          "removedBy": "stays (the seam)"
+        },
+        {
+          "file": "src/app/services/threat-simulation.service.ts",
+          "uses": {
+            "getStatusMap": 1,
+            "ImplementationService": 2,
+            "implService": 2,
+            "mitigationsByTechnique": 1
+          },
+          "bucket": "phase-2",
+          "reason": "Threat simulation uses the legacy implemented fold; P2-12 gives it PostureService numerators (bounded window, design 4.1).",
+          "removedBy": "P2-12"
+        },
+        {
+          "file": "src/app/services/xlsx-export.service.ts",
+          "uses": {
+            "ImplStatus": 5,
+            "mitigationsByTechnique": 1,
+            "techniquesByMitigation": 1
+          },
+          "bucket": "stays",
+          "reason": "XLSX export: Known mitigation-only sheets plus the Impl Status (best) column, a per-technique best-status fold that P2-14 routes through implViewFor or lists as a bounded export window (Addendum note 4). E9.1.",
+          "removedBy": "E9.1 (fold: P2-14 decision, Addendum note 4)"
+        }
+      ]
+    }
+  }
+}

@@ -107,20 +107,10 @@ describe('Dashboard KPIs (fixture domain)', () => {
     expect(stats.cveExposedCount).toBe(count(o => o.cve));
   });
 
-  it('posture score follows the documented 20/20/20/15/15/10 weighting', () => {
+  it('the hidden legacy postureScore is deleted (P2-08); the KEV-gap counter it read stays', () => {
     const stats = fixture.componentInstance.stats!;
-    const f = (n: number) => n / parents.length;
-    const kevGaps = count(o => o.kev && !o.defended);
-    const critical = count(o => o.groups > 0 && !o.defended);
-    const expected = Math.round(100 * (
-      0.20 * f(count(o => o.mitigation)) +
-      0.20 * f(count(o => o.detection)) +
-      0.20 * f(count(o => o.control)) +
-      0.15 * f(count(o => o.d3fend)) +
-      0.15 * (1 - f(kevGaps)) +
-      0.10 * (1 - f(critical))
-    ));
-    expect(stats.postureScore).toBe(expected);
+    expect('postureScore' in stats).toBeFalse();
+    expect(stats.kevExposedGapCount).toBe(count(o => o.kev && !o.defended));
   });
 
   it('implementation KPIs summarise the stored mitigation statuses', () => {
@@ -144,8 +134,8 @@ describe('Dashboard KPIs (fixture domain)', () => {
     for (const old of ['Enriched', 'Coverage', 'Mitigation coverage', 'Detection coverage', 'Control coverage']) {
       expect(rendered(old)).withContext(old).toBe('(not rendered)');
     }
-    // E1.5: the threat-weighted composite (postureScore, still computed above) is not
-    // rendered under any label: it moves with group usage, so it is not Known-rung data.
+    // E1.5 hid the threat-weighted composite (postureScore) and P2-08 deleted it:
+    // it moved with group usage, so it was not Known-rung data. No label for it renders.
     expect(rendered('Reference depth index')).toBe('(not rendered)');
     expect(rendered('Posture score')).toBe('(not rendered)');
   });

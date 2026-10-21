@@ -6,6 +6,7 @@ import {
   OnDestroy,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
+  inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Observable, Subscription, combineLatest, distinctUntilChanged, filter, map, take } from 'rxjs';
@@ -32,9 +33,13 @@ import { CustomMitigationService } from '../../services/custom-mitigation.servic
 import { EnrichmentService, mappedPct } from '../../services/enrichment.service';
 import { KevEntry } from '../../models/cve';
 import { SourceRegistryService } from '../../services/source-registry.service';
+import { PostureService } from '../../services/posture.service';
+import { hasDefensiveReference } from '../../models/known-signals';
+import { PostureCardComponent } from '../posture-card/posture-card.component';
 
 export interface DashboardStats {
-  // Known tier: 'mapped' = >=1 defensive reference input (EnrichmentService.mappedRollup)
+  // Known tier: 'mapped' = >=1 defensive reference input (PostureService.rollup,
+  // whose Known numbers are EnrichmentService.mappedRollup's)
   totalTechniques: number;
   coveredTechniques: number;
   coveragePct: number;
@@ -43,9 +48,6 @@ export interface DashboardStats {
   // Per-framework mapped % (so no single framework is the headline)
   mitigationCoveragePct: number;
   controlCoveragePct: number;
-
-  // Composite defensive posture (0–100): mitigation is ONE weighted input
-  postureScore: number;
 
   // Implementation
   implementedCount: number;
@@ -63,8 +65,8 @@ export interface DashboardStats {
   // Risk
   criticalRiskCount: number;  // high threat + no mitigation
   /**
-   * KEV-mapped parent techniques with no defensive signal: an input of the
-   * legacy postureScore composite. Not rendered; exposed so the P2-01
+   * KEV-mapped parent techniques with no defensive reference input other than
+   * an Atomic test (hasDefensiveReference). Not rendered; exposed so the P2-01
    * characterization baseline (legacy-risk-dim.spec.ts) reads the component's
    * own count, which P2-09 changes.
    */
@@ -75,7 +77,7 @@ export interface DashboardStats {
   coverageTrend: number;  // +/- % from previous snapshot
   hasTrendData: boolean;
 
-  // Per-tactic mapped count (for bar chart), from mappedRollup().byTactic
+  // Per-tactic mapped count (for bar chart), from PostureService.rollup().byTactic
   tacticStats: Array<{ name: string; shortname: string; pct: number; covered: number; total: number }>;
 
   // Top risk techniques (expanded to 10 for gap-summary widget)
@@ -125,7 +127,7 @@ interface RegistryVerdict { status: 'failed' | 'empty'; detail: string; }
 @Component({
   selector: 'app-dashboard-panel',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, PostureCardComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dashboard-panel.component.html',
   styleUrl: './dashboard-panel.component.scss',
@@ -154,6 +156,8 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
 
   private subs = new Subscription();
   private statsBuilt = false;
+  /** The one rollup (P2-08): Known numbers unchanged; the Mapped Summary widget mounts the posture card. */
+  private readonly posture = inject(PostureService);
 
   constructor(
     private filterService: FilterService,
@@ -232,15 +236,15 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
       // and roadmap show (>=1 defensive reference input; threat-intel and CVE
       // links are not inputs), so a group starting to use a technique cannot
       // move it. The per-framework tiles read the same reference inputs.
-      const rollup = this.enrichment.mappedRollup(domain);
+      // PostureService.rollup (P2-08) carries mappedRollup's Known numbers
+      // unchanged (R16), so no number here moves.
+      const rollup = this.posture.rollup();
       const coveredTechniques = rollup.overall.mapped;
       const coveragePct = rollup.overall.pct;
       const uncoveredCount = totalTechniques - coveredTechniques;
       const ref = this.enrichment.referenceDefenseTotals(parentTechs, domain);
       const mitigationCoveragePct = mappedPct(ref.mitigation, totalTechniques);
       const controlCoveragePct = mappedPct(ref.control, totalTechniques);
-      // Threat-side totals, read only by the legacy composite below (not rendered).
-      const et = this.enrichment.totals(parentTechs, domain);
 
       // Implementation counts
       const implSummary = this.implService.summarize();
@@ -266,18 +270,19 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
       const detectionCoveragePct = mappedPct(ref.detection, totalTechniques);
 
       // Critical risk: threat-relevant (≥1 group) techniques with NO defensive
-      // signal of ANY kind — no mitigation AND no detection AND no control AND
+      // reference input — no mitigation AND no detection AND no control AND
       // no D3FEND countermeasure (atomic tests / CVE links don't count as defense).
+      // P2-09 also leaves out techniques with Covered or Proven data.
       const criticalRiskTechs = parentTechs.filter(t => {
         const hasGroup = (domain.groupsByTechnique.get(t.id)?.length ?? 0) > 0;
-        return hasGroup && !this.enrichment.hasDefensiveSignal(t, domain);
+        return hasGroup && !hasDefensiveReference(this.enrichment.signals(t, domain));
       });
       const criticalRiskCount = criticalRiskTechs.length;
 
       // KEV-exposed gaps: KEV-mapped techniques that are wholly undefended.
       const kevExposedGapCount = parentTechs.filter(t => {
         const hasKev = this.attackCveService.getKevCvesForTechnique(t.attackId).length > 0;
-        return hasKev && !this.enrichment.hasDefensiveSignal(t, domain);
+        return hasKev && !hasDefensiveReference(this.enrichment.signals(t, domain));
       }).length;
 
       // Top 10 risk techniques sorted by threat group count (expanded for gap widget)
@@ -315,8 +320,8 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
       }
 
       // Per-tactic mapped count, sorted ascending (fewest mapped first). The
-      // same mappedRollup() rows as the stats bar, analytics panel and tactic
-      // summary, so the Tactic Breakdown bars and Radar agree with them.
+      // same rollup rows as the stats bar, analytics panel and tactic summary,
+      // so the Tactic Breakdown bars and Radar agree with them.
       const tacticStats = rollup.byTactic
         .map(row => ({ name: row.tacticName, shortname: row.shortname, pct: row.pct, covered: row.mapped, total: row.total }))
         .sort((a, b) => a.pct - b.pct);
@@ -349,29 +354,6 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
       // Recent KEV entries (most recent 5 by dateAdded)
       const recentKevEntries = this.getRecentKevEntries();
 
-      // Legacy composite (0–100), kept computed for the E0.2 characterization
-      // pin only and NOT rendered (E1.5, D6 hide-before-delete). It is not a
-      // Known-rung number: 25% of its weight is threat input (KEV exposure and
-      // group-used techniques, both inverted), so adding a group that uses an
-      // unmitigated technique lowers it. Threat is a separate dimension, never a
-      // posture rung (plan 4.1), so no label, grade or risk verdict is derived
-      // from it; the defensive-only Known view is the Reference depth lens.
-      //   mitigation coverage       0.20
-      //   detection coverage        0.20
-      //   control coverage          0.20
-      //   D3FEND coverage           0.15
-      //   KEV exposure (inverted)   0.15
-      //   threat pressure (inverted)0.10
-      const frac = (n: number) => (totalTechniques > 0 ? n / totalTechniques : 0);
-      const postureScore = Math.round(100 * (
-        0.20 * frac(et.mitigation) +
-        0.20 * frac(et.detection) +        // Sigma+CAR analytics only; D3FEND is its own term below (no double-count, atomic excluded)
-        0.20 * frac(et.control) +
-        0.15 * frac(et.d3fend) +
-        0.15 * (1 - frac(kevExposedGapCount)) +
-        0.10 * (1 - frac(criticalRiskCount))
-      ));
-
       this.stats = {
         totalTechniques,
         coveredTechniques,
@@ -379,7 +361,6 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
         uncoveredCount,
         mitigationCoveragePct,
         controlCoveragePct,
-        postureScore,
         implementedCount,
         inProgressCount,
         plannedCount,

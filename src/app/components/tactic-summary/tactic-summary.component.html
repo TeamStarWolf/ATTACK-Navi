@@ -18,6 +18,26 @@
         <div class="coverage-fill" [style.width.%]="mappedStats.pct"></div>
       </div>
 
+      <!-- Posture (P2-08): this tactic's row of PostureService.rollup(), only with data of yours recorded -->
+      @if (ownerWords() && postureStats(); as p) {
+        <div class="stat-row" data-testid="tactic-posture-covered">
+          <span class="stat-label">{{ labels.covered }}</span>
+          <span class="stat-value"><span data-posture="covered">{{ p.covered }}</span> of <span data-posture="assessable">{{ p.assessable }}</span> assessable</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">{{ labels.partial }}</span>
+          <span class="stat-value" data-posture="partial">{{ p.partial }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">{{ labels.proven }}</span>
+          <span class="stat-value" data-posture="proven">{{ p.proven }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">{{ labels.stale }}</span>
+          <span class="stat-value" data-posture="stale">{{ p.stale }}</span>
+        </div>
+      }
+
       <!-- Mitigation-only coverage, shown explicitly as one framework -->
       <div class="stat-row">
         <span class="stat-label">Mitigations</span>

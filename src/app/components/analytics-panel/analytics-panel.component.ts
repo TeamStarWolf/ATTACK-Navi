@@ -6,6 +6,9 @@ import {
   OnDestroy,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
+  Signal,
+  computed,
+  inject,
 } from '@angular/core';
 
 import { Subscription } from 'rxjs';
@@ -16,8 +19,10 @@ import { ImplementationService } from '../../services/implementation.service';
 import { CveService } from '../../services/cve.service';
 import { SigmaService } from '../../services/sigma.service';
 import { NistMappingService } from '../../services/nist-mapping.service';
-import { EnrichmentService } from '../../services/enrichment.service';
+import { PostureService } from '../../services/posture.service';
+import type { PostureTally } from '../../models/posture/posture.types';
 import { Domain } from '../../models/domain';
+import { POSTURE_LINE_LABELS } from '../posture-card/posture-card.component';
 
 interface TacticStat {
   name: string;
@@ -61,8 +66,8 @@ export class AnalyticsPanelComponent implements OnInit, OnDestroy {
   topGaps: TopGap[] = [];
   topMitigations: TopMitigation[] = [];
   // Known tier ('mapped', E1.7): >=1 defensive reference input, from
-  // EnrichmentService.mappedRollup(). Never threat-intel or CVE links.
-  // P2 seam: PostureService replaces these with Known / Covered / Proven.
+  // PostureService.rollup() (P2-08), whose Known numbers are mappedRollup's.
+  // Never threat-intel or CVE links.
   mappedPct = 0;
   totalTechs = 0;
   mappedTechs = 0;
@@ -77,6 +82,12 @@ export class AnalyticsPanelComponent implements OnInit, OnDestroy {
 
   private subs = new Subscription();
 
+  private readonly posture = inject(PostureService);
+  readonly ownerWords: Signal<boolean> = this.posture.ownerWords;
+  /** The rollup's Covered / partial / Proven / stale over parent techniques, shown only under ownerWords(). */
+  readonly postureOverall: Signal<PostureTally> = computed(() => this.posture.rollup().overall);
+  readonly labels = POSTURE_LINE_LABELS;
+
   constructor(
     private filterService: FilterService,
     private panelNav: PanelNavService,
@@ -85,7 +96,6 @@ export class AnalyticsPanelComponent implements OnInit, OnDestroy {
     private cveService: CveService,
     private sigmaService: SigmaService,
     private nistMappingService: NistMappingService,
-    private enrichment: EnrichmentService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -125,7 +135,7 @@ export class AnalyticsPanelComponent implements OnInit, OnDestroy {
     const parentTechs = this.domain.techniques.filter(t => !t.isSubtechnique);
     // Known tier: the same rollup stats-bar, tactic-summary, the timeline
     // snapshots and roadmap-panel show; mitigation is tracked separately.
-    const rollup = this.enrichment.mappedRollup(this.domain);
+    const rollup = this.posture.rollup();
     this.totalTechs = rollup.overall.total;
     this.mappedTechs = rollup.overall.mapped;
     this.mappedPct = rollup.overall.pct;

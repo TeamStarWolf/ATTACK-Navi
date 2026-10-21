@@ -13,17 +13,17 @@
 //     EnrichmentService.riskScore with the matrix's KEV scores), the first 20
 //     parent techniques as [attackId, score];
 //   - dimmed: the techniques "Dim uncovered" dims (matrix isDimmed with
-//     dimUncovered on, which reads EnrichmentService.isEnriched); empty on the
+//     dimUncovered on, which reads hasAnySignal since P2-08); empty on the
 //     fixture today, with a sensitivity spec that shows the pin can move;
-//   - dashboard: criticalRiskCount, kevExposedGapCount and the legacy
-//     postureScore, all read from DashboardPanelComponent's stats (the KEV-gap
-//     count is exposed there, unrendered, for this pin; an independent
-//     recomputation of both predicates cross-checks them). The KEV-gap count is 0
-//     on the fixture by construction (every KEV-mapped technique has a
-//     defensive signal; the DARK_TECHNIQUES have no CVE signal), so two
-//     sensitivity specs below show the pin can move: a dark technique given a
-//     KEV CVE, and a KEV-mapped parent stripped of every defensive link, each
-//     become a KEV-exposed gap and move postureScore;
+//   - dashboard: criticalRiskCount and kevExposedGapCount, read from
+//     DashboardPanelComponent's stats (the KEV-gap count is exposed there,
+//     unrendered, for this pin; an independent recomputation of both predicates
+//     cross-checks them). The KEV-gap count is 0 on the fixture by construction
+//     (every KEV-mapped technique has a defensive signal; the DARK_TECHNIQUES
+//     have no CVE signal), so two sensitivity specs below show the pin can move:
+//     a dark technique given a KEV CVE, and a KEV-mapped parent stripped of
+//     every defensive link, each become a KEV-exposed gap. (P2-08 deleted the
+//     hidden legacy postureScore; it left this section by the update procedure below.)
 //   - statusStops: the status-lens stop and cell colour per technique (the
 //     best-status fold over every mapped mitigation);
 //   - implImplemented: the techniques impl=implemented keeps (not filtered).
@@ -54,6 +54,7 @@ import { DataService } from '../services/data.service';
 import { EnrichmentService } from '../services/enrichment.service';
 import { FilterService } from '../services/filter.service';
 import { ImplementationService, ImplStatus } from '../services/implementation.service';
+import { hasDefensiveReference } from '../models/known-signals';
 import { DARK_TECHNIQUES, controlsProvider, parseFixtureDomain, resetBrowserState, signalStubProviders } from './lens-harness';
 
 const SEEDED = ['M1026', 'M1047'] as const;
@@ -72,7 +73,7 @@ const STATUS_STOP: Record<ImplStatus | 'none', string> = {
   none: 'none', 'not-started': 'not started', 'in-progress': 'in progress', planned: 'planned', implemented: 'implemented',
 };
 
-interface DashboardValues { criticalRiskCount: number; kevExposedGapCount: number; postureScore: number }
+interface DashboardValues { criticalRiskCount: number; kevExposedGapCount: number }
 
 /** Replace one method of an injected stub for one ATT&CK id; every other id keeps the stub's answer. */
 function overrideFor(svc: object, method: string, attackId: string, value: unknown): void {
@@ -122,7 +123,7 @@ for (const profile of ['fresh', 'seeded'] as const) {
     const byId = (a: Technique, b: Technique) => a.attackId.localeCompare(b.attackId);
 
     /**
-     * The dashboard's threat-gap counters and legacy composite, read from
+     * The dashboard's threat-gap counters, read from
      * DashboardPanelComponent's stats (kevExposedGapCount is exposed there,
      * unrendered, for this pin; dashboard-panel.component.ts buildStats).
      */
@@ -131,7 +132,7 @@ for (const profile of ['fresh', 'seeded'] as const) {
       dash.detectChanges();
       const stats = dash.componentInstance.stats!;
       dash.destroy();
-      return { criticalRiskCount: stats.criticalRiskCount, kevExposedGapCount: stats.kevExposedGapCount, postureScore: stats.postureScore };
+      return { criticalRiskCount: stats.criticalRiskCount, kevExposedGapCount: stats.kevExposedGapCount };
     }
 
     function values(): RiskDimValues {
@@ -163,9 +164,9 @@ for (const profile of ['fresh', 'seeded'] as const) {
       const dash = dashboard();
       const cves = TestBed.inject(AttackCveService);
       const kevGaps = parents.filter(t =>
-        cves.getKevCvesForTechnique(t.attackId).length > 0 && !enrichment.hasDefensiveSignal(t, domain)).length;
+        cves.getKevCvesForTechnique(t.attackId).length > 0 && !hasDefensiveReference(enrichment.signals(t, domain))).length;
       const critical = parents.filter(t =>
-        (domain.groupsByTechnique.get(t.id)?.length ?? 0) > 0 && !enrichment.hasDefensiveSignal(t, domain)).length;
+        (domain.groupsByTechnique.get(t.id)?.length ?? 0) > 0 && !hasDefensiveReference(enrichment.signals(t, domain))).length;
       expect(dash.criticalRiskCount).withContext('criticalRiskCount predicate').toBe(critical);
       expect(dash.kevExposedGapCount).withContext('kevExposedGapCount predicate').toBe(kevGaps);
 
@@ -233,7 +234,7 @@ for (const profile of ['fresh', 'seeded'] as const) {
       const enrichment = TestBed.inject(EnrichmentService);
       const t1007 = domain.techniques.find(x => x.attackId === 'T1007')!;
       expect(DARK_TECHNIQUES.has('T1007')).withContext('T1007 has no defensive or CVE signal').toBeTrue();
-      expect(enrichment.hasDefensiveSignal(t1007, domain)).toBeFalse();
+      expect(hasDefensiveReference(enrichment.signals(t1007, domain))).toBeFalse();
       expect(cves.getKevCvesForTechnique('T1007')).toEqual([]);
 
       overrideFor(cves, 'getKevCvesForTechnique', 'T1007', [{ cveId: 'CVE-2024-10070' }]);
@@ -252,7 +253,6 @@ for (const profile of ['fresh', 'seeded'] as const) {
       const all = dashboard();
       expect(all.kevExposedGapCount).toBe(darkParents.length);
       expect(all.criticalRiskCount).toBe(before.criticalRiskCount);
-      expect(all.postureScore).withContext('the KEV-gap term moves the legacy composite').toBeLessThan(before.postureScore);
     });
 
     it('the KEV-gap pin can see a change: a KEV-mapped parent stripped of every defensive link is a KEV-exposed gap', () => {
@@ -262,7 +262,7 @@ for (const profile of ['fresh', 'seeded'] as const) {
       const target = domain.techniques.filter(t => !t.isSubtechnique).sort(byId)
         .find(t => cves.getKevCvesForTechnique(t.attackId).length > 0)!;
       expect(target).withContext('the fixture has a KEV-mapped parent').toBeDefined();
-      expect(enrichment.hasDefensiveSignal(target, domain)).withContext(`${target.attackId} is defended today`).toBeTrue();
+      expect(hasDefensiveReference(enrichment.signals(target, domain))).withContext(`${target.attackId} is defended today`).toBeTrue();
 
       // Strip its mitigation, detection, control and D3FEND links.
       const id = target.attackId;
@@ -274,12 +274,11 @@ for (const profile of ['fresh', 'seeded'] as const) {
         overrideFor(TestBed.inject(svc as unknown as typeof NistMappingService), 'getControlCount', id, 0);
       }
       overrideFor(TestBed.inject(D3fendService), 'getCountermeasures', id, []);
-      expect(enrichment.hasDefensiveSignal(target, domain)).withContext(`${id} stripped`).toBeFalse();
+      expect(hasDefensiveReference(enrichment.signals(target, domain))).withContext(`${id} stripped`).toBeFalse();
 
       const after = dashboard();
       expect(after.kevExposedGapCount).toBe(before.kevExposedGapCount + 1);
       expect(after.kevExposedGapCount).toBe(1);
-      expect(after.postureScore).withContext('the legacy composite moves').toBeLessThan(before.postureScore);
     });
 
     it('today, risk, dim and the threat-gap counters ignore implemented mitigations (P2-09 changes this)', () => {
