@@ -10,6 +10,7 @@ import {
   OnChanges,
   HostListener,
   HostBinding,
+  inject,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   ViewChild,
@@ -58,7 +59,7 @@ import { Cve2CapecService } from '../../services/cve2capec.service';
 import { PocExploitService } from '../../services/poc-exploit.service';
 import { EnrichmentService } from '../../services/enrichment.service';
 import { referenceDepthScore } from '../../models/reference-depth';
-import { hasAnySignal } from '../../models/known-signals';
+import { PostureService } from '../../services/posture.service';
 import { LENS_NA_COLOR, isLensAvailable } from '../../models/heatmap-modes';
 import type { AttackDomain } from '../../services/data.service';
 
@@ -295,6 +296,8 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private subs = new Subscription();
+  /** Posture buckets for Sort by risk and Dim uncovered (P2-09, E2.1-d3). */
+  private readonly posture = inject(PostureService);
 
   constructor(
     private filterService: FilterService,
@@ -468,6 +471,16 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
   ngOnInit(): void {
     this.matrixControl.register(this);
     this.el.nativeElement.addEventListener('wheel', this.wheelListener, { passive: false });
+
+    // Sort by risk reads the posture bucket (P2-09): owner data recorded while
+    // the matrix is open re-sorts it.
+    this.subs.add(
+      this.posture.states$.subscribe(() => {
+        if (this.sortMode !== 'coverage') return;
+        this.rebuildSortedColumns();
+        this.cdr.markForCheck();
+      }),
+    );
 
     this.subs.add(
       this.filterService.selectedTechnique$.subscribe((t) => {
@@ -1299,12 +1312,13 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
         techniques = [...techniques, ...customForTactic];
         if (this.sortMode === 'coverage') {
           // "Sort by risk": highest multi-signal risk first (threat pressure +
-          // KEV exposure, doubled when wholly undefended), not fewest mitigations.
-          techniques.sort((a, b) => {
-            const ra = this.enrichment.riskScore(a, this.domain, this.kevScores.get(a.attackId) ?? 0);
-            const rb = this.enrichment.riskScore(b, this.domain, this.kevScores.get(b.attackId) ?? 0);
-            return rb - ra || a.attackId.localeCompare(b.attackId);
-          });
+          // KEV exposure, doubled for a threat gap: wholly unmapped with nothing
+          // of the owner's recorded at Covered or above, P2-09), not fewest
+          // mitigations.
+          const risk = new Map(techniques.map(t => [t, this.enrichment.riskScore(
+            t, this.domain, this.kevScores.get(t.attackId) ?? 0, this.posture.stateFor(t).bucket,
+          )]));
+          techniques.sort((a, b) => risk.get(b)! - risk.get(a)! || a.attackId.localeCompare(b.attackId));
         }
         return { ...col, techniques };
       });
@@ -1768,10 +1782,10 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
       if (!techMatches && !subMatches) return true;
     }
     if (this.hasDataSourceFilter && this.dataSourceIds && !this.dataSourceIds.has(t.id) && !t.subtechniques.some((s) => this.dataSourceIds!.has(s.id))) return true;
-    // "Dim uncovered" = dim techniques with NO enrichment of any kind (no
-    // cross-framework signal), not merely those lacking a mitigation. P2-09
-    // makes it dim posture bucket 'none'.
-    if (this.dimUncovered && !hasAnySignal(this.enrichment.signals(t, this.domain))) return true;
+    // "Dim uncovered" dims posture bucket 'none' (P2-09, E2.1-d3): no defensive
+    // reference input of the Known tier (Atomic tests count) and nothing of the
+    // owner's recorded. Threat-intel and CVE links no longer keep a cell bright.
+    if (this.dimUncovered && this.posture.stateFor(t).bucket === 'none') return true;
     if (this.hasTechniqueSearch) {
       if (this.matchedIds.has(t.id)) return false;
       if (t.subtechniques.some((s) => this.matchedIds.has(s.id))) return false;

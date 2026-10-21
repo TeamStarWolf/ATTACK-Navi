@@ -1,36 +1,58 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 //
-// Characterization baseline (Phase 2 design P2-01, R18): the LEGACY risk, dim
-// and threat-gap answers and the legacy status fold, pinned as they are today,
-// on a fresh profile and on the seeded profile (M1047 and M1026 'implemented').
-// P2-09 makes risk, dim and the threat-gap counters read posture, and P2-14
-// re-derives the status lens and impl= from PostureService; each updates this
-// baseline in the same PR, so the diff shows exactly which numbers moved.
+// Before/after spec for the risk sort, Dim uncovered and the dashboard's
+// threat-gap counters (Phase 2 design §3 P2-09, E2.1-d3; R9, S8). P2-01 pinned
+// the LEGACY answers (the "before"); P2-09 makes the three read posture, so this
+// spec pins the "after" next to them and shows exactly which numbers moved.
+// P2-14 re-derives the status lens and impl= from PostureService and moves the
+// status pins; P2-09 leaves them as they are.
 //
-// Pinned in __snapshots__/legacy-baseline.json, section riskDim.<profile>:
-//   - riskTop20: Sort by risk (matrix sortMode 'coverage', comparator over
-//     EnrichmentService.riskScore with the matrix's KEV scores), the first 20
-//     parent techniques as [attackId, score];
-//   - dimmed: the techniques "Dim uncovered" dims (matrix isDimmed with
-//     dimUncovered on, which reads hasAnySignal since P2-08); empty on the
-//     fixture today, with a sensitivity spec that shows the pin can move;
-//   - dashboard: criticalRiskCount and kevExposedGapCount, read from
+// Profiles, on the lens fixture (lens-harness.ts) with the real PostureService
+// and its stores, POSTURE_TODAY pinned to 2026-10-01:
+//   - fresh: no owner data of the user's (the fixture controls of
+//     controlsProvider reach only mitigated techniques, so they move no number;
+//     asserted below);
+//   - seeded: P2-07's seed composition (posture-seed.ts): M1047 and M1026
+//     implemented, one confirmed technique, one passed own run with a fired
+//     detection, one failed run after a mark, one not-reproducible run. The
+//     confirmed and the proven technique are the two highest-risk threat gaps;
+//     a separate spec shows P2-07's own picks (mitigated parents) move nothing.
+//
+// Before: __snapshots__/legacy-baseline.json section riskDim.<profile>, as
+// P2-01 pinned it (fresh; seeded = M1047 and M1026 implemented). The legacy
+// answers read no owner data at all, so P2-01's seeded pin is also the before of
+// the fuller P2-07 seed; the first spec recomputes the legacy answers on each
+// profile and checks them against those pins, unchanged:
+//   - riskTop20: Sort by risk, the first 20 parent techniques as [attackId,
+//     score], read with the pre-posture bucket ('none', riskScore's default);
+//   - dimmed: hasAnySignal false (threat-intel and CVE links kept a cell bright);
+//   - dashboard: criticalRiskCount and kevExposedGapCount over
+//     hasDefensiveReference alone;
+//   - statusStops and implImplemented: the status fold, unchanged by P2-09.
+//
+// After: section riskDimAfter.<profile>:
+//   - riskTop20: the matrix comparator over riskScore(tech, domain, kev,
+//     bucket); a threat gap's exposure is doubled only while its bucket is not
+//     covered, proven or stale (isThreatGap);
+//   - dimmed: matrix isDimmed with Dim uncovered on, which dims posture bucket
+//     'none'; newlyDimmed is dimmed minus the before set;
+//   - dashboard: criticalRiskCount and kevExposedGapCount read from
 //     DashboardPanelComponent's stats (the KEV-gap count is exposed there,
-//     unrendered, for this pin; an independent recomputation of both predicates
-//     cross-checks them). The KEV-gap count is 0 on the fixture by construction
-//     (every KEV-mapped technique has a defensive signal; the DARK_TECHNIQUES
-//     have no CVE signal), so two sensitivity specs below show the pin can move:
-//     a dark technique given a KEV CVE, and a KEV-mapped parent stripped of
-//     every defensive link, each become a KEV-exposed gap. (P2-08 deleted the
-//     hidden legacy postureScore; it left this section by the update procedure below.)
-//   - statusStops: the status-lens stop and cell colour per technique (the
-//     best-status fold over every mapped mitigation);
-//   - implImplemented: the techniques impl=implemented keeps (not filtered).
+//     unrendered), cross-checked by an independent recomputation.
+// Fresh: risk order and both counters equal the before pins; dim equals the
+// before set plus the techniques kept bright only by threat-intel or CVE links.
+// Seeded: the covered and the proven technique leave the counters and drop in
+// the risk order; nothing else moves.
+//
+// The KEV-gap count is 0 on the fixture by construction (every KEV-mapped
+// technique has a defensive signal; the DARK_TECHNIQUES have no CVE signal), so
+// sensitivity specs below show the pins can move.
 //
 // To update after an INTENDED change: run this spec, copy each logged
 // "[legacy-baseline] <section> <json>" line's json into that section of the
-// JSON file, and review the diff. Never hand-edit a value to make it pass.
+// JSON file, and review the diff. Never hand-edit a value to make it pass. The
+// before sections (riskDim) are history: P2-09 leaves them byte-identical.
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -41,6 +63,9 @@ import { DashboardPanelComponent } from '../components/dashboard-panel/dashboard
 import { Domain } from '../models/domain';
 import { HEATMAP_MODES } from '../models/heatmap-modes';
 import { Technique } from '../models/technique';
+import type { PostureBucket } from '../models/posture/posture.types';
+import { refForTechnique, techniqueRefKey } from '../models/technique-ref';
+import { AtomicService } from '../services/atomic.service';
 import { AttackCveService } from '../services/attack-cve.service';
 import { CARService } from '../services/car.service';
 import { CisControlsService } from '../services/cis-controls.service';
@@ -54,10 +79,13 @@ import { DataService } from '../services/data.service';
 import { EnrichmentService } from '../services/enrichment.service';
 import { FilterService } from '../services/filter.service';
 import { ImplementationService, ImplStatus } from '../services/implementation.service';
-import { hasDefensiveReference } from '../models/known-signals';
+import { PostureService } from '../services/posture.service';
+import { SourceRegistryService } from '../services/source-registry.service';
+import { TechniqueMarksService } from '../services/technique-marks.service';
+import { ValidationService } from '../services/validation.service';
+import { hasAnySignal, hasDefensiveReference } from '../models/known-signals';
 import { DARK_TECHNIQUES, controlsProvider, parseFixtureDomain, resetBrowserState, signalStubProviders } from './lens-harness';
-
-const SEEDED = ['M1026', 'M1047'] as const;
+import { type PostureSeedPicks, daysBeforeSeedToday, postureSeedToday, seedPostureProfile } from './posture-seed';
 
 /** The real LibraryLayerService asks for its manifest when the matrix is built. */
 const LIBRARY_MANIFEST = [{ file: 'lens-fixture-a.json', name: 'Lens fixture A', description: '' }];
@@ -73,6 +101,9 @@ const STATUS_STOP: Record<ImplStatus | 'none', string> = {
   none: 'none', 'not-started': 'not started', 'in-progress': 'in progress', planned: 'planned', implemented: 'implemented',
 };
 
+/** Buckets that record something of the owner's at Covered or above (independent of isThreatGap). */
+const RECORDED: ReadonlySet<PostureBucket> = new Set<PostureBucket>(['covered', 'proven', 'stale']);
+
 interface DashboardValues { criticalRiskCount: number; kevExposedGapCount: number }
 
 /** Replace one method of an injected stub for one ATT&CK id; every other id keeps the stub's answer. */
@@ -82,7 +113,7 @@ function overrideFor(svc: object, method: string, attackId: string, value: unkno
   target[method] = (id: string) => (id === attackId ? value : original(id));
 }
 
-interface RiskDimValues {
+interface BeforeValues {
   riskTop20: [string, number][];
   dimmed: string[];
   dashboard: DashboardValues;
@@ -90,27 +121,42 @@ interface RiskDimValues {
   implImplemented: string[];
 }
 
+interface AfterValues {
+  riskTop20: [string, number][];
+  dimmed: string[];
+  newlyDimmed: string[];
+  dashboard: DashboardValues;
+}
+
+const before = (profile: string): BeforeValues =>
+  (BASELINE as unknown as { riskDim: Record<string, BeforeValues> }).riskDim[profile];
+const afterPin = (profile: string): AfterValues | undefined =>
+  (BASELINE as unknown as { riskDimAfter?: Record<string, AfterValues> }).riskDimAfter?.[profile];
+
 for (const profile of ['fresh', 'seeded'] as const) {
-  describe(`Legacy risk sort, dim, threat-gap counters and status fold, ${profile} profile (characterization, P2-01)`, () => {
+  describe(`Risk sort, dim and threat-gap counters before and after posture, ${profile} profile (P2-09, E2.1-d3)`, () => {
     let domain: Domain;
     let matrix: MatrixComponent;
     let filter: FilterService;
+    let posture: PostureService;
+    let picks: PostureSeedPicks | null = null;
 
     beforeEach(() => {
       resetBrowserState();
       domain = parseFixtureDomain();
       TestBed.configureTestingModule({
         imports: [MatrixComponent, DashboardPanelComponent],
-        providers: [provideHttpClient(withXhr()), provideHttpClientTesting(), ...signalStubProviders(), controlsProvider(domain)],
+        providers: [
+          provideHttpClient(withXhr()), provideHttpClientTesting(), ...signalStubProviders(), controlsProvider(domain),
+          postureSeedToday(),
+        ],
       });
       // Score maps and the sort are computed in the class, not the template.
       TestBed.overrideTemplate(MatrixComponent, '');
       (TestBed.inject(DataService) as unknown as { domainSubject: { next(d: Domain): void } }).domainSubject.next(domain);
       filter = TestBed.inject(FilterService);
-      if (profile === 'seeded') {
-        const impl = TestBed.inject(ImplementationService);
-        for (const id of SEEDED) impl.setStatus(domain.mitigations.find(m => m.attackId === id)!.id, 'implemented');
-      }
+      posture = TestBed.inject(PostureService);
+      picks = profile === 'seeded' ? seedPostureProfile(domain) : null;
       const fixture = TestBed.createComponent(MatrixComponent);
       fixture.componentRef.setInput('domain', domain);
       fixture.detectChanges();
@@ -121,6 +167,9 @@ for (const profile of ['fresh', 'seeded'] as const) {
     afterEach(() => resetBrowserState());
 
     const byId = (a: Technique, b: Technique) => a.attackId.localeCompare(b.attackId);
+    const sorted = (ids: Iterable<string>) => [...ids].sort((a, b) => a.localeCompare(b));
+    const keyOf = (t: Technique) => techniqueRefKey(refForTechnique(t, 'enterprise', domain.attackVersion));
+    const parentsById = () => domain.techniques.filter(t => !t.isSubtechnique).sort(byId);
 
     /**
      * The dashboard's threat-gap counters, read from
@@ -135,15 +184,61 @@ for (const profile of ['fresh', 'seeded'] as const) {
       return { criticalRiskCount: stats.criticalRiskCount, kevExposedGapCount: stats.kevExposedGapCount };
     }
 
-    function values(): RiskDimValues {
+    const kev = (t: Technique) => matrix.kevScores.get(t.attackId) ?? 0;
+    /** After: the posture-aware score the matrix sorts by. */
+    const risk = (t: Technique) => TestBed.inject(EnrichmentService).riskScore(t, domain, kev(t), posture.stateFor(t).bucket);
+    /** Before: the pre-posture score (bucket 'none', riskScore's default). */
+    const legacyRisk = (t: Technique) => TestBed.inject(EnrichmentService).riskScore(t, domain, kev(t));
+    const rankBy = (score: (t: Technique) => number) => [...parentsById()].sort((a, b) => score(b) - score(a) || byId(a, b));
+    const top20 = (ranked: Technique[], score: (t: Technique) => number) =>
+      ranked.slice(0, 20).map(t => [t.attackId, score(t)] as [string, number]);
+
+    /** The legacy answers, recomputed from the signals alone (they read no owner data). */
+    function legacy(): Omit<BeforeValues, 'statusStops' | 'implImplemented'> {
+      const enrichment = TestBed.inject(EnrichmentService);
+      const cves = TestBed.inject(AttackCveService);
+      const parents = parentsById();
+      const undefended = (t: Technique) => !hasDefensiveReference(enrichment.signals(t, domain));
+      return {
+        riskTop20: top20(rankBy(legacyRisk), legacyRisk),
+        dimmed: [...domain.techniques].sort(byId).filter(t => !hasAnySignal(enrichment.signals(t, domain))).map(t => t.attackId),
+        dashboard: {
+          criticalRiskCount: parents.filter(t => (domain.groupsByTechnique.get(t.id)?.length ?? 0) > 0 && undefended(t)).length,
+          kevExposedGapCount: parents.filter(t => cves.getKevCvesForTechnique(t.attackId).length > 0 && undefended(t)).length,
+        },
+      };
+    }
+
+    /** The status fold (P2-14 moves it; P2-09 must not). */
+    function statusFold(): Pick<BeforeValues, 'statusStops' | 'implImplemented'> {
+      const all = [...domain.techniques].sort(byId);
+      filter.setHeatmapMode('status');
+      const statusDef = HEATMAP_MODES.find(m => m.value === 'status')!;
+      const stopColours = new Map(statusDef.ramp.stops.map(s => [s.label, s.color]));
+      const statusStops: Record<string, [string, string]> = {};
+      for (const t of all) {
+        const stop = STATUS_STOP[matrix.getTechniqueImplStatus(t) ?? 'none'];
+        const colour = matrix.getCellColor(t);
+        expect(colour).withContext(`status colour of ${t.attackId} is its ramp stop`).toBe(stopColours.get(stop)!);
+        statusStops[t.attackId] = [stop, colour];
+      }
+      // impl=implemented: the techniques the filter keeps; every other one is dimmed.
+      filter.setImplStatusFilter('implemented');
+      const implImplemented = all.filter(t => !matrix.isImplFiltered(t)).map(t => t.attackId);
+      for (const t of all) expect(matrix.isDimmed(t)).withContext(`impl= dims ${t.attackId}`).toBe(!implImplemented.includes(t.attackId));
+      filter.setImplStatusFilter(null);
+      return { statusStops, implImplemented };
+    }
+
+    /** The posture-aware answers, read from the matrix and the dashboard. */
+    function after(): AfterValues & { ranked: Technique[] } {
       const enrichment = TestBed.inject(EnrichmentService);
       const all = [...domain.techniques].sort(byId);
       const parents = all.filter(t => !t.isSubtechnique);
 
       // Sort by risk: the matrix comparator, over every parent technique.
       filter.setSortMode('coverage');
-      const risk = (t: Technique) => enrichment.riskScore(t, domain, matrix.kevScores.get(t.attackId) ?? 0);
-      const ranked = [...parents].sort((a, b) => risk(b) - risk(a) || byId(a, b));
+      const ranked = rankBy(risk);
       // The matrix's own columns are ordered by that same comparator.
       const rank = new Map(ranked.map((t, i) => [t.id, i]));
       expect(matrix.sortedColumns.length).toBeGreaterThan(5);
@@ -158,111 +253,238 @@ for (const profile of ['fresh', 'seeded'] as const) {
       expect(matrix.dimUncovered).toBeTrue();
       const dimmed = all.filter(t => matrix.isDimmed(t)).map(t => t.attackId);
       filter.toggleDimUncovered();
+      expect(dimmed).withContext('dim = bucket none').toEqual(all.filter(t => posture.stateFor(t).bucket === 'none').map(t => t.attackId));
 
-      // Dashboard threat-gap counters (dashboard-panel.component.ts), read from
-      // the component; an independent recomputation cross-checks both.
+      // Dashboard threat-gap counters, read from the component; an independent
+      // recomputation cross-checks both.
       const dash = dashboard();
       const cves = TestBed.inject(AttackCveService);
-      const kevGaps = parents.filter(t =>
-        cves.getKevCvesForTechnique(t.attackId).length > 0 && !hasDefensiveReference(enrichment.signals(t, domain))).length;
-      const critical = parents.filter(t =>
-        (domain.groupsByTechnique.get(t.id)?.length ?? 0) > 0 && !hasDefensiveReference(enrichment.signals(t, domain))).length;
+      const gap = (t: Technique) =>
+        !hasDefensiveReference(enrichment.signals(t, domain)) && !RECORDED.has(posture.stateFor(t).bucket);
+      const critical = parents.filter(t => (domain.groupsByTechnique.get(t.id)?.length ?? 0) > 0 && gap(t)).length;
+      const kevGaps = parents.filter(t => cves.getKevCvesForTechnique(t.attackId).length > 0 && gap(t)).length;
       expect(dash.criticalRiskCount).withContext('criticalRiskCount predicate').toBe(critical);
       expect(dash.kevExposedGapCount).withContext('kevExposedGapCount predicate').toBe(kevGaps);
 
-      // Status lens: the best-status fold, its ramp stop and the cell colour.
-      filter.setHeatmapMode('status');
-      const statusDef = HEATMAP_MODES.find(m => m.value === 'status')!;
-      const stopColours = new Map(statusDef.ramp.stops.map(s => [s.label, s.color]));
-      const statusStops: Record<string, [string, string]> = {};
-      for (const t of all) {
-        const stop = STATUS_STOP[matrix.getTechniqueImplStatus(t) ?? 'none'];
-        const colour = matrix.getCellColor(t);
-        expect(colour).withContext(`status colour of ${t.attackId} is its ramp stop`).toBe(stopColours.get(stop)!);
-        statusStops[t.attackId] = [stop, colour];
-      }
-
-      // impl=implemented: the techniques the filter keeps; every other one is dimmed.
-      filter.setImplStatusFilter('implemented');
-      const implImplemented = all.filter(t => !matrix.isImplFiltered(t)).map(t => t.attackId);
-      for (const t of all) expect(matrix.isDimmed(t)).withContext(`impl= dims ${t.attackId}`).toBe(!implImplemented.includes(t.attackId));
-      filter.setImplStatusFilter(null);
-
+      const was = new Set(before(profile).dimmed);
       return {
-        riskTop20: ranked.slice(0, 20).map(t => [t.attackId, risk(t)] as [string, number]),
+        riskTop20: top20(ranked, risk),
         dimmed,
+        newlyDimmed: dimmed.filter(id => !was.has(id)),
         dashboard: dash,
-        statusStops,
-        implImplemented,
+        ranked,
       };
     }
 
-    it('pins the legacy values', () => {
-      const v = values();
-      // Non-degenerate: the pins can see a change.
-      expect(v.riskTop20.length).toBe(20);
-      // Today every fixture technique has some enrichment link (the undefended
-      // ones are still used by a group), so Dim uncovered dims nothing; the
-      // sensitivity spec below shows the pin can see a technique that loses them.
-      expect(v.dimmed).toEqual([]);
-      expect(v.dashboard.criticalRiskCount).toBeGreaterThan(0);
+    const pinnable = (v: AfterValues): AfterValues =>
+      ({ riskTop20: v.riskTop20, dimmed: v.dimmed, newlyDimmed: v.newlyDimmed, dashboard: v.dashboard });
+
+    it('before: the legacy answers still equal the P2-01 pins (they read no owner data)', () => {
+      const pinned = before(profile);
+      expect(pinned).withContext('both before profiles are pinned').toBeDefined();
+      const l = legacy();
+      expect(l.riskTop20).toEqual(pinned.riskTop20);
+      expect(l.dimmed).toEqual(pinned.dimmed);
+      expect(l.dashboard).toEqual(pinned.dashboard);
+      // The status fold is P2-14's; P2-09 leaves it exactly as pinned.
+      const fold = statusFold();
+      expect(fold.statusStops).toEqual(pinned.statusStops);
+      expect(fold.implImplemented).toEqual(pinned.implImplemented);
       if (profile === 'seeded') {
-        expect(v.implImplemented.length).toBeGreaterThan(0);
-        expect(new Set(Object.values(v.statusStops).map(s => s[0]))).toEqual(new Set(['none', 'implemented']));
+        expect(new Set(Object.values(fold.statusStops).map(s => s[0]))).toEqual(new Set(['none', 'implemented']));
       } else {
-        expect(v.implImplemented).toEqual([]);
-        expect(new Set(Object.values(v.statusStops).map(s => s[0]))).toEqual(new Set(['none']));
+        expect(new Set(Object.values(fold.statusStops).map(s => s[0]))).toEqual(new Set(['none']));
       }
-      pin(`riskDim.${profile}`, v);
     });
 
-    it('the dim pin can see a change: an undefended technique stripped of its threat links is dimmed', () => {
-      const t = domain.techniques.find(x => x.attackId === 'T1007')!;
-      expect(DARK_TECHNIQUES.has(t.attackId)).withContext('T1007 has no defensive or CVE signal').toBeTrue();
-      domain.groupsByTechnique.delete(t.id);
-      domain.softwareByTechnique.delete(t.id);
-      domain.campaignsByTechnique.delete(t.id);
-      expect(values().dimmed).toEqual(['T1007']);
+    it('after: pins the posture-aware values', () => {
+      const v = after();
+      expect(v.riskTop20.length).toBe(20);
+      expect(v.dashboard.criticalRiskCount).toBeGreaterThan(0);
+      pin(`riskDimAfter.${profile}`, pinnable(v));
     });
 
-    it('the KEV-gap pin can see a change: an undefended (dark) technique given a KEV CVE is a KEV-exposed gap', () => {
-      const pinned = (BASELINE as unknown as { riskDim: Record<string, RiskDimValues> }).riskDim[profile].dashboard;
-      const before = dashboard();
-      expect(before).withContext('the component reproduces the pinned counters').toEqual(pinned);
+    if (profile === 'fresh') {
+      it('fresh: risk order and both counters equal the before pins; dim adds exactly the threat-only techniques', () => {
+        const enrichment = TestBed.inject(EnrichmentService);
+        // The fixture controls give owner marks only where a mitigation is mapped,
+        // so no owner mark reaches a technique without a defensive reference.
+        for (const t of domain.techniques) {
+          if (posture.stateFor(t).bucket === 'none' || posture.stateFor(t).bucket === 'known') continue;
+          expect(hasDefensiveReference(enrichment.signals(t, domain))).withContext(`${t.attackId} has a mark and a reference`).toBeTrue();
+        }
+        const v = after();
+        const pinned = before('fresh');
+        expect(v.riskTop20).withContext('risk order byte-identical').toEqual(pinned.riskTop20);
+        expect(v.ranked.map(t => t.attackId)).withContext('every parent, not only the top 20')
+          .toEqual(rankBy(legacyRisk).map(t => t.attackId));
+        expect(v.dashboard).withContext('both counters unchanged').toEqual(pinned.dashboard);
+
+        // Kept bright before only by threat-intel or CVE links: some signal, but
+        // none of the five Known reference inputs (Atomic tests count there).
+        const threatOnly = [...domain.techniques].sort(byId)
+          .filter(t => hasAnySignal(enrichment.signals(t, domain)) && enrichment.referenceSignalCount(t, domain) === 0)
+          .map(t => t.attackId);
+        expect(threatOnly.length).withContext('the change is visible on the fixture').toBeGreaterThan(0);
+        expect(v.dimmed).toEqual(sorted(new Set([...pinned.dimmed, ...threatOnly])));
+        expect(v.newlyDimmed).toEqual(threatOnly);
+        // On this fixture they are exactly the techniques with no ATT&CK mitigation.
+        expect(threatOnly).toEqual(sorted(DARK_TECHNIQUES));
+      });
+
+      it("P2-07's own picks move nothing: owner data on a technique with a defensive reference never moves a P2-09 number", () => {
+        const freshAfter = pinnable(after());
+        // P2-07's seed as P2-07 picks it (posture-count-equality.spec.ts picks()).
+        const mitigation = (id: string) => domain.mitigations.find(m => m.attackId === id)!;
+        const parentIds = (id: string) => (domain.techniquesByMitigation.get(mitigation(id).id) ?? [])
+          .filter(t => !t.isSubtechnique).map(t => t.attackId).sort();
+        const m1047 = parentIds('M1047');
+        const m1026 = parentIds('M1026');
+        const only1047 = m1047.filter(id => !m1026.includes(id));
+        const only1026 = m1026.filter(id => !m1047.includes(id));
+        const untouched = parentsById().map(t => t.attackId).filter(id => !m1047.includes(id) && !m1026.includes(id));
+        const tech = (id: string) => domain.techniques.find(t => t.attackId === id)!;
+        const impl = TestBed.inject(ImplementationService);
+        impl.setStatus(mitigation('M1047').id, 'implemented');
+        impl.setStatus(mitigation('M1026').id, 'implemented');
+        expect(TestBed.inject(TechniqueMarksService).confirm(keyOf(tech(only1026[0])))).toBeTrue();
+        expect(TestBed.inject(ValidationService).importJson(JSON.stringify({ runs: [
+          { id: 'p207-pass', techniqueId: only1047[0], runDate: daysBeforeSeedToday(10), status: 'passed', attackResult: 'executed',
+            detectionsFired: ['sigma:p2-07'] },
+          { id: 'p207-fail', techniqueId: only1047[1], runDate: daysBeforeSeedToday(5), status: 'failed', attackResult: 'executed' },
+          { id: 'p207-nr', techniqueId: untouched[0], runDate: daysBeforeSeedToday(3), status: 'not-reproducible', attackResult: 'executed' },
+        ] })).ok).toBeTrue();
+        expect(posture.stateFor(tech(only1047[0])).bucket).toBe('proven');
+        expect(posture.stateFor(tech(only1026[0])).bucket).toBe('covered');
+        expect(pinnable(after())).toEqual(freshAfter);
+      });
+    } else {
+      it('seeded: the covered and the proven technique leave the counters and drop in the risk order; nothing else moves', () => {
+        const s = picks!;
+        const v = after();
+        const pinned = before('seeded');
+        const freshAfter = afterPin('fresh');
+        expect(freshAfter).withContext('the fresh after values are pinned').toBeDefined();
+        expect([s.confirmed, s.proof, s.failed, s.notReproducible].map(t => t.attackId))
+          .withContext('the seed picks: confirmed, proof, failed, not reproducible').toEqual(['T1007', 'T1082', 'T1021', 'T1001']);
+        expect(posture.stateFor(s.confirmed).bucket).toBe('covered');
+        expect(posture.stateFor(s.proof).bucket).toBe('proven');
+        expect(posture.stateFor(s.failed).subStates).toContain('contradicted');
+        expect(posture.stateFor(s.notReproducible).excluded).toBeTrue();
+
+        // Counters: both picks were critical-risk before (used by a group, no
+        // defensive reference) and leave; neither is KEV-mapped on the fixture.
+        expect(v.dashboard.criticalRiskCount).toBe(pinned.dashboard.criticalRiskCount - 2);
+        expect(v.dashboard.kevExposedGapCount).toBe(pinned.dashboard.kevExposedGapCount);
+
+        // Risk: each pick's score halves and it drops; the other parents keep their order.
+        const legacyOrder = rankBy(legacyRisk).map(t => t.attackId);
+        const afterOrder = v.ranked.map(t => t.attackId);
+        for (const t of [s.confirmed, s.proof]) {
+          expect(risk(t) * 2).withContext(t.attackId).toBe(legacyRisk(t));
+          expect(afterOrder.indexOf(t.attackId)).withContext(`${t.attackId} drops`).toBeGreaterThan(legacyOrder.indexOf(t.attackId));
+        }
+        const moved = new Set([s.confirmed.attackId, s.proof.attackId]);
+        expect(afterOrder.filter(id => !moved.has(id))).toEqual(legacyOrder.filter(id => !moved.has(id)));
+        for (const t of parentsById()) if (!moved.has(t.attackId)) expect(risk(t)).withContext(t.attackId).toBe(legacyRisk(t));
+        expect(legacyOrder.slice(0, 20)).toEqual(pinned.riskTop20.map(([id]) => id));
+
+        // Dim: the fresh after set, minus the two picks the owner recorded.
+        expect(v.dimmed).toEqual(freshAfter!.dimmed.filter(id => !moved.has(id)));
+      });
+    }
+
+    // ── Sensitivity: each pin can see a change ─────────────────────────────
+    /** A dark parent used by a group that the seed did not touch. */
+    function darkProbe(): Technique {
+      const taken = new Set(picks ? [picks.confirmed, picks.proof, picks.failed, picks.notReproducible].map(t => t.id) : []);
+      const t = parentsById().find(x => DARK_TECHNIQUES.has(x.attackId) && !taken.has(x.id)
+        && (domain.groupsByTechnique.get(x.id)?.length ?? 0) > 0)!;
+      expect(t).withContext('the fixture has an untouched dark parent').toBeDefined();
+      expect(posture.stateFor(t).bucket).toBe('none');
+      return t;
+    }
+
+    it('the dim pin can see a change: owner data or an Atomic test lifts a dimmed technique', () => {
+      const probe = darkProbe();
+      const dimmedNow = () => {
+        filter.toggleDimUncovered();
+        const d = matrix.isDimmed(probe);
+        filter.toggleDimUncovered();
+        return d;
+      };
+      expect(dimmedNow()).withContext(`${probe.attackId} dims (bucket none)`).toBeTrue();
+
+      // An Atomic test is a Known reference input: bucket 'known', not dimmed.
+      // A store write is not involved, so nudge PostureService's Known revision.
+      overrideFor(TestBed.inject(AtomicService), 'getTestCount', probe.attackId, 2);
+      const registry = TestBed.inject(SourceRegistryService);
+      registry.succeed(registry.all()[0].id);
+      expect(posture.stateFor(probe).bucket).toBe('known');
+      expect(dimmedNow()).toBeFalse();
+      overrideFor(TestBed.inject(AtomicService), 'getTestCount', probe.attackId, 0);
+      registry.succeed(registry.all()[0].id);
+      expect(dimmedNow()).toBeTrue();
+
+      // A technique confirmation: bucket 'covered', not dimmed.
+      expect(TestBed.inject(TechniqueMarksService).confirm(keyOf(probe))).toBeTrue();
+      expect(posture.stateFor(probe).bucket).toBe('covered');
+      expect(dimmedNow()).toBeFalse();
+    });
+
+    it('the counters and the risk sort can see a stale proof: it leaves the counters and loses its doubling', () => {
+      const probe = darkProbe();
+      const start = dashboard();
+      const doubled = risk(probe);
+      expect(TestBed.inject(ValidationService).importJson(JSON.stringify({ runs: [
+        { id: 'p209-stale', techniqueId: probe.attackId, runDate: daysBeforeSeedToday(200), status: 'passed', attackResult: 'executed',
+          detectionsFired: ['sigma:p2-09-stale'] },
+      ] })).ok).toBeTrue();
+      expect(posture.stateFor(probe).bucket).toBe('stale');
+      expect(dashboard().criticalRiskCount).toBe(start.criticalRiskCount - 1);
+      expect(risk(probe) * 2).toBe(doubled);
+    });
+
+    it('the KEV-gap pin can see a change: an undefended (dark) technique given a KEV CVE is a KEV-exposed gap until the owner covers it', () => {
+      const start = dashboard();
+      expect(start).withContext('the component reproduces the pinned counters').toEqual(afterPin(profile)!.dashboard);
 
       const cves = TestBed.inject(AttackCveService);
       const enrichment = TestBed.inject(EnrichmentService);
-      const t1007 = domain.techniques.find(x => x.attackId === 'T1007')!;
-      expect(DARK_TECHNIQUES.has('T1007')).withContext('T1007 has no defensive or CVE signal').toBeTrue();
-      expect(hasDefensiveReference(enrichment.signals(t1007, domain))).toBeFalse();
-      expect(cves.getKevCvesForTechnique('T1007')).toEqual([]);
+      const probe = darkProbe();
+      expect(hasDefensiveReference(enrichment.signals(probe, domain))).toBeFalse();
+      expect(cves.getKevCvesForTechnique(probe.attackId)).toEqual([]);
 
-      overrideFor(cves, 'getKevCvesForTechnique', 'T1007', [{ cveId: 'CVE-2024-10070' }]);
+      overrideFor(cves, 'getKevCvesForTechnique', probe.attackId, [{ cveId: `CVE-2024-${probe.attackId.slice(1)}0` }]);
       const one = dashboard();
-      expect(one.kevExposedGapCount).toBe(before.kevExposedGapCount + 1);
+      expect(one.kevExposedGapCount).toBe(start.kevExposedGapCount + 1);
       expect(one.kevExposedGapCount).toBe(1);
-      expect(one.criticalRiskCount).withContext('KEV is not a criticalRisk input').toBe(before.criticalRiskCount);
+      expect(one.criticalRiskCount).withContext('KEV is not a criticalRisk input').toBe(start.criticalRiskCount);
 
-      // One technique moves the 0.15 KEV term by 100 * 0.15 / 45 = 0.33 points,
-      // which rounding can hide; every dark parent at once cannot hide.
-      const darkParents = domain.techniques.filter(t => !t.isSubtechnique && DARK_TECHNIQUES.has(t.attackId));
-      expect(darkParents.length).toBeGreaterThan(3);
+      // Every untouched dark parent at once cannot hide.
+      const recorded = (t: Technique) => RECORDED.has(posture.stateFor(t).bucket);
+      const darkParents = parentsById().filter(t => DARK_TECHNIQUES.has(t.attackId) && !recorded(t));
+      expect(darkParents.length).toBeGreaterThanOrEqual(3);
       for (const t of darkParents) {
-        if (t.attackId !== 'T1007') overrideFor(cves, 'getKevCvesForTechnique', t.attackId, [{ cveId: `CVE-2024-${t.attackId.slice(1)}0` }]);
+        if (t !== probe) overrideFor(cves, 'getKevCvesForTechnique', t.attackId, [{ cveId: `CVE-2024-${t.attackId.slice(1)}0` }]);
       }
-      const all = dashboard();
-      expect(all.kevExposedGapCount).toBe(darkParents.length);
-      expect(all.criticalRiskCount).toBe(before.criticalRiskCount);
+      expect(dashboard().kevExposedGapCount).toBe(darkParents.length);
+
+      // Covered (a technique confirmation) takes it out of both counters.
+      expect(TestBed.inject(TechniqueMarksService).confirm(keyOf(probe))).toBeTrue();
+      const covered = dashboard();
+      expect(covered.kevExposedGapCount).toBe(darkParents.length - 1);
+      expect(covered.criticalRiskCount).toBe(start.criticalRiskCount - 1);
     });
 
     it('the KEV-gap pin can see a change: a KEV-mapped parent stripped of every defensive link is a KEV-exposed gap', () => {
-      const before = dashboard();
+      const start = dashboard();
       const cves = TestBed.inject(AttackCveService);
       const enrichment = TestBed.inject(EnrichmentService);
-      const target = domain.techniques.filter(t => !t.isSubtechnique).sort(byId)
-        .find(t => cves.getKevCvesForTechnique(t.attackId).length > 0)!;
-      expect(target).withContext('the fixture has a KEV-mapped parent').toBeDefined();
-      expect(hasDefensiveReference(enrichment.signals(target, domain))).withContext(`${target.attackId} is defended today`).toBeTrue();
+      const target = parentsById()
+        .find(t => cves.getKevCvesForTechnique(t.attackId).length > 0 && !RECORDED.has(posture.stateFor(t).bucket))!;
+      expect(target).withContext('the fixture has a KEV-mapped parent with nothing of the owner recorded').toBeDefined();
+      expect(hasDefensiveReference(enrichment.signals(target, domain))).withContext(`${target.attackId} is mapped today`).toBeTrue();
 
       // Strip its mitigation, detection, control and D3FEND links.
       const id = target.attackId;
@@ -276,18 +498,9 @@ for (const profile of ['fresh', 'seeded'] as const) {
       overrideFor(TestBed.inject(D3fendService), 'getCountermeasures', id, []);
       expect(hasDefensiveReference(enrichment.signals(target, domain))).withContext(`${id} stripped`).toBeFalse();
 
-      const after = dashboard();
-      expect(after.kevExposedGapCount).toBe(before.kevExposedGapCount + 1);
-      expect(after.kevExposedGapCount).toBe(1);
-    });
-
-    it('today, risk, dim and the threat-gap counters ignore implemented mitigations (P2-09 changes this)', () => {
-      const v = values();
-      const other = (BASELINE as unknown as { riskDim: Record<string, RiskDimValues | undefined> }).riskDim[profile === 'fresh' ? 'seeded' : 'fresh'];
-      expect(other).withContext('both profiles are pinned').toBeDefined();
-      expect(v.riskTop20).toEqual(other!.riskTop20);
-      expect(v.dimmed).toEqual(other!.dimmed);
-      expect(v.dashboard).toEqual(other!.dashboard);
+      const stripped = dashboard();
+      expect(stripped.kevExposedGapCount).toBe(start.kevExposedGapCount + 1);
+      expect(stripped.kevExposedGapCount).toBe(1);
     });
   });
 }

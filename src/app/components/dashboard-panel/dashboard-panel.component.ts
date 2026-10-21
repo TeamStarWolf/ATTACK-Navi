@@ -30,11 +30,10 @@ import { MispService } from '../../services/misp.service';
 import { OpenCtiService } from '../../services/opencti.service';
 import { XlsxExportService } from '../../services/xlsx-export.service';
 import { CustomMitigationService } from '../../services/custom-mitigation.service';
-import { EnrichmentService, mappedPct } from '../../services/enrichment.service';
+import { EnrichmentService, isThreatGap, mappedPct } from '../../services/enrichment.service';
 import { KevEntry } from '../../models/cve';
 import { SourceRegistryService } from '../../services/source-registry.service';
 import { PostureService } from '../../services/posture.service';
-import { hasDefensiveReference } from '../../models/known-signals';
 import { PostureCardComponent } from '../posture-card/posture-card.component';
 
 export interface DashboardStats {
@@ -63,12 +62,16 @@ export interface DashboardStats {
   detectionCoveragePct: number;
 
   // Risk
-  criticalRiskCount: number;  // high threat + no mitigation
   /**
-   * KEV-mapped parent techniques with no defensive reference input other than
-   * an Atomic test (hasDefensiveReference). Not rendered; exposed so the P2-01
-   * characterization baseline (legacy-risk-dim.spec.ts) reads the component's
-   * own count, which P2-09 changes.
+   * Threat gaps (P2-09): parent techniques used by any ATT&CK group that are
+   * wholly unmapped, with nothing of the owner's recorded at Covered or above
+   * (isThreatGap). Not bound to the threat profile (S8).
+   */
+  criticalRiskCount: number;
+  /**
+   * KEV-mapped parent techniques that are threat gaps (isThreatGap). Not
+   * rendered; exposed so legacy-risk-dim.spec.ts reads the component's own
+   * count, pinned before and after P2-09.
    */
   kevExposedGapCount: number;
   cveExposedCount: number;
@@ -269,21 +272,19 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
       // 'detection' reference input of the Known tier.
       const detectionCoveragePct = mappedPct(ref.detection, totalTechniques);
 
-      // Critical risk: threat-relevant (≥1 group) techniques with NO defensive
-      // reference input — no mitigation AND no detection AND no control AND
-      // no D3FEND countermeasure (atomic tests / CVE links don't count as defense).
-      // P2-09 also leaves out techniques with Covered or Proven data.
-      const criticalRiskTechs = parentTechs.filter(t => {
-        const hasGroup = (domain.groupsByTechnique.get(t.id)?.length ?? 0) > 0;
-        return hasGroup && !hasDefensiveReference(this.enrichment.signals(t, domain));
-      });
+      // Critical risk (P2-09, E2.1-d3; R9, S8): threat-relevant (used by any
+      // ATT&CK group, not the threat profile) techniques that are threat gaps:
+      // NO defensive reference input (no mitigation, detection, control or
+      // D3FEND countermeasure; Atomic tests and CVE links don't count) AND
+      // nothing of the owner's recorded at Covered or above (posture bucket not
+      // covered, proven or stale). Fresh profile: unchanged.
+      const gap = (t: Technique) => isThreatGap(this.enrichment.signals(t, domain), this.posture.stateFor(t).bucket);
+      const criticalRiskTechs = parentTechs.filter(t => (domain.groupsByTechnique.get(t.id)?.length ?? 0) > 0 && gap(t));
       const criticalRiskCount = criticalRiskTechs.length;
 
-      // KEV-exposed gaps: KEV-mapped techniques that are wholly undefended.
-      const kevExposedGapCount = parentTechs.filter(t => {
-        const hasKev = this.attackCveService.getKevCvesForTechnique(t.attackId).length > 0;
-        return hasKev && !hasDefensiveReference(this.enrichment.signals(t, domain));
-      }).length;
+      // KEV-exposed gaps: KEV-mapped techniques that are threat gaps.
+      const kevExposedGapCount = parentTechs.filter(t =>
+        this.attackCveService.getKevCvesForTechnique(t.attackId).length > 0 && gap(t)).length;
 
       // Top 10 risk techniques sorted by threat group count (expanded for gap widget)
       const topRiskTechniques = [...criticalRiskTechs]

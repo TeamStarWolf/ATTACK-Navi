@@ -3,7 +3,8 @@
 import { Injectable } from '@angular/core';
 import { Domain } from '../models/domain';
 import { Technique } from '../models/technique';
-import { hasDefensiveReference } from '../models/known-signals';
+import { type SignalFamilies, hasDefensiveReference } from '../models/known-signals';
+import type { PostureBucket } from '../models/posture/posture.types';
 import { SigmaService } from './sigma.service';
 import { CARService } from './car.service';
 import { AtomicService } from './atomic.service';
@@ -358,17 +359,36 @@ export class EnrichmentService {
   /**
    * Multi-signal risk score for "Sort by risk". Higher = riskier: threat
    * pressure (groups weighted 2×, plus software + campaigns) and KEV exposure,
-   * doubled when the technique has no defensive reference input other than an
-   * Atomic test (`hasDefensiveReference`, models/known-signals.ts). P2-09 makes
-   * it read posture.
+   * doubled when the technique is a threat gap (`isThreatGap`): no defensive
+   * reference input other than an Atomic test, and nothing of the owner's
+   * recorded at Covered or above. `bucket` is the technique's posture bucket
+   * (PostureService.stateFor; P2-09, E2.1-d3). The default 'none' gives the
+   * pre-posture answer, so on a fresh profile the order is unchanged; only
+   * owner Covered or Proven data lowers a technique.
    */
-  riskScore(tech: Technique, domain?: Domain | null, kevScore = 0): number {
+  riskScore(tech: Technique, domain?: Domain | null, kevScore = 0, bucket: PostureBucket = 'none'): number {
     if (!tech) return 0;
     const groups = this.len(() => domain?.groupsByTechnique?.get(tech.id));
     const software = this.len(() => domain?.softwareByTechnique?.get(tech.id));
     const campaigns = this.len(() => domain?.campaignsByTechnique?.get(tech.id));
     const threat = groups * 2 + software + campaigns;
     const exposure = threat + (kevScore > 0 ? kevScore * 3 : 0);
-    return exposure * (hasDefensiveReference(this.signals(tech, domain)) ? 1 : 2);
+    return exposure * (isThreatGap(this.signals(tech, domain), bucket) ? 2 : 1);
   }
+}
+
+/** Buckets that record something of the owner's at Covered or above (§2.2): full Covered, Proven, stale Proven. */
+const OWNER_RECORDED: ReadonlySet<PostureBucket> = new Set<PostureBucket>(['covered', 'proven', 'stale']);
+
+/**
+ * A threat gap (P2-09, E2.1-d3; R9, S8): wholly unmapped (no mitigation,
+ * detection content, control mapping or D3FEND countermeasure, the Known test
+ * `hasDefensiveReference`) AND nothing of the owner's recorded: the posture
+ * bucket is not covered, proven or stale. A partial bucket is still a gap. The
+ * risk sort doubles a gap's exposure; the dashboard's critical-risk and
+ * KEV-exposed-gap counters count gaps. On a fresh profile every bucket is
+ * 'none' or 'known', so this equals `!hasDefensiveReference(s)`.
+ */
+export function isThreatGap(s: SignalFamilies, bucket: PostureBucket): boolean {
+  return !hasDefensiveReference(s) && !OWNER_RECORDED.has(bucket);
 }

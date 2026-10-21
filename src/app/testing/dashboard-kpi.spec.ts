@@ -5,6 +5,12 @@
 // expected number is recomputed here by an independent oracle from the fixture
 // and the stub signal data (lens-harness.ts), then checked twice: on the
 // component's `stats` and on the rendered Mapped Summary widget.
+//
+// The last describe pins the threat-gap counters before and after P2-09
+// (E2.1-d3; R9): criticalRiskCount and kevExposedGapCount on a fresh profile
+// and on the P2-07 seed composition (posture-seed.ts). Before = the legacy
+// predicate (used by a group / KEV-mapped, and no defensive reference); after =
+// the component, which also leaves out covered, proven and stale techniques.
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -14,6 +20,8 @@ import { Domain } from '../models/domain';
 import { Technique } from '../models/technique';
 import { DataService } from '../services/data.service';
 import { ImplementationService } from '../services/implementation.service';
+import { PostureService } from '../services/posture.service';
+import { type PostureSeedPicks, postureSeedToday, seedPostureProfile } from './posture-seed';
 import {
   IMPL_CYCLE, controlsProvider, cvesFor, parseFixtureDomain, resetBrowserState, signal,
   signalStubProviders, sortedMitigations,
@@ -140,3 +148,67 @@ describe('Dashboard KPIs (fixture domain)', () => {
     expect(rendered('Posture score')).toBe('(not rendered)');
   });
 });
+
+/**
+ * Pinned before and after values on the fixture (P2-09). Before is P2-01's
+ * legacy-baseline riskDim.<profile>.dashboard; after is riskDimAfter.
+ */
+const THREAT_GAP_PINS = {
+  fresh: { before: { criticalRiskCount: 5, kevExposedGapCount: 0 }, after: { criticalRiskCount: 5, kevExposedGapCount: 0 } },
+  seeded: { before: { criticalRiskCount: 5, kevExposedGapCount: 0 }, after: { criticalRiskCount: 3, kevExposedGapCount: 0 } },
+} as const;
+
+for (const profile of ['fresh', 'seeded'] as const) {
+  describe(`Dashboard threat-gap counters before and after posture, ${profile} profile (P2-09, E2.1-d3)`, () => {
+    let domain: Domain;
+    let parents: Technique[];
+    let picks: PostureSeedPicks | null;
+    let fixture: ComponentFixture<DashboardPanelComponent>;
+
+    beforeEach(() => {
+      resetBrowserState();
+      domain = parseFixtureDomain();
+      parents = domain.techniques.filter(t => !t.isSubtechnique);
+      TestBed.configureTestingModule({
+        imports: [DashboardPanelComponent],
+        providers: [provideHttpClient(withXhr()), provideHttpClientTesting(), ...signalStubProviders(), postureSeedToday()],
+      });
+      (TestBed.inject(DataService) as unknown as { domainSubject: { next(d: Domain): void } }).domainSubject.next(domain);
+      picks = profile === 'seeded' ? seedPostureProfile(domain) : null;
+      fixture = TestBed.createComponent(DashboardPanelComponent);
+      fixture.detectChanges();
+    });
+
+    afterEach(() => resetBrowserState());
+
+    it('before: the legacy predicate gives the P2-01 values', () => {
+      const legacy = {
+        criticalRiskCount: parents.filter(t => { const o = oracle(t, domain); return o.groups > 0 && !o.defended; }).length,
+        kevExposedGapCount: parents.filter(t => { const o = oracle(t, domain); return o.kev && !o.defended; }).length,
+      };
+      expect(legacy).toEqual(THREAT_GAP_PINS[profile].before);
+    });
+
+    it('after: the component leaves out covered, proven and stale techniques; the scope line reads "used by any ATT&CK group"', () => {
+      const stats = fixture.componentInstance.stats!;
+      const pinned = THREAT_GAP_PINS[profile].after;
+      expect({ criticalRiskCount: stats.criticalRiskCount, kevExposedGapCount: stats.kevExposedGapCount }).toEqual(pinned);
+
+      // Oracle: the legacy predicate minus the techniques with Covered-or-above owner data.
+      const posture = TestBed.inject(PostureService);
+      const recorded = (t: Technique) => ['covered', 'proven', 'stale'].includes(posture.stateFor(t).bucket);
+      const critical = parents.filter(t => { const o = oracle(t, domain); return o.groups > 0 && !o.defended && !recorded(t); });
+      expect(critical.length).toBe(pinned.criticalRiskCount);
+      expect(stats.topRiskTechniques.map(r => r.attackId).sort()).toEqual(critical.map(t => t.attackId).sort());
+      if (picks) {
+        expect(stats.topRiskTechniques.map(r => r.attackId)).not.toContain(picks.confirmed.attackId);
+        expect(stats.topRiskTechniques.map(r => r.attackId)).not.toContain(picks.proof.attackId);
+      } else {
+        expect(pinned).withContext('fresh: unchanged').toEqual(THREAT_GAP_PINS.fresh.before);
+      }
+
+      const scope = (fixture.nativeElement as HTMLElement).querySelector('[data-critical-risk-scope]');
+      expect(scope?.textContent?.trim()).toBe(`${pinned.criticalRiskCount} critical-risk techniques, used by any ATT&CK group`);
+    });
+  });
+}
