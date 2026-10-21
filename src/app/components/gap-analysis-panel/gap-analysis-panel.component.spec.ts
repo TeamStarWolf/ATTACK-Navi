@@ -39,6 +39,7 @@ describe('GapAnalysisPanelComponent', () => {
             get current() { return { source: profileSource }; },
             profile$: new BehaviorSubject({ source: profileSource }),
             setSource: jasmine.createSpy(),
+            absentGroups: () => [],
         }},
       ],
     });

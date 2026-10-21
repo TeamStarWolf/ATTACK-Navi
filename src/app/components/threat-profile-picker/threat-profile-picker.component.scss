@@ -139,6 +139,9 @@
   }
 }
 
+/* profile mode: stored groups the loaded domain lacks, dimmed but still selectable (RP-F decision 6). */
+.tpp-absent .tpp-item--absent { opacity: 0.6; }
+
 .tpp-empty {
   padding: 8px 10px;
   font-size: 0.8rem;

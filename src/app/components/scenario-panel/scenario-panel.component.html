@@ -275,6 +275,8 @@
 
             @if (profileSimResult; as sim) {
               <div class="sim-result-body">
+                <!-- RP-F decision 6: the simulated profile's groups this domain lacks (renders nothing otherwise). -->
+                <app-profile-domain-notice />
                 <div class="sim-summary-row">
                   <div class="sim-summary-card">
                     <div class="sim-summary-value">{{ sim.coveragePercent }}%</div>

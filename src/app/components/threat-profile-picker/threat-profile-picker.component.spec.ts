@@ -1,6 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed, ComponentFixture } from '@angular/core/testing';
+import { WritableSignal, signal } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { ThreatProfilePickerComponent } from './threat-profile-picker.component';
 import { DataService } from '../../services/data.service';
@@ -10,7 +11,8 @@ import { ThreatProfileService } from '../../services/threat-profile.service';
 import { Domain } from '../../models/domain';
 import { ThreatGroup } from '../../models/group';
 import { Campaign } from '../../models/campaign';
-import { ThreatProfileSource } from '../../models/threat-profile';
+import { ProfileGroupRef, ThreatProfileSource } from '../../models/threat-profile';
+import { THREAT_WEIGHT_PROVIDER } from '../../models/posture/threat-weight';
 
 // The picker is the single source of the sector aid table (P2-10). This fixture mirrors the
 // expected content; the test compares the picker's runtime `component.sectors` against it, so
@@ -46,6 +48,9 @@ describe('ThreatProfilePickerComponent', () => {
   let toggleThreatGroup: jasmine.Spy;
   let currentSource: ThreatProfileSource;
   let profileSubject: BehaviorSubject<{ source: ThreatProfileSource }>;
+  // RP-F decision 6: what the service reports as absent from the loaded domain, and its sentence.
+  let absent: ProfileGroupRef[];
+  let domainNotice: WritableSignal<string | null>;
 
   function configure(): void {
     domain$ = new BehaviorSubject<Domain | null>(domainWith(
@@ -66,6 +71,10 @@ describe('ThreatProfilePickerComponent', () => {
             get current() { return { source: currentSource }; },
             profile$: profileSubject,
             setSource,
+            absentGroups: (d: Domain | null) => (d ? absent : []),
+        } },
+        { provide: THREAT_WEIGHT_PROVIDER, useValue: {
+            weight: () => 0, revision: signal(0), parents: signal(new Set<string>()), domainNotice,
         } },
       ],
     });
@@ -73,7 +82,12 @@ describe('ThreatProfilePickerComponent', () => {
     component = fixture.componentInstance;
   }
 
-  beforeEach(() => { currentSource = { kind: 'top-groups', n: 20 }; configure(); });
+  beforeEach(() => {
+    currentSource = { kind: 'top-groups', n: 20 };
+    absent = [];
+    domainNotice = signal<string | null>(null);
+    configure();
+  });
 
   it('is created and loads groups and campaigns from the domain', () => {
     fixture.detectChanges();
@@ -316,5 +330,68 @@ describe('ThreatProfilePickerComponent', () => {
     expect(component.filteredGroups().map((g) => g.attackId)).toEqual(['G0001']);
     component.toggleSector('Financial');   // toggle off
     expect(component.filteredGroups().length).toBe(2);
+  });
+  describe('stored groups the loaded domain lacks (RP-F decision 6)', () => {
+    const APT29: ProfileGroupRef = { id: 'intrusion-set--apt29', name: 'APT29' };
+    const NOTICE = '1 of 2 groups present in Enterprise: grp-G0001; APT29 has no Enterprise use';
+    const host = () => fixture.nativeElement as HTMLElement;
+    const absentButtons = () => Array.from(host().querySelectorAll('[data-testid="profile-absent-groups"] button'));
+
+    beforeEach(() => {
+      TestBed.resetTestingModule();
+      currentSource = { kind: 'groups', ids: ['intrusion-set--aaa', APT29.id] };
+      absent = [APT29];
+      configure();
+      domainNotice.set(NOTICE);
+      component.mode = 'profile';
+      fixture.detectChanges();
+    });
+
+    it('the header shows the shared sentence and lists the absent group pressed, dimmed, "has no <Domain> use"', () => {
+      expect(host().querySelector('[data-testid="profile-domain-notice"]')!.textContent!.trim()).toBe(NOTICE);
+      const rows = absentButtons();
+      expect(rows.length).toBe(1);
+      expect(itemText(rows[0])).toBe('APT29 has no Enterprise use');
+      expect(rows[0].classList).toContain('tpp-item--absent');
+      expect(rows[0].getAttribute('aria-pressed')).toBe('true');
+    });
+
+    it('toggling a present group keeps the absent one in the stored selection (never dropped)', () => {
+      component.selectGroup(component.groups.find((g) => g.id === 'intrusion-set--bbb')!);
+      expect(setSource).toHaveBeenCalledWith({ kind: 'groups', ids: ['intrusion-set--aaa', APT29.id, 'intrusion-set--bbb'] });
+      component.selectGroup(component.groups.find((g) => g.id === 'intrusion-set--aaa')!);
+      expect(setSource.calls.mostRecent().args[0]).toEqual({ kind: 'groups', ids: [APT29.id, 'intrusion-set--bbb'] });
+    });
+
+    it('an absent group is selectable: deselecting keeps it listed (unpressed) so it can be picked again', () => {
+      component.toggleAbsent(APT29);
+      expect(setSource).toHaveBeenCalledWith({ kind: 'groups', ids: ['intrusion-set--aaa'] });
+      absent = [];                       // the service no longer stores it
+      profileSubject.next({ source: { kind: 'groups', ids: ['intrusion-set--aaa'] } });
+      fixture.detectChanges();
+      expect(absentButtons().length).toBe(1);
+      expect(absentButtons()[0].getAttribute('aria-pressed')).toBe('false');
+      (absentButtons()[0] as HTMLButtonElement).click();
+      expect(setSource.calls.mostRecent().args[0]).toEqual({ kind: 'groups', ids: ['intrusion-set--aaa', APT29.id] });
+    });
+
+    it('nothing is shown when every stored group is present, and the next domain load re-lists from the service', () => {
+      absent = [];
+      domainNotice.set(null);
+      domain$.next(domain$.value);       // a domain (re)load re-reads the absent list
+      fixture.detectChanges();
+      expect(host().querySelector('[data-testid="profile-domain-notice"]')).toBeNull();
+      expect(absentButtons().length).toBe(0);
+    });
+
+    it('single mode shows neither the notice nor the absent list', () => {
+      TestBed.resetTestingModule();
+      configure();
+      domainNotice.set(NOTICE);
+      component.mode = 'single';
+      fixture.detectChanges();
+      expect(host().querySelector('[data-testid="profile-domain-notice"]')).toBeNull();
+      expect(absentButtons().length).toBe(0);
+    });
   });
 });

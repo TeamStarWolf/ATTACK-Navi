@@ -1,6 +1,23 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
 <div class="tpp" role="group" aria-label="Threat profile picker">
+  @if (mode === 'profile') {
+    <!-- RP-F decision 6: say which stored groups the loaded domain lacks; never drop them. -->
+    <app-profile-domain-notice />
+    @if (absentShown.length > 0 && preset === 'groups') {
+      <ul class="tpp-list tpp-absent" aria-label="Profile groups absent from this domain" data-testid="profile-absent-groups">
+        @for (a of absentShown; track a.id) {
+          <li>
+            <button type="button" class="tpp-item tpp-item--absent" [class.selected]="selectedGroupIds.has(a.id)"
+                    [attr.aria-pressed]="selectedGroupIds.has(a.id)" (click)="toggleAbsent(a)">
+              <span class="tpp-item-name">{{ a.name }}</span>
+              <span class="tpp-item-id">has no {{ absentDomainLabel }} use</span>
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  }
   @if (showPresetTabs) {
     <div class="tpp-presets" role="tablist" aria-label="Profile source">
       <button type="button" role="tab" [attr.aria-selected]="preset === 'top-groups'"

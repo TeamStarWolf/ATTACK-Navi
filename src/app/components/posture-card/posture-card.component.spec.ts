@@ -188,4 +188,34 @@ describe('PostureCardComponent (P2-07)', () => {
     f.detectChanges();
     expect(line()).toBe(allParents.length);
   });
+  it("the ctem threat-relevant card shows the shared cross-domain notice through the token; 'all' does not (RP-F decision 6)", () => {
+    const d = makeSplitDomain();
+    const domainNotice = signal<string | null>('1 of 2 groups present in ICS: FIN7; APT29 has no ICS use');
+    const mount = (scope: 'all' | 'threat-relevant') => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [PostureCardComponent],
+        providers: [
+          { provide: DataService, useValue: { domain$: new BehaviorSubject(d) } },
+          postureStubProvider(makePostureStub(() => d, {})),
+          { provide: THREAT_WEIGHT_PROVIDER, useValue: { weight: () => 0, revision: signal(0), parents: signal(new Set<string>()), domainNotice } },
+        ],
+      });
+      const f = TestBed.createComponent(PostureCardComponent);
+      f.componentRef.setInput('scope', scope);
+      f.detectChanges();
+      return f;
+    };
+    const notice = (f: ComponentFixture<PostureCardComponent>) =>
+      (f.nativeElement as HTMLElement).querySelector('[data-testid="profile-domain-notice"]');
+
+    const tr = mount('threat-relevant');
+    expect(text(notice(tr))).toBe('1 of 2 groups present in ICS: FIN7; APT29 has no ICS use');
+    domainNotice.set(null);            // every stored group present: nothing changes on the card
+    tr.detectChanges();
+    expect(notice(tr)).toBeNull();
+
+    domainNotice.set('1 of 2 groups present in ICS: FIN7; APT29 has no ICS use');
+    expect(notice(mount('all'))).toBeNull();
+  });
 });

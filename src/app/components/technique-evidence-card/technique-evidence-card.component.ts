@@ -96,7 +96,8 @@ export class TechniqueEvidenceCardComponent {
   private readonly domain = toSignal(this.data.domain$, { initialValue: null });
   private readonly domainId = toSignal(this.data.currentDomain$, { initialValue: this.data.getCurrentAttackDomain() });
   private readonly mode = toSignal(inject(FilterService).heatmapMode$, { initialValue: DEFAULT_HEATMAP_MODE });
-  private readonly profile = toSignal(inject(ThreatProfileService).profile$, { initialValue: null });
+  private readonly threatProfile = inject(ThreatProfileService);
+  private readonly profile = toSignal(this.threatProfile.profile$, { initialValue: null });
   private readonly settingsNow = toSignal(this.settings.settings$, { initialValue: null });
   private readonly kevLoaded = toSignal(this.cve.kevLoaded$, { initialValue: false });
   private readonly kevScores = toSignal(this.cve.kevTechScores$, { initialValue: new Map<string, number>() });
@@ -206,7 +207,10 @@ export class TechniqueEvidenceCardComponent {
       ? [...new Set(this.attackCve.getCvesForTechnique(t.attackId).map(c => c.cveId))].filter(id => this.cve.isKev(id))
       : [];
     return {
-      profileLabel: profile?.label ?? null,
+      // RP-F decision 6: when some stored groups have no use in this domain, the line names
+      // them (the one shared sentence, ThreatProfileService.domainNotice) instead of the
+      // narrowed label; otherwise the label is unchanged.
+      profileLabel: profile ? (this.threatProfile.domainNotice() ?? profile.label) : null,
       profileActors: profile ? profile.usedBy(t.id) : [],
       bundleGroups: domain?.groupsByTechnique.get(t.id)?.length ?? 0,
       kevLoaded,

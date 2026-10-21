@@ -8,7 +8,7 @@ import { Technique } from './technique';
 import { ThreatGroup } from './group';
 import { Campaign } from './campaign';
 import { DataService } from '../services/data.service';
-import { rankGroupsByPrevalence, resolveProfile } from './threat-profile';
+import { profileDomainNotice, rankGroupsByPrevalence, resolveProfile, splitStoredGroups } from './threat-profile';
 
 function tech(id: string, attackId: string, parentId: string | null = null): Technique {
   return {
@@ -127,6 +127,36 @@ describe('threat-profile model', () => {
 
   // The Top-20 and all-groups parent counts over the real bundled Enterprise 19.2,
   // through parseBundle (the same code path the app runs; bundled-data.spec pattern).
+  describe('cross-domain groups (RP-F decision 6)', () => {
+    it('splitStoredGroups: present in the domain order, absent in the stored order without duplicates', () => {
+      const d = emptyDomain({ groups: [group('g-b', 'G0002'), group('g-a', 'G0001')] });
+      const split = splitStoredGroups(['g-x', 'g-a', 'g-b', 'g-x', 'g-y'], d);
+      expect(split.present.map((g) => g.id)).toEqual(['g-b', 'g-a']);
+      expect(split.absentIds).toEqual(['g-x', 'g-y']);
+    });
+
+    it('resolveProfile counts only the present groups (the same rule) and keeps the source as stored', () => {
+      const d = emptyDomain({ groups: [group('g-a', 'G0001')] });
+      const p = resolveProfile({ kind: 'groups', ids: ['g-a', 'g-gone'] }, d);
+      expect(p.groupIds).toEqual(['g-a']);
+      expect(p.source).toEqual({ kind: 'groups', ids: ['g-a', 'g-gone'] });
+    });
+
+    it('profileDomainNotice names the present and absent groups and the domain, or is null', () => {
+      const fin7 = { id: 'g-fin7', name: 'FIN7' };
+      const apt29 = { id: 'g-apt29', name: 'APT29' };
+      const apt28 = { id: 'g-apt28', name: 'APT28' };
+      expect(profileDomainNotice(null)).toBeNull();
+      expect(profileDomainNotice({ domain: 'enterprise', present: [fin7, apt29], absent: [] })).toBeNull();
+      expect(profileDomainNotice({ domain: 'ics', present: [fin7], absent: [apt29] }))
+        .toBe('1 of 2 groups present in ICS: FIN7; APT29 has no ICS use');
+      expect(profileDomainNotice({ domain: 'mobile', present: [fin7], absent: [apt29, apt28] }))
+        .toBe('1 of 3 groups present in Mobile: FIN7; APT29, APT28 have no Mobile use');
+      expect(profileDomainNotice({ domain: 'ics', present: [], absent: [apt29] }))
+        .toBe('0 of 1 group present in ICS; APT29 has no ICS use');
+    });
+  });
+
   describe('bundled Enterprise 19.2 prevalence counts', () => {
     let domain: Domain;
     beforeAll(async () => {
