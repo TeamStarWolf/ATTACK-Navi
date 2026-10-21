@@ -447,8 +447,10 @@ test.describe('lens availability (plan E1.2)', () => {
     await expect(page.locator('.cell.lens-na')).toHaveCount(cells);
 
     // The lens menu disables the 23 lenses without ICS data, each with its reason.
+    // This profile has no owner data, so the menu offers 34 of the 36 lenses:
+    // the Proven and Covered lenses wait for data of yours (§10.4 item 14).
     await page.locator('.heatmap-btn').click();
-    await expect(page.locator('.lens-na-summary')).toContainText('23 of 36 lenses have no ICS ATT&CK data');
+    await expect(page.locator('.lens-na-summary')).toContainText('23 of 34 lenses have no ICS ATT&CK data');
     const disabled = page.locator('.heatmap-groups .heatmap-mode-btn[aria-disabled="true"]');
     await expect(disabled).toHaveCount(23);
     for (const btn of await disabled.all()) {
