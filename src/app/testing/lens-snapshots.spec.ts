@@ -37,7 +37,8 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import SNAPSHOTS from './__snapshots__/lens-snapshots.json';
 import FROZEN_HASHES from './__snapshots__/lens-snapshots.frozen.json';
 import { MatrixComponent } from '../components/matrix/matrix.component';
-import { HEATMAP_MODES } from '../models/heatmap-modes';
+import { HEATMAP_MODES, heatmapModeDef } from '../models/heatmap-modes';
+import { registryCell } from '../models/lens-registry';
 import { Domain } from '../models/domain';
 import { Technique } from '../models/technique';
 import { DataService } from '../services/data.service';
@@ -87,7 +88,8 @@ const SCORE: Record<HeatmapMode, (m: MatrixComponent, t: Technique) => Score> = 
   coverage: (_m, t) => t.mitigationCount,
   status: (m, t) => m.getTechniqueImplStatus(t),
   controls: (m, t) => m.getControlStatus(t),
-  unified: (m, t) => m.getUnifiedScore(t),
+  // Reference depth (P2-15): the unified lens's registry projection, as the matrix computes it.
+  unified: (m, t) => registryCell(heatmapModeDef('unified')!, m.lensContext(), t).score,
   library: (m, t) => m.getLibraryScore(t),
   frequency: (m, t) => m.getFrequencyScore(t),
   risk: (m, t) => m.getRiskScore(t),

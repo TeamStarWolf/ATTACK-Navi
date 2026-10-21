@@ -24,7 +24,7 @@ import { TaxiiService, TaxiiServerConfig, TaxiiCollection } from '../../services
 import { ImportSummary } from '../../services/stix-collection.service';
 import { csvRow } from '../../utils/csv';
 import { HEATMAP_MODES } from '../../models/heatmap-modes';
-import { isRegistryLens, lensNameVisible } from '../../models/lens-registry';
+import { isPostureCellLens, lensNameVisible } from '../../models/lens-registry';
 import { PostureService } from '../../services/posture.service';
 
 @Component({
@@ -54,14 +54,16 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
   private readonly postureService = inject(PostureService);
 
   // The lenses the Colorblind-safe toggle leaves alone: the registry-hosted
-  // lenses, whose ramps are CVD-safe by design (P2-14). Read from the lens
+  // lenses with a posture cell, whose ramps are CVD-safe by design (P2-14).
+  // Reference depth is registry-hosted too (P2-15) but turns to viridis under
+  // the toggle, so it is not named (isPostureCellLens). Read from the lens
   // registry with the menu labels, so the description names each lens the way
   // the lens picker does. The Proven and Covered lenses are named only once
   // owner data exists (lensNameVisible over PostureService.ownerWords, §10.4
   // item 14): an empty user never sees a rung word here.
   readonly cvdOwnRampLenses: Signal<string> = computed(() => {
     const ownerWords = this.postureService.ownerWords();
-    return HEATMAP_MODES.filter(m => isRegistryLens(m) && lensNameVisible(m, ownerWords)).map(m => m.label).join(', ');
+    return HEATMAP_MODES.filter(m => isPostureCellLens(m) && lensNameVisible(m, ownerWords)).map(m => m.label).join(', ');
   });
 
   get themes(): { id: string; label: string; colors: string[] }[] {

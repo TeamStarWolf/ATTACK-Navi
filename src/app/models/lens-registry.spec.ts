@@ -4,15 +4,18 @@
 // The LensRegistry seam (Phase 2 design §2.5, §3 P2-13, P2-14): Posture,
 // Proven and Covered are registry-hosted and appended last; of the 33 older
 // entries, status and controls moved into the registry in P2-14 (re-derived
-// through PostureService) and keep their index, and the other 31 stay legacy
-// (no project, no color), so the matrix switchboard and the colour copies
-// still serve them unchanged.
+// through PostureService) and unified (Reference depth) in P2-15, a score-only
+// lens; all three keep their index, and the other 30 stay legacy (no project,
+// no color), so the matrix switchboard and the colour copies still serve them
+// unchanged.
 import {
-  HEATMAP_MODES, LENS_RUNG_MEANING, type LensContext, heatmapModeDef, isLensAvailable, lensAvailability, lensRungBadge,
+  HEATMAP_MODES, LENS_RUNG_MEANING, type LensContext, REFERENCE_DEPTH_STOP_SCORES, heatmapModeDef, isLensAvailable, lensAvailability,
+  lensRungBadge,
 } from './heatmap-modes';
+import { referenceDepthScore } from './reference-depth';
 import {
-  NO_OWNER_DATA_LINE, OWNER_DATA_LENSES, OWNER_WORD_LENSES, isRegistryLens, lensNameVisible, lensOnScreen, lensQuestion, registryCell,
-  registryColor,
+  NO_OWNER_DATA_LINE, OWNER_DATA_LENSES, OWNER_WORD_LENSES, SCORE_ONLY_LENSES, isPostureCellLens, isRegistryLens, lensNameVisible, lensOnScreen,
+  lensQuestion, registryCell, registryColor,
 } from './lens-registry';
 import type { Technique } from './technique';
 import { lensLabel } from './posture/posture-vocabulary';
@@ -33,15 +36,16 @@ function ctx(bucket: Parameters<typeof stubState>[1], theme: 'dark' | 'light' = 
 }
 
 describe('LensRegistry seam (P2-13)', () => {
-  it('hosts status and controls in place and posture, proven and covered appended after the 33 older entries', () => {
+  it('hosts status, controls and unified in place and posture, proven and covered appended after the 33 older entries', () => {
     const hosted = HEATMAP_MODES.filter(isRegistryLens).map(m => m.value);
-    expect(hosted).toEqual(['status', 'controls', 'posture', 'proven', 'covered']);
+    expect(hosted).toEqual(['status', 'controls', 'unified', 'posture', 'proven', 'covered']);
     expect(HEATMAP_MODES.findIndex(m => m.value === 'status')).toBe(1);
     expect(HEATMAP_MODES.findIndex(m => m.value === 'controls')).toBe(2);
+    expect(HEATMAP_MODES.findIndex(m => m.value === 'unified')).toBe(3);
     expect(HEATMAP_MODES.findIndex(m => m.value === 'posture')).toBe(33);
     expect(HEATMAP_MODES.findIndex(m => m.value === 'proven')).toBe(34);
     expect(HEATMAP_MODES.findIndex(m => m.value === 'covered')).toBe(35);
-    for (const def of HEATMAP_MODES.slice(0, 33).filter(d => d.value !== 'status' && d.value !== 'controls')) {
+    for (const def of HEATMAP_MODES.slice(0, 33).filter(d => !['status', 'controls', 'unified'].includes(d.value))) {
       expect(def.project).withContext(def.value).toBeUndefined();
       expect(def.color).withContext(def.value).toBeUndefined();
     }
@@ -73,6 +77,71 @@ describe('LensRegistry seam (P2-13)', () => {
         expect(registryColor(posture, cell, { theme, colorblindSafe: true })).toBe(postureFill(bucket, theme));
       }
     }
+  });
+});
+
+describe('the Reference depth lens in the registry (P2-15)', () => {
+  const unified = heatmapModeDef('unified')!;
+
+  /**
+   * The colour TechniqueCellComponent.computeUnifiedColor painted before P2-15,
+   * copied verbatim as the oracle (the minimap's threshold copy painted the
+   * colorblindSafe-off column for every score, 0 included).
+   */
+  function preRegistryColour(score: number, colorblindSafe: boolean): string {
+    if (colorblindSafe) {
+      if (score <= 15) return '#440154';
+      if (score <= 30) return '#414487';
+      if (score <= 50) return '#2a788e';
+      if (score <= 65) return '#22a884';
+      if (score <= 80) return '#7ad151';
+      return '#fde725';
+    }
+    if (score <= 15) return '#0e1b30';
+    if (score <= 30) return '#143a5c';
+    if (score <= 50) return '#1f6aa8';
+    if (score <= 65) return '#2f95d8';
+    if (score <= 80) return '#38bdf8';
+    return '#a78bfa';
+  }
+
+  it('is a score-only registry lens: no posture cell, and the only one', () => {
+    expect([...SCORE_ONLY_LENSES]).toEqual(['unified']);
+    expect(isRegistryLens(unified)).toBeTrue();
+    expect(isPostureCellLens(unified)).toBeFalse();
+    expect(HEATMAP_MODES.filter(isPostureCellLens).map(m => m.value)).toEqual(['status', 'controls', 'posture', 'proven', 'covered']);
+    expect(isPostureCellLens(heatmapModeDef('coverage'))).toBeFalse();
+    expect(isPostureCellLens(undefined)).toBeFalse();
+  });
+
+  it('projects the Reference depth score of the saturating Known counts', () => {
+    const counts = { mitigations: 3, detectionContent: 7, controls: 1, d3fend: 2, atomic: 0 };
+    const c: LensContext = { ...ctx('known'), knownCounts: () => counts };
+    expect(registryCell(unified, c, T)).toEqual({ score: referenceDepthScore(counts) });
+    expect(registryCell(unified, ctx('known'), T).score).toBe(referenceDepthScore(ctx('known').knownCounts(T)));
+  });
+
+  it('paints every score exactly as before, colorblind-safe off and on, in both themes', () => {
+    const scores = [...Array.from({ length: 101 }, (_, i) => i), -1, 100.5, 150, Number.NaN];
+    for (const score of scores) {
+      for (const colorblindSafe of [false, true]) {
+        for (const theme of ['dark', 'light'] as const) {
+          expect(registryColor(unified, { score }, { theme, colorblindSafe }))
+            .withContext(`${score} cvd=${colorblindSafe} ${theme}`).toBe(preRegistryColour(score, colorblindSafe));
+        }
+      }
+    }
+  });
+
+  it('keeps its six threshold stops, and each stop score paints that stop', () => {
+    expect(unified.ramp.scale).toBe('threshold');
+    expect(unified.ramp.stops.map(s => s.label)).toEqual(['0-15', '16-30', '31-50', '51-65', '66-80', '81-100']);
+    expect(unified.ramp.stops.map(s => s.color)).toEqual(['#0e1b30', '#143a5c', '#1f6aa8', '#2f95d8', '#38bdf8', '#a78bfa']);
+    expect(REFERENCE_DEPTH_STOP_SCORES.length).toBe(unified.ramp.stops.length);
+    REFERENCE_DEPTH_STOP_SCORES.forEach((score, i) => {
+      expect(registryColor(unified, { score }, { theme: 'dark', colorblindSafe: false })).toBe(unified.ramp.stops[i].color);
+      expect(registryColor(unified, { score }, { theme: 'dark', colorblindSafe: true })).toBe(preRegistryColour(score, true));
+    });
   });
 });
 
