@@ -9,6 +9,9 @@ import {
   OnInit,
   OnDestroy,
   ChangeDetectorRef,
+  DestroyRef,
+  computed,
+  signal,
 } from '@angular/core';
 
 import { RouterLink, RouterLinkActive } from '@angular/router';
@@ -17,6 +20,7 @@ import { CveService } from '../../services/cve.service';
 import { DataService } from '../../services/data.service';
 import { IconComponent } from '../../shared/icons/icon.component';
 import { ViewpointSelectorComponent } from '../viewpoint-selector/viewpoint-selector.component';
+import { readPref, writePref } from '../../utils/local-pref';
 
 interface WorkspaceNavItem {
   /** Workspace root path — routerLinkActive matches any child tab. */
@@ -63,6 +67,21 @@ export function defaultRailSections(): { label: string; items: string[] }[] {
 
 const NAVRAIL_ORDER_KEY = 'navrail-sections-v1';
 
+/** localStorage key for the icon-only rail: '1' when collapsed, absent when expanded (the default). */
+export const NAVRAIL_COLLAPSED_KEY = 'navrail-collapsed-v1';
+
+/** Above this width the rail is a side column; at or below it, a bottom bar (matches the SCSS query). */
+const WIDE_QUERY = '(width > 768px)';
+
+/** The stored collapsed preference; anything but '1' (or blocked storage) means expanded. */
+export function loadRailCollapsed(): boolean {
+  return readPref(NAVRAIL_COLLAPSED_KEY) === '1';
+}
+
+export function saveRailCollapsed(collapsed: boolean): void {
+  writePref(NAVRAIL_COLLAPSED_KEY, collapsed ? '1' : null);
+}
+
 @Component({
   selector: 'app-nav-rail',
   standalone: true,
@@ -70,6 +89,9 @@ const NAVRAIL_ORDER_KEY = 'navrail-sections-v1';
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './nav-rail.component.html',
   styleUrl: './nav-rail.component.scss',
+  host: {
+    '[class.collapsed]': 'iconOnly()',
+  },
 })
 export class NavRailComponent implements OnInit, OnDestroy {
   /** Opens the keyboard-help overlay (hosted by AppComponent). */
@@ -77,6 +99,18 @@ export class NavRailComponent implements OnInit, OnDestroy {
 
   /** The live (possibly user-reordered) sections. */
   sections: NavSection[] = this.loadSections();
+
+  /**
+   * The collapse preference, read when the rail is created so the first render
+   * already has it (no flash of the wide rail on reload). Persisted per browser.
+   */
+  readonly collapsed = signal(loadRailCollapsed());
+
+  /** True while the rail is a side column; the bottom bar (<= 768 px) never collapses. */
+  private readonly wide = signal(this.matchWide());
+
+  /** Icon-only mode is shown only when collapsed AND in side-column layout. */
+  readonly iconOnly = computed(() => this.collapsed() && this.wide());
 
   /** Drag state: which section + item is being dragged, and the hover target. */
   dragSection: number | null = null;
@@ -89,10 +123,12 @@ export class NavRailComponent implements OnInit, OnDestroy {
   private cveService = inject(CveService);
   private dataService = inject(DataService);
   private cdr = inject(ChangeDetectorRef);
+  private destroyRef = inject(DestroyRef);
   private kevSub?: Subscription;
   private domainSub?: Subscription;
 
   ngOnInit(): void {
+    this.watchWide();
     this.kevSub = this.cveService.newKevCount$.subscribe(count => {
       this.newKevCount = count;
       this.cdr.markForCheck();
@@ -113,6 +149,32 @@ export class NavRailComponent implements OnInit, OnDestroy {
 
   onSettingsClick(): void {
     this.newVersionAvailable = false;
+  }
+
+  /** Collapse to icons only, or expand back to labels; persisted per browser. */
+  toggleCollapsed(): void {
+    const next = !this.collapsed();
+    this.collapsed.set(next);
+    saveRailCollapsed(next);
+  }
+
+  /** Item tooltip: just the name in icon-only mode, the reorder hint otherwise. */
+  itemTitle(label: string, sectionLabel: string): string {
+    return this.iconOnly() ? label : label + ' — drag to reorder within ' + sectionLabel;
+  }
+
+  private matchWide(): boolean {
+    return typeof window === 'undefined' || typeof window.matchMedia !== 'function'
+      ? true
+      : window.matchMedia(WIDE_QUERY).matches;
+  }
+
+  private watchWide(): void {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const mql = window.matchMedia(WIDE_QUERY);
+    const onChange = (e: MediaQueryListEvent) => this.wide.set(e.matches);
+    mql.addEventListener('change', onChange);
+    this.destroyRef.onDestroy(() => mql.removeEventListener('change', onChange));
   }
 
   // --- reorder (native HTML5 drag; click still navigates; within-section only) ---

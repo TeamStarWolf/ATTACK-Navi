@@ -20,10 +20,49 @@
   padding: 16px 12px 10px;
 }
 
-.rail-viewpoint {
-  display: block;
+.rail-top {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
   flex-shrink: 0;
   margin-bottom: 12px;
+}
+
+.rail-viewpoint {
+  display: block;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Collapse / expand toggle: the chevron points the way the rail will move. */
+.rail-collapse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  padding: 0;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+
+  &:hover {
+    background: var(--bg-hover);
+    color: var(--text-main);
+    border-color: var(--border-default);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+}
+
+.rail-collapse-icon {
+  transform: rotate(180deg);
 }
 
 .rail-section-label {
@@ -208,6 +247,77 @@
   color: var(--text-main);
 }
 
+/* --- icon-only (collapsed) rail; the class is only set above 768 px --- */
+:host(.collapsed) {
+  width: 64px;
+
+  /* The viewpoint menu keeps its full width and opens over the workspace. */
+  overflow: visible;
+
+  .nav-rail-inner {
+    padding: 16px 8px 10px;
+  }
+
+  .rail-top {
+    flex-direction: column;
+  }
+
+  .rail-collapse-btn {
+    width: 100%;
+    height: 32px;
+  }
+
+  .rail-collapse-icon {
+    transform: none;
+  }
+
+  /* Section labels become thin separators: the grouping stays visible. */
+  .rail-section-label {
+    height: 1px;
+    margin: 2px 10px 6px;
+    padding: 0;
+    overflow: hidden;
+    font-size: 0;
+    background: var(--border-subtle);
+  }
+
+  .nav-section + .nav-section {
+    margin-top: 8px;
+  }
+
+  .nav-item {
+    justify-content: center;
+    gap: 0;
+    padding: 8px 0;
+  }
+
+  .nav-label,
+  .nav-grip {
+    display: none;
+  }
+
+  .nav-badge {
+    position: absolute;
+    top: 1px;
+    right: 2px;
+    min-width: 14px;
+    height: 14px;
+    padding: 0 3px;
+    font-size: 8px;
+    line-height: 14px;
+  }
+
+  .rail-reset {
+    justify-content: center;
+    margin: 6px 0 2px;
+    padding: 5px 0;
+
+    span {
+      display: none;
+    }
+  }
+}
+
 /* Mobile: collapse to horizontal bottom bar (all 10 items reachable) */
 @media (max-width: 768px) {
   :host {
@@ -234,7 +344,13 @@
 
   .rail-section-label { display: none; }
 
+  /* The bottom bar never collapses: no toggle, the viewpoint stays a bar item. */
+  .rail-top { display: contents; }
+
+  .rail-collapse-btn { display: none; }
+
   .rail-viewpoint {
+    flex: none;
     margin-bottom: 0;
     margin-right: 4px;
     min-width: 96px;

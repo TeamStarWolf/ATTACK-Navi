@@ -1,6 +1,9 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-<aside class="sidebar" [class.open]="open" role="complementary" aria-label="Technique details">
+<aside id="technique-drawer" class="sidebar" [class.open]="open" role="complementary" aria-label="Technique details" [style.--drawer-width]="drawerWidth.width() + 'px'">
+  @if (open) {
+    <app-drawer-resize-handle controls="technique-drawer" />
+  }
   @if (technique) {
     <div class="sidebar-inner">
       <header class="sidebar-header">

@@ -6,6 +6,7 @@ import {
   OnDestroy,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
+  inject,
 } from '@angular/core';
 
 interface GraphNode { id: string; label: string; type: 'technique' | 'mitigation' | 'group'; x: number; y: number; }
@@ -77,12 +78,14 @@ import { SentinelRulesService, SentinelRule } from '../../services/sentinel-rule
 
 import { LibraryCrossRefComponent } from '../library-cross-ref/library-cross-ref.component';
 import { ValidationStatusPillComponent } from '../validation-status-pill/validation-status-pill.component';
+import { DrawerResizeHandleComponent } from '../drawer-resize-handle/drawer-resize-handle.component';
+import { DrawerWidthService } from '../../services/drawer-width.service';
 import { ctidDatasetUrl } from '../../services/ctid-links';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, FormsModule, AttackTextPipe, LibraryCrossRefComponent, ValidationStatusPillComponent],
+  imports: [CommonModule, FormsModule, AttackTextPipe, LibraryCrossRefComponent, ValidationStatusPillComponent, DrawerResizeHandleComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss',
@@ -107,6 +110,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
   dataComponents: MitreDataComponent[] = [];
   detectionNotes: import('../../models/domain').DetectionNote[] = [];
   open = false;
+  /** Drawer width (px), resizable from its left edge and persisted per browser. */
+  protected readonly drawerWidth = inject(DrawerWidthService);
   /** The drawer stays open across workspaces while pinned (FilterService.drawerPinned$). */
   pinned = false;
   isCustomTechnique = false;
@@ -627,6 +632,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
         this.epssSub?.unsubscribe();
         this.technique = tech;
         this.open = tech !== null;
+        this.drawerWidth.setOpen(this.open);
         this.isCustomTechnique = tech !== null && (
           tech.id.startsWith('custom--') ||
           this.customTechniqueService.getAll().some(ct => ct.attackId === tech.attackId)
@@ -1236,6 +1242,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.drawerWidth.setOpen(false);
     this.subs.unsubscribe();
     this.atomicSub?.unsubscribe();
     this.sigmaSub?.unsubscribe();
