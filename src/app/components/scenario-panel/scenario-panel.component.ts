@@ -31,6 +31,7 @@ import { DataService } from '../../services/data.service';
 import { PostureService } from '../../services/posture.service';
 import { ThreatSimulationService, SimulationResult as ThreatSimResult } from '../../services/threat-simulation.service';
 import { EmulationPlanService } from '../../services/emulation-plan.service';
+import { ProfileDomainNoticeComponent } from '../profile-domain-notice/profile-domain-notice.component';
 import { ThreatProfilePickerComponent } from '../threat-profile-picker/threat-profile-picker.component';
 import { ThreatGroup } from '../../models/group';
 import { Technique } from '../../models/technique';
@@ -81,7 +82,7 @@ function outcomeOf(bucket: PostureBucket): ScenarioOutcome {
 @Component({
   selector: 'app-scenario-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule, ThreatProfilePickerComponent],
+  imports: [CommonModule, FormsModule, ThreatProfilePickerComponent, ProfileDomainNoticeComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './scenario-panel.component.html',
   styleUrl: './scenario-panel.component.scss',

@@ -18,7 +18,8 @@ import { LibraryLayerService, LibraryLayerMeta } from '../../services/library-la
 import { ThreatProfileService } from '../../services/threat-profile.service';
 import { ThreatGroup } from '../../models/group';
 import { Campaign } from '../../models/campaign';
-import { ThreatProfileSource } from '../../models/threat-profile';
+import { ATTACK_DOMAIN_SHORT_LABEL, ProfileGroupRef, ThreatProfileSource, attackDomainOf } from '../../models/threat-profile';
+import { ProfileDomainNoticeComponent } from '../profile-domain-notice/profile-domain-notice.component';
 
 type PickerMode = 'profile' | 'single' | 'multi-local';
 type Preset = 'top-groups' | 'all' | 'groups' | 'campaigns' | 'library-layer';
@@ -50,7 +51,7 @@ const SECTOR_CATEGORIES: readonly SectorCategory[] = [
 @Component({
   selector: 'app-threat-profile-picker',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, ProfileDomainNoticeComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './threat-profile-picker.component.html',
   styleUrl: './threat-profile-picker.component.scss',
@@ -109,6 +110,15 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
   readonly selectedGroupIds = new Set<string>();
   readonly selectedCampaignIds = new Set<string>();
   selectedLayerFile: string | null = null;
+  /**
+   * profile mode: stored groups the loaded domain lacks (ThreatProfileService.absentGroups),
+   * listed under the notice (dashed rail, muted name, full contrast) and still selectable. One deselected here stays listed
+   * (unpressed) until the next domain load, so it can be picked again; none is ever
+   * dropped from the selection by a domain switch.
+   */
+  absentShown: ProfileGroupRef[] = [];
+  /** The loaded domain's short name for the absent rows ("has no ICS use"). */
+  absentDomainLabel = '';
 
   private subs = new Subscription();
   /**
@@ -140,8 +150,11 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
       // re-emissions of the same source (domain switch, layer load) so they do not
       // reset the user's open tab before they have applied anything.
       this.subs.add(this.threatProfile.profile$.subscribe((p) => {
-        if (this.serializeSource(p.source) === this.lastSource) return;
-        this.initFromProfile(p.source);
+        if (this.serializeSource(p.source) !== this.lastSource) {
+          this.initFromProfile(p.source);
+          this.absentShown = [];   // a source changed elsewhere: list only its absent groups
+        }
+        this.mergeAbsent();
         this.cdr.markForCheck();
       }));
     }
@@ -149,6 +162,9 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
       this.groups = domain ? [...domain.groups].sort((a, b) => a.name.localeCompare(b.name)) : [];
       this.campaigns = domain ? [...domain.campaigns].sort((a, b) => a.name.localeCompare(b.name)) : [];
       this.resolveQuickPicks();
+      this.absentDomainLabel = domain ? ATTACK_DOMAIN_SHORT_LABEL[attackDomainOf(domain)] : '';
+      this.absentShown = [];
+      this.mergeAbsent();
       this.cdr.markForCheck();
     }));
     // Injecting LibraryLayerService triggers its own manifest load; we only subscribe.
@@ -160,6 +176,29 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subs.unsubscribe();
+  }
+
+  /** profile mode: add the service's current absent groups to the absent list (no duplicates). */
+  private mergeAbsent(): void {
+    if (this.mode !== 'profile') return;
+    const shown = new Set(this.absentShown.map((r) => r.id));
+    const added = this.threatProfile.absentGroups(this.dataService.getCurrentDomain()).filter((r) => !shown.has(r.id));
+    if (added.length > 0) this.absentShown = [...this.absentShown, ...added];
+  }
+
+  /**
+   * profile mode: toggle a stored group the loaded domain lacks. It stays a groups source;
+   * the other selected ids (present or absent) are kept as they are.
+   */
+  toggleAbsent(ref: ProfileGroupRef): void {
+    if (this.mode !== 'profile') return;
+    if (this.selectedGroupIds.has(ref.id)) this.selectedGroupIds.delete(ref.id);
+    else this.selectedGroupIds.add(ref.id);
+    this.selectedCampaignIds.clear();
+    this.selectedLayerFile = null;
+    this.preset = 'groups';
+    this.applyProfile();
+    this.cdr.markForCheck();
   }
 
   /** Reflect the stored profile source so the first click does not silently replace it. */
