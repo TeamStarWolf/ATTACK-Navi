@@ -291,19 +291,23 @@
                   <div class="detection-cards">
                     <div class="det-card">
                       <div class="det-value" style="color: var(--accent-warm)">{{ stats.sigmaRuleCount }}</div>
-                      <div class="det-label">Sigma Rules</div>
+                      <div class="det-label" title="SigmaHQ coverage-layer rule counts, summed over this domain's techniques">Sigma rule links</div>
                     </div>
                     <div class="det-card">
                       <div class="det-value" style="color: var(--accent-blue)">{{ stats.elasticRuleCount }}</div>
-                      <div class="det-label">Elastic Rules</div>
+                      <div class="det-label" title="Elastic detection-rules counts from the pinned snapshot, summed over this domain's techniques">Elastic rule links</div>
                     </div>
                     <div class="det-card">
                       <div class="det-value" style="color: var(--success)">{{ stats.splunkRuleCount }}</div>
-                      <div class="det-label">Splunk Rules</div>
+                      <div class="det-label" title="Splunk security_content counts from the pinned snapshot, summed over this domain's techniques">Splunk rule links</div>
                     </div>
                   </div>
                   <div class="widget-footer-note">
                     {{ stats.detectionCoveragePct }}% of techniques with detection content mapped
+                  </div>
+                  <div class="widget-footer-note" data-testid="detection-links-note">
+                    Rule links are per-technique counts added up, so a rule that names two techniques counts twice.
+                    Elastic and Splunk come from the bundled rule snapshot pinned to a commit: rules in public repositories, not rules running in your environment.
                   </div>
                 </div>
               </div>

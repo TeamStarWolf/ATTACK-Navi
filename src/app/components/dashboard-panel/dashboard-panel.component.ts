@@ -120,7 +120,7 @@ interface RadarChart {
 interface HealthEntry {
   name: string;
   status: 'loading' | 'loaded' | 'failed' | 'empty';
-  /** Why the entry is failed or empty, from the source registry. */
+  /** Why the entry is failed or empty, from the source registry; for a loaded rule snapshot, its pinned commit. */
   detail?: string;
 }
 
@@ -475,15 +475,24 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
     // data-health ribbon: a loader that fails (or answers with 0 rows) no longer reports
     // loaded, so the registry is what turns the entry 'failed' (or 'empty') instead of
     // leaving it 'loading' for the whole session.
-    const sources: { name: string; loaded$: Observable<boolean>; ids: string[] }[] = [
+    // The Elastic and Splunk entries take their name from the source inventory, as the
+    // Status page's source table shows it ('... (pinned snapshot)'), and a loaded entry's
+    // `loadedDetail` names the pinned commit the loader recorded.
+    const sources: { name: string; loaded$: Observable<boolean>; ids: string[]; loadedDetail?: () => string | undefined }[] = [
       { name: 'Atomic Red Team', loaded$: this.atomicService.loaded$, ids: ['atomic-layer'] },
       { name: 'Sigma Rules', loaded$: this.sigmaService.loaded$, ids: ['sigmahq-coverage'] },
       { name: 'ATT&CK CVE', loaded$: this.attackCveService.loaded$, ids: ['ctid-attack-to-cve', 'ctid-kev'] },
       { name: 'MISP Galaxy', loaded$: this.mispService.loaded$, ids: ['misp-galaxy'] },
       { name: 'D3FEND', loaded$: this.d3fendService.loaded$, ids: ['d3fend-ontology'] },
       { name: 'CAR Analytics', loaded$: this.carService.loaded$, ids: ['car-layer'] },
-      { name: 'Elastic Rules', loaded$: this.elasticService.loaded$, ids: ['elastic-tree'] },
-      { name: 'Splunk Content', loaded$: this.splunkContentService.loaded$, ids: ['splunk-tree'] },
+      {
+        name: this.sources.get('elastic-tree').name, loaded$: this.elasticService.loaded$, ids: ['elastic-tree'],
+        loadedDetail: () => this.snapshotDetail('elastic-tree'),
+      },
+      {
+        name: this.sources.get('splunk-tree').name, loaded$: this.splunkContentService.loaded$, ids: ['splunk-tree'],
+        loadedDetail: () => this.snapshotDetail('splunk-tree'),
+      },
     ];
     this.healthEntries = sources.map(s => ({ name: s.name, status: 'loading' as const }));
     const setEntry = (i: number, entry: HealthEntry) => {
@@ -497,7 +506,10 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
           // A failed or empty source keeps its verdict until the registry clears it (a retry started).
           const status = this.healthEntries[i].status;
           if (!loaded && (status === 'failed' || status === 'empty')) return;
-          setEntry(i, { name: src.name, status: loaded ? 'loaded' : 'loading' });
+          const detail = loaded ? src.loadedDetail?.() : undefined;
+          setEntry(i, detail
+            ? { name: src.name, status: 'loaded', detail }
+            : { name: src.name, status: loaded ? 'loaded' : 'loading' });
         }),
       );
       this.subs.add(
@@ -509,6 +521,12 @@ export class DashboardPanelComponent implements OnInit, OnDestroy {
         }),
       );
     });
+  }
+
+  /** The pinned snapshot a loaded rule-coverage record names: its kind and version, set from the bundled file. */
+  private snapshotDetail(id: string): string | undefined {
+    const record = this.sources.get(id);
+    return record.version?.startsWith('snapshot of ') ? `reference data; ${record.kind} ${record.version}` : undefined;
   }
 
   // ─── Radar chart computation (ported from AnalyticsPanelComponent) ──────

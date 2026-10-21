@@ -30,8 +30,8 @@
 | 19 | `nist` | NIST 800-53 | NIST 800-53 | Gradient (5) | `NistMappingService` | Count of mapped NIST 800-53 controls |
 | 20 | `veris` | VERIS Actions | VERIS Actions | Gradient (5) | `VerisService` | Count of VERIS incident action mappings |
 | 21 | `epss` | EPSS Prob. | EPSS Probability | Gradient (5) | `EpssService` | Average EPSS exploitation probability (0--1) across mapped CVEs |
-| 22 | `elastic` | Elastic Rules | Elastic Rules | Gradient (5) | `ElasticService` | Count of Elastic Detection Rules |
-| 23 | `splunk` | Splunk Detections | Splunk Detections | Gradient (5) | `SplunkContentService` | Count of Splunk Security Content detections |
+| 22 | `elastic` | Elastic Rules | Elastic Rules | Relative (5) | `ElasticService` (bundled rule-coverage snapshot) | Rules in `elastic/detection-rules` at the pinned commit whose threat mapping names the technique or one of its sub-techniques |
+| 23 | `splunk` | Splunk Detections | Splunk Detections | Relative (5) | `SplunkContentService` (bundled rule-coverage snapshot) | Detections in `splunk/security_content` at the pinned commit whose `mitre_attack_id` list names the technique or one of its sub-techniques |
 | 24 | `intelligence` | Intelligence | Intel Signals | Gradient (5) | Computed (MISP + groups) | `hasMisp (0/1) + threatGroupCount` |
 | 25 | `posture` | Posture | Posture | Categorical (6 + 2 patterns) | `PostureService.stateFor` via the lens's own `project` | Each technique's own posture bucket: `none`, `known`, `partial`, `covered`, `stale` or `proven` |
 | 26 | `proven` | Proven | Proven | Categorical (4) | `PostureService.stateFor` via the lens's own `project` | Where a named detection fired or blocked on a recorded date: 3 production, 2 range or your own run, 1 older than its window, 0 none <!-- truth-vocab-allow proven-only -- names the Proven lens --> |
@@ -430,13 +430,18 @@ To add a heatmap mode (36 exist today), modify these files in order:
 
 | Property | Value |
 |----------|-------|
-| **Display Label** | Elastic Rules |
-| **Icon** | (green circle) |
+| **Display Label** | Elastic Rules (lens menu group Detections, rung Known) |
 | **Legend Label** | Elastic Rules |
-| **Data Source** | `ElasticService.getRuleCount(attackId)` |
-| **Score Computation** | Count of Elastic Detection Rules from the elastic/detection-rules repository mapped to this technique. |
-| **Color Scale** | `#0a1a0a` (0) -> `#1a3a1a` (1--3) -> `#2a6a2a` (4--8) -> `#3a9a3a` (9--15) -> `#4caf50` (16+) |
-| **Use Case** | Elastic SIEM-specific detection coverage. Shows which techniques have pre-built Elastic detection rules available. Green scale matches the Elastic brand. Useful for Elastic Security customers planning detection rule deployment. |
+| **Domains** | Enterprise only; n/a (hatched) in ICS, Mobile and F3 |
+| **Data Source** | `ElasticService.getRuleCount(attackId)`, which reads the `elastic` section of the bundled `src/assets/data/rule-coverage-snapshot.json` |
+| **Score Computation** | The number of rules in `elastic/detection-rules` (`rules/**/*.toml`, not `rules/_deprecated/`) at the pinned commit whose `[[rule.threat.technique]]` or `[[rule.threat.technique.subtechnique]]` entries name the technique. A parent technique's count is the distinct rules naming it or any of its sub-techniques, so a parent is never lower than its sub-techniques. At the 2026-10-21 pin the snapshot holds 2,131 rules, 446 techniques have at least one, and the highest parent count is T1059 with 323. |
+| **Color Scale** | Relative to the highest score in the loaded domain: `#0a1a0a` (0), then `#1a3a1a` (<25%), `#2a6a2a` (25-49%), `#3a9a3a` (50-74%), `#4caf50` (75-100%) |
+| **What zero means** | No rule names this technique at the pinned commit, or the bundled rule snapshot did not load; in that case the banner above the matrix names the reason (`bundled snapshot missing ...`). The legend ends with "Not known to us, not safe." |
+| **Use Case** | Shows where the public Elastic rule repository has rules mapped to a technique, as reference data. It says nothing about which rules run in your environment. |
+
+**Provenance.** The counts are not fetched from GitHub when the app runs. `scripts/build-rule-coverage-snapshot.mjs` reads the rule bodies from the repository's tarball at a pinned commit and writes the snapshot; the monthly `refresh-data.yml` workflow (the 3rd of each month) moves the pin to the branch head and opens a pull request for review. The legend's source line reads "Elastic detection-rules (bundled snapshot of the rule bodies at a pinned commit; commit and date on the Status page)", and the Status page's source table names the commit (`elastic-tree`, kind `bundled`, version `snapshot of <date>, elastic/detection-rules@<sha7> (commit <date>, main)`). See [SERVICES.md](SERVICES.md#rule-coverage-snapshot-elastic-splunk-mdecrevoisier-sigma).
+
+**In the technique drawer.** The drawer's **Rule sources** section has an Elastic detection-rules list for the selected technique: the same count, up to ten rule names, each linked to the rule file at the pinned commit, a line "N of M listed by name; the rest are in the repository at this commit" when there are more, and the pinned repository, commit date and snapshot date. A technique with no rule reads "no rules reference this technique at the pinned commit"; a snapshot that did not load shows "Not loaded:" with the reason, and the section badge reads `not loaded` instead of a count.
 
 ---
 
@@ -444,13 +449,16 @@ To add a heatmap mode (36 exist today), modify these files in order:
 
 | Property | Value |
 |----------|-------|
-| **Display Label** | Splunk Detections |
-| **Icon** | (orange circle) |
+| **Display Label** | Splunk Detections (lens menu group Detections, rung Known) |
 | **Legend Label** | Splunk Detections |
-| **Data Source** | `SplunkContentService.getRuleCount(attackId)` |
-| **Score Computation** | Count of Splunk Security Content detections from the splunk/security_content repository mapped to this technique. |
-| **Color Scale** | `#1a0a0a` (0) -> `#4a2a0a` (1--3) -> `#7a4a1a` (4--8) -> `#c06a20` (9--15) -> `#ff9800` (16+) |
-| **Use Case** | Splunk-specific detection coverage. Shows which techniques have Splunk security content available. Orange scale matches the Splunk brand. Useful for Splunk Enterprise Security customers. |
+| **Domains** | Enterprise only; n/a (hatched) in ICS, Mobile and F3 |
+| **Data Source** | `SplunkContentService.getRuleCount(attackId)`, which reads the `splunk` section of the bundled `src/assets/data/rule-coverage-snapshot.json` |
+| **Score Computation** | The number of detections in `splunk/security_content` (`detections/**/*.yml`, not `detections/deprecated/`) at the pinned commit whose `mitre_attack_id` list names the technique. A parent technique's count is the distinct detections naming it or any of its sub-techniques. At the 2026-10-21 pin the snapshot holds 2,169 detections, 396 techniques have at least one, and the highest parent count is T1059 with 165. |
+| **Color Scale** | Relative to the highest score in the loaded domain: `#1a0a0a` (0), then `#4a2a0a` (<25%), `#7a4a1a` (25-49%), `#c06a20` (50-74%), `#ff9800` (75-100%) |
+| **What zero means** | No detection names this technique at the pinned commit, or the bundled rule snapshot did not load; in that case the banner above the matrix names the reason. The legend ends with "Not known to us, not safe." |
+| **Use Case** | Shows where the public Splunk security_content repository has detections mapped to a technique, as reference data. It says nothing about which searches run in your environment. |
+
+**Provenance and drawer.** As for Elastic: the same snapshot file, builder and monthly refresh, with the `splunk/security_content` pin on the `develop` branch (`splunk-tree` on the Status page). The drawer's Rule sources section has a Splunk security_content list with the same count, up to ten detection names linked at the pinned commit, and the same empty and not-loaded states.
 
 ---
 

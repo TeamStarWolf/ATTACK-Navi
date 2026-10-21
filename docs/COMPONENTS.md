@@ -711,8 +711,8 @@ Components that render the ATT&CK matrix grid and its supporting UI.
 | **Selector** | `app-dashboard-panel` |
 | **File** | `src/app/components/dashboard-panel/dashboard-panel.component.ts` |
 | **Panel ID** | `dashboard` |
-| **Purpose** | Executive KPI dashboard. Displays mapping stats (total, mapped, percentage), implementation breakdown (implemented/in-progress/planned/not-started), detection coverage (CAR/Atomic/D3FEND), risk indicators (critical-risk count, CVE-exposed count), coverage trend from timeline snapshots, per-tactic bar chart, and top-risk techniques. Supports HTML report export. |
-| **Key I/O** | Subscribes to `DataService`, `ImplementationService`, `TimelineService`, `AttackCveService`, `CARService`, `AtomicService`, `D3fendService`, `HtmlReportService` |
+| **Purpose** | Executive KPI dashboard. Displays mapping stats (total, mapped, percentage), implementation breakdown (implemented/in-progress/planned/not-started), detection coverage (CAR/Atomic/D3FEND), risk indicators (critical-risk count, CVE-exposed count), coverage trend from timeline snapshots, per-tactic bar chart, and top-risk techniques. Supports HTML report export. The Detection Content widget shows Sigma, Elastic and Splunk rule links: per-technique counts added up over the domain's techniques, so a rule naming two techniques counts twice (Elastic and Splunk from the bundled rule-coverage snapshot). The Data Health widget reads the source registry and names the Elastic and Splunk rows as the source inventory does, 'Elastic detection-rules (pinned snapshot)' and 'Splunk security_content (pinned snapshot)', with the pinned commit in a loaded row's tooltip. |
+| **Key I/O** | Subscribes to `DataService`, `ImplementationService`, `TimelineService`, `AttackCveService`, `CARService`, `AtomicService`, `D3fendService`, `SigmaService`, `ElasticService`, `SplunkContentService`, `SourceRegistryService`, `HtmlReportService` |
 
 ---
 
