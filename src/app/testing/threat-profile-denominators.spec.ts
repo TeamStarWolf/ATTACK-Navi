@@ -17,6 +17,8 @@ import { Technique } from '../models/technique';
 import { AttackDomain, DataService } from '../services/data.service';
 import { ThreatProfileService } from '../services/threat-profile.service';
 import { GapAnalysisService } from '../services/gap-analysis.service';
+import { ThreatSimulationService } from '../services/threat-simulation.service';
+import { EpssService } from '../services/epss.service';
 import { SigmaService } from '../services/sigma.service';
 import { ElasticService } from '../services/elastic.service';
 import { SplunkContentService } from '../services/splunk-content.service';
@@ -56,6 +58,7 @@ describe('threat-profile denominators move in one step (P2-10 [AC])', () => {
   let domain: Domain;
   let threatProfile: ThreatProfileService;
   let gap: GapAnalysisService;
+  let threatSim: ThreatSimulationService;
 
   function load(d: Domain, id: AttackDomain): void {
     const ds = TestBed.inject(DataService) as unknown as {
@@ -82,18 +85,23 @@ describe('threat-profile denominators move in one step (P2-10 [AC])', () => {
         { provide: M365DefenderService, useValue: { getQueriesForTechnique: () => [] } },
         { provide: AtomicService, useValue: { getTestCount: () => 0 } },
         { provide: CARService, useValue: { getAnalytics: () => [] } },
-        { provide: AttackCveService, useValue: { getKevCvesForTechnique: () => [] } },
-        { provide: ExploitdbService, useValue: { getExploitCount: () => 0 } },
+        { provide: AttackCveService, useValue: { getKevCvesForTechnique: () => [], getCvesForTechnique: () => [] } },
+        { provide: ExploitdbService, useValue: { getExploitCount: () => 0, hasExploits: () => false } },
+        { provide: EpssService, useValue: { getScore: () => null } },
       ],
     });
     load(domain, 'enterprise');
     threatProfile = TestBed.inject(ThreatProfileService);
     gap = TestBed.inject(GapAnalysisService);
+    threatSim = TestBed.inject(ThreatSimulationService);
   });
 
   afterEach(() => resetBrowserState());
 
   const gapTotal = () => gap.generateReport(domain, threatProfile.current).summary.totalTechniques;
+  // The scenario panel's profile simulation reads this same total (simulate().techniquesTotal),
+  // so one assertion covers both the scenario and threat-simulation totals.
+  const threatSimTotal = () => threatSim.simulate(domain).techniquesTotal;
 
   it('one setSource, one CD pass: the mounted card line and the wizard step-3 set equal parentTechniqueIds.size', () => {
     // Mount ONE card and ONE wizard BEFORE the change.
@@ -116,6 +124,7 @@ describe('threat-profile denominators move in one step (P2-10 [AC])', () => {
     expect(uniqueTechIds(wiz)).toBe(n);              // the actual step-3 technique set (deduped)
     expect(wiz.totalTechniques).toBe(n);
     expect(gapTotal()).toBe(n);
+    expect(threatSimTotal()).toBe(n);          // scenario + threat-simulation total
   });
 
   it('Skip sets {kind:"all"}; the wizard/gap/card totals all equal the domain parent-technique count', () => {
@@ -137,6 +146,7 @@ describe('threat-profile denominators move in one step (P2-10 [AC])', () => {
     expect(uniqueTechIds(wiz)).toBe(domainParents);
     expect(gapTotal()).toBe(domainParents);
     expect(cardLine(cardF)).toBe(domainParents);
+    expect(threatSimTotal()).toBe(domainParents);   // scenario + threat-simulation total
   });
 });
 

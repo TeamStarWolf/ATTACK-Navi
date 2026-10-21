@@ -1,268 +1,208 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
+//
+// Threat Scenario Simulator (Phase 2 design §3 P2-12a, E2.6-b3).
+// Both flows run on the shared threat-profile picker: the single simulation picks
+// one actor (mode="single"); the profile simulation edits the shared profile
+// (mode="profile") and runs ThreatSimulationService over it — the former
+// multi-actor overlay collapses to that one profile result (actor-vs-actor moves
+// to #/intel/compare in P2-12b).
+//
+// Outcomes are posture buckets, not the old blocked/detected/vulnerable/unknown:
+// reference content alone no longer counts as covered or detected. Each technique
+// takes its bucket from PostureService.stateFor; the cards, table, pills, plan,
+// donut and radar all read those buckets. Covered/Proven surfaces render only
+// under ownerWords(); a fresh profile shows Known only + None. Every rung word
+// comes from the vocabulary module (scenarioOutcomeLabel).
 import {
   Component,
   OnInit,
   OnDestroy,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
+  inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription, filter, take } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
-import { ImplementationService } from '../../services/implementation.service';
-import { CARService } from '../../services/car.service';
-import { AtomicService } from '../../services/atomic.service';
-import { D3fendService } from '../../services/d3fend.service';
-import { ThreatSimulationService, SimulationResult as ThreatSimResult, SimulationGap } from '../../services/threat-simulation.service';
+import { PostureService } from '../../services/posture.service';
+import { ThreatSimulationService, SimulationResult as ThreatSimResult } from '../../services/threat-simulation.service';
 import { EmulationPlanService } from '../../services/emulation-plan.service';
+import { ThreatProfilePickerComponent } from '../threat-profile-picker/threat-profile-picker.component';
 import { ThreatGroup } from '../../models/group';
 import { Technique } from '../../models/technique';
+import { PostureBucket } from '../../models/posture/posture.types';
+import { scenarioOutcomeLabel } from '../../models/posture/posture-vocabulary';
 import { csvRow } from '../../utils/csv';
 
-export type TechniqueOutcome = 'blocked' | 'detected' | 'vulnerable' | 'unknown';
+/** The scenario card / pill a bucket is counted under. 'stale' folds into 'proven' (aged Proven). */
+export type ScenarioOutcome = 'proven' | 'covered' | 'partial' | 'known' | 'none';
 
 interface RadarPoint { tactic: string; pct: number; index: number; total: number; }
 
 interface ScenarioTechnique {
   technique: Technique;
-  outcome: TechniqueOutcome;
+  bucket: PostureBucket;
+  outcome: ScenarioOutcome;
   mitigationCount: number;
-  implementedMitigations: number;
-  hasDetection: boolean;
-  riskLevel: 'critical' | 'high' | 'medium' | 'low';
   reasoning: string;
 }
 
 interface SimulationResult {
   group: ThreatGroup;
   techniques: ScenarioTechnique[];
-  blockedCount: number;
-  detectedCount: number;
-  vulnerableCount: number;
-  unknownCount: number;
-  overallRisk: 'critical' | 'high' | 'medium' | 'low';
-  overallScore: number;
+  proven: number;    // bucket proven + stale
+  covered: number;   // bucket covered
+  partial: number;   // bucket partial — its own number, never summed into covered
+  known: number;     // bucket known
+  none: number;      // bucket none
+  total: number;
+  knownOnlyShare: number;   // known / total, as a percentage
+  hasOwnerWords: boolean;   // Covered/Proven surfaces render only when true
+}
+
+/** Map a posture bucket to the scenario outcome it is counted under. */
+function outcomeOf(bucket: PostureBucket): ScenarioOutcome {
+  switch (bucket) {
+    case 'proven':
+    case 'stale': return 'proven';
+    case 'covered': return 'covered';
+    case 'partial': return 'partial';
+    case 'known': return 'known';
+    default: return 'none';
+  }
 }
 
 @Component({
   selector: 'app-scenario-panel',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ThreatProfilePickerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './scenario-panel.component.html',
   styleUrl: './scenario-panel.component.scss',
 })
 export class ScenarioPanelComponent implements OnInit, OnDestroy {
-  groups: ThreatGroup[] = [];
   selectedGroup: ThreatGroup | null = null;
   result: SimulationResult | null = null;
   searchText = '';
-  filterOutcome: TechniqueOutcome | 'all' = 'all';
+  filterBucket: ScenarioOutcome | 'all' = 'all';
   activeTab: 'summary' | 'techniques' | 'plan' = 'summary';
   isSimulating = false;
-  groupSearch = '';
 
-  // ─── Threat Simulation (enhanced) ──────────────────────────────────────
-  selectedGroupIds = new Set<string>();
-  threatSimResults: ThreatSimResult[] = [];
-  activeThreatSimResult: ThreatSimResult | null = null;
+  // ─── Profile simulation (the collapsed overlay) ─────────────────────────
+  profileSimResult: ThreatSimResult | null = null;
   showThreatSim = false;
 
-  private cachedDomain: any = null;
+  /** The fresh-profile prompt; shown when the owner has recorded no posture yet. */
+  readonly freshMessage = 'Record a run or mark a mitigation implemented to see your outcomes';
+  readonly outcomeLabel = scenarioOutcomeLabel;
+
+  private domain: any = null;
   private subs = new Subscription();
+
+  private readonly posture = inject(PostureService);
 
   constructor(
     private filterService: FilterService,
     private dataService: DataService,
-    private implService: ImplementationService,
-    private carService: CARService,
-    private atomicService: AtomicService,
-    private d3fendService: D3fendService,
     private threatSimService: ThreatSimulationService,
     private emulationPlanService: EmulationPlanService,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
-    this.loadGroups();
+    // Follow the loaded domain for the panel's life (a domain switch re-scopes both flows).
+    this.subs.add(this.dataService.domain$.subscribe(domain => {
+      this.domain = domain;
+      if (!domain) {
+        this.selectedGroup = null;
+        this.result = null;
+        this.profileSimResult = null;
+        this.showThreatSim = false;
+      } else if (this.selectedGroup) {
+        // Re-resolve the selected actor against the new domain; drop it (and the result) if gone.
+        const still = domain.groups.find((g: ThreatGroup) => g.id === this.selectedGroup!.id);
+        this.selectedGroup = still ?? null;
+        if (!still) this.result = null;
+      }
+      this.cdr.markForCheck();
+    }));
   }
 
   ngOnDestroy(): void {
     this.subs.unsubscribe();
   }
 
-  loadGroups(): void {
-    this.dataService.domain$.pipe(filter(Boolean), take(1)).subscribe(domain => {
-      this.cachedDomain = domain;
-      this.groups = [...domain.groups].sort((a, b) => a.name.localeCompare(b.name));
-      this.cdr.markForCheck();
-    });
-  }
-
-  get filteredGroups(): ThreatGroup[] {
-    const q = this.groupSearch.trim().toLowerCase();
-    if (!q) return this.groups;
-    return this.groups.filter(g =>
-      g.name.toLowerCase().includes(q) ||
-      g.attackId.toLowerCase().includes(q) ||
-      g.aliases.some(a => a.toLowerCase().includes(q)),
-    );
-  }
-
-  selectGroup(group: ThreatGroup): void {
+  /** From the single-mode picker: the chosen actor's STIX id. */
+  onGroupPicked(stixId: string): void {
+    const group = this.domain?.groups.find((g: ThreatGroup) => g.id === stixId) ?? null;
+    if (!group) return;
     this.selectedGroup = group;
     this.result = null;
     this.runSimulation(group);
   }
 
   runSimulation(group: ThreatGroup): void {
+    if (!this.domain) return;
     this.isSimulating = true;
     this.cdr.markForCheck();
-
-    const doCompute = (domain: any) => {
-      setTimeout(() => {
-        this.result = this.computeResult(group, domain);
-        this.isSimulating = false;
-        this.activeTab = 'summary';
-        this.filterOutcome = 'all';
-        this.searchText = '';
-        this.cdr.markForCheck();
-      }, 300);
-    };
-
-    if (this.cachedDomain) {
-      doCompute(this.cachedDomain);
-    } else {
-      this.dataService.domain$.pipe(filter(Boolean), take(1)).subscribe(d => {
-        this.cachedDomain = d;
-        doCompute(d);
-      });
-    }
+    setTimeout(() => {
+      this.result = this.computeResult(group, this.domain);
+      this.isSimulating = false;
+      this.activeTab = 'summary';
+      this.filterBucket = 'all';
+      this.searchText = '';
+      this.cdr.markForCheck();
+    }, 150);
   }
 
   private computeResult(group: ThreatGroup, domain: any): SimulationResult {
-    const techniques = this.dataService.getTechniquesForGroup(group.id);
-    const statusMap = this.implService.getStatusMap();
-    const scenarioTechniques: ScenarioTechnique[] = [];
+    const techniques: Technique[] = this.dataService.getTechniquesForGroup(group.id);
+    const scenarioTechniques: ScenarioTechnique[] = techniques.map(tech => {
+      const bucket = this.posture.stateFor(tech).bucket;
+      const mitigationCount = (domain.mitigationsByTechnique?.get(tech.id) ?? []).length;
+      return { technique: tech, bucket, outcome: outcomeOf(bucket), mitigationCount, reasoning: this.reasoningFor(bucket, mitigationCount) };
+    });
 
-    for (const tech of techniques) {
-      const mitRels = domain.mitigationsByTechnique?.get(tech.id) ?? [];
-      const mitigationCount = mitRels.length;
-
-      let implementedMitigations = 0;
-      for (const rel of mitRels) {
-        const s = statusMap.get(rel.mitigation.id);
-        if (s === 'implemented') implementedMitigations++;
-      }
-
-      const carCount = this.carService.getAnalytics(tech.attackId).length;
-      const atomicCount = this.atomicService.getTestCount(tech.attackId);
-      const d3fendCount = this.d3fendService.getCountermeasures(tech.attackId).length;
-      const hasDetection = (carCount + atomicCount + d3fendCount) > 0;
-
-      let outcome: TechniqueOutcome;
-      if (implementedMitigations >= 2) {
-        outcome = 'blocked';
-      } else if (implementedMitigations >= 1 && hasDetection) {
-        outcome = 'detected';
-      } else if (implementedMitigations >= 1) {
-        outcome = 'detected';
-      } else if (hasDetection) {
-        outcome = 'detected';
-      } else if (mitigationCount > 0) {
-        outcome = 'vulnerable';
-      } else {
-        outcome = 'unknown';
-      }
-
-      let riskLevel: 'critical' | 'high' | 'medium' | 'low';
-      if (outcome === 'unknown') riskLevel = 'critical';
-      else if (outcome === 'vulnerable') riskLevel = 'high';
-      else if (outcome === 'detected') riskLevel = 'medium';
-      else riskLevel = 'low';
-
-      let reasoning: string;
-      if (outcome === 'blocked') {
-        reasoning = `${implementedMitigations} mitigation${implementedMitigations !== 1 ? 's' : ''} implemented`;
-        if (hasDetection) {
-          const parts: string[] = [];
-          if (carCount > 0) parts.push(`CAR analytics`);
-          if (atomicCount > 0) parts.push(`Atomic tests`);
-          if (d3fendCount > 0) parts.push(`D3FEND`);
-          if (parts.length) reasoning += ` + ${parts.join(', ')}`;
-        }
-      } else if (outcome === 'detected') {
-        if (implementedMitigations > 0) {
-          reasoning = `${implementedMitigations} mitigation${implementedMitigations !== 1 ? 's' : ''} implemented`;
-          const parts: string[] = [];
-          if (carCount > 0) parts.push('CAR analytics');
-          if (d3fendCount > 0) parts.push('D3FEND');
-          if (atomicCount > 0) parts.push('Atomic tests');
-          if (parts.length) reasoning += ` + ${parts[0]}`;
-        } else {
-          const parts: string[] = [];
-          if (carCount > 0) parts.push(`${carCount} CAR analytic${carCount !== 1 ? 's' : ''}`);
-          if (d3fendCount > 0) parts.push(`${d3fendCount} D3FEND countermeasure${d3fendCount !== 1 ? 's' : ''}`);
-          if (atomicCount > 0) parts.push(`${atomicCount} Atomic test${atomicCount !== 1 ? 's' : ''}`);
-          reasoning = 'No mitigation — ' + parts.join(', ');
-        }
-      } else if (outcome === 'vulnerable') {
-        reasoning = `${mitigationCount} mitigation${mitigationCount !== 1 ? 's' : ''} available but not implemented`;
-      } else {
-        reasoning = 'No mitigations or detections';
-      }
-
-      scenarioTechniques.push({
-        technique: tech,
-        outcome,
-        mitigationCount,
-        implementedMitigations,
-        hasDetection,
-        riskLevel,
-        reasoning,
-      });
-    }
-
-    const blockedCount = scenarioTechniques.filter(t => t.outcome === 'blocked').length;
-    const detectedCount = scenarioTechniques.filter(t => t.outcome === 'detected').length;
-    const vulnerableCount = scenarioTechniques.filter(t => t.outcome === 'vulnerable').length;
-    const unknownCount = scenarioTechniques.filter(t => t.outcome === 'unknown').length;
-    const total = scenarioTechniques.length || 1;
-
-    const overallScore = Math.round((blockedCount * 100 + detectedCount * 60) / total);
-
-    let overallRisk: 'critical' | 'high' | 'medium' | 'low';
-    const criticalPct = unknownCount / total;
-    const highPct = vulnerableCount / total;
-    if (criticalPct > 0.3) overallRisk = 'critical';
-    else if (criticalPct > 0.15 || highPct > 0.3) overallRisk = 'high';
-    else if (criticalPct > 0 || highPct > 0.15) overallRisk = 'medium';
-    else overallRisk = 'low';
+    const count = (o: ScenarioOutcome) => scenarioTechniques.filter(t => t.outcome === o).length;
+    const proven = count('proven');
+    const covered = count('covered');
+    const partial = count('partial');
+    const known = count('known');
+    const none = count('none');
+    const total = scenarioTechniques.length;
+    const order: Record<ScenarioOutcome, number> = { none: 0, known: 1, partial: 2, covered: 3, proven: 4 };
 
     return {
       group,
-      techniques: scenarioTechniques.sort((a, b) => {
-        const riskOrder = { critical: 0, high: 1, medium: 2, low: 3 };
-        return riskOrder[a.riskLevel] - riskOrder[b.riskLevel];
-      }),
-      blockedCount,
-      detectedCount,
-      vulnerableCount,
-      unknownCount,
-      overallRisk,
-      overallScore,
+      techniques: scenarioTechniques.sort((a, b) => order[a.outcome] - order[b.outcome]),
+      proven, covered, partial, known, none, total,
+      knownOnlyShare: total > 0 ? Math.round((known / total) * 100) : 0,
+      hasOwnerWords: this.posture.ownerWords(),
     };
   }
+
+  private reasoningFor(bucket: PostureBucket, mitigationCount: number): string {
+    switch (bucket) {
+      case 'proven': return 'A named detection fired or the technique was blocked on a recorded run';
+      case 'stale': return 'A recorded run that has aged past its window';
+      case 'covered': return 'You recorded a mitigation, control, confirmation or run (self-attested)';
+      case 'partial': return 'Partly recorded: a broad mitigation marked implemented, not confirmed per technique';
+      case 'known': return mitigationCount > 0
+        ? `${mitigationCount} mitigation${mitigationCount !== 1 ? 's' : ''} mapped; none recorded as deployed`
+        : 'Mapped by a public source; nothing recorded as deployed';
+      default: return 'No reference mapping and nothing recorded';
+    }
+  }
+
+  // ─── Derived views ──────────────────────────────────────────────────────
 
   get filteredTechniques(): ScenarioTechnique[] {
     if (!this.result) return [];
     let list = this.result.techniques;
-    if (this.filterOutcome !== 'all') {
-      list = list.filter(t => t.outcome === this.filterOutcome);
-    }
+    if (this.filterBucket !== 'all') list = list.filter(t => t.outcome === this.filterBucket);
     const q = this.searchText.trim().toLowerCase();
     if (q) {
       list = list.filter(t =>
@@ -274,74 +214,63 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
     return list;
   }
 
+  /** Gaps to close: not yet covered/proven (none, known or partial), most-mapped first. */
   get remediationPlan(): ScenarioTechnique[] {
     if (!this.result) return [];
     return this.result.techniques
-      .filter(t => t.outcome === 'vulnerable' || (t.outcome === 'detected' && t.implementedMitigations === 0))
+      .filter(t => t.outcome === 'none' || t.outcome === 'known' || t.outcome === 'partial')
       .sort((a, b) => b.mitigationCount - a.mitigationCount);
   }
 
-  get scoreGrade(): string {
-    const s = this.result?.overallScore ?? 0;
-    if (s >= 90) return 'A';
-    if (s >= 75) return 'B';
-    if (s >= 60) return 'C';
-    if (s >= 40) return 'D';
-    return 'F';
+  bucketLabel(o: ScenarioOutcome): string {
+    switch (o) {
+      case 'proven': return scenarioOutcomeLabel('proven');
+      case 'covered': return scenarioOutcomeLabel('covered');
+      case 'partial': return 'partial';
+      case 'known': return scenarioOutcomeLabel('known');
+      default: return scenarioOutcomeLabel('none');
+    }
   }
 
   get donutGradient(): string {
     if (!this.result) return '';
-    const total = this.result.techniques.length || 1;
-    const b = this.result.blockedCount / total;
-    const d = this.result.detectedCount / total;
-    const v = this.result.vulnerableCount / total;
-    const u = this.result.unknownCount / total;
-
-    const blockedEnd = Math.round(b * 360);
-    const detectedEnd = Math.round((b + d) * 360);
-    const vulnerableEnd = Math.round((b + d + v) * 360);
-
+    const total = this.result.total || 1;
+    const segs: [number, string][] = [
+      [this.result.proven, '#4ade80'],
+      [this.result.covered, '#22d3ee'],
+      [this.result.partial, '#fbbf24'],
+      [this.result.known, '#60a5fa'],
+      [this.result.none, '#f87171'],
+    ];
     const parts: string[] = [];
-    if (b > 0) parts.push(`#4ade80 0deg ${blockedEnd}deg`);
-    if (d > 0) parts.push(`#fbbf24 ${blockedEnd}deg ${detectedEnd}deg`);
-    if (v > 0) parts.push(`#f97316 ${detectedEnd}deg ${vulnerableEnd}deg`);
-    if (u > 0) parts.push(`#f87171 ${vulnerableEnd}deg 360deg`);
+    let acc = 0;
+    for (const [n, color] of segs) {
+      if (n <= 0) continue;
+      const start = Math.round((acc / total) * 360);
+      acc += n;
+      const end = Math.round((acc / total) * 360);
+      parts.push(`${color} ${start}deg ${end}deg`);
+    }
     if (parts.length === 0) parts.push('#27272a 0deg 360deg');
-
     return `conic-gradient(${parts.join(', ')})`;
-  }
-
-  get remediationScoreImpact(): number {
-    if (!this.result) return 0;
-    const total = this.result.techniques.length || 1;
-    const quickWins = this.remediationPlan.length;
-    return Math.round((quickWins * 60) / total);
   }
 
   get radarData(): RadarPoint[] {
     if (!this.result) return [];
-
-    const tacticMap = new Map<string, { blocked: number; total: number }>();
-
+    const tacticMap = new Map<string, { covered: number; total: number }>();
     for (const st of this.result.techniques) {
+      const isCovered = st.outcome === 'covered' || st.outcome === 'proven';
       for (const tactic of st.technique.tacticShortnames ?? []) {
-        if (!tacticMap.has(tactic)) tacticMap.set(tactic, { blocked: 0, total: 0 });
-        const entry = tacticMap.get(tactic)!;
-        entry.total++;
-        if (st.outcome === 'blocked' || st.outcome === 'detected') entry.blocked++;
+        if (!tacticMap.has(tactic)) tacticMap.set(tactic, { covered: 0, total: 0 });
+        const e = tacticMap.get(tactic)!;
+        e.total++;
+        if (isCovered) e.covered++;
       }
     }
-
     const points: RadarPoint[] = [];
     let i = 0;
     for (const [tactic, stats] of tacticMap) {
-      points.push({
-        tactic,
-        pct: stats.total > 0 ? Math.round((stats.blocked / stats.total) * 100) : 0,
-        index: i++,
-        total: tacticMap.size,
-      });
+      points.push({ tactic, pct: stats.total > 0 ? Math.round((stats.covered / stats.total) * 100) : 0, index: i++, total: tacticMap.size });
     }
     return points;
   }
@@ -349,17 +278,12 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
   get radarSvgPath(): string {
     const points = this.radarData;
     if (points.length < 3) return '';
-
     const cx = 120, cy = 120, r = 90;
     const coords = points.map((p, i) => {
       const angle = (i / points.length) * 2 * Math.PI - Math.PI / 2;
       const dist = (p.pct / 100) * r;
-      return {
-        x: cx + Math.cos(angle) * dist,
-        y: cy + Math.sin(angle) * dist,
-      };
+      return { x: cx + Math.cos(angle) * dist, y: cy + Math.sin(angle) * dist };
     });
-
     return coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x.toFixed(1)} ${c.y.toFixed(1)}`).join(' ') + ' Z';
   }
 
@@ -387,82 +311,44 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
     this.filterService.selectTechnique(tech.technique);
   }
 
+  selectGapTechnique(technique: Technique): void {
+    this.filterService.selectTechnique(technique);
+  }
+
   attackUrl(attackId: string): string {
     return `https://attack.mitre.org/techniques/${attackId.replace('.', '/')}/`;
   }
 
-  // ─── Threat Simulation (enhanced) ───────────────────────────────────────
+  // ─── Profile simulation ─────────────────────────────────────────────────
 
-  toggleGroupSelection(group: ThreatGroup): void {
-    if (this.selectedGroupIds.has(group.id)) {
-      this.selectedGroupIds.delete(group.id);
-    } else {
-      this.selectedGroupIds.add(group.id);
-    }
-    this.cdr.markForCheck();
-  }
-
-  isGroupSelected(group: ThreatGroup): boolean {
-    return this.selectedGroupIds.has(group.id);
-  }
-
-  runThreatSimulation(): void {
-    const ids = [...this.selectedGroupIds];
-    if (ids.length === 0) return;
+  runProfileSimulation(): void {
+    if (!this.domain) return;
     this.isSimulating = true;
     this.showThreatSim = true;
-    this.threatSimResults = [];
-    this.activeThreatSimResult = null;
+    this.profileSimResult = null;
     this.cdr.markForCheck();
-
-    const doSim = (domain: any) => {
-      setTimeout(() => {
-        this.threatSimResults = this.threatSimService.simulateMultipleActors(ids, domain);
-        if (this.threatSimResults.length > 0) {
-          this.activeThreatSimResult = this.threatSimResults[0];
-        }
-        this.isSimulating = false;
-        this.cdr.markForCheck();
-      }, 200);
-    };
-
-    if (this.cachedDomain) {
-      doSim(this.cachedDomain);
-    } else {
-      this.dataService.domain$.pipe(filter(Boolean), take(1)).subscribe(d => {
-        this.cachedDomain = d;
-        doSim(d);
-      });
-    }
-  }
-
-  selectThreatSimResult(result: ThreatSimResult): void {
-    this.activeThreatSimResult = result;
-    this.cdr.markForCheck();
+    setTimeout(() => {
+      this.profileSimResult = this.threatSimService.simulate(this.domain);
+      this.isSimulating = false;
+      this.cdr.markForCheck();
+    }, 150);
   }
 
   get threatSimTacticBars(): { tactic: string; covered: number; total: number; pct: number }[] {
-    if (!this.activeThreatSimResult) return [];
-    return this.activeThreatSimResult.tacticBreakdown.map(t => ({
-      ...t,
-      pct: t.total > 0 ? Math.round((t.covered / t.total) * 100) : 0,
-    }));
+    if (!this.profileSimResult) return [];
+    return this.profileSimResult.tacticBreakdown.map(t => ({ ...t, pct: t.total > 0 ? Math.round((t.covered / t.total) * 100) : 0 }));
   }
 
   closeThreatSim(): void {
     this.showThreatSim = false;
-    this.threatSimResults = [];
-    this.activeThreatSimResult = null;
-    this.selectedGroupIds.clear();
+    this.profileSimResult = null;
     this.cdr.markForCheck();
   }
 
   exportSimulationCsv(): void {
-    const result = this.activeThreatSimResult;
+    const result = this.profileSimResult;
     if (!result) return;
-    const rows: string[] = [
-      'Priority,ATT&CK ID,Technique Name,Tactic,KEV Count,Has Exploit,EPSS Avg',
-    ];
+    const rows: string[] = ['Priority,ATT&CK ID,Technique Name,Tactic,KEV Count,Has Exploit,EPSS Avg'];
     for (const gap of result.gaps) {
       rows.push(csvRow([
         gap.priority.toUpperCase(),
@@ -477,14 +363,14 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
     const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `simulation-${result.actor.attackId}-gaps.csv`;
+    a.download = 'profile-simulation-gaps.csv';
     a.click();
     URL.revokeObjectURL(a.href);
   }
 
   exportCalderaProfile(): void {
-    if (!this.selectedGroup || !this.cachedDomain) return;
-    const plan = this.emulationPlanService.generatePlan(this.selectedGroup.id, this.cachedDomain);
+    if (!this.selectedGroup || !this.domain) return;
+    const plan = this.emulationPlanService.generatePlan(this.selectedGroup.id, this.domain);
     if (plan.steps.length === 0) return;
     this.emulationPlanService.exportCalderaProfile(plan);
   }

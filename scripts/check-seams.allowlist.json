@@ -85,18 +85,6 @@
           "removedBy": "E5.5"
         },
         {
-          "file": "src/app/components/scenario-panel/scenario-panel.component.ts",
-          "uses": {
-            "getStatusMap": 1,
-            "ImplementationService": 2,
-            "implService": 2,
-            "mitigationsByTechnique": 1
-          },
-          "bucket": "phase-2",
-          "reason": "Scenario outcomes use the legacy implemented fold (getStatusMap over mitigationsByTechnique); P2-12 gives them PostureService numerators (bounded window, design 4.1).",
-          "removedBy": "P2-12"
-        },
-        {
           "file": "src/app/components/settings-panel/settings-panel.component.ts",
           "uses": {
             "getStatusMap": 1,
@@ -278,18 +266,6 @@
           "bucket": "seam",
           "reason": "PostureService: the one place the mitigation status store and the mitigation-to-technique map are joined into one PostureState per technique (P2-05). Every other surface reads it; this file is what the rule protects.",
           "removedBy": "stays (the seam)"
-        },
-        {
-          "file": "src/app/services/threat-simulation.service.ts",
-          "uses": {
-            "getStatusMap": 1,
-            "ImplementationService": 2,
-            "implService": 2,
-            "mitigationsByTechnique": 1
-          },
-          "bucket": "phase-2",
-          "reason": "Threat simulation uses the legacy implemented fold; P2-12 gives it PostureService numerators (bounded window, design 4.1).",
-          "removedBy": "P2-12"
         },
         {
           "file": "src/app/services/xlsx-export.service.ts",

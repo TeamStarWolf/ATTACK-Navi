@@ -588,12 +588,6 @@ $unknown: var(--danger);
   line-height: 1;
   margin-bottom: 4px;
   color: var(--text-main);
-
-  &.score-grade-A { color: var(--success); }
-  &.score-grade-B { color: var(--success); }
-  &.score-grade-C { color: var(--accent-warm); }
-  &.score-grade-D { color: var(--accent-warm); }
-  &.score-grade-F { color: var(--danger); }
 }
 
 .score-max {
@@ -602,16 +596,11 @@ $unknown: var(--danger);
   color: var(--text-faint);
 }
 
-.score-grade-label {
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 10px;
-
-  &.grade-A { color: var(--success); }
-  &.grade-B { color: var(--success); }
-  &.grade-C { color: var(--accent-warm); }
-  &.grade-D { color: var(--accent-warm); }
-  &.grade-F { color: var(--danger); }
+.score-note {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-top: 6px;
+  max-width: 260px;
 }
 
 .score-bar-wrap { margin-top: 8px; }
@@ -627,13 +616,8 @@ $unknown: var(--danger);
 .score-bar-fill {
   height: 100%;
   border-radius: 4px;
+  background: var(--accent);
   transition: width 0.5s ease;
-
-  &.grade-fill-A { background: var(--success); }
-  &.grade-fill-B { background: var(--success); }
-  &.grade-fill-C { background: var(--accent-warm); }
-  &.grade-fill-D { background: var(--accent-warm); }
-  &.grade-fill-F { background: var(--danger); }
 }
 
 /* Key finding */
@@ -1501,4 +1485,71 @@ $unknown: var(--danger);
   color: var(--success);
   font-size: 13px;
   font-weight: 500;
+}
+
+/* ── P2-12a: posture-bucket outcomes (proven / covered / partial / known / none) ── */
+$proven:  #4ade80;
+$covered: #22d3ee;
+$partial: #fbbf24;
+$known:   #60a5fa;
+$none:    #f87171;
+
+.outcome-card {
+  &.outcome-proven  { border-color: rgb(74  222 128 / 20%); }
+  &.outcome-covered { border-color: rgb(34  211 238 / 20%); }
+  &.outcome-known   { border-color: rgb(96  165 250 / 20%); }
+  &.outcome-none    { border-color: rgb(248 113 113 / 20%); }
+}
+
+.legend-dot {
+  &.dot-proven  { background: $proven; }
+  &.dot-covered { background: $covered; }
+  &.dot-partial { background: $partial; }
+  &.dot-known   { background: $known; }
+  &.dot-none    { background: $none; }
+}
+
+.outcome-badge {
+  &.outcome-badge-proven  { background: rgb(74  222 128 / 12%); color: $proven; }
+  &.outcome-badge-covered { background: rgb(34  211 238 / 12%); color: $covered; }
+  &.outcome-badge-partial { background: rgb(251 191 36 /  12%); color: $partial; }
+  &.outcome-badge-known   { background: rgb(96  165 250 / 12%); color: $known; }
+  &.outcome-badge-none    { background: rgb(248 113 113 / 12%); color: $none; }
+}
+
+.pill {
+  &.pill-none    { &.active { border-color: $none;    background: rgb(248 113 113 / 10%); color: $none; } }
+  &.pill-known   { &.active { border-color: $known;   background: rgb(96  165 250 / 10%); color: $known; } }
+  &.pill-partial { &.active { border-color: $partial; background: rgb(251 191 36 /  10%); color: $partial; } }
+  &.pill-covered { &.active { border-color: $covered; background: rgb(34  211 238 / 10%); color: $covered; } }
+  &.pill-proven  { &.active { border-color: $proven;  background: rgb(74  222 128 / 10%); color: $proven; } }
+}
+
+.result-share-badge {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-main);
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+}
+
+.fresh-note {
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.partial-note {
+  margin: -4px 0 12px;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.profile-sim-header { margin-top: 16px; }
+
+.selector-hint {
+  margin: 4px 0 8px;
+  font-size: 12px;
+  color: var(--text-faint);
 }
