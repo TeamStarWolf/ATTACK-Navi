@@ -32,6 +32,7 @@ const STATUS_LABEL: Record<ValidationStatus, string> = {
         <div class="vsp-row">
           <span class="vsp-status" [attr.data-status]="latest.status">{{ statusLabel(latest.status) }}</span>
           @if (labProven) {
+            <!-- truth-vocab-allow-next-line proven-only -- labProven gates this to proofScope 'range'; the run carries its date and source -->
             <span class="vsp-lab" title="Validated against a published Lylat range build">lab</span>
           }
           <span class="vsp-meta">
@@ -40,6 +41,7 @@ const STATUS_LABEL: Record<ValidationStatus, string> = {
         </div>
         @if (labRuleRefs.length) {
           <div class="vsp-row vsp-rules">
+            <!-- truth-vocab-allow-next-line proven-only -- labRuleRefs holds only range-Proven rule ids; each is validated by the imported range run -->
             range-validated rules:
             @for (ref of labRuleRefs; track ref) { <code class="vsp-rule">{{ ref }}</code> }
           </div>

@@ -13,6 +13,7 @@
           <input type="file" accept="application/json" (change)="importRuns($event)" id="vp-import-runs" style="display:none">
           <label for="vp-import-runs" class="vp-btn">Import JSON</label>
           <input type="file" accept="application/json" (change)="importRangeResults($event)" id="vp-import-range" style="display:none">
+          <!-- truth-vocab-allow-next-line proven-only -- names the range contract whose rows are range-Proven; its date and source ride each imported run -->
           <label for="vp-import-range" class="vp-btn" title="Load a Lylat range validated-detections export as range-scoped proof">Import range results</label>
           <button class="vp-btn" (click)="exportRuns()">Export Runs JSON</button>
           <button class="vp-btn" (click)="exportNavigatorLayer()">Export ATT&amp;CK Layer</button>

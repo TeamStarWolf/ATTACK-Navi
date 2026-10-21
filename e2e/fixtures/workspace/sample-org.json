@@ -34,17 +34,11 @@
     "affectedAssetIds": ["fw-edge-01"]
   },
   "rangeContract": {
-    "mission": "CORNERIA-ROOT-01",
-    "rows": [
-      { "mission_id": "CORNERIA-ROOT-01", "technique_id": "T1558.003", "result": "validated", "detection": "wazuh:100821", "run_at": "2026-10-01T14:00:00Z" },
-      { "mission_id": "CORNERIA-ROOT-01", "technique_id": "T1558.003", "result": "validated", "detection": "wazuh:100821", "run_at": "2026-10-02T14:00:00Z" },
-      { "mission_id": "CORNERIA-ROOT-01", "technique_id": "T1087.002", "result": "validated", "detection": "wazuh:100810", "run_at": "2026-10-01T13:40:00Z" },
-      { "mission_id": "CORNERIA-ROOT-01", "technique_id": "T1078.002", "result": "validated", "detection": "wazuh:100812", "run_at": "2026-10-01T13:52:00Z" },
-      { "mission_id": "CORNERIA-ROOT-01", "technique_id": "T1059.001", "result": "validated", "detection": "wazuh:100830", "run_at": "2026-10-01T14:10:00Z" },
-      { "mission_id": "CORNERIA-ROOT-01", "technique_id": "T1059.001", "result": "validated", "detection": "wazuh:100831", "run_at": "2026-10-02T14:10:00Z" },
-      { "mission_id": "CORNERIA-ROOT-01", "technique_id": "T1003.001", "result": "validated", "detection": "wazuh:100840", "run_at": "2026-10-01T14:25:00Z" },
-      { "mission_id": "CORNERIA-ROOT-01", "technique_id": "T1021.002", "result": "validated", "detection": "wazuh:100850", "run_at": "2026-10-01T14:40:00Z" }
-    ]
+    "fixture": "src/testing/fixtures/lylat/validated-detections.fixture.json",
+    "mission": "SYNTH-MISSION-A",
+    "rowCount": 8,
+    "techniqueCount": 6,
+    "firstRule": "wazuh:990001"
   },
   "ctiReport": {
     "title": "Synthetic intrusion report (e2e fixture)",

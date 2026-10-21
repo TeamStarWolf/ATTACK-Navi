@@ -24,7 +24,7 @@ Counts and versions derived from the code. When a document states one of these n
 | RxJS | 7.8.2 | `package-lock.json` |
 | zone.js | 0.16.3 | `package-lock.json` |
 | Truth-vocabulary lint findings | 0 | `node scripts/lint-truth-vocab.mjs` (src/app templates and TS, README, docs) |
-| Truth-vocabulary allow directives | 7 | inline allow comments in those files, each with its reason |
+| Truth-vocabulary allow directives | 11 | inline allow comments in those files, each with its reason |
 
 Unit spec files are files, not test cases; Karma prints the test-case count for the commit it ran.
 
