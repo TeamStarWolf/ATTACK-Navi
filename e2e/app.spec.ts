@@ -485,6 +485,39 @@ test.describe('E2.3: tech= and dom= share links', () => {
     }
   });
 
+  // RP-F item 4: the page's domain switch clears the filters, which reset the lens
+  // after the URL reader applied heat=. The page now re-applies the pasted lens, so a
+  // non-Enterprise technique link keeps it and "Open in matrix" carries it. The writer
+  // adds tech= once the technique is selected, so its arrival marks the rewritten URL.
+  for (const [dom, id, heat, label] of [
+    ['ics', 'T0883', 'coverage', 'Mitigations mapped'],
+    ['ics', 'T0883', 'kev', 'KEV'],
+    ['mobile', 'T1404', 'coverage', 'Mitigations mapped'],
+  ] as const) {
+    test(`[RP-F 4] a pasted #/technique/${dom}/${id}?heat=${heat} keeps its lens, and Open in matrix carries it`, async ({ browser }) => {
+      const { context, page } = await newVisitor(browser);
+      try {
+        await page.goto('about:blank');
+        await page.goto(`${BASE}/#/technique/${dom}/${id}?heat=${heat}`);
+        const card = page.locator('app-technique-page [data-testid="evidence-card"]');
+        await expect(card).toBeVisible({ timeout: ROUTE_TIMEOUT });
+        await expect(page.locator('app-technique-page .tp-id')).toHaveText(id);
+        await expect(card.getByTestId('ev-why')).toContainText(`Lens: ${label}`);
+        await expect(page).toHaveURL(new RegExp(`[?&]tech=${id}(&|$)`), { timeout: ROUTE_TIMEOUT });
+        await expect(page).toHaveURL(new RegExp(`#/technique/${dom}/${id}\\?(.*&)?heat=${heat}(&|$)`));
+        expect(new URL(page.url()).hash).not.toContain('heat=frequency');
+
+        await page.getByTestId('open-in-matrix').click();
+        await expect(page).toHaveURL(new RegExp(`#/matrix\\?(.*&)?heat=${heat}(&|$)`), { timeout: ROUTE_TIMEOUT });
+        await expect(page).toHaveURL(new RegExp(`[?&]dom=${dom}(&|$)`));
+        await expect(page.locator('.heatmap-btn')).toContainText(label);
+        await expect(page.locator('.sidebar.open .sidebar-header .attack-id')).toHaveText(id, { timeout: ROUTE_TIMEOUT });
+      } finally {
+        await context.close();
+      }
+    });
+  }
+
   test('an ICS technique link loads ICS and opens its drawer (dom=ics&tech=T0807)', async ({ browser }) => {
     const { context, page } = await newVisitor(browser);
     try {
@@ -803,6 +836,20 @@ test.describe('E2.4: default-lens rule', () => {
       await expect(page.locator('.first-glance-banner')).toHaveCount(0);
     });
   }
+
+  test('[RP-F 4] one recorded run and a pasted #/technique/ics/T0883?heat=status: Status survives the domain switch, not Posture', async ({ page }) => {
+    await openWorkspace(page, { seed: { 'navi.v2.validation-runs': oneRun } });
+    await page.goto('about:blank');
+    await page.goto(BASE + '/#/technique/ics/T0883?heat=status');
+    const card = page.locator('app-technique-page [data-testid="evidence-card"]');
+    await expect(card).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    await expect(card.getByTestId('ev-why')).toContainText('Lens: Status');
+    await expect(page).toHaveURL(/[?&]tech=T0883(&|$)/, { timeout: ROUTE_TIMEOUT });
+    await expect(page).toHaveURL(/#\/technique\/ics\/T0883\?(.*&)?heat=status(&|$)/);
+    await page.getByTestId('open-in-matrix').click();
+    await expect(page).toHaveURL(/#\/matrix\?(.*&)?heat=status(&|$)/, { timeout: ROUTE_TIMEOUT });
+    await expect(page.locator('.heatmap-btn')).toContainText('Status');
+  });
 
   test('[RP-F 1] one recorded run and a pasted #/technique/enterprise/T1059.001?heat=bogus: the page explains Posture and the link says heat=posture', async ({ page }) => {
     await openWorkspace(page, { seed: { 'navi.v2.validation-runs': oneRun } });

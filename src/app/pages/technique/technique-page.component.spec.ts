@@ -48,14 +48,16 @@ describe('TechniquePageComponent (P2-18)', () => {
   let domain$: BehaviorSubject<Domain | null>;
   let selected: BehaviorSubject<Technique | null>;
   let clearAll: jasmine.Spy;
+  let setHeatmapMode: jasmine.Spy;
   let switchDomain: jasmine.Spy;
   let open: jasmine.Spy;
 
-  function render(domainParam: string, id: string, before?: () => void): HTMLElement {
+  function render(domainParam: string, id: string, before?: () => void, heat?: string): HTMLElement {
     current = new BehaviorSubject<AttackDomain>('enterprise');
     domain$ = new BehaviorSubject<Domain | null>(ENTERPRISE);
     selected = new BehaviorSubject<Technique | null>(null);
     clearAll = jasmine.createSpy('clearAll').and.callFake(() => selected.next(null));
+    setHeatmapMode = jasmine.createSpy('setHeatmapMode');
     // DataService.switchDomain: the domain on screen changes now, its bundle loads later.
     switchDomain = jasmine.createSpy('switchDomain').and.callFake((d: AttackDomain) => { current.next(d); domain$.next(null); });
     open = jasmine.createSpy('open');
@@ -63,7 +65,7 @@ describe('TechniquePageComponent (P2-18)', () => {
       imports: [TechniquePageComponent],
       providers: [
         { provide: DataService, useValue: { domain$, currentDomain$: current, getCurrentAttackDomain: () => current.value, switchDomain } },
-        { provide: FilterService, useValue: { selectedTechnique$: selected, selectTechnique: (t: Technique | null) => selected.next(t), clearAll } },
+        { provide: FilterService, useValue: { selectedTechnique$: selected, selectTechnique: (t: Technique | null) => selected.next(t), clearAll, setHeatmapMode } },
         { provide: PanelNavService, useValue: { open } },
       ],
     });
@@ -75,6 +77,7 @@ describe('TechniquePageComponent (P2-18)', () => {
     fixture = TestBed.createComponent(TechniquePageComponent);
     fixture.componentRef.setInput('domain', domainParam);
     fixture.componentRef.setInput('id', id);
+    if (heat !== undefined) fixture.componentRef.setInput('heat', heat);
     fixture.detectChanges();
     return fixture.nativeElement as HTMLElement;
   }
@@ -96,6 +99,32 @@ describe('TechniquePageComponent (P2-18)', () => {
     expect(text(el.querySelector('.tp-domain'))).toBe('ICS ATT&CK 19.2');
     expect(text(el.querySelector('.stub-card'))).toBe('T0807');
     expect(switchDomain).toHaveBeenCalledTimes(1);
+  });
+
+  // RP-F item 4: clearAll resets the lens, so the pasted heat= is applied again after the switch.
+  for (const [dom, id, heat] of [['ics', 'T0807', 'coverage'], ['ics', 'T0807', 'kev'], ['mobile', 'T1404', 'coverage'], ['ics', 'T0807', 'status']] as const) {
+    it(`/technique/${dom}/${id}?heat=${heat} keeps its lens across the domain switch`, () => {
+      render(dom, id, undefined, heat);
+      expect(switchDomain).toHaveBeenCalledOnceWith(dom);
+      expect(setHeatmapMode).toHaveBeenCalledOnceWith(heat);
+      expect(clearAll).toHaveBeenCalledBefore(setHeatmapMode);
+      expect(switchDomain).toHaveBeenCalledBefore(setHeatmapMode);
+    });
+  }
+
+  it('an invalid or empty heat= is not re-applied: the default lens clearAll chose stays (RP-F item 1)', () => {
+    render('ics', 'T0807', undefined, 'bogus');
+    expect(clearAll).toHaveBeenCalledTimes(1);
+    expect(setHeatmapMode).not.toHaveBeenCalled();
+    TestBed.resetTestingModule();
+    render('ics', 'T0807', undefined, '');
+    expect(setHeatmapMode).not.toHaveBeenCalled();
+  });
+
+  it('a link to the domain on screen with heat= leaves the lens the URL reader applied', () => {
+    render('enterprise', 'T1059.001', undefined, 'coverage');
+    expect(clearAll).not.toHaveBeenCalled();
+    expect(setHeatmapMode).not.toHaveBeenCalled();
   });
 
   it('a link to the domain on screen neither clears filters nor switches', () => {

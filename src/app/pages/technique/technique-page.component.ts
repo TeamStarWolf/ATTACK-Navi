@@ -8,12 +8,14 @@
 // the technique that replaced it), switches the ATT&CK domain when the link
 // names another one, the way the toolbar's domain picker does (filters are
 // cleared, then the domain loads), and selects the technique, so "Open in
-// matrix" lands on the matrix with its drawer open. It is a FACTS "detail
-// page", not a workspace (scripts/gen-facts.mjs).
+// matrix" lands on the matrix with its drawer open. The link's heat= survives
+// that switch: clearing the filters resets the lens, so the page re-applies
+// the pasted lens after it (RP-F item 4). It is a FACTS "detail page", not a
+// workspace (scripts/gen-facts.mjs).
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { DataService, type AttackDomain } from '../../services/data.service';
-import { ATTACK_DOMAIN_NAMES, FilterService, isAttackDomain, normalizeUrlTechId } from '../../services/filter.service';
+import { ATTACK_DOMAIN_NAMES, FilterService, isAttackDomain, isHeatmapMode, normalizeUrlTechId } from '../../services/filter.service';
 import { AttackIdResolverService } from '../../services/attack-id-resolver.service';
 import { PanelNavService } from '../../services/panel-nav.service';
 import type { Technique } from '../../models/technique';
@@ -38,6 +40,12 @@ export class TechniquePageComponent {
   /** Route params, bound by withComponentInputBinding (app.config.ts). */
   readonly domain = input<string>('');
   readonly id = input<string>('');
+  /**
+   * The link's heat= query param, bound by withComponentInputBinding. The URL
+   * reader has applied it by the time the domain switch runs; loadTarget puts
+   * it back after clearAll, which resets the lens to the default.
+   */
+  readonly heat = input<string | undefined>(undefined);
 
   private readonly data = inject(DataService);
   private readonly filter = inject(FilterService);
@@ -106,12 +114,21 @@ export class TechniquePageComponent {
     });
   }
 
-  /** Load the link's domain the way the toolbar's domain picker does: clear the filters, then switch. */
+  /**
+   * Load the link's domain the way the toolbar's domain picker does: clear the
+   * filters, then switch. clearAll resets the lens to the default (Posture with
+   * owner data, else Frequency), so a valid heat= in the link is applied again
+   * after the switch: #/technique/ics/T0883?heat=coverage stays on Mitigations
+   * mapped, and "Open in matrix" carries heat=coverage (RP-F item 4). An invalid
+   * heat= is not a lens choice, so the default stays (RP-F item 1).
+   */
   loadTarget(): void {
     const target = this.target();
     if (!target || this.data.getCurrentAttackDomain() === target) return;
+    const heat = this.heat();
     this.filter.clearAll();
     this.data.switchDomain(target);
+    if (isHeatmapMode(heat)) this.filter.setHeatmapMode(heat);
   }
 
   /** Back to the matrix with this technique's drawer open (the selection travels with the navigation). */
