@@ -390,7 +390,7 @@ test('the verbatim upstream fixtures travel with their licence terms', () => {
     ['splunk-detection.yml', 'licenses/splunk-security_content-LICENSE', 'Apache-2.0'],
   ];
   for (const [fixture, licence, spdx] of terms) {
-    assert.match(readme, new RegExp(`\`${fixture.replace('.', '\.')}\``), `${fixture} is listed`);
+    assert.ok(readme.includes('`' + fixture + '`'), `${fixture} is listed`);
     assert.ok(readme.includes(`(${licence})`), `the README links ${licence}`);
     assert.equal(identifyLicence(read(`${FIX}/${licence}`)), spdx, `${licence} holds the ${spdx} terms`);
   }
