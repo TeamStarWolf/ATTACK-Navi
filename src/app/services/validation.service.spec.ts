@@ -13,6 +13,8 @@ import { OwnerDataService } from './owner-data.service';
 import { WorkspaceBundleService } from './workspace-bundle.service';
 import { fingerprint } from '../models/storage-envelope';
 import { runMatches } from '../models/posture/run-match';
+import LYLAT_FIXTURE from '../../testing/fixtures/lylat/validated-detections.fixture.json';
+import LYLAT_INVALID_IP from '../../testing/fixtures/lylat/invalid/ip-evidence.json';
 
 const STORAGE_KEY = VALIDATION_RUNS_V2_KEY;
 
@@ -369,6 +371,49 @@ describe('ValidationService', () => {
       expect(after.statusFromSource).toBe(true);
       expect(after.status).toBe('not-reproducible');
       expect(after.notes).toBe('checked');
+    });
+  });
+
+  describe('importRangeContract (P2-20)', () => {
+    const text = () => JSON.stringify(LYLAT_FIXTURE);
+    const rangeRuns = (svc: ValidationService) => svc.all.filter(r => r.source === 'lylat-range:SYNTH-MISSION-A');
+
+    beforeEach(() => loadDomain('enterprise', '19.2'));
+
+    it('[AC] imports the fixture as range-scoped runs, keyed like a manual run', () => {
+      const res = service.importRangeContract(text());
+      expect(res.ok).toBeTrue();
+      const stored = rangeRuns(service);
+      expect(stored.length).toBe(8);
+      expect(stored.every(r => r.proofScope === 'range' && r.statusFromSource)).toBeTrue();
+      const t1059 = stored.find(r => r.techniqueId === 'T1059.001')!;
+      expect(t1059.techniqueRef).toBe('attack/enterprise/T1059.001@19.2');
+      expect(t1059.outcomes![0].coverageState).toBe('validated');
+      // Survives a reload.
+      expect(rangeRuns(rebuild()).length).toBe(8);
+    });
+
+    it('[AC-R7] re-importing the same file replaces by source: the denominator holds', () => {
+      service.importRangeContract(text());
+      const first = rangeRuns(service).length;
+      const res = service.importRangeContract(text());
+      expect(res.ok).toBeTrue();
+      expect(rangeRuns(service).length).toBe(first);
+      expect(first).toBe(8);
+      expect(res.bySource['lylat-range:SYNTH-MISSION-A']).toEqual({ added: 0, replaced: 8 });
+    });
+
+    it('refuses a privacy-leaking file and stores nothing', () => {
+      const res = service.importRangeContract(JSON.stringify(LYLAT_INVALID_IP));
+      expect(res.ok).toBeFalse();
+      expect(res.error).toContain('Invalid range results');
+      expect(service.all).toEqual([]);
+    });
+
+    it('refuses a non-contract file without touching the store', () => {
+      expect(service.importRangeContract(JSON.stringify({ schema: 'something-else' })).ok).toBeFalse();
+      expect(service.importRangeContract('not-json').ok).toBeFalse();
+      expect(service.all).toEqual([]);
     });
   });
 
