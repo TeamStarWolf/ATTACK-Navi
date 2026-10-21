@@ -10,6 +10,7 @@ import { TimelineService } from '../../services/timeline.service';
 import { OpenCtiService } from '../../services/opencti.service';
 import { MispService } from '../../services/misp.service';
 import { TaxiiService } from '../../services/taxii.service';
+import { lensLabel } from '../../models/posture/posture-vocabulary';
 
 describe('SettingsPanelComponent', () => {
   let fixture: ComponentFixture<SettingsPanelComponent>;
@@ -84,6 +85,22 @@ describe('SettingsPanelComponent', () => {
       expect(settingsService.getCoverageColors())
         .withContext(`swatch vs applied ramp for "${theme.label}"`)
         .toEqual(theme.colors);
+    }
+  });
+
+  // P2-14 round 2: SAFE_STATUS / SAFE_CONTROLS are gone, so the toggle no longer
+  // swaps the status lens to Okabe-Ito; its description must say which lenses keep
+  // their own ramps instead of claiming every mode changes.
+  it('the colorblind-safe description names the lenses that keep their own ramps', () => {
+    const labels = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.checkbox-item'));
+    const item = labels.find(l => l.querySelector('.checkbox-label')?.textContent?.trim() === 'Colorblind-safe heatmaps');
+    expect(item).withContext('colorblind-safe toggle').toBeDefined();
+    const desc = item!.querySelector('.checkbox-desc')!.textContent ?? '';
+    expect(desc).toContain('Sequential heatmap modes use viridis');
+    expect(desc).not.toContain('All heatmap modes');
+    expect(desc).not.toContain('Okabe-Ito (status)');
+    for (const name of ['Status', 'Controls', lensLabel('covered'), lensLabel('proven'), lensLabel('posture')]) {
+      expect(desc).withContext(name).toContain(name);
     }
   });
 

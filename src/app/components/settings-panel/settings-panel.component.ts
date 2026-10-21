@@ -20,6 +20,7 @@ import { MispService } from '../../services/misp.service';
 import { TaxiiService, TaxiiServerConfig, TaxiiCollection } from '../../services/taxii.service';
 import { ImportSummary } from '../../services/stix-collection.service';
 import { csvRow } from '../../utils/csv';
+import { lensLabel } from '../../models/posture/posture-vocabulary';
 
 @Component({
   selector: 'app-settings-panel',
@@ -44,6 +45,11 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
     { id: 'monochrome', label: 'Monochrome' },
     { id: 'accessible', label: 'High Contrast' },
   ];
+
+  // The lenses the Colorblind-safe toggle leaves alone: their ramps are
+  // CVD-safe by design (P2-14). Built from the lens labels so the toggle's
+  // description names each lens the way the lens picker does.
+  readonly cvdOwnRampLenses = ['Status', 'Controls', lensLabel('covered'), lensLabel('proven'), lensLabel('posture')].join(', ');
 
   get themes(): { id: string; label: string; colors: string[] }[] {
     return this.themeLabels.map(t => ({ ...t, colors: this.settingsService.COLOR_THEMES[t.id] ?? [] }));

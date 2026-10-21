@@ -19,8 +19,9 @@ export interface AppSettings {
   // Heatmap color theme
   heatmapColorTheme: 'default' | 'redgreen' | 'blueorange' | 'monochrome' | 'accessible';
 
-  // Colorblind-safe heatmaps: swap ALL heatmap ramps for viridis (sequential)
-  // and Okabe-Ito (categorical) — not just the coverage theme.
+  // Colorblind-safe heatmaps: swap the sequential lens ramps for viridis and the
+  // two-category F3 origin lens for Okabe-Ito blue / reddish purple. The status,
+  // controls, covered, proven and posture lenses keep their own CVD-safe ramps.
   colorblindSafe: boolean;   // default false
 
   // Organization info for reports
