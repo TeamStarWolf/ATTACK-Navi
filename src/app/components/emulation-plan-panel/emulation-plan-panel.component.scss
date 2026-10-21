@@ -98,33 +98,7 @@
   margin: 0 0 12px;
 }
 
-.emu-quick-picks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-  margin-bottom: 14px;
-
-  .emu-qp-label {
-    font-size: 11px;
-    color: var(--text-muted, #8b93a7);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-right: 4px;
-  }
-  .emu-qp-btn {
-    background: rgba(78, 161, 255, 0.10);
-    border: 1px solid rgba(78, 161, 255, 0.32);
-    color: var(--accent);
-    padding: 4px 11px;
-    border-radius: 999px;
-    cursor: pointer;
-    font-size: 11.5px;
-    font-weight: 600;
-
-    &:hover { background: rgba(78, 161, 255, 0.20); }
-  }
-}
+/* .emu-quick-picks moved into the shared picker as its single-mode presets (.tpp-quick, RP-F item 3). */
 
 /* .emu-search and .emu-group-list removed with the bespoke group list (P2-11; the shared picker owns selection). */
 

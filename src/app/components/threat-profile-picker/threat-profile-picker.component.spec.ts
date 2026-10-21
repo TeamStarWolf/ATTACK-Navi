@@ -30,6 +30,10 @@ function grp(id: string, attackId: string, description: string): ThreatGroup {
 function camp(id: string, attackId: string): Campaign {
   return { id, attackId, name: `camp-${attackId}`, description: '', url: '', aliases: [], firstSeen: '', lastSeen: '', attributedGroupIds: [] };
 }
+/** A list item as 'Name G####' (its name and id spans). */
+function itemText(b: Element): string {
+  return Array.from(b.querySelectorAll('span')).map((n) => n.textContent!.trim()).join(' ');
+}
 function domainWith(groups: ThreatGroup[], campaigns: Campaign[] = []): Domain {
   return { name: 'Enterprise ATT&CK', groups, campaigns } as unknown as Domain;
 }
@@ -88,6 +92,76 @@ describe('ThreatProfilePickerComponent', () => {
     expect(emitted[0]).not.toMatch(/^G\d+$/);
     expect(setSource).not.toHaveBeenCalled();
     expect(component.showPresetTabs).toBeFalse();
+  });
+
+  // RP-F item 3: single mode holds the chosen group, so the list shows what was emitted.
+  it('single mode marks the chosen list item selected, and a second pick replaces it', () => {
+    component.mode = 'single';
+    fixture.detectChanges();
+    component.selectGroup(component.groups[0]);
+    fixture.detectChanges();
+    const items = () => Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('.tpp-item'));
+    expect(items().filter((b) => b.classList.contains('selected')).map(itemText)).toEqual(['grp-G0001 G0001']);
+    items()[1].click();
+    fixture.detectChanges();
+    expect([...component.selectedGroupIds]).toEqual(['intrusion-set--bbb']);
+    expect(items().map((b) => b.getAttribute('aria-pressed'))).toEqual(['false', 'true']);
+  });
+
+  it('single mode quick picks: presets resolve by ATT&CK id, drive the picker selection and emit the STIX id', () => {
+    component.mode = 'single';
+    fixture.componentRef.setInput('quickPicks', [
+      { label: 'Bee', attackId: 'G0002' },
+      { label: 'Missing', attackId: 'G9999' },   // not in the domain: not shown
+    ]);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    const presets = Array.from(el.querySelectorAll<HTMLButtonElement>('.tpp-quick-btn'));
+    expect(presets.map((b) => b.textContent!.replace(/\s+/g, ' ').trim())).toEqual(['Bee']);
+    const emitted: string[] = [];
+    component.groupSelected.subscribe((id) => emitted.push(id));
+    component.searchText = 'grp-G0001';            // a search that hides the preset's group
+    component.toggleSector('Financial');
+    presets[0].click();
+    fixture.detectChanges();
+    expect(emitted).toEqual(['intrusion-set--bbb']);
+    expect(component.searchText).toBe('');         // cleared so the selected item is on screen
+    expect(component.activeSector).toBeNull();
+    const selected = Array.from(el.querySelectorAll<HTMLButtonElement>('.tpp-item.selected'));
+    expect(selected.map(itemText)).toEqual(['grp-G0002 G0002']);
+    expect(selected[0].getAttribute('aria-pressed')).toBe('true');
+    expect(el.querySelector('.tpp-quick-btn')!.getAttribute('aria-pressed')).toBe('true');
+    expect(setSource).not.toHaveBeenCalled();
+  });
+
+  it('single mode quick picks re-resolve on a domain switch and are absent outside single mode', () => {
+    component.mode = 'single';
+    fixture.componentRef.setInput('quickPicks', [{ label: 'New', attackId: 'G0003' }]);
+    fixture.detectChanges();
+    expect(component.quickPickGroups.length).toBe(0);
+    domain$.next(domainWith([grp('intrusion-set--ddd', 'G0003', 'new group')]));
+    fixture.detectChanges();
+    expect(component.quickPickGroups.map((q) => q.group.id)).toEqual(['intrusion-set--ddd']);
+
+    TestBed.resetTestingModule(); configure();
+    component.mode = 'profile';
+    fixture.componentRef.setInput('quickPicks', [{ label: 'Bee', attackId: 'G0002' }]);
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).querySelector('.tpp-quick')).toBeNull();
+  });
+
+  it('single mode reflects the caller selection (selectedGroupId) without emitting', () => {
+    component.mode = 'single';
+    const emitted: string[] = [];
+    component.groupSelected.subscribe((id) => emitted.push(id));
+    fixture.componentRef.setInput('selectedGroupId', 'intrusion-set--bbb');
+    fixture.detectChanges();
+    expect([...component.selectedGroupIds]).toEqual(['intrusion-set--bbb']);
+    fixture.componentRef.setInput('selectedGroupId', null);   // the caller cleared it (New Plan)
+    fixture.detectChanges();
+    expect(component.selectedGroupIds.size).toBe(0);
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('.tpp-item.selected').length).toBe(0);
+    expect(emitted).toEqual([]);
   });
 
   it('multi-local mode emits a set and never mutates the service', () => {

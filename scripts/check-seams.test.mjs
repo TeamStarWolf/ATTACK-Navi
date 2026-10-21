@@ -74,6 +74,19 @@ test('this repository passes with its generated allow-list, and the list is exac
   for (const onPicker of ['actor-compare-panel.component.ts', 'comparison-panel.component.ts', 'scenario-panel.component.ts']) {
     assert.equal(listedOnePicker.some((f) => f.endsWith(`/${onPicker}`)), false, `${onPicker} is on the shared picker`);
   }
+  // picker-select (RP-F item 3): the list is exactly the grep, every entry is annotated,
+  // and the emulation panel, whose Common picks are now the picker's presets, is clean.
+  const listedSelect = allowlist.rules['picker-select'].entries.map((e) => e.file);
+  assert.deepEqual(listedSelect, scanRule(ROOT, 'picker-select').map((h) => h.file));
+  assert.deepEqual(generateAllowlist(ROOT, allowlist).rules['picker-select'].entries, allowlist.rules['picker-select'].entries);
+  for (const e of allowlist.rules['picker-select'].entries) {
+    assert.ok(e.reason && e.removedBy && e.bucket, `${e.file} (picker-select) has a bucket, reason and removedBy`);
+  }
+  for (const clean of ['emulation-plan-panel.component.ts', 'emulation-plan-panel.component.html']) {
+    assert.equal(listedSelect.some((f) => f.endsWith(`/${clean}`)), false, `${clean} selects through the shared picker`);
+  }
+  // It leaves one-picker's patterns as decided (P2-17): domain.groups AND aliases.some( only.
+  assert.deepEqual(allowlist.rules['one-picker'].patterns, [String.raw`domain\.groups\b`, String.raw`\baliases\.some\(`]);
 });
 
 test('a planted violation fails the CLI and is named', () => {
@@ -103,6 +116,43 @@ test('one-picker: a planted rival group picker fails; the threat-profile-picker 
   // A technique-name filter plus a domain.groups STIX lookup is NOT a rival picker (no aliases.some).
   withFixture({ 'src/app/components/graph/graph.component.ts': 'const t = list.filter(x => x.name.toLowerCase().includes(q)); const g = domain.groups.find(g => g.id === id);\n' }, { rules: { 'one-picker': { entries: [] } } }, (dir) => {
     assert.equal(run(dir).status, 0);
+  });
+});
+
+test('picker-select: a planted direct selectGroup( call fails; the picker itself is excluded; a listed file passes', () => {
+  const none = { rules: { 'picker-select': { entries: [] } } };
+  // The RP-F form: preset buttons in a template that call a selectGroup() beside the picker.
+  const PRESETS = '<button (click)="selectGroup(qp.group)">{{ qp.label }}</button>\n<app-threat-profile-picker mode="single" (groupSelected)="onGroupPicked($event)" />\n';
+  withFixture({ 'src/app/components/rival/rival.component.html': PRESETS }, none, (dir) => {
+    const r = run(dir);
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /picker-select: src\/app\/components\/rival\/rival\.component\.html matches both regexes and is not on the allow-list/);
+    assert.match(r.stderr, /\(groupSelected\) output or pass presets as \[quickPicks\]/);
+  });
+  // A TypeScript call (this.selectGroup(g), picker.selectCampaign(c)) is the same seam.
+  for (const call of ['this.selectGroup(group);\n', 'picker.selectCampaign(c);\n']) {
+    withFixture({ 'src/app/components/rival/rival.component.ts': call }, none, (dir) => {
+      assert.equal(run(dir).status, 1, call);
+    });
+  }
+  // The picker's own selection methods and template are excluded.
+  withFixture({
+    'src/app/components/threat-profile-picker/threat-profile-picker.component.ts': 'selectGroup(g: ThreatGroup): void { this.selectGroup(g); }\n',
+    'src/app/components/threat-profile-picker/threat-profile-picker.component.html': '<button (click)="selectGroup(g)"></button>\n',
+  }, none, (dir) => {
+    assert.equal(run(dir).status, 0);
+  });
+  // Binding the picker's output, passing presets, or a name that only starts the same is not a call.
+  withFixture({ 'src/app/components/ok/ok.component.html': '<app-threat-profile-picker mode="single" [quickPicks]="quickPicks" (groupSelected)="onGroupPicked($event)" />\n<p>{{ reselectGroup }} {{ selectGroupId }}</p>\n' }, none, (dir) => {
+    assert.equal(run(dir).status, 0);
+  });
+  // A listed file with a reason passes.
+  withFixture({ 'src/app/components/browse/browse.component.ts': 'onGroupPicked(id) { this.selectGroup(find(id)); }\n' }, {
+    rules: { 'picker-select': { entries: [{ file: 'src/app/components/browse/browse.component.ts', uses: { 'selectGroup(': 1 }, bucket: 'stays', reason: 'handler of the picker output', removedBy: 'stays' }] } },
+  }, (dir) => {
+    const r = run(dir);
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /picker-select: 1 allow-listed files/);
   });
 });
 

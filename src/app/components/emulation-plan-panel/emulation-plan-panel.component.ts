@@ -18,7 +18,7 @@ import {
 } from '../../services/emulation-plan.service';
 import { LibraryService } from '../../services/library.service';
 import { PanelNavService } from '../../services/panel-nav.service';
-import { ThreatProfilePickerComponent } from '../threat-profile-picker/threat-profile-picker.component';
+import { PickerQuickPick, ThreatProfilePickerComponent } from '../threat-profile-picker/threat-profile-picker.component';
 import { ThreatGroup } from '../../models/group';
 import { Domain } from '../../models/domain';
 
@@ -50,9 +50,10 @@ export class EmulationPlanPanelComponent implements OnInit, OnDestroy {
   generating = false;
   savedPlans: EmulationPlan[] = [];
 
-  // Common-actor quick picks, by ATT&CK id. Resolved to the loaded domain's STIX groups
-  // on each domain emission (no name/alias matching at click — P2-12's one-picker rule).
-  readonly quickPicks: readonly { label: string; attackId: string }[] = [
+  // Common-actor quick picks, by ATT&CK id. They are the shared picker's quick-select
+  // presets (RP-F item 3): the picker resolves them to the loaded domain's STIX groups
+  // and selects through its own selectGroup, so the panel has no second selection path.
+  readonly quickPicks: readonly PickerQuickPick[] = [
     { label: 'APT28', attackId: 'G0007' },
     { label: 'APT29', attackId: 'G0016' },
     { label: 'APT41', attackId: 'G0096' },
@@ -60,8 +61,6 @@ export class EmulationPlanPanelComponent implements OnInit, OnDestroy {
     { label: 'Lazarus Group', attackId: 'G0032' },
     { label: 'Sandworm Team', attackId: 'G0034' },
   ];
-  quickPickGroups: { label: string; group: ThreatGroup }[] = [];
-
   private subs = new Subscription();
 
   constructor(
@@ -79,7 +78,6 @@ export class EmulationPlanPanelComponent implements OnInit, OnDestroy {
     this.subs.add(this.dataService.domain$.subscribe(domain => {
       this.domain = domain;
       this.groups = domain ? [...domain.groups].sort((a, b) => a.name.localeCompare(b.name)) : [];
-      this.resolveQuickPicks();
       // Keep the selection valid for the loaded domain: re-resolve by id, and if the group
       // is gone, clear it and any plan so generatePlan can never run against a stale group
       // (generatePlan now throws for an actor the domain lacks).
@@ -99,23 +97,15 @@ export class EmulationPlanPanelComponent implements OnInit, OnDestroy {
 
   // ─── Setup ────────────────────────────────────────────────────────────────
 
-  /** Resolve each quick pick's ATT&CK id to the loaded domain's STIX group, dropping any absent. */
-  private resolveQuickPicks(): void {
-    const byAttackId = new Map(this.groups.map(g => [g.attackId, g]));
-    this.quickPickGroups = this.quickPicks
-      .map(qp => ({ label: qp.label, group: byAttackId.get(qp.attackId) }))
-      .filter((q): q is { label: string; group: ThreatGroup } => !!q.group);
-  }
-
   // ─── Group selection ──────────────────────────────────────────────────────
 
-  /** The shared picker (single mode) emits a STIX intrusion-set id; resolve it to the group. */
+  /**
+   * The shared picker (single mode) emits a STIX intrusion-set id, from a list item or
+   * a Common pick; resolve it to the group. This is the panel's only way to choose a group.
+   */
   onGroupPicked(stixId: string): void {
     const group = this.groups.find(g => g.id === stixId);
-    if (group) this.selectGroup(group);
-  }
-
-  selectGroup(group: ThreatGroup): void {
+    if (!group) return;
     this.selectedGroup = group;
     this.cdr.markForCheck();
   }

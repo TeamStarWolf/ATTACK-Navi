@@ -48,6 +48,41 @@
   border-radius: 4px;
 }
 
+/* single mode: quick-select presets (the emulation panel's Common picks, RP-F item 3). */
+.tpp-quick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+
+  .tpp-quick-label {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-right: 2px;
+  }
+
+  .tpp-quick-btn {
+    padding: 3px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent);
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    border-radius: 999px;
+    cursor: pointer;
+
+    &:hover { background: var(--bg-raised); }
+
+    &.selected {
+      color: var(--text-main);
+      background: var(--bg-raised);
+      border-color: var(--accent);
+    }
+  }
+}
+
 .tpp-sectors {
   display: flex;
   flex-wrap: wrap;
