@@ -12,7 +12,7 @@ import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { checkText, parseNumber, DEFAULT_DOCS, checkFreshness } from './check-facts.mjs';
-import { collectFacts, headline, renderFacts, parseFactsMarkdown } from './gen-facts.mjs';
+import { collectFacts, headline, renderFacts, parseFactsMarkdown, routes, isDetailPath } from './gen-facts.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SCRIPT = join(ROOT, 'scripts', 'check-facts.mjs');
@@ -146,4 +146,46 @@ test('CLI: the repository docs pass, and a planted wrong count in a copy exits 1
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+// P2-18 (S15): a top-level route whose path has a :param is a DETAIL PAGE, a
+// separate fact; it never counts as a routed workspace, so the docs that state
+// the workspace count (ARCHITECTURE.md, AGENTS.md) do not move.
+test('a :param route counts as a detail page, not a workspace', () => {
+  assert.equal(isDetailPath('technique/:domain/:id'), true);
+  assert.equal(isDetailPath(':id'), true);
+  assert.equal(isDetailPath('matrix'), false);
+  assert.equal(isDetailPath('settings'), false);
+  assert.equal(isDetailPath(''), false);
+
+  const dir = mkdtempSync(join(tmpdir(), 'gen-facts-routes-'));
+  try {
+    mkdirSync(join(dir, 'src/app/pages'), { recursive: true });
+    writeFileSync(join(dir, 'src/app/app.routes.ts'), [
+      "import { Routes } from '@angular/router';",
+      'export const routes: Routes = [',
+      "  { path: '', pathMatch: 'full', redirectTo: 'matrix' },",
+      "  { path: 'matrix', loadComponent: () => import('./pages/matrix/m').then((c) => c.M), data: { title: 'Matrix' } },",
+      "  { path: 'technique/:domain/:id', loadComponent: () => import('./pages/technique/t').then((c) => c.T), data: { title: 'Technique' } },",
+      "  { path: '**', redirectTo: 'matrix' },",
+      '];',
+      '',
+    ].join('\n'));
+    const r = routes(dir);
+    assert.equal(r.workspaceCount, 1);
+    assert.deepEqual(r.workspaces.map((w) => w.path), ['/matrix']);
+    assert.equal(r.detailPageCount, 1);
+    assert.deepEqual(r.detailPages, [{ path: '/technique/:domain/:id', title: 'Technique' }]);
+    assert.equal(r.redirects.length, 2);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('the repository has one detail page and its workspaces exclude it', () => {
+  const h = headline(collectFacts(ROOT));
+  assert.equal(h.detailPages, 1);
+  const r = collectFacts(ROOT).routes;
+  assert.ok(r.detailPages.some((d) => d.path === '/technique/:domain/:id'));
+  assert.ok(!r.workspaces.some((w) => isDetailPath(w.path.slice(1))));
 });

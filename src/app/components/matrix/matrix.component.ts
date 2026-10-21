@@ -8,6 +8,7 @@ import {
   OnInit,
   OnDestroy,
   OnChanges,
+  AfterViewChecked,
   HostListener,
   HostBinding,
   computed,
@@ -24,7 +25,7 @@ import { Tactic } from '../../models/tactic';
 import { Technique } from '../../models/technique';
 import { FilterService, SortMode, HeatmapMode } from '../../services/filter.service';
 import { resolveTacticEntry, techniqueBelongsToColumn } from '../../services/attack-tactics';
-import { MatrixControlService } from '../../services/matrix-control.service';
+import { MatrixControlService, type LegacyLensReadout } from '../../services/matrix-control.service';
 import { ImplementationService, ImplStatus } from '../../services/implementation.service';
 import { CveService } from '../../services/cve.service';
 import { DocumentationService } from '../../services/documentation.service';
@@ -117,7 +118,7 @@ function sameEntries<K, V>(a: ReadonlyMap<K, V>, b: ReadonlyMap<K, V>): boolean 
   templateUrl: './matrix.component.html',
   styleUrl: './matrix.component.scss',
 })
-export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
+export class MatrixComponent implements OnInit, OnChanges, OnDestroy, AfterViewChecked {
   @Input() domain!: Domain;
   /**
    * The ATT&CK domain on screen (E1.2). A lens without data for it renders
@@ -153,6 +154,8 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
   multiSelectMode = false;
   selectedTechIds = new Set<string>();
   selectedTechniqueId: string | null = null;
+  /** The selected technique, for the legacy-lens readout (P2-18). */
+  private selectedTechnique: Technique | null = null;
   highlightedIds = new Set<string>();
   matchedIds = new Set<string>();
   platformIds: Set<string> | null = null;
@@ -561,6 +564,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     this.subs.add(
       this.filterService.selectedTechnique$.subscribe((t) => {
         this.selectedTechniqueId = t?.id ?? null;
+        this.selectedTechnique = t;
         this.cdr.markForCheck();
       }),
     );
@@ -1199,6 +1203,65 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy {
     if (initialSearch) {
       this.searchQuery = initialSearch;
       this.rebuildSearchMatches();
+    }
+  }
+
+  /**
+   * Publish the selected technique's legacy-lens score (P2-18): the evidence
+   * card's "Why this colour" reads it as 'score N of max M'. Checked after each
+   * view check, so a score that arrives late (an async source) is published
+   * too; only a changed readout is written, outside the check (microtask).
+   */
+  ngAfterViewChecked(): void {
+    const t = this.selectedTechnique;
+    const scored = t ? this.legacyScore(t) : null;
+    const readout: LegacyLensReadout | null = t && scored ? { techId: t.id, mode: this.heatmapMode, ...scored } : null;
+    if (!this.matrixControl.isPublished(readout)) queueMicrotask(() => this.matrixControl.publishReadout(readout));
+  }
+
+  /**
+   * The score and maximum a legacy lens paints `tech` with (the same pairs
+   * getCellColor passes to the relative ramp); null on a registry lens and on
+   * the categorical F3 origin lens. Mitigations mapped reports the colour
+   * step: the count capped at the ramp's top (4 or more share the top colour).
+   */
+  legacyScore(tech: Technique): { score: number; max: number } | null {
+    if (heatmapModeDef(this.heatmapMode)?.project) return null;
+    const pair = (score: number, max: number) => ({ score, max });
+    switch (this.heatmapMode) {
+      case 'coverage': {
+        const top = Math.max(1, this.settingsService.getCoverageColors().length - 1);
+        return pair(Math.min(Math.max(tech.mitigationCount, 0), top), top);
+      }
+      case 'frequency': return pair(this.getFrequencyScore(tech), this.maxFrequencyScore);
+      case 'exposure': return pair(this.getExposureScore(tech), this.maxExposure);
+      case 'software': return pair(this.getSoftwareScore(tech), this.maxSoftware);
+      case 'campaign': return pair(this.getCampaignScore(tech), this.maxCampaign);
+      case 'risk': return pair(this.getRiskScore(tech), this.maxRisk);
+      case 'kev': return pair(this.getKevScore(tech), this.maxKev);
+      case 'd3fend': return pair(this.getD3fendScore(tech), this.maxD3fend);
+      case 'atomic': return pair(this.getAtomicScore(tech), this.maxAtomic);
+      case 'engage': return pair(this.getEngageScore(tech), this.maxEngageScore);
+      case 'car': return pair(this.getCarScore(tech), this.maxCarScore);
+      case 'cve': return pair(this.getCveScore(tech), this.maxCveScore);
+      case 'detection': return pair(this.getDetectionScore(tech), this.maxDetectionScore);
+      case 'cri': return pair(this.getCriScore(tech), this.maxCriScore);
+      case 'library': return pair(this.getLibraryScore(tech), this.maxLibraryScore);
+      case 'sigma': return pair(this.getSigmaScore(tech), this.maxSigmaScore);
+      case 'nist': return pair(this.getNistScore(tech), this.maxNistScore);
+      case 'veris': return pair(this.getVerisScore(tech), this.maxVerisScore);
+      case 'epss': return pair(this.getEpssScore(tech), 1);
+      case 'elastic': return pair(this.getElasticScore(tech), this.maxElasticScore);
+      case 'splunk': return pair(this.getSplunkScore(tech), this.maxSplunkScore);
+      case 'intelligence': return pair(this.getIntelScore(tech), this.maxIntelScore);
+      case 'm365': return pair(this.getM365Score(tech), this.maxM365Score);
+      case 'my-exposure': return pair(this.getMyExposureScore(tech), this.maxMyExposure);
+      case 'wazuh': return pair(this.getWazuhScore(tech), this.maxWazuhScore);
+      case 'csa-ccm': return pair(this.getCsaCcmScore(tech), this.maxCsaCcmScore);
+      case 'm365-controls': return pair(this.getM365ControlsScore(tech), this.maxM365ControlsScore);
+      case 'kill-chain': return pair(this.getKillChainScore(tech), this.maxKillChainScore);
+      case 'poc-exploits': return pair(this.getPocScore(tech), this.maxPocScore);
+      default: return null;
     }
   }
 

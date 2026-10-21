@@ -24,13 +24,26 @@ const hostFor = (path: string): string => {
 };
 
 /**
+ * The example URL CURRENT_ROUTES carries for each parameterised route (P2-18):
+ * a route with a `:param` cannot be visited as written, so the table names one
+ * concrete page for it. A parameterised route declared in src/app without an
+ * example here fails the route-table guard below, as an unlisted route does.
+ */
+const PARAM_EXAMPLES: Readonly<Record<string, string>> = {
+  'technique/:domain/:id': '/technique/enterprise/T1059.001',
+};
+
+/**
  * The routable pages declared in src/app: top-level `loadComponent` routes plus
- * every `loadComponent` child of each lazily loaded workspace route file.
+ * every `loadComponent` child of each lazily loaded workspace route file. A
+ * top-level route with a `:param` is listed by its PARAM_EXAMPLES example, or
+ * as the raw path when it has none (which no CURRENT_ROUTES row can equal).
  */
 function declaredRoutes(): string[] {
   const top = readFileSync('src/app/app.routes.ts', 'utf8');
   const paths: string[] = [];
   for (const m of top.matchAll(/path:\s*'([\w-]+)',\s*loadComponent:/g)) paths.push(`/${m[1]}`);
+  for (const m of top.matchAll(/path:\s*'([\w:/-]*:[\w:/-]*)',\s*loadComponent:/g)) paths.push(PARAM_EXAMPLES[m[1]] ?? `/${m[1]}`);
   for (const m of top.matchAll(/path:\s*'([\w-]+)',\s*loadChildren:\s*\(\)\s*=>\s*import\('\.\/([^']+)'\)/g)) {
     const child = readFileSync(`src/app/${m[2]}.ts`, 'utf8');
     for (const c of child.matchAll(/path:\s*'([\w-]+)',\s*loadComponent:/g)) paths.push(`/${m[1]}/${c[1]}`);

@@ -1,0 +1,78 @@
+<!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+     https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
+<!-- The technique evidence card (P2-18): Why this colour, then the evidence rung by rung.
+     The two owner blocks render only when PostureService.ownerWords() is true (fresh profile: Known and Threat only). -->
+<section class="evidence-card" data-testid="evidence-card" aria-label="Technique evidence">
+  <div class="ev-why" data-testid="ev-why">
+    <p class="ev-why-line"><span class="ev-why-label">Why this colour:</span>&ngsp;{{ why().text }}</p>&ngsp;
+    <p class="ev-why-lens">Lens: {{ why().lens }}</p>
+  </div>
+
+  @if (ownerWords()) {
+    <div class="ev-block" data-testid="ev-proven">
+      <h3 class="ev-title">{{ provenTitle }}</h3>
+      @for (p of proofs(); track p.key) {
+        <div class="ev-row" data-testid="ev-proof">
+          <span class="ev-line">{{ p.line }}</span>&ngsp;
+          <span class="ev-meta">source {{ p.source }}</span>
+          @if (p.lab) {
+            &ngsp;<span class="ev-badge ev-lab" title="Recorded in the range">lab</span>
+          }
+          @if (p.stale) {
+            &ngsp;<span class="ev-badge ev-stale" [title]="'Older than its ' + p.window + '-day window'">stale</span>
+          }
+        </div>
+      } @empty {
+        <p class="ev-empty">No recorded detection for this technique.</p>
+      }
+    </div>
+
+    <div class="ev-block" data-testid="ev-covered">
+      <h3 class="ev-title">{{ coveredTitle }}</h3>
+      @for (m of coveredMarks(); track m.key) {
+        <div class="ev-row" data-testid="ev-mark">
+          <span class="ev-badge ev-qualifier">{{ m.qualifier }}</span>&ngsp;
+          <span class="ev-line">{{ m.basis }}@if (m.via) { via {{ m.via }}}</span>&ngsp;
+          <span class="ev-meta">{{ m.strength }} · source {{ m.source }}@if (m.at) { · {{ m.at }}}</span>
+          @if (m.canConfirm) {
+            <button type="button" class="ev-confirm-btn" data-testid="ev-confirm" (click)="confirm(m.via!)"
+                    title="Confirm this technique yourself: it then counts in full, not only through the broad mitigation">Confirm</button>
+          }
+        </div>
+      } @empty {
+        <p class="ev-empty">Nothing of yours recorded for this technique.</p>
+      }
+    </div>
+  }
+
+  <div class="ev-block" data-testid="ev-known">
+    <h3 class="ev-title">Known: reference data</h3>
+    <p class="ev-summary">mapped {{ known().mapped }} of {{ knownFamilies }} reference families</p>
+    <ul class="ev-list">
+      @for (r of known().rows; track r.family) {
+        <li class="ev-known-row" [class.ev-zero]="r.count === 0">
+          <span class="ev-family">{{ r.family }}</span>&ngsp;
+          <span class="ev-count">{{ r.count }}</span>&ngsp;
+          <span class="ev-meta">{{ r.source }}</span>
+        </li>
+      }
+    </ul>
+  </div>
+
+  <div class="ev-block" data-testid="ev-threat">
+    <h3 class="ev-title">Threat</h3>
+    @if (threat().profileLabel !== null) {
+      <p class="ev-summary" data-testid="ev-threat-profile">
+        Threat profile ({{ threat().profileLabel }}): used by {{ threat().profileActors.length }}@if (threat().profileActors.length > 0) {: {{ threat().profileActors.join(', ') }}}
+      </p>
+    }
+    <p class="ev-summary">Used by {{ threat().bundleGroups }} groups in the loaded ATT&amp;CK bundle</p>
+    @if (threat().kevLoaded) {
+      <p class="ev-summary" data-testid="ev-kev">
+        KEV-linked CVEs: {{ threat().kevCount }}@if (threat().kevIds.length > 0) { ({{ threat().kevIds.join(', ') }})}
+      </p>
+    } @else {
+      <p class="ev-summary ev-meta" data-testid="ev-kev">KEV-linked CVEs: the KEV catalogue is not loaded in this session</p>
+    }
+  </div>
+</section>

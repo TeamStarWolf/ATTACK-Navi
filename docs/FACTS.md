@@ -12,9 +12,10 @@ Counts and versions derived from the code. When a document states one of these n
 | Routed workspaces (top-level routes, redirects excluded) | 10 | `src/app/app.routes.ts` |
 | Workspaces that lazy-load a route file | 8 | `loadChildren` in `src/app/app.routes.ts` |
 | Routed workspace tabs | 47 | child routes with `data.tab` in `src/app/pages/*/*.routes.ts` |
+| Detail pages (top-level routes with a `:param`, not workspaces) | 1 | `src/app/app.routes.ts` |
 | Library layers | 37 | `src/assets/data/library-layers/index.json` |
 | Lylat mission layers | 35 | `src/assets/data/lylat-mission-layers/index.json` |
-| Unit spec files | 235 | `src/**/*.spec.ts` |
+| Unit spec files | 238 | `src/**/*.spec.ts` |
 | Playwright spec files | 8 | `e2e/**/*.spec.ts` |
 | Script test files | 9 | `scripts/**/*.test.mjs` |
 | Proxy test files | 1 | `server/**/*.test.*` |
@@ -93,6 +94,8 @@ Version is the `x_mitre_version` of the bundle's `x-mitre-collection` object.
 | `/reports` | Reports | `src/app/pages/reports/reports.routes.ts` | 3: Report Builder (`builder`), IR Playbooks (`playbooks`), Export Hub (`exports`) |
 | `/status` | Status | single component | - |
 | `/settings` | Settings | `src/app/pages/settings/settings.routes.ts` | 2: Preferences (`preferences`), Changelog (`changelog`) |
+
+Detail pages: `/technique/:domain/:id` (Technique).
 
 Redirects: `''` → `matrix`, `**` → `matrix`.
 
@@ -184,8 +187,9 @@ Read by `scripts/check-facts.mjs`.
   "routedWorkspaces": 10,
   "routeFileWorkspaces": 8,
   "routedTabs": 47,
+  "detailPages": 1,
   "libraryLayers": 37,
-  "unitSpecs": 235,
+  "unitSpecs": 238,
   "angularMajor": 22,
   "typescriptMajor": 6,
   "bundleVersions": {

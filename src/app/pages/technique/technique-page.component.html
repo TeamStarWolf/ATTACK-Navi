@@ -1,0 +1,32 @@
+<!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+     https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
+<!-- The thin technique page (P2-18): header, evidence card, Open in matrix. No drawer on this route. -->
+<article class="technique-page">
+  @if (technique(); as t) {
+    <header class="tp-header">
+      <p class="tp-domain">{{ stateText() }}</p>
+      <h1 class="tp-title">
+        <a class="tp-id" [href]="t.url" target="_blank" rel="noopener" title="View on ATT&CK">{{ t.attackId }}</a>
+        <span class="tp-name">{{ t.name }}</span>
+      </h1>
+      @if (t.tacticShortnames.length > 0) {
+        <p class="tp-tactics">Tactics: {{ t.tacticShortnames.join(', ') }}</p>
+      }
+      <button type="button" class="tp-open-matrix" data-testid="open-in-matrix" (click)="openInMatrix()">Open in matrix</button>
+    </header>
+    <app-technique-evidence-card [technique]="t" />
+  } @else if (view().kind === 'loading') {
+    <p class="tp-state" role="status">{{ stateText() }}</p>
+  } @else if (view().kind === 'elsewhere') {
+    <div class="tp-state" role="status">
+      <p>{{ stateText() }}</p>
+      <button type="button" class="tp-open-matrix" (click)="loadTarget()">Load {{ $any(view()).domainName }}</button>
+    </div>
+  } @else {
+    <div class="tp-state tp-empty" data-testid="technique-page-empty" role="status">
+      <h1 class="tp-title">Technique not found</h1>
+      <p>{{ stateText() }}</p>
+      <button type="button" class="tp-open-matrix" (click)="openInMatrix()">Open the matrix</button>
+    </div>
+  }
+</article>

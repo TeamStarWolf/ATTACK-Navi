@@ -9,7 +9,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { provideLocationMocks } from '@angular/common/testing';
 
 import { SidebarComponent } from '../components/sidebar/sidebar.component';
@@ -81,6 +81,34 @@ describe('Sidebar section presence (fixture domain, 5 techniques)', () => {
       // The mitigations section renders even when there are none (T1082 has no mitigation).
       expect(has.has('mitigations')).withContext(`${attackId} mitigations`).toBeTrue();
     }
+  });
+
+  // P2-18: the evidence card opens the drawer body, below the header and before
+  // the Library cross-ref; it is not a #sb-sec-* section, so the lists above hold.
+  it('the evidence card is first in the body: below the header, before the Library cross-ref', () => {
+    sectionsFor('T1078');
+    const host = fixture.nativeElement as HTMLElement;
+    const body = host.querySelector('.sidebar-body')!;
+    const card = body.querySelector('app-technique-evidence-card')!;
+    expect(card).not.toBeNull();
+    expect(body.firstElementChild).toBe(card);
+    const following = (a: Element, b: Element) => !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(following(host.querySelector('.sidebar-header')!, card)).toBeTrue();
+    expect(following(card, body.querySelector('app-library-cross-ref')!)).toBeTrue();
+    expect(following(card, body.querySelector('app-validation-status-pill')!)).toBeTrue();
+    expect(card.querySelector('[data-testid="ev-why"]')!.textContent).toContain('Why this colour:');
+    // The header's "Full page" link opens the technique page.
+    expect(host.querySelector('[data-testid="drawer-full-page"]')!.getAttribute('href')).toBe('/technique/enterprise/T1078');
+  });
+
+  // P2-18 round 1: the page link keeps the current query, so a copied "Full page" link reopens the same lens.
+  it('the "Full page" link carries the current lens (heat=) and the rest of the query', async () => {
+    await TestBed.inject(Router).navigateByUrl('/?heat=coverage&dom=enterprise&tech=T1078');
+    // The navigation has ended before the drawer renders its link (no whenStable: the seed requests stay pending).
+    sectionsFor('T1078');
+    const href = (fixture.nativeElement as HTMLElement).querySelector('[data-testid="drawer-full-page"]')!.getAttribute('href')!;
+    expect(href.split('?')[0]).toBe('/technique/enterprise/T1078');
+    expect(new URLSearchParams(href.split('?')[1] ?? '').get('heat')).toBe('coverage');
   });
 
   it('renders nothing until a technique is selected', () => {

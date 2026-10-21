@@ -14,7 +14,7 @@ interface GraphLink { source: string; target: string; type: string; }
 interface RelGraphData { nodes: GraphNode[]; links: GraphLink[]; }
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { buildTechniqueShareUrl } from '../../utils/share-link';
 import { Technique } from '../../models/technique';
@@ -85,11 +85,12 @@ import { type TechniqueMarkRecord, TechniqueMarksService } from '../../services/
 import { postureBadge } from '../../models/posture/posture-vocabulary';
 import { parseTechniqueRef, refForTechnique, techniqueRefKey } from '../../models/technique-ref';
 import { ctidDatasetUrl } from '../../services/ctid-links';
+import { TechniqueEvidenceCardComponent } from '../technique-evidence-card/technique-evidence-card.component';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, FormsModule, AttackTextPipe, LibraryCrossRefComponent, ValidationStatusPillComponent, DrawerResizeHandleComponent],
+  imports: [CommonModule, FormsModule, RouterLink, AttackTextPipe, LibraryCrossRefComponent, ValidationStatusPillComponent, DrawerResizeHandleComponent, TechniqueEvidenceCardComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss',
@@ -1269,6 +1270,15 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   close(): void {
     this.filterService.selectTechnique(null);
+  }
+
+  /**
+   * "Full page" (P2-18): the technique's own page, #/technique/<domain>/<id>, which owns the evidence card.
+   * The template preserves the current query (heat=, dom=, tech=, filters), so a copied page link reopens
+   * the same lens; the URL writer does not rewrite in-session when the filter state is unchanged.
+   */
+  get fullPageLink(): string[] | null {
+    return this.technique ? ['/technique', this.dataService.getCurrentAttackDomain(), this.technique.attackId] : null;
   }
 
   /** Pin keeps the drawer open across workspaces (E2.3); FilterService holds the state. */

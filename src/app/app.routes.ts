@@ -51,6 +51,14 @@ export const routes: Routes = [
     data: { title: 'Status', icon: 'monitor' },
   },
   {
+    // A detail page (P2-18, S15): one technique, its evidence card, no drawer.
+    // gen-facts counts a top-level route with a :param as a detail page, not a workspace.
+    path: 'technique/:domain/:id',
+    loadComponent: () =>
+      import('./pages/technique/technique-page.component').then((c) => c.TechniquePageComponent),
+    data: { title: 'Technique' },
+  },
+  {
     path: 'settings',
     loadChildren: () => import('./pages/settings/settings.routes').then((m) => m.SETTINGS_ROUTES),
   },

@@ -16,6 +16,7 @@ import { DEFAULT_HEATMAP_MODE, FilterService } from '../../services/filter.servi
 import { LibraryLayerService, LibraryLayerMeta } from '../../services/library-layer.service';
 import { UserLayerService } from '../../services/user-layer.service';
 import { SettingsService } from '../../services/settings.service';
+import { MatrixControlService } from '../../services/matrix-control.service';
 
 // ── fixtures ────────────────────────────────────────────────────────────────
 
@@ -261,6 +262,32 @@ describe('MatrixComponent', () => {
     // Nothing is mapped to T9003 and it has no mitigations: it must not score
     // above the equally-bare T9002.
     expect(depth(T_IMPACT)).toBe(weak);
+  });
+
+  // P2-18: the evidence card's "score N of max M" on a legacy lens is the matrix's own pair.
+  it('publishes the selected technique\'s legacy-lens score and max; none on a registry lens', async () => {
+    const control = TestBed.inject(MatrixControlService);
+    filterService.setHeatmapMode('library');
+    filterService.selectTechnique(T_WELL_MITIGATED);
+    fixture.detectChanges();
+    await Promise.resolve();
+    expect(component.legacyScore(T_WELL_MITIGATED)).toEqual({ score: 40, max: 40 });
+    expect(control.legacyReadout()).toEqual({ techId: T_WELL_MITIGATED.id, mode: 'library', score: 40, max: 40 });
+
+    filterService.setHeatmapMode('coverage');
+    fixture.detectChanges();
+    await Promise.resolve();
+    const top = TestBed.inject(SettingsService).getCoverageColors().length - 1;
+    expect(control.legacyReadout()).toEqual({
+      techId: T_WELL_MITIGATED.id, mode: 'coverage', score: Math.min(T_WELL_MITIGATED.mitigationCount, top), max: top,
+    });
+
+    filterService.setHeatmapMode('posture');
+    fixture.detectChanges();
+    await Promise.resolve();
+    expect(component.legacyScore(T_WELL_MITIGATED)).toBeNull();
+    expect(control.legacyReadout()).toBeNull();
+    filterService.selectTechnique(null);
   });
 
   describe('library heatmap mode', () => {

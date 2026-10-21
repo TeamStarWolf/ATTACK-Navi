@@ -31,10 +31,16 @@
           <button class="graph-btn" (click)="openTechniqueGraph()" title="View relationship graph">🕸️</button>
           <button class="collapse-all-btn" (click)="collapseAll()" title="Collapse all sections">⊟</button>
           <button class="expand-rel-btn" (click)="expandRelevant()" title="Expand sections with data">⊞</button>
+          @if (fullPageLink; as link) {
+            <a class="full-page-link" data-testid="drawer-full-page" [routerLink]="link" queryParamsHandling="preserve" title="Open this technique on its own page">Full page</a>
+          }
         </div>
       </header>
 
       <div class="sidebar-body">
+
+        <!-- Why this colour and the evidence behind it (P2-18): first in the body, before the Library cross-ref -->
+        <app-technique-evidence-card [technique]="technique" />
 
         <!-- Jump index: grouped shortcuts to all 48 sections -->
         <div class="jump-index" [class.open]="showJumpIndex">
