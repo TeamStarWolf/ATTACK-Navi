@@ -1,6 +1,6 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { SourceId, V2Envelope, V2Store, fingerprint, readV2, replaceSource, upsertById, writeV2 } from './storage-envelope';
+import { SourceId, V2Envelope, V2Store, fingerprint, readV2, replaceSource, replaceSourceInDomains, upsertById, writeV2 } from './storage-envelope';
 
 interface Rec extends V2Envelope { readonly id: string; readonly note: string }
 
@@ -35,6 +35,33 @@ describe('storage envelope (Phase 2 design §2.3)', () => {
       const existing = [rec('a', 'manual'), rec('b', 'layer:x')];
       expect(replaceSource(existing, [], 'layer:x').map(r => r.id)).toEqual(['a']);
       expect(replaceSource(existing, [rec('c', 'layer:y')], 'layer:y').map(r => r.id)).toEqual(['a', 'b', 'c']);
+    });
+  });
+
+  // P2-20 item 1: the range import keys each file to the one loaded domain, so the
+  // replace must be domain-scoped or the second domain's import deletes the first's.
+  describe('replaceSourceInDomains', () => {
+    const recD = (id: string, source: SourceId, domain: 'enterprise' | 'ics'): Rec => ({ ...rec(id, source), domain });
+
+    it('replaces the source only within the incoming records\' domains, keeping its rows in other domains', () => {
+      const existing = [
+        recD('a', 'manual', 'enterprise'),
+        recD('b', 'lylat-range:M', 'enterprise'),
+        recD('c', 'lylat-range:M', 'ics'),
+        recD('d', 'lylat-range:M', 'enterprise'),
+      ];
+      const before = JSON.stringify(existing);
+      const incoming = [recD('e', 'lylat-range:M', 'enterprise')];   // enterprise only
+      const out = replaceSourceInDomains(existing, incoming, 'lylat-range:M');
+      // the two enterprise M rows go; the ics M row and the manual row stay; incoming appended.
+      expect(out.map(r => r.id)).toEqual(['a', 'c', 'e']);
+      expect(out.find(r => r.id === 'c')).toBe(existing[2]);          // the ics row is byte-identical
+      expect(JSON.stringify(existing)).withContext('input is not mutated').toBe(before);
+    });
+
+    it('with empty incoming, drops nothing (there is no domain to scope to)', () => {
+      const existing = [recD('a', 'lylat-range:M', 'enterprise'), recD('b', 'lylat-range:M', 'ics')];
+      expect(replaceSourceInDomains(existing, [], 'lylat-range:M').map(r => r.id)).toEqual(['a', 'b']);
     });
   });
 

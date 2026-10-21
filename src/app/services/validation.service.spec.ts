@@ -14,6 +14,7 @@ import { WorkspaceBundleService } from './workspace-bundle.service';
 import { fingerprint } from '../models/storage-envelope';
 import { runMatches } from '../models/posture/run-match';
 import LYLAT_FIXTURE from '../../testing/fixtures/lylat/validated-detections.fixture.json';
+import LYLAT_FIXTURE_B from '../../testing/fixtures/lylat/validated-detections.mission-b.fixture.json';
 import LYLAT_INVALID_IP from '../../testing/fixtures/lylat/invalid/ip-evidence.json';
 import LYLAT_INVALID_HOSTNAME from '../../testing/fixtures/lylat/invalid/hostname.json';
 
@@ -500,29 +501,73 @@ describe('ValidationService', () => {
       expect(JSON.stringify(service.all)).toBe(before);
     });
 
-    // R7, in full (round 2, item 7): start from an 8-row mission A and a separate
-    // 2-row mission B (10 runs total) plus a manual run; re-importing mission A
-    // replaces only A — mission B's two runs and the manual run are byte-for-byte
-    // untouched.
-    it('[AC-R7] re-importing one mission replaces only it, leaving other missions and manual runs', () => {
-      const aRows = Array.from({ length: 8 }, (_, i) => cRow('MISSION-A', 'T1059.001', `wazuh:${200 + i}`, i));
-      const bRows = Array.from({ length: 2 }, (_, i) => cRow('MISSION-B', 'T1003.001', `wazuh:${300 + i}`, 8 + i));
-      service.importRangeContract(contract([...aRows, ...bRows]));       // 10 runs: 8 A + 2 B
-      expect(service.all.filter(r => r.source === 'lylat-range:MISSION-A').length).toBe(8);
-      expect(service.all.filter(r => r.source === 'lylat-range:MISSION-B').length).toBe(2);
-      service.record({ ...baseRun, techniqueId: 'T1021.002' });
-      const missionBBefore = JSON.stringify(service.all.filter(r => r.source === 'lylat-range:MISSION-B'));
+    // R7, in full (round 2 item 7, sharpened round 3 item 2): import the 8-row
+    // FIXTURE as mission A and a SEPARATE two-row mission B file (10 runs total),
+    // add a manual run, then re-import the SAME A fixture — only A's rows are
+    // replaced; mission B's two runs and the manual run stay byte-for-byte.
+    it('[AC-R7] mission A fixture + a separate mission B file = 10 runs; re-importing A replaces only A', () => {
+      expect(service.importRangeContract(text()).ok).toBeTrue();                            // the 8-row fixture = mission A
+      expect(service.importRangeContract(JSON.stringify(LYLAT_FIXTURE_B)).ok).toBeTrue();   // a separate 2-row mission B file
+      expect(service.all.filter(r => r.source === 'lylat-range:SYNTH-MISSION-A').length).toBe(8);
+      expect(service.all.filter(r => r.source === 'lylat-range:SYNTH-MISSION-B').length).toBe(2);
+      expect(service.all.length).toBe(10);
+
+      service.record({ ...baseRun, techniqueId: 'T1021.002' });                             // a manual run beside the imports
+      const missionBBefore = JSON.stringify(service.all.filter(r => r.source === 'lylat-range:SYNTH-MISSION-B'));
       const manualBefore = JSON.stringify(service.all.filter(r => r.source === 'manual'));
 
-      const res = service.importRangeContract(contract([
-        cRow('MISSION-A', 'T1059.001', 'wazuh:1', 0),
-        cRow('MISSION-A', 'T1087.002', 'wazuh:2', 1),
-        cRow('MISSION-A', 'T1078.002', 'wazuh:3', 2),
-      ]));
+      const res = service.importRangeContract(text());                                      // re-import the SAME mission A fixture
       expect(res.ok).toBeTrue();
-      expect(service.all.filter(r => r.source === 'lylat-range:MISSION-A').length).toBe(3);
-      expect(JSON.stringify(service.all.filter(r => r.source === 'lylat-range:MISSION-B'))).toBe(missionBBefore);
+      expect(service.all.filter(r => r.source === 'lylat-range:SYNTH-MISSION-A').length).toBe(8);
+      expect(service.all.filter(r => r.source === 'lylat-range:SYNTH-MISSION-B').length).toBe(2);
+      expect(JSON.stringify(service.all.filter(r => r.source === 'lylat-range:SYNTH-MISSION-B'))).toBe(missionBBefore);
       expect(JSON.stringify(service.all.filter(r => r.source === 'manual'))).toBe(manualBefore);
+    });
+
+    // Round 3 (item 1): the range replace is DOMAIN-SCOPED. A mission that spans
+    // Enterprise and ICS is brought in by loading each domain and re-importing the
+    // same file: the second domain's rows are ADDED (not swapped for the first's),
+    // and re-importing under one domain replaces only that domain's rows — nothing
+    // is lost. (The describe loads Enterprise with no technique list, so isKnown is
+    // always true; loadDomain switches the loaded domain mid-session.)
+    const mixMission = 'MISSION-MIX';
+    const mixed = (firstDet: string) => contract([
+      cRow(mixMission, 'T1059.001', firstDet, 0),
+      { ...cRow(mixMission, 'T0883', 'wazuh:701', 1), technique_ref: { domain: 'ics', id: 'T0883', attack_version: '19.2' } },
+      cRow(mixMission, 'T1003.001', 'wazuh:702', 2),
+    ]);
+    const mixRuns = () => service.all.filter(r => r.source === `lylat-range:${mixMission}`);
+
+    it('[AC item 1] accumulates a mixed-domain mission across domains; a re-import replaces only the loaded domain', () => {
+      // (a) Enterprise loaded: the two Enterprise rows store; the ICS row is skipped.
+      loadDomain('enterprise', '19.2');
+      const ra = service.importRangeContract(mixed('wazuh:700'));
+      expect(ra.ok).toBeTrue();
+      expect(mixRuns().length).toBe(2);
+      expect(mixRuns().every(r => r.domain === 'enterprise')).toBeTrue();
+      expect(ra.dropped.map(d => d.row)).toEqual([1]);                 // the ICS row, by export index
+
+      // (b) ICS loaded, the SAME file: the ICS row is ADDED; the Enterprise rows remain.
+      loadDomain('ics', '19.2');
+      const rb = service.importRangeContract(mixed('wazuh:700'));
+      expect(rb.ok).toBeTrue();
+      expect(mixRuns().length).toBe(3);                               // 2 enterprise + 1 ics — nothing lost
+      expect(mixRuns().filter(r => r.domain === 'enterprise').length).toBe(2);
+      expect(mixRuns().filter(r => r.domain === 'ics').length).toBe(1);
+      expect(rb.bySource[`lylat-range:${mixMission}`]).toEqual({ added: 1, replaced: 0 }); // enterprise rows not replaced
+      expect(rb.dropped.map(d => d.row)).toEqual([0, 2]);             // the two enterprise rows, skipped under ICS
+
+      // (c) Enterprise loaded again, one Enterprise row changed: only the Enterprise
+      // rows are replaced; the ICS row is byte-for-byte untouched.
+      loadDomain('enterprise', '19.2');
+      const icsBefore = JSON.stringify(mixRuns().filter(r => r.domain === 'ics'));
+      const rc = service.importRangeContract(mixed('wazuh:999'));     // the first Enterprise row's detection changed
+      expect(rc.ok).toBeTrue();
+      expect(mixRuns().length).toBe(3);                              // still 3: 2 enterprise replaced in place, 1 ics kept
+      expect(mixRuns().filter(r => r.domain === 'enterprise').length).toBe(2);
+      expect(JSON.stringify(mixRuns().filter(r => r.domain === 'ics'))).toBe(icsBefore);
+      expect(service.all.find(r => r.id === `lylat:${mixMission}:0`)!.detectionsExpected).toEqual(['wazuh:999']);
+      expect(rc.bySource[`lylat-range:${mixMission}`]).toEqual({ added: 2, replaced: 2 }); // only the 2 enterprise replaced
     });
 
     it('refuses a privacy-leaking file and stores nothing', () => {

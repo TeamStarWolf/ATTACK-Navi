@@ -13,6 +13,7 @@ import {
   fingerprint,
   readV2,
   replaceSource,
+  replaceSourceInDomains,
   upsertById,
   writeV2,
 } from '../models/storage-envelope';
@@ -750,6 +751,14 @@ export class ValidationService {
         const replaced = [...ids].filter(id => existing.has(id)).length;
         bySource[source] = { added: ids.size - replaced, replaced };
         records = upsertById(records, incoming);
+      } else if (source.startsWith('lylat-range:')) {
+        // Range source: replace only this mission's rows IN the loaded domain, so
+        // importing each domain in turn accumulates the mission rather than the
+        // later domain's import deleting the earlier one (P2-20). `incoming` is
+        // single-domain (every row is keyed to the one loaded domain).
+        const domains = new Set(incoming.map(r => r.domain));
+        bySource[source] = { added: incoming.length, replaced: records.filter(r => r.source === source && domains.has(r.domain)).length };
+        records = replaceSourceInDomains(records, incoming, source);
       } else {
         bySource[source] = { added: incoming.length, replaced: records.filter(r => r.source === source).length };
         records = replaceSource(records, incoming, source);

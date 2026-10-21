@@ -85,6 +85,9 @@ test('the validator refuses an impossible calendar date (round 2, item 9)', () =
   assert.ok(validateExport(s, badDay).some(e => e.includes('/validated_at')), 'impossible validated_at should fail');
   const badGen = { ...fixture, generated_at: '2026-02-30T00:00:00Z' };
   assert.ok(validateExport(s, badGen).some(e => e.includes('/generated_at')), 'impossible generated_at should fail');
+  // round 3 (item 3): the real month-end boundary is ACCEPTED (not over-rejected).
+  assert.equal(validateExport(s, { ...fixture, rows: [{ ...fixture.rows[0], validated_at: '2026-02-28' }] }).length, 0, 'valid validated_at should pass');
+  assert.equal(validateExport(s, { ...fixture, generated_at: '2026-02-28T00:00:00Z' }).length, 0, 'valid generated_at should pass');
 });
 
 test('the privacy sweep fires on the three free-id fields only', () => {

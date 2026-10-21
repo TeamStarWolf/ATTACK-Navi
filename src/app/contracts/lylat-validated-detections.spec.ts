@@ -199,5 +199,12 @@ describe('Lylat validated-detections contract (P2-20)', () => {
     const r2 = validateLylatExport(badGen);
     expect(r2.ok).toBeFalse();
     if (!r2.ok) expect(r2.errors.some((e) => e.includes('generated_at'))).toBeTrue();
+
+    // Round 3 (item 3): the real month-end boundary is ACCEPTED, so the calendar
+    // check rejects only impossible days — it is not over-rejecting valid ones.
+    const goodDay = { ...base, rows: [{ ...base.rows[0], validated_at: '2026-02-28' }] } as unknown as LylatExportV1;
+    expect(validateLylatExport(goodDay).ok).toBeTrue();
+    const goodGen = { ...base, generated_at: '2026-02-28T00:00:00Z' } as unknown as LylatExportV1;
+    expect(validateLylatExport(goodGen).ok).toBeTrue();
   });
 });

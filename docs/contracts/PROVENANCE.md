@@ -73,7 +73,7 @@ run of the same technique. Every field maps as follows:
 | `negative_control` | `outcomes[].negativeControl` | `not-reproducible` maps to the `not-reproducible` status |
 | `validated_at` | `run.runDate` (date-only) | the date the range recorded for the run |
 | `evidence_ref` | `outcomes[].evidenceRef` | opaque; never a URL (`evidenceLinks` stays URLs) |
-| `mission_id` | `run.missionId`, and the run `source` = `lylat-range:<mission_id>` | one source per mission; re-importing replaces that source |
+| `mission_id` | `run.missionId`, and the run `source` = `lylat-range:<mission_id>` | one source per mission; re-importing replaces that source's rows in the loaded domain |
 | `range_build_ref` | — | export-level provenance; not stored per run |
 | `generated_at` | `run.createdAt` / `run.updatedAt` | when the export was produced |
 | `schema` | import discriminator | the file is refused unless the const matches |
@@ -94,16 +94,17 @@ imported when its domain is `atlas`, when its domain is **not the loaded domain*
 when its technique does not resolve to a parseable ref, or when its resolved technique
 is not one of the loaded domain's. Every imported run is range-scoped.
 
-**Loaded-domain scoping, and the v1 mixed-mission limitation.** An imported run is
-keyed to the one domain loaded at import (R6 §3), exactly as a manual run is. So a
-version-1 import only brings in the rows whose domain matches the loaded domain; rows
-for another ATT&CK domain are skipped with `row domain <d> is not the loaded domain`.
-To import a mission's rows that span, say, Enterprise and ICS, load each domain and
-re-import — replace-by-source means re-importing the same mission under the same
-loaded domain is idempotent, and importing it under a second domain adds that domain's
-rows under the same mission source. The panel lists what was imported per source and
-what was skipped, with the reason, so nothing is silently lost. A later contract
-version may carry domain on the run and lift this limitation; version 1 does not.
+**Loaded-domain scoping, and multi-domain missions.** An imported run is keyed to the
+one domain loaded at import (R6 §3), exactly as a manual run is. So a single import only
+brings in the rows whose domain matches the loaded domain; rows for another ATT&CK domain
+are skipped with `row domain <d> is not the loaded domain`. To bring in a mission whose
+rows span, say, Enterprise and ICS, load each domain and re-import the same file:
+replace-by-source is **scoped to the loaded domain**, so re-importing a mission replaces
+only that mission's rows in the domain now loaded and leaves its rows in every other
+domain in place. Re-importing under the same domain is therefore idempotent, and
+importing under a second domain **adds** that domain's rows beside the first's — the
+earlier domain's rows are not deleted. The panel lists what was imported per source and
+what was skipped, with the reason, so nothing is silently lost.
 
 ### Privacy rules
 
