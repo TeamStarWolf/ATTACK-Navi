@@ -229,3 +229,103 @@ describe('UrlStateService: a write skipped during a navigation', () => {
     expect(query()['heat']).toBe('kev');
   }));
 });
+
+// RP-F decision 19: the toolbar brand link (routerLink /matrix) and a bare #/matrix hash
+// reach the matrix with no query. The state had not changed, so the writer left the
+// address bar bare and F5 lost a chosen Frequency or KEV lens (3 of 3 in round 3).
+describe('UrlStateService: the matrix route reached with no query (RP-F decision 19)', () => {
+  @Component({ template: '' })
+  class BlankComponent {}
+
+  let service: UrlStateService;
+  let filterService: FilterService;
+  let router: Router;
+  const query = () => router.parseUrl(router.url).queryParams;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(withXhr()), provideHttpClientTesting(),
+        provideRouter([
+          { path: '', pathMatch: 'full', redirectTo: 'matrix' },
+          { path: 'matrix', component: BlankComponent },
+          { path: 'intel', component: BlankComponent },
+        ]),
+      ],
+    });
+    service = TestBed.inject(UrlStateService);
+    filterService = TestBed.inject(FilterService);
+    router = TestBed.inject(Router);
+  });
+
+  /** Boot on #/matrix, then let the writer's first pass settle. */
+  function boot(): void {
+    service.init();
+    void router.navigateByUrl('/matrix');
+    tick(400);
+    tick();
+  }
+
+  /** The brand link: a navigation to /matrix that drops the query, then the held write. */
+  function brandLink(): void {
+    void router.navigateByUrl('/matrix');
+    tick();
+    tick(400);
+    tick();
+  }
+
+  it('a chosen KEV lens is written back after the brand link, so a reload keeps it', fakeAsync(() => {
+    boot();
+    filterService.setHeatmapMode('kev');
+    tick(400);
+    expect(query()['heat']).toBe('kev');
+    brandLink();
+    expect(router.url.startsWith('/matrix')).toBeTrue();
+    expect(query()['heat']).toBe('kev');
+  }));
+
+  it('a bare root hash redirects to the matrix and is written back the same way', fakeAsync(() => {
+    boot();
+    filterService.setHeatmapMode('kev');
+    tick(400);
+    void router.navigateByUrl('/');
+    tick();
+    tick(400);
+    tick();
+    expect(router.url.startsWith('/matrix')).toBeTrue();
+    expect(query()['heat']).toBe('kev');
+  }));
+
+  it('a Frequency chosen with owner data is written back as heat=frequency', fakeAsync(() => {
+    boot();
+    filterService.ownerDataPresent.next(true);
+    filterService.setHeatmapMode('frequency');   // a View-menu pick: explicit
+    tick(400);
+    expect(query()['heat']).toBe('frequency');
+    brandLink();
+    expect(query()['heat']).toBe('frequency');
+  }));
+
+  it('the D4 default path is unchanged (decision 10): an unchosen Frequency stays bare, with no navigation', fakeAsync(() => {
+    boot();
+    filterService.ownerDataPresent.next(true);
+    filterService.setHeatmapMode('frequency', { explicit: false });
+    tick(400);
+    expect(query()['heat']).toBeUndefined();
+    const navigate = spyOn(router, 'navigateByUrl').and.callThrough();
+    brandLink();
+    expect(query()['heat']).toBeUndefined();
+    expect(navigate).toHaveBeenCalledTimes(1);   // the brand link itself, no writer pass
+  }));
+
+  it('another route with no query is left alone', fakeAsync(() => {
+    boot();
+    filterService.setHeatmapMode('kev');
+    tick(400);
+    void router.navigateByUrl('/intel');
+    tick();
+    tick(400);
+    tick();
+    expect(router.url).toBe('/intel');
+  }));
+});

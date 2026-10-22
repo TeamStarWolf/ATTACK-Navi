@@ -887,6 +887,41 @@ test.describe('E2.4: default-lens rule', () => {
     await expect(page).toHaveURL(/#\/matrix\?(.*&)?heat=frequency(&|$)/, { timeout: 5000 });
   });
 
+  // RP-F decision 19: the toolbar brand link (routerLink /matrix) dropped the query, and
+  // with no state change the writer left #/matrix bare, so F5 lost a chosen lens (3 of 3
+  // in round 3). The lens is now written back; the D4 default path stays bare (decision 10).
+  test('[RP-F 19] KEV chosen in the View menu survives the brand link and F5', async ({ page }) => {
+    await openWorkspace(page);
+    await page.goto(BASE + '/#/matrix');
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+    await page.locator('.heatmap-btn').click();
+    await page.locator('.views-menu .lens-item[data-lens="kev"] .heatmap-mode-btn').click();
+    await expect(page.locator('.views-menu')).toBeHidden();
+    await expect(page).toHaveURL(/#\/matrix\?(.*&)?heat=kev(&|$)/, { timeout: LENS_STEP_TIMEOUT });
+    await page.locator('.brand-link').click();
+    await expect(page).toHaveURL(/#\/matrix\?(.*&)?heat=kev(&|$)/, { timeout: 5000 });
+    await page.reload();
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+    await expect(page.locator('.heatmap-btn')).toContainText('KEV');
+    await expect(page).toHaveURL(/#\/matrix\?(.*&)?heat=kev(&|$)/, { timeout: 5000 });
+  });
+
+  test('[RP-F 19] the D4 default path is unchanged: the brand link leaves #/matrix bare and F5 opens Frequency with the banner', async ({ page }) => {
+    await openWorkspace(page);
+    await page.goto(BASE + '/#/matrix');
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+    await expect(page.locator('.heatmap-btn')).toContainText('Frequency');
+    await page.locator('.brand-link').click();
+    // The URL writer is debounced (300 ms); give it well over that before reading the hash.
+    await page.waitForTimeout(1500);
+    expect(new URL(page.url()).hash).not.toContain('heat=');
+    await page.reload();
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+    await expect(page.locator('.heatmap-btn')).toContainText('Frequency');
+    await expect(page.locator('.first-glance-banner')).toBeVisible();
+    expect(new URL(page.url()).hash).not.toContain('heat=');
+  });
+
   test('[RP-F 4] one recorded run and a pasted #/technique/ics/T0883?heat=status: Status survives the domain switch, not Posture', async ({ page }) => {
     await openWorkspace(page, { seed: { 'navi.v2.validation-runs': oneRun } });
     await page.goto('about:blank');
