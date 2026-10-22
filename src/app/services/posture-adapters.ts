@@ -239,7 +239,11 @@ export function runInputs(run: ValidationRunV2): RunInputs {
   const verdicts: RunVerdict[] = failed || notReproducible
     ? [{ date: run.runDate, failed, notReproducible, source: run.source }]
     : [];
-  const summary: RunSummary = { runId: run.id, status: run.status, date: run.runDate, source: run.source, rulesFired: named.size };
+  // The pill's "N of M detection rules fired" counts detectionsFired, so the card's count
+  // does too: a rule named only by an outcome (blocked or alerted) is proof input above,
+  // never a rule the pill says fired (RP-F decision 28).
+  const rulesFired = new Set(run.detectionsFired.map(d => d.trim()).filter(d => d !== '')).size;
+  const summary: RunSummary = { runId: run.id, status: run.status, date: run.runDate, source: run.source, rulesFired };
   return { proof, covered, verdicts, summary };
 }
 

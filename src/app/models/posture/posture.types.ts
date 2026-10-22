@@ -65,8 +65,10 @@ export interface RunSummary {
   readonly date: string;                  // runDate (ISO timestamp) or validated_at (YYYY-MM-DD)
   readonly source: SourceId;
   /**
-   * The distinct named rules the run lists as fired (the pill's "N of M detection
-   * rules fired"), whatever its status; absent reads as 0. A run that fired a rule
+   * The distinct non-empty entries of the run's detectionsFired, whatever its
+   * status: the Validation pill's "N of M detection rules fired" count (Record Run
+   * and the range adapter list each rule once). A rule named only by an outcome is
+   * not counted, as the pill does not count it. Absent reads as 0. A run that fired a rule
    * but yields no proof (untested, failed, ...) is named with its status wherever
    * the card would otherwise say "No recorded detection" (RP-F decision 28).
    */
