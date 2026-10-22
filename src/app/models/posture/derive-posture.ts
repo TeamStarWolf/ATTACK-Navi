@@ -15,13 +15,14 @@
 //      full mark is undated); then partial marks give 'partial'.
 //   4. Otherwise 'known' when there is a Known reference signal, else 'none'.
 // 'planned' and 'telemetry-observed' sub-states are set from the marks in every
-// branch. CI fails unless this file has 100% branch coverage
+// branch. Every branch also lists the runs that yield no qualifying proof
+// record (runsWithoutProof, RP-F decision 9), newest first. CI fails unless this file has 100% branch coverage
 // (scripts/check-branch-coverage.mjs).
 import type { CoveredQualifier } from '../heatmap-modes';
 import type { TechniqueRefKey } from '../technique-ref';
 import type {
   CoveredMark, PostureBucket, PostureInputs, PostureRules, PostureRung, PostureState, PostureSubState,
-  PostureTally, ProofRecord, ProofScope, RunVerdict,
+  PostureTally, ProofRecord, ProofScope, RunSummary, RunVerdict,
 } from './posture.types';
 
 /** D16 threshold 15 (dec:364-380); D10 windows range 90, production 180, own-run 90 (own-run is §10.4 item 2). */
@@ -92,20 +93,34 @@ function qualifiersOf(marks: readonly CoveredMark[]): CoveredQualifier[] {
   return QUALIFIER_ORDER.filter(q => marks.some(m => m.qualifier === q));
 }
 
+/**
+ * The runs that produced no qualifying proof record (RP-F decision 9): an
+ * untested run, a failed run, a passed run with no named rule, a run whose
+ * named rule has no parseable date. A run with one qualifying record is out.
+ * Newest first; an undated run sorts last (two undated runs subtract to NaN,
+ * which falls through to the runId order, as equal dates do).
+ */
+function runsWithoutProof(runs: readonly RunSummary[], proof: readonly DatedProof[]): RunSummary[] {
+  const proved = new Set(proof.map(p => p.record.runId));
+  return runs.filter(r => !proved.has(r.runId))
+    .sort((a, b) => (time(b.date) ?? -Infinity) - (time(a.date) ?? -Infinity) || a.runId.localeCompare(b.runId));
+}
+
 export function derivePosture(ref: TechniqueRefKey, input: PostureInputs, rules: PostureRules, now: Date): PostureState {
   const sub = new Set<PostureSubState>();
   if (input.covered.some(m => m.strength === 'planned')) sub.add('planned');
   if (input.covered.some(m => m.basis === 'range-telemetry-observed')) sub.add('telemetry-observed');
+  const proof = qualifyingProof(input.proof, rules, now);
   const base = {
     ref,
     covered: input.covered,
     knownSignals: input.knownSignals,
     threatWeight: input.threatWeight,
     exposureWeight: input.exposureWeight,
+    runsWithoutProof: runsWithoutProof(input.runs ?? [], proof),
   };
 
   // 1. Proof.
-  const proof = qualifyingProof(input.proof, rules, now);
   if (proof.length > 0) {
     const best = proof[0];
     const bucket: PostureBucket = best.fresh ? 'proven' : 'stale';

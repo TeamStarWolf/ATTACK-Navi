@@ -100,7 +100,8 @@ export class MatrixPageComponent implements OnInit {
     const mode = this.heatmapMode$$();
     if (!this.domain$$()) return;
     const onScreen = lensOnScreen(mode, this.posture.ownerWords(), DEFAULT_HEATMAP_MODE);
-    if (onScreen !== mode) untracked(() => this.filterService.setHeatmapMode(onScreen));
+    // The fallback is a default, not a lens pick (RP-F decision 10).
+    if (onScreen !== mode) untracked(() => this.filterService.setHeatmapMode(onScreen, { explicit: false }));
   });
 
   /**

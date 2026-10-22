@@ -2,8 +2,10 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
+import { BehaviorSubject } from 'rxjs';
 import { ViewpointService } from './viewpoint.service';
 import { FilterService } from './filter.service';
+import { DataService } from './data.service';
 
 const STORAGE_KEY = 'attack-navi-viewpoint';
 
@@ -63,7 +65,8 @@ describe('ViewpointService', () => {
 
     service.setViewpoint('red');
 
-    expect(filterService.setHeatmapMode).toHaveBeenCalledOnceWith('atomic');
+    // RP-F decision 10: a viewpoint's lens is a default, in session as at boot.
+    expect(filterService.setHeatmapMode).toHaveBeenCalledOnceWith('atomic', { explicit: false });
     expect(service.current.id).toBe('red');
     expect(emitted).toBe('red');
     expect(localStorage.getItem(STORAGE_KEY)).toBe('red');
@@ -79,7 +82,7 @@ describe('ViewpointService', () => {
   it('setViewpoint with { navigate: false } does not navigate', () => {
     const navSpy = spyOn(router, 'navigateByUrl').and.resolveTo(true);
     service.setViewpoint('vuln', { navigate: false });
-    expect(filterService.setHeatmapMode).toHaveBeenCalledOnceWith('kev');
+    expect(filterService.setHeatmapMode).toHaveBeenCalledOnceWith('kev', { explicit: false });
     expect(navSpy).not.toHaveBeenCalled();
   });
 
@@ -98,7 +101,8 @@ describe('ViewpointService', () => {
     service.restore();
 
     expect(service.current.id).toBe('red');
-    expect(filterService.setHeatmapMode).toHaveBeenCalledOnceWith('atomic');
+    // RP-F decision 10: restored at boot, the lens is a default, not a lens pick.
+    expect(filterService.setHeatmapMode).toHaveBeenCalledOnceWith('atomic', { explicit: false });
     expect(navSpy).not.toHaveBeenCalled();
   });
 
@@ -165,7 +169,7 @@ describe('ViewpointService', () => {
     window.location.hash = '#/matrix?heat=bogus';
     localStorage.setItem(STORAGE_KEY, 'red');
     service.restore();
-    expect(filterService.setHeatmapMode).toHaveBeenCalledOnceWith('atomic');
+    expect(filterService.setHeatmapMode).toHaveBeenCalledOnceWith('atomic', { explicit: false });
   });
 
   it('restore swallows a localStorage read that throws', () => {
@@ -192,5 +196,47 @@ describe('ViewpointService', () => {
     service.setViewpoint('vuln');
     expect(service.isFeaturedLens('kev')).toBeTrue();
     expect(service.isFeaturedLens('unified')).toBeFalse();
+  });
+});
+
+// RP-F decision 10 with the real FilterService: switching to the Analyst viewpoint in
+// session puts Prevalence on screen as the viewpoint's default, as restore() does at
+// boot, so once owner data exists the link leaves heat= absent and a reload runs D4.
+describe('ViewpointService with FilterService (RP-F decision 10)', () => {
+  let service: ViewpointService;
+  let filter: FilterService;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        { provide: DataService, useValue: { domain$: new BehaviorSubject(null) } },
+      ],
+    });
+    try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+    service = TestBed.inject(ViewpointService);
+    filter = TestBed.inject(FilterService);
+    spyOn(TestBed.inject(Router), 'navigateByUrl').and.resolveTo(true);
+  });
+
+  afterEach(() => {
+    try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+  });
+
+  it('Analyst switched to in session after owner data exists: Prevalence, not a choice, heat absent', () => {
+    filter.ownerDataPresent.next(true);
+    filter.setHeatmapMode('posture');
+    service.setViewpoint('analyst');
+    expect(filter.getStateSnapshot().heatmapMode).toBe('frequency');
+    expect(filter.prevalenceChosen).toBeFalse();
+    expect(filter.serializeUrlState()['heat']).toBeUndefined();
+  });
+
+  it('a specialist viewpoint still names its lens; a Prevalence picked afterwards is a choice', () => {
+    filter.ownerDataPresent.next(true);
+    service.setViewpoint('red');
+    expect(filter.serializeUrlState()['heat']).toBe('atomic');
+    filter.setHeatmapMode('frequency');
+    expect(filter.serializeUrlState()['heat']).toBe('frequency');
   });
 });

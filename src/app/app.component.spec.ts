@@ -475,7 +475,10 @@ describe('AppComponent: default-lens rule at boot (P2-19, E2.4)', () => {
     expect(router.url).toContain('heat=atomic');
   });
 
-  it('owner data recorded later in the session never switches the lens on screen; the link then names it', async () => {
+  // RP-F decision 10 reverses this spec's last line: the default Prevalence was
+  // written as heat=frequency when owner data appeared, so a reload kept Frequency
+  // instead of running D4 (P2-19 walk step 5). The link now leaves heat absent.
+  it('owner data recorded later in the session never switches the lens on screen; the link leaves heat absent so a reload runs D4', async () => {
     configure(nothing);
     await bootAt();
     expect(heat()).toBe('frequency');
@@ -484,7 +487,7 @@ describe('AppComponent: default-lens rule at boot (P2-19, E2.4)', () => {
     await tick(400);
     expect(TestBed.inject(FilterService).ownerDataPresent.value).toBeTrue();
     expect(heat()).toBe('frequency');
-    expect(router.url).toContain('heat=frequency');
+    expect(router.url).not.toContain('heat=');
   });
 });
 

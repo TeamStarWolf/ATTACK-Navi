@@ -119,6 +119,13 @@ export interface FilterStateSnapshot {
   dimUncovered: boolean;
   searchFilterMode: boolean;
   hiddenTacticIds: string[];
+  /**
+   * Whether Prevalence was chosen, not only defaulted (RP-F decision 10). It
+   * travels with heatmapMode so a restored layer keeps the difference; a
+   * snapshot saved before it existed cannot say, so its Prevalence reads as
+   * the default.
+   */
+  prevalenceChosen?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -151,6 +158,23 @@ export class FilterService {
    * changes the lens on screen.
    */
   readonly ownerDataPresent = new BehaviorSubject<boolean>(false);
+  /**
+   * Whether Prevalence is on screen because it was chosen, not because it is
+   * the D4 default (RP-F decision 10). Only Prevalence needs the difference,
+   * so the flag is true only while the lens is Prevalence: setHeatmapMode with
+   * any other lens clears it, which keeps every path that puts another lens on
+   * screen (the D4 Posture boot path, a data-load re-render) from leaving a
+   * stale choice behind. Prevalence is a choice when set by a lens pick (the
+   * View menu and every setHeatmapMode caller that does not pass
+   * { explicit: false }), a valid pasted heat=frequency (applyUrlState) or a
+   * snapshot that recorded it as chosen; it is a default at boot, after
+   * clearAll and when applied with { explicit: false } (a viewpoint's lens, at
+   * boot or switched in session; the owner-word fallback; a cleared preset).
+   * serializeUrlState reads it: with owner data, Prevalence is written as
+   * heat=frequency only when chosen, so owner data that first appears in a
+   * session leaves heat= absent and a reload runs D4 (Posture).
+   */
+  private prevalenceChosenFlag = false;
   private implStatusFilterSubject = new BehaviorSubject<string | null>(null);
   private searchFilterModeSubject = new BehaviorSubject<boolean>(false);
   searchFilterMode$: Observable<boolean> = this.searchFilterModeSubject.asObservable();
@@ -392,7 +416,7 @@ export class FilterService {
       // mode's loaders, so each enumerated param is validated and otherwise ignored;
       // the next URL write then serializes only the valid state.
       const heat = params.get('heat');
-      if (isHeatmapMode(heat)) this.heatmapModeSubject.next(heat);
+      if (isHeatmapMode(heat)) this.setHeatmapMode(heat);
       const impl = params.get('impl');
       if (isImplStatus(impl)) this.implStatusFilterSubject.next(impl);
       const scope = params.get('scope');
@@ -461,11 +485,19 @@ export class FilterService {
    * ds, heat, impl, scope, tsearch, grp, sw, camp) so old links stay valid
    * through the legacy-hash shim, plus (P2-17) `tgap=1`, the Threat gaps
    * overlay, (E2.3) `tech`, the open technique, and
-   * `dom`, the ATT&CK domain when it is not Enterprise. With `tech`, `heat`
-   * and `dom` are always written, so a pasted link carries its lens and domain
-   * even at the defaults. `heat` is left out only for Prevalence with no owner
-   * data and no `tech` (P2-19): with owner data a link without heat= would
-   * open Posture, so every lens, heat=posture included, is written.
+   * `dom`, the ATT&CK domain when it is not Enterprise. With `tech`, `dom`
+   * is always written, and so is `heat` with one exception below, so a pasted
+   * link carries its lens and domain even at the defaults. `heat` is left out
+   * in two cases, both Prevalence as the unchosen D4 default:
+   * - no owner data and no `tech` (P2-19): a link without heat= opens
+   *   Prevalence for a recipient with no owner data;
+   * - owner data present and Prevalence never chosen (RP-F decision 10), with
+   *   or without `tech`: writing heat=frequency would pin Prevalence on reload,
+   *   so heat= stays absent and the reload runs D4 (Posture). This is the one
+   *   exception to the E2.3 rule that a link with `tech` names its lens: such a
+   *   link opens on the recipient's own D4 default.
+   * Every other lens, heat=posture included, and a chosen Prevalence are
+   * always written once owner data exists.
    */
   serializeUrlState(): Record<string, string> {
     const domain = this.domainSnapshot;
@@ -485,7 +517,11 @@ export class FilterService {
     if (ds) params['ds'] = ds;
     const tech = this.selectedTechniqueSubject.value?.attackId ?? this.pendingUrlTechId;
     const heat = this.heatmapModeSubject.value;
-    if (heat !== DEFAULT_HEATMAP_MODE || this.ownerDataPresent.value || tech) params['heat'] = heat;
+    // Prevalence is the D4 default. Without owner data it is left out unless a
+    // technique is open; with owner data it is written only when chosen (RP-F
+    // decision 10), so a reload runs D4 and boots Posture instead of pinning it.
+    const writeDefault = this.ownerDataPresent.value ? this.prevalenceChosenFlag : !!tech;
+    if (heat !== DEFAULT_HEATMAP_MODE || writeDefault) params['heat'] = heat;
     const impl = this.implStatusFilterSubject.value;
     if (impl) params['impl'] = impl;
     const scope = this.searchScopeSubject.value;
@@ -629,8 +665,21 @@ export class FilterService {
     this.activeDataSourceSubject.next(name);
   }
 
-  setHeatmapMode(mode: HeatmapMode): void {
+  /**
+   * Put `mode` on screen. A lens pick is a choice (the default); a caller that
+   * applies a default (a viewpoint's lens, the owner-word fallback, a reset)
+   * passes { explicit: false }, so Prevalence set that way is not written as
+   * heat=frequency once owner data exists (RP-F decision 10). Any lens other
+   * than Prevalence clears the choice (see prevalenceChosenFlag).
+   */
+  setHeatmapMode(mode: HeatmapMode, opts: { explicit?: boolean } = {}): void {
+    this.prevalenceChosenFlag = mode === DEFAULT_HEATMAP_MODE && (opts.explicit ?? true);
     this.heatmapModeSubject.next(mode);
+  }
+
+  /** Whether Prevalence is on screen because it was chosen (RP-F decision 10). */
+  get prevalenceChosen(): boolean {
+    return this.prevalenceChosenFlag;
   }
 
   setImplStatusFilter(status: string | null): void {
@@ -699,7 +748,7 @@ export class FilterService {
     this.activeSoftwareIdsSubject.next(new Set());
     this.activeCampaignIdsSubject.next(new Set());
     this.activeDataSourceSubject.next(null);
-    this.heatmapModeSubject.next(this.defaultLens);
+    this.setHeatmapMode(this.defaultLens, { explicit: false });
     this.implStatusFilterSubject.next(null);
     this.searchFilterModeSubject.next(false);
     this.cveTechniqueIdsSubject.next(new Set());
@@ -719,12 +768,20 @@ export class FilterService {
       dimUncovered: this.dimUncoveredSubject.value,
       searchFilterMode: this.searchFilterModeSubject.value,
       hiddenTacticIds: [...this.hiddenTacticIdsSubject.value],
+      prevalenceChosen: this.prevalenceChosenFlag,
     };
   }
 
   restoreStateSnapshot(state: Partial<FilterStateSnapshot> | null | undefined): void {
     if (!state) return;
-    if (state.heatmapMode) this.heatmapModeSubject.next(state.heatmapMode as HeatmapMode);
+    if (state.heatmapMode) {
+      // A restored Prevalence keeps whether it was chosen (RP-F decision 10). A
+      // snapshot without the flag predates it and cannot say, so its Prevalence
+      // reads as the default.
+      const mode = state.heatmapMode as HeatmapMode;
+      const chosen = typeof state.prevalenceChosen === 'boolean' ? state.prevalenceChosen : mode !== DEFAULT_HEATMAP_MODE;
+      this.setHeatmapMode(mode, { explicit: chosen });
+    }
     if (state.platformFilter !== undefined) this.platformFilterSubject.next(state.platformFilter);
     if (state.sortMode) this.sortModeSubject.next(state.sortMode as SortMode);
     if (typeof state.dimUncovered === 'boolean') this.dimUncoveredSubject.next(state.dimUncovered);

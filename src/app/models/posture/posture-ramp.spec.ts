@@ -10,7 +10,7 @@ import { PROVEN, postureBadge, scenarioOutcomeLabel } from './posture-vocabulary
 import {
   POSTURE_BUCKETS, POSTURE_PATTERN_CLASS, POSTURE_SCORE, POSTURE_SURFACE, POSTURE_TOKENS, STALE_MIX, type PostureTheme,
   postureColor, postureFill, postureHasCheck, postureLegendStops, postureLensCell, posturePatterns, postureProject,
-  postureCellLabel, postureRampStops, postureStopLabel,
+  postureCellLabel, postureRampStops, postureStopLabel, CONTRADICTED_SPOKEN_LENSES, CONTRADICTED_WORDS,
 } from './posture-ramp';
 import { stubState } from '../../testing/posture-stub';
 
@@ -146,5 +146,41 @@ describe('posture cell label (§7)', () => {
     }
     const ageless = { ...stubState('T1078', 'stale'), proofAge: null };
     expect(postureCellLabel(ageless, WINDOWS)).toBe(postureBadge(ageless));
+  });
+
+  // RP-F decision 11: one builder and one phrase. A contradicted cell names the
+  // legend's words on Posture, Covered and Status, the way a stale cell names its age.
+  describe('a contradicted state (RP-F decision 11)', () => {
+    const contradicted = (bucket: Parameters<typeof stubState>[1]) =>
+      ({ ...stubState('T1078', bucket), subStates: ['contradicted' as const] });
+
+    it("uses the legend stop's phrase", () => {
+      expect(CONTRADICTED_WORDS).toBe('contradicted by a later failed run');
+      expect(postureStopLabel('contradicted')).toBe(CONTRADICTED_WORDS);
+      expect([...CONTRADICTED_SPOKEN_LENSES]).toEqual(['posture', 'covered', 'status']);
+    });
+
+    it('appends it to the Posture words, after a stale age', () => {
+      const known = contradicted('known');
+      expect(postureCellLabel(known, WINDOWS)).toBe(`${postureBadge(known)}, ${CONTRADICTED_WORDS}`);
+      const stale = contradicted('stale');
+      expect(postureCellLabel(stale, WINDOWS))
+        .toBe(`${PROVEN} (your run), stale (120 days; window 90), ${CONTRADICTED_WORDS}`);
+    });
+
+    it("appends it to a Covered or Status lens's own words; Proven and Controls keep theirs", () => {
+      const s = contradicted('known');
+      expect(postureCellLabel(s, WINDOWS, { value: 'status', words: 'Status: implemented' }))
+        .toBe(`Status: implemented, ${CONTRADICTED_WORDS}`);
+      expect(postureCellLabel(s, WINDOWS, { value: 'covered', words: 'None' })).toBe(`None, ${CONTRADICTED_WORDS}`);
+      expect(postureCellLabel(s, WINDOWS, { value: 'proven', words: 'no recorded detection' })).toBe('no recorded detection');
+      expect(postureCellLabel(s, WINDOWS, { value: 'controls', words: 'Controls: none' })).toBe('Controls: none');
+    });
+
+    it('adds nothing without the contradicted sub-state', () => {
+      const s = { ...stubState('T1078', 'known'), subStates: ['not-reproducible' as const] };
+      expect(postureCellLabel(s, WINDOWS)).toBe(postureBadge(s));
+      expect(postureCellLabel(s, WINDOWS, { value: 'status', words: 'Status: implemented' })).toBe('Status: implemented');
+    });
   });
 });

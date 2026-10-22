@@ -43,10 +43,11 @@ describe('QuickFiltersComponent', () => {
   it('clearPreset returns to the effective default lens (posture with owner data)', () => {
     const filter = TestBed.inject(FilterService) as unknown as { defaultLens: string; setHeatmapMode: jasmine.Spy };
     component.clearPreset();
-    expect(filter.setHeatmapMode).toHaveBeenCalledWith('frequency');
+    // RP-F decision 10: a cleared preset returns to the default, which is not a lens pick.
+    expect(filter.setHeatmapMode).toHaveBeenCalledWith('frequency', { explicit: false });
     filter.defaultLens = 'posture';
     component.clearPreset();
-    expect(filter.setHeatmapMode).toHaveBeenCalledWith('posture');
+    expect(filter.setHeatmapMode).toHaveBeenCalledWith('posture', { explicit: false });
     expect(component.activePreset).toBeNull();
   });
 

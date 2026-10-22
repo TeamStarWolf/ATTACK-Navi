@@ -20,7 +20,7 @@ import { Observable } from 'rxjs';
 import type { Domain } from '../models/domain';
 import type { Technique } from '../models/technique';
 import type {
-  CoveredMark, PostureInputs, PostureRules, PostureState, PostureTally, ProofRecord, ProofScope, RunVerdict,
+  CoveredMark, PostureInputs, PostureRules, PostureState, PostureTally, ProofRecord, ProofScope, RunSummary, RunVerdict,
 } from '../models/posture/posture.types';
 import { DEFAULT_POSTURE_RULES, derivePosture, tallyPosture } from '../models/posture/derive-posture';
 import { hasOwnerWords } from '../models/posture/posture-vocabulary';
@@ -157,14 +157,16 @@ export class PostureService {
       if (tele) covered.push(tele);
       const proof: ProofRecord[] = [];
       const verdicts: RunVerdict[] = [];
+      const runSummaries: RunSummary[] = [];
       for (const r of runs.get(t.id) ?? []) {
         proof.push(...r.proof);
         covered.push(...r.covered);
         verdicts.push(...r.verdicts);
+        runSummaries.push(r.summary);
       }
       const input: PostureInputs = {
         knownSignals: this.enrichment.referenceSignalCount(t, domain),
-        covered, proof, verdicts,
+        covered, proof, verdicts, runs: runSummaries,
         threatWeight: this.threatWeight.weight(t.id),
         exposureWeight: domainId === 'enterprise' ? exposure.get(t.attackId) ?? 0 : 0,
       };

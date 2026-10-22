@@ -837,6 +837,56 @@ test.describe('E2.4: default-lens rule', () => {
     });
   }
 
+  // RP-F decision 10: owner data that first appears in the session (a bulk set of 3
+  // techniques) while Frequency is on screen only as the D4 default must not write
+  // heat=frequency: a reload then runs D4 and boots Posture (P2-19 walk step 5). A
+  // Frequency chosen through the View menu is a choice and survives the reload.
+  // The reload is a fresh navigation; the in-session lens change goes through the View menu.
+  async function bulkSetThreeImplemented(page: Page): Promise<void> {
+    await page.locator('.heatmap-btn').click();
+    await page.locator('.views-menu .menu-action', { hasText: 'Multi-select' }).click();
+    const boxes = page.locator('.cell-checkbox');
+    await expect(boxes.first()).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    for (let i = 0; i < 3; i++) await boxes.nth(i).click();
+    await expect(page.locator('.bulk-bar .bulk-count')).toHaveText('3 selected');
+    await page.locator('.bulk-bar .bulk-btn.impl').click();
+    // Owner data now exists (D4): the Prevalence banner hides in the same session.
+    await expect(page.locator('.first-glance-banner')).toHaveCount(0, { timeout: ROUTE_TIMEOUT });
+  }
+
+  test('[RP-F 10] a fresh profile bulk-sets 3 techniques on #/matrix: heat stays absent, and a reload boots Posture with heat=posture', async ({ page }) => {
+    await openWorkspace(page);
+    await page.goto(BASE + '/#/matrix');
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+    await expect(page.locator('.heatmap-btn')).toContainText('Frequency');
+    await expect(page.locator('.first-glance-banner')).toBeVisible();
+    await bulkSetThreeImplemented(page);
+    await expect(page.locator('.heatmap-btn')).toContainText('Frequency');
+    // The URL writer is debounced (300 ms); give it well over that before reading the hash.
+    await page.waitForTimeout(1500);
+    expect(new URL(page.url()).hash).not.toContain('heat=');
+    await page.reload();
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+    await expect(page.locator('.heatmap-btn')).toContainText('Posture');
+    await expect(page).toHaveURL(/#\/matrix\?(.*&)?heat=posture(&|$)/, { timeout: 5000 });
+    await expect(page.locator('.first-glance-banner')).toHaveCount(0);
+  });
+
+  test('[RP-F 10] Frequency chosen in the View menu before the bulk set is written as heat=frequency and kept on reload', async ({ page }) => {
+    await openWorkspace(page);
+    await page.goto(BASE + '/#/matrix');
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+    await page.locator('.heatmap-btn').click();
+    await page.locator('.views-menu .lens-item[data-lens="frequency"] .heatmap-mode-btn').click();
+    await expect(page.locator('.views-menu')).toBeHidden();
+    await bulkSetThreeImplemented(page);
+    await expect(page).toHaveURL(/#\/matrix\?(.*&)?heat=frequency(&|$)/, { timeout: 5000 });
+    await page.reload();
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+    await expect(page.locator('.heatmap-btn')).toContainText('Frequency');
+    await expect(page).toHaveURL(/#\/matrix\?(.*&)?heat=frequency(&|$)/, { timeout: 5000 });
+  });
+
   test('[RP-F 4] one recorded run and a pasted #/technique/ics/T0883?heat=status: Status survives the domain switch, not Posture', async ({ page }) => {
     await openWorkspace(page, { seed: { 'navi.v2.validation-runs': oneRun } });
     await page.goto('about:blank');

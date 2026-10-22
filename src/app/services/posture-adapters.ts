@@ -24,7 +24,7 @@
 import type { Domain } from '../models/domain';
 import type { Technique } from '../models/technique';
 import type { SecurityControl } from '../models/security-control';
-import type { CoveredMark, CoveredStrength, ProofRecord, RunVerdict } from '../models/posture/posture.types';
+import type { CoveredMark, CoveredStrength, ProofRecord, RunSummary, RunVerdict } from '../models/posture/posture.types';
 import { rollupMitigations } from '../models/posture/mitigation-rollup';
 import { runMatches } from '../models/posture/run-match';
 import { type TechniqueRefKey, parseTechniqueRef } from '../models/technique-ref';
@@ -168,6 +168,8 @@ export interface RunInputs {
   readonly proof: readonly ProofRecord[];
   readonly covered: readonly CoveredMark[];
   readonly verdicts: readonly RunVerdict[];
+  /** The run itself, so derivePosture can name a run that yields no proof (RP-F decision 9). */
+  readonly summary: RunSummary;
 }
 
 const RANGE_STATES = {
@@ -232,7 +234,8 @@ export function runInputs(run: ValidationRunV2): RunInputs {
   const verdicts: RunVerdict[] = failed || notReproducible
     ? [{ date: run.runDate, failed, notReproducible, source: run.source }]
     : [];
-  return { proof, covered, verdicts };
+  const summary: RunSummary = { runId: run.id, status: run.status, date: run.runDate, source: run.source };
+  return { proof, covered, verdicts, summary };
 }
 
 /** A technique-marks record as a CoveredMark: implemented → full, in progress or planned → planned. */

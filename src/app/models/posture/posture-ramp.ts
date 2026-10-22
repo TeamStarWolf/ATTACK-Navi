@@ -113,14 +113,46 @@ export interface PostureCellVM {
 }
 
 /**
- * The words of one posture cell, for its aria-label and tooltip (§7 Decay,
- * Rendering): postureBadge(state), except that a stale cell names its proof
- * age and the decay window it passed, as "Proven (your run), stale (120 days;
- * window 90)". `windows` are the D10 windows the state was derived with
+ * The words of the contradicted sub-state, one phrase for the legend stop and
+ * for a contradicted cell's aria-label and tooltip (RP-F decision 11).
+ */
+export const CONTRADICTED_WORDS = 'contradicted by a later failed run';
+
+/**
+ * The lenses whose cell words name the contradicted sub-state (RP-F decision
+ * 11): Posture, Covered and Status, whose colour or stop the full marks set.
+ * Proven and Controls keep their own words.
+ */
+export const CONTRADICTED_SPOKEN_LENSES: ReadonlySet<string> = new Set(['posture', 'covered', 'status']);
+
+/**
+ * The words of one posture-cell lens cell, for its aria-label and tooltip
+ * (§7 Decay, Rendering). On the Posture lens (no `lens`, or `lens.words`
+ * absent) they are postureBadge(state), except that a stale cell names its
+ * proof age and the decay window it passed, as "Proven (your run), stale (120
+ * days; window 90)". `windows` are the D10 windows the state was derived with
  * (PostureService.decayDays). A stale state with no scope or age (never
- * produced by derivePosture) falls back to the badge.
+ * produced by derivePosture) falls back to the badge. Another posture-cell
+ * lens passes its own cell words as `lens.words` (P2-14).
+ *
+ * A contradicted state (a later failed run outranks the full marks) adds
+ * ', contradicted by a later failed run' on the lenses in
+ * CONTRADICTED_SPOKEN_LENSES, the way a stale cell names its age (RP-F
+ * decision 11): "Known: mapped, contradicted by a later failed run".
  */
 export function postureCellLabel(
+  s: Pick<PostureState, 'bucket' | 'qualifiers' | 'proofScope' | 'proofAge' | 'covered' | 'subStates'>,
+  windows: Readonly<Record<ProofScope, number>>,
+  lens: { readonly value: string; readonly words?: string } = { value: 'posture' },
+): string {
+  const words = lens.words ?? postureStateWords(s, windows);
+  return CONTRADICTED_SPOKEN_LENSES.has(lens.value) && s.subStates.includes('contradicted')
+    ? `${words}, ${CONTRADICTED_WORDS}`
+    : words;
+}
+
+/** The Posture lens's own words for a state: the badge, or the stale age and window. */
+function postureStateWords(
   s: Pick<PostureState, 'bucket' | 'qualifiers' | 'proofScope' | 'proofAge' | 'covered'>,
   windows: Readonly<Record<ProofScope, number>>,
 ): string {
@@ -183,7 +215,7 @@ export function postureStopLabel(key: PostureBucket | PosturePattern): string {
     case 'covered': return scenarioOutcomeLabel('covered');
     case 'proven': return PROVEN;
     case 'stale': return `${PROVEN} (stale)`;
-    case 'contradicted': return 'contradicted by a later failed run';
+    case 'contradicted': return CONTRADICTED_WORDS;
     default: return 'not reproducible';
   }
 }

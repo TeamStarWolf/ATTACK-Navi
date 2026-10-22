@@ -247,6 +247,70 @@ describe('ThreatProfileService', () => {
       expect(makeService(new BehaviorSubject<Domain | null>(ics())).absentGroups(ics())).toEqual([{ id: APT29, name: APT29 }]);
     });
 
+    // RP-F decision 13: a profile stored with ATT&CK ids (G0016) resolved only by STIX id,
+    // so every stored group read as absent: "APT29 has no Enterprise use" on Enterprise.
+    describe('a profile stored with ATT&CK ids (RP-F decision 13)', () => {
+      const withAttackIds = (name: string, groups: readonly [string, string, string][]): Domain => {
+        const d = domainOf(name, []);
+        const gs = groups.map(([id, attackId, n]) => ({ id, attackId, name: n, aliases: [] }) as unknown as Domain['groups'][number]);
+        const t = d.techniques[0];
+        return { ...d, groups: gs, groupsByTechnique: new Map([['t1', gs]]), techniquesByGroup: new Map(gs.map((g) => [g.id, [t]])) } as Domain;
+      };
+      const ent = () => withAttackIds('Enterprise ATT&CK', [[APT29, 'G0016', 'APT29'], [FIN7, 'G0046', 'FIN7']]);
+      const icsOnly = () => withAttackIds('ICS ATT&CK', [[FIN7, 'G0046', 'FIN7']]);
+
+      it('reads every stored group present on Enterprise, after a reload, with no absent notice', () => {
+        makeService(new BehaviorSubject<Domain | null>(ent())).setSource({ kind: 'groups', ids: ['G0016', 'g0046'] });
+        expect(JSON.parse(localStorage.getItem(KEY)!).records[0].ids).toEqual(['G0016', 'g0046']);   // stored as given
+        const svc = makeService(new BehaviorSubject<Domain | null>(ent()));
+        expect(names(svc.presentGroups(ent()))).toEqual(['APT29', 'FIN7']);
+        expect(svc.absentGroups(ent())).toEqual([]);
+        expect(svc.domainNotice()).toBeNull();
+        expect(svc.current.groupIds).toEqual([APT29, FIN7]);   // the counted profile resolves them too
+        expect(svc.current.label).toBe('2 groups');
+      });
+
+      it('on ICS names the absent group by its name, not "G0016"', () => {
+        const domain$ = new BehaviorSubject<Domain | null>(ent());
+        const svc = makeService(domain$);
+        svc.setSource({ kind: 'groups', ids: ['G0016', 'G0046'] });
+        currentAttackDomain = 'ics';
+        domain$.next(icsOnly());
+        expect(names(svc.presentGroups(icsOnly()))).toEqual(['FIN7']);
+        expect(svc.absentGroups(icsOnly())).toEqual([{ id: 'G0016', name: 'APT29' }]);
+        expect(svc.domainNotice()).toBe('1 of 2 groups present in ICS: FIN7; APT29 has no ICS use');
+        currentAttackDomain = 'enterprise';
+      });
+
+      it('a group stored under both ids and absent from ICS is named once; the notice counts it once', () => {
+        const domain$ = new BehaviorSubject<Domain | null>(ent());
+        const svc = makeService(domain$);
+        svc.setSource({ kind: 'groups', ids: [APT29, 'G0016', 'G0046'] });
+        currentAttackDomain = 'ics';
+        domain$.next(icsOnly());
+        expect(svc.absentGroups(icsOnly())).toEqual([{ id: APT29, name: 'APT29' }]);
+        expect(svc.domainNotice()).toBe('1 of 2 groups present in ICS: FIN7; APT29 has no ICS use');
+        currentAttackDomain = 'enterprise';
+      });
+
+      it('after a reload straight onto ICS, the stored name hints still name it once', () => {
+        makeService(new BehaviorSubject<Domain | null>(ent())).setSource({ kind: 'groups', ids: [APT29, 'G0016', 'G0046'] });
+        currentAttackDomain = 'ics';
+        const svc = makeService(new BehaviorSubject<Domain | null>(icsOnly()));
+        expect(svc.absentGroups(icsOnly())).toEqual([{ id: APT29, name: 'APT29' }]);
+        expect(svc.domainNotice()).toBe('1 of 2 groups present in ICS: FIN7; APT29 has no ICS use');
+        currentAttackDomain = 'enterprise';
+      });
+
+      it('a group stored under both ids counts once', () => {
+        const svc = makeService(new BehaviorSubject<Domain | null>(ent()));
+        svc.setSource({ kind: 'groups', ids: [APT29, 'G0016'] });
+        expect(names(svc.presentGroups(ent()))).toEqual(['APT29']);
+        expect(svc.absentGroups(ent())).toEqual([]);
+        expect(svc.current.groupIds).toEqual([APT29]);
+      });
+    });
+
     it('presentGroups/absentGroups are empty while no domain is loaded', () => {
       const svc = makeService();
       svc.setSource({ kind: 'groups', ids: [APT29] });

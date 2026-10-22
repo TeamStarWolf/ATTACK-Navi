@@ -164,6 +164,12 @@ describe('posture adapters (P2-05)', () => {
       }]);
     });
 
+    it('carries the run itself (id, status, date, source) for the runs-without-proof line (RP-F decision 9)', () => {
+      expect(runInputs(run({ status: 'untested' })).summary).toEqual({
+        runId: 'r1', status: 'untested', date: '2026-09-20T10:00:00.000Z', source: 'manual',
+      });
+    });
+
     it("'failed' is a failed verdict and 'not-reproducible' a notReproducible one", () => {
       expect(runInputs(run({ status: 'failed' })).verdicts).toEqual([
         { date: '2026-09-20T10:00:00.000Z', failed: true, notReproducible: false, source: 'manual' },

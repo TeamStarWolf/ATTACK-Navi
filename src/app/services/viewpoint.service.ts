@@ -152,7 +152,10 @@ export class ViewpointService {
   setViewpoint(id: ViewpointId, opts?: { navigate?: boolean }): void {
     const vp = this.viewpoints.find((v) => v.id === id);
     if (!vp) return;
-    this.filterService.setHeatmapMode(vp.defaultLens);
+    // A viewpoint's lens is its default, in session as at boot (restore), not
+    // a lens pick: the Analyst viewpoint's Prevalence must not pin
+    // heat=frequency once owner data exists (RP-F decision 10).
+    this.filterService.setHeatmapMode(vp.defaultLens, { explicit: false });
     this.persist(vp.id);
     this.viewpointSubject.next(vp);
     if (opts?.navigate !== false) {
@@ -171,7 +174,8 @@ export class ViewpointService {
     if (!vp) return;
     this.viewpointSubject.next(vp);
     if (!this.urlHasHeatParam()) {
-      this.filterService.setHeatmapMode(vp.defaultLens);
+      // Restored at boot, the viewpoint's lens is a default, not a lens pick (RP-F decision 10).
+      this.filterService.setHeatmapMode(vp.defaultLens, { explicit: false });
     }
   }
 

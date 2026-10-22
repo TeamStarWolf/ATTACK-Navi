@@ -151,7 +151,7 @@ export class QuickFiltersComponent implements OnInit, OnDestroy {
   clearPreset(): void {
     this.activePreset = null;
     // The effective default (P2-19): Posture once owner data exists, else Prevalence.
-    this.filterService.setHeatmapMode(this.filterService.defaultLens);
+    this.filterService.setHeatmapMode(this.filterService.defaultLens, { explicit: false });
     this.filterService.setImplStatusFilter(null);
     this.cdr.markForCheck();
   }
