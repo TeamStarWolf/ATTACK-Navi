@@ -104,13 +104,37 @@ function ownerRecordWithoutRung(state: PostureState): boolean {
   return state.subStates.includes('contradicted') || state.excluded;
 }
 
+/** Where the runs of yours are listed in full (the Detection Validation workbench). */
+const SEE_VALIDATION = 'see Detection Validation';
+
+/**
+ * The runs of yours on the technique that yield no proof (RP-F decision 9):
+ * '1 run of yours recorded, latest untested on 2026-10-21', or '' with none.
+ * It names the run's status and date only, never a rung: a run without a named
+ * rule is not Proven, and nothing here says it covers the technique.
+ */
+export function runsClause(state: Pick<PostureState, 'runsWithoutProof'>): string {
+  const runs = state.runsWithoutProof;
+  if (runs.length === 0) return '';
+  const latest = runs[0];
+  return `${runs.length} run${runs.length === 1 ? '' : 's'} of yours recorded, latest ${latest.status} on ${latest.date.slice(0, 10)}`;
+}
+
+/** '; <runsClause>; see Detection Validation', or '' with no run without proof. */
+function runsNote(state: PostureState): string {
+  const runs = runsClause(state);
+  return runs ? `; ${runs}; ${SEE_VALIDATION}` : '';
+}
+
 /**
  * The Posture lens: the technique's own rung, from its PostureState.
  *   'Proven (your run) on 2026-10-21 by manual; 1 rule fired'
  *   'Covered (self-attested) from mitigation implemented via M1036'
  *   'Covered (self-attested, partial via M1038): reached only through a mitigation mapped to more techniques than the breadth threshold'
  *   'Known: mapped (3 of 5 reference families)'
+ *   'Known: mapped (3 of 5 reference families); 1 run of yours recorded, latest passed on 2026-10-21; see Detection Validation'
  *   'None: no reference data mapped and nothing of yours recorded'
+ *   'None: no reference data mapped; 1 run of yours recorded, latest untested on 2026-10-21; see Detection Validation'
  *   'None: no reference data mapped; a later failed run contradicts the marks'   (a contradicted mark or an excluded technique)
  */
 export function postureExplain(state: PostureState, decayDays?: Readonly<Record<ProofScope, number>>): string {
@@ -127,10 +151,13 @@ export function postureExplain(state: PostureState, decayDays?: Readonly<Record<
         + ': reached only through a mitigation or control mapped to more techniques than the breadth threshold'
         + postureNotes(state);
     case 'known':
-      return `${postureBadge(state)} (${state.knownSignals} of ${KNOWN_FAMILY_COUNT} reference families)` + postureNotes(state);
-    default:
+      return `${postureBadge(state)} (${state.knownSignals} of ${KNOWN_FAMILY_COUNT} reference families)` + runsNote(state) + postureNotes(state);
+    default: {
+      const runs = runsClause(state);
+      if (runs) return `None: no reference data mapped; ${runs}; ${SEE_VALIDATION}` + postureNotes(state);
       return (ownerRecordWithoutRung(state) ? 'None: no reference data mapped' : 'None: no reference data mapped and nothing of yours recorded')
         + postureNotes(state);
+    }
   }
 }
 
@@ -143,7 +170,10 @@ export function postureExplain(state: PostureState, decayDays?: Readonly<Record<
  *   'None: no covered (self-attested or range) mark; see the Known block for its reference data (3 of 5 reference families)'
  *   'None: a later failed run contradicts your covered (self-attested or range) marks'   (RP-F round 1)
  *   'None: no covered (self-attested or range) mark; not reproducible, so left out of the denominator'
+ *   'None: no covered (self-attested or range) mark; 1 run of yours recorded, latest failed on 2026-10-21; see Detection Validation'
  *   'None: nothing of yours reaches this technique'   (no run, no reference data, no mark, no verdict)
+ * A run of yours that yields no proof (untested, failed, passed with no named
+ * rule) is named with its status and date (RP-F decision 9), never as a rung.
  * A contradicted full mark or a not-reproducible verdict is the owner's own record,
  * so it is named instead of 'nothing of yours'; a contradicted mark is the head,
  * never 'no covered mark' followed by a note about 'the marks'.
@@ -160,9 +190,9 @@ function coveredNoneExplain(state: PostureState): string {
   if (state.proof.length > 0) return `${head}; see the ${PROVEN} block for its recorded result` + notes;
   if (state.knownSignals > 0) {
     return `${head}; see the ${KNOWN_BLOCK} block for its reference data (${state.knownSignals} of ${KNOWN_FAMILY_COUNT} reference families)`
-      + notes;
+      + runsNote(state) + notes;
   }
-  if (ownerRecordWithoutRung(state)) return head + notes;
+  if (state.runsWithoutProof.length > 0 || ownerRecordWithoutRung(state)) return head + runsNote(state) + notes;
   return 'None: nothing of yours reaches this technique';
 }
 

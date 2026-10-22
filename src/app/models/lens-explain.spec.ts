@@ -5,9 +5,9 @@
 // PostureState, and 'score N of max M: <formula>' for the legacy lenses.
 import { heatmapModeDef } from './heatmap-modes';
 import type { HeatmapMode } from '../services/filter.service';
-import type { CoveredMark, PostureState, ProofRecord } from './posture/posture.types';
-import { DEFAULT_POSTURE_RULES } from './posture/derive-posture';
-import { basisWords, formatScore, lensExplain, postureExplain } from './lens-explain';
+import type { CoveredMark, PostureInputs, PostureState, ProofRecord, RunSummary } from './posture/posture.types';
+import { DEFAULT_POSTURE_RULES, derivePosture } from './posture/derive-posture';
+import { basisWords, formatScore, lensExplain, postureExplain, runsClause } from './lens-explain';
 
 const def = (mode: HeatmapMode) => heatmapModeDef(mode)!;
 
@@ -20,7 +20,7 @@ const RUN: ProofRecord = {
 function state(over: Partial<PostureState>): PostureState {
   return {
     ref: 'attack/enterprise/T1078@19.2', rung: 'known', bucket: 'known', qualifiers: [], subStates: [], covered: [], proof: [],
-    proofScope: null, proofAge: null, knownSignals: 3, threatWeight: 1, exposureWeight: 0, excluded: false, ...over,
+    proofScope: null, proofAge: null, knownSignals: 3, threatWeight: 1, exposureWeight: 0, excluded: false, runsWithoutProof: [], ...over,
   };
 }
 
@@ -183,6 +183,74 @@ describe('lensExplain (P2-18): Why this colour', () => {
     it('Reference depth (a score-only registry lens) is out of 100', () => {
       expect(lensExplain(def('unified'), { score: 45 }, { state: state({}) }))
         .toBe(`score 45 of max 100: ${def('unified').formula}`);
+    });
+  });
+
+  // RP-F decision 9: a run of yours that yields no rung is acknowledged with its count,
+  // latest status and date, and points to Detection Validation; it never reads as a rung.
+  describe('runs of yours without proof (RP-F decision 9)', () => {
+    const TODAY = new Date('2026-10-21T12:00:00.000Z');
+    const run = (runId: string, status: string, date: string): RunSummary => ({ runId, status, date, source: 'manual' });
+    /** The state derivePosture gives the technique, so the words follow the real derivation. */
+    const derived = (attackId: string, over: Partial<PostureInputs>): PostureState => derivePosture(
+      `attack/enterprise/${attackId}@19.2`,
+      { knownSignals: 0, covered: [], proof: [], verdicts: [], threatWeight: 0, exposureWeight: 0, ...over },
+      DEFAULT_POSTURE_RULES, TODAY);
+    const RUNG_WORDS = /\bcovered\b|\bproven\b|\bdefended\b|\bvalidated\b/i;
+
+    it('an untested run on T1069 (the Record Run defaults): None names the run, on Posture and on Covered', () => {
+      const s = derived('T1069', { runs: [run('u1', 'untested', '2026-10-21T08:00:00.000Z')] });
+      expect([s.bucket, s.runsWithoutProof.length]).toEqual(['none', 1]);
+      const posture = lensExplain(def('posture'), { score: 0, bucket: 'none' }, { state: s });
+      expect(posture).toBe('None: no reference data mapped; 1 run of yours recorded, latest untested on 2026-10-21; see Detection Validation');
+      expect(posture).not.toMatch(RUNG_WORDS);
+      expect(lensExplain(def('covered'), { score: 0 }, { state: s }))
+        .toBe('None: no covered (self-attested or range) mark; 1 run of yours recorded, latest untested on 2026-10-21; see Detection Validation');
+    });
+
+    it('a seeded failed run (no marks, no rule): None names it with the latest status and date', () => {
+      const s = derived('T1069', {
+        runs: [run('f1', 'failed', '2026-10-20T08:00:00.000Z'), run('u0', 'untested', '2026-10-01T08:00:00.000Z')],
+        verdicts: [{ date: '2026-10-20T08:00:00.000Z', failed: true, notReproducible: false, source: 'manual' }],
+      });
+      expect(postureExplain(s))
+        .toBe('None: no reference data mapped; 2 runs of yours recorded, latest failed on 2026-10-20; see Detection Validation');
+      expect(lensExplain(def('covered'), { score: 0 }, { state: s })).not.toContain('nothing of yours reaches this technique');
+    });
+
+    it('a passed run with no named rule on T1059.001: the Known line gains the run, and the Covered fallback names it', () => {
+      const s = derived('T1059.001', { knownSignals: 4, runs: [run('p1', 'passed', '2026-10-21T09:00:00.000Z')] });
+      expect(s.bucket).toBe('known');
+      const known = postureExplain(s);
+      expect(known).toBe('Known: mapped (4 of 5 reference families); 1 run of yours recorded, latest passed on 2026-10-21; see Detection Validation');
+      expect(known).not.toMatch(RUNG_WORDS);
+      expect(lensExplain(def('covered'), { score: 0 }, { state: s })).toBe(
+        'None: no covered (self-attested or range) mark; see the Known block for its reference data (4 of 5 reference families); '
+        + '1 run of yours recorded, latest passed on 2026-10-21; see Detection Validation');
+    });
+
+    it('a run with a named rule is proof, not a run without proof; the Proven line is unchanged', () => {
+      const s = derived('T1059.001', { knownSignals: 4, runs: [run('r1', 'passed', RUN.date)], proof: [RUN] });
+      expect(s.runsWithoutProof).toEqual([]);
+      expect(postureExplain(s)).toBe('Proven (your run) on 2026-10-21 by manual; 1 rule fired');
+    });
+
+    it('a technique with no runs keeps the old wording', () => {
+      expect(postureExplain(derived('T1069', {}))).toBe('None: no reference data mapped and nothing of yours recorded');
+      expect(postureExplain(derived('T1059.001', { knownSignals: 4 }))).toBe('Known: mapped (4 of 5 reference families)');
+      expect(lensExplain(def('covered'), { score: 0 }, { state: derived('T1069', {}) })).toBe('None: nothing of yours reaches this technique');
+      expect(runsClause(derived('T1069', {}))).toBe('');
+    });
+
+    it('a contradicted mark with a failed run names the run, then the contradiction note', () => {
+      const s = state({
+        rung: 'none', bucket: 'none', knownSignals: 0, subStates: ['contradicted'], covered: [{ ...MIT_FULL, at: '2026-10-01' }],
+        runsWithoutProof: [run('f1', 'failed', '2026-10-20')],
+      });
+      expect(postureExplain(s)).toBe('None: no reference data mapped; 1 run of yours recorded, latest failed on 2026-10-20; '
+        + 'see Detection Validation; a later failed run contradicts the marks');
+      expect(lensExplain(def('covered'), { score: 0 }, { state: s })).toBe('None: a later failed run contradicts your covered '
+        + '(self-attested or range) marks; 1 run of yours recorded, latest failed on 2026-10-20; see Detection Validation');
     });
   });
 

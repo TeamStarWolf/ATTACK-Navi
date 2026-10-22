@@ -22,6 +22,9 @@ import { PostureService } from '../../services/posture.service';
 import { SettingsService } from '../../services/settings.service';
 import { THREAT_WEIGHT_PROVIDER } from '../../models/posture/threat-weight';
 import { isThreatGap } from '../../models/posture/gap';
+import { CONTRADICTED_WORDS } from '../../models/posture/posture-ramp';
+import { ControlsService } from '../../services/controls.service';
+import { BehaviorSubject } from 'rxjs';
 import SNAPSHOTS from '../../testing/__snapshots__/lens-snapshots.json';
 import {
   LENS_RUN_AGES, controlsProvider, lensPostureTodayProvider, lensRunTechniques, parseFixtureDomain, resetBrowserState,
@@ -221,6 +224,89 @@ describe('MatrixComponent (rendered, Posture lens, stale cell)', () => {
     const { fresh } = lensRunTechniques(domain);
     expect(cellOf(fresh).getAttribute('aria-label')).toBe(`${fresh.attackId}: ${fresh.name}, Proven (your run)`);
     expect(tooltipOf(fresh)).toBe('Proven (your run)');
+  });
+});
+
+// RP-F decision 11: a contradicted cell (an implemented M1015 control and
+// mitigation, then a later failed run on T1078) says "contradicted" in its
+// aria-label and tooltip on the Posture, Covered and Status lenses, the way a
+// stale cell names its age; T1003 (the same M1015 marks, no failed run) does not.
+describe('MatrixComponent (rendered, contradicted cell, RP-F decision 11)', () => {
+  let domain: Domain;
+  let fixture: ComponentFixture<MatrixComponent>;
+  let host: HTMLElement;
+  const tech = (attackId: string) => domain.techniques.find(t => t.attackId === attackId) as Technique;
+
+  beforeEach(() => {
+    resetBrowserState();
+    domain = parseFixtureDomain();
+    const m1015 = domain.mitigations.find(m => m.attackId === 'M1015')!;
+    TestBed.configureTestingModule({
+      imports: [MatrixComponent],
+      providers: [
+        provideHttpClient(withXhr()),
+        provideHttpClientTesting(),
+        ...signalStubProviders(),
+        {
+          provide: ControlsService,
+          useValue: {
+            controls$: new BehaviorSubject([{
+              id: 'ctl-M1015', name: 'AD configuration', framework: 'Custom', controlRef: 'M1015', description: '',
+              mitigationIds: [m1015.id], status: 'implemented',
+            }]),
+            computeCoverage: () => new Map(),
+          },
+        },
+        lensPostureTodayProvider(),
+      ],
+    });
+    (TestBed.inject(DataService) as unknown as { domainSubject: { next(d: Domain): void } }).domainSubject.next(domain);
+    TestBed.inject(ImplementationService).setStatus(m1015.id, 'implemented');
+    TestBed.inject(ValidationService).importJson(JSON.stringify({ runs: [
+      { id: 'f-t1078', techniqueId: 'T1078', runDate: '2026-10-20T08:00:00.000Z', status: 'failed', attackResult: 'executed' },
+    ] }));
+    fixture = TestBed.createComponent(MatrixComponent);
+    fixture.componentRef.setInput('domain', domain);
+    fixture.detectChanges();
+    host = fixture.nativeElement as HTMLElement;
+  });
+
+  afterEach(() => resetBrowserState());
+
+  const cellOf = (t: Technique) => host.querySelector(`[data-tech-id="${t.id}"] .cell`) as HTMLElement;
+  const tooltipOf = (t: Technique): string => {
+    const cellHost = host.querySelector(`[data-tech-id="${t.id}"] app-technique-cell`) as HTMLElement;
+    cellHost.dispatchEvent(new MouseEvent('mouseenter', { clientX: 10, clientY: 10 }));
+    fixture.detectChanges();
+    const text = cellHost.querySelector('.tt-posture')!.textContent!.trim();
+    cellHost.dispatchEvent(new MouseEvent('mouseleave'));
+    fixture.detectChanges();
+    return text;
+  };
+
+  for (const lens of ['posture', 'covered', 'status'] as const) {
+    it(`${lens}: the contradicted T1078 cell says so in its aria-label and tooltip; T1003 does not`, () => {
+      expect(TestBed.inject(PostureService).stateFor(tech('T1078')).subStates).toContain('contradicted');
+      TestBed.inject(FilterService).setHeatmapMode(lens);
+      fixture.detectChanges();
+      const t1078 = tech('T1078');
+      const aria = cellOf(t1078).getAttribute('aria-label')!;
+      expect(aria.startsWith(`T1078: ${t1078.name}, `)).withContext(aria).toBeTrue();
+      expect(aria.endsWith(`, ${CONTRADICTED_WORDS}`)).withContext(aria).toBeTrue();
+      const tooltip = tooltipOf(t1078);
+      expect(tooltip.endsWith(`, ${CONTRADICTED_WORDS}`)).withContext(tooltip).toBeTrue();
+      const t1003 = tech('T1003');
+      expect(cellOf(t1003).getAttribute('aria-label')).not.toContain('contradicted');
+      expect(tooltipOf(t1003)).not.toContain('contradicted');
+    });
+  }
+
+  it('the Proven and Controls lenses keep their own words (not in decision 11)', () => {
+    for (const lens of ['proven', 'controls'] as const) {
+      TestBed.inject(FilterService).setHeatmapMode(lens);
+      fixture.detectChanges();
+      expect(cellOf(tech('T1078')).getAttribute('aria-label')).withContext(lens).not.toContain('contradicted');
+    }
   });
 });
 

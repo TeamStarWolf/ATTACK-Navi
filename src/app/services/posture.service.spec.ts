@@ -264,6 +264,31 @@ describe('PostureService (P2-05, E2.1-c)', () => {
       expect(posture.ownerWords()).toBeTrue();
     });
 
+    it('RP-F decision 9: runs that yield no proof are listed on the state, newest first; a run with a named rule is not', () => {
+      TestBed.inject(ValidationService).importJson(JSON.stringify({ runs: [
+        { id: 'u1', techniqueId: 'T1593', runDate: daysBefore(1), status: 'untested', attackResult: 'executed' },
+        { id: 'f1', techniqueId: 'T1593', runDate: daysBefore(4), status: 'failed', attackResult: 'executed' },
+        { id: 'p1', techniqueId: 'T1597', runDate: daysBefore(2), status: 'passed', attackResult: 'executed' },
+        { id: 'p2', techniqueId: 'T1597', runDate: daysBefore(3), status: 'passed', attackResult: 'executed', detectionsFired: ['sigma:b'] },
+      ] }));
+      const t1593 = stateOf(tech('T1593'));
+      expect(t1593.proof).toEqual([]);
+      expect(t1593.runsWithoutProof.map(r => [r.runId, r.status, r.date.slice(0, 10)]))
+        .toEqual([['u1', 'untested', daysBefore(1).slice(0, 10)], ['f1', 'failed', daysBefore(4).slice(0, 10)]]);
+      const t1597 = stateOf(tech('T1597'));
+      expect(t1597.bucket).toBe('proven');
+      expect(t1597.runsWithoutProof.map(r => r.runId)).toEqual(['p1']);
+      expect(stateOf(tech('T1003')).runsWithoutProof).toEqual([]);
+    });
+
+    it('RP-F decision 9: an untested run alone gives no owner words (the card names the run, never a rung)', () => {
+      TestBed.inject(ValidationService).importJson(JSON.stringify({ runs: [
+        { id: 'u1', techniqueId: 'T1593', runDate: daysBefore(1), status: 'untested', attackResult: 'executed' },
+      ] }));
+      expect(stateOf(tech('T1593')).runsWithoutProof.length).toBe(1);
+      expect(posture.ownerWords()).toBeFalse();
+    });
+
     it('R16: one not-reproducible run moves assessable by -1 and leaves total, mapped and pct unchanged', () => {
       const before = posture.rollup();
       const known = TestBed.inject(EnrichmentService).mappedRollup(domain);

@@ -8,7 +8,9 @@ import { Technique } from './technique';
 import { ThreatGroup } from './group';
 import { Campaign } from './campaign';
 import { DataService } from '../services/data.service';
-import { profileDomainNotice, rankGroupsByPrevalence, resolveProfile, splitStoredGroups } from './threat-profile';
+import {
+  type KnownGroup, findStoredGroup, indexGroups, profileDomainNotice, rankGroupsByPrevalence, resolveProfile, splitStoredGroups,
+} from './threat-profile';
 
 function tech(id: string, attackId: string, parentId: string | null = null): Technique {
   return {
@@ -133,6 +135,40 @@ describe('threat-profile model', () => {
       const split = splitStoredGroups(['g-x', 'g-a', 'g-b', 'g-x', 'g-y'], d);
       expect(split.present.map((g) => g.id)).toEqual(['g-b', 'g-a']);
       expect(split.absentIds).toEqual(['g-x', 'g-y']);
+    });
+
+    it('splitStoredGroups resolves a stored ATT&CK id (any case) as well as a STIX id (RP-F decision 13)', () => {
+      const d = emptyDomain({ groups: [group('g-b', 'G0002'), group('g-a', 'G0001')] });
+      const split = splitStoredGroups(['G0001', 'g0002', 'G9999', 'g-a'], d);
+      expect(split.present.map((g) => g.id)).toEqual(['g-b', 'g-a']);
+      expect(split.absentIds).toEqual(['G9999']);
+      expect(resolveProfile({ kind: 'groups', ids: ['G0001'] }, d).groupIds).toEqual(['g-a']);
+    });
+
+    it('findStoredGroup reads the one index by STIX id or ATT&CK id in any case (RP-F decision 13)', () => {
+      const index = new Map<string, KnownGroup>();
+      indexGroups(index, [group('g-a', 'G0001')]);
+      expect(findStoredGroup(index, 'g-a')?.id).toBe('g-a');
+      expect(findStoredGroup(index, 'G0001')?.id).toBe('g-a');
+      expect(findStoredGroup(index, 'g0001')?.id).toBe('g-a');
+      expect(findStoredGroup(index, 'G-A')).toBeUndefined();
+      expect(findStoredGroup(index, 'G9999')).toBeUndefined();
+    });
+
+    it('splitStoredGroups names an absent group stored under both ids once, under the id stored first (RP-F decision 13)', () => {
+      const ics = emptyDomain({ groups: [group('g-b', 'G0002')] });
+      const known = new Map<string, KnownGroup>();
+      indexGroups(known, [group('g-a', 'G0001'), group('g-b', 'G0002')]);
+      expect(splitStoredGroups(['g-a', 'g-b', 'g0001'], ics, known).absentIds).toEqual(['g-a']);
+      expect(splitStoredGroups(['G0001', 'g-a', 'g-b'], ics, known).absentIds).toEqual(['G0001']);
+      // Without the index the two ids cannot be told to be one group.
+      expect(splitStoredGroups(['g-a', 'G0001'], ics).absentIds).toEqual(['g-a', 'G0001']);
+      // A group known only by stored name hints (an id and a name each) is told apart by its name.
+      const hints = new Map<string, KnownGroup>([
+        ['g-a', { id: 'g-a', attackId: '', name: 'Alpha' }], ['G0001', { id: 'G0001', attackId: '', name: 'Alpha' }],
+        ['g-z', { id: 'g-z', attackId: '', name: 'Zulu' }],
+      ]);
+      expect(splitStoredGroups(['g-a', 'G0001', 'g-z'], ics, hints).absentIds).toEqual(['g-a', 'g-z']);
     });
 
     it('resolveProfile counts only the present groups (the same rule) and keeps the source as stored', () => {

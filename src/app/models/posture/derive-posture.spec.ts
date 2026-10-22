@@ -4,7 +4,7 @@
 // One row per branch of the rung derivation (Phase 2 design §2.2). CI gates
 // this file's subject at 100% branch coverage (scripts/check-branch-coverage.mjs).
 import { DEFAULT_POSTURE_RULES, derivePosture, tallyPosture } from './derive-posture';
-import type { CoveredMark, PostureInputs, PostureState, ProofRecord, ProofScope, RunVerdict } from './posture.types';
+import type { CoveredMark, PostureInputs, PostureState, ProofRecord, ProofScope, RunSummary, RunVerdict } from './posture.types';
 import type { TechniqueRefKey } from '../technique-ref';
 
 /** POSTURE_TODAY, pinned (§7, R14): every date below is relative to it. */
@@ -263,6 +263,44 @@ describe('derivePosture (Phase 2 design §2.2)', () => {
     it('none otherwise', () => {
       const s = derive();
       expect([s.rung, s.bucket]).toEqual(['none', 'none']);
+    });
+  });
+
+  // RP-F decision 9: the runs of yours that yield no qualifying proof record, newest first.
+  describe('runs without proof', () => {
+    const run = (runId: string, ageDays: number | null, status = 'untested'): RunSummary => ({
+      runId, status, date: ageDays === null ? 'not a date' : daysAgo(ageDays), source: 'manual',
+    });
+
+    it('no runs input: an empty list in every branch', () => {
+      expect(derive().runsWithoutProof).toEqual([]);
+      expect(derive({ proof: [proof('own-run', 1)] }).runsWithoutProof).toEqual([]);
+    });
+
+    it('an untested run (no proof, no mark) is listed and leaves the rung at none', () => {
+      const s = derive({ runs: [run('u1', 2)] });
+      expect([s.rung, s.bucket]).toEqual(['none', 'none']);
+      expect(s.runsWithoutProof.map(r => [r.runId, r.status])).toEqual([['u1', 'untested']]);
+    });
+
+    it('a run with a qualifying proof record is out; its sibling without one is in, on a proven state', () => {
+      const s = derive({
+        runs: [run('own-run-1', 1, 'passed'), run('f1', 3, 'failed')],
+        proof: [proof('own-run', 1)],
+      });
+      expect(s.bucket).toBe('proven');
+      expect(s.runsWithoutProof.map(r => r.runId)).toEqual(['f1']);
+    });
+
+    it('a run whose only record does not qualify (no parseable date) is still a run without proof', () => {
+      const s = derive({ runs: [run('bad', 1, 'passed')], proof: [proof('own-run', 1, { runId: 'bad', date: 'never' })], knownSignals: 2 });
+      expect(s.bucket).toBe('known');
+      expect(s.runsWithoutProof.map(r => r.runId)).toEqual(['bad']);
+    });
+
+    it('newest first; an undated run sorts last; equal dates by runId', () => {
+      const s = derive({ runs: [run('old', 20), run('undated', null), run('b', 5), run('new', 1), run('a', 5), run('undated-2', null)] });
+      expect(s.runsWithoutProof.map(r => r.runId)).toEqual(['new', 'a', 'b', 'old', 'undated', 'undated-2']);
     });
   });
 

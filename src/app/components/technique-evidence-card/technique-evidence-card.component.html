@@ -45,6 +45,11 @@
     </div>
   }
 
+  @if (runsWithoutProof(); as runs) {
+    <!-- RP-F decision 9: runs of yours with no named rule that fired; status and date only, never a rung. -->
+    <p class="ev-summary" data-testid="ev-runs-without-proof">Runs without proof: {{ runs }}; see Detection Validation</p>
+  }
+
   <div class="ev-block" data-testid="ev-known">
     <h3 class="ev-title">Known: reference data</h3>
     <p class="ev-summary">mapped {{ known().mapped }} of {{ knownFamilies }} reference families</p>

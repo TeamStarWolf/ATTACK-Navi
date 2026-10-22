@@ -54,6 +54,18 @@ export interface RunVerdict {
   readonly source: SourceId;
 }
 
+/**
+ * One run of yours on the technique, as derivePosture reads it (RP-F decision 9):
+ * enough to say on the card that a run is recorded when it yields no proof.
+ */
+export interface RunSummary {
+  readonly runId: string;
+  /** The run's ValidationStatus: 'untested', 'failed', 'passed', 'partial', 'no-telemetry', 'not-reproducible'. */
+  readonly status: string;
+  readonly date: string;                  // runDate (ISO timestamp) or validated_at (YYYY-MM-DD)
+  readonly source: SourceId;
+}
+
 export type PostureSubState = 'partial' | 'planned' | 'stale' | 'contradicted' | 'not-reproducible' | 'telemetry-observed';
 
 export interface PostureState {
@@ -71,6 +83,12 @@ export interface PostureState {
   readonly threatWeight: number;
   readonly exposureWeight: number;                    // always 0 outside Enterprise (§1.16)
   readonly excluded: boolean;                         // not reproducible and no proof: out of the Covered/Proven denominator only
+  /**
+   * The runs of yours on the technique that yield no qualifying proof record
+   * (untested; failed; passed or partial with no named rule), newest first
+   * (RP-F decision 9). Never a rung: the card only says they are recorded.
+   */
+  readonly runsWithoutProof: readonly RunSummary[];
 }
 
 export interface PostureTally {
@@ -100,6 +118,8 @@ export interface PostureInputs {
   readonly verdicts: readonly RunVerdict[];
   readonly threatWeight: number;
   readonly exposureWeight: number;
+  /** Every run of yours matched to the technique (RP-F decision 9); absent means none. */
+  readonly runs?: readonly RunSummary[];
 }
 
 /**

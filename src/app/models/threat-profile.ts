@@ -81,23 +81,68 @@ export const ATTACK_DOMAIN_SHORT_LABEL: Readonly<Record<AttackDomain, string>> =
   f3: 'F3',
 };
 
+/** A group as a stored profile id can name it: STIX id, ATT&CK id ('' when unknown) and name. */
+export type KnownGroup = Pick<ThreatGroup, 'id' | 'attackId' | 'name'>;
+
+/**
+ * Groups keyed by every id a stored profile may hold them under: the STIX id as
+ * is and the ATT&CK id upper-cased (RP-F decision 13). Built with indexGroups,
+ * read with findStoredGroup; the one lookup behind both the membership rule
+ * (splitStoredGroups) and the name of an absent group (ThreatProfileService).
+ */
+export type GroupIdIndex = ReadonlyMap<string, KnownGroup>;
+
+/** Add `groups` to `index` under their STIX id and their upper-cased ATT&CK id. */
+export function indexGroups(index: Map<string, KnownGroup>, groups: Iterable<KnownGroup>): void {
+  for (const g of groups) {
+    index.set(g.id, g);
+    if (g.attackId) index.set(g.attackId.toUpperCase(), g);
+  }
+}
+
+/** The group a stored id names in `index`: by STIX id, or by ATT&CK id in any case (G0016, g0016). */
+export function findStoredGroup(index: GroupIdIndex, id: string): KnownGroup | undefined {
+  return index.get(id) ?? index.get(id.toUpperCase());
+}
+
 /**
  * THE membership rule for a stored group list against a domain: a stored id is
- * present when the domain's groups carry it, absent otherwise. resolveProfile and
- * ThreatProfileService.presentGroups/absentGroups both use this, so the profile the
- * surfaces count and the notice that names the absent groups never disagree.
- * `present` keeps the domain's order (the order resolveProfile has always used);
- * `absentIds` keeps the stored order, without duplicates.
+ * present when the domain's groups carry it, by STIX id or by ATT&CK id (G0016,
+ * any case: a profile stored with ATT&CK ids must not read "has no Enterprise
+ * use" for a group that is there, RP-F decision 13), absent otherwise.
+ * resolveProfile and ThreatProfileService.presentGroups/absentGroups both use
+ * this, so the profile the surfaces count and the notice that names the absent
+ * groups never disagree. `present` keeps the domain's order (the order
+ * resolveProfile has always used), each group once even when stored under both
+ * ids. `absentIds` keeps the stored order, each group once: `known` (the groups
+ * of every domain seen, and stored name hints) tells that a STIX id and an
+ * ATT&CK id stored side by side are one group, which is then named once under
+ * the id stored first. A group `known` holds only as a stored name hint (an id
+ * with a name, no other id) is told apart by its name.
  */
 export function splitStoredGroups(
   ids: readonly string[],
   domain: Pick<Domain, 'groups'>,
+  known: GroupIdIndex = new Map(),
 ): { readonly present: readonly ThreatGroup[]; readonly absentIds: readonly string[] } {
-  const wanted = new Set(ids);
-  const present = domain.groups.filter((g) => wanted.has(g.id));
-  const inDomain = new Set(present.map((g) => g.id));
-  const absentIds = [...wanted].filter((id) => !inDomain.has(id));
-  return { present, absentIds };
+  const inDomain = new Map<string, KnownGroup>();
+  indexGroups(inDomain, domain.groups);
+  const presentIds = new Set<string>();
+  const absentIds: string[] = [];
+  const absentKeys = new Set<string>();
+  for (const id of ids) {
+    const here = findStoredGroup(inDomain, id);
+    if (here) {
+      presentIds.add(here.id);
+      continue;
+    }
+    const seen = findStoredGroup(known, id);
+    const key = !seen ? `id:${id}` : seen.attackId ? `id:${seen.id}` : `name:${seen.name}`;
+    if (absentKeys.has(key)) continue;
+    absentKeys.add(key);
+    absentIds.push(id);
+  }
+  return { present: domain.groups.filter((g) => presentIds.has(g.id)), absentIds };
 }
 
 /**
