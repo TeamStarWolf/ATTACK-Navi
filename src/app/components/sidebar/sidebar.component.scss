@@ -1,5 +1,7 @@
 /* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
    https://github.com/TeamStarWolf/ATTACK-Navi - MIT License */
+@use '../drawer-primitives/roles';
+
 .sidebar {
   position: fixed;
   right: 0;
@@ -12,6 +14,14 @@
   flex-direction: column;
 
   &.open { transform: translateX(0); }
+}
+
+// Controls take the drawer's type, not the user agent's (buttons rendered in Arial).
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
 }
 
 .sidebar-inner {
@@ -235,13 +245,6 @@
   &:hover { color: var(--accent); }
 }
 
-.section-label {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  margin-bottom: 7px;
-}
-
 // Metadata tags (permissions, bypass)
 .meta-tags-row {
   margin-bottom: 14px;
@@ -305,424 +308,17 @@
   }
 }
 
-// Data sources
-.data-sources-section {
-  margin-bottom: 14px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.ds-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.ds-chip {
-  font-size: 10px;
-  padding: 2px 7px;
-  border: 1px solid rgb(88 166 255 / 20%);
-  font-weight: 500;
-}
-
-// Detection guidance
-.detection-section {
-  margin-bottom: 14px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.detection-toggle {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: rgb(26 159 255 / 7%);
-  border: 1px solid rgb(26 159 255 / 20%);
-  border-radius: 5px;
-  color: var(--accent);
-  font-size: 11px;
-  font-weight: 600;
-  padding: 6px 10px;
-  cursor: pointer;
-  text-align: left;
-  transition: all 0.15s;
-
-  .toggle-arrow { font-size: 9px; }
-  &:hover { background: rgb(26 159 255 / 12%); }
-  &.expanded { border-radius: 5px 5px 0 0; }
-}
-
-.detection-text {
-  margin: 0;
-  padding: 10px 12px;
-  background: rgb(26 159 255 / 4%);
-  border: 1px solid rgb(26 159 255 / 15%);
-  border-top: none;
-  border-radius: 0 0 5px 5px;
-  font-size: 11px;
-  color: #5aabf0;
-  line-height: 1.6;
-}
-
-// Data components (detected-by)
-.data-components-section {
-  margin-bottom: 14px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.dc-groups {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.dc-group {
-  display: flex;
-  align-items: flex-start;
-  gap: 7px;
-  flex-wrap: wrap;
-}
-
-.dc-source-btn {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--accent);
-  background: rgb(26 159 255 / 8%);
-  border: 1px solid rgb(26 159 255 / 25%);
-  padding: 2px 8px;
-  cursor: pointer;
-  white-space: nowrap;
-  flex-shrink: 0;
-  transition: all 0.15s;
-  &:hover { background: rgb(26 159 255 / 20%); border-color: rgb(26 159 255 / 50%); }
-}
-
-.dc-components-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-  padding-top: 2px;
-}
-
-.dc-component {
-  color: var(--success);
-  font-size: 10px;
-  font-weight: 500;
-  background: rgb(74 222 128 / 7%);
-  border: 1px solid rgb(74 222 128 / 18%);
-  border-radius: 3px;
-  padding: 1px 6px;
-}
-
-// Procedure examples
-.procedures-section {
-  margin-bottom: 14px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.procedures-toggle {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgb(255 167 38 / 7%);
-  border: 1px solid rgb(255 167 38 / 20%);
-  border-radius: 5px;
-  color: var(--accent-warm);
-  font-size: 11px;
-  font-weight: 600;
-  padding: 6px 10px;
-  cursor: pointer;
-  text-align: left;
-  transition: all 0.15s;
-
-  .proc-badge {
-    background: rgb(255 167 38 / 15%);
-    border-radius: 8px;
-    padding: 1px 6px;
-    font-size: 10px;
-    font-weight: 700;
-  }
-  .toggle-arrow { margin-left: auto; font-size: 9px; }
-  &:hover { background: rgb(255 167 38 / 12%); }
-  &.expanded { border-radius: 5px 5px 0 0; }
-}
-
-.procedures-list {
-  border: 1px solid rgb(255 167 38 / 15%);
-  border-top: none;
-  border-radius: 0 0 5px 5px;
-  overflow: hidden;
-}
-
-.proc-item {
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--border-subtle);
-
-  &:last-child { border-bottom: none; }
-
-  &.group { border-left: 2px solid rgb(255 167 38 / 50%); }
-  &.malware { border-left: 2px solid rgb(248 113 113 / 50%); }
-  &.tool { border-left: 2px solid rgb(26 159 255 / 50%); }
-  &.campaign { border-left: 2px solid rgb(185 152 245 / 50%); }
-}
-
-.dc-notes {
-  margin-top: 6px;
-  border-top: 1px solid var(--border-subtle);
-}
-
-.dc-note {
-  padding: 6px 10px;
-  border-bottom: 1px solid var(--border-subtle);
-
-  &:last-child { border-bottom: none; }
-}
-
-.dc-note-source {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--accent);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.dc-note-text {
-  margin: 3px 0 0;
-  font-size: 11px;
-  line-height: 1.5;
-  color: var(--text-muted);
-}
-
-.proc-header {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-bottom: 5px;
-}
-
-.proc-id {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--text-faint);
-}
-
-.proc-type { font-size: 11px; }
-
-.proc-name {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-main);
-}
-
-.proc-desc {
-  font-size: 11px;
-  line-height: 1.5;
-  margin: 0;
-}
-
-.show-more-btn {
-  width: 100%;
-  padding: 7px;
-  background: rgb(255 255 255 / 3%);
-  border: none;
-  border-top: 1px solid var(--border-subtle);
-  color: var(--text-faint);
-  font-size: 11px;
-  cursor: pointer;
-  &:hover { background: rgb(255 255 255 / 6%); color: var(--text-faint); }
-}
-
-// Software section
-.software-section {
-  margin-bottom: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border-subtle);
-
-  .section-title {
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--text-faint);
-    margin: 0 0 10px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-  }
-
-  .count-badge.sw {
-    background: rgb(88 166 255 / 12%);
-    color: var(--accent);
-    border-radius: 8px;
-    padding: 1px 7px;
-    font-size: 10px;
-    font-weight: 700;
-  }
-}
-
-.sw-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.sw-chip {
-  font-size: 11px;
-  padding: 3px 9px;
-  border: 1px solid rgb(88 166 255 / 22%);
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.15s;
-
-  &.malware {
-    background: rgb(248 113 113 / 8%);
-    color: var(--danger);
-    border-color: rgb(248 113 113 / 22%);
-    &:hover { background: rgb(248 113 113 / 18%); border-color: rgb(248 113 113 / 45%); }
-  }
-  &:not(.malware):hover { background: rgb(88 166 255 / 18%); border-color: rgb(88 166 255 / 45%); }
-}
-
-// Campaigns section
-.campaigns-section {
-  margin-bottom: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.camp-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.camp-chip {
-  font-size: 11px;
-  padding: 3px 9px;
-  border: 1px solid rgb(88 166 255 / 20%);
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.15s;
-  &:hover { background: rgb(88 166 255 / 18%); border-color: rgb(88 166 255 / 40%); }
-}
-
-.count-badge.camp {
-  background: rgb(88 166 255 / 15%);
-  color: var(--accent);
-}
-
-// Analyst notes
-.tech-notes-section {
-  margin-bottom: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.notes-textarea {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 8px 10px;
-  border: 1px solid var(--border-subtle);
-  font-size: 12px;
-  font-family: inherit;
-  resize: vertical;
-  outline: none;
-  line-height: 1.5;
-}
-
-// Threat actors section
-.threat-section {
-  margin-bottom: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border-subtle);
-
-  .section-title {
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--text-faint);
-    margin: 0 0 10px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-  }
-
-  .count-badge {
-    background: rgb(255 167 40 / 12%);
-    color: var(--accent-warm);
-    border-radius: 8px;
-    padding: 1px 7px;
-    font-size: 10px;
-    font-weight: 700;
-  }
-}
-
-.group-chips { display: flex; flex-wrap: wrap; gap: 5px; }
-
-.group-chip {
-  font-size: 11px;
-  padding: 3px 9px;
-  border: 1px solid rgb(255 167 40 / 25%);
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.15s;
-  &:hover { background: rgb(255 167 40 / 20%); border-color: rgb(255 167 40 / 50%); }
-}
-
-// Mitigations section
-.mitigations-section {
-  .section-title {
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--text-faint);
-    margin: 0 0 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-  }
-
-  .count-badge {
-    background: rgb(88 166 255 / 12%);
-    color: var(--accent);
-    border-radius: 8px;
-    padding: 1px 7px;
-    font-size: 10px;
-    font-weight: 700;
-  }
-}
-
-.impl-summary-badge {
-  font-size: 10px;
-  font-weight: 700;
-  background: rgb(76 175 80 / 15%);
-  color: #4caf50;
-  border-radius: 8px;
-  padding: 1px 7px;
-  text-transform: none;
-  letter-spacing: 0;
-}
-
+// The bulk status line is a plain text line (.sb-text) laid out as a row of controls.
 .bulk-update-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 12px;
-  background: rgb(255 255 255 / 3%);
-  border-radius: 6px;
-  margin-bottom: 8px;
   flex-wrap: wrap;
 }
 
 .bulk-label {
   font-size: 11px;
-  color: rgb(255 255 255 / 40%);
+  color: var(--text-faint);
   white-space: nowrap;
 }
 
@@ -745,17 +341,11 @@
 .bulk-clear-btn {
   font-size: 10px;
   padding: 2px 8px;
-  background: rgb(255 255 255 / 6%);
+  background: var(--bg-hover);
   border: none;
-  color: rgb(255 255 255 / 50%);
+  color: var(--text-muted);
   cursor: pointer;
-  &:hover { background: rgb(255 255 255 / 12%); }
-}
-
-.no-mitigations {
-  font-size: 12px;
-  color: var(--text-faint);
-  font-style: italic;
+  &:hover { background: var(--bg-active, var(--bg-hover)); }
 }
 
 // Impl status chips
@@ -916,82 +506,11 @@
   &:hover { opacity: 1; }
 }
 
-.mit-no-results {
-  font-size: 11px;
-  color: var(--text-faint);
-  padding: 8px 0;
-  text-align: center;
-}
-
-// Mitigation list
-.mitigation-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
+// A mitigation row (app-drawer-row kind detail): its head line and both descriptions
+// (.sb-desc) come from the primitives; the status chips, posture badge, the clamp and
+// toggles of the descriptions and the documentation form are this section's own controls.
 .mitigation-item {
-  padding: 10px 12px;
-  border: 1px solid var(--border-subtle);
-
-  .mit-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 6px;
-  }
-
-  .mit-id {
-    font-size: 11px;
-    font-weight: 600;
-    background: rgb(88 166 255 / 10%);
-    color: var(--accent);
-    padding: 1px 5px;
-    border-radius: 4px;
-    text-decoration: none;
-    white-space: nowrap;
-    border: 1px solid rgb(88 166 255 / 20%);
-    &:hover { background: rgb(88 166 255 / 20%); }
-  }
-
-  .mit-name {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-main);
-    flex: 1;
-    text-decoration: none;
-    &:hover { text-decoration: underline; }
-  }
-
-  .filter-mit-btn {
-    background: none;
-    border: 1px solid var(--border-subtle);
-    border-radius: 4px;
-    color: var(--accent);
-    font-size: 10px;
-    font-weight: 600;
-    padding: 2px 7px;
-    cursor: pointer;
-    white-space: nowrap;
-    flex-shrink: 0;
-    transition: all 0.15s;
-    &:hover { background: rgb(88 166 255 / 12%); border-color: rgb(88 166 255 / 40%); }
-  }
-
-  .rel-description {
-    font-size: 11px;
-    color: #5aabf0;
-    font-style: italic;
-    margin: 0 0 6px;
-    line-height: 1.5;
-    padding: 5px 9px;
-    background: rgb(26 159 255 / 7%);
-    border-radius: 4px;
-    border-left: 2px solid rgb(26 159 255 / 40%);
-  }
+  .impl-status-row { margin-top: 6px; }
 
   .mit-desc-wrap {
     position: relative;
@@ -1014,13 +533,6 @@
     height: 2em;
     background: linear-gradient(to bottom, transparent, var(--bg-panel-strong));
     pointer-events: none;
-  }
-
-  .mit-description {
-    font-size: 11px;
-    color: var(--text-faint);
-    margin: 0;
-    line-height: 1.5;
   }
 
   .mit-desc-toggle {
@@ -1073,44 +585,8 @@
     text-align: left;
     transition: color 0.15s;
     font-family: inherit;
-    &:hover { color: #5aabf0; }
+    &:hover { color: var(--accent); }
   }
-}
-
-.parent-mit-note {
-  margin-bottom: 10px;
-  padding: 8px 10px;
-  background: rgb(255 193 7 / 6%);
-  border: 1px solid rgb(255 193 7 / 20%);
-  border-radius: 6px;
-}
-
-.parent-mit-label {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--accent-warm);
-  display: block;
-  margin-bottom: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.parent-mit-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.parent-mit-chip {
-  font-size: 10px;
-  padding: 2px 8px;
-  border: 1px solid rgb(255 167 40 / 30%);
-  background: rgb(255 167 40 / 8%);
-  color: var(--accent-warm);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  &:hover { background: rgb(255 167 40 / 18%); }
 }
 
 .chip-ext {
@@ -1124,642 +600,24 @@
   &:hover { opacity: 1; text-decoration: underline; }
 }
 
-// D3FEND Active Defenses
-.d3fend-section {
-  margin-bottom: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border-subtle);
-
-  .section-title {
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--text-faint);
-    margin: 0 0 10px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-
-    .count-badge {
-      background: rgb(88 166 255 / 12%);
-      color: var(--accent);
-      border-radius: 8px;
-      padding: 1px 7px;
-      font-size: 10px;
-      font-weight: 700;
-    }
-  }
-}
-
-.d3fend-item {
-  padding: 8px 10px;
-  border: 1px solid rgb(88 166 255 / 18%);
-  border-radius: 6px;
-  background: rgb(88 166 255 / 4%);
-  margin-bottom: 6px;
-
-  &:last-child { margin-bottom: 0; }
-}
-
-.d3fend-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.d3fend-id {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--accent);
-  background: rgb(88 166 255 / 10%);
-  border: 1px solid rgb(88 166 255 / 20%);
-  border-radius: 4px;
-  padding: 1px 5px;
-  text-decoration: none;
-  white-space: nowrap;
-  font-family: monospace;
-  flex-shrink: 0;
-  &:hover { background: rgb(88 166 255 / 22%); text-decoration: underline; }
-}
-
-.d3fend-name {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-main);
-  line-height: 1.3;
-}
-
-.d3fend-def {
-  font-size: 11px;
-  color: #5aabf0;
-  line-height: 1.5;
-  margin: 0;
-}
-
-.d3fend-category { margin-bottom: 8px; }
-
-.d3fend-cat-label {
-  font-size: 9px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 1px; padding: 2px 6px; border-radius: 3px;
-  display: inline-block; margin-bottom: 4px;
-}
-.d3fend-cat-harden  { background: rgb(74 222 128 / 12%); color: var(--success); }
-.d3fend-cat-detect  { background: rgb(88 166 255 / 10%); color: var(--accent); }
-.d3fend-cat-isolate { background: rgb(255 167 40 / 10%); color: var(--accent-warm); }
-.d3fend-cat-deceive { background: rgb(255 167 40 / 10%); color: var(--accent-warm); }
-.d3fend-cat-evict   { background: rgb(248 113 113 / 10%); color: var(--danger); }
-
 // Engage styles
-
-.engage-item {
-  padding: 6px 0;
-  border-bottom: 1px solid var(--bg-hover);
-  &:last-of-type { border-bottom: none; }
-}
-
-.engage-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-bottom: 3px;
-}
-
-.engage-id {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--accent-warm);
-  text-decoration: none;
-  font-family: monospace;
-  &:hover { text-decoration: underline; }
-}
-
-.engage-name {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-main);
-}
-
-.engage-cat-badge {
-  font-size: 8px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 1px 5px;
-  border-radius: 3px;
-}
-.engage-cat-prepare  { background: rgb(74 222 128 / 12%); color: var(--success); }
-.engage-cat-expose   { background: rgb(88 166 255 / 10%); color: var(--accent); }
-.engage-cat-affect   { background: rgb(248 113 113 / 10%); color: var(--danger); }
-.engage-cat-elicit   { background: rgb(255 167 40 / 10%); color: var(--accent-warm); }
-.engage-cat-understand { background: rgb(88 166 255 / 10%); color: var(--text-muted); }
-
-.engage-def {
-  font-size: 11px;
-  color: #7a9ab8;
-  margin: 0;
-  line-height: 1.4;
-}
 
 // CAR styles
 
-.car-item {
-  padding: 6px 0;
-  border-bottom: 1px solid var(--bg-hover);
-  &:last-of-type { border-bottom: none; }
-}
-
-.car-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-bottom: 3px;
-}
-
-.car-id {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--accent);
-  text-decoration: none;
-  white-space: nowrap;
-  &:hover { text-decoration: underline; }
-}
-
-.car-name {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-main);
-}
-
-.car-platforms {
-  display: flex;
-  gap: 3px;
-  flex-wrap: wrap;
-  margin-left: auto;
-}
-
-.car-platform {
-  font-size: 8px;
-  background: var(--bg-hover);
-  color: var(--text-faint);
-  padding: 1px 4px;
-  border-radius: 3px;
-  font-weight: 600;
-}
-
-.car-desc {
-  font-size: 11px;
-  margin: 0 0 4px;
-  line-height: 1.4;
-}
-
-.car-pseudocode {
-  display: block;
-  font-size: 10px;
-  background: var(--bg-panel);
-  color: var(--text-muted);
-  border: 1px solid var(--border-subtle);
-  border-radius: 5px;
-  padding: 5px 8px;
-  font-family: Consolas, Monaco, monospace;
-  white-space: pre-wrap;
-  word-break: break-all;
-  line-height: 1.4;
-  margin-top: 3px;
-}
-
-.framework-link {
-  display: inline-block;
-  margin-top: 6px;
-  font-size: 10px;
-  color: var(--text-faint);
-  text-decoration: none;
-  &:hover { color: var(--accent); }
-}
-
 // Atomic Red Team styles
 
-.atomic-item {
-  padding: 6px 0;
-  border-bottom: 1px solid var(--bg-hover);
-  &:last-of-type { border-bottom: none; }
-}
-
-.atomic-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 2px;
-}
-
-.atomic-name {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-main);
-  text-decoration: none;
-  display: block;
-  &:hover { text-decoration: underline; }
-}
-
-.atomic-platforms {
-  display: flex;
-  gap: 3px;
-  margin-left: auto;
-}
-
-.atomic-platform {
-  font-size: 8px;
-  background: var(--bg-hover);
-  color: var(--text-faint);
-  padding: 1px 4px;
-  border-radius: 3px;
-  font-weight: 600;
-}
-
-.atomic-executor-badge {
-  font-size: 9px;
-  font-weight: 600;
-  color: var(--accent);
-  background: rgb(88 166 255 / 10%);
-  border: 1px solid rgb(88 166 255 / 20%);
-  padding: 1px 6px;
-  border-radius: 3px;
-  font-family: monospace;
-}
-
-.atomic-desc {
-  font-size: 10px;
-  color: var(--text-faint);
-  margin: 3px 0 0;
-  line-height: 1.45;
-  font-style: italic;
-}
-
-.atomic-more-note {
-  font-size: 10px;
-  color: var(--text-faint);
-  padding: 6px 0 4px;
-  font-style: italic;
-  margin: 0;
-  border-top: 1px solid var(--bg-hover);
-  margin-top: 4px;
-}
-
-.atomic-live-hint {
-  font-size: 11px;
-  color: var(--text-faint);
-  padding: 6px 0 8px;
-  font-style: italic;
-  margin: 0;
-}
-
-// MISP Galaxy styles
-.misp-cluster-card {
-  background: rgb(220 20 60 / 6%);
-  border: 1px solid rgb(220 20 60 / 18%);
-  border-radius: 6px;
-  padding: 8px 10px;
-  margin-top: 6px;
-}
-
-.misp-cluster-value {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--danger);
-  margin-bottom: 4px;
-}
-
-.misp-cluster-desc {
-  font-size: 10px;
-  color: var(--text-faint);
-  margin: 0 0 6px;
-  line-height: 1.45;
-}
-
-.misp-platforms {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-  margin-bottom: 6px;
-}
-
-.misp-tag-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgb(0 0 0 / 25%);
-  border-radius: 4px;
-  padding: 4px 6px;
-  margin-bottom: 4px;
-}
-
-.misp-tag-text {
-  font-size: 9px;
-  color: var(--danger);
-  font-family: monospace;
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.misp-copy-btn {
-  background: none;
-  border: none;
-  color: var(--text-faint);
-  cursor: pointer;
-  font-size: 12px;
-  padding: 0 2px;
-  flex-shrink: 0;
-  &:hover { color: #c2d8ea; }
-}
-
-.misp-synonyms {
-  font-size: 9px;
-  color: var(--text-faint);
-  font-style: italic;
-}
-
-// Tags section
-.tags-section { margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--bg-hover); }
-.tag-chips-row { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; min-height: 8px; }
-
-.tag-chip-item {
-  display: flex; align-items: center; gap: 3px;
-  background: rgb(88 166 255 / 10%); border: 1px solid rgb(88 166 255 / 20%);
-  color: var(--accent); font-size: 10px; padding: 2px 7px; border-radius: 4px;
-}
 .tag-remove { background: none; border: none; color: var(--text-faint); cursor: pointer; font-size: 9px; padding: 0 0 0 2px; &:hover { color: var(--danger); } }
-.tag-presets { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 6px; }
-
-.preset-tag {
-  font-size: 9px; background: rgb(88 166 255 / 7%); border: 1px solid rgb(88 166 255 / 15%);
-  color: var(--text-faint); padding: 2px 7px; border-radius: 4px; cursor: pointer;
-  &:hover { color: var(--text-muted); border-color: rgb(88 166 255 / 30%); }
-  &.active { background: rgb(88 166 255 / 10%); border-color: rgb(88 166 255 / 25%); color: var(--accent); }
-}
-.tag-input-row { display: flex; gap: 4px; }
-
-.tag-input {
-  flex: 1; background: var(--bg-panel-strong); border: 1px solid var(--border-subtle); color: var(--text-main);
-  font-size: 11px; padding: 4px 8px; border-radius: 4px; outline: none;
-}
-
-.tag-add-btn {
-  background: rgb(26 159 255 / 15%); border: 1px solid rgb(26 159 255 / 30%);
-  color: var(--accent); border-radius: 5px; padding: 4px 10px; cursor: pointer; font-size: 12px;
-  &:hover { background: rgb(26 159 255 / 25%); }
-  &:disabled { opacity: 0.3; cursor: not-allowed; }
-}
-
-.section-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 16px 6px;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.section-count {
-  background: rgb(88 166 255 / 12%);
-  color: var(--accent);
-  font-size: 10px;
-  font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 10px;
-}
-
-.cve-exposure-list {
-  padding: 0 16px 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.cve-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 8px;
-  border: 1px solid var(--border-subtle);
-
-  &:hover { border-color: var(--border-default); }
-}
-
-.cve-id {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--accent);
-  text-decoration: none;
-  white-space: nowrap;
-
-  &:hover { text-decoration: underline; }
-}
-
-.cve-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-  flex: 1;
-}
-
-.cve-tag {
-  font-size: 9px;
-  font-weight: 600;
-  padding: 1px 5px;
-  border-radius: 3px;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-
-  &.exploit { background: rgb(239 68 68 / 12%); color: var(--danger); }
-  &.primary { background: rgb(255 167 40 / 12%); color: var(--accent-warm); }
-  &.secondary { background: rgb(88 166 255 / 10%); color: var(--accent); }
-}
-
-// CVE item top row (ID + badges)
-.cve-item-top {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  flex-wrap: wrap;
-}
-
-// CVE source badge (CTID green / CWE gray)
-.cve-source-badge {
-  font-size: 7px;
-  font-weight: 700;
-  padding: 1px 4px;
-  border-radius: 3px;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  flex-shrink: 0;
-
-  &.cve-source-ctid {
-    background: rgb(74 222 128 / 12%);
-    color: var(--success);
-    border: 1px solid rgb(74 222 128 / 25%);
-  }
-
-  &.cve-source-cwe {
-    background: rgb(107 114 128 / 12%);
-    color: #9ca3af;
-    border: 1px solid rgb(107 114 128 / 25%);
-  }
-}
-
-// Capability group chip in sidebar
-.cve-cap-group {
-  display: inline-block;
-  padding: 0 5px;
-  border-radius: 8px;
-  font-size: 8px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  border: 1px solid;
-  flex-shrink: 0;
-}
-
-// CVE rationale sentence
-.cve-rationale {
-  font-size: 10px;
-  color: var(--text-muted);
-  line-height: 1.4;
-  margin: 3px 0 0;
-  font-style: italic;
-
-  &.cve-rationale--inferred {
-    color: var(--text-faint);
-  }
-}
-
-// CTID-curated CVE item gets a subtle green left border
-.cve-item--ctid {
-  border-left: 2px solid rgb(74 222 128 / 30%);
-}
-
-// Inferred CVE item gets no special border treatment
-.cve-item--inferred {
-  opacity: 0.85;
-}
-
-// NIST 800-53 Rev5 Controls
-.nist-controls-list {
-  padding: 0 16px 8px;
-}
-
-.nist-item {
-  display: flex;
-  align-items: baseline;
-  gap: 7px;
-  padding: 5px 8px;
-  border-bottom: 1px solid var(--bg-hover);
-
-  &:last-of-type { border-bottom: none; }
-}
-
-.nist-id {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--accent);
-  min-width: 52px;
-  flex-shrink: 0;
-}
-
-.nist-family {
-  font-size: 9px;
-  font-weight: 600;
-  color: var(--text-faint);
-  background: var(--bg-panel-strong);
-  border: 1px solid var(--border-subtle);
-  border-radius: 3px;
-  padding: 0 4px;
-  min-width: 24px;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.nist-desc {
-  font-size: 11px;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.nist-attribution {
-  padding: 6px 0 2px;
-  font-size: 10px;
-
-  a {
-    color: var(--text-faint);
-    text-decoration: none;
-    &:hover { color: var(--accent); }
-  }
-}
 
 /* ── Cloud & CIS Controls ── */
-.cloud-controls-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  margin-bottom: 8px;
-}
-
-.cloud-control {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  padding: 5px 0;
-  border-bottom: 1px solid rgb(26 52 72 / 50%);
-
-  &:last-of-type { border-bottom: none; }
-}
-
-.ctrl-id {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-muted);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.ctrl-type {
-  font-size: 9px;
-  font-weight: 700;
-  padding: 1px 5px;
-  border-radius: 6px;
-  flex-shrink: 0;
-  text-transform: uppercase;
-
-  &.provider-cis   { background: rgb(168 85 247 / 12%); color: var(--accent-purple); }
-  &.provider-aws   { background: rgb(251 146 60 / 12%);  color: var(--accent-warm); }
-  &.provider-azure { background: rgb(56 189 248 / 12%);  color: #38bdf8; }
-  &.provider-gcp   { background: rgb(52 211 153 / 12%);  color: #34d399; }
-}
-
-.ctrl-desc {
-  font-size: 11px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1;
-  min-width: 0;
-}
 
 // ── Coverage Score Card ──
+// The reference-sources card is an .upgrade-section-block: the foundation gives it
+// the section container (border, 12px radius, 16px padding, panel background).
 .coverage-score-card {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 12px 16px;
   margin: 0 0 16px;
-  border: 1px solid rgb(255 255 255 / 6%);
 }
 
 .score-circle {
@@ -1789,335 +647,7 @@
 
 // ── VERIS Incident Actions ──
 
-.veris-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.veris-action {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 8px;
-  border: 1px solid var(--border-subtle);
-}
-
-.veris-cat {
-  font-size: 9px;
-  font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: rgb(251 146 60 / 10%);
-  color: var(--accent-warm);
-  border: 1px solid rgb(251 146 60 / 20%);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  flex-shrink: 0;
-}
-
-.veris-label {
-  font-size: 11px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1;
-  min-width: 0;
-}
-
-.ctid-attribution {
-  margin-top: 6px;
-  font-size: 10px;
-
-  a {
-    color: var(--text-faint);
-    text-decoration: none;
-    &:hover { color: var(--accent); }
-  }
-}
-
-// ── CRI Financial Profile ─────────────────────────────────
-.cri-controls-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.cri-control {
-  display: flex;
-  align-items: baseline;
-  gap: 7px;
-  padding: 5px 8px;
-  background: var(--bg-panel-strong);
-  border: 1px solid var(--border-subtle);
-  border-radius: 5px;
-}
-
-.cri-id {
-  font-size: 10px;
-  font-weight: 700;
-  font-family: 'IBM Plex Mono', monospace;
-  color: var(--accent);
-  text-decoration: none;
-  white-space: nowrap;
-  flex-shrink: 0;
-  &:hover { text-decoration: underline; }
-}
-
-.cri-func {
-  font-size: 9px;
-  font-weight: 700;
-  padding: 1px 5px;
-  border-radius: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  white-space: nowrap;
-  flex-shrink: 0;
-
-  &.cri-func-GV { background: rgb(139 92 246 / 12%); color: #a78bfa; border: 1px solid rgb(139 92 246 / 25%); }
-  &.cri-func-ID { background: rgb(59 130 246 / 12%); color: var(--accent); border: 1px solid rgb(59 130 246 / 25%); }
-  &.cri-func-PR { background: rgb(16 185 129 / 12%); color: #34d399; border: 1px solid rgb(16 185 129 / 25%); }
-  &.cri-func-DE { background: rgb(245 158 11 / 12%); color: var(--accent-warm); border: 1px solid rgb(245 158 11 / 25%); }
-  &.cri-func-RS { background: rgb(239 68 68 / 12%);  color: var(--danger); border: 1px solid rgb(239 68 68 / 25%);  }
-  &.cri-func-RC { background: rgb(107 114 128 / 12%); color: #9ca3af; border: 1px solid rgb(107 114 128 / 25%); }
-}
-
-.cri-desc {
-  font-size: 11px;
-  color: var(--text-faint);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1;
-  min-width: 0;
-}
-
-// ── CAPEC Attack Patterns ────────────────────────────────
-.capec-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.capec-entry {
-  padding: 8px 10px;
-  background: rgb(234 88 12 / 6%);
-  border-radius: 6px;
-  border-left: 2px solid rgb(234 88 12 / 35%);
-}
-
-.capec-header {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-bottom: 3px;
-}
-
-.capec-id {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--accent-warm);
-  text-decoration: none;
-  font-family: 'IBM Plex Mono', monospace;
-  &:hover { color: #fdba74; text-decoration: underline; }
-}
-
-.capec-name {
-  font-size: 12px;
-  font-weight: 600;
-  color: #c8d6e0;
-  margin-bottom: 4px;
-}
-
-.capec-desc {
-  font-size: 11px;
-  color: var(--text-faint);
-  margin: 0;
-  line-height: 1.45;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.capec-badge {
-  font-size: 10px;
-  font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 10px;
-  white-space: nowrap;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  &.capec-likelihood-high   { background: rgb(239 68 68 / 12%); color: var(--danger); border: 1px solid rgb(239 68 68 / 25%); }
-  &.capec-likelihood-medium { background: rgb(245 158 11 / 12%); color: var(--accent-warm); border: 1px solid rgb(245 158 11 / 25%); }
-  &.capec-likelihood-low    { background: rgb(16 185 129 / 12%); color: #34d399; border: 1px solid rgb(16 185 129 / 25%); }
-  &.capec-severity-high     { background: rgb(239 68 68 / 12%); color: var(--danger); border: 1px solid rgb(239 68 68 / 25%); }
-  &.capec-severity-medium   { background: rgb(245 158 11 / 12%); color: var(--accent-warm); border: 1px solid rgb(245 158 11 / 25%); }
-  &.capec-severity-low      { background: rgb(16 185 129 / 12%); color: #34d399; border: 1px solid rgb(16 185 129 / 25%); }
-}
-
-.capec-cwe-pills {
-  display: flex;
-  gap: 3px;
-  flex-wrap: wrap;
-}
-
-.cwe-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  padding: 1px 6px;
-  background: rgb(99 102 241 / 12%);
-  color: #818cf8;
-  border-radius: 10px;
-  border: 1px solid rgb(99 102 241 / 25%);
-  font-family: 'IBM Plex Mono', monospace;
-  text-decoration: none;
-  transition: background 0.15s;
-  &:hover { background: rgb(99 102 241 / 22%); }
-}
-
-.cwe-pill-name {
-  color: var(--text-faint);
-  font-family: inherit;
-  font-size: 9px;
-  font-weight: 400;
-}
-
 // ── Custom Controls (sidebar) ────────────────────────────
-
-.section-title {
-
-  .section-count {
-    font-size: 10px;
-    background: rgb(90 122 144 / 15%);
-    border: 1px solid rgb(90 122 144 / 25%);
-    border-radius: 8px;
-    padding: 1px 6px;
-    font-weight: 600;
-    margin-left: auto;
-  }
-}
-
-.custom-mit-row {
-  border: 1px solid var(--border-subtle);
-  padding: 8px 10px;
-  margin-bottom: 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.custom-mit-header {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.custom-mit-id {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--accent);
-  background: rgb(88 166 255 / 10%);
-  padding: 1px 5px;
-  border-radius: 3px;
-  flex-shrink: 0;
-}
-
-.custom-mit-name {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-main);
-  flex: 1;
-  min-width: 0;
-}
-
-.custom-mit-cat {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-  padding: 1px 5px;
-  border-radius: 3px;
-  flex-shrink: 0;
-}
-
-.cat-edr       { background: rgb(59 130 246 / 12%); color: #3b82f6; border: 1px solid rgb(59 130 246 / 25%); }
-.cat-siem      { background: rgb(139 92 246 / 12%); color: #8b5cf6; border: 1px solid rgb(139 92 246 / 25%); }
-.cat-network   { background: rgb(6 182 212 / 12%);  color: #06b6d4; border: 1px solid rgb(6 182 212 / 25%); }
-.cat-email     { background: rgb(245 158 11 / 12%); color: var(--accent-warm); border: 1px solid rgb(245 158 11 / 25%); }
-.cat-iam       { background: rgb(16 185 129 / 12%); color: #10b981; border: 1px solid rgb(16 185 129 / 25%); }
-.cat-endpoint  { background: rgb(249 115 22 / 12%); color: var(--accent-warm); border: 1px solid rgb(249 115 22 / 25%); }
-.cat-identity  { background: rgb(16 185 129 / 12%); color: #10b981; border: 1px solid rgb(16 185 129 / 25%); }
-.cat-cloud     { background: rgb(100 116 139 / 12%); color: var(--text-faint); border: 1px solid rgb(100 116 139 / 25%); }
-.cat-custom    { background: rgb(107 114 128 / 12%); color: #9ca3af; border: 1px solid rgb(107 114 128 / 25%); }
-
-.impl-badge {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-  padding: 1px 5px;
-  border-radius: 3px;
-  flex-shrink: 0;
-}
-
-.impl-implemented  { background: rgb(74 222 128 / 12%); color: var(--success); border: 1px solid rgb(74 222 128 / 25%); }
-.impl-in-progress  { background: rgb(96 165 250 / 12%); color: var(--accent); border: 1px solid rgb(96 165 250 / 25%); }
-.impl-planned      { background: rgb(251 146 60 / 12%); color: var(--accent-warm); border: 1px solid rgb(251 146 60 / 25%); }
-.impl-not-started  { background: rgb(248 113 113 / 12%); color: var(--danger); border: 1px solid rgb(248 113 113 / 25%); }
-
-.custom-mit-desc {
-  margin: 0;
-  font-size: 11px;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-// Annotation section
-.annotation-section {
-  margin-bottom: 14px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--border-subtle);
-
-  .section-title {
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--text-faint);
-    margin: 0 0 8px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-  }
-
-  .section-count.has-note {
-    color: var(--accent);
-    font-size: 12px;
-  }
-}
-
-.annotation-input {
-  width: 100%;
-  border: 1px solid var(--border-subtle);
-  font-size: 12px;
-  padding: 8px 10px;
-  resize: vertical;
-  font-family: inherit;
-  line-height: 1.5;
-  box-sizing: border-box;
-  transition: border-color 0.15s;
-
-  &:focus {
-    outline: none;
-    background: rgb(88 166 255 / 4%);
-  }
-}
 
 .annotation-controls {
   display: flex;
@@ -2221,104 +751,6 @@
 }
 
 // ── Subtechnique list ─────────────────────────────────────────────────────────
-
-.detail-section {
-
-  .section-title {
-    font-size: 10px;
-    font-weight: 600;
-    margin: 0 0 8px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    text-transform: uppercase;
-
-    .section-icon { font-size: 12px; }
-    .toggle-arrow { margin-left: auto; font-size: 9px; opacity: 0.6; }
-    .section-count { font-size: 9px; }
-  }
-}
-
-.subtechnique-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.subtechnique-row {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 5px 8px;
-  border-radius: 5px;
-  cursor: pointer;
-  border: 1px solid transparent;
-  transition: all 0.12s;
-  background: rgb(88 166 255 / 3%);
-
-  &:hover {
-    background: rgb(88 166 255 / 10%);
-    border-color: rgb(88 166 255 / 20%);
-  }
-}
-
-.sub-id {
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--accent);
-  flex-shrink: 0;
-  min-width: 74px;
-}
-
-.sub-name {
-  font-size: 11px;
-  color: var(--text-main);
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.sub-mits {
-  font-size: 9px;
-  font-weight: 700;
-  color: var(--text-faint);
-  flex-shrink: 0;
-  padding: 1px 5px;
-  border-radius: 8px;
-  background: rgb(255 255 255 / 4%);
-  border: 1px solid var(--border-subtle);
-
-  &.has-mits {
-    color: var(--success);
-    background: rgb(74 222 128 / 8%);
-    border-color: rgb(74 222 128 / 25%);
-  }
-}
-
-// Relationship Graph
-.detail-section {
-  margin-bottom: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.section-title {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  margin: 0 0 8px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  user-select: none;
-
-  .section-icon { font-size: 12px; }
-  .toggle-arrow { margin-left: auto; font-size: 9px; color: var(--text-faint); }
-
-  &:hover { color: var(--text-faint); }
-}
 
 .rel-graph-container { padding: 8px 0; }
 
@@ -2455,133 +887,51 @@
     linear-gradient(180deg, rgb(255 255 255 / 1.5%), transparent 140px),
     rgb(7 14 22 / 90%);
 
+  // Every section card (app-drawer-section) styles itself from the drawer
+  // primitives; the reference-sources card keeps the same container.
   .upgrade-section-block {
     margin-bottom: 16px;
-    border-bottom: none !important;
-  }
-
-  .upgrade-section-title {
-    margin-bottom: 12px;
   }
 }
 
-.meta-label,
-.section-label,
-.section-title,
-.section-heading,
-.detail-section .section-title {
+.meta-label {
   color: var(--text-faint) !important;
   letter-spacing: 0.12em !important;
 }
 
 .meta-value,
 .description,
-.proc-desc,
-.mit-description,
-.custom-mit-desc,
-.veris-label,
-.ctrl-desc,
-.nist-desc,
-.car-desc,
 .doc-hint {
   color: var(--text-muted) !important;
 }
 
 .description,
-.meta-tags-row,
-.data-sources-section,
-.detection-section,
-.data-components-section,
-.procedures-section,
-.software-section,
-.campaigns-section,
-.tech-notes-section,
-.threat-section,
-.annotation-section,
-.detail-section {
+.meta-tags-row {
   border-color: var(--line-soft) !important;
 }
 
-.coverage-score-card,
-.mitigation-item,
-.custom-mit-row,
-.doc-form,
-.cve-item,
-.veris-action,
-.notes-textarea,
-.annotation-input,
-.tag-input,
-.mit-search-input,
-.doc-input,
-.doc-textarea {
-  background: rgb(255 255 255 / 4%) !important;
-  border-color: var(--line-soft) !important;
-  border-radius: 14px !important;
-  color: var(--text-main) !important;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 2.5%);
+.doc-form {
+  background: var(--bg-hover);
+  border-color: var(--line-soft);
+  border-radius: var(--radius-md, 8px);
+  color: var(--text-main);
 }
 
-.notes-textarea::placeholder,
-.annotation-input::placeholder,
-.tag-input::placeholder,
-.mit-search-input::placeholder,
-.doc-input::placeholder,
-.doc-textarea::placeholder {
-  color: var(--text-faint) !important;
-}
-
-.notes-textarea:focus,
-.annotation-input:focus,
-.tag-input:focus,
-.mit-search-input:focus,
-.doc-input:focus,
-.doc-textarea:focus {
-  border-color: rgb(111 211 255 / 34%) !important;
-}
-
-.group-chip,
-.sw-chip,
-.camp-chip,
-.parent-mit-chip,
 .platform-pill,
 .tag-chip,
-.tag-chip-item,
-.preset-tag,
 .doc-toggle-btn,
 .bulk-clear-btn,
-.bulk-status-btn,
-.filter-mit-btn,
-.dc-source-btn,
-.ds-chip {
+.bulk-status-btn {
   border-radius: 999px !important;
 }
 
-.group-chip {
-  background: rgb(255 180 84 / 10%) !important;
-  color: var(--accent-warm) !important;
-  border-color: rgb(255 180 84 / 24%) !important;
-}
-
-.sw-chip,
-.camp-chip,
 .platform-pill,
-.ds-chip,
-.tag-chip,
-.tag-chip-item,
-.preset-tag {
+.tag-chip {
   background: rgb(111 211 255 / 9%) !important;
   color: var(--accent) !important;
   border-color: rgb(111 211 255 / 22%) !important;
 }
 
-.mit-id,
-.custom-mit-id,
-.sub-id,
-.proc-id,
-.ctrl-id,
-.nist-id,
-.cve-id,
-.car-id,
 .attack-id {
   font-family: 'IBM Plex Mono', monospace !important;
 }
@@ -2619,255 +969,45 @@
 .completeness-bar {
   margin: 8px 0 12px;
   padding: 6px 10px;
-  background: rgb(255 255 255 / 3%);
+  background: var(--bg-hover);
   border-radius: 8px;
-  border: 1px solid rgb(255 255 255 / 6%);
+  border: 1px solid var(--line-soft);
 }
 
 .completeness-label {
   display: flex;
   justify-content: space-between;
   font-size: 10px;
-  color: rgb(255 255 255 / 50%);
+  color: var(--text-muted);
   margin-bottom: 4px;
+}
+
+// The level's colour is a role token (both themes): high / mid / low.
+.completeness-bar {
+  --completeness-tone: var(--danger);
+
+  &[data-level='mid'] { --completeness-tone: var(--accent-warm); }
+  &[data-level='high'] { --completeness-tone: var(--success); }
 }
 
 .completeness-pct {
   font-weight: 700;
   font-size: 11px;
+  color: var(--completeness-tone);
 }
 
 .completeness-track {
   height: 4px;
   border-radius: 2px;
-  background: rgb(255 255 255 / 8%);
+  background: var(--bg-active, var(--bg-hover));
   overflow: hidden;
 }
 
 .completeness-fill {
   height: 100%;
+  background: var(--completeness-tone);
   border-radius: 2px;
   transition: width 0.3s ease, background 0.3s ease;
-}
-
-// OpenCTI section
-.opencti-section {
-  .loading-dot { color: var(--text-muted); font-style: italic; font-size: 11px; margin-left: 6px; }
-  .opencti-error { color: #ef4444; font-size: 12px; padding: 6px 0; }
-  .opencti-empty { color: var(--text-muted); font-size: 12px; font-style: italic; padding: 4px 0; }
-}
-
-.opencti-indicator {
-  background: rgb(255 255 255 / 4%);
-  border: 1px solid rgb(255 255 255 / 8%);
-  border-radius: 6px;
-  padding: 8px 10px;
-  margin-bottom: 6px;
-  font-size: 12px;
-}
-
-.opencti-ind-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
-}
-
-.opencti-pattern-type {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  padding: 1px 6px;
-  border-radius: 4px;
-  &.pt-stix    { background: var(--bg-panel-strong); color: var(--accent); }
-  &.pt-yara    { background: #2d1b1b; color: var(--danger); }
-  &.pt-sigma   { background: #0f2e2a; color: #34d399; }
-  &.pt-suricata { background: #1a1a2e; color: #a78bfa; }
-}
-
-.opencti-confidence {
-  font-size: 10px;
-  font-weight: 700;
-  margin-left: auto;
-  &.conf-high { color: var(--success); }
-  &.conf-med  { color: var(--accent-warm); }
-  &.conf-low  { color: var(--danger); }
-}
-
-.opencti-ind-name {
-  font-weight: 600;
-  color: var(--text-main);
-  margin-bottom: 3px;
-  word-break: break-word;
-}
-
-.opencti-ind-desc {
-  color: var(--text-muted);
-  font-size: 11px;
-  line-height: 1.4;
-  margin-bottom: 5px;
-}
-
-.opencti-labels {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-  margin-bottom: 5px;
-}
-
-.opencti-label {
-  font-size: 10px;
-  padding: 1px 5px;
-  border-radius: 3px;
-  background: rgb(99 102 241 / 20%);
-  color: #a5b4fc;
-  border: 1px solid rgb(99 102 241 / 30%);
-}
-
-.opencti-pattern {
-  code {
-    font-size: 10px;
-    color: var(--text-faint);
-    background: rgb(0 0 0 / 30%);
-    padding: 3px 6px;
-    border-radius: 4px;
-    display: block;
-    word-break: break-all;
-    font-family: 'IBM Plex Mono', monospace;
-  }
-}
-
-// ExploitDB section — danger / red theme
-.exploitdb-section {
-  border-left: 3px solid var(--danger);
-
-  .exploitdb-summary {
-    font-size: 12px;
-    color: #fca5a5;
-    line-height: 1.5;
-    margin: 4px 0 8px;
-  }
-
-  .section-count {
-    background: rgb(220 38 38 / 18%);
-    color: var(--danger);
-  }
-}
-
-// Nuclei Templates section — blue / scanning theme
-.nuclei-section {
-  border-left: 3px solid #3b82f6;
-
-  .nuclei-summary {
-    font-size: 12px;
-    color: #93c5fd;
-    line-height: 1.5;
-    margin: 4px 0 8px;
-  }
-
-  .section-count {
-    background: rgb(59 130 246 / 18%);
-    color: var(--accent);
-  }
-}
-
-// CVE Kill Chain section — purple / chain theme
-.kill-chain-section {
-  border-left: 3px solid #7b3faa;
-
-  .kill-chain-summary {
-    font-size: 12px;
-    color: #c4b5fd;
-    line-height: 1.5;
-    margin: 4px 0 8px;
-  }
-
-  .kill-chain-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-
-  .kill-chain-item {
-    font-size: 11px;
-    color: #d4c4f0;
-    padding: 3px 0;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    flex-wrap: wrap;
-  }
-
-  .kc-cve {
-    color: var(--danger);
-    font-weight: 600;
-    font-family: monospace;
-    font-size: 11px;
-  }
-
-  .kc-arrow {
-    color: #6b7280;
-    font-size: 10px;
-  }
-
-  .kc-step {
-    color: #c4b5fd;
-    font-size: 10px;
-    background: rgb(123 63 170 / 15%);
-    padding: 1px 4px;
-    border-radius: 3px;
-  }
-
-  .kc-defense {
-    color: var(--success);
-    font-size: 10px;
-    background: rgb(34 197 94 / 15%);
-    padding: 1px 4px;
-    border-radius: 3px;
-  }
-
-  .section-count {
-    background: rgb(123 63 170 / 18%);
-    color: #a78bfa;
-  }
-}
-
-// PoC Exploits section — orange-red / weaponized theme
-.poc-exploit-section {
-  border-left: 3px solid #d96a2a;
-
-  .poc-summary {
-    font-size: 12px;
-    color: #fdba74;
-    line-height: 1.5;
-    margin: 4px 0 8px;
-  }
-
-  .section-count {
-    background: rgb(217 106 42 / 18%);
-    color: var(--accent-warm);
-  }
-}
-
-// Collapsible section styles
-.collapsible-title {
-  cursor: pointer;
-  user-select: none;
-
-  &:hover {
-    background: rgb(88 166 255 / 6%);
-    border-radius: 4px;
-  }
-}
-
-.section-chevron {
-  display: inline-block;
-  width: 14px;
-  font-size: 11px;
-  color: var(--accent);
-  transition: transform 0.15s ease;
-  text-align: center;
-  flex-shrink: 0;
 }
 
 .collapse-all-btn,
@@ -2918,738 +1058,17 @@
   }
 }
 
-// ─── EVTX Samples ───────────────────────────────────────────────────────────
-.evtx-section {
-  border-left: 2px solid #0078d4;
-}
-
-.evtx-icon {
-  font-size: 12px;
-}
-
-.evtx-badge {
-  background: rgb(0 120 212 / 20%) !important;
-  color: #4ca6ff !important;
-  border-color: rgb(0 120 212 / 30%) !important;
-}
-
-.evtx-item {
-  padding: 5px 0;
-  border-bottom: 1px solid var(--bg-hover);
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  &:last-of-type { border-bottom: none; }
-}
-
-.evtx-link {
-  font-size: 11px;
-  font-weight: 500;
-  color: #4ca6ff;
-  text-decoration: none;
-  flex: 1;
-  word-break: break-all;
-  &:hover { text-decoration: underline; color: #80c0ff; }
-}
-
-.evtx-tactic {
-  font-size: 9px;
-  color: #0078d4;
-  background: rgb(0 120 212 / 10%);
-  border: 1px solid rgb(0 120 212 / 20%);
-  padding: 1px 5px;
-  border-radius: 3px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-// ─── Microsoft 365 Defender Hunting Queries ─────────────────────────────────
-.m365-section {
-  border-left: 2px solid #0078d4;
-}
-
-.m365-icon {
-  font-size: 12px;
-}
-
-.m365-badge {
-  background: rgb(0 120 212 / 20%) !important;
-  color: #4ca6ff !important;
-  border-color: rgb(0 120 212 / 30%) !important;
-}
-
-.m365-item {
-  padding: 5px 0;
-  border-bottom: 1px solid var(--bg-hover);
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  &:last-of-type { border-bottom: none; }
-}
-
-.m365-link {
-  font-size: 11px;
-  font-weight: 500;
-  color: #4ca6ff;
-  text-decoration: none;
-  flex: 1;
-  &:hover { text-decoration: underline; color: #80c0ff; }
-}
-
-.m365-tactic {
-  font-size: 9px;
-  color: #0078d4;
-  background: rgb(0 120 212 / 10%);
-  border: 1px solid rgb(0 120 212 / 20%);
-  padding: 1px 5px;
-  border-radius: 3px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.m365-framework-link {
-  color: #0078d4 !important;
-  &:hover { color: #4ca6ff !important; }
-}
-
-// ─── Invoke-AtomicRedTeam Buttons ───────────────────────────────────────────
-.invoke-copy-btn {
-  display: inline-block;
-  margin-top: 4px;
-  padding: 2px 8px;
-  font-size: 9px;
-  font-weight: 600;
-  font-family: monospace;
-  color: #b0c8e0;
-  background: rgb(1 36 86 / 40%);
-  border: 1px solid rgb(1 36 86 / 60%);
-  border-radius: 3px;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
-  &:hover {
-    background: rgb(1 36 86 / 70%);
-    border-color: #012456;
-    color: #e0f0ff;
-  }
-}
-
-.invoke-actions {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin: 8px 0 4px;
-  padding-top: 6px;
-  border-top: 1px solid var(--bg-hover);
-}
-
-.invoke-run-all-btn,
-.invoke-cleanup-btn,
-.invoke-batch-btn {
-  padding: 3px 10px;
-  font-size: 10px;
-  font-weight: 600;
-  font-family: monospace;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
-}
-
-.invoke-run-all-btn {
-  color: #b0c8e0;
-  background: rgb(1 36 86 / 50%);
-  border: 1px solid rgb(1 36 86 / 70%);
-  &:hover { background: #012456; color: #e0f0ff; }
-}
-
-.invoke-cleanup-btn {
-  color: var(--accent-warm);
-  background: rgb(255 152 0 / 10%);
-  border: 1px solid rgb(255 152 0 / 25%);
-  &:hover { background: rgb(255 152 0 / 20%); color: #ffd54f; }
-}
-
-.invoke-batch-btn {
-  color: #4caf50;
-  background: rgb(76 175 80 / 10%);
-  border: 1px solid rgb(76 175 80 / 25%);
-  &:hover { background: rgb(76 175 80 / 20%); color: #81c784; }
-}
-
 // ─── SIEM Query Library cards ────────────────────────────────────────────────
 
-.siem-badge {
-  background: rgb(255 165 0 / 18%) !important;
-  color: #ffb347 !important;
-  border-color: rgb(255 165 0 / 30%) !important;
-}
-
-.siem-query-card {
-  background: var(--bg-base);
-  border: 1px solid var(--border-subtle);
-  border-radius: 6px;
-  padding: 8px 10px;
-  margin-bottom: 6px;
-  transition: border-color 0.15s;
-
-  &:last-of-type { margin-bottom: 0; }
-  &:hover { border-color: var(--border-default); }
-}
-
-.siem-query-card-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
-}
-
-.siem-query-platform {
-  font-size: 9px;
-  font-weight: 700;
-  color: #ffb347;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.siem-query-confidence {
-  font-size: 8px;
-  font-weight: 700;
-  text-transform: uppercase;
-  padding: 0 5px;
-  border-radius: 6px;
-  line-height: 16px;
-
-  &[data-confidence='high'] {
-    color: var(--success);
-    background: rgb(126 231 135 / 10%);
-    border: 1px solid rgb(126 231 135 / 20%);
-  }
-  &[data-confidence='medium'] {
-    color: var(--accent-warm);
-    background: rgb(251 191 36 / 10%);
-    border: 1px solid rgb(251 191 36 / 20%);
-  }
-  &[data-confidence='low'] {
-    color: #f97583;
-    background: rgb(249 117 131 / 10%);
-    border: 1px solid rgb(249 117 131 / 20%);
-  }
-}
-
-.siem-query-copy-btn {
-  margin-left: auto;
-  background: transparent;
-  border: 1px solid var(--border-subtle);
-  border-radius: 3px;
-  color: var(--text-faint);
-  font-size: 10px;
-  padding: 1px 6px;
-  cursor: pointer;
-  transition: all 0.15s;
-  line-height: 1.3;
-
-  &:hover { color: var(--accent); border-color: var(--border-default); }
-  &.copied { color: var(--success); border-color: rgb(126 231 135 / 30%); }
-}
-
-.siem-query-title {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text-muted);
-  margin-bottom: 4px;
-}
-
-.siem-query-code {
-  font-family: Consolas, Monaco, 'Fira Code', monospace;
-  font-size: 9px;
-  background: var(--bg-base);
-  color: #a8d8a8;
-  padding: 6px 8px;
-  border-radius: 4px;
-  border: 1px solid rgb(255 255 255 / 5%);
-  white-space: pre-wrap;
-  word-break: break-word;
-  overflow: auto;
-  max-height: 120px;
-  margin: 0;
-  line-height: 1.45;
-
-  code {
-    font-family: inherit;
-    font-size: inherit;
-    color: inherit;
-  }
-
-  &::-webkit-scrollbar { width: 4px; height: 4px; }
-  &::-webkit-scrollbar-track { background: transparent; }
-  &::-webkit-scrollbar-thumb { background: rgb(255 255 255 / 8%); border-radius: 2px; }
-}
-
 /* ── BloodHound AD Attack Paths ── */
-.bloodhound-section .section-title {
-  color: #E34646;
-}
-
-.bloodhound-card {
-  padding: 8px 10px;
-  margin: 5px 0;
-  background: rgba(227, 70, 70, 0.06);
-  border: 1px solid rgba(227, 70, 70, 0.18);
-  border-radius: 8px;
-  border-left: 3px solid #E34646;
-}
-
-.bloodhound-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
-}
-
-.bloodhound-name {
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: #E34646;
-}
-
-.bloodhound-desc {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin-bottom: 6px;
-  line-height: 1.4;
-}
-
-.bloodhound-row {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  margin-bottom: 5px;
-
-  &:last-child { margin-bottom: 0; }
-}
-
-.bloodhound-label {
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: var(--text-faint);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.bloodhound-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.bloodhound-chip {
-  display: inline-block;
-  padding: 2px 7px;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  line-height: 1.4;
-}
-
-.tool-chip {
-  background: rgba(227, 70, 70, 0.12);
-  color: #ff8f7a;
-  border: 1px solid rgba(227, 70, 70, 0.22);
-}
-
-.mit-chip {
-  background: rgba(99, 210, 151, 0.10);
-  color: #63d297;
-  border: 1px solid rgba(99, 210, 151, 0.22);
-}
-
-.detect-chip {
-  background: rgba(111, 211, 255, 0.10);
-  color: var(--accent);
-  border: 1px solid rgba(111, 211, 255, 0.22);
-}
 
 /* ── C2 Framework Capabilities ── */
-.c2-framework-group {
-  margin: 6px 0;
-}
-
-.c2-framework-label {
-  font-size: 0.78rem;
-  font-weight: 700;
-  padding: 3px 0 3px 8px;
-  border-left: 3px solid;
-  margin-bottom: 4px;
-}
-
-.c2-cap-card {
-  padding: 5px 8px 5px 14px;
-  margin: 3px 0;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.c2-cap-name {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--text-main);
-}
-
-.c2-cap-desc {
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  margin: 2px 0;
-}
-
-.c2-cap-techniques {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 3px;
-}
-
-.c2-tid {
-  display: inline-block;
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-size: 0.68rem;
-  font-weight: 600;
-  background: rgba(111, 211, 255, 0.10);
-  color: var(--accent);
-  border: 1px solid rgba(111, 211, 255, 0.18);
-  font-family: 'IBM Plex Mono', monospace;
-}
 
 /* ── IoC Threat Feed ── */
-.ioc-feed-section .section-title {
-  color: #ef5350;
-}
-
-.ioc-card {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 10px;
-  margin: 3px 0;
-  background: rgba(239, 83, 80, 0.06);
-  border: 1px solid rgba(239, 83, 80, 0.15);
-  border-radius: 6px;
-  border-left: 3px solid #ef5350;
-}
-
-.ioc-type-badge {
-  display: inline-block;
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  flex-shrink: 0;
-}
-
-.ioc-type-ip {
-  background: rgba(239, 83, 80, 0.15);
-  color: #ef5350;
-  border: 1px solid rgba(239, 83, 80, 0.25);
-}
-
-.ioc-type-domain {
-  background: rgba(171, 71, 188, 0.15);
-  color: #ce93d8;
-  border: 1px solid rgba(171, 71, 188, 0.25);
-}
-
-.ioc-type-hash {
-  background: rgba(255, 167, 38, 0.15);
-  color: var(--accent-warm);
-  border: 1px solid rgba(255, 167, 38, 0.25);
-}
-
-.ioc-type-url {
-  background: rgba(66, 165, 245, 0.15);
-  color: var(--accent);
-  border: 1px solid rgba(66, 165, 245, 0.25);
-}
-
-.ioc-type-email {
-  background: rgba(102, 187, 106, 0.15);
-  color: #66bb6a;
-  border: 1px solid rgba(102, 187, 106, 0.25);
-}
-
-.ioc-type-cve {
-  background: rgba(255, 112, 67, 0.15);
-  color: #ff7043;
-  border: 1px solid rgba(255, 112, 67, 0.25);
-}
-
-.ioc-value {
-  font-size: 0.75rem;
-  font-family: 'IBM Plex Mono', monospace;
-  color: var(--text-main);
-  word-break: break-all;
-  line-height: 1.3;
-}
-
-.section-more {
-  font-size: 0.72rem;
-  color: var(--text-faint);
-  text-align: center;
-  padding: 4px 0;
-  font-style: italic;
-}
 
 /* ── Azure / Entra ID Attack Patterns ── */
-.azure-identity-section .section-title {
-  color: #0078d4;
-}
-
-.azure-card {
-  padding: 8px 10px;
-  margin: 5px 0;
-  background: rgba(0, 120, 212, 0.06);
-  border: 1px solid rgba(0, 120, 212, 0.18);
-  border-radius: 8px;
-  border-left: 3px solid #0078d4;
-}
-
-.azure-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
-}
-
-.azure-name {
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: #4db8ff;
-}
-
-.azure-desc {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin-bottom: 6px;
-  line-height: 1.4;
-}
-
-.azure-row {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  margin-bottom: 5px;
-
-  &:last-child { margin-bottom: 0; }
-}
-
-.azure-label {
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: var(--text-faint);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.azure-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.azure-chip {
-  display: inline-block;
-  padding: 2px 7px;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  line-height: 1.4;
-}
-
-.azure-chip.svc-chip {
-  background: rgba(0, 120, 212, 0.12);
-  color: #4db8ff;
-  border: 1px solid rgba(0, 120, 212, 0.22);
-}
-
-.azure-chip.mit-chip {
-  background: rgba(99, 210, 151, 0.10);
-  color: #63d297;
-  border: 1px solid rgba(99, 210, 151, 0.22);
-}
-
-.azure-kql-wrap {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-}
-
-.azure-kql {
-  flex: 1;
-  font-size: 0.7rem;
-  font-family: 'IBM Plex Mono', monospace;
-  color: var(--text-muted);
-  background: rgba(0, 0, 0, 0.25);
-  padding: 5px 8px;
-  border-radius: 4px;
-  line-height: 1.4;
-  word-break: break-all;
-  border: 1px solid rgba(0, 120, 212, 0.15);
-}
-
-.azure-copy-btn {
-  flex-shrink: 0;
-  padding: 3px 8px;
-  border-radius: 4px;
-  background: rgba(0, 120, 212, 0.15);
-  border: 1px solid rgba(0, 120, 212, 0.3);
-  color: #4db8ff;
-  font-size: 0.68rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-
-  &:hover {
-    background: rgba(0, 120, 212, 0.25);
-    border-color: #0078d4;
-  }
-}
 
 /* ── Known Offensive Tools ── */
-.tools-section .section-title {
-  color: #ff9800;
-}
-
-.tool-card {
-  padding: 8px 10px;
-  margin: 5px 0;
-  background: rgba(255, 152, 0, 0.06);
-  border: 1px solid rgba(255, 152, 0, 0.18);
-  border-radius: 8px;
-  border-left: 3px solid #ff9800;
-}
-
-.tool-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 3px;
-}
-
-.tool-name {
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--accent-warm);
-}
-
-.tool-category-badge {
-  display: inline-block;
-  padding: 1px 7px;
-  border-radius: 4px;
-  font-size: 0.65rem;
-  font-weight: 600;
-  background: rgba(255, 152, 0, 0.12);
-  color: var(--accent-warm);
-  border: 1px solid rgba(255, 152, 0, 0.25);
-  white-space: nowrap;
-}
-
-.tool-desc {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin-bottom: 4px;
-  line-height: 1.4;
-}
-
-.tool-link {
-  display: inline-block;
-  font-size: 0.7rem;
-  color: var(--accent-warm);
-  text-decoration: none;
-  word-break: break-all;
-  opacity: 0.8;
-  transition: opacity 0.15s;
-
-  &:hover {
-    opacity: 1;
-    text-decoration: underline;
-  }
-}
-
-// ── CSA CCM & M365 Controls Score Badges ─────────────────
-.ctrl-pill-badge {
-  font-size: 8px;
-  font-weight: 600;
-  border-radius: 3px;
-  padding: 1px 5px;
-  flex-shrink: 0;
-  text-transform: capitalize;
-
-  // Plan E1.5: each chip takes its hue from a theme token, so its text is
-  // >= 4.5:1 in both themes (the fixed hex hues washed out in light mode).
-  &.score-significant { --chip: var(--success); }
-  &.score-partial { --chip: var(--accent-warm); }
-  &.score-minimal { --chip: var(--danger); }
-  &.category-protect { --chip: var(--accent-blue); }
-  &.category-detect { --chip: var(--accent-purple); }
-  &.category-respond { --chip: var(--accent-orange); }
-
-  &[class*='score-'],
-  &[class*='category-'] {
-    color: var(--chip);
-    background: color-mix(in srgb, var(--chip) 12%, transparent);
-    border: 1px solid color-mix(in srgb, var(--chip) 30%, transparent);
-  }
-}
-
-// Anthropic Cybersecurity Skills section
-.anthropic-skills-section {
-  .anthropic-badge {
-    background: rgba(217, 119, 87, 0.18);
-    color: #D97757;
-  }
-
-  .anthropic-skills-info {
-    padding: 6px 0;
-  }
-
-  .anthropic-skill-count {
-    font-size: 0.82rem;
-    color: #D97757;
-    font-weight: 600;
-  }
-
-  .anthropic-link {
-    color: #D97757 !important;
-    &:hover { color: #e8956e !important; }
-  }
-}
-
-// ThreatHunter Playbook section
-.playbook-section {
-  .playbook-badge {
-    background: rgba(46, 125, 50, 0.18);
-    color: #2E7D32;
-  }
-
-  .playbook-info {
-    padding: 6px 0;
-  }
-
-  .playbook-count {
-    font-size: 0.82rem;
-    color: #4caf50;
-    font-weight: 600;
-  }
-
-  .playbook-link,
-  .playbook-repo-link {
-    color: #4caf50 !important;
-    &:hover { color: #66bb6a !important; }
-  }
-
-  .playbook-repo-link {
-    margin-left: 8px;
-  }
-}
 
 /* === P4: jump index + curated badges === */
 .jump-index {
@@ -3664,6 +1083,7 @@
 }
 
 .jump-index-toggle {
+  font: inherit;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -3727,48 +1147,81 @@
   border-color: rgba(251, 191, 36, 0.35);
 }
 
-/* Curated chips on section titles: hand-curated editorial mappings */
-#sb-sec-payloads::after,
-#sb-sec-offensive-tools::after,
-#sb-sec-c2::after,
-#sb-sec-bloodhound::after,
-#sb-sec-azure-identity::after,
-#sb-sec-logging::after,
-#sb-sec-ioc-feed::after,
-#sb-sec-wazuh-xdr::after,
-#sb-sec-siem::after,
-#sb-sec-threat-hunting::after {
-  content: 'curated';
-  display: inline-block;
-  margin-left: 6px;
-  padding: 1px 6px;
-  border: 1px dashed rgba(251, 191, 36, 0.45);
-  border-radius: 8px;
-  color: var(--accent-warm);
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  vertical-align: middle;
-  cursor: help;
-}
-
 /* Imported (user-uploaded) Navigator layer data for the selected technique */
 .imported-layer-section {
   .imported-layer-body { display: flex; flex-direction: column; gap: 8px; padding-top: 4px; font-size: 12px; }
   .il-source { opacity: 0.8; }
   .il-badges { display: flex; flex-wrap: wrap; gap: 6px; }
-  .il-badge {
-    display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; white-space: nowrap;
-    border-radius: 10px; background: rgba(120, 160, 255, 0.14); border: 1px solid rgba(120, 160, 255, 0.3);
-  }
-  .il-swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid rgba(255, 255, 255, 0.35); }
-  .il-disabled { background: rgba(255, 120, 120, 0.14); border-color: rgba(255, 120, 120, 0.3); }
-  .il-comment { white-space: pre-wrap; line-height: 1.4; padding: 6px 8px; border-radius: 6px; background: rgba(255, 255, 255, 0.05); }
+  .il-badge { display: inline-flex; align-items: center; gap: 5px; }
+  .il-swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--line-strong, var(--line-soft)); }
+  .il-comment { white-space: pre-wrap; line-height: 1.4; padding: 6px 8px; border-radius: var(--radius-sm, 4px); background: var(--bg-hover); }
   .il-metadata { margin: 0; display: flex; flex-direction: column; gap: 4px; }
   .il-meta-row { display: flex; gap: 8px; }
   .il-meta-row dt { font-weight: 600; opacity: 0.75; min-width: 90px; }
   .il-meta-row dd { margin: 0; word-break: break-word; }
   .il-links { margin: 0; padding-left: 16px; display: flex; flex-direction: column; gap: 3px; }
   .il-links a { word-break: break-all; }
+}
+
+// Tags: the custom-tag input and its add button on one line.
+.tag-input-row {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+
+  .tag-input { flex: 1; min-width: 0; }
+}
+
+// Detection Validation: the pill is its own component, unchanged (its template, its
+// labels, data-status and its per-status colours are its own); the card around it is
+// the section primitive. These rules put the pill's parts on the primitives' roles:
+// its title is the section header's, its Open Workbench button sits where a header's
+// trailing action sits, its status line is an entity row, its other lines plain text,
+// its status and lab marks badges, its rule ids id chips and its notes a description.
+// The selectors reach into the pill (::ng-deep) and are more specific than its own.
+.vsp-section ::ng-deep app-validation-status-pill {
+  .vsp {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    font-size: var(--text-xs, 11px);
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+
+  .vsp .vsp-head {
+    position: absolute;
+    top: var(--space-4, 16px);
+    right: var(--space-4, 16px);
+    height: 24px; // the section header's height
+    margin: 0;
+  }
+
+  .vsp .vsp-head h4 { display: none; }
+
+  .vsp .vsp-open { @include roles.action; }
+
+  .vsp > .vsp-row:not(.vsp-rules, .vsp-when) { @include roles.row-box; }
+
+  .vsp .vsp-rules,
+  .vsp .vsp-when { @include roles.text; }
+
+  .vsp .vsp-meta { @include roles.secondary; }
+
+  .vsp .vsp-status,
+  .vsp .vsp-lab { @include roles.badge-shape; }
+
+  .vsp .vsp-rule { @include roles.id; }
+
+  .vsp .vsp-notes {
+    @include roles.desc;
+    color: var(--text-muted) !important; // over the page-level ".sidebar p" light override
+  }
+
+  .vsp .vsp-empty {
+    @include roles.text;
+    color: var(--text-muted) !important;
+  }
 }
