@@ -243,6 +243,63 @@ describe('lensExplain (P2-18): Why this colour', () => {
       expect(postureExplain(proven)).toBe('Proven (your run) on 10/21/26 by manual; 1 rule fired');
     });
 
+    // RP-F decision 16b: a run's status governs its proof, and the latest run governs the rung.
+    describe('the latest run governs (RP-F decision 16b)', () => {
+      const at = (day: number, hour = 10) => new Date(2026, 9, day, hour, 0).toISOString();
+      const fired = (runId: string, date: string) => ({ ...RUN, runId, date });
+
+      it('T1135 shape: a failed run with a fired rule is not Proven; the line names the failed run', () => {
+        const s = derived('T1135', { knownSignals: 2, runs: [run('f1', 'failed', at(20))], proof: [fired('f1', at(20))] });
+        const posture = postureExplain(s);
+        expect(posture).toBe('Known: mapped (2 of 5 reference families); 1 run of yours recorded, latest failed on 10/20/26; see Detection Validation');
+        expect(posture).not.toMatch(RUNG_WORDS);
+        expect(lensExplain(def('proven'), { score: 0 }, { state: s })).toBe('No recorded detection for this technique');
+      });
+
+      it('T1010 shape: passed then failed is not Proven, and the why line names both runs', () => {
+        const s = derived('T1010', {
+          knownSignals: 3,
+          runs: [run('p1', 'passed', at(18)), run('f1', 'failed', at(20, 20))],
+          proof: [fired('p1', at(18))],
+          verdicts: [{ date: at(20, 20), failed: true, notReproducible: false, source: 'manual' }],
+        });
+        expect(s.bucket).toBe('known');
+        const posture = postureExplain(s);
+        expect(posture).toBe('Known: mapped (3 of 5 reference families); contradicted: latest run failed on 10/20/26; '
+          + 'an earlier run passed on 10/18/26; see Detection Validation');
+        expect(posture).not.toMatch(RUNG_WORDS);
+        expect(posture).not.toContain('contradicts the marks');
+        expect(lensExplain(def('proven'), { score: 0 }, { state: s }))
+          .toBe('No recorded detection for this technique; contradicted: latest run failed on 10/20/26; an earlier run passed on 10/18/26');
+        expect(lensExplain(def('covered'), { score: 0 }, { state: s })).toBe('None: no covered (self-attested or range) mark; '
+          + 'see the Known block for its reference data (3 of 5 reference families); contradicted: latest run failed on 10/20/26; '
+          + 'an earlier run passed on 10/18/26; see Detection Validation');
+      });
+
+      it('a run with no telemetry after a pass is named as such, not as a contradiction; None with no reference data', () => {
+        const s = derived('T1010', { runs: [run('p1', 'passed', at(18)), run('n1', 'no-telemetry', at(19))], proof: [fired('p1', at(18))] });
+        expect(s.subStates).toEqual([]);
+        expect(postureExplain(s)).toBe('None: no reference data mapped; latest run had no telemetry on 10/19/26; '
+          + 'an earlier run passed on 10/18/26; see Detection Validation');
+      });
+
+      it('a superseded proof with partial marks still names both runs', () => {
+        const s = derived('T1078', {
+          runs: [run('p1', 'passed', at(18)), run('f1', 'failed', at(20))], proof: [fired('p1', at(18))],
+          covered: [{ ...MIT_FULL, strength: 'partial', via: 'M1038' }],
+        });
+        expect(s.bucket).toBe('partial');
+        expect(postureExplain(s)).toContain('; contradicted: latest run failed on 10/20/26; an earlier run passed on 10/18/26; see Detection Validation');
+      });
+
+      it('passed then passed: Proven on the latest date; failed then passed: Proven', () => {
+        const twice = derived('T1078', { runs: [run('p1', 'passed', at(18)), run('p2', 'passed', at(20))], proof: [fired('p1', at(18)), fired('p2', at(20))] });
+        expect(postureExplain(twice)).toBe('Proven (your run) on 10/20/26 by manual; 1 rule fired');
+        const recovered = derived('T1078', { runs: [run('f1', 'failed', at(18)), run('p1', 'passed', at(20))], proof: [fired('p1', at(20))] });
+        expect(postureExplain(recovered)).toBe('Proven (your run) on 10/20/26 by manual; 1 rule fired');
+      });
+    });
+
     it('a technique with no runs keeps the old wording', () => {
       expect(postureExplain(derived('T1069', {}))).toBe('None: no reference data mapped and nothing of yours recorded');
       expect(postureExplain(derived('T1059.001', { knownSignals: 4 }))).toBe('Known: mapped (4 of 5 reference families)');

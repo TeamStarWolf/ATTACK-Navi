@@ -66,6 +66,19 @@ export interface RunSummary {
   readonly source: SourceId;
 }
 
+/**
+ * A run of yours that outranked every proof record on the technique (RP-F
+ * decision 16): the latest run failed (or had no telemetry) after an earlier
+ * run's named rule fired. The why line names both: "latest run failed on
+ * <date>; an earlier run passed on <date>".
+ */
+export interface SupersededProof {
+  /** The newest dated run with status 'failed' or 'no-telemetry'; it governs the rung. */
+  readonly latest: RunSummary;
+  /** The newest proof record it outranked (its date is the earlier run's date). */
+  readonly earlier: ProofRecord;
+}
+
 export type PostureSubState = 'partial' | 'planned' | 'stale' | 'contradicted' | 'not-reproducible' | 'telemetry-observed';
 
 export interface PostureState {
@@ -89,6 +102,14 @@ export interface PostureState {
    * (RP-F decision 9). Never a rung: the card only says they are recorded.
    */
   readonly runsWithoutProof: readonly RunSummary[];
+  /**
+   * The run that outranked every proof record, and the newest record it outranked
+   * (RP-F decision 16); null (or absent, in a hand-built state) when no proof was
+   * outranked or newer proof still stands. Never a rung: the state is then
+   * Covered, partial, Known or None, and 'contradicted' when the latest run
+   * failed and no newer full marks hold Covered.
+   */
+  readonly supersededProof?: SupersededProof | null;
 }
 
 export interface PostureTally {
