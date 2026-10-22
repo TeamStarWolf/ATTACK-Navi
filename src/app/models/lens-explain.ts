@@ -14,7 +14,7 @@
 // PROVEN through them); this file holds no rung-word literal, so the
 // truth-vocabulary lint needs no allow here.
 import type { LensCell, LensDefinition } from './heatmap-modes';
-import type { CoveredBasis, CoveredMark, PostureState, ProofRecord, ProofScope } from './posture/posture.types';
+import type { CoveredBasis, CoveredMark, PostureState, ProofRecord, ProofScope, RunSummary } from './posture/posture.types';
 import { PROVEN, postureBadge } from './posture/posture-vocabulary';
 import { SCORE_ONLY_LENSES } from './lens-registry';
 import { CONTRADICTED_WORDS } from './posture/posture-ramp';
@@ -78,12 +78,19 @@ function describeMarks(marks: readonly CoveredMark[]): string {
   return parts.join(', ');
 }
 
+/** Where the runs of yours are listed in full (the Detection Validation workbench). */
+const SEE_VALIDATION = 'see Detection Validation';
+
 /** The distinct detection references of a state's proof: the rules that fired or blocked. */
 function rulesFired(proof: readonly ProofRecord[]): number {
   return new Set(proof.map(p => p.detectionRef)).size;
 }
 
-/** The best proof record's line: '<badge> on <date> by <source>; N rule(s) fired'. */
+/**
+ * The best proof record's line: '<badge> on <date> by <source>; N rule(s) fired',
+ * then the newest later run that left the proof standing (laterRunClause, RP-F
+ * decision 29), so a Proven cell never hides a newer run the pill shows.
+ */
 function proofExplain(state: PostureState, decayDays?: Readonly<Record<ProofScope, number>>): string {
   const best = state.proof[0];
   const n = rulesFired(state.proof);
@@ -91,7 +98,38 @@ function proofExplain(state: PostureState, decayDays?: Readonly<Record<ProofScop
   if (state.bucket === 'stale' && decayDays && state.proofScope) {
     line += `; older than its ${decayDays[state.proofScope]}-day window`;
   }
-  return line;
+  const later = laterRunClause(state);
+  return later ? `${line}; ${later}` : line;
+}
+
+/** What a later run that left the proof standing did, on `day` (RP-F decision 29). */
+function laterRunWords(run: RunSummary, day: string): string {
+  if (run.status === 'partial') {
+    // A range row maps 'telemetry-observed' to partial (statusForRow); an own run is
+    // partial when some expected rule did not fire.
+    return run.source.startsWith('lylat-range:') ? `a later run on ${day} observed telemetry only` : `a later partial run on ${day}`;
+  }
+  if (run.status === 'untested') return `a later untested run on ${day}`;
+  if (run.status === 'no-telemetry') return `a later run on ${day} had no telemetry`;
+  if (run.status === 'failed') return `a later run of another rule failed on ${day}`;
+  return `a later run of another rule was ${run.status.replace(/-/g, ' ')} on ${day}`;
+}
+
+/**
+ * The newest run of yours later than every standing proof record that left it
+ * standing (PostureState.laterRuns, RP-F decision 29: proof supersession is per
+ * rule, and an untested, partial or no-telemetry run, or a run of another rule, never
+ * removes proof): 'a later run on 10/21/26 observed telemetry only', 'a later
+ * untested run on 10/21/26', 'a later run of another rule failed on 10/21/26', with
+ * '(N more later runs; see Detection Validation)' when there are more; '' with none.
+ * The days are the local days the Detection Validation pill prints.
+ */
+export function laterRunClause(state: Pick<PostureState, 'laterRuns'>): string {
+  const runs = state.laterRuns ?? [];
+  if (runs.length === 0) return '';
+  const words = laterRunWords(runs[0], validationDay(runs[0].date));
+  const more = runs.length - 1;
+  return more > 0 ? `${words} (${more} more later run${more === 1 ? '' : 's'}; ${SEE_VALIDATION})` : words;
 }
 
 const CONTRADICTED_NOTE = '; a later failed run contradicts the marks';
@@ -124,9 +162,6 @@ function postureNotes(state: PostureState): string {
 function ownerRecordWithoutRung(state: PostureState): boolean {
   return state.subStates.includes('contradicted') || state.excluded;
 }
-
-/** Where the runs of yours are listed in full (the Detection Validation workbench). */
-const SEE_VALIDATION = 'see Detection Validation';
 
 /**
  * What the latest run did, as the superseded clause says it: 'failed', 'had no

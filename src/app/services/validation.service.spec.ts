@@ -13,6 +13,7 @@ import { OwnerDataService } from './owner-data.service';
 import { WorkspaceBundleService } from './workspace-bundle.service';
 import { fingerprint } from '../models/storage-envelope';
 import { runMatches } from '../models/posture/run-match';
+import { runInputs } from './posture-adapters';
 import LYLAT_FIXTURE from '../../testing/fixtures/lylat/validated-detections.fixture.json';
 import LYLAT_FIXTURE_B from '../../testing/fixtures/lylat/validated-detections.mission-b.fixture.json';
 import LYLAT_INVALID_IP from '../../testing/fixtures/lylat/invalid/ip-evidence.json';
@@ -395,6 +396,30 @@ describe('ValidationService', () => {
       expect('hostname' in service.all[0]).toBe(false);
       expect(localStorage.getItem(STORAGE_KEY)).not.toContain('hostname');
       expect('hostname' in rebuild().all[0]).toBe(false);
+    });
+
+    // RP-F decision 29: the rule lists are normalised at import and at load (trimmed,
+    // empties dropped, each rule once), so the Validation pill's "N of M detection rules
+    // fired" (latest.detectionsFired.length) and the evidence card's fired-rule count
+    // (runInputs summary.rulesFired) read the same rules.
+    it("normalises detectionsFired and detectionsExpected at import and load: ['siem:a','siem:a',''] is one rule on the pill and the card", () => {
+      const dup = { detectionsExpected: [' siem:a ', 'siem:a', ''], detectionsFired: ['siem:a', 'siem:a', ''] };
+      const res = service.importJson(JSON.stringify({ runs: [v1Run('d1', 'T1110', dup)] }));
+      expect(res.ok).toBe(true);
+      for (const svc of [service, rebuild()]) {
+        const run = svc.latestFor('T1110')!;
+        expect(run.detectionsFired).toEqual(['siem:a']);
+        expect(run.detectionsExpected).toEqual(['siem:a']);
+        const pill = run.detectionsFired.length;
+        const card = runInputs(run).summary.rulesFired;
+        expect([pill, card]).toEqual([1, 1]);
+      }
+      // The v1 copy-forward reads through the same normaliser.
+      localStorage.clear();
+      localStorage.setItem(VALIDATION_RUNS_V1_KEY, JSON.stringify([v1Run('v1', 'T1110', dup)]));
+      const upgraded = rebuild().latestFor('T1110')!;
+      expect([upgraded.detectionsFired.length, runInputs(upgraded).summary.rulesFired]).toEqual([1, 1]);
+      expect(upgraded.detectionsExpected).toEqual(['siem:a']);
     });
 
     // P2-02 round 1: proofScope and statusFromSource follow the source, never the row.

@@ -127,6 +127,17 @@ function strList(x: unknown): string[] {
   return Array.isArray(x) ? x.filter((v): v is string => typeof v === 'string') : [];
 }
 
+/**
+ * A rule list (detectionsExpected, detectionsFired) as every surface counts it (RP-F
+ * decision 29): each entry trimmed, empties dropped, each rule once, in first-seen
+ * order. Applied at load and at import (sanitizeRun, upgradeV1), so the Validation
+ * pill's "N of M detection rules fired" and the evidence card's fired-rule count
+ * (posture-adapters runInputs) read the same rules: ['siem:a', 'siem:a', ''] is one.
+ */
+export function ruleList(x: unknown): string[] {
+  return [...new Set(strList(x).map(v => v.trim()).filter(v => v !== ''))];
+}
+
 /** A source a stored run may carry. 'wizard' names legacy technique ratings, never runs. */
 export function isRunSource(x: unknown): x is Exclude<SourceId, 'wizard'> {
   if (typeof x !== 'string') return false;
@@ -230,8 +241,8 @@ export function sanitizeRun(
     atomicTestId: str(x['atomicTestId']),
     atomicCommand: str(x['atomicCommand']),
     attackResult: x['attackResult'],
-    detectionsExpected: strList(x['detectionsExpected']),
-    detectionsFired: strList(x['detectionsFired']),
+    detectionsExpected: ruleList(x['detectionsExpected']),
+    detectionsFired: ruleList(x['detectionsFired']),
     responsePlaybook: str(x['responsePlaybook']),
     responseActions: strList(x['responseActions']),
     evidenceLinks: strList(x['evidenceLinks']),
@@ -321,8 +332,8 @@ function upgradeV1(raw: string): { runs: ValidationRunV2[]; dropped: ImportResul
     const lists = {
       telemetryRequired: strList(row['telemetryRequired']),
       telemetryAvailable: strList(row['telemetryAvailable']),
-      detectionsExpected: strList(row['detectionsExpected']),
-      detectionsFired: strList(row['detectionsFired']),
+      detectionsExpected: ruleList(row['detectionsExpected']),
+      detectionsFired: ruleList(row['detectionsFired']),
     };
     // v1 rows are always 'manual' own runs, whatever extra fields they carry.
     const r = sanitizeRun({

@@ -241,9 +241,15 @@ export function runInputs(run: ValidationRunV2): RunInputs {
     : [];
   // The pill's "N of M detection rules fired" counts detectionsFired, so the card's count
   // does too: a rule named only by an outcome (blocked or alerted) is proof input above,
-  // never a rule the pill says fired (RP-F decision 28).
+  // never a rule the pill says fired (RP-F decision 28). The store normalises the list at
+  // load and import (ruleList, RP-F decision 29), so both count each rule once.
   const rulesFired = new Set(run.detectionsFired.map(d => d.trim()).filter(d => d !== '')).size;
-  const summary: RunSummary = { runId: run.id, status: run.status, date: run.runDate, source: run.source, rulesFired };
+  // Every rule the run names, so derivePosture supersedes proof per rule (RP-F decision 29).
+  const rules = [...new Set(
+    [...run.outcomes.map(o => o.detectionRef ?? ''), ...run.detectionsExpected, ...run.detectionsFired]
+      .map(d => d.trim()).filter(d => d !== ''),
+  )];
+  const summary: RunSummary = { runId: run.id, status: run.status, date: run.runDate, source: run.source, rulesFired, rules };
   return { proof, covered, verdicts, summary };
 }
 

@@ -177,7 +177,7 @@ describe('posture adapters (P2-05)', () => {
 
     it('carries the run itself (id, status, date, source) for the runs-without-proof line (RP-F decision 9)', () => {
       expect(runInputs(run({ status: 'untested' })).summary).toEqual({
-        runId: 'r1', status: 'untested', date: '2026-09-20T10:00:00.000Z', source: 'manual', rulesFired: 0,
+        runId: 'r1', status: 'untested', date: '2026-09-20T10:00:00.000Z', source: 'manual', rulesFired: 0, rules: [],
       });
       // RP-F decision 28: the named rules the run lists as fired, whatever its status (the pill's count).
       expect(runInputs(run({ status: 'untested', detectionsFired: ['siem:a', 'siem:b', 'siem:a'] })).summary.rulesFired).toBe(2);
@@ -197,6 +197,16 @@ describe('posture adapters (P2-05)', () => {
       expect(alertedNamed.summary.rulesFired).toBe(0);
       // Blank entries are not rules; each listed rule counts once.
       expect(runInputs(run({ status: 'untested', detectionsFired: [' ', 'siem:a', ' siem:a '] })).summary.rulesFired).toBe(1);
+    });
+
+    // RP-F decision 29: proof supersession is per rule, so the summary carries every rule the
+    // run names (outcomes, expected, fired), trimmed, each once, for derivePosture's sameRule.
+    it('names every rule of the run, from its outcomes, expected and fired lists, each once (RP-F decision 29)', () => {
+      const r = runInputs(run({
+        status: 'failed', detectionsExpected: ['siem:a', ' siem:b '], detectionsFired: ['siem:a', ''],
+        outcomes: [outcome({ detectionRef: 'edr:c', outcome: 'blocked' }), outcome({ detectionRef: null, outcome: 'none' }), outcome({ detectionRef: ' siem:a', outcome: 'alerted' })],
+      }));
+      expect(r.summary.rules).toEqual(['edr:c', 'siem:a', 'siem:b']);
     });
 
     it("'failed' is a failed verdict and 'not-reproducible' a notReproducible one", () => {
