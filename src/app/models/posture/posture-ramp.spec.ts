@@ -207,6 +207,7 @@ describe('posture cell label (§7)', () => {
           supersededProof: {
             latest: RUN,
             earlier: { scope: 'own-run', detectionRef: 'sigma:1', outcome: 'alerted', date: '2026-10-18T15:00:00.000Z', source: 'manual', runId: 'p1' },
+            earlierStatus: 'passed',
           },
         },
       };

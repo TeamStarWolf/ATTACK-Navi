@@ -336,7 +336,23 @@ describe('derivePosture (Phase 2 design §2.2)', () => {
       expect(s.subStates).toEqual(['contradicted']);
       expect(s.supersededProof!.latest.runId).toBe('f1');
       expect(s.supersededProof!.earlier.runId).toBe('p1');
+      expect(s.supersededProof!.earlierStatus).toBe('passed');
       expect(s.runsWithoutProof.map(r => r.runId)).toEqual(['f1', 'p1']);
+    });
+
+    it('the outranked earlier run carries its own status: a partial run with a fired rule is named partial', () => {
+      const s = derive({
+        runs: [run('r1', 5, 'partial'), run('f1', 1, 'failed')], proof: [own('r1', 5)], verdicts: [verdict(1, { failed: true })],
+      });
+      expect(s.supersededProof!.earlier.runId).toBe('r1');
+      expect(s.supersededProof!.earlierStatus).toBe('partial');
+      expect(s.subStates).toEqual(['contradicted']);
+    });
+
+    it('an outranked record whose run is not listed carries no status', () => {
+      const s = derive({ runs: [run('f1', 1, 'failed')], proof: [own('elsewhere', 5)] });
+      expect(s.supersededProof!.earlier.runId).toBe('elsewhere');
+      expect(s.supersededProof!.earlierStatus).toBeNull();
     });
 
     it('passed then passed: Proven on the latest run\'s date', () => {

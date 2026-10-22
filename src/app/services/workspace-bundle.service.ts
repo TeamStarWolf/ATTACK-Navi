@@ -106,14 +106,17 @@ export class WorkspaceBundleService {
     if (parsed.version !== 1) {
       throw new Error(`Unsupported bundle version: ${parsed.version}.`);
     }
+    // The bundled threat profile in the one stored shape (RP-F decision 18) before the
+    // whitelisted write below, which then stores it as it stores every bundled key.
+    if (typeof parsed.data[THREAT_PROFILE_KEY] === 'string') {
+      parsed.data[THREAT_PROFILE_KEY] = this.normaliseThreatProfile(parsed.data[THREAT_PROFILE_KEY]);
+    }
     const allowed = new Set(WorkspaceBundleService.BUNDLED_KEYS);
     const written: string[] = [];
     for (const [key, value] of Object.entries(parsed.data)) {
       // Only whitelisted keys — a crafted bundle can't write arbitrary storage.
       if (!allowed.has(key) || typeof value !== 'string') continue;
-      const cleaned = key === 'mitre-nav-settings-v1' ? this.stripSecrets(value)
-        : key === THREAT_PROFILE_KEY ? this.normaliseThreatProfile(value)
-        : value;
+      const cleaned = key === 'mitre-nav-settings-v1' ? this.stripSecrets(value) : value;
       localStorage.setItem(key, cleaned);
       written.push(key);
     }

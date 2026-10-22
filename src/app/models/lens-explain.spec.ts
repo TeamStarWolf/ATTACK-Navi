@@ -7,7 +7,7 @@ import { heatmapModeDef } from './heatmap-modes';
 import type { HeatmapMode } from '../services/filter.service';
 import type { CoveredMark, PostureInputs, PostureState, ProofRecord, RunSummary } from './posture/posture.types';
 import { DEFAULT_POSTURE_RULES, derivePosture } from './posture/derive-posture';
-import { basisWords, formatScore, lensExplain, postureExplain, runsClause } from './lens-explain';
+import { basisWords, formatScore, lensExplain, postureExplain, runsClause, supersededClause } from './lens-explain';
 
 const def = (mode: HeatmapMode) => heatmapModeDef(mode)!;
 
@@ -290,6 +290,38 @@ describe('lensExplain (P2-18): Why this colour', () => {
         });
         expect(s.bucket).toBe('partial');
         expect(postureExplain(s)).toContain('; contradicted: latest run failed on 10/20/26; an earlier run passed on 10/18/26; see Detection Validation');
+      });
+
+      it('a partial earlier run is named partial, never passed, on every line that names it (RP-F round 3)', () => {
+        const s = derived('T1010', {
+          knownSignals: 3,
+          runs: [run('r1', 'partial', at(18)), run('f1', 'failed', at(20))],
+          proof: [fired('r1', at(18))],
+          verdicts: [{ date: at(20), failed: true, notReproducible: false, source: 'manual' }],
+        });
+        expect(s.supersededProof!.earlierStatus).toBe('partial');
+        const clause = 'contradicted: latest run failed on 10/20/26; an earlier run was partial on 10/18/26';
+        expect(supersededClause(s)).toBe(clause);
+        expect(postureExplain(s)).toBe(`Known: mapped (3 of 5 reference families); ${clause}; see Detection Validation`);
+        expect(lensExplain(def('proven'), { score: 0 }, { state: s })).toBe(`No recorded detection for this technique; ${clause}`);
+        expect(lensExplain(def('covered'), { score: 0 }, { state: s })).toContain(`; ${clause}; see Detection Validation`);
+        expect(lensExplain(def('status'), { score: 0, label: 'Untested' }, { state: s })).toBe(`Untested; ${clause}`);
+        for (const line of [postureExplain(s), lensExplain(def('proven'), { score: 0 }, { state: s })]) {
+          expect(line).not.toContain('passed');
+        }
+      });
+
+      it('an earlier untested or not-reproducible run is named by its status; a record with no run listed names the rule only', () => {
+        const words = (status: string | null) => supersededClause({
+          subStates: [],
+          supersededProof: { latest: run('f1', 'failed', at(20)), earlier: fired('r1', at(18)), earlierStatus: status },
+        });
+        expect(words('untested')).toBe('latest run failed on 10/20/26; an earlier run was untested on 10/18/26');
+        expect(words('not-reproducible')).toBe('latest run failed on 10/20/26; an earlier run was not reproducible on 10/18/26');
+        expect(words('passed')).toBe('latest run failed on 10/20/26; an earlier run passed on 10/18/26');
+        expect(words(null)).toBe('latest run failed on 10/20/26; an earlier named rule fired on 10/18/26');
+        const unlisted = derived('T1010', { runs: [run('f1', 'failed', at(20))], proof: [fired('other', at(18))] });
+        expect(unlisted.supersededProof!.earlierStatus).toBeNull();
       });
 
       it('passed then passed: Proven on the latest date; failed then passed: Proven', () => {

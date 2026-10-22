@@ -18,7 +18,9 @@ import { LibraryLayerService, LibraryLayerMeta } from '../../services/library-la
 import { ThreatProfileService } from '../../services/threat-profile.service';
 import { ThreatGroup } from '../../models/group';
 import { Campaign } from '../../models/campaign';
-import { ATTACK_DOMAIN_SHORT_LABEL, ProfileGroupRef, ThreatProfileSource, attackDomainOf } from '../../models/threat-profile';
+import {
+  ATTACK_DOMAIN_SHORT_LABEL, GroupIdIndex, KnownGroup, ProfileGroupRef, ThreatProfileSource, attackDomainOf, findStoredGroup, indexGroups,
+} from '../../models/threat-profile';
 import { ProfileDomainNoticeComponent } from '../profile-domain-notice/profile-domain-notice.component';
 
 type PickerMode = 'profile' | 'single' | 'multi-local';
@@ -101,6 +103,8 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
   activeSector: string | null = null;
 
   groups: ThreatGroup[] = [];
+  /** `groups` indexed by every id a stored profile may hold them under; see shownGroupIndex. */
+  private groupIndex: { readonly groups: readonly ThreatGroup[]; readonly index: GroupIdIndex } | null = null;
   campaigns: Campaign[] = [];
   layers: LibraryLayerMeta[] = [];
   /** quickPicks resolved to the loaded domain's groups by ATT&CK id (no name or alias matching). */
@@ -201,10 +205,24 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
     return this.selectedKeysFor(g).length > 0;
   }
 
-  /** The selected ids that name `g`: its STIX id, or its ATT&CK id in any case. */
+  /**
+   * The selected ids that name `g`: each resolved by the one stored-id rule
+   * (findStoredGroup over the shown groups' GroupIdIndex, RP-F decision 18), so a
+   * STIX id or an ATT&CK id in any case counts, and the picker keeps no rule of its own.
+   */
   private selectedKeysFor(g: ThreatGroup): string[] {
-    const attackId = g.attackId.toUpperCase();
-    return [...this.selectedGroupIds].filter((id) => id === g.id || (attackId !== '' && id.toUpperCase() === attackId));
+    const index = this.shownGroupIndex();
+    return [...this.selectedGroupIds].filter((id) => findStoredGroup(index, id)?.id === g.id);
+  }
+
+  /** The shown groups' GroupIdIndex (indexGroups), rebuilt when `groups` is replaced. */
+  private shownGroupIndex(): GroupIdIndex {
+    if (this.groupIndex?.groups !== this.groups) {
+      const index = new Map<string, KnownGroup>();
+      indexGroups(index, this.groups);
+      this.groupIndex = { groups: this.groups, index };
+    }
+    return this.groupIndex.index;
   }
 
   /**

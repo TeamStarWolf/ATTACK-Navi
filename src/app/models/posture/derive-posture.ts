@@ -125,7 +125,8 @@ function latestNoProofRun(runs: readonly RunSummary[]): { readonly run: RunSumma
  * governs, so a record strictly older than the newest such run is outranked.
  * `superseded` names that run and the newest record it outranked, when it
  * leaves no proof standing (the why line: "latest run failed on <date>; an
- * earlier run passed on <date>"); null otherwise, a newer passing run included.
+ * earlier run passed on <date>"), with that earlier run's own status, looked up
+ * among the runs; null otherwise, a newer passing run included.
  */
 function standingProof(
   input: PostureInputs, rules: PostureRules, now: Date,
@@ -138,7 +139,8 @@ function standingProof(
   const proof = qualifying.filter(p => p.t >= latest.t);
   if (proof.length > 0 || qualifying.length === 0) return { proof, superseded: null };
   const earlier = [...qualifying].sort((a, b) => b.t - a.t)[0].record;
-  return { proof, superseded: { latest: latest.run, earlier } };
+  const earlierStatus = runs.find(r => r.runId === earlier.runId)?.status ?? null;
+  return { proof, superseded: { latest: latest.run, earlier, earlierStatus } };
 }
 
 function qualifiersOf(marks: readonly CoveredMark[]): CoveredQualifier[] {

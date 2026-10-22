@@ -126,8 +126,20 @@ function latestRunWords(status: string): string {
 }
 
 /**
+ * What the outranked earlier run was, by its own status (RP-F round 3): 'run passed',
+ * 'run was partial', 'run was untested', 'run was not reproducible'; with no run of
+ * that id listed, only what the record holds: 'named rule fired'.
+ */
+function earlierRunWords(status: string | null): string {
+  if (status === null) return 'named rule fired';
+  if (status === 'passed') return 'run passed';
+  return `run was ${status.replace(/-/g, ' ')}`;
+}
+
+/**
  * The run that outranked every proof record (RP-F decision 16):
  * 'contradicted: latest run failed on 10/22/26; an earlier run passed on 10/21/26',
+ * the earlier run named by its own status ('an earlier run was partial on ...'),
  * or '' when none did. 'contradicted: ' leads while the state is contradicted (the
  * cell paints the hatch, so its words say so, RP-F decision 17); a run with no
  * telemetry reads 'latest run had no telemetry on ...'. The days are the local
@@ -138,7 +150,7 @@ export function supersededClause(state: Pick<PostureState, 'supersededProof' | '
   if (!s) return '';
   return (state.subStates.includes('contradicted') ? 'contradicted: ' : '')
     + `latest run ${latestRunWords(s.latest.status)} on ${validationDay(s.latest.date)}; `
-    + `an earlier run passed on ${validationDay(s.earlier.date)}`;
+    + `an earlier ${earlierRunWords(s.earlierStatus)} on ${validationDay(s.earlier.date)}`;
 }
 
 /**

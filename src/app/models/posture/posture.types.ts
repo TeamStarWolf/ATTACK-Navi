@@ -69,14 +69,21 @@ export interface RunSummary {
 /**
  * A run of yours that outranked every proof record on the technique (RP-F
  * decision 16): the latest run failed (or had no telemetry) after an earlier
- * run's named rule fired. The why line names both: "latest run failed on
- * <date>; an earlier run passed on <date>".
+ * run's named rule fired. The why line names both runs by their own status:
+ * "latest run failed on <date>; an earlier run passed on <date>" (or "... an
+ * earlier run was partial on <date>").
  */
 export interface SupersededProof {
   /** The newest dated run with status 'failed' or 'no-telemetry'; it governs the rung. */
   readonly latest: RunSummary;
   /** The newest proof record it outranked (its date is the earlier run's date). */
   readonly earlier: ProofRecord;
+  /**
+   * The earlier run's own status (its RunSummary, looked up by earlier.runId), so the
+   * why line names what that run was ('passed', 'partial', ...) and never says a run
+   * passed that did not; null when no run of that id is listed.
+   */
+  readonly earlierStatus: string | null;
 }
 
 export type PostureSubState = 'partial' | 'planned' | 'stale' | 'contradicted' | 'not-reproducible' | 'telemetry-observed';
