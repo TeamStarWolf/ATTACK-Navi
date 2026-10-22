@@ -13,6 +13,10 @@ import {
   postureCellLabel, postureRampStops, postureStopLabel, CONTRADICTED_SPOKEN_LENSES, CONTRADICTED_WORDS,
 } from './posture-ramp';
 import { stubState } from '../../testing/posture-stub';
+import { isPostureCellLens } from '../lens-registry';
+import { lensExplain } from '../lens-explain';
+import type { LensContext } from '../heatmap-modes';
+import type { PostureState } from './posture.types';
 
 const THEMES: readonly PostureTheme[] = ['dark', 'light'];
 const T = { id: 'attack-pattern--1', attackId: 'T1001' } as Technique;
@@ -157,7 +161,7 @@ describe('posture cell label (§7)', () => {
     it("uses the legend stop's phrase", () => {
       expect(CONTRADICTED_WORDS).toBe('contradicted by a later failed run');
       expect(postureStopLabel('contradicted')).toBe(CONTRADICTED_WORDS);
-      expect([...CONTRADICTED_SPOKEN_LENSES]).toEqual(['posture', 'covered', 'status']);
+      expect([...CONTRADICTED_SPOKEN_LENSES]).toEqual(['posture', 'covered', 'proven', 'status']);
     });
 
     it('appends it to the Posture words, after a stale age', () => {
@@ -168,13 +172,97 @@ describe('posture cell label (§7)', () => {
         .toBe(`${PROVEN} (your run), stale (120 days; window 90), ${CONTRADICTED_WORDS}`);
     });
 
-    it("appends it to a Covered or Status lens's own words; Proven and Controls keep theirs", () => {
+    it("appends it to a Covered, Proven or Status lens's own words; Controls keeps its own (RP-F decision 17)", () => {
       const s = contradicted('known');
       expect(postureCellLabel(s, WINDOWS, { value: 'status', words: 'Status: implemented' }))
         .toBe(`Status: implemented, ${CONTRADICTED_WORDS}`);
       expect(postureCellLabel(s, WINDOWS, { value: 'covered', words: 'None' })).toBe(`None, ${CONTRADICTED_WORDS}`);
-      expect(postureCellLabel(s, WINDOWS, { value: 'proven', words: 'no recorded detection' })).toBe('no recorded detection');
+      expect(postureCellLabel(s, WINDOWS, { value: 'proven', words: 'no recorded detection' }))
+        .toBe(`no recorded detection, ${CONTRADICTED_WORDS}`);
       expect(postureCellLabel(s, WINDOWS, { value: 'controls', words: 'Controls: none' })).toBe('Controls: none');
+    });
+
+    // RP-F decision 17: paints implies speaks. The Proven lens drew the hatch on 6 of 6
+    // contradicted cells in round 3 while its aria-label said only "no recorded detection".
+    describe('paints implies speaks, over every posture-cell lens (RP-F decision 17)', () => {
+      const FULL = {
+        qualifier: 'self-attested' as const, basis: 'mitigation-implemented' as const, strength: 'full' as const, via: 'M1015', source: 'manual' as const,
+      };
+      const PARTIAL = { ...FULL, strength: 'partial' as const, via: 'M1038' };
+      const RUN = { runId: 'f1', status: 'failed', date: '2026-10-20T15:00:00.000Z', source: 'manual' as const };
+      const base = stubState('T1078', 'known');
+      /**
+       * The contradicted shapes derivePosture produces: a contradicted full mark (T1078: M1015
+       * and a later failed run), with and without partial marks, and a proof a later failed
+       * run outranked (T1010, RP-F decision 16).
+       */
+      const SHAPES: Record<string, PostureState> = {
+        'contradicted mark, Known': { ...base, subStates: ['contradicted'], covered: [FULL], runsWithoutProof: [RUN] },
+        'contradicted mark, partial': {
+          ...base, rung: 'covered', bucket: 'partial', qualifiers: ['self-attested'], subStates: ['contradicted', 'partial'],
+          covered: [FULL, PARTIAL], runsWithoutProof: [RUN],
+        },
+        'outranked proof, None': {
+          ...stubState('T1010', 'none'), subStates: ['contradicted'], runsWithoutProof: [RUN],
+          supersededProof: {
+            latest: RUN,
+            earlier: { scope: 'own-run', detectionRef: 'sigma:1', outcome: 'alerted', date: '2026-10-18T15:00:00.000Z', source: 'manual', runId: 'p1' },
+            earlierStatus: 'passed',
+          },
+        },
+      };
+      const ctx = (s: PostureState): LensContext => ({
+        posture: () => s,
+        known: () => ({ mitigation: true, detection: false, control: false, d3fend: false, atomic: false }),
+        knownCounts: () => ({ mitigations: 1, detectionContent: 0, controls: 0, d3fend: 0, atomic: 0 }),
+        implView: () => ({ status: 'implemented', partialVia: null }),
+        theme: 'dark', colorblindSafe: false,
+      } as unknown as LensContext);
+      const lenses = HEATMAP_MODES.filter(d => isPostureCellLens(d));
+      const paints = (def: (typeof HEATMAP_MODES)[number], s: PostureState): boolean => {
+        const cell = def.project!(ctx(s), T);
+        return posturePatterns({ bucket: cell.bucket ?? 'none', subStates: cell.subStates ?? [] }).includes('contradicted');
+      };
+
+      it('covers the five posture-cell lenses; Posture, Covered and Proven paint the hatch', () => {
+        expect(lenses.map(d => d.value).sort()).toEqual(['controls', 'covered', 'posture', 'proven', 'status']);
+        expect(lenses.filter(d => paints(d, SHAPES['contradicted mark, Known'])).map(d => d.value).sort())
+          .toEqual(['covered', 'posture', 'proven']);
+      });
+
+      for (const [shape, s] of Object.entries(SHAPES)) {
+        it(`${shape}: every lens whose cell paints the contradicted hatch is in the spoken set; spoken lenses say it in label and why line`, () => {
+          for (const def of lenses) {
+            const cell = def.project!(ctx(s), T);
+            const label = postureCellLabel(s, WINDOWS, def.value === 'posture' ? { value: 'posture' } : { value: def.value, words: cell.label });
+            const why = lensExplain(def, cell, { state: s });
+            if (paints(def, s)) {
+              expect(CONTRADICTED_SPOKEN_LENSES.has(def.value)).withContext(`${def.value} paints the hatch`).toBeTrue();
+            }
+            if (CONTRADICTED_SPOKEN_LENSES.has(def.value)) {
+              expect(label).withContext(`${def.value} aria-label`).toContain(CONTRADICTED_WORDS);
+              expect(why).withContext(`${def.value} why line`).toMatch(/contradict/);
+            }
+          }
+        });
+      }
+
+      it('Status paints no hatch, yet its label and why line name the contradiction', () => {
+        const s = SHAPES['contradicted mark, Known'];
+        const def = heatmapModeDef('status')!;
+        expect(paints(def, s)).toBeFalse();
+        expect(lensExplain(def, def.project!(ctx(s), T), { state: s })).toBe(`Status: implemented; ${CONTRADICTED_WORDS}`);
+      });
+
+      it('the Proven lens names the outranked proof, or the contradicted marks, in its why line', () => {
+        const def = heatmapModeDef('proven')!;
+        const s = SHAPES['outranked proof, None'];
+        expect(lensExplain(def, def.project!(ctx(s), T), { state: s }))
+          .toMatch(/^No recorded detection for this technique; contradicted: latest run failed on \d+\/\d+\/26; an earlier run passed on \d+\/\d+\/26$/);
+        const marks = SHAPES['contradicted mark, Known'];
+        expect(lensExplain(def, def.project!(ctx(marks), T), { state: marks }))
+          .toBe(`No recorded detection for this technique; ${CONTRADICTED_WORDS}`);
+      });
     });
 
     it('adds nothing without the contradicted sub-state', () => {

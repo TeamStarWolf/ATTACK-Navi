@@ -9,7 +9,8 @@ import { ThreatGroup } from './group';
 import { Campaign } from './campaign';
 import { DataService } from '../services/data.service';
 import {
-  type KnownGroup, findStoredGroup, indexGroups, profileDomainNotice, rankGroupsByPrevalence, resolveProfile, splitStoredGroups,
+  type KnownGroup, findStoredGroup, indexGroups, normaliseStoredGroupIds, profileDomainNotice, rankGroupsByPrevalence, resolveProfile,
+  splitStoredGroups,
 } from './threat-profile';
 
 function tech(id: string, attackId: string, parentId: string | null = null): Technique {
@@ -132,16 +133,24 @@ describe('threat-profile model', () => {
   describe('cross-domain groups (RP-F decision 6)', () => {
     it('splitStoredGroups: present in the domain order, absent in the stored order without duplicates', () => {
       const d = emptyDomain({ groups: [group('g-b', 'G0002'), group('g-a', 'G0001')] });
-      const split = splitStoredGroups(['g-x', 'g-a', 'g-b', 'g-x', 'g-y'], d);
+      const known = new Map<string, KnownGroup>();
+      indexGroups(known, [group('g-x', 'G0010'), group('g-y', 'G0011')]);   // groups another domain carried
+      const split = splitStoredGroups(['g-x', 'g-a', 'g-b', 'g-x', 'g-y'], d, known);
       expect(split.present.map((g) => g.id)).toEqual(['g-b', 'g-a']);
       expect(split.absentIds).toEqual(['g-x', 'g-y']);
+      expect(split.unresolvedIds).toEqual([]);
+      // RP-F decision 18: ids no domain seen carries resolve to no group: unresolved, never absent.
+      const cold = splitStoredGroups(['g-x', 'g-a', 'g-b', 'g-x', 'g-y'], d);
+      expect(cold.absentIds).toEqual([]);
+      expect(cold.unresolvedIds).toEqual(['g-x', 'g-y']);
     });
 
     it('splitStoredGroups resolves a stored ATT&CK id (any case) as well as a STIX id (RP-F decision 13)', () => {
       const d = emptyDomain({ groups: [group('g-b', 'G0002'), group('g-a', 'G0001')] });
       const split = splitStoredGroups(['G0001', 'g0002', 'G9999', 'g-a'], d);
       expect(split.present.map((g) => g.id)).toEqual(['g-b', 'g-a']);
-      expect(split.absentIds).toEqual(['G9999']);
+      expect(split.absentIds).toEqual([]);
+      expect(split.unresolvedIds).toEqual(['G9999']);   // RP-F decision 18: an unknown ATT&CK id is not a group
       expect(resolveProfile({ kind: 'groups', ids: ['G0001'] }, d).groupIds).toEqual(['g-a']);
     });
 
@@ -161,8 +170,9 @@ describe('threat-profile model', () => {
       indexGroups(known, [group('g-a', 'G0001'), group('g-b', 'G0002')]);
       expect(splitStoredGroups(['g-a', 'g-b', 'g0001'], ics, known).absentIds).toEqual(['g-a']);
       expect(splitStoredGroups(['G0001', 'g-a', 'g-b'], ics, known).absentIds).toEqual(['G0001']);
-      // Without the index the two ids cannot be told to be one group.
-      expect(splitStoredGroups(['g-a', 'G0001'], ics).absentIds).toEqual(['g-a', 'G0001']);
+      // Without the index neither id resolves to a group: both are unresolved (RP-F decision 18).
+      expect(splitStoredGroups(['g-a', 'G0001'], ics).absentIds).toEqual([]);
+      expect(splitStoredGroups(['g-a', 'G0001'], ics).unresolvedIds).toEqual(['g-a', 'G0001']);
       // A group known only by stored name hints (an id and a name each) is told apart by its name.
       const hints = new Map<string, KnownGroup>([
         ['g-a', { id: 'g-a', attackId: '', name: 'Alpha' }], ['G0001', { id: 'G0001', attackId: '', name: 'Alpha' }],
@@ -190,6 +200,50 @@ describe('threat-profile model', () => {
         .toBe('1 of 3 groups present in Mobile: FIN7; APT29, APT28 have no Mobile use');
       expect(profileDomainNotice({ domain: 'ics', present: [], absent: [apt29] }))
         .toBe('0 of 1 group present in ICS; APT29 has no ICS use');
+    });
+
+    // RP-F decision 18: ids that resolve to no group read "<id>: unknown or withdrawn group id",
+    // never "has no <domain> use" (round 3: 12 of 12 such ids read as absent).
+    it('profileDomainNotice announces each unresolved id, and never as absent from the domain', () => {
+      const apt29 = { id: 'g-apt29', name: 'APT29' };
+      expect(profileDomainNotice({ domain: 'enterprise', present: [apt29], absent: [], unresolved: ['Fancy Bear', 'G9999'] }))
+        .toBe('1 of 3 groups present in Enterprise: APT29; Fancy Bear: unknown or withdrawn group id; G9999: unknown or withdrawn group id');
+      expect(profileDomainNotice({ domain: 'ics', present: [], absent: [apt29], unresolved: ['G0074'] }))
+        .toBe('0 of 2 groups present in ICS; APT29 has no ICS use; G0074: unknown or withdrawn group id');
+      expect(profileDomainNotice({ domain: 'enterprise', present: [apt29], absent: [], unresolved: [] })).toBeNull();
+    });
+
+    it('splitStoredGroups: aliases, revoked and unknown ATT&CK ids and an all-zero STIX id are unresolved on Enterprise and ICS', () => {
+      const ent = emptyDomain({ groups: [group('g-apt29', 'G0016'), group('g-fin7', 'G0046')] });
+      const ics = emptyDomain({ name: 'ICS ATT&CK', groups: [group('g-fin7', 'G0046')] });
+      const known = new Map<string, KnownGroup>();
+      indexGroups(known, ent.groups);
+      const ids = ['Fancy Bear', 'G0074', 'G0042', 'G9999', 'intrusion-set--00000000-0000-0000-0000-000000000000'];
+      for (const d of [ent, ics]) {
+        const split = splitStoredGroups(['g-apt29', ...ids], d, known);
+        expect(split.unresolvedIds).withContext(d.name).toEqual(ids);
+        expect(split.absentIds).withContext(d.name).toEqual(d === ent ? [] : ['g-apt29']);
+      }
+    });
+
+    it('splitStoredGroups refuses a name hint that renames a real group; a hint for a group of another domain still names it', () => {
+      const ent = emptyDomain({ groups: [group('g-apt29', 'G0016')] });
+      const hints = new Map<string, KnownGroup>([
+        ['intrusion-set--zero', { id: 'intrusion-set--zero', attackId: '', name: 'grp-G0016' }],   // claims APT29's name
+        ['g-ics-only', { id: 'g-ics-only', attackId: '', name: 'Xenotime' }],
+      ]);
+      const split = splitStoredGroups(['intrusion-set--zero', 'g-ics-only'], ent, hints);
+      expect(split.unresolvedIds).toEqual(['intrusion-set--zero']);
+      expect(split.absentIds).toEqual(['g-ics-only']);
+    });
+
+    it('normaliseStoredGroupIds: ATT&CK ids of seen groups become STIX ids, once each; anything else is kept', () => {
+      const known = new Map<string, KnownGroup>();
+      indexGroups(known, [group('g-apt29', 'G0016'), group('g-fin7', 'G0046')]);
+      known.set('g-hint', { id: 'g-hint', attackId: '', name: 'Hinted' });
+      expect(normaliseStoredGroupIds(['G0016', 'g0046', 'g-apt29', 'G9999', 'Fancy Bear', 'g-hint'], known))
+        .toEqual(['g-apt29', 'g-fin7', 'G9999', 'Fancy Bear', 'g-hint']);
+      expect(normaliseStoredGroupIds([], known)).toEqual([]);
     });
   });
 

@@ -155,8 +155,32 @@ describe('ValidationPanelComponent', () => {
     expect(tile('not-reproducible')).toBe('2');
     expect(el.querySelector('.vp-kpi[data-status="not-reproducible"] .vp-kpi-label')!.textContent!.trim())
       .toBe('Not reproducible (patched target)');
-    expect(tile('untested')).toBe(String(component.totalCards - 4));
+    expect(tile('untested')).toBe('0');   // no technique in scope: distinct techniques, never cards minus runs (RP-F decision 20)
     expect(el.textContent).toContain('Coverage so far: 4 validations recorded');
+  });
+
+  // RP-F decision 20: "Untested (in scope)" was totalCards minus a RUN count, so several
+  // runs on one technique drove it below zero; round 3 read -3 on Detect > Validation.
+  it('"Untested (in scope)" counts distinct in-scope techniques with no recorded run, never cards minus runs (it read -3)', () => {
+    const svc = TestBed.inject(ValidationService) as unknown as Record<string, unknown>;
+    const runsFor: Record<string, { status: string; runDate: string }[]> = {
+      T1: ['passed', 'failed', 'passed', 'partial', 'failed', 'no-telemetry']
+        .map((status, i) => ({ status, runDate: `2026-10-1${i}T00:00:00.000Z` })),
+      T2: [{ status: 'untested', runDate: '2026-10-20T00:00:00.000Z' }],
+      T3: [],
+    };
+    svc['forTechnique'] = (id: string) => runsFor[id] ?? [];
+    svc['latestFor'] = (id: string) => (runsFor[id] ?? []).at(-1) ?? null;
+    svc['statusCounts'] = () => ({ passed: 2, partial: 1, failed: 2, 'no-telemetry': 1, untested: 1, 'not-reproducible': 0 });
+    (TestBed.inject(SigmaService) as unknown as { getRuleCount: () => number }).getRuleCount = () => 1;
+    const tech = (n: number) => ({ id: `attack-pattern--t${n}`, attackId: `T${n}`, name: `T${n}`, isSubtechnique: false, tacticShortnames: ['execution'] });
+    (TestBed.inject(DataService) as unknown as { domain$: BehaviorSubject<unknown> }).domain$.next({ techniques: [tech(1), tech(2), tech(3)] });
+    rerender();
+    expect(component.totalCards).toBe(3);
+    expect(component.recordedCount).toBe(6);              // the old reading: 3 - 6 = -3
+    expect(component.untestedInScope).toBe(2);            // T2 (untested only) and T3 (no run)
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelector('.vp-kpi[data-status="untested"] .vp-kpi-value')!.textContent!.trim()).toBe('2');
   });
 
   it('names v1 runs the copy-forward could not carry, and is silent when there are none', () => {

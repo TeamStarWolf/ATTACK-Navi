@@ -7,7 +7,15 @@
 //      detectionRef, a parseable date) makes the rung 'proven'. The best record
 //      is the highest scope among the fresh ones (production, range, own-run),
 //      newest first, and the bucket is 'proven'; with no fresh record the best
-//      is the newest one and the bucket is 'stale'.
+//      is the newest one and the bucket is 'stale'. A run's STATUS governs its
+//      proof (RP-F decision 16): a failed or no-telemetry run yields none even
+//      when it lists a fired rule, and the latest run governs, so a proof record
+//      older than the newest dated failed or no-telemetry run does not count
+//      (strictly older, as a failed run outranks a mark only when strictly newer).
+//      When that leaves no proof, the state names the run that outranked it
+//      (supersededProof) and, when that run failed and no newer full marks
+//      hold Covered, is 'contradicted', as a full mark a later failed run
+//      outranks is.
 //   2. Otherwise a not-reproducible verdict sets `excluded` (out of the
 //      Covered/Proven denominator only) and falls through for display.
 //   3. Otherwise full marks give 'covered', unless a failed verdict contradicts
@@ -22,7 +30,7 @@ import type { CoveredQualifier } from '../heatmap-modes';
 import type { TechniqueRefKey } from '../technique-ref';
 import type {
   CoveredMark, PostureBucket, PostureInputs, PostureRules, PostureRung, PostureState, PostureSubState,
-  PostureTally, ProofRecord, ProofScope, RunSummary, RunVerdict,
+  PostureTally, ProofRecord, ProofScope, RunSummary, RunVerdict, SupersededProof,
 } from './posture.types';
 
 /** D16 threshold 15 (dec:364-380); D10 windows range 90, production 180, own-run 90 (own-run is §10.4 item 2). */
@@ -37,6 +45,12 @@ const DAY_MS = 86_400_000;
 const SCOPE_RANK: Readonly<Record<ProofScope, number>> = { production: 3, range: 2, 'own-run': 1 };
 
 const QUALIFIER_ORDER: readonly CoveredQualifier[] = ['self-attested', 'range'];
+
+/**
+ * Run statuses that never yield proof, even when the run lists a fired rule
+ * (RP-F decision 16: T1135's failed run with one rule read Proven beside a FAIL pill).
+ */
+export const NO_PROOF_STATUSES: ReadonlySet<string> = new Set(['failed', 'no-telemetry']);
 
 /** Milliseconds since the epoch, or null when absent or not a date. */
 function time(iso: string | undefined): number | null {
@@ -89,6 +103,46 @@ function isContradicted(full: readonly CoveredMark[], verdicts: readonly RunVerd
   return latestFailed > newestMark;
 }
 
+/**
+ * The newest dated run whose status yields no proof (NO_PROOF_STATUSES), or null.
+ * An undated one never outranks a proof record, as an undated failed verdict
+ * never outranks a dated mark; of two on the same instant the first is kept.
+ */
+function latestNoProofRun(runs: readonly RunSummary[]): { readonly run: RunSummary; readonly t: number } | null {
+  let latest: { run: RunSummary; t: number } | null = null;
+  for (const run of runs) {
+    if (!NO_PROOF_STATUSES.has(run.status)) continue;
+    const t = time(run.date);
+    if (t === null) continue;
+    if (latest === null || t > latest.t) latest = { run, t };
+  }
+  return latest;
+}
+
+/**
+ * The proof that stands once each run's status is applied (RP-F decision 16):
+ * a record of a failed or no-telemetry run never counts, and the latest run
+ * governs, so a record strictly older than the newest such run is outranked.
+ * `superseded` names that run and the newest record it outranked, when it
+ * leaves no proof standing (the why line: "latest run failed on <date>; an
+ * earlier run passed on <date>"), with that earlier run's own status, looked up
+ * among the runs; null otherwise, a newer passing run included.
+ */
+function standingProof(
+  input: PostureInputs, rules: PostureRules, now: Date,
+): { readonly proof: DatedProof[]; readonly superseded: SupersededProof | null } {
+  const runs = input.runs ?? [];
+  const noProofRuns = new Set(runs.filter(r => NO_PROOF_STATUSES.has(r.status)).map(r => r.runId));
+  const qualifying = qualifyingProof(input.proof.filter(p => !noProofRuns.has(p.runId)), rules, now);
+  const latest = latestNoProofRun(runs);
+  if (latest === null) return { proof: qualifying, superseded: null };
+  const proof = qualifying.filter(p => p.t >= latest.t);
+  if (proof.length > 0 || qualifying.length === 0) return { proof, superseded: null };
+  const earlier = [...qualifying].sort((a, b) => b.t - a.t)[0].record;
+  const earlierStatus = runs.find(r => r.runId === earlier.runId)?.status ?? null;
+  return { proof, superseded: { latest: latest.run, earlier, earlierStatus } };
+}
+
 function qualifiersOf(marks: readonly CoveredMark[]): CoveredQualifier[] {
   return QUALIFIER_ORDER.filter(q => marks.some(m => m.qualifier === q));
 }
@@ -110,7 +164,7 @@ export function derivePosture(ref: TechniqueRefKey, input: PostureInputs, rules:
   const sub = new Set<PostureSubState>();
   if (input.covered.some(m => m.strength === 'planned')) sub.add('planned');
   if (input.covered.some(m => m.basis === 'range-telemetry-observed')) sub.add('telemetry-observed');
-  const proof = qualifyingProof(input.proof, rules, now);
+  const { proof, superseded } = standingProof(input, rules, now);
   const base = {
     ref,
     covered: input.covered,
@@ -118,6 +172,7 @@ export function derivePosture(ref: TechniqueRefKey, input: PostureInputs, rules:
     threatWeight: input.threatWeight,
     exposureWeight: input.exposureWeight,
     runsWithoutProof: runsWithoutProof(input.runs ?? [], proof),
+    supersededProof: superseded,
   };
 
   // 1. Proof.
@@ -163,6 +218,10 @@ export function derivePosture(ref: TechniqueRefKey, input: PostureInputs, rules:
     rung = 'none';
     bucket = 'none';
   }
+  // A failed run that outranked every proof record contradicts the technique's
+  // evidence, unless newer full marks still hold Covered (RP-F decision 16). A run
+  // with no telemetry outranks the proof too but contradicts nothing: it saw nothing.
+  if (superseded?.latest.status === 'failed' && bucket !== 'covered') sub.add('contradicted');
 
   return {
     ...base, rung, bucket, qualifiers, subStates: [...sub].sort(),

@@ -40,7 +40,10 @@
           }
         </div>
       } @empty {
-        <p class="ev-empty">Nothing of yours recorded for this technique.</p>
+        <!-- RP-F decision 16: the empty line speaks of marks only, and is left out while the card lists a run. -->
+        @if (!listsRun()) {
+          <p class="ev-empty" data-testid="ev-covered-empty">No covered (self-attested or range) mark recorded.</p>
+        }
       }
     </div>
   }

@@ -11,7 +11,12 @@
             <button type="button" class="tpp-item tpp-item--absent" [class.selected]="selectedGroupIds.has(a.id)"
                     [attr.aria-pressed]="selectedGroupIds.has(a.id)" (click)="toggleAbsent(a)">
               <span class="tpp-item-name">{{ a.name }}</span>
-              <span class="tpp-item-id">has no {{ absentDomainLabel }} use</span>
+              <!-- RP-F decision 18: an id that resolves to no group is never "absent from" a domain. -->
+              @if (a.unresolved) {
+                <span class="tpp-item-id">unknown or withdrawn group id</span>
+              } @else {
+                <span class="tpp-item-id">has no {{ absentDomainLabel }} use</span>
+              }
             </button>
           </li>
         }
@@ -65,8 +70,8 @@
     <ul class="tpp-list" aria-label="Groups">
       @for (g of filteredGroups(); track g.id) {
         <li>
-          <button type="button" class="tpp-item" [class.selected]="selectedGroupIds.has(g.id)"
-                  [attr.aria-pressed]="selectedGroupIds.has(g.id)" (click)="selectGroup(g)">
+          <button type="button" class="tpp-item" [class.selected]="isGroupPressed(g)"
+                  [attr.aria-pressed]="isGroupPressed(g)" (click)="selectGroup(g)">
             <span class="tpp-item-name">{{ g.name }}</span>
             <span class="tpp-item-id">{{ g.attackId }}</span>
           </button>

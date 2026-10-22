@@ -119,11 +119,15 @@ export interface PostureCellVM {
 export const CONTRADICTED_WORDS = 'contradicted by a later failed run';
 
 /**
- * The lenses whose cell words name the contradicted sub-state (RP-F decision
- * 11): Posture, Covered and Status, whose colour or stop the full marks set.
- * Proven and Controls keep their own words.
+ * The lenses whose cell words name the contradicted sub-state. Paints implies
+ * speaks (RP-F decision 17): every lens whose projection carries the
+ * sub-states, so posturePatterns draws the contradicted hatch (Posture, Covered,
+ * Proven), says so in its aria-label and tooltip; Status draws no hatch but its
+ * stop comes from the same implementation marks, so it says so too (RP-F
+ * decision 11). Controls keeps its own words: its projection drops sub-states.
+ * posture-ramp.spec asserts the invariant over every posture-cell lens.
  */
-export const CONTRADICTED_SPOKEN_LENSES: ReadonlySet<string> = new Set(['posture', 'covered', 'status']);
+export const CONTRADICTED_SPOKEN_LENSES: ReadonlySet<string> = new Set(['posture', 'covered', 'proven', 'status']);
 
 /**
  * The words of one posture-cell lens cell, for its aria-label and tooltip
@@ -135,10 +139,10 @@ export const CONTRADICTED_SPOKEN_LENSES: ReadonlySet<string> = new Set(['posture
  * produced by derivePosture) falls back to the badge. Another posture-cell
  * lens passes its own cell words as `lens.words` (P2-14).
  *
- * A contradicted state (a later failed run outranks the full marks) adds
- * ', contradicted by a later failed run' on the lenses in
+ * A contradicted state (a later failed run outranks the full marks or the
+ * proof) adds ', contradicted by a later failed run' on the lenses in
  * CONTRADICTED_SPOKEN_LENSES, the way a stale cell names its age (RP-F
- * decision 11): "Known: mapped, contradicted by a later failed run".
+ * decisions 11 and 17): "Known: mapped, contradicted by a later failed run".
  */
 export function postureCellLabel(
   s: Pick<PostureState, 'bucket' | 'qualifiers' | 'proofScope' | 'proofAge' | 'covered' | 'subStates'>,

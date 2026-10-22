@@ -141,9 +141,9 @@ describe('posture vocabulary (Phase 2 design §2.4)', () => {
   });
 
   it('proofLine: scope, date, the named detection and the outcome, composed from PROVEN', () => {
-    expect(proofLine(record)).toBe(`${PROVEN} in range on 2026-09-14 by wazuh:990003 (alerted)`);
-    expect(proofLine({ ...record, scope: 'own-run', outcome: 'blocked', date: '2026-09-21T23:59:00.000Z', detectionRef: 'sigma:abc' }))
-      .toBe(`${PROVEN} (your run) on 2026-09-21 by sigma:abc (blocked)`);
+    expect(proofLine(record)).toBe(`${PROVEN} in range on 9/14/26 by wazuh:990003 (alerted)`);
+    expect(proofLine({ ...record, scope: 'own-run', outcome: 'blocked', date: new Date(2026, 8, 21, 23, 59).toISOString(), detectionRef: 'sigma:abc' }))
+      .toBe(`${PROVEN} (your run) on 9/21/26 by sigma:abc (blocked)`);
   });
 
   it('scenarioOutcomeLabel and lensLabel', () => {

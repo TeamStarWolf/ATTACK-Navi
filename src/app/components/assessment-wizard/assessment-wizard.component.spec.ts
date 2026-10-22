@@ -35,7 +35,7 @@ describe('AssessmentWizardComponent', () => {
             get current() { return emptyProfile; },
             profile$: new BehaviorSubject(emptyProfile),
             setSource: jasmine.createSpy(),
-            absentGroups: () => [],
+            absentGroups: () => [], unresolvedGroups: () => [],
         }},
       ],
     });

@@ -887,6 +887,41 @@ test.describe('E2.4: default-lens rule', () => {
     await expect(page).toHaveURL(/#\/matrix\?(.*&)?heat=frequency(&|$)/, { timeout: 5000 });
   });
 
+  // RP-F decision 19: the toolbar brand link (routerLink /matrix) dropped the query, and
+  // with no state change the writer left #/matrix bare, so F5 lost a chosen lens (3 of 3
+  // in round 3). The lens is now written back; the D4 default path stays bare (decision 10).
+  test('[RP-F 19] KEV chosen in the View menu survives the brand link and F5', async ({ page }) => {
+    await openWorkspace(page);
+    await page.goto(BASE + '/#/matrix');
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+    await page.locator('.heatmap-btn').click();
+    await page.locator('.views-menu .lens-item[data-lens="kev"] .heatmap-mode-btn').click();
+    await expect(page.locator('.views-menu')).toBeHidden();
+    await expect(page).toHaveURL(/#\/matrix\?(.*&)?heat=kev(&|$)/, { timeout: LENS_STEP_TIMEOUT });
+    await page.locator('.brand-link').click();
+    await expect(page).toHaveURL(/#\/matrix\?(.*&)?heat=kev(&|$)/, { timeout: 5000 });
+    await page.reload();
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+    await expect(page.locator('.heatmap-btn')).toContainText('KEV');
+    await expect(page).toHaveURL(/#\/matrix\?(.*&)?heat=kev(&|$)/, { timeout: 5000 });
+  });
+
+  test('[RP-F 19] the D4 default path is unchanged: the brand link leaves #/matrix bare and F5 opens Frequency with the banner', async ({ page }) => {
+    await openWorkspace(page);
+    await page.goto(BASE + '/#/matrix');
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+    await expect(page.locator('.heatmap-btn')).toContainText('Frequency');
+    await page.locator('.brand-link').click();
+    // The URL writer is debounced (300 ms); give it well over that before reading the hash.
+    await page.waitForTimeout(1500);
+    expect(new URL(page.url()).hash).not.toContain('heat=');
+    await page.reload();
+    await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+    await expect(page.locator('.heatmap-btn')).toContainText('Frequency');
+    await expect(page.locator('.first-glance-banner')).toBeVisible();
+    expect(new URL(page.url()).hash).not.toContain('heat=');
+  });
+
   test('[RP-F 4] one recorded run and a pasted #/technique/ics/T0883?heat=status: Status survives the domain switch, not Posture', async ({ page }) => {
     await openWorkspace(page, { seed: { 'navi.v2.validation-runs': oneRun } });
     await page.goto('about:blank');
@@ -914,6 +949,45 @@ test.describe('E2.4: default-lens rule', () => {
     await expect(page).toHaveURL(/#\/matrix\?(.*&)?heat=posture(&|$)/, { timeout: ROUTE_TIMEOUT });
     await expect(page.locator('.heatmap-btn')).toContainText('Posture');
   });
+
+  // RP-F decision 17: paints implies speaks. T1078 carries M1015 implemented (an undated
+  // full mark) and a later failed run, so the mark is contradicted. In round 3 the Proven
+  // lens drew the hatch while its aria-label and tooltip said only "no recorded detection".
+  // Each lens is a pasted link (a fresh navigation); the drawer's why line is read too.
+  const T1078 = 'attack-pattern--b17a1a56-e99c-403c-8948-561df0cffe81';
+  const M1015 = 'course-of-action--e3388c78-2a8d-47c2-8422-c1398b324462';
+  const contradictedSeed = {
+    'mitre-nav-impl-v1': JSON.stringify([[M1015, 'implemented']]),
+    'navi.v2.validation-runs': JSON.stringify({
+      schema: 2, tombstones: [],
+      records: [{
+        id: 'e2e-rpf17-failed', techniqueId: 'T1078', runDate: '2026-10-20T15:00:00.000Z', status: 'failed', attackResult: 'executed',
+        source: 'manual', domain: null, attackVersion: 'unknown', createdAt: '2026-10-20T15:00:00.000Z', updatedAt: '2026-10-20T15:00:00.000Z',
+        techniqueRef: null, outcomes: [], proofScope: 'own-run', statusFromSource: false,
+      }],
+    }),
+  };
+  for (const [lens, label, hatch] of [
+    ['posture', 'Posture', true], ['covered', 'Covered', true], ['proven', 'Proven', true], ['status', 'Status', false],
+  ] as const) {
+    test(`[RP-F 17] T1078 (M1015 and a later failed run) on heat=${lens}: aria-label, tooltip and why line say contradicted${hatch ? ', with the hatch' : ', no hatch'}`, async ({ page }) => {
+      await openWorkspace(page, { seed: contradictedSeed });
+      await page.goto('about:blank');
+      await page.goto(`${BASE}/#/matrix?heat=${lens}`);
+      await expect(page.locator('.heatmap-btn')).toContainText(label, { timeout: ROUTE_TIMEOUT });
+      const cell = page.locator(`[data-tech-id="${T1078}"] .cell`).first();
+      await expect(cell).toBeVisible({ timeout: ROUTE_TIMEOUT });
+      await expect(cell).toHaveAttribute('aria-label', /contradicted by a later failed run/);
+      if (hatch) await expect(cell).toHaveClass(/posture-contradicted/);
+      else await expect(cell).not.toHaveClass(/posture-contradicted/);
+      await cell.hover();
+      await expect(page.locator('.tooltip-card .tt-posture')).toContainText('contradicted by a later failed run');
+      await cell.click();
+      const why = page.locator('.sidebar.open [data-testid="ev-why"]');
+      await expect(why).toContainText(/contradict/, { timeout: ROUTE_TIMEOUT });
+      await expect(why).toContainText(`Lens: ${label}`);
+    });
+  }
 });
 
 // RP-F item 5: with the technique drawer open at 1440x900 the View button wraps to

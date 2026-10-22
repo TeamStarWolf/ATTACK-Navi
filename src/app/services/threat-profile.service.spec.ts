@@ -241,10 +241,12 @@ describe('ThreatProfileService', () => {
       localStorage.setItem(KEY, JSON.stringify(raw));
       const svc = makeService(new BehaviorSubject<Domain | null>(ics()));
       expect(svc.current.source).toEqual({ kind: 'groups', ids: [APT29, FIN7] });
-      expect(svc.absentGroups(ics())).toEqual([{ id: APT29, name: APT29 }]);   // no name known: the id
+      // No name known and no domain seen that carries it: unknown or withdrawn, never absent (RP-F decision 18).
+      expect(svc.absentGroups(ics())).toEqual([]);
+      expect(svc.unresolvedGroups(ics())).toEqual([{ id: APT29, name: APT29, unresolved: true }]);
       raw.records[0].groupNames = ['APT29'];
       localStorage.setItem(KEY, JSON.stringify(raw));
-      expect(makeService(new BehaviorSubject<Domain | null>(ics())).absentGroups(ics())).toEqual([{ id: APT29, name: APT29 }]);
+      expect(makeService(new BehaviorSubject<Domain | null>(ics())).unresolvedGroups(ics())).toEqual([{ id: APT29, name: APT29, unresolved: true }]);
     });
 
     // RP-F decision 13: a profile stored with ATT&CK ids (G0016) resolved only by STIX id,
@@ -261,7 +263,8 @@ describe('ThreatProfileService', () => {
 
       it('reads every stored group present on Enterprise, after a reload, with no absent notice', () => {
         makeService(new BehaviorSubject<Domain | null>(ent())).setSource({ kind: 'groups', ids: ['G0016', 'g0046'] });
-        expect(JSON.parse(localStorage.getItem(KEY)!).records[0].ids).toEqual(['G0016', 'g0046']);   // stored as given
+        // RP-F decision 18: one shape in storage; the ATT&CK ids are written back as STIX ids.
+        expect(JSON.parse(localStorage.getItem(KEY)!).records[0].ids).toEqual([APT29, FIN7]);
         const svc = makeService(new BehaviorSubject<Domain | null>(ent()));
         expect(names(svc.presentGroups(ent()))).toEqual(['APT29', 'FIN7']);
         expect(svc.absentGroups(ent())).toEqual([]);
@@ -277,7 +280,7 @@ describe('ThreatProfileService', () => {
         currentAttackDomain = 'ics';
         domain$.next(icsOnly());
         expect(names(svc.presentGroups(icsOnly()))).toEqual(['FIN7']);
-        expect(svc.absentGroups(icsOnly())).toEqual([{ id: 'G0016', name: 'APT29' }]);
+        expect(svc.absentGroups(icsOnly())).toEqual([{ id: APT29, name: 'APT29' }]);   // normalised on the Enterprise load
         expect(svc.domainNotice()).toBe('1 of 2 groups present in ICS: FIN7; APT29 has no ICS use');
         currentAttackDomain = 'enterprise';
       });
@@ -308,6 +311,101 @@ describe('ThreatProfileService', () => {
         expect(names(svc.presentGroups(ent()))).toEqual(['APT29']);
         expect(svc.absentGroups(ent())).toEqual([]);
         expect(svc.current.groupIds).toEqual([APT29]);
+      });
+
+      // RP-F decision 18: one shape in storage. A profile stored with ATT&CK ids is
+      // normalised to STIX ids on load (and on workspace import), with its name hint.
+      describe('normalised to STIX ids on load (RP-F decision 18)', () => {
+        const ZERO = 'intrusion-set--00000000-0000-0000-0000-000000000000';
+        const storeRaw = (ids: string[], groupNames?: Record<string, string>) => localStorage.setItem(KEY, JSON.stringify({
+          schema: 2, tombstones: [], records: [{
+            kind: 'groups', ids, ...(groupNames ? { groupNames } : {}),
+            domain: 'enterprise', attackVersion: '19.2', source: 'manual', createdAt: '2026-10-21T00:00:00.000Z', updatedAt: '2026-10-21T00:00:00.000Z',
+          }],
+        }));
+        const storedIds = () => JSON.parse(localStorage.getItem(KEY)!).records[0].ids;
+
+        it("a profile stored as ['G0016','G0046'] loads on Enterprise as STIX ids, and storage holds STIX ids after load", () => {
+          storeRaw(['G0016', 'G0046']);
+          const svc = makeService(new BehaviorSubject<Domain | null>(ent()));
+          expect(svc.current.source).toEqual({ kind: 'groups', ids: [APT29, FIN7] });
+          expect(storedIds()).toEqual([APT29, FIN7]);
+          expect(JSON.parse(localStorage.getItem(KEY)!).records[0].groupNames).toEqual({ [APT29]: 'APT29', [FIN7]: 'FIN7' });
+          expect(svc.domainNotice()).toBeNull();
+          expect(svc.current.groupIds).toEqual([APT29, FIN7]);
+        });
+
+        it('lower-case and mixed shapes collapse to one STIX id per group', () => {
+          storeRaw(['g0016', APT29, 'G0046']);
+          makeService(new BehaviorSubject<Domain | null>(ent()));
+          expect(storedIds()).toEqual([APT29, FIN7]);
+        });
+
+        it('on a cold ICS boot only the ids ICS names are normalised; Enterprise finishes the job when it loads', () => {
+          storeRaw(['G0016', 'G0046']);
+          currentAttackDomain = 'ics';
+          const domain$ = new BehaviorSubject<Domain | null>(icsOnly());
+          const svc = makeService(domain$);
+          expect(storedIds()).toEqual(['G0016', FIN7]);
+          // G0016 resolves to no group this session yet: announced as such, never "has no ICS use".
+          expect(svc.domainNotice()).toBe('1 of 2 groups present in ICS: FIN7; G0016: unknown or withdrawn group id');
+          expect(svc.absentGroups(icsOnly())).toEqual([]);
+          expect(svc.unresolvedGroups(icsOnly())).toEqual([{ id: 'G0016', name: 'G0016', unresolved: true }]);
+          currentAttackDomain = 'enterprise';
+          domain$.next(ent());
+          expect(storedIds()).toEqual([APT29, FIN7]);
+          currentAttackDomain = 'ics';
+          domain$.next(icsOnly());
+          expect(svc.domainNotice()).toBe('1 of 2 groups present in ICS: FIN7; APT29 has no ICS use');
+          currentAttackDomain = 'enterprise';
+        });
+
+        const UNRESOLVED = ['Fancy Bear', 'G0074', 'G0042', 'G9999', ZERO];
+        it('aliases, revoked G0074 and G0042, unknown G9999 and an all-zero STIX id are unknown or withdrawn on Enterprise', () => {
+          storeRaw([APT29, ...UNRESOLVED]);
+          const svc = makeService(new BehaviorSubject<Domain | null>(ent()));
+          expect(storedIds()).toEqual([APT29, ...UNRESOLVED]);    // kept, never dropped
+          expect(svc.absentGroups(ent())).toEqual([]);
+          expect(svc.unresolvedGroups(ent()).map((r) => r.id)).toEqual(UNRESOLVED);
+          const notice = svc.domainNotice()!;
+          expect(notice).toBe('1 of 6 groups present in Enterprise: APT29; '
+            + UNRESOLVED.map((id) => `${id}: unknown or withdrawn group id`).join('; '));
+          expect(notice).not.toContain('has no');
+        });
+
+        it('the same ids on ICS: the known group is absent by name, the rest unknown or withdrawn', () => {
+          storeRaw([APT29, ...UNRESOLVED], { [APT29]: 'APT29' });
+          currentAttackDomain = 'ics';
+          const svc = makeService(new BehaviorSubject<Domain | null>(icsOnly()));
+          expect(svc.absentGroups(icsOnly())).toEqual([{ id: APT29, name: 'APT29' }]);
+          expect(svc.domainNotice()).toBe('0 of 6 groups present in ICS; APT29 has no ICS use; '
+            + UNRESOLVED.map((id) => `${id}: unknown or withdrawn group id`).join('; '));
+          currentAttackDomain = 'enterprise';
+        });
+
+        it('a name hint never names a group that did not resolve: an alias hint is ignored, a hint renaming a real group is refused', () => {
+          storeRaw(['Fancy Bear', ZERO], { 'Fancy Bear': 'APT28', [ZERO]: 'APT29' });
+          const svc = makeService(new BehaviorSubject<Domain | null>(ent()));
+          const notice = svc.domainNotice()!;
+          expect(notice).toBe('0 of 2 groups present in Enterprise; Fancy Bear: unknown or withdrawn group id; '
+            + `${ZERO}: unknown or withdrawn group id`);
+          expect(notice).not.toContain('APT28');
+          expect(notice).not.toContain('APT29 has no');
+        });
+
+        it('a workspace-bundle value is normalised to STIX ids with its name hint; one that does not parse is left as it is', () => {
+          const svc = makeService(new BehaviorSubject<Domain | null>(ent()));
+          const value = JSON.stringify({ schema: 2, tombstones: [], records: [{
+            kind: 'groups', ids: ['G0016', 'g0046', 'G9999'], source: 'manual', createdAt: 'x', updatedAt: 'x', domain: 'enterprise', attackVersion: '19.2',
+          }] });
+          const out = JSON.parse(svc.normaliseImportedValue(value));
+          expect(out.records[0].ids).toEqual([APT29, FIN7, 'G9999']);
+          expect(out.records[0].groupNames).toEqual({ [APT29]: 'APT29', [FIN7]: 'FIN7' });
+          expect(out.records[0].source).toBe('manual');
+          expect(svc.normaliseImportedValue('not json')).toBe('not json');
+          const topN = JSON.stringify({ schema: 2, tombstones: [], records: [{ kind: 'top-groups', n: 5 }] });
+          expect(JSON.parse(svc.normaliseImportedValue(topN))).toEqual(JSON.parse(topN));
+        });
       });
     });
 
