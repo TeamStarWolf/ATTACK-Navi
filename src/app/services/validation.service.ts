@@ -841,7 +841,7 @@ export class ValidationService {
     const runVersion = latestRun(this.runsSubject.value.filter(r => r.attackVersion !== 'unknown'), storedRunKey)?.run.attackVersion ?? '';
     const attack = domainVersion || runVersion;
     return {
-      name: `ATTACK-Navi Detection Validation — ${new Date().toISOString().split('T')[0]}`,
+      name: `ATT&CK-Navi Detection Validation — ${new Date().toISOString().split('T')[0]}`,
       versions: { ...(attack ? { attack } : {}), navigator: '5', layer: '4.5' },
       domain: domainId,
       description: 'Auto-generated validation status by technique (latest run wins).',
