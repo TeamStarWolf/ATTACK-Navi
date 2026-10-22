@@ -292,20 +292,19 @@ describe('lensExplain (P2-18): Why this colour', () => {
         expect(postureExplain(s)).toContain('; contradicted: latest run failed on 10/20/26; an earlier run passed on 10/18/26; see Detection Validation');
       });
 
-      it('a partial earlier run is named partial, never passed, on every line that names it (RP-F round 3)', () => {
+      it('a partial earlier run yields no proof (RP-F decision 23): the lines name both runs, never as passed', () => {
         const s = derived('T1010', {
           knownSignals: 3,
           runs: [run('r1', 'partial', at(18)), run('f1', 'failed', at(20))],
           proof: [fired('r1', at(18))],
           verdicts: [{ date: at(20), failed: true, notReproducible: false, source: 'manual' }],
         });
-        expect(s.supersededProof!.earlierStatus).toBe('partial');
-        const clause = 'contradicted: latest run failed on 10/20/26; an earlier run was partial on 10/18/26';
-        expect(supersededClause(s)).toBe(clause);
+        expect(s.supersededProof).toBeNull();
+        expect(s.proof).toEqual([]);
+        const clause = '2 runs of yours recorded, latest failed on 10/20/26';
+        expect(supersededClause(s)).toBe('');
         expect(postureExplain(s)).toBe(`Known: mapped (3 of 5 reference families); ${clause}; see Detection Validation`);
-        expect(lensExplain(def('proven'), { score: 0 }, { state: s })).toBe(`No recorded detection for this technique; ${clause}`);
         expect(lensExplain(def('covered'), { score: 0 }, { state: s })).toContain(`; ${clause}; see Detection Validation`);
-        expect(lensExplain(def('status'), { score: 0, label: 'Untested' }, { state: s })).toBe(`Untested; ${clause}`);
         for (const line of [postureExplain(s), lensExplain(def('proven'), { score: 0 }, { state: s })]) {
           expect(line).not.toContain('passed');
         }

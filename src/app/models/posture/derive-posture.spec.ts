@@ -3,7 +3,7 @@
 //
 // One row per branch of the rung derivation (Phase 2 design §2.2). CI gates
 // this file's subject at 100% branch coverage (scripts/check-branch-coverage.mjs).
-import { DEFAULT_POSTURE_RULES, derivePosture, tallyPosture } from './derive-posture';
+import { DEFAULT_POSTURE_RULES, PROVING_STATUSES, derivePosture, provesStatus, tallyPosture } from './derive-posture';
 import type { CoveredMark, PostureInputs, PostureState, ProofRecord, ProofScope, RunSummary, RunVerdict } from './posture.types';
 import type { TechniqueRefKey } from '../technique-ref';
 
@@ -340,13 +340,13 @@ describe('derivePosture (Phase 2 design §2.2)', () => {
       expect(s.runsWithoutProof.map(r => r.runId)).toEqual(['f1', 'p1']);
     });
 
-    it('the outranked earlier run carries its own status: a partial run with a fired rule is named partial', () => {
+    it('a partial run with a fired rule yields no proof (RP-F decision 23), so a later failed run outranks nothing', () => {
       const s = derive({
         runs: [run('r1', 5, 'partial'), run('f1', 1, 'failed')], proof: [own('r1', 5)], verdicts: [verdict(1, { failed: true })],
       });
-      expect(s.supersededProof!.earlier.runId).toBe('r1');
-      expect(s.supersededProof!.earlierStatus).toBe('partial');
-      expect(s.subStates).toEqual(['contradicted']);
+      expect(s.proof).toEqual([]);
+      expect(s.supersededProof).toBeNull();
+      expect(s.runsWithoutProof.map(r => r.runId)).toEqual(['f1', 'r1']);
     });
 
     it('an outranked record whose run is not listed carries no status', () => {
@@ -417,6 +417,69 @@ describe('derivePosture (Phase 2 design §2.2)', () => {
       const s = derive({ runs: [run('f1', 1, 'failed')], knownSignals: 1 });
       expect(s.supersededProof).toBeNull();
       expect(s.subStates).toEqual([]);
+    });
+  });
+
+  // RP-F decision 23: proof is an ALLOW-list. Round 4 found an untested run (S12 T1018)
+  // and a not-reproducible run (S13 T1082), each listing a fired rule, reading Proven
+  // beside an UNTESTED and a Not reproducible pill.
+  describe('proof is an allow-list of run statuses (RP-F decision 23)', () => {
+    const run = (runId: string, ageDays: number | null, status: string): RunSummary => ({
+      runId, status, date: ageDays === null ? 'not a date' : daysAgo(ageDays), source: 'manual',
+    });
+    const own = (runId: string, ageDays: number): ProofRecord => proof('own-run', ageDays, { runId, source: 'manual' });
+
+    it('PROVING_STATUSES is exactly passed', () => {
+      expect([...PROVING_STATUSES]).toEqual(['passed']);
+      expect(provesStatus('passed')).toBeTrue();
+      for (const status of ['untested', 'partial', 'not-reproducible', 'failed', 'no-telemetry', 'PASSED', '']) {
+        expect(provesStatus(status)).withContext(status).toBeFalse();
+      }
+    });
+
+    for (const status of ['untested', 'partial', 'not-reproducible', 'failed', 'no-telemetry']) {
+      it(`a ${status} run with a fired rule is not Proven; it is a run without proof`, () => {
+        const s = derive({ runs: [run('x1', 1, status)], proof: [own('x1', 1)], knownSignals: 2 });
+        expect(s.rung).not.toBe('proven');
+        expect(s.proof).toEqual([]);
+        expect(s.runsWithoutProof.map(r => [r.runId, r.status])).toEqual([['x1', status]]);
+      });
+    }
+
+    it('S12 T1018 shape: untested with one fired rule reads Known, never Proven', () => {
+      const s = derive({ runs: [run('s12', 6, 'untested')], proof: [own('s12', 6)], knownSignals: 3 });
+      expect([s.rung, s.bucket]).toEqual(['known', 'known']);
+    });
+
+    it('S13 T1082 shape: not reproducible with one fired rule is excluded, never Proven', () => {
+      const s = derive({
+        runs: [run('s13', 6, 'not-reproducible')], proof: [own('s13', 6)],
+        verdicts: [verdict(6, { notReproducible: true })], knownSignals: 3,
+      });
+      expect([s.rung, s.bucket, s.excluded]).toEqual(['known', 'known', true]);
+      expect(s.subStates).toEqual(['not-reproducible']);
+    });
+
+    it('a newer untested run after a pass outranks the proof and is named; nothing is contradicted', () => {
+      const s = derive({ runs: [run('p1', 6, 'passed'), run('u1', 1, 'untested')], proof: [own('p1', 6)], knownSignals: 1 });
+      expect([s.rung, s.bucket]).toEqual(['known', 'known']);
+      expect(s.supersededProof!.latest.runId).toBe('u1');
+      expect(s.supersededProof!.earlierStatus).toBe('passed');
+      expect(s.subStates).toEqual([]);
+    });
+
+    it('a newer not-reproducible run after a pass outranks the proof and excludes the technique', () => {
+      const s = derive({
+        runs: [run('p1', 6, 'passed'), run('n1', 1, 'not-reproducible')], proof: [own('p1', 6)],
+        verdicts: [verdict(1, { notReproducible: true })],
+      });
+      expect(s.proof).toEqual([]);
+      expect(s.excluded).toBeTrue();
+      expect(s.supersededProof!.latest.runId).toBe('n1');
+    });
+
+    it('a record whose run is not listed stands as it is (inputs built without runs)', () => {
+      expect(derive({ runs: [run('u1', 9, 'untested')], proof: [own('elsewhere', 1)] }).bucket).toBe('proven');
     });
   });
 

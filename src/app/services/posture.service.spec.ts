@@ -237,7 +237,22 @@ describe('PostureService (P2-05, E2.1-c)', () => {
       for (const s of shown) expect(s.qualifiers.length).withContext(s.ref).toBeGreaterThan(0);
     });
 
-    it("a blocked own run without a detection is bucket 'covered' with basis 'own-run-blocked', never 'proven'", () => {
+    it("a passed blocked own run without a detection is bucket 'covered' with basis 'own-run-blocked', never 'proven'", () => {
+      const t = tech('T1593');
+      TestBed.inject(ValidationService).importRows([{
+        id: 'blocked-1', techniqueId: t.attackId, runDate: daysBefore(3), status: 'passed', attackResult: 'blocked',
+        outcomes: [{ detectionRef: null, outcome: 'blocked' }],
+      } as never], 'layer:blocked-run');
+      const s = stateOf(t);
+      expect(s.bucket).toBe('covered');
+      expect(s.rung).toBe('covered');
+      expect(s.proof).toEqual([]);
+      expect(s.covered.map(m => [m.qualifier, m.basis, m.strength])).toEqual([['self-attested', 'own-run-blocked', 'full']]);
+    });
+
+    // RP-F decision 23: Record Run's "Blocked by control" with no expected rule stores
+    // 'untested'; its blocked outcome attests nothing (it read Covered beside UNTESTED).
+    it("Record Run 'Blocked by control' with no expected rule stores untested and leaves the rung where it was", () => {
       const t = tech('T1593');
       TestBed.inject(ValidationService).record({
         techniqueId: t.attackId, techniqueName: t.name, operator: '', runDate: daysBefore(3),
@@ -245,10 +260,10 @@ describe('PostureService (P2-05, E2.1-c)', () => {
         detectionsExpected: [], detectionsFired: [], responsePlaybook: '', responseActions: [], evidenceLinks: [], notes: '',
       });
       const s = stateOf(t);
-      expect(s.bucket).toBe('covered');
-      expect(s.rung).toBe('covered');
-      expect(s.proof).toEqual([]);
-      expect(s.covered.map(m => [m.qualifier, m.basis, m.strength])).toEqual([['self-attested', 'own-run-blocked', 'full']]);
+      expect(s.rung).not.toBe('covered');
+      expect(s.rung).not.toBe('proven');
+      expect(s.covered).toEqual([]);
+      expect(s.runsWithoutProof.map(r => r.status)).toEqual(['untested']);
     });
 
     it('a run with a named detection reaches the top rung, and expiringSoon counts a proof near its window', () => {

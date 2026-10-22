@@ -156,13 +156,24 @@ describe('posture adapters (P2-05)', () => {
       expect(viaOutcome.proof.map(p => p.outcome)).toEqual(['blocked']);
     });
 
-    it("a blocked run with no named detection is a full self-attested 'own-run-blocked' mark, never proof", () => {
-      const r = runInputs(run({ attackResult: 'blocked', outcomes: [outcome({ outcome: 'blocked' })] }));
+    it("a passed blocked run with no named detection is a full self-attested 'own-run-blocked' mark, never proof", () => {
+      const r = runInputs(run({ status: 'passed', attackResult: 'blocked', outcomes: [outcome({ outcome: 'blocked' })] }));
       expect(r.proof).toEqual([]);
       expect(r.covered).toEqual([{
         qualifier: 'self-attested', basis: 'own-run-blocked', strength: 'full', source: 'manual', at: '2026-09-20T10:00:00.000Z',
       }]);
     });
+
+    // RP-F decision 23: the own-run-blocked mark is gated on the proof allow-list. Record
+    // Run's "Blocked by control" with no expected rule stores 'untested' (T1069), and a
+    // seeded failed run with a blocked outcome (S26 T1027) read Covered beside a FAIL pill.
+    for (const status of ['untested', 'partial', 'not-reproducible', 'failed', 'no-telemetry'] as const) {
+      it(`a ${status} run with a blocked outcome and no named rule attests nothing`, () => {
+        const r = runInputs(run({ status, attackResult: 'blocked', outcomes: [outcome({ outcome: 'blocked' })] }));
+        expect(r.covered).toEqual([]);
+        expect(r.proof).toEqual([]);
+      });
+    }
 
     it('carries the run itself (id, status, date, source) for the runs-without-proof line (RP-F decision 9)', () => {
       expect(runInputs(run({ status: 'untested' })).summary).toEqual({
