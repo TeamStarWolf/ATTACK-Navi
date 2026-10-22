@@ -89,11 +89,39 @@ import { TechniqueEvidenceCardComponent } from '../technique-evidence-card/techn
 import {
   RULE_SOURCE_KEYS, RuleSourceListComponent, type RuleSourceView, ruleSourceError, ruleSourceView,
 } from '../rule-source-list/rule-source-list.component';
+import { DrawerRowComponent, DrawerSectionComponent, type DrawerBadgeTone } from '../drawer-primitives';
+
+/**
+ * The badge tone of each value a drawer row shows as a badge (one theme token per
+ * meaning, so the badge reads in both themes); a value not listed is neutral.
+ */
+const BADGE_TONES: Readonly<Record<string, Readonly<Record<string, DrawerBadgeTone>>>> = {
+  // CTID score chips (CSA CCM, M365 controls): score value or category
+  ctrl: { significant: 'success', partial: 'warm', minimal: 'danger', protect: 'blue', detect: 'purple', respond: 'orange' },
+  provider: { cis: 'purple', aws: 'warm', azure: 'blue', gcp: 'success' },
+  cri: { GV: 'purple', ID: 'accent', PR: 'success', DE: 'warm', RS: 'danger', RC: 'neutral' },
+  // CAPEC likelihood / severity, SIEM query confidence
+  level: { high: 'danger', medium: 'warm', low: 'success' },
+  engage: { prepare: 'success', expose: 'accent', affect: 'danger', elicit: 'warm', understand: 'neutral' },
+  ioc: { ip: 'danger', domain: 'purple', hash: 'warm', url: 'accent', email: 'success', cve: 'orange' },
+  impl: { implemented: 'success', 'in-progress': 'accent', planned: 'warm', 'not-started': 'danger' },
+  // CVE capability group (CTID): the hue each group had, as the nearest role token
+  capGroup: {
+    xxe: 'purple', sql_injection: 'danger', buffer_overflow: 'orange', auth_bypass: 'blue', code_execution: 'warm',
+    xss: 'danger', command_injection: 'danger', path_traversal: 'success', deserialization: 'purple',
+    privilege_escalation: 'purple', information_disclosure: 'accent', memory_corruption: 'orange', race_condition: 'success',
+    improper_input_validation: 'danger', use_after_free: 'danger', integer_overflow: 'orange',
+  },
+  customCat: {
+    edr: 'blue', siem: 'purple', network: 'blue', email: 'warm', iam: 'success',
+    endpoint: 'orange', identity: 'success', cloud: 'neutral', custom: 'neutral',
+  },
+};
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, AttackTextPipe, LibraryCrossRefComponent, ValidationStatusPillComponent, DrawerResizeHandleComponent, TechniqueEvidenceCardComponent, RuleSourceListComponent],
+  imports: [CommonModule, FormsModule, RouterLink, AttackTextPipe, LibraryCrossRefComponent, ValidationStatusPillComponent, DrawerResizeHandleComponent, TechniqueEvidenceCardComponent, RuleSourceListComponent, DrawerSectionComponent, DrawerRowComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss',
@@ -340,6 +368,13 @@ export class SidebarComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** The tone of a row badge: BADGE_TONES[kind][value], case-insensitive except for the CRI function codes. */
+  badgeTone(kind: string, value: string | null | undefined): DrawerBadgeTone {
+    const tones = BADGE_TONES[kind];
+    if (!tones || !value) return 'neutral';
+    return tones[value] ?? tones[value.toLowerCase()] ?? 'neutral';
+  }
+
   isCurated(id: string): boolean {
     return SidebarComponent.CURATED_SECTIONS.has(id);
   }
@@ -521,15 +556,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
       map.set(cap.framework, list);
     }
     return Array.from(map.entries()).map(([framework, capabilities]) => ({ framework, capabilities }));
-  }
-
-  c2FrameworkColor(name: string): string {
-    switch (name) {
-      case 'Sliver': return '#4CAF50';
-      case 'Cobalt Strike': return '#2196F3';
-      case 'Metasploit': return '#FF5722';
-      default: return '#888';
-    }
   }
 
   /** Unified list with a consistent 'provider' field for template use. */
@@ -1787,27 +1813,17 @@ export class SidebarComponent implements OnInit, OnDestroy {
     return parts.length > 0 ? parts.join(', ') : '';
   }
 
-  /** Capability group color mapping */
-  getCapGroupColor(group: string): string {
-    const colors: Record<string, string> = {
-      xxe: '#a855f7',
-      sql_injection: '#ef4444',
-      buffer_overflow: '#f97316',
-      auth_bypass: '#3b82f6',
-      code_execution: '#eab308',
-      xss: '#ec4899',
-      command_injection: '#f43f5e',
-      path_traversal: '#14b8a6',
-      deserialization: '#8b5cf6',
-      privilege_escalation: '#6366f1',
-      information_disclosure: '#06b6d4',
-      memory_corruption: '#d97706',
-      race_condition: '#84cc16',
-      improper_input_validation: '#e11d48',
-      use_after_free: '#dc2626',
-      integer_overflow: '#ea580c',
-    };
-    return colors[group.toLowerCase()] ?? '#6b7280';
+  /** The capability group's badge tone (a role token, so it reads in both themes); unknown groups are neutral. */
+  capGroupTone(group: string): DrawerBadgeTone {
+    return this.badgeTone('capGroup', group);
+  }
+
+  /** The EPSS badge's tone, on the EpssService colour bands (>= 0.5, >= 0.2, >= 0.05, below). */
+  epssTone(epss: number): DrawerBadgeTone {
+    if (epss >= 0.5) return 'danger';
+    if (epss >= 0.2) return 'orange';
+    if (epss >= 0.05) return 'warm';
+    return 'success';
   }
 
   /** Format capability group name for display */

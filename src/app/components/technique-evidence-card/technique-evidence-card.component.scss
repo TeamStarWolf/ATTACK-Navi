@@ -14,6 +14,17 @@
   gap: 10px;
 }
 
+/* In the technique drawer the card sits in the same container as every drawer
+   section (src/app/components/drawer-primitives): same border, radius, padding,
+   background and spacing. Its own content and sub-block titles are unchanged. */
+:host-context(.sidebar-body) .evidence-card {
+  margin: 0 0 var(--space-4, 16px);
+  padding: var(--space-4, 16px);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg, 12px);
+  background: var(--bg-panel-strong);
+}
+
 .ev-why-line {
   margin: 0;
   font-size: 13px;

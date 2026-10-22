@@ -9,6 +9,7 @@
 // from ruleSourceView(); this component only presents it. A rule listed here exists in
 // a public repository: it is reference data, not a rule running anywhere.
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { DrawerRowComponent } from '../drawer-primitives';
 import {
   type RuleCoverageKey, type RuleCoverageLink, type RuleCoverageSection, ruleLinks,
 } from '../../services/rule-coverage-snapshot.service';
@@ -74,6 +75,7 @@ export function ruleSourceError(key: RuleCoverageKey, err: unknown): RuleSourceV
 @Component({
   selector: 'app-rule-source-list',
   standalone: true,
+  imports: [DrawerRowComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './rule-source-list.component.html',
   styleUrl: './rule-source-list.component.scss',

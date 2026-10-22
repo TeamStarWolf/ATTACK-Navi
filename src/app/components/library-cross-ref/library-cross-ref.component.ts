@@ -15,6 +15,7 @@ import {
 import { Subscription } from 'rxjs';
 import { LibraryService, LibraryAsset } from '../../services/library.service';
 import { PanelNavService } from '../../services/panel-nav.service';
+import { DrawerRowComponent, DrawerSectionComponent, type DrawerBadgeTone } from '../drawer-primitives';
 
 /**
  * Shows Library assets (tools / channels / X accounts) related to a given
@@ -25,141 +26,43 @@ import { PanelNavService } from '../../services/panel-nav.service';
 @Component({
   selector: 'app-library-cross-ref',
   standalone: true,
-  imports: [],
+  imports: [DrawerSectionComponent, DrawerRowComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <section class="lcr">
-      <header class="lcr-head">
-        <h4>From the Library</h4>
-        @if (assets.length > 0) {
-          <button class="lcr-open-library" (click)="openLibrary()" title="Open the Library Index">
-            Open Library →
-          </button>
-        }
-      </header>
+    <app-drawer-section class="lcr" heading="From the Library" [collapsible]="false">
+      @if (assets.length > 0) {
+        <button sbTrailing class="sb-action lcr-open-library" (click)="openLibrary()" title="Open the Library Index">
+          Open Library →
+        </button>
+      }
 
       @if (assets.length === 0) {
-        <p class="lcr-empty">
+        <p class="sb-empty lcr-empty">
           No starred tools, channels, or accounts mapped to this technique yet.
           @if (attackId) { <span>({{ attackId }})</span> }
         </p>
       } @else {
-        <p class="lcr-meta">
+        <p class="sb-text lcr-meta">
           {{ assets.length }} matching {{ assets.length === 1 ? 'asset' : 'assets' }}
-          (curated by <a href="https://x.com/WolfenLabs" target="_blank" rel="noreferrer">&#64;WolfenLabs</a>)
+          (curated by <a class="sb-link" href="https://x.com/WolfenLabs" target="_blank" rel="noreferrer">&#64;WolfenLabs</a>)
         </p>
-        <ul class="lcr-list">
+        <div class="sb-list sb-list--scroll lcr-list">
           @for (a of assets; track a.id) {
-            <li class="lcr-item" [attr.data-type]="a.type">
-              <a [href]="a.url" target="_blank" rel="noopener noreferrer" class="lcr-link">
-                <span class="lcr-type-badge" [attr.data-type]="a.type">{{ shortType(a.type) }}</span>
-                <span class="lcr-title">{{ a.title }}</span>
-              </a>
-              @if (a.description) {
-                <p class="lcr-desc">{{ a.description }}</p>
-              }
-            </li>
+            <app-drawer-row kind="detail" class="lcr-item" [attr.data-type]="a.type"
+                            [name]="a.title" nameClass="lcr-link lcr-title" [nameHref]="a.url" rel="noopener noreferrer"
+                            [description]="a.description">
+              <span sbBadge class="sb-badge lcr-type-badge" [attr.data-type]="a.type" [attr.data-tone]="typeTone(a.type)">{{ shortType(a.type) }}</span>
+            </app-drawer-row>
           }
-        </ul>
+        </div>
       }
-    </section>
+    </app-drawer-section>
   `,
   styles: [`
-    .lcr {
-      margin: 12px 0;
-      padding: 10px 12px;
-      background: rgba(78, 161, 255, 0.04);
-      border: 1px solid rgba(78, 161, 255, 0.18);
-      border-radius: 6px;
-    }
-    .lcr-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin: 0 0 8px;
-    }
-    .lcr-head h4 {
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
-      color: var(--accent, #4ea1ff);
-      margin: 0;
-      font-weight: 700;
-    }
-    .lcr-open-library {
-      background: transparent;
-      border: 1px solid var(--border-subtle, #2a2f3d);
-      color: var(--text-muted, #8b93a7);
-      padding: 3px 9px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 11px;
-    }
-    .lcr-open-library:hover {
-      color: var(--accent, #4ea1ff);
-      border-color: var(--accent, #4ea1ff);
-    }
-    .lcr-meta {
-      font-size: 11px;
-      color: var(--text-muted, #8b93a7);
-      margin: 0 0 8px;
-    }
-    .lcr-empty {
-      font-size: 12px;
-      color: var(--text-muted, #8b93a7);
-      margin: 4px 0 0;
-      font-style: italic;
-    }
-    .lcr-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      max-height: 260px;
-      overflow-y: auto;
-    }
-    .lcr-item {
-      padding: 5px 8px;
-      border-radius: 4px;
-    }
-    .lcr-item:hover {
-      background: rgba(255, 255, 255, 0.03);
-    }
-    .lcr-link {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      text-decoration: none;
-      color: var(--text-main, #e6e8ee);
-      font-size: 12.5px;
-    }
-    .lcr-link:hover .lcr-title {
-      color: var(--accent, #4ea1ff);
-    }
-    .lcr-title {
-      flex: 1;
-      font-weight: 500;
-      word-break: break-word;
-    }
-    .lcr-type-badge {
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      padding: 1px 5px;
-      border-radius: 3px;
-      flex-shrink: 0;
-    }
-    .lcr-type-badge[data-type="tool"]      { background: rgba(78,161,255,0.18); color: #4ea1ff; }
-    .lcr-type-badge[data-type="channel"]   { background: rgba(239,68,68,0.18); color: #ef4444; }
-    .lcr-type-badge[data-type="x-account"] { background: rgba(167,139,250,0.18); color: #a78bfa; }
-    .lcr-desc {
-      font-size: 11px;
-      color: var(--text-muted, #8b93a7);
-      margin: 2px 0 0 50px;
-      line-height: 1.35;
+    :host { display: block; }
+    /* The card, header, rows and badges come from the drawer primitives; only the
+       two-line clamp of an asset's description is this list's own. */
+    .lcr-item .sb-desc {
       display: -webkit-box;
       -webkit-line-clamp: 2;
       line-clamp: 2;
@@ -210,6 +113,12 @@ export class LibraryCrossRefComponent implements OnInit, OnChanges, OnDestroy {
 
   openLibrary(): void {
     this.panelNav.open('library');
+  }
+
+  typeTone(t: string): DrawerBadgeTone {
+    if (t === 'channel') return 'danger';
+    if (t === 'x-account') return 'purple';
+    return 'accent';
   }
 
   shortType(t: string): string {
