@@ -6,7 +6,8 @@
 import { heatmapModeDef } from './heatmap-modes';
 import type { HeatmapMode } from '../services/filter.service';
 import type { CoveredMark, PostureInputs, PostureState, ProofRecord, RunSummary } from './posture/posture.types';
-import { DEFAULT_POSTURE_RULES, derivePosture } from './posture/derive-posture';
+import { DEFAULT_POSTURE_RULES, PROVING_STATUSES, derivePosture } from './posture/derive-posture';
+import { provingStatusWords } from './posture/proof-gap';
 import { basisWords, formatScore, lensExplain, postureExplain, provenNoneLine, runsClause, supersededClause } from './lens-explain';
 
 const def = (mode: HeatmapMode) => heatmapModeDef(mode)!;
@@ -332,15 +333,41 @@ describe('lensExplain (P2-18): Why this colour', () => {
       // RP-F decision 28: the Proven lens never says "No recorded detection" beside a run that fired a rule.
       it('a run that fired a rule without proof is named, with its date and status, instead of "No recorded detection"', () => {
         const s = derived('T1018', { knownSignals: 2, runs: [{ ...run('s12', 'untested', at(15)), rulesFired: 1 }], proof: [fired('s12', at(15))] });
-        const line = 'No proof: 1 rule fired in your run on 10/15/26 (status untested); a run is proof only when it passed';
+        const line = 'No proof: 1 rule fired in your run on 10/15/26 (status untested); a run is proof only when its status is passed';
         expect(provenNoneLine(s)).toBe(line);
         expect(lensExplain(def('proven'), { score: 0 }, { state: s })).toBe(line);
         expect(provenNoneLine(state({ runsWithoutProof: [{ ...run('x', 'failed', at(15)), rulesFired: 2 }] })))
-          .toBe('No proof: 2 rules fired in your run on 10/15/26 (status failed); a run is proof only when it passed');
-        // A passed run without proof was outranked: the superseded clause names it, not this line.
-        expect(provenNoneLine(state({ runsWithoutProof: [{ ...run('p', 'passed', at(15)), rulesFired: 1 }] })))
-          .toBe('No recorded detection for this technique');
+          .toBe('No proof: 2 rules fired in your run on 10/15/26 (status failed); a run is proof only when its status is passed');
         expect(provenNoneLine(state({ runsWithoutProof: [run('u', 'untested', at(15))] }))).toBe('No recorded detection for this technique');
+      });
+
+      // RP-F round 4 repair: a passed run whose proof a later run outranked fired a rule the pill
+      // still shows ("range-run rules: siem:curated"), so the Proven block names it too (S27 T1059.001).
+      it('a passed run whose proof a later run outranked is named, never "No recorded detection"', () => {
+        const s = derived('T1059.001', {
+          knownSignals: 2,
+          runs: [{ ...run('m1', 'passed', at(18)), rulesFired: 1 }, run('f', 'failed', at(20))],
+          proof: [fired('m1', at(18))],
+        });
+        expect(s.proof.length).toBe(0);
+        expect(provenNoneLine(s)).toBe('No proof: 1 rule fired in your run on 10/18/26 (status passed); a later run outranks it');
+        expect(lensExplain(def('proven'), { score: 0 }, { state: s })).not.toContain('No recorded detection');
+        // A passed run whose date cannot be read is sorted oldest, flagged, and named with why it is not proof.
+        expect(provenNoneLine(state({ runsWithoutProof: [{ ...run('y', 'passed', 'yesterday'), rulesFired: 1 }] })))
+          .toBe("No proof: 1 rule fired in your run on 'yesterday' (unreadable date, sorted oldest) (status passed); "
+            + 'a run is proof only with a readable date');
+      });
+
+      // RP-F decision 23: the proof rule is read from the one allow-list, never a status literal.
+      it('the "proof only when" words follow PROVING_STATUSES', () => {
+        expect(provingStatusWords()).toBe([...PROVING_STATUSES].join(' or '));
+        expect(provenNoneLine(state({ runsWithoutProof: [{ ...run('x', 'partial', at(15)), rulesFired: 1 }] })))
+          .toContain(`a run is proof only when its status is ${provingStatusWords()}`);
+      });
+
+      it('the runs-without-proof clause flags a run whose date cannot be read (RP-F decision 24)', () => {
+        expect(runsClause(state({ runsWithoutProof: [run('y', 'failed', 'yesterday')] })))
+          .toBe("1 run of yours recorded, latest failed on 'yesterday' (unreadable date, sorted oldest)");
       });
 
       it('an earlier untested or not-reproducible run is named by its status; a record with no run listed names the rule only', () => {

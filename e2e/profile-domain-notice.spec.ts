@@ -22,9 +22,15 @@ async function storedIds(page: Page): Promise<string[]> {
   }, KEY);
 }
 
-/** Open the drawer on the first cell and return its threat-profile line. */
-async function drawerProfileLine(page: Page) {
-  await page.locator('.cell').first().click();
+/**
+ * The open drawer's threat-profile line: the drawer is opened on the first cell, or,
+ * with `reopenedFromLink` (a reload of a link that carries tech=: opening a drawer
+ * writes tech= into the hash), the app reopens that drawer itself, so the helper
+ * waits for it and never clicks: a click there toggled the reopened drawer closed
+ * whenever the boot beat the click (CI, round 4).
+ */
+async function drawerProfileLine(page: Page, reopenedFromLink = false) {
+  if (!reopenedFromLink) await page.locator('.cell').first().click();
   await expect(page.locator('.sidebar.open')).toBeVisible({ timeout: ROUTE_TIMEOUT });
   return page.locator('.sidebar.open [data-testid="ev-threat-profile"]');
 }
@@ -102,9 +108,11 @@ test.describe('cross-domain threat profile (RP-F decision 6)', () => {
       await expect(line).toContainText(`Threat profile (${notice})`, { timeout: ROUTE_TIMEOUT });
       await expect(line).not.toContainText('unknown or withdrawn');
       expect((await storedIds(page)).every((id) => id.startsWith('intrusion-set--'))).toBe(true);
+      // F5 keeps the hash, tech= included, so the app reopens the drawer from the link.
+      await expect(page).toHaveURL(/[?&]tech=/);
       await page.reload();
       await expect(page.locator('.cell').first()).toBeVisible({ timeout: ROUTE_TIMEOUT });
-      const again = await drawerProfileLine(page);
+      const again = await drawerProfileLine(page, true);
       await expect(again).toContainText(`Threat profile (${notice})`, { timeout: ROUTE_TIMEOUT });
     });
   }

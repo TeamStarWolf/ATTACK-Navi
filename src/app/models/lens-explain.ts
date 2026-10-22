@@ -14,11 +14,19 @@
 // PROVEN through them); this file holds no rung-word literal, so the
 // truth-vocabulary lint needs no allow here.
 import type { LensCell, LensDefinition } from './heatmap-modes';
-import type { CoveredBasis, CoveredMark, PostureState, ProofRecord, ProofScope, RunSummary } from './posture/posture.types';
+import type { CoveredBasis, CoveredMark, PostureState, ProofRecord, ProofScope } from './posture/posture.types';
 import { PROVEN, postureBadge } from './posture/posture-vocabulary';
 import { SCORE_ONLY_LENSES } from './lens-registry';
 import { CONTRADICTED_WORDS } from './posture/posture-ramp';
 import { validationDay } from './local-date';
+import { provenNoneLine } from './posture/proof-gap';
+
+/**
+ * The head of the Proven block and the Proven lens when no proof stands (RP-F
+ * decision 28), from proof-gap.ts: the Proven lens cell's aria-label and tooltip
+ * name the same run (postureCellLabel), so the cell, the why line and the card agree.
+ */
+export { provenNoneLine };
 
 /** The five Known reference families (EnrichmentService.referenceSignalCount). */
 export const KNOWN_FAMILY_COUNT = 5;
@@ -174,32 +182,6 @@ export function runsClause(state: Pick<PostureState, 'runsWithoutProof' | 'super
   if (runs.length === 0) return '';
   const latest = runs[0];
   return `${runs.length} run${runs.length === 1 ? '' : 's'} of yours recorded, latest ${latest.status} on ${validationDay(latest.date)}`;
-}
-
-/**
- * The newest run of yours that lists a fired rule yet yields no proof because of its
- * status (untested, partial, not reproducible, failed, no telemetry), or null. A
- * passed run without proof is not one: its proof was outranked by a later run, which
- * the superseded clause names.
- */
-function firedRunWithoutProof(state: Pick<PostureState, 'runsWithoutProof'>): RunSummary | null {
-  return state.runsWithoutProof.find(r => (r.rulesFired ?? 0) > 0 && r.status !== 'passed') ?? null;
-}
-
-/**
- * The head of the Proven block and the Proven lens when no proof stands (RP-F
- * decision 28): 'No recorded detection for this technique', unless a run of yours
- * lists a fired rule, which the Validation pill shows ("UNTESTED 1 of 0 detection
- * rules fired"); then the run is named with its date and status instead:
- * 'No proof: 1 rule fired in your run on 10/15/26 (status untested); a run is proof
- * only when it passed'. It names a status and a date, never a rung.
- */
-export function provenNoneLine(state: Pick<PostureState, 'runsWithoutProof'>): string {
-  const run = firedRunWithoutProof(state);
-  if (!run) return 'No recorded detection for this technique';
-  const n = run.rulesFired as number;
-  return `No proof: ${n} rule${n === 1 ? '' : 's'} fired in your run on ${validationDay(run.date)} (status ${run.status}); `
-    + 'a run is proof only when it passed';
 }
 
 /** '; <runsClause>; see Detection Validation', or '' with no run without proof. */

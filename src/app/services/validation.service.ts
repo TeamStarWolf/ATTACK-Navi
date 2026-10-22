@@ -6,7 +6,7 @@ import { AttackIdResolverService } from './attack-id-resolver.service';
 import { DataService, type AttackDomain } from './data.service';
 import type { ProofScope } from '../models/posture/posture.types';
 import { runMatches } from '../models/posture/run-match';
-import { compareRunsNewestFirst, latestRun, storedRunKey } from '../models/posture/latest-run';
+import { type LatestRun, compareRunsNewestFirst, latestRun, storedRunKey } from '../models/posture/latest-run';
 import {
   type SourceId,
   type V2Envelope,
@@ -479,10 +479,19 @@ export class ValidationService {
    * Picked with the one latest-run comparator the posture derivation uses (RP-F
    * decision 24): instants, never runDate strings (a string compare put an offset
    * timestamp or 'yesterday' ahead of a later run); on the same instant the run that
-   * proves less; a run whose date is unreadable is the oldest.
+   * proves less; a run whose date is unreadable is the oldest. LatestRun.undated
+   * is true exactly when the returned run's runDate is unreadable (runTime null),
+   * and every surface prints such a date flagged through the one formatter
+   * (local-date.ts unreadableDate: "'yesterday' (unreadable date, sorted oldest)"),
+   * so the pill's "last run" and the card carry the flag; latestRunFor returns it.
    */
   latestFor(techniqueId: string): ValidationRunV2 | null {
-    return latestRun(this.forTechnique(techniqueId), storedRunKey)?.run ?? null;
+    return this.latestRunFor(techniqueId)?.run ?? null;
+  }
+
+  /** latestFor with the comparator's undated flag (RP-F decision 24), or null for no run. */
+  latestRunFor(techniqueId: string): LatestRun<ValidationRunV2> | null {
+    return latestRun(this.forTechnique(techniqueId), storedRunKey);
   }
 
   /** Compute status from telemetry/detection/response inputs. */
@@ -809,9 +818,10 @@ export class ValidationService {
       if (!cur || compareRunsNewestFirst(storedRunKey(r), storedRunKey(cur)) < 0) latestById.set(r.techniqueId, r);
     }
     const domainVersion = this.loaded()?.version ?? '';
-    const runVersion = [...this.runsSubject.value]
-      .filter(r => r.attackVersion !== 'unknown')
-      .sort((a, b) => b.runDate.localeCompare(a.runDate))[0]?.attackVersion ?? '';
+    // The newest run by the one latest-run comparator (RP-F decision 24), never a
+    // runDate string compare: an offset timestamp, a date-only date beside a
+    // timestamp, or 'yesterday' misordered here as they did in the old latestFor.
+    const runVersion = latestRun(this.runsSubject.value.filter(r => r.attackVersion !== 'unknown'), storedRunKey)?.run.attackVersion ?? '';
     const attack = domainVersion || runVersion;
     return {
       name: `ATTACK-Navi Detection Validation — ${new Date().toISOString().split('T')[0]}`,

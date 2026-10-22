@@ -70,13 +70,27 @@ function offsetZone(minutes: number): string {
   return `${minutes < 0 ? '-' : '+'}${String(Math.floor(abs / 60)).padStart(2, '0')}${String(abs % 60).padStart(2, '0')}`;
 }
 
+/** What a date runTime cannot read is flagged with wherever it is printed (RP-F decision 24). */
+export const UNREADABLE_DATE_FLAG = 'unreadable date, sorted oldest';
+
+/**
+ * A value runTime cannot read, as every surface prints it: the value as recorded,
+ * quoted, then flagged: "'yesterday' (unreadable date, sorted oldest)". The
+ * latest-run comparator sorts such a run oldest (latest-run.ts, LatestRun.undated),
+ * so the Validation pill's "last run", the card's runs line and the why line all
+ * say why it is not ordered by its date (round 4 printed "failed on yesterday").
+ */
+export function unreadableDate(date: unknown): string {
+  return `'${typeof date === 'string' ? date : ''}' (${UNREADABLE_DATE_FLAG})`;
+}
+
 /**
  * `date` in `format`, in local time, read by runTime: a date-only 'YYYY-MM-DD' is
- * that local day; a value runTime cannot read is returned as it is.
+ * that local day; a value runTime cannot read is quoted and flagged (unreadableDate).
  */
 function format(date: string, fmt: string): string {
   const t = runTime(date);
-  if (t === null) return String(date ?? '');
+  if (t === null) return unreadableDate(date);
   return fixedOffsetMinutes === null ? formatDate(t, fmt, LOCALE) : formatDate(t, fmt, LOCALE, offsetZone(fixedOffsetMinutes));
 }
 

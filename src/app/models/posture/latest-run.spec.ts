@@ -4,7 +4,7 @@
 // The one latest-run comparator (RP-F decision 24) and the one run-date reading
 // it shares with the pill's day (local-date.ts runTime / validationDay).
 import { compareRunsNewestFirst, latestRun, sortRunsNewestFirst, storedRunKey, summaryRunKey, type RunOrderKey } from './latest-run';
-import { runTime, setRunDateZoneForSpecs, validationDay } from '../local-date';
+import { UNREADABLE_DATE_FLAG, runTime, setRunDateZoneForSpecs, unreadableDate, validationDateTime, validationDay } from '../local-date';
 
 const CHICAGO = -300;   // America/Chicago in October (CDT)
 const TOKYO = 540;      // Asia/Tokyo
@@ -30,13 +30,16 @@ describe('runTime: the one run-date reading (RP-F decision 24)', () => {
     });
   }
 
-  it('a value that is not a date, or names no calendar day, is null and prints as it is', () => {
+  it('a value that is not a date, or names no calendar day, is null and prints quoted and flagged', () => {
     for (const bad of ['yesterday', '', 'not a date', '2026-02-30', '2026-13-01']) {
       expect(runTime(bad)).withContext(bad).toBeNull();
     }
     expect(runTime(undefined)).toBeNull();
     expect(runTime(42)).toBeNull();
-    expect(validationDay('yesterday')).toBe('yesterday');
+    // RP-F decision 24: sorted oldest AND flagged where it is printed (round 4: "failed on yesterday").
+    expect(validationDay('yesterday')).toBe("'yesterday' (unreadable date, sorted oldest)");
+    expect(validationDateTime('yesterday')).toBe("'yesterday' (unreadable date, sorted oldest)");
+    expect(unreadableDate(undefined)).toBe(`'' (${UNREADABLE_DATE_FLAG})`);
     setRunDateZoneForSpecs(TOKYO);
     expect(runTime('2026-02-30')).toBeNull();
   });

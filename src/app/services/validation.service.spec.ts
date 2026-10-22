@@ -331,6 +331,32 @@ describe('ValidationService', () => {
       expect(layer.techniques.length).toBe(1);
       expect(layer.techniques[0].comment).toContain('passed');
     });
+
+    // RP-F decision 24 (round 4 repair): the newest run's ATT&CK version is picked with the one
+    // latest-run comparator, never a runDate string compare (an offset timestamp sorted ahead).
+    it("with no domain loaded, the version is the newest run's by instant, not by runDate string", () => {
+      loadDomain('enterprise', '18.1');
+      service.record({ ...baseRun, runDate: '2026-10-21T01:30:00+09:00' });   // 2026-10-20T16:30Z
+      loadDomain('enterprise', '19.2');
+      service.record({ ...baseRun, runDate: '2026-10-20T20:00:00Z' });        // later instant, smaller string
+      loadDomain('enterprise', '17.0');
+      service.record({ ...baseRun, runDate: 'yesterday' });                    // unreadable: the oldest
+      fakeData.loaded = null;
+      const layer = service.buildNavigatorLayer('enterprise-attack') as { versions: { attack?: string } };
+      expect(layer.versions.attack).toBe('19.2');
+    });
+  });
+
+  describe('latestRunFor (RP-F decision 24)', () => {
+    it("carries the undated flag: true only when the latest run's date cannot be read", () => {
+      service.record({ ...baseRun, runDate: 'yesterday' });
+      expect(service.latestRunFor('T1003.001')!.undated).toBe(true);
+      const dated = service.record({ ...baseRun, runDate: '2026-10-19T10:00:00.000Z' });
+      const latest = service.latestRunFor('T1003.001')!;
+      expect([latest.run.id, latest.undated]).toEqual([dated.id, false]);
+      expect(service.latestFor('T1003.001')!.id).toBe(dated.id);
+      expect(service.latestRunFor('T9999')).toBeNull();
+    });
   });
   describe('merge by source (P2-02)', () => {
     it('[AC] re-importing a source replaces only that source', () => {

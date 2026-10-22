@@ -359,4 +359,55 @@ describe('posture cell label (§7)', () => {
       expect(postureCellLabel(s, WINDOWS)).toBe('Known: mapped, not reproducible');
     });
   });
+
+  // RP-F decision 28 (round 4 repair): the Proven lens cell read "T1018: ..., no recorded detection"
+  // while its why line, its card and its pill said a rule fired (S12 T1018 untested, S13 T1082
+  // not reproducible, a failed T1082, S27 T1059.001's outranked range pass).
+  describe('the Proven lens cell names a run that fired a rule without proof (RP-F decision 28)', () => {
+    const proven = heatmapModeDef('proven')!;
+    const ctx = (s: PostureState): LensContext => ({ posture: () => s, theme: 'dark', colorblindSafe: false } as unknown as LensContext);
+    const fired = (runId: string, status: string, date: string, n = 1) => ({ runId, status, date, source: 'manual' as const, rulesFired: n });
+    const SHAPES: Record<string, { state: PostureState; words: RegExp }> = {
+      'S12 T1018 untested': {
+        state: { ...stubState('T1018', 'known'), runsWithoutProof: [fired('s12', 'untested', '2026-10-15T15:00:00.000Z')] },
+        words: /^no proof, 1 rule fired in your run on \d+\/\d+\/26 \(status untested\)$/,
+      },
+      'S13 T1082 not reproducible': {
+        state: { ...stubState('T1082', 'known'), subStates: ['not-reproducible'], excluded: true,
+          runsWithoutProof: [fired('s13', 'not-reproducible', '2026-10-15T15:00:00.000Z')] },
+        words: /^no proof, 1 rule fired in your run on \d+\/\d+\/26 \(status not-reproducible\), not reproducible$/,
+      },
+      'T1082 failed, 1 of 2 fired': {
+        state: { ...stubState('T1082', 'known'), runsWithoutProof: [fired('f', 'failed', '2026-10-15T15:00:00.000Z')] },
+        words: /^no proof, 1 rule fired in your run on \d+\/\d+\/26 \(status failed\)$/,
+      },
+      'S27 T1059.001 outranked range pass': {
+        state: {
+          ...stubState('T1059.001', 'known'), subStates: ['contradicted'],
+          runsWithoutProof: [fired('m', 'failed', '2026-10-19T15:00:00.000Z', 0), fired('r', 'passed', '2026-10-19')],
+        },
+        words: new RegExp(String.raw`^no proof, 1 rule fired in your run on \d+/\d+/26 \(status passed\), ` + `${CONTRADICTED_WORDS}$`),
+      },
+    };
+    for (const [name, { state, words }] of Object.entries(SHAPES)) {
+      it(`${name}: the aria-label and tooltip name the run, as the why line does`, () => {
+        const cell = proven.project!(ctx(state), T);
+        expect(cell.score).toBe(0);
+        const painted = { bucket: cell.bucket ?? 'none', subStates: cell.subStates ?? [] };
+        const label = postureCellLabel(state, WINDOWS, { value: 'proven', words: cell.label }, painted);
+        expect(label).toMatch(words);
+        expect(label).not.toContain('no recorded detection');
+        expect(lensExplain(proven, cell, { state })).toMatch(/^No proof: 1 rule fired in your run on /);
+      });
+    }
+
+    it('with no run that fired a rule the 0 stop keeps its words, and a proven cell is untouched', () => {
+      const none = stubState('T1069', 'known');
+      const cell = proven.project!(ctx(none), T);
+      expect(postureCellLabel(none, WINDOWS, { value: 'proven', words: cell.label }, { bucket: 'none', subStates: [] }))
+        .toBe('no recorded detection');
+      expect(postureCellLabel(none, WINDOWS, { value: 'proven', words: `${PROVEN} (your run)` }, { bucket: 'proven', subStates: [] }))
+        .toBe(`${PROVEN} (your run)`);
+    });
+  });
 });

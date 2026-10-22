@@ -75,13 +75,18 @@ export interface RunSummary {
 
 /**
  * A run of yours that outranked every proof record on the technique (RP-F
- * decision 16): the latest run failed (or had no telemetry) after an earlier
- * run's named rule fired. The why line names both runs by their own status:
- * "latest run failed on <date>; an earlier run passed on <date>" (or "... an
- * earlier run was partial on <date>").
+ * decisions 16 and 23): the latest dated run's status is not on the proof
+ * allow-list (PROVING_STATUSES, derive-posture) and it is newer, by the one
+ * latest-run comparator, than an earlier run's named rule that fired. The why
+ * line names both runs by their own status: "latest run failed on <date>; an
+ * earlier run passed on <date>" (or "latest run was untested on <date>; ...").
  */
 export interface SupersededProof {
-  /** The newest dated run with status 'failed' or 'no-telemetry'; it governs the rung. */
+  /**
+   * The newest dated run whose status is not on PROVING_STATUSES (untested, partial,
+   * not-reproducible, failed, no-telemetry: an allow-list, never a list of the
+   * statuses that do not prove); it governs the rung.
+   */
   readonly latest: RunSummary;
   /** The newest proof record it outranked (its date is the earlier run's date). */
   readonly earlier: ProofRecord;

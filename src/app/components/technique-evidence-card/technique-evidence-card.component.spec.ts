@@ -243,7 +243,7 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
     it('beside a run that fired a rule without proof, the Proven block and the Proven lens name the run and its status', () => {
       const fired: RunSummary = { ...UNTESTED, runId: 's12', date: '2026-10-15T15:00:00.000Z', rulesFired: 1 };
       const el = render(state({ rung: 'known', bucket: 'known', runsWithoutProof: [fired] }), true, 'proven');
-      const line = 'No proof: 1 rule fired in your run on 10/15/26 (status untested); a run is proof only when it passed';
+      const line = 'No proof: 1 rule fired in your run on 10/15/26 (status untested); a run is proof only when its status is passed';
       expect(text(block(el, 'ev-proven')!.querySelector('[data-testid="ev-proven-empty"]'))).toBe(`${line}.`);
       expect(text(block(el, 'ev-why'))).toContain(`Why this colour: ${line}`);
       expect(text(el)).not.toContain('No recorded detection');
@@ -261,7 +261,20 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
       const el = render(s, true, 'posture');
       expect(text(block(el, 'ev-why'))).toContain(
         'Why this colour: Known: mapped (3 of 5 reference families); latest run was untested on 10/20/26; an earlier run passed on 10/18/26; see Detection Validation');
-      expect(text(block(el, 'ev-proven')!.querySelector('[data-testid="ev-proven-empty"]'))).toBe('No recorded detection for this technique.');
+      // RP-F decision 28 (round 4 repair, S27 T1059.001): the outranked pass fired a rule the pill
+      // still shows, so the Proven block names it rather than "No recorded detection".
+      expect(text(block(el, 'ev-proven')!.querySelector('[data-testid="ev-proven-empty"]')))
+        .toBe('No proof: 1 rule fired in your run on 10/18/26 (status passed); a later run outranks it.');
+      expect(text(el)).not.toContain('No recorded detection');
+    });
+
+    // RP-F decision 24 (round 4 repair, S22 T1497): an unreadable run date is sorted oldest AND
+    // flagged where it is printed; round 4 read "Runs without proof: failed on yesterday (source manual)".
+    it('a run whose date cannot be read is flagged in the runs line, never printed as a date', () => {
+      const undated: RunSummary = { runId: 'y', status: 'failed', date: 'yesterday', source: 'manual' };
+      const el = render(state({ rung: 'none', bucket: 'none', knownSignals: 0, runsWithoutProof: [undated] }), true, 'posture');
+      expect(text(block(el, 'ev-runs-without-proof')))
+        .toBe("Runs without proof: failed on 'yesterday' (unreadable date, sorted oldest) (source manual); see Detection Validation");
     });
 
     // RP-F decision 16a: the Covered block's empty line spoke of everything ("Nothing of yours

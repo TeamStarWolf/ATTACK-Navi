@@ -32,6 +32,7 @@ import type { LensCell, LensContext, LensRampStop } from '../heatmap-modes';
 import type { PostureBucket, PostureState, PostureSubState, ProofScope } from './posture.types';
 import { hexContrast, mixHex } from '../cvd';
 import { PROVEN, postureBadge, scenarioOutcomeLabel } from './posture-vocabulary';
+import { provenNoneCellWords } from './proof-gap';
 
 export type PostureTheme = 'dark' | 'light';
 
@@ -164,14 +165,24 @@ export const PATTERN_WORDS: Readonly<Record<PosturePattern, string>> = {
  *   PATTERN_WORDS when the words do not already say them: the not-reproducible
  *   cross-hatch adds ', not reproducible' ("None, not reproducible" on Covered;
  *   round 4 read only "None" or "no recorded detection" on 3 of 3 lenses).
+ *
+ * A Proven lens cell with no proof (painted neither proven nor stale) beside a run
+ * of yours that fired a rule names that run instead of the 0 stop's 'no recorded
+ * detection' (RP-F decision 28, provenNoneCellWords): round 4 read "T1018: ...,
+ * no recorded detection" while the same cell's why line, its card and its pill
+ * said a rule fired.
  */
 export function postureCellLabel(
-  s: Pick<PostureState, 'bucket' | 'qualifiers' | 'proofScope' | 'proofAge' | 'covered' | 'subStates'>,
+  s: Pick<PostureState, 'bucket' | 'qualifiers' | 'proofScope' | 'proofAge' | 'covered' | 'subStates'>
+    & Partial<Pick<PostureState, 'runsWithoutProof'>>,
   windows: Readonly<Record<ProofScope, number>>,
   lens: { readonly value: string; readonly words?: string } = { value: 'posture' },
   painted: Pick<PostureCellVM, 'bucket' | 'subStates'> | null = lens.value === 'posture' ? s : null,
 ): string {
   let words = lens.words ?? postureStateWords(s, windows);
+  if (lens.value === 'proven' && painted && !postureHasCheck(painted.bucket)) {
+    words = provenNoneCellWords({ runsWithoutProof: s.runsWithoutProof ?? [] }) ?? words;
+  }
   const patterns = painted ? posturePatterns(painted) : [];
   if ((CONTRADICTED_SPOKEN_LENSES.has(lens.value) && s.subStates.includes('contradicted')) || patterns.includes('contradicted')) {
     words = `${words}, ${CONTRADICTED_WORDS}`;
