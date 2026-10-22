@@ -609,57 +609,25 @@ body.light-mode {
   .meta-label { color: #64748b !important; }
   .meta-value { color: #1e293b !important; }
   .section-label { color: #334155 !important; }
-  .section-title { color: #334155 !important; }
-  .mitigation-item { border-color: #e2e8f0 !important; }
+  /* Drawer section headers (.sb-head) take --text-faint from the tokens, as every other section part does. */
+  .section-title:not(.sb-head) { color: #334155 !important; }
   .sidebar .section-label { color: #334155 !important; }
-  .sidebar p, .sidebar .meta-item { color: #475569 !important; }
+  .sidebar p:not(.sb-text, .sb-desc, .sb-empty), .sidebar .meta-item { color: #475569 !important; }
 
   .signal-pill, .cve-pill {
     background: #f1f5f9 !important;
     border-color: #cbd5e1 !important;
   }
 
-  .tag-chip, .ds-chip {
+  .tag-chip {
     background: #f1f5f9 !important;
     border-color: #cbd5e1 !important;
     color: #334155 !important;
   }
 
-  .detection-toggle {
-    background: rgb(37 99 235 / 6%) !important;
-    border-color: rgb(37 99 235 / 18%) !important;
-    color: #1d4ed8 !important;
-    &:hover { background: rgb(37 99 235 / 10%) !important; }
-  }
-  .detection-text {
-    background: rgb(37 99 235 / 4%) !important;
-    border-color: rgb(37 99 235 / 12%) !important;
-    color: #475569 !important;
-  }
+  .meta-tags-row { border-bottom-color: #e2e8f0 !important; }
 
-  .data-sources-section, .detection-section, .data-components-section,
-  .procedures-section, .meta-tags-row {
-    border-bottom-color: #e2e8f0 !important;
-  }
-
-  .mit-header {
-    .mit-id { color: #1d4ed8 !important; }
-    .mit-name { color: #1a1a2e !important; }
-  }
   .rel-description, .mit-description { color: #475569 !important; }
-
-  .notes-textarea {
-    background: #f8f9fa !important;
-    color: #1a1a2e !important;
-    border-color: #e2e8f0 !important;
-    &:focus { border-color: #1d4ed8 !important; }
-  }
-
-  .group-chip, .sw-chip, .camp-chip {
-    background: #f1f5f9 !important;
-    color: #1a1a2e !important;
-    border-color: #e2e8f0 !important;
-  }
 
   .watchlist-btn {
     border-color: #e2e8f0 !important;

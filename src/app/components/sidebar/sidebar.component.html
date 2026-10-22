@@ -280,28 +280,29 @@
           </div>
         }
 
+        <!-- Every section below renders through app-drawer-section (one card, one header,
+             one count pill) and its rows through app-drawer-row or the shared sb- classes
+             (src/app/components/drawer-primitives). The body is wrapped in the section's own
+             @if as before, so a collapsed section creates none of its content. -->
+
         <!-- Imported (user-uploaded) Navigator layer data for this technique -->
         @if (activeUserLayer && userLayerEntry) {
-          <section class="detail-section imported-layer-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-imported-layer" [attr.aria-expanded]="!isSectionCollapsed('imported-layer')" (click)="toggleSection('imported-layer')">
-              <span class="section-chevron">{{ isSectionCollapsed('imported-layer') ? '▸' : '▾' }}</span>
-              <span class="section-icon">🗂</span> Imported Layer
-              <span class="section-count has-note">●</span>
-            </h4>
+          <app-drawer-section class="imported-layer-section" sectionId="imported-layer" heading="Imported Layer" icon="🗂" count="●"
+                              [expanded]="!isSectionCollapsed('imported-layer')" (expandedChange)="toggleSection('imported-layer')">
             @if (!isSectionCollapsed('imported-layer')) {
               <div class="imported-layer-body">
                 <div class="il-source">From <strong>{{ activeUserLayer.name }}</strong></div>
                 <div class="il-badges">
                   @if (userLayerEntry.score !== null) {
-                    <span class="il-badge il-score" title="Layer score">Score: {{ userLayerEntry.score }}</span>
+                    <span class="sb-badge il-badge il-score" data-tone="accent" title="Layer score">Score: {{ userLayerEntry.score }}</span>
                   }
                   @if (userLayerEntry.color) {
-                    <span class="il-badge il-color" title="Layer cell color">
+                    <span class="sb-badge il-badge il-color" title="Layer cell color">
                       <span class="il-swatch" [style.background]="swatchColor(userLayerEntry.color)"></span>{{ userLayerEntry.color }}
                     </span>
                   }
                   @if (!userLayerEntry.enabled) {
-                    <span class="il-badge il-disabled" title="Disabled in the source layer">Disabled</span>
+                    <span class="sb-badge il-badge il-disabled" data-tone="danger" title="Disabled in the source layer">Disabled</span>
                   }
                 </div>
                 @if (userLayerEntry.comment) {
@@ -317,24 +318,20 @@
                 @if (userLayerEntry.links.length) {
                   <ul class="il-links">
                     @for (lnk of userLayerEntry.links; track lnk.url) {
-                      <li><a [href]="lnk.url" target="_blank" rel="noopener noreferrer">{{ lnk.label || lnk.url }}</a></li>
+                      <li><a class="sb-link" [href]="lnk.url" target="_blank" rel="noopener noreferrer">{{ lnk.label || lnk.url }}</a></li>
                     }
                   </ul>
                 }
               </div>
             }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- Technique Note/Annotation -->
-        <section class="detail-section annotation-section upgrade-section-block">
-          <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-annotation" [attr.aria-expanded]="!isSectionCollapsed('annotation')" (click)="toggleSection('annotation')">
-            <span class="section-chevron">{{ isSectionCollapsed('annotation') ? '▸' : '▾' }}</span>
-            <span class="section-icon">📌</span> Annotation
-            @if (annotation) { <span class="section-count has-note">●</span> }
-          </h4>
+        <app-drawer-section class="annotation-section" sectionId="annotation" heading="Annotation" icon="📌" [count]="annotation ? '●' : null"
+                            [expanded]="!isSectionCollapsed('annotation')" (expandedChange)="toggleSection('annotation')">
           @if (!isSectionCollapsed('annotation')) {
-            <textarea class="annotation-input" [(ngModel)]="annotationNote"
+            <textarea class="sb-input annotation-input" [(ngModel)]="annotationNote"
                       placeholder="Add a note about this technique..." rows="3"
                       (blur)="saveAnnotation()"></textarea>
             <div class="annotation-controls">
@@ -346,1510 +343,1233 @@
                 }
               </div>
               @if (annotation) {
-                <button class="clear-ann-btn" (click)="clearAnnotation()">Clear</button>
+                <button class="sb-action clear-ann-btn" (click)="clearAnnotation()">Clear</button>
               }
             </div>
           }
-        </section>
+        </app-drawer-section>
 
         <!-- Data sources -->
         @if (technique.dataSources.length > 0) {
-          <div class="data-sources-section upgrade-section-block">
-            <div class="section-label upgrade-section-title collapsible-title" role="button" id="sb-sec-datasources" [attr.aria-expanded]="!isSectionCollapsed('datasources')" (click)="toggleSection('datasources')">
-              <span class="section-chevron">{{ isSectionCollapsed('datasources') ? '▸' : '▾' }}</span>
-              📡 Data Sources
-            </div>
+          <app-drawer-section class="data-sources-section" sectionId="datasources" heading="Data Sources" icon="📡"
+                              [expanded]="!isSectionCollapsed('datasources')" (expandedChange)="toggleSection('datasources')">
             @if (!isSectionCollapsed('datasources')) {
-              <div class="ds-chips upgrade-chip-row">
+              <div class="sb-chips ds-chips">
                 @for (ds of technique.dataSources; track ds) {
-                  <span class="ds-chip">{{ ds }}</span>
+                  <span class="sb-chip ds-chip" data-tone="accent">{{ ds }}</span>
                 }
               </div>
             }
-          </div>
+          </app-drawer-section>
         }
 
         <!-- Subtechniques -->
         @if (technique.subtechniques.length) {
-          <section class="detail-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title" id="sb-sec-subtechniques" (click)="toggleSection('subtechniques')" style="cursor:pointer">
-              <span class="section-icon">🔀</span>
-              Subtechniques ({{ technique.subtechniques.length }})
-              <span class="toggle-arrow">{{ isSectionCollapsed('subtechniques') ? '▼' : '▲' }}</span>
-            </h4>
+          <app-drawer-section sectionId="subtechniques" heading="Subtechniques" icon="🔀" [count]="technique.subtechniques.length"
+                              [expanded]="!isSectionCollapsed('subtechniques')" (expandedChange)="toggleSection('subtechniques')">
             @if (!isSectionCollapsed('subtechniques')) {
-              <div class="subtechnique-list">
+              <div class="sb-list subtechnique-list">
                 @for (sub of technique.subtechniques; track sub.id) {
-                  <div class="subtechnique-row" (click)="selectSubtechnique(sub)">
-                    <span class="sub-id">{{ sub.attackId }}</span>
-                    <span class="sub-name">{{ sub.name }}</span>
-                    <span class="sub-mits" [class.has-mits]="sub.mitigationCount > 0">
-                      {{ sub.mitigationCount }}M
-                    </span>
-                  </div>
+                  <app-drawer-row class="subtechnique-row" [clickable]="true" (rowClick)="selectSubtechnique(sub)"
+                                  [entityId]="sub.attackId" idClass="sub-id" [name]="sub.name">
+                    <span sbHead class="sb-badge sub-mits" [attr.data-tone]="sub.mitigationCount > 0 ? 'success' : 'neutral'">{{ sub.mitigationCount }}M</span>
+                  </app-drawer-row>
                 }
               </div>
             }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- Detection -->
         @if (technique.detectionText) {
-          <div class="detection-section upgrade-section-block">
-            <button class="detection-toggle" id="sb-sec-detection" [class.expanded]="!isSectionCollapsed('detection')" (click)="toggleSection('detection')">
-              🔍 Detection Guidance
-              <span class="toggle-arrow">{{ isSectionCollapsed('detection') ? '▼' : '▲' }}</span>
-            </button>
+          <app-drawer-section class="detection-section" sectionId="detection" heading="Detection Guidance" icon="🔍"
+                              [expanded]="!isSectionCollapsed('detection')" (expandedChange)="toggleSection('detection')">
             @if (!isSectionCollapsed('detection')) {
-              <p class="detection-text" [innerHTML]="technique.detectionText | attackText"></p>
+              <p class="sb-text detection-text" [innerHTML]="technique.detectionText | attackText"></p>
             }
-          </div>
+          </app-drawer-section>
         }
 
         <!-- Data Components (detection sources) -->
         @if (dataComponents.length > 0) {
-          <div class="data-components-section upgrade-section-block">
-            <div class="section-label upgrade-section-title collapsible-title" role="button" id="sb-sec-datacomponents" [attr.aria-expanded]="!isSectionCollapsed('datacomponents')" (click)="toggleSection('datacomponents')">
-              <span class="section-chevron">{{ isSectionCollapsed('datacomponents') ? '▸' : '▾' }}</span>
-              📡 Detected By
-            </div>
+          <app-drawer-section class="data-components-section" sectionId="datacomponents" heading="Detected By" icon="📡"
+                              [expanded]="!isSectionCollapsed('datacomponents')" (expandedChange)="toggleSection('datacomponents')">
             @if (!isSectionCollapsed('datacomponents')) {
               <div class="dc-groups">
                 @for (grp of groupedDataComponents; track grp.sourceName) {
-                  <div class="dc-group">
+                  <div class="sb-chips dc-group">
                     <button
-                      class="dc-source-btn"
+                      class="sb-chip dc-source-btn"
+                      data-tone="accent"
                       (click)="filterByDataSource(grp.sourceName)"
                       [title]="'Filter matrix to ' + grp.sourceName + ' detectable techniques'"
                     >{{ grp.sourceName }}</button>
-                    <div class="dc-components-row">
-                      @for (dc of grp.components; track dc.id) {
-                        <span class="dc-component">{{ dc.name }}</span>
-                      }
-                    </div>
+                    @for (dc of grp.components; track dc.id) {
+                      <span class="sb-chip dc-component" data-tone="success">{{ dc.name }}</span>
+                    }
                   </div>
                 }
                 @if (detectionNotes.length > 0) {
-                  <div class="dc-notes">
+                  <div class="sb-list dc-notes">
                     @for (note of detectionNotes; track note.description) {
-                      <div class="dc-note">
-                        <span class="dc-note-source">{{ note.dataComponentName }}</span>
-                        <p class="dc-note-text" [innerHTML]="note.description | attackText"></p>
-                      </div>
+                      <app-drawer-row kind="detail" class="dc-note" [name]="note.dataComponentName" nameClass="dc-note-source"
+                                      [descriptionHtml]="note.description | attackText" />
                     }
                   </div>
                 }
               </div>
             }
-          </div>
+          </app-drawer-section>
         }
 
         <!-- Procedure Examples -->
         @if (procedures.length > 0) {
-          <div class="procedures-section upgrade-section-block">
-            <button class="procedures-toggle" id="sb-sec-procedures" [class.expanded]="!isSectionCollapsed('procedures')" (click)="toggleSection('procedures')">
-              📋 Procedure Examples
-              <span class="proc-badge">{{ procedures.length }}</span>
-              <span class="toggle-arrow">{{ isSectionCollapsed('procedures') ? '▼' : '▲' }}</span>
-            </button>
+          <app-drawer-section class="procedures-section" sectionId="procedures" heading="Procedure Examples" icon="📋" [count]="procedures.length"
+                              [expanded]="!isSectionCollapsed('procedures')" (expandedChange)="toggleSection('procedures')">
             @if (!isSectionCollapsed('procedures')) {
-              <div class="procedures-list">
+              <div class="sb-list procedures-list">
                 @for (proc of procedures.slice(0, procedureLimit); track proc.sourceId + proc.description) {
-                  <div class="proc-item" [class.group]="proc.sourceType === 'group'" [class.malware]="proc.sourceType === 'malware'" [class.tool]="proc.sourceType === 'tool'" [class.campaign]="proc.sourceType === 'campaign'">
-                    <div class="proc-header">
-                      <a class="proc-id" [href]="'https://attack.mitre.org/' + (proc.sourceType === 'group' ? 'groups' : proc.sourceType === 'campaign' ? 'campaigns' : 'software') + '/' + proc.attackId" target="_blank" rel="noopener">{{ proc.attackId }}</a>
-                      <span class="proc-type">{{ proc.sourceType === 'group' ? '👥' : proc.sourceType === 'campaign' ? '🗓' : proc.sourceType === 'malware' ? '☣' : '🔧' }}</span>
-                      <span class="proc-name">{{ proc.sourceName }}</span>
-                    </div>
-                    <p class="proc-desc" [innerHTML]="proc.description | attackText"></p>
-                  </div>
+                  <app-drawer-row kind="detail" class="proc-item" [attr.data-source-type]="proc.sourceType"
+                                  [entityId]="proc.attackId" idClass="proc-id"
+                                  [idHref]="'https://attack.mitre.org/' + (proc.sourceType === 'group' ? 'groups' : proc.sourceType === 'campaign' ? 'campaigns' : 'software') + '/' + proc.attackId"
+                                  [name]="proc.sourceName" nameClass="proc-name" [descriptionHtml]="proc.description | attackText">
+                    <span sbBadge class="sb-row-icon proc-type">{{ proc.sourceType === 'group' ? '👥' : proc.sourceType === 'campaign' ? '🗓' : proc.sourceType === 'malware' ? '☣' : '🔧' }}</span>
+                  </app-drawer-row>
                 }
                 @if (procedures.length > procedureLimit) {
-                  <button class="show-more-btn" (click)="procedureLimit = procedureLimit + 10">
+                  <button class="sb-more show-more-btn" (click)="procedureLimit = procedureLimit + 10">
                     Show {{ procedures.length - procedureLimit }} more…
                   </button>
                 }
               </div>
             }
-          </div>
+          </app-drawer-section>
         }
 
         <!-- CVE Exposure section -->
         @if (cveExposures.length > 0) {
-          <div class="section-heading collapsible-title" role="button" id="sb-sec-cve" [attr.aria-expanded]="!isSectionCollapsed('cve')" (click)="toggleSection('cve')">
-            <span class="section-chevron">{{ isSectionCollapsed('cve') ? '▸' : '▾' }}</span>
-            <span>CVE Exposure</span>
-            <span class="section-count">{{ cveExposures.length }}</span>
-          </div>
-          @if (!isSectionCollapsed('cve')) {
-          <div class="cve-exposure-list">
-            @for (m of (showAllCves ? cveExposures : cveExposures.slice(0, 5)); track m.cveId) {
-              <div class="cve-item" [class.cve-item--ctid]="m.source === 'ctid-kev'" [class.cve-item--inferred]="m.source === 'ctid-csv' && !m.capabilityGroup">
-                <div class="cve-item-top">
-                  <a [href]="'https://nvd.nist.gov/vuln/detail/' + m.cveId" target="_blank" rel="noopener" class="cve-id"
-                     [style.color]="getEpssForCve(m.cveId) !== null && getEpssForCve(m.cveId)! >= 0.5 ? '#d32f2f' : getEpssForCve(m.cveId) !== null && getEpssForCve(m.cveId)! >= 0.2 ? '#f57c00' : getEpssForCve(m.cveId) !== null && getEpssForCve(m.cveId)! >= 0.05 ? '#ffa000' : ''">{{ m.cveId }}</a>
-                  @if (m.source === 'ctid-kev') {
-                    <span class="cve-source-badge cve-source-ctid">CTID</span>
-                  } @else if (m.capabilityGroup) {
-                    <span class="cve-source-badge cve-source-ctid">CTID</span>
-                  } @else {
-                    <span class="cve-source-badge cve-source-cwe">CWE</span>
-                  }
-                  @if (getEpssForCve(m.cveId) !== null) {
-                    <span class="cve-tag" [style.background]="epssService.getEpssColor(getEpssForCve(m.cveId)!) + '22'" [style.color]="epssService.getEpssColor(getEpssForCve(m.cveId)!)" [style.border-color]="epssService.getEpssColor(getEpssForCve(m.cveId)!) + '55'" [title]="'EPSS: probability of exploitation in next 30 days'">EPSS {{ epssService.formatEpss(getEpssForCve(m.cveId)!) }}</span>
-                  }
-                  @if (m.capabilityGroup) {
-                    <span class="cve-cap-group" [style.background]="getCapGroupColor(m.capabilityGroup) + '18'" [style.color]="getCapGroupColor(m.capabilityGroup)" [style.border-color]="getCapGroupColor(m.capabilityGroup) + '40'">
-                      {{ formatCapGroup(m.capabilityGroup) }}
-                    </span>
-                  }
-                  <div class="cve-tags">
+          <app-drawer-section class="cve-section" sectionId="cve" heading="CVE Exposure" [count]="cveExposures.length"
+                              [expanded]="!isSectionCollapsed('cve')" (expandedChange)="toggleSection('cve')">
+            @if (!isSectionCollapsed('cve')) {
+              <div class="sb-list cve-exposure-list">
+                @for (m of (showAllCves ? cveExposures : cveExposures.slice(0, 5)); track m.cveId) {
+                  <app-drawer-row kind="detail" class="cve-item" [class.cve-item--ctid]="m.source === 'ctid-kev'" [class.cve-item--inferred]="m.source === 'ctid-csv' && !m.capabilityGroup"
+                                  [entityId]="m.cveId" idClass="cve-id" [idHref]="'https://nvd.nist.gov/vuln/detail/' + m.cveId">
+                    @if (m.source === 'ctid-kev' || m.capabilityGroup) {
+                      <span sbBadge class="sb-badge cve-source-badge cve-source-ctid" data-tone="accent">CTID</span>
+                    } @else {
+                      <span sbBadge class="sb-badge cve-source-badge cve-source-cwe" data-tone="neutral">CWE</span>
+                    }
+                    @if (getEpssForCve(m.cveId) !== null) {
+                      <span sbBadge class="sb-badge cve-tag" [style.background]="epssService.getEpssColor(getEpssForCve(m.cveId)!) + '22'" [style.color]="epssService.getEpssColor(getEpssForCve(m.cveId)!)" [style.border-color]="epssService.getEpssColor(getEpssForCve(m.cveId)!) + '55'" [title]="'EPSS: probability of exploitation in next 30 days'">EPSS {{ epssService.formatEpss(getEpssForCve(m.cveId)!) }}</span>
+                    }
+                    @if (m.capabilityGroup) {
+                      <span sbBadge class="sb-badge cve-cap-group" [style.background]="getCapGroupColor(m.capabilityGroup) + '18'" [style.color]="getCapGroupColor(m.capabilityGroup)" [style.border-color]="getCapGroupColor(m.capabilityGroup) + '40'">{{ formatCapGroup(m.capabilityGroup) }}</span>
+                    }
                     @if (m.exploitationTechnique.length > 0) {
-                      <span class="cve-tag exploit">EXPLOIT</span>
+                      <span sbBadge class="sb-badge cve-tag exploit" data-tone="danger">EXPLOIT</span>
                     }
                     @if (m.primaryImpact.length > 0) {
-                      <span class="cve-tag primary">PRIMARY</span>
+                      <span sbBadge class="sb-badge cve-tag primary" data-tone="warm">PRIMARY</span>
                     }
                     @if (m.secondaryImpact.length > 0) {
-                      <span class="cve-tag secondary">SECONDARY</span>
+                      <span sbBadge class="sb-badge cve-tag secondary" data-tone="accent">SECONDARY</span>
                     }
-                  </div>
-                </div>
-                @if (m.description) {
-                  <p class="cve-rationale cve-desc-snippet" [title]="m.description">{{ m.description.length > 80 ? m.description.slice(0, 80) + '...' : m.description }}</p>
+                    @if (m.description) {
+                      <p class="sb-desc cve-rationale cve-desc-snippet" [title]="m.description">{{ m.description.length > 80 ? m.description.slice(0, 80) + '...' : m.description }}</p>
+                    }
+                    @if (m.source === 'ctid-kev' || m.capabilityGroup) {
+                      <!-- CTID curated: show sentence -->
+                      @if (buildCveSentence(m)) {
+                        <p class="sb-desc cve-rationale">{{ buildCveSentence(m) }}</p>
+                      }
+                    } @else {
+                      <!-- CWE inferred -->
+                      <p class="sb-desc sb-desc--note cve-rationale cve-rationale--inferred">Mapped via CWE-based technique association</p>
+                    }
+                  </app-drawer-row>
                 }
-                @if (m.source === 'ctid-kev' || m.capabilityGroup) {
-                  <!-- CTID curated: show sentence -->
-                  @if (buildCveSentence(m)) {
-                    <p class="cve-rationale">{{ buildCveSentence(m) }}</p>
-                  }
-                } @else {
-                  <!-- CWE inferred -->
-                  <p class="cve-rationale cve-rationale--inferred">Mapped via CWE-based technique association</p>
+                @if (cveExposures.length > 5) {
+                  <button class="sb-more show-more-btn" (click)="showAllCves = !showAllCves">
+                    {{ showAllCves ? 'Show less' : 'Show ' + (cveExposures.length - 5) + ' more CVEs' }}
+                  </button>
                 }
               </div>
             }
-            @if (cveExposures.length > 5) {
-              <button class="show-more-btn" (click)="showAllCves = !showAllCves">
-                {{ showAllCves ? 'Show less' : 'Show ' + (cveExposures.length - 5) + ' more CVEs' }}
-              </button>
-            }
-          </div>
-          }
+          </app-drawer-section>
         }
 
         <!-- NIST 800-53 Rev5 Controls section -->
         @if (nistControls.length > 0) {
-          <div class="section-heading collapsible-title" role="button" id="sb-sec-nist" [attr.aria-expanded]="!isSectionCollapsed('nist')" (click)="toggleSection('nist')">
-            <span class="section-chevron">{{ isSectionCollapsed('nist') ? '▸' : '▾' }}</span>
-            <span>NIST 800-53 Rev5 Controls</span>
-            <span class="section-count">{{ nistControls.length }}</span>
-          </div>
-          @if (!isSectionCollapsed('nist')) {
-          <div class="nist-controls-list">
-            @for (ctrl of (showAllNist ? nistControls : nistControls.slice(0, 6)); track ctrl.id) {
-              <div class="nist-item">
-                <span class="nist-id">{{ ctrl.id }}</span>
-                <span class="nist-family">{{ ctrl.family }}</span>
-                <span class="nist-desc">{{ ctrl.description }}</span>
+          <app-drawer-section class="nist-section" sectionId="nist" heading="NIST 800-53 Rev5 Controls" [count]="nistControls.length"
+                              [expanded]="!isSectionCollapsed('nist')" (expandedChange)="toggleSection('nist')">
+            @if (!isSectionCollapsed('nist')) {
+              <div class="sb-list nist-controls-list">
+                @for (ctrl of (showAllNist ? nistControls : nistControls.slice(0, 6)); track ctrl.id) {
+                  <app-drawer-row class="nist-item" [entityId]="ctrl.id" idClass="nist-id" [secondary]="ctrl.description">
+                    <span sbBadge class="sb-badge nist-family" data-tone="neutral">{{ ctrl.family }}</span>
+                  </app-drawer-row>
+                }
+                @if (nistControls.length > 6) {
+                  <button class="sb-more show-more-btn" (click)="showAllNist = !showAllNist">
+                    {{ showAllNist ? 'Show less' : 'Show ' + (nistControls.length - 6) + ' more controls' }}
+                  </button>
+                }
               </div>
+              <a class="sb-source nist-attribution" [href]="ctidUrl('nist')" target="_blank" rel="noopener">Source: CTID Mappings Explorer</a>
             }
-            @if (nistControls.length > 6) {
-              <button class="show-more-btn" (click)="showAllNist = !showAllNist">
-                {{ showAllNist ? 'Show less' : 'Show ' + (nistControls.length - 6) + ' more controls' }}
-              </button>
-            }
-            <div class="nist-attribution">
-              <a [href]="ctidUrl('nist')" target="_blank" rel="noopener">
-                Source: CTID Mappings Explorer
-              </a>
-            </div>
-          </div>
-          }
+          </app-drawer-section>
         }
 
         <!-- Cloud & CIS Controls section -->
         @if (allCloudControls.length > 0) {
-          <div class="section-heading collapsible-title" role="button" id="sb-sec-cloud" [attr.aria-expanded]="!isSectionCollapsed('cloud')" (click)="toggleSection('cloud')">
-            <span class="section-chevron">{{ isSectionCollapsed('cloud') ? '▸' : '▾' }}</span>
-            <span>Cloud &amp; CIS Controls</span>
-            <span class="section-count">{{ allCloudControls.length }}</span>
-          </div>
-          @if (!isSectionCollapsed('cloud')) {
-          <div class="cloud-controls-list">
-            @for (c of visibleCloudControls; track c.id + c.provider) {
-              <div class="cloud-control">
-                <span class="ctrl-id">{{ c.id }}</span>
-                <span class="ctrl-type provider-{{ c.provider }}">{{ c.provider === 'cis' ? 'CIS' : c.provider }}</span>
-                <span class="ctrl-desc">{{ c.description }}</span>
+          <app-drawer-section class="cloud-section" sectionId="cloud" heading="Cloud & CIS Controls" [count]="allCloudControls.length"
+                              [expanded]="!isSectionCollapsed('cloud')" (expandedChange)="toggleSection('cloud')">
+            @if (!isSectionCollapsed('cloud')) {
+              <div class="sb-list cloud-controls-list">
+                @for (c of visibleCloudControls; track c.id + c.provider) {
+                  <app-drawer-row class="cloud-control" [entityId]="c.id" idClass="ctrl-id" [secondary]="c.description">
+                    <span sbBadge class="sb-badge ctrl-type provider-{{ c.provider }}" [attr.data-tone]="badgeTone('provider', c.provider)">{{ c.provider === 'cis' ? 'CIS' : c.provider }}</span>
+                  </app-drawer-row>
+                }
+                @if (allCloudControls.length > 5) {
+                  <button class="sb-more show-more-btn" (click)="showAllCloud = !showAllCloud">
+                    {{ showAllCloud ? 'Show less' : 'Show ' + (allCloudControls.length - 5) + ' more controls' }}
+                  </button>
+                }
               </div>
             }
-            @if (allCloudControls.length > 5) {
-              <button class="show-more-btn" (click)="showAllCloud = !showAllCloud">
-                {{ showAllCloud ? 'Show less' : 'Show ' + (allCloudControls.length - 5) + ' more controls' }}
-              </button>
-            }
-          </div>
-          }
+          </app-drawer-section>
         }
 
         <!-- VERIS Incident Actions section -->
         @if (verisActions.length > 0) {
-          <section class="detail-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-veris" [attr.aria-expanded]="!isSectionCollapsed('veris')" (click)="toggleSection('veris')">
-              <span class="section-chevron">{{ isSectionCollapsed('veris') ? '▸' : '▾' }}</span>
-              <span class="section-icon">📋</span> VERIS Incident Actions
-              <span class="section-count">{{ verisActions.length }}</span>
-            </h4>
+          <app-drawer-section class="veris-section" sectionId="veris" heading="VERIS Incident Actions" icon="📋" [count]="verisActions.length"
+                              [expanded]="!isSectionCollapsed('veris')" (expandedChange)="toggleSection('veris')">
             @if (!isSectionCollapsed('veris')) {
-            <div class="veris-list">
-              @for (a of (showAllVeris ? verisActions : verisActions.slice(0,4)); track a.id) {
-                <div class="veris-action">
-                  <span class="veris-cat">{{ a.category }}</span>
-                  <span class="veris-label">{{ a.label }}</span>
-                </div>
-              }
-              @if (verisActions.length > 4) {
-                <button class="show-more-btn" (click)="showAllVeris = !showAllVeris">
-                  {{ showAllVeris ? 'Show less' : 'Show ' + (verisActions.length - 4) + ' more actions' }}
-                </button>
-              }
-            </div>
-            <div class="ctid-attribution">
-              <a [href]="ctidUrl('veris')" target="_blank" rel="noopener">CTID Mappings Explorer</a>
-            </div>
+              <div class="sb-list veris-list">
+                @for (a of (showAllVeris ? verisActions : verisActions.slice(0,4)); track a.id) {
+                  <app-drawer-row class="veris-action" [secondary]="a.label">
+                    <span sbBadge class="sb-badge veris-cat" data-tone="warm">{{ a.category }}</span>
+                  </app-drawer-row>
+                }
+                @if (verisActions.length > 4) {
+                  <button class="sb-more show-more-btn" (click)="showAllVeris = !showAllVeris">
+                    {{ showAllVeris ? 'Show less' : 'Show ' + (verisActions.length - 4) + ' more actions' }}
+                  </button>
+                }
+              </div>
+              <a class="sb-source ctid-attribution" [href]="ctidUrl('veris')" target="_blank" rel="noopener">CTID Mappings Explorer</a>
             }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- CSA CCM Controls section -->
         @if (csaCcmControls.length > 0) {
-          <section class="detail-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-csa-ccm" [attr.aria-expanded]="!isSectionCollapsed('csa-ccm')" (click)="toggleSection('csa-ccm')">
-              <span class="section-chevron">{{ isSectionCollapsed('csa-ccm') ? '&#x25B8;' : '&#x25BE;' }}</span>
-              <span class="section-icon">&#9729;</span> CSA CCM Controls
-              <span class="section-count">{{ csaCcmControls.length }}</span>
-            </h4>
+          <app-drawer-section class="csa-ccm-section" sectionId="csa-ccm" heading="CSA CCM Controls" icon="&#9729;" [count]="csaCcmControls.length"
+                              [expanded]="!isSectionCollapsed('csa-ccm')" (expandedChange)="toggleSection('csa-ccm')">
             @if (!isSectionCollapsed('csa-ccm')) {
-            <div class="nist-controls-list">
-              @for (ctrl of (showAllCsaCcm ? csaCcmControls : csaCcmControls.slice(0, 6)); track ctrl.controlId + ctrl.scoreCategory) {
-                <div class="nist-item">
-                  <span class="nist-id">{{ ctrl.controlId }}</span>
-                  <span class="nist-family" [class]="'score-' + ctrl.scoreValue">{{ ctrl.scoreCategory }}</span>
-                  <span class="nist-desc">{{ ctrl.description }}</span>
-                  <span class="ctrl-pill-badge score-{{ ctrl.scoreValue }}">{{ ctrl.scoreValue }}</span>
-                </div>
-              }
-              @if (csaCcmControls.length > 6) {
-                <button class="show-more-btn" (click)="showAllCsaCcm = !showAllCsaCcm">
-                  {{ showAllCsaCcm ? 'Show less' : 'Show ' + (csaCcmControls.length - 6) + ' more controls' }}
-                </button>
-              }
-              <div class="ctid-attribution">
-                <a [href]="ctidUrl('csaCcm')" target="_blank" rel="noopener">CTID Mappings Explorer</a>
+              <div class="sb-list nist-controls-list">
+                @for (ctrl of (showAllCsaCcm ? csaCcmControls : csaCcmControls.slice(0, 6)); track ctrl.controlId + ctrl.scoreCategory) {
+                  <app-drawer-row class="nist-item" [entityId]="ctrl.controlId" idClass="nist-id" [secondary]="ctrl.description">
+                    <span sbBadge class="sb-badge nist-family" data-tone="neutral">{{ ctrl.scoreCategory }}</span>
+                    <span sbBadge class="sb-badge ctrl-pill-badge score-{{ ctrl.scoreValue }}" [attr.data-tone]="badgeTone('ctrl', ctrl.scoreValue)">{{ ctrl.scoreValue }}</span>
+                  </app-drawer-row>
+                }
+                @if (csaCcmControls.length > 6) {
+                  <button class="sb-more show-more-btn" (click)="showAllCsaCcm = !showAllCsaCcm">
+                    {{ showAllCsaCcm ? 'Show less' : 'Show ' + (csaCcmControls.length - 6) + ' more controls' }}
+                  </button>
+                }
               </div>
-            </div>
+              <a class="sb-source ctid-attribution" [href]="ctidUrl('csaCcm')" target="_blank" rel="noopener">CTID Mappings Explorer</a>
             }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- Microsoft 365 Controls section -->
         @if (m365Controls.length > 0) {
-          <section class="detail-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-m365-controls" [attr.aria-expanded]="!isSectionCollapsed('m365-controls')" (click)="toggleSection('m365-controls')">
-              <span class="section-chevron">{{ isSectionCollapsed('m365-controls') ? '&#x25B8;' : '&#x25BE;' }}</span>
-              <span class="section-icon">&#128311;</span> Microsoft 365 Controls
-              <span class="section-count">{{ m365Controls.length }}</span>
-            </h4>
+          <app-drawer-section class="m365-controls-section" sectionId="m365-controls" heading="Microsoft 365 Controls" icon="&#128311;" [count]="m365Controls.length"
+                              [expanded]="!isSectionCollapsed('m365-controls')" (expandedChange)="toggleSection('m365-controls')">
             @if (!isSectionCollapsed('m365-controls')) {
-            <div class="nist-controls-list">
-              @for (ctrl of (showAllM365Controls ? m365Controls : m365Controls.slice(0, 6)); track ctrl.controlId + ctrl.scoreCategory) {
-                <div class="nist-item">
-                  <a class="nist-id" [href]="ctrl.url" target="_blank" rel="noopener"
-                     [title]="'Open ' + ctrl.controlId + ' in the CTID Mappings Explorer'">{{ ctrl.controlId }}</a>
-                  <span class="nist-family">{{ ctrl.group }}</span>
-                  <span class="nist-desc">{{ ctrl.description }}</span>
-                  <span class="ctrl-pill-badge score-{{ ctrl.scoreValue }}">{{ ctrl.scoreValue }}</span>
-                  <span class="ctrl-pill-badge category-{{ ctrl.scoreCategory }}">{{ ctrl.scoreCategory }}</span>
-                </div>
-              }
-              @if (m365Controls.length > 6) {
-                <button class="show-more-btn" (click)="showAllM365Controls = !showAllM365Controls">
-                  {{ showAllM365Controls ? 'Show less' : 'Show ' + (m365Controls.length - 6) + ' more controls' }}
-                </button>
-              }
-              <div class="ctid-attribution">
-                <a [href]="ctidUrl('m365')" target="_blank" rel="noopener">CTID Mappings Explorer</a>
+              <div class="sb-list nist-controls-list">
+                @for (ctrl of (showAllM365Controls ? m365Controls : m365Controls.slice(0, 6)); track ctrl.controlId + ctrl.scoreCategory) {
+                  <app-drawer-row class="nist-item" [entityId]="ctrl.controlId" idClass="nist-id" [idHref]="ctrl.url"
+                                  [idTitle]="'Open ' + ctrl.controlId + ' in the CTID Mappings Explorer'" [secondary]="ctrl.description">
+                    <span sbBadge class="sb-badge nist-family" data-tone="neutral">{{ ctrl.group }}</span>
+                    <span sbBadge class="sb-badge ctrl-pill-badge score-{{ ctrl.scoreValue }}" [attr.data-tone]="badgeTone('ctrl', ctrl.scoreValue)">{{ ctrl.scoreValue }}</span>
+                    <span sbBadge class="sb-badge ctrl-pill-badge category-{{ ctrl.scoreCategory }}" [attr.data-tone]="badgeTone('ctrl', ctrl.scoreCategory)">{{ ctrl.scoreCategory }}</span>
+                  </app-drawer-row>
+                }
+                @if (m365Controls.length > 6) {
+                  <button class="sb-more show-more-btn" (click)="showAllM365Controls = !showAllM365Controls">
+                    {{ showAllM365Controls ? 'Show less' : 'Show ' + (m365Controls.length - 6) + ' more controls' }}
+                  </button>
+                }
               </div>
-            </div>
+              <a class="sb-source ctid-attribution" [href]="ctidUrl('m365')" target="_blank" rel="noopener">CTID Mappings Explorer</a>
             }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- CRI Profile Controls section -->
         @if (criControls.length > 0) {
-          <section class="detail-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-cri" [attr.aria-expanded]="!isSectionCollapsed('cri')" (click)="toggleSection('cri')">
-              <span class="section-chevron">{{ isSectionCollapsed('cri') ? '▸' : '▾' }}</span>
-              <span class="section-icon">🏦</span> CRI Financial Profile
-              <span class="section-count">{{ criControls.length }}</span>
-            </h4>
+          <app-drawer-section class="cri-section" sectionId="cri" heading="CRI Financial Profile" icon="🏦" [count]="criControls.length"
+                              [expanded]="!isSectionCollapsed('cri')" (expandedChange)="toggleSection('cri')">
             @if (!isSectionCollapsed('cri')) {
-            <div class="cri-controls-list">
-              @for (c of (showAllCri ? criControls : criControls.slice(0, 5)); track c.id) {
-                <div class="cri-control">
-                  <a [href]="c.url" target="_blank" rel="noopener" class="cri-id">{{ c.id }}</a>
-                  <span class="cri-func cri-func-{{ c.function }}">{{ c.functionLabel }}</span>
-                  <span class="cri-desc">{{ c.description }}</span>
-                </div>
-              }
-              @if (criControls.length > 5) {
-                <button class="show-more-btn" (click)="showAllCri = !showAllCri">
-                  {{ showAllCri ? 'Show less' : 'Show ' + (criControls.length - 5) + ' more controls' }}
-                </button>
-              }
-            </div>
-            <div class="ctid-attribution">
-              <a href="https://center-for-threat-informed-defense.github.io/mappings-explorer/external/cri_profile/" target="_blank" rel="noopener">CTID Mappings Explorer · CRI Profile v2.1</a>
-            </div>
+              <div class="sb-list cri-controls-list">
+                @for (c of (showAllCri ? criControls : criControls.slice(0, 5)); track c.id) {
+                  <app-drawer-row class="cri-control" [entityId]="c.id" idClass="cri-id" [idHref]="c.url" [secondary]="c.description">
+                    <span sbBadge class="sb-badge cri-func cri-func-{{ c.function }}" [attr.data-tone]="badgeTone('cri', c.function)">{{ c.functionLabel }}</span>
+                  </app-drawer-row>
+                }
+                @if (criControls.length > 5) {
+                  <button class="sb-more show-more-btn" (click)="showAllCri = !showAllCri">
+                    {{ showAllCri ? 'Show less' : 'Show ' + (criControls.length - 5) + ' more controls' }}
+                  </button>
+                }
+              </div>
+              <a class="sb-source ctid-attribution" href="https://center-for-threat-informed-defense.github.io/mappings-explorer/external/cri_profile/" target="_blank" rel="noopener">CTID Mappings Explorer · CRI Profile v2.1</a>
             }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- CAPEC Attack Patterns section -->
         @if (capecEntries.length > 0) {
-          <section class="detail-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-capec" [attr.aria-expanded]="!isSectionCollapsed('capec')" (click)="toggleSection('capec')">
-              <span class="section-chevron">{{ isSectionCollapsed('capec') ? '▸' : '▾' }}</span>
-              <span class="section-icon">🎯</span> CAPEC Attack Patterns
-              <span class="section-count">{{ capecEntries.length }}</span>
-            </h4>
+          <app-drawer-section class="capec-section" sectionId="capec" heading="CAPEC Attack Patterns" icon="🎯" [count]="capecEntries.length"
+                              [expanded]="!isSectionCollapsed('capec')" (expandedChange)="toggleSection('capec')">
             @if (!isSectionCollapsed('capec')) {
-            <div class="capec-list">
-              @for (c of (showAllCapec ? capecEntries : capecEntries.slice(0, 4)); track c.id) {
-                <div class="capec-entry">
-                  <div class="capec-header">
-                    <a [href]="c.url" target="_blank" rel="noopener" class="capec-id">{{ c.id }}</a>
+              <div class="sb-list capec-list">
+                @for (c of (showAllCapec ? capecEntries : capecEntries.slice(0, 4)); track c.id) {
+                  <app-drawer-row kind="detail" class="capec-entry" [entityId]="c.id" idClass="capec-id" [idHref]="c.url"
+                                  [name]="c.name" nameClass="capec-name" [description]="c.description">
                     @if (c.likelihood) {
-                      <span class="capec-badge capec-likelihood-{{ c.likelihood.toLowerCase() }}"
+                      <span sbBadge class="sb-badge capec-badge capec-likelihood-{{ c.likelihood.toLowerCase() }}" [attr.data-tone]="badgeTone('level', c.likelihood)"
                             title="Likelihood of attack">{{ c.likelihood }}</span>
                     }
                     @if (c.severity) {
-                      <span class="capec-badge capec-severity-{{ c.severity.toLowerCase() }}"
+                      <span sbBadge class="sb-badge capec-badge capec-severity-{{ c.severity.toLowerCase() }}" [attr.data-tone]="badgeTone('level', c.severity)"
                             title="Typical severity">{{ c.severity }} impact</span>
                     }
                     @if (c.cweIds.length > 0) {
-                      <span class="capec-cwe-pills">
+                      <div class="sb-chips capec-cwe-pills">
                         @for (cweId of c.cweIds.slice(0, 3); track cweId) {
-                          <a class="cwe-pill" [href]="cweService.getUrl(cweId)" target="_blank" rel="noopener" [title]="$safeNavigationMigration(cweService.getInfo(cweId)?.name)">
-                            {{ cweId }}@if (cweService.getInfo(cweId)?.name) { <span class="cwe-pill-name">{{ cweService.getInfo(cweId)!.name }}</span> }
+                          <a class="sb-chip cwe-pill" data-tone="purple" [href]="cweService.getUrl(cweId)" target="_blank" rel="noopener" [title]="$safeNavigationMigration(cweService.getInfo(cweId)?.name)">
+                            <span class="sb-chip-id">{{ cweId }}</span>@if (cweService.getInfo(cweId)?.name) { <span class="cwe-pill-name">{{ cweService.getInfo(cweId)!.name }}</span> }
                           </a>
                         }
-                      </span>
+                      </div>
                     }
-                  </div>
-                  <div class="capec-name">{{ c.name }}</div>
-                  @if (c.description) {
-                    <p class="capec-desc">{{ c.description }}</p>
-                  }
-                </div>
-              }
-              @if (capecEntries.length > 4) {
-                <button class="show-more-btn" (click)="showAllCapec = !showAllCapec">
-                  {{ showAllCapec ? 'Show less' : 'Show ' + (capecEntries.length - 4) + ' more patterns' }}
-                </button>
-              }
-            </div>
-            <div class="ctid-attribution">
-              <a href="https://capec.mitre.org/" target="_blank" rel="noopener">MITRE CAPEC</a>
-            </div>
+                  </app-drawer-row>
+                }
+                @if (capecEntries.length > 4) {
+                  <button class="sb-more show-more-btn" (click)="showAllCapec = !showAllCapec">
+                    {{ showAllCapec ? 'Show less' : 'Show ' + (capecEntries.length - 4) + ' more patterns' }}
+                  </button>
+                }
+              </div>
+              <a class="sb-source ctid-attribution" href="https://capec.mitre.org/" target="_blank" rel="noopener">MITRE CAPEC</a>
             }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- ExploitDB Exploits section -->
         @if (exploitCount > 0) {
-          <section class="detail-section upgrade-section-block exploitdb-section">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-exploitdb" [attr.aria-expanded]="!isSectionCollapsed('exploitdb')" (click)="toggleSection('exploitdb')">
-              <span class="section-chevron">{{ isSectionCollapsed('exploitdb') ? '▸' : '▾' }}</span>
-              <span class="section-icon">💥</span> ExploitDB Exploits
-              <span class="section-count">{{ exploitCount }}</span>
-            </h4>
+          <app-drawer-section class="exploitdb-section" sectionId="exploitdb" heading="ExploitDB Exploits" icon="💥" [count]="exploitCount"
+                              [expanded]="!isSectionCollapsed('exploitdb')" (expandedChange)="toggleSection('exploitdb')">
             @if (!isSectionCollapsed('exploitdb')) {
-              <p class="exploitdb-summary">
+              <app-drawer-row kind="plain" class="exploitdb-summary">
                 {{ exploitCount }} public exploit{{ exploitCount !== 1 ? 's' : '' }} mapped to this technique via CVE cross-reference.
-              </p>
-              <a class="framework-link" href="https://www.exploit-db.com/" target="_blank" rel="noopener">Exploit Database ↗</a>
+              </app-drawer-row>
+              <a class="sb-source framework-link" href="https://www.exploit-db.com/" target="_blank" rel="noopener">Exploit Database ↗</a>
             }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- Nuclei Templates section -->
         @if (nucleiCount > 0) {
-          <section class="detail-section upgrade-section-block nuclei-section">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-nuclei" [attr.aria-expanded]="!isSectionCollapsed('nuclei')" (click)="toggleSection('nuclei')">
-              <span class="section-chevron">{{ isSectionCollapsed('nuclei') ? '▸' : '▾' }}</span>
-              <span class="section-icon">🔬</span> Nuclei Templates
-              <span class="section-count">{{ nucleiCount }}</span>
-            </h4>
+          <app-drawer-section class="nuclei-section" sectionId="nuclei" heading="Nuclei Templates" icon="🔬" [count]="nucleiCount"
+                              [expanded]="!isSectionCollapsed('nuclei')" (expandedChange)="toggleSection('nuclei')">
             @if (!isSectionCollapsed('nuclei')) {
-              <p class="nuclei-summary">
+              <app-drawer-row kind="plain" class="nuclei-summary">
                 {{ nucleiCount }} Nuclei scan template{{ nucleiCount !== 1 ? 's' : '' }} mapped to this technique via CVE cross-reference.
-              </p>
-              <a class="framework-link" href="https://github.com/projectdiscovery/nuclei-templates" target="_blank" rel="noopener">Nuclei Templates ↗</a>
+              </app-drawer-row>
+              <a class="sb-source framework-link" href="https://github.com/projectdiscovery/nuclei-templates" target="_blank" rel="noopener">Nuclei Templates ↗</a>
             }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- CVE Kill Chain section (CVE2CAPEC integration) -->
         @if (killChainEntries.length > 0) {
-          <section class="detail-section upgrade-section-block kill-chain-section">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-kill-chain" [attr.aria-expanded]="!isSectionCollapsed('kill-chain')" (click)="toggleSection('kill-chain')">
-              <span class="section-chevron">{{ isSectionCollapsed('kill-chain') ? '▸' : '▾' }}</span>
-              <span class="section-icon">🔗</span> CVE Kill Chain
-              <span class="section-count">{{ killChainEntries.length }}</span>
-            </h4>
+          <app-drawer-section class="kill-chain-section" sectionId="kill-chain" heading="CVE Kill Chain" icon="🔗" [count]="killChainEntries.length"
+                              [expanded]="!isSectionCollapsed('kill-chain')" (expandedChange)="toggleSection('kill-chain')">
             @if (!isSectionCollapsed('kill-chain')) {
-              <p class="kill-chain-summary">
+              <app-drawer-row kind="plain" class="kill-chain-summary">
                 {{ killChainEntries.length }} CVE{{ killChainEntries.length !== 1 ? 's' : '' }} with full kill chain mapping (CVE → CWE → CAPEC → ATT&amp;CK → D3FEND).
-              </p>
-              <ul class="kill-chain-list">
+              </app-drawer-row>
+              <div class="sb-list kill-chain-list">
                 @for (entry of (showAllKillChain ? killChainEntries : killChainEntries.slice(0, 5)); track entry.cveId) {
-                  <li class="kill-chain-item">
-                    <span class="kc-cve">{{ entry.cveId }}</span>
-                    <span class="kc-arrow">→</span>
-                    <span class="kc-step" title="CWE">{{ entry.cwes.length }} CWE</span>
-                    <span class="kc-arrow">→</span>
-                    <span class="kc-step" title="CAPEC">{{ entry.capecs.length }} CAPEC</span>
+                  <app-drawer-row class="kill-chain-item" [entityId]="entry.cveId" idClass="kc-cve">
+                    <span sbBadge class="sb-arrow kc-arrow">→</span>
+                    <span sbBadge class="sb-badge kc-step" data-tone="purple" title="CWE">{{ entry.cwes.length }} CWE</span>
+                    <span sbBadge class="sb-arrow kc-arrow">→</span>
+                    <span sbBadge class="sb-badge kc-step" data-tone="purple" title="CAPEC">{{ entry.capecs.length }} CAPEC</span>
                     @if (entry.defenses.length > 0) {
-                      <span class="kc-arrow">→</span>
-                      <span class="kc-defense" title="D3FEND defenses">{{ entry.defenses.length }} D3FEND</span>
+                      <ng-container sbBadge>
+                        <span class="sb-arrow kc-arrow">→</span>
+                        <span class="sb-badge kc-defense" data-tone="success" title="D3FEND defenses">{{ entry.defenses.length }} D3FEND</span>
+                      </ng-container>
                     }
-                  </li>
+                  </app-drawer-row>
                 }
-              </ul>
-              @if (killChainEntries.length > 5 && !showAllKillChain) {
-                <button class="show-more-btn" (click)="showAllKillChain = true">Show all {{ killChainEntries.length }} chains</button>
-              }
-              <a class="framework-link" href="https://github.com/Galeax/CVE2CAPEC" target="_blank" rel="noopener">CVE2CAPEC ↗</a>
+                @if (killChainEntries.length > 5 && !showAllKillChain) {
+                  <button class="sb-more show-more-btn" (click)="showAllKillChain = true">Show all {{ killChainEntries.length }} chains</button>
+                }
+              </div>
+              <a class="sb-source framework-link" href="https://github.com/Galeax/CVE2CAPEC" target="_blank" rel="noopener">CVE2CAPEC ↗</a>
             }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- PoC Exploits section (trickest/cve integration) -->
         @if (pocCount > 0) {
-          <section class="detail-section upgrade-section-block poc-exploit-section">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-poc-exploits" [attr.aria-expanded]="!isSectionCollapsed('poc-exploits')" (click)="toggleSection('poc-exploits')">
-              <span class="section-chevron">{{ isSectionCollapsed('poc-exploits') ? '▸' : '▾' }}</span>
-              <span class="section-icon">💣</span> PoC Exploits
-              <span class="section-count">{{ pocCount }}</span>
-            </h4>
+          <app-drawer-section class="poc-exploit-section" sectionId="poc-exploits" heading="PoC Exploits" icon="💣" [count]="pocCount"
+                              [expanded]="!isSectionCollapsed('poc-exploits')" (expandedChange)="toggleSection('poc-exploits')">
             @if (!isSectionCollapsed('poc-exploits')) {
-              <p class="poc-summary">
+              <app-drawer-row kind="plain" class="poc-summary">
                 {{ pocCount }} proof-of-concept exploit{{ pocCount !== 1 ? 's' : '' }} available for CVEs mapped to this technique.
-              </p>
-              <a class="framework-link" href="https://github.com/trickest/cve" target="_blank" rel="noopener">trickest/cve Repository ↗</a>
+              </app-drawer-row>
+              <a class="sb-source framework-link" href="https://github.com/trickest/cve" target="_blank" rel="noopener">trickest/cve Repository ↗</a>
             }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- Tags section -->
-        <div class="tags-section upgrade-section-block">
-          <div class="section-label upgrade-section-title collapsible-title" role="button" id="sb-sec-tags" [attr.aria-expanded]="!isSectionCollapsed('tags')" (click)="toggleSection('tags')">
-            <span class="section-chevron">{{ isSectionCollapsed('tags') ? '▸' : '▾' }}</span>
-            🏷 Tags
-          </div>
+        <app-drawer-section class="tags-section" sectionId="tags" heading="Tags" icon="🏷"
+                            [expanded]="!isSectionCollapsed('tags')" (expandedChange)="toggleSection('tags')">
           @if (!isSectionCollapsed('tags')) {
-          <div class="tag-chips-row upgrade-chip-row">
-            @for (tag of currentTags; track tag) {
-              <span class="tag-chip-item">
-                {{ tag }}
-                <button class="tag-remove" (click)="removeTag(tag)">✕</button>
-              </span>
+            @if (currentTags.length > 0) {
+              <div class="sb-chips tag-chips-row">
+                @for (tag of currentTags; track tag) {
+                  <span class="sb-chip tag-chip-item" data-tone="accent">
+                    {{ tag }}
+                    <button class="tag-remove" (click)="removeTag(tag)">✕</button>
+                  </span>
+                }
+              </div>
             }
-          </div>
-          <div class="tag-presets upgrade-chip-row">
-            @for (p of presetTags; track p) {
-              <button
-                class="preset-tag"
-                [class.active]="currentTags.includes(p)"
-                (click)="addTag(p)"
-              >{{ p }}</button>
-            }
-          </div>
-          <div class="tag-input-row">
-            <input
-              type="text"
-              class="tag-input"
-              placeholder="Custom tag…"
-              [(ngModel)]="newTagInput"
-              (keydown.enter)="newTagInput && addTag(newTagInput)"
-            />
-            <button class="tag-add-btn" [disabled]="!newTagInput" (click)="addTag(newTagInput)">+</button>
-          </div>
+            <div class="sb-chips tag-presets">
+              @for (p of presetTags; track p) {
+                <button
+                  class="sb-chip preset-tag"
+                  data-tone="neutral"
+                  [class.is-active]="currentTags.includes(p)"
+                  [class.active]="currentTags.includes(p)"
+                  (click)="addTag(p)"
+                >{{ p }}</button>
+              }
+            </div>
+            <div class="tag-input-row">
+              <input
+                type="text"
+                class="sb-input tag-input"
+                placeholder="Custom tag…"
+                [(ngModel)]="newTagInput"
+                (keydown.enter)="newTagInput && addTag(newTagInput)"
+              />
+              <button class="sb-action tag-add-btn" [disabled]="!newTagInput" (click)="addTag(newTagInput)">+</button>
+            </div>
           }
-        </div>
+        </app-drawer-section>
 
         <!-- Technique notes -->
-        <div class="tech-notes-section upgrade-section-block">
-          <div class="section-label upgrade-section-title collapsible-title" role="button" id="sb-sec-notes" [attr.aria-expanded]="!isSectionCollapsed('notes')" (click)="toggleSection('notes')">
-            <span class="section-chevron">{{ isSectionCollapsed('notes') ? '▸' : '▾' }}</span>
-            📝 Analyst Notes
-          </div>
+        <app-drawer-section class="tech-notes-section" sectionId="notes" heading="Analyst Notes" icon="📝"
+                            [expanded]="!isSectionCollapsed('notes')" (expandedChange)="toggleSection('notes')">
           @if (!isSectionCollapsed('notes')) {
             <textarea
-              class="notes-textarea"
+              class="sb-input notes-textarea"
               placeholder="Add notes about this technique — context, observations, applicability to your environment…"
               [(ngModel)]="techniqueNote"
               (blur)="saveTechNote()"
               rows="3"
             ></textarea>
           }
-        </div>
+        </app-drawer-section>
 
         <!-- Threat groups section -->
         @if (threatGroups.length > 0) {
-          <div class="threat-section upgrade-section-block">
-            <h3 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-threats" [attr.aria-expanded]="!isSectionCollapsed('threats')" (click)="toggleSection('threats')">
-              <span class="section-chevron">{{ isSectionCollapsed('threats') ? '▸' : '▾' }}</span>
-              👥 Threat Actors
-              <span class="count-badge">{{ threatGroups.length }}</span>
-            </h3>
+          <app-drawer-section class="threat-section" sectionId="threats" heading="Threat Actors" icon="👥" [count]="threatGroups.length"
+                              [expanded]="!isSectionCollapsed('threats')" (expandedChange)="toggleSection('threats')">
             @if (!isSectionCollapsed('threats')) {
-            <div class="group-chips upgrade-chip-row">
-              @for (g of threatGroups; track g.id) {
-                <button class="group-chip" (click)="filterByGroup(g)" [title]="'View ' + g.name + ' in Threats panel'">
-                  {{ g.attackId }} {{ g.name }}
-                  <a [href]="'https://attack.mitre.org/groups/' + g.attackId" target="_blank" rel="noopener" (click)="$event.stopPropagation()" class="chip-ext">↗</a>
-                </button>
-              }
-            </div>
+              <div class="sb-chips group-chips">
+                @for (g of threatGroups; track g.id) {
+                  <button class="sb-chip group-chip" data-tone="warm" (click)="filterByGroup(g)" [title]="'View ' + g.name + ' in Threats panel'">
+                    <span class="sb-chip-id">{{ g.attackId }}</span> {{ g.name }}
+                    <a [href]="'https://attack.mitre.org/groups/' + g.attackId" target="_blank" rel="noopener" (click)="$event.stopPropagation()" class="chip-ext">↗</a>
+                  </button>
+                }
+              </div>
             }
-          </div>
+          </app-drawer-section>
         }
 
         <!-- Software section -->
         @if (softwareList.length > 0) {
-          <div class="software-section upgrade-section-block">
-            <h3 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-software" [attr.aria-expanded]="!isSectionCollapsed('software')" (click)="toggleSection('software')">
-              <span class="section-chevron">{{ isSectionCollapsed('software') ? '▸' : '▾' }}</span>
-              🛠️ Software / Malware
-              <span class="count-badge sw">{{ softwareList.length }}</span>
-            </h3>
+          <app-drawer-section class="software-section" sectionId="software" heading="Software / Malware" icon="🛠️" [count]="softwareList.length"
+                              [expanded]="!isSectionCollapsed('software')" (expandedChange)="toggleSection('software')">
             @if (!isSectionCollapsed('software')) {
-            <div class="sw-chips upgrade-chip-row">
-              @for (sw of softwareList; track sw.id) {
-                <button
-                  class="sw-chip"
-                  [class.malware]="sw.type === 'malware'"
-                  (click)="filterBySoftware(sw)"
-                  [title]="sw.type === 'malware' ? 'Malware' : 'Tool'"
-                >
-                  {{ sw.attackId }} {{ sw.name }}
-                  <a [href]="'https://attack.mitre.org/software/' + sw.attackId" target="_blank" rel="noopener" (click)="$event.stopPropagation()" class="chip-ext">↗</a>
-                </button>
-              }
-            </div>
+              <div class="sb-chips sw-chips">
+                @for (sw of softwareList; track sw.id) {
+                  <button
+                    class="sb-chip sw-chip"
+                    [class.malware]="sw.type === 'malware'"
+                    [attr.data-tone]="sw.type === 'malware' ? 'danger' : 'accent'"
+                    (click)="filterBySoftware(sw)"
+                    [title]="sw.type === 'malware' ? 'Malware' : 'Tool'"
+                  >
+                    <span class="sb-chip-id">{{ sw.attackId }}</span> {{ sw.name }}
+                    <a [href]="'https://attack.mitre.org/software/' + sw.attackId" target="_blank" rel="noopener" (click)="$event.stopPropagation()" class="chip-ext">↗</a>
+                  </button>
+                }
+              </div>
             }
-          </div>
+          </app-drawer-section>
         }
 
         <!-- Campaigns section -->
         @if (campaigns.length > 0) {
-          <div class="campaigns-section upgrade-section-block">
-            <h3 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-campaigns" [attr.aria-expanded]="!isSectionCollapsed('campaigns')" (click)="toggleSection('campaigns')">
-              <span class="section-chevron">{{ isSectionCollapsed('campaigns') ? '▸' : '▾' }}</span>
-              🎯 Campaigns
-              <span class="count-badge camp">{{ campaigns.length }}</span>
-            </h3>
+          <app-drawer-section class="campaigns-section" sectionId="campaigns" heading="Campaigns" icon="🎯" [count]="campaigns.length"
+                              [expanded]="!isSectionCollapsed('campaigns')" (expandedChange)="toggleSection('campaigns')">
             @if (!isSectionCollapsed('campaigns')) {
-            <div class="camp-chips upgrade-chip-row">
-              @for (c of campaigns; track c.id) {
-                <button
-                  class="camp-chip"
-                  (click)="filterByCampaign(c)"
-                  [title]="c.firstSeen ? c.firstSeen.slice(0,10) : c.attackId"
-                >
-                  {{ c.attackId }} {{ c.name }}
-                  <a [href]="'https://attack.mitre.org/campaigns/' + c.attackId" target="_blank" rel="noopener" (click)="$event.stopPropagation()" class="chip-ext">↗</a>
-                </button>
-              }
-            </div>
+              <div class="sb-chips camp-chips">
+                @for (c of campaigns; track c.id) {
+                  <button
+                    class="sb-chip camp-chip"
+                    data-tone="accent"
+                    (click)="filterByCampaign(c)"
+                    [title]="c.firstSeen ? c.firstSeen.slice(0,10) : c.attackId"
+                  >
+                    <span class="sb-chip-id">{{ c.attackId }}</span> {{ c.name }}
+                    <a [href]="'https://attack.mitre.org/campaigns/' + c.attackId" target="_blank" rel="noopener" (click)="$event.stopPropagation()" class="chip-ext">↗</a>
+                  </button>
+                }
+              </div>
             }
-          </div>
+          </app-drawer-section>
         }
 
         <!-- D3FEND Active Defenses section -->
         @if (d3fendMeasures.length > 0) {
-          <section class="sidebar-section d3fend-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-d3fend" [attr.aria-expanded]="!isSectionCollapsed('d3fend')" (click)="toggleSection('d3fend')">
-              <span class="section-chevron">{{ isSectionCollapsed('d3fend') ? '▸' : '▾' }}</span>
-              🛡 D3FEND Active Defenses <span class="count-badge upgrade-section-count">{{ d3fendMeasures.length }}</span>
-            </h4>
+          <app-drawer-section class="d3fend-section" sectionId="d3fend" heading="D3FEND Active Defenses" icon="🛡" [count]="d3fendMeasures.length"
+                              [expanded]="!isSectionCollapsed('d3fend')" (expandedChange)="toggleSection('d3fend')">
             @if (!isSectionCollapsed('d3fend')) {
-            @for (group of groupedD3fend; track group.category) {
-              <div class="d3fend-category">
-                <div class="d3fend-cat-label d3fend-cat-{{ group.category | lowercase }}">{{ group.category }}</div>
-                @for (measure of group.measures; track measure.id) {
-                  <div class="d3fend-item">
-                    <div class="d3fend-header">
-                      <a [href]="measure.url" target="_blank" rel="noopener" class="d3fend-id">{{ measure.id }}</a>
-                      <span class="d3fend-name">{{ measure.name }}</span>
-                    </div>
-                    <p class="d3fend-def">{{ measure.definition }}</p>
-                  </div>
-                }
-              </div>
+              @for (group of groupedD3fend; track group.category) {
+                <div class="sb-list d3fend-category">
+                  <span class="sb-sublabel d3fend-cat-label d3fend-cat-{{ group.category | lowercase }}">{{ group.category }}</span>
+                  @for (measure of group.measures; track measure.id) {
+                    <app-drawer-row kind="detail" class="d3fend-item" [entityId]="measure.id" idClass="d3fend-id" [idHref]="measure.url"
+                                    [name]="measure.name" nameClass="d3fend-name" [description]="measure.definition" />
+                  }
+                </div>
+              }
             }
-            }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- MITRE Engage Adversary Engagement section -->
         @if (engageActivities.length > 0) {
-          <section class="sidebar-section engage-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-engage" [attr.aria-expanded]="!isSectionCollapsed('engage')" (click)="toggleSection('engage')">
-              <span class="section-chevron">{{ isSectionCollapsed('engage') ? '▸' : '▾' }}</span>
-              🎭 Engage Activities <span class="count-badge upgrade-section-count">{{ engageActivities.length }}</span>
-            </h4>
+          <app-drawer-section class="engage-section" sectionId="engage" heading="Engage Activities" icon="🎭" [count]="engageActivities.length"
+                              [expanded]="!isSectionCollapsed('engage')" (expandedChange)="toggleSection('engage')">
             @if (!isSectionCollapsed('engage')) {
-            @for (act of engageActivities; track act.id) {
-              <div class="engage-item engage-cat-{{ act.category | lowercase }}">
-                <div class="engage-header">
-                  <a [href]="act.url" target="_blank" rel="noopener" class="engage-id">{{ act.id }}</a>
-                  <span class="engage-cat-badge engage-cat-{{ act.category | lowercase }}">{{ act.category }}</span>
-                  <span class="engage-name">{{ act.name }}</span>
-                </div>
-                <p class="engage-def">{{ act.definition }}</p>
+              <div class="sb-list">
+                @for (act of engageActivities; track act.id) {
+                  <app-drawer-row kind="detail" class="engage-item" [entityId]="act.id" idClass="engage-id" [idHref]="act.url"
+                                  [name]="act.name" nameClass="engage-name" [description]="act.definition">
+                    <span sbBadge class="sb-badge engage-cat-badge" [attr.data-tone]="badgeTone('engage', act.category)">{{ act.category }}</span>
+                  </app-drawer-row>
+                }
               </div>
+              <a href="https://engage.mitre.org" target="_blank" rel="noopener" class="sb-source framework-link">MITRE Engage ↗</a>
             }
-            <a href="https://engage.mitre.org" target="_blank" rel="noopener" class="framework-link">MITRE Engage ↗</a>
-            }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- MITRE CAR Detection Analytics section -->
         @if (carAnalytics.length > 0) {
-          <section class="sidebar-section car-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-car" [attr.aria-expanded]="!isSectionCollapsed('car')" (click)="toggleSection('car')">
-              <span class="section-chevron">{{ isSectionCollapsed('car') ? '▸' : '▾' }}</span>
-              🔬 CAR Detection Analytics <span class="count-badge upgrade-section-count">{{ carAnalytics.length }}</span>
-            </h4>
+          <app-drawer-section class="car-section" sectionId="car" heading="CAR Detection Analytics" icon="🔬" [count]="carAnalytics.length"
+                              [expanded]="!isSectionCollapsed('car')" (expandedChange)="toggleSection('car')">
             @if (!isSectionCollapsed('car')) {
-            @for (analytic of carAnalytics; track analytic.id) {
-              <div class="car-item">
-                <div class="car-header">
-                  <a [href]="analytic.url" target="_blank" rel="noopener" class="car-id">{{ analytic.id }}</a>
-                  <span class="car-name">{{ analytic.name }}</span>
-                  <div class="car-platforms">
+              <div class="sb-list">
+                @for (analytic of carAnalytics; track analytic.id) {
+                  <app-drawer-row kind="detail" class="car-item" [entityId]="analytic.id" idClass="car-id" [idHref]="analytic.url"
+                                  [name]="analytic.name" nameClass="car-name" [description]="analytic.description">
                     @for (p of analytic.platforms; track p) {
-                      <span class="car-platform">{{ p }}</span>
+                      <span sbHead class="sb-badge car-platform" data-tone="neutral">{{ p }}</span>
                     }
-                  </div>
-                </div>
-                <p class="car-desc">{{ analytic.description }}</p>
-                @if (analytic.pseudocode) {
-                  <code class="car-pseudocode">{{ analytic.pseudocode }}</code>
+                    @if (analytic.pseudocode) {
+                      <code class="sb-code car-pseudocode">{{ analytic.pseudocode }}</code>
+                    }
+                  </app-drawer-row>
                 }
               </div>
+              <a href="https://car.mitre.org" target="_blank" rel="noopener" class="sb-source framework-link">MITRE CAR ↗</a>
             }
-            <a href="https://car.mitre.org" target="_blank" rel="noopener" class="framework-link">MITRE CAR ↗</a>
-            }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- Atomic Red Team Tests -->
         @if (atomicLiveCount > 0 || atomicTests.length > 0) {
-          <section class="sidebar-section atomic-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-atomic" [attr.aria-expanded]="!isSectionCollapsed('atomic')" (click)="toggleSection('atomic')">
-              <span class="section-chevron">{{ isSectionCollapsed('atomic') ? '▸' : '▾' }}</span>
-              ⚛ Atomic Red Team Tests
-              <span class="count-badge upgrade-section-count">{{ atomicLiveCount > 0 ? atomicLiveCount : atomicTests.length }}</span>
-            </h4>
-
+          <app-drawer-section class="atomic-section" sectionId="atomic" heading="Atomic Red Team Tests" icon="⚛" [count]="atomicLiveCount > 0 ? atomicLiveCount : atomicTests.length"
+                              [expanded]="!isSectionCollapsed('atomic')" (expandedChange)="toggleSection('atomic')">
             @if (!isSectionCollapsed('atomic')) {
-            @if (atomicFetching) {
-              <p class="atomic-live-hint">Loading tests from Atomic Red Team…</p>
-            } @else if (atomicLiveTests.length > 0) {
-              @for (test of atomicLiveTests; track test.guid || test.name; let i = $index) {
-                <div class="atomic-item">
-                  <div class="atomic-header">
-                    <span class="atomic-executor-badge" [title]="'Executor: ' + test.executorName">
-                      {{ executorIcon(test.executorName) }} {{ test.executorName }}
-                    </span>
-                    <div class="atomic-platforms">
+              @if (atomicFetching) {
+                <p class="sb-text atomic-live-hint">Loading tests from Atomic Red Team…</p>
+              } @else if (atomicLiveTests.length > 0) {
+                <div class="sb-list">
+                  @for (test of atomicLiveTests; track test.guid || test.name; let i = $index) {
+                    <app-drawer-row kind="detail" class="atomic-item" [name]="test.name" nameClass="atomic-name" [description]="test.description">
+                      <span sbBadge class="sb-badge atomic-executor-badge" data-tone="accent" [title]="'Executor: ' + test.executorName">
+                        {{ executorIcon(test.executorName) }} {{ test.executorName }}
+                      </span>
                       @for (p of test.platforms; track p) {
-                        <span class="atomic-platform">{{ p }}</span>
+                        <span sbBadge class="sb-badge atomic-platform" data-tone="neutral">{{ p }}</span>
                       }
-                    </div>
-                  </div>
-                  <span class="atomic-name">{{ test.name }}</span>
-                  @if (test.description) {
-                    <p class="atomic-desc">{{ test.description }}</p>
+                      <div class="sb-actions">
+                        <button class="sb-action invoke-copy-btn" (click)="copyInvokeCommand(technique!.attackId, i + 1)" [title]="'Copy Invoke-AtomicTest command for test #' + (i + 1)">
+                          {{ copiedInvoke === technique!.attackId + '#' + (i + 1) ? 'Copied!' : 'Copy Invoke Command' }}
+                        </button>
+                      </div>
+                    </app-drawer-row>
                   }
-                  <button class="invoke-copy-btn" (click)="copyInvokeCommand(technique!.attackId, i + 1)" [title]="'Copy Invoke-AtomicTest command for test #' + (i + 1)">
-                    {{ copiedInvoke === technique!.attackId + '#' + (i + 1) ? 'Copied!' : 'Copy Invoke Command' }}
-                  </button>
                 </div>
+                <p class="sb-text atomic-more-note">
+                  Showing {{ atomicLiveTests.length }} of {{ atomicLiveCount > 0 ? atomicLiveCount : atomicTests.length }} tests indexed from the Atomic Red Team library. View on GitHub for full details.
+                </p>
+              } @else {
+                <p class="sb-text atomic-live-hint">
+                  {{ atomicLiveCount > 0 ? atomicLiveCount : atomicTests.length }} tests indexed from the Atomic Red Team library. View on GitHub for full details.
+                </p>
               }
-              <p class="atomic-more-note">
-                Showing {{ atomicLiveTests.length }} of {{ atomicLiveCount > 0 ? atomicLiveCount : atomicTests.length }} tests indexed from the Atomic Red Team library. View on GitHub for full details.
-              </p>
-            } @else {
-              <p class="atomic-live-hint">
-                {{ atomicLiveCount > 0 ? atomicLiveCount : atomicTests.length }} tests indexed from the Atomic Red Team library. View on GitHub for full details.
-              </p>
+              <div class="sb-actions invoke-actions">
+                <button class="sb-action invoke-run-all-btn" (click)="copyInvokeCommand(technique!.attackId)" title="Copy Invoke-AtomicTest command for all tests">
+                  {{ copiedInvoke === technique!.attackId ? 'Copied!' : 'Copy Invoke Command' }}
+                </button>
+                <button class="sb-action invoke-cleanup-btn" (click)="copyCleanupCommand(technique!.attackId)" title="Copy cleanup command">
+                  {{ copiedInvoke === 'cleanup' ? 'Copied!' : 'Copy Cleanup' }}
+                </button>
+                <button class="sb-action invoke-batch-btn" (click)="copyBatchScript()" title="Copy batch script for all sub-techniques">
+                  {{ copiedBatchScript ? 'Copied!' : 'Run All Tests' }}
+                </button>
+              </div>
+              <a [href]="atomicGitHubUrl" target="_blank" rel="noopener" class="sb-source framework-link">View all on Atomic Red Team ↗</a>
             }
-            <div class="invoke-actions">
-              <button class="invoke-run-all-btn" (click)="copyInvokeCommand(technique!.attackId)" title="Copy Invoke-AtomicTest command for all tests">
-                {{ copiedInvoke === technique!.attackId ? 'Copied!' : 'Copy Invoke Command' }}
-              </button>
-              <button class="invoke-cleanup-btn" (click)="copyCleanupCommand(technique!.attackId)" title="Copy cleanup command">
-                {{ copiedInvoke === 'cleanup' ? 'Copied!' : 'Copy Cleanup' }}
-              </button>
-              <button class="invoke-batch-btn" (click)="copyBatchScript()" title="Copy batch script for all sub-techniques">
-                {{ copiedBatchScript ? 'Copied!' : 'Run All Tests' }}
-              </button>
-            </div>
-            <a [href]="atomicGitHubUrl" target="_blank" rel="noopener" class="framework-link">View all on Atomic Red Team ↗</a>
-            }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- Rule sources: Elastic, Splunk and community SIGMA rules at pinned commits -->
-        <section class="sidebar-section rule-sources-section upgrade-section-block" data-testid="rule-sources">
-          <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-rule-sources" [attr.aria-expanded]="!isSectionCollapsed('rule-sources')" (click)="toggleSection('rule-sources')">
-            <span class="section-chevron">{{ isSectionCollapsed('rule-sources') ? '▸' : '▾' }}</span>
-            Rule sources
-            @if (!ruleSourcesLoading) {
-              @if (ruleSourcesFailed === 0) {
-                <span class="count-badge upgrade-section-count">{{ ruleSourcesTotal }}</span>
-              } @else if (ruleSourcesFailed === ruleSources.length) {
-                <!-- Nothing loaded: no count to show, and never a 0 that reads as "no rule names it". -->
-                <span class="count-badge upgrade-section-count rs-badge-failed" data-state="not-loaded"
-                      title="The bundled rule snapshot did not load; the section says why">not loaded</span>
-              } @else {
-                <!-- Some loaded: their total, and how many sources it leaves out. -->
-                <span class="count-badge upgrade-section-count rs-badge-failed" data-state="partial"
-                      [title]="'Total of the sources that loaded; ' + ruleSourcesFailed + ' of ' + ruleSources.length + ' did not load'">{{ ruleSourcesTotal }}, {{ ruleSourcesFailed }} of {{ ruleSources.length }} not loaded</span>
-              }
-            }
-          </h4>
+        <app-drawer-section class="rule-sources-section" data-testid="rule-sources" sectionId="rule-sources" heading="Rule sources"
+                            [count]="ruleSourcesLoading ? null : ruleSourcesFailed === 0 ? ruleSourcesTotal : ruleSourcesFailed === ruleSources.length ? 'not loaded' : ruleSourcesTotal + ', ' + ruleSourcesFailed + ' of ' + ruleSources.length + ' not loaded'"
+                            [countState]="ruleSourcesLoading || ruleSourcesFailed === 0 ? null : ruleSourcesFailed === ruleSources.length ? 'not-loaded' : 'partial'"
+                            [countTitle]="ruleSourcesLoading || ruleSourcesFailed === 0 ? null : ruleSourcesFailed === ruleSources.length ? 'The bundled rule snapshot did not load; the section says why' : 'Total of the sources that loaded; ' + ruleSourcesFailed + ' of ' + ruleSources.length + ' did not load'"
+                            [expanded]="!isSectionCollapsed('rule-sources')" (expandedChange)="toggleSection('rule-sources')">
           @if (!isSectionCollapsed('rule-sources')) {
-            <p class="atomic-live-hint">Rules in public repositories that name this technique, at the commit each snapshot pins: reference data, not rules running in your environment.</p>
+            <p class="sb-text atomic-live-hint">Rules in public repositories that name this technique, at the commit each snapshot pins: reference data, not rules running in your environment.</p>
             @if (ruleSourcesLoading) {
-              <p class="atomic-live-hint">Reading the bundled rule snapshot...</p>
+              <p class="sb-text atomic-live-hint">Reading the bundled rule snapshot...</p>
             }
             @for (src of ruleSources; track src.key) {
               <app-rule-source-list [source]="src" />
             }
             @if (sigmaOfficialCount > 0) {
-              <p class="atomic-live-hint">SigmaHQ: {{ sigmaOfficialCount }} rules (count only).
-                <a href="https://github.com/SigmaHQ/sigma" target="_blank" rel="noopener" class="framework-link">SigmaHQ on GitHub ↗</a>
+              <p class="sb-text atomic-live-hint">SigmaHQ: {{ sigmaOfficialCount }} rules (count only).
+                <a href="https://github.com/SigmaHQ/sigma" target="_blank" rel="noopener" class="sb-source framework-link">SigmaHQ on GitHub ↗</a>
               </p>
             }
           }
-        </section>
+        </app-drawer-section>
 
         <!-- Anthropic Cybersecurity Skills -->
         @if (anthropicSkillCount > 0) {
-          <section class="sidebar-section anthropic-skills-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-anthropic-skills" [attr.aria-expanded]="!isSectionCollapsed('anthropic-skills')" (click)="toggleSection('anthropic-skills')">
-              <span class="section-chevron">{{ isSectionCollapsed('anthropic-skills') ? '&#9656;' : '&#9662;' }}</span>
-              Cybersecurity Skills <span class="count-badge upgrade-section-count anthropic-badge">{{ anthropicSkillCount }}</span>
-            </h4>
+          <app-drawer-section class="anthropic-skills-section" sectionId="anthropic-skills" heading="Cybersecurity Skills" [count]="anthropicSkillCount"
+                              [expanded]="!isSectionCollapsed('anthropic-skills')" (expandedChange)="toggleSection('anthropic-skills')">
             @if (!isSectionCollapsed('anthropic-skills')) {
-              <div class="anthropic-skills-info">
-                <span class="anthropic-skill-count">{{ anthropicSkillCount }} skill{{ anthropicSkillCount !== 1 ? 's' : '' }} mapped to this technique</span>
-              </div>
-              <a href="https://github.com/mukul975/Anthropic-Cybersecurity-Skills" target="_blank" rel="noopener" class="framework-link anthropic-link">Anthropic Cybersecurity Skills ↗</a>
+              <app-drawer-row kind="plain" class="anthropic-skill-count">{{ anthropicSkillCount }} skill{{ anthropicSkillCount !== 1 ? 's' : '' }} mapped to this technique</app-drawer-row>
+              <a href="https://github.com/mukul975/Anthropic-Cybersecurity-Skills" target="_blank" rel="noopener" class="sb-source framework-link anthropic-link">Anthropic Cybersecurity Skills ↗</a>
             }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- ThreatHunter Playbook -->
         @if (playbookCount > 0) {
-          <section class="sidebar-section playbook-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-threathunter-playbook" [attr.aria-expanded]="!isSectionCollapsed('threathunter-playbook')" (click)="toggleSection('threathunter-playbook')">
-              <span class="section-chevron">{{ isSectionCollapsed('threathunter-playbook') ? '&#9656;' : '&#9662;' }}</span>
-              Threat Hunter Playbook <span class="count-badge upgrade-section-count playbook-badge">{{ playbookCount }}</span>
-            </h4>
+          <app-drawer-section class="playbook-section" sectionId="threathunter-playbook" heading="Threat Hunter Playbook" [count]="playbookCount"
+                              [expanded]="!isSectionCollapsed('threathunter-playbook')" (expandedChange)="toggleSection('threathunter-playbook')">
             @if (!isSectionCollapsed('threathunter-playbook')) {
-              <div class="playbook-info">
-                <span class="playbook-count">{{ playbookCount }} playbook{{ playbookCount !== 1 ? 's' : '' }} for this technique</span>
-              </div>
+              <app-drawer-row kind="plain" class="playbook-count">{{ playbookCount }} playbook{{ playbookCount !== 1 ? 's' : '' }} for this technique</app-drawer-row>
               @if (playbookUrl) {
-                <a [href]="playbookUrl" target="_blank" rel="noopener" class="framework-link playbook-link">View Playbook ↗</a>
+                <a [href]="playbookUrl" target="_blank" rel="noopener" class="sb-source framework-link playbook-link">View Playbook ↗</a>
               }
-              <a href="https://github.com/OTRF/ThreatHunter-Playbook" target="_blank" rel="noopener" class="framework-link playbook-repo-link">ThreatHunter Playbook on GitHub ↗</a>
+              <a href="https://github.com/OTRF/ThreatHunter-Playbook" target="_blank" rel="noopener" class="sb-source framework-link playbook-repo-link">ThreatHunter Playbook on GitHub ↗</a>
             }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- EVTX Samples -->
         @if (evtxSamples.length > 0) {
-          <section class="sidebar-section evtx-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-evtx-samples" [attr.aria-expanded]="!isSectionCollapsed('evtx-samples')" (click)="toggleSection('evtx-samples')">
-              <span class="section-chevron">{{ isSectionCollapsed('evtx-samples') ? '▸' : '▾' }}</span>
-              <span class="evtx-icon">&#x1F4BE;</span> EVTX Samples
-              <span class="count-badge upgrade-section-count evtx-badge">{{ evtxSamples.length }}</span>
-            </h4>
+          <app-drawer-section class="evtx-section" sectionId="evtx-samples" heading="EVTX Samples" icon="&#x1F4BE;" [count]="evtxSamples.length"
+                              [expanded]="!isSectionCollapsed('evtx-samples')" (expandedChange)="toggleSection('evtx-samples')">
             @if (!isSectionCollapsed('evtx-samples')) {
-              @for (sample of evtxSamples; track sample.url) {
-                <div class="evtx-item">
-                  <a [href]="sample.url" target="_blank" rel="noopener" class="evtx-link">{{ sample.filename }}</a>
-                  @if (sample.tactic) {
-                    <span class="evtx-tactic">{{ sample.tactic }}</span>
-                  }
-                </div>
-              }
-              <a href="https://github.com/mdecrevoisier/EVTX-to-MITRE-Attack" target="_blank" rel="noopener" class="framework-link">EVTX-to-MITRE-Attack ↗</a>
+              <div class="sb-list">
+                @for (sample of evtxSamples; track sample.url) {
+                  <app-drawer-row class="evtx-item" [name]="sample.filename" nameClass="evtx-link" [nameHref]="sample.url">
+                    @if (sample.tactic) {
+                      <span sbHead class="sb-badge evtx-tactic" data-tone="blue">{{ sample.tactic }}</span>
+                    }
+                  </app-drawer-row>
+                }
+              </div>
+              <a href="https://github.com/mdecrevoisier/EVTX-to-MITRE-Attack" target="_blank" rel="noopener" class="sb-source framework-link">EVTX-to-MITRE-Attack ↗</a>
             }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- Microsoft 365 Defender Hunting Queries -->
         @if (m365Queries.length > 0) {
-          <section class="sidebar-section m365-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-m365" [attr.aria-expanded]="!isSectionCollapsed('m365')" (click)="toggleSection('m365')">
-              <span class="section-chevron">{{ isSectionCollapsed('m365') ? '▸' : '▾' }}</span>
-              <span class="m365-icon">&#x1F537;</span> Microsoft 365 Defender
-              <span class="count-badge upgrade-section-count m365-badge">{{ m365Queries.length }}</span>
-            </h4>
+          <app-drawer-section class="m365-section" sectionId="m365" heading="Microsoft 365 Defender" icon="&#x1F537;" [count]="m365Queries.length"
+                              [expanded]="!isSectionCollapsed('m365')" (expandedChange)="toggleSection('m365')">
             @if (!isSectionCollapsed('m365')) {
-              @for (query of m365Queries; track query.path) {
-                <div class="m365-item">
-                  <a [href]="query.url" target="_blank" rel="noopener" class="m365-link">{{ query.title }}</a>
-                  <span class="m365-tactic">{{ query.tactic }}</span>
-                </div>
-              }
-              <a href="https://github.com/microsoft/Microsoft-365-Defender-Hunting-Queries" target="_blank" rel="noopener" class="framework-link m365-framework-link">Microsoft 365 Defender Hunting Queries ↗</a>
+              <div class="sb-list">
+                @for (query of m365Queries; track query.path) {
+                  <app-drawer-row class="m365-item" [name]="query.title" nameClass="m365-link" [nameHref]="query.url">
+                    <span sbHead class="sb-badge m365-tactic" data-tone="blue">{{ query.tactic }}</span>
+                  </app-drawer-row>
+                }
+              </div>
+              <a href="https://github.com/microsoft/Microsoft-365-Defender-Hunting-Queries" target="_blank" rel="noopener" class="sb-source framework-link m365-framework-link">Microsoft 365 Defender Hunting Queries ↗</a>
             }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- SIEM Query Library -->
         @if (siemQueries.length > 0) {
-          <section class="sidebar-section siem-queries-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-siem" [attr.aria-expanded]="!isSectionCollapsed('siem')" (click)="toggleSection('siem')">
-              <span class="section-chevron">{{ isSectionCollapsed('siem') ? '&#x25B8;' : '&#x25BE;' }}</span>
-              &#x26A1; SIEM Queries
-              <span class="count-badge upgrade-section-count siem-badge">{{ siemQueries.length }}</span>
-            </h4>
+          <app-drawer-section class="siem-queries-section" sectionId="siem" heading="SIEM Queries" icon="&#x26A1;" [count]="siemQueries.length" [curated]="true"
+                              [expanded]="!isSectionCollapsed('siem')" (expandedChange)="toggleSection('siem')">
             @if (!isSectionCollapsed('siem')) {
-              @for (query of siemQueries; track query.platform + query.title) {
-                <div class="siem-query-card">
-                  <div class="siem-query-card-header">
-                    <span class="siem-query-platform">{{ query.platformLabel }}</span>
-                    <span class="siem-query-confidence" [attr.data-confidence]="query.confidence">{{ query.confidence }}</span>
-                    <button
-                      class="siem-query-copy-btn"
+              <div class="sb-list">
+                @for (query of siemQueries; track query.platform + query.title) {
+                  <app-drawer-row kind="detail" class="siem-query-card" [name]="query.title" nameClass="siem-query-title">
+                    <span sbBadge class="sb-badge siem-query-platform" data-tone="accent">{{ query.platformLabel }}</span>
+                    <span sbBadge class="sb-badge siem-query-confidence" [attr.data-confidence]="query.confidence" [attr.data-tone]="badgeTone('level', query.confidence)">{{ query.confidence }}</span>
+                    <button sbHead
+                      class="sb-action siem-query-copy-btn"
                       [class.copied]="copiedSiemQuery === query.platform + ':' + query.title"
                       (click)="copySiemQuery(query)"
                       [title]="copiedSiemQuery === query.platform + ':' + query.title ? 'Copied!' : 'Copy query'"
                     >
                       {{ copiedSiemQuery === query.platform + ':' + query.title ? '&#x2713;' : '&#x1F4CB;' }}
                     </button>
-                  </div>
-                  <div class="siem-query-title">{{ query.title }}</div>
-                  <pre class="siem-query-code"><code>{{ query.query }}</code></pre>
-                </div>
-              }
+                    <pre class="sb-code siem-query-code"><code>{{ query.query }}</code></pre>
+                  </app-drawer-row>
+                }
+              </div>
             }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- MISP Galaxy -->
         @if (mispCluster) {
-          <section class="sidebar-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-misp" [attr.aria-expanded]="!isSectionCollapsed('misp')" (click)="toggleSection('misp')">
-              <span class="section-chevron">{{ isSectionCollapsed('misp') ? '▸' : '▾' }}</span>
-              🔴 MISP Galaxy Cluster
-            </h4>
+          <app-drawer-section class="misp-section" sectionId="misp" heading="MISP Galaxy Cluster" icon="🔴"
+                              [expanded]="!isSectionCollapsed('misp')" (expandedChange)="toggleSection('misp')">
             @if (!isSectionCollapsed('misp')) {
-            <div class="misp-cluster-card">
-              <div class="misp-cluster-value">{{ mispCluster.value }}</div>
-              @if (mispCluster.description) {
-                <p class="misp-cluster-desc">{{ mispCluster.description | slice:0:180 }}{{ mispCluster.description.length > 180 ? '…' : '' }}</p>
-              }
-              @if (mispCluster.mitrePlatforms.length > 0) {
-                <div class="misp-platforms">
-                  @for (p of mispCluster.mitrePlatforms; track p) {
-                    <span class="atomic-platform">{{ p }}</span>
-                  }
+              <app-drawer-row kind="detail" class="misp-cluster-card" [name]="mispCluster.value" nameClass="misp-cluster-value"
+                              [description]="mispCluster.description ? (mispCluster.description | slice:0:180) + (mispCluster.description.length > 180 ? '…' : '') : ''">
+                @for (p of mispCluster.mitrePlatforms; track p) {
+                  <span sbHead class="sb-badge atomic-platform" data-tone="neutral">{{ p }}</span>
+                }
+                <code class="sb-code misp-tag-text">misp-galaxy:mitre-attack-pattern="{{ mispCluster.value }}"</code>
+                <div class="sb-actions misp-tag-row">
+                  <button class="sb-action misp-copy-btn" (click)="copyMispTag()" [title]="mispTagCopied ? 'Copied!' : 'Copy MISP tag'">
+                    {{ mispTagCopied ? '✓' : '📋' }}
+                  </button>
                 </div>
-              }
-              <div class="misp-tag-row">
-                <code class="misp-tag-text">misp-galaxy:mitre-attack-pattern="{{ mispCluster.value }}"</code>
-                <button class="misp-copy-btn" (click)="copyMispTag()" [title]="mispTagCopied ? 'Copied!' : 'Copy MISP tag'">
-                  {{ mispTagCopied ? '✓' : '📋' }}
-                </button>
-              </div>
-              @if (mispCluster.synonyms.length > 0) {
-                <div class="misp-synonyms">Also known as: {{ mispCluster.synonyms.slice(0,3).join(', ') }}</div>
-              }
-            </div>
+                @if (mispCluster.synonyms.length > 0) {
+                  <p class="sb-desc misp-synonyms">Also known as: {{ mispCluster.synonyms.slice(0,3).join(', ') }}</p>
+                }
+              </app-drawer-row>
             }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- OpenCTI Threat Intelligence -->
         @if (openctiService.getConfig().connected || openctiIndicators.length > 0 || openctiLoading) {
-          <section class="sidebar-section upgrade-section-block opencti-section">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-opencti" [attr.aria-expanded]="!isSectionCollapsed('opencti')" (click)="toggleSection('opencti')">
-              <span class="section-chevron">{{ isSectionCollapsed('opencti') ? '▸' : '▾' }}</span>
-              <span class="section-icon">🔗</span> OpenCTI Indicators
-              @if (openctiIndicators.length > 0) {
-                <span class="section-count">{{ openctiIndicators.length }}</span>
-              }
-              @if (openctiLoading) {
-                <span class="loading-dot">...</span>
-              }
-            </h4>
+          <app-drawer-section class="opencti-section" sectionId="opencti" heading="OpenCTI Indicators" icon="🔗" [count]="openctiIndicators.length > 0 ? openctiIndicators.length : null"
+                              [expanded]="!isSectionCollapsed('opencti')" (expandedChange)="toggleSection('opencti')">
+            @if (openctiLoading) {
+              <span sbTrailing class="loading-dot">...</span>
+            }
             @if (!isSectionCollapsed('opencti')) {
-            @if (openctiError) {
-              <div class="opencti-error">⚠ {{ openctiError }}</div>
-            }
-            @if (!openctiLoading && openctiIndicators.length === 0 && !openctiError) {
-              <div class="opencti-empty">No indicators found for this technique.</div>
-            }
-            @for (ind of openctiIndicators; track ind.id) {
-              <div class="opencti-indicator">
-                <div class="opencti-ind-header">
-                  <span class="opencti-pattern-type" [class]="'pt-' + ind.patternType">{{ ind.patternType }}</span>
-                  <span class="opencti-confidence" [class]="ind.confidence >= 75 ? 'conf-high' : ind.confidence >= 40 ? 'conf-med' : 'conf-low'">
-                    {{ ind.confidence }}%
-                  </span>
-                </div>
-                <div class="opencti-ind-name">{{ ind.name }}</div>
-                @if (ind.description) {
-                  <div class="opencti-ind-desc">{{ ind.description | slice:0:120 }}{{ ind.description.length > 120 ? '…' : '' }}</div>
-                }
-                @if (ind.labels.length > 0) {
-                  <div class="opencti-labels">
-                    @for (lbl of ind.labels; track lbl) {
-                      <span class="opencti-label">{{ lbl }}</span>
+              @if (openctiError) {
+                <p class="sb-text opencti-error">⚠ {{ openctiError }}</p>
+              }
+              @if (!openctiLoading && openctiIndicators.length === 0 && !openctiError) {
+                <p class="sb-empty opencti-empty">No indicators found for this technique.</p>
+              }
+              <div class="sb-list">
+                @for (ind of openctiIndicators; track ind.id) {
+                  <app-drawer-row kind="detail" class="opencti-indicator" [name]="ind.name" nameClass="opencti-ind-name"
+                                  [description]="ind.description ? (ind.description | slice:0:120) + (ind.description.length > 120 ? '…' : '') : ''">
+                    <span sbBadge class="sb-badge opencti-pattern-type" [class]="'pt-' + ind.patternType" data-tone="accent">{{ ind.patternType }}</span>
+                    <span sbBadge class="sb-badge opencti-confidence" [class]="ind.confidence >= 75 ? 'conf-high' : ind.confidence >= 40 ? 'conf-med' : 'conf-low'"
+                          [attr.data-tone]="ind.confidence >= 75 ? 'success' : ind.confidence >= 40 ? 'warm' : 'danger'">
+                      {{ ind.confidence }}%
+                    </span>
+                    @if (ind.labels.length > 0) {
+                      <div class="sb-chips opencti-labels">
+                        @for (lbl of ind.labels; track lbl) {
+                          <span class="sb-badge opencti-label" data-tone="neutral">{{ lbl }}</span>
+                        }
+                      </div>
                     }
-                  </div>
+                    <code class="sb-code opencti-pattern">{{ ind.pattern | slice:0:100 }}{{ ind.pattern.length > 100 ? '…' : '' }}</code>
+                  </app-drawer-row>
                 }
-                <div class="opencti-pattern">
-                  <code>{{ ind.pattern | slice:0:100 }}{{ ind.pattern.length > 100 ? '…' : '' }}</code>
-                </div>
               </div>
             }
-            }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- PayloadsAllTheThings -->
         @if (payloadRefs.length > 0) {
-          <section class="sidebar-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-payloads" [attr.aria-expanded]="!isSectionCollapsed('payloads')" (click)="toggleSection('payloads')">
-              <span class="section-chevron">{{ isSectionCollapsed('payloads') ? '&#x25B8;' : '&#x25BE;' }}</span>
-              <span class="section-icon">&#x1F4E6;</span> PayloadsAllTheThings
-              <span class="count-badge upgrade-section-count">{{ payloadRefs.length }}</span>
-            </h4>
+          <app-drawer-section class="payloads-section" sectionId="payloads" heading="PayloadsAllTheThings" icon="&#x1F4E6;" [count]="payloadRefs.length" [curated]="true"
+                              [expanded]="!isSectionCollapsed('payloads')" (expandedChange)="toggleSection('payloads')">
             @if (!isSectionCollapsed('payloads')) {
-              @for (ref of payloadRefs; track ref.url) {
-                <div class="payload-ref-card" style="padding: 6px 8px; margin: 4px 0; background: rgba(255,255,255,0.04); border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);">
-                  <a [href]="ref.url" target="_blank" rel="noopener" style="color: #58a6ff; font-size: 0.82rem; text-decoration: none; display: flex; align-items: center; gap: 6px;">
-                    <span style="opacity: 0.6; font-size: 0.72rem;">{{ ref.category }}</span>
-                    <span>{{ ref.title }}</span>
-                    <span style="opacity: 0.5; margin-left: auto;">&#x2197;</span>
-                  </a>
-                </div>
-              }
-              <a href="https://github.com/swisskyrepo/PayloadsAllTheThings" target="_blank" rel="noopener" class="framework-link" style="display: block; margin-top: 6px; font-size: 0.75rem; color: #888;">PayloadsAllTheThings on GitHub &#x2197;</a>
+              <div class="sb-list">
+                @for (ref of payloadRefs; track ref.url) {
+                  <app-drawer-row class="payload-ref-card" [name]="ref.title" [nameHref]="ref.url">
+                    <span sbBadge class="sb-badge payload-category" data-tone="neutral">{{ ref.category }}</span>
+                  </app-drawer-row>
+                }
+              </div>
+              <a href="https://github.com/swisskyrepo/PayloadsAllTheThings" target="_blank" rel="noopener" class="sb-source framework-link">PayloadsAllTheThings on GitHub &#x2197;</a>
             }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- Windows Event Logging Config -->
         @if (loggingConfigs.length > 0) {
-          <section class="sidebar-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-logging" [attr.aria-expanded]="!isSectionCollapsed('logging')" (click)="toggleSection('logging')">
-              <span class="section-chevron">{{ isSectionCollapsed('logging') ? '&#x25B8;' : '&#x25BE;' }}</span>
-              <span class="section-icon">&#x1F4DD;</span> Logging Config
-              <span class="count-badge upgrade-section-count">{{ loggingConfigs.length }}</span>
-            </h4>
+          <app-drawer-section class="logging-section" sectionId="logging" heading="Logging Config" icon="&#x1F4DD;" [count]="loggingConfigs.length" [curated]="true"
+                              [expanded]="!isSectionCollapsed('logging')" (expandedChange)="toggleSection('logging')">
             @if (!isSectionCollapsed('logging')) {
-              @for (cfg of loggingConfigs; track cfg.source) {
-                <div style="padding: 6px 8px; margin: 4px 0; background: rgba(255,255,255,0.04); border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);">
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-                    <span style="color: #e0e0e0; font-size: 0.82rem; font-weight: 600;">{{ cfg.source }}</span>
-                    <span style="color: #888; font-size: 0.72rem;">Event {{ cfg.eventId }}</span>
-                  </div>
-                  @if (cfg.description) {
-                    <div style="color: #999; font-size: 0.75rem; margin-bottom: 4px;">{{ cfg.description }}</div>
-                  }
-                  <pre style="font-size: 0.72rem; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; color: #a5d6ff; margin: 0;"><code>{{ cfg.command }}</code></pre>
-                </div>
-              }
+              <div class="sb-list">
+                @for (cfg of loggingConfigs; track cfg.source) {
+                  <app-drawer-row kind="detail" class="logging-config" [name]="cfg.source" [description]="cfg.description">
+                    <span sbHead class="sb-badge logging-event" data-tone="neutral">Event {{ cfg.eventId }}</span>
+                    <pre class="sb-code logging-command"><code>{{ cfg.command }}</code></pre>
+                  </app-drawer-row>
+                }
+              </div>
               <button
-                class="share-btn"
-                style="margin-top: 6px; width: 100%;"
+                class="sb-action sb-action--block share-btn"
                 (click)="copyLoggingScript()"
                 [title]="copiedLoggingScript ? 'Copied!' : 'Copy combined PowerShell script'"
               >
                 {{ copiedLoggingScript ? '&#x2713; Copied!' : '&#x1F4CB; Copy Script' }}
               </button>
             }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- BloodHound AD Attack Paths -->
         @if (adAttackPaths.length > 0) {
-          <section class="sidebar-section bloodhound-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-bloodhound" [attr.aria-expanded]="!isSectionCollapsed('bloodhound')" (click)="toggleSection('bloodhound')">
-              <span class="section-chevron">{{ isSectionCollapsed('bloodhound') ? '&#x25B8;' : '&#x25BE;' }}</span>
-              <span class="section-icon" style="color: #E34646;">&#x1F6E1;</span> AD Attack Paths
-              <span class="count-badge upgrade-section-count" style="background: rgba(227,70,70,0.18); color: #E34646;">{{ adAttackPaths.length }}</span>
-            </h4>
+          <app-drawer-section class="bloodhound-section" sectionId="bloodhound" heading="AD Attack Paths" icon="&#x1F6E1;" [count]="adAttackPaths.length" [curated]="true"
+                              [expanded]="!isSectionCollapsed('bloodhound')" (expandedChange)="toggleSection('bloodhound')">
             @if (!isSectionCollapsed('bloodhound')) {
-              @for (path of adAttackPaths; track path.attackPath) {
-                <div class="bloodhound-card">
-                  <div class="bloodhound-header">
-                    <span class="bloodhound-name">{{ path.attackPath }}</span>
-                  </div>
-                  <div class="bloodhound-desc">{{ path.description }}</div>
-                  <div class="bloodhound-row">
-                    <span class="bloodhound-label">Tools</span>
-                    <div class="bloodhound-chips">
-                      @for (tool of path.tools; track tool) {
-                        <span class="bloodhound-chip tool-chip">{{ tool }}</span>
-                      }
+              <div class="sb-list">
+                @for (path of adAttackPaths; track path.attackPath) {
+                  <app-drawer-row kind="detail" class="bloodhound-card" [name]="path.attackPath" nameClass="bloodhound-name" [description]="path.description">
+                    <div class="sb-kv bloodhound-row">
+                      <span class="sb-kv-label bloodhound-label">Tools</span>
+                      <div class="sb-chips bloodhound-chips">
+                        @for (tool of path.tools; track tool) {
+                          <span class="sb-badge bloodhound-chip tool-chip" data-tone="danger">{{ tool }}</span>
+                        }
+                      </div>
                     </div>
-                  </div>
-                  <div class="bloodhound-row">
-                    <span class="bloodhound-label">Mitigations</span>
-                    <div class="bloodhound-chips">
-                      @for (mit of path.mitigations; track mit) {
-                        <span class="bloodhound-chip mit-chip">{{ mit }}</span>
-                      }
+                    <div class="sb-kv bloodhound-row">
+                      <span class="sb-kv-label bloodhound-label">Mitigations</span>
+                      <div class="sb-chips bloodhound-chips">
+                        @for (mit of path.mitigations; track mit) {
+                          <span class="sb-badge bloodhound-chip mit-chip" data-tone="success">{{ mit }}</span>
+                        }
+                      </div>
                     </div>
-                  </div>
-                  <div class="bloodhound-row">
-                    <span class="bloodhound-label">Detection</span>
-                    <div class="bloodhound-chips">
-                      @for (hint of path.detectionHints; track hint) {
-                        <span class="bloodhound-chip detect-chip">{{ hint }}</span>
-                      }
+                    <div class="sb-kv bloodhound-row">
+                      <span class="sb-kv-label bloodhound-label">Detection</span>
+                      <div class="sb-chips bloodhound-chips">
+                        @for (hint of path.detectionHints; track hint) {
+                          <span class="sb-badge bloodhound-chip detect-chip" data-tone="accent">{{ hint }}</span>
+                        }
+                      </div>
                     </div>
-                  </div>
-                </div>
-              }
+                  </app-drawer-row>
+                }
+              </div>
             }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- C2 Framework Capabilities -->
         @if (c2Capabilities.length > 0) {
-          <section class="sidebar-section c2-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-c2" [attr.aria-expanded]="!isSectionCollapsed('c2')" (click)="toggleSection('c2')">
-              <span class="section-chevron">{{ isSectionCollapsed('c2') ? '&#x25B8;' : '&#x25BE;' }}</span>
-              <span class="section-icon">&#x1F4E1;</span> C2 Frameworks
-              <span class="count-badge upgrade-section-count">{{ c2Capabilities.length }}</span>
-            </h4>
+          <app-drawer-section class="c2-section" sectionId="c2" heading="C2 Frameworks" icon="&#x1F4E1;" [count]="c2Capabilities.length" [curated]="true"
+                              [expanded]="!isSectionCollapsed('c2')" (expandedChange)="toggleSection('c2')">
             @if (!isSectionCollapsed('c2')) {
               @for (group of groupedC2; track group.framework) {
-                <div class="c2-framework-group">
-                  <div class="c2-framework-label" [style.border-left-color]="c2FrameworkColor(group.framework)" [style.color]="c2FrameworkColor(group.framework)">
-                    {{ group.framework }}
-                  </div>
+                <div class="sb-list c2-framework-group">
+                  <span class="sb-sublabel c2-framework-label">{{ group.framework }}</span>
                   @for (cap of group.capabilities; track cap.capability) {
-                    <div class="c2-cap-card">
-                      <div class="c2-cap-name">{{ cap.capability }}</div>
-                      <div class="c2-cap-desc">{{ cap.description }}</div>
-                      <div class="c2-cap-techniques">
+                    <app-drawer-row kind="detail" class="c2-cap-card" [name]="cap.capability" nameClass="c2-cap-name" [description]="cap.description">
+                      <div class="sb-chips c2-cap-techniques">
                         @for (tid of cap.techniqueIds; track tid) {
-                          <span class="c2-tid">{{ tid }}</span>
+                          <span class="sb-id c2-tid">{{ tid }}</span>
                         }
                       </div>
-                    </div>
+                    </app-drawer-row>
                   }
                 </div>
               }
             }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- Threat Indicators (IoC Feed) -->
         @if (iocs.length > 0) {
-          <section class="sidebar-section ioc-feed-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-ioc-feed" [attr.aria-expanded]="!isSectionCollapsed('ioc-feed')" (click)="toggleSection('ioc-feed')">
-              <span class="section-chevron">{{ isSectionCollapsed('ioc-feed') ? '&#x25B8;' : '&#x25BE;' }}</span>
-              <span class="section-icon" style="color: #ef5350;">&#x1F6A8;</span> Threat Indicators
-              <span class="count-badge upgrade-section-count">{{ iocs.length }}</span>
-            </h4>
+          <app-drawer-section class="ioc-feed-section" sectionId="ioc-feed" heading="Threat Indicators" icon="&#x1F6A8;" [count]="iocs.length" [curated]="true"
+                              [expanded]="!isSectionCollapsed('ioc-feed')" (expandedChange)="toggleSection('ioc-feed')">
             @if (!isSectionCollapsed('ioc-feed')) {
-              @for (ioc of iocs.slice(0, 20); track ioc.value) {
-                <div class="ioc-card">
-                  <span class="ioc-type-badge ioc-type-{{ ioc.type }}">{{ ioc.type | uppercase }}</span>
-                  <span class="ioc-value">{{ ioc.value }}</span>
-                </div>
-              }
+              <div class="sb-list">
+                @for (ioc of iocs.slice(0, 20); track ioc.value) {
+                  <app-drawer-row class="ioc-card" [entityId]="ioc.value" idClass="ioc-value">
+                    <span sbBadge class="sb-badge ioc-type-badge" [attr.data-tone]="badgeTone('ioc', ioc.type)">{{ ioc.type | uppercase }}</span>
+                  </app-drawer-row>
+                }
+              </div>
               @if (iocs.length > 20) {
-                <div class="section-more">+ {{ iocs.length - 20 }} more indicators</div>
+                <app-drawer-row kind="plain" class="section-more">+ {{ iocs.length - 20 }} more indicators</app-drawer-row>
               }
             }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- Azure / Entra ID Attack Patterns -->
         @if (azureAttacks.length > 0) {
-          <section class="sidebar-section azure-identity-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-azure-identity" [attr.aria-expanded]="!isSectionCollapsed('azure-identity')" (click)="toggleSection('azure-identity')">
-              <span class="section-chevron">{{ isSectionCollapsed('azure-identity') ? '&#x25B8;' : '&#x25BE;' }}</span>
-              <span class="section-icon" style="color: #0078d4;">&#x2601;</span> Azure/Entra ID
-              <span class="count-badge upgrade-section-count">{{ azureAttacks.length }}</span>
-            </h4>
+          <app-drawer-section class="azure-identity-section" sectionId="azure-identity" heading="Azure/Entra ID" icon="&#x2601;" [count]="azureAttacks.length" [curated]="true"
+                              [expanded]="!isSectionCollapsed('azure-identity')" (expandedChange)="toggleSection('azure-identity')">
             @if (!isSectionCollapsed('azure-identity')) {
-              @for (attack of azureAttacks; track attack.name) {
-                <div class="azure-card">
-                  <div class="azure-header">
-                    <span class="azure-name">{{ attack.name }}</span>
-                  </div>
-                  <div class="azure-desc">{{ attack.description }}</div>
-                  <div class="azure-row">
-                    <span class="azure-label">Services</span>
-                    <div class="azure-chips">
-                      @for (svc of attack.affectedServices; track svc) {
-                        <span class="azure-chip svc-chip">{{ svc }}</span>
-                      }
+              <div class="sb-list">
+                @for (attack of azureAttacks; track attack.name) {
+                  <app-drawer-row kind="detail" class="azure-card" [name]="attack.name" nameClass="azure-name" [description]="attack.description">
+                    <div class="sb-kv azure-row">
+                      <span class="sb-kv-label azure-label">Services</span>
+                      <div class="sb-chips azure-chips">
+                        @for (svc of attack.affectedServices; track svc) {
+                          <span class="sb-badge azure-chip svc-chip" data-tone="blue">{{ svc }}</span>
+                        }
+                      </div>
                     </div>
-                  </div>
-                  <div class="azure-row">
-                    <span class="azure-label">KQL Detection</span>
-                    <div class="azure-kql-wrap">
-                      <code class="azure-kql">{{ attack.detectionQuery }}</code>
-                      <button class="azure-copy-btn" (click)="copyKql(attack)" [title]="copiedKql === attack.name ? 'Copied!' : 'Copy KQL query'">
-                        {{ copiedKql === attack.name ? 'Copied' : 'Copy' }}
-                      </button>
+                    <div class="sb-kv azure-row">
+                      <span class="sb-kv-label azure-label">KQL Detection</span>
+                      <code class="sb-code azure-kql">{{ attack.detectionQuery }}</code>
+                      <div class="sb-actions">
+                        <button class="sb-action azure-copy-btn" (click)="copyKql(attack)" [title]="copiedKql === attack.name ? 'Copied!' : 'Copy KQL query'">
+                          {{ copiedKql === attack.name ? 'Copied' : 'Copy' }}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  <div class="azure-row">
-                    <span class="azure-label">Mitigations</span>
-                    <div class="azure-chips">
-                      @for (mit of attack.mitigations; track mit) {
-                        <span class="azure-chip mit-chip">{{ mit }}</span>
-                      }
+                    <div class="sb-kv azure-row">
+                      <span class="sb-kv-label azure-label">Mitigations</span>
+                      <div class="sb-chips azure-chips">
+                        @for (mit of attack.mitigations; track mit) {
+                          <span class="sb-badge azure-chip mit-chip" data-tone="success">{{ mit }}</span>
+                        }
+                      </div>
                     </div>
-                  </div>
-                </div>
-              }
+                  </app-drawer-row>
+                }
+              </div>
             }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- Known Offensive Tools -->
         @if (offensiveTools.length > 0) {
-          <section class="sidebar-section tools-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-offensive-tools" [attr.aria-expanded]="!isSectionCollapsed('offensive-tools')" (click)="toggleSection('offensive-tools')">
-              <span class="section-chevron">{{ isSectionCollapsed('offensive-tools') ? '&#x25B8;' : '&#x25BE;' }}</span>
-              <span class="section-icon" style="color: #ff9800;">&#x1F529;</span> Known Tools
-              <span class="count-badge upgrade-section-count">{{ offensiveTools.length }}</span>
-            </h4>
+          <app-drawer-section class="tools-section" sectionId="offensive-tools" heading="Known Tools" icon="&#x1F529;" [count]="offensiveTools.length" [curated]="true"
+                              [expanded]="!isSectionCollapsed('offensive-tools')" (expandedChange)="toggleSection('offensive-tools')">
             @if (!isSectionCollapsed('offensive-tools')) {
-              @for (tool of offensiveTools; track tool.name) {
-                <div class="tool-card">
-                  <div class="tool-header">
-                    <span class="tool-name">{{ tool.name }}</span>
-                    <span class="tool-category-badge">{{ tool.category }}</span>
-                  </div>
-                  <div class="tool-desc">{{ tool.description }}</div>
-                  <a class="tool-link" [href]="tool.url" target="_blank" rel="noopener">{{ tool.url }}</a>
-                </div>
-              }
+              <div class="sb-list">
+                @for (tool of offensiveTools; track tool.name) {
+                  <app-drawer-row kind="detail" class="tool-card" [name]="tool.name" nameClass="tool-name" [description]="tool.description">
+                    <span sbHead class="sb-badge tool-category-badge" data-tone="warm">{{ tool.category }}</span>
+                    <a class="sb-link tool-link" [href]="tool.url" target="_blank" rel="noopener">{{ tool.url }}</a>
+                  </app-drawer-row>
+                }
+              </div>
             }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- Wazuh XDR Rules -->
         @if (wazuhRules.length > 0) {
-          <section class="sidebar-section wazuh-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-wazuh-xdr" [attr.aria-expanded]="!isSectionCollapsed('wazuh-xdr')" (click)="toggleSection('wazuh-xdr')">
-              <span class="section-chevron">{{ isSectionCollapsed('wazuh-xdr') ? '&#x25B8;' : '&#x25BE;' }}</span>
-              <span class="section-icon" style="color: #3AABE0;">&#x1F6E1;</span> Wazuh stock rules (curated)
-              <span class="count-badge upgrade-section-count">{{ wazuhRules.length }}</span>
-            </h4>
+          <app-drawer-section class="wazuh-section" sectionId="wazuh-xdr" heading="Wazuh stock rules (curated)" icon="&#x1F6E1;" [count]="wazuhRules.length" [curated]="true"
+                              [expanded]="!isSectionCollapsed('wazuh-xdr')" (expandedChange)="toggleSection('wazuh-xdr')">
             @if (!isSectionCollapsed('wazuh-xdr')) {
-              @for (rule of wazuhRules; track rule.ruleId + rule.ruleGroup) {
-                <div class="tool-card" style="border-left: 3px solid #3AABE0;">
-                  <div class="tool-header">
-                    <span class="tool-name" style="color: #3AABE0;">Rule {{ rule.ruleId }}</span>
-                    <span class="tool-category-badge" [style.background]="rule.level >= 10 ? '#d32f2f' : rule.level >= 7 ? '#f57c00' : '#388e3c'" style="color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 8px;">Level {{ rule.level }}</span>
-                  </div>
-                  <div class="tool-desc">{{ rule.description }}</div>
-                  <div class="tool-desc" style="font-size: 11px; color: #888; margin-top: 2px;">Group: {{ rule.ruleGroup }}</div>
-                </div>
-              }
+              <div class="sb-list">
+                @for (rule of wazuhRules; track rule.ruleId + rule.ruleGroup) {
+                  <app-drawer-row kind="detail" class="tool-card wazuh-rule" [entityId]="'Rule ' + rule.ruleId" [description]="rule.description">
+                    <span sbBadge class="sb-badge tool-category-badge" [attr.data-tone]="rule.level >= 10 ? 'danger' : rule.level >= 7 ? 'warm' : 'success'">Level {{ rule.level }}</span>
+                    <p class="sb-desc">Group: {{ rule.ruleGroup }}</p>
+                  </app-drawer-row>
+                }
+              </div>
             }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- Threat Hunting Queries -->
         @if (huntingQueries.length > 0) {
-          <section class="sidebar-section hunting-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-threat-hunting" [attr.aria-expanded]="!isSectionCollapsed('threat-hunting')" (click)="toggleSection('threat-hunting')">
-              <span class="section-chevron">{{ isSectionCollapsed('threat-hunting') ? '&#x25B8;' : '&#x25BE;' }}</span>
-              <span class="section-icon" style="color: #7B1FA2;">&#x1F50D;</span> Threat Hunting
-              <span class="count-badge upgrade-section-count">{{ huntingQueries.length }}</span>
-            </h4>
+          <app-drawer-section class="hunting-section" sectionId="threat-hunting" heading="Threat Hunting" icon="&#x1F50D;" [count]="huntingQueries.length" [curated]="true"
+                              [expanded]="!isSectionCollapsed('threat-hunting')" (expandedChange)="toggleSection('threat-hunting')">
             @if (!isSectionCollapsed('threat-hunting')) {
-              @for (q of huntingQueries; track q.url) {
-                <div class="tool-card" style="border-left: 3px solid #7B1FA2;">
-                  <div class="tool-header">
-                    <span class="tool-name" style="color: #7B1FA2;">{{ q.title }}</span>
-                    <span class="tool-category-badge" style="background: #7B1FA2; color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 8px;">{{ q.platform }}</span>
-                  </div>
-                  <div class="tool-desc" style="font-size: 11px; color: #888;">Tactic: {{ q.tactic }} &middot; Source: {{ q.source }}</div>
-                  <a class="tool-link" [href]="q.url" target="_blank" rel="noopener" style="color: #7B1FA2;">View Query</a>
-                </div>
-              }
+              <div class="sb-list">
+                @for (q of huntingQueries; track q.url) {
+                  <app-drawer-row kind="detail" class="tool-card hunting-query" [name]="q.title" nameClass="tool-name">
+                    <span sbHead class="sb-badge tool-category-badge" data-tone="purple">{{ q.platform }}</span>
+                    <p class="sb-desc">Tactic: {{ q.tactic }} &middot; Source: {{ q.source }}</p>
+                    <a class="sb-link tool-link" [href]="q.url" target="_blank" rel="noopener">View Query</a>
+                  </app-drawer-row>
+                }
+              </div>
             }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- Custom Controls section -->
         @if (customMitigations.length > 0) {
-          <section class="detail-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-custom" [attr.aria-expanded]="!isSectionCollapsed('custom')" (click)="toggleSection('custom')">
-              <span class="section-chevron">{{ isSectionCollapsed('custom') ? '▸' : '▾' }}</span>
-              <span class="section-icon">🏢</span> Custom Controls
-              <span class="section-count">{{ customMitigations.length }}</span>
-            </h4>
+          <app-drawer-section class="custom-section" sectionId="custom" heading="Custom Controls" icon="🏢" [count]="customMitigations.length"
+                              [expanded]="!isSectionCollapsed('custom')" (expandedChange)="toggleSection('custom')">
             @if (!isSectionCollapsed('custom')) {
-            @for (cm of customMitigations; track cm.id) {
-              <div class="custom-mit-row">
-                <div class="custom-mit-header">
-                  <span class="custom-mit-id">{{ cm.id }}</span>
-                  <span class="custom-mit-cat cat-{{ cm.category.toLowerCase().replace(' ', '-') }}">{{ cm.category }}</span>
-                  <span class="custom-mit-name">{{ cm.name }}</span>
-                  @if (cm.implStatus) {
-                    <span class="impl-badge impl-{{ cm.implStatus }}">{{ cm.implStatus }}</span>
-                  }
-                </div>
-                @if (cm.description) {
-                  <p class="custom-mit-desc">{{ cm.description }}</p>
+              <div class="sb-list">
+                @for (cm of customMitigations; track cm.id) {
+                  <app-drawer-row kind="detail" class="custom-mit-row" [entityId]="cm.id" idClass="custom-mit-id"
+                                  [name]="cm.name" nameClass="custom-mit-name" [description]="cm.description">
+                    <span sbBadge class="sb-badge custom-mit-cat cat-{{ cm.category.toLowerCase().replace(' ', '-') }}" [attr.data-tone]="badgeTone('customCat', cm.category.toLowerCase().replace(' ', '-'))">{{ cm.category }}</span>
+                    @if (cm.implStatus) {
+                      <span sbHead class="sb-badge impl-badge impl-{{ cm.implStatus }}" [attr.data-tone]="badgeTone('impl', cm.implStatus)">{{ cm.implStatus }}</span>
+                    }
+                  </app-drawer-row>
                 }
               </div>
             }
-            }
-          </section>
+          </app-drawer-section>
         }
 
         <!-- Mitigations section -->
-        <div class="mitigations-section upgrade-section-block">
-          <h3 class="section-title upgrade-section-title collapsible-title" role="button" id="sb-sec-mitigations" [attr.aria-expanded]="!isSectionCollapsed('mitigations')" (click)="toggleSection('mitigations')">
-            <span class="section-chevron">{{ isSectionCollapsed('mitigations') ? '▸' : '▾' }}</span>
-            Mitigations
-            <span class="count-badge">{{ mitigations.length }}</span>
-            @if (implSummary.total > 0 && implSummary.implemented > 0) {
-              <span class="impl-summary-badge">&#10003; {{ implSummary.implemented }} done</span>
-            }
-          </h3>
-
-          @if (!isSectionCollapsed('mitigations')) {
-          @if (parentMitigations.length > 0) {
-            <div class="parent-mit-note upgrade-note-block">
-              <span class="parent-mit-label">↑ Parent technique mitigations</span>
-              <div class="parent-mit-chips upgrade-chip-row">
-                @for (rel of parentMitigations; track rel.mitigation.id) {
-                  <button class="parent-mit-chip" (click)="filterByMitigation(rel.mitigation)" [title]="rel.mitigation.name">
-                    {{ rel.mitigation.attackId }} {{ rel.mitigation.name }}
-                    <a [href]="rel.mitigation.url" target="_blank" rel="noopener" (click)="$event.stopPropagation()" class="chip-ext">↗</a>
-                  </button>
-                }
-              </div>
-            </div>
+        <app-drawer-section class="mitigations-section" sectionId="mitigations" heading="Mitigations" [count]="mitigations.length"
+                            [expanded]="!isSectionCollapsed('mitigations')" (expandedChange)="toggleSection('mitigations')">
+          @if (implSummary.total > 0 && implSummary.implemented > 0) {
+            <span sbTrailing class="sb-badge impl-summary-badge" data-tone="success">&#10003; {{ implSummary.implemented }} done</span>
           }
-          @if (mitigations.length === 0 && parentMitigations.length === 0) {
-            <p class="no-mitigations">No mitigations mapped to this technique.</p>
-          } @else if (mitigations.length > 0) {
-            @if (mitigations.length > 4) {
-              <div class="mit-search-wrap">
-                <input
-                  type="text"
-                  class="mit-search-input"
-                  placeholder="Filter mitigations…"
-                  [(ngModel)]="mitSearchText"
-                />
-                @if (mitSearchText) {
-                  <button class="mit-search-clear" (click)="mitSearchText = ''">✕</button>
-                }
-              </div>
-            }
-            @if (filteredMitigations.length === 0 && mitSearchText) {
-              <p class="mit-no-results">No mitigations match your search.</p>
-            }
-            @if (filteredMitigations.length > 1) {
-              <div class="bulk-update-row">
-                <span class="bulk-label">All {{ filteredMitigations.length }} mitigations:</span>
-                <div class="bulk-actions upgrade-action-strip">
-                  @for (s of statusOptions; track s) {
-                    <button
-                      class="bulk-status-btn"
-                      (click)="setAllMitigationStatus(s)"
-                      [style.background]="statusColors[s]"
-                      [title]="'Set all to ' + statusLabels[s]"
-                    >{{ statusLabels[s] }}</button>
+          @if (!isSectionCollapsed('mitigations')) {
+            @if (parentMitigations.length > 0) {
+              <div class="parent-mit-note">
+                <span class="sb-sublabel parent-mit-label">↑ Parent technique mitigations</span>
+                <div class="sb-chips parent-mit-chips">
+                  @for (rel of parentMitigations; track rel.mitigation.id) {
+                    <button class="sb-chip parent-mit-chip" data-tone="warm" (click)="filterByMitigation(rel.mitigation)" [title]="rel.mitigation.name">
+                      <span class="sb-chip-id">{{ rel.mitigation.attackId }}</span> {{ rel.mitigation.name }}
+                      <a [href]="rel.mitigation.url" target="_blank" rel="noopener" (click)="$event.stopPropagation()" class="chip-ext">↗</a>
+                    </button>
                   }
-                  <button class="bulk-clear-btn" (click)="clearAllMitigationStatus()">Clear All</button>
                 </div>
               </div>
             }
-            <ul class="mitigation-list">
-              @for (rel of filteredMitigations; track rel.mitigation.id) {
-                <li class="mitigation-item">
-                  <div class="mit-header">
-                    <a [href]="rel.mitigation.url" target="_blank" rel="noopener" class="mit-id">
-                      {{ rel.mitigation.attackId }}
-                    </a>
-                    <a [href]="rel.mitigation.url" target="_blank" rel="noopener" class="mit-name">{{ rel.mitigation.name }}</a>
-                    <button
-                      class="filter-mit-btn"
+            @if (mitigations.length === 0 && parentMitigations.length === 0) {
+              <p class="sb-empty no-mitigations">No mitigations mapped to this technique.</p>
+            } @else if (mitigations.length > 0) {
+              @if (mitigations.length > 4) {
+                <div class="mit-search-wrap">
+                  <input
+                    type="text"
+                    class="sb-input mit-search-input"
+                    placeholder="Filter mitigations…"
+                    [(ngModel)]="mitSearchText"
+                  />
+                  @if (mitSearchText) {
+                    <button class="mit-search-clear" (click)="mitSearchText = ''">✕</button>
+                  }
+                </div>
+              }
+              @if (filteredMitigations.length === 0 && mitSearchText) {
+                <p class="sb-empty mit-no-results">No mitigations match your search.</p>
+              }
+              @if (filteredMitigations.length > 1) {
+                <div class="bulk-update-row">
+                  <span class="bulk-label">All {{ filteredMitigations.length }} mitigations:</span>
+                  <div class="bulk-actions upgrade-action-strip">
+                    @for (s of statusOptions; track s) {
+                      <button
+                        class="bulk-status-btn"
+                        (click)="setAllMitigationStatus(s)"
+                        [style.background]="statusColors[s]"
+                        [title]="'Set all to ' + statusLabels[s]"
+                      >{{ statusLabels[s] }}</button>
+                    }
+                    <button class="bulk-clear-btn" (click)="clearAllMitigationStatus()">Clear All</button>
+                  </div>
+                </div>
+              }
+              <div class="sb-list mitigation-list">
+                @for (rel of filteredMitigations; track rel.mitigation.id) {
+                  <app-drawer-row kind="detail" class="mitigation-item" [entityId]="rel.mitigation.attackId" idClass="mit-id" [idHref]="rel.mitigation.url"
+                                  [name]="rel.mitigation.name" nameClass="mit-name" [nameHref]="rel.mitigation.url">
+                    <button sbHead
+                      class="sb-action filter-mit-btn"
                       (click)="filterByMitigation(rel.mitigation)"
                       title="Highlight all techniques this mitigation is mapped to"
                     >Show all →</button>
-                  </div>
 
-                  <!-- Implementation status -->
-                  <div class="impl-status-row">
-                    @for (s of statusOptions; track s) {
-                      <button
-                        class="impl-chip"
-                        [class.active]="getImplStatus(rel.mitigation.id) === s"
-                        [style.border-color]="getImplStatus(rel.mitigation.id) === s ? statusColors[s] : ''"
-                        [style.background]="getImplStatus(rel.mitigation.id) === s ? statusColors[s] : ''"
-                        [style.color]="getImplStatus(rel.mitigation.id) === s ? '#fff' : ''"
-                        (click)="setImplStatus(rel.mitigation.id, s)"
-                        [title]="statusLabels[s]"
-                      >{{ statusLabels[s] }}</button>
-                    }
-                  </div>
-
-                  <!-- Posture badge (P2-16): an implemented mitigation broader than the breadth threshold -->
-                  @if (mitigationPostureBadge(rel.mitigation); as badge) {
-                    <div class="mit-posture-row" data-testid="mit-posture-row">
-                      <span
-                        class="mit-posture-badge"
-                        [class.partial]="badge.partial"
-                        data-testid="mit-posture-badge"
-                      >{{ badge.text }}</span>
-                      @if (badge.canUnconfirm) {
+                    <!-- Implementation status -->
+                    <div class="impl-status-row">
+                      @for (s of statusOptions; track s) {
                         <button
-                          class="mit-confirm-btn"
-                          data-testid="mit-unconfirm"
-                          (click)="unconfirmTechnique()"
-                          title="Remove this technique's own confirmation; the mitigation's status is unchanged"
-                        >Unconfirm</button>
-                      } @else if (badge.canConfirm) {
-                        <button
-                          class="mit-confirm-btn"
-                          data-testid="mit-confirm"
-                          (click)="confirmTechnique(rel.mitigation)"
-                          title="This mitigation maps to many techniques; confirm it is in place for this technique"
-                        >Confirm for this technique</button>
+                          class="impl-chip"
+                          [class.active]="getImplStatus(rel.mitigation.id) === s"
+                          [style.border-color]="getImplStatus(rel.mitigation.id) === s ? statusColors[s] : ''"
+                          [style.background]="getImplStatus(rel.mitigation.id) === s ? statusColors[s] : ''"
+                          [style.color]="getImplStatus(rel.mitigation.id) === s ? '#fff' : ''"
+                          (click)="setImplStatus(rel.mitigation.id, s)"
+                          [title]="statusLabels[s]"
+                        >{{ statusLabels[s] }}</button>
                       }
                     </div>
-                  }
 
-                  @if (rel.description) {
-                    <div class="rel-desc-wrap" [class.expanded]="isRelDescExpanded(rel.mitigation.id)">
-                      <p class="rel-description" [innerHTML]="rel.description | attackText"></p>
-                      <div class="rel-desc-fade"></div>
-                    </div>
-                    <button class="rel-desc-toggle" (click)="toggleRelDesc(rel.mitigation.id)">
-                      {{ isRelDescExpanded(rel.mitigation.id) ? '▲ Less' : '▼ Context' }}
+                    <!-- Posture badge (P2-16): an implemented mitigation broader than the breadth threshold -->
+                    @if (mitigationPostureBadge(rel.mitigation); as badge) {
+                      <div class="mit-posture-row" data-testid="mit-posture-row">
+                        <span
+                          class="mit-posture-badge"
+                          [class.partial]="badge.partial"
+                          data-testid="mit-posture-badge"
+                        >{{ badge.text }}</span>
+                        @if (badge.canUnconfirm) {
+                          <button
+                            class="mit-confirm-btn"
+                            data-testid="mit-unconfirm"
+                            (click)="unconfirmTechnique()"
+                            title="Remove this technique's own confirmation; the mitigation's status is unchanged"
+                          >Unconfirm</button>
+                        } @else if (badge.canConfirm) {
+                          <button
+                            class="mit-confirm-btn"
+                            data-testid="mit-confirm"
+                            (click)="confirmTechnique(rel.mitigation)"
+                            title="This mitigation maps to many techniques; confirm it is in place for this technique"
+                          >Confirm for this technique</button>
+                        }
+                      </div>
+                    }
+
+                    @if (rel.description) {
+                      <div class="rel-desc-wrap" [class.expanded]="isRelDescExpanded(rel.mitigation.id)">
+                        <p class="rel-description" [innerHTML]="rel.description | attackText"></p>
+                        <div class="rel-desc-fade"></div>
+                      </div>
+                      <button class="rel-desc-toggle" (click)="toggleRelDesc(rel.mitigation.id)">
+                        {{ isRelDescExpanded(rel.mitigation.id) ? '▲ Less' : '▼ Context' }}
+                      </button>
+                    }
+                    @if (rel.mitigation.description) {
+                      <div class="mit-desc-wrap" [class.expanded]="isMitDescExpanded(rel.mitigation.id)">
+                        <p class="mit-description" [innerHTML]="rel.mitigation.description | attackText"></p>
+                        <div class="mit-desc-fade"></div>
+                      </div>
+                      <button class="mit-desc-toggle" (click)="toggleMitDesc(rel.mitigation.id)">
+                        {{ isMitDescExpanded(rel.mitigation.id) ? '▲ Less' : '▼ Show description' }}
+                      </button>
+                    }
+
+                    <!-- Documentation toggle -->
+                    <button
+                      class="doc-toggle-btn"
+                      [class.has-doc]="hasDoc(rel.mitigation.id)"
+                      (click)="toggleDoc(rel.mitigation.id)"
+                    >
+                      {{ hasDoc(rel.mitigation.id) ? '📄' : '📝' }}
+                      {{ isDocExpanded(rel.mitigation.id) ? 'Hide documentation' : (hasDoc(rel.mitigation.id) ? 'View / edit documentation' : 'Add documentation') }}
                     </button>
-                  }
-                  @if (rel.mitigation.description) {
-                    <div class="mit-desc-wrap" [class.expanded]="isMitDescExpanded(rel.mitigation.id)">
-                      <p class="mit-description" [innerHTML]="rel.mitigation.description | attackText"></p>
-                      <div class="mit-desc-fade"></div>
-                    </div>
-                    <button class="mit-desc-toggle" (click)="toggleMitDesc(rel.mitigation.id)">
-                      {{ isMitDescExpanded(rel.mitigation.id) ? '▲ Less' : '▼ Show description' }}
-                    </button>
-                  }
 
-                  <!-- Documentation toggle -->
-                  <button
-                    class="doc-toggle-btn"
-                    [class.has-doc]="hasDoc(rel.mitigation.id)"
-                    (click)="toggleDoc(rel.mitigation.id)"
-                  >
-                    {{ hasDoc(rel.mitigation.id) ? '📄' : '📝' }}
-                    {{ isDocExpanded(rel.mitigation.id) ? 'Hide documentation' : (hasDoc(rel.mitigation.id) ? 'View / edit documentation' : 'Add documentation') }}
-                  </button>
-
-                  <!-- Documentation form -->
-                  @if (isDocExpanded(rel.mitigation.id)) {
-                    <div class="doc-form">
-                      <div class="doc-field">
-                        <label class="doc-label">Security Controls</label>
-                        <input
-                          type="text"
-                          class="doc-input"
-                          placeholder="e.g. NIST AC-2, CIS 5.1, ISO A.9.2.1"
-                          [(ngModel)]="getEditingDoc(rel.mitigation.id).controlRefs"
-                        />
-                        <span class="doc-hint">Comma-separated references to any framework</span>
+                    <!-- Documentation form -->
+                    @if (isDocExpanded(rel.mitigation.id)) {
+                      <div class="doc-form">
+                        <div class="doc-field">
+                          <label class="doc-label">Security Controls</label>
+                          <input
+                            type="text"
+                            class="sb-input doc-input"
+                            placeholder="e.g. NIST AC-2, CIS 5.1, ISO A.9.2.1"
+                            [(ngModel)]="getEditingDoc(rel.mitigation.id).controlRefs"
+                          />
+                          <span class="doc-hint">Comma-separated references to any framework</span>
+                        </div>
+                        <div class="doc-field">
+                          <label class="doc-label">Owner / Responsible Team</label>
+                          <input
+                            type="text"
+                            class="sb-input doc-input"
+                            placeholder="e.g. Security Engineering, John Smith"
+                            [(ngModel)]="getEditingDoc(rel.mitigation.id).owner"
+                          />
+                        </div>
+                        <div class="doc-field">
+                          <label class="doc-label">Target Date</label>
+                          <input
+                            type="date"
+                            class="sb-input doc-input"
+                            [(ngModel)]="getEditingDoc(rel.mitigation.id).dueDate"
+                          />
+                        </div>
+                        <div class="doc-field">
+                          <label class="doc-label">Evidence / Ticket URL</label>
+                          <input
+                            type="url"
+                            class="sb-input doc-input"
+                            placeholder="https://jira.company.com/ticket/SEC-123"
+                            [(ngModel)]="getEditingDoc(rel.mitigation.id).evidenceUrl"
+                          />
+                        </div>
+                        <div class="doc-field">
+                          <label class="doc-label">Implementation Notes</label>
+                          <textarea
+                            class="sb-input doc-textarea"
+                            placeholder="Describe how this mitigation is implemented, any exceptions, deviations from standard, or additional context…"
+                            [(ngModel)]="getEditingDoc(rel.mitigation.id).notes"
+                            rows="4"
+                          ></textarea>
+                        </div>
+                        <div class="doc-actions upgrade-action-strip">
+                          <button class="doc-save-btn" (click)="saveDoc(rel.mitigation.id)">💾 Save</button>
+                          <button class="doc-cancel-btn" (click)="toggleDoc(rel.mitigation.id)">Cancel</button>
+                        </div>
                       </div>
-                      <div class="doc-field">
-                        <label class="doc-label">Owner / Responsible Team</label>
-                        <input
-                          type="text"
-                          class="doc-input"
-                          placeholder="e.g. Security Engineering, John Smith"
-                          [(ngModel)]="getEditingDoc(rel.mitigation.id).owner"
-                        />
-                      </div>
-                      <div class="doc-field">
-                        <label class="doc-label">Target Date</label>
-                        <input
-                          type="date"
-                          class="doc-input"
-                          [(ngModel)]="getEditingDoc(rel.mitigation.id).dueDate"
-                        />
-                      </div>
-                      <div class="doc-field">
-                        <label class="doc-label">Evidence / Ticket URL</label>
-                        <input
-                          type="url"
-                          class="doc-input"
-                          placeholder="https://jira.company.com/ticket/SEC-123"
-                          [(ngModel)]="getEditingDoc(rel.mitigation.id).evidenceUrl"
-                        />
-                      </div>
-                      <div class="doc-field">
-                        <label class="doc-label">Implementation Notes</label>
-                        <textarea
-                          class="doc-textarea"
-                          placeholder="Describe how this mitigation is implemented, any exceptions, deviations from standard, or additional context…"
-                          [(ngModel)]="getEditingDoc(rel.mitigation.id).notes"
-                          rows="4"
-                        ></textarea>
-                      </div>
-                      <div class="doc-actions upgrade-action-strip">
-                        <button class="doc-save-btn" (click)="saveDoc(rel.mitigation.id)">💾 Save</button>
-                        <button class="doc-cancel-btn" (click)="toggleDoc(rel.mitigation.id)">Cancel</button>
-                      </div>
-                    </div>
-                  }
-                </li>
-              }
-            </ul>
+                    }
+                  </app-drawer-row>
+                }
+              </div>
+            }
           }
-          }
-        </div>
+        </app-drawer-section>
 
         @if (mitigations.length > 0 || threatGroups.length > 0) {
-          <section class="detail-section upgrade-section-block">
-            <h4 class="section-title upgrade-section-title" id="sb-sec-relgraph" (click)="toggleSection('relgraph')" style="cursor:pointer">
-              <span class="section-icon">🕸️</span> Relationship Graph
-              <span class="toggle-arrow">{{ isSectionCollapsed('relgraph') ? '▼' : '▲' }}</span>
-            </h4>
+          <app-drawer-section class="relgraph-section" sectionId="relgraph" heading="Relationship Graph" icon="🕸️"
+                              [expanded]="!isSectionCollapsed('relgraph')" (expandedChange)="toggleSection('relgraph')">
             @if (!isSectionCollapsed('relgraph')) {
               <div class="rel-graph-container">
                 <svg width="400" height="240" viewBox="0 0 400 240" class="rel-graph-svg">
@@ -1888,7 +1608,7 @@
                 </div>
               </div>
             }
-          </section>
+          </app-drawer-section>
         }
 
       </div>

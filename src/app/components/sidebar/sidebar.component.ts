@@ -89,11 +89,32 @@ import { TechniqueEvidenceCardComponent } from '../technique-evidence-card/techn
 import {
   RULE_SOURCE_KEYS, RuleSourceListComponent, type RuleSourceView, ruleSourceError, ruleSourceView,
 } from '../rule-source-list/rule-source-list.component';
+import { DrawerRowComponent, DrawerSectionComponent, type DrawerBadgeTone } from '../drawer-primitives';
+
+/**
+ * The badge tone of each value a drawer row shows as a badge (one theme token per
+ * meaning, so the badge reads in both themes); a value not listed is neutral.
+ */
+const BADGE_TONES: Readonly<Record<string, Readonly<Record<string, DrawerBadgeTone>>>> = {
+  // CTID score chips (CSA CCM, M365 controls): score value or category
+  ctrl: { significant: 'success', partial: 'warm', minimal: 'danger', protect: 'blue', detect: 'purple', respond: 'orange' },
+  provider: { cis: 'purple', aws: 'warm', azure: 'blue', gcp: 'success' },
+  cri: { GV: 'purple', ID: 'accent', PR: 'success', DE: 'warm', RS: 'danger', RC: 'neutral' },
+  // CAPEC likelihood / severity, SIEM query confidence
+  level: { high: 'danger', medium: 'warm', low: 'success' },
+  engage: { prepare: 'success', expose: 'accent', affect: 'danger', elicit: 'warm', understand: 'neutral' },
+  ioc: { ip: 'danger', domain: 'purple', hash: 'warm', url: 'accent', email: 'success', cve: 'orange' },
+  impl: { implemented: 'success', 'in-progress': 'accent', planned: 'warm', 'not-started': 'danger' },
+  customCat: {
+    edr: 'blue', siem: 'purple', network: 'blue', email: 'warm', iam: 'success',
+    endpoint: 'orange', identity: 'success', cloud: 'neutral', custom: 'neutral',
+  },
+};
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, AttackTextPipe, LibraryCrossRefComponent, ValidationStatusPillComponent, DrawerResizeHandleComponent, TechniqueEvidenceCardComponent, RuleSourceListComponent],
+  imports: [CommonModule, FormsModule, RouterLink, AttackTextPipe, LibraryCrossRefComponent, ValidationStatusPillComponent, DrawerResizeHandleComponent, TechniqueEvidenceCardComponent, RuleSourceListComponent, DrawerSectionComponent, DrawerRowComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss',
@@ -340,6 +361,13 @@ export class SidebarComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** The tone of a row badge: BADGE_TONES[kind][value], case-insensitive except for the CRI function codes. */
+  badgeTone(kind: string, value: string | null | undefined): DrawerBadgeTone {
+    const tones = BADGE_TONES[kind];
+    if (!tones || !value) return 'neutral';
+    return tones[value] ?? tones[value.toLowerCase()] ?? 'neutral';
+  }
+
   isCurated(id: string): boolean {
     return SidebarComponent.CURATED_SECTIONS.has(id);
   }
@@ -521,15 +549,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
       map.set(cap.framework, list);
     }
     return Array.from(map.entries()).map(([framework, capabilities]) => ({ framework, capabilities }));
-  }
-
-  c2FrameworkColor(name: string): string {
-    switch (name) {
-      case 'Sliver': return '#4CAF50';
-      case 'Cobalt Strike': return '#2196F3';
-      case 'Metasploit': return '#FF5722';
-      default: return '#888';
-    }
   }
 
   /** Unified list with a consistent 'provider' field for template use. */
