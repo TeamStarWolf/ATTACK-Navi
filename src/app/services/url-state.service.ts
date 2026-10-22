@@ -3,7 +3,7 @@
 import { Injectable, inject } from '@angular/core';
 import { NavigationCancel, NavigationEnd, NavigationError, NavigationSkipped, Router } from '@angular/router';
 import { filter, take } from 'rxjs';
-import { FilterService } from './filter.service';
+import { FilterService, firstValidHeat } from './filter.service';
 
 /**
  * Owns the URL <-> filter-state sync under the router.
@@ -51,6 +51,13 @@ export class UrlStateService {
         const params = new URLSearchParams();
         for (const [key, value] of Object.entries(queryParams)) {
           if (typeof value === 'string') params.set(key, value);
+          // A repeated key arrives as an array. `heat` takes its first valid value, and
+          // none valid is absent (RP-F decision 26, firstValidHeat); any other repeated
+          // key is ignored, as before.
+          else if (key === 'heat') {
+            const heat = firstValidHeat(value as string[]);
+            if (heat !== null) params.set(key, heat);
+          }
         }
         if ([...params.keys()].length) {
           this.filterService.applyUrlState(params);

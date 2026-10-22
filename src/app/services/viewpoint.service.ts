@@ -3,7 +3,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { DEFAULT_HEATMAP_MODE, FilterService, HeatmapMode, isHeatmapMode } from './filter.service';
+import { DEFAULT_HEATMAP_MODE, FilterService, HeatmapMode, firstValidHeat } from './filter.service';
 
 /** A security role the whole app can be viewed through. */
 export type ViewpointId =
@@ -230,13 +230,17 @@ export class ViewpointService {
    * ABSENT and the viewpoint's lens and the default-lens rule (D4) still run
    * (RP-F item 1). Otherwise an invalid key pinned Frequency and the writer
    * then wrote heat=frequency into every reshare.
+   *
+   * A repeated key reads as the URL reader reads it (firstValidHeat, RP-F decision
+   * 26): its first valid value is the choice, and a key with no valid value is
+   * absent, so `heat=bogus&heat=also-bogus` lets D4 run.
    */
   urlHasHeatParam(): boolean {
     try {
-      if (isHeatmapMode(new URLSearchParams(window.location.search).get('heat'))) return true;
+      if (firstValidHeat(new URLSearchParams(window.location.search).getAll('heat')) !== null) return true;
       const hash = window.location.hash || '';
       const q = hash.indexOf('?');
-      if (q >= 0 && isHeatmapMode(new URLSearchParams(hash.slice(q + 1)).get('heat'))) return true;
+      if (q >= 0 && firstValidHeat(new URLSearchParams(hash.slice(q + 1)).getAll('heat')) !== null) return true;
       return false;
     } catch {
       return false;

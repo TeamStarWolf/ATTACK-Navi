@@ -837,6 +837,31 @@ test.describe('E2.4: default-lens rule', () => {
     });
   }
 
+  // RP-F decision 26: a repeated heat key in a pasted link takes its first VALID value;
+  // with none valid the key is absent and D4 runs. Round 4: heat=frequency&heat=bogus
+  // opened Frequency and rewrote to bare #/matrix, so F5 gave Posture. Fresh navigations.
+  for (const [query, lens, label] of [
+    ['heat=frequency&heat=bogus', 'frequency', 'Frequency'],
+    ['heat=bogus&heat=kev', 'kev', 'KEV'],
+    ['heat=bogus&heat=also-bogus', 'posture', 'Posture'],
+  ] as const) {
+    test(`[RP-F 26] one recorded run and a pasted #/matrix?${query}: ${label}, heat=${lens} once, kept on F5`, async ({ page }) => {
+      await openWorkspace(page, { seed: { 'navi.v2.validation-runs': oneRun } });
+      await page.goto('about:blank');
+      await page.goto(`${BASE}/#/matrix?${query}`);
+      await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+      await expect(page.locator('.heatmap-btn')).toContainText(label);
+      await expect(page).toHaveURL(new RegExp(`#/matrix\\?(.*&)?heat=${lens}(&|$)`), { timeout: LENS_STEP_TIMEOUT });
+      const hash = new URL(page.url()).hash;
+      expect(hash.match(/heat=/g)?.length).toBe(1);
+      expect(hash).not.toContain('bogus');
+      await page.reload();
+      await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
+      await expect(page.locator('.heatmap-btn')).toContainText(label);
+      await expect(page).toHaveURL(new RegExp(`#/matrix\\?(.*&)?heat=${lens}(&|$)`), { timeout: LENS_STEP_TIMEOUT });
+    });
+  }
+
   // RP-F decision 10: owner data that first appears in the session (a bulk set of 3
   // techniques) while Frequency is on screen only as the D4 default must not write
   // heat=frequency: a reload then runs D4 and boots Posture (P2-19 walk step 5). A
