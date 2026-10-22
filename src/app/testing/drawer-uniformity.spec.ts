@@ -150,6 +150,10 @@ describe('Drawer uniformity: one section pattern and one row pattern', () => {
         s.backgroundColor, s.color, s.marginBottom].join('|');
     };
     expect(new Set(hs.map(hk)).size).withContext(hs.map(h => `${h.id}: ${hk(h)}`).join('\n')).toBe(1);
+    // One height whatever the header holds: a count pill, a trailing action, or nothing.
+    const heights = hs.map(h => `${h.id}: ${h.getBoundingClientRect().height}`);
+    expect(new Set(hs.map(h => h.getBoundingClientRect().height)).size).withContext(heights.join('\n')).toBe(1);
+    expect(getComputedStyle(hs[0]).minHeight).toBe('24px');
     const cards = hs.map(h => h.parentElement as HTMLElement);
     const ck = (c: HTMLElement) => {
       const s = getComputedStyle(c);
@@ -177,9 +181,11 @@ describe('Drawer uniformity: one section pattern and one row pattern', () => {
       }
       const box = (r: HTMLElement) => {
         const s = getComputedStyle(r);
-        return [s.paddingTop, s.paddingRight, s.paddingBottom, s.paddingLeft, s.minHeight, s.fontFamily, s.fontSize].join('|');
+        return [s.paddingTop, s.paddingRight, s.paddingBottom, s.paddingLeft, s.minHeight, s.fontFamily, s.fontSize,
+          s.borderTopLeftRadius, s.borderBottomRightRadius].join('|');
       };
-      expect(new Set(ofKind.map(box)).size).withContext(kind).toBe(1);
+      expect(new Set(ofKind.map(box)).size).withContext(ofKind.map(r => `${r.className}: ${box(r)}`).join('\n')).toBe(1);
+      expect(getComputedStyle(ofKind[0]).borderTopLeftRadius).withContext(kind).toBe('0px');
     }
     const ids = [...host().querySelectorAll<HTMLElement>('app-drawer-row .sb-id')];
     expect(ids.length).toBeGreaterThan(20);
@@ -189,6 +195,35 @@ describe('Drawer uniformity: one section pattern and one row pattern', () => {
     };
     expect(new Set(ids.map(idk)).size).toBe(1);
     expect(getComputedStyle(ids[0]).fontFamily).toContain('IBM Plex Mono');
+  });
+
+  it('every row description and every row name computes the same type', () => {
+    const descs = [...host().querySelectorAll<HTMLElement>('app-drawer-row .sb-desc')];
+    expect(descs.length).toBeGreaterThan(10);
+    const dk = (e: HTMLElement) => {
+      const s = getComputedStyle(e);
+      return [s.fontSize, s.fontStyle, s.fontWeight, s.color, s.marginTop, s.paddingLeft, s.borderLeftWidth, s.backgroundColor].join('|');
+    };
+    expect(new Set(descs.map(dk)).size).withContext(descs.map(e => `${e.className}: ${dk(e)}`).join('\n')).toBe(1);
+    expect(getComputedStyle(descs[0]).fontStyle).toBe('normal');
+    const names = [...host().querySelectorAll<HTMLElement>('app-drawer-row .sb-name')];
+    expect(names.length).toBeGreaterThan(10);
+    const nk = (e: HTMLElement) => {
+      const s = getComputedStyle(e);
+      return [s.fontSize, s.fontWeight, s.color].join('|');
+    };
+    expect(new Set(names.map(nk)).size).withContext(names.map(e => `${e.className}: ${nk(e)}`).join('\n')).toBe(1);
+  });
+
+  it('every row badge takes its colour from a tone, never an inline colour', () => {
+    const badges = [...host().querySelectorAll<HTMLElement>('app-drawer-section .sb-badge')];
+    expect(badges.length).toBeGreaterThan(10);
+    for (const b of badges) expect(b.getAttribute('style')).withContext(b.className).toBeNull();
+    const bk = (e: HTMLElement) => {
+      const s = getComputedStyle(e);
+      return [s.fontSize, s.fontWeight, s.paddingTop, s.paddingLeft, s.borderTopWidth, s.borderTopLeftRadius, s.textTransform].join('|');
+    };
+    expect(new Set(badges.map(bk)).size).withContext(badges.map(e => `${e.className}: ${bk(e)}`).join('\n')).toBe(1);
   });
 
   it('show-more controls and source footers share one style', () => {
@@ -205,10 +240,10 @@ describe('Drawer uniformity: one section pattern and one row pattern', () => {
 
   it('no section keeps inline colours in its rows', () => {
     const body = host().querySelector('.sidebar-body')!;
-    // The data-driven colours stay (EPSS, capability group, the imported-layer swatch, the impl status buttons);
-    // nothing else in a section body carries a style attribute.
+    // The data-driven colours stay (the imported-layer swatch, the impl status buttons, the graph legend);
+    // nothing else in a section body carries a style attribute (EPSS and capability group take a tone).
     const inline = [...body.querySelectorAll<HTMLElement>('app-drawer-section [style]')]
-      .filter(e => !e.matches('.cve-tag, .cve-cap-group, .il-swatch, .impl-chip, .bulk-status-btn, .leg-dot'));
+      .filter(e => !e.matches('.il-swatch, .impl-chip, .bulk-status-btn, .leg-dot'));
     expect(inline.map(e => e.className)).toEqual([]);
   });
 });

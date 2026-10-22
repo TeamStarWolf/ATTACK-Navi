@@ -6,7 +6,9 @@
    section. Global on purpose (the components use ViewEncapsulation.None) so the
    shared classes also style what a host projects into a section body. Every class
    is prefixed sb- and every colour is a theme role token, so dark and light come
-   from the tokens alone (no body.light-mode forks). */
+   from the tokens alone (no body.light-mode forks). The roles themselves are the
+   mixins in _roles.scss. */
+@use './roles';
 
 /* ── Section card ─────────────────────────────────────────────────── */
 .sb-section {
@@ -30,7 +32,7 @@
   align-items: center;
   gap: var(--space-2, 8px);
   box-sizing: border-box;
-  min-height: 18px;
+  min-height: 24px; /* fits the count pill (20px) and a trailing action (23.4px): one height for every header */
   margin: 0;
   padding: 0;
   font: inherit;
@@ -139,27 +141,17 @@
 /* ── Rows ─────────────────────────────────────────────────────────── */
 .sb-row {
   display: block;
-  box-sizing: border-box;
-  min-width: 0;
-  min-height: 28px;
-  padding: 6px 8px;
-  font-family: inherit;
-  font-size: var(--text-xs, 11px);
-  line-height: 1.5;
-  color: var(--text-muted);
+  @include roles.row-box;
 }
 
 .sb-row:not(.sb-row--plain) + .sb-row:not(.sb-row--plain) {
-  border-top: 1px solid var(--border-subtle);
+  border-top: 1px solid var(--border-subtle) !important; /* see the shield below */
 }
 
 .sb-row--clickable {
   cursor: pointer;
 
-  &:hover {
-    background: var(--bg-hover);
-    border-radius: var(--radius-sm, 4px);
-  }
+  &:hover { background: var(--bg-hover); }
 }
 
 .sb-row-head {
@@ -172,19 +164,7 @@
 
 /* The id chip: every entity id, in every row kind. */
 .sb-id {
-  flex-shrink: 0;
-  padding: 1px 5px;
-  border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
-  border-radius: var(--radius-sm, 4px);
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
-  color: var(--accent);
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1.5;
-  letter-spacing: 0;
-  white-space: nowrap;
-  text-decoration: none;
+  @include roles.id;
 }
 
 a.sb-id:hover { text-decoration: underline; }
@@ -207,21 +187,14 @@ a.sb-name:hover {
   flex: 1 1 120px;
   min-width: 0;
   overflow: hidden;
-  font-size: var(--text-xs, 11px);
-  color: var(--text-muted);
+  @include roles.secondary;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
 .sb-desc {
-  margin: 4px 0 0;
-  font-size: var(--text-xs, 11px);
-  line-height: 1.5;
-  color: var(--text-muted);
-  overflow-wrap: anywhere;
+  @include roles.desc;
 }
-
-.sb-desc--note { font-style: italic; }
 
 .sb-row-icon {
   font-size: 11px;
@@ -234,13 +207,7 @@ a.sb-name:hover {
 .sb-row--plain,
 .sb-text {
   display: block;
-  min-height: 0;
-  margin: 0 0 8px;
-  padding: 0;
-  font-size: var(--text-xs, 11px);
-  line-height: 1.5;
-  color: var(--text-muted);
-  overflow-wrap: anywhere;
+  @include roles.text;
 }
 
 .sb-empty {
@@ -323,21 +290,9 @@ a.sb-name:hover {
 }
 
 .sb-badge {
-  display: inline-block;
-  flex-shrink: 0;
-  padding: 1px 6px;
-  border: 1px solid color-mix(in srgb, var(--sb-tone) 25%, transparent);
-  border-radius: var(--radius-sm, 4px);
+  @include roles.badge-shape;
   background: color-mix(in srgb, var(--sb-tone) 12%, transparent);
   color: var(--sb-tone);
-  font-family: inherit;
-  font-size: 9px;
-  font-weight: 700;
-  line-height: 1.5;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
-  white-space: nowrap;
-  text-decoration: none;
 }
 
 a.sb-badge:hover { text-decoration: underline; }
@@ -419,33 +374,7 @@ a.sb-chip {
 }
 
 .sb-action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  box-sizing: border-box;
-  padding: 3px 9px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm, 4px);
-  background: transparent;
-  color: var(--text-muted);
-  font: inherit;
-  font-size: var(--text-xs, 11px);
-  font-weight: 600;
-  line-height: 1.4;
-  white-space: nowrap;
-  text-decoration: none;
-  cursor: pointer;
-
-  &:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-
-  &:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
+  @include roles.action;
 }
 
 .sb-action--block {
@@ -507,3 +436,21 @@ textarea.sb-input { resize: vertical; }
   max-height: 260px;
   overflow-y: auto;
 }
+
+/* ── Shield ──────────────────────────────────────────────────────────
+   src/styles.scss carries page-level light-theme overrides with !important keyed on
+   names the drawer still uses (.section-title on every header, .mitigation-item on a
+   row, ".sidebar p" on every paragraph). The roles win over them here with the same
+   tokens, so a section looks the same in both themes and in or out of the drawer.
+   The selectors are made more specific than those overrides (doubled class, or the
+   card and body around the paragraph); the divider rule above is already. */
+.sb-section > .sb-head.sb-head { color: var(--text-faint) !important; }
+
+.sb-section .sb-body :is(p.sb-text, p.sb-desc, p.sb-row--plain) { color: var(--text-muted) !important; }
+
+.sb-section .sb-body p.sb-empty { color: var(--text-faint) !important; }
+
+/* A row has square corners (its divider runs edge to edge); a clickable row rounds on hover. */
+.sb-row.sb-row { border-radius: 0 !important; }
+
+.sb-row.sb-row--clickable:hover { border-radius: var(--radius-sm, 4px) !important; }

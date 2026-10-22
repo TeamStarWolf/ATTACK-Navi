@@ -1,5 +1,7 @@
 /* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
    https://github.com/TeamStarWolf/ATTACK-Navi - MIT License */
+@use '../drawer-primitives/roles';
+
 .sidebar {
   position: fixed;
   right: 0;
@@ -306,14 +308,11 @@ select {
   }
 }
 
+// The bulk status line is a plain text line (.sb-text) laid out as a row of controls.
 .bulk-update-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 12px;
-  background: var(--bg-hover);
-  border-radius: 6px;
-  margin-bottom: 8px;
   flex-wrap: wrap;
 }
 
@@ -507,23 +506,11 @@ select {
   &:hover { opacity: 1; }
 }
 
-// A mitigation row (app-drawer-row kind detail): its head line comes from the
-// primitives; the status chips, posture badge, context toggles and documentation
-// form below it are this section's own controls.
+// A mitigation row (app-drawer-row kind detail): its head line and both descriptions
+// (.sb-desc) come from the primitives; the status chips, posture badge, the clamp and
+// toggles of the descriptions and the documentation form are this section's own controls.
 .mitigation-item {
   .impl-status-row { margin-top: 6px; }
-
-  .rel-description {
-    font-size: 11px;
-    color: #5aabf0;
-    font-style: italic;
-    margin: 0 0 6px;
-    line-height: 1.5;
-    padding: 5px 9px;
-    background: rgb(26 159 255 / 7%);
-    border-radius: 4px;
-    border-left: 2px solid rgb(26 159 255 / 40%);
-  }
 
   .mit-desc-wrap {
     position: relative;
@@ -546,13 +533,6 @@ select {
     height: 2em;
     background: linear-gradient(to bottom, transparent, var(--bg-panel-strong));
     pointer-events: none;
-  }
-
-  .mit-description {
-    font-size: 11px;
-    color: var(--text-faint);
-    margin: 0;
-    line-height: 1.5;
   }
 
   .mit-desc-toggle {
@@ -605,7 +585,7 @@ select {
     text-align: left;
     transition: color 0.15s;
     font-family: inherit;
-    &:hover { color: #5aabf0; }
+    &:hover { color: var(--accent); }
   }
 }
 
@@ -921,7 +901,6 @@ select {
 
 .meta-value,
 .description,
-.mit-description,
 .doc-hint {
   color: var(--text-muted) !important;
 }
@@ -1003,9 +982,18 @@ select {
   margin-bottom: 4px;
 }
 
+// The level's colour is a role token (both themes): high / mid / low.
+.completeness-bar {
+  --completeness-tone: var(--danger);
+
+  &[data-level='mid'] { --completeness-tone: var(--accent-warm); }
+  &[data-level='high'] { --completeness-tone: var(--success); }
+}
+
 .completeness-pct {
   font-weight: 700;
   font-size: 11px;
+  color: var(--completeness-tone);
 }
 
 .completeness-track {
@@ -1017,6 +1005,7 @@ select {
 
 .completeness-fill {
   height: 100%;
+  background: var(--completeness-tone);
   border-radius: 2px;
   transition: width 0.3s ease, background 0.3s ease;
 }
@@ -1158,8 +1147,6 @@ select {
   border-color: rgba(251, 191, 36, 0.35);
 }
 
-/* Curated chips on section titles: hand-curated editorial mappings */
-
 /* Imported (user-uploaded) Navigator layer data for the selected technique */
 .imported-layer-section {
   .imported-layer-body { display: flex; flex-direction: column; gap: 8px; padding-top: 4px; font-size: 12px; }
@@ -1183,4 +1170,58 @@ select {
   align-items: stretch;
 
   .tag-input { flex: 1; min-width: 0; }
+}
+
+// Detection Validation: the pill is its own component, unchanged (its template, its
+// labels, data-status and its per-status colours are its own); the card around it is
+// the section primitive. These rules put the pill's parts on the primitives' roles:
+// its title is the section header's, its Open Workbench button sits where a header's
+// trailing action sits, its status line is an entity row, its other lines plain text,
+// its status and lab marks badges, its rule ids id chips and its notes a description.
+// The selectors reach into the pill (::ng-deep) and are more specific than its own.
+.vsp-section ::ng-deep app-validation-status-pill {
+  .vsp {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    font-size: var(--text-xs, 11px);
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+
+  .vsp .vsp-head {
+    position: absolute;
+    top: var(--space-4, 16px);
+    right: var(--space-4, 16px);
+    height: 24px; // the section header's height
+    margin: 0;
+  }
+
+  .vsp .vsp-head h4 { display: none; }
+
+  .vsp .vsp-open { @include roles.action; }
+
+  .vsp > .vsp-row:not(.vsp-rules, .vsp-when) { @include roles.row-box; }
+
+  .vsp .vsp-rules,
+  .vsp .vsp-when { @include roles.text; }
+
+  .vsp .vsp-meta { @include roles.secondary; }
+
+  .vsp .vsp-status,
+  .vsp .vsp-lab { @include roles.badge-shape; }
+
+  .vsp .vsp-rule { @include roles.id; }
+
+  .vsp .vsp-notes {
+    @include roles.desc;
+    color: var(--text-muted) !important; // over the page-level ".sidebar p" light override
+  }
+
+  .vsp .vsp-empty {
+    @include roles.text;
+    color: var(--text-muted) !important;
+  }
 }

@@ -1,29 +1,29 @@
 @let s = source();
 <div class="rule-source" data-testid="rule-source" [attr.data-source]="s.key">
-  <div class="rs-head">
+  <div class="sb-sublabel rs-head">
     <span class="rs-label">{{ s.label }}</span>
     @if (!s.error) {
       <span class="rs-count" data-testid="rule-source-count">{{ s.count }} {{ s.count === 1 ? 'rule' : 'rules' }}</span>
     }
   </div>
   @if (s.error) {
-    <p class="rs-note rs-error" data-testid="rule-source-error">Not loaded: {{ s.error }}</p>
+    <p class="sb-empty rs-note rs-error" data-testid="rule-source-error">Not loaded: {{ s.error }}</p>
   } @else if (s.count === 0) {
-    <p class="rs-note" data-testid="rule-source-empty">{{ empty }}</p>
+    <p class="sb-empty rs-note" data-testid="rule-source-empty">{{ empty }}</p>
   } @else {
-    <ul class="rs-rules">
+    <div class="sb-list rs-rules" role="list">
       @for (r of s.rules; track $index) {
-        <li><a class="rs-rule" [href]="r.url" target="_blank" rel="noopener">{{ r.name }}</a></li>
+        <app-drawer-row role="listitem" [name]="r.name" nameClass="rs-rule" [nameHref]="r.url" />
       }
-    </ul>
+    </div>
     @if (s.rules.length < s.count) {
-      <p class="rs-note">{{ s.rules.length }} of {{ s.count }} listed by name; the rest are in the repository at this commit.</p>
+      <p class="sb-text rs-note">{{ s.rules.length }} of {{ s.count }} listed by name; the rest are in the repository at this commit.</p>
     }
   }
   @if (!s.error) {
-    <p class="rs-prov" data-testid="rule-source-provenance">
+    <div class="sb-source rs-prov" data-testid="rule-source-provenance">
       Pinned <a [href]="s.repoUrl" target="_blank" rel="noopener" [title]="s.sha">{{ s.repo }}&#64;{{ s.sha.slice(0, 7) }}</a>,
       commit {{ s.commitDate }}; snapshot {{ s.generated }}
-    </p>
+    </div>
   }
 </div>

@@ -114,8 +114,12 @@
           [techniqueName]="technique.name"
           [tacticSlugs]="technique.tacticShortnames" />
 
-        <!-- Latest detection-validation status -->
-        <app-validation-status-pill [attackId]="technique.attackId" />
+        <!-- Latest detection-validation status: the pill (its own component, unchanged)
+             inside the one section card; sidebar.component.scss puts its parts on the
+             primitives' roles. -->
+        <app-drawer-section class="vsp-section" heading="Detection Validation" [collapsible]="false">
+          <app-validation-status-pill [attackId]="technique.attackId" />
+        </app-drawer-section>
 
         @if (technique.description) {
           <div class="description-wrap" [class.expanded]="descExpanded">
@@ -263,18 +267,17 @@
 
         <!-- Technique Completeness Score -->
         @if (technique) {
-          <div class="completeness-bar" [title]="'Data completeness: ' + completenessScore + '%'">
+          <div class="completeness-bar" [title]="'Data completeness: ' + completenessScore + '%'"
+               [attr.data-level]="completenessScore >= 70 ? 'high' : completenessScore >= 40 ? 'mid' : 'low'">
             <div class="completeness-label">
               <span>Completeness</span>
-              <span class="completeness-pct"
-                [style.color]="completenessScore >= 70 ? '#4caf50' : completenessScore >= 40 ? '#ff9800' : '#f44336'">
+              <span class="completeness-pct">
                 {{ completenessScore }}%
               </span>
             </div>
             <div class="completeness-track">
               <div class="completeness-fill"
-                [style.width.%]="completenessScore"
-                [style.background]="completenessScore >= 70 ? '#4caf50' : completenessScore >= 40 ? '#ff9800' : '#f44336'">
+                [style.width.%]="completenessScore">
               </div>
             </div>
           </div>
@@ -351,12 +354,12 @@
 
         <!-- Data sources -->
         @if (technique.dataSources.length > 0) {
-          <app-drawer-section class="data-sources-section" sectionId="datasources" heading="Data Sources" icon="📡"
+          <app-drawer-section sectionId="datasources" heading="Data Sources" icon="📡"
                               [expanded]="!isSectionCollapsed('datasources')" (expandedChange)="toggleSection('datasources')">
             @if (!isSectionCollapsed('datasources')) {
               <div class="sb-chips ds-chips">
                 @for (ds of technique.dataSources; track ds) {
-                  <span class="sb-chip ds-chip" data-tone="accent">{{ ds }}</span>
+                  <span class="sb-chip" data-tone="accent">{{ ds }}</span>
                 }
               </div>
             }
@@ -382,17 +385,17 @@
 
         <!-- Detection -->
         @if (technique.detectionText) {
-          <app-drawer-section class="detection-section" sectionId="detection" heading="Detection Guidance" icon="🔍"
+          <app-drawer-section sectionId="detection" heading="Detection Guidance" icon="🔍"
                               [expanded]="!isSectionCollapsed('detection')" (expandedChange)="toggleSection('detection')">
             @if (!isSectionCollapsed('detection')) {
-              <p class="sb-text detection-text" [innerHTML]="technique.detectionText | attackText"></p>
+              <p class="sb-text" [innerHTML]="technique.detectionText | attackText"></p>
             }
           </app-drawer-section>
         }
 
         <!-- Data Components (detection sources) -->
         @if (dataComponents.length > 0) {
-          <app-drawer-section class="data-components-section" sectionId="datacomponents" heading="Detected By" icon="📡"
+          <app-drawer-section sectionId="datacomponents" heading="Detected By" icon="📡"
                               [expanded]="!isSectionCollapsed('datacomponents')" (expandedChange)="toggleSection('datacomponents')">
             @if (!isSectionCollapsed('datacomponents')) {
               <div class="dc-groups">
@@ -424,7 +427,7 @@
 
         <!-- Procedure Examples -->
         @if (procedures.length > 0) {
-          <app-drawer-section class="procedures-section" sectionId="procedures" heading="Procedure Examples" icon="📋" [count]="procedures.length"
+          <app-drawer-section sectionId="procedures" heading="Procedure Examples" icon="📋" [count]="procedures.length"
                               [expanded]="!isSectionCollapsed('procedures')" (expandedChange)="toggleSection('procedures')">
             @if (!isSectionCollapsed('procedures')) {
               <div class="sb-list procedures-list">
@@ -453,7 +456,7 @@
             @if (!isSectionCollapsed('cve')) {
               <div class="sb-list cve-exposure-list">
                 @for (m of (showAllCves ? cveExposures : cveExposures.slice(0, 5)); track m.cveId) {
-                  <app-drawer-row kind="detail" class="cve-item" [class.cve-item--ctid]="m.source === 'ctid-kev'" [class.cve-item--inferred]="m.source === 'ctid-csv' && !m.capabilityGroup"
+                  <app-drawer-row kind="detail" [attr.data-cve-source]="m.source === 'ctid-kev' ? 'ctid' : m.source === 'ctid-csv' && !m.capabilityGroup ? 'inferred' : null"
                                   [entityId]="m.cveId" idClass="cve-id" [idHref]="'https://nvd.nist.gov/vuln/detail/' + m.cveId">
                     @if (m.source === 'ctid-kev' || m.capabilityGroup) {
                       <span sbBadge class="sb-badge cve-source-badge cve-source-ctid" data-tone="accent">CTID</span>
@@ -461,10 +464,10 @@
                       <span sbBadge class="sb-badge cve-source-badge cve-source-cwe" data-tone="neutral">CWE</span>
                     }
                     @if (getEpssForCve(m.cveId) !== null) {
-                      <span sbBadge class="sb-badge cve-tag" [style.background]="epssService.getEpssColor(getEpssForCve(m.cveId)!) + '22'" [style.color]="epssService.getEpssColor(getEpssForCve(m.cveId)!)" [style.border-color]="epssService.getEpssColor(getEpssForCve(m.cveId)!) + '55'" [title]="'EPSS: probability of exploitation in next 30 days'">EPSS {{ epssService.formatEpss(getEpssForCve(m.cveId)!) }}</span>
+                      <span sbBadge class="sb-badge cve-tag" [attr.data-tone]="epssTone(getEpssForCve(m.cveId)!)" [title]="'EPSS: probability of exploitation in next 30 days'">EPSS {{ epssService.formatEpss(getEpssForCve(m.cveId)!) }}</span>
                     }
                     @if (m.capabilityGroup) {
-                      <span sbBadge class="sb-badge cve-cap-group" [style.background]="getCapGroupColor(m.capabilityGroup) + '18'" [style.color]="getCapGroupColor(m.capabilityGroup)" [style.border-color]="getCapGroupColor(m.capabilityGroup) + '40'">{{ formatCapGroup(m.capabilityGroup) }}</span>
+                      <span sbBadge class="sb-badge cve-cap-group" [attr.data-tone]="capGroupTone(m.capabilityGroup)">{{ formatCapGroup(m.capabilityGroup) }}</span>
                     }
                     @if (m.exploitationTechnique.length > 0) {
                       <span sbBadge class="sb-badge cve-tag exploit" data-tone="danger">EXPLOIT</span>
@@ -485,7 +488,7 @@
                       }
                     } @else {
                       <!-- CWE inferred -->
-                      <p class="sb-desc sb-desc--note cve-rationale cve-rationale--inferred">Mapped via CWE-based technique association</p>
+                      <p class="sb-desc cve-rationale cve-rationale--inferred">Mapped via CWE-based technique association</p>
                     }
                   </app-drawer-row>
                 }
@@ -549,7 +552,7 @@
             @if (!isSectionCollapsed('veris')) {
               <div class="sb-list veris-list">
                 @for (a of (showAllVeris ? verisActions : verisActions.slice(0,4)); track a.id) {
-                  <app-drawer-row class="veris-action" [secondary]="a.label">
+                  <app-drawer-row [secondary]="a.label">
                     <span sbBadge class="sb-badge veris-cat" data-tone="warm">{{ a.category }}</span>
                   </app-drawer-row>
                 }
@@ -787,7 +790,7 @@
                             [expanded]="!isSectionCollapsed('notes')" (expandedChange)="toggleSection('notes')">
           @if (!isSectionCollapsed('notes')) {
             <textarea
-              class="sb-input notes-textarea"
+              class="sb-input"
               placeholder="Add notes about this technique — context, observations, applicability to your environment…"
               [(ngModel)]="techniqueNote"
               (blur)="saveTechNote()"
@@ -803,7 +806,7 @@
             @if (!isSectionCollapsed('threats')) {
               <div class="sb-chips group-chips">
                 @for (g of threatGroups; track g.id) {
-                  <button class="sb-chip group-chip" data-tone="warm" (click)="filterByGroup(g)" [title]="'View ' + g.name + ' in Threats panel'">
+                  <button class="sb-chip" data-tone="warm" (click)="filterByGroup(g)" [title]="'View ' + g.name + ' in Threats panel'">
                     <span class="sb-chip-id">{{ g.attackId }}</span> {{ g.name }}
                     <a [href]="'https://attack.mitre.org/groups/' + g.attackId" target="_blank" rel="noopener" (click)="$event.stopPropagation()" class="chip-ext">↗</a>
                   </button>
@@ -821,7 +824,7 @@
               <div class="sb-chips sw-chips">
                 @for (sw of softwareList; track sw.id) {
                   <button
-                    class="sb-chip sw-chip"
+                    class="sb-chip"
                     [class.malware]="sw.type === 'malware'"
                     [attr.data-tone]="sw.type === 'malware' ? 'danger' : 'accent'"
                     (click)="filterBySoftware(sw)"
@@ -844,7 +847,7 @@
               <div class="sb-chips camp-chips">
                 @for (c of campaigns; track c.id) {
                   <button
-                    class="sb-chip camp-chip"
+                    class="sb-chip"
                     data-tone="accent"
                     (click)="filterByCampaign(c)"
                     [title]="c.firstSeen ? c.firstSeen.slice(0,10) : c.attackId"
@@ -1411,7 +1414,7 @@
                 <p class="sb-empty mit-no-results">No mitigations match your search.</p>
               }
               @if (filteredMitigations.length > 1) {
-                <div class="bulk-update-row">
+                <div class="sb-text bulk-update-row">
                   <span class="bulk-label">All {{ filteredMitigations.length }} mitigations:</span>
                   <div class="bulk-actions upgrade-action-strip">
                     @for (s of statusOptions; track s) {
@@ -1429,7 +1432,7 @@
               <div class="sb-list mitigation-list">
                 @for (rel of filteredMitigations; track rel.mitigation.id) {
                   <app-drawer-row kind="detail" class="mitigation-item" [entityId]="rel.mitigation.attackId" idClass="mit-id" [idHref]="rel.mitigation.url"
-                                  [name]="rel.mitigation.name" nameClass="mit-name" [nameHref]="rel.mitigation.url">
+                                  [name]="rel.mitigation.name" [nameHref]="rel.mitigation.url">
                     <button sbHead
                       class="sb-action filter-mit-btn"
                       (click)="filterByMitigation(rel.mitigation)"
@@ -1479,7 +1482,7 @@
 
                     @if (rel.description) {
                       <div class="rel-desc-wrap" [class.expanded]="isRelDescExpanded(rel.mitigation.id)">
-                        <p class="rel-description" [innerHTML]="rel.description | attackText"></p>
+                        <p class="sb-desc rel-description" [innerHTML]="rel.description | attackText"></p>
                         <div class="rel-desc-fade"></div>
                       </div>
                       <button class="rel-desc-toggle" (click)="toggleRelDesc(rel.mitigation.id)">
@@ -1488,7 +1491,7 @@
                     }
                     @if (rel.mitigation.description) {
                       <div class="mit-desc-wrap" [class.expanded]="isMitDescExpanded(rel.mitigation.id)">
-                        <p class="mit-description" [innerHTML]="rel.mitigation.description | attackText"></p>
+                        <p class="sb-desc mit-description" [innerHTML]="rel.mitigation.description | attackText"></p>
                         <div class="mit-desc-fade"></div>
                       </div>
                       <button class="mit-desc-toggle" (click)="toggleMitDesc(rel.mitigation.id)">

@@ -93,7 +93,7 @@ export class DrawerRowComponent {
   readonly idClass = input<string | null | undefined>('');
   readonly badges = input<readonly DrawerBadge[]>([]);
   readonly name = input<string | null | undefined>('');
-  /** Extra classes on the name (kept hooks such as mit-name). */
+  /** Extra classes on the name (kept hooks such as rs-rule, lcr-title). */
   readonly nameClass = input<string | null | undefined>('');
   /** The name's external link. */
   readonly nameHref = input<string | null | undefined>('');
