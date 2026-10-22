@@ -8,7 +8,7 @@ _Baseline verified: main at `8fbc6da` (one source of facts, #134), 2026-10-16 UT
 
 The Phase 0 review train is merged: the 19 review PRs (#112-#128, #132, #133) and the safety nets, namely #134 (the facts pipeline, and ROADMAP.md rewritten from the plan), #135 (journey, redirect and accessibility e2e skeletons), #136 (characterization specs for the heatmap lenses, sidebar and dashboard KPIs), #137 (measurement harness and sprawl audit) and #139 (the refresh-data artifact is treated as untrusted and verified before the write-token job uses it). Counts and versions now have one source: `node scripts/gen-facts.mjs` writes [docs/FACTS.md](docs/FACTS.md) from the code, and `node scripts/check-facts.mjs` fails when README.md, ARCHITECTURE.md, this file or QUICKSTART.md disagree with it. Neither script runs in CI yet, so run both by hand before pushing a doc change. The phase plan and epic ids (`E0.1`-`E10.4`) are in [ROADMAP.md](ROADMAP.md).
 
-## Active initiative: make ATTACK-Navi the front-end for the whole library
+## Active initiative: make ATT&CK-Navi the front-end for the whole library
 
 Three-phase effort so the app opens on a repo-wide view and lets you traverse everything the TeamStarWolf library holds, ATT&CK-centered.
 

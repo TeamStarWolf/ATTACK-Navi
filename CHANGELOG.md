@@ -1,10 +1,21 @@
 # Changelog
 
-All notable changes to ATTACK-Navi are documented here.
+All notable changes to ATT&CK-Navi are documented here.
 
 ## Unreleased
 
 ### Changed
+- **The project's display name is ATT&CK-Navi.** Headings, prose, the page title,
+  the web manifest name, the welcome dialog, export footers and signatures (HTML,
+  PDF and PNG reports, Sigma, YARA, Suricata, Zeek, STIX, emulation plans and
+  Navigator layers) now read "ATT&CK-Navi" instead of "ATTACK-Navi",
+  "ATT&CK Navi" or "ATTACK Navi". The repository slug is unchanged:
+  `TeamStarWolf/ATTACK-Navi`, the Pages URL `teamstarwolf.github.io/ATTACK-Navi/`,
+  the `--base-href`, the package and project names, file paths, storage keys and
+  the proxy's `X-Requested-With: ATTACK-Navi` value all stay as they were.
+  Navigator layers exported before the rename ("Exported from ATT&CK Navi") are
+  still recognised as this app's own on import. The README banner is the owner's
+  ATT&CK NAVI logo again, now at `assets/brand/attack-navi-banner.png`.
 - **Elastic, Splunk and mdecrevoisier Sigma rule counts come from the rule bodies,
   as a pinned build-time snapshot.** These three sources used to list GitHub trees
   and read technique ids from file names, which carry none, so their lenses were

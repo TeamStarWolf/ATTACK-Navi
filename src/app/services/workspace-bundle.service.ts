@@ -101,7 +101,7 @@ export class WorkspaceBundleService {
       throw new Error('Not valid JSON.');
     }
     if (parsed?.format !== 'attack-navi-workspace' || typeof parsed.data !== 'object' || parsed.data === null) {
-      throw new Error('Not an ATTACK-Navi workspace bundle.');
+      throw new Error('Not an ATT&CK-Navi workspace bundle.');
     }
     if (parsed.version !== 1) {
       throw new Error(`Unsupported bundle version: ${parsed.version}.`);

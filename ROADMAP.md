@@ -1,6 +1,6 @@
-# ATTACK-Navi Roadmap
+# ATT&CK-Navi Roadmap
 
-This roadmap is the phase table of the **ATTACK-Navi Product Plan** dated 2026-10-13, written against main at `5831e2d`. The full plan (personas, the keep/consolidate/retire list, the data and architecture decisions, metrics, risks and owner decisions) is kept by the repository owner outside this repository; pull requests cite its epic ids, for example `E0.5`. It replaces the April 2026 roadmap that used to live here.
+This roadmap is the phase table of the **ATT&CK-Navi Product Plan** dated 2026-10-13, written against main at `5831e2d`. The full plan (personas, the keep/consolidate/retire list, the data and architecture decisions, metrics, risks and owner decisions) is kept by the repository owner outside this repository; pull requests cite its epic ids, for example `E0.5`. It replaces the April 2026 roadmap that used to live here.
 
 Counts quoted elsewhere in the docs (heatmap modes, routed workspaces and tabs, library layers, spec files, bundled ATT&CK versions) are generated from the code in [docs/FACTS.md](docs/FACTS.md) by `node scripts/gen-facts.mjs`, and `node scripts/check-facts.mjs` fails when README.md, ARCHITECTURE.md, HANDOFF.md or QUICKSTART.md disagree with them.
 

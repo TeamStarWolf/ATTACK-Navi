@@ -2,7 +2,7 @@
 import { AttackDomain } from '../services/data.service';
 
 /**
- * ATTACK-Navi's own internal layer model — the format a user's uploaded MITRE
+ * ATT&CK-Navi's own internal layer model — the format a user's uploaded MITRE
  * ATT&CK Navigator layer is converted INTO and saved as.
  *
  * It is a faithful superset of the official Navigator layer format: every rich
@@ -56,8 +56,8 @@ export interface UserLayerLegendItem {
 }
 
 /**
- * A fully converted, persistable ATTACK-Navi layer. `id`/`importedAt`/
- * `sourceFormat` are ATTACK-Navi bookkeeping; everything else mirrors the
+ * A fully converted, persistable ATT&CK-Navi layer. `id`/`importedAt`/
+ * `sourceFormat` are ATT&CK-Navi bookkeeping; everything else mirrors the
  * source Navigator layer.
  */
 export interface AttackNaviLayer {
@@ -80,7 +80,7 @@ export interface AttackNaviLayer {
   /** Layer-level links. */
   links: UserLayerLink[];
   techniques: UserLayerTechnique[];
-  /** ISO timestamp of when this layer was imported into ATTACK-Navi. */
+  /** ISO timestamp of when this layer was imported into ATT&CK-Navi. */
   importedAt: string;
   /** Detected source format, e.g. 'navigator-4.5' or 'navigator-3.x'. */
   sourceFormat: string;

@@ -50,7 +50,7 @@ const DEFAULT_GRADIENT: UserLayerGradient = {
 
 /**
  * Owns the "saved user layers" feature: converting an uploaded MITRE ATT&CK
- * Navigator layer into ATTACK-Navi's internal {@link AttackNaviLayer} model,
+ * Navigator layer into ATT&CK-Navi's internal {@link AttackNaviLayer} model,
  * persisting it in IndexedDB, and exposing the active layer's per-technique data
  * so the matrix can color by it and the sidebar can surface it.
  *

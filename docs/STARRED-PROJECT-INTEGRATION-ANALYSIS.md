@@ -1,6 +1,6 @@
 # Open-Source Project Integration Analysis
 
-> A survey of candidate open-source security projects (about 200 public repositories from 18 authors and organizations), mapped to ATTACK-Navi integration opportunities.
+> A survey of candidate open-source security projects (about 200 public repositories from 18 authors and organizations), mapped to ATT&CK-Navi integration opportunities.
 > Generated: April 2026. Candidate rankings and star counts are as of that date; the "Implemented" section is corrected against `main`.
 
 ---

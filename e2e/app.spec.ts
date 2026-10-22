@@ -58,7 +58,7 @@ async function hermetic(page: Page): Promise<void> {
   }
 }
 
-test.describe('ATT&CK Navi', () => {
+test.describe('ATT&CK-Navi', () => {
   test.beforeEach(async ({ page }) => {
     await hermetic(page);
     // Fresh contexts have empty localStorage — the first-visit onboarding
