@@ -304,6 +304,122 @@ describe('derivePosture (Phase 2 design §2.2)', () => {
     });
   });
 
+  // RP-F decision 16: a run's status governs its proof, and the latest run governs the rung.
+  describe('a run\'s status governs its proof (RP-F decision 16)', () => {
+    const run = (runId: string, ageDays: number | null, status: string): RunSummary => ({
+      runId, status, date: ageDays === null ? 'not a date' : daysAgo(ageDays), source: 'manual',
+    });
+    const own = (runId: string, ageDays: number): ProofRecord => proof('own-run', ageDays, { runId, source: 'manual' });
+
+    it('T1135 shape: a failed run that lists a fired rule is not Proven; it is a run without proof', () => {
+      const s = derive({ runs: [run('f1', 1, 'failed')], proof: [own('f1', 1)], knownSignals: 2 });
+      expect([s.rung, s.bucket]).toEqual(['known', 'known']);
+      expect(s.proof).toEqual([]);
+      expect(s.runsWithoutProof.map(r => r.runId)).toEqual(['f1']);
+      expect(s.supersededProof).toBeNull();
+      expect(s.subStates).toEqual([]);
+    });
+
+    it('a no-telemetry run with a fired rule is not Proven either', () => {
+      expect(derive({ runs: [run('n1', 1, 'no-telemetry')], proof: [own('n1', 1)] }).bucket).toBe('none');
+    });
+
+    it('T1010 shape: passed then failed is not Proven; the state names both runs and is contradicted', () => {
+      const s = derive({
+        runs: [run('p1', 5, 'passed'), run('f1', 1, 'failed')],
+        proof: [own('p1', 5)],
+        verdicts: [verdict(1, { failed: true })],
+        knownSignals: 3,
+      });
+      expect([s.rung, s.bucket]).toEqual(['known', 'known']);
+      expect(s.proof).toEqual([]);
+      expect(s.subStates).toEqual(['contradicted']);
+      expect(s.supersededProof!.latest.runId).toBe('f1');
+      expect(s.supersededProof!.earlier.runId).toBe('p1');
+      expect(s.supersededProof!.earlierStatus).toBe('passed');
+      expect(s.runsWithoutProof.map(r => r.runId)).toEqual(['f1', 'p1']);
+    });
+
+    it('the outranked earlier run carries its own status: a partial run with a fired rule is named partial', () => {
+      const s = derive({
+        runs: [run('r1', 5, 'partial'), run('f1', 1, 'failed')], proof: [own('r1', 5)], verdicts: [verdict(1, { failed: true })],
+      });
+      expect(s.supersededProof!.earlier.runId).toBe('r1');
+      expect(s.supersededProof!.earlierStatus).toBe('partial');
+      expect(s.subStates).toEqual(['contradicted']);
+    });
+
+    it('an outranked record whose run is not listed carries no status', () => {
+      const s = derive({ runs: [run('f1', 1, 'failed')], proof: [own('elsewhere', 5)] });
+      expect(s.supersededProof!.earlier.runId).toBe('elsewhere');
+      expect(s.supersededProof!.earlierStatus).toBeNull();
+    });
+
+    it('passed then passed: Proven on the latest run\'s date', () => {
+      const s = derive({ runs: [run('p1', 9, 'passed'), run('p2', 2, 'passed')], proof: [own('p1', 9), own('p2', 2)] });
+      expect([s.rung, s.bucket, s.proofAge]).toEqual(['proven', 'proven', 2]);
+      expect(s.proof[0].runId).toBe('p2');
+      expect(s.supersededProof).toBeNull();
+    });
+
+    it('failed then passed: Proven (the newer passing run governs)', () => {
+      const s = derive({ runs: [run('f1', 9, 'failed'), run('p1', 2, 'passed')], proof: [own('p1', 2)], verdicts: [verdict(9, { failed: true })] });
+      expect([s.rung, s.bucket]).toEqual(['proven', 'proven']);
+      expect(s.supersededProof).toBeNull();
+      expect(s.subStates).toEqual([]);
+    });
+
+    it('passed, failed, passed: Proven on the newest pass; the failed run is listed', () => {
+      const s = derive({
+        runs: [run('p1', 9, 'passed'), run('f1', 5, 'failed'), run('p2', 2, 'passed')], proof: [own('p1', 9), own('p2', 2)],
+      });
+      expect(s.bucket).toBe('proven');
+      expect(s.proof.map(p => p.runId)).toEqual(['p2']);
+      expect(s.runsWithoutProof.map(r => r.runId)).toEqual(['f1', 'p1']);
+    });
+
+    it('a failed run on the same day as the proof does not outrank it (newer means strictly newer)', () => {
+      expect(derive({ runs: [run('p1', 3, 'passed'), run('f1', 3, 'failed')], proof: [own('p1', 3)] }).bucket).toBe('proven');
+    });
+
+    it('an undated failed run never outranks a proof; of two failed runs the newest governs', () => {
+      expect(derive({ runs: [run('p1', 3, 'passed'), run('f0', null, 'failed')], proof: [own('p1', 3)] }).bucket).toBe('proven');
+      const s = derive({ runs: [run('p1', 6, 'passed'), run('f1', 1, 'failed'), run('f2', 4, 'failed')], proof: [own('p1', 6)] });
+      expect(s.supersededProof!.latest.runId).toBe('f1');
+    });
+
+    it('the newest outranked record is the earlier run named, whatever the best-record order', () => {
+      const s = derive({
+        runs: [run('r-old', 30, 'passed'), run('r-new', 4, 'passed'), run('f1', 1, 'failed')],
+        proof: [proof('production', 30, { runId: 'r-old' }), own('r-new', 4)],
+      });
+      expect(s.supersededProof!.earlier.runId).toBe('r-new');
+    });
+
+    it('newer full marks still hold Covered: no contradicted sub-state, the superseded run still named', () => {
+      const s = derive({
+        runs: [run('p1', 9, 'passed'), run('f1', 5, 'failed')], proof: [own('p1', 9)],
+        verdicts: [verdict(5, { failed: true })], covered: [mark({ at: daysAgo(1) })],
+      });
+      expect([s.rung, s.bucket]).toEqual(['covered', 'covered']);
+      expect(s.subStates).toEqual([]);
+      expect(s.supersededProof!.latest.runId).toBe('f1');
+    });
+
+    it('a no-telemetry run after a pass outranks the proof but contradicts nothing', () => {
+      const s = derive({ runs: [run('p1', 6, 'passed'), run('n1', 1, 'no-telemetry')], proof: [own('p1', 6)], knownSignals: 1 });
+      expect([s.rung, s.bucket]).toEqual(['known', 'known']);
+      expect(s.supersededProof!.latest.runId).toBe('n1');
+      expect(s.subStates).toEqual([]);
+    });
+
+    it('a failed run with no proof to outrank sets nothing', () => {
+      const s = derive({ runs: [run('f1', 1, 'failed')], knownSignals: 1 });
+      expect(s.supersededProof).toBeNull();
+      expect(s.subStates).toEqual([]);
+    });
+  });
+
   it('every state honours the invariant: qualifiers non-empty exactly when the bucket is partial or covered', () => {
     const states = [
       derive(), derive({ knownSignals: 1 }), derive({ covered: [mark()] }), derive({ covered: [mark({ strength: 'partial' })] }),

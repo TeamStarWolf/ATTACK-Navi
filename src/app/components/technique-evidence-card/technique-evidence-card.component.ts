@@ -24,6 +24,7 @@ import {
 import { lensOnScreen } from '../../models/lens-registry';
 import { KNOWN_FAMILY_COUNT, basisWords, lensExplain } from '../../models/lens-explain';
 import { PROVEN, lensLabel, proofLine } from '../../models/posture/posture-vocabulary';
+import { validationDay } from '../../models/local-date';
 import { POSTURE_TODAY } from '../../models/posture/posture-today';
 import { refForTechnique, techniqueRefKey } from '../../models/technique-ref';
 import { DataService } from '../../services/data.service';
@@ -178,7 +179,7 @@ export class TechniqueEvidenceCardComponent {
       const age = Number.isNaN(t) ? null : Math.max(0, Math.floor((now - t) / DAY_MS));
       return {
         key: `${p.runId}|${p.detectionRef}|${p.date}`,
-        line: proofLine(p), rule: p.detectionRef, date: p.date.slice(0, 10), outcome: p.outcome, source: p.source,
+        line: proofLine(p), rule: p.detectionRef, date: validationDay(p.date), outcome: p.outcome, source: p.source,
         lab: p.scope === 'range', stale: age !== null && age > windows[p.scope], window: windows[p.scope],
       };
     });
@@ -186,12 +187,21 @@ export class TechniqueEvidenceCardComponent {
 
   /**
    * The runs of yours on the technique that yield no proof (RP-F decision 9), newest
-   * first: 'untested on 2026-10-21 (source manual); failed on ...', or '' with none.
+   * first: 'untested on 10/21/26 (source manual); failed on ...', or '' with none.
    * The Proven block stays proof-only (P2-14); this line names each run's status
    * and date, never a rung, so it renders whether or not owner words may render.
+   * Every date on the card is the local day the Detection Validation pill prints
+   * (validationDay, RP-F decision 16), never the UTC day of the ISO timestamp.
    */
   readonly runsWithoutProof = computed(() =>
-    this.state().runsWithoutProof.map(r => `${r.status} on ${r.date.slice(0, 10)} (source ${r.source})`).join('; '));
+    this.state().runsWithoutProof.map(r => `${r.status} on ${validationDay(r.date)} (source ${r.source})`).join('; '));
+
+  /**
+   * True when the card lists a run of yours: a proof record in the Proven block or
+   * the Runs-without-proof line (RP-F decision 16). The Covered block's empty line
+   * then stays out, so no block says nothing of yours is recorded beside a run.
+   */
+  readonly listsRun = computed(() => this.proofs().length > 0 || this.runsWithoutProof() !== '');
 
   /** The Covered block: every mark with its qualifier, basis and via. Empty while no owner words. */
   readonly coveredMarks = computed(() => {
@@ -200,7 +210,7 @@ export class TechniqueEvidenceCardComponent {
     return state.covered.map((m, i) => ({
       key: `${i}|${m.basis}|${m.via ?? ''}|${m.source}`,
       qualifier: m.qualifier, basis: basisWords(m.basis), via: m.via ?? null, strength: m.strength, source: m.source,
-      at: m.at?.slice(0, 10) ?? null,
+      at: m.at ? validationDay(m.at) : null,
       // P2-16's Confirm: offered on a partial mark while the technique's state is partial.
       canConfirm: m.strength === 'partial' && state.bucket === 'partial' && !!m.via,
     }));

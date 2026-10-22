@@ -70,9 +70,37 @@ export class UrlStateService {
     this.router.events
       .pipe(filter((e) => e instanceof NavigationEnd || e instanceof NavigationCancel
         || e instanceof NavigationError || e instanceof NavigationSkipped))
-      .subscribe(() => {
+      .subscribe((e) => {
+        if (e instanceof NavigationEnd && this.isBareMatrix(e.urlAfterRedirects)) this.reserializeBareMatrix();
         if (this.writePending) setTimeout(() => this.writeState(), 0);
       });
+  }
+
+  /**
+   * True when `url` is the matrix route with no query params: what the toolbar brand
+   * link (routerLink /matrix, which drops the query) and a bare #/matrix hash reach.
+   */
+  private isBareMatrix(url: string): boolean {
+    const tree = this.router.parseUrl(url);
+    return tree.root.children['primary']?.segments[0]?.path === 'matrix' && Object.keys(tree.queryParams).length === 0;
+  }
+
+  /**
+   * The matrix route activated without the query (RP-F decision 19): the state did not
+   * change, so the writer, which compares against what it last wrote, would leave the
+   * address bar bare and F5 would lose an explicit lens (a chosen Frequency or KEV fell
+   * back to the D4 default in 3 of 3 round-3 cases). Re-serialise the state once the
+   * navigation settles. A state that serialises to nothing (the D4 default, decision
+   * 10) stays bare, with no navigation.
+   */
+  private reserializeBareMatrix(): void {
+    const serialized = new URLSearchParams(this.filterService.serializeUrlState()).toString();
+    if (serialized === '') {
+      this.lastWritten = '';
+      return;
+    }
+    this.lastWritten = null;
+    this.writePending = true;
   }
 
   private writeState(): void {

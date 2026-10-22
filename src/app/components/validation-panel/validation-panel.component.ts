@@ -37,6 +37,8 @@ interface TechniqueValidationCard {
   detectionsAvailable: string[];
   atomicTestCount: number;
   latestRun: ValidationRun | null;
+  /** Whether any run of this technique has a recorded outcome (every status but untested; RP-F decision 20). */
+  recorded: boolean;
   libraryAssetCount: number;
 }
 
@@ -143,6 +145,7 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
         detectionsAvailable: detections,
         atomicTestCount: atomicCount,
         latestRun: this.validationService.latestFor(tech.attackId),
+        recorded: this.validationService.forTechnique(tech.attackId).some(r => RECORDED_STATUS[r.status]),
         libraryAssetCount: this.libraryService.getAssetsForTactic(tech.tacticShortnames?.[0] ?? '').length,
       });
     }
@@ -189,13 +192,23 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
   /**
    * Runs with a recorded outcome: every status but 'untested'. Read from a
    * Record over ValidationStatus, so a new status cannot be left out of the
-   * "Untested (in scope)" tile or the "Coverage so far" line.
+   * "Coverage so far" line (or of untestedInScope, which reads the same Record).
    */
   get recordedCount(): number {
     const counts = this.statusCounts;
     return (Object.keys(RECORDED_STATUS) as ValidationStatus[])
       .filter(s => RECORDED_STATUS[s])
       .reduce((sum, s) => sum + (counts[s] ?? 0), 0);
+  }
+
+  /**
+   * "Untested (in scope)": the distinct in-scope techniques (cards) with no run that
+   * recorded an outcome (RP-F decision 20). It read totalCards minus recordedCount, a
+   * run count, so two runs on one technique, or runs on techniques outside the cards,
+   * drove it below zero (-3 in round 3).
+   */
+  get untestedInScope(): number {
+    return this.techniqueCards.filter(c => !c.recorded).length;
   }
 
   /** v1 runs the copy-forward could not carry (design §5.11); they stay in the v1 key. */

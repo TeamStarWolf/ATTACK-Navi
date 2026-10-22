@@ -50,6 +50,8 @@ describe('ThreatProfilePickerComponent', () => {
   let profileSubject: BehaviorSubject<{ source: ThreatProfileSource }>;
   // RP-F decision 6: what the service reports as absent from the loaded domain, and its sentence.
   let absent: ProfileGroupRef[];
+  // RP-F decision 18: stored ids that resolve to no group, as the service reports them.
+  let unresolved: ProfileGroupRef[];
   let domainNotice: WritableSignal<string | null>;
 
   function configure(): void {
@@ -72,6 +74,7 @@ describe('ThreatProfilePickerComponent', () => {
             profile$: profileSubject,
             setSource,
             absentGroups: (d: Domain | null) => (d ? absent : []),
+            unresolvedGroups: (d: Domain | null) => (d ? unresolved : []),
         } },
         { provide: THREAT_WEIGHT_PROVIDER, useValue: {
             weight: () => 0, revision: signal(0), parents: signal(new Set<string>()), domainNotice,
@@ -85,6 +88,7 @@ describe('ThreatProfilePickerComponent', () => {
   beforeEach(() => {
     currentSource = { kind: 'top-groups', n: 20 };
     absent = [];
+    unresolved = [];
     domainNotice = signal<string | null>(null);
     configure();
   });
@@ -437,6 +441,55 @@ describe('ThreatProfilePickerComponent', () => {
       fixture.detectChanges();
       expect(host().querySelector('[data-testid="profile-domain-notice"]')).toBeNull();
       expect(absentButtons().length).toBe(0);
+    });
+  });
+
+  // RP-F decision 18: a profile stored with ATT&CK ids showed its groups unpressed (0 of 2 on
+  // Enterprise), and a click added a STIX duplicate; ids that resolve to no group read
+  // "has no <domain> use".
+  describe('stored ids in either shape, and ids that resolve to no group (RP-F decision 18)', () => {
+    const host = () => fixture.nativeElement as HTMLElement;
+    const listButton = (attackId: string) => Array.from(host().querySelectorAll('ul[aria-label="Groups"] button'))
+      .find((b) => b.textContent!.includes(attackId)) as HTMLButtonElement;
+    const absentButtons = () => Array.from(host().querySelectorAll('[data-testid="profile-absent-groups"] button'));
+
+    function profileWith(ids: string[]): void {
+      TestBed.resetTestingModule();
+      currentSource = { kind: 'groups', ids };
+      configure();
+      component.mode = 'profile';
+      fixture.detectChanges();
+    }
+
+    it('a profile stored as [G0001, g0002] presses both groups, as the STIX-stored profile does', () => {
+      profileWith(['G0001', 'g0002']);
+      expect(listButton('G0001').getAttribute('aria-pressed')).toBe('true');
+      expect(listButton('G0002').getAttribute('aria-pressed')).toBe('true');
+      expect(listButton('G0001').classList).toContain('selected');
+      profileWith(['intrusion-set--aaa', 'intrusion-set--bbb']);
+      expect(listButton('G0001').getAttribute('aria-pressed')).toBe('true');
+      expect(listButton('G0002').getAttribute('aria-pressed')).toBe('true');
+    });
+
+    it('a click on a group held as G0001 deselects it; it never adds the STIX id beside it', () => {
+      profileWith(['G0001', 'intrusion-set--bbb']);
+      listButton('G0001').click();
+      fixture.detectChanges();
+      expect(setSource).toHaveBeenCalledWith({ kind: 'groups', ids: ['intrusion-set--bbb'] });
+      expect(listButton('G0001').getAttribute('aria-pressed')).toBe('false');
+      listButton('G0001').click();
+      expect(setSource.calls.mostRecent().args[0]).toEqual({ kind: 'groups', ids: ['intrusion-set--bbb', 'intrusion-set--aaa'] });
+    });
+
+    it('an unresolved id is listed as "unknown or withdrawn group id", never "has no <domain> use"', () => {
+      unresolved = [{ id: 'G9999', name: 'G9999', unresolved: true }, { id: 'Fancy Bear', name: 'Fancy Bear', unresolved: true }];
+      profileWith(['intrusion-set--aaa', 'G9999', 'Fancy Bear']);
+      const rows = absentButtons().map((b) => itemText(b));
+      expect(rows).toEqual(['G9999 unknown or withdrawn group id', 'Fancy Bear unknown or withdrawn group id']);
+      expect(host().textContent).not.toContain('has no');
+      expect(absentButtons().every((b) => b.getAttribute('aria-pressed') === 'true')).toBeTrue();
+      (absentButtons()[0] as HTMLButtonElement).click();     // still removable from the profile
+      expect(setSource.calls.mostRecent().args[0]).toEqual({ kind: 'groups', ids: ['intrusion-set--aaa', 'Fancy Bear'] });
     });
   });
 });

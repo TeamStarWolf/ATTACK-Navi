@@ -17,6 +17,8 @@ import type { LensCell, LensDefinition } from './heatmap-modes';
 import type { CoveredBasis, CoveredMark, PostureState, ProofRecord, ProofScope } from './posture/posture.types';
 import { PROVEN, postureBadge } from './posture/posture-vocabulary';
 import { SCORE_ONLY_LENSES } from './lens-registry';
+import { CONTRADICTED_WORDS } from './posture/posture-ramp';
+import { validationDay } from './local-date';
 
 /** The five Known reference families (EnrichmentService.referenceSignalCount). */
 export const KNOWN_FAMILY_COUNT = 5;
@@ -77,7 +79,7 @@ function rulesFired(proof: readonly ProofRecord[]): number {
 function proofExplain(state: PostureState, decayDays?: Readonly<Record<ProofScope, number>>): string {
   const best = state.proof[0];
   const n = rulesFired(state.proof);
-  let line = `${postureBadge(state)} on ${best.date.slice(0, 10)} by ${best.source}; ${n} rule${n === 1 ? '' : 's'} fired`;
+  let line = `${postureBadge(state)} on ${validationDay(best.date)} by ${best.source}; ${n} rule${n === 1 ? '' : 's'} fired`;
   if (state.bucket === 'stale' && decayDays && state.proofScope) {
     line += `; older than its ${decayDays[state.proofScope]}-day window`;
   }
@@ -87,10 +89,21 @@ function proofExplain(state: PostureState, decayDays?: Readonly<Record<ProofScop
 const CONTRADICTED_NOTE = '; a later failed run contradicts the marks';
 const EXCLUDED_NOTE = '; not reproducible, so left out of the denominator';
 
+/**
+ * True when a later failed run outranks the technique's full marks: the state is
+ * contradicted, and not only because a later run outranked its proof. A state contradicted
+ * only because a later run outranked its proof (supersededProof, RP-F decision 16)
+ * has no marks to name, so the marks note stays out of its lines.
+ */
+function marksContradicted(state: PostureState): boolean {
+  return state.subStates.includes('contradicted')
+    && (!state.supersededProof || state.covered.some(m => m.strength === 'full'));
+}
+
 /** The notes every posture line ends with: a contradicting run, an excluded technique. */
 function postureNotes(state: PostureState): string {
   let notes = '';
-  if (state.subStates.includes('contradicted')) notes += CONTRADICTED_NOTE;
+  if (marksContradicted(state)) notes += CONTRADICTED_NOTE;
   if (state.excluded) notes += EXCLUDED_NOTE;
   return notes;
 }
@@ -107,17 +120,54 @@ function ownerRecordWithoutRung(state: PostureState): boolean {
 /** Where the runs of yours are listed in full (the Detection Validation workbench). */
 const SEE_VALIDATION = 'see Detection Validation';
 
+/** What the latest run did, as the superseded clause says it: 'failed', 'had no telemetry'. */
+function latestRunWords(status: string): string {
+  return status === 'no-telemetry' ? 'had no telemetry' : status;
+}
+
+/**
+ * What the outranked earlier run was, by its own status (RP-F round 3): 'run passed',
+ * 'run was partial', 'run was untested', 'run was not reproducible'; with no run of
+ * that id listed, only what the record holds: 'named rule fired'.
+ */
+function earlierRunWords(status: string | null): string {
+  if (status === null) return 'named rule fired';
+  if (status === 'passed') return 'run passed';
+  return `run was ${status.replace(/-/g, ' ')}`;
+}
+
+/**
+ * The run that outranked every proof record (RP-F decision 16):
+ * 'contradicted: latest run failed on 10/22/26; an earlier run passed on 10/21/26',
+ * the earlier run named by its own status ('an earlier run was partial on ...'),
+ * or '' when none did. 'contradicted: ' leads while the state is contradicted (the
+ * cell paints the hatch, so its words say so, RP-F decision 17); a run with no
+ * telemetry reads 'latest run had no telemetry on ...'. The days are the local
+ * days the Detection Validation pill prints.
+ */
+export function supersededClause(state: Pick<PostureState, 'supersededProof' | 'subStates'>): string {
+  const s = state.supersededProof;
+  if (!s) return '';
+  return (state.subStates.includes('contradicted') ? 'contradicted: ' : '')
+    + `latest run ${latestRunWords(s.latest.status)} on ${validationDay(s.latest.date)}; `
+    + `an earlier ${earlierRunWords(s.earlierStatus)} on ${validationDay(s.earlier.date)}`;
+}
+
 /**
  * The runs of yours on the technique that yield no proof (RP-F decision 9):
- * '1 run of yours recorded, latest untested on 2026-10-21', or '' with none.
+ * '1 run of yours recorded, latest untested on 10/21/26', or '' with none.
  * It names the run's status and date only, never a rung: a run without a named
- * rule is not Proven, and nothing here says it covers the technique.
+ * rule is not Proven, and nothing here says it covers the technique. When the
+ * latest run outranked an earlier proof (RP-F decision 16) it says that instead:
+ * 'contradicted: latest run failed on 10/22/26; an earlier run passed on 10/21/26'.
  */
-export function runsClause(state: Pick<PostureState, 'runsWithoutProof'>): string {
+export function runsClause(state: Pick<PostureState, 'runsWithoutProof' | 'supersededProof' | 'subStates'>): string {
+  const superseded = supersededClause(state);
+  if (superseded) return superseded;
   const runs = state.runsWithoutProof;
   if (runs.length === 0) return '';
   const latest = runs[0];
-  return `${runs.length} run${runs.length === 1 ? '' : 's'} of yours recorded, latest ${latest.status} on ${latest.date.slice(0, 10)}`;
+  return `${runs.length} run${runs.length === 1 ? '' : 's'} of yours recorded, latest ${latest.status} on ${validationDay(latest.date)}`;
 }
 
 /** '; <runsClause>; see Detection Validation', or '' with no run without proof. */
@@ -126,15 +176,20 @@ function runsNote(state: PostureState): string {
   return runs ? `; ${runs}; ${SEE_VALIDATION}` : '';
 }
 
+/** runsNote when a later run outranked the proof (RP-F decision 16); '' otherwise (a Covered or partial line names no other run). */
+function supersededNote(state: PostureState): string {
+  return state.supersededProof ? runsNote(state) : '';
+}
+
 /**
  * The Posture lens: the technique's own rung, from its PostureState.
- *   'Proven (your run) on 2026-10-21 by manual; 1 rule fired'
+ *   'Proven (your run) on 10/21/26 by manual; 1 rule fired'
  *   'Covered (self-attested) from mitigation implemented via M1036'
  *   'Covered (self-attested, partial via M1038): reached only through a mitigation mapped to more techniques than the breadth threshold'
  *   'Known: mapped (3 of 5 reference families)'
- *   'Known: mapped (3 of 5 reference families); 1 run of yours recorded, latest passed on 2026-10-21; see Detection Validation'
+ *   'Known: mapped (3 of 5 reference families); 1 run of yours recorded, latest passed on 10/21/26; see Detection Validation'
  *   'None: no reference data mapped and nothing of yours recorded'
- *   'None: no reference data mapped; 1 run of yours recorded, latest untested on 2026-10-21; see Detection Validation'
+ *   'None: no reference data mapped; 1 run of yours recorded, latest untested on 10/21/26; see Detection Validation'
  *   'None: no reference data mapped; a later failed run contradicts the marks'   (a contradicted mark or an excluded technique)
  */
 export function postureExplain(state: PostureState, decayDays?: Readonly<Record<ProofScope, number>>): string {
@@ -144,17 +199,17 @@ export function postureExplain(state: PostureState, decayDays?: Readonly<Record<
       return proofExplain(state, decayDays) + postureNotes(state);
     case 'covered': {
       const marks = describeMarks(state.covered.filter(m => m.strength === 'full'));
-      return postureBadge(state) + (marks ? ` from ${marks}` : '') + postureNotes(state);
+      return postureBadge(state) + (marks ? ` from ${marks}` : '') + supersededNote(state) + postureNotes(state);
     }
     case 'partial':
       return postureBadge(state)
         + ': reached only through a mitigation or control mapped to more techniques than the breadth threshold'
-        + postureNotes(state);
+        + supersededNote(state) + postureNotes(state);
     case 'known':
       return `${postureBadge(state)} (${state.knownSignals} of ${KNOWN_FAMILY_COUNT} reference families)` + runsNote(state) + postureNotes(state);
     default: {
-      const runs = runsClause(state);
-      if (runs) return `None: no reference data mapped; ${runs}; ${SEE_VALIDATION}` + postureNotes(state);
+      const runs = runsNote(state);
+      if (runs) return 'None: no reference data mapped' + runs + postureNotes(state);
       return (ownerRecordWithoutRung(state) ? 'None: no reference data mapped' : 'None: no reference data mapped and nothing of yours recorded')
         + postureNotes(state);
     }
@@ -170,7 +225,7 @@ export function postureExplain(state: PostureState, decayDays?: Readonly<Record<
  *   'None: no covered (self-attested or range) mark; see the Known block for its reference data (3 of 5 reference families)'
  *   'None: a later failed run contradicts your covered (self-attested or range) marks'   (RP-F round 1)
  *   'None: no covered (self-attested or range) mark; not reproducible, so left out of the denominator'
- *   'None: no covered (self-attested or range) mark; 1 run of yours recorded, latest failed on 2026-10-21; see Detection Validation'
+ *   'None: no covered (self-attested or range) mark; 1 run of yours recorded, latest failed on 10/21/26; see Detection Validation'
  *   'None: nothing of yours reaches this technique'   (no run, no reference data, no mark, no verdict)
  * A run of yours that yields no proof (untested, failed, passed with no named
  * rule) is named with its status and date (RP-F decision 9), never as a rung.
@@ -182,8 +237,7 @@ export function postureExplain(state: PostureState, decayDays?: Readonly<Record<
  * A stale run counts: it is still listed in the Proven block.
  */
 function coveredNoneExplain(state: PostureState): string {
-  const contradicted = state.subStates.includes('contradicted');
-  const head = contradicted
+  const head = marksContradicted(state)
     ? 'None: a later failed run contradicts your covered (self-attested or range) marks'
     : 'None: no covered (self-attested or range) mark';
   const notes = state.excluded ? EXCLUDED_NOTE : '';
@@ -196,22 +250,41 @@ function coveredNoneExplain(state: PostureState): string {
   return 'None: nothing of yours reaches this technique';
 }
 
+/**
+ * '; <how the state is contradicted>' for a lens whose own words do not already
+ * say it (RP-F decision 17: a cell that paints or speaks the contradicted hatch
+ * says so in its why line too): the run that outranked the proof (supersededClause,
+ * which leads with 'contradicted: '), else 'contradicted by a later failed run'.
+ * A run with no telemetry that outranked the proof is named though it contradicts
+ * nothing; '' for a state with neither.
+ */
+function contradictionNote(state: PostureState): string {
+  const superseded = supersededClause(state);
+  if (superseded) return `; ${superseded}`;
+  return state.subStates.includes('contradicted') ? `; ${CONTRADICTED_WORDS}` : '';
+}
+
 /** A registry lens other than Posture: its cell's own words, with the marks or proof behind them. */
 function registryExplain(def: LensDefinition, cell: LensCell, ctx: LensExplainContext): string {
   const { state } = ctx;
   if (def.value === 'posture') return postureExplain(state, ctx.decayDays);
   if (def.value === 'proven') {
-    return cell.score > 0 && state.proof.length > 0 ? proofExplain(state, ctx.decayDays) : 'No recorded detection for this technique';
+    if (cell.score > 0 && state.proof.length > 0) return proofExplain(state, ctx.decayDays);
+    return 'No recorded detection for this technique' + contradictionNote(state);
   }
   if (def.value === 'covered') {
     if (cell.score === 2) {
       return `${cell.label} from ${describeMarks(state.covered.filter(m => m.strength === 'full'))}`;
     }
     if (cell.score === 1) {
-      return `${cell.label}: reached only through a mitigation or control mapped to more techniques than the breadth threshold`;
+      return `${cell.label}: reached only through a mitigation or control mapped to more techniques than the breadth threshold`
+        + contradictionNote(state);
     }
     return coveredNoneExplain(state);
   }
+  // Status draws no hatch, but its stop comes from the marks a later failed run
+  // contradicts, so its line names the contradiction (RP-F decision 17).
+  if (def.value === 'status') return (cell.label ?? '') + contradictionNote(state);
   return cell.label ?? `score ${formatScore(cell.score)}`;
 }
 

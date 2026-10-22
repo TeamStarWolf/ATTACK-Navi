@@ -229,7 +229,7 @@ describe('MatrixComponent (rendered, Posture lens, stale cell)', () => {
 
 // RP-F decision 11: a contradicted cell (an implemented M1015 control and
 // mitigation, then a later failed run on T1078) says "contradicted" in its
-// aria-label and tooltip on the Posture, Covered and Status lenses, the way a
+// aria-label and tooltip on the Posture, Covered, Proven (RP-F decision 17) and Status lenses, the way a
 // stale cell names its age; T1003 (the same M1015 marks, no failed run) does not.
 describe('MatrixComponent (rendered, contradicted cell, RP-F decision 11)', () => {
   let domain: Domain;
@@ -284,7 +284,8 @@ describe('MatrixComponent (rendered, contradicted cell, RP-F decision 11)', () =
     return text;
   };
 
-  for (const lens of ['posture', 'covered', 'status'] as const) {
+  // RP-F decision 17: Proven joins (it paints the hatch, so it says it); Status paints no hatch but says it.
+  for (const lens of ['posture', 'covered', 'proven', 'status'] as const) {
     it(`${lens}: the contradicted T1078 cell says so in its aria-label and tooltip; T1003 does not`, () => {
       expect(TestBed.inject(PostureService).stateFor(tech('T1078')).subStates).toContain('contradicted');
       TestBed.inject(FilterService).setHeatmapMode(lens);
@@ -301,12 +302,27 @@ describe('MatrixComponent (rendered, contradicted cell, RP-F decision 11)', () =
     });
   }
 
-  it('the Proven and Controls lenses keep their own words (not in decision 11)', () => {
-    for (const lens of ['proven', 'controls'] as const) {
+  it('the Controls lens keeps its own words and paints no hatch (its projection carries no sub-state)', () => {
+    TestBed.inject(FilterService).setHeatmapMode('controls');
+    fixture.detectChanges();
+    expect(cellOf(tech('T1078')).getAttribute('aria-label')).not.toContain('contradicted');
+    expect(cellOf(tech('T1078')).classList).not.toContain('posture-contradicted');
+  });
+
+  // RP-F decision 17: paints implies speaks, on the rendered cells. Round 3: the Proven
+  // lens painted the hatch on 6 of 6 contradicted cells and said only "no recorded detection".
+  it('every lens whose T1078 cell paints the contradicted hatch says contradicted in its aria-label', () => {
+    for (const lens of ['posture', 'covered', 'proven', 'status', 'controls'] as const) {
       TestBed.inject(FilterService).setHeatmapMode(lens);
       fixture.detectChanges();
-      expect(cellOf(tech('T1078')).getAttribute('aria-label')).withContext(lens).not.toContain('contradicted');
+      const cell = cellOf(tech('T1078'));
+      if (cell.classList.contains('posture-contradicted')) {
+        expect(cell.getAttribute('aria-label')).withContext(lens).toContain(CONTRADICTED_WORDS);
+      }
     }
+    TestBed.inject(FilterService).setHeatmapMode('proven');
+    fixture.detectChanges();
+    expect(cellOf(tech('T1078')).classList).toContain('posture-contradicted');
   });
 });
 

@@ -9,6 +9,7 @@
 // whole literals rather than templates.
 import type { CoveredQualifier } from '../heatmap-modes';
 import type { CoveredMark, PostureState, ProofRecord, ProofScope } from './posture.types';
+import { validationDay } from '../local-date';
 
 // truth-vocab-allow-next-line proven-only -- the Proven-rung word; every caller passes Proven-rung data
 export const PROVEN = 'Proven';
@@ -86,9 +87,9 @@ export function postureBadge(s: Pick<PostureState, 'bucket' | 'qualifiers' | 'pr
   }
 }
 
-/** One proof line: 'Proven in range on 2026-09-14 by wazuh:990003 (alerted)'. */
+/** One proof line: 'Proven in range on 9/14/26 by wazuh:990003 (alerted)'. */
 export function proofLine(p: ProofRecord): string {
-  return `${PROVEN}${SCOPE_WORDS[p.scope]} on ${p.date.slice(0, 10)} by ${p.detectionRef} (${p.outcome})`;
+  return `${PROVEN}${SCOPE_WORDS[p.scope]} on ${validationDay(p.date)} by ${p.detectionRef} (${p.outcome})`;
 }
 
 /** The outcome label of a scenario step (P2-12; S7, R21). */

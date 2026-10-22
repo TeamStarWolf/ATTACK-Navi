@@ -18,7 +18,9 @@ import { LibraryLayerService, LibraryLayerMeta } from '../../services/library-la
 import { ThreatProfileService } from '../../services/threat-profile.service';
 import { ThreatGroup } from '../../models/group';
 import { Campaign } from '../../models/campaign';
-import { ATTACK_DOMAIN_SHORT_LABEL, ProfileGroupRef, ThreatProfileSource, attackDomainOf } from '../../models/threat-profile';
+import {
+  ATTACK_DOMAIN_SHORT_LABEL, GroupIdIndex, KnownGroup, ProfileGroupRef, ThreatProfileSource, attackDomainOf, findStoredGroup, indexGroups,
+} from '../../models/threat-profile';
 import { ProfileDomainNoticeComponent } from '../profile-domain-notice/profile-domain-notice.component';
 
 type PickerMode = 'profile' | 'single' | 'multi-local';
@@ -101,6 +103,8 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
   activeSector: string | null = null;
 
   groups: ThreatGroup[] = [];
+  /** `groups` indexed by every id a stored profile may hold them under; see shownGroupIndex. */
+  private groupIndex: { readonly groups: readonly ThreatGroup[]; readonly index: GroupIdIndex } | null = null;
   campaigns: Campaign[] = [];
   layers: LibraryLayerMeta[] = [];
   /** quickPicks resolved to the loaded domain's groups by ATT&CK id (no name or alias matching). */
@@ -178,12 +182,47 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
     this.subs.unsubscribe();
   }
 
-  /** profile mode: add the service's current absent groups to the absent list (no duplicates). */
+  /**
+   * profile mode: add the service's current absent groups, then its unresolved ids (RP-F
+   * decision 18: listed as "unknown or withdrawn group id", never as absent from the
+   * domain), to the absent list (no duplicates).
+   */
   private mergeAbsent(): void {
     if (this.mode !== 'profile') return;
     const shown = new Set(this.absentShown.map((r) => r.id));
-    const added = this.threatProfile.absentGroups(this.dataService.getCurrentDomain()).filter((r) => !shown.has(r.id));
+    const domain = this.dataService.getCurrentDomain();
+    const added = [...this.threatProfile.absentGroups(domain), ...this.threatProfile.unresolvedGroups(domain)]
+      .filter((r) => !shown.has(r.id));
     if (added.length > 0) this.absentShown = [...this.absentShown, ...added];
+  }
+
+  /**
+   * True when the selection holds `g`, by its STIX id or by its ATT&CK id in any case
+   * (RP-F decision 18): a profile stored with ATT&CK ids shows its groups pressed while
+   * it waits to be normalised to STIX ids.
+   */
+  isGroupPressed(g: ThreatGroup): boolean {
+    return this.selectedKeysFor(g).length > 0;
+  }
+
+  /**
+   * The selected ids that name `g`: each resolved by the one stored-id rule
+   * (findStoredGroup over the shown groups' GroupIdIndex, RP-F decision 18), so a
+   * STIX id or an ATT&CK id in any case counts, and the picker keeps no rule of its own.
+   */
+  private selectedKeysFor(g: ThreatGroup): string[] {
+    const index = this.shownGroupIndex();
+    return [...this.selectedGroupIds].filter((id) => findStoredGroup(index, id)?.id === g.id);
+  }
+
+  /** The shown groups' GroupIdIndex (indexGroups), rebuilt when `groups` is replaced. */
+  private shownGroupIndex(): GroupIdIndex {
+    if (this.groupIndex?.groups !== this.groups) {
+      const index = new Map<string, KnownGroup>();
+      indexGroups(index, this.groups);
+      this.groupIndex = { groups: this.groups, index };
+    }
+    return this.groupIndex.index;
   }
 
   /**
@@ -319,7 +358,10 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
       this.cdr.markForCheck();
       return;
     }
-    if (this.selectedGroupIds.has(g.id)) this.selectedGroupIds.delete(g.id);
+    // A group held under either id shape is one group (RP-F decision 18): a click on a
+    // group stored as G0016 deselects it rather than adding its STIX id beside it.
+    const held = this.selectedKeysFor(g);
+    if (held.length > 0) for (const id of held) this.selectedGroupIds.delete(id);
     else this.selectedGroupIds.add(g.id);
     if (this.mode === 'multi-local') {
       this.selectionChange.emit(new Set(this.selectedGroupIds));   // never touches the service

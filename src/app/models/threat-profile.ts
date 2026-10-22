@@ -59,19 +59,37 @@ export interface LibraryLayerInput {
   readonly techniques: readonly { readonly techniqueID: string }[];
 }
 
-/** A group named by a profile: its STIX id and the name to show (an absent group's name is remembered, see ThreatProfileService). */
-export interface ProfileGroupRef { readonly id: string; readonly name: string; }
+/**
+ * A group named by a profile: its STIX id and the name to show (an absent group's name
+ * is remembered, see ThreatProfileService). `unresolved` marks a stored id that names
+ * no group seen this session (RP-F decision 18); its name is then the id as stored.
+ */
+export interface ProfileGroupRef { readonly id: string; readonly name: string; readonly unresolved?: boolean; }
 
 /**
  * A stored groups profile split against one domain: the groups the domain carries
- * (present) and the stored ones it does not (absent). The stored profile is never
- * narrowed; the split only says which of its groups this domain can resolve.
+ * (present), the known groups it does not (absent), and the stored ids that resolve
+ * to no group at all (unresolved: an alias, a revoked or unknown ATT&CK id, a
+ * malformed STIX id; RP-F decision 18). The stored profile is never narrowed; the
+ * split only says which of its groups this domain can resolve.
  */
 export interface ProfileDomainGroups {
   readonly domain: AttackDomain;
   readonly present: readonly ProfileGroupRef[];
   readonly absent: readonly ProfileGroupRef[];
+  /** Stored ids, as stored, that name no known group (RP-F decision 18); absent means none. */
+  readonly unresolved?: readonly string[];
 }
+
+/**
+ * A STIX intrusion-set id by its shape (the type prefix): the one shape a stored groups
+ * profile keeps, and the only key a stored name hint may carry (RP-F decision 18). A
+ * well-shaped id that names no group (an all-zero uuid) is caught by resolution, not here.
+ */
+export const STIX_GROUP_ID = /^intrusion-set--\S+$/;
+
+/** What an unresolved stored id reads as, wherever the profile names it (RP-F decision 18). */
+export const UNRESOLVED_GROUP_WORDS = 'unknown or withdrawn group id';
 
 /** The short domain name the cross-domain notice uses ("present in ICS"). */
 export const ATTACK_DOMAIN_SHORT_LABEL: Readonly<Record<AttackDomain, string>> = {
@@ -119,16 +137,27 @@ export function findStoredGroup(index: GroupIdIndex, id: string): KnownGroup | u
  * ATT&CK id stored side by side are one group, which is then named once under
  * the id stored first. A group `known` holds only as a stored name hint (an id
  * with a name, no other id) is told apart by its name.
+ *
+ * A stored id that resolves to no group is `unresolvedIds`, never absent (RP-F
+ * decision 18): it is in neither the domain nor `known` (an alias such as "Fancy
+ * Bear", a revoked G0074 or G0042, an unknown G9999, a malformed or all-zero STIX
+ * id), or `known` holds it only as a name hint whose name a group of `known` or of
+ * the domain carries under another id (a hint cannot rename a real group). Saying
+ * such an id "has no <domain> use" would claim a group exists that does not.
  */
 export function splitStoredGroups(
   ids: readonly string[],
   domain: Pick<Domain, 'groups'>,
   known: GroupIdIndex = new Map(),
-): { readonly present: readonly ThreatGroup[]; readonly absentIds: readonly string[] } {
+): { readonly present: readonly ThreatGroup[]; readonly absentIds: readonly string[]; readonly unresolvedIds: readonly string[] } {
   const inDomain = new Map<string, KnownGroup>();
   indexGroups(inDomain, domain.groups);
+  // Names of real groups (from a loaded domain, never from a hint), to catch a hint that renames one.
+  const realNames = new Map<string, string>();
+  for (const g of [...known.values(), ...domain.groups]) if (g.attackId) realNames.set(g.name, g.id);
   const presentIds = new Set<string>();
   const absentIds: string[] = [];
+  const unresolvedIds: string[] = [];
   const absentKeys = new Set<string>();
   for (const id of ids) {
     const here = findStoredGroup(inDomain, id);
@@ -137,29 +166,52 @@ export function splitStoredGroups(
       continue;
     }
     const seen = findStoredGroup(known, id);
-    const key = !seen ? `id:${id}` : seen.attackId ? `id:${seen.id}` : `name:${seen.name}`;
+    const renamed = !!seen && !seen.attackId && realNames.has(seen.name) && realNames.get(seen.name) !== seen.id;
+    const key = !seen || renamed ? `unresolved:${id}` : seen.attackId ? `id:${seen.id}` : `name:${seen.name}`;
     if (absentKeys.has(key)) continue;
     absentKeys.add(key);
-    absentIds.push(id);
+    (!seen || renamed ? unresolvedIds : absentIds).push(id);
   }
-  return { present: domain.groups.filter((g) => presentIds.has(g.id)), absentIds };
+  return { present: domain.groups.filter((g) => presentIds.has(g.id)), absentIds, unresolvedIds };
+}
+
+/**
+ * Stored group ids in the one stored shape, STIX ids (RP-F decision 18): an id that
+ * names a group a loaded domain carried (`known`, by STIX id or by ATT&CK id in any
+ * case) becomes that group's STIX id; any other id is kept as it is (it may resolve
+ * once its domain loads, and an unresolved id is announced, never dropped). Order is
+ * kept and each group appears once.
+ */
+export function normaliseStoredGroupIds(ids: readonly string[], known: GroupIdIndex): string[] {
+  const out: string[] = [];
+  for (const id of ids) {
+    const g = findStoredGroup(known, id);
+    const stix = g && g.attackId ? g.id : id;
+    if (!out.includes(stix)) out.push(stix);
+  }
+  return out;
 }
 
 /**
  * The one sentence every profile surface shows when some stored groups have no use
  * in the loaded domain, e.g. "1 of 2 groups present in ICS: FIN7; APT29 has no ICS
- * use". Null when nothing is absent (the surfaces then show what they always did).
- * It names groups and domains only.
+ * use". Null when nothing is absent or unresolved (the surfaces then show what they
+ * always did). It names groups and domains only, and each stored id that resolves to
+ * no group as "<id>: unknown or withdrawn group id" (RP-F decision 18): "1 of 2 groups
+ * present in Enterprise: APT29; G9999: unknown or withdrawn group id".
  */
 export function profileDomainNotice(split: ProfileDomainGroups | null): string | null {
-  if (!split || split.absent.length === 0) return null;
+  const unresolved = split?.unresolved ?? [];
+  if (!split || (split.absent.length === 0 && unresolved.length === 0)) return null;
   const where = ATTACK_DOMAIN_SHORT_LABEL[split.domain] ?? split.domain;
-  const total = split.present.length + split.absent.length;
+  const total = split.present.length + split.absent.length + unresolved.length;
   const names = (refs: readonly ProfileGroupRef[]) => refs.map((r) => r.name).join(', ');
   const present = split.present.length > 0 ? `: ${names(split.present)}` : '';
-  const verb = split.absent.length === 1 ? 'has' : 'have';
-  return `${split.present.length} of ${total} ${total === 1 ? 'group' : 'groups'} present in ${where}${present}; `
-    + `${names(split.absent)} ${verb} no ${where} use`;
+  const parts = [`${split.present.length} of ${total} ${total === 1 ? 'group' : 'groups'} present in ${where}${present}`];
+  if (split.absent.length > 0) parts.push(`${names(split.absent)} ${split.absent.length === 1 ? 'has' : 'have'} no ${where} use`);
+  // RP-F decision 18: an id that resolves to no group is never "absent from" a domain.
+  for (const id of unresolved) parts.push(`${id}: ${UNRESOLVED_GROUP_WORDS}`);
+  return parts.join('; ');
 }
 
 const DOMAIN_NAME_TO_ATTACK: Readonly<Record<string, AttackDomain>> = {
