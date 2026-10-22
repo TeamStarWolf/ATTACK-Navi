@@ -7,7 +7,7 @@ import { heatmapModeDef } from './heatmap-modes';
 import type { HeatmapMode } from '../services/filter.service';
 import type { CoveredMark, PostureInputs, PostureState, ProofRecord, RunSummary } from './posture/posture.types';
 import { DEFAULT_POSTURE_RULES, derivePosture } from './posture/derive-posture';
-import { basisWords, formatScore, lensExplain, postureExplain, runsClause, supersededClause } from './lens-explain';
+import { basisWords, formatScore, lensExplain, postureExplain, provenNoneLine, runsClause, supersededClause } from './lens-explain';
 
 const def = (mode: HeatmapMode) => heatmapModeDef(mode)!;
 
@@ -308,6 +308,39 @@ describe('lensExplain (P2-18): Why this colour', () => {
         for (const line of [postureExplain(s), lensExplain(def('proven'), { score: 0 }, { state: s })]) {
           expect(line).not.toContain('passed');
         }
+      });
+
+      // RP-F decision 28: a newer untested or not-reproducible run after a pass is named in the
+      // why line by its status (round 4's T1518 stayed Proven and its why line said nothing).
+      it('a newer untested or not-reproducible run after a pass is named as the latest run, by its status', () => {
+        const untested = derived('T1518', {
+          knownSignals: 2, runs: [run('p1', 'passed', at(18)), run('u1', 'untested', at(20))], proof: [fired('p1', at(18))],
+        });
+        expect(untested.rung).toBe('known');
+        expect(postureExplain(untested))
+          .toBe('Known: mapped (2 of 5 reference families); latest run was untested on 10/20/26; an earlier run passed on 10/18/26; see Detection Validation');
+        const notRepro = derived('T1082', {
+          knownSignals: 2, runs: [run('p1', 'passed', at(18)), run('n1', 'not-reproducible', at(20))], proof: [fired('p1', at(18))],
+          verdicts: [{ date: at(20), failed: false, notReproducible: true, source: 'manual' }],
+        });
+        expect(supersededClause(notRepro)).toBe('latest run was not reproducible on 10/20/26; an earlier run passed on 10/18/26');
+        expect(lensExplain(def('proven'), { score: 0 }, { state: notRepro }))
+          .toBe('No recorded detection for this technique; latest run was not reproducible on 10/20/26; an earlier run passed on 10/18/26'
+            + '; not reproducible, so left out of the denominator');
+      });
+
+      // RP-F decision 28: the Proven lens never says "No recorded detection" beside a run that fired a rule.
+      it('a run that fired a rule without proof is named, with its date and status, instead of "No recorded detection"', () => {
+        const s = derived('T1018', { knownSignals: 2, runs: [{ ...run('s12', 'untested', at(15)), rulesFired: 1 }], proof: [fired('s12', at(15))] });
+        const line = 'No proof: 1 rule fired in your run on 10/15/26 (status untested); a run is proof only when it passed';
+        expect(provenNoneLine(s)).toBe(line);
+        expect(lensExplain(def('proven'), { score: 0 }, { state: s })).toBe(line);
+        expect(provenNoneLine(state({ runsWithoutProof: [{ ...run('x', 'failed', at(15)), rulesFired: 2 }] })))
+          .toBe('No proof: 2 rules fired in your run on 10/15/26 (status failed); a run is proof only when it passed');
+        // A passed run without proof was outranked: the superseded clause names it, not this line.
+        expect(provenNoneLine(state({ runsWithoutProof: [{ ...run('p', 'passed', at(15)), rulesFired: 1 }] })))
+          .toBe('No recorded detection for this technique');
+        expect(provenNoneLine(state({ runsWithoutProof: [run('u', 'untested', at(15))] }))).toBe('No recorded detection for this technique');
       });
 
       it('an earlier untested or not-reproducible run is named by its status; a record with no run listed names the rule only', () => {

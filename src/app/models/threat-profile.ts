@@ -47,6 +47,12 @@ export interface ThreatProfile {
   weight(techniqueStixId: string): number;
   /** Group/campaign names using the technique (sub usage rolls up to the parent). */
   usedBy(techniqueStixId: string): readonly string[];
+  /**
+   * Group/campaign names using exactly this technique, no roll-up: the basis of the
+   * evidence card's Threat block, which counts direct uses only, as its "Used by N
+   * groups in the loaded ATT&CK bundle" line does (RP-F decision 28).
+   */
+  usedByDirect(techniqueStixId: string): readonly string[];
 }
 
 /**
@@ -371,12 +377,14 @@ export function resolveProfile(src: ThreatProfileSource, domain: Domain, layer?:
   }
 
   const usage = new Map<string, Set<string>>();
+  const direct = new Map<string, Set<string>>();
   for (const actor of actors) {
     for (const t of actor.techniques) {
       techniqueIds.add(t.id);
       const parent = parentOf(t.id);
       parentTechniqueIds.add(parent);
       (usage.get(parent) ?? usage.set(parent, new Set()).get(parent)!).add(actor.name);
+      (direct.get(t.id) ?? direct.set(t.id, new Set()).get(t.id)!).add(actor.name);
     }
   }
 
@@ -389,5 +397,6 @@ export function resolveProfile(src: ThreatProfileSource, domain: Domain, layer?:
     parentTechniqueIds,
     weight: (stix) => usage.get(parentOf(stix))?.size ?? 0,
     usedBy: (stix) => [...(usage.get(parentOf(stix)) ?? [])].sort(),
+    usedByDirect: (stix) => [...(direct.get(stix) ?? [])].sort(),
   };
 }

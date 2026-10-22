@@ -93,6 +93,12 @@ describe('threat-profile model', () => {
     expect(profile.weight('t3')).toBe(1);
     expect(profile.usedBy('t2')).toEqual(['grp-G0001', 'grp-G0002']);
     expect(profile.label).toBe('Top 2 groups by prevalence');
+    // RP-F decision 28: direct uses only, no roll-up (the evidence card's Threat basis).
+    expect(profile.usedBy('t1')).toEqual(['grp-G0001', 'grp-G0002']);
+    expect(profile.usedByDirect('t1')).toEqual(['grp-G0001', 'grp-G0002']);
+    expect(profile.usedByDirect('t1a')).toEqual(['grp-G0002']);
+    expect(profile.usedBy('t1a')).toEqual(['grp-G0001', 'grp-G0002']);
+    expect(profile.usedByDirect('t9')).toEqual([]);
   });
 
   it('clamps top-groups n to [1, number of groups]', () => {

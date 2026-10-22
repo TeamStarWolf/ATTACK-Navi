@@ -239,7 +239,7 @@ export function runInputs(run: ValidationRunV2): RunInputs {
   const verdicts: RunVerdict[] = failed || notReproducible
     ? [{ date: run.runDate, failed, notReproducible, source: run.source }]
     : [];
-  const summary: RunSummary = { runId: run.id, status: run.status, date: run.runDate, source: run.source };
+  const summary: RunSummary = { runId: run.id, status: run.status, date: run.runDate, source: run.source, rulesFired: named.size };
   return { proof, covered, verdicts, summary };
 }
 

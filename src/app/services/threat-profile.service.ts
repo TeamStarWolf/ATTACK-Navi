@@ -304,6 +304,7 @@ export class ThreatProfileService implements OnDestroy, ThreatWeightProvider {
       parentTechniqueIds: new Set(),
       weight: () => 0,
       usedBy: () => [],
+      usedByDirect: () => [],
     };
   }
 

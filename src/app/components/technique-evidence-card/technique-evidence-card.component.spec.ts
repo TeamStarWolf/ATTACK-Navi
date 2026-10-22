@@ -66,10 +66,13 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
   let domainNotice: WritableSignal<string | null>;
   let profileLabel: string;
   let profileActors: string[];
+  /** The profile's roll-up over sub-techniques (usedBy); null reads as the direct uses. */
+  let profileRollup: string[] | null;
   beforeEach(() => {
     domainNotice = signal<string | null>(null);
     profileLabel = 'Top 20 groups by prevalence';
     profileActors = ['APT28', 'APT29'];
+    profileRollup = null;
   });
 
   function render(s: PostureState, ownerWords: boolean, mode: HeatmapMode = 'frequency', extra: (Provider | EnvironmentProviders)[] = []): HTMLElement {
@@ -103,7 +106,7 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
         },
         {
           provide: ThreatProfileService,
-          useValue: { profile$: of({ label: profileLabel, usedBy: () => profileActors }), domainNotice },
+          useValue: { profile$: of({ label: profileLabel, usedBy: () => profileRollup ?? profileActors, usedByDirect: () => profileActors }), domainNotice },
         },
         {
           provide: CveService,
@@ -234,6 +237,33 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
       expect(text(block(el, 'ev-why'))).not.toContain('nothing of yours reaches this technique');
     });
 
+    // RP-F decision 28: round 4's S12 T1018 shape. An untested run with one fired rule sat
+    // beside the pill "UNTESTED 1 of 0 detection rules fired" while the Proven block said
+    // "No recorded detection for this technique.".
+    it('beside a run that fired a rule without proof, the Proven block and the Proven lens name the run and its status', () => {
+      const fired: RunSummary = { ...UNTESTED, runId: 's12', date: '2026-10-15T15:00:00.000Z', rulesFired: 1 };
+      const el = render(state({ rung: 'known', bucket: 'known', runsWithoutProof: [fired] }), true, 'proven');
+      const line = 'No proof: 1 rule fired in your run on 10/15/26 (status untested); a run is proof only when it passed';
+      expect(text(block(el, 'ev-proven')!.querySelector('[data-testid="ev-proven-empty"]'))).toBe(`${line}.`);
+      expect(text(block(el, 'ev-why'))).toContain(`Why this colour: ${line}`);
+      expect(text(el)).not.toContain('No recorded detection');
+      expect(text(block(el, 'ev-runs-without-proof')))
+        .toBe('Runs without proof: untested on 10/15/26 (source manual, 1 rule fired); see Detection Validation');
+    });
+
+    it('T1518 shape: a newer untested run after a pass is named in the why line; the card reads no rung from the pass', () => {
+      const passed: RunSummary = { runId: 'p1', status: 'passed', date: '2026-10-18T15:00:00.000Z', source: 'manual', rulesFired: 1 };
+      const newer: RunSummary = { runId: 'u2', status: 'untested', date: '2026-10-20T15:00:00.000Z', source: 'manual' };
+      const s = state({
+        rung: 'known', bucket: 'known', runsWithoutProof: [newer, passed],
+        supersededProof: { latest: newer, earlier: { ...OWN_PROOF, runId: 'p1', date: passed.date }, earlierStatus: 'passed' },
+      });
+      const el = render(s, true, 'posture');
+      expect(text(block(el, 'ev-why'))).toContain(
+        'Why this colour: Known: mapped (3 of 5 reference families); latest run was untested on 10/20/26; an earlier run passed on 10/18/26; see Detection Validation');
+      expect(text(block(el, 'ev-proven')!.querySelector('[data-testid="ev-proven-empty"]'))).toBe('No recorded detection for this technique.');
+    });
+
     // RP-F decision 16a: the Covered block's empty line spoke of everything ("Nothing of yours
     // recorded for this technique.") beside a recorded run on 72 of 72 owner cards in round 3.
     it('the Covered block never says nothing of yours is recorded while the card lists a run', () => {
@@ -358,6 +388,18 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
     domainNotice.set(null);           // back on Enterprise: every group present, the line is the plain label
     fixture.detectChanges();
     expect(line()).toBe('Threat profile (FIN7): used by 0');
+  });
+
+  // RP-F decision 28: the profile line rolled sub-technique uses up to the parent while the
+  // bundle line counted direct uses only. Both now count direct uses; the roll-up is labelled.
+  it('the Threat block counts direct uses on both lines, and labels the roll-up over sub-techniques when it is larger', () => {
+    profileActors = ['APT29'];
+    profileRollup = ['APT28', 'APT29', 'FIN7'];
+    const el = render(state(), false);
+    const threat = block(el, 'ev-threat')!;
+    expect(text(threat.querySelector('[data-testid="ev-threat-profile"]')))
+      .toBe('Threat profile (Top 20 groups by prevalence): used by 1: APT29; 3 counting its sub-techniques');
+    expect(text(threat)).toContain('Used by 3 groups in the loaded ATT&CK bundle');
   });
 
   it('the Threat block names the profile actors, the bundle groups and the KEV-linked CVEs', () => {

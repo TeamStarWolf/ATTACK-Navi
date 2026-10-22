@@ -1030,6 +1030,42 @@ test.describe('E2.4: default-lens rule', () => {
       }],
     }),
   };
+  // RP-F decisions 23 and 28: round 4's S12 T1018. An untested run that lists one fired
+  // rule read "Proven (your run) ... 1 rule fired" beside the pill "UNTESTED 1 of 0
+  // detection rules fired". The card now follows the pill: no Proven line, and the
+  // Proven block names the run and its status instead of "No recorded detection".
+  const T1018 = 'attack-pattern--e358d692-23c0-4a31-9eb6-ecc13a8d7735';
+  test('[RP-F 23/28] T1018 (an untested run with one fired rule) on heat=proven: the card names the run and its status, never Proven', async ({ page }) => {
+    await openWorkspace(page, {
+      seed: {
+        'mitre-nav-impl-v1': JSON.stringify([[M1015, 'implemented']]),
+        'navi.v2.validation-runs': JSON.stringify({
+          schema: 2, tombstones: [],
+          records: [{
+            id: 'e2e-rpf23-s12', techniqueId: 'T1018', runDate: '2026-10-15T15:00:00.000Z', status: 'untested', attackResult: 'executed',
+            detectionsExpected: [], detectionsFired: ['siem:curated'],
+            source: 'manual', domain: null, attackVersion: 'unknown', createdAt: '2026-10-15T15:00:00.000Z', updatedAt: '2026-10-15T15:00:00.000Z',
+            techniqueRef: null, outcomes: [{ detectionRef: 'siem:curated', outcome: 'alerted' }], proofScope: 'own-run', statusFromSource: false,
+          }],
+        }),
+      },
+    });
+    await page.goto('about:blank');
+    await page.goto(`${BASE}/#/matrix?heat=proven`);
+    await expect(page.locator('.heatmap-btn')).toContainText('Proven', { timeout: ROUTE_TIMEOUT });
+    const cell = page.locator(`[data-tech-id="${T1018}"] .cell`).first();
+    await expect(cell).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    await cell.click();
+    const drawer = page.locator('.sidebar.open');
+    await expect(drawer.locator('app-validation-status-pill .vsp-status').first()).toHaveText('UNTESTED', { timeout: ROUTE_TIMEOUT });
+    const card = drawer.locator('[data-testid="evidence-card"]');
+    await expect(card.getByTestId('ev-proven-empty')).toContainText('1 rule fired in your run on', { timeout: ROUTE_TIMEOUT });
+    await expect(card.getByTestId('ev-proven-empty')).toContainText('(status untested)');
+    await expect(card.getByTestId('ev-why')).toContainText('No proof: 1 rule fired');
+    await expect(card).not.toContainText('No recorded detection');
+    await expect(card).not.toContainText('Proven (your run)');
+  });
+
   for (const [lens, label] of [['posture', 'Posture'], ['covered', 'Covered'], ['proven', 'Proven']] as const) {
     test(`[RP-F 27] T1082 (a not-reproducible run) on heat=${lens}: the cross-hatch, and "not reproducible" in the aria-label, tooltip and why line`, async ({ page }) => {
       await openWorkspace(page, { seed: notReproducibleSeed });

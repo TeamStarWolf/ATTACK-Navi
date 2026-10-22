@@ -22,7 +22,7 @@ import {
   type LensCell, type LensContext, heatmapModeDef, lensAvailability,
 } from '../../models/heatmap-modes';
 import { lensOnScreen } from '../../models/lens-registry';
-import { KNOWN_FAMILY_COUNT, basisWords, lensExplain } from '../../models/lens-explain';
+import { KNOWN_FAMILY_COUNT, basisWords, lensExplain, provenNoneLine } from '../../models/lens-explain';
 import { PROVEN, lensLabel, proofLine } from '../../models/posture/posture-vocabulary';
 import { runTime, validationDay } from '../../models/local-date';
 import { POSTURE_TODAY } from '../../models/posture/posture-today';
@@ -186,15 +186,28 @@ export class TechniqueEvidenceCardComponent {
   });
 
   /**
+   * The Proven block's line when it lists no proof record (RP-F decision 28): 'No
+   * recorded detection for this technique', or, beside a run that fired a rule
+   * without proof, that run's date and status (provenNoneLine, the Proven lens's words).
+   */
+  readonly provenEmpty = computed(() => provenNoneLine(this.state()));
+
+  /**
    * The runs of yours on the technique that yield no proof (RP-F decision 9), newest
    * first: 'untested on 10/21/26 (source manual); failed on ...', or '' with none.
+   * A run that lists fired rules says how many, as the Validation pill does
+   * ('untested on 10/15/26 (source manual, 1 rule fired)', RP-F decision 28).
    * The Proven block stays proof-only (P2-14); this line names each run's status
    * and date, never a rung, so it renders whether or not owner words may render.
    * Every date on the card is the local day the Detection Validation pill prints
    * (validationDay, RP-F decision 16), never the UTC day of the ISO timestamp.
    */
   readonly runsWithoutProof = computed(() =>
-    this.state().runsWithoutProof.map(r => `${r.status} on ${validationDay(r.date)} (source ${r.source})`).join('; '));
+    this.state().runsWithoutProof.map(r => {
+      const n = r.rulesFired ?? 0;
+      const fired = n > 0 ? `, ${n} rule${n === 1 ? '' : 's'} fired` : '';
+      return `${r.status} on ${validationDay(r.date)} (source ${r.source}${fired})`;
+    }).join('; '));
 
   /**
    * True when the card lists a run of yours: a proof record in the Proven block or
@@ -216,7 +229,13 @@ export class TechniqueEvidenceCardComponent {
     }));
   });
 
-  /** The Threat block: the threat profile's actors using the technique, every group in the bundle, KEV-linked CVEs. */
+  /**
+   * The Threat block: the threat profile's actors using the technique, every group in
+   * the bundle, KEV-linked CVEs. Both counts are on one basis, direct uses of this
+   * technique (RP-F decision 28: the profile line rolled sub-technique uses up while
+   * the bundle line did not); the profile's roll-up over sub-techniques, the basis of
+   * its threat weight, is shown only when larger, and labelled as such.
+   */
   readonly threat = computed(() => {
     const t = this.technique();
     const domain = this.domain();
@@ -231,7 +250,9 @@ export class TechniqueEvidenceCardComponent {
       // them (the one shared sentence, ThreatProfileService.domainNotice) instead of the
       // narrowed label; otherwise the label is unchanged.
       profileLabel: profile ? (this.threatProfile.domainNotice() ?? profile.label) : null,
-      profileActors: profile ? profile.usedBy(t.id) : [],
+      profileActors: profile ? profile.usedByDirect(t.id) : [],
+      // A parent counts its sub-techniques' uses too; a sub-technique has no roll-up of its own.
+      profileRollup: profile && !t.isSubtechnique ? profile.usedBy(t.id).length : 0,
       bundleGroups: domain?.groupsByTechnique.get(t.id)?.length ?? 0,
       kevLoaded,
       kevCount: Math.max(this.kevScores().get(t.attackId) ?? 0, kevIds.length),

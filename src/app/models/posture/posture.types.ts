@@ -64,6 +64,13 @@ export interface RunSummary {
   readonly status: string;
   readonly date: string;                  // runDate (ISO timestamp) or validated_at (YYYY-MM-DD)
   readonly source: SourceId;
+  /**
+   * The distinct named rules the run lists as fired (the pill's "N of M detection
+   * rules fired"), whatever its status; absent reads as 0. A run that fired a rule
+   * but yields no proof (untested, failed, ...) is named with its status wherever
+   * the card would otherwise say "No recorded detection" (RP-F decision 28).
+   */
+  readonly rulesFired?: number;
 }
 
 /**
