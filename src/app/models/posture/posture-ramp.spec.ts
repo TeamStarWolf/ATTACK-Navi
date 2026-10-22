@@ -259,7 +259,7 @@ describe('posture cell label (§7)', () => {
         const def = heatmapModeDef('proven')!;
         const s = SHAPES['outranked proof, None'];
         expect(lensExplain(def, def.project!(ctx(s), T), { state: s }))
-          .toMatch(/^No recorded detection for this technique; contradicted: latest run failed on \d+\/\d+\/26; an earlier run passed on \d+\/\d+\/26$/);
+          .toMatch(/^No recorded detection for this technique; contradicted: latest run of the rule failed on \d+\/\d+\/26; an earlier run passed on \d+\/\d+\/26$/);
         const marks = SHAPES['contradicted mark, Known'];
         expect(lensExplain(def, def.project!(ctx(marks), T), { state: marks }))
           .toBe(`No recorded detection for this technique; ${CONTRADICTED_WORDS}`);

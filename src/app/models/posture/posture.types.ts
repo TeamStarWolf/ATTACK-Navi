@@ -93,9 +93,10 @@ export interface RunSummary {
  * rule, newer by the one latest-run comparator than the newest record it removed.
  * Proof supersession is per rule (decision 29): an untested, partial or no-telemetry
  * run, or a run of another rule, never removes proof (PostureState.laterRuns names
- * it instead). The why line names both runs by their own status: "latest run failed
- * on <date>; an earlier run passed on <date>" (or "latest run was not reproducible
- * on <date>; ...").
+ * it instead). The why line names both runs by their own status: "latest run of the
+ * rule failed on <date>; an earlier run passed on <date>" (or "latest run of the rule
+ * was not reproducible on <date>; ..."), then the newest run after it, if any
+ * (PostureState.laterRuns).
  */
 export interface SupersededProof {
   /**
@@ -149,8 +150,11 @@ export interface PostureState {
    * comparator) than every standing proof record that left the proof standing (RP-F
    * decision 29): an untested, partial or no-telemetry run, or a failed or
    * not-reproducible run of another rule. Newest first. Never a rung: the why line
-   * names the newest ("a later run on <date> observed telemetry only"). Empty on
-   * every other state (absent in a hand-built state).
+   * names the newest ("a later run on <date> observed telemetry only"). On a state
+   * whose proof a run removed (supersededProof), every run newer than that remover,
+   * whatever its status, so the why line names the newest after "latest run of the
+   * rule ..." (the Detection Validation pill shows it). Empty on every other state
+   * (absent in a hand-built state).
    */
   readonly laterRuns?: readonly RunSummary[];
 }

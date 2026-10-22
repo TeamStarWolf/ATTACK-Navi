@@ -260,7 +260,7 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
       });
       const el = render(s, true, 'posture');
       expect(text(block(el, 'ev-why'))).toContain(
-        'Why this colour: Known: mapped (3 of 5 reference families); latest run was untested on 10/20/26; an earlier run passed on 10/18/26; see Detection Validation');
+        'Why this colour: Known: mapped (3 of 5 reference families); latest run of the rule was untested on 10/20/26; an earlier run passed on 10/18/26; see Detection Validation');
       // RP-F decision 28 (round 4 repair, S27 T1059.001): the outranked pass fired a rule the pill
       // still shows, so the Proven block names it rather than "No recorded detection".
       expect(text(block(el, 'ev-proven')!.querySelector('[data-testid="ev-proven-empty"]')))

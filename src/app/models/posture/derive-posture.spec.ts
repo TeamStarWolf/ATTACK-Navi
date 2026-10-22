@@ -546,6 +546,19 @@ describe('derivePosture (Phase 2 design §2.2)', () => {
       expect(s.laterRuns).toEqual([]);
     });
 
+    // RP-F round 4 repair: the remover is the latest run of the RULE, not of the
+    // technique; every newer run (the Detection Validation pill shows the newest) is listed.
+    it('passed, failed, then untested and partial, SAME rule: not Proven; the runs after the remover are listed, newest first', () => {
+      const s = derive({
+        runs: [own('p1', 6, ['siem:a'], 'passed'), own('f1', 4, ['siem:a'], 'failed'),
+          own('r1', 2, ['siem:a'], 'partial'), own('u1', 1, undefined, 'untested')],
+        proof: [rec('p1', 6, 'siem:a'), rec('r1', 2, 'siem:a')], knownSignals: 2,
+      });
+      expect(s.rung).toBe('known');
+      expect(s.supersededProof!.latest.runId).toBe('f1');
+      expect(s.laterRuns!.map(r => [r.runId, r.status])).toEqual([['u1', 'untested'], ['r1', 'partial']]);
+    });
+
     it('passed then failed, DIFFERENT rule: Proven; the failed run of the other rule is listed', () => {
       const s = derive({
         runs: [own('p1', 6, ['siem:a'], 'passed'), own('f1', 1, ['siem:b'], 'failed')],

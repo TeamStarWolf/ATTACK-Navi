@@ -156,11 +156,14 @@ function sameRule(run: RunSummary, record: ProofRecord): boolean {
  * is the later one, so a tie never reads as a pass); a record whose run is not
  * listed is outranked by a strictly newer dated run.
  * `superseded` names the newest record and the newest run that removed it, when no
- * proof is left (the why line: "latest run failed on <date>; an earlier run passed
- * on <date>"), with that earlier run's own status, looked up among the runs; null
+ * proof is left (the why line: "latest run of the rule failed on <date>; an earlier
+ * run passed on <date>"), with that earlier run's own status, looked up among the runs; null
  * otherwise. `laterRuns` lists, newest first, the runs that do not prove and are
  * later than every standing record (an untested, partial or no-telemetry run, or a
- * failed or not-reproducible run of another rule): empty when no proof stands.
+ * failed or not-reproducible run of another rule); when no proof is left and a run
+ * removed it, every run newer than that remover (RP-F round 4 repair: the why line
+ * names the newest, so it never calls the remover the latest run while the
+ * Detection Validation pill shows a newer one); empty otherwise.
  */
 function standingProof(
   input: PostureInputs, rules: PostureRules, now: Date,
@@ -179,11 +182,17 @@ function standingProof(
   const removers = (p: DatedProof): RunSummary[] =>
     ordered.filter(r => REMOVING_STATUSES.has(r.status) && sameRule(r, p.record) && later(r, p));
   const proof = qualifying.filter(p => removers(p).length === 0);
-  const laterRuns = ordered.filter(r => proof.length > 0 && !provesStatus(r.status) && proof.every(p => later(r, p)));
-  if (proof.length > 0 || qualifying.length === 0) return { proof, superseded: null, laterRuns };
+  if (proof.length > 0) {
+    return { proof, superseded: null, laterRuns: ordered.filter(r => !provesStatus(r.status) && proof.every(p => later(r, p))) };
+  }
+  if (qualifying.length === 0) return { proof, superseded: null, laterRuns: [] };
   const newest = [...qualifying].sort((a, b) => b.t - a.t)[0];
   const earlierStatus = runs.find(r => r.runId === newest.record.runId)?.status ?? null;
-  return { proof, superseded: { latest: removers(newest)[0], earlier: newest.record, earlierStatus }, laterRuns };
+  const latest = removers(newest)[0];
+  // Every run newer than the remover, whatever its status: none holds proof (the
+  // newest qualifying record is older than its remover), and the pill may show one.
+  const newerThanRemover = ordered.slice(0, order.get(latest.runId) as number);
+  return { proof, superseded: { latest, earlier: newest.record, earlierStatus }, laterRuns: newerThanRemover };
 }
 
 function qualifiersOf(marks: readonly CoveredMark[]): CoveredQualifier[] {

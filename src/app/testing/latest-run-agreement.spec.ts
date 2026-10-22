@@ -139,7 +139,7 @@ describe('the pill and the card pick the same latest run, in any zone (RP-F deci
           // The why line names the pill's run as the latest, and never a later day on the earlier run.
           expect(s.supersededProof!.latest.runId).toBe(latest.id);
           const clause = runsClause(s);
-          expect(clause).toContain(`latest run failed on ${validationDay(latest.runDate)}`);
+          expect(clause).toContain(`latest run of the rule failed on ${validationDay(latest.runDate)}`);
           const [later, earlier] = [...clause.matchAll(/on (\d+\/\d+\/\d+)/g)].map(m => m[1]);
           expect(dayNumber(later)).toBeGreaterThanOrEqual(dayNumber(earlier));
         }

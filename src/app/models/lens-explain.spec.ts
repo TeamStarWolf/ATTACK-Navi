@@ -266,14 +266,14 @@ describe('lensExplain (P2-18): Why this colour', () => {
         });
         expect(s.bucket).toBe('known');
         const posture = postureExplain(s);
-        expect(posture).toBe('Known: mapped (3 of 5 reference families); contradicted: latest run failed on 10/20/26; '
+        expect(posture).toBe('Known: mapped (3 of 5 reference families); contradicted: latest run of the rule failed on 10/20/26; '
           + 'an earlier run passed on 10/18/26; see Detection Validation');
         expect(posture).not.toMatch(RUNG_WORDS);
         expect(posture).not.toContain('contradicts the marks');
         expect(lensExplain(def('proven'), { score: 0 }, { state: s }))
-          .toBe('No recorded detection for this technique; contradicted: latest run failed on 10/20/26; an earlier run passed on 10/18/26');
+          .toBe('No recorded detection for this technique; contradicted: latest run of the rule failed on 10/20/26; an earlier run passed on 10/18/26');
         expect(lensExplain(def('covered'), { score: 0 }, { state: s })).toBe('None: no covered (self-attested or range) mark; '
-          + 'see the Known block for its reference data (3 of 5 reference families); contradicted: latest run failed on 10/20/26; '
+          + 'see the Known block for its reference data (3 of 5 reference families); contradicted: latest run of the rule failed on 10/20/26; '
           + 'an earlier run passed on 10/18/26; see Detection Validation');
       });
 
@@ -290,7 +290,7 @@ describe('lensExplain (P2-18): Why this colour', () => {
           covered: [{ ...MIT_FULL, strength: 'partial', via: 'M1038' }],
         });
         expect(s.bucket).toBe('partial');
-        expect(postureExplain(s)).toContain('; contradicted: latest run failed on 10/20/26; an earlier run passed on 10/18/26; see Detection Validation');
+        expect(postureExplain(s)).toContain('; contradicted: latest run of the rule failed on 10/20/26; an earlier run passed on 10/18/26; see Detection Validation');
       });
 
       it('a partial earlier run yields no proof (RP-F decision 23): the lines name both runs, never as passed', () => {
@@ -325,9 +325,9 @@ describe('lensExplain (P2-18): Why this colour', () => {
           knownSignals: 2, runs: [run('p1', 'passed', at(18)), run('n1', 'not-reproducible', at(20))], proof: [fired('p1', at(18))],
           verdicts: [{ date: at(20), failed: false, notReproducible: true, source: 'manual' }],
         });
-        expect(supersededClause(notRepro)).toBe('latest run was not reproducible on 10/20/26; an earlier run passed on 10/18/26');
+        expect(supersededClause(notRepro)).toBe('latest run of the rule was not reproducible on 10/20/26; an earlier run passed on 10/18/26');
         expect(lensExplain(def('proven'), { score: 0 }, { state: notRepro }))
-          .toBe('No recorded detection for this technique; latest run was not reproducible on 10/20/26; an earlier run passed on 10/18/26'
+          .toBe('No recorded detection for this technique; latest run of the rule was not reproducible on 10/20/26; an earlier run passed on 10/18/26'
             + '; not reproducible, so left out of the denominator');
       });
 
@@ -376,10 +376,10 @@ describe('lensExplain (P2-18): Why this colour', () => {
           subStates: [],
           supersededProof: { latest: run('f1', 'failed', at(20)), earlier: fired('r1', at(18)), earlierStatus: status },
         });
-        expect(words('untested')).toBe('latest run failed on 10/20/26; an earlier run was untested on 10/18/26');
-        expect(words('not-reproducible')).toBe('latest run failed on 10/20/26; an earlier run was not reproducible on 10/18/26');
-        expect(words('passed')).toBe('latest run failed on 10/20/26; an earlier run passed on 10/18/26');
-        expect(words(null)).toBe('latest run failed on 10/20/26; an earlier named rule fired on 10/18/26');
+        expect(words('untested')).toBe('latest run of the rule failed on 10/20/26; an earlier run was untested on 10/18/26');
+        expect(words('not-reproducible')).toBe('latest run of the rule failed on 10/20/26; an earlier run was not reproducible on 10/18/26');
+        expect(words('passed')).toBe('latest run of the rule failed on 10/20/26; an earlier run passed on 10/18/26');
+        expect(words(null)).toBe('latest run of the rule failed on 10/20/26; an earlier named rule fired on 10/18/26');
         const unlisted = derived('T1010', { runs: [run('f1', 'failed', at(20))], proof: [fired('other', at(18))] });
         expect(unlisted.supersededProof!.earlierStatus).toBeNull();
       });
@@ -402,19 +402,58 @@ describe('lensExplain (P2-18): Why this colour', () => {
         expect(lensExplain(def('proven'), { score: 3 }, { state: s })).toBe(line);
       });
 
-      it('passed then failed of the SAME rule: not Proven, "latest run failed"; of a DIFFERENT rule: Proven, the failed run named', () => {
+      it('passed then failed of the SAME rule: not Proven, "latest run of the rule failed"; of a DIFFERENT rule: Proven, the failed run named', () => {
         const ruled = (runId: string, status: string, date: string, rules: string[]): RunSummary => ({ ...run(runId, status, date), rules });
         const ref = RUN.detectionRef;
         const same = derived('T1010', {
           knownSignals: 2, runs: [ruled('p1', 'passed', at(18), [ref]), ruled('f1', 'failed', at(20), [ref])], proof: [fired('p1', at(18))],
         });
         expect(same.rung).toBe('known');
-        expect(postureExplain(same)).toContain('latest run failed on 10/20/26; an earlier run passed on 10/18/26');
+        expect(postureExplain(same)).toContain('latest run of the rule failed on 10/20/26; an earlier run passed on 10/18/26');
         const other = derived('T1010', {
           knownSignals: 2, runs: [ruled('p1', 'passed', at(18), [ref]), ruled('f1', 'failed', at(20), ['sigma:other'])], proof: [fired('p1', at(18))],
         });
         expect(other.rung).toBe('proven');
         expect(postureExplain(other)).toBe('Proven (your run) on 10/18/26 by manual; 1 rule fired; a later run of another rule failed on 10/20/26');
+      });
+
+      // RP-F round 4 repair: the remover is the latest run OF THE RULE; a newer run that
+      // removed nothing (the one the Detection Validation pill shows) is named after it.
+      it('passed R, failed R, then a later untested run: the remover is the latest run of the rule, and the untested run is named', () => {
+        const ruled = (runId: string, status: string, date: string, rules: string[]): RunSummary => ({ ...run(runId, status, date), rules });
+        const ref = RUN.detectionRef;
+        const s = derived('T1010', {
+          knownSignals: 2,
+          runs: [ruled('p1', 'passed', at(18), [ref]), ruled('f1', 'failed', at(20), [ref]), run('u1', 'untested', at(21))],
+          proof: [fired('p1', at(18))],
+        });
+        expect(s.rung).toBe('known');
+        expect(s.supersededProof!.latest.runId).toBe('f1');
+        expect(s.laterRuns!.map(r => r.runId)).toEqual(['u1']);
+        expect(postureExplain(s)).toBe('Known: mapped (2 of 5 reference families); contradicted: latest run of the rule failed on 10/20/26; '
+          + 'an earlier run passed on 10/18/26; a later untested run on 10/21/26; see Detection Validation');
+        expect(postureExplain(s)).not.toMatch(RUNG_WORDS);
+        expect(lensExplain(def('proven'), { score: 0 }, { state: s })).toBe('No recorded detection for this technique; '
+          + 'contradicted: latest run of the rule failed on 10/20/26; an earlier run passed on 10/18/26; a later untested run on 10/21/26');
+
+        // Several newer runs: the newest is named and the rest counted, with one pointer to Detection Validation.
+        const more = derived('T1010', {
+          knownSignals: 2,
+          runs: [ruled('p1', 'passed', at(18), [ref]), ruled('f1', 'failed', at(20), [ref]),
+            ruled('o1', 'failed', at(21), ['sigma:other']), run('p2', 'passed', at(22))],
+          proof: [fired('p1', at(18))],
+        });
+        expect(more.laterRuns!.map(r => r.runId)).toEqual(['p2', 'o1']);
+        expect(postureExplain(more)).toBe('Known: mapped (2 of 5 reference families); contradicted: latest run of the rule failed on 10/20/26; '
+          + 'an earlier run passed on 10/18/26; a later run passed on 10/22/26 with no proof record (1 more later run); see Detection Validation');
+        expect(supersededClause(more)).not.toContain('; see Detection Validation');
+
+        // No run after the remover: nothing is appended.
+        const none = derived('T1010', {
+          knownSignals: 2, runs: [ruled('p1', 'passed', at(18), [ref]), ruled('f1', 'failed', at(20), [ref])], proof: [fired('p1', at(18))],
+        });
+        expect(none.laterRuns).toEqual([]);
+        expect(supersededClause(none)).toBe('contradicted: latest run of the rule failed on 10/20/26; an earlier run passed on 10/18/26');
       });
 
       it('the later-run clause: each status in words, the count of further later runs, and none when there is none', () => {

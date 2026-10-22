@@ -112,6 +112,9 @@ function laterRunWords(run: RunSummary, day: string): string {
   if (run.status === 'untested') return `a later untested run on ${day}`;
   if (run.status === 'no-telemetry') return `a later run on ${day} had no telemetry`;
   if (run.status === 'failed') return `a later run of another rule failed on ${day}`;
+  // Only after a removed proof (laterRuns lists no passed run while proof stands): a
+  // passed run newer than the remover holds no qualifying record of its own.
+  if (run.status === 'passed') return `a later run passed on ${day} with no proof record`;
   return `a later run of another rule was ${run.status.replace(/-/g, ' ')} on ${day}`;
 }
 
@@ -125,11 +128,15 @@ function laterRunWords(run: RunSummary, day: string): string {
  * The days are the local days the Detection Validation pill prints.
  */
 export function laterRunClause(state: Pick<PostureState, 'laterRuns'>): string {
-  const runs = state.laterRuns ?? [];
+  return laterRunsWords(state.laterRuns ?? [], true);
+}
+
+/** The newest of `runs` in words, then '(N more later runs)', with '; see Detection Validation' inside when `see`. */
+function laterRunsWords(runs: readonly RunSummary[], see: boolean): string {
   if (runs.length === 0) return '';
   const words = laterRunWords(runs[0], validationDay(runs[0].date));
   const more = runs.length - 1;
-  return more > 0 ? `${words} (${more} more later run${more === 1 ? '' : 's'}; ${SEE_VALIDATION})` : words;
+  return more > 0 ? `${words} (${more} more later run${more === 1 ? '' : 's'}${see ? `; ${SEE_VALIDATION}` : ''})` : words;
 }
 
 const CONTRADICTED_NOTE = '; a later failed run contradicts the marks';
@@ -186,20 +193,27 @@ function earlierRunWords(status: string | null): string {
 }
 
 /**
- * The run that outranked every proof record (RP-F decision 16):
- * 'contradicted: latest run failed on 10/22/26; an earlier run passed on 10/21/26',
+ * The run that outranked every proof record (RP-F decisions 16 and 29):
+ * 'contradicted: latest run of the rule failed on 10/22/26; an earlier run passed on 10/21/26',
  * the earlier run named by its own status ('an earlier run was partial on ...'),
- * or '' when none did. 'contradicted: ' leads while the state is contradicted (the
- * cell paints the hatch, so its words say so, RP-F decision 17); a run with no
- * telemetry reads 'latest run had no telemetry on ...'. The days are the local
- * days the Detection Validation pill prints.
+ * or '' when none did. It is the latest run OF THAT RULE (supersession is per rule),
+ * so when a newer run of yours left nothing to remove (an untested or partial run,
+ * a run of another rule), the clause names the newest one after it, as the proven
+ * line does (laterRunClause): '...; an earlier run passed on 10/21/26; a later
+ * untested run on 10/23/26' (RP-F round 4 repair: the pill shows that newer run).
+ * 'contradicted: ' leads while the state is contradicted (the cell paints the
+ * hatch, so its words say so, RP-F decision 17); a run with no telemetry reads
+ * 'latest run of the rule had no telemetry on ...'. The days are the local days
+ * the Detection Validation pill prints.
  */
-export function supersededClause(state: Pick<PostureState, 'supersededProof' | 'subStates'>): string {
+export function supersededClause(state: Pick<PostureState, 'supersededProof' | 'subStates' | 'laterRuns'>): string {
   const s = state.supersededProof;
   if (!s) return '';
+  const later = laterRunsWords(state.laterRuns ?? [], false);
   return (state.subStates.includes('contradicted') ? 'contradicted: ' : '')
-    + `latest run ${latestRunWords(s.latest.status)} on ${validationDay(s.latest.date)}; `
-    + `an earlier ${earlierRunWords(s.earlierStatus)} on ${validationDay(s.earlier.date)}`;
+    + `latest run of the rule ${latestRunWords(s.latest.status)} on ${validationDay(s.latest.date)}; `
+    + `an earlier ${earlierRunWords(s.earlierStatus)} on ${validationDay(s.earlier.date)}`
+    + (later ? `; ${later}` : '');
 }
 
 /**
@@ -207,10 +221,10 @@ export function supersededClause(state: Pick<PostureState, 'supersededProof' | '
  * '1 run of yours recorded, latest untested on 10/21/26', or '' with none.
  * It names the run's status and date only, never a rung: a run without a named
  * rule is not Proven, and nothing here says it covers the technique. When the
- * latest run outranked an earlier proof (RP-F decision 16) it says that instead:
- * 'contradicted: latest run failed on 10/22/26; an earlier run passed on 10/21/26'.
+ * latest run of a rule outranked an earlier proof (RP-F decisions 16 and 29) it says that instead:
+ * 'contradicted: latest run of the rule failed on 10/22/26; an earlier run passed on 10/21/26'.
  */
-export function runsClause(state: Pick<PostureState, 'runsWithoutProof' | 'supersededProof' | 'subStates'>): string {
+export function runsClause(state: Pick<PostureState, 'runsWithoutProof' | 'supersededProof' | 'subStates' | 'laterRuns'>): string {
   const superseded = supersededClause(state);
   if (superseded) return superseded;
   const runs = state.runsWithoutProof;
