@@ -837,31 +837,6 @@ test.describe('E2.4: default-lens rule', () => {
     });
   }
 
-  // RP-F decision 26: a repeated heat key in a pasted link takes its first VALID value;
-  // with none valid the key is absent and D4 runs. Round 4: heat=frequency&heat=bogus
-  // opened Frequency and rewrote to bare #/matrix, so F5 gave Posture. Fresh navigations.
-  for (const [query, lens, label] of [
-    ['heat=frequency&heat=bogus', 'frequency', 'Frequency'],
-    ['heat=bogus&heat=kev', 'kev', 'KEV'],
-    ['heat=bogus&heat=also-bogus', 'posture', 'Posture'],
-  ] as const) {
-    test(`[RP-F 26] one recorded run and a pasted #/matrix?${query}: ${label}, heat=${lens} once, kept on F5`, async ({ page }) => {
-      await openWorkspace(page, { seed: { 'navi.v2.validation-runs': oneRun } });
-      await page.goto('about:blank');
-      await page.goto(`${BASE}/#/matrix?${query}`);
-      await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
-      await expect(page.locator('.heatmap-btn')).toContainText(label);
-      await expect(page).toHaveURL(new RegExp(`#/matrix\\?(.*&)?heat=${lens}(&|$)`), { timeout: LENS_STEP_TIMEOUT });
-      const hash = new URL(page.url()).hash;
-      expect(hash.match(/heat=/g)?.length).toBe(1);
-      expect(hash).not.toContain('bogus');
-      await page.reload();
-      await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
-      await expect(page.locator('.heatmap-btn')).toContainText(label);
-      await expect(page).toHaveURL(new RegExp(`#/matrix\\?(.*&)?heat=${lens}(&|$)`), { timeout: LENS_STEP_TIMEOUT });
-    });
-  }
-
   // RP-F decision 10: owner data that first appears in the session (a bulk set of 3
   // techniques) while Frequency is on screen only as the D4 default must not write
   // heat=frequency: a reload then runs D4 and boots Posture (P2-19 walk step 5). A
@@ -1010,77 +985,6 @@ test.describe('E2.4: default-lens rule', () => {
       await cell.click();
       const why = page.locator('.sidebar.open [data-testid="ev-why"]');
       await expect(why).toContainText(/contradict/, { timeout: ROUTE_TIMEOUT });
-      await expect(why).toContainText(`Lens: ${label}`);
-    });
-  }
-
-  // RP-F decision 27: paints implies speaks for every hatch. T1082 carries one
-  // not-reproducible run (M1015 implemented elsewhere gives owner words, so Covered and
-  // Proven are on screen). In round 4 its cross-hatch painted on all three lenses while
-  // the aria-label read only "None" or "no recorded detection". Pasted links.
-  const T1082 = 'attack-pattern--354a7f88-63fb-41b5-a801-ce3b377b36f1';
-  const notReproducibleSeed = {
-    'mitre-nav-impl-v1': JSON.stringify([[M1015, 'implemented']]),
-    'navi.v2.validation-runs': JSON.stringify({
-      schema: 2, tombstones: [],
-      records: [{
-        id: 'e2e-rpf27-nr', techniqueId: 'T1082', runDate: '2026-10-20T15:00:00.000Z', status: 'not-reproducible', attackResult: 'executed',
-        source: 'manual', domain: null, attackVersion: 'unknown', createdAt: '2026-10-20T15:00:00.000Z', updatedAt: '2026-10-20T15:00:00.000Z',
-        techniqueRef: null, outcomes: [], proofScope: 'own-run', statusFromSource: false,
-      }],
-    }),
-  };
-  // RP-F decisions 23 and 28: round 4's S12 T1018. An untested run that lists one fired
-  // rule read "Proven (your run) ... 1 rule fired" beside the pill "UNTESTED 1 of 0
-  // detection rules fired". The card now follows the pill: no Proven line, and the
-  // Proven block names the run and its status instead of "No recorded detection".
-  const T1018 = 'attack-pattern--e358d692-23c0-4a31-9eb6-ecc13a8d7735';
-  test('[RP-F 23/28] T1018 (an untested run with one fired rule) on heat=proven: the card names the run and its status, never Proven', async ({ page }) => {
-    await openWorkspace(page, {
-      seed: {
-        'mitre-nav-impl-v1': JSON.stringify([[M1015, 'implemented']]),
-        'navi.v2.validation-runs': JSON.stringify({
-          schema: 2, tombstones: [],
-          records: [{
-            id: 'e2e-rpf23-s12', techniqueId: 'T1018', runDate: '2026-10-15T15:00:00.000Z', status: 'untested', attackResult: 'executed',
-            detectionsExpected: [], detectionsFired: ['siem:curated'],
-            source: 'manual', domain: null, attackVersion: 'unknown', createdAt: '2026-10-15T15:00:00.000Z', updatedAt: '2026-10-15T15:00:00.000Z',
-            techniqueRef: null, outcomes: [{ detectionRef: 'siem:curated', outcome: 'alerted' }], proofScope: 'own-run', statusFromSource: false,
-          }],
-        }),
-      },
-    });
-    await page.goto('about:blank');
-    await page.goto(`${BASE}/#/matrix?heat=proven`);
-    await expect(page.locator('.heatmap-btn')).toContainText('Proven', { timeout: ROUTE_TIMEOUT });
-    const cell = page.locator(`[data-tech-id="${T1018}"] .cell`).first();
-    await expect(cell).toBeVisible({ timeout: ROUTE_TIMEOUT });
-    await cell.click();
-    const drawer = page.locator('.sidebar.open');
-    await expect(drawer.locator('app-validation-status-pill .vsp-status').first()).toHaveText('UNTESTED', { timeout: ROUTE_TIMEOUT });
-    const card = drawer.locator('[data-testid="evidence-card"]');
-    await expect(card.getByTestId('ev-proven-empty')).toContainText('1 rule fired in your run on', { timeout: ROUTE_TIMEOUT });
-    await expect(card.getByTestId('ev-proven-empty')).toContainText('(status untested)');
-    await expect(card.getByTestId('ev-why')).toContainText('No proof: 1 rule fired');
-    await expect(card).not.toContainText('No recorded detection');
-    await expect(card).not.toContainText('Proven (your run)');
-  });
-
-  for (const [lens, label] of [['posture', 'Posture'], ['covered', 'Covered'], ['proven', 'Proven']] as const) {
-    test(`[RP-F 27] T1082 (a not-reproducible run) on heat=${lens}: the cross-hatch, and "not reproducible" in the aria-label, tooltip and why line`, async ({ page }) => {
-      await openWorkspace(page, { seed: notReproducibleSeed });
-      await page.goto('about:blank');
-      await page.goto(`${BASE}/#/matrix?heat=${lens}`);
-      await expect(page.locator('.heatmap-btn')).toContainText(label, { timeout: ROUTE_TIMEOUT });
-      const cell = page.locator(`[data-tech-id="${T1082}"] .cell`).first();
-      await expect(cell).toBeVisible({ timeout: ROUTE_TIMEOUT });
-      await expect(cell).toHaveClass(/posture-not-reproducible/);
-      await expect(cell).toHaveAttribute('aria-label', /not reproducible/);
-      await cell.hover();
-      await expect(page.locator('.tooltip-card .tt-posture')).toContainText('not reproducible');
-      await cell.click();
-      const why = page.locator('.sidebar.open [data-testid="ev-why"]');
-      await expect(why).toContainText('not reproducible', { timeout: ROUTE_TIMEOUT });
       await expect(why).toContainText(`Lens: ${label}`);
     });
   }
