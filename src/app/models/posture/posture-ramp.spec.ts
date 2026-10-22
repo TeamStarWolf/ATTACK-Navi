@@ -11,6 +11,7 @@ import {
   POSTURE_BUCKETS, POSTURE_PATTERN_CLASS, POSTURE_SCORE, POSTURE_SURFACE, POSTURE_TOKENS, STALE_MIX, type PostureTheme,
   postureColor, postureFill, postureHasCheck, postureLegendStops, postureLensCell, posturePatterns, postureProject,
   postureCellLabel, postureRampStops, postureStopLabel, CONTRADICTED_SPOKEN_LENSES, CONTRADICTED_WORDS,
+  NOT_REPRODUCIBLE_WORDS, PATTERN_WORDS,
 } from './posture-ramp';
 import { stubState } from '../../testing/posture-stub';
 import { isPostureCellLens } from '../lens-registry';
@@ -265,10 +266,97 @@ describe('posture cell label (§7)', () => {
       });
     });
 
-    it('adds nothing without the contradicted sub-state', () => {
+    it('adds nothing without the contradicted sub-state, and a lens that paints no pattern says no pattern', () => {
       const s = { ...stubState('T1078', 'known'), subStates: ['not-reproducible' as const] };
-      expect(postureCellLabel(s, WINDOWS)).toBe(postureBadge(s));
+      expect(postureCellLabel(stubState('T1078', 'known'), WINDOWS)).toBe(postureBadge(s));
       expect(postureCellLabel(s, WINDOWS, { value: 'status', words: 'Status: implemented' })).toBe('Status: implemented');
+    });
+  });
+
+  // RP-F decision 27: paints implies speaks for EVERY hatch pattern, not only contradicted.
+  // Round 4: T1082's not-reproducible cross-hatch painted on Posture, Covered and Proven,
+  // but the aria-label read only "None" or "no recorded detection" on 3 of 3 lenses.
+  describe('paints implies speaks, for every pattern and every posture-cell lens (RP-F decision 27)', () => {
+    const FULL = {
+      qualifier: 'self-attested' as const, basis: 'mitigation-implemented' as const, strength: 'full' as const, via: 'M1015', source: 'manual' as const,
+    };
+    const PARTIAL = { ...FULL, strength: 'partial' as const, via: 'M1038' };
+    const FAILED = { runId: 'f1', status: 'failed', date: '2026-10-20T15:00:00.000Z', source: 'manual' as const };
+    const NR_RUN = { runId: 'n1', status: 'not-reproducible', date: '2026-10-20T15:00:00.000Z', source: 'manual' as const };
+    const base = stubState('T1082', 'known');
+    const nr = { excluded: true, runsWithoutProof: [NR_RUN] };
+    /** Every pattern derivePosture can produce, alone and together. */
+    const SHAPES: Record<string, PostureState> = {
+      'partial': { ...base, rung: 'covered', bucket: 'partial', qualifiers: ['self-attested'], subStates: ['partial'], covered: [PARTIAL] },
+      'contradicted mark': { ...base, subStates: ['contradicted'], covered: [FULL], runsWithoutProof: [FAILED] },
+      'not reproducible, Known (T1082)': { ...base, subStates: ['not-reproducible'], ...nr },
+      'not reproducible, None': { ...stubState('T1082', 'none'), subStates: ['not-reproducible'], ...nr },
+      'not reproducible, full marks': {
+        ...base, rung: 'covered', bucket: 'covered', qualifiers: ['self-attested'], subStates: ['not-reproducible'], covered: [FULL], ...nr,
+      },
+      'not reproducible, partial marks': {
+        ...base, rung: 'covered', bucket: 'partial', qualifiers: ['self-attested'], subStates: ['not-reproducible', 'partial'], covered: [PARTIAL], ...nr,
+      },
+      'not reproducible and contradicted': {
+        ...base, subStates: ['contradicted', 'not-reproducible'], covered: [FULL], excluded: true, runsWithoutProof: [FAILED, NR_RUN],
+      },
+    };
+    const ctx = (s: PostureState): LensContext => ({
+      posture: () => s,
+      known: () => ({ mitigation: true, detection: false, control: false, d3fend: false, atomic: false }),
+      knownCounts: () => ({ mitigations: 1, detectionContent: 0, controls: 0, d3fend: 0, atomic: 0 }),
+      implView: () => ({ status: 'implemented', partialVia: s.bucket === 'partial' ? 'M1038' : null }),
+      theme: 'dark', colorblindSafe: false,
+    } as unknown as LensContext);
+    const lenses = HEATMAP_MODES.filter(d => isPostureCellLens(d));
+    const ALL_PATTERNS = Object.keys(POSTURE_PATTERN_CLASS) as (keyof typeof POSTURE_PATTERN_CLASS)[];
+    /** What each pattern's why line must match. */
+    const WHY: Readonly<Record<string, RegExp>> = { partial: /partial/, contradicted: /contradict/, 'not-reproducible': /not reproducible/ };
+
+    it('PATTERN_WORDS speaks every pattern posturePatterns can paint, as the legend does', () => {
+      expect(Object.keys(PATTERN_WORDS).sort()).toEqual([...ALL_PATTERNS].sort());
+      expect(PATTERN_WORDS['not-reproducible']).toBe(NOT_REPRODUCIBLE_WORDS);
+      expect(postureStopLabel('not-reproducible')).toBe(NOT_REPRODUCIBLE_WORDS);
+      expect(postureStopLabel('contradicted')).toBe(PATTERN_WORDS.contradicted);
+    });
+
+    it('every pattern is painted by some shape on some lens (the table below exercises them all)', () => {
+      const seen = new Set<string>();
+      for (const s of Object.values(SHAPES)) {
+        for (const def of lenses) {
+          const cell = def.project!(ctx(s), T);
+          for (const p of posturePatterns({ bucket: cell.bucket ?? 'none', subStates: cell.subStates ?? [] })) seen.add(p);
+        }
+      }
+      expect([...seen].sort()).toEqual([...ALL_PATTERNS].sort());
+    });
+
+    for (const [shape, s] of Object.entries(SHAPES)) {
+      it(`${shape}: each pattern a lens paints is in its aria-label and tooltip words and its why line`, () => {
+        for (const def of lenses) {
+          const cell = def.project!(ctx(s), T);
+          const painted = { bucket: cell.bucket ?? 'none', subStates: cell.subStates ?? [] };
+          // The matrix's call (matrix.component.ts refreshPostureCells): the aria-label and the tooltip both read it.
+          const label = postureCellLabel(s, WINDOWS, { value: def.value, words: cell.label }, painted);
+          const why = lensExplain(def, cell, { state: s });
+          for (const p of posturePatterns(painted)) {
+            expect(label.toLowerCase()).withContext(`${def.value} paints ${p}: label "${label}"`).toContain(PATTERN_WORDS[p].toLowerCase());
+            expect(why).withContext(`${def.value} paints ${p}: why "${why}"`).toMatch(WHY[p]);
+          }
+        }
+      });
+    }
+
+    it('T1082 on Posture, Covered and Proven: the cross-hatch, and "not reproducible" in each label', () => {
+      const s = SHAPES['not reproducible, Known (T1082)'];
+      for (const value of ['posture', 'covered', 'proven'] as const) {
+        const def = heatmapModeDef(value)!;
+        const cell = def.project!(ctx(s), T);
+        const painted = { bucket: cell.bucket ?? 'none', subStates: cell.subStates ?? [] };
+        expect(posturePatterns(painted)).withContext(value).toContain('not-reproducible');
+        expect(postureCellLabel(s, WINDOWS, { value, words: cell.label }, painted)).withContext(value).toMatch(/, not reproducible$/);
+      }
+      expect(postureCellLabel(s, WINDOWS)).toBe('Known: mapped, not reproducible');
     });
   });
 });

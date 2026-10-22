@@ -264,21 +264,31 @@ function contradictionNote(state: PostureState): string {
   return state.subStates.includes('contradicted') ? `; ${CONTRADICTED_WORDS}` : '';
 }
 
+/**
+ * '; not reproducible, so left out of the denominator' for an excluded state, or ''.
+ * The Covered and Proven lenses paint the not-reproducible cross-hatch from the
+ * same sub-state, so their why lines say it too (paints implies speaks, RP-F
+ * decision 27); round 4 found only the Posture why line naming it on T1082.
+ */
+function exclusionNote(state: PostureState): string {
+  return state.excluded ? EXCLUDED_NOTE : '';
+}
+
 /** A registry lens other than Posture: its cell's own words, with the marks or proof behind them. */
 function registryExplain(def: LensDefinition, cell: LensCell, ctx: LensExplainContext): string {
   const { state } = ctx;
   if (def.value === 'posture') return postureExplain(state, ctx.decayDays);
   if (def.value === 'proven') {
     if (cell.score > 0 && state.proof.length > 0) return proofExplain(state, ctx.decayDays);
-    return 'No recorded detection for this technique' + contradictionNote(state);
+    return 'No recorded detection for this technique' + contradictionNote(state) + exclusionNote(state);
   }
   if (def.value === 'covered') {
     if (cell.score === 2) {
-      return `${cell.label} from ${describeMarks(state.covered.filter(m => m.strength === 'full'))}`;
+      return `${cell.label} from ${describeMarks(state.covered.filter(m => m.strength === 'full'))}` + exclusionNote(state);
     }
     if (cell.score === 1) {
       return `${cell.label}: reached only through a mitigation or control mapped to more techniques than the breadth threshold`
-        + contradictionNote(state);
+        + contradictionNote(state) + exclusionNote(state);
     }
     return coveredNoneExplain(state);
   }

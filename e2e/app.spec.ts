@@ -1013,6 +1013,41 @@ test.describe('E2.4: default-lens rule', () => {
       await expect(why).toContainText(`Lens: ${label}`);
     });
   }
+
+  // RP-F decision 27: paints implies speaks for every hatch. T1082 carries one
+  // not-reproducible run (M1015 implemented elsewhere gives owner words, so Covered and
+  // Proven are on screen). In round 4 its cross-hatch painted on all three lenses while
+  // the aria-label read only "None" or "no recorded detection". Pasted links.
+  const T1082 = 'attack-pattern--354a7f88-63fb-41b5-a801-ce3b377b36f1';
+  const notReproducibleSeed = {
+    'mitre-nav-impl-v1': JSON.stringify([[M1015, 'implemented']]),
+    'navi.v2.validation-runs': JSON.stringify({
+      schema: 2, tombstones: [],
+      records: [{
+        id: 'e2e-rpf27-nr', techniqueId: 'T1082', runDate: '2026-10-20T15:00:00.000Z', status: 'not-reproducible', attackResult: 'executed',
+        source: 'manual', domain: null, attackVersion: 'unknown', createdAt: '2026-10-20T15:00:00.000Z', updatedAt: '2026-10-20T15:00:00.000Z',
+        techniqueRef: null, outcomes: [], proofScope: 'own-run', statusFromSource: false,
+      }],
+    }),
+  };
+  for (const [lens, label] of [['posture', 'Posture'], ['covered', 'Covered'], ['proven', 'Proven']] as const) {
+    test(`[RP-F 27] T1082 (a not-reproducible run) on heat=${lens}: the cross-hatch, and "not reproducible" in the aria-label, tooltip and why line`, async ({ page }) => {
+      await openWorkspace(page, { seed: notReproducibleSeed });
+      await page.goto('about:blank');
+      await page.goto(`${BASE}/#/matrix?heat=${lens}`);
+      await expect(page.locator('.heatmap-btn')).toContainText(label, { timeout: ROUTE_TIMEOUT });
+      const cell = page.locator(`[data-tech-id="${T1082}"] .cell`).first();
+      await expect(cell).toBeVisible({ timeout: ROUTE_TIMEOUT });
+      await expect(cell).toHaveClass(/posture-not-reproducible/);
+      await expect(cell).toHaveAttribute('aria-label', /not reproducible/);
+      await cell.hover();
+      await expect(page.locator('.tooltip-card .tt-posture')).toContainText('not reproducible');
+      await cell.click();
+      const why = page.locator('.sidebar.open [data-testid="ev-why"]');
+      await expect(why).toContainText('not reproducible', { timeout: ROUTE_TIMEOUT });
+      await expect(why).toContainText(`Lens: ${label}`);
+    });
+  }
 });
 
 // RP-F item 5: with the technique drawer open at 1440x900 the View button wraps to

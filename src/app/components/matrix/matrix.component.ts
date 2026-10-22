@@ -1828,8 +1828,9 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy, AfterViewC
         subStates: cell.subStates ?? [],
         proofScope: cell.proofScope ?? null,
         // The Posture lens names the state; P2-14's lenses name their own stop and
-        // score. One builder adds the contradicted words (RP-F decision 11).
-        label: postureCellLabel(this.posture.stateFor(t), windows, { value: def.value, words: cell.label }),
+        // score. One builder adds the words of every pattern the cell paints
+        // (RP-F decisions 11, 17 and 27), so it is given the projected cell.
+        label: postureCellLabel(this.posture.stateFor(t), windows, { value: def.value, words: cell.label }, { bucket: cell.bucket ?? 'none', subStates: cell.subStates ?? [] }),
         ...(def.value === 'posture' ? {} : { score: cell.score }),
         ...(cell.implStop !== undefined ? { implStop: cell.implStop } : {}),
       });
