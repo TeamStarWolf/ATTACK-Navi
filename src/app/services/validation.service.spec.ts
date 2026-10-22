@@ -347,15 +347,13 @@ describe('ValidationService', () => {
     });
   });
 
-  describe('latestRunFor (RP-F decision 24)', () => {
-    it("carries the undated flag: true only when the latest run's date cannot be read", () => {
-      service.record({ ...baseRun, runDate: 'yesterday' });
-      expect(service.latestRunFor('T1003.001')!.undated).toBe(true);
+  describe('latestFor with an unreadable date (RP-F decision 24)', () => {
+    it('returns an undated run only while no dated run exists; a dated run then wins', () => {
+      const undated = service.record({ ...baseRun, runDate: 'yesterday' });
+      expect(service.latestFor('T1003.001')!.id).toBe(undated.id);
       const dated = service.record({ ...baseRun, runDate: '2026-10-19T10:00:00.000Z' });
-      const latest = service.latestRunFor('T1003.001')!;
-      expect([latest.run.id, latest.undated]).toEqual([dated.id, false]);
       expect(service.latestFor('T1003.001')!.id).toBe(dated.id);
-      expect(service.latestRunFor('T9999')).toBeNull();
+      expect(service.latestFor('T9999')).toBeNull();
     });
   });
   describe('merge by source (P2-02)', () => {

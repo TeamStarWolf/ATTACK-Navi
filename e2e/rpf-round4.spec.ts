@@ -46,14 +46,24 @@ test.describe('RP-F round 4', () => {
       await page.goto(`${BASE}/#/matrix?${query}`);
       await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
       await expect(page.locator('.heatmap-btn')).toContainText(label);
-      await expect(page).toHaveURL(new RegExp(`#/matrix\\?(.*&)?heat=${lens}(&|$)`), { timeout: LENS_STEP_TIMEOUT });
-      const hash = new URL(page.url()).hash;
-      expect(hash.match(/heat=/g)?.length).toBe(1);
-      expect(hash).not.toContain('bogus');
+      // The pasted hash itself can already match heat=<lens>, so poll the whole settled
+      // shape (one heat key, the lens, no bogus value) instead of one regex: a one-shot
+      // read right after a matching URL raced the rewrite and saw two heat keys.
+      const settled = () => {
+        const hash = new URL(page.url()).hash;
+        return {
+          route: hash.startsWith('#/matrix?'),
+          heatKeys: hash.match(/heat=/g)?.length ?? 0,
+          lens: new RegExp(`[?&]heat=${lens}(&|$)`).test(hash),
+          bogus: hash.includes('bogus'),
+        };
+      };
+      const wanted = { route: true, heatKeys: 1, lens: true, bogus: false };
+      await expect.poll(settled, { timeout: LENS_STEP_TIMEOUT }).toEqual(wanted);
       await page.reload();
       await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
       await expect(page.locator('.heatmap-btn')).toContainText(label);
-      await expect(page).toHaveURL(new RegExp(`#/matrix\\?(.*&)?heat=${lens}(&|$)`), { timeout: LENS_STEP_TIMEOUT });
+      await expect.poll(settled, { timeout: LENS_STEP_TIMEOUT }).toEqual(wanted);
     });
   }
 

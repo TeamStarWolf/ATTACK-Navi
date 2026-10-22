@@ -6,7 +6,7 @@ import { AttackIdResolverService } from './attack-id-resolver.service';
 import { DataService, type AttackDomain } from './data.service';
 import type { ProofScope } from '../models/posture/posture.types';
 import { runMatches } from '../models/posture/run-match';
-import { type LatestRun, compareRunsNewestFirst, latestRun, storedRunKey } from '../models/posture/latest-run';
+import { compareRunsNewestFirst, latestRun, storedRunKey } from '../models/posture/latest-run';
 import {
   type SourceId,
   type V2Envelope,
@@ -483,15 +483,10 @@ export class ValidationService {
    * is true exactly when the returned run's runDate is unreadable (runTime null),
    * and every surface prints such a date flagged through the one formatter
    * (local-date.ts unreadableDate: "'yesterday' (unreadable date, sorted oldest)"),
-   * so the pill's "last run" and the card carry the flag; latestRunFor returns it.
+   * so the pill's "last run" and the card carry the flag.
    */
   latestFor(techniqueId: string): ValidationRunV2 | null {
-    return this.latestRunFor(techniqueId)?.run ?? null;
-  }
-
-  /** latestFor with the comparator's undated flag (RP-F decision 24), or null for no run. */
-  latestRunFor(techniqueId: string): LatestRun<ValidationRunV2> | null {
-    return latestRun(this.forTechnique(techniqueId), storedRunKey);
+    return latestRun(this.forTechnique(techniqueId), storedRunKey)?.run ?? null;
   }
 
   /** Compute status from telemetry/detection/response inputs. */
