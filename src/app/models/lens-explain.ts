@@ -17,6 +17,7 @@ import type { LensCell, LensDefinition } from './heatmap-modes';
 import type { CoveredBasis, CoveredMark, PostureState, ProofRecord, ProofScope } from './posture/posture.types';
 import { PROVEN, postureBadge } from './posture/posture-vocabulary';
 import { SCORE_ONLY_LENSES } from './lens-registry';
+import { CONTRADICTED_WORDS } from './posture/posture-ramp';
 import { validationDay } from './local-date';
 
 /** The five Known reference families (EnrichmentService.referenceSignalCount). */
@@ -237,24 +238,41 @@ function coveredNoneExplain(state: PostureState): string {
   return 'None: nothing of yours reaches this technique';
 }
 
+/**
+ * '; <how the state is contradicted>' for a lens whose own words do not already
+ * say it (RP-F decision 17: a cell that paints or speaks the contradicted hatch
+ * says so in its why line too): the run that outranked the proof (supersededClause,
+ * which leads with 'contradicted: '), else 'contradicted by a later failed run'.
+ * A run with no telemetry that outranked the proof is named though it contradicts
+ * nothing; '' for a state with neither.
+ */
+function contradictionNote(state: PostureState): string {
+  const superseded = supersededClause(state);
+  if (superseded) return `; ${superseded}`;
+  return state.subStates.includes('contradicted') ? `; ${CONTRADICTED_WORDS}` : '';
+}
+
 /** A registry lens other than Posture: its cell's own words, with the marks or proof behind them. */
 function registryExplain(def: LensDefinition, cell: LensCell, ctx: LensExplainContext): string {
   const { state } = ctx;
   if (def.value === 'posture') return postureExplain(state, ctx.decayDays);
   if (def.value === 'proven') {
     if (cell.score > 0 && state.proof.length > 0) return proofExplain(state, ctx.decayDays);
-    const superseded = supersededClause(state);
-    return 'No recorded detection for this technique' + (superseded ? `; ${superseded}` : '');
+    return 'No recorded detection for this technique' + contradictionNote(state);
   }
   if (def.value === 'covered') {
     if (cell.score === 2) {
       return `${cell.label} from ${describeMarks(state.covered.filter(m => m.strength === 'full'))}`;
     }
     if (cell.score === 1) {
-      return `${cell.label}: reached only through a mitigation or control mapped to more techniques than the breadth threshold`;
+      return `${cell.label}: reached only through a mitigation or control mapped to more techniques than the breadth threshold`
+        + contradictionNote(state);
     }
     return coveredNoneExplain(state);
   }
+  // Status draws no hatch, but its stop comes from the marks a later failed run
+  // contradicts, so its line names the contradiction (RP-F decision 17).
+  if (def.value === 'status') return (cell.label ?? '') + contradictionNote(state);
   return cell.label ?? `score ${formatScore(cell.score)}`;
 }
 
