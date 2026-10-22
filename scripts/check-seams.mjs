@@ -73,9 +73,9 @@ export const RULES = {
   // E2.6 one-picker (P2-12b): only threat-profile-picker should offer a group
   // picker that filters the full group list by name or alias; every other
   // component selects groups through it (which emits STIX ids). A file that
-  // reads `domain.groups` AND filters by alias (`aliases.some(...)`) is a rival
-  // group/actor picker and must be on the allow-list with a reason (owner
-  // decision, §10.4 item 8). The alias filter is the discriminator: only groups,
+  // reads `domain.groups` AND searches by alias (`aliases.some(...)`, or since
+  // RP-F decision 12 the alias join form below) is a rival group/actor picker
+  // and must be on the allow-list with a reason (owner decision, §10.4 item 8). The alias filter is the discriminator: only groups,
   // actors, software and campaigns carry aliases, so a technique-name filter
   // (`t.name.toLowerCase().includes`) never trips the rule, while a real group
   // picker always offers name-and-alias search. The picker itself is excluded.
@@ -91,16 +91,22 @@ export const RULES = {
   // RP-F decision 12: the alias clause also covers the alias JOIN form, the
   // aliases flattened into one search string, `(g.aliases ?? []).join(' ')`
   // (universal-search scores groups that way), and its bare form
-  // `g.aliases.join(`. In this tree only universal-search joins aliases, so the
-  // clause keeps zero false positives.
-  // The files section 10.4 item 8 names (owner decision: they keep their own
-  // group lists) are ownerExceptions: each is listed with an annotation even
-  // where it matches no clause today (campaign-timeline-panel builds a group
-  // colour map from groupsByTechnique and searches campaigns by alias;
-  // software-panel searches software by alias), so a later change there stays
-  // an owner-approved, annotated exception instead of an unreviewed one.
-  // FilterService, also named there, holds the matrix group filter's state and
-  // no picker; the threat-panel entry covers that filter.
+  // `g.aliases.join(`. The scan covers templates (.html) as well as .ts. Three
+  // files in this tree join aliases: universal-search.component.ts, which also
+  // reads domain.groups and so matches the rule, and two templates that only
+  // display a list of aliases, campaign-timeline-panel.component.html
+  // (`hoveredCampaign.aliases.join`) and software-panel.component.html
+  // (`sw.aliases.join`). The templates read no domain.groups, so they do not
+  // match; the rule still fires only on a file that does both, which keeps
+  // its zero false positives.
+  // The six files section 10.4 item 8 names (owner decision: they keep their
+  // own group lists or the matrix group filter) are ownerExceptions: each is
+  // listed with an annotation even where it matches no clause today
+  // (campaign-timeline-panel builds a group colour map from groupsByTechnique
+  // and searches campaigns by alias; software-panel searches software by
+  // alias; FilterService holds the matrix group filter's state and no picker),
+  // so a later change there stays an owner-approved, annotated exception
+  // instead of an unreviewed one.
   'one-picker': {
     summary: 'a component outside threat-profile-picker reads domain.groups AND searches by alias (aliases.some() or the alias join form)',
     exclude: /components\/threat-profile-picker\//,
@@ -114,6 +120,7 @@ export const RULES = {
       'src/app/components/threat-intelligence-panel/threat-intelligence-panel.component.ts',
       'src/app/components/threat-panel/threat-panel.component.ts',
       'src/app/components/universal-search/universal-search.component.ts',
+      'src/app/services/filter.service.ts',
     ],
   },
   // RP-F item 3: the picker's selection methods are called only inside the

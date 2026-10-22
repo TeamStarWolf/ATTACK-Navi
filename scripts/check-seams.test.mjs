@@ -74,10 +74,15 @@ test('this repository passes with its generated allow-list, and the list is exac
     'src/app/components/threat-intelligence-panel/threat-intelligence-panel.component.ts',
     'src/app/components/threat-panel/threat-panel.component.ts',
     'src/app/components/universal-search/universal-search.component.ts',
-  ], 'exactly the files section 10.4 item 8 names');
+    'src/app/services/filter.service.ts',
+  ], 'exactly the six files section 10.4 item 8 names: FilterService, threat-panel, campaign-timeline-panel, threat-intelligence-panel, universal-search and software-panel');
   for (const e of allowlist.rules['one-picker'].entries) assert.equal(e.bucket, 'owner-exception', `${e.file} is an owner exception`);
   // universal-search is caught by the alias join form, not only listed.
   assert.ok(scanRule(ROOT, 'one-picker').some((h) => h.file.endsWith('/universal-search.component.ts')), 'universal-search matches the alias join form');
+  // The two templates that only display aliases joined (no domain.groups read) do not match.
+  for (const display of ['campaign-timeline-panel.component.html', 'software-panel.component.html']) {
+    assert.equal(scanRule(ROOT, 'one-picker').some((h) => h.file.endsWith(`/${display}`)), false, `${display} only displays aliases`);
+  }
   assert.deepEqual(generateAllowlist(ROOT, allowlist).rules['one-picker'].entries, allowlist.rules['one-picker'].entries);
   for (const e of allowlist.rules['one-picker'].entries) {
     assert.ok(e.reason && e.removedBy && e.bucket, `${e.file} (one-picker) has a bucket, reason and removedBy`);

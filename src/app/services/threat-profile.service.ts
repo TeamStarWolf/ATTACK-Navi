@@ -9,7 +9,8 @@ import { readV2, writeV2, V2Envelope } from '../models/storage-envelope';
 import type { ThreatProfileEmptyReason, ThreatWeightProvider } from '../models/posture/posture.types';
 import {
   ThreatProfile, ThreatProfileSource, LibraryLayerInput, ProfileDomainGroups, ProfileGroupRef,
-  attackDomainOf, profileDomainNotice, resolveProfile, splitStoredGroups, threatProfileEmptyReason,
+  type KnownGroup, attackDomainOf, findStoredGroup, indexGroups, profileDomainNotice, resolveProfile, splitStoredGroups,
+  threatProfileEmptyReason,
 } from '../models/threat-profile';
 
 const STORAGE_KEY = 'navi.v2.threat-profile';
@@ -96,10 +97,12 @@ export class ThreatProfileService implements OnDestroy, ThreatWeightProvider {
   /** The domain the last profile was resolved against (null while one loads). */
   private lastDomain: Domain | null = null;
   /**
-   * Group names by STIX id, learned from every domain loaded this session and from the
-   * stored record's name hint, so an absent group is named by its name, not its id.
+   * Every group seen, learned from every domain loaded this session and from the
+   * stored record's name hint, keyed as splitStoredGroups reads it (STIX id and
+   * ATT&CK id; GroupIdIndex), so an absent group is named by its name, not its id,
+   * and named once when stored under both ids (RP-F decision 13).
    */
-  private readonly groupNames = new Map<string, string>();
+  private readonly knownGroups = new Map<string, KnownGroup>();
   // The stored groups split against the loaded domain (a groups source only), kept in
   // sync with profile$. A domain switch changes the split, never the stored source.
   private readonly domainGroupsSig = signal<ProfileDomainGroups | null>(null);
@@ -162,24 +165,17 @@ export class ThreatProfileService implements OnDestroy, ThreatWeightProvider {
   private splitFor(domain: Domain | null): ProfileDomainGroups | null {
     const src = this.source;
     if (!domain || src.kind !== 'groups') return null;
-    const { present, absentIds } = splitStoredGroups(src.ids, domain);
+    const { present, absentIds } = splitStoredGroups(src.ids, domain, this.knownGroups);
     return {
       domain: attackDomainOf(domain),
       present: present.map((g) => ({ id: g.id, name: g.name })),
-      absent: absentIds.map((id) => ({ id, name: this.groupNames.get(id) ?? this.groupNames.get(id.toUpperCase()) ?? id })),
+      absent: absentIds.map((id) => ({ id, name: findStoredGroup(this.knownGroups, id)?.name ?? id })),
     };
   }
 
-  /**
-   * Remember every group name of a loaded domain (names only; nothing is stored),
-   * by STIX id and by ATT&CK id, so an absent group stored under its ATT&CK id is
-   * named too (RP-F decision 13).
-   */
+  /** Remember every group of a loaded domain (ids and names only; nothing is stored). */
   private learnNames(domain: Domain | null): void {
-    for (const g of domain?.groups ?? []) {
-      this.groupNames.set(g.id, g.name);
-      if (g.attackId) this.groupNames.set(g.attackId.toUpperCase(), g.name);
-    }
+    indexGroups(this.knownGroups, domain?.groups ?? []);
   }
 
   /** Resolve against `domain` (null while one loads) and emit. */
@@ -242,7 +238,7 @@ export class ThreatProfileService implements OnDestroy, ThreatWeightProvider {
   private learnStoredNames(hint: unknown): void {
     if (!hint || typeof hint !== 'object' || Array.isArray(hint)) return;
     for (const [id, name] of Object.entries(hint as Record<string, unknown>)) {
-      if (typeof name === 'string' && name.length > 0 && !this.groupNames.has(id)) this.groupNames.set(id, name);
+      if (typeof name === 'string' && name.length > 0 && !this.knownGroups.has(id)) this.knownGroups.set(id, { id, attackId: '', name });
     }
   }
 
@@ -251,7 +247,7 @@ export class ThreatProfileService implements OnDestroy, ThreatWeightProvider {
     const names: Record<string, string> = Object.create(null);   // ids are data: no prototype keys
     if (src.kind === 'groups') {
       for (const id of src.ids) {
-        const name = this.groupNames.get(id) ?? this.groupNames.get(id.toUpperCase());
+        const name = findStoredGroup(this.knownGroups, id)?.name;
         if (name) names[id] = name;
       }
     }

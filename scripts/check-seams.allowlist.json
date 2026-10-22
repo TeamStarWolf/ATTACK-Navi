@@ -334,6 +334,15 @@
           "bucket": "owner-exception",
           "reason": "The universal search: scores groups by name, ATT&CK id and their aliases joined into one string ((g.aliases ?? []).join(\" \")) next to techniques, software and campaigns, to open a result; it never chooses the threat profile. Caught by the alias join form (RP-F decision 12). Owner-approved exception (section 10.4 item 8).",
           "removedBy": "stays (owner decision, section 10.4 item 8)"
+        },
+        {
+          "file": "src/app/services/filter.service.ts",
+          "uses": {
+            "domain.groups": 2
+          },
+          "bucket": "owner-exception",
+          "reason": "The matrix group filter's state: the grp= URL param maps ATT&CK ids to STIX ids and back through domain.groups.find (an id lookup, no alias search); it holds no picker and never chooses the threat profile. Matches no one-picker clause today (no alias search); listed so any group search it grows stays an annotated exception. Owner-approved exception (section 10.4 item 8: FilterService and threat-panel are the matrix group filter).",
+          "removedBy": "stays (owner decision, section 10.4 item 8)"
         }
       ]
     },

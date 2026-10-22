@@ -282,6 +282,26 @@ describe('ThreatProfileService', () => {
         currentAttackDomain = 'enterprise';
       });
 
+      it('a group stored under both ids and absent from ICS is named once; the notice counts it once', () => {
+        const domain$ = new BehaviorSubject<Domain | null>(ent());
+        const svc = makeService(domain$);
+        svc.setSource({ kind: 'groups', ids: [APT29, 'G0016', 'G0046'] });
+        currentAttackDomain = 'ics';
+        domain$.next(icsOnly());
+        expect(svc.absentGroups(icsOnly())).toEqual([{ id: APT29, name: 'APT29' }]);
+        expect(svc.domainNotice()).toBe('1 of 2 groups present in ICS: FIN7; APT29 has no ICS use');
+        currentAttackDomain = 'enterprise';
+      });
+
+      it('after a reload straight onto ICS, the stored name hints still name it once', () => {
+        makeService(new BehaviorSubject<Domain | null>(ent())).setSource({ kind: 'groups', ids: [APT29, 'G0016', 'G0046'] });
+        currentAttackDomain = 'ics';
+        const svc = makeService(new BehaviorSubject<Domain | null>(icsOnly()));
+        expect(svc.absentGroups(icsOnly())).toEqual([{ id: APT29, name: 'APT29' }]);
+        expect(svc.domainNotice()).toBe('1 of 2 groups present in ICS: FIN7; APT29 has no ICS use');
+        currentAttackDomain = 'enterprise';
+      });
+
       it('a group stored under both ids counts once', () => {
         const svc = makeService(new BehaviorSubject<Domain | null>(ent()));
         svc.setSource({ kind: 'groups', ids: [APT29, 'G0016'] });

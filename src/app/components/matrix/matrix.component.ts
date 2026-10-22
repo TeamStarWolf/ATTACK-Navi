@@ -66,19 +66,11 @@ import { refForTechnique, techniqueRefKey } from '../../models/technique-ref';
 import { LENS_NA_COLOR, type LensContext, heatmapModeDef, isLensAvailable } from '../../models/heatmap-modes';
 import { SCORE_ONLY_LENSES, isPostureCellLens, isRegistryLens, registryCell, registryColor } from '../../models/lens-registry';
 import { type PostureCellVM, postureCellLabel } from '../../models/posture/posture-ramp';
-import { withContradicted } from '../../models/posture/posture-vocabulary';
 import { type ControlStop, controlStop } from '../../models/posture/lens-ramps';
 import { type MyMarkBucket, isThreatGap, myMarkBucket, threatGapThreshold } from '../../models/posture/gap';
 import { THREAT_WEIGHT_PROVIDER } from '../../models/posture/threat-weight';
 import { ThemeService } from '../../services/theme.service';
 import type { AttackDomain } from '../../services/data.service';
-
-/**
- * The lenses whose cell aria-label and tooltip say 'contradicted' when a later
- * failed run outranks the technique's full marks (RP-F decision 11): Posture,
- * Covered and Status, whose colour or stop the marks set.
- */
-export const CONTRADICTED_SPOKEN_LENSES: ReadonlySet<string> = new Set(['posture', 'covered', 'status']);
 
 /**
  * Tactic header colours keyed by shortname. Enterprise v19 split
@@ -1815,18 +1807,15 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy, AfterViewC
     const ctx = this.lensContext();
     const windows = this.posture.decayDays();
     const cells = new Map<string, PostureCellVM>();
-    const speaksContradicted = CONTRADICTED_SPOKEN_LENSES.has(def.value);
     for (const t of this.domain.techniques) {
       const cell = registryCell(def, ctx, t);
-      const state = this.posture.stateFor(t);
-      // The Posture lens names the state; P2-14's lenses name their own stop and score.
-      const label = cell.label ?? postureCellLabel(state, windows);
       cells.set(t.id, {
         bucket: cell.bucket ?? 'none',
         subStates: cell.subStates ?? [],
         proofScope: cell.proofScope ?? null,
-        // RP-F decision 11: a contradicted technique says so, as a stale one names its age.
-        label: speaksContradicted ? withContradicted(label, state.subStates) : label,
+        // The Posture lens names the state; P2-14's lenses name their own stop and
+        // score. One builder adds the contradicted words (RP-F decision 11).
+        label: postureCellLabel(this.posture.stateFor(t), windows, { value: def.value, words: cell.label }),
         ...(def.value === 'posture' ? {} : { score: cell.score }),
         ...(cell.implStop !== undefined ? { implStop: cell.implStop } : {}),
       });

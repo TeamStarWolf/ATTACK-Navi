@@ -83,7 +83,7 @@ describe('FilterService', () => {
     // still written and so honoured on reload.
     describe('the ownerDataPresent transition (RP-F decision 10)', () => {
       it('the default Prevalence: heat stays absent before and after owner data appears', () => {
-        expect(service.lensExplicit).toBeFalse();
+        expect(service.prevalenceChosen).toBeFalse();
         expect(service.serializeUrlState()['heat']).toBeUndefined();
         service.ownerDataPresent.next(true);
         expect(service.getStateSnapshot().heatmapMode).toBe('frequency');
@@ -92,7 +92,7 @@ describe('FilterService', () => {
 
       it('a Prevalence chosen through the View menu (setHeatmapMode): heat=frequency once owner data appears', () => {
         service.setHeatmapMode('frequency');
-        expect(service.lensExplicit).toBeTrue();
+        expect(service.prevalenceChosen).toBeTrue();
         expect(service.serializeUrlState()['heat']).toBeUndefined();
         service.ownerDataPresent.next(true);
         expect(service.serializeUrlState()['heat']).toBe('frequency');
@@ -101,10 +101,10 @@ describe('FilterService', () => {
       it('a pasted heat=frequency is a choice; an invalid heat= is not', () => {
         service.applyUrlState(new URLSearchParams('heat=bogus'));
         service.ownerDataPresent.next(true);
-        expect(service.lensExplicit).toBeFalse();
+        expect(service.prevalenceChosen).toBeFalse();
         expect(service.serializeUrlState()['heat']).toBeUndefined();
         service.applyUrlState(new URLSearchParams('heat=frequency'));
-        expect(service.lensExplicit).toBeTrue();
+        expect(service.prevalenceChosen).toBeTrue();
         expect(service.serializeUrlState()['heat']).toBe('frequency');
       });
 
@@ -116,7 +116,7 @@ describe('FilterService', () => {
         service.setHeatmapMode('frequency');
         service.ownerDataPresent.next(false);
         service.clearAll();
-        expect(service.lensExplicit).toBeFalse();
+        expect(service.prevalenceChosen).toBeFalse();
         service.ownerDataPresent.next(true);
         expect(service.serializeUrlState()['heat']).toBeUndefined();
       });
@@ -130,10 +130,41 @@ describe('FilterService', () => {
         expect(service.serializeUrlState()['heat']).toBe('frequency');
       });
 
-      it('a restored snapshot names a chosen lens', () => {
+      it('a snapshot carries whether Prevalence was chosen; a restored default stays a default', () => {
+        const defaulted = service.getStateSnapshot();
+        expect(defaulted.prevalenceChosen).toBeFalse();
+        service.setHeatmapMode('frequency');
+        const chosen = service.getStateSnapshot();
+        expect(chosen.prevalenceChosen).toBeTrue();
+        service.ownerDataPresent.next(true);
+
+        service.restoreStateSnapshot(defaulted);
+        expect(service.prevalenceChosen).toBeFalse();
+        expect(service.serializeUrlState()['heat']).toBeUndefined();
+        service.restoreStateSnapshot(chosen);
+        expect(service.prevalenceChosen).toBeTrue();
+        expect(service.serializeUrlState()['heat']).toBe('frequency');
+      });
+
+      it('a snapshot saved before the flag existed: Prevalence reads as the default, any other lens is written', () => {
         service.ownerDataPresent.next(true);
         service.restoreStateSnapshot({ heatmapMode: 'frequency' });
-        expect(service.serializeUrlState()['heat']).toBe('frequency');
+        expect(service.prevalenceChosen).toBeFalse();
+        expect(service.serializeUrlState()['heat']).toBeUndefined();
+        service.restoreStateSnapshot({ heatmapMode: 'kev' });
+        expect(service.serializeUrlState()['heat']).toBe('kev');
+      });
+
+      it('any lens other than Prevalence clears the choice (the D4 Posture boot path, a data-load re-render)', () => {
+        service.setHeatmapMode('frequency');
+        expect(service.prevalenceChosen).toBeTrue();
+        service.setHeatmapMode('posture');
+        expect(service.prevalenceChosen).toBeFalse();
+        service.setHeatmapMode('library');
+        expect(service.prevalenceChosen).toBeFalse();
+        service.setHeatmapMode('frequency', { explicit: false });
+        service.ownerDataPresent.next(true);
+        expect(service.serializeUrlState()['heat']).toBeUndefined();
       });
     });
 

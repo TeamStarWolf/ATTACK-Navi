@@ -489,18 +489,6 @@ describe('AppComponent: default-lens rule at boot (P2-19, E2.4)', () => {
     expect(heat()).toBe('frequency');
     expect(router.url).not.toContain('heat=');
   });
-
-  it('RP-F decision 10: a Prevalence chosen before owner data appears is written as heat=frequency', async () => {
-    configure(nothing);
-    await bootAt();
-    TestBed.inject(FilterService).setHeatmapMode('frequency');
-    await tick(400);
-    expect(router.url).not.toContain('heat=');
-    TestBed.inject(ImplementationService).setStatus(mitigationId(domain, 'M1047'), 'implemented');
-    await tick(400);
-    expect(heat()).toBe('frequency');
-    expect(router.url).toContain('heat=frequency');
-  });
 });
 
 // The technique drawer loads in a @defer (on immediate) block, and DrawerWarmupComponent

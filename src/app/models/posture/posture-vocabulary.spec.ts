@@ -1,8 +1,6 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import {
-  CONTRADICTED_WORDS, PROVEN, hasOwnerWords, lensLabel, postureBadge, proofLine, scenarioOutcomeLabel, withContradicted,
-} from './posture-vocabulary';
+import { PROVEN, hasOwnerWords, lensLabel, postureBadge, proofLine, scenarioOutcomeLabel } from './posture-vocabulary';
 import type { CoveredQualifier } from '../heatmap-modes';
 import type { CoveredMark, PostureBucket, PostureState, ProofRecord, ProofScope } from './posture.types';
 
@@ -184,18 +182,6 @@ describe('posture vocabulary (Phase 2 design §2.4)', () => {
 
     it('accepts any iterable', () => {
       expect(hasOwnerWords(new Set([state([mark()])]).values())).toBeTrue();
-    });
-  });
-
-  // RP-F decision 11: a contradicted cell says so, the way a stale cell names its age.
-  describe('withContradicted', () => {
-    it("appends ', contradicted (a later failed run)' only with the contradicted sub-state", () => {
-      expect(CONTRADICTED_WORDS).toBe('contradicted (a later failed run)');
-      expect(withContradicted('Known: mapped', ['contradicted'])).toBe('Known: mapped, contradicted (a later failed run)');
-      expect(withContradicted('Status: implemented', ['contradicted', 'not-reproducible']))
-        .toBe('Status: implemented, contradicted (a later failed run)');
-      expect(withContradicted('Known: mapped', [])).toBe('Known: mapped');
-      expect(withContradicted('None', ['stale', 'planned'])).toBe('None');
     });
   });
 });
