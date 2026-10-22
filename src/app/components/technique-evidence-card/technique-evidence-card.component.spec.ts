@@ -5,7 +5,10 @@
 // seeded PostureState; a fresh profile shows Known and Threat only, with no
 // Covered or Proven words; "Why this colour" follows the lens on screen.
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { WritableSignal, signal } from '@angular/core';
+import { type EnvironmentProviders, type Provider, WritableSignal, signal } from '@angular/core';
+import { provideRouter } from '@angular/router';
+import { ValidationStatusPillComponent } from '../validation-status-pill/validation-status-pill.component';
+import { ValidationService } from '../../services/validation.service';
 import { BehaviorSubject, of } from 'rxjs';
 import { TechniqueEvidenceCardComponent } from './technique-evidence-card.component';
 import type { Technique } from '../../models/technique';
@@ -69,7 +72,7 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
     profileActors = ['APT28', 'APT29'];
   });
 
-  function render(s: PostureState, ownerWords: boolean, mode: HeatmapMode = 'frequency'): HTMLElement {
+  function render(s: PostureState, ownerWords: boolean, mode: HeatmapMode = 'frequency', extra: (Provider | EnvironmentProviders)[] = []): HTMLElement {
     heat = new BehaviorSubject<HeatmapMode>(mode);
     confirm = jasmine.createSpy('confirm').and.returnValue(true);
     kevLoaded = new BehaviorSubject(true);
@@ -110,6 +113,7 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
         { provide: SettingsService, useValue: { settings$: of({}), getCoverageColors: () => ['#0', '#1', '#2', '#3', '#4'] } },
         { provide: TechniqueMarksService, useValue: { confirm } },
         { provide: POSTURE_TODAY, useValue: signal(new Date('2026-10-21T00:00:00.000Z')) },
+        ...extra,
       ],
     });
     fixture = TestBed.createComponent(TechniqueEvidenceCardComponent);
@@ -185,11 +189,11 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
   it('Why this colour on Posture, Proven and Covered reads the seeded PostureState', () => {
     const proven = state({ rung: 'proven', bucket: 'proven', proof: [OWN_PROOF], proofScope: 'own-run', proofAge: 1 });
     const el = render(proven, true, 'posture');
-    expect(text(block(el, 'ev-why'))).toContain('Why this colour: Proven (your run) on 2026-10-20 by manual; 1 rule fired');
+    expect(text(block(el, 'ev-why'))).toContain('Why this colour: Proven (your run) on 10/20/26 by manual; 1 rule fired');
 
     heat.next('proven');
     fixture.detectChanges();
-    expect(text(block(el, 'ev-why'))).toContain('Why this colour: Proven (your run) on 2026-10-20 by manual; 1 rule fired');
+    expect(text(block(el, 'ev-why'))).toContain('Why this colour: Proven (your run) on 10/20/26 by manual; 1 rule fired');
 
     heat.next('covered');
     fixture.detectChanges();
@@ -212,9 +216,9 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
     it('an untested run on T1069 with no owner words: the None line names it, and no rung word reaches the card', () => {
       const el = render(T1069_NONE, false, 'posture');
       expect(text(block(el, 'ev-why'))).toContain(
-        'Why this colour: None: no reference data mapped; 1 run of yours recorded, latest untested on 2026-10-21; see Detection Validation');
+        'Why this colour: None: no reference data mapped; 1 run of yours recorded, latest untested on 10/21/26; see Detection Validation');
       expect(text(block(el, 'ev-why'))).not.toContain('nothing of yours recorded');
-      expect(text(block(el, 'ev-runs-without-proof'))).toBe('Runs without proof: untested on 2026-10-21 (source manual); see Detection Validation');
+      expect(text(block(el, 'ev-runs-without-proof'))).toBe('Runs without proof: untested on 10/21/26 (source manual); see Detection Validation');
       expect(block(el, 'ev-proven')).toBeNull();
       expect(text(el)).not.toMatch(RUNG_WORDS);
     });
@@ -224,10 +228,63 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
       expect(text(block(el, 'ev-proven')!.querySelector('.ev-empty'))).toBe('No recorded detection for this technique.');
       expect(block(el, 'ev-proven')!.querySelectorAll('[data-testid="ev-proof"]').length).toBe(0);
       expect(text(block(el, 'ev-runs-without-proof')))
-        .toBe('Runs without proof: untested on 2026-10-21 (source manual); failed on 2026-10-19 (source manual); see Detection Validation');
+        .toBe('Runs without proof: untested on 10/21/26 (source manual); failed on 10/19/26 (source manual); see Detection Validation');
       expect(text(block(el, 'ev-why'))).toContain('Why this colour: None: no covered (self-attested or range) mark; '
-        + '2 runs of yours recorded, latest untested on 2026-10-21; see Detection Validation');
+        + '2 runs of yours recorded, latest untested on 10/21/26; see Detection Validation');
       expect(text(block(el, 'ev-why'))).not.toContain('nothing of yours reaches this technique');
+    });
+
+    // RP-F decision 16a: the Covered block's empty line spoke of everything ("Nothing of yours
+    // recorded for this technique.") beside a recorded run on 72 of 72 owner cards in round 3.
+    it('the Covered block never says nothing of yours is recorded while the card lists a run', () => {
+      const el = render(state({ rung: 'none', bucket: 'none', knownSignals: 0, runsWithoutProof: [UNTESTED, FAILED] }), true, 'covered');
+      expect(block(el, 'ev-covered')).not.toBeNull();
+      expect(block(el, 'ev-covered')!.querySelector('[data-testid="ev-covered-empty"]')).toBeNull();
+      expect(text(el)).not.toMatch(/nothing of yours/i);
+      expect(block(el, 'ev-runs-without-proof')).not.toBeNull();
+    });
+
+    it('the Covered block omits its empty line beside a Proven record too, and names marks only when nothing is listed', () => {
+      const proven = render(state({ rung: 'proven', bucket: 'proven', proof: [OWN_PROOF], proofScope: 'own-run', proofAge: 1 }), true, 'posture');
+      expect(block(proven, 'ev-covered')!.querySelector('[data-testid="ev-covered-empty"]')).toBeNull();
+      expect(text(proven)).not.toMatch(/nothing of yours/i);
+      TestBed.resetTestingModule();
+
+      // Owner words from another technique; this one has no mark and no run: the line is about marks.
+      const bare = render(state(), true, 'posture');
+      expect(text(block(bare, 'ev-covered')!.querySelector('[data-testid="ev-covered-empty"]')))
+        .toBe('No covered (self-attested or range) mark recorded.');
+      expect(text(bare)).not.toMatch(/nothing of yours recorded for this technique/i);
+    });
+
+    // RP-F decision 16a: the card printed the UTC day of the ISO timestamp (date.slice(0, 10)),
+    // "2026-10-22", while the drawer's Validation pill printed "10/21/26, 7:49 PM".
+    it('a run recorded after 19:00 local time: the card and the Validation pill print the same day', () => {
+      const late = new Date(2026, 9, 21, 19, 49).toISOString();   // 19:49 local on 21 October, whatever the zone
+      const run: RunSummary = { runId: 'late', status: 'failed', date: late, source: 'manual' };
+      const proof: ProofRecord = { ...OWN_PROOF, date: late, runId: 'late-proof' };
+      const validation = {
+        runs$: new BehaviorSubject([]),
+        forTechnique: () => [{ id: 'late', runDate: late, status: 'failed', detectionsFired: [], detectionsExpected: ['sigma:4688'], outcomes: [] }],
+        latestFor: () => ({ id: 'late', runDate: late, status: 'failed', detectionsFired: [], detectionsExpected: ['sigma:4688'], outcomes: [] }),
+      };
+      const el = render(state({
+        rung: 'proven', bucket: 'proven', proof: [proof], proofScope: 'own-run', proofAge: 0, runsWithoutProof: [run],
+      }), true, 'posture', [provideRouter([]), { provide: ValidationService, useValue: validation }]);
+      const pill = TestBed.createComponent(ValidationStatusPillComponent);
+      pill.componentInstance.attackId = 'T1078';
+      pill.detectChanges();
+      pill.componentInstance.ngOnChanges({});
+      pill.detectChanges();
+      const pillWhen = text((pill.nativeElement as HTMLElement).querySelector('.vsp-when'));
+      expect(pillWhen).toMatch(/^last run 10\/21\/26, 7:49\sPM/);
+
+      const day = '10/21/26';
+      expect(text(block(el, 'ev-why'))).toContain(`Why this colour: Proven (your run) on ${day} by manual; 1 rule fired`);
+      expect(text(block(el, 'ev-proven')!.querySelector('[data-testid="ev-proof"]'))).toContain(`Proven (your run) on ${day} by sigma:4688`);
+      expect(text(block(el, 'ev-runs-without-proof'))).toBe(`Runs without proof: failed on ${day} (source manual); see Detection Validation`);
+      expect(text(el)).not.toContain('2026-10-22');
+      expect(text(el)).not.toContain('2026-10-21');
     });
 
     it('a technique with no runs renders no Runs without proof line: an empty user\'s card is unchanged', () => {
@@ -248,9 +305,9 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
     expect(text(proven.querySelector('h3'))).toBe('Proven');
     const rows = Array.from(proven.querySelectorAll('[data-testid="ev-proof"]')).map(r => text(r));
     expect(rows.length).toBe(2);
-    expect(rows[0]).toBe('Proven (your run) on 2026-10-20 by sigma:4688 (blocked) source manual');
+    expect(rows[0]).toBe('Proven (your run) on 10/20/26 by sigma:4688 (blocked) source manual');
     // 142 days old on the 90-day range window: stale, and a range record carries the lab badge.
-    expect(rows[1]).toBe('Proven in range on 2026-06-01 by wazuh:990003 (alerted) source lylat-range:CORNERIA-ROOT-01 lab stale');
+    expect(rows[1]).toBe('Proven in range on 6/1/26 by wazuh:990003 (alerted) source lylat-range:CORNERIA-ROOT-01 lab stale');
   });
 
   it('the Covered block lists each mark with qualifier, basis and via; Confirm on a partial mark reuses P2-16\'s path', () => {
@@ -272,7 +329,7 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
     const el = render(s, true, 'posture');
     const row = block(el, 'ev-covered')!.querySelector('[data-testid="ev-mark"]')!;
     expect(text(row)).toContain('range detection authored in the range via wazuh:990003');
-    expect(text(row)).toContain('full · source lylat-range:CORNERIA-ROOT-01 · 2026-06-01');
+    expect(text(row)).toContain('full · source lylat-range:CORNERIA-ROOT-01 · 6/1/26');
     expect(row.querySelector('[data-testid="ev-confirm"]')).toBeNull();
   });
 

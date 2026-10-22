@@ -8,6 +8,7 @@ import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { ValidationService, ValidationRunV2, ValidationStatus } from '../../services/validation.service';
 import { PanelNavService } from '../../services/panel-nav.service';
+import { validationDateTime } from '../../models/local-date';
 
 const STATUS_LABEL: Record<ValidationStatus, string> = {
   passed: 'PASS', failed: 'FAIL', partial: 'PARTIAL',
@@ -47,7 +48,7 @@ const STATUS_LABEL: Record<ValidationStatus, string> = {
           </div>
         }
         <div class="vsp-row vsp-when">
-          last run {{ latest.runDate | date:'short' }}
+          last run {{ runWhen(latest.runDate) }}
           @if (latest.operator) { · by {{ latest.operator }} }
           @if (allRuns.length > 1) { · {{ allRuns.length }} total runs }
         </div>
@@ -193,5 +194,10 @@ export class ValidationStatusPillComponent implements OnInit, OnChanges, OnDestr
 
   statusLabel(s: ValidationStatus): string {
     return STATUS_LABEL[s];
+  }
+
+  /** The run's local date and time, with the formatter the evidence card prints its day with (RP-F decision 16). */
+  runWhen(date: string): string {
+    return validationDateTime(date);
   }
 }

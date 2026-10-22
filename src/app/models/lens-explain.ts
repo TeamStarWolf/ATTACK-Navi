@@ -17,6 +17,7 @@ import type { LensCell, LensDefinition } from './heatmap-modes';
 import type { CoveredBasis, CoveredMark, PostureState, ProofRecord, ProofScope } from './posture/posture.types';
 import { PROVEN, postureBadge } from './posture/posture-vocabulary';
 import { SCORE_ONLY_LENSES } from './lens-registry';
+import { validationDay } from './local-date';
 
 /** The five Known reference families (EnrichmentService.referenceSignalCount). */
 export const KNOWN_FAMILY_COUNT = 5;
@@ -77,7 +78,7 @@ function rulesFired(proof: readonly ProofRecord[]): number {
 function proofExplain(state: PostureState, decayDays?: Readonly<Record<ProofScope, number>>): string {
   const best = state.proof[0];
   const n = rulesFired(state.proof);
-  let line = `${postureBadge(state)} on ${best.date.slice(0, 10)} by ${best.source}; ${n} rule${n === 1 ? '' : 's'} fired`;
+  let line = `${postureBadge(state)} on ${validationDay(best.date)} by ${best.source}; ${n} rule${n === 1 ? '' : 's'} fired`;
   if (state.bucket === 'stale' && decayDays && state.proofScope) {
     line += `; older than its ${decayDays[state.proofScope]}-day window`;
   }
@@ -109,7 +110,7 @@ const SEE_VALIDATION = 'see Detection Validation';
 
 /**
  * The runs of yours on the technique that yield no proof (RP-F decision 9):
- * '1 run of yours recorded, latest untested on 2026-10-21', or '' with none.
+ * '1 run of yours recorded, latest untested on 10/21/26', or '' with none.
  * It names the run's status and date only, never a rung: a run without a named
  * rule is not Proven, and nothing here says it covers the technique.
  */
@@ -117,7 +118,7 @@ export function runsClause(state: Pick<PostureState, 'runsWithoutProof'>): strin
   const runs = state.runsWithoutProof;
   if (runs.length === 0) return '';
   const latest = runs[0];
-  return `${runs.length} run${runs.length === 1 ? '' : 's'} of yours recorded, latest ${latest.status} on ${latest.date.slice(0, 10)}`;
+  return `${runs.length} run${runs.length === 1 ? '' : 's'} of yours recorded, latest ${latest.status} on ${validationDay(latest.date)}`;
 }
 
 /** '; <runsClause>; see Detection Validation', or '' with no run without proof. */
@@ -128,13 +129,13 @@ function runsNote(state: PostureState): string {
 
 /**
  * The Posture lens: the technique's own rung, from its PostureState.
- *   'Proven (your run) on 2026-10-21 by manual; 1 rule fired'
+ *   'Proven (your run) on 10/21/26 by manual; 1 rule fired'
  *   'Covered (self-attested) from mitigation implemented via M1036'
  *   'Covered (self-attested, partial via M1038): reached only through a mitigation mapped to more techniques than the breadth threshold'
  *   'Known: mapped (3 of 5 reference families)'
- *   'Known: mapped (3 of 5 reference families); 1 run of yours recorded, latest passed on 2026-10-21; see Detection Validation'
+ *   'Known: mapped (3 of 5 reference families); 1 run of yours recorded, latest passed on 10/21/26; see Detection Validation'
  *   'None: no reference data mapped and nothing of yours recorded'
- *   'None: no reference data mapped; 1 run of yours recorded, latest untested on 2026-10-21; see Detection Validation'
+ *   'None: no reference data mapped; 1 run of yours recorded, latest untested on 10/21/26; see Detection Validation'
  *   'None: no reference data mapped; a later failed run contradicts the marks'   (a contradicted mark or an excluded technique)
  */
 export function postureExplain(state: PostureState, decayDays?: Readonly<Record<ProofScope, number>>): string {
@@ -170,7 +171,7 @@ export function postureExplain(state: PostureState, decayDays?: Readonly<Record<
  *   'None: no covered (self-attested or range) mark; see the Known block for its reference data (3 of 5 reference families)'
  *   'None: a later failed run contradicts your covered (self-attested or range) marks'   (RP-F round 1)
  *   'None: no covered (self-attested or range) mark; not reproducible, so left out of the denominator'
- *   'None: no covered (self-attested or range) mark; 1 run of yours recorded, latest failed on 2026-10-21; see Detection Validation'
+ *   'None: no covered (self-attested or range) mark; 1 run of yours recorded, latest failed on 10/21/26; see Detection Validation'
  *   'None: nothing of yours reaches this technique'   (no run, no reference data, no mark, no verdict)
  * A run of yours that yields no proof (untested, failed, passed with no named
  * rule) is named with its status and date (RP-F decision 9), never as a rung.
