@@ -15,6 +15,8 @@ import type { Domain } from '../../models/domain';
 import type { Technique } from '../../models/technique';
 import { RULE_COVERAGE_FIXTURE } from '../../testing/rule-coverage-fixture';
 import { parseFixtureDomain, resetBrowserState } from '../../testing/lens-harness';
+import { AttackCveService, CveAttackMapping } from '../../services/attack-cve.service';
+import { EpssScore, EpssService } from '../../services/epss.service';
 
 const noopBSet = () => new BehaviorSubject(new Set());
 const noopBMap = () => new BehaviorSubject(new Map());
@@ -303,5 +305,88 @@ describe('SidebarComponent: Rule sources (Elastic, Splunk, mdecrevoisier SIGMA a
     chip.click();
     fixture.detectChanges();
     expect(sources().length).toBe(3);
+  });
+});
+
+// The CTID ATT&CK-to-CVE mapping loads on demand: a selected technique asks for it, so it
+// usually lands after the selection. Everything the drawer header reads from it at
+// selection time (the CVE and EPSS pills, the completeness score) is worked out again
+// when it lands, so the drawer ends up as it did when the mapping was in first.
+describe('SidebarComponent: the CTID mapping arriving after the selection', () => {
+  let fixture: ComponentFixture<SidebarComponent>;
+  let filter: FilterService;
+  let attackCve: AttackCveService;
+  let epss: EpssService;
+  let mapped: CveAttackMapping[];
+
+  const mapping = (cveId: string): CveAttackMapping => ({
+    cveId, description: 'fixture', primaryImpact: ['T1082'], secondaryImpact: [], exploitationTechnique: [],
+    capabilityGroup: 'fixture', comments: [], references: [], phase: '', source: 'ctid-kev',
+  });
+  const score = (cveId: string, value: number): EpssScore => ({ cveId, epss: value, percentile: 0.9, date: '2026-10-01' } as EpssScore);
+
+  beforeEach(() => {
+    resetBrowserState();
+    const domain = parseFixtureDomain();
+    TestBed.configureTestingModule({
+      imports: [SidebarComponent],
+      providers: [provideHttpClient(withXhr()), provideHttpClientTesting(), provideRouter([]), provideLocationMocks()],
+    });
+    (TestBed.inject(DataService) as unknown as { domainSubject: { next(d: Domain): void } }).domainSubject.next(domain);
+    filter = TestBed.inject(FilterService);
+    attackCve = TestBed.inject(AttackCveService);
+    epss = TestBed.inject(EpssService);
+    mapped = [];
+    spyOn(attackCve, 'getCvesForTechnique').and.callFake(() => mapped);
+    spyOn(epss, 'fetchScores').and.callFake((ids: string[]) =>
+      of(new Map(ids.map(id => [id, score(id, id === 'CVE-2024-0001' ? 0.5 : 0.382)]))));
+    fixture = TestBed.createComponent(SidebarComponent);
+    fixture.detectChanges();
+    filter.selectTechnique(domain.techniques.find(t => t.attackId === 'T1082')!);
+    fixture.detectChanges();
+  });
+
+  afterEach(() => resetBrowserState());
+
+  const pill = (label: string) => fixture.componentInstance.signals.find(s => s.label === label);
+
+  it('selection before the mapping: no CVE or EPSS pill and no EPSS request yet', () => {
+    expect(pill('CVE')).toBeUndefined();
+    expect(pill('EPSS')).toBeUndefined();
+    expect(epss.fetchScores).not.toHaveBeenCalled();
+  });
+
+  it('when the mapping lands: the EPSS average is fetched, and the pills and completeness are worked out again', () => {
+    const before = fixture.componentInstance.completenessScore;
+    mapped = [mapping('CVE-2024-0001'), mapping('CVE-2024-0002')];
+    (attackCve as unknown as { loadedSubject: BehaviorSubject<boolean> }).loadedSubject.next(true);
+    fixture.detectChanges();
+
+    expect(epss.fetchScores).toHaveBeenCalledOnceWith(['CVE-2024-0001', 'CVE-2024-0002']);
+    const c = fixture.componentInstance;
+    expect(c.epssAvg).toBeCloseTo(0.441, 6);
+    expect(pill('EPSS')?.value).toBe('44.1%');
+    expect(pill('CVE')?.value).toBe('2');
+    expect(c.cveExposures.map(m => m.cveId)).toEqual(['CVE-2024-0001', 'CVE-2024-0002']);
+    // The CVE exposure item of the completeness score now counts, as it did with the mapping in first.
+    expect(c.completenessScore).toBe(Math.min(before + 10, 100));
+  });
+
+  it('matches a selection made with the mapping already in', () => {
+    mapped = [mapping('CVE-2024-0001'), mapping('CVE-2024-0002')];
+    (attackCve as unknown as { loadedSubject: BehaviorSubject<boolean> }).loadedSubject.next(true);
+    fixture.detectChanges();
+    const late = { epss: fixture.componentInstance.epssAvg, signals: fixture.componentInstance.signals,
+      completeness: fixture.componentInstance.completenessScore };
+
+    // Select away and back: the selection handler reads the mapping that is now in.
+    const domainTechs = parseFixtureDomain().techniques;
+    filter.selectTechnique(domainTechs.find(t => t.attackId !== 'T1082')!);
+    fixture.detectChanges();
+    filter.selectTechnique(domainTechs.find(t => t.attackId === 'T1082')!);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.epssAvg).toBeCloseTo(late.epss!, 6);
+    expect(fixture.componentInstance.signals).toEqual(late.signals);
+    expect(fixture.componentInstance.completenessScore).toBe(late.completeness);
   });
 });

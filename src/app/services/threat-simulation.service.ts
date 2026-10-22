@@ -13,6 +13,7 @@
 // content never counts. The gap/priority inputs (KEV, exploits, EPSS) are
 // unchanged.
 import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
 import { PostureService } from './posture.service';
 import { AttackCveService } from './attack-cve.service';
 import { ExploitdbService } from './exploitdb.service';
@@ -73,6 +74,20 @@ export class ThreatSimulationService {
     // Simulations count CVEs from the CTID ATT&CK-to-CVE mapping, which loads on demand:
     // the scenario view (this service's only user) asks for it when it opens.
     this.attackCveService.loadOnDemand();
+  }
+
+  /**
+   * Emits once the CTID mapping behind the KEV and CVE counts has settled ('loaded' or
+   * 'failed'; at once when it already has). The scenario view waits on it before
+   * simulating, so the counts are never taken from an index that has not arrived.
+   */
+  cveMappingsSettled$(): Observable<'loaded' | 'failed'> {
+    return this.attackCveService.settled$();
+  }
+
+  /** Whether the CTID mapping has loaded (it loads on demand). */
+  cveMappingsLoaded$(): Observable<boolean> {
+    return this.attackCveService.loaded$;
   }
 
   /**

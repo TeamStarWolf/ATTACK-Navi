@@ -494,6 +494,23 @@ export class SidebarComponent implements OnInit, OnDestroy {
     return this.cveEpssCache.get(cveId) ?? null;
   }
 
+  /**
+   * Average EPSS over the CVEs the CTID mapping links to this technique, for the EPSS
+   * signal pill. Run at selection and again when the mapping arrives (it loads on demand).
+   */
+  private fetchEpssAvg(tech: Technique): void {
+    this.epssSub?.unsubscribe();
+    const cveIds = this.attackCveService.getCvesForTechnique(tech.attackId).map(m => m.cveId);
+    if (cveIds.length === 0) return;
+    this.epssSub = this.epssService.fetchScores(cveIds).subscribe(scores => {
+      const vals = cveIds.map(id => scores.get(id)?.epss).filter((s): s is number => s !== undefined);
+      if (this.technique?.attackId !== tech.attackId) return;
+      this.epssAvg = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+      this.signals = this.getSignals(tech);
+      this.cdr.markForCheck();
+    });
+  }
+
   private refreshCveEpssCache(): void {
     this.cveEpssCache.clear();
     for (const m of this.cveExposures) {
@@ -835,19 +852,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
           });
         }
         // EPSS — fetch scores for CVEs mapped to this technique
-        if (tech) {
-          const cveIds = this.attackCveService.getCvesForTechnique(tech.attackId).map(m => m.cveId);
-          if (cveIds.length > 0) {
-            this.epssSub = this.epssService.fetchScores(cveIds).subscribe(scores => {
-              const vals = cveIds.map(id => scores.get(id)?.epss).filter((s): s is number => s !== undefined);
-              this.epssAvg = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
-              if (this.technique?.attackId === tech.attackId) {
-                this.signals = this.getSignals(tech);
-                this.cdr.markForCheck();
-              }
-            });
-          }
-        }
+        if (tech) this.fetchEpssAvg(tech);
         this.cdr.markForCheck();
       }),
     );
@@ -893,12 +898,19 @@ export class SidebarComponent implements OnInit, OnDestroy {
       }),
     );
 
-    // Refresh CVE exposures when CTID data finishes loading
+    // Refresh CVE exposures when CTID data finishes loading. The mapping loads on demand
+    // (a selected technique asks for it), so it often lands after the selection: the EPSS
+    // average, the signal pills and the completeness score, all read from it at selection
+    // time, are worked out again here as well, as they were when the mapping was in first.
     this.subs.add(
       this.attackCveService.loaded$.subscribe((loaded) => {
         if (loaded && this.technique) {
-          this.cveExposures = this.attackCveService.getCvesForTechnique(this.technique.attackId).slice(0, 20);
+          const tech = this.technique;
+          this.cveExposures = this.attackCveService.getCvesForTechnique(tech.attackId).slice(0, 20);
           this.refreshCveEpssCache();
+          this.signals = this.getSignals(tech);
+          this.computeCompleteness();
+          this.fetchEpssAvg(tech);
           this.cdr.markForCheck();
         }
       }),

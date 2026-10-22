@@ -131,6 +131,10 @@ describe('DataHealthComponent', () => {
     expect(fixture.nativeElement.querySelectorAll('.dot-on-demand').length).toBe(3);
   });
 
+  // The ribbon on its own, with nothing asking for the three sources. On the #/status page
+  // itself, the page's own Mapped counts (the stats bar and the coverage breakdown) read the
+  // CTID ATT&CK-to-CVE mapping as soon as they render, so there ATT&CK CVE goes loading,
+  // then loaded, at once; CVE2CAPEC and PoC Exploits stay 'on demand' until a view asks.
   describe('on-demand sources', () => {
     const dot = (name: string) =>
       [...fixture.nativeElement.querySelectorAll('.health-dot')].find((d: Element) => d.getAttribute('title')!.startsWith(`${name}:`)) as Element;

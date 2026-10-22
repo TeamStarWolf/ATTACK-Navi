@@ -91,7 +91,7 @@ describe('threat-profile denominators move in one step (P2-10 [AC])', () => {
         { provide: M365DefenderService, useValue: { getQueriesForTechnique: () => [] } },
         { provide: AtomicService, useValue: { getTestCount: () => 0 } },
         { provide: CARService, useValue: { getAnalytics: () => [] } },
-        { provide: AttackCveService, useValue: { loadOnDemand: () => undefined, getKevCvesForTechnique: () => [], getCvesForTechnique: () => [] } },
+        { provide: AttackCveService, useValue: { loadOnDemand: () => undefined, loaded$: new BehaviorSubject(true), settled$: () => of('loaded' as const), getKevCvesForTechnique: () => [], getCvesForTechnique: () => [] } },
         { provide: ExploitdbService, useValue: { getExploitCount: () => 0, hasExploits: () => false } },
         { provide: EpssService, useValue: { getScore: () => null } },
       ],

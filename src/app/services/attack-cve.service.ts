@@ -4,7 +4,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { forkJoin, of, throwError } from 'rxjs';
-import { catchError, map, switchMap } from 'rxjs/operators';
+import { catchError, filter, map, switchMap, take } from 'rxjs/operators';
 import { retryWithBackoff } from '../utils/retry';
 import { SourceRegistryService } from './source-registry.service';
 
@@ -88,6 +88,21 @@ export class AttackCveService {
     if (this.initialized) return;
     this.initialized = true;
     this.load();
+  }
+
+  /**
+   * Ask for the mapping and emit once, when it has settled: 'loaded' (either dataset
+   * arrived) or 'failed' (neither did). Emits at once when it has already settled. A
+   * view that computes from the mapping on a user action (the auto roadmap, the gap
+   * report, the profile simulation) waits on this, so it never counts from indexes that
+   * have not arrived yet; with the mapping in, it computes exactly as before.
+   */
+  settled$(): Observable<'loaded' | 'failed'> {
+    this.loadOnDemand();
+    return this.outcome$.pipe(
+      filter((o): o is 'loaded' | 'failed' => o !== 'pending'),
+      take(1),
+    );
   }
 
   /** URL of the KEV snapshot that was actually used. */

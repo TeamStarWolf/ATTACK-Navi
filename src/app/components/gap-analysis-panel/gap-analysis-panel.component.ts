@@ -39,6 +39,11 @@ interface CoverageSourceRow {
 export class GapAnalysisPanelComponent implements OnInit, OnDestroy {
   result: GapAnalysisResult | null = null;
   generating = false;
+  /** True while Generate waits for the CTID mapping the KEV counts read. */
+  waitingForCves = false;
+  /** How the CTID mapping had settled when the shown report was generated. */
+  private resultOutcome: 'loaded' | 'failed' | null = null;
+  private settleSub?: Subscription;
 
   // Step 1: the shared threat-profile picker (profile mode) scopes the analysis.
   private domain: Domain | null = null;
@@ -90,6 +95,11 @@ export class GapAnalysisPanelComponent implements OnInit, OnDestroy {
     // demand: opening this view asks for it (only the first ask fetches).
     this.attackCveService.loadOnDemand();
     this.loadGroups();
+    // A report generated while the mapping had failed is generated again when a retry
+    // brings the mapping in, so its KEV counts are never left at 0.
+    this.subs.add(this.attackCveService.loaded$.subscribe(loaded => {
+      if (loaded && this.result && this.resultOutcome === 'failed' && !this.generating) this.generate();
+    }));
   }
 
   ngOnDestroy(): void {
@@ -112,10 +122,26 @@ export class GapAnalysisPanelComponent implements OnInit, OnDestroy {
   generate(): void {
     if (!this.domain) return;
     this.generating = true;
+    this.waitingForCves = true;
     this.cdr.markForCheck();
+    // The KEV counts read the CTID ATT&CK-to-CVE mapping, which loads on demand: wait
+    // until it has settled (at once when it is already in), so the report is never
+    // generated from an index that has not arrived.
+    this.settleSub?.unsubscribe();
+    this.settleSub = this.attackCveService.settled$().subscribe(outcome => {
+      this.waitingForCves = false;
+      this.cdr.markForCheck();
+      this.runReport(outcome);
+    });
+    this.subs.add(this.settleSub);
+  }
+
+  private runReport(outcome: 'loaded' | 'failed'): void {
     // Defer to next tick so the spinner renders before the sync computation blocks the thread
     setTimeout(() => {
-      this.result = this.gapService.generateReport(this.domain!, this.threatProfile.current);
+      if (!this.domain) { this.generating = false; this.cdr.markForCheck(); return; }
+      this.result = this.gapService.generateReport(this.domain, this.threatProfile.current);
+      this.resultOutcome = outcome;
       this.generating = false;
       this.buildDetectionSources();
       this.gapLimit = 20;

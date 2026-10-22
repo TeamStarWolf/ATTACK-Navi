@@ -42,7 +42,7 @@
             }
           </button>
           @if (generating) {
-            <div class="generating-indicator">Analyzing techniques and computing gaps...</div>
+            <div class="generating-indicator">{{ waitingForCves ? 'Loading the CVE mappings for the KEV counts...' : 'Analyzing techniques and computing gaps...' }}</div>
           }
         </div>
       }
