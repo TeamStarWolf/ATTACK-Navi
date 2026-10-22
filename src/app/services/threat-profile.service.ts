@@ -1,6 +1,6 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { Injectable, OnDestroy, Signal, computed, signal } from '@angular/core';
+import { Inject, Injectable, InjectionToken, OnDestroy, Optional, Signal, computed, signal } from '@angular/core';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { DataService } from './data.service';
 import { LibraryLayerService } from './library-layer.service';
@@ -9,18 +9,31 @@ import { readV2, writeV2, V2Envelope } from '../models/storage-envelope';
 import type { ThreatProfileEmptyReason, ThreatWeightProvider } from '../models/posture/posture.types';
 import {
   ThreatProfile, ThreatProfileSource, LibraryLayerInput, ProfileDomainGroups, ProfileGroupRef,
-  type KnownGroup, STIX_GROUP_ID, attackDomainOf, findStoredGroup, indexGroups, normaliseStoredGroupIds, profileDomainNotice,
-  resolveProfile, splitStoredGroups,
+  type GroupIndexEntry, type KnownGroup, STIX_GROUP_ID, attackDomainOf, currentIndexedGroups, groupNameHints, indexGroups,
+  normaliseStoredGroupIds, profileDomainNotice, resolveProfile, resolveStoredGroup, splitStoredGroups,
   threatProfileEmptyReason,
 } from '../models/threat-profile';
+import GROUP_INDEX_DATA from '../../assets/data/group-index.json';
+
+/**
+ * The all-domain group index the profile resolves stored ids against (RP-F decision
+ * 25): src/assets/data/group-index.json, built from the bundled Enterprise, ICS and
+ * Mobile STIX files by scripts/build-group-index.mjs. Provided for specs; the app
+ * reads the bundled file.
+ */
+export const GROUP_INDEX = new InjectionToken<readonly GroupIndexEntry[]>('GROUP_INDEX');
+
+/** The bundled index's groups. */
+export const BUNDLED_GROUP_INDEX: readonly GroupIndexEntry[] = (GROUP_INDEX_DATA as { groups: GroupIndexEntry[] }).groups;
 
 const STORAGE_KEY = 'navi.v2.threat-profile';
 const DEFAULT_SOURCE: ThreatProfileSource = { kind: 'top-groups', n: 20 };
 
 /**
  * The stored record. `groupNames` is a display hint only (STIX id to group name, for
- * a groups source), written by setSource so a group the loaded domain lacks can still
- * be named after a reload straight into that domain. It is never part of the source.
+ * a groups source): the name of every stored id that resolves to a real group
+ * (groupNameHints), written whenever it changes. It is never part of the source and
+ * never a resolution (RP-F decision 25): the group index names an absent group.
  */
 type StoredRecord = ThreatProfileSource & V2Envelope & { readonly groupNames?: Readonly<Record<string, string>> };
 
@@ -43,6 +56,26 @@ function isStoredSource(x: unknown): x is ThreatProfileSource & V2Envelope {
     case 'all': return true;
     default: return false;
   }
+}
+
+/**
+ * The stored name hint as data: only string-to-string entries keyed by a STIX
+ * intrusion-set id (it may come from an imported bundle); anything else is dropped.
+ * It is compared, never resolved against (RP-F decision 25).
+ */
+function readHint(hint: unknown): Readonly<Record<string, string>> {
+  const out: Record<string, string> = Object.create(null);
+  if (!hint || typeof hint !== 'object' || Array.isArray(hint)) return out;
+  for (const [id, name] of Object.entries(hint as Record<string, unknown>)) {
+    if (STIX_GROUP_ID.test(id) && typeof name === 'string' && name.length > 0) out[id] = name;
+  }
+  return out;
+}
+
+/** Two name hints hold the same entries. */
+function sameHint(a: Readonly<Record<string, string>>, b: Readonly<Record<string, string>>): boolean {
+  const ka = Object.keys(a);
+  return ka.length === Object.keys(b).length && ka.every((k) => b[k] === a[k]);
 }
 
 /** The label shown before a domain has loaded; resolveProfile recomputes it once a Domain is present. */
@@ -98,12 +131,16 @@ export class ThreatProfileService implements OnDestroy, ThreatWeightProvider {
   /** The domain the last profile was resolved against (null while one loads). */
   private lastDomain: Domain | null = null;
   /**
-   * Every group seen, learned from every domain loaded this session and from the
-   * stored record's name hint, keyed as splitStoredGroups reads it (STIX id and
-   * ATT&CK id; GroupIdIndex), so an absent group is named by its name, not its id,
-   * and named once when stored under both ids (RP-F decision 13).
+   * Every real group: the current groups of the all-domain group index (RP-F decision
+   * 25) and of every domain loaded this session, keyed as splitStoredGroups reads it
+   * (STIX id and ATT&CK id; GroupIdIndex), so an absent group is named by its name,
+   * not its id, and named once when stored under both ids (RP-F decision 13), on a
+   * fresh boot into a domain that lacks it as much as after a switch. A stored name
+   * hint is never learned here: a hint is never a resolution.
    */
   private readonly knownGroups = new Map<string, KnownGroup>();
+  /** The name hint as stored (or last written), so normaliseSource writes only on a change. */
+  private storedHint: Readonly<Record<string, string>> = {};
   // The stored groups split against the loaded domain (a groups source only), kept in
   // sync with profile$. A domain switch changes the split, never the stored source.
   private readonly domainGroupsSig = signal<ProfileDomainGroups | null>(null);
@@ -111,7 +148,12 @@ export class ThreatProfileService implements OnDestroy, ThreatWeightProvider {
   /** The one cross-domain sentence (profileDomainNotice), or null when no stored group is absent. */
   readonly domainNotice: Signal<string | null> = computed(() => profileDomainNotice(this.domainGroupsSig()));
 
-  constructor(private dataService: DataService, private libraryLayers: LibraryLayerService) {
+  constructor(
+    private dataService: DataService,
+    private libraryLayers: LibraryLayerService,
+    @Optional() @Inject(GROUP_INDEX) groupIndex: readonly GroupIndexEntry[] | null = null,
+  ) {
+    indexGroups(this.knownGroups, currentIndexedGroups(groupIndex ?? BUNDLED_GROUP_INDEX));
     this.source = this.loadSource();
     const initial = this.dataService.getCurrentDomain();
     this.domainLoaded = !!initial;
@@ -180,7 +222,7 @@ export class ThreatProfileService implements OnDestroy, ThreatWeightProvider {
     return {
       domain: attackDomainOf(domain),
       present: present.map((g) => ({ id: g.id, name: g.name })),
-      absent: absentIds.map((id) => ({ id, name: findStoredGroup(this.knownGroups, id)?.name ?? id })),
+      absent: absentIds.map((id) => ({ id, name: resolveStoredGroup(this.knownGroups, id)?.name ?? id })),
       unresolved: unresolvedIds,
     };
   }
@@ -191,17 +233,20 @@ export class ThreatProfileService implements OnDestroy, ThreatWeightProvider {
   }
 
   /**
-   * One shape in storage (RP-F decision 18): a groups source's ATT&CK ids (G0016, any
-   * case) become the STIX ids of the groups a loaded domain carried, and the record is
-   * written back with its name hint. Ids no loaded domain names are kept as they are:
-   * they may resolve when their domain loads, and an unresolved id is announced, never
-   * dropped. Runs at construction and on every domain load; writes only on a change.
+   * One shape in storage (RP-F decisions 18 and 25): a groups source's ids are
+   * trimmed, empty ids dropped, and ATT&CK ids (G0016, any case) become the STIX ids
+   * of the real groups they name (the group index or a loaded domain); the record is
+   * written back with the name hint of every resolved id. Ids that resolve to no real
+   * group are kept as they are: an unresolved id is announced, never dropped. Runs at
+   * construction and on every domain load; writes only when the ids or the hint change
+   * (a hint-less store gains its hint on the first load, so it reads the same after F5).
    */
   private normaliseSource(): void {
     const src = this.source;
     if (src.kind !== 'groups') return;
     const ids = normaliseStoredGroupIds(src.ids, this.knownGroups);
-    if (ids.length === src.ids.length && ids.every((id, i) => id === src.ids[i])) return;
+    const sameIds = ids.length === src.ids.length && ids.every((id, i) => id === src.ids[i]);
+    if (sameIds && sameHint(groupNameHints(ids, this.knownGroups), this.storedHint)) return;
     this.source = { kind: 'groups', ids };
     this.persist(this.source);
   }
@@ -219,15 +264,10 @@ export class ThreatProfileService implements OnDestroy, ThreatWeightProvider {
       const records = store.records.map((r: unknown) => {
         const rec = r as Record<string, unknown> | null;
         if (!rec || rec['kind'] !== 'groups' || !Array.isArray(rec['ids']) || !rec['ids'].every((i) => typeof i === 'string')) return r;
+        // RP-F decision 25: the hint is rebuilt from the ids that resolve; an imported hint
+        // is never a resolution, so one naming an unresolved id is not carried over.
         const ids = normaliseStoredGroupIds(rec['ids'] as string[], this.knownGroups);
-        const names: Record<string, string> = Object.create(null);
-        const hint = rec['groupNames'];
-        if (hint && typeof hint === 'object' && !Array.isArray(hint)) Object.assign(names, hint);
-        for (const id of ids) {
-          const name = findStoredGroup(this.knownGroups, id)?.name;
-          if (name && STIX_GROUP_ID.test(id)) names[id] = name;
-        }
-        return { ...rec, ids, groupNames: names };
+        return { ...rec, ids, groupNames: groupNameHints(ids, this.knownGroups) };
       });
       return JSON.stringify({ ...store, records });
     } catch {
@@ -285,36 +325,17 @@ export class ThreatProfileService implements OnDestroy, ThreatWeightProvider {
     try {
       const record = readV2<ThreatProfileSource>(STORAGE_KEY, isStoredSource).records[0] as StoredRecord | undefined;
       if (!record) return DEFAULT_SOURCE;
-      this.learnStoredNames(record.groupNames);
+      this.storedHint = readHint(record.groupNames);
       return sourceFromRecord(record);
     } catch {
       return DEFAULT_SOURCE;
     }
   }
 
-  /**
-   * Read the stored name hint, skipping anything that is not a string-to-string entry (it
-   * may come from an imported bundle). Only a STIX intrusion-set id takes a hint (RP-F
-   * decision 18): an alias or an ATT&CK id with a name ("Fancy Bear": "APT28") would
-   * otherwise name a group that never resolved as absent from the domain.
-   */
-  private learnStoredNames(hint: unknown): void {
-    if (!hint || typeof hint !== 'object' || Array.isArray(hint)) return;
-    for (const [id, name] of Object.entries(hint as Record<string, unknown>)) {
-      if (!STIX_GROUP_ID.test(id)) continue;
-      if (typeof name === 'string' && name.length > 0 && !this.knownGroups.has(id)) this.knownGroups.set(id, { id, attackId: '', name });
-    }
-  }
-
   private persist(src: ThreatProfileSource): void {
     const now = new Date().toISOString();
-    const names: Record<string, string> = Object.create(null);   // ids are data: no prototype keys
-    if (src.kind === 'groups') {
-      for (const id of src.ids) {
-        const name = findStoredGroup(this.knownGroups, id)?.name;
-        if (name) names[id] = name;
-      }
-    }
+    const names = src.kind === 'groups' ? groupNameHints(src.ids, this.knownGroups) : {};
+    if (src.kind === 'groups') this.storedHint = names;
     const record: StoredRecord = {
       ...src,
       ...(src.kind === 'groups' ? { groupNames: names } : {}),

@@ -9,8 +9,8 @@ import { ThreatGroup } from './group';
 import { Campaign } from './campaign';
 import { DataService } from '../services/data.service';
 import {
-  type KnownGroup, findStoredGroup, indexGroups, normaliseStoredGroupIds, profileDomainNotice, rankGroupsByPrevalence, resolveProfile,
-  splitStoredGroups,
+  type GroupIndexEntry, type KnownGroup, cleanStoredIds, currentIndexedGroups, findStoredGroup, groupNameHints, indexGroups,
+  normaliseStoredGroupIds, profileDomainNotice, rankGroupsByPrevalence, resolveProfile, resolveStoredGroup, splitStoredGroups,
 } from './threat-profile';
 
 function tech(id: string, attackId: string, parentId: string | null = null): Technique {
@@ -173,12 +173,13 @@ describe('threat-profile model', () => {
       // Without the index neither id resolves to a group: both are unresolved (RP-F decision 18).
       expect(splitStoredGroups(['g-a', 'G0001'], ics).absentIds).toEqual([]);
       expect(splitStoredGroups(['g-a', 'G0001'], ics).unresolvedIds).toEqual(['g-a', 'G0001']);
-      // A group known only by stored name hints (an id and a name each) is told apart by its name.
+      // RP-F decision 25: a name hint (an id and a name, no ATT&CK id) is never a resolution.
       const hints = new Map<string, KnownGroup>([
         ['g-a', { id: 'g-a', attackId: '', name: 'Alpha' }], ['G0001', { id: 'G0001', attackId: '', name: 'Alpha' }],
         ['g-z', { id: 'g-z', attackId: '', name: 'Zulu' }],
       ]);
-      expect(splitStoredGroups(['g-a', 'G0001', 'g-z'], ics, hints).absentIds).toEqual(['g-a', 'g-z']);
+      expect(splitStoredGroups(['g-a', 'G0001', 'g-z'], ics, hints).absentIds).toEqual([]);
+      expect(splitStoredGroups(['g-a', 'G0001', 'g-z'], ics, hints).unresolvedIds).toEqual(['g-a', 'G0001', 'g-z']);
     });
 
     it('resolveProfile counts only the present groups (the same rule) and keeps the source as stored', () => {
@@ -226,24 +227,69 @@ describe('threat-profile model', () => {
       }
     });
 
-    it('splitStoredGroups refuses a name hint that renames a real group; a hint for a group of another domain still names it', () => {
+    // RP-F decision 25: a hint on a fabricated STIX id read "APT29 has no ICS use" (round 4).
+    it('splitStoredGroups never resolves an id through a name hint, whatever name it carries', () => {
       const ent = emptyDomain({ groups: [group('g-apt29', 'G0016')] });
       const hints = new Map<string, KnownGroup>([
         ['intrusion-set--zero', { id: 'intrusion-set--zero', attackId: '', name: 'grp-G0016' }],   // claims APT29's name
         ['g-ics-only', { id: 'g-ics-only', attackId: '', name: 'Xenotime' }],
       ]);
       const split = splitStoredGroups(['intrusion-set--zero', 'g-ics-only'], ent, hints);
-      expect(split.unresolvedIds).toEqual(['intrusion-set--zero']);
-      expect(split.absentIds).toEqual(['g-ics-only']);
+      expect(split.unresolvedIds).toEqual(['intrusion-set--zero', 'g-ics-only']);
+      expect(split.absentIds).toEqual([]);
     });
 
-    it('normaliseStoredGroupIds: ATT&CK ids of seen groups become STIX ids, once each; anything else is kept', () => {
+    it('normaliseStoredGroupIds: ATT&CK ids of real groups become STIX ids, once each; ids are trimmed, empty ids dropped', () => {
       const known = new Map<string, KnownGroup>();
       indexGroups(known, [group('g-apt29', 'G0016'), group('g-fin7', 'G0046')]);
       known.set('g-hint', { id: 'g-hint', attackId: '', name: 'Hinted' });
-      expect(normaliseStoredGroupIds(['G0016', 'g0046', 'g-apt29', 'G9999', 'Fancy Bear', 'g-hint'], known))
+      expect(normaliseStoredGroupIds([' G0016 ', 'g0046', 'g-apt29', '', '  ', 'G9999', 'Fancy Bear', 'g-hint'], known))
         .toEqual(['g-apt29', 'g-fin7', 'G9999', 'Fancy Bear', 'g-hint']);
       expect(normaliseStoredGroupIds([], known)).toEqual([]);
+    });
+
+    it('splitStoredGroups trims stored ids and drops empty ones (round 4: ": unknown or withdrawn group id")', () => {
+      const d = emptyDomain({ groups: [group('g-a', 'G0001')] });
+      const split = splitStoredGroups([' G0001 ', '', '   ', ' G9999'], d);
+      expect(split.present.map((g) => g.id)).toEqual(['g-a']);
+      expect(split.unresolvedIds).toEqual(['G9999']);
+      expect(cleanStoredIds([' a ', '', ' '])).toEqual(['a']);
+    });
+
+    describe('the all-domain group index (RP-F decision 25)', () => {
+      const ENTRIES: GroupIndexEntry[] = [
+        { attackId: 'G0016', stixId: 'intrusion-set--apt29', name: 'APT29', aliases: ['Cozy Bear'], revoked: false, deprecated: false, domains: ['enterprise'] },
+        { attackId: 'G1000', stixId: 'intrusion-set--allanite', name: 'ALLANITE', aliases: [], revoked: false, deprecated: false, domains: ['ics'] },
+        { attackId: 'G0057', stixId: 'intrusion-set--apt34', name: 'APT34', aliases: [], revoked: true, deprecated: false, domains: [] },
+        { attackId: 'G0014', stixId: 'intrusion-set--night', name: 'Night Dragon', aliases: [], revoked: false, deprecated: true, domains: [] },
+      ];
+
+      it('holds the current groups only; aliases are never ids', () => {
+        expect(currentIndexedGroups(ENTRIES).map((g) => g.attackId)).toEqual(['G0016', 'G1000']);
+        const known = new Map<string, KnownGroup>();
+        indexGroups(known, currentIndexedGroups(ENTRIES));
+        expect(resolveStoredGroup(known, 'g0016')?.name).toBe('APT29');
+        expect(resolveStoredGroup(known, 'Cozy Bear')).toBeUndefined();
+        expect(resolveStoredGroup(known, 'G0057')).toBeUndefined();
+        expect(resolveStoredGroup(known, 'intrusion-set--night')).toBeUndefined();
+      });
+
+      it('a real group of another domain is absent by name; revoked, deprecated, alias and unknown ids are unresolved', () => {
+        const mobile = emptyDomain({ name: 'Mobile ATT&CK', groups: [] });
+        const known = new Map<string, KnownGroup>();
+        indexGroups(known, currentIndexedGroups(ENTRIES));
+        const split = splitStoredGroups(['G0016', 'intrusion-set--allanite', 'G0057', 'G0014', 'Cozy Bear', 'G9999'], mobile, known);
+        expect(split.absentIds).toEqual(['G0016', 'intrusion-set--allanite']);
+        expect(split.unresolvedIds).toEqual(['G0057', 'G0014', 'Cozy Bear', 'G9999']);
+      });
+
+      it('groupNameHints names every resolved STIX id, and nothing else', () => {
+        const known = new Map<string, KnownGroup>();
+        indexGroups(known, currentIndexedGroups(ENTRIES));
+        known.set('intrusion-set--fake', { id: 'intrusion-set--fake', attackId: '', name: 'APT29' });
+        expect({ ...groupNameHints(['intrusion-set--apt29', 'G1000', 'intrusion-set--fake', 'intrusion-set--apt34', ' intrusion-set--allanite '], known) })
+          .toEqual({ 'intrusion-set--apt29': 'APT29', 'intrusion-set--allanite': 'ALLANITE' });
+      });
     });
   });
 

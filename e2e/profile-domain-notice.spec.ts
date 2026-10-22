@@ -79,4 +79,33 @@ test.describe('cross-domain threat profile (RP-F decision 6)', () => {
     await expect(picker.locator('[data-testid="profile-domain-notice"]')).toHaveCount(0);
     await expect(picker.locator('[data-testid="profile-absent-groups"]')).toHaveCount(0);
   });
+
+  // RP-F decision 25: a FRESH BOOT into ICS or Mobile resolves stored ids against the
+  // all-domain group index. Round 4 read "G0016: unknown or withdrawn group id" for APT29
+  // on a pasted ICS link, and a different sentence after F5. Pasted links, then F5.
+  for (const [dom, notice] of [
+    ['ics', NOTICE],
+    ['mobile', '0 of 2 groups present in Mobile; APT29, FIN7 have no Mobile use'],
+  ] as const) {
+    test(`a profile stored as ['G0016','G0046'] on a fresh boot into ${dom} names the absent groups, and reads the same after F5`, async ({ page }) => {
+      await page.addInitScript((key) => {
+        if (localStorage.getItem(key) !== null) return;
+        localStorage.setItem(key, JSON.stringify({ schema: 2, tombstones: [], records: [{
+          kind: 'groups', ids: ['G0016', ' G0046 ', ''], domain: 'enterprise', attackVersion: '19.2', source: 'manual',
+          createdAt: '2026-10-21T00:00:00.000Z', updatedAt: '2026-10-21T00:00:00.000Z',
+        }] }));
+      }, KEY);
+      await page.goto('about:blank');
+      await page.goto(`${BASE}/#/matrix?dom=${dom}`);
+      await expect(page.locator('.cell').first()).toBeVisible({ timeout: ROUTE_TIMEOUT });
+      const line = await drawerProfileLine(page);
+      await expect(line).toContainText(`Threat profile (${notice})`, { timeout: ROUTE_TIMEOUT });
+      await expect(line).not.toContainText('unknown or withdrawn');
+      expect((await storedIds(page)).every((id) => id.startsWith('intrusion-set--'))).toBe(true);
+      await page.reload();
+      await expect(page.locator('.cell').first()).toBeVisible({ timeout: ROUTE_TIMEOUT });
+      const again = await drawerProfileLine(page);
+      await expect(again).toContainText(`Threat profile (${notice})`, { timeout: ROUTE_TIMEOUT });
+    });
+  }
 });
