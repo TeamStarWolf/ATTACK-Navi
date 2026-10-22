@@ -9,7 +9,8 @@ import { readV2, writeV2, V2Envelope } from '../models/storage-envelope';
 import type { ThreatProfileEmptyReason, ThreatWeightProvider } from '../models/posture/posture.types';
 import {
   ThreatProfile, ThreatProfileSource, LibraryLayerInput, ProfileDomainGroups, ProfileGroupRef,
-  type KnownGroup, attackDomainOf, findStoredGroup, indexGroups, profileDomainNotice, resolveProfile, splitStoredGroups,
+  type KnownGroup, STIX_GROUP_ID, attackDomainOf, findStoredGroup, indexGroups, normaliseStoredGroupIds, profileDomainNotice,
+  resolveProfile, splitStoredGroups,
   threatProfileEmptyReason,
 } from '../models/threat-profile';
 
@@ -116,6 +117,7 @@ export class ThreatProfileService implements OnDestroy, ThreatWeightProvider {
     this.domainLoaded = !!initial;
     this.lastDomain = initial;
     this.learnNames(initial);
+    this.normaliseSource();
     this.profileSubject = new BehaviorSubject<ThreatProfile>(this.build(initial));
     this.profile$ = this.profileSubject.asObservable();
     // Re-resolve on every domain emission, INCLUDING null: a domain switch emits null
@@ -161,15 +163,25 @@ export class ThreatProfileService implements OnDestroy, ThreatWeightProvider {
     return [...(this.splitFor(domain)?.absent ?? [])];
   }
 
-  /** The split behind presentGroups/absentGroups, or null when it does not apply. */
+  /**
+   * The stored ids that resolve to no group seen this session (a groups source only; []
+   * otherwise): aliases, revoked or unknown ATT&CK ids, malformed STIX ids (RP-F decision
+   * 18). Named as stored and marked `unresolved`; they stay in the stored source.
+   */
+  unresolvedGroups(domain: Domain | null): ProfileGroupRef[] {
+    return (this.splitFor(domain)?.unresolved ?? []).map((id) => ({ id, name: id, unresolved: true }));
+  }
+
+  /** The split behind presentGroups/absentGroups/unresolvedGroups, or null when it does not apply. */
   private splitFor(domain: Domain | null): ProfileDomainGroups | null {
     const src = this.source;
     if (!domain || src.kind !== 'groups') return null;
-    const { present, absentIds } = splitStoredGroups(src.ids, domain, this.knownGroups);
+    const { present, absentIds, unresolvedIds } = splitStoredGroups(src.ids, domain, this.knownGroups);
     return {
       domain: attackDomainOf(domain),
       present: present.map((g) => ({ id: g.id, name: g.name })),
       absent: absentIds.map((id) => ({ id, name: findStoredGroup(this.knownGroups, id)?.name ?? id })),
+      unresolved: unresolvedIds,
     };
   }
 
@@ -178,11 +190,57 @@ export class ThreatProfileService implements OnDestroy, ThreatWeightProvider {
     indexGroups(this.knownGroups, domain?.groups ?? []);
   }
 
+  /**
+   * One shape in storage (RP-F decision 18): a groups source's ATT&CK ids (G0016, any
+   * case) become the STIX ids of the groups a loaded domain carried, and the record is
+   * written back with its name hint. Ids no loaded domain names are kept as they are:
+   * they may resolve when their domain loads, and an unresolved id is announced, never
+   * dropped. Runs at construction and on every domain load; writes only on a change.
+   */
+  private normaliseSource(): void {
+    const src = this.source;
+    if (src.kind !== 'groups') return;
+    const ids = normaliseStoredGroupIds(src.ids, this.knownGroups);
+    if (ids.length === src.ids.length && ids.every((id, i) => id === src.ids[i])) return;
+    this.source = { kind: 'groups', ids };
+    this.persist(this.source);
+  }
+
+  /**
+   * A navi.v2.threat-profile value arriving in a workspace bundle, in the stored shape
+   * (RP-F decision 18): its groups ids normalised against the groups seen this session,
+   * with the name hint of each that resolves. Anything that does not parse as a v2
+   * store is returned unchanged (loadSource validates it as it always has).
+   */
+  normaliseImportedValue(value: string): string {
+    try {
+      const store = JSON.parse(value) as { records?: unknown };
+      if (!store || typeof store !== 'object' || !Array.isArray(store.records)) return value;
+      const records = store.records.map((r: unknown) => {
+        const rec = r as Record<string, unknown> | null;
+        if (!rec || rec['kind'] !== 'groups' || !Array.isArray(rec['ids']) || !rec['ids'].every((i) => typeof i === 'string')) return r;
+        const ids = normaliseStoredGroupIds(rec['ids'] as string[], this.knownGroups);
+        const names: Record<string, string> = Object.create(null);
+        const hint = rec['groupNames'];
+        if (hint && typeof hint === 'object' && !Array.isArray(hint)) Object.assign(names, hint);
+        for (const id of ids) {
+          const name = findStoredGroup(this.knownGroups, id)?.name;
+          if (name && STIX_GROUP_ID.test(id)) names[id] = name;
+        }
+        return { ...rec, ids, groupNames: names };
+      });
+      return JSON.stringify({ ...store, records });
+    } catch {
+      return value;
+    }
+  }
+
   /** Resolve against `domain` (null while one loads) and emit. */
   private emit(domain: Domain | null): void {
     this.domainLoaded = !!domain;
     this.lastDomain = domain;
     this.learnNames(domain);
+    this.normaliseSource();
     this.profileSubject.next(this.build(domain));
   }
 
@@ -234,10 +292,16 @@ export class ThreatProfileService implements OnDestroy, ThreatWeightProvider {
     }
   }
 
-  /** Read the stored name hint, skipping anything that is not a string-to-string entry (it may come from an imported bundle). */
+  /**
+   * Read the stored name hint, skipping anything that is not a string-to-string entry (it
+   * may come from an imported bundle). Only a STIX intrusion-set id takes a hint (RP-F
+   * decision 18): an alias or an ATT&CK id with a name ("Fancy Bear": "APT28") would
+   * otherwise name a group that never resolved as absent from the domain.
+   */
   private learnStoredNames(hint: unknown): void {
     if (!hint || typeof hint !== 'object' || Array.isArray(hint)) return;
     for (const [id, name] of Object.entries(hint as Record<string, unknown>)) {
+      if (!STIX_GROUP_ID.test(id)) continue;
       if (typeof name === 'string' && name.length > 0 && !this.knownGroups.has(id)) this.knownGroups.set(id, { id, attackId: '', name });
     }
   }

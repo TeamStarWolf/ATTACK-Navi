@@ -75,7 +75,7 @@ describe('ScenarioPanelComponent (posture outcomes)', () => {
             get current() { return { source: { kind: 'top-groups', n: 20 } }; },
             profile$: new BehaviorSubject({ source: { kind: 'top-groups', n: 20 } }),
             setSource: jasmine.createSpy('setSource'),
-            absentGroups: () => [],
+            absentGroups: () => [], unresolvedGroups: () => [],
         } },
       ],
     });

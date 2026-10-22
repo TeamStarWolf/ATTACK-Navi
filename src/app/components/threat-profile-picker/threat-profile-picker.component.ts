@@ -178,12 +178,33 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
     this.subs.unsubscribe();
   }
 
-  /** profile mode: add the service's current absent groups to the absent list (no duplicates). */
+  /**
+   * profile mode: add the service's current absent groups, then its unresolved ids (RP-F
+   * decision 18: listed as "unknown or withdrawn group id", never as absent from the
+   * domain), to the absent list (no duplicates).
+   */
   private mergeAbsent(): void {
     if (this.mode !== 'profile') return;
     const shown = new Set(this.absentShown.map((r) => r.id));
-    const added = this.threatProfile.absentGroups(this.dataService.getCurrentDomain()).filter((r) => !shown.has(r.id));
+    const domain = this.dataService.getCurrentDomain();
+    const added = [...this.threatProfile.absentGroups(domain), ...this.threatProfile.unresolvedGroups(domain)]
+      .filter((r) => !shown.has(r.id));
     if (added.length > 0) this.absentShown = [...this.absentShown, ...added];
+  }
+
+  /**
+   * True when the selection holds `g`, by its STIX id or by its ATT&CK id in any case
+   * (RP-F decision 18): a profile stored with ATT&CK ids shows its groups pressed while
+   * it waits to be normalised to STIX ids.
+   */
+  isGroupPressed(g: ThreatGroup): boolean {
+    return this.selectedKeysFor(g).length > 0;
+  }
+
+  /** The selected ids that name `g`: its STIX id, or its ATT&CK id in any case. */
+  private selectedKeysFor(g: ThreatGroup): string[] {
+    const attackId = g.attackId.toUpperCase();
+    return [...this.selectedGroupIds].filter((id) => id === g.id || (attackId !== '' && id.toUpperCase() === attackId));
   }
 
   /**
@@ -319,7 +340,10 @@ export class ThreatProfilePickerComponent implements OnInit, OnDestroy {
       this.cdr.markForCheck();
       return;
     }
-    if (this.selectedGroupIds.has(g.id)) this.selectedGroupIds.delete(g.id);
+    // A group held under either id shape is one group (RP-F decision 18): a click on a
+    // group stored as G0016 deselects it rather than adding its STIX id beside it.
+    const held = this.selectedKeysFor(g);
+    if (held.length > 0) for (const id of held) this.selectedGroupIds.delete(id);
     else this.selectedGroupIds.add(g.id);
     if (this.mode === 'multi-local') {
       this.selectionChange.emit(new Set(this.selectedGroupIds));   // never touches the service

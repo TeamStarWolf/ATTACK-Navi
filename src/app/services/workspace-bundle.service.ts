@@ -1,7 +1,11 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { Injectable } from '@angular/core';
+import { Injectable, Injector, Optional } from '@angular/core';
 import { ValidationService } from './validation.service';
+import { ThreatProfileService } from './threat-profile.service';
+
+/** The shared threat profile's store (ThreatProfileService); its group ids are normalised on import. */
+const THREAT_PROFILE_KEY = 'navi.v2.threat-profile';
 
 /**
  * Full-workspace export/import: every piece of user work-product the app
@@ -20,6 +24,9 @@ import { ValidationService } from './validation.service';
  */
 @Injectable({ providedIn: 'root' })
 export class WorkspaceBundleService {
+  /** Optional so specs can still `new` the service; import then writes the profile as it came. */
+  constructor(@Optional() private readonly injector?: Injector) {}
+
   /** User work-product + preferences. Order is cosmetic (export readability). */
   static readonly BUNDLED_KEYS: readonly string[] = [
     // Analysis state
@@ -104,7 +111,9 @@ export class WorkspaceBundleService {
     for (const [key, value] of Object.entries(parsed.data)) {
       // Only whitelisted keys — a crafted bundle can't write arbitrary storage.
       if (!allowed.has(key) || typeof value !== 'string') continue;
-      const cleaned = key === 'mitre-nav-settings-v1' ? this.stripSecrets(value) : value;
+      const cleaned = key === 'mitre-nav-settings-v1' ? this.stripSecrets(value)
+        : key === THREAT_PROFILE_KEY ? this.normaliseThreatProfile(value)
+        : value;
       localStorage.setItem(key, cleaned);
       written.push(key);
     }
@@ -119,6 +128,22 @@ export class WorkspaceBundleService {
     a.download = `attack-navi-workspace-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
+  }
+
+  /**
+   * A bundled threat profile in the one stored shape (RP-F decision 18): its ATT&CK
+   * group ids become STIX ids through ThreatProfileService, looked up only now, so
+   * export alone never constructs it. Without the service (a bare `new` in a spec, or
+   * one that cannot be built) the value is written as it came; the service normalises
+   * it again on load.
+   */
+  private normaliseThreatProfile(value: string): string {
+    try {
+      const profile = this.injector?.get(ThreatProfileService, null);
+      return profile ? profile.normaliseImportedValue(value) : value;
+    } catch {
+      return value;
+    }
   }
 
   /** Remove credential material from a serialized settings payload. */
