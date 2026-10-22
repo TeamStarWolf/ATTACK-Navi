@@ -181,6 +181,36 @@ describe('ValidationService', () => {
     it('latestFor returns null when no runs exist', () => {
       expect(service.latestFor('T9999')).toBeNull();
     });
+
+    // RP-F decision 24: latestFor uses the one latest-run comparator the posture
+    // derivation uses (latest-run.ts), never a runDate string compare.
+    it('S19 T1007: an offset timestamp is ordered by its instant, not its string', () => {
+      service.record({ ...baseRun, runDate: '2026-10-21T01:30:00+09:00', detectionsFired: ['sigma:a'] });
+      const later = service.record({ ...baseRun, runDate: '2026-10-20T20:00:00Z', detectionsFired: [] });
+      expect(service.latestFor('T1003.001')!.id).toBe(later.id);
+      expect(later.status).toBe('failed');
+    });
+
+    it('S18 T1049: on the same instant the failed run is the latest, whichever was recorded first', () => {
+      const at = '2026-10-20T15:00:00.000Z';
+      const failed = service.record({ ...baseRun, runDate: at, detectionsFired: [] });
+      service.record({ ...baseRun, runDate: at });
+      expect(service.latestFor('T1003.001')!.id).toBe(failed.id);
+    });
+
+    it("S22 T1497: a runDate that is not a date ('yesterday') is the oldest run", () => {
+      const dated = service.record({ ...baseRun, runDate: '2026-10-19T10:00:00.000Z' });
+      service.record({ ...baseRun, runDate: 'yesterday', detectionsFired: [] });
+      expect(service.latestFor('T1003.001')!.id).toBe(dated.id);
+    });
+
+    it('the Navigator layer export colours each technique by the same latest run', () => {
+      const at = '2026-10-20T15:00:00.000Z';
+      service.record({ ...baseRun, runDate: at });
+      service.record({ ...baseRun, runDate: at, detectionsFired: [] });
+      const layer = service.buildNavigatorLayer('enterprise-attack') as { techniques: { techniqueID: string; comment?: string; color?: string }[] };
+      expect(layer.techniques.find(t => t.techniqueID === 'T1003.001')!.color).toBe('#ef4444');
+    });
   });
 
   describe('update', () => {

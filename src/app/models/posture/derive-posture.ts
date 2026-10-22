@@ -13,7 +13,8 @@
 //      partial, not-reproducible, failed or no-telemetry run yields none even
 //      when it lists a fired rule. The latest run governs, so a proof record
 //      older than the newest dated run that does not prove does not count
-//      (strictly older, as a failed run outranks a mark only when strictly newer).
+//      (older by the one latest-run comparator, latest-run.ts, RP-F decision 24:
+//      on the same instant the run that proves less is the later one).
 //      When that leaves no proof, the state names the run that outranked it
 //      (supersededProof) and, when that run failed and no newer full marks
 //      hold Covered, is 'contradicted', as a full mark a later failed run
@@ -34,6 +35,8 @@ import type {
   CoveredMark, PostureBucket, PostureInputs, PostureRules, PostureRung, PostureState, PostureSubState,
   PostureTally, ProofRecord, ProofScope, RunSummary, RunVerdict, SupersededProof,
 } from './posture.types';
+import { runTime } from '../local-date';
+import { sortRunsNewestFirst, summaryRunKey } from './latest-run';
 
 /** D16 threshold 15 (dec:364-380); D10 windows range 90, production 180, own-run 90 (own-run is §10.4 item 2). */
 export const DEFAULT_POSTURE_RULES: PostureRules = {
@@ -66,11 +69,13 @@ export function provesStatus(status: string): boolean {
   return PROVING_STATUSES.has(status);
 }
 
-/** Milliseconds since the epoch, or null when absent or not a date. */
+/**
+ * Milliseconds since the epoch, or null when absent or not a date: runTime
+ * (local-date.ts), the reading the latest-run comparator and the pill's day share,
+ * so a date-only date is its local day (RP-F decision 24).
+ */
 function time(iso: string | undefined): number | null {
-  if (!iso) return null;
-  const t = Date.parse(iso);
-  return Number.isNaN(t) ? null : t;
+  return runTime(iso);
 }
 
 interface DatedProof {
@@ -118,26 +123,25 @@ function isContradicted(full: readonly CoveredMark[], verdicts: readonly RunVerd
 }
 
 /**
- * The newest dated run whose status yields no proof (not on PROVING_STATUSES), or null.
- * An undated one never outranks a proof record, as an undated failed verdict
- * never outranks a dated mark; of two on the same instant the first is kept.
+ * The runs newest first by the one latest-run comparator (latest-run.ts, RP-F
+ * decision 24), with the newest DATED run whose status yields no proof (not on
+ * PROVING_STATUSES), or null. An undated run sorts oldest and never outranks a
+ * proof record, as an undated failed verdict never outranks a dated mark. On the
+ * same instant the comparator puts the run that proves less first (failed before
+ * passed, S18 T1049), so a tie never reads as a pass.
  */
-function latestNoProofRun(runs: readonly RunSummary[]): { readonly run: RunSummary; readonly t: number } | null {
-  let latest: { run: RunSummary; t: number } | null = null;
-  for (const run of runs) {
-    if (provesStatus(run.status)) continue;
-    const t = time(run.date);
-    if (t === null) continue;
-    if (latest === null || t > latest.t) latest = { run, t };
-  }
-  return latest;
+function latestNoProofRun(runs: readonly RunSummary[]): { readonly order: ReadonlyMap<string, number>; readonly run: RunSummary; readonly t: number } | null {
+  const ordered = sortRunsNewestFirst(runs, summaryRunKey);
+  const run = ordered.find(r => !provesStatus(r.status) && time(r.date) !== null);
+  if (!run) return null;
+  return { order: new Map(ordered.map((r, i) => [r.runId, i])), run, t: time(run.date) as number };
 }
 
 /**
  * The proof that stands once each run's status is applied (RP-F decisions 16 and
  * 23): a record counts only when its run's status is on PROVING_STATUSES (a record
  * whose run is not listed, in inputs built without runs, stands as it is), and the
- * latest run governs, so a record strictly older than the newest run that does not
+ * latest run governs, so a record older (by the latest-run comparator) than the newest run that does not
  * prove is outranked: a newer untested run after a pass names both runs.
  * `superseded` names that run and the newest record it outranked, when it
  * leaves no proof standing (the why line: "latest run failed on <date>; an
@@ -152,7 +156,13 @@ function standingProof(
   const qualifying = qualifyingProof(input.proof.filter(p => !noProofRuns.has(p.runId)), rules, now);
   const latest = latestNoProofRun(runs);
   if (latest === null) return { proof: qualifying, superseded: null };
-  const proof = qualifying.filter(p => p.t >= latest.t);
+  // A listed run stands when the comparator puts it before the latest run that does
+  // not prove; an unlisted record (inputs built without runs) when it is not older.
+  const latestAt = latest.order.get(latest.run.runId) as number;
+  const proof = qualifying.filter(p => {
+    const at = latest.order.get(p.record.runId);
+    return at === undefined ? p.t >= latest.t : at < latestAt;
+  });
   if (proof.length > 0 || qualifying.length === 0) return { proof, superseded: null };
   const earlier = [...qualifying].sort((a, b) => b.t - a.t)[0].record;
   const earlierStatus = runs.find(r => r.runId === earlier.runId)?.status ?? null;
@@ -167,13 +177,12 @@ function qualifiersOf(marks: readonly CoveredMark[]): CoveredQualifier[] {
  * The runs that produced no qualifying proof record (RP-F decision 9): an
  * untested run, a failed run, a passed run with no named rule, a run whose
  * named rule has no parseable date. A run with one qualifying record is out.
- * Newest first; an undated run sorts last (two undated runs subtract to NaN,
- * which falls through to the runId order, as equal dates do).
+ * Newest first by the one latest-run comparator (RP-F decision 24): an undated
+ * run sorts last; equal instants put the run that proves less first, then runId.
  */
 function runsWithoutProof(runs: readonly RunSummary[], proof: readonly DatedProof[]): RunSummary[] {
   const proved = new Set(proof.map(p => p.record.runId));
-  return runs.filter(r => !proved.has(r.runId))
-    .sort((a, b) => (time(b.date) ?? -Infinity) - (time(a.date) ?? -Infinity) || a.runId.localeCompare(b.runId));
+  return sortRunsNewestFirst(runs.filter(r => !proved.has(r.runId)), summaryRunKey);
 }
 
 export function derivePosture(ref: TechniqueRefKey, input: PostureInputs, rules: PostureRules, now: Date): PostureState {

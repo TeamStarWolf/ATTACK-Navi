@@ -6,6 +6,7 @@ import { AttackIdResolverService } from './attack-id-resolver.service';
 import { DataService, type AttackDomain } from './data.service';
 import type { ProofScope } from '../models/posture/posture.types';
 import { runMatches } from '../models/posture/run-match';
+import { compareRunsNewestFirst, latestRun, storedRunKey } from '../models/posture/latest-run';
 import {
   type SourceId,
   type V2Envelope,
@@ -473,11 +474,15 @@ export class ValidationService {
     return this.runsSubject.value.filter(r => runMatches(r, t, domainId, resolve));
   }
 
-  /** Most recent run for a technique, or null. */
+  /**
+   * Most recent run for a technique, or null: the Detection Validation pill's run.
+   * Picked with the one latest-run comparator the posture derivation uses (RP-F
+   * decision 24): instants, never runDate strings (a string compare put an offset
+   * timestamp or 'yesterday' ahead of a later run); on the same instant the run that
+   * proves less; a run whose date is unreadable is the oldest.
+   */
   latestFor(techniqueId: string): ValidationRunV2 | null {
-    const runs = this.forTechnique(techniqueId);
-    if (runs.length === 0) return null;
-    return runs.reduce((latest, r) => (r.runDate > latest.runDate ? r : latest));
+    return latestRun(this.forTechnique(techniqueId), storedRunKey)?.run ?? null;
   }
 
   /** Compute status from telemetry/detection/response inputs. */
@@ -801,7 +806,7 @@ export class ValidationService {
     const latestById = new Map<string, ValidationRunV2>();
     for (const r of this.runsSubject.value) {
       const cur = latestById.get(r.techniqueId);
-      if (!cur || r.runDate > cur.runDate) latestById.set(r.techniqueId, r);
+      if (!cur || compareRunsNewestFirst(storedRunKey(r), storedRunKey(cur)) < 0) latestById.set(r.techniqueId, r);
     }
     const domainVersion = this.loaded()?.version ?? '';
     const runVersion = [...this.runsSubject.value]

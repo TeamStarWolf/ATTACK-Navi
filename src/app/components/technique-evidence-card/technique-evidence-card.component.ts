@@ -24,7 +24,7 @@ import {
 import { lensOnScreen } from '../../models/lens-registry';
 import { KNOWN_FAMILY_COUNT, basisWords, lensExplain } from '../../models/lens-explain';
 import { PROVEN, lensLabel, proofLine } from '../../models/posture/posture-vocabulary';
-import { validationDay } from '../../models/local-date';
+import { runTime, validationDay } from '../../models/local-date';
 import { POSTURE_TODAY } from '../../models/posture/posture-today';
 import { refForTechnique, techniqueRefKey } from '../../models/technique-ref';
 import { DataService } from '../../services/data.service';
@@ -175,8 +175,8 @@ export class TechniqueEvidenceCardComponent {
     const windows = this.posture.decayDays();
     const now = this.today().getTime();
     return this.state().proof.map(p => {
-      const t = Date.parse(p.date);
-      const age = Number.isNaN(t) ? null : Math.max(0, Math.floor((now - t) / DAY_MS));
+      const t = runTime(p.date);
+      const age = t === null ? null : Math.max(0, Math.floor((now - t) / DAY_MS));
       return {
         key: `${p.runId}|${p.detectionRef}|${p.date}`,
         line: proofLine(p), rule: p.detectionRef, date: validationDay(p.date), outcome: p.outcome, source: p.source,

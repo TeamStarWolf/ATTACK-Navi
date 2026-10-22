@@ -378,8 +378,26 @@ describe('derivePosture (Phase 2 design §2.2)', () => {
       expect(s.runsWithoutProof.map(r => r.runId)).toEqual(['f1', 'p1']);
     });
 
-    it('a failed run on the same day as the proof does not outrank it (newer means strictly newer)', () => {
-      expect(derive({ runs: [run('p1', 3, 'passed'), run('f1', 3, 'failed')], proof: [own('p1', 3)] }).bucket).toBe('proven');
+    // RP-F decision 24 (S18 T1049): the one latest-run comparator puts the failed run of
+    // a same-instant pair first, as the Validation pill now does, so it outranks the pass.
+    it('a failed run on the same instant as the proof outranks it: a tie never reads as a pass', () => {
+      const s = derive({ runs: [run('p1', 3, 'passed'), run('f1', 3, 'failed')], proof: [own('p1', 3)] });
+      expect(s.bucket).toBe('none');
+      expect(s.subStates).toEqual(['contradicted']);
+      expect(s.supersededProof!.latest.runId).toBe('f1');
+    });
+
+    it('an unlisted record on the same instant as the latest failed run still stands (it has no run to order)', () => {
+      expect(derive({ runs: [run('f1', 3, 'failed')], proof: [own('elsewhere', 3)] }).bucket).toBe('proven');
+    });
+
+    it('a run dated with a date-only value is ordered as its local day by the shared comparator', () => {
+      const at = (d: string) => ({ runId: d, status: d.startsWith('p') ? 'passed' : 'failed', date: '', source: 'manual' as const });
+      const s = derive({
+        runs: [{ ...at('p1'), date: '2026-09-29' }, { ...at('f1'), date: new Date(2026, 8, 28, 22).toISOString() }],
+        proof: [proof('own-run', 2, { runId: 'p1', date: '2026-09-29' })],
+      });
+      expect(s.bucket).toBe('proven');
     });
 
     it('an undated failed run never outranks a proof; of two failed runs the newest governs', () => {
