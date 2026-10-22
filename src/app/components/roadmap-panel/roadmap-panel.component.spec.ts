@@ -18,7 +18,7 @@ describe('RoadmapPanelComponent', () => {
       providers: [
         { provide: DataService, useValue: { domain$: new BehaviorSubject(null) }},
         { provide: ImplementationService, useValue: { status$: new BehaviorSubject(new Map()) }},
-        { provide: AttackCveService, useValue: { getCvesForTechnique: () => [] } },
+        { provide: AttackCveService, useValue: { loadOnDemand: () => undefined, getCvesForTechnique: () => [] } },
         // P2-08: the Known count and the posture line read PostureService.rollup.
         postureStubProvider(makePostureStub(() => null)),
       ],

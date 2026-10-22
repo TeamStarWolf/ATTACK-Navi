@@ -112,6 +112,9 @@ export class RoadmapPanelComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    // The roadmap weights mitigations by CVE count from the CTID ATT&CK-to-CVE mapping,
+    // which loads on demand: opening this view asks for it (only the first ask fetches).
+    this.attackCveService.loadOnDemand();
     this.subs.add(this.dataService.domain$.subscribe(domain => {
       this.domain = domain;
       this.buildRoadmap();

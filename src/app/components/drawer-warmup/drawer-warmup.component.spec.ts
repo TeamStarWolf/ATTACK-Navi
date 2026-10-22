@@ -2,7 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { type ProviderToken } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { DRAWER_BOOT_SERVICES, DrawerWarmupComponent } from './drawer-warmup.component';
+import { DRAWER_BOOT_SERVICES, DRAWER_ON_DEMAND_SERVICES, DrawerWarmupComponent } from './drawer-warmup.component';
 import { SidebarComponent } from '../sidebar/sidebar.component';
 
 /**
@@ -12,14 +12,14 @@ import { SidebarComponent } from '../sidebar/sidebar.component';
  */
 function recording(created: ProviderToken<unknown>[]) {
   const inert = () => new Proxy({}, { get: () => () => undefined });
-  return DRAWER_BOOT_SERVICES.map((token) => ({
+  return [...DRAWER_BOOT_SERVICES, ...DRAWER_ON_DEMAND_SERVICES].map((token) => ({
     provide: token,
     useFactory: () => { created.push(token); return inert(); },
   }));
 }
 
 describe('DrawerWarmupComponent', () => {
-  it("creates every root service the drawer's construction creates, in the drawer's order, and renders nothing", () => {
+  it("creates every root service the drawer's construction creates except the on-demand ones, in the drawer's order, and renders nothing", () => {
     // The drawer's own construction (no change detection: its constructor and field initialisers only).
     const byDrawer: ProviderToken<unknown>[] = [];
     TestBed.configureTestingModule({ imports: [SidebarComponent], providers: recording(byDrawer) });
@@ -31,8 +31,13 @@ describe('DrawerWarmupComponent', () => {
     const fixture = TestBed.createComponent(DrawerWarmupComponent);
     fixture.detectChanges();
 
-    expect(byDrawer).toEqual([...DRAWER_BOOT_SERVICES]);
-    expect(byWarmup).toEqual(byDrawer);
+    // The drawer still injects the on-demand services; the warmup creates every other
+    // service, in the drawer's order, and none of the on-demand ones.
+    const onDemand = new Set(DRAWER_ON_DEMAND_SERVICES);
+    expect(DRAWER_ON_DEMAND_SERVICES.every((t) => byDrawer.includes(t))).toBeTrue();
+    expect(byDrawer.filter((t) => !onDemand.has(t))).toEqual([...DRAWER_BOOT_SERVICES]);
+    expect(byWarmup).toEqual([...DRAWER_BOOT_SERVICES]);
+    expect(byWarmup.some((t) => onDemand.has(t))).toBeFalse();
     expect((fixture.nativeElement as HTMLElement).childNodes.length).toBe(0);
   });
 });

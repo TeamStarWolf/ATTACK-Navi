@@ -102,7 +102,9 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
   techniqueSearchText = '';
   filteredTechniques: Technique[] = [];
   showTechniqueDropdown = false;
-  cveSearchHint: { cveId: string; techniqueCount: number } | null = null;
+  cveSearchHint: { cveId: string; techniqueCount: number; loading: boolean } | null = null;
+  /** The on-demand CTID ATT&CK-to-CVE mapping has loaded (until then a CVE hint says it is loading). */
+  cveMappingsLoaded = false;
   searchScope: SearchScope = 'name';
   searchFilterMode = false;
 
@@ -218,6 +220,12 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
         this.filteredTechniques = [];
         this.showTechniqueDropdown = false;
       }
+      this.cdr.markForCheck();
+    }));
+    this.subs.add(this.attackCveService.loaded$.subscribe((loaded) => {
+      this.cveMappingsLoaded = loaded;
+      // A CVE hint shown while the mapping loaded is worked out again now it has arrived.
+      if (loaded && this.cveSearchHint) this.onTechniqueSearchInput();
       this.cdr.markForCheck();
     }));
     this.subs.add(this.filterService.searchScope$.subscribe((s) => { this.searchScope = s; this.cdr.markForCheck(); }));
@@ -338,13 +346,15 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
       this.showTechniqueDropdown = false;
       return;
     }
+    // CVE lookups read the CTID mapping, which loads on demand: typing a CVE id asks for it.
+    if (/^cve/i.test(q)) this.attackCveService.loadOnDemand();
     if (/^CVE-\d{4}-\d+$/i.test(q)) {
       const mapping = this.attackCveService.getMappingForCve(q.toUpperCase());
       if (mapping) {
         const attackIds = new Set([...mapping.primaryImpact, ...mapping.secondaryImpact, ...mapping.exploitationTechnique]);
-        this.cveSearchHint = { cveId: q.toUpperCase(), techniqueCount: attackIds.size };
+        this.cveSearchHint = { cveId: q.toUpperCase(), techniqueCount: attackIds.size, loading: false };
       } else {
-        this.cveSearchHint = { cveId: q.toUpperCase(), techniqueCount: 0 };
+        this.cveSearchHint = { cveId: q.toUpperCase(), techniqueCount: 0, loading: !this.cveMappingsLoaded };
       }
       this.filteredTechniques = [];
       this.showTechniqueDropdown = true;

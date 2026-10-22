@@ -73,6 +73,50 @@ describe('AttackCveService', () => {
     });
   });
 
+  // Nothing on the matrix's default lens needs the mapping, so it is fetched when a view
+  // asks for it or first reads it, never because the service was created.
+  describe('on demand', () => {
+    let http: HttpTestingController;
+    const isCsv = (r: { url: string }) => new URL(r.url).pathname.includes('attack_to_cve');
+
+    beforeEach(() => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [provideHttpClient(withXhr()), provideHttpClientTesting()],
+      });
+      service = TestBed.inject(AttackCveService);
+      http = TestBed.inject(HttpTestingController);
+    });
+
+    it('makes no request on construction', () => {
+      expect(http.match(() => true)).toEqual([]);
+    });
+
+    it('requests the CSV and the KEV listing exactly once after loadOnDemand(), even when called twice', () => {
+      service.loadOnDemand();
+      service.loadOnDemand();
+      expect(http.match(isCsv).length).toBe(1);
+      expect(http.match(fromHost('api.github.com')).length).toBe(1);
+      http.verify();
+    });
+
+    it('the first read asks for it, and later reads add no request', () => {
+      service.getMappingForCve('CVE-2024-0001');
+      service.getCvesForTechnique('T1190');
+      service.searchCves('CVE-2024');
+      expect(http.match(isCsv).length).toBe(1);
+      expect(http.match(fromHost('api.github.com')).length).toBe(1);
+      http.verify();
+    });
+
+    it("'Load now' on either dataset before any ask loads both", () => {
+      service.retry('ctid-kev');
+      expect(http.match(isCsv).length).toBe(1);
+      expect(http.match(fromHost('api.github.com')).length).toBe(1);
+      http.verify();
+    });
+  });
+
   describe('KEV snapshot discovery', () => {
     // CTID publishes each KEV mapping under mappings/kev/attack-<ver>/kev-<MM.DD.YYYY>/.
     // A pinned path keeps serving an old snapshot forever once a newer one lands, and
@@ -88,6 +132,7 @@ describe('AttackCveService', () => {
       });
       const svc = TestBed.inject(AttackCveService);
       const mock = TestBed.inject(HttpTestingController);
+      svc.loadOnDemand();
 
       mock.expectOne(r => new URL(r.url).pathname.includes('attack_to_cve')).flush('');
 
@@ -143,6 +188,7 @@ describe('AttackCveService', () => {
       const mock = TestBed.inject(HttpTestingController);
       let loaded = false;
       service.loaded$.subscribe(v => (loaded = v));
+      service.loadOnDemand();
 
       mock.expectOne(r => new URL(r.url).pathname.includes('attack_to_cve')).flush('');
       mock.expectOne(fromHost('api.github.com'))

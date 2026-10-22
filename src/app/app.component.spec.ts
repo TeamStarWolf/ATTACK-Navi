@@ -506,9 +506,11 @@ describe('AppComponent: the technique drawer in @defer behind a warm-up', () => 
   const DRAWER_BOOT_LOADS = [
     'mappings/nist_800_53/', 'mappings/aws/', 'mappings/azure/', 'mappings/gcp/', 'mappings/veris/',
     'mappings/cri_profile/', 'misp-galaxy/', 'sigma_attack_nav_coverage.json', 'rule-coverage-snapshot.json',
-    'cwe-catalog.json', 'technique-queries.json', 'mappings/csa_ccm/', 'mappings/m365/', 'CVE-2026.jsonl.gz',
-    'CVE-2025.jsonl.gz', 'Anthropic-Cybersecurity-Skills/', 'ThreatHunter-Playbook/', 'library-layers/index.json',
+    'cwe-catalog.json', 'technique-queries.json', 'mappings/csa_ccm/', 'mappings/m365/',
+    'Anthropic-Cybersecurity-Skills/', 'ThreatHunter-Playbook/', 'library-layers/index.json',
   ];
+  /** Loads that are on demand now: neither the warm-up nor anything else starts them at boot. */
+  const ON_DEMAND_LOADS = ['Galeax/CVE2CAPEC/', 'repos/trickest/cve/', 'attack_to_cve/', 'mappings/kev/'];
 
   async function configure(opts: { warmup: boolean; behavior: DeferBlockBehavior }): Promise<void> {
     TestBed.configureTestingModule({
@@ -552,6 +554,9 @@ describe('AppComponent: the technique drawer in @defer behind a warm-up', () => 
     for (const load of DRAWER_BOOT_LOADS) {
       expect(withWarmup.filter(u => u.includes(load)).length).withContext(`${load} with the warm-up`).toBeGreaterThan(0);
       expect(withoutWarmup.filter(u => u.includes(load)).length).withContext(`${load} without it`).toBe(0);
+    }
+    for (const load of ON_DEMAND_LOADS) {
+      expect(withWarmup.filter(u => u.includes(load))).withContext(`${load} is on demand`).toEqual([]);
     }
   });
 

@@ -10,6 +10,7 @@ import { GapAnalysisService } from '../../services/gap-analysis.service';
 import { LibraryService } from '../../services/library.service';
 import { LibraryLayerService } from '../../services/library-layer.service';
 import { ThreatProfileService } from '../../services/threat-profile.service';
+import { AttackCveService } from '../../services/attack-cve.service';
 
 describe('GapAnalysisPanelComponent', () => {
   let component: GapAnalysisPanelComponent;
@@ -33,6 +34,7 @@ describe('GapAnalysisPanelComponent', () => {
             exportXlsx: jasmine.createSpy(),
         }},
         { provide: LibraryService, useValue: { getAssetsForTactic: () => [] }},
+        { provide: AttackCveService, useValue: { loadOnDemand: () => undefined }},
         // The shared picker (child) needs these:
         { provide: LibraryLayerService, useValue: { manifest$: new BehaviorSubject([]) }},
         { provide: ThreatProfileService, useValue: {

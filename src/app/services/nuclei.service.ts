@@ -58,6 +58,8 @@ export class NucleiService {
   private load(): void {
     // Wait for AttackCveService to finish loading before cross-referencing
     this.sources.begin('nuclei-tree');
+    // The CTID mapping it cross-references loads on demand too.
+    this.attackCveService.loadOnDemand();
     this.attackCveService.outcome$.pipe(filter(o => o !== 'pending'), take(1)).subscribe(outcome => {
       if (outcome === 'failed') this.sources.fail('nuclei-tree', 'blocked: the CTID ATT&CK-to-CVE mapping it cross-references did not load');
       else this.fetchTree();

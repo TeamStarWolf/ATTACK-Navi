@@ -19,12 +19,22 @@ import type { LensLegendStop } from '../../models/posture/lens-ramps';
 import type { PostureBucket } from '../../models/posture/posture.types';
 import { EXPIRING_SOON_DAYS, PostureService } from '../../services/posture.service';
 import { ThemeService } from '../../services/theme.service';
+import { SourceRegistryService } from '../../services/source-registry.service';
 import { THREAT_GAP_EXPOSURE_NOTE, THREAT_GAP_TOGGLE_LABEL, threatGapProfileNote, threatGapThreshold } from '../../models/posture/gap';
 import { THREAT_WEIGHT_PROVIDER } from '../../models/posture/threat-weight';
 import type { ThreatWeightProvider } from '../../models/posture/posture.types';
 
 /** A registry lens's legend stop: the Posture lens's, or a P2-14 lens's (which says whether its words are owner words). */
 type RegistryLegendStop = PostureLegendStop | LensLegendStop;
+
+/**
+ * Lenses whose source loads the first time the lens is picked (never at boot), and the
+ * line the legend shows while it loads: the cells stay unscored until it arrives.
+ */
+export const ON_DEMAND_LENS_LOADING: Partial<Record<HeatmapMode, { source: string; line: string }>> = {
+  'kill-chain': { source: 'cve2capec-runtime', line: 'Loading chains: the CVE2CAPEC data is fetched the first time this lens is used.' },
+  'poc-exploits': { source: 'trickest-poc-tree', line: 'Loading the PoC index: it is fetched the first time this lens is used.' },
+};
 
 /** Scale note shown after the stops, by ramp scale (none for categorical and threshold bands). */
 const SCALE_NOTE: Partial<Record<HeatmapModeDef['ramp']['scale'], string>> = {
@@ -92,6 +102,9 @@ const SCALE_NOTE: Partial<Record<HeatmapModeDef['ramp']['scale'], string>> = {
         <p class="legend-no-data">{{ noOwnerDataLine }}</p>
       } @else {
         <p class="legend-question">{{ def.question }}</p>
+      }
+      @if (onDemandLoadingLine; as line) {
+        <p class="legend-loading" role="status">{{ line }}</p>
       }
       @if (postureStops && ownerDataLens && expiringSoon > 0) {
         <p class="legend-expiring" role="status">{{ expiringLine }}</p>
@@ -222,6 +235,15 @@ export class LegendComponent implements OnInit, OnDestroy {
 
   private readonly injector = inject(Injector);
   private readonly themeService = inject(ThemeService);
+  private readonly sources = inject(SourceRegistryService);
+
+  /** While the active lens's on-demand source is not requested yet or loading, the line saying so. */
+  get onDemandLoadingLine(): string | null {
+    const entry = ON_DEMAND_LENS_LOADING[this.def.value];
+    if (!entry) return null;
+    const status = this.sources.get(entry.source).status;
+    return status === 'pending' || status === 'loading' ? entry.line : null;
+  }
   /** Injected on first use, so a legacy lens's legend needs no PostureService. */
   private postureService: PostureService | null = null;
 
@@ -328,6 +350,10 @@ export class LegendComponent implements OnInit, OnDestroy {
     );
     this.sub.add(
       this.themeService.isLight$.subscribe(() => this.cdr.markForCheck()),
+    );
+    // The loading line follows the on-demand source's record.
+    this.sub.add(
+      this.sources.records$.subscribe(() => this.cdr.markForCheck()),
     );
     this.sub.add(
       this.dataService.currentDomain$.subscribe(domain => {

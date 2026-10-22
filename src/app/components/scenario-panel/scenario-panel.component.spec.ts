@@ -65,7 +65,7 @@ describe('ScenarioPanelComponent (posture outcomes)', () => {
         // The REAL profile-scoped ThreatSimulationService over a fixture, so the overlay
         // exercises simulate() (item 5). Its gap/priority inputs are stubbed empty.
         { provide: THREAT_WEIGHT_PROVIDER, useValue: { weight: () => 0, revision: revisionSig, parents: parentsSig } },
-        { provide: AttackCveService, useValue: { getCvesForTechnique: () => [], getKevCvesForTechnique: () => [] } },
+        { provide: AttackCveService, useValue: { loadOnDemand: () => undefined, getCvesForTechnique: () => [], getKevCvesForTechnique: () => [] } },
         { provide: ExploitdbService, useValue: { hasExploits: () => false } },
         { provide: EpssService, useValue: { getScore: () => null } },
         { provide: EmulationPlanService, useValue: { generatePlan: () => ({ steps: [] }), exportCalderaProfile: () => {} } },

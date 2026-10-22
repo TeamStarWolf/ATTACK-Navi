@@ -97,6 +97,9 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
         this.query = '';
         this.results = [];
       } else {
+        // The palette searches CVEs in the CTID mapping, which loads on demand: opening it
+        // asks for the mapping (only the first ask fetches) so CVE results are there to type for.
+        this.attackCveService.loadOnDemand();
         // Freshly opened with an empty box: offer recent destinations.
         this.runSearch('');
       }

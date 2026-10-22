@@ -4,7 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { BehaviorSubject, of } from 'rxjs';
-import { DataHealthComponent } from './data-health.component';
+import { DataHealthComponent, ON_DEMAND_DETAIL } from './data-health.component';
 import { SourceRegistryService } from '../../services/source-registry.service';
 import { AtomicService } from '../../services/atomic.service';
 import { SigmaService } from '../../services/sigma.service';
@@ -124,9 +124,60 @@ describe('DataHealthComponent', () => {
   });
 
   it('should show dots in loading state initially', () => {
-    // Every source starts loading, EPSS included: it is no longer hard-coded as up.
+    // Every source starts loading, EPSS included: it is no longer hard-coded as up. The
+    // three on-demand sources (CTID ATT&CK-to-CVE, CVE2CAPEC, PoC) say 'on demand' instead.
     const loadingDots = fixture.nativeElement.querySelectorAll('.dot-loading');
-    expect(loadingDots.length).toBe(23);
+    expect(loadingDots.length).toBe(20);
+    expect(fixture.nativeElement.querySelectorAll('.dot-on-demand').length).toBe(3);
+  });
+
+  describe('on-demand sources', () => {
+    const dot = (name: string) =>
+      [...fixture.nativeElement.querySelectorAll('.health-dot')].find((d: Element) => d.getAttribute('title')!.startsWith(`${name}:`)) as Element;
+
+    it("lists the CTID ATT&CK-to-CVE mapping, CVE2CAPEC and PoC as 'on demand' until a view asks, never failed or loading", () => {
+      for (const name of ['ATT&CK CVE', 'CVE2CAPEC', 'PoC Exploits']) {
+        expect(dot(name).classList).toContain('dot-on-demand');
+        expect(dot(name).classList).not.toContain('dot-failed');
+        expect(dot(name).classList).not.toContain('dot-loading');
+        expect(dot(name).getAttribute('title')).toBe(`${name}: on demand - ${ON_DEMAND_DETAIL}`);
+      }
+      // A loaded$ replay of false does not turn it into "loading".
+      loadedSubjects['cve2capec'].next(false);
+      fixture.detectChanges();
+      expect(dot('CVE2CAPEC').classList).toContain('dot-on-demand');
+    });
+
+    it('goes loading when the first ask starts the request, then loaded when data arrives', () => {
+      const registry = TestBed.inject(SourceRegistryService);
+      registry.begin('cve2capec-runtime');
+      fixture.detectChanges();
+      expect(dot('CVE2CAPEC').classList).toContain('dot-loading');
+      expect(dot('CVE2CAPEC').getAttribute('title')).toBe('CVE2CAPEC: loading');
+      registry.succeed('cve2capec-runtime', 105151);
+      loadedSubjects['cve2capec'].next(true);
+      fixture.detectChanges();
+      expect(dot('CVE2CAPEC').classList).toContain('dot-loaded');
+      // The others are still on demand.
+      expect(dot('PoC Exploits').classList).toContain('dot-on-demand');
+    });
+
+    it('shows failed only after a request that was made fails', () => {
+      const registry = TestBed.inject(SourceRegistryService);
+      registry.begin('trickest-poc-tree');
+      registry.fail('trickest-poc-tree', 'HTTP 403 Forbidden');
+      fixture.detectChanges();
+      expect(dot('PoC Exploits').classList).toContain('dot-failed');
+      expect(dot('PoC Exploits').getAttribute('title')).toContain('HTTP 403');
+    });
+
+    it('turns the CTID entry loading once its datasets are asked for', () => {
+      const registry = TestBed.inject(SourceRegistryService);
+      registry.begin('ctid-attack-to-cve');
+      registry.begin('ctid-kev');
+      fixture.detectChanges();
+      expect(dot('ATT&CK CVE').classList).toContain('dot-loading');
+    });
   });
 
   it('should transition dot to loaded state when service loads', () => {
@@ -135,7 +186,7 @@ describe('DataHealthComponent', () => {
     const loadedDots = fixture.nativeElement.querySelectorAll('.dot-loaded');
     expect(loadedDots.length).toBe(1);
     const loadingDots = fixture.nativeElement.querySelectorAll('.dot-loading');
-    expect(loadingDots.length).toBe(22);
+    expect(loadingDots.length).toBe(19);
   });
 
   it('runs the EPSS availability check instead of reporting EPSS up unconditionally (E1.3)', () => {

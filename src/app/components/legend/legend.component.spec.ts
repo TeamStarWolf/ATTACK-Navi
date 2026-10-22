@@ -2,7 +2,8 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
-import { LegendComponent } from './legend.component';
+import { LegendComponent, ON_DEMAND_LENS_LOADING } from './legend.component';
+import { SourceRegistryService } from '../../services/source-registry.service';
 import { DEFAULT_HEATMAP_MODE, FilterService, HeatmapMode } from '../../services/filter.service';
 import { AttackDomain, DataService } from '../../services/data.service';
 import { SettingsService } from '../../services/settings.service';
@@ -57,6 +58,28 @@ describe('LegendComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it("says 'loading chains' on the CVE Kill Chain lens until its on-demand source has loaded", () => {
+    const registry = TestBed.inject(SourceRegistryService);
+    show('kill-chain');
+    expect(text('.legend-loading')).toBe(ON_DEMAND_LENS_LOADING['kill-chain']!.line);
+    expect(text('.legend-loading')).toContain('Loading chains');
+    registry.begin('cve2capec-runtime');
+    fixture.detectChanges();
+    expect(text('.legend-loading')).toContain('Loading chains');
+    registry.succeed('cve2capec-runtime', 105151);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.legend-loading')).toBeNull();
+    // A failed load is not "loading": the lens's zero meaning already names that case.
+    registry.fail('cve2capec-runtime', 'HTTP 404');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.legend-loading')).toBeNull();
+  });
+
+  it('shows no loading line on a lens whose sources are not on demand', () => {
+    show('frequency');
+    expect(fixture.nativeElement.querySelector('.legend-loading')).toBeNull();
   });
 
   it('should render correct color stops for coverage mode', () => {

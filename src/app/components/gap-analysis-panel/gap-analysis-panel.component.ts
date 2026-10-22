@@ -16,6 +16,7 @@ import { DataService } from '../../services/data.service';
 import { GapAnalysisService, GapAnalysisResult, PrioritizedGap } from '../../services/gap-analysis.service';
 import { LibraryService } from '../../services/library.service';
 import { ThreatProfileService } from '../../services/threat-profile.service';
+import { AttackCveService } from '../../services/attack-cve.service';
 import { ThreatProfilePickerComponent } from '../threat-profile-picker/threat-profile-picker.component';
 import { Domain } from '../../models/domain';
 
@@ -58,6 +59,7 @@ export class GapAnalysisPanelComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private libraryService: LibraryService,
     private threatProfile: ThreatProfileService,
+    private attackCveService: AttackCveService,
   ) {}
 
   /** Count of starred Library tools relevant to a technique's tactic. */
@@ -84,6 +86,9 @@ export class GapAnalysisPanelComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // The report counts KEV CVEs from the CTID ATT&CK-to-CVE mapping, which loads on
+    // demand: opening this view asks for it (only the first ask fetches).
+    this.attackCveService.loadOnDemand();
     this.loadGroups();
   }
 

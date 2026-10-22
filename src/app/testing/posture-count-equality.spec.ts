@@ -176,6 +176,7 @@ describe('[AC] Posture count equality across the count surfaces (P2-07, E2.1-d1)
           exposureMap$: new BehaviorSubject(assetExposure()), assets$: new BehaviorSubject([]), getExposureDetails: () => [],
         } },
         { provide: Cve2CapecService, useValue: {
+          loadOnDemand: () => undefined,
           loaded$: of(true), covered$: of(0), getChainCount: (id: string) => fixtureSignal('kill-chain', id),
         } },
         { provide: POSTURE_TODAY, useValue: signal(TODAY) },

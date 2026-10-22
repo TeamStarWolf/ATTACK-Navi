@@ -1,6 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
 import { Domain } from '../models/domain';
 import { Technique } from '../models/technique';
 import { type SignalFamilies, hasDefensiveReference } from '../models/known-signals';
@@ -152,6 +153,15 @@ export class EnrichmentService {
     private m365ControlsService: M365ControlsService,
     private attackCveService: AttackCveService,
   ) {}
+
+  /**
+   * Whether the CTID ATT&CK-to-CVE mapping behind the CVE signal has loaded. It loads on
+   * demand (the first read asks for it), so a view that shows the CVE count counts again
+   * when this turns true.
+   */
+  cveMappingsLoaded$(): Observable<boolean> {
+    return this.attackCveService.loaded$;
+  }
 
   /** Guard a numeric service lookup — never let missing data throw. */
   private num(fn: () => number): number {

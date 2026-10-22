@@ -652,6 +652,15 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy, AfterViewC
         if (mode === 'm365') {
           this.m365DefenderService.loadOnDemand();
         }
+        // The CVE2CAPEC chains and the PoC index load the first time their lens is picked
+        // (they are never fetched at boot); the lens re-renders on loaded$ below, and the
+        // legend says the chains are loading meanwhile.
+        if (mode === 'kill-chain') {
+          this.cve2capecService.loadOnDemand();
+        }
+        if (mode === 'poc-exploits') {
+          this.pocExploitService.loadOnDemand();
+        }
         if (mode === 'software' && this.domain) {
           this.softwareScores = new Map();
           for (const [techId, swList] of this.domain.softwareByTechnique.entries()) {
@@ -997,6 +1006,11 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy, AfterViewC
         }
         if (loaded && this.currentHeatmapMode === 'epss') {
           this.filterService.setHeatmapMode('epss');
+        }
+        // A CVE search typed before the on-demand mapping arrived highlights once it does.
+        if (loaded && /^cve-\d{4}-\d+$/i.test(this.searchQuery.trim())) {
+          this.rebuildSearchMatches();
+          this.cdr.markForCheck();
         }
       }),
     );

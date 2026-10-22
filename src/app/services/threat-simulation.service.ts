@@ -69,7 +69,11 @@ export class ThreatSimulationService {
     private attackCveService: AttackCveService,
     private exploitdbService: ExploitdbService,
     private epssService: EpssService,
-  ) {}
+  ) {
+    // Simulations count CVEs from the CTID ATT&CK-to-CVE mapping, which loads on demand:
+    // the scenario view (this service's only user) asks for it when it opens.
+    this.attackCveService.loadOnDemand();
+  }
 
   /**
    * Simulate the shared threat profile against the owner's posture: coverage over

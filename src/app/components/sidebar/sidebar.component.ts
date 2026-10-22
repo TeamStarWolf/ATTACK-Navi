@@ -727,6 +727,14 @@ export class SidebarComponent implements OnInit, OnDestroy {
         // ThreatHunter Playbook
         this.playbookCount = tech ? this.threatHunterPlaybookService.getPlaybookCount(tech.attackId) : 0;
         this.playbookUrl = tech ? this.threatHunterPlaybookService.getPlaybookUrl(tech.attackId) : null;
+        // The CVE Exposure, CVE Kill Chain and PoC Exploits sections read sources that load
+        // on demand: a selected technique asks for them (only the first ask fetches), and
+        // each section fills in on its source's loaded$ below.
+        if (tech) {
+          this.attackCveService.loadOnDemand();
+          this.cve2capecService.loadOnDemand();
+          this.pocExploitService.loadOnDemand();
+        }
         this.cveExposures = tech ? this.attackCveService.getCvesForTechnique(tech.attackId).slice(0, 20) : [];
         this.refreshCveEpssCache();
         this.showAllCves = false;

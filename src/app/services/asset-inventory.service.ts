@@ -544,6 +544,9 @@ export class AssetInventoryService {
         const assets: Asset[] = JSON.parse(raw);
         this.assetsSubject.next(assets);
         this.countSubject.next(assets.length);
+        // Exposure reads the CTID ATT&CK-to-CVE mapping, which loads on demand: an
+        // inventory on hand asks for it now, as the mapping's boot-time load used to give it.
+        this.attackCveService.loadOnDemand();
         // Defer exposure computation to let other services load
         setTimeout(() => this.recomputeExposure(assets), 2000);
       }
