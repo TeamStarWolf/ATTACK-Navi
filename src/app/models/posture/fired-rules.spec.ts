@@ -67,27 +67,40 @@ describe('firedRules (RP-F decision 30b)', () => {
     expect(firedRuleCount({ detectionsFired: ['siem:a', 'siem:a', 'siem:b'] })).toBe(2);
   });
 
-  // RP-F decision 33: the helper supplies both numbers, and the words for them when
-  // more rules fired than were expected (never 'N of M' then).
-  describe('firedRuleTally (RP-F decision 33)', () => {
-    it("fired within expected: both numbers, no words (each surface keeps its fraction)", () => {
-      expect(firedRuleTally({ detectionsExpected: ['siem:a', 'siem:b'], detectionsFired: ['siem:a'] }))
-        .toEqual({ fired: 1, expected: 2, exceeds: false, words: null });
-      expect(firedRuleTally({ detectionsExpected: ['siem:a'], detectionsFired: ['siem:a'] }))
-        .toEqual({ fired: 1, expected: 1, exceeds: false, words: null });
-      expect(firedRuleTally({ detectionsExpected: [], detectionsFired: [] }))
-        .toEqual({ fired: 0, expected: 0, exceeds: false, words: null });
+  // RP-F decision 38: the fraction counts EXPECTED rules that fired (k of M), names the
+  // unexpected ones (n) beside it, and reads 'N fired, none expected' when nothing was
+  // expected. Round 7: expected [a, b] with fired [a, c] read '2 of 2' (decision 33
+  // counted every fired rule against the expected ones).
+  describe('firedRuleTally (RP-F decision 38)', () => {
+    it("expected [a, b], fired [a, c]: '1 of 2 expected rules fired, plus 1 unexpected'", () => {
+      expect(firedRuleTally({ detectionsExpected: ['a', 'b'], detectionsFired: ['a', 'c'] }))
+        .toEqual({ fired: 2, expected: 2, matched: 1, unexpected: 1, words: '1 of 2 expected rules fired, plus 1 unexpected' });
     });
 
-    it("fired exceeds expected (rules known only from outcomes): 'N fired, M expected'", () => {
-      expect(firedRuleTally({ detectionsExpected: [], detectionsFired: [], outcomes: [outcome('edr:x', 'blocked')] }))
-        .toEqual({ fired: 1, expected: 0, exceeds: true, words: '1 fired, 0 expected' });
-      expect(firedRuleTally({ detectionsExpected: ['siem:a'], detectionsFired: ['siem:a', 'siem:b'] }).words).toBe('2 fired, 1 expected');
+    it("expected [a], fired [a, c]: '1 of 1 expected rules fired, plus 1 unexpected'", () => {
+      expect(firedRuleTally({ detectionsExpected: ['a'], detectionsFired: ['a', 'c'] }))
+        .toEqual({ fired: 2, expected: 1, matched: 1, unexpected: 1, words: '1 of 1 expected rules fired, plus 1 unexpected' });
     });
 
-    it('expected counts distinct, trimmed, non-empty rules, as fired does', () => {
-      expect(firedRuleTally({ detectionsExpected: ['siem:a', ' siem:a ', '', '  '], detectionsFired: ['siem:a'] }))
-        .toEqual({ fired: 1, expected: 1, exceeds: false, words: null });
+    it("expected none, fired [x]: '1 fired, none expected'; a rule known only from an outcome counts", () => {
+      expect(firedRuleTally({ detectionsExpected: [], detectionsFired: ['x'] }))
+        .toEqual({ fired: 1, expected: 0, matched: 0, unexpected: 1, words: '1 fired, none expected' });
+      expect(firedRuleTally({ detectionsExpected: [], detectionsFired: [], outcomes: [outcome('edr:x', 'blocked')] }).words).toBe('1 fired, none expected');
+      expect(firedRuleTally({ detectionsExpected: [], detectionsFired: [] }).words).toBe('0 fired, none expected');
+    });
+
+    it("an exact match reads 'M of M expected rules fired'; a missing expected rule is never counted as fired", () => {
+      expect(firedRuleTally({ detectionsExpected: ['a', 'b'], detectionsFired: ['b', 'a'] }).words).toBe('2 of 2 expected rules fired');
+      expect(firedRuleTally({ detectionsExpected: ['a', 'b'], detectionsFired: ['a'] }).words).toBe('1 of 2 expected rules fired');
+      expect(firedRuleTally({ detectionsExpected: ['a'], detectionsFired: [] }).words).toBe('0 of 1 expected rules fired');
+      // Expected [a, b], fired a and c: never '2 of 2'.
+      expect(firedRuleTally({ detectionsExpected: ['a', 'b'], detectionsFired: ['a'], outcomes: [outcome('c', 'alerted')] }).words)
+        .not.toContain('2 of 2');
+    });
+
+    it('blanks and duplicates collapse on both lists', () => {
+      expect(firedRuleTally({ detectionsExpected: ['siem:a', ' siem:a ', '', '  ', 'siem:b'], detectionsFired: ['siem:a', ' siem:a', ''], outcomes: [outcome('siem:a', 'alerted'), outcome(' ', 'blocked')] }))
+        .toEqual({ fired: 1, expected: 2, matched: 1, unexpected: 0, words: '1 of 2 expected rules fired' });
     });
   });
 

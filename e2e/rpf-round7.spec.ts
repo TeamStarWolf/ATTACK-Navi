@@ -154,4 +154,37 @@ test.describe('RP-F round 7', () => {
       await expect(card.getByTestId('ev-runs-without-proof')).toContainText('untested on 10/20/26 (source manual, 1 rule fired)');
     }
   });
+
+  // Decision 38: the fired fraction counts expected rules that fired. Expected [a, b]
+  // with a and c fired read "2 of 2" before (every fired rule counted against the
+  // expected ones).
+  test('[RP-F 38] expected [a, b], fired [a, c]: the pill and Run History read "1 of 2 expected rules fired, plus 1 unexpected"', async ({ page }) => {
+    await openWorkspace(page, {
+      seed: {
+        'navi.v2.validation-runs': JSON.stringify({
+          schema: 2, tombstones: [],
+          records: [{
+            id: 'e2e-rpf38', techniqueId: 'T1059', techniqueName: 'Command and Scripting Interpreter', runDate: '2026-10-20T15:00:00.000Z',
+            operator: '', telemetryRequired: [], telemetryAvailable: [], atomicTestId: '', atomicCommand: '', attackResult: 'executed',
+            detectionsExpected: ['siem:a', 'siem:b'], detectionsFired: ['siem:a', 'siem:c'], responsePlaybook: '', responseActions: [],
+            evidenceLinks: [], notes: '', status: 'partial', source: 'manual', domain: null, attackVersion: 'unknown', techniqueRef: null,
+            outcomes: [], proofScope: 'own-run', statusFromSource: false,
+            createdAt: '2026-10-20T15:00:00.000Z', updatedAt: '2026-10-20T15:00:00.000Z',
+          }],
+        }),
+      },
+    });
+    const words = '1 of 2 expected rules fired, plus 1 unexpected';
+    await paste(page, '#/matrix?tech=T1059');
+    const pill = page.locator('.sidebar.open app-validation-status-pill');
+    await expect(pill.locator('.vsp-meta').first()).toHaveText(new RegExp(`^\\s*${escape(words)}\\s*$`), { timeout: ROUTE_TIMEOUT });
+    await expect(pill).not.toContainText('2 of 2');
+
+    await page.evaluate(() => { window.location.hash = '#/detect/validation'; });
+    await expect(page.locator('app-validation-panel')).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    await page.getByRole('button', { name: /Run History/ }).click();
+    const row = page.locator('.vp-runs-table tbody tr').first();
+    await expect(row).toContainText(words);
+    await expect(row).not.toContainText('2/2');
+  });
 });

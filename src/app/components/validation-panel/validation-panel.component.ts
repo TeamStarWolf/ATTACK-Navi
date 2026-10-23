@@ -418,13 +418,13 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
 
   /**
    * A run's fired rules beside its expected ones, through the shared helper the pill
-   * uses (firedRuleTally, RP-F decision 33): 'N/M', or 'N fired, M expected' when more
-   * rules fired than were expected (never a fraction then). `lead` prefixes the
-   * fraction only ('fired ' on the technique tile).
+   * uses (firedRuleTally, RP-F decision 38): 'k of M expected rules fired', plus ', plus n
+   * unexpected' when other rules fired, or 'N fired, none expected'. The technique tile
+   * and Run History print it as the pill does (decision 33's 'N/M' and 'N fired, M
+   * expected' are gone: expected [a, b] with fired [a, c] read 'fired 2/2').
    */
-  firedWords(run: ValidationRun, lead = ''): string {
-    const t = firedRuleTally(run);
-    return t.words ?? `${lead}${t.fired}/${t.expected}`;
+  firedWords(run: ValidationRun): string {
+    return firedRuleTally(run).words;
   }
 
   /**

@@ -135,9 +135,10 @@ test.describe('RP-F round 6', () => {
     await expect(pill.locator('.vsp-status').first()).toHaveText('UNTESTED', { timeout: ROUTE_TIMEOUT });
   });
 
-  // Decision 33: with more rules fired than expected the pill reads "N fired, M expected",
-  // never "N of M" (round 6: a tile "fired 2/1" beside a pill "UNTESTED 2 of 1").
-  test('[RP-F 33] a run that fired more rules than it expected: the pill and the Run History read "2 fired, 1 expected"', async ({ page }) => {
+  // Decision 33, as decision 38 words it (round 7): the fraction counts expected rules
+  // that fired and names the others, never "N of M" over every fired rule (round 6: a
+  // tile "fired 2/1" beside a pill "UNTESTED 2 of 1").
+  test('[RP-F 33] a run that fired more rules than it expected: the pill and the Run History read "1 of 1 expected rules fired, plus 1 unexpected"', async ({ page }) => {
     await openWorkspace(page, {
       seed: {
         'navi.v2.validation-runs': JSON.stringify({
@@ -155,14 +156,14 @@ test.describe('RP-F round 6', () => {
     });
     await paste(page, '#/matrix?tech=T1059');
     const pill = page.locator('.sidebar.open app-validation-status-pill');
-    await expect(pill.locator('.vsp-meta').first()).toHaveText(/^\s*detection rules: 2 fired, 1 expected\s*$/, { timeout: ROUTE_TIMEOUT });
+    await expect(pill.locator('.vsp-meta').first()).toHaveText(/^\s*1 of 1 expected rules fired, plus 1 unexpected\s*$/, { timeout: ROUTE_TIMEOUT });
     await expect(pill).not.toContainText('2 of 1');
 
     await page.evaluate(() => { window.location.hash = '#/detect/validation'; });
     await expect(page.locator('app-validation-panel')).toBeVisible({ timeout: ROUTE_TIMEOUT });
     await page.getByRole('button', { name: /Run History/ }).click();
     const row = page.locator('.vp-runs-table tbody tr').first();
-    await expect(row).toContainText('2 fired, 1 expected');
+    await expect(row).toContainText('1 of 1 expected rules fired, plus 1 unexpected');
     await expect(row).not.toContainText('2/1');
   });
 });

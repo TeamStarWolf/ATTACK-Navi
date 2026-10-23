@@ -79,9 +79,10 @@ test.describe('RP-F round 5', () => {
 
   // Decision 30b: one fired-rule count. T1113 has a passed run whose only rule is a blocked
   // outcome (detectionsFired empty). Round 5: the card read "1 rule fired" beside a pill
-  // reading "0 of 0 detection rules fired". Both now count through firedRules. Decision 33
-  // (round 6): with more rules fired than expected the pill reads "1 fired, 0 expected", never "1 of 0".
-  test('[RP-F 30b] T1113 (a passed run whose only rule is a blocked outcome): the pill reads 1 fired, 0 expected and the card 1 rule fired', async ({ page }) => {
+  // reading "0 of 0 detection rules fired". Both now count through firedRules. Decision 38
+  // (round 7, replacing decision 33's "1 fired, 0 expected"): with no expected rule the
+  // pill reads "1 fired, none expected", never "1 of 0".
+  test('[RP-F 30b] T1113 (a passed run whose only rule is a blocked outcome): the pill reads 1 fired, none expected and the card 1 rule fired', async ({ page }) => {
     await openWorkspace(page, {
       seed: {
         'navi.v2.validation-runs': runsStore({
@@ -100,7 +101,7 @@ test.describe('RP-F round 5', () => {
     const drawer = page.locator('.sidebar.open');
     const pill = drawer.locator('app-validation-status-pill');
     await expect(pill.locator('.vsp-status').first()).toHaveText('PASS', { timeout: ROUTE_TIMEOUT });
-    await expect(pill.locator('.vsp-meta').first()).toHaveText(/^\s*detection rules: 1 fired, 0 expected\s*$/);
+    await expect(pill.locator('.vsp-meta').first()).toHaveText(/^\s*1 fired, none expected\s*$/);
     const why = drawer.locator('[data-testid="evidence-card"] [data-testid="ev-why"]');
     await expect(why).toContainText('; 1 rule fired', { timeout: ROUTE_TIMEOUT });
     await expect(why).not.toContainText('0 rules fired');
