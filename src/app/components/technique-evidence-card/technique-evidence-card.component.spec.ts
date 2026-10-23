@@ -14,7 +14,7 @@ import { TechniqueEvidenceCardComponent } from './technique-evidence-card.compon
 import type { Technique } from '../../models/technique';
 import type { Domain } from '../../models/domain';
 import type { CoveredMark, PostureState, ProofRecord, RunSummary } from '../../models/posture/posture.types';
-import { DEFAULT_POSTURE_RULES } from '../../models/posture/derive-posture';
+import { DEFAULT_POSTURE_RULES, derivePosture } from '../../models/posture/derive-posture';
 import { POSTURE_TODAY } from '../../models/posture/posture-today';
 import { heatmapModeDef } from '../../models/heatmap-modes';
 import { DataService } from '../../services/data.service';
@@ -251,16 +251,26 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
         .toBe('Runs without proof: untested on 10/15/26 (source manual, 1 rule fired); see Detection Validation');
     });
 
-    it('T1518 shape: a newer untested run after a pass is named in the why line; the card reads no rung from the pass', () => {
-      const passed: RunSummary = { runId: 'p1', status: 'passed', date: '2026-10-18T15:00:00.000Z', source: 'manual', rulesFired: 1 };
-      const newer: RunSummary = { runId: 'u2', status: 'untested', date: '2026-10-20T15:00:00.000Z', source: 'manual' };
-      const s = state({
-        rung: 'known', bucket: 'known', runsWithoutProof: [newer, passed],
-        supersededProof: { latest: newer, earlier: { ...OWN_PROOF, runId: 'p1', date: passed.date }, earlierStatus: 'passed' },
-      });
+    // RP-F decision 29: proof supersession is per rule, and only a later FAILED or
+    // not-reproducible run of the SAME rule removes proof (the real T1518 shape, a later
+    // untested run, stays Proven and is covered in lens-explain.spec.ts). The state is
+    // derived by derivePosture, not built by hand, so it is one the app can produce.
+    it('a later failed run of the same rule removes the pass: the why line names both runs; the card reads no rung from the pass', () => {
+      const rule = OWN_PROOF.detectionRef;
+      const passed: RunSummary = { runId: 'p1', status: 'passed', date: '2026-10-18T15:00:00.000Z', source: 'manual', rulesFired: 1, rules: [rule] };
+      const failed: RunSummary = { runId: 'f2', status: 'failed', date: '2026-10-20T15:00:00.000Z', source: 'manual', rules: [rule] };
+      const s = derivePosture(state().ref, {
+        knownSignals: 3, covered: [], threatWeight: 1, exposureWeight: 0,
+        proof: [{ ...OWN_PROOF, runId: 'p1', date: passed.date }],
+        verdicts: [{ date: failed.date, failed: true, notReproducible: false, source: 'manual' }],
+        runs: [failed, passed],
+      }, DEFAULT_POSTURE_RULES, new Date('2026-10-21T00:00:00.000Z'));
+      expect(s.rung).toBe('known');
+      expect(s.proof.length).toBe(0);
+      expect(s.supersededProof?.latest.runId).toBe('f2');
       const el = render(s, true, 'posture');
       expect(text(block(el, 'ev-why'))).toContain(
-        'Why this colour: Known: mapped (3 of 5 reference families); latest run of the rule was untested on 10/20/26; an earlier run passed on 10/18/26; see Detection Validation');
+        'Why this colour: Known: mapped (3 of 5 reference families); contradicted: latest run of the rule failed on 10/20/26; an earlier run passed on 10/18/26; see Detection Validation');
       // RP-F decision 28 (round 4 repair, S27 T1059.001): the outranked pass fired a rule the pill
       // still shows, so the Proven block names it rather than "No recorded detection".
       expect(text(block(el, 'ev-proven')!.querySelector('[data-testid="ev-proven-empty"]')))

@@ -171,14 +171,13 @@ function ownerRecordWithoutRung(state: PostureState): boolean {
 }
 
 /**
- * What the latest run did, as the superseded clause says it: 'failed', 'had no
- * telemetry', 'was untested', 'was not reproducible', 'was partial' (RP-F decision 28:
- * a newer untested or not-reproducible run after a pass is named by its status).
+ * What the run that removed the proof did, as the superseded clause says it:
+ * 'failed' or 'was not reproducible'. Only those two statuses remove proof (RP-F
+ * decision 29, REMOVING_STATUSES in derive-posture.ts); an untested, partial or
+ * no-telemetry run never does, and is named by laterRunClause instead.
  */
 function latestRunWords(status: string): string {
-  if (status === 'failed') return 'failed';
-  if (status === 'no-telemetry') return 'had no telemetry';
-  return `was ${status.replace(/-/g, ' ')}`;
+  return status === 'failed' ? 'failed' : `was ${status.replace(/-/g, ' ')}`;
 }
 
 /**
@@ -202,9 +201,9 @@ function earlierRunWords(status: string | null): string {
  * line does (laterRunClause): '...; an earlier run passed on 10/21/26; a later
  * untested run on 10/23/26' (RP-F round 4 repair: the pill shows that newer run).
  * 'contradicted: ' leads while the state is contradicted (the cell paints the
- * hatch, so its words say so, RP-F decision 17); a run with no telemetry reads
- * 'latest run of the rule had no telemetry on ...'. The days are the local days
- * the Detection Validation pill prints.
+ * hatch, so its words say so, RP-F decision 17); a not-reproducible remover reads
+ * 'latest run of the rule was not reproducible on ...' and contradicts nothing. The
+ * days are the local days the Detection Validation pill prints.
  */
 export function supersededClause(state: Pick<PostureState, 'supersededProof' | 'subStates' | 'laterRuns'>): string {
   const s = state.supersededProof;
@@ -318,8 +317,9 @@ function coveredNoneExplain(state: PostureState): string {
  * say it (RP-F decision 17: a cell that paints or speaks the contradicted hatch
  * says so in its why line too): the run that outranked the proof (supersededClause,
  * which leads with 'contradicted: '), else 'contradicted by a later failed run'.
- * A run with no telemetry that outranked the proof is named though it contradicts
- * nothing; '' for a state with neither.
+ * A not-reproducible run of the rule that removed the proof is named though it
+ * contradicts nothing (only failed and not-reproducible runs remove proof, RP-F
+ * decision 29); '' for a state with neither.
  */
 function contradictionNote(state: PostureState): string {
   const superseded = supersededClause(state);
