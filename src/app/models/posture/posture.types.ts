@@ -64,6 +64,20 @@ export interface CoveredMark {
    * (and on a hand-built telemetry mark, which then reads as no detection alerted).
    */
   readonly telemetryOutcome?: TelemetryOutcome;
+  /**
+   * On a range telemetry partial whose rule fired (telemetryOutcome 'alerted' or
+   * 'blocked'): the date of the newest run that fired the rule, when that is not the
+   * run of the mark's own row (RP-F decision 40: a rule counts as fired when any run in
+   * the technique's evidence fired it). Absent when the mark's own run fired it.
+   */
+  readonly telemetryFiredAt?: string;
+  /**
+   * On a quiet range telemetry partial (telemetryOutcome 'logged' or 'none', or absent):
+   * true when another rule fired in the technique's evidence (RP-F decision 40), so the
+   * words name this rule as quiet ("this rule did not alert") and never say "no
+   * detection alerted" beside a pill or a Proven block that counts a fired rule.
+   */
+  readonly techniqueFired?: boolean;
 }
 
 export type ProofScope = 'production' | 'range' | 'own-run';
@@ -124,6 +138,13 @@ export interface RunSummary {
    * keys on source plus technique).
    */
   readonly rules?: readonly string[];
+  /**
+   * The run's attackResult when the attack did not execute ('failed-prereq' or 'errored',
+   * RP-F decision 44); absent otherwise. Such a run fired nothing (rulesFired 0) and its
+   * range rows are not credited: the card's Covered block says "range run on <date> did
+   * not execute (<outcome>): not credited".
+   */
+  readonly notExecuted?: string;
 }
 
 /**

@@ -43,6 +43,7 @@ import type {
 } from './posture.types';
 import { runTime } from '../local-date';
 import { sortRunsNewestFirst, summaryRunKey } from './latest-run';
+import { ruleKey } from './fired-rules';
 
 /** D16 threshold 15 (dec:364-380); D10 windows range 90, production 180, own-run 90 (own-run is §10.4 item 2). */
 export const DEFAULT_POSTURE_RULES: PostureRules = {
@@ -138,13 +139,16 @@ const REMOVING_STATUSES: ReadonlySet<string> = new Set(['failed', 'not-reproduci
 
 /**
  * True when `run` is a run of the record's detection rule (RP-F decision 29): it
- * names the record's detectionRef, or it names no rule and has the record's source
+ * names the record's detectionRef, compared by ruleKey (trimmed, case-insensitive, RP-F
+ * decision 40, as the range marks supersede; PR #241 round 1: a failed run naming
+ * 'WAZUH:306' did not remove proof of 'wazuh:306'), or it names no rule and has the record's source
  * (a manual run without a rule id keys on source plus technique; every input here
  * is one technique's).
  */
 function sameRule(run: RunSummary, record: ProofRecord): boolean {
   const named = run.rules ?? [];
-  return named.length > 0 ? named.includes(record.detectionRef.trim()) : run.source === record.source;
+  const key = ruleKey(record.detectionRef);
+  return named.length > 0 ? named.some(r => ruleKey(r) === key) : run.source === record.source;
 }
 
 /**

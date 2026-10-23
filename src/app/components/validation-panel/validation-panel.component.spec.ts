@@ -254,6 +254,18 @@ describe('ValidationPanelComponent', () => {
     expect(component.firedWords(run([], ['x']))).toBe('1 fired, none expected');
   });
 
+  // RP-F decision 44: the tile and Run History read the same words as the pill for a run
+  // whose attack did not execute, with no fraction.
+  it("firedWords: a run whose attack did not execute reads 'attack did not execute', with no fraction (RP-F decision 44)", () => {
+    for (const attackResult of ['failed-prereq', 'errored']) {
+      const run = { attackResult, detectionsExpected: ['a', 'b'], detectionsFired: ['a', 'b'] } as never;
+      expect(component.firedWords(run)).toBe('attack did not execute');
+      expect(component.firedCount(run)).toBe(0);
+    }
+    // The outcomes that ran the attack keep the fraction.
+    expect(component.firedWords({ attackResult: 'blocked', detectionsExpected: ['a'], detectionsFired: ['a'] } as never)).toBe('1 of 1 expected rules fired');
+  });
+
   // RP-F decision 34: the Run History sorts through the one latest-run comparator
   // (decision 24): by instant, newest first; on the same instant the run that proves
   // less first; 'date unknown' rows last. It sorted runDate strings, so an offset

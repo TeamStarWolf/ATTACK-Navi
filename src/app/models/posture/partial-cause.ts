@@ -17,6 +17,12 @@
 //   is not proof". The why line, the cell's aria-label and tooltip, the card's Covered
 //   block and its "Record a run" tooltip all say it, and the card offers "Record a
 //   run" instead of Confirm.
+// The words are per technique and per rule, never per row (RP-F decision 40):
+// posture-adapters gives one telemetry mark per rule (the latest row of the rule, alerted
+// or blocked when any run of the technique fired it, matched case-insensitively), and
+// each mark is one clause dated by its run: "... (range run on 10/21/26)". A quiet rule
+// beside a rule that fired reads "partial, this rule did not alert", so "no detection
+// alerted" never stands beside a fired rule the pill or the Proven block counts.
 // Round 6 (letter A) found a telemetry-only range row on T1200 explained with the
 // threshold sentence, and its Confirm minted a self-attested mark 'via wazuh:5'.
 // Round 7 (letters A and G) found a telemetry row whose rule alerted (T1082 via
@@ -31,7 +37,9 @@
 // range rows. Threshold or breadth wording outside this file is a defect
 // (partial-cause-words.spec.ts).
 // No rung word here: these lines name a cause, never a rung.
-import type { CoveredMark, PartialCause, PostureState } from './posture.types';
+import type { CoveredMark, PartialCause, PostureState, RunSummary } from './posture.types';
+import { attackResultWords } from './fired-rules';
+import { validationDay } from '../local-date';
 
 /** The breadth partial's reason (D16), as the why line has always said it. */
 export const BREADTH_PARTIAL_WORDS =
@@ -97,13 +105,23 @@ export const PARTIAL_CAUSES_FORMULA =
 export const PARTIAL_CAUSES_NOTE =
   'a broad mitigation not confirmed per technique, or range telemetry with no alert credited, counts as partial';
 
-/** The tail of a range telemetry partial whose row's outcome is logged or none (RP-F decision 31). */
+/** The tail of a range telemetry partial when no rule fired anywhere in the technique's evidence (RP-F decision 31). */
 const TELEMETRY_QUIET_TAIL = 'partial, no detection alerted';
 
-/** How a telemetry partial's row ended, as its words group it: quiet (logged, none or unknown), alerted, blocked. */
+/**
+ * The tail of a quiet telemetry row's rule when another rule of the technique fired
+ * (RP-F decision 40): the clause names this rule as quiet, never "no detection alerted"
+ * beside a pill or a Proven block that counts a fired rule.
+ */
+const TELEMETRY_RULE_QUIET_TAIL = 'partial, this rule did not alert';
+
+/** The same for a quiet row that names no rule while another rule of the technique fired. */
+const TELEMETRY_UNNAMED_QUIET_TAIL = 'partial, no rule named';
+
+/** How a telemetry partial's rule ended, as its words order it: quiet (logged, none or unknown), alerted, blocked. */
 type TelemetryFired = 'quiet' | 'alerted' | 'blocked';
 
-/** The order the groups are named in: the quiet rows first, then the rows whose rule fired. */
+/** The order the clauses are named in: the quiet rules first, then the rules that fired. */
 const TELEMETRY_FIRED_ORDER: readonly TelemetryFired[] = ['quiet', 'alerted', 'blocked'];
 
 /** The group of a telemetry mark, from the outcome its producer recorded (RP-F decision 35). */
@@ -123,41 +141,49 @@ export function partialCausesOf(state: Pick<PostureState, 'covered'> & Partial<P
   return [...causes].sort();
 }
 
-/** The distinct `via` of the partial marks of `cause`, in mark order. */
-function viaOf(marks: readonly CoveredMark[], cause: PartialCause): string[] {
-  const out: string[] = [];
-  for (const m of marks) {
-    if (m.strength === 'partial' && m.partialCause === cause && m.via && !out.includes(m.via)) out.push(m.via);
+/**
+ * One telemetry mark's clause (RP-F decisions 35 and 40): one rule, its outcome and its
+ * run date (` (range run on <day>)`, the local day the Detection Validation pill prints).
+ *   quiet, nothing fired:      'range telemetry observed via wazuh:5: partial, no detection alerted (range run on 10/20/26)'
+ *   quiet, another rule fired: 'range telemetry observed via wazuh:202: partial, this rule did not alert (range run on 10/21/26)'
+ *   fired in the row's run:    'range telemetry observed via wazuh:12: partial; the rule alerted in this run, but the
+ *                               range reports telemetry-only coverage, so it is not proof (range run on 10/20/26)'
+ *   fired in another run:      '... the rule alerted in a run on 10/20/26, but ...'
+ */
+function telemetryClause(m: CoveredMark): string {
+  const head = `range telemetry observed${m.via ? ` via ${m.via}` : ''}`;
+  const when = m.at ? ` (range run on ${validationDay(m.at)})` : '';
+  const fired = telemetryFired(m);
+  if (fired === 'quiet') {
+    const tail = !m.techniqueFired ? TELEMETRY_QUIET_TAIL : m.via ? TELEMETRY_RULE_QUIET_TAIL : TELEMETRY_UNNAMED_QUIET_TAIL;
+    return `${head}: ${tail}${when}`;
   }
-  return out;
-}
-
-/** One group's words: the rules it names, then the tail its outcome reads. */
-function telemetryClause(via: readonly string[], fired: TelemetryFired): string {
-  const head = `range telemetry observed${via.length > 0 ? ` via ${via.join(', ')}` : ''}`;
-  if (fired === 'quiet') return `${head}: ${TELEMETRY_QUIET_TAIL}`;
-  return `${head}: partial; ${via.length > 1 ? 'the rules' : 'the rule'} ${fired} in this run, `
-    + 'but the range reports telemetry-only coverage, so it is not proof';
+  const where = m.telemetryFiredAt ? `in a run on ${validationDay(m.telemetryFiredAt)}` : 'in this run';
+  return `${head}: partial; the rule ${fired} ${where}, but the range reports telemetry-only coverage, so it is not proof${when}`;
 }
 
 /**
- * The words of the state's range telemetry partial marks, by the outcome each mark's
- * row recorded (RP-F decisions 31 and 35), naming every rule of each group:
- *   logged or none:  'range telemetry observed via wazuh:5: partial, no detection alerted'
- *   alerted:         'range telemetry observed via wazuh:12: partial; the rule alerted in this run,
- *                     but the range reports telemetry-only coverage, so it is not proof'
- *   blocked:         the same with 'the rule blocked in this run'
- * Groups are joined with '; ', quiet rows first. Without a telemetry mark, or a rule,
- * 'range telemetry observed: partial, no detection alerted'.
+ * The words of the state's range telemetry partial marks, one clause per rule (RP-F
+ * decision 40: posture-adapters gives one telemetry mark per rule, the latest row of the
+ * rule, alerted or blocked when any run of the technique fired it), quiet rules first,
+ * then the rules that alerted, then those that blocked, joined with '; ':
+ *   'range telemetry observed via wazuh:202: partial, this rule did not alert (range run on 10/21/26);
+ *    range telemetry observed via wazuh:201: partial; the rule alerted in this run, but the range
+ *    reports telemetry-only coverage, so it is not proof (range run on 10/21/26)'
+ * Without a telemetry mark, 'range telemetry observed: partial, no detection alerted'.
+ * Round 8 grouped the rows by outcome and worded each row alone, so T1113 read "no
+ * detection alerted" for wazuh:202 beside a pill counting wazuh:201 as fired.
  */
 export function telemetryPartialWords(marks: readonly CoveredMark[]): string {
   const telemetry = marks.filter(m => m.strength === 'partial' && m.partialCause === 'telemetry');
   const clauses: string[] = [];
   for (const fired of TELEMETRY_FIRED_ORDER) {
-    const group = telemetry.filter(m => telemetryFired(m) === fired);
-    if (group.length > 0) clauses.push(telemetryClause(viaOf(group, 'telemetry'), fired));
+    for (const m of telemetry) {
+      const clause = telemetryFired(m) === fired ? telemetryClause(m) : null;
+      if (clause !== null && !clauses.includes(clause)) clauses.push(clause);
+    }
   }
-  return clauses.length > 0 ? clauses.join('; ') : telemetryClause([], 'quiet');
+  return clauses.length > 0 ? clauses.join('; ') : `range telemetry observed: ${TELEMETRY_QUIET_TAIL}`;
 }
 
 /**
@@ -170,6 +196,18 @@ export function partialMarkWords(m: CoveredMark): string | null {
   if (m.partialCause === 'telemetry') return telemetryPartialWords([m]);
   if (m.partialCause === 'breadth') return BREADTH_PARTIAL_WORDS;
   return null;
+}
+
+/**
+ * The Covered words of a range run whose attack did not execute (RP-F decision 44): its
+ * rows credit nothing, so the card's Covered block names it instead of a mark:
+ *   'range run on 10/21/26 did not execute (errored): not credited'
+ * It never reads "the rule alerted in this run" (round 8, T1027.013). Null for a run
+ * that executed, or one that is not a range run.
+ */
+export function notCreditedWords(run: Pick<RunSummary, 'date' | 'source' | 'notExecuted'>): string | null {
+  if (!run.notExecuted || !run.source.startsWith('lylat-range:')) return null;
+  return `range run on ${validationDay(run.date)} did not execute (${attackResultWords(run.notExecuted)}): not credited`;
 }
 
 /**

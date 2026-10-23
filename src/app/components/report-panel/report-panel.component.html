@@ -50,7 +50,7 @@
           <p class="report-split-note" data-testid="report-split-note">
             <strong>{{ labels.known }}</strong> and <strong>{{ labels.theoreticalShort }}</strong> counts come from ATT&amp;CK's reference mappings and make no claim about your environment.
             @if (ownerWords()) {
-              <strong>{{ labels.covered }}</strong> counts come only from data you recorded (self-attested, not validated); {{ labels.partialNote }}.
+              <strong>{{ labels.coveredCard }}</strong> counts come from data you recorded (self-attested, not validated) and from range detection rows (range), with a count per source; {{ labels.partialNote }}.
             } @else {
               {{ labels.fresh }}
             }
@@ -72,8 +72,12 @@
                 @if (ownerWords()) {
                   <div class="summary-card implemented" data-testid="report-covered">
                     <div class="card-num" data-posture="covered">{{ s.covered }}</div>
-                    <div class="card-label">{{ labels.covered }}</div>
-                    <div class="card-sub" [attr.data-share-pct]="s.coveredPct">{{ s.covered }} of <span data-posture="assessable">{{ s.assessable }}</span> {{ labels.assessable }} techniques ({{ s.coveredPct }}%). {{ labels.coveredNote }} {{ labels.assessableNote }}</div>
+                    <div class="card-label">{{ labels.coveredCard }}</div>
+                    <!-- RP-F decision 43: one line per source with its count (report-split coveredCardLines). -->
+                    @for (line of coveredLines(); track line) {
+                      <div class="card-sub" data-testid="report-covered-source">{{ line }}</div>
+                    }
+                    <div class="card-sub" [attr.data-share-pct]="s.coveredPct">{{ s.covered }} of <span data-posture="assessable">{{ s.assessable }}</span> {{ labels.assessable }} techniques ({{ s.coveredPct }}%). {{ coveredLabels().coveredNote }} {{ coveredLabels().assessableNote }}</div>
                   </div>
                   <div class="summary-card implemented" data-testid="report-partial">
                     <div class="card-num" data-posture="partial">{{ s.partial }}</div>
@@ -135,7 +139,7 @@
         @if (isSectionVisible('coverage-by-tactic')) {
           <section class="section" [style.order]="sectionOrder('coverage-by-tactic')">
             <h2>{{ ownerWords() ? 'Theoretical and Posture by Tactic' : 'Theoretical by Tactic' }}</h2>
-            <p class="section-desc">{{ labels.theoreticalShort }}: {{ labels.theoreticalNote }} @if (ownerWords()) { {{ labels.covered }}: {{ labels.coveredNote }} }</p>
+            <p class="section-desc">{{ labels.theoreticalShort }}: {{ labels.theoreticalNote }} @if (ownerWords()) { {{ coveredLabels().covered }}: {{ coveredLabels().coveredNote }} }</p>
             <table class="coverage-table" data-testid="report-tactic-split">
               <thead>
                 <tr>
@@ -143,7 +147,7 @@
                   <th>Total</th>
                   <th>{{ labels.theoreticalShort }} (mapped)</th>
                   @if (ownerWords()) {
-                    <th>{{ labels.covered }}</th>
+                    <th>{{ coveredLabels().covered }}</th>
                     <th>{{ labels.partial }}</th>
                     <th>{{ provenLabel }}</th>
                   }

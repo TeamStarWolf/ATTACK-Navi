@@ -4,7 +4,7 @@ import { Injectable, Injector, inject } from '@angular/core';
 import { ImplStatus, ImplementationService } from './implementation.service';
 import { Domain } from '../models/domain';
 import { PostureService } from './posture.service';
-import { computeReportSplit, partialCardLines, REPORT_SPLIT_LABELS } from '../models/report-split';
+import { computeReportSplit, coveredCardLines, coveredSplitLabels, partialCardLines, REPORT_SPLIT_LABELS } from '../models/report-split';
 import { PROVEN } from '../models/posture/posture-vocabulary';
 
 /** data-posture / data-split values (posture bucket keys) the equality spec reads. */
@@ -71,6 +71,8 @@ export class PdfReportService {
     const L = REPORT_SPLIT_LABELS;
     const posture = this.injector.get(PostureService);
     const split = computeReportSplit(domain, posture.rollup(), this.injector.get(ImplementationService).summarize()['implemented']);
+    // The Covered words by the sources the count includes (RP-F decision 43): a range source never reads self-attested.
+    const C = coveredSplitLabels(split);
     // Covered and Proven words render only when the owner has recorded data (§2.4).
     const ownerWords = posture.ownerWords();
 
@@ -237,7 +239,7 @@ export class PdfReportService {
 
 <!-- Summary Stats -->
 <h2>Summary</h2>
-<p style="font-size:10px;color:#555"><strong>${L.known}</strong>: ${L.knownNote} <strong>${L.theoreticalShort}</strong>: ${L.theoreticalNote}${ownerWords ? ` <strong>${L.covered}</strong>: ${L.coveredNote} ${L.assessableNote}` : ` ${L.fresh}`}</p>
+<p style="font-size:10px;color:#555"><strong>${L.known}</strong>: ${L.knownNote} <strong>${L.theoreticalShort}</strong>: ${L.theoreticalNote}${ownerWords ? ` <strong>${C.covered}</strong>: ${C.coveredNote} ${C.assessableNote}` : ` ${L.fresh}`}</p>
 <div class="summary-grid no-break">
   <div class="summary-box">
     <div class="num" data-posture="known-total">${split.total}</div>
@@ -257,7 +259,8 @@ export class PdfReportService {
   </div>${ownerWords ? `
   <div class="summary-box">
     <div class="num" data-share-pct="${split.coveredPct}"><span data-posture="${DATA.covered}">${split.covered}</span> (${split.coveredPct}%)</div>
-    <div class="lbl">${L.covered}, of <span data-posture="assessable">${split.assessable}</span> ${L.assessable}</div>
+    <div class="lbl">${L.coveredCard}, of <span data-posture="assessable">${split.assessable}</span> ${L.assessable}</div>${coveredCardLines(split).map(line => `
+    <div class="lbl" data-posture-source>${line}</div>`).join('')}
   </div>
   <div class="summary-box">
     <div class="num" data-posture="${DATA.partial}">${split.partial}</div>
@@ -283,7 +286,7 @@ export class PdfReportService {
       <th style="text-align:center">Total</th>
       <th style="text-align:center">${L.known}</th>
       <th style="text-align:center">${L.theoreticalShort} (mitigation mapped)</th>${ownerWords ? `
-      <th style="text-align:center">${L.covered}</th>
+      <th style="text-align:center">${C.covered}</th>
       <th style="text-align:center">${L.partial}</th>
       <th style="text-align:center">${PROVEN}</th>
       <th style="text-align:center">${L.stale}</th>` : ''}

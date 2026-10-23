@@ -7,6 +7,7 @@ import {
   VALIDATION_RUNS_V1_KEY, VALIDATION_RUNS_V2_KEY, sanitizeRun, statusFromInputs, storedUntestedWords,
 } from './validation.service';
 import { DEFAULT_POSTURE_RULES, derivePosture } from '../models/posture/derive-posture';
+import { attackDidNotExecute } from '../models/posture/fired-rules';
 import { AttackIdResolverService } from './attack-id-resolver.service';
 import { DataService, AttackDomain } from './data.service';
 import { ImplementationService } from './implementation.service';
@@ -255,16 +256,16 @@ describe('ValidationService', () => {
       // A passed run whose attack executed is untouched, and still proves.
       expect(byId.get('r7-t1059')!.status).toBe('passed');
       expect(proofOf(byId.get('r7-t1059')!).bucket).toBe('proven');
-      expect(describeImportResult(result)).toBe('Imported manual: 3 added, 0 replaced. 2 runs stored untested: the attack did not execute.');
+      expect(describeImportResult(result)).toBe('Imported manual: 3 added. 2 runs stored untested: the attack did not execute.');
       // A reload reads the stored status back unchanged.
       expect(new Map(rebuild().all.map(r => [r.id, r.status])).get('r7-t1027')).toBe('untested');
     });
 
     it('the summary names one run in the singular, and says nothing when every run executed', () => {
-      expect(describeImportResult(service.importJson(exportOf(T1027)))).toBe('Imported manual: 1 added, 0 replaced. 1 run stored untested: the attack did not execute.');
+      expect(describeImportResult(service.importJson(exportOf(T1027)))).toBe('Imported manual: 1 added. 1 run stored untested: the attack did not execute.');
       const plain = service.importJson(exportOf(EXECUTED));
       expect(plain.storedUntested).toBeUndefined();
-      expect(describeImportResult(plain)).toBe('Imported manual: 1 added, 0 replaced.');
+      expect(describeImportResult(plain)).toBe('Imported manual: 1 added.');
       expect(storedUntestedWords(0)).toBe('');
       expect(storedUntestedWords(3)).toBe('3 runs stored untested: the attack did not execute');
     });
@@ -543,7 +544,9 @@ describe('ValidationService', () => {
 
       const result = service.importRows([rangeRow('a3', 'T1110')], 'lylat-range:mission-a');
 
-      expect(result).toEqual({ ok: true, bySource: { 'lylat-range:mission-a': { added: 1, replaced: 2 } }, dropped: [] });
+      // RP-F decision 45: a3 is new (added); a1 and a2 are gone from the source (removed).
+      expect(result).toEqual({ ok: true, bySource: { 'lylat-range:mission-a': { added: 1, replaced: 0, removed: 2 } }, dropped: [] });
+      expect(describeImportResult(result)).toBe('Imported lylat-range:mission-a: 1 added, 2 removed.');
       expect(snapshot('lylat-range:mission-b')).toBe(missionB);
       expect(snapshot('manual')).toBe(manual);
       expect(service.all.filter(r => r.source === 'lylat-range:mission-a').map(r => r.id)).toEqual(['a3']);
@@ -652,9 +655,11 @@ describe('ValidationService', () => {
       expect(res.ok).toBeTrue();
       expect(rangeRuns(service).length).toBe(first);
       expect(first).toBe(8);
-      // replace-by-source counts every prior run of the source as replaced and
-      // every incoming run as added; the stored denominator stays 8 (no doubling).
-      expect(res.bySource['lylat-range:SYNTH-MISSION-A']).toEqual({ added: 8, replaced: 8 });
+      // RP-F decision 45: the source supersedes itself with the same 8 runs, so they are
+      // replaced, never also added; the stored denominator stays 8 (no doubling). Round 8
+      // read "43 added, 43 replaced" on a second import of the same contract file.
+      expect(res.bySource['lylat-range:SYNTH-MISSION-A']).toEqual({ added: 0, replaced: 8 });
+      expect(describeImportResult(res)).toBe('Imported lylat-range:SYNTH-MISSION-A: 8 replaced.');
     });
 
     // Minimal valid contract builders, so these tests control rows and missions.
@@ -817,7 +822,7 @@ describe('ValidationService', () => {
       expect(mixRuns().filter(r => r.domain === 'enterprise').length).toBe(2);
       expect(JSON.stringify(mixRuns().filter(r => r.domain === 'ics'))).toBe(icsBefore);
       expect(service.all.find(r => r.id === `lylat:${mixMission}:enterprise:0`)!.detectionsExpected).toEqual(['wazuh:999']);
-      expect(rc.bySource[`lylat-range:${mixMission}`]).toEqual({ added: 2, replaced: 2 }); // only the 2 enterprise replaced
+      expect(rc.bySource[`lylat-range:${mixMission}`]).toEqual({ added: 0, replaced: 2 }); // only the 2 enterprise replaced
     });
 
     it('[AC item 1] a domain-keyed run id never collides across domains; delete hits one domain only', () => {
@@ -1057,5 +1062,39 @@ describe('ValidationService', () => {
       expect(legend).toContain('not-reproducible');
       expect(service.statusCounts()['not-reproducible']).toBe(0);
     });
+  });
+});
+
+// RP-F decision 44: the fired-rule helper (a pure model module) and the store agree on
+// which attack results mean the attack did not execute, so a run the store keeps
+// untested (decision 32) is also the run whose rules never count as fired.
+describe('the attack results that did not execute (RP-F decisions 32 and 44)', () => {
+  it('ATTACK_DID_NOT_EXECUTE and the fired-rule helper name the same results', () => {
+    for (const [result, notExecuted] of Object.entries(ATTACK_DID_NOT_EXECUTE)) {
+      expect(attackDidNotExecute(result)).withContext(result).toBe(notExecuted);
+    }
+  });
+});
+
+// RP-F decision 45: sanitizeRun trims an outcome's detectionRef and drops a blank one, so
+// no surface lists an empty rule name (round 8: the T1092 Import JSON shape stored '  ').
+describe('sanitizeRun: the detectionRef of an outcome (RP-F decision 45)', () => {
+  const row = (detectionRef: unknown) => ({
+    id: 'r45', techniqueId: 'T1092', runDate: '2026-10-21', status: 'partial', attackResult: 'executed', source: 'lylat-range:J35',
+    detectionsExpected: ['wazuh:305'], detectionsFired: [],
+    outcomes: [{ detectionRef, outcome: 'alerted', coverageState: 'telemetry-observed' }],
+  });
+  const refOf = (x: unknown) => {
+    const r = sanitizeRun(x);
+    return 'run' in r ? r.run.outcomes.map(o => o.detectionRef) : r.reason;
+  };
+
+  it('trims a padded rule id and drops a blank one to null', () => {
+    expect(refOf(row(' wazuh:305 '))).toEqual(['wazuh:305']);
+    expect(refOf(row('   '))).toEqual([null]);
+    expect(refOf(row(''))).toEqual([null]);
+    expect(refOf(row(null))).toEqual([null]);
+    // A detectionRef of another type is not an outcome (unchanged).
+    expect(refOf(row(42))).toEqual([]);
   });
 });

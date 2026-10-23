@@ -36,12 +36,26 @@ describe('partial-cause (RP-F decisions 31 and 35)', () => {
       .toBe(`range telemetry observed via wazuh:13: partial; the rule blocked in this run, ${NOT_PROOF}`);
   });
 
-  it('rows of different outcomes are named in groups, quiet rows first; several rules read "the rules"', () => {
+  // RP-F decision 40: one clause per rule (posture-adapters gives one telemetry mark per
+  // rule), quiet rules first, then alerted, then blocked; never one clause for a group.
+  it('names one clause per rule, quiet rules first, then the rules that alerted, then those that blocked', () => {
     const marks = [telemetry('wazuh:12', 'alerted'), telemetry('wazuh:5', 'logged'), telemetry('wazuh:14', 'alerted'), telemetry('wazuh:13', 'blocked')];
     expect(telemetryPartialWords(marks)).toBe(
       'range telemetry observed via wazuh:5: partial, no detection alerted; '
-      + `range telemetry observed via wazuh:12, wazuh:14: partial; the rules alerted in this run, ${NOT_PROOF}; `
+      + `range telemetry observed via wazuh:12: partial; the rule alerted in this run, ${NOT_PROOF}; `
+      + `range telemetry observed via wazuh:14: partial; the rule alerted in this run, ${NOT_PROOF}; `
       + `range telemetry observed via wazuh:13: partial; the rule blocked in this run, ${NOT_PROOF}`);
+  });
+
+  it('dates each clause by its run, names a firing in another run by its date, and words a quiet rule beside a fired one', () => {
+    expect(telemetryPartialWords([{ ...telemetry('wazuh:206', 'alerted'), at: '2026-10-21' }]))
+      .toBe(`range telemetry observed via wazuh:206: partial; the rule alerted in this run, ${NOT_PROOF} (range run on 10/21/26)`);
+    expect(telemetryPartialWords([{ ...telemetry('wazuh:206', 'alerted'), at: '2026-10-21', telemetryFiredAt: '2026-10-20' }]))
+      .toBe(`range telemetry observed via wazuh:206: partial; the rule alerted in a run on 10/20/26, ${NOT_PROOF} (range run on 10/21/26)`);
+    expect(telemetryPartialWords([{ ...telemetry('wazuh:202', 'logged'), at: '2026-10-21', techniqueFired: true }]))
+      .toBe('range telemetry observed via wazuh:202: partial, this rule did not alert (range run on 10/21/26)');
+    expect(telemetryPartialWords([{ ...telemetry(undefined, 'logged'), techniqueFired: true }]))
+      .toBe('range telemetry observed: partial, no rule named');
   });
 
   it('only telemetry partial marks are words; with none, or no rule, the bare no-alert words', () => {

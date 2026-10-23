@@ -55,6 +55,10 @@
           <p class="ev-empty" data-testid="ev-covered-empty">No covered (self-attested or range) mark recorded.</p>
         }
       }
+      @for (line of notCredited(); track line) {
+        <!-- RP-F decision 44: a range run whose attack did not execute credits no mark; it is named, never as fired. -->
+        <div class="ev-row" data-testid="ev-not-credited"><span class="ev-meta ev-cause">{{ line }}</span></div>
+      }
     </div>
   }
 

@@ -127,12 +127,20 @@ test.describe('RP-F round 6', () => {
     await expect(modal).toHaveCount(0);
 
     await expect(tile.locator('.vp-status-badge')).toHaveText(/UNTESTED/);
+    // Decision 44 (round 8): the ticked rules of an attack that did not execute never count
+    // as fired; the tile and the history read "attack did not execute", with no fraction.
+    await expect(tile.locator('.vp-tcard-runline')).toContainText('attack did not execute');
+    await expect(tile.locator('.vp-tcard-runline')).not.toContainText(/\d+ of \d+ expected/);
     await page.getByRole('button', { name: /Run History/ }).click();
-    await expect(page.locator('.vp-runs-table tbody tr').first().locator('.vp-status-badge')).toHaveText(/UNTESTED/);
+    const historyRow = page.locator('.vp-runs-table tbody tr').first();
+    await expect(historyRow.locator('.vp-status-badge')).toHaveText(/UNTESTED/);
+    await expect(historyRow).toContainText('attack did not execute');
+    await expect(historyRow).not.toContainText(/\d+ of \d+ expected/);
 
     await paste(page, '#/matrix?tech=T1059');
     const pill = page.locator('.sidebar.open app-validation-status-pill');
     await expect(pill.locator('.vsp-status').first()).toHaveText('UNTESTED', { timeout: ROUTE_TIMEOUT });
+    await expect(pill.locator('.vsp-row').first()).toHaveText(/^\s*UNTESTED, attack did not execute\s*$/);
   });
 
   // Decision 33, as decision 38 words it (round 7): the fraction counts expected rules

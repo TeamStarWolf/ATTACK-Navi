@@ -30,6 +30,8 @@
 import type { Domain } from './domain';
 import type { PostureRollup } from '../services/posture.service';
 import { PARTIAL_CAUSES_NOTE, type PartialCauseTally, partialCauseLines } from './posture/partial-cause';
+import { COVERED_SOURCE_ORDER, type CoveredSourceTally, coveredSourceLines } from './posture/covered-source';
+import { coveredCountLabel, lensLabel } from './posture/posture-vocabulary';
 
 /** The words every Report surface uses for the halves of the split. */
 export const REPORT_SPLIT_LABELS = {
@@ -40,8 +42,15 @@ export const REPORT_SPLIT_LABELS = {
   theoreticalNote: 'ATT&CK reference mapping only. No claim about your environment.',
   /** The report-builder CSV column header (unchanged); its cells come from the posture bucket. */
   implemented: 'Implemented (self-attested)',
+  /** The Covered words when no range source is counted; coveredSplitLabels picks them (RP-F decision 43). */
   covered: 'Covered (self-attested)',
   coveredNote: 'A technique you recorded: a narrow mitigation you marked implemented, a control, a confirmation or a run. Not validated.',
+  /**
+   * The Covered card's label in the Report Builder and the HTML and PDF reports; its
+   * lines name each source with its count (coveredCardLines, RP-F decision 43), so a
+   * range-only Covered technique is never counted under a self-attested label.
+   */
+  coveredCard: `${lensLabel('covered')}, by source`,
   /** The word after a Covered share's denominator: `N of A assessable`. */
   assessable: 'assessable',
   assessableNote: 'Covered (self-attested) shares divide by assessable parent techniques: every parent technique except those a not-reproducible run with no proof excludes.',
@@ -96,6 +105,8 @@ export interface ReportSplit {
   partial: number;
   /** The partial techniques by typed cause (RP-F decision 36); null when the rollup carries no count by cause. */
   partialByCause: PartialCauseTally | null;
+  /** The Covered techniques by source (RP-F decision 43); null when the rollup carries no count by source. */
+  coveredBySource: CoveredSourceTally | null;
   proven: number;
   stale: number;
   /** Parent techniques with no mitigation mapped (total - theoretical). */
@@ -113,6 +124,55 @@ export interface ReportSplit {
  */
 export function partialCardLines(split: Pick<ReportSplit, 'partialByCause'>): string[] {
   return split.partialByCause ? partialCauseLines(split.partialByCause) : [];
+}
+
+/**
+ * The Covered card's lines, one per source with a count (RP-F decision 43):
+ * 'Covered (self-attested: mitigation, control, confirmation or your run): 3',
+ * 'Covered (range: lab-validated detection): 2'. Every Report surface (the Report
+ * Builder panel, the HTML report, the PDF report) prints these under the card.
+ */
+export function coveredCardLines(split: Pick<ReportSplit, 'coveredBySource'>): string[] {
+  return split.coveredBySource ? coveredSourceLines(split.coveredBySource) : [];
+}
+
+/** The Covered words of a split (coveredSplitLabels): the count's label and its two notes. */
+export interface CoveredSplitLabels {
+  /** The Covered heading, per-tactic bar key and column header. */
+  readonly covered: string;
+  /** What the Covered count counts. */
+  readonly coveredNote: string;
+  /** What a Covered share divides by. */
+  readonly assessableNote: string;
+}
+
+const RANGE_COVERED_NOTE = 'A technique the range reports a deployed or authored detection for: a lab detection row, not a proof.';
+const BOTH_COVERED_NOTE = 'A technique you recorded (a narrow mitigation you marked implemented, a control, a confirmation or a run: self-attested, not validated) or one the range reports a deployed or authored detection for (range: a lab detection row, not a proof).';
+const ASSESSABLE_TAIL = 'shares divide by assessable parent techniques: every parent technique except those a not-reproducible run with no proof excludes.';
+
+/**
+ * The Covered words every Report surface prints around the split's Covered numbers
+ * (the HTML report's split heading, note, per-tactic bars and section subtitle; the PDF
+ * report's note and Tactic Breakdown column; the Report Builder's Covered card sub-line,
+ * tactic note and column header), by the sources the count includes (RP-F decision 43):
+ * with no range source, REPORT_SPLIT_LABELS' self-attested words; with a range source,
+ * 'Covered (range)' or 'Covered (self-attested or range)' (coveredCountLabel) and notes
+ * that name the range. PR #241 round 1: a range-only profile (T1005, T1105, T1059
+ * deployed; T1550.002, T1037.001 detection-authored) read 'Covered (self-attested) 3 of
+ * 222' and 'A technique you recorded ... Not validated.' around its range counts.
+ */
+export function coveredSplitLabels(split: Pick<ReportSplit, 'coveredBySource'>): CoveredSplitLabels {
+  const tally = split.coveredBySource;
+  const sources = COVERED_SOURCE_ORDER.filter(q => (tally?.[q] ?? 0) > 0);
+  if (!sources.includes('range')) {
+    return { covered: REPORT_SPLIT_LABELS.covered, coveredNote: REPORT_SPLIT_LABELS.coveredNote, assessableNote: REPORT_SPLIT_LABELS.assessableNote };
+  }
+  const covered = coveredCountLabel(sources);
+  return {
+    covered,
+    coveredNote: sources.includes('self-attested') ? BOTH_COVERED_NOTE : RANGE_COVERED_NOTE,
+    assessableNote: `${covered} ${ASSESSABLE_TAIL}`,
+  };
 }
 
 type SplitDomain = Pick<Domain, 'techniques' | 'tacticColumns'>;
@@ -175,6 +235,7 @@ export function computeReportSplit(domain: SplitDomain, rollup: PostureRollup, i
     coveredPct: pct(o.covered, o.assessable),
     partial: o.partial,
     partialByCause: o.partialByCause ?? null,
+    coveredBySource: o.coveredBySource ?? null,
     proven: o.proven,
     stale: o.stale,
     unmapped: total - theoretical,

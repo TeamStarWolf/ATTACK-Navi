@@ -24,6 +24,9 @@ import {
   TacticSplit,
   computeReportSplit,
   partialCardLines,
+  coveredCardLines,
+  coveredSplitLabels,
+  type CoveredSplitLabels,
   isTechniqueMapped,
   REPORT_SPLIT_LABELS,
 } from '../../models/report-split';
@@ -97,6 +100,20 @@ export class ReportPanelComponent implements OnInit, OnDestroy {
     const s = this.split();
     return s ? partialCardLines(s) : [];
   });
+
+  /** The Covered card's per-source lines (RP-F decision 43). */
+  readonly coveredLines = computed(() => {
+    const s = this.split();
+    return s ? coveredCardLines(s) : [];
+  });
+
+  /**
+   * The Covered words around the split's Covered numbers, by the sources the count
+   * includes (RP-F decision 43): the Covered card's sub-line, the tactic note and the
+   * tactic column header never call a range count self-attested.
+   */
+  readonly coveredLabels: Signal<CoveredSplitLabels> = computed(() =>
+    coveredSplitLabels(this.split() ?? { coveredBySource: null }));
 
   readonly split: Signal<ReportSplit | null> = computed(() => {
     const domain = this.domainSig();
