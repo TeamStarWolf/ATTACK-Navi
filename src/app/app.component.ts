@@ -115,6 +115,9 @@ export class AppComponent implements OnInit {
    * registered lens (heat=bogus, an empty heat=) is not an explicit choice:
    * urlHasHeatParam reads it as absent, so this rule still runs and the
    * writer then replaces the invalid key with the lens chosen here (RP-F item 1).
+   * A repeated heat key is read once, by firstValidHeat (RP-F decision 26): its
+   * first valid value is the explicit choice (`heat=bogus&heat=kev` is KEV); with
+   * no valid value the key is absent and this rule runs.
    */
   private applyDefaultLensRule(): void {
     if (this.viewpoint.urlHasHeatParam()) return;

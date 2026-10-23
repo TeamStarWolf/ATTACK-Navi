@@ -47,6 +47,12 @@ export interface ThreatProfile {
   weight(techniqueStixId: string): number;
   /** Group/campaign names using the technique (sub usage rolls up to the parent). */
   usedBy(techniqueStixId: string): readonly string[];
+  /**
+   * Group/campaign names using exactly this technique, no roll-up: the basis of the
+   * evidence card's Threat block, which counts direct uses only, as its "Used by N
+   * groups in the loaded ATT&CK bundle" line does (RP-F decision 28).
+   */
+  usedByDirect(techniqueStixId: string): readonly string[];
 }
 
 /**
@@ -103,6 +109,40 @@ export const ATTACK_DOMAIN_SHORT_LABEL: Readonly<Record<AttackDomain, string>> =
 export type KnownGroup = Pick<ThreatGroup, 'id' | 'attackId' | 'name'>;
 
 /**
+ * One group of the build-time group index, src/assets/data/group-index.json
+ * (scripts/build-group-index.mjs; RP-F decision 25): every intrusion-set of the
+ * bundled Enterprise, ICS and Mobile STIX files, with the domains that carry it as
+ * a current group. The profile resolves stored ids against it, so a real group the
+ * loaded domain lacks is named, on a fresh boot into any domain.
+ */
+export interface GroupIndexEntry {
+  readonly attackId: string;
+  readonly stixId: string;
+  readonly name: string;
+  readonly aliases: readonly string[];
+  readonly revoked: boolean;
+  readonly deprecated: boolean;
+  readonly domains: readonly string[];
+}
+
+/**
+ * The CURRENT groups of the index as KnownGroups (STIX id, ATT&CK id, name), for
+ * indexGroups. A revoked or deprecated group is left out, so its ids stay
+ * unresolved ("unknown or withdrawn"), as is a group with no ATT&CK id. Aliases are
+ * never ids: "Fancy Bear" resolves to no group (RP-F decision 18).
+ */
+export function currentIndexedGroups(entries: readonly GroupIndexEntry[]): KnownGroup[] {
+  return entries
+    .filter((e) => !e.revoked && !e.deprecated && e.attackId !== '' && STIX_GROUP_ID.test(e.stixId) && e.name !== '')
+    .map((e) => ({ id: e.stixId, attackId: e.attackId, name: e.name }));
+}
+
+/** Stored ids as the profile reads them: trimmed, empty ids dropped (" G0016 " is G0016; "" is nothing). */
+export function cleanStoredIds(ids: readonly string[]): string[] {
+  return ids.map((id) => id.trim()).filter((id) => id !== '');
+}
+
+/**
  * Groups keyed by every id a stored profile may hold them under: the STIX id as
  * is and the ATT&CK id upper-cased (RP-F decision 13). Built with indexGroups,
  * read with findStoredGroup; the one lookup behind both the membership rule
@@ -124,26 +164,37 @@ export function findStoredGroup(index: GroupIdIndex, id: string): KnownGroup | u
 }
 
 /**
+ * The real group a stored id names in `known`: by STIX id or by ATT&CK id in any
+ * case, and only a group with an ATT&CK id (a group of a loaded domain or of the
+ * group index). An entry with no ATT&CK id is a name hint, and a hint is never a
+ * resolution (RP-F decision 25).
+ */
+export function resolveStoredGroup(known: GroupIdIndex, id: string): KnownGroup | undefined {
+  const g = findStoredGroup(known, id);
+  return g && g.attackId ? g : undefined;
+}
+
+/**
  * THE membership rule for a stored group list against a domain: a stored id is
  * present when the domain's groups carry it, by STIX id or by ATT&CK id (G0016,
  * any case: a profile stored with ATT&CK ids must not read "has no Enterprise
- * use" for a group that is there, RP-F decision 13), absent otherwise.
- * resolveProfile and ThreatProfileService.presentGroups/absentGroups both use
- * this, so the profile the surfaces count and the notice that names the absent
- * groups never disagree. `present` keeps the domain's order (the order
- * resolveProfile has always used), each group once even when stored under both
- * ids. `absentIds` keeps the stored order, each group once: `known` (the groups
- * of every domain seen, and stored name hints) tells that a STIX id and an
- * ATT&CK id stored side by side are one group, which is then named once under
- * the id stored first. A group `known` holds only as a stored name hint (an id
- * with a name, no other id) is told apart by its name.
+ * use" for a group that is there, RP-F decision 13), absent when it names a real
+ * group the domain does not carry. resolveProfile and
+ * ThreatProfileService.presentGroups/absentGroups both use this, so the profile
+ * the surfaces count and the notice that names the absent groups never disagree.
+ * `present` keeps the domain's order (the order resolveProfile has always used),
+ * each group once even when stored under both ids. `absentIds` keeps the stored
+ * order, each group once: `known` (the groups of every domain seen and of the
+ * all-domain group index, RP-F decision 25) tells that a STIX id and an ATT&CK id
+ * stored side by side are one group, which is then named once under the id
+ * stored first. Stored ids are trimmed and empty ids dropped (cleanStoredIds).
  *
- * A stored id that resolves to no group is `unresolvedIds`, never absent (RP-F
- * decision 18): it is in neither the domain nor `known` (an alias such as "Fancy
- * Bear", a revoked G0074 or G0042, an unknown G9999, a malformed or all-zero STIX
- * id), or `known` holds it only as a name hint whose name a group of `known` or of
- * the domain carries under another id (a hint cannot rename a real group). Saying
- * such an id "has no <domain> use" would claim a group exists that does not.
+ * A stored id that resolves to no real group is `unresolvedIds`, never absent
+ * (RP-F decisions 18 and 25): it is in neither the domain nor `known` as a group
+ * with an ATT&CK id (an alias such as "Fancy Bear", a revoked G0057 or deprecated
+ * G0014, an unknown G9999, a malformed or all-zero STIX id). A name hint never
+ * resolves an id (resolveStoredGroup). Saying such an id "has no <domain> use"
+ * would claim a group exists that does not.
  */
 export function splitStoredGroups(
   ids: readonly string[],
@@ -152,44 +203,55 @@ export function splitStoredGroups(
 ): { readonly present: readonly ThreatGroup[]; readonly absentIds: readonly string[]; readonly unresolvedIds: readonly string[] } {
   const inDomain = new Map<string, KnownGroup>();
   indexGroups(inDomain, domain.groups);
-  // Names of real groups (from a loaded domain, never from a hint), to catch a hint that renames one.
-  const realNames = new Map<string, string>();
-  for (const g of [...known.values(), ...domain.groups]) if (g.attackId) realNames.set(g.name, g.id);
   const presentIds = new Set<string>();
   const absentIds: string[] = [];
   const unresolvedIds: string[] = [];
-  const absentKeys = new Set<string>();
-  for (const id of ids) {
+  const keys = new Set<string>();
+  for (const id of cleanStoredIds(ids)) {
     const here = findStoredGroup(inDomain, id);
     if (here) {
       presentIds.add(here.id);
       continue;
     }
-    const seen = findStoredGroup(known, id);
-    const renamed = !!seen && !seen.attackId && realNames.has(seen.name) && realNames.get(seen.name) !== seen.id;
-    const key = !seen || renamed ? `unresolved:${id}` : seen.attackId ? `id:${seen.id}` : `name:${seen.name}`;
-    if (absentKeys.has(key)) continue;
-    absentKeys.add(key);
-    (!seen || renamed ? unresolvedIds : absentIds).push(id);
+    const real = resolveStoredGroup(known, id);
+    const key = real ? `id:${real.id}` : `unresolved:${id}`;
+    if (keys.has(key)) continue;
+    keys.add(key);
+    (real ? absentIds : unresolvedIds).push(id);
   }
   return { present: domain.groups.filter((g) => presentIds.has(g.id)), absentIds, unresolvedIds };
 }
 
 /**
- * Stored group ids in the one stored shape, STIX ids (RP-F decision 18): an id that
- * names a group a loaded domain carried (`known`, by STIX id or by ATT&CK id in any
- * case) becomes that group's STIX id; any other id is kept as it is (it may resolve
- * once its domain loads, and an unresolved id is announced, never dropped). Order is
- * kept and each group appears once.
+ * Stored group ids in the one stored shape, STIX ids (RP-F decisions 18 and 25): an
+ * id that names a real group (`known`: the groups of a loaded domain or of the
+ * all-domain group index, by STIX id or by ATT&CK id in any case) becomes that
+ * group's STIX id; any other id is kept as it is (an unresolved id is announced,
+ * never dropped). Ids are trimmed and empty ids dropped; order is kept and each
+ * group appears once.
  */
 export function normaliseStoredGroupIds(ids: readonly string[], known: GroupIdIndex): string[] {
   const out: string[] = [];
-  for (const id of ids) {
-    const g = findStoredGroup(known, id);
-    const stix = g && g.attackId ? g.id : id;
+  for (const id of cleanStoredIds(ids)) {
+    const stix = resolveStoredGroup(known, id)?.id ?? id;
     if (!out.includes(stix)) out.push(stix);
   }
   return out;
+}
+
+/**
+ * The name hint stored beside a groups profile (RP-F decision 25): the name of every
+ * stored id that resolves to a real group, keyed by its STIX id. Built only from
+ * resolved ids, so a hint never names an id that did not resolve. Keys are data:
+ * the record has no prototype.
+ */
+export function groupNameHints(ids: readonly string[], known: GroupIdIndex): Record<string, string> {
+  const names: Record<string, string> = Object.create(null);
+  for (const id of cleanStoredIds(ids)) {
+    const g = resolveStoredGroup(known, id);
+    if (g && STIX_GROUP_ID.test(id)) names[id] = g.name;
+  }
+  return names;
 }
 
 /**
@@ -315,12 +377,14 @@ export function resolveProfile(src: ThreatProfileSource, domain: Domain, layer?:
   }
 
   const usage = new Map<string, Set<string>>();
+  const direct = new Map<string, Set<string>>();
   for (const actor of actors) {
     for (const t of actor.techniques) {
       techniqueIds.add(t.id);
       const parent = parentOf(t.id);
       parentTechniqueIds.add(parent);
       (usage.get(parent) ?? usage.set(parent, new Set()).get(parent)!).add(actor.name);
+      (direct.get(t.id) ?? direct.set(t.id, new Set()).get(t.id)!).add(actor.name);
     }
   }
 
@@ -333,5 +397,6 @@ export function resolveProfile(src: ThreatProfileSource, domain: Domain, layer?:
     parentTechniqueIds,
     weight: (stix) => usage.get(parentOf(stix))?.size ?? 0,
     usedBy: (stix) => [...(usage.get(parentOf(stix)) ?? [])].sort(),
+    usedByDirect: (stix) => [...(direct.get(stix) ?? [])].sort(),
   };
 }

@@ -23,7 +23,8 @@
           }
         </div>
       } @empty {
-        <p class="ev-empty">No recorded detection for this technique.</p>
+        <!-- RP-F decision 28: a run that fired a rule without proof is named with its status, never "No recorded detection". -->
+        <p class="ev-empty" data-testid="ev-proven-empty">{{ provenEmpty() }}.</p>
       }
     </div>
 
@@ -71,7 +72,7 @@
     <h3 class="ev-title">Threat</h3>
     @if (threat().profileLabel !== null) {
       <p class="ev-summary" data-testid="ev-threat-profile">
-        Threat profile ({{ threat().profileLabel }}): used by {{ threat().profileActors.length }}@if (threat().profileActors.length > 0) {: {{ threat().profileActors.join(', ') }}}
+        Threat profile ({{ threat().profileLabel }}): used by {{ threat().profileActors.length }}@if (threat().profileActors.length > 0) {: {{ threat().profileActors.join(', ') }}}@if (threat().profileRollup > threat().profileActors.length) {; {{ threat().profileRollup }} counting its sub-techniques}
       </p>
     }
     <p class="ev-summary">Used by {{ threat().bundleGroups }} groups in the loaded ATT&amp;CK bundle</p>

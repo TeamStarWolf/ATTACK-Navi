@@ -465,6 +465,29 @@ describe('AppComponent: default-lens rule at boot (P2-19, E2.4)', () => {
     });
   }
 
+  // RP-F decision 26: a repeated heat key takes its first VALID value; with none valid
+  // the key is absent and D4 runs. Round 4: heat=frequency&heat=bogus opened Frequency
+  // and rewrote to bare #/matrix, so F5 gave Posture.
+  const REPEATED: readonly [string, string][] = [
+    ['heat=frequency&heat=bogus', 'frequency'],
+    ['heat=bogus&heat=kev', 'kev'],
+    ['heat=bogus&heat=also-bogus', 'posture'],
+  ];
+  for (const [query, lens] of REPEATED) {
+    it(`a repeated key ${query} with owner data opens ${lens} and keeps heat=${lens} in the link`, async () => {
+      configure(oneRun);
+      window.location.hash = `#/matrix?${query}`;
+      boot();
+      expect(heat()).withContext('after the default-lens rule').toBe(lens === 'posture' ? 'posture' : 'frequency');
+      await router.navigateByUrl(`/matrix?${query}`);
+      await tick(400);
+      expect(heat()).toBe(lens);
+      expect(router.url).toContain(`heat=${lens}`);
+      expect(router.url).not.toContain('bogus');
+      expect(router.url.match(/heat=/g)?.length).toBe(1);
+    });
+  }
+
   it("an invalid heat=bogus does not stand a stored specialist viewpoint aside: red gives 'atomic'", async () => {
     configure(d => () => { implementedM1047(d)(); localStorage.setItem(VIEWPOINT_KEY, 'red'); });
     window.location.hash = '#/matrix?heat=bogus';

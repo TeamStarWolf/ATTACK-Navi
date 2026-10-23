@@ -156,18 +156,57 @@ describe('posture adapters (P2-05)', () => {
       expect(viaOutcome.proof.map(p => p.outcome)).toEqual(['blocked']);
     });
 
-    it("a blocked run with no named detection is a full self-attested 'own-run-blocked' mark, never proof", () => {
-      const r = runInputs(run({ attackResult: 'blocked', outcomes: [outcome({ outcome: 'blocked' })] }));
+    it("a passed blocked run with no named detection is a full self-attested 'own-run-blocked' mark, never proof", () => {
+      const r = runInputs(run({ status: 'passed', attackResult: 'blocked', outcomes: [outcome({ outcome: 'blocked' })] }));
       expect(r.proof).toEqual([]);
       expect(r.covered).toEqual([{
         qualifier: 'self-attested', basis: 'own-run-blocked', strength: 'full', source: 'manual', at: '2026-09-20T10:00:00.000Z',
       }]);
     });
 
+    // RP-F decision 23: the own-run-blocked mark is gated on the proof allow-list. Record
+    // Run's "Blocked by control" with no expected rule stores 'untested' (T1069), and a
+    // seeded failed run with a blocked outcome (S26 T1027) read Covered beside a FAIL pill.
+    for (const status of ['untested', 'partial', 'not-reproducible', 'failed', 'no-telemetry'] as const) {
+      it(`a ${status} run with a blocked outcome and no named rule attests nothing`, () => {
+        const r = runInputs(run({ status, attackResult: 'blocked', outcomes: [outcome({ outcome: 'blocked' })] }));
+        expect(r.covered).toEqual([]);
+        expect(r.proof).toEqual([]);
+      });
+    }
+
     it('carries the run itself (id, status, date, source) for the runs-without-proof line (RP-F decision 9)', () => {
       expect(runInputs(run({ status: 'untested' })).summary).toEqual({
-        runId: 'r1', status: 'untested', date: '2026-09-20T10:00:00.000Z', source: 'manual',
+        runId: 'r1', status: 'untested', date: '2026-09-20T10:00:00.000Z', source: 'manual', rulesFired: 0, rules: [],
       });
+      // RP-F decision 28: the named rules the run lists as fired, whatever its status (the pill's count).
+      expect(runInputs(run({ status: 'untested', detectionsFired: ['siem:a', 'siem:b', 'siem:a'] })).summary.rulesFired).toBe(2);
+    });
+
+    it("counts only detectionsFired as fired rules, the pill's count, never a rule an outcome names (RP-F decision 28)", () => {
+      // A blocked outcome naming a rule, with nothing in detectionsFired: the pill says
+      // '0 of 0 detection rules fired', so the card names no fired rule either.
+      const blockedNamed = runInputs(run({
+        status: 'untested', attackResult: 'blocked', detectionsFired: [],
+        outcomes: [outcome({ detectionRef: 'edr:block-1', outcome: 'blocked' })],
+      }));
+      expect(blockedNamed.summary.rulesFired).toBe(0);
+      const alertedNamed = runInputs(run({
+        status: 'untested', detectionsFired: [], outcomes: [outcome({ detectionRef: 'siem:x', outcome: 'alerted' })],
+      }));
+      expect(alertedNamed.summary.rulesFired).toBe(0);
+      // Blank entries are not rules; each listed rule counts once.
+      expect(runInputs(run({ status: 'untested', detectionsFired: [' ', 'siem:a', ' siem:a '] })).summary.rulesFired).toBe(1);
+    });
+
+    // RP-F decision 29: proof supersession is per rule, so the summary carries every rule the
+    // run names (outcomes, expected, fired), trimmed, each once, for derivePosture's sameRule.
+    it('names every rule of the run, from its outcomes, expected and fired lists, each once (RP-F decision 29)', () => {
+      const r = runInputs(run({
+        status: 'failed', detectionsExpected: ['siem:a', ' siem:b '], detectionsFired: ['siem:a', ''],
+        outcomes: [outcome({ detectionRef: 'edr:c', outcome: 'blocked' }), outcome({ detectionRef: null, outcome: 'none' }), outcome({ detectionRef: ' siem:a', outcome: 'alerted' })],
+      }));
+      expect(r.summary.rules).toEqual(['edr:c', 'siem:a', 'siem:b']);
     });
 
     it("'failed' is a failed verdict and 'not-reproducible' a notReproducible one", () => {

@@ -7,7 +7,7 @@ import { AttackIdResolverService } from './attack-id-resolver.service';
 import { Domain } from '../models/domain';
 import { Technique } from '../models/technique';
 import {
-  DEFAULT_HEATMAP_MODE, FilterService, domainHintForAttackId, effectiveDefaultLens, isAttackDomain, techNotInDomainMessage,
+  DEFAULT_HEATMAP_MODE, FilterService, domainHintForAttackId, effectiveDefaultLens, firstValidHeat, isAttackDomain, techNotInDomainMessage,
   URL_TECH_ID_PATTERN, normalizeUrlTechId,
 } from './filter.service';
 
@@ -208,6 +208,26 @@ describe('FilterService', () => {
       expect(service.getStateSnapshot().heatmapMode).toBe('frequency');
       apply('heat=bogus');
       expect(service.getStateSnapshot().heatmapMode).toBe('frequency');
+    });
+
+    // RP-F decision 26: a repeated heat key takes its first valid value, in link order.
+    it('a repeated heat key applies its first valid value; with none valid the lens is left alone', () => {
+      apply('heat=frequency&heat=bogus');
+      expect(service.getStateSnapshot().heatmapMode).toBe('frequency');
+      apply('heat=bogus&heat=kev');
+      expect(service.getStateSnapshot().heatmapMode).toBe('kev');
+      apply('heat=bogus&heat=also-bogus');
+      expect(service.getStateSnapshot().heatmapMode).toBe('kev');
+    });
+
+    it('firstValidHeat: the first registered lens of a list or a single value, else null', () => {
+      expect(firstValidHeat(['bogus', 'kev', 'posture'])).toBe('kev');
+      expect(firstValidHeat(['frequency', 'bogus'])).toBe('frequency');
+      expect(firstValidHeat(['bogus', 'also-bogus', ''])).toBeNull();
+      expect(firstValidHeat([])).toBeNull();
+      expect(firstValidHeat('coverage')).toBe('coverage');
+      expect(firstValidHeat(null)).toBeNull();
+      expect(firstValidHeat(undefined)).toBeNull();
     });
 
     it('ignores unknown scope and impl values but still applies the rest of the link', () => {

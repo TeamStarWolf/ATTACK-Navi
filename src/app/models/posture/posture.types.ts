@@ -64,17 +64,45 @@ export interface RunSummary {
   readonly status: string;
   readonly date: string;                  // runDate (ISO timestamp) or validated_at (YYYY-MM-DD)
   readonly source: SourceId;
+  /**
+   * The entries of the run's detectionsFired, whatever its status: the Validation
+   * pill's "N of M detection rules fired" count. The store normalises the list at
+   * load and at import (ValidationService ruleList, RP-F decision 29: trimmed, empties
+   * dropped, each rule once), so the pill and this count read the same rules. A rule
+   * named only by an outcome is not counted, as the pill does not count it. Absent
+   * reads as 0. A run that fired a rule but yields no proof (untested, failed, ...) is
+   * named with its status wherever the card would otherwise say "No recorded
+   * detection" (RP-F decision 28).
+   */
+  readonly rulesFired?: number;
+  /**
+   * The detection rules the run names (RP-F decision 29): the distinct trimmed,
+   * non-empty rule ids of its outcomes' detectionRefs, detectionsExpected and
+   * detectionsFired. Proof supersession is per rule: a later failed or
+   * not-reproducible run removes a proof record only when it names that record's
+   * detectionRef. A run that names no rule (absent or empty) is the same rule as
+   * every record of its own source on the technique (a manual run without a rule id
+   * keys on source plus technique).
+   */
+  readonly rules?: readonly string[];
 }
 
 /**
  * A run of yours that outranked every proof record on the technique (RP-F
- * decision 16): the latest run failed (or had no telemetry) after an earlier
- * run's named rule fired. The why line names both runs by their own status:
- * "latest run failed on <date>; an earlier run passed on <date>" (or "... an
- * earlier run was partial on <date>").
+ * decisions 16, 23 and 29): a failed or not-reproducible run of the SAME detection
+ * rule, newer by the one latest-run comparator than the newest record it removed.
+ * Proof supersession is per rule (decision 29): an untested, partial or no-telemetry
+ * run, or a run of another rule, never removes proof (PostureState.laterRuns names
+ * it instead). The why line names both runs by their own status: "latest run of the
+ * rule failed on <date>; an earlier run passed on <date>" (or "latest run of the rule
+ * was not reproducible on <date>; ..."), then the newest run after it, if any
+ * (PostureState.laterRuns).
  */
 export interface SupersededProof {
-  /** The newest dated run with status 'failed' or 'no-telemetry'; it governs the rung. */
+  /**
+   * The newest failed or not-reproducible run of the removed record's rule that is
+   * later than it (RP-F decision 29); it governs the rung.
+   */
   readonly latest: RunSummary;
   /** The newest proof record it outranked (its date is the earlier run's date). */
   readonly earlier: ProofRecord;
@@ -117,6 +145,18 @@ export interface PostureState {
    * failed and no newer full marks hold Covered.
    */
   readonly supersededProof?: SupersededProof | null;
+  /**
+   * On a Proven or stale state, the runs of yours newer (by the one latest-run
+   * comparator) than every standing proof record that left the proof standing (RP-F
+   * decision 29): an untested, partial or no-telemetry run, or a failed or
+   * not-reproducible run of another rule. Newest first. Never a rung: the why line
+   * names the newest ("a later run on <date> observed telemetry only"). On a state
+   * whose proof a run removed (supersededProof), every run newer than that remover,
+   * whatever its status, so the why line names the newest after "latest run of the
+   * rule ..." (the Detection Validation pill shows it). Empty on every other state
+   * (absent in a hand-built state).
+   */
+  readonly laterRuns?: readonly RunSummary[];
 }
 
 export interface PostureTally {

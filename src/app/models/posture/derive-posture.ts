@@ -8,14 +8,21 @@
 //      is the highest scope among the fresh ones (production, range, own-run),
 //      newest first, and the bucket is 'proven'; with no fresh record the best
 //      is the newest one and the bucket is 'stale'. A run's STATUS governs its
-//      proof (RP-F decision 16): a failed or no-telemetry run yields none even
-//      when it lists a fired rule, and the latest run governs, so a proof record
-//      older than the newest dated failed or no-telemetry run does not count
-//      (strictly older, as a failed run outranks a mark only when strictly newer).
-//      When that leaves no proof, the state names the run that outranked it
-//      (supersededProof) and, when that run failed and no newer full marks
-//      hold Covered, is 'contradicted', as a full mark a later failed run
-//      outranks is.
+//      proof (RP-F decisions 16 and 23): only a run whose status is on the
+//      allow-list PROVING_STATUSES ('passed') yields proof; an untested,
+//      partial, not-reproducible, failed or no-telemetry run yields none even
+//      when it lists a fired rule. Supersession is PER RULE (RP-F decision 29):
+//      the latest run of the SAME detection rule governs, so a proof record
+//      stands unless a later failed or not-reproducible run names its rule (a
+//      run that names no rule is the same rule as every record of its own
+//      source); later by the one latest-run comparator, latest-run.ts, RP-F
+//      decision 24 (on the same instant the run that proves less is the later
+//      one). A later untested, partial or no-telemetry run, or a later run of
+//      another rule, never removes proof: the state lists it (laterRuns) for the
+//      why line. When no proof is left, the state names the run that outranked
+//      the newest record (supersededProof) and, when that run failed and no
+//      newer full marks hold Covered, is 'contradicted', as a full mark a later
+//      failed run outranks is.
 //   2. Otherwise a not-reproducible verdict sets `excluded` (out of the
 //      Covered/Proven denominator only) and falls through for display.
 //   3. Otherwise full marks give 'covered', unless a failed verdict contradicts
@@ -32,6 +39,8 @@ import type {
   CoveredMark, PostureBucket, PostureInputs, PostureRules, PostureRung, PostureState, PostureSubState,
   PostureTally, ProofRecord, ProofScope, RunSummary, RunVerdict, SupersededProof,
 } from './posture.types';
+import { runTime } from '../local-date';
+import { sortRunsNewestFirst, summaryRunKey } from './latest-run';
 
 /** D16 threshold 15 (dec:364-380); D10 windows range 90, production 180, own-run 90 (own-run is §10.4 item 2). */
 export const DEFAULT_POSTURE_RULES: PostureRules = {
@@ -47,16 +56,30 @@ const SCOPE_RANK: Readonly<Record<ProofScope, number>> = { production: 3, range:
 const QUALIFIER_ORDER: readonly CoveredQualifier[] = ['self-attested', 'range'];
 
 /**
- * Run statuses that never yield proof, even when the run lists a fired rule
- * (RP-F decision 16: T1135's failed run with one rule read Proven beside a FAIL pill).
+ * The run statuses that can yield proof: an ALLOW-list (RP-F decision 23). Only a
+ * passed run's named rule reaches Proven. Every other status the store accepts
+ * (untested, partial, not-reproducible, failed, no-telemetry) never does, whatever
+ * rules the run lists: round 4 found untested (T1018) and not-reproducible (T1082)
+ * runs with a fired rule reading Proven beside an UNTESTED and a Not reproducible
+ * pill, because the old deny-list named failed and no-telemetry only. 'partial' is
+ * left out: the design's one status table (Phase 2 design §P2-20, plan:670-674)
+ * maps a range row's 'telemetry-observed' to partial, a Covered-level state, and an
+ * own run is partial when some expected rule did not fire.
  */
-export const NO_PROOF_STATUSES: ReadonlySet<string> = new Set(['failed', 'no-telemetry']);
+export const PROVING_STATUSES: ReadonlySet<string> = new Set(['passed']);
 
-/** Milliseconds since the epoch, or null when absent or not a date. */
+/** True when a run of `status` can yield proof (PROVING_STATUSES). */
+export function provesStatus(status: string): boolean {
+  return PROVING_STATUSES.has(status);
+}
+
+/**
+ * Milliseconds since the epoch, or null when absent or not a date: runTime
+ * (local-date.ts), the reading the latest-run comparator and the pill's day share,
+ * so a date-only date is its local day (RP-F decision 24).
+ */
 function time(iso: string | undefined): number | null {
-  if (!iso) return null;
-  const t = Date.parse(iso);
-  return Number.isNaN(t) ? null : t;
+  return runTime(iso);
 }
 
 interface DatedProof {
@@ -104,43 +127,72 @@ function isContradicted(full: readonly CoveredMark[], verdicts: readonly RunVerd
 }
 
 /**
- * The newest dated run whose status yields no proof (NO_PROOF_STATUSES), or null.
- * An undated one never outranks a proof record, as an undated failed verdict
- * never outranks a dated mark; of two on the same instant the first is kept.
+ * The run statuses that REMOVE an earlier proof record of the same rule (RP-F
+ * decision 29): a later failed or not-reproducible run of that rule. An untested,
+ * partial or no-telemetry run says nothing against the rule that fired, so it
+ * never removes proof (it is named in the why line instead).
  */
-function latestNoProofRun(runs: readonly RunSummary[]): { readonly run: RunSummary; readonly t: number } | null {
-  let latest: { run: RunSummary; t: number } | null = null;
-  for (const run of runs) {
-    if (!NO_PROOF_STATUSES.has(run.status)) continue;
-    const t = time(run.date);
-    if (t === null) continue;
-    if (latest === null || t > latest.t) latest = { run, t };
-  }
-  return latest;
+const REMOVING_STATUSES: ReadonlySet<string> = new Set(['failed', 'not-reproducible']);
+
+/**
+ * True when `run` is a run of the record's detection rule (RP-F decision 29): it
+ * names the record's detectionRef, or it names no rule and has the record's source
+ * (a manual run without a rule id keys on source plus technique; every input here
+ * is one technique's).
+ */
+function sameRule(run: RunSummary, record: ProofRecord): boolean {
+  const named = run.rules ?? [];
+  return named.length > 0 ? named.includes(record.detectionRef.trim()) : run.source === record.source;
 }
 
 /**
- * The proof that stands once each run's status is applied (RP-F decision 16):
- * a record of a failed or no-telemetry run never counts, and the latest run
- * governs, so a record strictly older than the newest such run is outranked.
- * `superseded` names that run and the newest record it outranked, when it
- * leaves no proof standing (the why line: "latest run failed on <date>; an
- * earlier run passed on <date>"), with that earlier run's own status, looked up
- * among the runs; null otherwise, a newer passing run included.
+ * The proof that stands once each run's status is applied (RP-F decisions 16, 23
+ * and 29): a record counts only when its run's status is on PROVING_STATUSES (a
+ * record whose run is not listed, in inputs built without runs, stands as it is),
+ * and the latest run of the SAME rule governs: a record is removed by a run of its
+ * rule (sameRule) that failed or was not reproducible and is later than it. Later
+ * is the one latest-run comparator's order (RP-F decision 24: an undated run sorts
+ * oldest and never outranks a record; on the same instant the run that proves less
+ * is the later one, so a tie never reads as a pass); a record whose run is not
+ * listed is outranked by a strictly newer dated run.
+ * `superseded` names the newest record and the newest run that removed it, when no
+ * proof is left (the why line: "latest run of the rule failed on <date>; an earlier
+ * run passed on <date>"), with that earlier run's own status, looked up among the runs; null
+ * otherwise. `laterRuns` lists, newest first, the runs that do not prove and are
+ * later than every standing record (an untested, partial or no-telemetry run, or a
+ * failed or not-reproducible run of another rule); when no proof is left and a run
+ * removed it, every run newer than that remover (RP-F round 4 repair: the why line
+ * names the newest, so it never calls the remover the latest run while the
+ * Detection Validation pill shows a newer one); empty otherwise.
  */
 function standingProof(
   input: PostureInputs, rules: PostureRules, now: Date,
-): { readonly proof: DatedProof[]; readonly superseded: SupersededProof | null } {
+): { readonly proof: DatedProof[]; readonly superseded: SupersededProof | null; readonly laterRuns: RunSummary[] } {
   const runs = input.runs ?? [];
-  const noProofRuns = new Set(runs.filter(r => NO_PROOF_STATUSES.has(r.status)).map(r => r.runId));
+  const noProofRuns = new Set(runs.filter(r => !provesStatus(r.status)).map(r => r.runId));
   const qualifying = qualifyingProof(input.proof.filter(p => !noProofRuns.has(p.runId)), rules, now);
-  const latest = latestNoProofRun(runs);
-  if (latest === null) return { proof: qualifying, superseded: null };
-  const proof = qualifying.filter(p => p.t >= latest.t);
-  if (proof.length > 0 || qualifying.length === 0) return { proof, superseded: null };
-  const earlier = [...qualifying].sort((a, b) => b.t - a.t)[0].record;
-  const earlierStatus = runs.find(r => r.runId === earlier.runId)?.status ?? null;
-  return { proof, superseded: { latest: latest.run, earlier, earlierStatus } };
+  const ordered = sortRunsNewestFirst(runs, summaryRunKey);
+  const order = new Map(ordered.map((r, i) => [r.runId, i]));
+  const later = (run: RunSummary, p: DatedProof): boolean => {
+    const at = order.get(p.record.runId);
+    if (at !== undefined) return (order.get(run.runId) as number) < at;
+    const t = time(run.date);
+    return t !== null && t > p.t;
+  };
+  const removers = (p: DatedProof): RunSummary[] =>
+    ordered.filter(r => REMOVING_STATUSES.has(r.status) && sameRule(r, p.record) && later(r, p));
+  const proof = qualifying.filter(p => removers(p).length === 0);
+  if (proof.length > 0) {
+    return { proof, superseded: null, laterRuns: ordered.filter(r => !provesStatus(r.status) && proof.every(p => later(r, p))) };
+  }
+  if (qualifying.length === 0) return { proof, superseded: null, laterRuns: [] };
+  const newest = [...qualifying].sort((a, b) => b.t - a.t)[0];
+  const earlierStatus = runs.find(r => r.runId === newest.record.runId)?.status ?? null;
+  const latest = removers(newest)[0];
+  // Every run newer than the remover, whatever its status: none holds proof (the
+  // newest qualifying record is older than its remover), and the pill may show one.
+  const newerThanRemover = ordered.slice(0, order.get(latest.runId) as number);
+  return { proof, superseded: { latest, earlier: newest.record, earlierStatus }, laterRuns: newerThanRemover };
 }
 
 function qualifiersOf(marks: readonly CoveredMark[]): CoveredQualifier[] {
@@ -151,20 +203,19 @@ function qualifiersOf(marks: readonly CoveredMark[]): CoveredQualifier[] {
  * The runs that produced no qualifying proof record (RP-F decision 9): an
  * untested run, a failed run, a passed run with no named rule, a run whose
  * named rule has no parseable date. A run with one qualifying record is out.
- * Newest first; an undated run sorts last (two undated runs subtract to NaN,
- * which falls through to the runId order, as equal dates do).
+ * Newest first by the one latest-run comparator (RP-F decision 24): an undated
+ * run sorts last; equal instants put the run that proves less first, then runId.
  */
 function runsWithoutProof(runs: readonly RunSummary[], proof: readonly DatedProof[]): RunSummary[] {
   const proved = new Set(proof.map(p => p.record.runId));
-  return runs.filter(r => !proved.has(r.runId))
-    .sort((a, b) => (time(b.date) ?? -Infinity) - (time(a.date) ?? -Infinity) || a.runId.localeCompare(b.runId));
+  return sortRunsNewestFirst(runs.filter(r => !proved.has(r.runId)), summaryRunKey);
 }
 
 export function derivePosture(ref: TechniqueRefKey, input: PostureInputs, rules: PostureRules, now: Date): PostureState {
   const sub = new Set<PostureSubState>();
   if (input.covered.some(m => m.strength === 'planned')) sub.add('planned');
   if (input.covered.some(m => m.basis === 'range-telemetry-observed')) sub.add('telemetry-observed');
-  const { proof, superseded } = standingProof(input, rules, now);
+  const { proof, superseded, laterRuns } = standingProof(input, rules, now);
   const base = {
     ref,
     covered: input.covered,
@@ -173,6 +224,7 @@ export function derivePosture(ref: TechniqueRefKey, input: PostureInputs, rules:
     exposureWeight: input.exposureWeight,
     runsWithoutProof: runsWithoutProof(input.runs ?? [], proof),
     supersededProof: superseded,
+    laterRuns,
   };
 
   // 1. Proof.
@@ -219,8 +271,8 @@ export function derivePosture(ref: TechniqueRefKey, input: PostureInputs, rules:
     bucket = 'none';
   }
   // A failed run that outranked every proof record contradicts the technique's
-  // evidence, unless newer full marks still hold Covered (RP-F decision 16). A run
-  // with no telemetry outranks the proof too but contradicts nothing: it saw nothing.
+  // evidence, unless newer full marks still hold Covered (RP-F decision 16). A
+  // not-reproducible run of the rule outranks the proof too but contradicts nothing.
   if (superseded?.latest.status === 'failed' && bucket !== 'covered') sub.add('contradicted');
 
   return {

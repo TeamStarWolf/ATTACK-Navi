@@ -56,6 +56,10 @@ jobs:
       # scripts/build-kev-snapshot.mjs writes, and the one the registry names.
       # No network: the builder's fetch is not exercised here.
       - run: node --test scripts/build-kev-snapshot.test.mjs
+      # The all-domain group index (RP-F decision 25) is byte-identical to what
+      # scripts/build-group-index.mjs builds from the bundled STIX files (its test
+      # runs --check), so a bundle refresh that leaves it stale fails here.
+      - run: node --test scripts/build-group-index.test.mjs
       # The bundled rule-coverage snapshot is sound and in its serialised form;
       # the tar reader and the three rule parsers run on committed fixtures and
       # --check catches a tampered file. No network here either: the rebuild

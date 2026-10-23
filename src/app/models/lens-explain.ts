@@ -14,11 +14,19 @@
 // PROVEN through them); this file holds no rung-word literal, so the
 // truth-vocabulary lint needs no allow here.
 import type { LensCell, LensDefinition } from './heatmap-modes';
-import type { CoveredBasis, CoveredMark, PostureState, ProofRecord, ProofScope } from './posture/posture.types';
+import type { CoveredBasis, CoveredMark, PostureState, ProofRecord, ProofScope, RunSummary } from './posture/posture.types';
 import { PROVEN, postureBadge } from './posture/posture-vocabulary';
 import { SCORE_ONLY_LENSES } from './lens-registry';
 import { CONTRADICTED_WORDS } from './posture/posture-ramp';
 import { validationDay } from './local-date';
+import { provenNoneLine } from './posture/proof-gap';
+
+/**
+ * The head of the Proven block and the Proven lens when no proof stands (RP-F
+ * decision 28), from proof-gap.ts: the Proven lens cell's aria-label and tooltip
+ * name the same run (postureCellLabel), so the cell, the why line and the card agree.
+ */
+export { provenNoneLine };
 
 /** The five Known reference families (EnrichmentService.referenceSignalCount). */
 export const KNOWN_FAMILY_COUNT = 5;
@@ -70,12 +78,19 @@ function describeMarks(marks: readonly CoveredMark[]): string {
   return parts.join(', ');
 }
 
+/** Where the runs of yours are listed in full (the Detection Validation workbench). */
+const SEE_VALIDATION = 'see Detection Validation';
+
 /** The distinct detection references of a state's proof: the rules that fired or blocked. */
 function rulesFired(proof: readonly ProofRecord[]): number {
   return new Set(proof.map(p => p.detectionRef)).size;
 }
 
-/** The best proof record's line: '<badge> on <date> by <source>; N rule(s) fired'. */
+/**
+ * The best proof record's line: '<badge> on <date> by <source>; N rule(s) fired',
+ * then the newest later run that left the proof standing (laterRunClause, RP-F
+ * decision 29), so a Proven cell never hides a newer run the pill shows.
+ */
 function proofExplain(state: PostureState, decayDays?: Readonly<Record<ProofScope, number>>): string {
   const best = state.proof[0];
   const n = rulesFired(state.proof);
@@ -83,7 +98,45 @@ function proofExplain(state: PostureState, decayDays?: Readonly<Record<ProofScop
   if (state.bucket === 'stale' && decayDays && state.proofScope) {
     line += `; older than its ${decayDays[state.proofScope]}-day window`;
   }
-  return line;
+  const later = laterRunClause(state);
+  return later ? `${line}; ${later}` : line;
+}
+
+/** What a later run that left the proof standing did, on `day` (RP-F decision 29). */
+function laterRunWords(run: RunSummary, day: string): string {
+  if (run.status === 'partial') {
+    // A range row maps 'telemetry-observed' to partial (statusForRow); an own run is
+    // partial when some expected rule did not fire.
+    return run.source.startsWith('lylat-range:') ? `a later run on ${day} observed telemetry only` : `a later partial run on ${day}`;
+  }
+  if (run.status === 'untested') return `a later untested run on ${day}`;
+  if (run.status === 'no-telemetry') return `a later run on ${day} had no telemetry`;
+  if (run.status === 'failed') return `a later run of another rule failed on ${day}`;
+  // Only after a removed proof (laterRuns lists no passed run while proof stands): a
+  // passed run newer than the remover holds no qualifying record of its own.
+  if (run.status === 'passed') return `a later run passed on ${day} with no proof record`;
+  return `a later run of another rule was ${run.status.replace(/-/g, ' ')} on ${day}`;
+}
+
+/**
+ * The newest run of yours later than every standing proof record that left it
+ * standing (PostureState.laterRuns, RP-F decision 29: proof supersession is per
+ * rule, and an untested, partial or no-telemetry run, or a run of another rule, never
+ * removes proof): 'a later run on 10/21/26 observed telemetry only', 'a later
+ * untested run on 10/21/26', 'a later run of another rule failed on 10/21/26', with
+ * '(N more later runs; see Detection Validation)' when there are more; '' with none.
+ * The days are the local days the Detection Validation pill prints.
+ */
+export function laterRunClause(state: Pick<PostureState, 'laterRuns'>): string {
+  return laterRunsWords(state.laterRuns ?? [], true);
+}
+
+/** The newest of `runs` in words, then '(N more later runs)', with '; see Detection Validation' inside when `see`. */
+function laterRunsWords(runs: readonly RunSummary[], see: boolean): string {
+  if (runs.length === 0) return '';
+  const words = laterRunWords(runs[0], validationDay(runs[0].date));
+  const more = runs.length - 1;
+  return more > 0 ? `${words} (${more} more later run${more === 1 ? '' : 's'}${see ? `; ${SEE_VALIDATION}` : ''})` : words;
 }
 
 const CONTRADICTED_NOTE = '; a later failed run contradicts the marks';
@@ -117,12 +170,14 @@ function ownerRecordWithoutRung(state: PostureState): boolean {
   return state.subStates.includes('contradicted') || state.excluded;
 }
 
-/** Where the runs of yours are listed in full (the Detection Validation workbench). */
-const SEE_VALIDATION = 'see Detection Validation';
-
-/** What the latest run did, as the superseded clause says it: 'failed', 'had no telemetry'. */
+/**
+ * What the run that removed the proof did, as the superseded clause says it:
+ * 'failed' or 'was not reproducible'. Only those two statuses remove proof (RP-F
+ * decision 29, REMOVING_STATUSES in derive-posture.ts); an untested, partial or
+ * no-telemetry run never does, and is named by laterRunClause instead.
+ */
 function latestRunWords(status: string): string {
-  return status === 'no-telemetry' ? 'had no telemetry' : status;
+  return status === 'failed' ? 'failed' : `was ${status.replace(/-/g, ' ')}`;
 }
 
 /**
@@ -137,20 +192,27 @@ function earlierRunWords(status: string | null): string {
 }
 
 /**
- * The run that outranked every proof record (RP-F decision 16):
- * 'contradicted: latest run failed on 10/22/26; an earlier run passed on 10/21/26',
+ * The run that outranked every proof record (RP-F decisions 16 and 29):
+ * 'contradicted: latest run of the rule failed on 10/22/26; an earlier run passed on 10/21/26',
  * the earlier run named by its own status ('an earlier run was partial on ...'),
- * or '' when none did. 'contradicted: ' leads while the state is contradicted (the
- * cell paints the hatch, so its words say so, RP-F decision 17); a run with no
- * telemetry reads 'latest run had no telemetry on ...'. The days are the local
- * days the Detection Validation pill prints.
+ * or '' when none did. It is the latest run OF THAT RULE (supersession is per rule),
+ * so when a newer run of yours left nothing to remove (an untested or partial run,
+ * a run of another rule), the clause names the newest one after it, as the proven
+ * line does (laterRunClause): '...; an earlier run passed on 10/21/26; a later
+ * untested run on 10/23/26' (RP-F round 4 repair: the pill shows that newer run).
+ * 'contradicted: ' leads while the state is contradicted (the cell paints the
+ * hatch, so its words say so, RP-F decision 17); a not-reproducible remover reads
+ * 'latest run of the rule was not reproducible on ...' and contradicts nothing. The
+ * days are the local days the Detection Validation pill prints.
  */
-export function supersededClause(state: Pick<PostureState, 'supersededProof' | 'subStates'>): string {
+export function supersededClause(state: Pick<PostureState, 'supersededProof' | 'subStates' | 'laterRuns'>): string {
   const s = state.supersededProof;
   if (!s) return '';
+  const later = laterRunsWords(state.laterRuns ?? [], false);
   return (state.subStates.includes('contradicted') ? 'contradicted: ' : '')
-    + `latest run ${latestRunWords(s.latest.status)} on ${validationDay(s.latest.date)}; `
-    + `an earlier ${earlierRunWords(s.earlierStatus)} on ${validationDay(s.earlier.date)}`;
+    + `latest run of the rule ${latestRunWords(s.latest.status)} on ${validationDay(s.latest.date)}; `
+    + `an earlier ${earlierRunWords(s.earlierStatus)} on ${validationDay(s.earlier.date)}`
+    + (later ? `; ${later}` : '');
 }
 
 /**
@@ -158,10 +220,10 @@ export function supersededClause(state: Pick<PostureState, 'supersededProof' | '
  * '1 run of yours recorded, latest untested on 10/21/26', or '' with none.
  * It names the run's status and date only, never a rung: a run without a named
  * rule is not Proven, and nothing here says it covers the technique. When the
- * latest run outranked an earlier proof (RP-F decision 16) it says that instead:
- * 'contradicted: latest run failed on 10/22/26; an earlier run passed on 10/21/26'.
+ * latest run of a rule outranked an earlier proof (RP-F decisions 16 and 29) it says that instead:
+ * 'contradicted: latest run of the rule failed on 10/22/26; an earlier run passed on 10/21/26'.
  */
-export function runsClause(state: Pick<PostureState, 'runsWithoutProof' | 'supersededProof' | 'subStates'>): string {
+export function runsClause(state: Pick<PostureState, 'runsWithoutProof' | 'supersededProof' | 'subStates' | 'laterRuns'>): string {
   const superseded = supersededClause(state);
   if (superseded) return superseded;
   const runs = state.runsWithoutProof;
@@ -255,13 +317,24 @@ function coveredNoneExplain(state: PostureState): string {
  * say it (RP-F decision 17: a cell that paints or speaks the contradicted hatch
  * says so in its why line too): the run that outranked the proof (supersededClause,
  * which leads with 'contradicted: '), else 'contradicted by a later failed run'.
- * A run with no telemetry that outranked the proof is named though it contradicts
- * nothing; '' for a state with neither.
+ * A not-reproducible run of the rule that removed the proof is named though it
+ * contradicts nothing (only failed and not-reproducible runs remove proof, RP-F
+ * decision 29); '' for a state with neither.
  */
 function contradictionNote(state: PostureState): string {
   const superseded = supersededClause(state);
   if (superseded) return `; ${superseded}`;
   return state.subStates.includes('contradicted') ? `; ${CONTRADICTED_WORDS}` : '';
+}
+
+/**
+ * '; not reproducible, so left out of the denominator' for an excluded state, or ''.
+ * The Covered and Proven lenses paint the not-reproducible cross-hatch from the
+ * same sub-state, so their why lines say it too (paints implies speaks, RP-F
+ * decision 27); round 4 found only the Posture why line naming it on T1082.
+ */
+function exclusionNote(state: PostureState): string {
+  return state.excluded ? EXCLUDED_NOTE : '';
 }
 
 /** A registry lens other than Posture: its cell's own words, with the marks or proof behind them. */
@@ -270,15 +343,15 @@ function registryExplain(def: LensDefinition, cell: LensCell, ctx: LensExplainCo
   if (def.value === 'posture') return postureExplain(state, ctx.decayDays);
   if (def.value === 'proven') {
     if (cell.score > 0 && state.proof.length > 0) return proofExplain(state, ctx.decayDays);
-    return 'No recorded detection for this technique' + contradictionNote(state);
+    return provenNoneLine(state) + contradictionNote(state) + exclusionNote(state);
   }
   if (def.value === 'covered') {
     if (cell.score === 2) {
-      return `${cell.label} from ${describeMarks(state.covered.filter(m => m.strength === 'full'))}`;
+      return `${cell.label} from ${describeMarks(state.covered.filter(m => m.strength === 'full'))}` + exclusionNote(state);
     }
     if (cell.score === 1) {
       return `${cell.label}: reached only through a mitigation or control mapped to more techniques than the breadth threshold`
-        + contradictionNote(state);
+        + contradictionNote(state) + exclusionNote(state);
     }
     return coveredNoneExplain(state);
   }
