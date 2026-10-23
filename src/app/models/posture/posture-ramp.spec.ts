@@ -155,6 +155,23 @@ describe('posture cell label (§7)', () => {
 
   // RP-F decision 11: one builder and one phrase. A contradicted cell names the
   // legend's words on Posture, Covered and Status, the way a stale cell names its age.
+  // RP-F decision 31: a cell painted partial by a range telemetry row says so, as its why line does.
+  it('a range telemetry partial names its cause; a breadth partial keeps the badge alone', () => {
+    const windows = { production: 180, range: 90, 'own-run': 90 };
+    const tele = {
+      ...stubState('T1200', 'partial'), qualifiers: ['range'] as const, partialCauses: ['telemetry'] as const,
+      covered: [{ qualifier: 'range', basis: 'range-telemetry-observed', strength: 'partial', via: 'wazuh:5', source: 'lylat-range:m', partialCause: 'telemetry' }],
+    } as PostureState;
+    const words = 'range telemetry observed via wazuh:5: partial, no detection alerted';
+    expect(postureCellLabel(tele, windows)).toBe(`Covered (range, partial via wazuh:5), ${words}`);
+    expect(postureCellLabel(tele, windows, { value: 'covered', words: 'Covered (self-attested or range), partial via wazuh:5' }, { bucket: 'partial', subStates: ['partial'] }))
+      .toBe(`Covered (self-attested or range), partial via wazuh:5, ${words}`);
+    // Not painted partial (a Proven cell): no partial words.
+    expect(postureCellLabel(tele, windows, { value: 'proven', words: 'Proven in range' }, { bucket: 'proven', subStates: [] })).toBe('Proven in range');
+    const breadth = { ...stubState('T1078', 'partial'), partialCauses: ['breadth'] as const } as PostureState;
+    expect(postureCellLabel(breadth, windows)).toBe('Covered (self-attested, partial via M1)');
+  });
+
   describe('a contradicted state (RP-F decision 11)', () => {
     const contradicted = (bucket: Parameters<typeof stubState>[1]) =>
       ({ ...stubState('T1078', bucket), subStates: ['contradicted' as const] });

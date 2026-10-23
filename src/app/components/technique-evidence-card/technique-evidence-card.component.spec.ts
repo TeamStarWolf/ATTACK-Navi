@@ -28,6 +28,10 @@ import { AttackCveService } from '../../services/attack-cve.service';
 import { SettingsService } from '../../services/settings.service';
 import { TechniqueMarksService } from '../../services/technique-marks.service';
 import { SourceRegistryService } from '../../services/source-registry.service';
+import { RecordRunRequestService } from '../../services/record-run-request.service';
+import { lylatRowsToRuns, validateLylatExport } from '../../contracts/lylat-validated-detections';
+import { runInputs } from '../../services/posture-adapters';
+import RANGE_FIXTURE from '../../../testing/fixtures/lylat/validated-detections.fixture.json';
 
 const TECH = {
   id: 'attack-pattern--t1078', attackId: 'T1078', name: 'Valid Accounts', mitigationCount: 8,
@@ -47,8 +51,37 @@ const RANGE_PROOF: ProofRecord = {
 const OWN_PROOF: ProofRecord = {
   scope: 'own-run', detectionRef: 'sigma:4688', outcome: 'blocked', date: '2026-10-20T10:00:00.000Z', source: 'manual', runId: 'r-own',
 };
-const PARTIAL: CoveredMark = { qualifier: 'self-attested', basis: 'mitigation-implemented', strength: 'partial', via: 'M1038', source: 'manual' };
+const PARTIAL: CoveredMark = { qualifier: 'self-attested', basis: 'mitigation-implemented', strength: 'partial', via: 'M1038', source: 'manual', partialCause: 'breadth' };
 const FULL_RANGE: CoveredMark = { qualifier: 'range', basis: 'range-detection-authored', strength: 'full', via: 'wazuh:990003', source: 'lylat-range:CORNERIA-ROOT-01', at: '2026-06-01' };
+
+/**
+ * A technique's PostureState through the range contract path (RP-F decision 31): the
+ * export is validated, mapped to runs (lylatRowsToRuns), turned into posture inputs
+ * (runInputs) and derived, as PostureService does after Import range results.
+ */
+function rangeState(attackId: string, exportJson: unknown): PostureState {
+  const checked = validateLylatExport(exportJson);
+  if (!checked.ok) throw new Error(checked.errors.join('; '));
+  const runs = lylatRowsToRuns(checked.value, id => id, 'enterprise', '19.2', () => true);
+  const inputs = [...runs.bySource.values()].flat().filter(r => r.run.techniqueId === attackId).map(r => runInputs(r.run));
+  return derivePosture(`attack/enterprise/${attackId}@19.2`, {
+    knownSignals: 0, threatWeight: 0, exposureWeight: 0,
+    covered: inputs.flatMap(i => i.covered), proof: inputs.flatMap(i => i.proof), verdicts: inputs.flatMap(i => i.verdicts),
+    runs: inputs.map(i => i.summary),
+  }, DEFAULT_POSTURE_RULES, new Date('2026-10-22T00:00:00.000Z'));
+}
+
+/** Round 6, letter A: one telemetry-observed range row on T1200, imported through the contract path. */
+const T1200_TELEMETRY_EXPORT = {
+  schema: 'lylat-validated-detections/1', range_build_ref: 'a1b2c3d', generated_at: '2026-10-21T00:00:00Z',
+  rows: [{
+    mission_id: 'SYNTH-MISSION-T', technique_ref: { domain: 'enterprise', id: 'T1200', attack_version: '19.2' },
+    detection_ref: 'wazuh:5', coverage_state: 'telemetry-observed', outcome: 'logged',
+    negative_control: 'detection-only', validated_at: '2026-10-21', evidence_ref: 'SYNTH-MISSION-T-step1',
+  }],
+};
+const T1200 = { ...TECH, id: 'attack-pattern--t1200', attackId: 'T1200', name: 'Hardware Additions' } as unknown as Technique;
+const T1003_001 = { ...TECH, id: 'attack-pattern--t1003-001', attackId: 'T1003.001', name: 'LSASS Memory', isSubtechnique: true } as unknown as Technique;
 
 function state(over: Partial<PostureState> = {}): PostureState {
   return {
@@ -61,6 +94,9 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
   let fixture: ComponentFixture<TechniqueEvidenceCardComponent>;
   let heat: BehaviorSubject<HeatmapMode>;
   let confirm: jasmine.Spy;
+  let recordRequest: jasmine.Spy;
+  /** The technique the card renders (TECH unless a spec names another). */
+  let techInput: Technique;
   let kevLoaded: BehaviorSubject<boolean>;
   // The drawer's threat-profile line (RP-F decision 6): the shared notice replaces the label.
   let domainNotice: WritableSignal<string | null>;
@@ -73,11 +109,13 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
     profileLabel = 'Top 20 groups by prevalence';
     profileActors = ['APT28', 'APT29'];
     profileRollup = null;
+    techInput = TECH;
   });
 
   function render(s: PostureState, ownerWords: boolean, mode: HeatmapMode = 'frequency', extra: (Provider | EnvironmentProviders)[] = []): HTMLElement {
     heat = new BehaviorSubject<HeatmapMode>(mode);
     confirm = jasmine.createSpy('confirm').and.returnValue(true);
+    recordRequest = jasmine.createSpy('request');
     kevLoaded = new BehaviorSubject(true);
     TestBed.configureTestingModule({
       imports: [TechniqueEvidenceCardComponent],
@@ -115,12 +153,13 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
         { provide: AttackCveService, useValue: { loaded$: of(true), getCvesForTechnique: () => [{ cveId: 'CVE-2024-3400' }, { cveId: 'CVE-2019-0001' }] } },
         { provide: SettingsService, useValue: { settings$: of({}), getCoverageColors: () => ['#0', '#1', '#2', '#3', '#4'] } },
         { provide: TechniqueMarksService, useValue: { confirm } },
+        { provide: RecordRunRequestService, useValue: { request: recordRequest } },
         { provide: POSTURE_TODAY, useValue: signal(new Date('2026-10-21T00:00:00.000Z')) },
         ...extra,
       ],
     });
     fixture = TestBed.createComponent(TechniqueEvidenceCardComponent);
-    fixture.componentRef.setInput('technique', TECH);
+    fixture.componentRef.setInput('technique', techInput);
     fixture.detectChanges();
     return fixture.nativeElement as HTMLElement;
   }
@@ -375,6 +414,66 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
     (row.querySelector('[data-testid="ev-confirm"]') as HTMLButtonElement).click();
     expect(confirm).toHaveBeenCalledOnceWith('attack/enterprise/T1078@19.2', { via: 'M1038' });
     expect(block(el, 'ev-proven')!.textContent).toContain('No recorded detection for this technique.');
+  });
+
+  // RP-F decision 31 (round 6, letter A): a range telemetry partial is partial by
+  // telemetry. Round 6 read the breadth-threshold sentence and offered Confirm, which
+  // minted a self-attested mark 'via wazuh:5' and turned the technique full Covered.
+  describe('a range telemetry partial (RP-F decision 31)', () => {
+    const WORDS = 'range telemetry observed via wazuh:5: partial, no detection alerted';
+
+    for (const [mode, line] of [
+      ['posture', `Covered (range, partial via wazuh:5) from ${WORDS}`],
+      ['covered', `Covered (self-attested or range), partial via wazuh:5 from ${WORDS}`],
+    ] as const) {
+      it(`T1200 through the contract path, lens ${mode}: the why line names the telemetry, never the threshold`, () => {
+        techInput = T1200;
+        const s = rangeState('T1200', T1200_TELEMETRY_EXPORT);
+        expect(s.partialCauses).toEqual(['telemetry']);
+        const why = text(block(render(s, true, mode), 'ev-why'));
+        expect(why).toContain(line);
+        expect(why).not.toContain('breadth threshold');
+      });
+    }
+
+    it('the Covered block names the row; no Confirm; "Record a run" asks Detect > Validation for the technique', () => {
+      techInput = T1200;
+      const el = render(rangeState('T1200', T1200_TELEMETRY_EXPORT), true, 'posture');
+      const row = block(el, 'ev-covered')!.querySelector('[data-testid="ev-mark"]')!;
+      expect(text(row)).toContain('range telemetry observed in the range via wazuh:5');
+      expect(text(row)).toContain('partial · source lylat-range:SYNTH-MISSION-T · 10/21/26');
+      expect(el.querySelector('[data-testid="ev-confirm"]')).toBeNull();
+      const record = row.querySelector('[data-testid="ev-record-run"]') as HTMLButtonElement;
+      expect(text(record)).toBe('Record a run');
+      record.click();
+      expect(recordRequest).toHaveBeenCalledOnceWith('T1200');
+      expect(confirm).not.toHaveBeenCalled();
+    });
+
+    it('Confirm never mints a mark via a range rule, even when called directly', () => {
+      techInput = T1200;
+      render(rangeState('T1200', T1200_TELEMETRY_EXPORT), true, 'posture');
+      fixture.componentInstance.confirm('wazuh:5');
+      expect(confirm).not.toHaveBeenCalled();
+    });
+
+    it("the P2-20 fixture's T1003.001 (alerted plus telemetry rows) stays Proven; the why line names the telemetry row", () => {
+      techInput = T1003_001;
+      const el = render(rangeState('T1003.001', RANGE_FIXTURE), true, 'posture');
+      const why = text(block(el, 'ev-why'));
+      expect(why).toContain('Proven in range on 10/19/26 by lylat-range:SYNTH-MISSION-A; 1 rule fired; a later run on 10/20/26 observed telemetry only');
+      const marks = Array.from(block(el, 'ev-covered')!.querySelectorAll('[data-testid="ev-mark"]'));
+      expect(marks.map(m => text(m.querySelector('.ev-line')))).toEqual(['telemetry observed in the range via wazuh:990007']);
+      expect(el.querySelector('[data-testid="ev-confirm"]')).toBeNull();
+      expect(el.querySelector('[data-testid="ev-record-run"]')).not.toBeNull();
+    });
+
+    it('a breadth partial (M1038) keeps its threshold sentence and Confirm, and offers no Record a run', () => {
+      const el = render(state({ rung: 'covered', bucket: 'partial', subStates: ['partial'], covered: [PARTIAL], partialCauses: ['breadth'] }), true, 'posture');
+      expect(text(block(el, 'ev-why'))).toContain('Covered (self-attested, partial via M1038): reached only through a mitigation or control mapped to more techniques than the breadth threshold');
+      expect(el.querySelector('[data-testid="ev-confirm"]')).not.toBeNull();
+      expect(el.querySelector('[data-testid="ev-record-run"]')).toBeNull();
+    });
   });
 
   it('a full mark offers no Confirm', () => {

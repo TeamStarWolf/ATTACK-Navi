@@ -35,6 +35,10 @@ import { TechniqueMarksService } from './technique-marks.service';
 import { TelemetryCoverageService, telemetryKey } from './telemetry-coverage.service';
 import { VALIDATION_RUNS_V1_KEY, VALIDATION_RUNS_V2_KEY, ValidationService } from './validation.service';
 import { parseFixtureDomain, resetBrowserState, signalStubProviders } from '../testing/lens-harness';
+import { heatmapModeDef } from '../models/heatmap-modes';
+import { lensExplain } from '../models/lens-explain';
+import { postureCellLabel } from '../models/posture/posture-ramp';
+import RANGE_FIXTURE from '../../testing/fixtures/lylat/validated-detections.fixture.json';
 
 const TODAY = new Date('2026-10-01T00:00:00.000Z');
 const daysBefore = (n: number) => new Date(TODAY.getTime() - n * 86_400_000).toISOString();
@@ -585,6 +589,84 @@ describe('PostureService (P2-05, E2.1-c)', () => {
       expect(rangeStates.length).toBe(6); // one per distinct technique
       expect(rangeStates.filter(s => s.bucket === 'proven').length).toBe(5);
       expect(rangeStates.filter(s => s.bucket === 'stale').length).toBe(1);
+    });
+  });
+
+  // RP-F decision 31 (round 6, letter A): a range row whose coverage_state is
+  // telemetry-observed is a partial by TELEMETRY. Round 6 read the breadth-threshold
+  // sentence on Posture, Covered and the technique page beside a Covered block saying
+  // "telemetry observed in the range via wazuh:5 partial". Imported through the
+  // contract path (ValidationService.importRangeContract), as the walk did.
+  describe('range telemetry partial (RP-F decision 31)', () => {
+    let validation: ValidationService;
+    const WINDOWS = { production: 180, range: 90, 'own-run': 90 } as const;
+    const TELEMETRY_WORDS = 'range telemetry observed via wazuh:5: partial, no detection alerted';
+    const BREADTH = /breadth threshold/;
+
+    function bootRange(ids: readonly string[]): void {
+      resetBrowserState();
+      domain = tinyDomain('ent', '19.2', ids);
+      TestBed.configureTestingModule({
+        providers: [
+          provideHttpClient(withXhr()), provideHttpClientTesting(),
+          ...signalStubProviders(),
+          { provide: POSTURE_TODAY, useValue: signal(new Date('2026-10-22T00:00:00.000Z')) },
+        ],
+      });
+      load(domain, 'enterprise');
+      validation = TestBed.inject(ValidationService);
+      posture = TestBed.inject(PostureService);
+    }
+
+    /** The why line on a lens, from the cell that lens projects (as the evidence card does). */
+    function why(mode: 'posture' | 'covered' | 'proven', s: PostureState): string {
+      const def = heatmapModeDef(mode)!;
+      // The Posture, Covered and Proven projections read the technique's state only.
+      const cell = def.project!({ posture: () => s } as never, tech(s.ref.split('/')[2].split('@')[0]));
+      return lensExplain(def, cell, { state: s, decayDays: WINDOWS });
+    }
+
+    it('[AC] a telemetry-only range row on T1200: telemetry words on Posture, Covered and the aria-label, never the threshold sentence', () => {
+      bootRange(['T1200']);
+      const res = validation.importRangeContract(JSON.stringify({
+        schema: 'lylat-validated-detections/1', range_build_ref: 'a1b2c3d', generated_at: '2026-10-21T00:00:00.000Z',
+        rows: [{
+          mission_id: 'SYNTH-MISSION-T', technique_ref: { domain: 'enterprise', id: 'T1200', attack_version: '19.2' },
+          detection_ref: 'wazuh:5', coverage_state: 'telemetry-observed', outcome: 'logged',
+          negative_control: 'detection-only', validated_at: '2026-10-21', evidence_ref: 'SYNTH-MISSION-T-step1',
+        }],
+      }));
+      expect(res.ok).toBeTrue();
+      const s = stateOf(tech('T1200'));
+      expect(s.bucket).toBe('partial');
+      expect(s.partialCauses).toEqual(['telemetry']);
+      expect(s.covered.map(m => [m.basis, m.strength, m.via, m.partialCause])).toEqual([['range-telemetry-observed', 'partial', 'wazuh:5', 'telemetry']]);
+
+      expect(why('posture', s)).toBe(`Covered (range, partial via wazuh:5) from ${TELEMETRY_WORDS}`);
+      expect(why('covered', s)).toBe(`Covered (self-attested or range), partial via wazuh:5 from ${TELEMETRY_WORDS}`);
+      for (const mode of ['posture', 'covered'] as const) expect(why(mode, s)).not.toMatch(BREADTH);
+
+      // The cell's aria-label and tooltip say it too, on both lenses.
+      expect(postureCellLabel(s, WINDOWS)).toBe(`Covered (range, partial via wazuh:5), ${TELEMETRY_WORDS}`);
+      const covered = heatmapModeDef('covered')!;
+      const cell = covered.project!({ posture: () => s } as never, tech('T1200'));
+      expect(postureCellLabel(s, WINDOWS, { value: 'covered', words: cell.label }, { bucket: cell.bucket!, subStates: cell.subStates! }))
+        .toBe(`Covered (self-attested or range), partial via wazuh:5, ${TELEMETRY_WORDS}`);
+    });
+
+    it("[AC] the P2-20 fixture's T1003.001 (alerted plus telemetry rows) stays Proven and names the telemetry row", () => {
+      bootRange(['T1558.003', 'T1087.002', 'T1078.002', 'T1059.001', 'T1003.001', 'T1021.002']);
+      expect(validation.importRangeContract(JSON.stringify(RANGE_FIXTURE)).ok).toBeTrue();
+      const s = stateOf(tech('T1003.001'));
+      expect(s.bucket).toBe('proven');
+      expect(s.partialCauses).toEqual(['telemetry']);
+      const posture = why('posture', s);
+      expect(posture).toContain('Proven in range on 10/19/26 by lylat-range:SYNTH-MISSION-A; 1 rule fired');
+      expect(posture).toContain('a later run on 10/20/26 observed telemetry only');
+      // The Covered lens paints the telemetry row's partial: its words name the row by its rule, never the threshold.
+      const covered = why('covered', s);
+      expect(covered).toBe('Covered (self-attested or range), partial via wazuh:990007 from range telemetry observed via wazuh:990007: partial, no detection alerted');
+      expect(covered).not.toMatch(BREADTH);
     });
   });
 });

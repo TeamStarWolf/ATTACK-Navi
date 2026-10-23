@@ -25,6 +25,19 @@ export type CoveredBasis =
 
 export type CoveredStrength = 'full' | 'partial' | 'planned';
 
+/**
+ * Why a mark is partial (RP-F decision 31). Set where the partial mark is produced,
+ * never inferred from wording:
+ * - 'breadth': the mark reaches the technique only through a mitigation or control
+ *   mapped to more techniques than the D16 breadth threshold (mitigation-rollup.ts,
+ *   posture-adapters controlsAdapter). The why line says so and the card offers Confirm.
+ * - 'telemetry': a range row whose coverage_state is telemetry-observed (posture-adapters
+ *   runInputs): the range saw the technique's telemetry and no detection alerted. The
+ *   why line says "range telemetry observed via <rule>: partial, no detection alerted",
+ *   and the card offers "Record a run", never Confirm.
+ */
+export type PartialCause = 'breadth' | 'telemetry';
+
 export interface CoveredMark {
   readonly qualifier: CoveredQualifier;
   readonly basis: CoveredBasis;
@@ -32,6 +45,8 @@ export interface CoveredMark {
   readonly via?: string;          // 'M1038', control uuid, 'Sysmon::1', 'wazuh:990003'
   readonly source: SourceId;      // §2.3
   readonly at?: string;           // ISO date when known
+  /** On a partial mark: why it is partial (RP-F decision 31), set by the mark's producer. */
+  readonly partialCause?: PartialCause;
 }
 
 export type ProofScope = 'production' | 'range' | 'own-run';
@@ -164,6 +179,14 @@ export interface PostureState {
    * (absent in a hand-built state).
    */
   readonly laterRuns?: readonly RunSummary[];
+  /**
+   * The causes of the technique's partial marks (RP-F decision 31), sorted and unique,
+   * read from each partial mark's partialCause in every branch (a Proven state may
+   * still hold a range telemetry partial, which the Covered lens paints). Empty with
+   * no partial mark, or when no partial mark names its cause (a hand-built mark): the
+   * why line then names no cause rather than guess one. Absent in a hand-built state.
+   */
+  readonly partialCauses?: readonly PartialCause[];
 }
 
 export interface PostureTally {

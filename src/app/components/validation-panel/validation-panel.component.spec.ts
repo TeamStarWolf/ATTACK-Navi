@@ -13,6 +13,8 @@ import { SiemQueryService } from '../../services/siem-query.service';
 import { LibraryService } from '../../services/library.service';
 import { TelemetryCoverageService } from '../../services/telemetry-coverage.service';
 import { makePostureStub, postureStubProvider } from '../../testing/posture-stub';
+import { PanelNavService } from '../../services/panel-nav.service';
+import { RecordRunRequestService } from '../../services/record-run-request.service';
 
 describe('ValidationPanelComponent', () => {
   let component: ValidationPanelComponent;
@@ -54,6 +56,8 @@ describe('ValidationPanelComponent', () => {
         }},
         // The summary header mounts the posture card (P2-07).
         postureStubProvider(makePostureStub(() => null)),
+        // "Record a run" (RP-F decision 31) opens this panel through PanelNavService.
+        { provide: PanelNavService, useValue: { open: jasmine.createSpy('open') } },
       ],
     });
     fixture = TestBed.createComponent(ValidationPanelComponent);
@@ -249,6 +253,45 @@ describe('ValidationPanelComponent', () => {
     rerender();
     expect(el.querySelector('.vp-migration-msg')!.textContent).toContain('row 2: missing techniqueId');
     expect(component.migrationNotice).toContain('attacknavi.validation-runs.v1');
+  });
+
+  // RP-F decision 31: the evidence card's "Record a run" on a range telemetry partial
+  // opens Detect > Validation with the technique preselected: the Techniques tab,
+  // filtered to it, and the Record Run form open on it.
+  describe('"Record a run" from the evidence card (RP-F decision 31)', () => {
+    const tech = (attackId: string, isSubtechnique = false) =>
+      ({ id: `attack-pattern--${attackId}`, attackId, name: `Name ${attackId}`, isSubtechnique, tacticShortnames: ['initial-access'] });
+    const domain$ = () => (TestBed.inject(DataService) as unknown as { domain$: BehaviorSubject<unknown> }).domain$;
+
+    it('a request made before the domain loads opens the form once the domain is there, even for a technique with no card', () => {
+      const requests = TestBed.inject(RecordRunRequestService);
+      requests.request('T1200');
+      expect(TestBed.inject(PanelNavService).open).toHaveBeenCalledOnceWith('validation');
+      expect(component.showRecordModal).toBeFalse();
+      domain$().next({ techniques: [tech('T1059'), tech('T1200')] });
+      expect(component.showRecordModal).toBeTrue();
+      expect(component.selectedTechnique?.attackId).toBe('T1200');
+      expect(component.currentTab).toBe('techniques');
+      expect(component.searchText).toBe('T1200');
+      expect(requests.take()).toBeNull();   // consumed once
+    });
+
+    it('a request while the panel is on screen opens the form at once, for a sub-technique too', () => {
+      domain$().next({ techniques: [tech('T1003'), tech('T1003.001', true)] });
+      TestBed.inject(RecordRunRequestService).request('T1003.001');
+      expect(component.showRecordModal).toBeTrue();
+      expect(component.selectedTechnique?.attackId).toBe('T1003.001');
+      const el: HTMLElement = fixture.nativeElement;
+      rerender();
+      expect(el.querySelector('.vp-modal-head h3')?.textContent).toContain('T1003.001');
+    });
+
+    it('an id the loaded domain does not carry is dropped', () => {
+      domain$().next({ techniques: [tech('T1059')] });
+      TestBed.inject(RecordRunRequestService).request('T9999');
+      expect(component.showRecordModal).toBeFalse();
+      expect(TestBed.inject(RecordRunRequestService).take()).toBeNull();
+    });
   });
 
   it('cancelRecord closes the modal and clears selectedTechnique', () => {

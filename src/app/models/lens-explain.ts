@@ -21,6 +21,7 @@ import { CONTRADICTED_WORDS } from './posture/posture-ramp';
 import { validationDay } from './local-date';
 import { provenNoneLine } from './posture/proof-gap';
 import { firedRuleCount } from './posture/fired-rules';
+import { partialReason } from './posture/partial-cause';
 
 /**
  * The head of the Proven block and the Proven lens when no proof stands (RP-F
@@ -259,7 +260,8 @@ function supersededNote(state: PostureState): string {
  * The Posture lens: the technique's own rung, from its PostureState.
  *   'Proven (your run) on 10/21/26 by manual; 1 rule fired'
  *   'Covered (self-attested) from mitigation implemented via M1036'
- *   'Covered (self-attested, partial via M1038): reached only through a mitigation mapped to more techniques than the breadth threshold'
+ *   'Covered (self-attested, partial via M1038): reached only through a mitigation or control mapped to more techniques than the breadth threshold'
+ *   'Covered (range, partial via wazuh:5) from range telemetry observed via wazuh:5: partial, no detection alerted'   (RP-F decision 31)
  *   'Known: mapped (3 of 5 reference families)'
  *   'Known: mapped (3 of 5 reference families); 1 run of yours recorded, latest passed on 10/21/26; see Detection Validation'
  *   'None: no reference data mapped and nothing of yours recorded'
@@ -276,9 +278,9 @@ export function postureExplain(state: PostureState, decayDays?: Readonly<Record<
       return postureBadge(state) + (marks ? ` from ${marks}` : '') + supersededNote(state) + postureNotes(state);
     }
     case 'partial':
-      return postureBadge(state)
-        + ': reached only through a mitigation or control mapped to more techniques than the breadth threshold'
-        + supersededNote(state) + postureNotes(state);
+      // RP-F decision 31: the reason follows the marks' typed cause (breadth or range
+      // telemetry), never the threshold sentence for a telemetry-observed range row.
+      return postureBadge(state) + partialReason(state) + supersededNote(state) + postureNotes(state);
     case 'known':
       return `${postureBadge(state)} (${state.knownSignals} of ${KNOWN_FAMILY_COUNT} reference families)` + runsNote(state) + postureNotes(state);
     default: {
@@ -362,8 +364,8 @@ function registryExplain(def: LensDefinition, cell: LensCell, ctx: LensExplainCo
       return `${cell.label} from ${describeMarks(state.covered.filter(m => m.strength === 'full'))}` + exclusionNote(state);
     }
     if (cell.score === 1) {
-      return `${cell.label}: reached only through a mitigation or control mapped to more techniques than the breadth threshold`
-        + contradictionNote(state) + exclusionNote(state);
+      // RP-F decision 31: by the partial marks' typed cause, as the Posture line says it.
+      return `${cell.label}${partialReason(state)}` + contradictionNote(state) + exclusionNote(state);
     }
     return coveredNoneExplain(state);
   }

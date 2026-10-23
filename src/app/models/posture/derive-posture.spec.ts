@@ -648,6 +648,37 @@ describe('derivePosture (Phase 2 design §2.2)', () => {
   });
 });
 
+// RP-F decision 31: a partial state carries the typed causes of its partial marks,
+// read from the marks' own partialCause in every branch, never from wording.
+describe('partial causes (RP-F decision 31)', () => {
+  const breadth = mark({ strength: 'partial', via: 'M1038', partialCause: 'breadth' });
+  const telemetry = mark({ qualifier: 'range', basis: 'range-telemetry-observed', strength: 'partial', via: 'wazuh:5', source: 'lylat-range:m1', partialCause: 'telemetry' });
+
+  it('a range telemetry partial: bucket partial, partialCauses [telemetry], sub-state telemetry-observed', () => {
+    const s = derive({ covered: [telemetry] });
+    expect(s.bucket).toBe('partial');
+    expect(s.partialCauses).toEqual(['telemetry']);
+    expect(s.subStates).toEqual(['partial', 'telemetry-observed']);
+  });
+
+  it('a breadth partial: partialCauses [breadth]; both: sorted and unique', () => {
+    expect(derive({ covered: [breadth] }).partialCauses).toEqual(['breadth']);
+    expect(derive({ covered: [telemetry, breadth, telemetry] }).partialCauses).toEqual(['breadth', 'telemetry']);
+  });
+
+  it('is set in every branch: a Proven state keeps the telemetry cause the Covered lens paints', () => {
+    const s = derive({ covered: [telemetry], proof: [proof('range', 2)] });
+    expect(s.bucket).toBe('proven');
+    expect(s.partialCauses).toEqual(['telemetry']);
+  });
+
+  it('names no cause for a full or planned mark, nor for a partial mark that names none', () => {
+    expect(derive({ covered: [mark(), mark({ strength: 'planned' })] }).partialCauses).toEqual([]);
+    expect(derive({ covered: [mark({ strength: 'partial' })] }).partialCauses).toEqual([]);
+    expect(derive().partialCauses).toEqual([]);
+  });
+});
+
 describe('tallyPosture', () => {
   it('counts one bucket per state, summing to total; excluded leaves total and lowers assessable', () => {
     const states = [
