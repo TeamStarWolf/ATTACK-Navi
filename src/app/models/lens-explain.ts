@@ -217,13 +217,20 @@ function earlierRunWords(status: string | null): string {
  * hatch, so its words say so, RP-F decision 17); a not-reproducible remover reads
  * 'latest run of the rule was not reproducible on ...' and contradicts nothing. The
  * days are the local days the Detection Validation pill prints.
+ * A run that names no rule (a manual run recorded without a rule id, which decision 29
+ * matches on source plus technique) is never called a run "of the rule" (RP-F decision
+ * 39): 'latest run failed, no rule named, on 10/22/26; an earlier run passed on ...'.
  */
 export function supersededClause(state: Pick<PostureState, 'supersededProof' | 'subStates' | 'laterRuns'>): string {
   const s = state.supersededProof;
   if (!s) return '';
   const later = laterRunsWords(state.laterRuns ?? [], false);
+  const day = validationDay(s.latest.date);
+  const latest = (s.latest.rules ?? []).length > 0
+    ? `latest run of the rule ${latestRunWords(s.latest.status)} on ${day}`
+    : `latest run ${latestRunWords(s.latest.status)}, no rule named, on ${day}`;
   return (state.subStates.includes('contradicted') ? 'contradicted: ' : '')
-    + `latest run of the rule ${latestRunWords(s.latest.status)} on ${validationDay(s.latest.date)}; `
+    + `${latest}; `
     + `an earlier ${earlierRunWords(s.earlierStatus)} on ${validationDay(s.earlier.date)}`
     + (later ? `; ${later}` : '');
 }

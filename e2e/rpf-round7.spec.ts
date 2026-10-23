@@ -187,4 +187,28 @@ test.describe('RP-F round 7', () => {
     await expect(row).toContainText(words);
     await expect(row).not.toContainText('2/2');
   });
+
+  // Decision 39: a manual failed run with no rule id is matched on source plus technique
+  // (decision 29), so it is never called a run "of the rule".
+  test('[RP-F 39] a manual failed run with no rule id after a pass: the why line reads "latest run failed, no rule named"', async ({ page }) => {
+    const record = (id: string, runDate: string, status: string, rules: string[]) => ({
+      id, techniqueId: 'T1078', techniqueName: 'Valid Accounts', runDate, operator: '', telemetryRequired: [], telemetryAvailable: [],
+      atomicTestId: '', atomicCommand: '', attackResult: 'executed', detectionsExpected: rules, detectionsFired: rules,
+      responsePlaybook: '', responseActions: [], evidenceLinks: [], notes: '', status, source: 'manual', domain: null,
+      attackVersion: 'unknown', techniqueRef: null, outcomes: [], proofScope: 'own-run', statusFromSource: false,
+      createdAt: runDate, updatedAt: runDate,
+    });
+    await openWorkspace(page, {
+      seed: {
+        'navi.v2.validation-runs': JSON.stringify({
+          schema: 2, tombstones: [],
+          records: [record('e2e-rpf39-pass', '2026-10-20T15:00:00.000Z', 'passed', ['sigma:r39']), record('e2e-rpf39-fail', '2026-10-21T15:00:00.000Z', 'failed', [])],
+        }),
+      },
+    });
+    await paste(page, '#/matrix?heat=posture&tech=T1078');
+    const why = page.locator('.sidebar.open [data-testid="evidence-card"] [data-testid="ev-why"]');
+    await expect(why).toContainText('contradicted: latest run failed, no rule named, on 10/21/26; an earlier run passed on 10/20/26', { timeout: ROUTE_TIMEOUT });
+    await expect(why).not.toContainText('of the rule');
+  });
 });

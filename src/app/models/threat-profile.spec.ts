@@ -225,6 +225,30 @@ describe('threat-profile model', () => {
         .toBe('0 of 1 group present in ICS; APT29 has no ICS use');
     });
 
+    // RP-F decision 39 (round 7): the notice agrees in number on every domain: "has" for
+    // one absent group, "have" for several, and "group" or "groups" by the resolved count.
+    for (const [domain, label] of [['enterprise', 'Enterprise'], ['ics', 'ICS'], ['mobile', 'Mobile']] as const) {
+      it(`profileDomainNotice agrees in number on ${label}: has for one absent group, have for several`, () => {
+        const fin7 = { id: 'g-fin7', name: 'FIN7' };
+        const apt29 = { id: 'g-apt29', name: 'APT29' };
+        const apt28 = { id: 'g-apt28', name: 'APT28' };
+        expect(profileDomainNotice({ domain, present: [], absent: [apt29] }))
+          .toBe(`0 of 1 group present in ${label}; APT29 has no ${label} use`);
+        expect(profileDomainNotice({ domain, present: [fin7], absent: [apt29] }))
+          .toBe(`1 of 2 groups present in ${label}: FIN7; APT29 has no ${label} use`);
+        expect(profileDomainNotice({ domain, present: [], absent: [apt29, apt28] }))
+          .toBe(`0 of 2 groups present in ${label}; APT29, APT28 have no ${label} use`);
+        expect(profileDomainNotice({ domain, present: [fin7], absent: [apt29, apt28], unresolved: ['G9999'] }))
+          .toBe(`3 of 4 ids resolved; 1 of 3 groups present in ${label}: FIN7; APT29, APT28 have no ${label} use; G9999: unknown or withdrawn group id`);
+        for (const notice of [
+          profileDomainNotice({ domain, present: [], absent: [apt29] }),
+          profileDomainNotice({ domain, present: [fin7], absent: [apt29, apt28] }),
+        ]) {
+          expect(notice).not.toMatch(/[A-Z0-9]+ have no|, [A-Z0-9]+ has no/);
+        }
+      });
+    }
+
     // RP-F decision 18: ids that resolve to no group read "<id>: unknown or withdrawn group id",
     // never "has no <domain> use" (round 3: 12 of 12 such ids read as absent).
     it('profileDomainNotice announces each unresolved id, and never as absent from the domain', () => {
