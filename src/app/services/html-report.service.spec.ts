@@ -282,10 +282,21 @@ describe('HtmlReportService', () => {
     it("replaces the 'All mapped mitigations implemented' card with the rollup's partial count", async () => {
       const html = await report({ T1: 'partial', T2: 'partial', T4: 'covered' }, 1);
       expect(html).not.toContain('All mapped mitigations implemented');
-      expect(html).toContain('partial (broad mitigation, not confirmed per technique)');
+      expect(html).toContain('partial, by cause');
+      expect(html).toContain('<div class="stat-label" data-partial-cause>partial (broad mitigation, not confirmed per technique): 2</div>');
+      expect(html).not.toContain('range telemetry, no alert credited');
       expect(card(html, 'partial')).toBe(posture.rollup().overall.partial);
       expect(card(html, 'partial')).toBe(2);
       expect(card(html, 'covered')).toBe(1);
+    });
+
+    // RP-F decision 36 (round 7, letter G): the HTML report stated a breadth cause for
+    // telemetry-only range partials.
+    it('an HTML report built from telemetry-only range rows names the telemetry cause and counts it', async () => {
+      posture.telemetry(['T1', 'T2']);
+      const html = await report({ T1: 'partial', T2: 'partial' });
+      expect(html).toContain('<div class="stat-label" data-partial-cause>partial (range telemetry, no alert credited): 2</div>');
+      expect(html).not.toContain('broad mitigation, not confirmed');
     });
 
     it('badges each table technique with postureBadge(stateFor(t))', async () => {

@@ -95,4 +95,28 @@ test.describe('RP-F round 7', () => {
     await expect(page.locator('.sidebar.open [data-testid="evidence-card"] [data-testid="ev-why"]'))
       .toContainText('Covered (range, partial via wazuh:5) from range telemetry observed via wazuh:5: partial, no detection alerted', { timeout: ROUTE_TIMEOUT });
   });
+
+  // Decision 36: the scenario table and the Report Builder read the typed cause. Round 7
+  // read a breadth cause ("a broad mitigation marked implemented") for telemetry-only
+  // range partials there.
+  test('[RP-F 36] telemetry-only range partials: the scenario note and the Report Builder count them under the telemetry cause', async ({ page }) => {
+    await openWorkspace(page);
+    await importRange(page, 'round7.json', ROUND7_EXPORT, 'SYNTH-MISSION-R7');
+
+    // Lazarus Group uses T1082, T1083 and T1106: three telemetry-only partials.
+    await page.goto(`${BASE}/#/intel/scenarios`);
+    const picker = page.locator('app-scenario-panel app-threat-profile-picker').first();
+    await picker.locator('.tpp-search input').fill('Lazarus');
+    await picker.locator('.tpp-item', { hasText: 'Lazarus Group' }).first().click();
+    const causeLines = page.locator('[data-testid="scenario-partial-cause"]');
+    await expect(causeLines).toHaveText(['partial (range telemetry, no alert credited): 3'], { timeout: ROUTE_TIMEOUT });
+    await expect(page.locator('app-scenario-panel')).not.toContainText('broad mitigation');
+
+    await page.goto(`${BASE}/#/reports/builder`);
+    const card = page.locator('[data-testid="report-partial"]');
+    await expect(card.locator('[data-testid="report-partial-cause"]')).toHaveText(['partial (range telemetry, no alert credited): 4'], { timeout: ROUTE_TIMEOUT });
+    await expect(card).not.toContainText('broad mitigation');
+    await expect(page.locator('[data-testid="report-split-note"]'))
+      .toContainText('a broad mitigation not confirmed per technique, or range telemetry with no alert credited, counts as partial');
+  });
 });

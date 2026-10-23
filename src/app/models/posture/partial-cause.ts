@@ -22,12 +22,80 @@
 // Round 7 (letters A and G) found a telemetry row whose rule alerted (T1082 via
 // wazuh:12) or blocked (T1083 via wazuh:13) read "no detection alerted" beside a pill
 // that said the rule fired: the tail was fixed, not read from the row.
+// Every surface that words a partial reads its cause through this file (RP-F decision
+// 36): the why line and the cell (lens-explain, posture-ramp), the card's Covered block,
+// the scenario table's reason and partial note (scenario-panel), the Report Builder's
+// partial card and note and the HTML and PDF reports (report-split), and the Posture
+// and Covered lens formulas (heatmap-modes). Round 7 found the scenario table and the
+// Report Builder inferring a breadth cause from the partial bucket on telemetry-only
+// range rows. Threshold or breadth wording outside this file is a defect
+// (partial-cause-words.spec.ts).
 // No rung word here: these lines name a cause, never a rung.
 import type { CoveredMark, PartialCause, PostureState } from './posture.types';
 
 /** The breadth partial's reason (D16), as the why line has always said it. */
 export const BREADTH_PARTIAL_WORDS =
   'reached only through a mitigation or control mapped to more techniques than the breadth threshold';
+
+/** The order every per-cause list names the causes in. */
+export const PARTIAL_CAUSE_ORDER: readonly PartialCause[] = ['breadth', 'telemetry'];
+
+/**
+ * Each cause's label where a partial is counted or listed by cause (RP-F decision 36):
+ * the Report Builder's partial card, the HTML and PDF reports, the scenario table's
+ * reason and its partial note.
+ */
+export const PARTIAL_CAUSE_LABELS: Readonly<Record<PartialCause, string>> = {
+  breadth: 'partial (broad mitigation, not confirmed per technique)',
+  telemetry: 'partial (range telemetry, no alert credited)',
+};
+
+/** How many partial techniques have each cause (a technique with both causes counts under each). */
+export type PartialCauseTally = Readonly<Record<PartialCause, number>>;
+
+/**
+ * Count the techniques in the partial bucket by cause (RP-F decision 36), from each
+ * state's typed causes (partialCausesOf), never from the bucket alone. A technique
+ * with both causes counts under each; a partial state that names no cause (a
+ * hand-built one) counts under neither.
+ */
+export function tallyPartialCauses(
+  states: Iterable<Pick<PostureState, 'bucket' | 'covered'> & Partial<Pick<PostureState, 'partialCauses'>>>,
+): PartialCauseTally {
+  const tally: Record<PartialCause, number> = { breadth: 0, telemetry: 0 };
+  for (const s of states) {
+    if (s.bucket !== 'partial') continue;
+    for (const c of partialCausesOf(s)) tally[c]++;
+  }
+  return tally;
+}
+
+/** '<label>: <count>' for each cause with a count, in PARTIAL_CAUSE_ORDER (the partial card's and note's lines). */
+export function partialCauseLines(tally: PartialCauseTally): string[] {
+  return PARTIAL_CAUSE_ORDER.filter(c => tally[c] > 0).map(c => `${PARTIAL_CAUSE_LABELS[c]}: ${tally[c]}`);
+}
+
+/**
+ * A partial technique's reason in the scenario table (RP-F decision 36): the label of
+ * each of its causes, joined with '; '; 'partial' alone when no cause is named.
+ */
+export function partialCauseReason(state: Pick<PostureState, 'covered'> & Partial<Pick<PostureState, 'partialCauses'>>): string {
+  const causes = partialCausesOf(state);
+  return causes.length > 0 ? PARTIAL_CAUSE_ORDER.filter(c => causes.includes(c)).map(c => PARTIAL_CAUSE_LABELS[c]).join('; ') : 'partial';
+}
+
+/**
+ * When a technique is partial, as the Posture and Covered lens formulas say it (RP-F
+ * decision 36): both causes, never the breadth cause alone. The formulas wrap it:
+ * 'partial when <this>' (Posture), '1 when <this> (partial, drawn dashed)' (Covered).
+ */
+export const PARTIAL_CAUSES_FORMULA =
+  'only a mitigation or control mapped to more techniques than the breadth threshold in Settings (15 by default) reaches it, '
+  + 'or only a range row reports it with telemetry-only coverage (telemetry observed, no alert credited, even when its rule fired)';
+
+/** What counts as partial, as the Report Builder's note says it (RP-F decision 36). */
+export const PARTIAL_CAUSES_NOTE =
+  'a broad mitigation not confirmed per technique, or range telemetry with no alert credited, counts as partial';
 
 /** The tail of a range telemetry partial whose row's outcome is logged or none (RP-F decision 31). */
 const TELEMETRY_QUIET_TAIL = 'partial, no detection alerted';
@@ -51,7 +119,7 @@ function telemetryFired(m: CoveredMark): TelemetryFired {
 export function partialCausesOf(state: Pick<PostureState, 'covered'> & Partial<Pick<PostureState, 'partialCauses'>>): PartialCause[] {
   if (state.partialCauses) return [...state.partialCauses];
   const causes = new Set<PartialCause>();
-  for (const m of state.covered) if (m.strength === 'partial' && m.partialCause) causes.add(m.partialCause);
+  for (const m of state.covered ?? []) if (m.strength === 'partial' && m.partialCause) causes.add(m.partialCause);
   return [...causes].sort();
 }
 

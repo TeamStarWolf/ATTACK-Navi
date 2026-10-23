@@ -68,10 +68,11 @@ describe('ReportPanelComponent split (E1.1, P2-07)', () => {
     } as unknown as Domain;
   }
 
-  function render(buckets: Record<string, PostureBucket>, implemented = 0): HTMLElement {
+  function render(buckets: Record<string, PostureBucket>, implemented = 0, telemetry: readonly string[] = []): HTMLElement {
     localStorage.removeItem('mitre-nav-report-config-v1');
     const domain = reportDomain();
     posture = makePostureStub(() => domain, buckets);
+    posture.telemetry(telemetry);
     TestBed.configureTestingModule({
       imports: [ReportPanelComponent],
       providers: [
@@ -151,9 +152,22 @@ describe('ReportPanelComponent split (E1.1, P2-07)', () => {
     expect(note).toContain('partial');
   });
 
+  // RP-F decision 36 (round 7, letter G): the Report Builder stated a breadth cause for
+  // telemetry-only range partials; its note named only the broad mitigation.
+  it('a report built from telemetry-only range rows names the telemetry cause and counts it; the note names both causes', () => {
+    const el = render({ T1: 'partial', T2: 'partial' }, 0, ['T1', 'T2']);
+    expect(Array.from(el.querySelectorAll('[data-testid="report-partial-cause"]')).map(e => text(e)))
+      .toEqual(['partial (range telemetry, no alert credited): 2']);
+    expect(text(el.querySelector('[data-testid="report-partial"]'))).not.toContain('broad mitigation');
+    expect(text(el.querySelector('[data-testid="report-split-note"]')))
+      .toContain('a broad mitigation not confirmed per technique, or range telemetry with no alert credited, counts as partial');
+  });
+
   it('shows the partial card and the Proven count from the rollup', () => {
     const el = render({ T1: 'partial', T2: 'partial', T4: 'proven', T5: 'stale' }, 2);
-    expect(text(el.querySelector('[data-testid="report-partial"]'))).toContain('partial (broad mitigation, not confirmed per technique)');
+    expect(text(el.querySelector('[data-testid="report-partial"]'))).toContain('partial, by cause');
+    expect(Array.from(el.querySelectorAll('[data-testid="report-partial-cause"]')).map(e => text(e)))
+      .toEqual(['partial (broad mitigation, not confirmed per technique): 2']);
     const overall = posture.rollup().overall;
     const summary = el.querySelector('.summary-grid')!;
     expect([num(summary, 'covered'), num(summary, 'partial'), num(summary, 'proven'), num(summary, 'stale')])

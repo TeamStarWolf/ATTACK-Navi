@@ -5,8 +5,10 @@
 // 35). The telemetry cause carries its row's outcome; the words follow it.
 import type { CoveredMark, TelemetryOutcome } from './posture.types';
 import {
-  BREADTH_PARTIAL_WORDS, partialMarkWords, partialReason, recordRunTooltip, telemetryPartialWords,
+  BREADTH_PARTIAL_WORDS, PARTIAL_CAUSES_FORMULA, PARTIAL_CAUSE_LABELS, partialCauseLines, partialCauseReason, partialMarkWords,
+  partialReason, recordRunTooltip, tallyPartialCauses, telemetryPartialWords,
 } from './partial-cause';
+import { heatmapModeDef } from '../heatmap-modes';
 import { runSourceWords } from './proof-gap';
 
 const telemetry = (via: string | undefined, telemetryOutcome?: TelemetryOutcome): CoveredMark => ({
@@ -63,6 +65,37 @@ describe('partial-cause (RP-F decisions 31 and 35)', () => {
     expect(partialMarkWords({ ...BREADTH, partialCause: undefined })).toBeNull();
     expect(recordRunTooltip(telemetry('wazuh:13', 'blocked')))
       .toBe(`range telemetry observed via wazuh:13: partial; the rule blocked in this run, ${NOT_PROOF}; record a validation run of this technique in Detect > Validation`);
+  });
+
+  // RP-F decision 36: every surface that words a partial counts and names it by cause.
+  it('tallyPartialCauses counts partial techniques by their typed cause, never from the bucket alone', () => {
+    const tally = tallyPartialCauses([
+      { bucket: 'partial', covered: [telemetry('wazuh:5', 'logged')], partialCauses: ['telemetry'] },
+      { bucket: 'partial', covered: [BREADTH] },                                      // causes read from the marks
+      { bucket: 'partial', covered: [BREADTH, telemetry('wazuh:12', 'alerted')], partialCauses: ['breadth', 'telemetry'] },
+      { bucket: 'proven', covered: [telemetry('wazuh:7', 'logged')], partialCauses: ['telemetry'] },   // not partial
+      { bucket: 'partial', covered: [], partialCauses: [] },                          // names no cause
+    ]);
+    expect(tally).toEqual({ breadth: 2, telemetry: 2 });
+    expect(partialCauseLines(tally)).toEqual([`${PARTIAL_CAUSE_LABELS.breadth}: 2`, `${PARTIAL_CAUSE_LABELS.telemetry}: 2`]);
+    expect(partialCauseLines({ breadth: 0, telemetry: 3 })).toEqual(['partial (range telemetry, no alert credited): 3']);
+    expect(partialCauseLines({ breadth: 0, telemetry: 0 })).toEqual([]);
+  });
+
+  it('partialCauseReason names each cause by its label, breadth first', () => {
+    expect(partialCauseReason({ covered: [telemetry('wazuh:5', 'logged')] })).toBe('partial (range telemetry, no alert credited)');
+    expect(partialCauseReason({ covered: [], partialCauses: ['telemetry', 'breadth'] }))
+      .toBe('partial (broad mitigation, not confirmed per technique); partial (range telemetry, no alert credited)');
+    expect(partialCauseReason({ covered: [] })).toBe('partial');
+  });
+
+  it('the Posture and Covered lens formulas describe both causes through PARTIAL_CAUSES_FORMULA', () => {
+    for (const mode of ['posture', 'covered'] as const) {
+      const formula = heatmapModeDef(mode)!.formula;
+      expect(formula).withContext(mode).toContain(PARTIAL_CAUSES_FORMULA);
+      expect(formula).withContext(mode).toContain('breadth threshold');
+      expect(formula).withContext(mode).toContain('telemetry-only coverage');
+    }
   });
 
   it('a run is named "your run" only when you recorded it; a contract-imported run is the range run', () => {

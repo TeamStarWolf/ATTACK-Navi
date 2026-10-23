@@ -292,9 +292,17 @@ describe('PdfReportService', () => {
     it('takes Covered, partial, Proven and stale from the posture rollup', () => {
       const html = capture(makeMockDomain(), { T1059: 'partial', T1190: 'proven' });
       expect(html).toContain('<div class="num" data-share-pct="0"><span data-posture="covered">0</span> (0%)</div>\n    <div class="lbl">Covered (self-attested), of <span data-posture="assessable">2</span> assessable</div>');
-      expect(html).toContain('<div class="num" data-posture="partial">1</div>\n    <div class="lbl">partial (broad mitigation, not confirmed per technique)</div>');
+      expect(html).toContain('<div class="num" data-posture="partial">1</div>\n    <div class="lbl">partial, by cause</div>\n    <div class="lbl" data-partial-cause>partial (broad mitigation, not confirmed per technique): 1</div>');
       expect(html).toContain('<div class="num" data-posture="proven">1</div>\n    <div class="lbl">Proven</div>');
       expect(html).toContain('<div class="num" data-posture="stale">0</div>');
+    });
+
+    // RP-F decision 36: a telemetry-only range partial is counted under its own cause.
+    it('a PDF report built from telemetry-only range rows names the telemetry cause and counts it', () => {
+      posture.telemetry(['T1059']);
+      const html = capture(makeMockDomain(), { T1059: 'partial' });
+      expect(html).toContain('<div class="lbl" data-partial-cause>partial (range telemetry, no alert credited): 1</div>');
+      expect(html).not.toContain('broad mitigation');
     });
 
     it('R16: the Covered share divides by assessable; the Total Techniques box keeps every parent', () => {

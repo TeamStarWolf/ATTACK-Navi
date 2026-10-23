@@ -15,6 +15,8 @@ import { LENS_SOURCES, domainLabel, type LensSourceId } from './lens-sources';
 // only types from this file, so these runtime imports are cycle-free too.
 import { lensLabel } from './posture/posture-vocabulary';
 import { postureColor, postureProject, postureRampStops } from './posture/posture-ramp';
+// partial-cause imports only types from posture.types, so this runtime import is cycle-free.
+import { PARTIAL_CAUSES_FORMULA } from './posture/partial-cause';
 // P2-14: the Proven and Covered lenses, and the status and controls lenses
 // re-derived through PostureService (lens-ramps.ts imports only types from here).
 import {
@@ -447,7 +449,7 @@ export const HEATMAP_MODES: readonly HeatmapModeDef[] = [
   { value: 'posture', label: lensLabel('posture'), short: 'Posture', group: 'Coverage & Posture',
     question: 'What is covered (self-attested or range), and what has a recorded detection?',
     rung: 'Mixed',
-    formula: 'Each technique shows its own rung from the data you recorded: a recorded detection (faded once older than its window), else Covered (self-attested or range) from implemented mitigations, declared controls, confirmations and range marks (partial when only a mitigation mapped to more techniques than the breadth threshold reaches it), else Known: mapped when reference data exists.',
+    formula: `Each technique shows its own rung from the data you recorded: a recorded detection (faded once older than its window), else Covered (self-attested or range) from implemented mitigations, declared controls, confirmations and range marks (partial when ${PARTIAL_CAUSES_FORMULA}), else Known: mapped when reference data exists.`,
     domains: ALL_DOMAINS, sources: ['attack-bundle', 'workspace-local'],
     zeroMeaning: 'No reference data is mapped and nothing of yours is recorded. Not known to us, not safe.',
     ramp: { scale: 'categorical', stops: postureRampStops() },
@@ -467,7 +469,7 @@ export const HEATMAP_MODES: readonly HeatmapModeDef[] = [
   { value: 'covered', label: lensLabel('covered'), short: 'Covered (self-attested or range)', group: 'Coverage & Posture',
     question: 'What have you declared or deployed for this technique, by your own statement or in the range?',
     rung: 'Covered', qualifier: 'self-attested',
-    formula: 'From implemented mitigations, declared controls, confirmations, configured telemetry and range marks: 2 when one reaches the technique in full, 1 when only a mitigation or control mapped to more techniques than the breadth threshold in Settings (15 by default) reaches it (partial, drawn dashed), 0 otherwise. A later failed run removes the full marks it contradicts.',
+    formula: `From implemented mitigations, declared controls, confirmations, configured telemetry and range marks: 2 when one reaches the technique in full, 1 when ${PARTIAL_CAUSES_FORMULA} (partial, drawn dashed), 0 otherwise. A later failed run removes the full marks it contradicts.`,
     domains: ALL_DOMAINS, sources: ['attack-bundle', 'workspace-local'],
     zeroMeaning: 'Nothing of yours reaches this technique. Not known to us, not safe.',
     ramp: { scale: 'categorical', stops: rampStopsOf(coveredLegendStops) },
