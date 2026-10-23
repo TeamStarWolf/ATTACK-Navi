@@ -119,4 +119,39 @@ test.describe('RP-F round 7', () => {
     await expect(page.locator('[data-testid="report-split-note"]'))
       .toContainText('a broad mitigation not confirmed per technique, or range telemetry with no alert credited, counts as partial');
   });
+
+  // Decision 37: decision 32 on every write path. Import JSON kept an explicit 'passed'
+  // with attackResult errored or failed-prereq, so T1027 and T1486 read Proven (2/2).
+  test('[RP-F 37] Import JSON: T1027 (errored) and T1486 (failed-prereq) with status passed store untested; the summary counts them; pill, card and tile never read Proven', async ({ page }) => {
+    await openWorkspace(page);
+    const run = (id: string, techniqueId: string, attackResult: string) => ({
+      id, techniqueId, techniqueName: techniqueId, runDate: '2026-10-20T15:00:00.000Z', operator: '', telemetryRequired: [], telemetryAvailable: [],
+      atomicTestId: '', atomicCommand: '', attackResult, detectionsExpected: ['sigma:r7'], detectionsFired: ['sigma:r7'],
+      responsePlaybook: '', responseActions: [], evidenceLinks: [], notes: '', status: 'passed', source: 'manual',
+    });
+    const body = JSON.stringify({ schemaVersion: '2.0', runs: [run('r7-t1027', 'T1027', 'errored'), run('r7-t1486', 'T1486', 'failed-prereq')] });
+    await page.goto(`${BASE}/#/detect/validation`);
+    await expect(page.locator('app-validation-panel')).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    await page.locator('#vp-import-runs').setInputFiles({ name: 'runs.json', mimeType: 'application/json', buffer: Buffer.from(body) });
+    await expect(page.locator('.vp-import-msg').first()).toContainText('2 runs stored untested: the attack did not execute', { timeout: ROUTE_TIMEOUT });
+
+    await page.getByRole('button', { name: /Techniques/ }).click();
+    for (const id of ['T1027', 'T1486']) {
+      await page.locator('.vp-search').fill(id);
+      const tile = page.locator('.vp-tcard', { has: page.locator('.vp-tid', { hasText: new RegExp(`^${id}$`) }) });
+      await expect(tile.locator('.vp-status-badge')).toHaveText(/UNTESTED/, { timeout: ROUTE_TIMEOUT });
+    }
+
+    for (const id of ['T1027', 'T1486']) {
+      await paste(page, `#/matrix?heat=posture&tech=${id}`);
+      const drawer = page.locator('.sidebar.open');
+      await expect(drawer.locator('.sidebar-header .attack-id')).toHaveText(id, { timeout: ROUTE_TIMEOUT });
+      await expect(drawer.locator('app-validation-status-pill .vsp-status').first()).toHaveText('UNTESTED');
+      const card = drawer.locator('[data-testid="evidence-card"]');
+      await expect(card.getByTestId('ev-why')).not.toContainText('Proven');
+      await expect(card.getByTestId('ev-proof')).toHaveCount(0);
+      // The card names the run by its status and date, never a rung (decision 9).
+      await expect(card.getByTestId('ev-runs-without-proof')).toContainText('untested on 10/20/26 (source manual, 1 rule fired)');
+    }
+  });
 });

@@ -92,6 +92,12 @@ export interface ImportResult {
   bySource: Record<string, { added: number; replaced: number }>;
   dropped: { row: number; reason: string }[];
   error?: string;
+  /**
+   * How many stored runs were stored untested because their attack did not execute
+   * (RP-F decision 37): their row said another status ('passed', ...) with attackResult
+   * errored or failed-prereq. Absent or 0 when none.
+   */
+  storedUntested?: number;
 }
 
 /** The v1 store: read once per construction for the copy-forward, never written or deleted again (§5.2). */
@@ -236,13 +242,23 @@ function sanitizeOutcome(x: unknown): ValidationOutcome | null {
  * createdAt = updatedAt = runDate. Returns the reason when a required field is
  * missing or malformed.
  *
+ * Decision 32 on every write path (RP-F decision 37): when attackResult says the
+ * attack did not execute (ATTACK_DID_NOT_EXECUTE: errored, failed-prereq), the status
+ * is re-derived through statusFromInputs, so an explicit 'passed' (or any other
+ * status) stores 'untested', whatever source the run comes from. Every writer and the
+ * store reader copy runs through here (Import JSON, the v1 copy-forward, Import range
+ * results, importRows, readStore), so a stored run can never read Proven from an
+ * attack that did not run. `untested` is true when the row's own status was changed;
+ * the import summary counts those. Round 7 imported T1027 (errored) and T1486
+ * (failed-prereq) with status 'passed' through Import JSON and read Proven.
+ *
  * @param source the source the run is stored under; a row's own `source` is
  *   used when `source` is undefined and the row names a valid one, else 'manual'.
  */
 export function sanitizeRun(
   x: unknown,
   source?: Exclude<SourceId, 'wizard'>,
-): { run: ValidationRunV2 } | { reason: string } {
+): { run: ValidationRunV2; untested: boolean } | { reason: string } {
   if (!isObj(x)) return { reason: 'not an object' };
   for (const field of ['id', 'techniqueId', 'runDate'] as const) {
     if (typeof x[field] !== 'string' || (x[field] as string).trim() === '') return { reason: `missing ${field}` };
@@ -279,6 +295,9 @@ export function sanitizeRun(
     notes: str(x['notes']),
     status: x['status'],
   };
+  // RP-F decision 37: an attack that did not execute stores untested, whatever status the row says.
+  const untested = ATTACK_DID_NOT_EXECUTE[base.attackResult] && base.status !== 'untested';
+  if (untested) base.status = statusFromInputs(base);
   const ref = typeof x['techniqueRef'] === 'string' && parseTechniqueRef(x['techniqueRef']) !== null
     ? (x['techniqueRef'] as TechniqueRefKey)
     : null;
@@ -301,7 +320,7 @@ export function sanitizeRun(
     statusFromSource: src !== 'manual',
     ...(typeof x['missionId'] === 'string' ? { missionId: x['missionId'] } : {}),
   };
-  return { run };
+  return { run, untested };
 }
 
 /** A stored v2 record: it sanitizes, and it names its own source. */
@@ -340,16 +359,17 @@ function nonBlank(x: unknown): x is string {
  * A row that is not an object, or has no techniqueId or runDate, is reported in
  * `dropped` (row = its index in the v1 array); it stays in the v1 key.
  */
-function upgradeV1(raw: string): { runs: ValidationRunV2[]; dropped: ImportResult['dropped'] } {
+function upgradeV1(raw: string): { runs: ValidationRunV2[]; dropped: ImportResult['dropped']; untested: ReadonlySet<string> } {
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
   } catch {
-    return { runs: [], dropped: [] };                 // the v1 app read this as no runs either
+    return { runs: [], dropped: [], untested: new Set() };   // the v1 app read this as no runs either
   }
-  if (!Array.isArray(parsed)) return { runs: [], dropped: [] };
+  if (!Array.isArray(parsed)) return { runs: [], dropped: [], untested: new Set() };
   const runs: ValidationRunV2[] = [];
   const dropped: ImportResult['dropped'] = [];
+  const untested = new Set<string>();
   const ids = new Set<string>();
   parsed.forEach((row: unknown, i: number) => {
     if (!isObj(row)) {
@@ -382,20 +402,42 @@ function upgradeV1(raw: string): { runs: ValidationRunV2[]; dropped: ImportResul
     }
     ids.add(id);
     runs.push(r.run);
+    if (r.untested) untested.add(id);
   });
-  return { runs, dropped };
+  return { runs, dropped, untested };
 }
 
-/** "manual: 1 added, 0 replaced; lylat-range:m1: 2 added, 3 replaced. 1 row dropped (row 2: missing id)." */
+/**
+ * 'N runs stored untested: the attack did not execute' (RP-F decision 37), or '' for
+ * none: the runs an import or the v1 copy-forward stored untested although their row
+ * said another status, because attackResult was errored or failed-prereq.
+ */
+export function storedUntestedWords(n: number): string {
+  return n > 0 ? `${n} run${n === 1 ? '' : 's'} stored untested: the attack did not execute` : '';
+}
+
+/**
+ * "manual: 1 added, 0 replaced; lylat-range:m1: 2 added, 3 replaced. 1 run stored untested:
+ * the attack did not execute. 1 row dropped (row 2: missing id)."
+ */
 export function describeImportResult(result: ImportResult): string {
   if (!result.ok) return `Import failed: ${result.error ?? 'unknown error'}`;
   const parts = Object.entries(result.bySource).map(([s, c]) => `${s}: ${c.added} added, ${c.replaced} replaced`);
   let msg = parts.length ? `Imported ${parts.join('; ')}.` : 'Nothing imported.';
+  const untested = storedUntestedWords(result.storedUntested ?? 0);
+  if (untested) msg += ` ${untested}.`;
   if (result.dropped.length) {
     const first = result.dropped.slice(0, 3).map(d => `row ${d.row}: ${d.reason}`).join('; ');
     msg += ` ${result.dropped.length} row${result.dropped.length === 1 ? '' : 's'} dropped (${first}${result.dropped.length > 3 ? '; …' : ''}).`;
   }
   return msg;
+}
+
+/** One sanitised row on its way into merge(): its export row index, the run, and whether decision 37 stored it untested. */
+interface ImportRow {
+  readonly row: number;
+  readonly run: ValidationRunV2;
+  readonly untested?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -410,6 +452,12 @@ export class ValidationService {
    * names them, so a run that cannot be carried is never silently gone.
    */
   readonly migrationDropped: readonly { row: number; reason: string }[] = this.boot.dropped;
+  /**
+   * How many v1 runs the copy-forward stored untested because their attack did not
+   * execute (RP-F decision 37), recomputed on every construction while the v1 key
+   * exists. The panel names them with storedUntestedWords.
+   */
+  readonly migrationStoredUntested: number = this.boot.storedUntested;
   /** The in-memory v2 store; every writer goes through commit(). */
   private store: V2Store<ValidationRunV2> = this.boot.store;
   private runsSubject = new BehaviorSubject<ValidationRunV2[]>([...this.store.records]);
@@ -445,14 +493,19 @@ export class ValidationService {
    * absent from v2 and from its tombstones; never overwrites or deletes a v2
    * run; never writes or deletes the v1 key.
    */
-  private loadAndCopyForward(): { store: V2Store<ValidationRunV2>; dropped: ImportResult['dropped'] } {
+  private loadAndCopyForward(): { store: V2Store<ValidationRunV2>; dropped: ImportResult['dropped']; storedUntested: number } {
     const stored = readStore();
     const v1Raw = readRaw(VALIDATION_RUNS_V1_KEY);
-    if (v1Raw === null) return { store: stored, dropped: [] };
+    if (v1Raw === null) return { store: stored, dropped: [], storedUntested: 0 };
     const fp = fingerprint(v1Raw);
     const upgraded = upgradeV1(v1Raw);
     const v2Present = readRaw(VALIDATION_RUNS_V2_KEY) !== null;
-    if (v2Present && stored.migratedFromV1Fingerprint === fp) return { store: stored, dropped: upgraded.dropped };
+    // The v1 runs now in the store that the copy-forward stored untested (RP-F decision 37).
+    const storedUntested = (records: readonly ValidationRunV2[]) =>
+      records.filter(r => r.source === 'manual' && upgraded.untested.has(r.id) && r.status === 'untested').length;
+    if (v2Present && stored.migratedFromV1Fingerprint === fp) {
+      return { store: stored, dropped: upgraded.dropped, storedUntested: storedUntested(stored.records) };
+    }
     const taken = new Set([...stored.records.map(r => r.id), ...stored.tombstones]);
     const copied: ValidationRunV2[] = [];
     for (const run of upgraded.runs) {
@@ -462,7 +515,7 @@ export class ValidationService {
     }
     const next: V2Store<ValidationRunV2> = { ...stored, migratedFromV1Fingerprint: fp, records: [...stored.records, ...copied] };
     writeV2(VALIDATION_RUNS_V2_KEY, next);
-    return { store: next, dropped: upgraded.dropped };
+    return { store: next, dropped: upgraded.dropped, storedUntested: storedUntested(copied) };
   }
 
   /** The one write path (two writers in one tick both land here). */
@@ -672,7 +725,7 @@ export class ValidationService {
       return { ok: false, bySource: {}, dropped: [], error: 'Missing runs array' };
     }
     const dropped: ImportResult['dropped'] = [];
-    const groups = new Map<SourceId, { row: number; run: ValidationRunV2 }[]>();
+    const groups = new Map<SourceId, ImportRow[]>();
     (parsed['runs'] as unknown[]).forEach((x, i) => {
       const r = sanitizeRun(x);
       if ('reason' in r) {
@@ -680,7 +733,7 @@ export class ValidationService {
         return;
       }
       const g = groups.get(r.run.source) ?? [];
-      g.push({ row: i, run: r.run });
+      g.push({ row: i, run: r.run, untested: r.untested });
       groups.set(r.run.source, g);
     });
     return this.merge(groups, dropped);
@@ -697,11 +750,11 @@ export class ValidationService {
       return { ok: false, bySource: {}, dropped: [], error: `Not an import source: ${String(source)}` };
     }
     const dropped: ImportResult['dropped'] = [];
-    const group: { row: number; run: ValidationRunV2 }[] = [];
+    const group: ImportRow[] = [];
     rows.forEach((x, i) => {
       const r = sanitizeRun(x, source);
       if ('reason' in r) dropped.push({ row: i, reason: r.reason });
-      else group.push({ row: i, run: r.run });
+      else group.push({ row: i, run: r.run, untested: r.untested });
     });
     if (rows.length > 0 && group.length === 0) {
       return { ok: false, bySource: {}, dropped, error: 'No valid rows; nothing was replaced.' };
@@ -762,13 +815,14 @@ export class ValidationService {
     const dropped: ImportResult['dropped'] = [...skipped];
     // Sanitise every mapped run (tracking its export row for any drop), then
     // commit all missions at once: one store write, one emission (atomic).
-    const groups = new Map<SourceId, { row: number; run: ValidationRunV2 }[]>();
+    const groups = new Map<SourceId, ImportRow[]>();
     for (const [source, tagged] of bySource) {
-      const group: { row: number; run: ValidationRunV2 }[] = [];
+      const group: ImportRow[] = [];
       for (const { row, run } of tagged) {
+        // The same allowlist and decision-37 re-derivation as every other write path.
         const r = sanitizeRun(run, source);
         if ('reason' in r) dropped.push({ row, reason: r.reason });
-        else group.push({ row, run: r.run });
+        else group.push({ row, run: r.run, untested: r.untested });
       }
       if (group.length > 0) groups.set(source, group);
     }
@@ -777,11 +831,13 @@ export class ValidationService {
 
   /** Apply grouped rows: 'manual' upserts by id, every other source replaces itself. One commit. */
   private merge(
-    groups: ReadonlyMap<SourceId, readonly { row: number; run: ValidationRunV2 }[]>,
+    groups: ReadonlyMap<SourceId, readonly ImportRow[]>,
     dropped: ImportResult['dropped'],
   ): ImportResult {
     let records: ValidationRunV2[] = [...this.store.records];
     const bySource: ImportResult['bySource'] = {};
+    // Stored runs that the decision-37 rule stored untested (dropped rows are not counted).
+    let storedUntested = 0;
     // Replacing sources first, so an id a replaced source gives up is free for the rows after it.
     const order = [...groups.keys()].sort((a, b) => Number(a === 'manual') - Number(b === 'manual'));
     for (const source of order) {
@@ -803,7 +859,8 @@ export class ValidationService {
       );
       const seen = new Set<string>();
       const incoming: ValidationRunV2[] = [];
-      for (const { row, run } of groups.get(source) ?? []) {
+      const untestedIds = new Set<string>();
+      for (const { row, run, untested } of groups.get(source) ?? []) {
         const other = owner.get(run.id);
         if (other !== undefined) {
           dropped.push({ row, reason: `id ${run.id} belongs to source ${other}` });
@@ -812,8 +869,11 @@ export class ValidationService {
         } else {
           seen.add(run.id);
           incoming.push(run);
+          if (untested) untestedIds.add(run.id);
+          else untestedIds.delete(run.id);   // a later manual row with the same id wins (upsert)
         }
       }
+      storedUntested += untestedIds.size;
       if (source === 'manual') {
         const existing = new Set(records.filter(r => r.source === 'manual').map(r => r.id));
         const ids = new Set(incoming.map(r => r.id));
@@ -834,7 +894,7 @@ export class ValidationService {
     }
     dropped.sort((a, b) => a.row - b.row);
     this.commit(records);
-    return { ok: true, bySource, dropped };
+    return { ok: true, bySource, dropped, ...(storedUntested > 0 ? { storedUntested } : {}) };
   }
 
   /**
