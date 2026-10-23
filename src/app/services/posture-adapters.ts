@@ -24,11 +24,12 @@
 import type { Domain } from '../models/domain';
 import type { Technique } from '../models/technique';
 import type { SecurityControl } from '../models/security-control';
-import type { CoveredMark, CoveredStrength, ProofRecord, RunSummary, RunVerdict, TelemetryOutcome } from '../models/posture/posture.types';
+import type { CoveredMark, CoveredStrength, ProofRecord, RunSummary, RunVerdict } from '../models/posture/posture.types';
 import { rollupMitigations } from '../models/posture/mitigation-rollup';
 import { provesStatus } from '../models/posture/derive-posture';
 import { runMatches } from '../models/posture/run-match';
-import { firedRuleCount } from '../models/posture/fired-rules';
+import { firedRuleCount, firedRules } from '../models/posture/fired-rules';
+import { compareRunsNewestFirst, sortRunsNewestFirst, storedRunKey } from '../models/posture/latest-run';
 import { type TechniqueRefKey, parseTechniqueRef } from '../models/technique-ref';
 import type { AttackDomain } from './data.service';
 import type { ImplStatus } from './implementation.service';
@@ -184,28 +185,149 @@ const RANGE_STATES = {
   'telemetry-observed': { basis: 'range-telemetry-observed', strength: 'partial', partialCause: 'telemetry' },
 } as const;
 
-/**
- * The outcome a telemetry-observed row's partial mark carries (RP-F decision 35, PR #240
- * round 1): 'alerted' or 'blocked' exactly when the row's rule is in the run's fired set
- * (`named`, whose keys are firedRules(run): detectionsFired plus the rules of alerted or
- * blocked outcomes), with 'blocked' when that rule or the run was blocked; otherwise the
- * row fired nothing the pill counts, so 'none' for a 'none' row and 'logged' for the rest.
- *   a 'logged' row via wazuh:5 with detectionsFired ['wazuh:5'] -> 'alerted' (the pill says 1 fired)
- *   an 'alerted' row with no detectionRef                       -> 'logged'  (the pill says 0 fired)
- *   an 'alerted' row via wazuh:5 in a run whose attack was blocked -> 'blocked' (as its proof record)
- */
-function telemetryOutcomeOf(
-  o: ValidationRunV2['outcomes'][number],
-  via: string | undefined,
-  named: ReadonlyMap<string, 'alerted' | 'blocked'>,
-): TelemetryOutcome {
-  const fired = via ? named.get(via) : undefined;
-  if (fired !== undefined) return fired;
-  return o.outcome === 'none' ? 'none' : 'logged';
+/** A rule id as decision 40 compares it: trimmed, case-insensitive ('WAZUH:306' is 'wazuh:306'). */
+function ruleKey(rule: string): string {
+  return rule.trim().toLowerCase();
 }
 
 /**
- * Validation adapter for one run (S4; §7):
+ * The rules a run fired, keyed by ruleKey, each 'alerted' or 'blocked': firedRules(run)
+ * (the set the Validation pill and the Proven block count, RP-F decision 30b), 'blocked'
+ * when the run (attackResult 'blocked') or that rule's own outcome was blocked.
+ */
+function firedOutcomes(run: ValidationRunV2): Map<string, 'alerted' | 'blocked'> {
+  const runBlocked = run.attackResult === 'blocked';
+  const out = new Map<string, 'alerted' | 'blocked'>();
+  for (const rule of firedRules(run)) out.set(ruleKey(rule), runBlocked ? 'blocked' : 'alerted');
+  for (const o of run.outcomes) {
+    const key = ruleKey(o.detectionRef ?? '');
+    if (o.outcome === 'blocked' && out.has(key)) out.set(key, 'blocked');
+  }
+  return out;
+}
+
+/** One rule's firing across a technique's evidence: how it fired, and the newest run that fired it. */
+interface RuleFiring {
+  readonly outcome: 'alerted' | 'blocked';
+  readonly run: ValidationRunV2;
+}
+
+/**
+ * Every rule fired anywhere in a technique's evidence (RP-F decision 40), keyed by
+ * ruleKey: 'blocked' when any run blocked it, else 'alerted', with the newest run (the
+ * one latest-run comparator, RP-F decision 24) that fired it.
+ */
+function techniqueFirings(runs: readonly ValidationRunV2[]): Map<string, RuleFiring> {
+  const out = new Map<string, RuleFiring>();
+  for (const run of sortRunsNewestFirst(runs, storedRunKey)) {
+    for (const [key, outcome] of firedOutcomes(run)) {
+      const seen = out.get(key);
+      if (seen === undefined) out.set(key, { outcome, run });
+      else if (outcome === 'blocked') out.set(key, { outcome, run: seen.run });
+    }
+  }
+  return out;
+}
+
+/** One range row as decision 40 reads it: its run (and index), the row, and the rule it is a row of (null: none). */
+interface RangeRow {
+  readonly runIndex: number;
+  readonly run: ValidationRunV2;
+  readonly row: ValidationRunV2['outcomes'][number];
+  readonly rule: string | null;
+}
+
+/**
+ * The rules a range row is a row of (RP-F decision 40): its own trimmed detectionRef;
+ * a row with no detectionRef resolves against its run's fired set (firedRules): the
+ * fired rules no other row of the run names, or every fired rule when the other rows
+ * name them all; [null] when the run fired nothing (the row names no rule).
+ *   T1221: a telemetry row with no rule, in a run that fired wazuh:301 -> ['wazuh:301']
+ */
+function rowRules(run: ValidationRunV2, row: ValidationRunV2['outcomes'][number]): (string | null)[] {
+  const own = row.detectionRef?.trim() ?? '';
+  if (own !== '') return [own];
+  const fired = firedRules(run);
+  const named = new Set(run.outcomes.map(o => ruleKey(o.detectionRef ?? '')));
+  const unnamed = fired.filter(r => !named.has(ruleKey(r)));
+  const rules = unnamed.length > 0 ? unnamed : fired;
+  return rules.length > 0 ? rules : [null];
+}
+
+/**
+ * The range marks of one technique's runs, worded per rule, never per row (RP-F
+ * decision 40), as a list per run (by its index in `runs`):
+ * - decision-29 per-rule supersession: of the range rows of one rule (rule ids matched
+ *   case-insensitively; a row with no rule resolved by rowRules), only the rows of the
+ *   rule's latest run by the one latest-run comparator (RP-F decision 24: on the same
+ *   instant the run that proves less, then by id) give marks, one per rule and basis; a
+ *   'validated' row gives none (derivePosture reads its rule as proof, or as a run
+ *   without proof) and supersedes its rule's older rows all the same; a row that names
+ *   no rule supersedes nothing and gives its own mark;
+ * - a 'deployed' or 'detection-authored' row is a range full mark, a 'telemetry-observed'
+ *   row a range partial mark with partialCause 'telemetry' (RP-F decision 31) whose
+ *   cause carries an outcome (RP-F decision 35): 'alerted' or 'blocked' when ANY run in
+ *   the technique's evidence fired the rule (techniqueFirings, the fired set the pill and
+ *   the Proven block count), with telemetryFiredAt naming that run's date when it is not
+ *   the row's own run; otherwise 'none' for a 'none' row and 'logged' for the rest, with
+ *   techniqueFired set when another rule fired, so the words never say "no detection
+ *   alerted" beside a fired rule the pill or the Proven block counts;
+ * - each mark is dated by its row's run (`at`), so its clause names the run date.
+ * Round 8 found the words built per row from the row's own detectionRef: T1105 (the
+ * same rule logged on 10/20, alerted on 10/21) read both "no detection alerted" and
+ * "the rule alerted"; T1113, T1057, T1560, T1213, T1221 and T1030 read "no detection
+ * alerted" beside a pill or a Proven block that counted a fired rule.
+ */
+function rangeMarks(runs: readonly ValidationRunV2[]): CoveredMark[][] {
+  const firings = techniqueFirings(runs);
+  const rows: RangeRow[] = [];
+  runs.forEach((run, runIndex) => {
+    if (run.proofScope !== 'range') return;
+    for (const row of run.outcomes) {
+      if (row.coverageState) for (const rule of rowRules(run, row)) rows.push({ runIndex, run, row, rule });
+    }
+  });
+  // The run of each rule's latest row; a row that names no rule supersedes nothing.
+  const latest = new Map<string, ValidationRunV2>();
+  for (const { run, rule } of rows) {
+    if (rule === null) continue;
+    const held = latest.get(ruleKey(rule));
+    if (held === undefined || compareRunsNewestFirst(storedRunKey(run), storedRunKey(held)) < 0) latest.set(ruleKey(rule), run);
+  }
+  const out: CoveredMark[][] = runs.map(() => []);
+  const seen = new Set<string>();
+  for (const { runIndex, run, row, rule } of rows) {
+    const key = rule === null ? '' : ruleKey(rule);
+    if (row.coverageState === 'validated' || row.coverageState === undefined) continue;
+    if (rule !== null && latest.get(key) !== run) continue;
+    const state = RANGE_STATES[row.coverageState];
+    const firing = rule === null ? undefined : firings.get(key);
+    const mark: CoveredMark = {
+      qualifier: 'range', basis: state.basis, strength: state.strength, source: run.source, at: run.runDate,
+      ...(rule !== null ? { via: rule } : {}),
+      ...('partialCause' in state ? {
+        partialCause: state.partialCause,
+        telemetryOutcome: firing ? firing.outcome : row.outcome === 'none' ? 'none' as const : 'logged' as const,
+        ...(firing && firing.run !== run ? { telemetryFiredAt: firing.run.runDate } : {}),
+        ...(!firing && firings.size > 0 ? { techniqueFired: true } : {}),
+      } : {}),
+    };
+    // One mark per rule and basis in a run: two rows of one rule in one run are one mark.
+    const id = rule === null ? null : `${runIndex}|${key}|${mark.basis}|${mark.telemetryOutcome ?? ''}`;
+    if (id !== null && seen.has(id)) continue;
+    if (id !== null) seen.add(id);
+    out[runIndex].push(mark);
+  }
+  return out;
+}
+
+/** Validation adapter for one run (S4; §7), as its technique's only run: runInputsFor([run])[0]. */
+export function runInputs(run: ValidationRunV2): RunInputs {
+  return runInputsFor([run])[0];
+}
+
+/**
+ * Validation adapter for the runs of one technique (S4; §7), one RunInputs per run:
  * - every named detection (an 'alerted' or 'blocked' outcome with a non-empty
  *   detectionRef, or an entry of detectionsFired) is one ProofRecord with the
  *   run's proofScope; its outcome is 'blocked' when that outcome or the run
@@ -219,74 +341,59 @@ function telemetryOutcomeOf(
  *   an UNTESTED pill);
  * - status 'failed' is a failed RunVerdict; status 'not-reproducible' (or a
  *   'not-reproducible' negative control) is a notReproducible one;
- * - range rows (proofScope 'range') with coverageState 'deployed' or
- *   'detection-authored' are range full marks, 'telemetry-observed' a range
- *   partial mark with partialCause 'telemetry' (RP-F decision 31) whose cause carries
- *   the row's outcome (telemetryOutcome: logged, none, alerted or blocked; RP-F decision
- *   35) as the run's fired set says it (telemetryOutcomeOf), so the words say a rule
- *   fired exactly when the pill and the Proven block count it. Own runs never carry range marks.
+ * - the range rows (proofScope 'range') give range marks per rule across all the
+ *   technique's runs (rangeMarks, RP-F decision 40), each on the run of its rule's
+ *   latest row. Own runs never carry range marks.
+ * PostureService passes the runs runMatches matched to one technique.
  */
-export function runInputs(run: ValidationRunV2): RunInputs {
-  const runBlocked = run.attackResult === 'blocked';
-  const named = new Map<string, 'alerted' | 'blocked'>();
-  for (const o of run.outcomes) {
-    const ref = o.detectionRef?.trim() ?? '';
-    if (ref === '' || (o.outcome !== 'alerted' && o.outcome !== 'blocked')) continue;
-    const outcome = o.outcome === 'blocked' || runBlocked ? 'blocked' : 'alerted';
-    if (named.get(ref) !== 'blocked') named.set(ref, outcome);
-  }
-  for (const d of run.detectionsFired) {
-    const ref = d.trim();
-    if (ref !== '' && !named.has(ref)) named.set(ref, runBlocked ? 'blocked' : 'alerted');
-  }
-  const blocked = runBlocked || run.outcomes.some(o => o.outcome === 'blocked');
-  // The one fired-rule count (firedRules, RP-F decision 30b): the distinct union of
-  // detectionsFired and the rules of alerted or blocked outcomes, which the Validation
-  // pill's "N of M detection rules fired" counts too. Round 5: a passed run whose only
-  // rule was a blocked outcome read "1 rule fired" on the card beside a pill "0 of 0".
-  // Every proof record carries it (runRulesFired), so the card's Proven line counts the
-  // run, not the records of it that a later run of one rule left standing.
-  const rulesFired = firedRuleCount(run);
-
-  const proof: ProofRecord[] = [...named].map(([detectionRef, outcome]) => ({
-    scope: run.proofScope, detectionRef, outcome, date: run.runDate, source: run.source, runId: run.id, runRulesFired: rulesFired,
-    ...(run.missionId !== undefined ? { missionId: run.missionId } : {}),
-  }));
-
-  const covered: CoveredMark[] = [];
-  if (blocked && named.size === 0 && provesStatus(run.status)) {
-    covered.push({ qualifier: 'self-attested', basis: 'own-run-blocked', strength: 'full', source: run.source, at: run.runDate });
-  }
-  if (run.proofScope === 'range') {
+export function runInputsFor(runs: readonly ValidationRunV2[]): RunInputs[] {
+  const range = rangeMarks(runs);
+  return runs.map((run, i) => {
+    const runBlocked = run.attackResult === 'blocked';
+    const named = new Map<string, 'alerted' | 'blocked'>();
     for (const o of run.outcomes) {
-      const state = o.coverageState && o.coverageState !== 'validated' ? RANGE_STATES[o.coverageState] : null;
-      if (state === null) continue;
-      const via = o.detectionRef?.trim();
-      covered.push({
-        qualifier: 'range', basis: state.basis, strength: state.strength, source: run.source, at: run.runDate,
-        ...(via ? { via } : {}),
-        // RP-F decision 35: the telemetry cause carries the row's outcome, set here where
-        // the mark is produced; partial-cause.ts words it (an alerted or blocked rule is
-        // named as fired, and still not proof). The outcome is read from the run's fired
-        // set (firedRules, the set the pill and the Proven block count; RP-F #240 round 1),
-        // never from the row alone, so the words cannot disagree with them.
-        ...('partialCause' in state ? { partialCause: state.partialCause, telemetryOutcome: telemetryOutcomeOf(o, via, named) } : {}),
-      });
+      const ref = o.detectionRef?.trim() ?? '';
+      if (ref === '' || (o.outcome !== 'alerted' && o.outcome !== 'blocked')) continue;
+      const outcome = o.outcome === 'blocked' || runBlocked ? 'blocked' : 'alerted';
+      if (named.get(ref) !== 'blocked') named.set(ref, outcome);
     }
-  }
+    for (const d of run.detectionsFired) {
+      const ref = d.trim();
+      if (ref !== '' && !named.has(ref)) named.set(ref, runBlocked ? 'blocked' : 'alerted');
+    }
+    const blocked = runBlocked || run.outcomes.some(o => o.outcome === 'blocked');
+    // The one fired-rule count (firedRules, RP-F decision 30b): the distinct union of
+    // detectionsFired and the rules of alerted or blocked outcomes, which the Validation
+    // pill's "N of M detection rules fired" counts too. Round 5: a passed run whose only
+    // rule was a blocked outcome read "1 rule fired" on the card beside a pill "0 of 0".
+    // Every proof record carries it (runRulesFired), so the card's Proven line counts the
+    // run, not the records of it that a later run of one rule left standing.
+    const rulesFired = firedRuleCount(run);
 
-  const failed = run.status === 'failed';
-  const notReproducible = run.status === 'not-reproducible' || run.outcomes.some(o => o.negativeControl === 'not-reproducible');
-  const verdicts: RunVerdict[] = failed || notReproducible
-    ? [{ date: run.runDate, failed, notReproducible, source: run.source }]
-    : [];
-  // Every rule the run names, so derivePosture supersedes proof per rule (RP-F decision 29).
-  const rules = [...new Set(
-    [...run.outcomes.map(o => o.detectionRef ?? ''), ...run.detectionsExpected, ...run.detectionsFired]
-      .map(d => d.trim()).filter(d => d !== ''),
-  )];
-  const summary: RunSummary = { runId: run.id, status: run.status, date: run.runDate, source: run.source, rulesFired, rules };
-  return { proof, covered, verdicts, summary };
+    const proof: ProofRecord[] = [...named].map(([detectionRef, outcome]) => ({
+      scope: run.proofScope, detectionRef, outcome, date: run.runDate, source: run.source, runId: run.id, runRulesFired: rulesFired,
+      ...(run.missionId !== undefined ? { missionId: run.missionId } : {}),
+    }));
+
+    const covered: CoveredMark[] = [];
+    if (blocked && named.size === 0 && provesStatus(run.status)) {
+      covered.push({ qualifier: 'self-attested', basis: 'own-run-blocked', strength: 'full', source: run.source, at: run.runDate });
+    }
+    covered.push(...range[i]);
+
+    const failed = run.status === 'failed';
+    const notReproducible = run.status === 'not-reproducible' || run.outcomes.some(o => o.negativeControl === 'not-reproducible');
+    const verdicts: RunVerdict[] = failed || notReproducible
+      ? [{ date: run.runDate, failed, notReproducible, source: run.source }]
+      : [];
+    // Every rule the run names, so derivePosture supersedes proof per rule (RP-F decision 29).
+    const rules = [...new Set(
+      [...run.outcomes.map(o => o.detectionRef ?? ''), ...run.detectionsExpected, ...run.detectionsFired]
+        .map(d => d.trim()).filter(d => d !== ''),
+    )];
+    const summary: RunSummary = { runId: run.id, status: run.status, date: run.runDate, source: run.source, rulesFired, rules };
+    return { proof, covered, verdicts, summary };
+  });
 }
 
 /** A technique-marks record as a CoveredMark: implemented → full, in progress or planned → planned. */

@@ -190,9 +190,8 @@ export function postureCellLabel(
     words = provenNoneCellWords({ runsWithoutProof: s.runsWithoutProof ?? [] }) ?? words;
   }
   const patterns = painted ? posturePatterns(painted) : [];
-  if (patterns.includes('partial') && partialCausesOf(s).includes('telemetry')) {
-    words = `${words}, ${telemetryPartialWords(s.covered)}`;
-  }
+  const telemetry = paintedTelemetryWords(s, painted);
+  if (telemetry) words = `${words}, ${telemetry}`;
   if ((CONTRADICTED_SPOKEN_LENSES.has(lens.value) && s.subStates.includes('contradicted')) || patterns.includes('contradicted')) {
     words = `${words}, ${CONTRADICTED_WORDS}`;
   }
@@ -200,6 +199,22 @@ export function postureCellLabel(
     if (p !== 'contradicted' && !words.toLowerCase().includes(PATTERN_WORDS[p])) words = `${words}, ${PATTERN_WORDS[p]}`;
   }
   return words;
+}
+
+/**
+ * The range telemetry clause a cell adds to its words when it paints the partial outline
+ * and the state holds a range telemetry partial (RP-F decision 31), or '': the per-rule
+ * words of partial-cause.ts (RP-F decision 40). The cell's aria-label and tooltip
+ * (postureCellLabel) and the Status lens's why line (lens-explain) both read it, so the
+ * three say the same clause; round 8 read it on the Status cell of T1106 (M1038 plus a
+ * telemetry row) while the why line left it out.
+ */
+export function paintedTelemetryWords(
+  s: Pick<PostureState, 'covered'> & Partial<Pick<PostureState, 'partialCauses'>>,
+  painted: Pick<PostureCellVM, 'bucket' | 'subStates'> | null,
+): string {
+  if (!painted || !posturePatterns(painted).includes('partial') || !partialCausesOf(s).includes('telemetry')) return '';
+  return telemetryPartialWords(s.covered);
 }
 
 /** The Posture lens's own words for a state: the badge, or the stale age and window. */

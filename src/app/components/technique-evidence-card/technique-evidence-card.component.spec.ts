@@ -491,7 +491,7 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
     // beside a pill and a Proven block that said the rule fired.
     describe('a telemetry row whose rule fired (RP-F decision 35)', () => {
       const fired = (rule: string, verb: string) =>
-        `range telemetry observed via ${rule}: partial; the rule ${verb} in this run, but the range reports telemetry-only coverage, so it is not proof`;
+        `range telemetry observed via ${rule}: partial; the rule ${verb} in this run, but the range reports telemetry-only coverage, so it is not proof (range run on 10/20/26)`;
       for (const [t, rule, verb, mode] of [
         [T1082, 'wazuh:12', 'alerted', 'posture'], [T1082, 'wazuh:12', 'alerted', 'covered'],
         [T1083, 'wazuh:13', 'blocked', 'posture'], [T1083, 'wazuh:13', 'blocked', 'covered'],
@@ -534,7 +534,7 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
       it('T1200 (logged via wazuh:5) keeps the no-alert words on the why line, the Covered block and the tooltip', () => {
         techInput = T1200;
         const el = render(rangeState('T1200', ROUND7_EXPORT), true, 'posture');
-        const words = 'range telemetry observed via wazuh:5: partial, no detection alerted';
+        const words = 'range telemetry observed via wazuh:5: partial, no detection alerted (range run on 10/20/26)';
         expect(text(block(el, 'ev-why'))).toContain(`Covered (range, partial via wazuh:5) from ${words}`);
         const row = block(el, 'ev-covered')!.querySelector('[data-testid="ev-mark"]')!;
         expect(text(row.querySelector('[data-testid="ev-mark-cause"]'))).toBe(words);

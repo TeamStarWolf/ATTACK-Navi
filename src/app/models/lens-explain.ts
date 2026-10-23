@@ -17,7 +17,7 @@ import type { LensCell, LensDefinition } from './heatmap-modes';
 import type { CoveredBasis, CoveredMark, PostureState, ProofRecord, ProofScope, RunSummary } from './posture/posture.types';
 import { PROVEN, postureBadge } from './posture/posture-vocabulary';
 import { SCORE_ONLY_LENSES } from './lens-registry';
-import { CONTRADICTED_WORDS } from './posture/posture-ramp';
+import { CONTRADICTED_WORDS, paintedTelemetryWords } from './posture/posture-ramp';
 import { validationDay } from './local-date';
 import { provenNoneLine } from './posture/proof-gap';
 import { firedRuleCount } from './posture/fired-rules';
@@ -377,8 +377,13 @@ function registryExplain(def: LensDefinition, cell: LensCell, ctx: LensExplainCo
     return coveredNoneExplain(state);
   }
   // Status draws no hatch, but its stop comes from the marks a later failed run
-  // contradicts, so its line names the contradiction (RP-F decision 17).
-  if (def.value === 'status') return (cell.label ?? '') + contradictionNote(state);
+  // contradicts, so its line names the contradiction (RP-F decision 17). A partial stop
+  // beside a range telemetry partial names the telemetry clause its aria-label and tooltip
+  // carry (paintedTelemetryWords, RP-F decision 40).
+  if (def.value === 'status') {
+    const telemetry = paintedTelemetryWords(state, { bucket: cell.bucket ?? 'none', subStates: cell.subStates ?? [] });
+    return (cell.label ?? '') + (telemetry ? `, ${telemetry}` : '') + contradictionNote(state);
+  }
   return cell.label ?? `score ${formatScore(cell.score)}`;
 }
 

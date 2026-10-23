@@ -20,7 +20,7 @@ const TELEMETRY_PARTIAL: CoveredMark = {
   at: '2026-10-21', partialCause: 'telemetry',
 };
 const BREADTH_SENTENCE = 'reached only through a mitigation or control mapped to more techniques than the breadth threshold';
-const TELEMETRY_WORDS = 'range telemetry observed via wazuh:5: partial, no detection alerted';
+const TELEMETRY_WORDS = 'range telemetry observed via wazuh:5: partial, no detection alerted (range run on 10/21/26)';
 const RUN: ProofRecord = {
   scope: 'own-run', detectionRef: 'sigma:4688-encoded', outcome: 'alerted', date: '2026-10-21T09:30:00.000Z', source: 'manual', runId: 'r1',
 };
@@ -145,7 +145,7 @@ describe('lensExplain (P2-18): Why this colour', () => {
         const fromMarks = state({ rung: 'covered', bucket: 'partial', subStates: ['partial'], covered: [TELEMETRY_PARTIAL] });
         expect(postureExplain(fromMarks)).toBe(`Covered (range, partial via wazuh:5) from ${TELEMETRY_WORDS}`);
         const noRule = state({ rung: 'covered', bucket: 'partial', subStates: ['partial'], covered: [{ ...TELEMETRY_PARTIAL, via: undefined }] });
-        expect(postureExplain(noRule)).toBe('Covered (range, partial) from range telemetry observed: partial, no detection alerted');
+        expect(postureExplain(noRule)).toBe('Covered (range, partial) from range telemetry observed: partial, no detection alerted (range run on 10/21/26)');
         const unnamed = state({ rung: 'covered', bucket: 'partial', subStates: ['partial'], covered: [{ ...MIT_PARTIAL, partialCause: undefined }] });
         expect(postureExplain(unnamed)).toBe('Covered (self-attested, partial via M1038)');
       });

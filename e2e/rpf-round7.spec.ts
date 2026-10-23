@@ -18,7 +18,7 @@ const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /** The words of a telemetry-observed row whose rule fired (decision 35). */
 const firedWords = (rule: string, verb: 'alerted' | 'blocked') =>
-  `range telemetry observed via ${rule}: partial; the rule ${verb} in this run, but the range reports telemetry-only coverage, so it is not proof`;
+  `range telemetry observed via ${rule}: partial; the rule ${verb} in this run, but the range reports telemetry-only coverage, so it is not proof (range run on 10/20/26)`;
 
 /** A contract-valid export: telemetry-observed rows whose rule alerted, blocked or only logged (round 7, letters A and G). */
 const ROUND7_EXPORT = JSON.stringify({

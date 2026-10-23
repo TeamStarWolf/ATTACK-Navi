@@ -38,7 +38,7 @@ import { type ImplStatus, ImplementationService } from './implementation.service
 import { type OwnerDataCounts, OwnerDataService } from './owner-data.service';
 import {
   type ImplView, type RunInputs, type UnmatchedKey,
-  controlsAdapter, implView, implementationAdapter, markKey, matchToTechniques, runInputs, techniqueMarkToCovered,
+  controlsAdapter, implView, implementationAdapter, markKey, matchToTechniques, runInputsFor, techniqueMarkToCovered,
   telemetryMark,
 } from './posture-adapters';
 import { SettingsService } from './settings.service';
@@ -122,7 +122,7 @@ export class PostureService {
     const out = new Map<string, RunInputs[]>();
     if (!domain) return out;
     const matched = matchToTechniques(this.runs(), r => r, domain.techniques, this.domainId(), this.resolve);
-    for (const [techId, runs] of matched) out.set(techId, runs.map(runInputs));
+    for (const [techId, runs] of matched) out.set(techId, runInputsFor(runs));
     return out;
   });
 
