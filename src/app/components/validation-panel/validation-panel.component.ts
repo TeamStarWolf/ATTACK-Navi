@@ -23,7 +23,7 @@ import { LibraryService } from '../../services/library.service';
 import { TelemetryCoverageService, TelemetrySourceRow } from '../../services/telemetry-coverage.service';
 import { Domain } from '../../models/domain';
 import { Technique } from '../../models/technique';
-import { firedRuleCount } from '../../models/posture/fired-rules';
+import { firedRuleCount, firedRuleTally } from '../../models/posture/fired-rules';
 import { runTime, validationDateTime } from '../../models/local-date';
 import { PostureCardComponent } from '../posture-card/posture-card.component';
 import { RecordRunRequestService } from '../../services/record-run-request.service';
@@ -407,6 +407,17 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
   /** The rules a run fired, as the Validation pill and the evidence card count them (firedRules, RP-F decision 30b). */
   firedCount(run: ValidationRun): number {
     return firedRuleCount(run);
+  }
+
+  /**
+   * A run's fired rules beside its expected ones, through the shared helper the pill
+   * uses (firedRuleTally, RP-F decision 33): 'N/M', or 'N fired, M expected' when more
+   * rules fired than were expected (never a fraction then). `lead` prefixes the
+   * fraction only ('fired ' on the technique tile).
+   */
+  firedWords(run: ValidationRun, lead = ''): string {
+    const t = firedRuleTally(run);
+    return t.words ?? `${lead}${t.fired}/${t.expected}`;
   }
 
   /**
