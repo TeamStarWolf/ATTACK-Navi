@@ -52,7 +52,7 @@ describe('TechniquePageComponent (P2-18)', () => {
   let switchDomain: jasmine.Spy;
   let open: jasmine.Spy;
 
-  function render(domainParam: string, id: string, before?: () => void, heat?: string): HTMLElement {
+  function render(domainParam: string, id: string, before?: () => void, heat?: string | readonly string[]): HTMLElement {
     current = new BehaviorSubject<AttackDomain>('enterprise');
     domain$ = new BehaviorSubject<Domain | null>(ENTERPRISE);
     selected = new BehaviorSubject<Technique | null>(null);
@@ -111,6 +111,31 @@ describe('TechniquePageComponent (P2-18)', () => {
       expect(switchDomain).toHaveBeenCalledBefore(setHeatmapMode);
     });
   }
+
+  // RP-F decision 30a: a repeated heat key binds as an array. The page read it with
+  // isHeatmapMode, which is false for an array, so ICS and Mobile links fell back to the
+  // default lens after clearAll (round 5, 6/6). It now reads it as the matrix does
+  // (firstValidHeat): the first valid value, in link order, on every domain.
+  for (const [dom, id, heat] of [
+    ['ics', 'T0807', ['bogus', 'coverage']],
+    ['ics', 'T0807', ['coverage', 'bogus']],
+    ['mobile', 'T1404', ['bogus', 'coverage']],
+    ['ics', 'T0807', ['', 'kev', 'coverage']],
+  ] as const) {
+    it(`/technique/${dom}/${id}?heat=${heat.join('&heat=')} applies the first valid value after the domain switch`, () => {
+      render(dom, id, undefined, heat);
+      expect(switchDomain).toHaveBeenCalledOnceWith(dom);
+      expect(setHeatmapMode).toHaveBeenCalledOnceWith(heat.find(h => h === 'coverage' || h === 'kev') as string);
+      expect(clearAll).toHaveBeenCalledBefore(setHeatmapMode);
+      expect(switchDomain).toHaveBeenCalledBefore(setHeatmapMode);
+    });
+  }
+
+  it('a repeated heat key with no valid value is not a lens choice: the default stays (RP-F decision 30a)', () => {
+    render('ics', 'T0807', undefined, ['bogus', 'also-bogus']);
+    expect(clearAll).toHaveBeenCalledTimes(1);
+    expect(setHeatmapMode).not.toHaveBeenCalled();
+  });
 
   it('an invalid or empty heat= is not re-applied: the default lens clearAll chose stays (RP-F item 1)', () => {
     render('ics', 'T0807', undefined, 'bogus');
