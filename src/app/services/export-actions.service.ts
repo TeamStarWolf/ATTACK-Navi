@@ -327,7 +327,7 @@ export class ExportActionsService {
     const sample = derived.slice(0, 8).map(d => `  ${d.techniqueId} -> ${d.status}  ("${d.comment.slice(0, 60)}")`);
     const more = derived.length > 8 ? [`  … and ${derived.length - 8} more technique(s)`] : [];
     return [
-      'This layer has no ATTACK-Navi status metadata, so statuses can only be guessed from its comments.',
+      'This layer has no ATT&CK-Navi status metadata, so statuses can only be guessed from its comments.',
       `Mark ${derived.length} technique(s) from comment keywords?`,
       ...sample,
       ...more,

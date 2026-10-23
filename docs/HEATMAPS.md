@@ -1,6 +1,6 @@
 # Heatmap Modes Reference
 
-> Reference for the heatmap coloring modes (lenses) in ATTACK-Navi. There are 36 today; the authoritative count is the Heatmap modes row in [FACTS.md](FACTS.md). The Detailed Mode Documentation below covers the original 24, the Posture lens (25) and the two lenses P2-14 added (26, 27); the other lenses added since are listed in the lens menu and defined in `src/app/models/heatmap-modes.ts`.
+> Reference for the heatmap coloring modes (lenses) in ATT&CK-Navi. There are 36 today; the authoritative count is the Heatmap modes row in [FACTS.md](FACTS.md). The Detailed Mode Documentation below covers the original 24, the Posture lens (25) and the two lenses P2-14 added (26, 27); the other lenses added since are listed in the lens menu and defined in `src/app/models/heatmap-modes.ts`.
 > Each mode recolors every technique cell in the matrix to visualize a different security dimension.
 
 ---

@@ -1,6 +1,6 @@
 # Analyst Workflow Guide
 
-This guide describes eight operational workflows supported by ATTACK-Navi. Each workflow follows a structured sequence of steps using the workspaces, heatmaps, and sidebar sections built into the application.
+This guide describes eight operational workflows supported by ATT&CK-Navi. Each workflow follows a structured sequence of steps using the workspaces, heatmaps, and sidebar sections built into the application.
 
 > **Navigation (v0.8.0).** The app is now organized into **routed workspaces** on the left
 > rail — Matrix, Dashboard, Intel, Detect, Exposure, Coverage, Library, Reports, Settings, and (since the Status workspace was added) Status — each

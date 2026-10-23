@@ -3,7 +3,7 @@
 import { TestBed } from '@angular/core/testing';
 import { BrowserFileService } from './browser-file.service';
 import { ImplementationService } from './implementation.service';
-import { NavigatorLayerService, detectStatusKeyword } from './navigator-layer.service';
+import { NavigatorLayerService, OWN_EXPORT_DESCRIPTION, detectStatusKeyword } from './navigator-layer.service';
 import { type ImplView, implView } from './posture-adapters';
 import { TECHNIQUE_MARKS_KEY, TechniqueMarksService } from './technique-marks.service';
 import type { ImplStatus } from './implementation.service';
@@ -248,6 +248,37 @@ describe('NavigatorLayerService', () => {
     expect(annotationService.setAnnotation).not.toHaveBeenCalled();
     expect(result.notesApplied).toBe(0);
   });
+
+  it('names the export ATT&CK-Navi in the layer description', () => {
+    const layer = service.buildLayer(roundTripDomain(), 'enterprise', new Map());
+    expect(layer.description).toBe('Exported from ATT&CK-Navi (Enterprise ATT&CK)');
+    expect(OWN_EXPORT_DESCRIPTION.test(layer.description)).toBeTrue();
+  });
+
+  // A layer exported before the rename says "ATT&CK Navi"; both spellings are ours,
+  // and a foreign description (MITRE's own Navigator included) is not.
+  for (const [description, own] of [
+    ['Exported from ATT&CK-Navi (Enterprise ATT&CK)', true],
+    ['Exported from ATT&CK Navi (Enterprise ATT&CK)', true],
+    ['Exported from ATT&CK Navigator', false],
+    ['Vendor coverage layer', false],
+  ] as const) {
+    it(`treats a description-only layer "${description}" as ${own ? 'our own export' : 'foreign'}`, async () => {
+      const annotationService = jasmine.createSpyObj('AnnotationService', ['setAnnotation', 'getAnnotation']);
+      annotationService.getAnnotation.and.returnValue(undefined);
+      const result = await service.importLayer(JSON.stringify({
+        description,
+        techniques: [{ techniqueID: 'T1059', comment: 'Status: implemented' }],
+      }), roundTripDomain(), implService, annotationService, { deriveStatusesFromComments: true });
+      expect(OWN_EXPORT_DESCRIPTION.test(description)).toBe(own);
+      if (own) {
+        expect(result.derivedStatuses).toEqual([]);
+        expect(annotationService.setAnnotation).not.toHaveBeenCalled();
+      } else {
+        expect(annotationService.setAnnotation).toHaveBeenCalledWith('T1059', 'Status: implemented');
+      }
+    });
+  }
 
   it('never overwrites an existing analyst note with a foreign comment', async () => {
     const annotationService = jasmine.createSpyObj('AnnotationService', ['setAnnotation', 'getAnnotation']);

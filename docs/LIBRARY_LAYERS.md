@@ -1,7 +1,7 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf - MIT License -->
 # Library Layers Guide
 
-**Library layers** are curated MITRE ATT&CK Navigator overlays bundled with ATTACK-Navi. Select one from the **Library Layers** picker in the matrix controls and the workbench colors each technique cell by that layer's score, letting you see a theme, a data-driven frequency, or a specific adversary's documented behavior projected onto the ATT&CK matrix. This build ships **37 layers**.
+**Library layers** are curated MITRE ATT&CK Navigator overlays bundled with ATT&CK-Navi. Select one from the **Library Layers** picker in the matrix controls and the workbench colors each technique cell by that layer's score, letting you see a theme, a data-driven frequency, or a specific adversary's documented behavior projected onto the ATT&CK matrix. This build ships **37 layers**.
 
 Counts below are distinct technique IDs in each layer, not technique/tactic rows or machine counts. The inventory is checked against the [bundled manifest](../src/assets/data/library-layers/index.json); the layers target the bundled Enterprise ATT&CK v19.2 snapshot.
 

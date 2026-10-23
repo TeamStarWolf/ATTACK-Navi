@@ -84,6 +84,13 @@ export interface LayerImportResult {
 }
 
 /**
+ * The description our own layer export starts with. Accepts the current name
+ * (ATT&CK-Navi) and the pre-rename one (ATT&CK Navi) so older exports still
+ * round-trip as our own.
+ */
+export const OWN_EXPORT_DESCRIPTION = /^Exported from ATT&CK[ -]Navi(?!\w)/;
+
+/**
  * A status keyword preceded by a negation ("not implemented", "never planned",
  * "isn't in progress", "not yet implemented") is NOT that status. Word
  * boundaries already exclude "unimplemented" / "unplanned".
@@ -173,7 +180,7 @@ export class NavigatorLayerService {
       const bestStatus: ImplStatus | null = view.status;
       const partialVia = bestStatus === 'implemented' ? view.partialVia : null;
 
-      // Exact per-mitigation statuses ride along in metadata so ATTACK-Navi
+      // Exact per-mitigation statuses ride along in metadata so ATT&CK-Navi
       // layers round-trip losslessly (the technique-level rollup is lossy).
       const mitStatusPairs: string[] = [];
       for (const rel of rels) {
@@ -205,7 +212,7 @@ export class NavigatorLayerService {
       name: `${domain.name} Coverage`,
       versions: { attack: domain.attackVersion || '', navigator: '4.9', layer: '4.5' },
       domain: metadata.navigatorDomain,
-      description: `Exported from ATT&CK Navi (${domain.name})`,
+      description: `Exported from ATT&CK-Navi (${domain.name})`,
       filters: { platforms: metadata.defaultPlatforms },
       sorting: 0,
       layout: { layout: 'side', aggregateFunction: 'average', showID: false, showName: true, showAggregateScores: false, countUnscored: false },
@@ -241,7 +248,7 @@ export class NavigatorLayerService {
 
   /**
    * Imports a Navigator layer with round-trip fidelity:
-   * - ATTACK-Navi layers restore EXACT per-mitigation statuses and analyst
+   * - ATT&CK-Navi layers restore EXACT per-mitigation statuses and analyst
    *   notes from `attack-navi:*` metadata entries.
    * - Foreign layers' comments become analyst notes — but only on techniques
    *   that don't already have a note (imports never clobber existing analyst
@@ -285,7 +292,7 @@ export class NavigatorLayerService {
     // its comments ("Status: planned", "3 mitigation(s)") are display text,
     // not analyst notes, and must not be guessed at or imported as notes.
     const layerHeader = parsed as { description?: unknown };
-    const ownLayer = (typeof layerHeader.description === 'string' && layerHeader.description.startsWith('Exported from ATT&CK Navi'))
+    const ownLayer = (typeof layerHeader.description === 'string' && OWN_EXPORT_DESCRIPTION.test(layerHeader.description))
       || techniques.some(e => e.metadata.some(m => m.name.startsWith('attack-navi:')));
 
     // Mitigation ATT&CK id → STIX id, for exact status restore.

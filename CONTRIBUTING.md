@@ -1,6 +1,6 @@
-# Contributing to ATTACK-Navi
+# Contributing to ATT&CK-Navi
 
-Thanks for your interest in contributing! This document describes how to set up the development environment, follow code conventions, and extend ATTACK-Navi with new features.
+Thanks for your interest in contributing! This document describes how to set up the development environment, follow code conventions, and extend ATT&CK-Navi with new features.
 
 ---
 

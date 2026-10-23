@@ -1,10 +1,10 @@
-# AGENTS.md — Working in ATTACK-Navi
+# AGENTS.md — Working in ATT&CK-Navi
 
 Canonical instructions for any AI coding agent (Codex, Claude Code, or other) working in this repository. `CLAUDE.md` points here. Read `HANDOFF.md` too — it holds the current in-flight state and who is working on what.
 
 ## What this is
 
-ATTACK-Navi is a **browser-based MITRE ATT&CK analyst workbench** — an Angular single-page app, static (no backend), deployed to GitHub Pages. It renders the ATT&CK matrix and colors it by 36 "heatmap modes" (coverage, detection, vulnerability, framework-mapping, threat-landscape lenses; `HEATMAP_MODES` in `src/app/models/heatmap-modes.ts` is the count of record), with ten routed workspaces (Matrix, Status, Dashboard, Intel, Detect, Exposure, Coverage, Library, Reports, Settings). It is the front-end companion to the **TeamStarWolf reference library** (`github.com/TeamStarWolf/TeamStarWolf`), whose datasets it consumes.
+ATT&CK-Navi is a **browser-based MITRE ATT&CK analyst workbench** — an Angular single-page app, static (no backend), deployed to GitHub Pages. It renders the ATT&CK matrix and colors it by 36 "heatmap modes" (coverage, detection, vulnerability, framework-mapping, threat-landscape lenses; `HEATMAP_MODES` in `src/app/models/heatmap-modes.ts` is the count of record), with ten routed workspaces (Matrix, Status, Dashboard, Intel, Detect, Exposure, Coverage, Library, Reports, Settings). It is the front-end companion to the **TeamStarWolf reference library** (`github.com/TeamStarWolf/TeamStarWolf`), whose datasets it consumes.
 
 ## Collaboration rules (all agents)
 

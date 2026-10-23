@@ -1,6 +1,6 @@
-# ATTACK-Navi quick start
+# ATT&CK-Navi quick start
 
-ATTACK-Navi is a browser-based workbench for MITRE ATT&CK. It runs as a static site with
+ATT&CK-Navi is a browser-based workbench for MITRE ATT&CK. It runs as a static site with
 no account and no project server. This guide shows the first path to try, how to move
 around, what the colors mean, and the common workflows. It describes the app as built from
 `main`; control names are quoted as they appear on screen. The hosted build may lag `main`;

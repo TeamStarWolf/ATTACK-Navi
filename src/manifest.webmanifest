@@ -1,6 +1,6 @@
 {
-  "name": "ATT&CK Navi",
-  "short_name": "ATT&CK Navi",
+  "name": "ATT&CK-Navi",
+  "short_name": "ATT&CK-Navi",
   "theme_color": "#070d14",
   "background_color": "#070d14",
   "display": "standalone",

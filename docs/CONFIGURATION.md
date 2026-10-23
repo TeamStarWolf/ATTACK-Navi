@@ -1,6 +1,6 @@
 # Configuration Guide
 
-This document covers the configuration options for ATTACK-Navi: external integrations, display preferences, data management, and deployment.
+This document covers the configuration options for ATT&CK-Navi: external integrations, display preferences, data management, and deployment.
 
 ---
 
@@ -205,7 +205,7 @@ The key is kept in sessionStorage (under `mitre-nav-settings-v1-key`), not local
 
 ### Dark and Light Mode
 
-ATTACK-Navi follows the operating system's light or dark setting (`prefers-color-scheme`) until you pick a theme, and keeps following it if the OS setting changes. The theme button in the toolbar (or "Toggle theme" in the command palette) is an explicit choice: it is stored in localStorage under `mitre-nav-theme` (`light` or `dark`) with the marker `mitre-nav-theme-explicit`, and it always wins over the OS. Following the OS writes nothing to storage. A `light` value stored by an older version without the marker was the old automatic default, so the OS decides instead; a stored `dark` is kept as a choice.
+ATT&CK-Navi follows the operating system's light or dark setting (`prefers-color-scheme`) until you pick a theme, and keeps following it if the OS setting changes. The theme button in the toolbar (or "Toggle theme" in the command palette) is an explicit choice: it is stored in localStorage under `mitre-nav-theme` (`light` or `dark`) with the marker `mitre-nav-theme-explicit`, and it always wins over the OS. Following the OS writes nothing to storage. A `light` value stored by an older version without the marker was the old automatic default, so the OS decides instead; a stored `dark` is kept as a choice.
 
 ### Heatmap Color Themes
 
@@ -221,7 +221,7 @@ One caveat: the swatch you click and the ramp the matrix applies are defined in 
 
 ## 5. Domain Selection
 
-ATTACK-Navi supports four ATT&CK domains:
+ATT&CK-Navi supports four ATT&CK domains:
 
 | Domain | Description | STIX Source |
 |--------|-------------|-------------|
@@ -532,7 +532,7 @@ The repository's [`Dockerfile`](../Dockerfile) is the containerized deployment: 
 
 ### Environment Requirements
 
-ATTACK-Navi is a fully client-side application. The deployment server only needs to:
+ATT&CK-Navi is a fully client-side application. The deployment server only needs to:
 1. Serve static files (HTML, JS, CSS, JSON assets)
 2. Return `index.html` for all non-file routes (SPA fallback)
 3. Let the user's browser (not the server) reach the runtime data hosts in the CSP `connect-src` table above: `raw.githubusercontent.com`, `api.github.com`, `gitlab.com`, `api.first.org`, `services.nvd.nist.gov`, `www.cisa.gov`, `d3fend.mitre.org` and `cveawg.mitre.org`, plus any MISP, OpenCTI or TAXII origin you configure

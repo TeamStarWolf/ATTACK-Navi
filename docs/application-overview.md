@@ -1,8 +1,8 @@
-# ATTACK-Navi Application Overview
+# ATT&CK-Navi Application Overview
 
 ## What It Is
 
-ATTACK-Navi is a browser-based cybersecurity workbench built on top of the MITRE ATT&CK framework. The application is designed to help analysts move from a technique-centric view into richer operational questions: what reference is mapped, what is exposed, what intelligence is relevant, and what evidence exists for detection or control depth.
+ATT&CK-Navi is a browser-based cybersecurity workbench built on top of the MITRE ATT&CK framework. The application is designed to help analysts move from a technique-centric view into richer operational questions: what reference is mapped, what is exposed, what intelligence is relevant, and what evidence exists for detection or control depth.
 
 The project is intentionally broader than a traditional ATT&CK Navigator layer viewer. It treats the ATT&CK matrix as the entry point to a multi-surface analysis environment rather than the final product.
 
@@ -10,7 +10,7 @@ The project is intentionally broader than a traditional ATT&CK Navigator layer v
 
 ### 1. Coverage review
 
-Analysts can use ATTACK-Navi to review mitigation coverage, implementation status, control mappings, and data-source depth at the tactic and technique level. This is the closest workflow to a classic ATT&CK assessment, but the app pushes beyond color-coding by exposing sidebars, comparisons, and export surfaces.
+Analysts can use ATT&CK-Navi to review mitigation coverage, implementation status, control mappings, and data-source depth at the tactic and technique level. This is the closest workflow to a classic ATT&CK assessment, but the app pushes beyond color-coding by exposing sidebars, comparisons, and export surfaces.
 
 ### 2. Threat-intelligence correlation
 
@@ -22,11 +22,11 @@ Exposure workflows map ATT&CK techniques to CVE, KEV, EPSS, ExploitDB, Nuclei, a
 
 ### 4. Detection validation
 
-Detection workflows combine Sigma, Elastic, Splunk, Atomic Red Team, CAR, and related sources so an analyst can judge how measurable or testable a technique is. This makes ATTACK-Navi useful for both detection engineering and purple-team preparation.
+Detection workflows combine Sigma, Elastic, Splunk, Atomic Red Team, CAR, and related sources so an analyst can judge how measurable or testable a technique is. This makes ATT&CK-Navi useful for both detection engineering and purple-team preparation.
 
 ### 5. Reporting and sharing
 
-ATTACK-Navi is also built to turn interactive analysis into artifacts. The app supports CSV, XLSX, HTML, PNG, state export, and Navigator-layer export so teams can preserve or circulate findings outside the live UI.
+ATT&CK-Navi is also built to turn interactive analysis into artifacts. The app supports CSV, XLSX, HTML, PNG, state export, and Navigator-layer export so teams can preserve or circulate findings outside the live UI.
 
 ## Experience Priorities
 
@@ -71,7 +71,7 @@ There is also an optional backend proxy under `server/` for environments that do
 
 ## Community Context
 
-ATTACK-Navi is part of the [TeamStarWolf](https://github.com/TeamStarWolf/TeamStarWolf) public resource library. Each discipline page in that library describes how ATTACK-Navi fits into a practitioner's workflow for that area, alongside learning paths, free training, and tooling recommendations.
+ATT&CK-Navi is part of the [TeamStarWolf](https://github.com/TeamStarWolf/TeamStarWolf) public resource library. Each discipline page in that library describes how ATT&CK-Navi fits into a practitioner's workflow for that area, alongside learning paths, free training, and tooling recommendations.
 
 | If you are working on... | See this discipline page |
 |---|---|
