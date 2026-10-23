@@ -30,7 +30,8 @@ import { TechniqueMarksService } from '../../services/technique-marks.service';
 import { SourceRegistryService } from '../../services/source-registry.service';
 import { RecordRunRequestService } from '../../services/record-run-request.service';
 import { lylatRowsToRuns, validateLylatExport } from '../../contracts/lylat-validated-detections';
-import { runInputs } from '../../services/posture-adapters';
+import { runInputs, runInputsFor } from '../../services/posture-adapters';
+import { rpf8Runs } from '../../testing/rpf8-shapes';
 import RANGE_FIXTURE from '../../../testing/fixtures/lylat/validated-detections.fixture.json';
 
 const TECH = {
@@ -531,7 +532,25 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
         expect(text(block(el, 'ev-proven-empty'))).toContain('No proof: 1 rule fired in the range run on 10/20/26 (status partial)');
       });
 
-      it('T1200 (logged via wazuh:5) keeps the no-alert words on the why line, the Covered block and the tooltip', () => {
+      // RP-F decision 44: a range run whose attack did not execute is named as not credited
+    // in the Covered block, never as a mark whose rule alerted.
+    it('T1027.013 (an errored range run): the Covered block reads "did not execute (errored): not credited"; the runs line says so', () => {
+      techInput = T1200;
+      const runs = rpf8Runs().get('T1027.013')!;
+      const inputs = runInputsFor(runs);
+      const s = derivePosture('attack/enterprise/T1027.013@19.2', {
+        knownSignals: 2, threatWeight: 1, exposureWeight: 0, covered: inputs.flatMap(i => i.covered),
+        proof: inputs.flatMap(i => i.proof), verdicts: inputs.flatMap(i => i.verdicts), runs: inputs.map(i => i.summary),
+      }, DEFAULT_POSTURE_RULES, new Date(2026, 9, 23, 12));
+      const el = render(s, true, 'covered');
+      expect(Array.from(el.querySelectorAll('[data-testid="ev-not-credited"]')).map(text))
+        .toEqual(['range run on 10/21/26 did not execute (errored): not credited']);
+      expect(text(el.querySelector('[data-testid="ev-runs-without-proof"]'))).toContain('(source lylat-range:J35, attack did not execute: errored)');
+      expect(text(el)).not.toContain('alerted in this run');
+      expect(text(el)).not.toMatch(/[1-9]\d* rules? fired/);
+    });
+
+    it('T1200 (logged via wazuh:5) keeps the no-alert words on the why line, the Covered block and the tooltip', () => {
         techInput = T1200;
         const el = render(rangeState('T1200', ROUND7_EXPORT), true, 'posture');
         const words = 'range telemetry observed via wazuh:5: partial, no detection alerted (range run on 10/20/26)';

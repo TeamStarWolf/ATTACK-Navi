@@ -7,6 +7,7 @@ import {
   VALIDATION_RUNS_V1_KEY, VALIDATION_RUNS_V2_KEY, sanitizeRun, statusFromInputs, storedUntestedWords,
 } from './validation.service';
 import { DEFAULT_POSTURE_RULES, derivePosture } from '../models/posture/derive-posture';
+import { attackDidNotExecute } from '../models/posture/fired-rules';
 import { AttackIdResolverService } from './attack-id-resolver.service';
 import { DataService, AttackDomain } from './data.service';
 import { ImplementationService } from './implementation.service';
@@ -1057,5 +1058,16 @@ describe('ValidationService', () => {
       expect(legend).toContain('not-reproducible');
       expect(service.statusCounts()['not-reproducible']).toBe(0);
     });
+  });
+});
+
+// RP-F decision 44: the fired-rule helper (a pure model module) and the store agree on
+// which attack results mean the attack did not execute, so a run the store keeps
+// untested (decision 32) is also the run whose rules never count as fired.
+describe('the attack results that did not execute (RP-F decisions 32 and 44)', () => {
+  it('ATTACK_DID_NOT_EXECUTE and the fired-rule helper name the same results', () => {
+    for (const [result, notExecuted] of Object.entries(ATTACK_DID_NOT_EXECUTE)) {
+      expect(attackDidNotExecute(result)).withContext(result).toBe(notExecuted);
+    }
   });
 });

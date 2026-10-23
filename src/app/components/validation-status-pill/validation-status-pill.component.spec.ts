@@ -185,8 +185,28 @@ describe('ValidationStatusPillComponent', () => {
     it("an unexpected rule on a non-passed run: '1 of 1 expected rules fired, plus 1 unexpected' (round 6: 'UNTESTED 2 of 1')", () => {
       const r = t1113({ status: 'untested', detectionsExpected: ['siem:a'], detectionsFired: ['siem:a', 'siem:b'] });
       expect(pillLine(r)).toBe('1 of 1 expected rules fired, plus 1 unexpected');
-      expect(component.tally(r)).toEqual({ fired: 2, expected: 1, matched: 1, unexpected: 1, words: '1 of 1 expected rules fired, plus 1 unexpected' });
+      expect(component.tally(r)).toEqual({ executed: true, fired: 2, expected: 1, matched: 1, unexpected: 1, words: '1 of 1 expected rules fired, plus 1 unexpected' });
     });
+
+    // RP-F decision 44: a run whose attack did not execute shows no fired count. Round 7
+    // read "UNTESTED 2 of 2 expected rules fired" on a "Failed prerequisite" run with its
+    // rules ticked (backlog item f).
+    for (const attackResult of ['failed-prereq', 'errored'] as const) {
+      it(`a ${attackResult} run with its rules ticked reads 'UNTESTED, attack did not execute', with no fraction`, () => {
+        const r = t1113({ status: 'untested', attackResult, detectionsExpected: ['siem:a', 'siem:b'], detectionsFired: ['siem:a', 'siem:b'] });
+        validation.forTechnique.and.returnValue([r]);
+        validation.latestFor.and.returnValue(r);
+        const f = TestBed.createComponent(ValidationStatusPillComponent);
+        f.componentInstance.attackId = 'T1113';
+        f.detectChanges();
+        const row = ((f.nativeElement as HTMLElement).querySelector('.vsp-row')?.textContent ?? '').replace(/\s+/g, ' ').trim();
+        expect(row).toBe('UNTESTED, attack did not execute');
+        expect(row).not.toMatch(/\d+ of \d+|fired/);
+        expect((f.nativeElement as HTMLElement).querySelector('.vsp-status')!.textContent!.trim()).toBe('UNTESTED');
+        expect(component.tally(r)).toEqual({ executed: false, fired: 0, expected: 2, matched: 0, unexpected: 0, words: 'attack did not execute' });
+        expect(component.firedCount(r)).toBe(0);
+      });
+    }
 
     it("expected [a, b] with fired a and c reads '1 of 2 expected rules fired, plus 1 unexpected', never '2 of 2' (round 7)", () => {
       const r = t1113({ status: 'partial', detectionsExpected: ['siem:a', 'siem:b'], detectionsFired: ['siem:a', 'siem:c'] });

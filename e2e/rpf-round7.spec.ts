@@ -168,7 +168,7 @@ test.describe('RP-F round 7', () => {
       await expect(tile.locator('.vp-status-badge')).toHaveText(/UNTESTED/, { timeout: ROUTE_TIMEOUT });
     }
 
-    for (const id of ['T1027', 'T1486']) {
+    for (const [id, result] of [['T1027', 'errored'], ['T1486', 'failed prerequisite']] as const) {
       await paste(page, `#/matrix?heat=posture&tech=${id}`);
       const drawer = page.locator('.sidebar.open');
       await expect(drawer.locator('.sidebar-header .attack-id')).toHaveText(id, { timeout: ROUTE_TIMEOUT });
@@ -176,8 +176,11 @@ test.describe('RP-F round 7', () => {
       const card = drawer.locator('[data-testid="evidence-card"]');
       await expect(card.getByTestId('ev-why')).not.toContainText('Proven');
       await expect(card.getByTestId('ev-proof')).toHaveCount(0);
-      // The card names the run by its status and date, never a rung (decision 9).
-      await expect(card.getByTestId('ev-runs-without-proof')).toContainText('untested on 10/20/26 (source manual, 1 rule fired)');
+      // The card names the run by its status and date, never a rung (decision 9); since
+      // decision 44 (round 8) a run whose attack did not execute shows no fired count.
+      await expect(card.getByTestId('ev-runs-without-proof'))
+        .toContainText(`untested on 10/20/26 (source manual, attack did not execute: ${result})`);
+      await expect(card.getByTestId('ev-runs-without-proof')).not.toContainText('rule fired');
     }
   });
 

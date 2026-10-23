@@ -138,6 +138,13 @@ export interface RunSummary {
    * keys on source plus technique).
    */
   readonly rules?: readonly string[];
+  /**
+   * The run's attackResult when the attack did not execute ('failed-prereq' or 'errored',
+   * RP-F decision 44); absent otherwise. Such a run fired nothing (rulesFired 0) and its
+   * range rows are not credited: the card's Covered block says "range run on <date> did
+   * not execute (<outcome>): not credited".
+   */
+  readonly notExecuted?: string;
 }
 
 /**

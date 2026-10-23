@@ -32,15 +32,18 @@ const STATUS_LABEL: Record<ValidationStatus, string> = {
       </header>
       @if (latest) {
         <div class="vsp-row">
-          <span class="vsp-status" [attr.data-status]="latest.status">{{ statusLabel(latest.status) }}</span>
-          @if (labRange) {
-            <span class="vsp-lab" title="Exercised against a published Lylat range build">lab</span>
-          }
-          <span class="vsp-meta">
-            @if (tally(latest); as t) {
-              {{ t.words }}
+          @if (tally(latest); as t) {
+            @if (t.executed) {
+              <span class="vsp-status" [attr.data-status]="latest.status">{{ statusLabel(latest.status) }}</span>
+              @if (labRange) {
+                <span class="vsp-lab" title="Exercised against a published Lylat range build">lab</span>
+              }
+              <span class="vsp-meta">{{ t.words }}</span>
+            } @else {
+              <!-- RP-F decision 44: an attack that did not execute fired nothing; no fraction, no fired count. -->
+              <span class="vsp-not-run"><span class="vsp-status" [attr.data-status]="latest.status">{{ statusLabel(latest.status) }}</span>, {{ t.words }}</span>
             }
-          </span>
+          }
         </div>
         @if (labProofRecords.length) {
           <div class="vsp-row vsp-rules">
@@ -93,6 +96,7 @@ const STATUS_LABEL: Record<ValidationStatus, string> = {
     }
     .vsp-when { color: var(--text-muted, #8b93a7); font-size: 11px; margin-top: 2px; }
     .vsp-meta { color: var(--text-muted, #8b93a7); }
+    .vsp-not-run { color: var(--text-muted, #8b93a7); }
     .vsp-lab {
       font-size: 9.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
       padding: 2px 7px; border-radius: 4px; flex-shrink: 0;

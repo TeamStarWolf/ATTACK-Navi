@@ -234,4 +234,25 @@ test.describe('RP-F round 8', () => {
       'Covered (self-attested: mitigation, control, confirmation or your run); Covered (range: lab-validated detection)');
     await expect(page.locator('app-scenario-panel')).not.toContainText('You recorded a mitigation, control, confirmation or run');
   });
+
+  // Decision 44: an attack that did not execute shows no fired count and no alerted
+  // clause. Round 8 read "the rule alerted in this run" on T1027.013 (range errored).
+  test('[RP-F 44] T1027.013 (range errored): the pill reads "UNTESTED, attack did not execute"; the Covered block says not credited; Run History has no fraction', async ({ page }) => {
+    await openWorkspace(page);
+    await importAll(page);
+    const { drawer: d, card } = await drawer(page, 'T1027.013', 'covered');
+    await expect(d.locator('app-validation-status-pill .vsp-row').first()).toHaveText(/^\s*UNTESTED, attack did not execute\s*$/, { timeout: ROUTE_TIMEOUT });
+    await expect(card.getByTestId('ev-not-credited')).toHaveText(['range run on 10/21/26 did not execute (errored): not credited']);
+    await expect(card).not.toContainText('alerted in this run');
+    await expect(card).not.toContainText(/[1-9]\d* rules? fired/);
+
+    await page.goto(`${BASE}/#/detect/validation`);
+    await expect(page.locator('app-validation-panel')).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    // Run History reads the pill's words, with no fraction (the technique tiles list the
+    // profile's parent techniques only; the [RP-F 32] e2e reads a tile).
+    await page.getByRole('button', { name: /Run History/ }).click();
+    const row = page.locator('.vp-runs-table tbody tr', { has: page.locator('code', { hasText: /^T1027\.013$/ }) });
+    await expect(row).toContainText('attack did not execute', { timeout: ROUTE_TIMEOUT });
+    await expect(row).not.toContainText(/\d+ of \d+ expected/);
+  });
 });

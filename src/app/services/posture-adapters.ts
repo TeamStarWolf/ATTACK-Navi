@@ -28,7 +28,7 @@ import type { CoveredMark, CoveredStrength, ProofRecord, RunSummary, RunVerdict 
 import { rollupMitigations } from '../models/posture/mitigation-rollup';
 import { provesStatus } from '../models/posture/derive-posture';
 import { runMatches } from '../models/posture/run-match';
-import { firedRuleCount, firedRules } from '../models/posture/fired-rules';
+import { attackDidNotExecute, firedRuleCount, firedRules } from '../models/posture/fired-rules';
 import { compareRunsNewestFirst, sortRunsNewestFirst, storedRunKey } from '../models/posture/latest-run';
 import { type TechniqueRefKey, parseTechniqueRef } from '../models/technique-ref';
 import type { AttackDomain } from './data.service';
@@ -282,7 +282,9 @@ function rangeMarks(runs: readonly ValidationRunV2[]): CoveredMark[][] {
   const firings = techniqueFirings(runs);
   const rows: RangeRow[] = [];
   runs.forEach((run, runIndex) => {
-    if (run.proofScope !== 'range') return;
+    // RP-F decision 44: a range run whose attack did not execute credits nothing and
+    // supersedes nothing; the card names it as not credited (notCreditedWords).
+    if (run.proofScope !== 'range' || attackDidNotExecute(run.attackResult)) return;
     for (const row of run.outcomes) {
       if (row.coverageState) for (const rule of rowRules(run, row)) rows.push({ runIndex, run, row, rule });
     }
@@ -350,14 +352,16 @@ export function runInputsFor(runs: readonly ValidationRunV2[]): RunInputs[] {
   const range = rangeMarks(runs);
   return runs.map((run, i) => {
     const runBlocked = run.attackResult === 'blocked';
+    const executed = !attackDidNotExecute(run.attackResult);
     const named = new Map<string, 'alerted' | 'blocked'>();
-    for (const o of run.outcomes) {
+    // RP-F decision 44: an attack that did not execute named no detection that fired.
+    for (const o of executed ? run.outcomes : []) {
       const ref = o.detectionRef?.trim() ?? '';
       if (ref === '' || (o.outcome !== 'alerted' && o.outcome !== 'blocked')) continue;
       const outcome = o.outcome === 'blocked' || runBlocked ? 'blocked' : 'alerted';
       if (named.get(ref) !== 'blocked') named.set(ref, outcome);
     }
-    for (const d of run.detectionsFired) {
+    for (const d of executed ? run.detectionsFired : []) {
       const ref = d.trim();
       if (ref !== '' && !named.has(ref)) named.set(ref, runBlocked ? 'blocked' : 'alerted');
     }
@@ -391,7 +395,10 @@ export function runInputsFor(runs: readonly ValidationRunV2[]): RunInputs[] {
       [...run.outcomes.map(o => o.detectionRef ?? ''), ...run.detectionsExpected, ...run.detectionsFired]
         .map(d => d.trim()).filter(d => d !== ''),
     )];
-    const summary: RunSummary = { runId: run.id, status: run.status, date: run.runDate, source: run.source, rulesFired, rules };
+    const summary: RunSummary = {
+      runId: run.id, status: run.status, date: run.runDate, source: run.source, rulesFired, rules,
+      ...(executed ? {} : { notExecuted: run.attackResult }),
+    };
     return { proof, covered, verdicts, summary };
   });
 }

@@ -37,7 +37,8 @@
 // range rows. Threshold or breadth wording outside this file is a defect
 // (partial-cause-words.spec.ts).
 // No rung word here: these lines name a cause, never a rung.
-import type { CoveredMark, PartialCause, PostureState } from './posture.types';
+import type { CoveredMark, PartialCause, PostureState, RunSummary } from './posture.types';
+import { attackResultWords } from './fired-rules';
 import { validationDay } from '../local-date';
 
 /** The breadth partial's reason (D16), as the why line has always said it. */
@@ -195,6 +196,18 @@ export function partialMarkWords(m: CoveredMark): string | null {
   if (m.partialCause === 'telemetry') return telemetryPartialWords([m]);
   if (m.partialCause === 'breadth') return BREADTH_PARTIAL_WORDS;
   return null;
+}
+
+/**
+ * The Covered words of a range run whose attack did not execute (RP-F decision 44): its
+ * rows credit nothing, so the card's Covered block names it instead of a mark:
+ *   'range run on 10/21/26 did not execute (errored): not credited'
+ * It never reads "the rule alerted in this run" (round 8, T1027.013). Null for a run
+ * that executed, or one that is not a range run.
+ */
+export function notCreditedWords(run: Pick<RunSummary, 'date' | 'source' | 'notExecuted'>): string | null {
+  if (!run.notExecuted || !run.source.startsWith('lylat-range:')) return null;
+  return `range run on ${validationDay(run.date)} did not execute (${attackResultWords(run.notExecuted)}): not credited`;
 }
 
 /**

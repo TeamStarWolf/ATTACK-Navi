@@ -18,11 +18,32 @@ export interface FiredRuleOutcome {
   readonly outcome: string;
 }
 
-/** What firedRules reads of a run. `outcomes` is absent on a v1-shaped run. */
+/** What firedRules reads of a run. `outcomes` is absent on a v1-shaped run; `attackResult` on a hand-built one. */
 export interface FiredRulesInput {
   readonly detectionsFired: readonly string[];
   readonly outcomes?: readonly FiredRuleOutcome[];
+  readonly attackResult?: string;
 }
+
+/**
+ * The attack results that mean the attack did not execute (RP-F decisions 32 and 44):
+ * Record Run's "Failed prerequisite" and "Errored" (ValidationService's
+ * ATTACK_DID_NOT_EXECUTE holds the same two; validation.service.spec checks they agree).
+ */
+const NOT_EXECUTED: Readonly<Record<string, string>> = { 'failed-prereq': 'failed prerequisite', errored: 'errored' };
+
+/** True when `attackResult` says the attack did not execute (failed-prereq, errored). */
+export function attackDidNotExecute(attackResult: string | undefined): boolean {
+  return attackResult !== undefined && Object.prototype.hasOwnProperty.call(NOT_EXECUTED, attackResult);
+}
+
+/** The words of a non-executed attack result: 'failed prerequisite', 'errored'; the result itself otherwise. */
+export function attackResultWords(attackResult: string): string {
+  return attackDidNotExecute(attackResult) ? NOT_EXECUTED[attackResult] : attackResult;
+}
+
+/** What the pill, the workbench tile and Run History say of a run whose attack did not execute (RP-F decision 44). */
+export const NOT_EXECUTED_WORDS = 'attack did not execute';
 
 /**
  * The rules a run fired: the distinct, trimmed, non-empty union of its
@@ -31,8 +52,14 @@ export interface FiredRulesInput {
  * nothing; a blank or duplicate id is one rule or none:
  *   detectionsFired [] and outcomes [{ detectionRef: 'edr:x', outcome: 'blocked' }] -> ['edr:x']
  *   detectionsFired ['siem:a', ' siem:a ', ''] and outcomes [{ 'siem:a', 'alerted' }] -> ['siem:a']
+ * A run whose attack did not execute (attackResult failed-prereq or errored) fired
+ * nothing (RP-F decision 44): its ticked or imported rules never count as fired, so no
+ * surface shows a fired count or an alerted clause for it. Round 7 read "UNTESTED 2 of 2
+ * expected rules fired" on a "Failed prerequisite" run with its rules ticked; round 8
+ * read "the rule alerted in this run" on T1027.013, whose range run errored.
  */
 export function firedRules(run: FiredRulesInput): string[] {
+  if (attackDidNotExecute(run.attackResult)) return [];
   const rules = new Set<string>();
   for (const d of run.detectionsFired) {
     const ref = typeof d === 'string' ? d.trim() : '';
@@ -73,6 +100,8 @@ export interface FiredTallyInput extends FiredRulesInput {
  * with fired [a, c] read '2 of 2' (round 7).
  */
 export interface FiredRuleTally {
+  /** False when the attack did not execute (RP-F decision 44): then nothing fired and `words` names no fraction. */
+  readonly executed: boolean;
   readonly fired: number;
   readonly expected: number;
   readonly matched: number;
@@ -89,10 +118,14 @@ function distinctRules(list: readonly string[]): string[] {
 export function firedRuleTally(run: FiredTallyInput): FiredRuleTally {
   const fired = firedRules(run);
   const expected = new Set(distinctRules(run.detectionsExpected));
+  // RP-F decision 44: an attack that did not execute fired nothing; no fraction is said.
+  if (attackDidNotExecute(run.attackResult)) {
+    return { executed: false, fired: 0, expected: expected.size, matched: 0, unexpected: 0, words: NOT_EXECUTED_WORDS };
+  }
   const matched = fired.filter(r => expected.has(r)).length;
   const unexpected = fired.length - matched;
   const words = expected.size === 0
     ? `${fired.length} fired, none expected`
     : `${matched} of ${expected.size} expected rules fired${unexpected > 0 ? `, plus ${unexpected} unexpected` : ''}`;
-  return { fired: fired.length, expected: expected.size, matched, unexpected, words };
+  return { executed: true, fired: fired.length, expected: expected.size, matched, unexpected, words };
 }

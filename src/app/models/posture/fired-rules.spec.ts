@@ -5,7 +5,7 @@
 // non-empty union of detectionsFired and the rules of alerted or blocked outcomes;
 // the run summary (posture-adapters) and the card's Proven line (lens-explain) count
 // through it, as the Validation pill does (validation-status-pill.component.spec.ts).
-import { firedRuleCount, firedRules, firedRuleTally } from './fired-rules';
+import { attackDidNotExecute, attackResultWords, firedRuleCount, firedRules, firedRuleTally } from './fired-rules';
 import { firedRules as reExported } from '../../services/validation.service';
 import { DEFAULT_POSTURE_RULES, derivePosture } from './derive-posture';
 import { postureExplain } from '../lens-explain';
@@ -71,20 +71,43 @@ describe('firedRules (RP-F decision 30b)', () => {
   // unexpected ones (n) beside it, and reads 'N fired, none expected' when nothing was
   // expected. Round 7: expected [a, b] with fired [a, c] read '2 of 2' (decision 33
   // counted every fired rule against the expected ones).
+  // RP-F decision 44: a run whose attack did not execute (failed-prereq, errored) fired
+  // nothing, whatever its lists say; the tally names no fraction.
+  describe('a run whose attack did not execute (RP-F decision 44)', () => {
+    for (const attackResult of ['failed-prereq', 'errored']) {
+      it(`${attackResult}: no fired rule, no fraction, 'attack did not execute'`, () => {
+        const run = { attackResult, detectionsExpected: ['a', 'b'], detectionsFired: ['a', 'b'], outcomes: [{ detectionRef: 'a', outcome: 'alerted' }] };
+        expect(firedRules(run)).toEqual([]);
+        expect(firedRuleTally(run)).toEqual({ executed: false, fired: 0, expected: 2, matched: 0, unexpected: 0, words: 'attack did not execute' });
+        expect(attackDidNotExecute(attackResult)).toBeTrue();
+      });
+    }
+
+    it('executed and blocked attacks fire as before; the words of each non-executed result', () => {
+      for (const attackResult of ['executed', 'blocked', undefined]) {
+        expect(firedRules({ attackResult, detectionsFired: ['a'] })).toEqual(['a']);
+        expect(attackDidNotExecute(attackResult)).toBeFalse();
+      }
+      expect(attackResultWords('failed-prereq')).toBe('failed prerequisite');
+      expect(attackResultWords('errored')).toBe('errored');
+      expect(attackResultWords('executed')).toBe('executed');
+    });
+  });
+
   describe('firedRuleTally (RP-F decision 38)', () => {
     it("expected [a, b], fired [a, c]: '1 of 2 expected rules fired, plus 1 unexpected'", () => {
       expect(firedRuleTally({ detectionsExpected: ['a', 'b'], detectionsFired: ['a', 'c'] }))
-        .toEqual({ fired: 2, expected: 2, matched: 1, unexpected: 1, words: '1 of 2 expected rules fired, plus 1 unexpected' });
+        .toEqual({ executed: true, fired: 2, expected: 2, matched: 1, unexpected: 1, words: '1 of 2 expected rules fired, plus 1 unexpected' });
     });
 
     it("expected [a], fired [a, c]: '1 of 1 expected rules fired, plus 1 unexpected'", () => {
       expect(firedRuleTally({ detectionsExpected: ['a'], detectionsFired: ['a', 'c'] }))
-        .toEqual({ fired: 2, expected: 1, matched: 1, unexpected: 1, words: '1 of 1 expected rules fired, plus 1 unexpected' });
+        .toEqual({ executed: true, fired: 2, expected: 1, matched: 1, unexpected: 1, words: '1 of 1 expected rules fired, plus 1 unexpected' });
     });
 
     it("expected none, fired [x]: '1 fired, none expected'; a rule known only from an outcome counts", () => {
       expect(firedRuleTally({ detectionsExpected: [], detectionsFired: ['x'] }))
-        .toEqual({ fired: 1, expected: 0, matched: 0, unexpected: 1, words: '1 fired, none expected' });
+        .toEqual({ executed: true, fired: 1, expected: 0, matched: 0, unexpected: 1, words: '1 fired, none expected' });
       expect(firedRuleTally({ detectionsExpected: [], detectionsFired: [], outcomes: [outcome('edr:x', 'blocked')] }).words).toBe('1 fired, none expected');
       expect(firedRuleTally({ detectionsExpected: [], detectionsFired: [] }).words).toBe('0 fired, none expected');
     });
@@ -100,7 +123,7 @@ describe('firedRules (RP-F decision 30b)', () => {
 
     it('blanks and duplicates collapse on both lists', () => {
       expect(firedRuleTally({ detectionsExpected: ['siem:a', ' siem:a ', '', '  ', 'siem:b'], detectionsFired: ['siem:a', ' siem:a', ''], outcomes: [outcome('siem:a', 'alerted'), outcome(' ', 'blocked')] }))
-        .toEqual({ fired: 1, expected: 2, matched: 1, unexpected: 0, words: '1 of 2 expected rules fired' });
+        .toEqual({ executed: true, fired: 1, expected: 2, matched: 1, unexpected: 0, words: '1 of 2 expected rules fired' });
     });
   });
 

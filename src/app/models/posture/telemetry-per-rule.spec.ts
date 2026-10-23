@@ -13,7 +13,7 @@ import type { CoveredMark, PostureInputs, PostureState } from './posture.types';
 import { DEFAULT_POSTURE_RULES, derivePosture } from './derive-posture';
 import { latestRun, storedRunKey } from './latest-run';
 import { firedRuleTally } from './fired-rules';
-import { partialMarkWords, recordRunTooltip, telemetryPartialWords } from './partial-cause';
+import { notCreditedWords, partialMarkWords, recordRunTooltip, telemetryPartialWords } from './partial-cause';
 import { postureCellLabel } from './posture-ramp';
 import { lensExplain, provenNoneLine } from '../lens-explain';
 import { runInputsFor } from '../../services/posture-adapters';
@@ -155,6 +155,31 @@ describe('RP-F decision 40: the telemetry cause per technique and per rule', () 
       : { ...r, outcomes: r.outcomes.map(o => ({ ...o, outcome: 'logged' as const })), detectionsFired: [] });
     const words = telemetryPartialWords(derive(runs).covered);
     expect(words).toBe(`range telemetry observed via wazuh:206: partial; the rule alerted in a run on 10/20/26, ${NOT_PROOF} (range run on 10/21/26)`);
+  });
+
+  // RP-F decision 44: a range run whose attack did not execute credits nothing and shows
+  // no fired count. Round 8 (T1027.013: an errored Import JSON range run with wazuh:307
+  // in detectionsFired and an alerted telemetry row) read "the rule alerted in this run".
+  it('T1027.013 (range run errored): no mark, no fired count, no alerted clause; the Covered words say it was not credited', () => {
+    const { runs, state } = of('T1027.013');
+    expect(runs[0].status).toBe('untested');
+    expect(state.covered).toEqual([]);
+    expect(state.runsWithoutProof.map(r => [r.status, r.rulesFired, r.notExecuted])).toEqual([['untested', 0, 'errored']]);
+    expect(notCreditedWords(state.runsWithoutProof[0])).toBe('range run on 10/21/26 did not execute (errored): not credited');
+    expect(firedRuleTally(runs[0]).words).toBe('attack did not execute');
+    expect(provenNoneLine(state)).toBe('No recorded detection for this technique');
+    for (const text of Object.values(surfaces(state))) {
+      expect(text).not.toContain('alerted in this run');
+      expect(text).not.toMatch(/[1-9]\d* rules? fired/);
+    }
+    expect(surfaces(state)['why posture']).toContain('1 range run recorded, latest untested on 10/21/26');
+  });
+
+  it('a non-executed run supersedes no rule: an older executed telemetry row of the rule keeps its mark', () => {
+    const [errored] = shapes.get('T1027.013')!;
+    const older = { ...errored, id: 'older', runDate: '2026-10-20', attackResult: 'executed' as const, status: 'partial' as const };
+    const state = derive([older, errored]);
+    expect(state.covered.map(m => [m.via, m.at, m.telemetryOutcome])).toEqual([['wazuh:307', '2026-10-20', 'alerted']]);
   });
 
   it('the Status lens why line carries the telemetry clause its aria-label and tooltip carry (T1106: M1038 plus wazuh:14)', () => {
