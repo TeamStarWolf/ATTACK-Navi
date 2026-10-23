@@ -10,6 +10,8 @@ import { BASE, ROUTE_TIMEOUT, openWorkspace } from './fixtures/workspace';
 /** heat= follows a pick after the debounced URL writer; the late debounce is absorbed here (see app.spec.ts). */
 const LENS_STEP_TIMEOUT = process.env['CI'] ? 60000 : 30000;
 
+const T1113 = 'attack-pattern--0259baeb-9f63-4c69-bf10-eb038c390688';
+
 /** One validation run as the v2 store holds it. */
 function runsStore(run: Record<string, unknown>): string {
   return JSON.stringify({
@@ -74,4 +76,32 @@ test.describe('RP-F round 5', () => {
       });
     }
   }
+
+  // Decision 30b: one fired-rule count. T1113 has a passed run whose only rule is a blocked
+  // outcome (detectionsFired empty). Round 5: the card read "1 rule fired" beside a pill
+  // reading "0 of 0 detection rules fired". Both now count through firedRules.
+  test('[RP-F 30b] T1113 (a passed run whose only rule is a blocked outcome): the pill reads 1 of 0 and the card 1 rule fired', async ({ page }) => {
+    await openWorkspace(page, {
+      seed: {
+        'navi.v2.validation-runs': runsStore({
+          id: 'e2e-rpf30b-t1113', techniqueId: 'T1113', runDate: '2026-10-20T15:00:00.000Z', status: 'passed',
+          outcomes: [{ detectionRef: 'edr:x', outcome: 'blocked' }],
+          createdAt: '2026-10-20T15:00:00.000Z', updatedAt: '2026-10-20T15:00:00.000Z',
+        }),
+      },
+    });
+    await page.goto('about:blank');
+    await page.goto(`${BASE}/#/matrix?heat=posture`);
+    await expect(page.locator('.heatmap-btn')).toContainText('Posture', { timeout: ROUTE_TIMEOUT });
+    const cell = page.locator(`[data-tech-id="${T1113}"] .cell`).first();
+    await expect(cell).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    await cell.click();
+    const drawer = page.locator('.sidebar.open');
+    const pill = drawer.locator('app-validation-status-pill');
+    await expect(pill.locator('.vsp-status').first()).toHaveText('PASS', { timeout: ROUTE_TIMEOUT });
+    await expect(pill.locator('.vsp-meta').first()).toHaveText(/^\s*1 of 0 detection rules fired\s*$/);
+    const why = drawer.locator('[data-testid="evidence-card"] [data-testid="ev-why"]');
+    await expect(why).toContainText('; 1 rule fired', { timeout: ROUTE_TIMEOUT });
+    await expect(why).not.toContainText('0 rules fired');
+  });
 });

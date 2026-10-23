@@ -23,6 +23,7 @@ import { LibraryService } from '../../services/library.service';
 import { TelemetryCoverageService, TelemetrySourceRow } from '../../services/telemetry-coverage.service';
 import { Domain } from '../../models/domain';
 import { Technique } from '../../models/technique';
+import { firedRuleCount } from '../../models/posture/fired-rules';
 import { PostureCardComponent } from '../posture-card/posture-card.component';
 
 /** Whether a status is a recorded outcome (counted out of "Untested (in scope)"). */
@@ -368,6 +369,11 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
       'not-reproducible': 'Not reproducible (patched target)',
     };
     return labels[s];
+  }
+
+  /** The rules a run fired, as the Validation pill and the evidence card count them (firedRules, RP-F decision 30b). */
+  firedCount(run: ValidationRun): number {
+    return firedRuleCount(run);
   }
 
   // Detections list and runs are useful in the runs/evidence tabs

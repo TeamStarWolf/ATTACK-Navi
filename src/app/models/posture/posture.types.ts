@@ -65,14 +65,13 @@ export interface RunSummary {
   readonly date: string;                  // runDate (ISO timestamp) or validated_at (YYYY-MM-DD)
   readonly source: SourceId;
   /**
-   * The entries of the run's detectionsFired, whatever its status: the Validation
-   * pill's "N of M detection rules fired" count. The store normalises the list at
-   * load and at import (ValidationService ruleList, RP-F decision 29: trimmed, empties
-   * dropped, each rule once), so the pill and this count read the same rules. A rule
-   * named only by an outcome is not counted, as the pill does not count it. Absent
-   * reads as 0. A run that fired a rule but yields no proof (untested, failed, ...) is
-   * named with its status wherever the card would otherwise say "No recorded
-   * detection" (RP-F decision 28).
+   * The rules the run fired, whatever its status, counted by firedRules (RP-F
+   * decision 30b): the distinct, trimmed, non-empty union of detectionsFired and the
+   * rules of its alerted or blocked outcomes, which the Validation pill's "N of M
+   * detection rules fired" counts too, so the pill and this count read the same
+   * rules. Absent reads as 0. A run that fired a rule but yields no proof
+   * (untested, failed, ...) is named with its status wherever the card would
+   * otherwise say "No recorded detection" (RP-F decision 28).
    */
   readonly rulesFired?: number;
   /**

@@ -20,6 +20,7 @@ import { SCORE_ONLY_LENSES } from './lens-registry';
 import { CONTRADICTED_WORDS } from './posture/posture-ramp';
 import { validationDay } from './local-date';
 import { provenNoneLine } from './posture/proof-gap';
+import { firedRuleCount } from './posture/fired-rules';
 
 /**
  * The head of the Proven block and the Proven lens when no proof stands (RP-F
@@ -81,9 +82,16 @@ function describeMarks(marks: readonly CoveredMark[]): string {
 /** Where the runs of yours are listed in full (the Detection Validation workbench). */
 const SEE_VALIDATION = 'see Detection Validation';
 
-/** The distinct detection references of a state's proof: the rules that fired or blocked. */
+/**
+ * How many rules the best record's run fired, among its standing proof records,
+ * counted by firedRules (RP-F decision 30b): each record is an alerted or blocked
+ * rule of that run, so the count is the run's own, as the Validation pill counts it.
+ * Round 5 counted the distinct rules of every standing record, of every run, under
+ * the best record's date.
+ */
 function rulesFired(proof: readonly ProofRecord[]): number {
-  return new Set(proof.map(p => p.detectionRef)).size;
+  const runId = proof[0]?.runId;
+  return firedRuleCount({ detectionsFired: [], outcomes: proof.filter(p => p.runId === runId) });
 }
 
 /**
