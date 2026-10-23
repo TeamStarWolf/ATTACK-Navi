@@ -297,8 +297,8 @@ export class EmulationPlanService {
     // Build YAML
     const lines: string[] = [];
     lines.push('---');
-    lines.push(`name: "${plan.actorName} Emulation - ATTACK-Navi"`);
-    lines.push(`description: "Auto-generated adversary profile from ATTACK-Navi emulation plan"`);
+    lines.push(`name: "${plan.actorName} Emulation - ATT&CK-Navi"`);
+    lines.push(`description: "Auto-generated adversary profile from ATT&CK-Navi emulation plan"`);
     lines.push('phases:');
 
     const sortedPhases = [...phases.keys()].sort((a, b) => a - b);
@@ -333,7 +333,7 @@ export class EmulationPlanService {
       lines.push(`  ${line}`);
     }
     lines.push(`generated_at: "${plan.createdAt}"`);
-    lines.push(`generator: "ATTACK-Navi (https://github.com/TeamStarWolf/ATTACK-Navi)"`);
+    lines.push(`generator: "ATT&CK-Navi (https://github.com/TeamStarWolf/ATTACK-Navi)"`);
     lines.push('');
     lines.push('campaign:');
     for (const step of plan.steps) {

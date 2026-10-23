@@ -5,7 +5,7 @@ import { Title } from '@angular/platform-browser';
 import { ActivatedRouteSnapshot, RouterStateSnapshot, TitleStrategy } from '@angular/router';
 
 /**
- * Builds document titles like "Validation · Detection · ATTACK Navi" from the
+ * Builds document titles like "Validation · Detection · ATT&CK-Navi" from the
  * route tree's data.tab / data.title entries.
  */
 @Injectable({ providedIn: 'root' })
@@ -24,7 +24,7 @@ export class AppTitleStrategy extends TitleStrategy {
       if (label && parts[0] !== label) parts.unshift(label);
       route = route.firstChild;
     }
-    parts.push('ATTACK Navi');
+    parts.push('ATT&CK-Navi');
     this.title.setTitle(parts.join(' · '));
   }
 }

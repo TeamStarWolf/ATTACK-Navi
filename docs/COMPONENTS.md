@@ -1,6 +1,6 @@
 # Component Catalog
 
-> Auto-generated reference for the Angular components in ATTACK-Navi.
+> Auto-generated reference for the Angular components in ATT&CK-Navi.
 > Each component is standalone and uses `ChangeDetectionStrategy.OnPush`.
 >
 > **v0.8.0 note:** the "Panel ID" column below is historical — panels are now

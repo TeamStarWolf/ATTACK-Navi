@@ -2,7 +2,7 @@
 
 ## Our Pledge
 
-We are committed to making participation in ATTACK-Navi respectful, constructive, and welcoming for everyone, regardless of experience level, identity, or background.
+We are committed to making participation in ATT&CK-Navi respectful, constructive, and welcoming for everyone, regardless of experience level, identity, or background.
 
 ## Our Standards
 

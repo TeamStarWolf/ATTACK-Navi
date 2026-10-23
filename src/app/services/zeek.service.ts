@@ -432,7 +432,7 @@ export class ZeekService {
       `# Zeek Detection Package — MITRE ATT&CK`,
       `# Generated: ${new Date().toISOString().slice(0, 10)}`,
       `# Techniques: ${techniques.length}`,
-      `# Source: ATT&CK Navi`,
+      `# Source: ATT&CK-Navi`,
       `#`,
       `# Installation:`,
       `#   zeek-pkg install ./attack-detection`,

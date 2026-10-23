@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://teamstarwolf.github.io/ATTACK-Navi/contracts/lylat-validated-detections.schema.json",
   "title": "Lylat validated-detections export, version 1",
-  "description": "A range export of the detection rules that fired, or blocked, against a technique during a published range run. ATTACK-Navi imports it locally as range-scoped evidence. This is ATTACK-Navi's own consumer copy, a provisional structural pin; see PROVENANCE.md.",
+  "description": "A range export of the detection rules that fired, or blocked, against a technique during a published range run. ATT&CK-Navi imports it locally as range-scoped evidence. This is ATT&CK-Navi's own consumer copy, a provisional structural pin; see PROVENANCE.md.",
   "x-navi-pin": "provisional",
   "type": "object",
   "additionalProperties": false,

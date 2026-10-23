@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-ATTACK-Navi is currently maintained as a moving `main` branch project.
+ATT&CK-Navi is currently maintained as a moving `main` branch project.
 
 | Deployment or Version | Supported |
 | --- | --- |
@@ -25,7 +25,7 @@ The goal is coordinated disclosure with enough time to validate the issue and pu
 
 ## Security Scope
 
-ATTACK-Navi is primarily a client-side Angular application with optional integration points and an optional backend proxy. The most important security areas are:
+ATT&CK-Navi is primarily a client-side Angular application with optional integration points and an optional backend proxy. The most important security areas are:
 
 - third-party dependency vulnerabilities
 - unsafe handling of integration secrets
@@ -38,7 +38,7 @@ ATTACK-Navi is primarily a client-side Angular application with optional integra
 - Treat the GitHub Pages build as the safest default for the core matrix experience.
 - Use the optional `server/` proxy when you do not want browser clients holding integration tokens directly.
 - Do not commit API keys, bearer tokens, or environment files with secrets.
-- Review integration settings before connecting ATTACK-Navi to production MISP or OpenCTI instances.
+- Review integration settings before connecting ATT&CK-Navi to production MISP or OpenCTI instances.
 
 ## Current Controls
 

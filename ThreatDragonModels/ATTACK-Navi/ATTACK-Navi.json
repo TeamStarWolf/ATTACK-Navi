@@ -1,9 +1,9 @@
 {
   "version": "2.3.0",
   "summary": {
-    "title": "ATTACK-Navi",
+    "title": "ATT&CK-Navi",
     "owner": "TeamStarWolf",
-    "description": "STRIDE threat model of ATTACK-Navi, a browser-based MITRE ATT&CK workbench served as a static site, with an optional proxy that holds OpenCTI and MISP credentials. Elements, flows and threats were derived from the code on main; each threat's description cites the relevant files.",
+    "description": "STRIDE threat model of ATT&CK-Navi, a browser-based MITRE ATT&CK workbench served as a static site, with an optional proxy that holds OpenCTI and MISP credentials. Elements, flows and threats were derived from the code on main; each threat's description cites the relevant files.",
     "id": 0
   },
   "detail": {
@@ -11,7 +11,7 @@
     "diagrams": [
       {
         "id": 0,
-        "title": "ATTACK-Navi data flow",
+        "title": "ATT&CK-Navi data flow",
         "diagramType": "STRIDE",
         "placeholder": "New STRIDE diagram description",
         "thumbnail": "./public/content/images/thumbnail.stride.jpg",

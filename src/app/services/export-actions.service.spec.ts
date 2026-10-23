@@ -280,7 +280,7 @@ describe('ExportActionsService.importNavigatorLayer', () => {
     expect(lastAlert()).toContain('0 statuses and 1 notes applied');
   });
 
-  it('an ATTACK-Navi round-trip layer restores exact statuses without a prompt', async () => {
+  it('an ATT&CK-Navi round-trip layer restores exact statuses without a prompt', async () => {
     pickTextFile.and.resolveTo(layerJson([{
       techniqueID: 'T1059',
       comment: 'Status: planned',

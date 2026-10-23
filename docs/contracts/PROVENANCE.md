@@ -1,6 +1,6 @@
 # Contract provenance
 
-This folder holds ATTACK-Navi's own copies of the external contracts it consumes.
+This folder holds ATT&CK-Navi's own copies of the external contracts it consumes.
 Each copy is a **structural pin**: a frozen, reviewable statement of the shape
 Navi relies on, so a change on either side is caught by CI rather than in
 production. A copy never carries live data; the data arrives at runtime, locally,

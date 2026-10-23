@@ -210,7 +210,7 @@ export class SuricataService {
       `# Suricata IDS Rules — MITRE ATT&CK`,
       `# Generated: ${new Date().toISOString().slice(0, 10)}`,
       `# Techniques: ${techniques.length}`,
-      `# Source: ATT&CK Navi`,
+      `# Source: ATT&CK-Navi`,
       `#`,
       `# Classification metadata:`,
       `#   classtype:trojan-activity   = malware C2`,

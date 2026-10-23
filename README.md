@@ -1,10 +1,10 @@
-# ATTACK-Navi
+<p align="center">
+  <img src="assets/brand/attack-navi-banner.png" alt="ATT&amp;CK-Navi" width="720">
+</p>
 
-<img src="assets/brand/starwolf64-banner-1280.png" alt="STARWOLF 64 banner" width="640">
+# ATT&CK-Navi
 
-*STARWOLF 64 is the TeamStarWolf brand; this tool is ATTACK-Navi.*
-
-ATTACK-Navi is a single-page Angular application for working with the MITRE ATT&CK matrix. It colors the matrix by mitigation, threat, vulnerability, detection and framework data, opens a detail sidebar for each technique, and puts longer tasks (threat group analysis, CVE exposure, detection content, control coverage, reporting) in routed workspaces with their own URLs.
+ATT&CK-Navi is a single-page Angular application for working with the MITRE ATT&CK matrix. It colors the matrix by mitigation, threat, vulnerability, detection and framework data, opens a detail sidebar for each technique, and puts longer tasks (threat group analysis, CVE exposure, detection content, control coverage, reporting) in routed workspaces with their own URLs.
 
 It runs as a static site with no required backend. ATT&CK is pinned to a bundled snapshot, and a newer release is offered only when you ask for it; D3FEND, CTID mappings and many other public datasets are fetched from their upstream sources in the browser. The app also ships other bundled snapshots and some hand-curated content, and [Data sources](#data-sources) lists which is which. An optional proxy under `server/` can hold OpenCTI and MISP credentials.
 

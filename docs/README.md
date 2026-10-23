@@ -1,6 +1,6 @@
-# ATTACK-Navi Docs Index
+# ATT&CK-Navi Docs Index
 
-This folder and the root technical documents together form the project handbook for ATTACK-Navi.
+This folder and the root technical documents together form the project handbook for ATT&CK-Navi.
 
 If you are new to the repo, start in this order:
 
@@ -56,7 +56,7 @@ If you are new to the repo, start in this order:
 
 ## Quick Orientation
 
-ATTACK-Navi is strongest when it is used as an analysis surface rather than a static ATT&CK viewer:
+ATT&CK-Navi is strongest when it is used as an analysis surface rather than a static ATT&CK viewer:
 
 - compare coverage and control depth across tactics
 - pivot from techniques into threat groups, campaigns, software, and indicators
@@ -76,9 +76,9 @@ When adding new docs:
 
 ## Community Learning Resources
 
-ATTACK-Navi is maintained by [TeamStarWolf](https://github.com/TeamStarWolf), a public cybersecurity resource library. The discipline pages below provide learning paths, free training, tools, certifications, and guidance for each major area of practice. ATTACK-Navi is referenced throughout each page as the recommended ATT&CK analysis surface for that discipline.
+ATT&CK-Navi is maintained by [TeamStarWolf](https://github.com/TeamStarWolf), a public cybersecurity resource library. The discipline pages below provide learning paths, free training, tools, certifications, and guidance for each major area of practice. ATT&CK-Navi is referenced throughout each page as the recommended ATT&CK analysis surface for that discipline.
 
-| Discipline | How ATTACK-Navi applies |
+| Discipline | How ATT&CK-Navi applies |
 |---|---|
 | [Threat Intelligence](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/threat-intelligence.md) | Threat group filters, campaign timelines, MISP/OpenCTI correlation, and STIX export |
 | [Detection Engineering](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/detection-engineering.md) | Sigma rule coverage, Elastic/Splunk detection counts, Atomic Red Team test mapping, and CAR analytics |
@@ -90,6 +90,6 @@ ATTACK-Navi is maintained by [TeamStarWolf](https://github.com/TeamStarWolf), a 
 | [Malware Analysis](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/malware-analysis.md) | Map observed malware capabilities to ATT&CK techniques; correlate with threat group attribution |
 | [ICS/OT Security](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/ics-ot-security.md) | ICS ATT&CK matrix domain; visualize OT-specific techniques, adversary emulation in industrial environments |
 | [Application Security](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/application-security.md) | Initial Access and Execution technique mapping; connect web exploitation to the full ATT&CK kill chain |
-| [AI & LLM Security](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/ai-llm-security.md) | ATTACK-Navi as an example of AI-assisted ATT&CK analysis; maps AI-enabled attack techniques across the matrix |
+| [AI & LLM Security](https://github.com/TeamStarWolf/TeamStarWolf/blob/main/disciplines/ai-llm-security.md) | ATT&CK-Navi as an example of AI-assisted ATT&CK analysis; maps AI-enabled attack techniques across the matrix |
 
 Visit the [TeamStarWolf profile](https://github.com/TeamStarWolf/TeamStarWolf) for the full resource library including books, starred repositories, YouTube channels, and follow lists.

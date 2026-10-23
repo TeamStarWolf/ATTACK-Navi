@@ -1,6 +1,6 @@
-# ATTACK-Navi Helm Chart
+# ATT&CK-Navi Helm Chart
 
-Deploy ATTACK-Navi to a Kubernetes cluster using the included Helm chart. The chart deploys the static app (nginx serving the production build) and nothing else.
+Deploy ATT&CK-Navi to a Kubernetes cluster using the included Helm chart. The chart deploys the static app (nginx serving the production build) and nothing else.
 
 ## Chart Overview
 
