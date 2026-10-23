@@ -25,6 +25,7 @@ import { Domain } from '../../models/domain';
 import { Technique } from '../../models/technique';
 import { firedRuleCount, firedRuleTally } from '../../models/posture/fired-rules';
 import { runTime, validationDateTime } from '../../models/local-date';
+import { sortRunsNewestFirst, storedRunKey } from '../../models/posture/latest-run';
 import { PostureCardComponent } from '../posture-card/posture-card.component';
 import { RecordRunRequestService } from '../../services/record-run-request.service';
 
@@ -430,8 +431,14 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
     return runTime(date) === null ? RUN_DATE_UNKNOWN : validationDateTime(date);
   }
 
-  // Detections list and runs are useful in the runs/evidence tabs
+  /**
+   * Every run, newest first, for the Run History and Evidence tabs: sorted through the
+   * one latest-run comparator (RP-F decisions 24 and 34), the order the pill and the
+   * evidence card read. By instant, never by runDate string (an offset timestamp or a
+   * date-only day sorted wrongly as text); on the same instant the run that proves less
+   * first; a run whose date is unreadable ('date unknown') last.
+   */
   get allRuns(): ValidationRun[] {
-    return this.validationService.all.slice().sort((a, b) => b.runDate.localeCompare(a.runDate));
+    return sortRunsNewestFirst(this.validationService.all, storedRunKey);
   }
 }

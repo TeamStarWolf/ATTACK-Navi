@@ -174,6 +174,19 @@ export function resolveStoredGroup(known: GroupIdIndex, id: string): KnownGroup 
   return g && g.attackId ? g : undefined;
 }
 
+/** An ATT&CK-shaped id (G0016, g9999, C0024, T1059.001): its letters name it in any case. */
+const ATTACK_SHAPED_ID = /^[a-z]{1,2}\d{4}(?:\.\d{3})?$/i;
+
+/**
+ * The key two unresolved stored ids share when they name the same thing (RP-F
+ * decision 34): an ATT&CK-shaped id is the same id in any case ('g9999' and 'G9999'
+ * are one id, as findStoredGroup reads ATT&CK ids in any case); any other id (a STIX
+ * id, a name hint) keeps its exact spelling.
+ */
+function unresolvedKey(id: string): string {
+  return ATTACK_SHAPED_ID.test(id) ? id.toUpperCase() : id;
+}
+
 /**
  * THE membership rule for a stored group list against a domain: a stored id is
  * present when the domain's groups carry it, by STIX id or by ATT&CK id (G0016,
@@ -194,7 +207,8 @@ export function resolveStoredGroup(known: GroupIdIndex, id: string): KnownGroup 
  * with an ATT&CK id (an alias such as "Fancy Bear", a revoked G0057 or deprecated
  * G0014, an unknown G9999, a malformed or all-zero STIX id). A name hint never
  * resolves an id (resolveStoredGroup). Saying such an id "has no <domain> use"
- * would claim a group exists that does not.
+ * would claim a group exists that does not. Unresolved ATT&CK-shaped ids are
+ * named once in any case (unresolvedKey, RP-F decision 34).
  */
 export function splitStoredGroups(
   ids: readonly string[],
@@ -214,7 +228,7 @@ export function splitStoredGroups(
       continue;
     }
     const real = resolveStoredGroup(known, id);
-    const key = real ? `id:${real.id}` : `unresolved:${id}`;
+    const key = real ? `id:${real.id}` : `unresolved:${unresolvedKey(id)}`;
     if (keys.has(key)) continue;
     keys.add(key);
     (real ? absentIds : unresolvedIds).push(id);

@@ -252,6 +252,32 @@ describe('ValidationPanelComponent', () => {
     expect(component.firedWords(run(['a'], ['a', 'b']), 'fired ')).toBe('2 fired, 1 expected');
   });
 
+  // RP-F decision 34: the Run History sorts through the one latest-run comparator
+  // (decision 24): by instant, newest first; on the same instant the run that proves
+  // less first; 'date unknown' rows last. It sorted runDate strings, so an offset
+  // timestamp or a date-only day sat in the wrong place and 'yesterday' sorted first.
+  it('the Run History sorts newest first by instant through the shared comparator, date unknown last', () => {
+    const run = (id: string, runDate: string, status = 'passed') => ({
+      id, techniqueId: 'T1005', techniqueName: 'Data from Local System', runDate, operator: '', status,
+      detectionsExpected: [], detectionsFired: [], outcomes: [], telemetryRequired: [], telemetryAvailable: [],
+      atomicTestId: '', atomicCommand: '', attackResult: 'executed', responsePlaybook: '', responseActions: [], evidenceLinks: [], notes: '',
+    });
+    const all = [
+      run('yesterday', 'yesterday'),
+      run('offset', '2026-10-21T01:00:00+05:00'),          // 2026-10-20T20:00Z
+      run('utc', '2026-10-20T21:00:00.000Z'),
+      run('tie-pass', '2026-10-19T10:00:00.000Z', 'passed'),
+      run('tie-fail', '2026-10-19T10:00:00.000Z', 'failed'),
+      run('blank', ''),
+    ];
+    (TestBed.inject(ValidationService) as unknown as { all: unknown[] }).all = all;
+    expect(component.allRuns.map(r => r.id)).toEqual(['utc', 'offset', 'tie-fail', 'tie-pass', 'blank', 'yesterday']);
+    component.setTab('runs');
+    rerender();
+    const whens = [...(fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr td:first-child')].map(td => (td.textContent ?? '').trim());
+    expect(whens.slice(-2)).toEqual(['date unknown', 'date unknown']);
+  });
+
   it('names v1 runs the copy-forward could not carry, and is silent when there are none', () => {
     const el: HTMLElement = fixture.nativeElement;
     expect(component.migrationNotice).toBeNull();
