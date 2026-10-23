@@ -152,5 +152,38 @@ describe('ValidationStatusPillComponent', () => {
       expect(pillLine(r)).toBe('2 of 3 detection rules fired');
       expect(cardLine(r)).toBe('Proven (your run) on 10/20/26 by manual; 2 rules fired');
     });
+
+    // Round 1 repair: the card counts the best record's RUN (firedRules over the run),
+    // never the records of it that stand, and never another run's records.
+    const cardLineOf = (runs: readonly ValidationRunV2[]): string => {
+      const ins = runs.map(runInputs);
+      return postureExplain(derivePosture('attack/enterprise/T1113@19.2', {
+        knownSignals: 2, threatWeight: 1, exposureWeight: 0,
+        covered: ins.flatMap(i => i.covered), proof: ins.flatMap(i => i.proof), verdicts: ins.flatMap(i => i.verdicts), runs: ins.map(i => i.summary),
+      }, DEFAULT_POSTURE_RULES, new Date('2026-10-21T00:00:00.000Z')));
+    };
+    const pillLineOf = (runs: ValidationRunV2[], latest: ValidationRunV2): string => {
+      validation.forTechnique.and.returnValue(runs);
+      validation.latestFor.and.returnValue(latest);
+      const f = TestBed.createComponent(ValidationStatusPillComponent);
+      f.componentInstance.attackId = 'T1113';
+      f.detectChanges();
+      return ((f.nativeElement as HTMLElement).querySelector('.vsp-meta')?.textContent ?? '').replace(/\s+/g, ' ').trim();
+    };
+
+    it("a partly superseded run: a later failed run of one rule leaves the other standing, and the card still names the run's 2 rules", () => {
+      const a = t1113({ id: 'rA', runDate: '2026-10-01T10:00:00.000Z', detectionsExpected: ['siem:x', 'siem:y'], detectionsFired: ['siem:x', 'siem:y'] });
+      const b = t1113({ id: 'rB', runDate: '2026-10-10T10:00:00.000Z', status: 'failed', detectionsExpected: ['siem:y'] });
+      expect(component.firedCount(a)).toBe(2);
+      expect(cardLineOf([a, b])).toBe('Proven (your run) on 10/1/26 by manual; 2 rules fired; a later run of another rule failed on 10/10/26');
+      expect(pillLineOf([b, a], b)).toBe('0 of 1 detection rules fired');
+    });
+
+    it("two passed runs: the card names the best run's own count, never the rules of both runs", () => {
+      const a = t1113({ id: 'rA', runDate: '2026-10-01T10:00:00.000Z', detectionsExpected: ['siem:x', 'siem:z'], detectionsFired: ['siem:x', 'siem:z'] });
+      const b = t1113({ id: 'rB', runDate: '2026-10-10T10:00:00.000Z', detectionsExpected: ['siem:y'], detectionsFired: ['siem:y'] });
+      expect(cardLineOf([a, b])).toBe('Proven (your run) on 10/10/26 by manual; 1 rule fired');
+      expect(pillLineOf([b, a], b)).toBe('1 of 1 detection rules fired');
+    });
   });
 });

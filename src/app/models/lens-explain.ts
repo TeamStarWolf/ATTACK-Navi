@@ -83,15 +83,19 @@ function describeMarks(marks: readonly CoveredMark[]): string {
 const SEE_VALIDATION = 'see Detection Validation';
 
 /**
- * How many rules the best record's run fired, among its standing proof records,
- * counted by firedRules (RP-F decision 30b): each record is an alerted or blocked
- * rule of that run, so the count is the run's own, as the Validation pill counts it.
- * Round 5 counted the distinct rules of every standing record, of every run, under
- * the best record's date.
+ * How many rules the best record's run fired (RP-F decision 30b): the run's own
+ * firedRules count, which runInputs puts on each of its records (runRulesFired, the
+ * same number as the run's RunSummary.rulesFired and the Validation pill's count).
+ * It is never a count of the records that stand: per-rule supersession (decision 29)
+ * can remove one record of a run and leave its others standing, and the Proven line
+ * still names the run's own count. A hand-built record without runRulesFired counts
+ * the distinct rules of the standing records of that same run (never of other runs).
+ * Round 5 counted the standing records of the best record's run; main, before it,
+ * the distinct rules of every standing record of every run.
  */
-function rulesFired(proof: readonly ProofRecord[]): number {
-  const runId = proof[0]?.runId;
-  return firedRuleCount({ detectionsFired: [], outcomes: proof.filter(p => p.runId === runId) });
+function rulesFired(best: ProofRecord, proof: readonly ProofRecord[]): number {
+  if (typeof best.runRulesFired === 'number') return best.runRulesFired;
+  return firedRuleCount({ detectionsFired: [], outcomes: proof.filter(p => p.runId === best.runId) });
 }
 
 /**
@@ -101,7 +105,7 @@ function rulesFired(proof: readonly ProofRecord[]): number {
  */
 function proofExplain(state: PostureState, decayDays?: Readonly<Record<ProofScope, number>>): string {
   const best = state.proof[0];
-  const n = rulesFired(state.proof);
+  const n = rulesFired(best, state.proof);
   let line = `${postureBadge(state)} on ${validationDay(best.date)} by ${best.source}; ${n} rule${n === 1 ? '' : 's'} fired`;
   if (state.bucket === 'stale' && decayDays && state.proofScope) {
     line += `; older than its ${decayDays[state.proofScope]}-day window`;

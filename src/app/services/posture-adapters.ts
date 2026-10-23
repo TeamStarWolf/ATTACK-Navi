@@ -213,9 +213,16 @@ export function runInputs(run: ValidationRunV2): RunInputs {
     if (ref !== '' && !named.has(ref)) named.set(ref, runBlocked ? 'blocked' : 'alerted');
   }
   const blocked = runBlocked || run.outcomes.some(o => o.outcome === 'blocked');
+  // The one fired-rule count (firedRules, RP-F decision 30b): the distinct union of
+  // detectionsFired and the rules of alerted or blocked outcomes, which the Validation
+  // pill's "N of M detection rules fired" counts too. Round 5: a passed run whose only
+  // rule was a blocked outcome read "1 rule fired" on the card beside a pill "0 of 0".
+  // Every proof record carries it (runRulesFired), so the card's Proven line counts the
+  // run, not the records of it that a later run of one rule left standing.
+  const rulesFired = firedRuleCount(run);
 
   const proof: ProofRecord[] = [...named].map(([detectionRef, outcome]) => ({
-    scope: run.proofScope, detectionRef, outcome, date: run.runDate, source: run.source, runId: run.id,
+    scope: run.proofScope, detectionRef, outcome, date: run.runDate, source: run.source, runId: run.id, runRulesFired: rulesFired,
     ...(run.missionId !== undefined ? { missionId: run.missionId } : {}),
   }));
 
@@ -240,11 +247,6 @@ export function runInputs(run: ValidationRunV2): RunInputs {
   const verdicts: RunVerdict[] = failed || notReproducible
     ? [{ date: run.runDate, failed, notReproducible, source: run.source }]
     : [];
-  // The one fired-rule count (firedRules, RP-F decision 30b): the distinct union of
-  // detectionsFired and the rules of alerted or blocked outcomes, which the Validation
-  // pill's "N of M detection rules fired" counts too. Round 5: a passed run whose only
-  // rule was a blocked outcome read "1 rule fired" on the card beside a pill "0 of 0".
-  const rulesFired = firedRuleCount(run);
   // Every rule the run names, so derivePosture supersedes proof per rule (RP-F decision 29).
   const rules = [...new Set(
     [...run.outcomes.map(o => o.detectionRef ?? ''), ...run.detectionsExpected, ...run.detectionsFired]

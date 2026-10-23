@@ -143,6 +143,14 @@ describe('posture adapters (P2-05)', () => {
       expect(r.covered).toEqual([]);
     });
 
+    it("every proof record carries its run's fired-rule count, the summary's (RP-F decision 30b, round 1)", () => {
+      const r = runInputs(run({
+        detectionsFired: ['sigma:a', 'sigma:b'], outcomes: [outcome({ outcome: 'blocked', detectionRef: 'edr:c' }), outcome({ outcome: 'logged', detectionRef: 'siem:l' })],
+      }));
+      expect(r.summary.rulesFired).toBe(3);
+      expect(r.proof.map(p => [p.detectionRef, p.runRulesFired])).toEqual([['edr:c', 3], ['sigma:a', 3], ['sigma:b', 3]]);
+    });
+
     it("an 'alerted' outcome with a detectionRef is proof even without detectionsFired; one without is not", () => {
       const r = runInputs(run({ outcomes: [outcome({ outcome: 'alerted', detectionRef: 'wazuh:1' }), outcome({ outcome: 'alerted' })] }));
       expect(r.proof.map(p => p.detectionRef)).toEqual(['wazuh:1']);

@@ -45,6 +45,14 @@ export interface ProofRecord {
   readonly source: SourceId;
   readonly runId: string;
   readonly missionId?: string;
+  /**
+   * How many rules the record's run fired, counted by firedRules over the run itself
+   * (RP-F decision 30b; the run's RunSummary.rulesFired), so the card's Proven line
+   * names the run's own count even when a later run of one rule removed some of the
+   * run's records (decision 29) and others stand. Set by runInputs; absent on a
+   * hand-built record.
+   */
+  readonly runRulesFired?: number;
 }
 
 export interface RunVerdict {
