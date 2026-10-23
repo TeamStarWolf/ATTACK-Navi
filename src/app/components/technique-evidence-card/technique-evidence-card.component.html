@@ -4,8 +4,19 @@
      The two owner blocks render only when PostureService.ownerWords() is true (fresh profile: Known and Threat only). -->
 <section class="evidence-card" data-testid="evidence-card" aria-label="Technique evidence">
   <div class="ev-why" data-testid="ev-why">
-    <p class="ev-why-line"><span class="ev-why-label">Why this colour:</span>&ngsp;{{ why().text }}</p>&ngsp;
-    <p class="ev-why-lens">Lens: {{ why().lens }}</p>
+    <p class="ev-why-line">
+      @if (why().swatch; as sw) {
+        <!-- The colour the lens gives this technique; the why line and the band say it in words (never colour alone). -->
+        <span class="ev-swatch" data-testid="ev-swatch" aria-hidden="true" [style.background-color]="sw.color"></span>&ngsp;
+      }
+      <span class="ev-why-label">Why this colour:</span>&ngsp;{{ why().text }}@if (why().swatch?.band) {&ngsp;<span class="ev-meta ev-band" data-testid="ev-band">({{ why().swatch?.band }})</span>}
+    </p>&ngsp;
+    <p class="ev-why-lens">Lens: {{ why().lens }}
+      @if (why().unscored) {
+        <!-- No score outside the matrix for this lens: no swatch; the matrix scores it. -->
+        &ngsp;<button type="button" class="ev-link-btn" data-testid="ev-score-on-matrix" (click)="openInMatrix()">This lens is scored on the matrix: open it there</button>
+      }
+    </p>
   </div>
 
   @if (ownerWords()) {
@@ -69,14 +80,23 @@
 
   <div class="ev-block" data-testid="ev-known">
     <h3 class="ev-title">Known: reference data</h3>
-    <p class="ev-summary">mapped {{ known().mapped }} of {{ knownFamilies }} reference families</p>
+    <p class="ev-summary" data-testid="ev-known-summary">mapped {{ known().mapped }} of {{ knownFamilies }} reference families{{ known().notApplicable }}</p>
     <ul class="ev-list">
       @for (r of known().rows; track r.family) {
-        <li class="ev-known-row" [class.ev-zero]="r.count === 0">
-          <span class="ev-family">{{ r.family }}</span>&ngsp;
-          <span class="ev-count">{{ r.count }}</span>&ngsp;
-          <span class="ev-meta">{{ r.source }}</span>
-        </li>
+        @if (r.na) {
+          <!-- The family's sources have no data for this domain: not applicable, never 0. -->
+          <li class="ev-known-row ev-na" data-testid="ev-known-na">
+            <span class="ev-family">{{ r.family }}</span>&ngsp;
+            <span class="ev-count">n/a</span>&ngsp;
+            <span class="ev-meta">{{ r.na }}</span>
+          </li>
+        } @else {
+          <li class="ev-known-row" [class.ev-zero]="r.count === 0">
+            <span class="ev-family">{{ r.family }}</span>&ngsp;
+            <span class="ev-count">{{ r.count }}</span>&ngsp;
+            <span class="ev-meta">{{ r.source }}</span>
+          </li>
+        }
       }
     </ul>
   </div>
@@ -89,12 +109,26 @@
       </p>
     }
     <p class="ev-summary">Used by {{ threat().bundleGroups }} groups in the loaded ATT&amp;CK bundle</p>
-    @if (threat().kevLoaded) {
-      <p class="ev-summary" data-testid="ev-kev">
-        KEV-linked CVEs: {{ threat().kevCount }}@if (threat().kevIds.length > 0) { ({{ threat().kevIds.join(', ') }})}
-      </p>
-    } @else {
-      <p class="ev-summary ev-meta" data-testid="ev-kev">KEV-linked CVEs: the KEV catalogue is not loaded in this session</p>
-    }
+    <!-- The KEV line (technique page design 4.6): loading, the count, failed with Retry, or not applicable. -->
+    <div class="ev-kev-region" aria-live="polite">
+      @switch (kevLine().kind) {
+        @case ('loaded') {
+          <p class="ev-summary" data-testid="ev-kev" data-kev-state="loaded">
+            KEV-linked CVEs:&ngsp;@if (kevLine().count > 0) {<a class="ev-link" routerLink="/exposure/cve">{{ kevLine().count }}</a>@if (kevLine().ids) { ({{ kevLine().ids }})}} @else {0 in the KEV catalogue}
+          </p>
+        }
+        @case ('loading') {
+          <p class="ev-summary ev-meta ev-loading" data-testid="ev-kev" data-kev-state="loading">{{ kevLine().text }}</p>
+        }
+        @case ('failed') {
+          <p class="ev-summary ev-meta" data-testid="ev-kev" data-kev-state="failed">
+            {{ kevLine().text }}&ngsp;·&ngsp;<button type="button" class="ev-link-btn" data-testid="ev-kev-retry" (click)="retryKev()">Retry</button>
+          </p>
+        }
+        @default {
+          <p class="ev-summary ev-meta" data-testid="ev-kev" data-kev-state="not-applicable">{{ kevLine().text }}</p>
+        }
+      }
+    </div>
   </div>
 </section>

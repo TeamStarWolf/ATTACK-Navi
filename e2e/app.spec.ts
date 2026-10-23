@@ -1,7 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { readFileSync } from 'node:fs';
-import { test, expect, Browser, BrowserContext, Page } from '@playwright/test';
+import { test, expect, Browser, BrowserContext, Page, Route } from '@playwright/test';
 import { openWorkspace } from './fixtures/workspace';
 
 const BASE = 'http://localhost:4200';
@@ -1054,4 +1054,203 @@ test.describe('View menu above the rail (RP-F item 5)', () => {
     }
     await expect(page.locator('.sidebar.open .sidebar-header .attack-id')).toHaveText('T1059.001');
   });
+});
+
+// Technique page design PR 1 (fix-first). The page and the drawer start the same
+// per-technique live fetches through one coordinator, so a cold paste and the
+// drawer's Full page agree (the owner's screenshot: D3FEND 20 through Full page,
+// 0 on a pasted link); the card asks for the KEV catalogue on idle and says
+// loading, the count, or failed with Retry; and the page takes the workspace's
+// width. Pasted-link tests are fresh navigations (about:blank first).
+test.describe('technique page PR 1: D3FEND parity, KEV states, the page width', () => {
+  const D3FEND_T1037 = 'https://d3fend.mitre.org/api/offensive-technique/attack/T1037.json';
+  /** Four live countermeasures for T1037; the bundled D3FEND seed maps none to it. */
+  const D3FEND_LIVE = ['Process Spawn Analysis', 'Script Execution Analysis', 'File Analysis', 'Executable Allowlisting'];
+  const d3fendAnswer = {
+    off_to_def: {
+      results: {
+        bindings: D3FEND_LIVE.map((label, i) => ({
+          def_tech_id: { value: `D3-PR1-${i}` },
+          def_tech_label: { value: label },
+          def_tactic_label: { value: i < 3 ? 'Detect' : 'Harden' },
+          def_tech: { value: `http://d3fend.mitre.org/ontologies/d3fend.owl#${label.replace(/\s+/g, '')}` },
+        })),
+      },
+    },
+  };
+  // The CTID KEV-to-ATT&CK mapping at its pinned path (the directory listing on
+  // api.github.com stays blocked, so the service falls back to the pinned file).
+  const CTID_KEV = 'https://raw.githubusercontent.com/center-for-threat-informed-defense/mappings-explorer/main/mappings/kev/attack-16.1/kev-07.28.2025/enterprise/kev-07.28.2025_attack-16.1-enterprise.json';
+  const ctidKev = {
+    mapping_objects: [{
+      capability_id: 'CVE-2024-3400', attack_object_id: 'T1059.001', mapping_type: 'exploitation_technique',
+      capability_description: 'PAN-OS GlobalProtect command injection', capability_group: 'command_injection',
+    }],
+  };
+
+  async function newVisitor(browser: Browser, viewport = { width: 1440, height: 900 }): Promise<{ context: BrowserContext; page: Page }> {
+    const context = await browser.newContext({ viewport });
+    const page = await context.newPage();
+    await hermetic(page);
+    await page.route(D3FEND_T1037, route => route.fulfill({ json: d3fendAnswer }));
+    await page.addInitScript(() => localStorage.setItem('onboarding-completed', 'true'));
+    return { context, page };
+  }
+
+  /** The Known rows of the evidence card in `scope`, as text. */
+  async function knownRows(scope: ReturnType<Page['locator']>): Promise<string[]> {
+    const rows = scope.locator('[data-testid="ev-known"] .ev-known-row');
+    await expect(rows).toHaveCount(5, { timeout: ROUTE_TIMEOUT });
+    return (await rows.allInnerTexts()).map(t => t.replace(/\s+/g, ' ').trim());
+  }
+
+  const d3fendRow = (rows: string[]) => rows.find(r => r.startsWith('D3FEND countermeasures'));
+
+  test('a cold paste of #/technique/enterprise/T1037 counts the live D3FEND answer, the same as the drawer and its Full page', async ({ browser }) => {
+    const pageCard = (p: Page) => p.locator('app-technique-page [data-testid="evidence-card"]');
+    const drawerCard = (p: Page) => p.locator('.sidebar.open [data-testid="evidence-card"]');
+
+    // 1. A pasted link in a new context: the page primes the coordinator itself.
+    const cold = await newVisitor(browser);
+    let pasted: string[] = [];
+    try {
+      await cold.page.goto('about:blank');
+      await cold.page.goto(`${BASE}/#/technique/enterprise/T1037`);
+      await expect(pageCard(cold.page)).toBeVisible({ timeout: ROUTE_TIMEOUT });
+      await expect(pageCard(cold.page).locator('[data-testid="ev-known"]'))
+        .toContainText(`D3FEND countermeasures ${D3FEND_LIVE.length}`, { timeout: ROUTE_TIMEOUT });
+      pasted = await knownRows(pageCard(cold.page));
+      expect(d3fendRow(pasted)).toBe(`D3FEND countermeasures ${D3FEND_LIVE.length} MITRE D3FEND`);
+      // Open in matrix: the drawer's card reads the same rows.
+      await cold.page.getByTestId('open-in-matrix').click();
+      await expect(drawerCard(cold.page)).toBeVisible({ timeout: ROUTE_TIMEOUT });
+      expect(await knownRows(drawerCard(cold.page))).toEqual(pasted);
+    } finally {
+      await cold.context.close();
+    }
+
+    // 2. The drawer first, then its Full page, in another new context: the same rows on both.
+    const warm = await newVisitor(browser);
+    try {
+      await warm.page.goto('about:blank');
+      await warm.page.goto(`${BASE}/#/matrix?tech=T1037`);
+      await expect(drawerCard(warm.page)).toBeVisible({ timeout: ROUTE_TIMEOUT });
+      await expect(drawerCard(warm.page).locator('[data-testid="ev-known"]'))
+        .toContainText(`D3FEND countermeasures ${D3FEND_LIVE.length}`, { timeout: ROUTE_TIMEOUT });
+      const drawer = await knownRows(drawerCard(warm.page));
+      expect(drawer).toEqual(pasted);
+      await warm.page.getByTestId('drawer-full-page').click();
+      await expect(pageCard(warm.page)).toBeVisible({ timeout: ROUTE_TIMEOUT });
+      expect(await knownRows(pageCard(warm.page))).toEqual(drawer);
+    } finally {
+      await warm.context.close();
+    }
+  });
+
+  test('KEV on demand: the line reads loading, then the count, with no lens that loads KEV', async ({ browser }) => {
+    const { context, page } = await newVisitor(browser);
+    let release: () => void = () => undefined;
+    const held = new Promise<void>(resolve => (release = resolve));
+    await page.route(CTID_KEV, async route => {
+      await held;
+      await route.fulfill({ json: ctidKev });
+    });
+    try {
+      await page.goto('about:blank');
+      await page.goto(`${BASE}/#/technique/enterprise/T1059.001`);
+      const kev = page.locator('app-technique-page [data-testid="ev-kev"]');
+      await expect(kev).toHaveAttribute('data-kev-state', 'loading', { timeout: ROUTE_TIMEOUT });
+      await expect(kev).toContainText('KEV-linked CVEs: loading');
+      await expect(kev).not.toContainText('not loaded in this session');
+      await expect(page.locator('app-technique-page .ev-kev-region')).toHaveAttribute('aria-live', 'polite');
+      release();
+      await expect(kev).toHaveAttribute('data-kev-state', 'loaded', { timeout: ROUTE_TIMEOUT });
+      await expect(kev).toContainText(/KEV-linked CVEs: [1-9]\d* \(.*CVE-2024-3400/);
+      await expect(kev.locator('a')).toHaveAttribute('href', '#/exposure/cve');
+      // The default lens is on screen throughout: the card asked for KEV, not a lens.
+      expect(new URL(page.url()).hash).not.toContain('heat=kev');
+    } finally {
+      release();
+      await context.close();
+    }
+  });
+
+  test('KEV on demand: the live feed and the bundled snapshot both failing reads failed with Retry, and Retry loads it', async ({ browser }) => {
+    const { context, page } = await newVisitor(browser);
+    const snapshotDown = (route: Route) => route.abort('failed');
+    await page.route('**/assets/data/kev-snapshot.json', snapshotDown);
+    await page.route(CTID_KEV, route => route.fulfill({ json: ctidKev }));
+    try {
+      await page.goto('about:blank');
+      await page.goto(`${BASE}/#/technique/enterprise/T1059.001`);
+      const kev = page.locator('app-technique-page [data-testid="ev-kev"]');
+      await expect(kev).toHaveAttribute('data-kev-state', 'failed', { timeout: ROUTE_TIMEOUT });
+      await expect(kev).toContainText('KEV catalogue unavailable: the live feed and the bundled snapshot both failed');
+      await expect(kev).not.toContainText(/KEV-linked CVEs: 0\b/);
+      await page.unroute('**/assets/data/kev-snapshot.json', snapshotDown);
+      await kev.getByRole('button', { name: 'Retry' }).click();
+      await expect(kev).toHaveAttribute('data-kev-state', 'loaded', { timeout: ROUTE_TIMEOUT });
+      await expect(kev).toContainText('CVE-2024-3400');
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('ICS: the Enterprise-only Known families and the KEV line read not applicable in ICS, never 0', async ({ browser }) => {
+    const { context, page } = await newVisitor(browser);
+    try {
+      await page.goto('about:blank');
+      await page.goto(`${BASE}/#/technique/ics/T0883`);
+      const card = page.locator('app-technique-page [data-testid="evidence-card"]');
+      await expect(card).toBeVisible({ timeout: ROUTE_TIMEOUT });
+      await expect(card.getByTestId('ev-known-na')).toHaveCount(4);
+      await expect(card.getByTestId('ev-known-summary')).toContainText('(4 not applicable in ICS ATT&CK)');
+      for (const row of await card.getByTestId('ev-known-na').allInnerTexts()) {
+        expect(row).toContain('not applicable in ICS ATT&CK');
+        expect(row).not.toMatch(/\b0\b/);
+      }
+      await expect(card.getByTestId('ev-kev')).toHaveAttribute('data-kev-state', 'not-applicable');
+      await expect(card.getByTestId('ev-kev')).toContainText('not applicable in ICS ATT&CK');
+    } finally {
+      await context.close();
+    }
+  });
+
+  for (const viewport of [{ width: 2000, height: 1100 }, { width: 1440, height: 900 }]) {
+    test(`the page takes the workspace width at ${viewport.width}x${viewport.height}, scrolls itself, and the h1 is plain text`, async ({ browser }) => {
+      const { context, page } = await newVisitor(browser, viewport);
+      try {
+        await page.goto('about:blank');
+        await page.goto(`${BASE}/#/technique/enterprise/T1037`);
+        await expect(page.locator('app-technique-page [data-testid="evidence-card"]')).toBeVisible({ timeout: ROUTE_TIMEOUT });
+        const m = await page.evaluate(() => {
+          const ws = document.querySelector('.workspace-area') as HTMLElement;
+          const host = document.querySelector('app-technique-page') as HTMLElement;
+          const cs = getComputedStyle(ws);
+          const inner = ws.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+          const doc = document.documentElement;
+          const card = document.querySelector('app-technique-page [data-testid="evidence-card"]') as HTMLElement;
+          return {
+            inner, host: host.getBoundingClientRect().width, overflowY: getComputedStyle(host).overflowY,
+            sideScroll: doc.scrollWidth > doc.clientWidth, card: card.getBoundingClientRect().width,
+          };
+        });
+        expect(m.host / m.inner, `page ${m.host} px of a ${m.inner} px workspace`).toBeGreaterThanOrEqual(0.9);
+        expect(m.card, 'the card is no longer capped at 760 px').toBeGreaterThan(760);
+        expect(m.overflowY).toBe('auto');
+        expect(m.sideScroll).toBe(false);
+        const h1 = page.locator('app-technique-page h1#tp-h1');
+        await expect(h1).toHaveText(/T1037\s+Boot or Logon Initialization Scripts/);
+        await expect(h1.locator('a')).toHaveCount(0);
+        await expect(h1).toBeFocused();
+        await expect(page).toHaveTitle('T1037 Boot or Logon Initialization Scripts · ATT&CK-Navi');
+        await expect(page.getByTestId('tp-tactic')).toHaveText(['TA0003 Persistence', 'TA0004 Privilege Escalation']);
+        const ext = page.getByTestId('tp-attack-link');
+        await expect(ext).toHaveAttribute('rel', 'noopener noreferrer');
+        await expect(ext).toHaveAttribute('target', '_blank');
+      } finally {
+        await context.close();
+      }
+    });
+  }
 });

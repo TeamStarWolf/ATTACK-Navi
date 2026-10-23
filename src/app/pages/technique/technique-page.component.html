@@ -1,32 +1,47 @@
 <!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
-<!-- The thin technique page (P2-18): header, evidence card, Open in matrix. No drawer on this route. -->
-<article class="technique-page">
+<!-- The technique page (P2-18; technique page design PR 1): header, evidence card, Open in matrix. No drawer on this route.
+     The host is the scroll container and takes the workspace's width (technique-page.component.scss). -->
+<article class="technique-page" [attr.aria-labelledby]="technique() || view().kind === 'unknown' ? 'tp-h1' : null">
   @if (technique(); as t) {
     <header class="tp-header">
       <p class="tp-domain">{{ stateText() }}</p>
-      <h1 class="tp-title">
-        <a class="tp-id" [href]="t.url" target="_blank" rel="noopener" title="View on ATT&CK">{{ t.attackId }}</a>
+      <!-- Plain text: the ATT&CK page is an action below. Focus lands here when a technique resolves. -->
+      <h1 class="tp-title" id="tp-h1" tabindex="-1">
+        <span class="tp-id">{{ t.attackId }}</span>&ngsp;
         <span class="tp-name">{{ t.name }}</span>
       </h1>
-      @if (t.tacticShortnames.length > 0) {
-        <p class="tp-tactics">Tactics: {{ t.tacticShortnames.join(', ') }}</p>
+      @if (tactics().length > 0) {
+        <p class="tp-tactics" data-testid="tp-tactics">
+          <span class="tp-facts-label">{{ tactics().length === 1 ? 'Tactic' : 'Tactics' }}:</span>&ngsp;
+          @for (tac of tactics(); track tac.attackId; let last = $last) {
+            <a class="tp-tactic" data-testid="tp-tactic" routerLink="/matrix" [queryParams]="tac.queryParams"
+               [state]="{ keepTechniqueSelection: true }"
+               [attr.aria-label]="tac.attackId + ' ' + tac.name + ': open the matrix on this technique'">{{ tac.attackId }} {{ tac.name }}</a>@if (!last) {<span class="tp-sep" aria-hidden="true">, </span>}
+          }
+        </p>
       }
-      <button type="button" class="tp-open-matrix" data-testid="open-in-matrix" (click)="openInMatrix()">Open in matrix</button>
+      <div class="tp-actions" role="group" aria-label="Technique actions">
+        <button type="button" class="tp-action tp-primary" data-testid="open-in-matrix" (click)="openInMatrix()">Open in matrix</button>
+        <a class="tp-action" data-testid="tp-attack-link" [href]="t.url" target="_blank" rel="noopener noreferrer">View {{ t.attackId }} on ATT&amp;CK<span class="tp-ext" aria-hidden="true">&nbsp;↗</span><span class="tp-sr-only"> (opens in a new tab)</span></a>
+      </div>
     </header>
-    <app-technique-evidence-card [technique]="t" />
+    <section class="tp-evidence" aria-labelledby="tp-evidence-h">
+      <h2 class="tp-h2" id="tp-evidence-h">Evidence</h2>
+      <app-technique-evidence-card [technique]="t" />
+    </section>
   } @else if (view().kind === 'loading') {
     <p class="tp-state" role="status">{{ stateText() }}</p>
   } @else if (view().kind === 'elsewhere') {
     <div class="tp-state" role="status">
       <p>{{ stateText() }}</p>
-      <button type="button" class="tp-open-matrix" (click)="loadTarget()">Load {{ $any(view()).domainName }}</button>
+      <button type="button" class="tp-action tp-primary" (click)="loadTarget()">Load {{ $any(view()).domainName }}</button>
     </div>
   } @else {
     <div class="tp-state tp-empty" data-testid="technique-page-empty" role="status">
-      <h1 class="tp-title">Technique not found</h1>
+      <h1 class="tp-title" id="tp-h1" tabindex="-1">Technique not found</h1>
       <p>{{ stateText() }}</p>
-      <button type="button" class="tp-open-matrix" (click)="openInMatrix()">Open the matrix</button>
+      <button type="button" class="tp-action tp-primary" (click)="openInMatrix()">Open the matrix</button>
     </div>
   }
 </article>

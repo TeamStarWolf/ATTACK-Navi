@@ -644,8 +644,10 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy, AfterViewC
         this.currentHeatmapMode = mode;
         this.refreshPostureCells(mode);
         this.refreshScoreCells(mode);
-        // KEV is not a Reference depth input, but the default lens still loads
-        // it: the cells' KEV badge and the risk sort read the same scores.
+        // The KEV and Reference depth lenses load the KEV catalogue when they are
+        // chosen (the cells' KEV badge and the risk sort read the same scores). The
+        // default lens (Frequency) does not: the technique evidence card asks for
+        // the catalogue on idle after it renders, in the drawer and on the page.
         if (mode === 'kev' || mode === 'unified') {
           this.cveService.loadKev();
         }
