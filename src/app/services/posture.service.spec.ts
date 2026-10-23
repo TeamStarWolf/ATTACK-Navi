@@ -654,6 +654,42 @@ describe('PostureService (P2-05, E2.1-c)', () => {
         .toBe(`Covered (self-attested or range), partial via wazuh:5, ${TELEMETRY_WORDS}`);
     });
 
+    // RP-F decision 35 (round 7, letters A and G): the telemetry cause carries the row's
+    // outcome. T1082 (alerted via wazuh:12) and T1083 (blocked via wazuh:13) read
+    // "partial, no detection alerted" beside the pill "PARTIAL LAB 1 of 1 detection rules
+    // fired" and their own Proven block "No proof: 1 rule fired ... (status partial)".
+    it('[AC] contract imports of T1082 (alerted), T1083 (blocked) and T1200 (logged): the why line and the aria-label follow the row outcome; the Proven line names the range run', () => {
+      bootRange(['T1082', 'T1083', 'T1200']);
+      const res = validation.importRangeContract(JSON.stringify({
+        schema: 'lylat-validated-detections/1', range_build_ref: 'a1b2c3d', generated_at: '2026-10-21T00:00:00.000Z',
+        rows: ([['T1082', 'wazuh:12', 'alerted'], ['T1083', 'wazuh:13', 'blocked'], ['T1200', 'wazuh:5', 'logged']] as const).map(([id, rule, outcome], i) => ({
+          mission_id: 'SYNTH-MISSION-R7', technique_ref: { domain: 'enterprise', id, attack_version: '19.2' },
+          detection_ref: rule, coverage_state: 'telemetry-observed', outcome,
+          negative_control: 'detection-only', validated_at: '2026-10-20', evidence_ref: `SYNTH-MISSION-R7-step${i + 1}`,
+        })),
+      }));
+      expect(res.ok).toBeTrue();
+      const fired = (rule: string, verb: string) =>
+        `range telemetry observed via ${rule}: partial; the rule ${verb} in this run, but the range reports telemetry-only coverage, so it is not proof`;
+      for (const [id, rule, verb] of [['T1082', 'wazuh:12', 'alerted'], ['T1083', 'wazuh:13', 'blocked']] as const) {
+        const s = stateOf(tech(id));
+        expect(s.bucket).withContext(id).toBe('partial');
+        expect(s.covered.map(m => [m.partialCause, m.telemetryOutcome])).withContext(id).toEqual([['telemetry', verb]]);
+        expect(why('posture', s)).withContext(id).toBe(`Covered (range, partial via ${rule}) from ${fired(rule, verb)}`);
+        expect(why('covered', s)).withContext(id).toBe(`Covered (self-attested or range), partial via ${rule} from ${fired(rule, verb)}`);
+        expect(postureCellLabel(s, WINDOWS)).withContext(id).toBe(`Covered (range, partial via ${rule}), ${fired(rule, verb)}`);
+        // The Proven block and lens keep the fired count, and name the run as the range's.
+        expect(why('proven', s)).withContext(id)
+          .toBe('No proof: 1 rule fired in the range run on 10/20/26 (status partial); a run is proof only when its status is passed');
+        // The pill counts the same rule (1 fired).
+        expect(s.runsWithoutProof.map(r => [r.status, r.rulesFired])).withContext(id).toEqual([['partial', 1]]);
+        for (const mode of ['posture', 'covered', 'proven'] as const) expect(why(mode, s)).not.toContain('no detection alerted');
+      }
+      const quiet = stateOf(tech('T1200'));
+      expect(quiet.covered.map(m => m.telemetryOutcome)).toEqual(['logged']);
+      expect(why('posture', quiet)).toBe('Covered (range, partial via wazuh:5) from range telemetry observed via wazuh:5: partial, no detection alerted');
+    });
+
     it("[AC] the P2-20 fixture's T1003.001 (alerted plus telemetry rows) stays Proven and names the telemetry row", () => {
       bootRange(['T1558.003', 'T1087.002', 'T1078.002', 'T1059.001', 'T1003.001', 'T1021.002']);
       expect(validation.importRangeContract(JSON.stringify(RANGE_FIXTURE)).ok).toBeTrue();

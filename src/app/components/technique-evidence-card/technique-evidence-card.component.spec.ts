@@ -59,14 +59,14 @@ const FULL_RANGE: CoveredMark = { qualifier: 'range', basis: 'range-detection-au
  * export is validated, mapped to runs (lylatRowsToRuns), turned into posture inputs
  * (runInputs) and derived, as PostureService does after Import range results.
  */
-function rangeState(attackId: string, exportJson: unknown): PostureState {
+function rangeState(attackId: string, exportJson: unknown, extraCovered: readonly CoveredMark[] = []): PostureState {
   const checked = validateLylatExport(exportJson);
   if (!checked.ok) throw new Error(checked.errors.join('; '));
   const runs = lylatRowsToRuns(checked.value, id => id, 'enterprise', '19.2', () => true);
   const inputs = [...runs.bySource.values()].flat().filter(r => r.run.techniqueId === attackId).map(r => runInputs(r.run));
   return derivePosture(`attack/enterprise/${attackId}@19.2`, {
     knownSignals: 0, threatWeight: 0, exposureWeight: 0,
-    covered: inputs.flatMap(i => i.covered), proof: inputs.flatMap(i => i.proof), verdicts: inputs.flatMap(i => i.verdicts),
+    covered: [...extraCovered, ...inputs.flatMap(i => i.covered)], proof: inputs.flatMap(i => i.proof), verdicts: inputs.flatMap(i => i.verdicts),
     runs: inputs.map(i => i.summary),
   }, DEFAULT_POSTURE_RULES, new Date('2026-10-22T00:00:00.000Z'));
 }
@@ -81,6 +81,24 @@ const T1200_TELEMETRY_EXPORT = {
   }],
 };
 const T1200 = { ...TECH, id: 'attack-pattern--t1200', attackId: 'T1200', name: 'Hardware Additions' } as unknown as Technique;
+
+/**
+ * Round 7, letters A and G: telemetry-observed range rows whose rule fired (T1082
+ * alerted via wazuh:12, T1083 blocked via wazuh:13, T1106 alerted via wazuh:14 with
+ * M1038 implemented), beside the no-alert shape (T1200 logged via wazuh:5).
+ */
+const ROUND7_EXPORT = {
+  schema: 'lylat-validated-detections/1', range_build_ref: 'a1b2c3d', generated_at: '2026-10-21T00:00:00Z',
+  rows: ([['T1082', 'wazuh:12', 'alerted'], ['T1083', 'wazuh:13', 'blocked'], ['T1106', 'wazuh:14', 'alerted'], ['T1200', 'wazuh:5', 'logged']] as const)
+    .map(([id, rule, outcome], i) => ({
+      mission_id: 'SYNTH-MISSION-R7', technique_ref: { domain: 'enterprise', id, attack_version: '19.2' },
+      detection_ref: rule, coverage_state: 'telemetry-observed', outcome,
+      negative_control: 'detection-only', validated_at: '2026-10-20', evidence_ref: `SYNTH-MISSION-R7-step${i + 1}`,
+    })),
+};
+const T1082 = { ...TECH, id: 'attack-pattern--t1082', attackId: 'T1082', name: 'System Information Discovery' } as unknown as Technique;
+const T1083 = { ...TECH, id: 'attack-pattern--t1083', attackId: 'T1083', name: 'File and Directory Discovery' } as unknown as Technique;
+const T1106 = { ...TECH, id: 'attack-pattern--t1106', attackId: 'T1106', name: 'Native API' } as unknown as Technique;
 const T1003_001 = { ...TECH, id: 'attack-pattern--t1003-001', attackId: 'T1003.001', name: 'LSASS Memory', isSubtechnique: true } as unknown as Technique;
 
 function state(over: Partial<PostureState> = {}): PostureState {
@@ -466,6 +484,69 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
       expect(marks.map(m => text(m.querySelector('.ev-line')))).toEqual(['telemetry observed in the range via wazuh:990007']);
       expect(el.querySelector('[data-testid="ev-confirm"]')).toBeNull();
       expect(el.querySelector('[data-testid="ev-record-run"]')).not.toBeNull();
+    });
+
+    // RP-F decision 35 (round 7, letters A and G): the telemetry cause carries the row's
+    // outcome. A row whose rule alerted or blocked read "partial, no detection alerted"
+    // beside a pill and a Proven block that said the rule fired.
+    describe('a telemetry row whose rule fired (RP-F decision 35)', () => {
+      const fired = (rule: string, verb: string) =>
+        `range telemetry observed via ${rule}: partial; the rule ${verb} in this run, but the range reports telemetry-only coverage, so it is not proof`;
+      for (const [t, rule, verb, mode] of [
+        [T1082, 'wazuh:12', 'alerted', 'posture'], [T1082, 'wazuh:12', 'alerted', 'covered'],
+        [T1083, 'wazuh:13', 'blocked', 'posture'], [T1083, 'wazuh:13', 'blocked', 'covered'],
+      ] as const) {
+        it(`${t.attackId} (${verb} via ${rule}), lens ${mode}: the why line, the Covered block, the Record-a-run tooltip and the Proven block agree`, () => {
+          techInput = t;
+          const s = rangeState(t.attackId, ROUND7_EXPORT);
+          expect(s.covered.map(m => [m.partialCause, m.telemetryOutcome])).toEqual([['telemetry', verb]]);
+          const el = render(s, true, mode);
+          const why = text(block(el, 'ev-why'));
+          expect(why).toContain(fired(rule, verb));
+          expect(why).not.toContain('no detection alerted');
+          expect(why).not.toContain('breadth threshold');
+          const row = block(el, 'ev-covered')!.querySelector('[data-testid="ev-mark"]')!;
+          expect(text(row.querySelector('[data-testid="ev-mark-cause"]'))).toBe(fired(rule, verb));
+          expect((row.querySelector('[data-testid="ev-record-run"]') as HTMLButtonElement).title)
+            .toBe(`${fired(rule, verb)}; record a validation run of this technique in Detect > Validation`);
+          expect(el.querySelector('[data-testid="ev-confirm"]')).toBeNull();
+          // The Proven block keeps the fired count and names the run as the range's, never 'your run'.
+          expect(text(block(el, 'ev-proven-empty')))
+            .toBe('No proof: 1 rule fired in the range run on 10/20/26 (status partial); a run is proof only when its status is passed.');
+        });
+      }
+
+      it('T1106 under M1038 implemented (mixed): the threshold sentence and the alerted telemetry words, Confirm for M1038 only, Record a run for the row', () => {
+        techInput = T1106;
+        const s = rangeState('T1106', ROUND7_EXPORT, [PARTIAL]);
+        expect(s.partialCauses).toEqual(['breadth', 'telemetry']);
+        const el = render(s, true, 'posture');
+        const why = text(block(el, 'ev-why'));
+        expect(why).toContain(`: reached only through a mitigation or control mapped to more techniques than the breadth threshold; ${fired('wazuh:14', 'alerted')}`);
+        expect(why).not.toContain('no detection alerted');
+        const causes = Array.from(el.querySelectorAll('[data-testid="ev-mark-cause"]')).map(text);
+        expect(causes).toEqual(['reached only through a mitigation or control mapped to more techniques than the breadth threshold', fired('wazuh:14', 'alerted')]);
+        expect(el.querySelectorAll('[data-testid="ev-confirm"]').length).toBe(1);
+        expect(el.querySelectorAll('[data-testid="ev-record-run"]').length).toBe(1);
+        expect(text(block(el, 'ev-proven-empty'))).toContain('No proof: 1 rule fired in the range run on 10/20/26 (status partial)');
+      });
+
+      it('T1200 (logged via wazuh:5) keeps the no-alert words on the why line, the Covered block and the tooltip', () => {
+        techInput = T1200;
+        const el = render(rangeState('T1200', ROUND7_EXPORT), true, 'posture');
+        const words = 'range telemetry observed via wazuh:5: partial, no detection alerted';
+        expect(text(block(el, 'ev-why'))).toContain(`Covered (range, partial via wazuh:5) from ${words}`);
+        const row = block(el, 'ev-covered')!.querySelector('[data-testid="ev-mark"]')!;
+        expect(text(row.querySelector('[data-testid="ev-mark-cause"]'))).toBe(words);
+        expect((row.querySelector('[data-testid="ev-record-run"]') as HTMLButtonElement).title).toContain(`${words}; record a validation run`);
+        expect(text(block(el, 'ev-proven-empty'))).toBe('No recorded detection for this technique.');
+      });
+
+      it('a manual run that fired a rule without proof is still named as your run', () => {
+        const run: RunSummary = { runId: 'm1', status: 'untested', date: '2026-10-15T12:00:00.000Z', source: 'manual', rulesFired: 1, rules: ['siem:a'] };
+        const el = render(state({ runsWithoutProof: [run] }), true, 'posture');
+        expect(text(block(el, 'ev-proven-empty'))).toContain('1 rule fired in your run on 10/15/26 (status untested)');
+      });
     });
 
     it('a breadth partial (M1038) keeps its threshold sentence and Confirm, and offers no Record a run', () => {

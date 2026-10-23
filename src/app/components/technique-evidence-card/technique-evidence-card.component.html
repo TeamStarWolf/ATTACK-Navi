@@ -35,14 +35,18 @@
           <span class="ev-badge ev-qualifier">{{ m.qualifier }}</span>&ngsp;
           <span class="ev-line">{{ m.basis }}@if (m.via) { via {{ m.via }}}</span>&ngsp;
           <span class="ev-meta">{{ m.strength }} · source {{ m.source }}@if (m.at) { · {{ m.at }}}</span>
+          @if (m.cause) {
+            <!-- RP-F decisions 35 and 36: the mark's typed cause, in the words the why line and the cell use. -->
+            &ngsp;<span class="ev-meta ev-cause" data-testid="ev-mark-cause">{{ m.cause }}</span>
+          }
           @if (m.canConfirm) {
             <button type="button" class="ev-confirm-btn" data-testid="ev-confirm" (click)="confirm(m.via!)"
                     title="Confirm this technique yourself: it then counts in full, not only through the broad mitigation">Confirm</button>
           }
           @if (m.canRecordRun) {
-            <!-- RP-F decision 31: range telemetry with no alerting detection is never confirmed; record a run instead. -->
+            <!-- RP-F decisions 31 and 35: range telemetry is never confirmed; record a run instead. The tooltip names the row's outcome. -->
             <button type="button" class="ev-confirm-btn" data-testid="ev-record-run" (click)="recordRun()"
-                    title="Range telemetry was observed and no detection alerted: record a validation run of this technique in Detect > Validation">Record a run</button>
+                    [title]="m.recordRunTitle">Record a run</button>
           }
         </div>
       } @empty {

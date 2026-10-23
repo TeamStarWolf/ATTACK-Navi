@@ -38,6 +38,17 @@ export type CoveredStrength = 'full' | 'partial' | 'planned';
  */
 export type PartialCause = 'breadth' | 'telemetry';
 
+/**
+ * The outcome of the range row behind a telemetry partial (RP-F decision 35): part of
+ * the cause, set by runInputs where the mark is produced, never inferred from wording.
+ * 'logged' or 'none': the range saw telemetry and no detection alerted. 'alerted' or
+ * 'blocked': the row's rule fired in that run, but the range reports telemetry-only
+ * coverage (coverage_state telemetry-observed), so the run is not proof. Round 7 read
+ * "partial, no detection alerted" on T1082 (alerted via wazuh:12) beside a pill that
+ * said the rule fired.
+ */
+export type TelemetryOutcome = 'logged' | 'none' | 'alerted' | 'blocked';
+
 export interface CoveredMark {
   readonly qualifier: CoveredQualifier;
   readonly basis: CoveredBasis;
@@ -47,6 +58,12 @@ export interface CoveredMark {
   readonly at?: string;           // ISO date when known
   /** On a partial mark: why it is partial (RP-F decision 31), set by the mark's producer. */
   readonly partialCause?: PartialCause;
+  /**
+   * On a range telemetry partial (partialCause 'telemetry'): the outcome of its range
+   * row (RP-F decision 35), which partial-cause.ts words. Absent on every other mark
+   * (and on a hand-built telemetry mark, which then reads as no detection alerted).
+   */
+  readonly telemetryOutcome?: TelemetryOutcome;
 }
 
 export type ProofScope = 'production' | 'range' | 'own-run';

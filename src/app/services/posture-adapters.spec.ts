@@ -252,7 +252,20 @@ describe('posture adapters (P2-05)', () => {
       expect(range.covered.map(m => m.partialCause ?? null)).toEqual([null, null, 'telemetry']);
       expect(range.proof).toEqual([]);
       expect(runInputs(run({ outcomes })).covered).toEqual([]);
+      // RP-F decision 35: the telemetry cause carries the row's outcome; no other mark does.
+      expect(range.covered.map(m => m.telemetryOutcome ?? null)).toEqual([null, null, 'logged']);
     });
+
+    // RP-F decision 35 (round 7): a telemetry-observed row whose rule alerted or blocked
+    // records that outcome on its partial mark, where the mark is produced.
+    for (const fired of ['alerted', 'blocked', 'none', 'logged'] as const) {
+      it(`a telemetry-observed row with outcome ${fired} records it on the telemetry partial`, () => {
+        const outcomes = [outcome({ outcome: fired, detectionRef: 'wazuh:12', coverageState: 'telemetry-observed' })];
+        const range = runInputs(run({ source: 'lylat-range:m1', proofScope: 'range', missionId: 'm1', status: 'partial', outcomes }));
+        expect(range.covered.map(m => [m.basis, m.strength, m.via, m.partialCause, m.telemetryOutcome]))
+          .toEqual([['range-telemetry-observed', 'partial', 'wazuh:12', 'telemetry', fired]]);
+      });
+    }
 
     it('carries the mission id onto range proof', () => {
       const r = runInputs(run({

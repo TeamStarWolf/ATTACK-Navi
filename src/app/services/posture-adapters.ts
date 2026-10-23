@@ -201,8 +201,9 @@ const RANGE_STATES = {
  *   'not-reproducible' negative control) is a notReproducible one;
  * - range rows (proofScope 'range') with coverageState 'deployed' or
  *   'detection-authored' are range full marks, 'telemetry-observed' a range
- *   partial mark with partialCause 'telemetry' (RP-F decision 31). Own runs never
- *   carry range marks.
+ *   partial mark with partialCause 'telemetry' (RP-F decision 31) whose cause carries
+ *   the row's outcome (telemetryOutcome: logged, none, alerted or blocked; RP-F decision
+ *   35), so the words say a rule fired when it did. Own runs never carry range marks.
  */
 export function runInputs(run: ValidationRunV2): RunInputs {
   const runBlocked = run.attackResult === 'blocked';
@@ -243,7 +244,10 @@ export function runInputs(run: ValidationRunV2): RunInputs {
       covered.push({
         qualifier: 'range', basis: state.basis, strength: state.strength, source: run.source, at: run.runDate,
         ...(via ? { via } : {}),
-        ...('partialCause' in state ? { partialCause: state.partialCause } : {}),
+        // RP-F decision 35: the telemetry cause carries the row's outcome, set here where
+        // the mark is produced; partial-cause.ts words it (an alerted or blocked rule is
+        // named as fired, and still not proof).
+        ...('partialCause' in state ? { partialCause: state.partialCause, telemetryOutcome: o.outcome } : {}),
       });
     }
   }
