@@ -38,7 +38,7 @@ const STATUS_LABEL: Record<ValidationStatus, string> = {
           }
           <span class="vsp-meta">
             @if (tally(latest); as t) {
-              @if (t.words) { detection rules: {{ t.words }} } @else { {{ t.fired }} of {{ t.expected }} detection rules fired }
+              {{ t.words }}
             }
           </span>
         </div>
@@ -205,9 +205,9 @@ export class ValidationStatusPillComponent implements OnInit, OnChanges, OnDestr
   }
 
   /**
-   * The run's fired and expected counts through the shared helper (RP-F decision 33):
-   * 'N of M detection rules fired', or 'detection rules: N fired, M expected' when
-   * more rules fired than were expected (never 'N of M').
+   * The run's fired rules beside its expected ones, through the shared helper (RP-F
+   * decision 38): 'k of M expected rules fired' (k counts expected rules that fired),
+   * plus ', plus n unexpected' when other rules fired, or 'N fired, none expected'.
    */
   tally(run: ValidationRunV2): FiredRuleTally {
     return firedRuleTally(run);

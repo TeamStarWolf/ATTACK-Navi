@@ -13,7 +13,7 @@ import { FormsModule } from '@angular/forms';
 import { Subscription, filter, take } from 'rxjs';
 import { DataService } from '../../services/data.service';
 import {
-  ValidationService, ValidationRun, ValidationStatus, VALIDATION_RUNS_V1_KEY, describeImportResult,
+  ValidationService, ValidationRun, ValidationStatus, VALIDATION_RUNS_V1_KEY, describeImportResult, storedUntestedWords,
 } from '../../services/validation.service';
 import { EventLoggingService } from '../../services/event-logging.service';
 import { AtomicService } from '../../services/atomic.service';
@@ -246,13 +246,19 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
     return this.techniqueCards.filter(c => !c.recorded).length;
   }
 
-  /** v1 runs the copy-forward could not carry (design §5.11); they stay in the v1 key. */
+  /**
+   * v1 runs the copy-forward could not carry (design §5.11); they stay in the v1 key.
+   * Also the v1 runs it stored untested because their attack did not execute (RP-F
+   * decision 37): 'N runs stored untested: the attack did not execute'.
+   */
   get migrationNotice(): string | null {
     const dropped = this.validationService.migrationDropped ?? [];
-    if (dropped.length === 0) return null;
+    const untested = storedUntestedWords(this.validationService.migrationStoredUntested ?? 0);
+    if (dropped.length === 0) return untested ? `From the previous format: ${untested}.` : null;
     const first = dropped.slice(0, 3).map(d => `row ${d.row}: ${d.reason}`).join('; ');
     return `${dropped.length} stored run${dropped.length === 1 ? '' : 's'} from the previous format could not be carried over ` +
-      `(${first}${dropped.length > 3 ? '; …' : ''}). ${dropped.length === 1 ? 'It is' : 'They are'} kept unchanged in ${VALIDATION_RUNS_V1_KEY}.`;
+      `(${first}${dropped.length > 3 ? '; …' : ''}). ${dropped.length === 1 ? 'It is' : 'They are'} kept unchanged in ${VALIDATION_RUNS_V1_KEY}.`
+      + (untested ? ` ${untested}.` : '');
   }
 
   openRecordModal(card: TechniqueValidationCard): void {
@@ -412,13 +418,13 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
 
   /**
    * A run's fired rules beside its expected ones, through the shared helper the pill
-   * uses (firedRuleTally, RP-F decision 33): 'N/M', or 'N fired, M expected' when more
-   * rules fired than were expected (never a fraction then). `lead` prefixes the
-   * fraction only ('fired ' on the technique tile).
+   * uses (firedRuleTally, RP-F decision 38): 'k of M expected rules fired', plus ', plus n
+   * unexpected' when other rules fired, or 'N fired, none expected'. The technique tile
+   * and Run History print it as the pill does (decision 33's 'N/M' and 'N fired, M
+   * expected' are gone: expected [a, b] with fired [a, c] read 'fired 2/2').
    */
-  firedWords(run: ValidationRun, lead = ''): string {
-    const t = firedRuleTally(run);
-    return t.words ?? `${lead}${t.fired}/${t.expected}`;
+  firedWords(run: ValidationRun): string {
+    return firedRuleTally(run).words;
   }
 
   /**

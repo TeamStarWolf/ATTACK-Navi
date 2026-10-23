@@ -221,9 +221,9 @@ describe('ValidationPanelComponent', () => {
         const card = [...el.querySelectorAll('.vp-tcard')].find(c => c.querySelector('.vp-tid')?.textContent?.trim() === attackId);
         return squash(card?.querySelector('.vp-tcard-runline')?.textContent);
       };
-      // RP-F decision 33: more rules fired than expected reads 'N fired, M expected', never a fraction.
-      expect(runline('T1113')).toBe('Last run date unknown · 1 fired, 0 expected');
-      expect(runline('T1005')).toBe('Last run 10/21/26, 7:49 PM · 1 fired, 0 expected');
+      // RP-F decision 38: no expected rule reads 'N fired, none expected', never a fraction.
+      expect(runline('T1113')).toBe('Last run date unknown · 1 fired, none expected');
+      expect(runline('T1005')).toBe('Last run 10/21/26, 7:49 PM · 1 fired, none expected');
       expect(component.runWhen('yesterday')).toBe('date unknown');
       expect(component.runWhen('')).toBe('date unknown');
       expect(component.runWhen('2026-02-30')).toBe('date unknown');
@@ -236,7 +236,7 @@ describe('ValidationPanelComponent', () => {
       const rows = [...el.querySelectorAll('tbody tr')].map(r => [...r.querySelectorAll('td')].map(td => squash(td.textContent)));
       const y = rows.find(r => r[1].startsWith('T1113'))!;
       expect(y[0]).toBe('date unknown');
-      expect(y[3]).toBe('1 fired, 0 expected');
+      expect(y[3]).toBe('1 fired, none expected');
       component.setTab('evidence');
       rerender();
       const whens = [...el.querySelectorAll('.vp-evidence-when')].map(w => squash(w.textContent));
@@ -245,11 +245,13 @@ describe('ValidationPanelComponent', () => {
     });
   });
 
-  it("firedWords: 'fired N/M' within expected, 'N fired, M expected' beyond it (RP-F decision 33)", () => {
+  it("firedWords: 'k of M expected rules fired', plus the unexpected ones, as the pill reads (RP-F decision 38)", () => {
     const run = (expected: string[], fired: string[]) => ({ detectionsExpected: expected, detectionsFired: fired }) as never;
-    expect(component.firedWords(run(['a', 'b'], ['a']), 'fired ')).toBe('fired 1/2');
-    expect(component.firedWords(run(['a'], ['a']))).toBe('1/1');
-    expect(component.firedWords(run(['a'], ['a', 'b']), 'fired ')).toBe('2 fired, 1 expected');
+    expect(component.firedWords(run(['a', 'b'], ['a']))).toBe('1 of 2 expected rules fired');
+    expect(component.firedWords(run(['a'], ['a']))).toBe('1 of 1 expected rules fired');
+    expect(component.firedWords(run(['a', 'b'], ['a', 'c']))).toBe('1 of 2 expected rules fired, plus 1 unexpected');
+    expect(component.firedWords(run(['a'], ['a', 'b']))).toBe('1 of 1 expected rules fired, plus 1 unexpected');
+    expect(component.firedWords(run([], ['x']))).toBe('1 fired, none expected');
   });
 
   // RP-F decision 34: the Run History sorts through the one latest-run comparator

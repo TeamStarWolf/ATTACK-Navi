@@ -23,6 +23,7 @@ import type {
   CoveredMark, PostureInputs, PostureRules, PostureState, PostureTally, ProofRecord, ProofScope, RunSummary, RunVerdict,
 } from '../models/posture/posture.types';
 import { DEFAULT_POSTURE_RULES, derivePosture, tallyPosture } from '../models/posture/derive-posture';
+import { type PartialCauseTally, tallyPartialCauses } from '../models/posture/partial-cause';
 import { hasOwnerWords } from '../models/posture/posture-vocabulary';
 import { THREAT_WEIGHT_PROVIDER } from '../models/posture/threat-weight';
 import { POSTURE_TODAY } from '../models/posture/posture-today';
@@ -48,7 +49,12 @@ import { ValidationService } from './validation.service';
 
 /** A posture tally with the Known numbers of EnrichmentService.mappedRollup alongside. */
 export interface PostureRollup {
-  overall: PostureTally & { mapped: number; pct: number };
+  /**
+   * `partialByCause` counts the partial techniques by their typed cause (RP-F decision
+   * 36, tallyPartialCauses), so the Report Builder and the reports split the partial
+   * card by cause instead of inferring one from the bucket. Absent in a hand-built rollup.
+   */
+  overall: PostureTally & { mapped: number; pct: number; partialByCause?: PartialCauseTally };
   byTactic: (PostureTally & { tacticId: string; tacticName: string; shortname: string; mapped: number; pct: number })[];
 }
 
@@ -277,7 +283,10 @@ export class PostureService {
     if (!domain) return { overall: { ...EMPTY_TALLY, ...known.overall }, byTactic: [] };
     this.knownRevision();
     const techs = opts.includeSubtechniques ? domain.techniques : domain.techniques.filter(t => !t.isSubtechnique);
-    const overall = { ...this.tallyFor(techs), total: known.overall.total, mapped: known.overall.mapped, pct: known.overall.pct };
+    const overall = {
+      ...this.tallyFor(techs), total: known.overall.total, mapped: known.overall.mapped, pct: known.overall.pct,
+      partialByCause: tallyPartialCauses(techs.map(t => this.stateFor(t))),
+    };
     const byTactic = (domain.tacticColumns ?? []).map((col, i) => {
       const row = known.byTactic[i];
       return {

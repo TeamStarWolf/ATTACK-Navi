@@ -4,7 +4,7 @@ import { Injectable, Injector, inject } from '@angular/core';
 import { ImplStatus, ImplementationService } from './implementation.service';
 import { Domain } from '../models/domain';
 import { PostureService } from './posture.service';
-import { computeReportSplit, REPORT_SPLIT_LABELS } from '../models/report-split';
+import { computeReportSplit, partialCardLines, REPORT_SPLIT_LABELS } from '../models/report-split';
 import { PROVEN } from '../models/posture/posture-vocabulary';
 
 /** data-posture / data-split values (posture bucket keys) the equality spec reads. */
@@ -261,7 +261,8 @@ export class PdfReportService {
   </div>
   <div class="summary-box">
     <div class="num" data-posture="${DATA.partial}">${split.partial}</div>
-    <div class="lbl">${L.partialCard}</div>
+    <div class="lbl">${L.partialCard}</div>${partialCardLines(split).map(line => `
+    <div class="lbl" data-partial-cause>${line}</div>`).join('')}
   </div>
   <div class="summary-box">
     <div class="num" data-posture="${DATA.proven}">${split.proven}</div>

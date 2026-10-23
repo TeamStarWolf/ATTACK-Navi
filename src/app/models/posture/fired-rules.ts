@@ -2,7 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 //
 // THE count of a run's fired detection rules (RP-F decision 30b), and, beside the
-// rules it expected, how that count is said (firedRuleTally, RP-F decision 33). Every surface
+// rules it expected, how that count is said (firedRuleTally, RP-F decision 38). Every surface
 // that says how many rules a run fired counts through firedRules: the Validation
 // pill ("N of M detection rules fired"), the Detection Validation workbench (its
 // tiles and runs table), the run summary the evidence card reads (posture-adapters
@@ -57,28 +57,42 @@ export interface FiredTallyInput extends FiredRulesInput {
 }
 
 /**
- * A run's fired and expected rule counts, and how the pill and the workbench say them
- * (RP-F decision 33). `fired` is firedRuleCount; `expected` counts the distinct,
- * trimmed, non-empty detectionsExpected. When fired exceeds expected (rules known
- * only from outcomes, or fired rules nobody listed as expected), a fraction would read
- * as more than all: `exceeds` is true and `words` is 'N fired, M expected', which
- * every surface prints instead of 'N of M' or 'N/M'. Round 6 read a tile 'fired 2/1'
- * beside a pill 'UNTESTED 2 of 1'. Otherwise `words` is null and each surface keeps
- * its fraction.
+ * A run's fired rules beside the rules it expected, and how the pill, the workbench
+ * tile and Run History say them (RP-F decision 38). The fraction counts EXPECTED
+ * rules that fired, so it can never read as all expected rules firing when one did
+ * not:
+ * - `fired`: every rule the run fired (firedRuleCount);
+ * - `expected` (M): the distinct, trimmed, non-empty detectionsExpected;
+ * - `matched` (k): the fired rules that were expected, |fired ∩ expected|;
+ * - `unexpected` (n): the fired rules nobody listed as expected;
+ * - `words`: 'k of M expected rules fired', plus ', plus n unexpected' when n > 0, or
+ *   'N fired, none expected' when M = 0.
+ * Expected [a, b] and fired [a, c] read '1 of 2 expected rules fired, plus 1
+ * unexpected'. Decision 33's '2 fired, 1 expected' (round 6) and the plain 'N of M'
+ * before it counted every fired rule against the expected ones, so expected [a, b]
+ * with fired [a, c] read '2 of 2' (round 7).
  */
 export interface FiredRuleTally {
   readonly fired: number;
   readonly expected: number;
-  readonly exceeds: boolean;
-  readonly words: string | null;
+  readonly matched: number;
+  readonly unexpected: number;
+  readonly words: string;
 }
 
-/** The fired and expected counts of a run, and the words for them when fired exceeds expected (RP-F decision 33). */
+/** The distinct, trimmed, non-empty rules of a list, in first-seen order. */
+function distinctRules(list: readonly string[]): string[] {
+  return [...new Set(list.map(d => (typeof d === 'string' ? d.trim() : '')).filter(d => d !== ''))];
+}
+
+/** A run's fired rules beside its expected ones, and the words for them (RP-F decision 38). */
 export function firedRuleTally(run: FiredTallyInput): FiredRuleTally {
-  const fired = firedRuleCount(run);
-  const expected = new Set(
-    run.detectionsExpected.map(d => (typeof d === 'string' ? d.trim() : '')).filter(d => d !== ''),
-  ).size;
-  const exceeds = fired > expected;
-  return { fired, expected, exceeds, words: exceeds ? `${fired} fired, ${expected} expected` : null };
+  const fired = firedRules(run);
+  const expected = new Set(distinctRules(run.detectionsExpected));
+  const matched = fired.filter(r => expected.has(r)).length;
+  const unexpected = fired.length - matched;
+  const words = expected.size === 0
+    ? `${fired.length} fired, none expected`
+    : `${matched} of ${expected.size} expected rules fired${unexpected > 0 ? `, plus ${unexpected} unexpected` : ''}`;
+  return { fired: fired.length, expected: expected.size, matched, unexpected, words };
 }

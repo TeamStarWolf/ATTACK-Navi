@@ -36,7 +36,7 @@ import type { ImplStatus } from '../../services/implementation.service';
 import type { PostureBucket } from './posture.types';
 import { hexContrast, mixHex } from '../cvd';
 import { POSTURE_SURFACE, STALE_MIX, type PostureTheme, postureFill } from './posture-ramp';
-import { PROVEN, scenarioOutcomeLabel } from './posture-vocabulary';
+import { PROVEN, provenScopeWords, scenarioOutcomeLabel } from './posture-vocabulary';
 
 /** One stop of a P2-14 lens ramp: its key (the cell's implStop or score), mix toward the hue, and words. */
 interface RampSpec {
@@ -237,7 +237,7 @@ export function coveredLegendStops(theme: PostureTheme): LensLegendStop[] {
 const PROVEN_SPECS: readonly RampSpec[] = [
   { key: '0', mix: 1, label: 'no recorded detection', ownerWords: false },
   { key: '1', mix: STALE_MIX, label: `${PROVEN} (stale)`, ownerWords: true, check: true },
-  { key: '2', mix: 0.25, label: `${PROVEN} in range or your run`, ownerWords: true, check: true },
+  { key: '2', mix: 0.25, label: `${PROVEN} in a range run or your run`, ownerWords: true, check: true },
   { key: '3', mix: 0, label: `${PROVEN} in production`, ownerWords: true, check: true },
 ];
 
@@ -253,10 +253,9 @@ export function provenProject(ctx: Pick<LensContext, 'posture'>, t: Technique): 
     return { score: 0, bucket: 'none', subStates: s.subStates, proofScope: null, label: PROVEN_SPECS[0].label };
   }
   const score = s.bucket === 'stale' ? 1 : s.proofScope === 'production' ? 3 : 2;
-  const scope = s.proofScope === 'production' ? ' in production' : s.proofScope === 'range' ? ' in range' : s.proofScope === 'own-run' ? ' (your run)' : '';
   return {
     score, bucket: s.bucket, subStates: s.subStates, proofScope: s.proofScope,
-    label: PROVEN + scope + (s.bucket === 'stale' ? ' (stale)' : ''),
+    label: PROVEN + provenScopeWords(s.proofScope) + (s.bucket === 'stale' ? ' (stale)' : ''),
   };
 }
 

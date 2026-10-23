@@ -35,7 +35,8 @@ import { ProfileDomainNoticeComponent } from '../profile-domain-notice/profile-d
 import { ThreatProfilePickerComponent } from '../threat-profile-picker/threat-profile-picker.component';
 import { ThreatGroup } from '../../models/group';
 import { Technique } from '../../models/technique';
-import { PostureBucket } from '../../models/posture/posture.types';
+import { PostureBucket, PostureState } from '../../models/posture/posture.types';
+import { type PartialCauseTally, partialCauseLines, partialCauseReason, tallyPartialCauses } from '../../models/posture/partial-cause';
 import { scenarioOutcomeLabel } from '../../models/posture/posture-vocabulary';
 import { THREAT_WEIGHT_PROVIDER } from '../../models/posture/threat-weight';
 import { csvRow } from '../../utils/csv';
@@ -60,11 +61,32 @@ interface SimulationResult {
   proven: number;    // bucket proven + stale
   covered: number;   // bucket covered
   partial: number;   // bucket partial — its own number, never summed into covered
+  partialByCause: PartialCauseTally;   // the partial techniques by typed cause (RP-F decision 36)
   known: number;     // bucket known
   none: number;      // bucket none
   total: number;
   knownOnlyShare: number;   // known / total, as a percentage
   hasOwnerWords: boolean;   // Covered/Proven surfaces render only when true
+}
+
+/**
+ * The scenario table's reason for one technique. A partial technique names its typed
+ * cause (RP-F decision 36, partial-cause.ts): 'partial (broad mitigation, not confirmed
+ * per technique)', 'partial (range telemetry, no alert credited)', or both. Round 7
+ * read the broad-mitigation reason on techniques whose only evidence was a range
+ * telemetry row.
+ */
+export function scenarioReason(state: Pick<PostureState, 'bucket' | 'covered' | 'partialCauses'>, mitigationCount: number): string {
+  switch (state.bucket) {
+    case 'proven': return 'A named detection fired or the technique was blocked on a recorded run';
+    case 'stale': return 'A recorded run that has aged past its window';
+    case 'covered': return 'You recorded a mitigation, control, confirmation or run (self-attested)';
+    case 'partial': return `Partly recorded: ${partialCauseReason(state)}`;
+    case 'known': return mitigationCount > 0
+      ? `${mitigationCount} mitigation${mitigationCount !== 1 ? 's' : ''} mapped; none recorded as deployed`
+      : 'Mapped by a public source; nothing recorded as deployed';
+    default: return 'No reference mapping and nothing recorded';
+  }
 }
 
 /** Map a posture bucket to the scenario outcome it is counted under. */
@@ -198,7 +220,7 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
       return {
         technique: tech, bucket, outcome: outcomeOf(bucket),
         contradicted: state.subStates.includes('contradicted'),
-        mitigationCount, reasoning: this.reasoningFor(bucket, mitigationCount),
+        mitigationCount, reasoning: scenarioReason(state, mitigationCount),
       };
     });
 
@@ -206,6 +228,7 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
     const proven = count('proven');
     const covered = count('covered');
     const partial = count('partial');
+    const partialByCause = tallyPartialCauses(scenarioTechniques.map(t => this.posture.stateFor(t.technique)));
     const known = count('known');
     const none = count('none');
     const total = scenarioTechniques.length;
@@ -214,23 +237,15 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
     return {
       group,
       techniques: scenarioTechniques.sort((a, b) => order[a.outcome] - order[b.outcome]),
-      proven, covered, partial, known, none, total,
+      proven, covered, partial, partialByCause, known, none, total,
       knownOnlyShare: total > 0 ? Math.round((known / total) * 100) : 0,
       hasOwnerWords: this.posture.ownerWords(),
     };
   }
 
-  private reasoningFor(bucket: PostureBucket, mitigationCount: number): string {
-    switch (bucket) {
-      case 'proven': return 'A named detection fired or the technique was blocked on a recorded run';
-      case 'stale': return 'A recorded run that has aged past its window';
-      case 'covered': return 'You recorded a mitigation, control, confirmation or run (self-attested)';
-      case 'partial': return 'Partly recorded: a broad mitigation marked implemented, not confirmed per technique';
-      case 'known': return mitigationCount > 0
-        ? `${mitigationCount} mitigation${mitigationCount !== 1 ? 's' : ''} mapped; none recorded as deployed`
-        : 'Mapped by a public source; nothing recorded as deployed';
-      default: return 'No reference mapping and nothing recorded';
-    }
+  /** The partial note's per-cause lines (RP-F decision 36): a count per typed cause. */
+  partialCauseLines(result: Pick<SimulationResult, 'partialByCause'>): string[] {
+    return partialCauseLines(result.partialByCause);
   }
 
   // ─── Derived views ──────────────────────────────────────────────────────

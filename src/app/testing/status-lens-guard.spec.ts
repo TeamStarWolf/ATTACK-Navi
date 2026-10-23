@@ -304,7 +304,7 @@ describe('Proven lens (P2-14): scores under the pinned POSTURE_TODAY and the lab
     expect(provenLabBadge(cell(range))).toBeTrue();
     expect(provenLabBadge(cell(fresh))).toBeFalse();
     expect(provenLabBadge(cell(stale))).toBeFalse();
-    expect(matrix.postureCell(range)!.label).toBe(`${PROVEN} in range`);
+    expect(matrix.postureCell(range)!.label).toBe(`${PROVEN} in a range run`);
     expect(matrix.postureCell(stale)!.label).toBe(`${PROVEN} (your run) (stale)`);
     for (const t of domain.techniques) {
       if ([fresh, stale, range].includes(t)) continue;

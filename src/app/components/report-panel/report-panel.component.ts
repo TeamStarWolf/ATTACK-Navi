@@ -23,6 +23,7 @@ import {
   ReportSplit,
   TacticSplit,
   computeReportSplit,
+  partialCardLines,
   isTechniqueMapped,
   REPORT_SPLIT_LABELS,
 } from '../../models/report-split';
@@ -91,6 +92,12 @@ export class ReportPanelComponent implements OnInit, OnDestroy {
    * states change: the same numbers as the posture card, the Validation
    * summary, the stats-bar and the HTML and PDF reports.
    */
+  /** The partial card's per-cause lines (RP-F decision 36). */
+  readonly partialLines = computed(() => {
+    const s = this.split();
+    return s ? partialCardLines(s) : [];
+  });
+
   readonly split: Signal<ReportSplit | null> = computed(() => {
     const domain = this.domainSig();
     return domain ? computeReportSplit(domain, this.posture.rollup(), this.implementedMitigations()) : null;

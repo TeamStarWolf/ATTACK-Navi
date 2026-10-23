@@ -135,14 +135,14 @@ describe('ValidationStatusPillComponent', () => {
       }, DEFAULT_POSTURE_RULES, new Date('2026-10-21T00:00:00.000Z')));
     };
 
-    // RP-F decision 33: more rules fired than expected reads 'N fired, M expected', never '1 of 0'.
-    it("T1113, outcome {edr:x, blocked} and empty detectionsFired: pill '1 fired, 0 expected', card '1 rule fired'", () => {
+    // RP-F decision 38: no expected rule reads 'N fired, none expected', never '1 of 0'.
+    it("T1113, outcome {edr:x, blocked} and empty detectionsFired: pill '1 fired, none expected', card '1 rule fired'", () => {
       const r = t1113({ outcomes: [{ detectionRef: 'edr:x', outcome: 'blocked' }] });
-      expect(pillLine(r)).toBe('detection rules: 1 fired, 0 expected');
+      expect(pillLine(r)).toBe('1 fired, none expected');
       expect(pillLine(r)).not.toMatch(/\d+ of \d+/);
       expect(cardLine(r)).toBe('Proven (your run) on 10/20/26 by manual; 1 rule fired');
       expect(pillLine(t1113({ detectionsExpected: ['edr:x'], outcomes: [{ detectionRef: 'edr:x', outcome: 'blocked' }] })))
-        .toBe('1 of 1 detection rules fired');
+        .toBe('1 of 1 expected rules fired');
     });
 
     it('duplicates and blanks collapse, and a rule in both lists counts once, on the pill and the card alike', () => {
@@ -151,7 +151,7 @@ describe('ValidationStatusPillComponent', () => {
         outcomes: [{ detectionRef: 'edr:x', outcome: 'blocked' }, { detectionRef: ' siem:a', outcome: 'alerted' }, { detectionRef: '', outcome: 'alerted' }],
       });
       expect(component.firedCount(r)).toBe(2);
-      expect(pillLine(r)).toBe('2 of 3 detection rules fired');
+      expect(pillLine(r)).toBe('2 of 3 expected rules fired');
       expect(cardLine(r)).toBe('Proven (your run) on 10/20/26 by manual; 2 rules fired');
     });
 
@@ -178,20 +178,27 @@ describe('ValidationStatusPillComponent', () => {
       const b = t1113({ id: 'rB', runDate: '2026-10-10T10:00:00.000Z', status: 'failed', detectionsExpected: ['siem:y'] });
       expect(component.firedCount(a)).toBe(2);
       expect(cardLineOf([a, b])).toBe('Proven (your run) on 10/1/26 by manual; 2 rules fired; a later run of another rule failed on 10/10/26');
-      expect(pillLineOf([b, a], b)).toBe('0 of 1 detection rules fired');
+      expect(pillLineOf([b, a], b)).toBe('0 of 1 expected rules fired');
     });
 
-    it("fired exceeds expected on a non-passed run too: 'detection rules: 2 fired, 1 expected' (round 6: 'UNTESTED 2 of 1')", () => {
+    // RP-F decision 38: the fraction counts expected rules that fired, and names the others.
+    it("an unexpected rule on a non-passed run: '1 of 1 expected rules fired, plus 1 unexpected' (round 6: 'UNTESTED 2 of 1')", () => {
       const r = t1113({ status: 'untested', detectionsExpected: ['siem:a'], detectionsFired: ['siem:a', 'siem:b'] });
-      expect(pillLine(r)).toBe('detection rules: 2 fired, 1 expected');
-      expect(component.tally(r)).toEqual({ fired: 2, expected: 1, exceeds: true, words: '2 fired, 1 expected' });
+      expect(pillLine(r)).toBe('1 of 1 expected rules fired, plus 1 unexpected');
+      expect(component.tally(r)).toEqual({ fired: 2, expected: 1, matched: 1, unexpected: 1, words: '1 of 1 expected rules fired, plus 1 unexpected' });
+    });
+
+    it("expected [a, b] with fired a and c reads '1 of 2 expected rules fired, plus 1 unexpected', never '2 of 2' (round 7)", () => {
+      const r = t1113({ status: 'partial', detectionsExpected: ['siem:a', 'siem:b'], detectionsFired: ['siem:a', 'siem:c'] });
+      expect(pillLine(r)).toBe('1 of 2 expected rules fired, plus 1 unexpected');
+      expect(pillLine(r)).not.toContain('2 of 2');
     });
 
     it("two passed runs: the card names the best run's own count, never the rules of both runs", () => {
       const a = t1113({ id: 'rA', runDate: '2026-10-01T10:00:00.000Z', detectionsExpected: ['siem:x', 'siem:z'], detectionsFired: ['siem:x', 'siem:z'] });
       const b = t1113({ id: 'rB', runDate: '2026-10-10T10:00:00.000Z', detectionsExpected: ['siem:y'], detectionsFired: ['siem:y'] });
       expect(cardLineOf([a, b])).toBe('Proven (your run) on 10/10/26 by manual; 1 rule fired');
-      expect(pillLineOf([b, a], b)).toBe('1 of 1 detection rules fired');
+      expect(pillLineOf([b, a], b)).toBe('1 of 1 expected rules fired');
     });
   });
 });

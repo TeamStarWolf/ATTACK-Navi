@@ -10,7 +10,8 @@
 import { Provider, Signal, computed, signal } from '@angular/core';
 import type { Domain } from '../models/domain';
 import type { Technique } from '../models/technique';
-import type { CoveredMark, PostureBucket, PostureState, ProofRecord, ProofScope } from '../models/posture/posture.types';
+import type { CoveredMark, PartialCause, PostureBucket, PostureState, ProofRecord, ProofScope } from '../models/posture/posture.types';
+import { tallyPartialCauses } from '../models/posture/partial-cause';
 import { DEFAULT_POSTURE_RULES, tallyPosture } from '../models/posture/derive-posture';
 import { hasOwnerWords } from '../models/posture/posture-vocabulary';
 import { PostureService, type PostureRollup } from '../services/posture.service';
@@ -18,7 +19,14 @@ import { PostureService, type PostureRollup } from '../services/posture.service'
 type StubDomain = Pick<Domain, 'techniques' | 'tacticColumns'>;
 
 const FULL: CoveredMark = { qualifier: 'self-attested', basis: 'mitigation-implemented', strength: 'full', via: 'M1', source: 'manual' };
-const PARTIAL: CoveredMark = { qualifier: 'self-attested', basis: 'mitigation-implemented', strength: 'partial', via: 'M1', source: 'manual' };
+const PARTIAL: CoveredMark = {
+  qualifier: 'self-attested', basis: 'mitigation-implemented', strength: 'partial', via: 'M1', source: 'manual', partialCause: 'breadth',
+};
+/** A range telemetry partial (RP-F decision 31), for a stub state whose cause is 'telemetry'. */
+const TELEMETRY: CoveredMark = {
+  qualifier: 'range', basis: 'range-telemetry-observed', strength: 'partial', via: 'wazuh:5', source: 'lylat-range:stub',
+  partialCause: 'telemetry', telemetryOutcome: 'logged',
+};
 const PROOF: ProofRecord = {
   scope: 'own-run', detectionRef: 'sigma:stub', outcome: 'alerted', date: '2026-10-01T00:00:00.000Z', source: 'manual', runId: 'stub',
 };
@@ -26,9 +34,13 @@ const PROOF: ProofRecord = {
 /**
  * A PostureState in `bucket`, with the marks or proof that bucket needs.
  * `mapped` sets knownSignals; `excluded` takes the technique out of
- * `assessable` (R16: a not-reproducible run with no proof).
+ * `assessable` (R16: a not-reproducible run with no proof). A partial state is partial
+ * by `cause` (RP-F decision 31): 'breadth' (a broad mitigation, the default) or
+ * 'telemetry' (a range telemetry row).
  */
-export function stubState(attackId: string, bucket: PostureBucket, mapped = bucket !== 'none', excluded = false): PostureState {
+export function stubState(
+  attackId: string, bucket: PostureBucket, mapped = bucket !== 'none', excluded = false, cause: PartialCause = 'breadth',
+): PostureState {
   const proof = bucket === 'proven' || bucket === 'stale';
   return {
     ref: `attack/enterprise/${attackId}@stub`,
@@ -36,7 +48,7 @@ export function stubState(attackId: string, bucket: PostureBucket, mapped = buck
     bucket,
     qualifiers: bucket === 'covered' || bucket === 'partial' ? ['self-attested'] : [],
     subStates: bucket === 'partial' ? ['partial'] : bucket === 'stale' ? ['stale'] : [],
-    covered: bucket === 'covered' ? [FULL] : bucket === 'partial' ? [PARTIAL] : [],
+    covered: bucket === 'covered' ? [FULL] : bucket === 'partial' ? [cause === 'telemetry' ? TELEMETRY : PARTIAL] : [],
     proof: proof ? [PROOF] : [],
     proofScope: proof ? 'own-run' : null,
     proofAge: proof ? (bucket === 'stale' ? 120 : 1) : null,
@@ -45,6 +57,7 @@ export function stubState(attackId: string, bucket: PostureBucket, mapped = buck
     exposureWeight: 0,
     excluded,
     runsWithoutProof: [],
+    partialCauses: bucket === 'partial' ? [cause] : [],
   };
 }
 
@@ -53,6 +66,8 @@ export interface PostureStub {
   set(buckets: Readonly<Record<string, PostureBucket>>): void;
   /** Mark these attackIds excluded (out of `assessable` only). */
   exclude(attackIds: readonly string[]): void;
+  /** Make these attackIds' partial states partial by range telemetry (RP-F decision 31) instead of breadth. */
+  telemetry(attackIds: readonly string[]): void;
   readonly ownerWords: Signal<boolean>;
   /** Fresh proofs within 7 days of their window (P2-13 legend); set with setExpiringSoon. */
   readonly expiringSoon: Signal<number>;
@@ -73,11 +88,12 @@ export interface PostureStub {
 export function makePostureStub(domain: () => StubDomain | null, buckets: Readonly<Record<string, PostureBucket>> = {}): PostureStub {
   const table = signal<Readonly<Record<string, PostureBucket>>>(buckets);
   const excluded = signal<ReadonlySet<string>>(new Set());
+  const telemetry = signal<ReadonlySet<string>>(new Set());
   const expiring = signal(0);
   const stateFor = (t: Pick<Technique, 'attackId' | 'mitigationCount'>): PostureState => {
     const mapped = (t.mitigationCount ?? 0) > 0;
     return stubState(t.attackId, table()[t.attackId] ?? (mapped ? 'known' : 'none'), mapped || table()[t.attackId] !== undefined,
-      excluded().has(t.attackId));
+      excluded().has(t.attackId), telemetry().has(t.attackId) ? 'telemetry' : 'breadth');
   };
   const states = computed(() => new Map((domain()?.techniques ?? []).map(t => [t.attackId, stateFor(t)] as const)));
   const tallyFor = (ts: readonly Pick<Technique, 'attackId' | 'mitigationCount'>[]) => tallyPosture(ts.map(stateFor));
@@ -88,6 +104,7 @@ export function makePostureStub(domain: () => StubDomain | null, buckets: Readon
   return {
     set: b => table.set(b),
     exclude: ids => excluded.set(new Set(ids)),
+    telemetry: ids => telemetry.set(new Set(ids)),
     ownerWords: computed(() => hasOwnerWords(states().values())),
     expiringSoon: expiring.asReadonly(),
     setExpiringSoon: n => expiring.set(n),
@@ -100,7 +117,7 @@ export function makePostureStub(domain: () => StubDomain | null, buckets: Readon
       if (!d) return { overall: { ...tallyPosture([]), mapped: 0, pct: 0 }, byTactic: [] };
       const techs = opts.includeSubtechniques ? d.techniques : d.techniques.filter(t => !t.isSubtechnique);
       return {
-        overall: { ...tallyFor(techs), ...known(techs) },
+        overall: { ...tallyFor(techs), ...known(techs), partialByCause: tallyPartialCauses(techs.map(stateFor)) },
         byTactic: d.tacticColumns.map(col => {
           const parents = col.techniques.filter(t => !t.isSubtechnique);
           return {

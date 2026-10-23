@@ -141,7 +141,7 @@ describe('posture cell label (§7)', () => {
     expect(s.proofAge).toBe(120);
     expect(postureCellLabel(s, WINDOWS)).toBe(`${PROVEN} (your run), stale (120 days; window 90)`);
     expect(postureCellLabel({ ...s, proofScope: 'production', proofAge: 200 }, WINDOWS)).toBe(`${PROVEN} in production, stale (200 days; window 180)`);
-    expect(postureCellLabel({ ...s, proofScope: 'range', proofAge: 95 }, { ...WINDOWS, range: 30 })).toBe(`${PROVEN} in range, stale (95 days; window 30)`);
+    expect(postureCellLabel({ ...s, proofScope: 'range', proofAge: 95 }, { ...WINDOWS, range: 30 })).toBe(`${PROVEN} in a range run, stale (95 days; window 30)`);
   });
 
   it('is the badge on every other bucket, and on a stale state with no age', () => {
@@ -167,7 +167,7 @@ describe('posture cell label (§7)', () => {
     expect(postureCellLabel(tele, windows, { value: 'covered', words: 'Covered (self-attested or range), partial via wazuh:5' }, { bucket: 'partial', subStates: ['partial'] }))
       .toBe(`Covered (self-attested or range), partial via wazuh:5, ${words}`);
     // Not painted partial (a Proven cell): no partial words.
-    expect(postureCellLabel(tele, windows, { value: 'proven', words: 'Proven in range' }, { bucket: 'proven', subStates: [] })).toBe('Proven in range');
+    expect(postureCellLabel(tele, windows, { value: 'proven', words: 'Proven in a range run' }, { bucket: 'proven', subStates: [] })).toBe('Proven in a range run');
     const breadth = { ...stubState('T1078', 'partial'), partialCauses: ['breadth'] as const } as PostureState;
     expect(postureCellLabel(breadth, windows)).toBe('Covered (self-attested, partial via M1)');
   });
@@ -276,7 +276,7 @@ describe('posture cell label (§7)', () => {
         const def = heatmapModeDef('proven')!;
         const s = SHAPES['outranked proof, None'];
         expect(lensExplain(def, def.project!(ctx(s), T), { state: s }))
-          .toMatch(/^No recorded detection for this technique; contradicted: latest run of the rule failed on \d+\/\d+\/26; an earlier run passed on \d+\/\d+\/26$/);
+          .toMatch(/^No recorded detection for this technique; contradicted: latest run failed, no rule named, on \d+\/\d+\/26; an earlier run passed on \d+\/\d+\/26$/);
         const marks = SHAPES['contradicted mark, Known'];
         expect(lensExplain(def, def.project!(ctx(marks), T), { state: marks }))
           .toBe(`No recorded detection for this technique; ${CONTRADICTED_WORDS}`);
