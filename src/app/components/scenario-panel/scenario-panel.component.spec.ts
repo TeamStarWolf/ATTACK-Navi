@@ -16,7 +16,8 @@ import { EpssService } from '../../services/epss.service';
 import { THREAT_WEIGHT_PROVIDER } from '../../models/posture/threat-weight';
 import { Technique } from '../../models/technique';
 import { ThreatGroup } from '../../models/group';
-import { PostureBucket, PostureSubState } from '../../models/posture/posture.types';
+import { PartialCause, PostureBucket, PostureSubState } from '../../models/posture/posture.types';
+import { scenarioReason } from './scenario-panel.component';
 
 function tech(id: string, attackId: string): Technique {
   return {
@@ -39,6 +40,7 @@ describe('ScenarioPanelComponent (posture outcomes)', () => {
   let buckets: Map<string, PostureBucket>;
   let subStates: Map<string, PostureSubState[]>;
   let knownSignals: Map<string, number>;   // reference mappings per technique (ctem "Known: mapped" source)
+  let causes: Map<string, PartialCause[]>;   // the typed partial causes per technique (RP-F decision 36)
   let ownerWords: boolean;
   let parentsSig: WritableSignal<ReadonlySet<string>>;
   let revisionSig: WritableSignal<number>;
@@ -64,7 +66,10 @@ describe('ScenarioPanelComponent (posture outcomes)', () => {
             getTechniquesForGroup: (id: string) => (id === GROUP.id ? [T1, T2] : []),
         } },
         { provide: PostureService, useValue: {
-            stateFor: (t: Technique) => ({ bucket: buckets.get(t.id) ?? 'none', subStates: subStates.get(t.id) ?? [], excluded: false, knownSignals: knownSignals.get(t.id) ?? 0 }),
+            stateFor: (t: Technique) => ({
+              bucket: buckets.get(t.id) ?? 'none', subStates: subStates.get(t.id) ?? [], excluded: false, knownSignals: knownSignals.get(t.id) ?? 0,
+              covered: [], partialCauses: causes.get(t.id) ?? [],
+            }),
             ownerWords: () => ownerWords,
         } },
         // The REAL profile-scoped ThreatSimulationService over a fixture, so the overlay
@@ -96,7 +101,7 @@ describe('ScenarioPanelComponent (posture outcomes)', () => {
   }
 
   beforeEach(() => {
-    buckets = new Map(); subStates = new Map(); knownSignals = new Map(); ownerWords = false;
+    buckets = new Map(); subStates = new Map(); knownSignals = new Map(); causes = new Map(); ownerWords = false;
     cveOutcome = new BehaviorSubject<'pending' | 'loaded' | 'failed'>('loaded');
     cveLoaded = new BehaviorSubject(true);
     kevByTech = new Map();
@@ -174,6 +179,52 @@ describe('ScenarioPanelComponent (posture outcomes)', () => {
     // Labels come from scenarioOutcomeLabel() — 'Covered (self-attested or range)'.
     expect(host.textContent).toContain('Covered (self-attested or range)');
   }));
+
+  // RP-F decision 36 (round 7, letter G): the scenario table read the broad-mitigation
+  // reason on techniques whose only evidence was a range telemetry row. The reason and
+  // the partial note now follow each state's typed cause, with a count per cause.
+  it('a scenario of telemetry-only range rows names the telemetry cause and counts it, never the broad mitigation', fakeAsync(() => {
+    ownerWords = true;
+    buckets = new Map([['t1', 'partial'], ['t2', 'partial']]);
+    causes = new Map([['t1', ['telemetry']], ['t2', ['telemetry']]]);
+    configure();
+    component.onGroupPicked(GROUP.id);
+    tick(200);
+    fixture.detectChanges();
+
+    expect(component.result!.partial).toBe(2);
+    expect(component.result!.partialByCause).toEqual({ breadth: 0, telemetry: 2 });
+    expect(component.result!.techniques.map(t => t.reasoning))
+      .toEqual(['Partly recorded: partial (range telemetry, no alert credited)', 'Partly recorded: partial (range telemetry, no alert credited)']);
+    const host = fixture.nativeElement as HTMLElement;
+    const lines = Array.from(host.querySelectorAll('[data-testid="scenario-partial-cause"]')).map(e => e.textContent!.trim());
+    expect(lines).toEqual(['partial (range telemetry, no alert credited): 2']);
+    expect(host.textContent).not.toContain('broad mitigation');
+  }));
+
+  it('a breadth partial still names the mitigation cause; a mixed scenario counts each cause', fakeAsync(() => {
+    ownerWords = true;
+    buckets = new Map([['t1', 'partial'], ['t2', 'partial']]);
+    causes = new Map([['t1', ['breadth']], ['t2', ['breadth', 'telemetry']]]);
+    configure();
+    component.onGroupPicked(GROUP.id);
+    tick(200);
+    fixture.detectChanges();
+
+    expect(component.result!.partialByCause).toEqual({ breadth: 2, telemetry: 1 });
+    expect(component.result!.techniques.map(t => t.reasoning)).toEqual([
+      'Partly recorded: partial (broad mitigation, not confirmed per technique)',
+      'Partly recorded: partial (broad mitigation, not confirmed per technique); partial (range telemetry, no alert credited)',
+    ]);
+    const lines = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('[data-testid="scenario-partial-cause"]')).map(e => e.textContent!.trim());
+    expect(lines).toEqual(['partial (broad mitigation, not confirmed per technique): 2', 'partial (range telemetry, no alert credited): 1']);
+  }));
+
+  it('scenarioReason reads the typed cause; a partial state that names none says partial only', () => {
+    expect(scenarioReason({ bucket: 'partial', covered: [], partialCauses: ['telemetry'] }, 0)).toBe('Partly recorded: partial (range telemetry, no alert credited)');
+    expect(scenarioReason({ bucket: 'partial', covered: [], partialCauses: [] }, 0)).toBe('Partly recorded: partial');
+    expect(scenarioReason({ bucket: 'known', covered: [] }, 2)).toBe('2 mitigations mapped; none recorded as deployed');
+  });
 
   it('the overlay Known row shows mapped-of-total (knownSignals>0), mirroring ctem, not bucket-known', fakeAsync(() => {
     ownerWords = true;

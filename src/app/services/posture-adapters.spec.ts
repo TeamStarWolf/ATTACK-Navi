@@ -11,6 +11,8 @@ import type { ImplStatus } from './implementation.service';
 import type { TechniqueMarkRecord } from './technique-marks.service';
 import type { ValidationOutcome, ValidationRunV2 } from './validation.service';
 import { fixtureControls, parseFixtureDomain } from '../testing/lens-harness';
+import { firedRules } from '../models/posture/fired-rules';
+import { telemetryPartialWords } from '../models/posture/partial-cause';
 import {
   classifyImplKey, controlsAdapter, implView, implementationAdapter, markKey, matchToTechniques,
   runInputs, techniqueMarkToCovered, telemetryMark,
@@ -252,6 +254,82 @@ describe('posture adapters (P2-05)', () => {
       expect(range.covered.map(m => m.partialCause ?? null)).toEqual([null, null, 'telemetry']);
       expect(range.proof).toEqual([]);
       expect(runInputs(run({ outcomes })).covered).toEqual([]);
+      // RP-F decision 35: the telemetry cause carries the row's outcome; no other mark does.
+      expect(range.covered.map(m => m.telemetryOutcome ?? null)).toEqual([null, null, 'logged']);
+    });
+
+    // RP-F decision 35 (round 7): a telemetry-observed row whose rule alerted or blocked
+    // records that outcome on its partial mark, where the mark is produced.
+    for (const fired of ['alerted', 'blocked', 'none', 'logged'] as const) {
+      it(`a telemetry-observed row with outcome ${fired} records it on the telemetry partial`, () => {
+        const outcomes = [outcome({ outcome: fired, detectionRef: 'wazuh:12', coverageState: 'telemetry-observed' })];
+        const range = runInputs(run({ source: 'lylat-range:m1', proofScope: 'range', missionId: 'm1', status: 'partial', outcomes }));
+        expect(range.covered.map(m => [m.basis, m.strength, m.via, m.partialCause, m.telemetryOutcome]))
+          .toEqual([['range-telemetry-observed', 'partial', 'wazuh:12', 'telemetry', fired]]);
+      });
+    }
+
+    // PR #240 round 1: the telemetry outcome is read from the run's fired set (firedRules),
+    // the set the pill and the Proven block count, never from the row alone. Both shapes
+    // reach the store through Import JSON (sanitizeRun keeps a lylat-range source and a
+    // null detectionRef).
+    describe("the telemetry outcome follows the run's fired set (PR #240 round 1)", () => {
+      const range = (over: Partial<ValidationRunV2>) =>
+        runInputs(run({ source: 'lylat-range:m1', proofScope: 'range', missionId: 'm1', status: 'partial', ...over }));
+      const telemetry = (r: ReturnType<typeof runInputs>) => r.covered.filter(m => m.partialCause === 'telemetry');
+
+      it("(a) a 'logged' row whose rule is in detectionsFired reads alerted, as the pill counts it", () => {
+        const r = range({
+          detectionsFired: ['wazuh:5'],
+          outcomes: [outcome({ outcome: 'logged', detectionRef: 'wazuh:5', coverageState: 'telemetry-observed' })],
+        });
+        expect(firedRules({ detectionsFired: ['wazuh:5'], outcomes: [{ detectionRef: 'wazuh:5', outcome: 'logged' }] })).toEqual(['wazuh:5']);
+        expect(telemetry(r).map(m => [m.via, m.telemetryOutcome])).toEqual([['wazuh:5', 'alerted']]);
+        expect(r.summary.rulesFired).toBe(1);
+        expect(telemetryPartialWords(telemetry(r))).toContain('the rule alerted in this run');
+        expect(telemetryPartialWords(telemetry(r))).not.toContain('no detection alerted');
+      });
+
+      for (const ref of [null, '', '   ']) {
+        it(`(b) an 'alerted' row with detectionRef ${JSON.stringify(ref)} fired nothing the pill counts, so it reads logged`, () => {
+          const r = range({ outcomes: [outcome({ outcome: 'alerted', detectionRef: ref, coverageState: 'telemetry-observed' })] });
+          expect(r.summary.rulesFired).toBe(0);
+          expect(r.proof).toEqual([]);
+          expect(telemetry(r).map(m => m.telemetryOutcome)).toEqual(['logged']);
+          expect(telemetryPartialWords(telemetry(r))).toContain('no detection alerted');
+          expect(telemetryPartialWords(telemetry(r))).not.toContain('the rule alerted');
+        });
+      }
+
+      it("an 'alerted' row in a run whose attack was blocked reads blocked, as its proof record does", () => {
+        const r = range({
+          attackResult: 'blocked',
+          outcomes: [outcome({ outcome: 'alerted', detectionRef: 'wazuh:12', coverageState: 'telemetry-observed' })],
+        });
+        expect(r.proof.map(p => [p.detectionRef, p.outcome])).toEqual([['wazuh:12', 'blocked']]);
+        expect(telemetry(r).map(m => m.telemetryOutcome)).toEqual(['blocked']);
+      });
+
+      it("a 'logged' row whose rule fired only through another row's blocked outcome reads blocked", () => {
+        const r = range({
+          outcomes: [
+            outcome({ outcome: 'blocked', detectionRef: 'wazuh:7', coverageState: 'validated' }),
+            outcome({ outcome: 'logged', detectionRef: 'wazuh:7', coverageState: 'telemetry-observed' }),
+          ],
+        });
+        expect(telemetry(r).map(m => m.telemetryOutcome)).toEqual(['blocked']);
+      });
+
+      it("a 'none' row whose rule did not fire keeps none; a 'logged' row keeps logged", () => {
+        const r = range({
+          detectionsFired: ['wazuh:9'],
+          outcomes: [
+            outcome({ outcome: 'none', detectionRef: 'wazuh:1', coverageState: 'telemetry-observed' }),
+            outcome({ outcome: 'logged', detectionRef: 'wazuh:2', coverageState: 'telemetry-observed' }),
+          ],
+        });
+        expect(telemetry(r).map(m => m.telemetryOutcome)).toEqual(['none', 'logged']);
+      });
     });
 
     it('carries the mission id onto range proof', () => {

@@ -26,6 +26,7 @@ import {
 import { lensOnScreen } from '../../models/lens-registry';
 import { KNOWN_FAMILY_COUNT, basisWords, lensExplain, provenNoneLine } from '../../models/lens-explain';
 import { PROVEN, lensLabel, proofLine } from '../../models/posture/posture-vocabulary';
+import { partialMarkWords, recordRunTooltip } from '../../models/posture/partial-cause';
 import { runTime, validationDay } from '../../models/local-date';
 import { POSTURE_TODAY } from '../../models/posture/posture-today';
 import { refForTechnique, techniqueRefKey } from '../../models/technique-ref';
@@ -227,6 +228,9 @@ export class TechniqueEvidenceCardComponent {
    * - a range telemetry partial (partialCause 'telemetry') never offers Confirm (range
    *   telemetry with no alerting detection is not the owner's to attest); it offers
    *   "Record a run", which opens Detect > Validation on the technique.
+   * Each partial mark names its cause in the words of partial-cause.ts (`cause`), and the
+   * "Record a run" tooltip starts with them (RP-F decision 35): a telemetry row whose rule
+   * alerted or blocked says so, and says it is not proof, as the why line and the cell do.
    */
   readonly coveredMarks = computed(() => {
     if (!this.ownerWords()) return [];
@@ -237,6 +241,8 @@ export class TechniqueEvidenceCardComponent {
       at: m.at ? validationDay(m.at) : null,
       canConfirm: confirmable(m) && state.bucket === 'partial',
       canRecordRun: m.strength === 'partial' && m.partialCause === 'telemetry',
+      cause: partialMarkWords(m),
+      recordRunTitle: m.partialCause === 'telemetry' ? recordRunTooltip(m) : null,
     }));
   });
 

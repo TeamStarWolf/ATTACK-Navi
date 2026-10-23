@@ -50,7 +50,7 @@
           <p class="report-split-note" data-testid="report-split-note">
             <strong>{{ labels.known }}</strong> and <strong>{{ labels.theoreticalShort }}</strong> counts come from ATT&amp;CK's reference mappings and make no claim about your environment.
             @if (ownerWords()) {
-              <strong>{{ labels.covered }}</strong> counts come only from data you recorded (self-attested, not validated); a broad mitigation counts as {{ labels.partial }}.
+              <strong>{{ labels.covered }}</strong> counts come only from data you recorded (self-attested, not validated); {{ labels.partialNote }}.
             } @else {
               {{ labels.fresh }}
             }
@@ -78,6 +78,10 @@
                   <div class="summary-card implemented" data-testid="report-partial">
                     <div class="card-num" data-posture="partial">{{ s.partial }}</div>
                     <div class="card-label">{{ labels.partialCard }}</div>
+                    <!-- RP-F decision 36: one line per typed cause with its count (report-split partialCardLines). -->
+                    @for (line of partialLines(); track line) {
+                      <div class="card-sub" data-testid="report-partial-cause">{{ line }}</div>
+                    }
                   </div>
                   <div class="summary-card implemented" data-testid="report-proven">
                     <div class="card-num" data-posture="proven">{{ s.proven }}</div>

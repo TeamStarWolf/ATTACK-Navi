@@ -16,6 +16,7 @@ import type { PostureBucket } from './posture/posture.types';
 import {
   computeReportSplit,
   isTechniqueMapped,
+  partialCardLines,
   REPORT_SPLIT_LABELS,
 } from './report-split';
 
@@ -104,6 +105,32 @@ describe('computeReportSplit (E1.1 Theoretical sub-line, P2-07 posture rollup)',
     expect(split.partial).toBe(3);
   });
 
+  // RP-F decision 36 (round 7, letter G): the Report Builder stated a breadth cause for
+  // telemetry-only range partials. The split now carries the partial count by cause.
+  it('a report built from telemetry-only range rows names the telemetry cause and counts it', () => {
+    const domain = makeSplitDomain();
+    const stub = makePostureStub(() => domain, { T1: 'partial', T2: 'partial' });
+    stub.telemetry(['T1', 'T2']);
+    const split = computeReportSplit(domain, stub.rollup(), 0);
+    expect(split.partial).toBe(2);
+    expect(split.partialByCause).toEqual({ breadth: 0, telemetry: 2 });
+    expect(partialCardLines(split)).toEqual(['partial (range telemetry, no alert credited): 2']);
+    expect(partialCardLines(split).join(' ')).not.toContain('broad mitigation');
+  });
+
+  it('a breadth partial still names the mitigation cause, with a count per cause beside a telemetry one', () => {
+    const domain = makeSplitDomain();
+    const stub = makePostureStub(() => domain, { T1: 'partial', T2: 'partial', T4: 'partial' });
+    stub.telemetry(['T4']);
+    const split = computeReportSplit(domain, stub.rollup(), 0);
+    expect(partialCardLines(split)).toEqual([
+      'partial (broad mitigation, not confirmed per technique): 2',
+      'partial (range telemetry, no alert credited): 1',
+    ]);
+    // A hand-built rollup with no count by cause lists no cause line rather than guess one.
+    expect(partialCardLines(computeReportSplit(domain, { ...stub.rollup(), overall: { ...stub.rollup().overall, partialByCause: undefined } }, 0))).toEqual([]);
+  });
+
   it('leaves Known and Theoretical unchanged when the posture changes', () => {
     const domain = makeSplitDomain();
     const before = computeReportSplit(domain, rollup(domain), 0);
@@ -158,7 +185,8 @@ describe('computeReportSplit (E1.1 Theoretical sub-line, P2-07 posture rollup)',
     expect(REPORT_SPLIT_LABELS.covered).toBe('Covered (self-attested)');
     expect(REPORT_SPLIT_LABELS.assessable).toBe('assessable');
     expect(REPORT_SPLIT_LABELS.assessableNote).toMatch(/not-reproducible/);
-    expect(REPORT_SPLIT_LABELS.partialCard).toBe('partial (broad mitigation, not confirmed per technique)');
+    expect(REPORT_SPLIT_LABELS.partialCard).toBe('partial, by cause');
+    expect(REPORT_SPLIT_LABELS.partialNote).toBe('a broad mitigation not confirmed per technique, or range telemetry with no alert credited, counts as partial');
     // The CSV column header is unchanged.
     expect(REPORT_SPLIT_LABELS.implemented).toBe('Implemented (self-attested)');
     // No Known or Theoretical wording may read as implemented, covered or protected.

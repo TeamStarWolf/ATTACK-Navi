@@ -108,6 +108,10 @@
 
                   @if (result.hasOwnerWords && result.partial > 0) {
                     <div class="partial-note">partial (counted on its own, not rolled up): {{ result.partial }}</div>
+                    <!-- RP-F decision 36: the partial count split by typed cause. -->
+                    @for (line of partialCauseLines(result); track line) {
+                      <div class="partial-note" data-testid="scenario-partial-cause">{{ line }}</div>
+                    }
                   }
 
                   <!-- Donut + Known-only share -->

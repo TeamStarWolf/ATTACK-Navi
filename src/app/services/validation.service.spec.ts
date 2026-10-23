@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { BehaviorSubject, firstValueFrom } from 'rxjs';
 import {
   ATTACK_DID_NOT_EXECUTE, ValidationService, ValidationStatus, ValidationRunV2, describeImportResult,
-  VALIDATION_RUNS_V1_KEY, VALIDATION_RUNS_V2_KEY, statusFromInputs,
+  VALIDATION_RUNS_V1_KEY, VALIDATION_RUNS_V2_KEY, sanitizeRun, statusFromInputs, storedUntestedWords,
 } from './validation.service';
 import { DEFAULT_POSTURE_RULES, derivePosture } from '../models/posture/derive-posture';
 import { AttackIdResolverService } from './attack-id-resolver.service';
@@ -217,6 +217,122 @@ describe('ValidationService', () => {
 
     it('a v1 row with no status and a non-executed outcome is carried as untested', () => {
       localStorage.setItem(VALIDATION_RUNS_V1_KEY, JSON.stringify([v1Run('fp', 'T1110', { status: undefined, attackResult: 'failed-prereq' })]));
+      expect(rebuild().all[0].status).toBe('untested');
+    });
+  });
+
+  // RP-F decision 37 (round 7, letter G): decision 32 on every write path. Import JSON
+  // kept an explicit status 'passed' with attackResult errored or failed-prereq, so
+  // T1027 and T1486 read Proven (2/2).
+  describe('every write path re-derives a non-executed run as untested (RP-F decision 37)', () => {
+    const exportOf = (...runs: Record<string, unknown>[]) => JSON.stringify({ schemaVersion: '2.0', runs });
+    const T1027 = v1Run('r7-t1027', 'T1027', { attackResult: 'errored', status: 'passed', source: 'manual' });
+    const T1486 = v1Run('r7-t1486', 'T1486', { attackResult: 'failed-prereq', status: 'passed', source: 'manual' });
+    const EXECUTED = v1Run('r7-t1059', 'T1059', { attackResult: 'executed', status: 'passed', source: 'manual' });
+
+    function proofOf(run: ValidationRunV2) {
+      const inputs = runInputs(run);
+      return derivePosture(`attack/enterprise/${run.techniqueId}@19.2`, {
+        knownSignals: 0, covered: inputs.covered, proof: inputs.proof, verdicts: inputs.verdicts, runs: [inputs.summary],
+        threatWeight: 0, exposureWeight: 0,
+      }, DEFAULT_POSTURE_RULES, new Date('2026-03-02T00:00:00.000Z'));
+    }
+
+    it('Import JSON: T1027 (errored) and T1486 (failed-prereq) with status passed store untested and never prove; the summary names the count', () => {
+      const result = service.importJson(exportOf(T1027, T1486, EXECUTED));
+      expect(result.ok).toBeTrue();
+      expect(result.storedUntested).toBe(2);
+      const byId = new Map(service.all.map(r => [r.id, r]));
+      expect(byId.get('r7-t1027')!.status).toBe('untested');
+      expect(byId.get('r7-t1486')!.status).toBe('untested');
+      expect(service.latestFor('T1027')!.status).toBe('untested');
+      for (const id of ['r7-t1027', 'r7-t1486']) {
+        const s = proofOf(byId.get(id)!);
+        expect(s.bucket).withContext(id).not.toBe('proven');
+        expect(s.proof).withContext(id).toEqual([]);
+        expect(s.runsWithoutProof.map(r => r.status)).withContext(id).toEqual(['untested']);
+      }
+      // A passed run whose attack executed is untouched, and still proves.
+      expect(byId.get('r7-t1059')!.status).toBe('passed');
+      expect(proofOf(byId.get('r7-t1059')!).bucket).toBe('proven');
+      expect(describeImportResult(result)).toBe('Imported manual: 3 added, 0 replaced. 2 runs stored untested: the attack did not execute.');
+      // A reload reads the stored status back unchanged.
+      expect(new Map(rebuild().all.map(r => [r.id, r.status])).get('r7-t1027')).toBe('untested');
+    });
+
+    it('the summary names one run in the singular, and says nothing when every run executed', () => {
+      expect(describeImportResult(service.importJson(exportOf(T1027)))).toBe('Imported manual: 1 added, 0 replaced. 1 run stored untested: the attack did not execute.');
+      const plain = service.importJson(exportOf(EXECUTED));
+      expect(plain.storedUntested).toBeUndefined();
+      expect(describeImportResult(plain)).toBe('Imported manual: 1 added, 0 replaced.');
+      expect(storedUntestedWords(0)).toBe('');
+      expect(storedUntestedWords(3)).toBe('3 runs stored untested: the attack did not execute');
+    });
+
+    it('a run already untested is not counted; any other explicit status with a non-executed attack is re-derived', () => {
+      const res = service.importJson(exportOf(
+        v1Run('u1', 'T1027', { attackResult: 'errored', status: 'untested' }),
+        v1Run('f1', 'T1486', { attackResult: 'failed-prereq', status: 'failed' }),
+        v1Run('p1', 'T1486', { attackResult: 'errored', status: 'partial' }),
+      ));
+      expect(res.storedUntested).toBe(2);
+      expect(service.all.map(r => r.status)).toEqual(['untested', 'untested', 'untested']);
+    });
+
+    it('the v1 copy-forward stores a non-executed passed row untested and counts it', () => {
+      localStorage.setItem(VALIDATION_RUNS_V1_KEY, JSON.stringify([
+        v1Run('v1-t1027', 'T1027', { attackResult: 'errored', status: 'passed' }), v1Run('v1-ok', 'T1059'),
+      ]));
+      const svc = rebuild();
+      expect(svc.all.map(r => [r.id, r.status])).toEqual([['v1-t1027', 'untested'], ['v1-ok', 'passed']]);
+      expect(svc.migrationStoredUntested).toBe(1);
+      // A later construction (no copy-forward) still names it while the v1 key exists.
+      expect(rebuild().migrationStoredUntested).toBe(1);
+    });
+
+    it('a range import (importRows, the contract path) with a non-executed passed row stores it untested', () => {
+      const res = service.importRows([{ ...rangeRow('lylat:x:enterprise:0', 'T1486'), attackResult: 'errored', status: 'passed' }], 'lylat-range:x');
+      expect(res.ok).toBeTrue();
+      expect(res.storedUntested).toBe(1);
+      expect(service.all[0].status).toBe('untested');
+      expect(service.all[0].statusFromSource).toBeTrue();
+    });
+
+    // PR #240 round 1: update() is a write path too. It recomputed the status only when an
+    // input field changed and never for a statusFromSource run, so these two patches stored
+    // a passed run of an attack that did not execute until the next boot's sanitizeRun.
+    for (const attackResult of ['errored', 'failed-prereq'] as const) {
+      it(`update(): a patch of { status: 'passed' } alone on a manual '${attackResult}' run stores untested`, () => {
+        const run = service.record({ ...baseRun, attackResult });
+        expect(run.status).toBe('untested');
+        service.update(run.id, { status: 'passed' });
+        expect(service.all[0].status).toBe('untested');
+        expect(proofOf(service.all[0]).bucket).not.toBe('proven');
+        expect(service.latestFor('T1003.001')!.status).toBe('untested');
+      });
+
+      it(`update(): a patch of { attackResult: '${attackResult}' } on an imported passed run stores untested`, () => {
+        service.importRows([{ ...rangeRow('imp1', 'T1486'), status: 'passed' }], 'lylat-range:x');
+        expect(service.all[0].status).toBe('passed');
+        expect(service.all[0].statusFromSource).toBeTrue();
+        service.update('imp1', { attackResult });
+        const after = service.all[0];
+        expect(after.status).toBe('untested');
+        expect(after.statusFromSource).toBeTrue();
+        expect(after.attackResult).toBe(attackResult);
+        expect(proofOf(after).bucket).not.toBe('proven');
+      });
+    }
+
+    it("update(): an executed run's explicit status patch is kept (only a non-executed attack is forced untested)", () => {
+      const run = service.record({ ...baseRun, attackResult: 'executed' });
+      service.update(run.id, { status: 'failed' });
+      expect(service.all[0].status).toBe('failed');
+    });
+
+    it('a stored record written before this rule reads back untested (the store reader sanitises too)', () => {
+      const run = (sanitizeRun(v1Run('old', 'T1027', { status: 'passed', attackResult: 'executed' })) as { run: ValidationRunV2 }).run;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ schema: 2, tombstones: [], records: [{ ...run, attackResult: 'errored', status: 'passed' }] }));
       expect(rebuild().all[0].status).toBe('untested');
     });
   });

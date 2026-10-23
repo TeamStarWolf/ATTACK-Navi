@@ -24,7 +24,7 @@
 import type { Domain } from '../models/domain';
 import type { Technique } from '../models/technique';
 import type { SecurityControl } from '../models/security-control';
-import type { CoveredMark, CoveredStrength, ProofRecord, RunSummary, RunVerdict } from '../models/posture/posture.types';
+import type { CoveredMark, CoveredStrength, ProofRecord, RunSummary, RunVerdict, TelemetryOutcome } from '../models/posture/posture.types';
 import { rollupMitigations } from '../models/posture/mitigation-rollup';
 import { provesStatus } from '../models/posture/derive-posture';
 import { runMatches } from '../models/posture/run-match';
@@ -185,6 +185,26 @@ const RANGE_STATES = {
 } as const;
 
 /**
+ * The outcome a telemetry-observed row's partial mark carries (RP-F decision 35, PR #240
+ * round 1): 'alerted' or 'blocked' exactly when the row's rule is in the run's fired set
+ * (`named`, whose keys are firedRules(run): detectionsFired plus the rules of alerted or
+ * blocked outcomes), with 'blocked' when that rule or the run was blocked; otherwise the
+ * row fired nothing the pill counts, so 'none' for a 'none' row and 'logged' for the rest.
+ *   a 'logged' row via wazuh:5 with detectionsFired ['wazuh:5'] -> 'alerted' (the pill says 1 fired)
+ *   an 'alerted' row with no detectionRef                       -> 'logged'  (the pill says 0 fired)
+ *   an 'alerted' row via wazuh:5 in a run whose attack was blocked -> 'blocked' (as its proof record)
+ */
+function telemetryOutcomeOf(
+  o: ValidationRunV2['outcomes'][number],
+  via: string | undefined,
+  named: ReadonlyMap<string, 'alerted' | 'blocked'>,
+): TelemetryOutcome {
+  const fired = via ? named.get(via) : undefined;
+  if (fired !== undefined) return fired;
+  return o.outcome === 'none' ? 'none' : 'logged';
+}
+
+/**
  * Validation adapter for one run (S4; §7):
  * - every named detection (an 'alerted' or 'blocked' outcome with a non-empty
  *   detectionRef, or an entry of detectionsFired) is one ProofRecord with the
@@ -201,8 +221,10 @@ const RANGE_STATES = {
  *   'not-reproducible' negative control) is a notReproducible one;
  * - range rows (proofScope 'range') with coverageState 'deployed' or
  *   'detection-authored' are range full marks, 'telemetry-observed' a range
- *   partial mark with partialCause 'telemetry' (RP-F decision 31). Own runs never
- *   carry range marks.
+ *   partial mark with partialCause 'telemetry' (RP-F decision 31) whose cause carries
+ *   the row's outcome (telemetryOutcome: logged, none, alerted or blocked; RP-F decision
+ *   35) as the run's fired set says it (telemetryOutcomeOf), so the words say a rule
+ *   fired exactly when the pill and the Proven block count it. Own runs never carry range marks.
  */
 export function runInputs(run: ValidationRunV2): RunInputs {
   const runBlocked = run.attackResult === 'blocked';
@@ -243,7 +265,12 @@ export function runInputs(run: ValidationRunV2): RunInputs {
       covered.push({
         qualifier: 'range', basis: state.basis, strength: state.strength, source: run.source, at: run.runDate,
         ...(via ? { via } : {}),
-        ...('partialCause' in state ? { partialCause: state.partialCause } : {}),
+        // RP-F decision 35: the telemetry cause carries the row's outcome, set here where
+        // the mark is produced; partial-cause.ts words it (an alerted or blocked rule is
+        // named as fired, and still not proof). The outcome is read from the run's fired
+        // set (firedRules, the set the pill and the Proven block count; RP-F #240 round 1),
+        // never from the row alone, so the words cannot disagree with them.
+        ...('partialCause' in state ? { partialCause: state.partialCause, telemetryOutcome: telemetryOutcomeOf(o, via, named) } : {}),
       });
     }
   }

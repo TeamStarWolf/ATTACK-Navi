@@ -48,10 +48,21 @@ function reason(run: RunSummary): string {
   return 'a later run outranks it';
 }
 
-/** 'N rule(s) fired in your run on <day> (status <status>)'. */
+/**
+ * Whose run it was, by its source (RP-F decision 35): 'your run' only for a run you
+ * recorded (source 'manual'), 'the range run' for a run imported from a range contract
+ * ('lylat-range:<mission>'), else 'the imported run'. Round 7 called a range row
+ * 'your run' on T1082.
+ */
+export function runSourceWords(source: string): string {
+  if (source === 'manual') return 'your run';
+  return source.startsWith('lylat-range:') ? 'the range run' : 'the imported run';
+}
+
+/** 'N rule(s) fired in your run on <day> (status <status>)', or 'in the range run' for a range row. */
 function firedRunWords(run: RunSummary): string {
   const n = run.rulesFired as number;
-  return `${n} rule${n === 1 ? '' : 's'} fired in your run on ${validationDay(run.date)} (status ${run.status})`;
+  return `${n} rule${n === 1 ? '' : 's'} fired in ${runSourceWords(run.source)} on ${validationDay(run.date)} (status ${run.status})`;
 }
 
 /**
