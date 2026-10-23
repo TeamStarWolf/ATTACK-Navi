@@ -3,9 +3,10 @@
 import { TestBed } from '@angular/core/testing';
 import { BehaviorSubject, firstValueFrom } from 'rxjs';
 import {
-  ValidationService, ValidationStatus, ValidationRunV2, describeImportResult,
-  VALIDATION_RUNS_V1_KEY, VALIDATION_RUNS_V2_KEY,
+  ATTACK_DID_NOT_EXECUTE, ValidationService, ValidationStatus, ValidationRunV2, describeImportResult,
+  VALIDATION_RUNS_V1_KEY, VALIDATION_RUNS_V2_KEY, statusFromInputs,
 } from './validation.service';
+import { DEFAULT_POSTURE_RULES, derivePosture } from '../models/posture/derive-posture';
 import { AttackIdResolverService } from './attack-id-resolver.service';
 import { DataService, AttackDomain } from './data.service';
 import { ImplementationService } from './implementation.service';
@@ -163,6 +164,60 @@ describe('ValidationService', () => {
         telemetryRequired: [], telemetryAvailable: [],
         detectionsExpected: [], detectionsFired: [],
       })).toBe('untested');
+    });
+  });
+
+  // RP-F decision 32: a run whose attack did not execute stores untested, never
+  // passed, whatever rules are ticked. Round 6 recorded "Failed prerequisite" with its
+  // rule ticked and stored 'passed', a proof the allow-list of decision 23 accepted.
+  describe('a run whose attack did not execute (RP-F decision 32)', () => {
+    const allFired = {
+      telemetryRequired: ['x'], telemetryAvailable: ['x'], detectionsExpected: ['sigma:a'], detectionsFired: ['sigma:a'],
+    };
+    const EXPECTED: Readonly<Record<ValidationRunV2['attackResult'], ValidationStatus>> = {
+      executed: 'passed', blocked: 'passed', 'failed-prereq': 'untested', errored: 'untested',
+    };
+
+    for (const [attackResult, status] of Object.entries(EXPECTED) as [ValidationRunV2['attackResult'], ValidationStatus][]) {
+      it(`attackResult '${attackResult}' with every rule ticked computes '${status}'`, () => {
+        expect(ATTACK_DID_NOT_EXECUTE[attackResult]).toBe(status === 'untested');
+        expect(statusFromInputs({ ...allFired, attackResult })).toBe(status);
+        // Whatever else the inputs say, a run that did not execute is untested.
+        if (status === 'untested') {
+          expect(statusFromInputs({ ...allFired, telemetryAvailable: [], attackResult })).toBe('untested');
+          expect(statusFromInputs({ ...allFired, detectionsFired: [], attackResult })).toBe('untested');
+        }
+      });
+    }
+
+    for (const attackResult of ['failed-prereq', 'errored'] as const) {
+      it(`record(): '${attackResult}' with its rule ticked stores untested, yields no proof, and the latest run reads untested`, () => {
+        const run = service.record({ ...baseRun, attackResult });
+        expect(run.status).toBe('untested');
+        expect(service.latestFor('T1003.001')!.status).toBe('untested');
+        const inputs = runInputs(run);
+        const s = derivePosture('attack/enterprise/T1003.001@19.2', {
+          knownSignals: 0, covered: inputs.covered, proof: inputs.proof, verdicts: inputs.verdicts, runs: [inputs.summary],
+          threatWeight: 0, exposureWeight: 0,
+        }, DEFAULT_POSTURE_RULES, new Date('2026-10-22T00:00:00.000Z'));
+        expect(s.bucket).not.toBe('proven');
+        expect(s.proof).toEqual([]);
+        expect(s.runsWithoutProof.map(r => r.status)).toEqual(['untested']);
+      });
+    }
+
+    it('update(): changing the outcome recomputes the status both ways', () => {
+      const run = service.record(baseRun);
+      expect(run.status).toBe('passed');
+      service.update(run.id, { attackResult: 'errored' });
+      expect(service.all[0].status).toBe('untested');
+      service.update(run.id, { attackResult: 'executed' });
+      expect(service.all[0].status).toBe('passed');
+    });
+
+    it('a v1 row with no status and a non-executed outcome is carried as untested', () => {
+      localStorage.setItem(VALIDATION_RUNS_V1_KEY, JSON.stringify([v1Run('fp', 'T1110', { status: undefined, attackResult: 'failed-prereq' })]));
+      expect(rebuild().all[0].status).toBe('untested');
     });
   });
 

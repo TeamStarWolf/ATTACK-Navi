@@ -164,13 +164,32 @@ export function scopeForSource(source: Exclude<SourceId, 'wizard'>): ProofScope 
   return source.startsWith('lylat-range:') ? 'range' : 'own-run';
 }
 
-/** Compute status from telemetry/detection inputs (the panel's rule, also used to fill a v1 row's missing status). */
+/**
+ * The Record Run outcomes that mean the attack did not execute (RP-F decision 32):
+ * "Failed prerequisite" and "Errored". Every other outcome the modal offers
+ * ("Executed", "Blocked by control") ran the attack. A Record over every
+ * attackResult, so a new outcome cannot be left unclassified.
+ */
+export const ATTACK_DID_NOT_EXECUTE: Readonly<Record<ValidationRun['attackResult'], boolean>> = {
+  executed: false, blocked: false, 'failed-prereq': true, errored: true,
+};
+
+/**
+ * Compute status from telemetry/detection inputs (the panel's rule, also used to fill a v1 row's missing status).
+ *
+ * A run whose attack did not execute (ATTACK_DID_NOT_EXECUTE: Failed prerequisite,
+ * Errored) is 'untested', never passed, whatever rules are ticked (RP-F decision 32):
+ * the proof allow-list of decision 23 cannot be satisfied by a run that never ran.
+ * Round 6 recorded "Failed prerequisite" with its rule ticked and stored 'passed'.
+ */
 export function statusFromInputs(input: {
   telemetryRequired: readonly string[];
   telemetryAvailable: readonly string[];
   detectionsExpected: readonly string[];
   detectionsFired: readonly string[];
+  attackResult?: ValidationRun['attackResult'];
 }): ValidationStatus {
+  if (input.attackResult !== undefined && ATTACK_DID_NOT_EXECUTE[input.attackResult]) return 'untested';
   if (input.telemetryRequired.length > 0 && input.telemetryAvailable.length === 0) return 'no-telemetry';
   if (input.detectionsExpected.length === 0) return 'untested';
   // The one fired-rule count (firedRules, RP-F decision 30b), over the inputs alone: update()
@@ -350,7 +369,9 @@ function upgradeV1(raw: string): { runs: ValidationRunV2[]; dropped: ImportResul
     const r = sanitizeRun({
       ...row,
       id,
-      status: oneOf(STATUSES, row['status']) ? row['status'] : statusFromInputs(lists),
+      status: oneOf(STATUSES, row['status'])
+        ? row['status']
+        : statusFromInputs({ ...lists, attackResult: oneOf(ATTACK_RESULTS, row['attackResult']) ? row['attackResult'] : undefined }),
       attackResult: oneOf(ATTACK_RESULTS, row['attackResult']) ? row['attackResult'] : 'executed',
       source: undefined, domain: null, techniqueRef: null,
       attackVersion: undefined, outcomes: undefined, createdAt: undefined, updatedAt: undefined, missionId: undefined,
@@ -511,12 +532,13 @@ export class ValidationService {
     return latestRun(this.forTechnique(techniqueId), storedRunKey)?.run ?? null;
   }
 
-  /** Compute status from telemetry/detection/response inputs. */
+  /** Compute status from telemetry/detection/response inputs and the attack's outcome (RP-F decision 32). */
   computeStatus(input: {
     telemetryRequired: string[];
     telemetryAvailable: string[];
     detectionsExpected: string[];
     detectionsFired: string[];
+    attackResult?: ValidationRun['attackResult'];
   }): ValidationStatus {
     return statusFromInputs(input);
   }
@@ -583,7 +605,8 @@ export class ValidationService {
           fields.telemetryRequired !== undefined ||
           fields.telemetryAvailable !== undefined ||
           fields.detectionsExpected !== undefined ||
-          fields.detectionsFired !== undefined
+          fields.detectionsFired !== undefined ||
+          fields.attackResult !== undefined
         ) {
           merged.status = statusFromInputs(merged);
         }

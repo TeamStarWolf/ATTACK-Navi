@@ -5,7 +5,7 @@ import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
 import { ValidationPanelComponent } from './validation-panel.component';
 import { DataService } from '../../services/data.service';
-import { ValidationService } from '../../services/validation.service';
+import { ATTACK_DID_NOT_EXECUTE, ValidationService, statusFromInputs } from '../../services/validation.service';
 import { EventLoggingService } from '../../services/event-logging.service';
 import { AtomicService } from '../../services/atomic.service';
 import { SigmaService } from '../../services/sigma.service';
@@ -292,6 +292,32 @@ describe('ValidationPanelComponent', () => {
       expect(component.showRecordModal).toBeFalse();
       expect(TestBed.inject(RecordRunRequestService).take()).toBeNull();
     });
+  });
+
+  // RP-F decision 32: every outcome the Record Run modal offers is classified, and the
+  // ones that mean the attack did not execute store untested whatever rules are ticked.
+  it('the Record Run outcomes: Failed prerequisite and Errored store untested with every rule ticked; Executed and Blocked do not', () => {
+    (TestBed.inject(DataService) as unknown as { domain$: BehaviorSubject<unknown> }).domain$
+      .next({ techniques: [{ id: 'attack-pattern--T1200', attackId: 'T1200', name: 'Hardware Additions', isSubtechnique: false, tacticShortnames: [] }] });
+    TestBed.inject(RecordRunRequestService).request('T1200');
+    rerender();
+    const options = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.vp-modal select option')]
+      .map(o => [(o as HTMLOptionElement).value, (o.textContent ?? '').trim()]);
+    expect(options).toEqual([
+      ['executed', 'Executed'], ['failed-prereq', 'Failed prerequisite'], ['blocked', 'Blocked by control'], ['errored', 'Errored'],
+    ]);
+    const ticked = { telemetryRequired: [], telemetryAvailable: [], detectionsExpected: ['sigma:1'], detectionsFired: ['sigma:1'] };
+    const stored = Object.fromEntries(options.map(([value]) =>
+      [value, statusFromInputs({ ...ticked, attackResult: value as keyof typeof ATTACK_DID_NOT_EXECUTE })]));
+    expect(stored).toEqual({ executed: 'passed', 'failed-prereq': 'untested', blocked: 'passed', errored: 'untested' });
+    // saveRun hands the chosen outcome to record(), which computes the status from it.
+    component.formAttackResult = 'failed-prereq';
+    component.formDetectionsExpected = ['sigma:1'];
+    component.formDetectionsFired = { 'sigma:1': true };
+    component.saveRun();
+    expect(TestBed.inject(ValidationService).record).toHaveBeenCalledWith(jasmine.objectContaining({
+      attackResult: 'failed-prereq', detectionsFired: ['sigma:1'],
+    }));
   });
 
   it('cancelRecord closes the modal and clears selectedTechnique', () => {
