@@ -192,4 +192,21 @@ test.describe('RP-F round 8', () => {
     await expect(marks.first()).toContainText('deployed in the range via wazuh:207');
     await expect(card).not.toContainText('telemetry observed in the range via wazuh:207');
   });
+
+  // Decision 42: the runs line names its source. Round 8 read "1 run of yours recorded" on
+  // T1090.002, whose only run was a range row.
+  test('[RP-F 42] the runs line: "1 range run" (T1090.002), "1 run of yours" (T1069), "2 runs (1 yours, 1 range)" (T1018)', async ({ page }) => {
+    await openWorkspace(page);
+    await importAll(page);
+    for (const [id, words] of [
+      ['T1090.002', '1 range run recorded, latest untested on 10/21/26; see Detection Validation'],
+      ['T1069', '1 run of yours recorded, latest untested on 10/20/26; see Detection Validation'],
+      ['T1018', '2 runs (1 yours, 1 range) recorded, latest untested on 10/21/26; see Detection Validation'],
+    ] as const) {
+      const { card } = await drawer(page, id, 'posture');
+      await expect(card.getByTestId('ev-why'), id).toContainText(words, { timeout: ROUTE_TIMEOUT });
+    }
+    const { card } = await drawer(page, 'T1090.002', 'posture');
+    await expect(card.getByTestId('ev-why')).not.toContainText('of yours');
+  });
 });
