@@ -255,4 +255,18 @@ test.describe('RP-F round 8', () => {
     await expect(row).toContainText('attack did not execute', { timeout: ROUTE_TIMEOUT });
     await expect(row).not.toContainText(/\d+ of \d+ expected/);
   });
+
+  // Decision 45: a blank rule id is dropped at store; a source that supersedes itself
+  // reads "N replaced", never "N added, N replaced".
+  test('[RP-F 45] re-importing the same contract reads "replaced" only; a blank rule id lists no range-run rule', async ({ page }) => {
+    await openWorkspace(page);
+    await importAll(page);
+    await page.locator('#vp-import-range').setInputFiles({ name: 'range-again.json', mimeType: 'application/json', buffer: Buffer.from(contract()) });
+    const summary = page.locator('.vp-import-msg', { hasText: `lylat-range:${MISSION}` });
+    await expect(summary).toHaveText(`Imported lylat-range:${MISSION}: ${ROWS.length} replaced.`, { timeout: ROUTE_TIMEOUT });
+
+    const { drawer: d } = await drawer(page, 'T1092', 'posture');
+    await expect(d.locator('app-validation-status-pill .vsp-status').first()).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    await expect(d.locator('app-validation-status-pill .vsp-rule')).toHaveCount(0);
+  });
 });

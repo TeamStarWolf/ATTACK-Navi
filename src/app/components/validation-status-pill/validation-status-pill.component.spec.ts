@@ -6,7 +6,7 @@ import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter, Router } from '@angular/router';
 import { ValidationStatusPillComponent } from './validation-status-pill.component';
-import { ValidationService, type ValidationRunV2 } from '../../services/validation.service';
+import { ValidationService, type ValidationRunV2, sanitizeRun } from '../../services/validation.service';
 import { runInputs } from '../../services/posture-adapters';
 import { DEFAULT_POSTURE_RULES, derivePosture } from '../../models/posture/derive-posture';
 import { postureExplain } from '../../models/lens-explain';
@@ -69,6 +69,19 @@ describe('ValidationStatusPillComponent', () => {
       outcomes: [{ detectionRef, outcome: 'alerted', coverageState: 'validated' }],
     };
   }
+
+  // RP-F decision 45: a blank rule id is dropped when the run is stored, so the pill never
+  // lists an empty rule name (round 8: the T1092 shape listed '  ' under range-run rules).
+  it('never lists an empty rule name: a stored run with a blank detectionRef lists no range-run rule', () => {
+    const stored = sanitizeRun({ ...rangeRun('wazuh:990001'), attackResult: 'executed', outcomes: [{ detectionRef: '   ', outcome: 'alerted', coverageState: 'telemetry-observed' }] });
+    const run = (stored as { run: ValidationRunV2 }).run;
+    validation.forTechnique.and.returnValue([run]);
+    validation.latestFor.and.returnValue(run);
+    component.attackId = 'T1558.003';
+    fixture.detectChanges();
+    expect(component.labProofRecords).toEqual([]);
+    expect((fixture.nativeElement as HTMLElement).querySelector('.vsp-rules')).toBeNull();
+  });
 
   it('marks a range-scoped run with the lab badge and lists each proof record with its date, newest first', () => {
     // Deliberately out of order: the older run is listed first in the input.
