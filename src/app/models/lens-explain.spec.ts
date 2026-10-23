@@ -46,6 +46,24 @@ describe('lensExplain (P2-18): Why this colour', () => {
         .toBe('Proven in range (stale) on 6/1/26 by lylat-range:CORNERIA-ROOT-01; 2 rules fired; older than its 90-day window');
     });
 
+    // RP-F decision 30b, round 1 repair: the Proven line names the best record's RUN's
+    // fired-rule count (runRulesFired, set by runInputs), never a count of the records
+    // that stand, and never a count that mixes in another run's records.
+    it("names the best record's run's own fired-rule count, even when only one of its records stands", () => {
+      const partlyRemoved = state({ rung: 'proven', bucket: 'proven', proofScope: 'own-run', proofAge: 20, proof: [{ ...RUN, runRulesFired: 2 }] });
+      expect(postureExplain(partlyRemoved)).toBe('Proven (your run) on 10/21/26 by manual; 2 rules fired');
+    });
+
+    it("a record without its run count counts the best run's standing records only, never another run's", () => {
+      const twoRuns = state({
+        rung: 'proven', bucket: 'proven', proofScope: 'own-run', proofAge: 0,
+        proof: [{ ...RUN, runId: 'rB', detectionRef: 'sigma:y' },
+          { ...RUN, runId: 'rA', detectionRef: 'sigma:x', date: '2026-10-01T09:30:00.000Z' },
+          { ...RUN, runId: 'rA', detectionRef: 'sigma:z', date: '2026-10-01T09:30:00.000Z' }],
+      });
+      expect(postureExplain(twoRuns)).toBe('Proven (your run) on 10/21/26 by manual; 1 rule fired');
+    });
+
     it('Covered names its qualifier and the marks behind it', () => {
       expect(lensExplain(def('posture'), { score: 0, bucket: 'covered' }, { state: COVERED_STATE }))
         .toBe('Covered (self-attested) from mitigation implemented via M1036');

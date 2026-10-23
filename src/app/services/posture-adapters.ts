@@ -28,6 +28,7 @@ import type { CoveredMark, CoveredStrength, ProofRecord, RunSummary, RunVerdict 
 import { rollupMitigations } from '../models/posture/mitigation-rollup';
 import { provesStatus } from '../models/posture/derive-posture';
 import { runMatches } from '../models/posture/run-match';
+import { firedRuleCount } from '../models/posture/fired-rules';
 import { type TechniqueRefKey, parseTechniqueRef } from '../models/technique-ref';
 import type { AttackDomain } from './data.service';
 import type { ImplStatus } from './implementation.service';
@@ -212,9 +213,16 @@ export function runInputs(run: ValidationRunV2): RunInputs {
     if (ref !== '' && !named.has(ref)) named.set(ref, runBlocked ? 'blocked' : 'alerted');
   }
   const blocked = runBlocked || run.outcomes.some(o => o.outcome === 'blocked');
+  // The one fired-rule count (firedRules, RP-F decision 30b): the distinct union of
+  // detectionsFired and the rules of alerted or blocked outcomes, which the Validation
+  // pill's "N of M detection rules fired" counts too. Round 5: a passed run whose only
+  // rule was a blocked outcome read "1 rule fired" on the card beside a pill "0 of 0".
+  // Every proof record carries it (runRulesFired), so the card's Proven line counts the
+  // run, not the records of it that a later run of one rule left standing.
+  const rulesFired = firedRuleCount(run);
 
   const proof: ProofRecord[] = [...named].map(([detectionRef, outcome]) => ({
-    scope: run.proofScope, detectionRef, outcome, date: run.runDate, source: run.source, runId: run.id,
+    scope: run.proofScope, detectionRef, outcome, date: run.runDate, source: run.source, runId: run.id, runRulesFired: rulesFired,
     ...(run.missionId !== undefined ? { missionId: run.missionId } : {}),
   }));
 
@@ -239,11 +247,6 @@ export function runInputs(run: ValidationRunV2): RunInputs {
   const verdicts: RunVerdict[] = failed || notReproducible
     ? [{ date: run.runDate, failed, notReproducible, source: run.source }]
     : [];
-  // The pill's "N of M detection rules fired" counts detectionsFired, so the card's count
-  // does too: a rule named only by an outcome (blocked or alerted) is proof input above,
-  // never a rule the pill says fired (RP-F decision 28). The store normalises the list at
-  // load and import (ruleList, RP-F decision 29), so both count each rule once.
-  const rulesFired = new Set(run.detectionsFired.map(d => d.trim()).filter(d => d !== '')).size;
   // Every rule the run names, so derivePosture supersedes proof per rule (RP-F decision 29).
   const rules = [...new Set(
     [...run.outcomes.map(o => o.detectionRef ?? ''), ...run.detectionsExpected, ...run.detectionsFired]

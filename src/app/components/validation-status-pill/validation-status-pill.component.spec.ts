@@ -6,7 +6,10 @@ import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter, Router } from '@angular/router';
 import { ValidationStatusPillComponent } from './validation-status-pill.component';
-import { ValidationService } from '../../services/validation.service';
+import { ValidationService, type ValidationRunV2 } from '../../services/validation.service';
+import { runInputs } from '../../services/posture-adapters';
+import { DEFAULT_POSTURE_RULES, derivePosture } from '../../models/posture/derive-posture';
+import { postureExplain } from '../../models/lens-explain';
 
 describe('ValidationStatusPillComponent', () => {
   let component: ValidationStatusPillComponent;
@@ -98,5 +101,89 @@ describe('ValidationStatusPillComponent', () => {
     expect(component.labRange).toBeFalse();
     expect(component.labProofRecords).toEqual([]);
     expect((fixture.nativeElement as HTMLElement).textContent ?? '').not.toContain('range-run rules');
+  });
+
+  // RP-F decision 30b: round 5's T1113 shape. A passed run whose only rule is a blocked
+  // outcome (detectionsFired empty) read "0 of 0 detection rules fired" on the pill beside
+  // a card reading "1 rule fired". Both now count through firedRules.
+  describe('the pill and the evidence card count the same fired rules (RP-F decision 30b)', () => {
+    function t1113(over: Partial<ValidationRunV2>): ValidationRunV2 {
+      return {
+        id: 'rpf30b', techniqueId: 'T1113', techniqueName: 'Screen Capture', runDate: '2026-10-20T10:00:00.000Z', operator: '',
+        telemetryRequired: [], telemetryAvailable: [], atomicTestId: '', atomicCommand: '',
+        attackResult: 'executed', detectionsExpected: [], detectionsFired: [],
+        responsePlaybook: '', responseActions: [], evidenceLinks: [], notes: '', status: 'passed',
+        domain: 'enterprise', attackVersion: '19.2', source: 'manual',
+        createdAt: '2026-10-20T10:00:00.000Z', updatedAt: '2026-10-20T10:00:00.000Z',
+        techniqueRef: 'attack/enterprise/T1113@19.2', proofScope: 'own-run', outcomes: [], statusFromSource: false,
+        ...over,
+      };
+    }
+    // A fresh pill per run: the pill reads its runs when attackId is first bound.
+    const pillLine = (r: ValidationRunV2): string => {
+      validation.forTechnique.and.returnValue([r]);
+      validation.latestFor.and.returnValue(r);
+      const f = TestBed.createComponent(ValidationStatusPillComponent);
+      f.componentInstance.attackId = 'T1113';
+      f.detectChanges();
+      return ((f.nativeElement as HTMLElement).querySelector('.vsp-meta')?.textContent ?? '').replace(/\s+/g, ' ').trim();
+    };
+    const cardLine = (r: ValidationRunV2): string => {
+      const i = runInputs(r);
+      return postureExplain(derivePosture('attack/enterprise/T1113@19.2', {
+        knownSignals: 2, threatWeight: 1, exposureWeight: 0, covered: i.covered, proof: i.proof, verdicts: i.verdicts, runs: [i.summary],
+      }, DEFAULT_POSTURE_RULES, new Date('2026-10-21T00:00:00.000Z')));
+    };
+
+    it("T1113, outcome {edr:x, blocked} and empty detectionsFired: pill '1 of N', card '1 rule fired'", () => {
+      const r = t1113({ outcomes: [{ detectionRef: 'edr:x', outcome: 'blocked' }] });
+      expect(pillLine(r)).toBe('1 of 0 detection rules fired');
+      expect(cardLine(r)).toBe('Proven (your run) on 10/20/26 by manual; 1 rule fired');
+      expect(pillLine(t1113({ detectionsExpected: ['edr:x'], outcomes: [{ detectionRef: 'edr:x', outcome: 'blocked' }] })))
+        .toBe('1 of 1 detection rules fired');
+    });
+
+    it('duplicates and blanks collapse, and a rule in both lists counts once, on the pill and the card alike', () => {
+      const r = t1113({
+        detectionsExpected: ['siem:a', 'edr:x', 'siem:c'], detectionsFired: ['siem:a', ' siem:a ', '', 'edr:x'],
+        outcomes: [{ detectionRef: 'edr:x', outcome: 'blocked' }, { detectionRef: ' siem:a', outcome: 'alerted' }, { detectionRef: '', outcome: 'alerted' }],
+      });
+      expect(component.firedCount(r)).toBe(2);
+      expect(pillLine(r)).toBe('2 of 3 detection rules fired');
+      expect(cardLine(r)).toBe('Proven (your run) on 10/20/26 by manual; 2 rules fired');
+    });
+
+    // Round 1 repair: the card counts the best record's RUN (firedRules over the run),
+    // never the records of it that stand, and never another run's records.
+    const cardLineOf = (runs: readonly ValidationRunV2[]): string => {
+      const ins = runs.map(runInputs);
+      return postureExplain(derivePosture('attack/enterprise/T1113@19.2', {
+        knownSignals: 2, threatWeight: 1, exposureWeight: 0,
+        covered: ins.flatMap(i => i.covered), proof: ins.flatMap(i => i.proof), verdicts: ins.flatMap(i => i.verdicts), runs: ins.map(i => i.summary),
+      }, DEFAULT_POSTURE_RULES, new Date('2026-10-21T00:00:00.000Z')));
+    };
+    const pillLineOf = (runs: ValidationRunV2[], latest: ValidationRunV2): string => {
+      validation.forTechnique.and.returnValue(runs);
+      validation.latestFor.and.returnValue(latest);
+      const f = TestBed.createComponent(ValidationStatusPillComponent);
+      f.componentInstance.attackId = 'T1113';
+      f.detectChanges();
+      return ((f.nativeElement as HTMLElement).querySelector('.vsp-meta')?.textContent ?? '').replace(/\s+/g, ' ').trim();
+    };
+
+    it("a partly superseded run: a later failed run of one rule leaves the other standing, and the card still names the run's 2 rules", () => {
+      const a = t1113({ id: 'rA', runDate: '2026-10-01T10:00:00.000Z', detectionsExpected: ['siem:x', 'siem:y'], detectionsFired: ['siem:x', 'siem:y'] });
+      const b = t1113({ id: 'rB', runDate: '2026-10-10T10:00:00.000Z', status: 'failed', detectionsExpected: ['siem:y'] });
+      expect(component.firedCount(a)).toBe(2);
+      expect(cardLineOf([a, b])).toBe('Proven (your run) on 10/1/26 by manual; 2 rules fired; a later run of another rule failed on 10/10/26');
+      expect(pillLineOf([b, a], b)).toBe('0 of 1 detection rules fired');
+    });
+
+    it("two passed runs: the card names the best run's own count, never the rules of both runs", () => {
+      const a = t1113({ id: 'rA', runDate: '2026-10-01T10:00:00.000Z', detectionsExpected: ['siem:x', 'siem:z'], detectionsFired: ['siem:x', 'siem:z'] });
+      const b = t1113({ id: 'rB', runDate: '2026-10-10T10:00:00.000Z', detectionsExpected: ['siem:y'], detectionsFired: ['siem:y'] });
+      expect(cardLineOf([a, b])).toBe('Proven (your run) on 10/10/26 by manual; 1 rule fired');
+      expect(pillLineOf([b, a], b)).toBe('1 of 1 detection rules fired');
+    });
   });
 });
