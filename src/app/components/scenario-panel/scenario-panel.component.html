@@ -28,7 +28,7 @@
           <app-threat-profile-picker mode="profile" />
           <div class="sim-action-bar">
             <button class="sim-run-btn" (click)="runProfileSimulation()" [disabled]="isSimulating">
-              @if (isSimulating) { <span class="mini-spinner"></span> Simulating… } @else { Simulate profile }
+              @if (isSimulating) { <span class="mini-spinner"></span> {{ waitingForCves ? 'Loading the CVE mappings…' : 'Simulating…' }} } @else { Simulate profile }
             </button>
           </div>
         </div>

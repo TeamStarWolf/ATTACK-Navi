@@ -95,7 +95,7 @@
     <div class="auto-roadmap-header">
       <button class="generate-btn" (click)="generateAutoRoadmap()" [disabled]="generatingRoadmap">
         @if (generatingRoadmap) {
-          <span class="spinner"></span> Analyzing...
+          <span class="spinner"></span> {{ waitingForCves ? 'Loading the CVE mappings...' : 'Analyzing...' }}
         } @else {
           🚀 Auto-Generate Roadmap
         }

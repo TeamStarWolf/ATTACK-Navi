@@ -90,7 +90,7 @@ describe('MatrixControlsComponent', () => {
             toggleMultiSelect: jasmine.createSpy(),
             requestGapView: jasmine.createSpy(),
         }},
-        { provide: AttackCveService, useValue: { getMappingForCve: () => null }},
+        { provide: AttackCveService, useValue: { getMappingForCve: () => null, loadOnDemand: () => undefined, loaded$: new BehaviorSubject(true) }},
         { provide: LibraryLayerService, useValue: libraryStub },
         { provide: UserLayerService, useValue: userLayerStub },
         { provide: PostureService, useValue: { implPartialOnly: partialOnly, ownerWords } },

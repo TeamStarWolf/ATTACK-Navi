@@ -39,6 +39,7 @@ describe('NucleiService', () => {
         {
           provide: AttackCveService,
           useValue: {
+            loadOnDemand: () => undefined,
             loaded$: mockAttackCveLoaded$.asObservable(),
             // The service waits on how the CTID mapping load settled (E1.3).
             outcome$: mockAttackCveLoaded$.pipe(map(l => (l ? 'loaded' : 'pending'))),

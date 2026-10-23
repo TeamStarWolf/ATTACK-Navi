@@ -159,10 +159,15 @@ export function signalStubProviders(): Provider[] {
       loaded$: loaded(), loadOnDemand: () => undefined, getHeatScore: (id: string) => s('m365', id),
     } },
     { provide: WazuhService, useValue: { getRulesForTechnique: (id: string) => list(s('wazuh', id)) } },
-    { provide: Cve2CapecService, useValue: { loaded$: loaded(), getChainCount: (id: string) => s('kill-chain', id) } },
-    { provide: PocExploitService, useValue: { loaded$: loaded(), getPocCount: (id: string) => s('poc', id) } },
+    // The three on-demand sources: the matrix asks for them when their lens is picked
+    // (loadOnDemand), as in the app; the stubs answer already loaded, so a snapshot is
+    // taken on loaded data (lens-on-demand.spec.ts covers the not-yet-loaded path).
+    { provide: Cve2CapecService, useValue: {
+      loaded$: loaded(), loadOnDemand: () => undefined, getChainCount: (id: string) => s('kill-chain', id),
+    } },
+    { provide: PocExploitService, useValue: { loaded$: loaded(), loadOnDemand: () => undefined, getPocCount: (id: string) => s('poc', id) } },
     { provide: AttackCveService, useValue: {
-      loaded$: loaded(),
+      loaded$: loaded(), loadOnDemand: () => undefined,
       getCvesForTechnique: (id: string) => cvesFor(id).map(cveId => ({ cveId })),
       getKevCvesForTechnique: (id: string) => cvesFor(id).slice(0, s('kev', id)).map(cveId => ({ cveId })),
       getMappingForCve: () => undefined,

@@ -98,9 +98,9 @@ const CASES: HonestyCase[] = [
   { id: 'attack-f3', service: F3FraudService, start: s => s.ensureLoaded(), loaded: s => s.loaded },
   { id: 'attack-releases', service: ChangelogService, loaded: s => current(s.loaded$) },
   { id: 'cve-technique-map', service: NvdBulkService, loaded: s => current(s.loaded$) },
-  { id: 'cve2capec-runtime', service: Cve2CapecService, loaded: s => current(s.loaded$) },
-  { id: 'ctid-attack-to-cve', service: AttackCveService, loaded: s => current(s.loaded$) },
-  { id: 'ctid-kev', service: AttackCveService, loaded: s => current(s.loaded$) },
+  { id: 'cve2capec-runtime', service: Cve2CapecService, start: s => s.loadOnDemand(), loaded: s => current(s.loaded$) },
+  { id: 'ctid-attack-to-cve', service: AttackCveService, start: s => s.loadOnDemand(), loaded: s => current(s.loaded$) },
+  { id: 'ctid-kev', service: AttackCveService, start: s => s.loadOnDemand(), loaded: s => current(s.loaded$) },
   { id: 'cisa-kev', service: CveService, start: s => s.loadKev(), loaded: s => current(s.kevLoaded$) },
   // The live feed failing loads the dated snapshot in its place; offline, it fails too and
   // no catalogue is reported as loaded.
@@ -136,7 +136,7 @@ const CASES: HonestyCase[] = [
   { id: 'elastic-tree', service: ElasticService, loaded: s => current(s.loaded$) },
   { id: 'splunk-tree', service: SplunkContentService, loaded: s => current(s.loaded$) },
   { id: 'm365-hunting-queries', service: M365DefenderService, start: s => s.loadOnDemand(), loaded: s => current(s.loaded$) },
-  { id: 'trickest-poc-tree', service: PocExploitService, loaded: s => current(s.loaded$) },
+  { id: 'trickest-poc-tree', service: PocExploitService, start: s => s.loadOnDemand(), loaded: s => current(s.loaded$) },
   { id: 'nuclei-tree', service: NucleiService, start: s => s.loadOnDemand(), loaded: s => current(s.loaded$) },
   { id: 'exploitdb', service: ExploitdbService, start: s => s.loadOnDemand(), loaded: s => current(s.loaded$) },
   { id: 'cyb3r-monk-hunting-tree', service: ThreatHuntingService, start: s => s.loadOnDemand(), loaded: s => current(s.loaded$) },

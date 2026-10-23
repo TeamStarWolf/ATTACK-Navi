@@ -116,6 +116,16 @@ export class AssetInventoryService {
     private epssService: EpssService,
   ) {
     this.loadFromStorage();
+    // Exposure reads the CTID ATT&CK-to-CVE mapping, which loads on demand (the first read
+    // asks for it). An exposure worked out before it arrived (an asset added before
+    // anything had asked) is worked out again when it lands. The replay at subscribe time
+    // is skipped: with the mapping already in, every compute already reads it.
+    let replay = true;
+    this.attackCveService.loaded$.subscribe(loaded => {
+      const first = replay;
+      replay = false;
+      if (loaded && !first && this.assetsSubject.value.length > 0) this.recomputeExposure();
+    });
   }
 
   // ── CRUD ────────────────────────────────────────────────
@@ -544,6 +554,9 @@ export class AssetInventoryService {
         const assets: Asset[] = JSON.parse(raw);
         this.assetsSubject.next(assets);
         this.countSubject.next(assets.length);
+        // Exposure reads the CTID ATT&CK-to-CVE mapping, which loads on demand: an
+        // inventory on hand asks for it now, as the mapping's boot-time load used to give it.
+        this.attackCveService.loadOnDemand();
         // Defer exposure computation to let other services load
         setTimeout(() => this.recomputeExposure(assets), 2000);
       }

@@ -189,13 +189,14 @@ export const SOURCE_DEFINITIONS: readonly SourceDefinition[] = [
     id: 'cve2capec-runtime', name: 'CVE2CAPEC database (runtime)', kind: 'live',
     version: 'main, unpinned (current and previous year files)', upstream: 'https://github.com/Galeax/CVE2CAPEC',
     licence: 'galeax-gpl-3.0', inventoryRow: R.cve2capecRuntime, owner: 'services/cve2capec.service.ts',
+    onDemand: true,
   },
   {
     id: 'ctid-attack-to-cve', name: 'CTID ATT&CK to CVE mappings', kind: 'live',
     version: 'master, unpinned (repository archived)',
     upstream: 'https://github.com/center-for-threat-informed-defense/attack_to_cve',
     licence: 'ctid-apache-2.0', inventoryRow: R.ctidAttackToCve, owner: 'services/attack-cve.service.ts',
-    archivedUpstream: '2024-04-03',
+    onDemand: true, archivedUpstream: '2024-04-03',
   },
   {
     id: 'cisa-kev', name: 'CISA Known Exploited Vulnerabilities', kind: 'live',
@@ -271,7 +272,7 @@ export const SOURCE_DEFINITIONS: readonly SourceDefinition[] = [
     id: 'ctid-kev', name: 'CTID KEV mapping', kind: 'live',
     version: 'newest snapshot in mappings-explorer (pinned fallback kev-07.28.2025, mapped vs ATT&CK 16.1)',
     upstream: `${CTID_RAW}/kev`, licence: 'ctid-apache-2.0',
-    inventoryRow: R.ctidMappings, owner: 'services/attack-cve.service.ts',
+    inventoryRow: R.ctidMappings, owner: 'services/attack-cve.service.ts', onDemand: true,
   },
   {
     id: 'cis-controls', name: 'CIS Controls mapping', kind: 'live',
@@ -350,7 +351,7 @@ export const SOURCE_DEFINITIONS: readonly SourceDefinition[] = [
   {
     id: 'trickest-poc-tree', name: 'trickest/cve PoC index (tree listing)', kind: 'live', version: 'main, unpinned',
     upstream: 'https://github.com/trickest/cve', licence: 'trickest-mit',
-    inventoryRow: R.trickest, owner: 'services/poc-exploit.service.ts',
+    inventoryRow: R.trickest, owner: 'services/poc-exploit.service.ts', onDemand: true,
   },
   {
     id: 'nuclei-tree', name: 'Nuclei templates (tree listing)', kind: 'live', version: 'main, unpinned',

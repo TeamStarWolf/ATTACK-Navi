@@ -2,7 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, map, of } from 'rxjs';
+import { Observable, catchError, filter, map, merge, of } from 'rxjs';
 
 import {
   CveDossier,
@@ -111,6 +111,14 @@ export class DossierService {
       });
   }
 
+  /**
+   * Emits each time one of the on-demand sources a live dossier reads (the CTID mapping,
+   * the CVE2CAPEC chains, the PoC index) finishes loading, so the panel can rebuild it.
+   */
+  onDemandLoaded(): Observable<boolean> {
+    return merge(this.attackCve.loaded$, this.cve2capec.loaded$, this.poc.loaded$).pipe(filter(loaded => loaded));
+  }
+
   /** True when a pre-generated dossier is known to exist for this CVE. */
   hasAsset(cveId: string): boolean {
     return this.assetIndex?.has(cveId.toUpperCase()) ?? false;
@@ -130,6 +138,12 @@ export class DossierService {
    */
   load(cveId: string, env: SsvcEnvironment = DEFAULT_ENVIRONMENT): Observable<CveDossier> {
     const id = cveId.trim().toUpperCase();
+    // The CTID mapping, the CVE2CAPEC chains and the PoC index load on demand; a dossier
+    // needs them, so building one asks for them (only the first ask fetches). The panel
+    // rebuilds a live dossier when they land, and says meanwhile that they are loading.
+    this.attackCve.loadOnDemand();
+    this.cve2capec.loadOnDemand();
+    this.poc.loadOnDemand();
     return this.http.get<Partial<CveDossier>>(`${ASSET_DIR}/${id}.json`).pipe(
       map(raw => this.fromAsset(id, raw, env)),
       catchError(() => of(this.compose(id, env))),
@@ -270,6 +284,14 @@ export class DossierService {
     return kept;
   }
 
+  /** True while every named on-demand source is not requested yet or still loading. */
+  private stillLoading(...ids: string[]): boolean {
+    return ids.every(id => {
+      const status = this.sources.get(id).status;
+      return status === 'pending' || status === 'loading';
+    });
+  }
+
   /** The live KEV feed is the catalogue in use (not the dated snapshot, not nothing). */
   private liveKevLoaded(): boolean {
     return this.cveService.kevAvailable && !this.cveService.kevSnapshotDate;
@@ -338,11 +360,23 @@ export class DossierService {
       )
       .sort((a, b) => rank(a.tier) - rank(b.tier) || a.id.localeCompare(b.id));
 
-    if (!ctid) {
+    if (!ctid && this.stillLoading('ctid-attack-to-cve', 'ctid-kev')) {
+      // Not loaded yet is not "CTID has no mapping": say which it is.
+      d.warnings.push(
+        'The CTID ATT&CK-to-CVE mapping is still loading, so per-CVE techniques from it ' +
+          'are not shown yet; the dossier is rebuilt when it arrives.',
+      );
+    } else if (!ctid) {
       d.warnings.push(
         'CTID publishes no per-CVE ATT&CK mapping for this CVE, so every technique ' +
           'below is derived from its weakness classes and describes that class rather ' +
           'than this vulnerability.',
+      );
+    }
+    if (this.stillLoading('cve2capec-runtime')) {
+      d.warnings.push(
+        'The CVE2CAPEC chains are still loading, so weakness-class techniques from them ' +
+          'are not shown yet; the dossier is rebuilt when they arrive.',
       );
     }
 

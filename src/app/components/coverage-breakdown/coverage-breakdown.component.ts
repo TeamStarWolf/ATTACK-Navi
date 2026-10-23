@@ -1,6 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { ChangeDetectionStrategy, Component, Input, OnChanges } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, Input, OnChanges, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { Domain } from '../../models/domain';
 import { EnrichmentService, EnrichmentTotals } from '../../services/enrichment.service';
@@ -34,7 +35,7 @@ interface CoverageRow {
   templateUrl: './coverage-breakdown.component.html',
   styleUrl: './coverage-breakdown.component.scss',
 })
-export class CoverageBreakdownComponent implements OnChanges {
+export class CoverageBreakdownComponent implements OnChanges, OnInit {
   @Input() domain!: Domain;
 
   /** 'Known: mapped', composed from the vocabulary module. */
@@ -47,10 +48,23 @@ export class CoverageBreakdownComponent implements OnChanges {
   defendedPct = 0;
   rows: CoverageRow[] = [];
 
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly destroyRef = inject(DestroyRef);
+
   constructor(private enrichment: EnrichmentService) {}
 
   ngOnChanges(): void {
     this.recompute();
+  }
+
+  ngOnInit(): void {
+    // The CVE / KEV row reads the CTID mapping, which loads on demand (this view's first
+    // read asks for it): count again once it has arrived.
+    this.enrichment.cveMappingsLoaded$().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(loaded => {
+      if (!loaded) return;
+      this.recompute();
+      this.cdr.markForCheck();
+    });
   }
 
   private pct(n: number, d: number): number {
