@@ -141,7 +141,7 @@
                 </div>
                 @if (c.latestRun) {
                   <div class="vp-tcard-runline">
-                    Last run {{ c.latestRun.runDate | date:'short' }}
+                    Last run {{ runWhen(c.latestRun.runDate) }}
                     @if (c.latestRun.operator) { · by {{ c.latestRun.operator }} }
                     · fired {{ firedCount(c.latestRun) }}/{{ c.latestRun.detectionsExpected.length }}
                   </div>
@@ -258,7 +258,7 @@
               <tbody>
                 @for (r of allRuns; track r.id) {
                   <tr [attr.data-status]="r.status">
-                    <td>{{ r.runDate | date:'short' }}</td>
+                    <td>{{ runWhen(r.runDate) }}</td>
                     <td><code>{{ r.techniqueId }}</code> {{ r.techniqueName }}</td>
                     <td><span class="vp-status-badge" [attr.data-status]="r.status">{{ statusLabel(r.status) }}</span></td>
                     <td>{{ firedCount(r) }}/{{ r.detectionsExpected.length }}</td>
@@ -291,7 +291,7 @@
                     <code>{{ r.techniqueId }}</code>
                     <strong>{{ r.techniqueName }}</strong>
                     <span class="vp-status-badge" [attr.data-status]="r.status">{{ statusLabel(r.status) }}</span>
-                    <span class="vp-evidence-when">{{ r.runDate | date:'short' }}</span>
+                    <span class="vp-evidence-when">{{ runWhen(r.runDate) }}</span>
                   </div>
                   @if (r.atomicCommand) {
                     <div class="vp-evidence-section">
