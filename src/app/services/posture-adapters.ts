@@ -139,6 +139,8 @@ export function controlsAdapter(
         : techniques.length <= threshold ? 'full' : 'partial';
       const mark: CoveredMark = {
         qualifier: 'self-attested', basis: 'control-implemented', strength, via: attackId(mitId), source: 'manual',
+        // RP-F decision 31: the cause of a partial mark is set where the mark is produced.
+        ...(strength === 'partial' ? { partialCause: 'breadth' as const } : {}),
       };
       for (const t of techniques) push(marks, t.id, mark);
     }
@@ -177,7 +179,9 @@ export interface RunInputs {
 const RANGE_STATES = {
   deployed: { basis: 'range-deployed', strength: 'full' },
   'detection-authored': { basis: 'range-detection-authored', strength: 'full' },
-  'telemetry-observed': { basis: 'range-telemetry-observed', strength: 'partial' },
+  // RP-F decision 31: a telemetry-observed row is partial because the range saw the
+  // technique's telemetry and no detection alerted, never because of breadth.
+  'telemetry-observed': { basis: 'range-telemetry-observed', strength: 'partial', partialCause: 'telemetry' },
 } as const;
 
 /**
@@ -197,7 +201,8 @@ const RANGE_STATES = {
  *   'not-reproducible' negative control) is a notReproducible one;
  * - range rows (proofScope 'range') with coverageState 'deployed' or
  *   'detection-authored' are range full marks, 'telemetry-observed' a range
- *   partial mark. Own runs never carry range marks.
+ *   partial mark with partialCause 'telemetry' (RP-F decision 31). Own runs never
+ *   carry range marks.
  */
 export function runInputs(run: ValidationRunV2): RunInputs {
   const runBlocked = run.attackResult === 'blocked';
@@ -238,6 +243,7 @@ export function runInputs(run: ValidationRunV2): RunInputs {
       covered.push({
         qualifier: 'range', basis: state.basis, strength: state.strength, source: run.source, at: run.runDate,
         ...(via ? { via } : {}),
+        ...('partialCause' in state ? { partialCause: state.partialCause } : {}),
       });
     }
   }

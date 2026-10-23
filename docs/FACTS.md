@@ -16,7 +16,7 @@ Counts and versions derived from the code. When a document states one of these n
 | Library layers | 37 | `src/assets/data/library-layers/index.json` |
 | Lylat mission layers | 35 | `src/assets/data/lylat-mission-layers/index.json` |
 | Unit spec files | 252 | `src/**/*.spec.ts` |
-| Playwright spec files | 15 | `e2e/**/*.spec.ts` |
+| Playwright spec files | 16 | `e2e/**/*.spec.ts` |
 | Script test files | 11 | `scripts/**/*.test.mjs` |
 | Proxy test files | 1 | `server/**/*.test.*` |
 | Angular | 22.2.2 | `package-lock.json` (`@angular/core`) |

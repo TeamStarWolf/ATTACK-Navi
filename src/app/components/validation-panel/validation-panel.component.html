@@ -143,7 +143,7 @@
                   <div class="vp-tcard-runline">
                     Last run {{ runWhen(c.latestRun.runDate) }}
                     @if (c.latestRun.operator) { · by {{ c.latestRun.operator }} }
-                    · fired {{ firedCount(c.latestRun) }}/{{ c.latestRun.detectionsExpected.length }}
+                    · {{ firedWords(c.latestRun, 'fired ') }}
                   </div>
                 }
                 <div class="vp-tcard-actions">
@@ -261,7 +261,7 @@
                     <td>{{ runWhen(r.runDate) }}</td>
                     <td><code>{{ r.techniqueId }}</code> {{ r.techniqueName }}</td>
                     <td><span class="vp-status-badge" [attr.data-status]="r.status">{{ statusLabel(r.status) }}</span></td>
-                    <td>{{ firedCount(r) }}/{{ r.detectionsExpected.length }}</td>
+                    <td>{{ firedWords(r) }}</td>
                     <td>{{ r.operator || '—' }}</td>
                     <td class="vp-runs-notes">{{ r.notes }}</td>
                     <td><button class="vp-btn-tiny" (click)="deleteRun(r.id)" title="Delete">✕</button></td>

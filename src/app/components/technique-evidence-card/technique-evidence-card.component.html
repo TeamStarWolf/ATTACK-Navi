@@ -39,6 +39,11 @@
             <button type="button" class="ev-confirm-btn" data-testid="ev-confirm" (click)="confirm(m.via!)"
                     title="Confirm this technique yourself: it then counts in full, not only through the broad mitigation">Confirm</button>
           }
+          @if (m.canRecordRun) {
+            <!-- RP-F decision 31: range telemetry with no alerting detection is never confirmed; record a run instead. -->
+            <button type="button" class="ev-confirm-btn" data-testid="ev-record-run" (click)="recordRun()"
+                    title="Range telemetry was observed and no detection alerted: record a validation run of this technique in Detect > Validation">Record a run</button>
+          }
         </div>
       } @empty {
         <!-- RP-F decision 16: the empty line speaks of marks only, and is left out while the card lists a run. -->

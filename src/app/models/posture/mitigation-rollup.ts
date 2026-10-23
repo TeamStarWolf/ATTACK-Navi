@@ -5,7 +5,8 @@
 // mitigation marks the techniques it is mapped to. A mitigation mapped to at
 // most `threshold` techniques in the loaded domain (parents and sub-techniques
 // together, Domain.techniquesByMitigation) gives full marks; a broader one gives
-// partial marks only, rendered "Covered (self-attested, partial via M1038)".
+// partial marks only, rendered "Covered (self-attested, partial via M1038)",
+// each carrying partialCause 'breadth' (RP-F decision 31).
 // CI fails unless this file has 100% branch coverage
 // (scripts/check-branch-coverage.mjs).
 import type { ImplStatus } from '../../services/implementation.service';
@@ -45,7 +46,10 @@ export function rollupMitigations(
     if (strength === null) continue;
     const via = mitAttackId(mitId);
     for (const t of techniques) {
-      const mark: CoveredMark = { qualifier: 'self-attested', basis: 'mitigation-implemented', strength, via, source: 'manual' };
+      // RP-F decision 31: a partial mark carries its cause where it is produced.
+      const mark: CoveredMark = strength === 'partial'
+        ? { qualifier: 'self-attested', basis: 'mitigation-implemented', strength, via, source: 'manual', partialCause: 'breadth' }
+        : { qualifier: 'self-attested', basis: 'mitigation-implemented', strength, via, source: 'manual' };
       const marks = out.get(t.id);
       if (marks) marks.push(mark);
       else out.set(t.id, [mark]);

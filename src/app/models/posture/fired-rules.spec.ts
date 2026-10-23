@@ -5,7 +5,7 @@
 // non-empty union of detectionsFired and the rules of alerted or blocked outcomes;
 // the run summary (posture-adapters) and the card's Proven line (lens-explain) count
 // through it, as the Validation pill does (validation-status-pill.component.spec.ts).
-import { firedRuleCount, firedRules } from './fired-rules';
+import { firedRuleCount, firedRules, firedRuleTally } from './fired-rules';
 import { firedRules as reExported } from '../../services/validation.service';
 import { DEFAULT_POSTURE_RULES, derivePosture } from './derive-posture';
 import { postureExplain } from '../lens-explain';
@@ -65,6 +65,30 @@ describe('firedRules (RP-F decision 30b)', () => {
 
   it('a v1-shaped run (no outcomes) counts its detectionsFired', () => {
     expect(firedRuleCount({ detectionsFired: ['siem:a', 'siem:a', 'siem:b'] })).toBe(2);
+  });
+
+  // RP-F decision 33: the helper supplies both numbers, and the words for them when
+  // more rules fired than were expected (never 'N of M' then).
+  describe('firedRuleTally (RP-F decision 33)', () => {
+    it("fired within expected: both numbers, no words (each surface keeps its fraction)", () => {
+      expect(firedRuleTally({ detectionsExpected: ['siem:a', 'siem:b'], detectionsFired: ['siem:a'] }))
+        .toEqual({ fired: 1, expected: 2, exceeds: false, words: null });
+      expect(firedRuleTally({ detectionsExpected: ['siem:a'], detectionsFired: ['siem:a'] }))
+        .toEqual({ fired: 1, expected: 1, exceeds: false, words: null });
+      expect(firedRuleTally({ detectionsExpected: [], detectionsFired: [] }))
+        .toEqual({ fired: 0, expected: 0, exceeds: false, words: null });
+    });
+
+    it("fired exceeds expected (rules known only from outcomes): 'N fired, M expected'", () => {
+      expect(firedRuleTally({ detectionsExpected: [], detectionsFired: [], outcomes: [outcome('edr:x', 'blocked')] }))
+        .toEqual({ fired: 1, expected: 0, exceeds: true, words: '1 fired, 0 expected' });
+      expect(firedRuleTally({ detectionsExpected: ['siem:a'], detectionsFired: ['siem:a', 'siem:b'] }).words).toBe('2 fired, 1 expected');
+    });
+
+    it('expected counts distinct, trimmed, non-empty rules, as fired does', () => {
+      expect(firedRuleTally({ detectionsExpected: ['siem:a', ' siem:a ', '', '  '], detectionsFired: ['siem:a'] }))
+        .toEqual({ fired: 1, expected: 1, exceeds: false, words: null });
+    });
   });
 
   it('ValidationService re-exports the same helper', () => {

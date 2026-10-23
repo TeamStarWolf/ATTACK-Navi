@@ -9,7 +9,7 @@ import { Subscription } from 'rxjs';
 import { ValidationService, ValidationRunV2, ValidationStatus } from '../../services/validation.service';
 import { PanelNavService } from '../../services/panel-nav.service';
 import { validationDateTime } from '../../models/local-date';
-import { firedRuleCount } from '../../models/posture/fired-rules';
+import { type FiredRuleTally, firedRuleCount, firedRuleTally } from '../../models/posture/fired-rules';
 
 const STATUS_LABEL: Record<ValidationStatus, string> = {
   passed: 'PASS', failed: 'FAIL', partial: 'PARTIAL',
@@ -37,7 +37,9 @@ const STATUS_LABEL: Record<ValidationStatus, string> = {
             <span class="vsp-lab" title="Exercised against a published Lylat range build">lab</span>
           }
           <span class="vsp-meta">
-            {{ firedCount(latest) }} of {{ latest.detectionsExpected.length }} detection rules fired
+            @if (tally(latest); as t) {
+              @if (t.words) { detection rules: {{ t.words }} } @else { {{ t.fired }} of {{ t.expected }} detection rules fired }
+            }
           </span>
         </div>
         @if (labProofRecords.length) {
@@ -200,6 +202,15 @@ export class ValidationStatusPillComponent implements OnInit, OnChanges, OnDestr
   /** The rules the run fired, counted as the evidence card counts them (firedRules, RP-F decision 30b). */
   firedCount(run: ValidationRunV2): number {
     return firedRuleCount(run);
+  }
+
+  /**
+   * The run's fired and expected counts through the shared helper (RP-F decision 33):
+   * 'N of M detection rules fired', or 'detection rules: N fired, M expected' when
+   * more rules fired than were expected (never 'N of M').
+   */
+  tally(run: ValidationRunV2): FiredRuleTally {
+    return firedRuleTally(run);
   }
 
   /** The run's local date and time, with the formatter the evidence card prints its day with (RP-F decision 16). */

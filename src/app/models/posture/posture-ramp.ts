@@ -33,6 +33,7 @@ import type { PostureBucket, PostureState, PostureSubState, ProofScope } from '.
 import { hexContrast, mixHex } from '../cvd';
 import { PROVEN, postureBadge, scenarioOutcomeLabel } from './posture-vocabulary';
 import { provenNoneCellWords } from './proof-gap';
+import { partialCausesOf, telemetryPartialWords } from './partial-cause';
 
 export type PostureTheme = 'dark' | 'light';
 
@@ -166,6 +167,11 @@ export const PATTERN_WORDS: Readonly<Record<PosturePattern, string>> = {
  *   cross-hatch adds ', not reproducible' ("None, not reproducible" on Covered;
  *   round 4 read only "None" or "no recorded detection" on 3 of 3 lenses).
  *
+ * A cell that paints the partial outline because of a range telemetry row (RP-F
+ * decision 31: partialCauses holds 'telemetry') adds its cause, as the why line
+ * says it: "Covered (range, partial via wazuh:5), range telemetry observed via
+ * wazuh:5: partial, no detection alerted".
+ *
  * A Proven lens cell with no proof (painted neither proven nor stale) beside a run
  * of yours that fired a rule names that run instead of the 0 stop's 'no recorded
  * detection' (RP-F decision 28, provenNoneCellWords): round 4 read "T1018: ...,
@@ -174,7 +180,7 @@ export const PATTERN_WORDS: Readonly<Record<PosturePattern, string>> = {
  */
 export function postureCellLabel(
   s: Pick<PostureState, 'bucket' | 'qualifiers' | 'proofScope' | 'proofAge' | 'covered' | 'subStates'>
-    & Partial<Pick<PostureState, 'runsWithoutProof'>>,
+    & Partial<Pick<PostureState, 'runsWithoutProof' | 'partialCauses'>>,
   windows: Readonly<Record<ProofScope, number>>,
   lens: { readonly value: string; readonly words?: string } = { value: 'posture' },
   painted: Pick<PostureCellVM, 'bucket' | 'subStates'> | null = lens.value === 'posture' ? s : null,
@@ -184,6 +190,9 @@ export function postureCellLabel(
     words = provenNoneCellWords({ runsWithoutProof: s.runsWithoutProof ?? [] }) ?? words;
   }
   const patterns = painted ? posturePatterns(painted) : [];
+  if (patterns.includes('partial') && partialCausesOf(s).includes('telemetry')) {
+    words = `${words}, ${telemetryPartialWords(s.covered)}`;
+  }
   if ((CONTRADICTED_SPOKEN_LENSES.has(lens.value) && s.subStates.includes('contradicted')) || patterns.includes('contradicted')) {
     words = `${words}, ${CONTRADICTED_WORDS}`;
   }
