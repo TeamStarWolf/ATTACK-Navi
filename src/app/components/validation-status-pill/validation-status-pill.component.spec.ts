@@ -6,10 +6,11 @@ import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter, Router } from '@angular/router';
 import { ValidationStatusPillComponent } from './validation-status-pill.component';
-import { ValidationService, type ValidationRunV2 } from '../../services/validation.service';
+import { ValidationService, type ValidationRunV2, sanitizeRun } from '../../services/validation.service';
 import { runInputs } from '../../services/posture-adapters';
 import { DEFAULT_POSTURE_RULES, derivePosture } from '../../models/posture/derive-posture';
 import { postureExplain } from '../../models/lens-explain';
+import { rpf8Runs } from '../../testing/rpf8-shapes';
 
 describe('ValidationStatusPillComponent', () => {
   let component: ValidationStatusPillComponent;
@@ -70,6 +71,19 @@ describe('ValidationStatusPillComponent', () => {
     };
   }
 
+  // RP-F decision 45: a blank rule id is dropped when the run is stored, so the pill never
+  // lists an empty rule name (round 8: the T1092 shape listed '  ' under range-run rules).
+  it('never lists an empty rule name: a stored run with a blank detectionRef lists no range-run rule', () => {
+    const stored = sanitizeRun({ ...rangeRun('wazuh:990001'), attackResult: 'executed', outcomes: [{ detectionRef: '   ', outcome: 'alerted', coverageState: 'telemetry-observed' }] });
+    const run = (stored as { run: ValidationRunV2 }).run;
+    validation.forTechnique.and.returnValue([run]);
+    validation.latestFor.and.returnValue(run);
+    component.attackId = 'T1558.003';
+    fixture.detectChanges();
+    expect(component.labProofRecords).toEqual([]);
+    expect((fixture.nativeElement as HTMLElement).querySelector('.vsp-rules')).toBeNull();
+  });
+
   it('marks a range-scoped run with the lab badge and lists each proof record with its date, newest first', () => {
     // Deliberately out of order: the older run is listed first in the input.
     const runs = [rangeRun('wazuh:990001', '2026-10-18'), rangeRun('wazuh:990002', '2026-10-20')];
@@ -89,6 +103,40 @@ describe('ValidationStatusPillComponent', () => {
     expect(text).toContain('wazuh:990001');
     expect(text).toContain('wazuh:990002');
     expect(text).toContain('Oct 20, 2026'); // the date renders beside the ref
+  });
+
+  // PR #241 round 1: the range-run rules list picked the newest date with a raw string
+  // compare, keyed rules case-sensitively, and listed the rules of a run whose attack did
+  // not execute (T1027.013 listed wazuh:307 beside 'UNTESTED, attack did not execute').
+  describe('range-run rules use the shared comparator and rule identity (PR #241 round 1)', () => {
+    function show(runs: ValidationRunV2[]): void {
+      validation.forTechnique.and.returnValue(runs);
+      validation.latestFor.and.returnValue(runs[runs.length - 1]);
+      component.attackId = runs[0].techniqueId;
+      fixture.detectChanges();
+    }
+
+    it('T1027.013 (range run errored): no range-run rule is listed', () => {
+      show(rpf8Runs().get('T1027.013')!);
+      expect(component.labProofRecords).toEqual([]);
+      expect((fixture.nativeElement as HTMLElement).textContent ?? '').not.toContain('range-run rules');
+    });
+
+    it("T1030 ('WAZUH:306' in a later run, 'wazuh:306' in an earlier one): one entry, the newest run's", () => {
+      const older = { ...rangeRun('wazuh:306', '2026-10-19'), id: 'r-older' };
+      const newer = { ...rangeRun('WAZUH:306', '2026-10-21'), id: 'r-newer' };
+      show([older, newer]);
+      expect(component.labProofRecords).toEqual([{ ref: 'WAZUH:306', date: '2026-10-21' }]);
+    });
+
+    it('a date-only run and an offset timestamp on the same local day order by the shared comparator, not by the string', () => {
+      // '2026-10-20T23:30:00-12:00' is 11:30Z on 10/21: after local midnight of 10/21 in
+      // any zone from UTC-11 to UTC+12, though its string sorts before '2026-10-21'.
+      const dateOnly = { ...rangeRun('wazuh:a', '2026-10-21'), id: 'r-a' };
+      const offset = { ...rangeRun('wazuh:b', '2026-10-20T23:30:00-12:00'), id: 'r-b' };
+      show([dateOnly, offset]);
+      expect(component.labProofRecords.map(r => r.ref)).toEqual(['wazuh:b', 'wazuh:a']);
+    });
   });
 
   it('does not show the lab badge for an own-run manual record', () => {
@@ -185,8 +233,28 @@ describe('ValidationStatusPillComponent', () => {
     it("an unexpected rule on a non-passed run: '1 of 1 expected rules fired, plus 1 unexpected' (round 6: 'UNTESTED 2 of 1')", () => {
       const r = t1113({ status: 'untested', detectionsExpected: ['siem:a'], detectionsFired: ['siem:a', 'siem:b'] });
       expect(pillLine(r)).toBe('1 of 1 expected rules fired, plus 1 unexpected');
-      expect(component.tally(r)).toEqual({ fired: 2, expected: 1, matched: 1, unexpected: 1, words: '1 of 1 expected rules fired, plus 1 unexpected' });
+      expect(component.tally(r)).toEqual({ executed: true, fired: 2, expected: 1, matched: 1, unexpected: 1, words: '1 of 1 expected rules fired, plus 1 unexpected' });
     });
+
+    // RP-F decision 44: a run whose attack did not execute shows no fired count. Round 7
+    // read "UNTESTED 2 of 2 expected rules fired" on a "Failed prerequisite" run with its
+    // rules ticked (backlog item f).
+    for (const attackResult of ['failed-prereq', 'errored'] as const) {
+      it(`a ${attackResult} run with its rules ticked reads 'UNTESTED, attack did not execute', with no fraction`, () => {
+        const r = t1113({ status: 'untested', attackResult, detectionsExpected: ['siem:a', 'siem:b'], detectionsFired: ['siem:a', 'siem:b'] });
+        validation.forTechnique.and.returnValue([r]);
+        validation.latestFor.and.returnValue(r);
+        const f = TestBed.createComponent(ValidationStatusPillComponent);
+        f.componentInstance.attackId = 'T1113';
+        f.detectChanges();
+        const row = ((f.nativeElement as HTMLElement).querySelector('.vsp-row')?.textContent ?? '').replace(/\s+/g, ' ').trim();
+        expect(row).toBe('UNTESTED, attack did not execute');
+        expect(row).not.toMatch(/\d+ of \d+|fired/);
+        expect((f.nativeElement as HTMLElement).querySelector('.vsp-status')!.textContent!.trim()).toBe('UNTESTED');
+        expect(component.tally(r)).toEqual({ executed: false, fired: 0, expected: 2, matched: 0, unexpected: 0, words: 'attack did not execute' });
+        expect(component.firedCount(r)).toBe(0);
+      });
+    }
 
     it("expected [a, b] with fired a and c reads '1 of 2 expected rules fired, plus 1 unexpected', never '2 of 2' (round 7)", () => {
       const r = t1113({ status: 'partial', detectionsExpected: ['siem:a', 'siem:b'], detectionsFired: ['siem:a', 'siem:c'] });

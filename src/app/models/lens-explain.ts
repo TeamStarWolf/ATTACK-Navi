@@ -17,7 +17,7 @@ import type { LensCell, LensDefinition } from './heatmap-modes';
 import type { CoveredBasis, CoveredMark, PostureState, ProofRecord, ProofScope, RunSummary } from './posture/posture.types';
 import { PROVEN, postureBadge } from './posture/posture-vocabulary';
 import { SCORE_ONLY_LENSES } from './lens-registry';
-import { CONTRADICTED_WORDS } from './posture/posture-ramp';
+import { CONTRADICTED_WORDS, paintedTelemetryWords } from './posture/posture-ramp';
 import { validationDay } from './local-date';
 import { provenNoneLine } from './posture/proof-gap';
 import { firedRuleCount } from './posture/fired-rules';
@@ -236,8 +236,25 @@ export function supersededClause(state: Pick<PostureState, 'supersededProof' | '
 }
 
 /**
- * The runs of yours on the technique that yield no proof (RP-F decision 9):
- * '1 run of yours recorded, latest untested on 10/21/26', or '' with none.
+ * How many runs the runs line counts, by source (RP-F decision 42): '1 run of yours'
+ * (manual or another import of yours), '1 range run' (a contract-imported range run,
+ * source 'lylat-range:'), or '3 runs (2 yours, 1 range)' when mixed. Round 8 read
+ * "1 run of yours recorded" on T1090.002, whose only run came from the range.
+ */
+export function runsCountWords(runs: readonly Pick<RunSummary, 'source'>[]): string {
+  const range = runs.filter(r => r.source.startsWith('lylat-range:')).length;
+  const yours = runs.length - range;
+  const s = runs.length === 1 ? '' : 's';
+  if (range === 0) return `${runs.length} run${s} of yours`;
+  if (yours === 0) return `${runs.length} range run${s}`;
+  return `${runs.length} runs (${yours} yours, ${range} range)`;
+}
+
+/**
+ * The runs on the technique that yield no proof (RP-F decisions 9 and 42):
+ * '1 run of yours recorded, latest untested on 10/21/26', '1 range run recorded, latest
+ * untested on 10/21/26', '3 runs (2 yours, 1 range) recorded, latest failed on 10/21/26',
+ * or '' with none.
  * It names the run's status and date only, never a rung: a run without a named
  * rule is not Proven, and nothing here says it covers the technique. When the
  * latest run of a rule outranked an earlier proof (RP-F decisions 16 and 29) it says that instead:
@@ -249,7 +266,7 @@ export function runsClause(state: Pick<PostureState, 'runsWithoutProof' | 'super
   const runs = state.runsWithoutProof;
   if (runs.length === 0) return '';
   const latest = runs[0];
-  return `${runs.length} run${runs.length === 1 ? '' : 's'} of yours recorded, latest ${latest.status} on ${validationDay(latest.date)}`;
+  return `${runsCountWords(runs)} recorded, latest ${latest.status} on ${validationDay(latest.date)}`;
 }
 
 /** '; <runsClause>; see Detection Validation', or '' with no run without proof. */
@@ -377,8 +394,13 @@ function registryExplain(def: LensDefinition, cell: LensCell, ctx: LensExplainCo
     return coveredNoneExplain(state);
   }
   // Status draws no hatch, but its stop comes from the marks a later failed run
-  // contradicts, so its line names the contradiction (RP-F decision 17).
-  if (def.value === 'status') return (cell.label ?? '') + contradictionNote(state);
+  // contradicts, so its line names the contradiction (RP-F decision 17). A partial stop
+  // beside a range telemetry partial names the telemetry clause its aria-label and tooltip
+  // carry (paintedTelemetryWords, RP-F decision 40).
+  if (def.value === 'status') {
+    const telemetry = paintedTelemetryWords(state, { bucket: cell.bucket ?? 'none', subStates: cell.subStates ?? [] });
+    return (cell.label ?? '') + (telemetry ? `, ${telemetry}` : '') + contradictionNote(state);
+  }
   return cell.label ?? `score ${formatScore(cell.score)}`;
 }
 

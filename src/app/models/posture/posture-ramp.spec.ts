@@ -403,7 +403,10 @@ describe('posture cell label (§7)', () => {
           ...stubState('T1059.001', 'known'), subStates: ['contradicted'],
           runsWithoutProof: [fired('m', 'failed', '2026-10-19T15:00:00.000Z', 0), fired('r', 'passed', '2026-10-19')],
         },
-        words: new RegExp(String.raw`^no proof, 1 rule fired in your run on \d+/\d+/26 \(status passed\), ` + `${CONTRADICTED_WORDS}$`),
+        // RP-F decision 41: the latest run (the failed one the pill shows) leads; the passed
+        // run of the same day that fired the rule is counted after it.
+        words: new RegExp(String.raw`^no proof, no rule fired in your run on \d+/\d+/26 \(status failed\), `
+          + String.raw`and 1 more run the same day: passed \(1 rule fired\), ` + `${CONTRADICTED_WORDS}$`),
       },
     };
     for (const [name, { state, words }] of Object.entries(SHAPES)) {
@@ -414,7 +417,7 @@ describe('posture cell label (§7)', () => {
         const label = postureCellLabel(state, WINDOWS, { value: 'proven', words: cell.label }, painted);
         expect(label).toMatch(words);
         expect(label).not.toContain('no recorded detection');
-        expect(lensExplain(proven, cell, { state })).toMatch(/^No proof: 1 rule fired in your run on /);
+        expect(lensExplain(proven, cell, { state })).toMatch(/^No proof: (1 rule|no rule) fired in your run on /);
       });
     }
 

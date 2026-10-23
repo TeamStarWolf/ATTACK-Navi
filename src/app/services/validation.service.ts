@@ -26,7 +26,7 @@ import {
   techniqueRefKey,
 } from '../models/technique-ref';
 import { validateLylatExport, lylatRowsToRuns } from '../contracts/lylat-validated-detections';
-import { firedRuleCount } from '../models/posture/fired-rules';
+import { attackDidNotExecute, firedRuleCount } from '../models/posture/fired-rules';
 
 export type ValidationStatus = 'passed' | 'failed' | 'partial' | 'no-telemetry' | 'untested' | 'not-reproducible';
 
@@ -89,7 +89,14 @@ export interface ValidationRunV2 extends ValidationRun, V2Envelope {
 /** What an import did, per source (§5.8), and the rows it refused (§5.9). */
 export interface ImportResult {
   ok: boolean;
-  bySource: Record<string, { added: number; replaced: number }>;
+  /**
+   * Per source (RP-F decision 45): `added` counts incoming runs whose id the source did
+   * not hold, `replaced` incoming runs whose id it did (a source superseding itself), and
+   * `removed` the source's stored runs the import replaced with nothing (absent or 0 when
+   * none). Re-importing the same contract file reads "43 replaced", never "43 added, 43
+   * replaced".
+   */
+  bySource: Record<string, { added: number; replaced: number; removed?: number }>;
   dropped: { row: number; reason: string }[];
   error?: string;
   /**
@@ -174,10 +181,14 @@ export function scopeForSource(source: Exclude<SourceId, 'wizard'>): ProofScope 
  * The Record Run outcomes that mean the attack did not execute (RP-F decision 32):
  * "Failed prerequisite" and "Errored". Every other outcome the modal offers
  * ("Executed", "Blocked by control") ran the attack. A Record over every
- * attackResult, so a new outcome cannot be left unclassified.
+ * attackResult, read from the fired-rule helper's one table (attackDidNotExecute,
+ * RP-F decision 44; PR #241 round 1 removed the second table kept here).
  */
 export const ATTACK_DID_NOT_EXECUTE: Readonly<Record<ValidationRun['attackResult'], boolean>> = {
-  executed: false, blocked: false, 'failed-prereq': true, errored: true,
+  executed: attackDidNotExecute('executed'),
+  blocked: attackDidNotExecute('blocked'),
+  'failed-prereq': attackDidNotExecute('failed-prereq'),
+  errored: attackDidNotExecute('errored'),
 };
 
 /**
@@ -195,7 +206,7 @@ export function statusFromInputs(input: {
   detectionsFired: readonly string[];
   attackResult?: ValidationRun['attackResult'];
 }): ValidationStatus {
-  if (input.attackResult !== undefined && ATTACK_DID_NOT_EXECUTE[input.attackResult]) return 'untested';
+  if (attackDidNotExecute(input.attackResult)) return 'untested';
   if (input.telemetryRequired.length > 0 && input.telemetryAvailable.length === 0) return 'no-telemetry';
   if (input.detectionsExpected.length === 0) return 'untested';
   // The one fired-rule count (firedRules, RP-F decision 30b), over the inputs alone: update()
@@ -222,11 +233,16 @@ export function outcomesFromV1(run: Pick<ValidationRun, 'detectionsFired' | 'att
   return out;
 }
 
-/** Per-field allowlist copy of one outcome; null when it is not an outcome. */
+/**
+ * Per-field allowlist copy of one outcome; null when it is not an outcome. The
+ * detectionRef is trimmed and a blank one is dropped to null (RP-F decision 45), so no
+ * surface lists an empty rule name (the pill's "range-run rules" read a blank ref as a rule).
+ */
 function sanitizeOutcome(x: unknown): ValidationOutcome | null {
   if (!isObj(x) || !oneOf(OUTCOMES, x['outcome'])) return null;
-  const ref = x['detectionRef'];
-  if (ref !== null && typeof ref !== 'string') return null;
+  const raw = x['detectionRef'];
+  if (raw !== null && typeof raw !== 'string') return null;
+  const ref = typeof raw === 'string' && raw.trim() !== '' ? raw.trim() : null;
   const o: { -readonly [K in keyof ValidationOutcome]: ValidationOutcome[K] } = { detectionRef: ref, outcome: x['outcome'] };
   if (oneOf(COVERAGE_STATES, x['coverageState'])) o.coverageState = x['coverageState'];
   if (oneOf(NEGATIVE_CONTROLS, x['negativeControl'])) o.negativeControl = x['negativeControl'];
@@ -296,7 +312,7 @@ export function sanitizeRun(
     status: x['status'],
   };
   // RP-F decision 37: an attack that did not execute stores untested, whatever status the row says.
-  const untested = ATTACK_DID_NOT_EXECUTE[base.attackResult] && base.status !== 'untested';
+  const untested = attackDidNotExecute(base.attackResult) && base.status !== 'untested';
   if (untested) base.status = statusFromInputs(base);
   const ref = typeof x['techniqueRef'] === 'string' && parseTechniqueRef(x['techniqueRef']) !== null
     ? (x['techniqueRef'] as TechniqueRefKey)
@@ -417,12 +433,23 @@ export function storedUntestedWords(n: number): string {
 }
 
 /**
- * "manual: 1 added, 0 replaced; lylat-range:m1: 2 added, 3 replaced. 1 run stored untested:
- * the attack did not execute. 1 row dropped (row 2: missing id)."
+ * One source's counts, naming only the counts that are not 0 (RP-F decision 45): '43
+ * replaced', '1 added', '2 added, 3 replaced, 1 removed'; 'nothing stored' for none.
+ */
+function sourceCountWords(c: ImportResult['bySource'][string]): string {
+  const parts = [[c.added, 'added'], [c.replaced, 'replaced'], [c.removed ?? 0, 'removed']] as const;
+  const words = parts.filter(([n]) => n > 0).map(([n, w]) => `${n} ${w}`);
+  return words.length > 0 ? words.join(', ') : 'nothing stored';
+}
+
+/**
+ * "manual: 1 added; lylat-range:m1: 2 added, 3 replaced. 1 run stored untested: the
+ * attack did not execute. 1 row dropped (row 2: missing id)." A source that supersedes
+ * itself with the same runs reads "lylat-range:m1: 43 replaced" (RP-F decision 45).
  */
 export function describeImportResult(result: ImportResult): string {
   if (!result.ok) return `Import failed: ${result.error ?? 'unknown error'}`;
-  const parts = Object.entries(result.bySource).map(([s, c]) => `${s}: ${c.added} added, ${c.replaced} replaced`);
+  const parts = Object.entries(result.bySource).map(([s, c]) => `${s}: ${sourceCountWords(c)}`);
   let msg = parts.length ? `Imported ${parts.join('; ')}.` : 'Nothing imported.';
   const untested = storedUntestedWords(result.storedUntested ?? 0);
   if (untested) msg += ` ${untested}.`;
@@ -431,6 +458,22 @@ export function describeImportResult(result: ImportResult): string {
     msg += ` ${result.dropped.length} row${result.dropped.length === 1 ? '' : 's'} dropped (${first}${result.dropped.length > 3 ? '; …' : ''}).`;
   }
   return msg;
+}
+
+/**
+ * What a source that replaces itself did (RP-F decision 45): incoming runs whose id the
+ * replaced runs held are `replaced`, the others `added`, and replaced runs no incoming run
+ * names are `removed`. Round 8 read "43 added, 43 replaced" when the same contract file
+ * was imported twice.
+ */
+function supersedeCounts(
+  existing: readonly Pick<ValidationRunV2, 'id'>[], incoming: readonly Pick<ValidationRunV2, 'id'>[],
+): ImportResult['bySource'][string] {
+  const before = new Set(existing.map(r => r.id));
+  const after = new Set(incoming.map(r => r.id));
+  const replaced = [...after].filter(id => before.has(id)).length;
+  const removed = [...before].filter(id => !after.has(id)).length;
+  return { added: after.size - replaced, replaced, ...(removed > 0 ? { removed } : {}) };
 }
 
 /** One sanitised row on its way into merge(): its export row index, the run, and whether decision 37 stored it untested. */
@@ -674,7 +717,7 @@ export class ValidationService {
       // execute stores untested: a patch of { status: 'passed' } alone on an errored
       // manual run, or of { attackResult: 'errored' } on an imported passed run, would
       // otherwise hold a passed run that reads Proven until the next boot's sanitizeRun.
-      if (ATTACK_DID_NOT_EXECUTE[merged.attackResult]) merged.status = 'untested';
+      if (attackDidNotExecute(merged.attackResult)) merged.status = 'untested';
       return merged;
     });
     this.commit(list);
@@ -893,10 +936,10 @@ export class ValidationService {
         // domain in turn accumulates the mission rather than the later domain's
         // import deleting the earlier one (P2-20). Each run id carries its domain
         // (lylat:<mission>:<domain>:<i>), so an id can never collide across domains.
-        bySource[source] = { added: incoming.length, replaced: records.filter(r => r.source === source && incomingDomains!.has(r.domain)).length };
+        bySource[source] = supersedeCounts(records.filter(r => r.source === source && incomingDomains!.has(r.domain)), incoming);
         records = replaceSourceInDomains(records, incoming, source);
       } else {
-        bySource[source] = { added: incoming.length, replaced: records.filter(r => r.source === source).length };
+        bySource[source] = supersedeCounts(records.filter(r => r.source === source), incoming);
         records = replaceSource(records, incoming, source);
       }
     }

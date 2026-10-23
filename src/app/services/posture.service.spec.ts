@@ -600,7 +600,7 @@ describe('PostureService (P2-05, E2.1-c)', () => {
   describe('range telemetry partial (RP-F decision 31)', () => {
     let validation: ValidationService;
     const WINDOWS = { production: 180, range: 90, 'own-run': 90 } as const;
-    const TELEMETRY_WORDS = 'range telemetry observed via wazuh:5: partial, no detection alerted';
+    const TELEMETRY_WORDS = 'range telemetry observed via wazuh:5: partial, no detection alerted (range run on 10/21/26)';
     const BREADTH = /breadth threshold/;
 
     function bootRange(ids: readonly string[]): void {
@@ -670,7 +670,7 @@ describe('PostureService (P2-05, E2.1-c)', () => {
       }));
       expect(res.ok).toBeTrue();
       const fired = (rule: string, verb: string) =>
-        `range telemetry observed via ${rule}: partial; the rule ${verb} in this run, but the range reports telemetry-only coverage, so it is not proof`;
+        `range telemetry observed via ${rule}: partial; the rule ${verb} in this run, but the range reports telemetry-only coverage, so it is not proof (range run on 10/20/26)`;
       for (const [id, rule, verb] of [['T1082', 'wazuh:12', 'alerted'], ['T1083', 'wazuh:13', 'blocked']] as const) {
         const s = stateOf(tech(id));
         expect(s.bucket).withContext(id).toBe('partial');
@@ -687,7 +687,7 @@ describe('PostureService (P2-05, E2.1-c)', () => {
       }
       const quiet = stateOf(tech('T1200'));
       expect(quiet.covered.map(m => m.telemetryOutcome)).toEqual(['logged']);
-      expect(why('posture', quiet)).toBe('Covered (range, partial via wazuh:5) from range telemetry observed via wazuh:5: partial, no detection alerted');
+      expect(why('posture', quiet)).toBe('Covered (range, partial via wazuh:5) from range telemetry observed via wazuh:5: partial, no detection alerted (range run on 10/20/26)');
     });
 
     it("[AC] the P2-20 fixture's T1003.001 (alerted plus telemetry rows) stays Proven and names the telemetry row", () => {
@@ -701,7 +701,7 @@ describe('PostureService (P2-05, E2.1-c)', () => {
       expect(posture).toContain('a later run on 10/20/26 observed telemetry only');
       // The Covered lens paints the telemetry row's partial: its words name the row by its rule, never the threshold.
       const covered = why('covered', s);
-      expect(covered).toBe('Covered (self-attested or range), partial via wazuh:990007 from range telemetry observed via wazuh:990007: partial, no detection alerted');
+      expect(covered).toBe('Covered (self-attested or range), partial via wazuh:990007 from range telemetry observed via wazuh:990007: partial, this rule did not alert (range run on 10/20/26)');
       expect(covered).not.toMatch(BREADTH);
     });
   });

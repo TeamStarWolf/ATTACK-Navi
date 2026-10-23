@@ -30,7 +30,8 @@ import { TechniqueMarksService } from '../../services/technique-marks.service';
 import { SourceRegistryService } from '../../services/source-registry.service';
 import { RecordRunRequestService } from '../../services/record-run-request.service';
 import { lylatRowsToRuns, validateLylatExport } from '../../contracts/lylat-validated-detections';
-import { runInputs } from '../../services/posture-adapters';
+import { runInputs, runInputsFor } from '../../services/posture-adapters';
+import { rpf8Runs } from '../../testing/rpf8-shapes';
 import RANGE_FIXTURE from '../../../testing/fixtures/lylat/validated-detections.fixture.json';
 
 const TECH = {
@@ -331,7 +332,7 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
       // RP-F decision 28 (round 4 repair, S27 T1059.001): the outranked pass fired a rule the pill
       // still shows, so the Proven block names it rather than "No recorded detection".
       expect(text(block(el, 'ev-proven')!.querySelector('[data-testid="ev-proven-empty"]')))
-        .toBe('No proof: 1 rule fired in your run on 10/18/26 (status passed); a later run outranks it.');
+        .toBe('No proof: no rule fired in your run on 10/20/26 (status failed); earlier, 1 rule fired in your run on 10/18/26 (status passed); a later run outranks it.');
       expect(text(el)).not.toContain('No recorded detection');
     });
 
@@ -491,7 +492,7 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
     // beside a pill and a Proven block that said the rule fired.
     describe('a telemetry row whose rule fired (RP-F decision 35)', () => {
       const fired = (rule: string, verb: string) =>
-        `range telemetry observed via ${rule}: partial; the rule ${verb} in this run, but the range reports telemetry-only coverage, so it is not proof`;
+        `range telemetry observed via ${rule}: partial; the rule ${verb} in this run, but the range reports telemetry-only coverage, so it is not proof (range run on 10/20/26)`;
       for (const [t, rule, verb, mode] of [
         [T1082, 'wazuh:12', 'alerted', 'posture'], [T1082, 'wazuh:12', 'alerted', 'covered'],
         [T1083, 'wazuh:13', 'blocked', 'posture'], [T1083, 'wazuh:13', 'blocked', 'covered'],
@@ -531,10 +532,28 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
         expect(text(block(el, 'ev-proven-empty'))).toContain('No proof: 1 rule fired in the range run on 10/20/26 (status partial)');
       });
 
-      it('T1200 (logged via wazuh:5) keeps the no-alert words on the why line, the Covered block and the tooltip', () => {
+      // RP-F decision 44: a range run whose attack did not execute is named as not credited
+    // in the Covered block, never as a mark whose rule alerted.
+    it('T1027.013 (an errored range run): the Covered block reads "did not execute (errored): not credited"; the runs line says so', () => {
+      techInput = T1200;
+      const runs = rpf8Runs().get('T1027.013')!;
+      const inputs = runInputsFor(runs);
+      const s = derivePosture('attack/enterprise/T1027.013@19.2', {
+        knownSignals: 2, threatWeight: 1, exposureWeight: 0, covered: inputs.flatMap(i => i.covered),
+        proof: inputs.flatMap(i => i.proof), verdicts: inputs.flatMap(i => i.verdicts), runs: inputs.map(i => i.summary),
+      }, DEFAULT_POSTURE_RULES, new Date(2026, 9, 23, 12));
+      const el = render(s, true, 'covered');
+      expect(Array.from(el.querySelectorAll('[data-testid="ev-not-credited"]')).map(text))
+        .toEqual(['range run on 10/21/26 did not execute (errored): not credited']);
+      expect(text(el.querySelector('[data-testid="ev-runs-without-proof"]'))).toContain('(source lylat-range:J35, attack did not execute: errored)');
+      expect(text(el)).not.toContain('alerted in this run');
+      expect(text(el)).not.toMatch(/[1-9]\d* rules? fired/);
+    });
+
+    it('T1200 (logged via wazuh:5) keeps the no-alert words on the why line, the Covered block and the tooltip', () => {
         techInput = T1200;
         const el = render(rangeState('T1200', ROUND7_EXPORT), true, 'posture');
-        const words = 'range telemetry observed via wazuh:5: partial, no detection alerted';
+        const words = 'range telemetry observed via wazuh:5: partial, no detection alerted (range run on 10/20/26)';
         expect(text(block(el, 'ev-why'))).toContain(`Covered (range, partial via wazuh:5) from ${words}`);
         const row = block(el, 'ev-covered')!.querySelector('[data-testid="ev-mark"]')!;
         expect(text(row.querySelector('[data-testid="ev-mark-cause"]'))).toBe(words);

@@ -8,6 +8,8 @@ import type { HeatmapMode } from '../services/filter.service';
 import type { CoveredMark, PostureInputs, PostureState, ProofRecord, RunSummary } from './posture/posture.types';
 import { DEFAULT_POSTURE_RULES, PROVING_STATUSES, derivePosture } from './posture/derive-posture';
 import { provingStatusWords } from './posture/proof-gap';
+import { runInputsFor } from '../services/posture-adapters';
+import { rpf8Runs } from '../testing/rpf8-shapes';
 import { basisWords, formatScore, laterRunClause, lensExplain, postureExplain, provenNoneLine, runsClause, supersededClause } from './lens-explain';
 
 const def = (mode: HeatmapMode) => heatmapModeDef(mode)!;
@@ -20,7 +22,7 @@ const TELEMETRY_PARTIAL: CoveredMark = {
   at: '2026-10-21', partialCause: 'telemetry',
 };
 const BREADTH_SENTENCE = 'reached only through a mitigation or control mapped to more techniques than the breadth threshold';
-const TELEMETRY_WORDS = 'range telemetry observed via wazuh:5: partial, no detection alerted';
+const TELEMETRY_WORDS = 'range telemetry observed via wazuh:5: partial, no detection alerted (range run on 10/21/26)';
 const RUN: ProofRecord = {
   scope: 'own-run', detectionRef: 'sigma:4688-encoded', outcome: 'alerted', date: '2026-10-21T09:30:00.000Z', source: 'manual', runId: 'r1',
 };
@@ -145,7 +147,7 @@ describe('lensExplain (P2-18): Why this colour', () => {
         const fromMarks = state({ rung: 'covered', bucket: 'partial', subStates: ['partial'], covered: [TELEMETRY_PARTIAL] });
         expect(postureExplain(fromMarks)).toBe(`Covered (range, partial via wazuh:5) from ${TELEMETRY_WORDS}`);
         const noRule = state({ rung: 'covered', bucket: 'partial', subStates: ['partial'], covered: [{ ...TELEMETRY_PARTIAL, via: undefined }] });
-        expect(postureExplain(noRule)).toBe('Covered (range, partial) from range telemetry observed: partial, no detection alerted');
+        expect(postureExplain(noRule)).toBe('Covered (range, partial) from range telemetry observed: partial, no detection alerted (range run on 10/21/26)');
         const unnamed = state({ rung: 'covered', bucket: 'partial', subStates: ['partial'], covered: [{ ...MIT_PARTIAL, partialCause: undefined }] });
         expect(postureExplain(unnamed)).toBe('Covered (self-attested, partial via M1038)');
       });
@@ -240,6 +242,38 @@ describe('lensExplain (P2-18): Why this colour', () => {
     it('Reference depth (a score-only registry lens) is out of 100', () => {
       expect(lensExplain(def('unified'), { score: 45 }, { state: state({}) }))
         .toBe(`score 45 of max 100: ${def('unified').formula}`);
+    });
+  });
+
+  // RP-F decision 42: the runs line names its source. Round 8 read "1 run of yours
+  // recorded" on T1090.002, whose only run was a range row (validated, logged: untested).
+  describe('the runs line names its source (RP-F decision 42)', () => {
+    const TODAY = new Date(2026, 9, 23, 12);
+    const run = (runId: string, status: string, source: RunSummary['source']): RunSummary =>
+      ({ runId, status, date: '2026-10-21', source });
+
+    it('T1090.002 (one range run, untested): "1 range run recorded, latest untested" on the Known and Covered lines', () => {
+      const runs = rpf8Runs().get('T1090.002')!;
+      const inputs = runInputsFor(runs);
+      const s = derivePosture('attack/enterprise/T1090.002@19.2', {
+        knownSignals: 3, threatWeight: 0, exposureWeight: 0, covered: inputs.flatMap(i => i.covered),
+        proof: inputs.flatMap(i => i.proof), verdicts: inputs.flatMap(i => i.verdicts), runs: inputs.map(i => i.summary),
+      }, DEFAULT_POSTURE_RULES, TODAY);
+      expect(runsClause(s)).toBe('1 range run recorded, latest untested on 10/21/26');
+      expect(postureExplain(s)).toBe('Known: mapped (3 of 5 reference families); 1 range run recorded, latest untested on 10/21/26; see Detection Validation');
+      expect(postureExplain(s)).not.toContain('of yours');
+      expect(lensExplain(def('covered'), { score: 0 }, { state: s })).toContain('; 1 range run recorded, latest untested on 10/21/26');
+    });
+
+    it('a manual run keeps "run of yours"; mixed sources are counted by source', () => {
+      const runsWithoutProof = (runs: RunSummary[]) => ({ runsWithoutProof: runs, supersededProof: null, subStates: [], laterRuns: [] });
+      expect(runsClause(runsWithoutProof([run('m', 'untested', 'manual')]))).toBe('1 run of yours recorded, latest untested on 10/21/26');
+      expect(runsClause(runsWithoutProof([run('l', 'failed', 'layer:x'), run('m', 'untested', 'manual')])))
+        .toBe('2 runs of yours recorded, latest failed on 10/21/26');
+      expect(runsClause(runsWithoutProof([run('r1', 'untested', 'lylat-range:a'), run('r2', 'partial', 'lylat-range:b')])))
+        .toBe('2 range runs recorded, latest untested on 10/21/26');
+      expect(runsClause(runsWithoutProof([run('m', 'failed', 'manual'), run('r1', 'untested', 'lylat-range:a'), run('m2', 'untested', 'manual')])))
+        .toBe('3 runs (2 yours, 1 range) recorded, latest failed on 10/21/26');
     });
   });
 
@@ -407,7 +441,7 @@ describe('lensExplain (P2-18): Why this colour', () => {
           proof: [fired('m1', at(18))],
         });
         expect(s.proof.length).toBe(0);
-        expect(provenNoneLine(s)).toBe('No proof: 1 rule fired in your run on 10/18/26 (status passed); a later run outranks it');
+        expect(provenNoneLine(s)).toBe('No proof: no rule fired in your run on 10/20/26 (status failed); earlier, 1 rule fired in your run on 10/18/26 (status passed); a later run outranks it');
         expect(lensExplain(def('proven'), { score: 0 }, { state: s })).not.toContain('No recorded detection');
         // A passed run whose date cannot be read is sorted oldest, flagged, and named with why it is not proof.
         expect(provenNoneLine(state({ runsWithoutProof: [{ ...run('y', 'passed', 'yesterday'), rulesFired: 1 }] })))
