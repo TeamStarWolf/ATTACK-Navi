@@ -5,7 +5,7 @@
 // non-empty union of detectionsFired and the rules of alerted or blocked outcomes;
 // the run summary (posture-adapters) and the card's Proven line (lens-explain) count
 // through it, as the Validation pill does (validation-status-pill.component.spec.ts).
-import { attackDidNotExecute, attackResultWords, firedRuleCount, firedRules, firedRuleTally } from './fired-rules';
+import { attackDidNotExecute, attackResultWords, firedRuleCount, firedRules, firedRuleTally, notExecutedNote, ruleKey } from './fired-rules';
 import { firedRules as reExported } from '../../services/validation.service';
 import { DEFAULT_POSTURE_RULES, derivePosture } from './derive-posture';
 import { postureExplain } from '../lens-explain';
@@ -151,5 +151,35 @@ describe('firedRules (RP-F decision 30b)', () => {
       expect(firedRuleCount(newer)).toBe(1);
       expect(cardLine([older, newer])).toBe('Proven (your run) on 10/20/26 by manual; 1 rule fired');
     });
+  });
+});
+
+// PR #241 round 1: one rule identity (RP-F decision 40) and one table of non-executed results.
+describe('fired-rules: rule identity and the non-executed note (PR #241 round 1)', () => {
+  it('ruleKey trims and lower-cases a rule id', () => {
+    expect(ruleKey(' WAZUH:306 ')).toBe('wazuh:306');
+    expect(ruleKey('wazuh:306')).toBe(ruleKey('WAZUH:306'));
+  });
+
+  it("firedRules counts 'wazuh:306' fired and 'WAZUH:306' alerted as one rule, keeping the first spelling", () => {
+    const run = { detectionsFired: ['wazuh:306'], outcomes: [{ detectionRef: 'WAZUH:306', outcome: 'alerted' }] };
+    expect(firedRules(run)).toEqual(['wazuh:306']);
+    expect(firedRuleCount(run)).toBe(1);
+    expect(firedRules({ detectionsFired: [], outcomes: [{ detectionRef: ' Edr:X ', outcome: 'blocked' }, { detectionRef: 'edr:x', outcome: 'alerted' }] })).toEqual(['Edr:X']);
+  });
+
+  it('the expected-rules fraction matches rule ids case-insensitively', () => {
+    const tally = firedRuleTally({ detectionsExpected: ['wazuh:306', ' WAZUH:306'], detectionsFired: ['wazuh:306'], outcomes: [{ detectionRef: 'WAZUH:306', outcome: 'alerted' }] });
+    expect([tally.fired, tally.expected, tally.matched, tally.unexpected]).toEqual([1, 1, 1, 0]);
+    expect(tally.words).toBe('1 of 1 expected rules fired');
+    expect(firedRuleTally({ detectionsExpected: ['Sigma:A'], detectionsFired: ['sigma:a', 'sigma:b'] }).words).toBe('1 of 1 expected rules fired, plus 1 unexpected');
+  });
+
+  it('notExecutedNote words a non-executed run from the one table, and is null for a run that executed', () => {
+    expect(notExecutedNote('errored')).toBe('attack did not execute: errored');
+    expect(notExecutedNote('failed-prereq')).toBe('attack did not execute: failed prerequisite');
+    expect(notExecutedNote('executed')).toBeNull();
+    expect(notExecutedNote('blocked')).toBeNull();
+    expect(notExecutedNote(undefined)).toBeNull();
   });
 });

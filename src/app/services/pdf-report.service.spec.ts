@@ -305,6 +305,24 @@ describe('PdfReportService', () => {
       expect(rangeOnly).not.toContain('confirmation or your run):');
     });
 
+    // PR #241 round 1: the PDF note and the Tactic Breakdown column read 'Covered
+    // (self-attested)' over a range-only profile's counts (T1005 under Collection).
+    it('a range-only PDF report never labels its Covered counts self-attested: note and Tactic Breakdown column', () => {
+      posture.coveredBy({ T1059: 'range' });
+      const rangeOnly = capture(makeMockDomain(), { T1059: 'covered' });
+      expect(rangeOnly).not.toContain('Covered (self-attested)');
+      expect(rangeOnly).not.toContain('A technique you recorded');
+      expect(rangeOnly).toContain('<strong>Covered (range)</strong>: A technique the range reports a deployed or authored detection for: a lab detection row, not a proof. Covered (range) shares divide');
+      expect(rangeOnly).toContain('<th style="text-align:center">Covered (range)</th>');
+    });
+
+    it('a PDF report covered by both sources heads its Tactic Breakdown column with both', () => {
+      posture.coveredBy({ T1059: 'both' });
+      const mixed = capture(makeMockDomain(), { T1059: 'covered' });
+      expect(mixed).toContain('<th style="text-align:center">Covered (self-attested or range)</th>');
+      expect(mixed).toContain('<strong>Covered (self-attested or range)</strong>');
+    });
+
     it('a PDF report names the Covered sources with a count per source: self-attested and mixed', () => {
       posture.coveredBy({ T1059: 'both' });
       const mixed = capture(makeMockDomain(), { T1059: 'covered', T1190: 'covered' });

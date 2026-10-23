@@ -26,7 +26,7 @@ import {
   techniqueRefKey,
 } from '../models/technique-ref';
 import { validateLylatExport, lylatRowsToRuns } from '../contracts/lylat-validated-detections';
-import { firedRuleCount } from '../models/posture/fired-rules';
+import { attackDidNotExecute, firedRuleCount } from '../models/posture/fired-rules';
 
 export type ValidationStatus = 'passed' | 'failed' | 'partial' | 'no-telemetry' | 'untested' | 'not-reproducible';
 
@@ -181,10 +181,14 @@ export function scopeForSource(source: Exclude<SourceId, 'wizard'>): ProofScope 
  * The Record Run outcomes that mean the attack did not execute (RP-F decision 32):
  * "Failed prerequisite" and "Errored". Every other outcome the modal offers
  * ("Executed", "Blocked by control") ran the attack. A Record over every
- * attackResult, so a new outcome cannot be left unclassified.
+ * attackResult, read from the fired-rule helper's one table (attackDidNotExecute,
+ * RP-F decision 44; PR #241 round 1 removed the second table kept here).
  */
 export const ATTACK_DID_NOT_EXECUTE: Readonly<Record<ValidationRun['attackResult'], boolean>> = {
-  executed: false, blocked: false, 'failed-prereq': true, errored: true,
+  executed: attackDidNotExecute('executed'),
+  blocked: attackDidNotExecute('blocked'),
+  'failed-prereq': attackDidNotExecute('failed-prereq'),
+  errored: attackDidNotExecute('errored'),
 };
 
 /**
@@ -202,7 +206,7 @@ export function statusFromInputs(input: {
   detectionsFired: readonly string[];
   attackResult?: ValidationRun['attackResult'];
 }): ValidationStatus {
-  if (input.attackResult !== undefined && ATTACK_DID_NOT_EXECUTE[input.attackResult]) return 'untested';
+  if (attackDidNotExecute(input.attackResult)) return 'untested';
   if (input.telemetryRequired.length > 0 && input.telemetryAvailable.length === 0) return 'no-telemetry';
   if (input.detectionsExpected.length === 0) return 'untested';
   // The one fired-rule count (firedRules, RP-F decision 30b), over the inputs alone: update()
@@ -308,7 +312,7 @@ export function sanitizeRun(
     status: x['status'],
   };
   // RP-F decision 37: an attack that did not execute stores untested, whatever status the row says.
-  const untested = ATTACK_DID_NOT_EXECUTE[base.attackResult] && base.status !== 'untested';
+  const untested = attackDidNotExecute(base.attackResult) && base.status !== 'untested';
   if (untested) base.status = statusFromInputs(base);
   const ref = typeof x['techniqueRef'] === 'string' && parseTechniqueRef(x['techniqueRef']) !== null
     ? (x['techniqueRef'] as TechniqueRefKey)
@@ -713,7 +717,7 @@ export class ValidationService {
       // execute stores untested: a patch of { status: 'passed' } alone on an errored
       // manual run, or of { attackResult: 'errored' } on an imported passed run, would
       // otherwise hold a passed run that reads Proven until the next boot's sanitizeRun.
-      if (ATTACK_DID_NOT_EXECUTE[merged.attackResult]) merged.status = 'untested';
+      if (attackDidNotExecute(merged.attackResult)) merged.status = 'untested';
       return merged;
     });
     this.commit(list);

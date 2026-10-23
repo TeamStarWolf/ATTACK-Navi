@@ -312,6 +312,31 @@ describe('HtmlReportService', () => {
       expect(rangeOnly).not.toContain('confirmation or your run):');
     });
 
+    // PR #241 round 1: the range-only walk profile (T1005, T1105, T1059 deployed;
+    // T1550.002, T1037.001 detection-authored) read 'Covered (self-attested) 3 of 222',
+    // per-tactic bars keyed 'Covered (self-attested)' and a note 'A technique you
+    // recorded ... Not validated.' around its range counts.
+    it('a range-only HTML report never labels its Covered counts self-attested: heading, note, tactic bars and subtitle', async () => {
+      posture.coveredBy({ T1: 'range', T4: 'range' });
+      const html = await report({ T1: 'covered', T4: 'covered' });
+      expect(html).not.toContain('Covered (self-attested)');
+      expect(html).not.toContain('A technique you recorded');
+      expect(html).toContain('<div style="font-size:18px;font-weight:700;color:#07101a;margin-bottom:4px">Covered (range)</div>');
+      expect(html).toContain('<strong>Covered (range)</strong>: A technique the range reports a deployed or authored detection for: a lab detection row, not a proof. Covered (range) shares divide by assessable parent techniques');
+      expect(html).toContain('<span class="bar-key">Covered (range)</span>');
+      expect(html).toContain(' Covered (range): A technique the range reports a deployed or authored detection for');
+      posture.coveredBy({ T1: 'range', T4: 'self-attested' });
+      const mixed = await report({ T1: 'covered', T4: 'covered' });
+      // T4's own badge names its own source; the counts' words name both.
+      expect(mixed).not.toContain('<span class="bar-key">Covered (self-attested)</span>');
+      expect(mixed).not.toContain('<strong>Covered (self-attested)</strong>');
+      expect(mixed).toContain('<span class="bar-key">Covered (self-attested or range)</span>');
+      expect(mixed).toContain('<div style="font-size:18px;font-weight:700;color:#07101a;margin-bottom:4px">Covered (self-attested or range)</div>');
+      posture.coveredBy({});
+      const own = await report({ T1: 'covered', T4: 'covered' });
+      expect(own).toContain('<span class="bar-key">Covered (self-attested)</span>');
+    });
+
     it('badges each table technique with postureBadge(stateFor(t))', async () => {
       const html = await report({ T1: 'partial', T2: 'proven', T4: 'covered' });
       const domain = loaded!;

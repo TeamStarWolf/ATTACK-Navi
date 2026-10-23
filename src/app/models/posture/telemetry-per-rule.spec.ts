@@ -192,3 +192,60 @@ describe('RP-F decision 40: the telemetry cause per technique and per rule', () 
     expect(all['why status']).toBe(`Status: implemented, partial via M1038, ${clause}`);
   });
 });
+
+// PR #241 round 1: one rule identity everywhere (RP-F decision 40: rule ids match
+// case-insensitively), and each telemetry clause names the run its outcome came from.
+describe('PR #241 round 1: rule identity and the run a clause names', () => {
+  const shapes = rpf8Runs();
+
+  // detectionsFired ['wazuh:306'] and an alerted outcome 'WAZUH:306': the pill read '1 of 1
+  // expected rules fired, plus 1 unexpected' and the Proven block '2 rules fired', while the
+  // telemetry cause treated them as one rule.
+  it("T1030 alerted ('WAZUH:306' alerted, 'wazuh:306' fired): one rule on the pill, the proof records and the Proven block", () => {
+    const runs = shapes.get('T1030')!.map(r => ({ ...r, outcomes: r.outcomes.map(o => ({ ...o, outcome: 'alerted' as const })) }));
+    expect(firedRuleTally(runs[0]).words).toBe('1 of 1 expected rules fired');
+    const [inputs] = runInputsFor(runs);
+    expect(inputs.proof.map(p => p.detectionRef)).toEqual(['wazuh:306']);
+    expect(inputs.summary.rulesFired).toBe(1);
+    const state = derive(runs);
+    expect(provenNoneLine(state)).toContain('1 rule fired');
+    expect(provenNoneLine(state)).not.toContain('2 rules fired');
+    expect(telemetryPartialWords(state.covered)).toBe(`range telemetry observed via WAZUH:306: partial; the rule alerted in this run, ${NOT_PROOF} (range run on 10/21/26)`);
+  });
+
+  // derive-posture sameRule compared rule ids case-sensitively, so a failed run naming
+  // 'WAZUH:306' did not remove proof of 'wazuh:306' (the range marks supersede case-insensitively).
+  it("a later failed run naming 'WAZUH:306' removes the proof of 'wazuh:306'", () => {
+    const [base] = shapes.get('T1030')!;
+    const passed: ValidationRunV2 = {
+      ...base, id: 'own-pass', runDate: '2026-10-20', status: 'passed', proofScope: 'own-run', source: 'manual',
+      outcomes: [], detectionsExpected: ['wazuh:306'], detectionsFired: ['wazuh:306'],
+    };
+    expect(derive([passed]).bucket).toBe('proven');
+    const failed: ValidationRunV2 = { ...passed, id: 'own-fail', runDate: '2026-10-21', status: 'failed', detectionsExpected: ['WAZUH:306'], detectionsFired: [] };
+    const state = derive([passed, failed]);
+    expect(state.proof).toEqual([]);
+    expect(state.bucket).not.toBe('proven');
+  });
+
+  // techniqueFirings kept the newest run that fired the rule while taking 'blocked' from an
+  // older run: wazuh:206 blocked on 10/20 and alerted on 10/21 read "the rule blocked in
+  // this run (range run on 10/21/26)", where the rule only alerted.
+  it('a rule blocked on 10/20 and alerted on 10/21: the clause names the 10/20 run that blocked it', () => {
+    const runs = shapes.get('T1105')!.map(r => r.runDate === '2026-10-20'
+      ? { ...r, outcomes: r.outcomes.map(o => ({ ...o, outcome: 'blocked' as const })) }
+      : { ...r, outcomes: r.outcomes.map(o => ({ ...o, outcome: 'alerted' as const })) });
+    const marks = runInputsFor(runs).flatMap(i => i.covered).filter(m => m.partialCause === 'telemetry');
+    expect(marks.map(m => [m.at, m.telemetryOutcome, m.telemetryFiredAt])).toEqual([['2026-10-21', 'blocked', '2026-10-20']]);
+    expect(telemetryPartialWords(derive(runs).covered))
+      .toBe(`range telemetry observed via wazuh:206: partial; the rule blocked in a run on 10/20/26, ${NOT_PROOF} (range run on 10/21/26)`);
+  });
+
+  it('a rule blocked in the newest run that fired it reads blocked in this run', () => {
+    const runs = shapes.get('T1105')!.map(r => r.runDate === '2026-10-20'
+      ? { ...r, outcomes: r.outcomes.map(o => ({ ...o, outcome: 'alerted' as const })) }
+      : { ...r, outcomes: r.outcomes.map(o => ({ ...o, outcome: 'blocked' as const })) });
+    expect(telemetryPartialWords(derive(runs).covered))
+      .toBe(`range telemetry observed via wazuh:206: partial; the rule blocked in this run, ${NOT_PROOF} (range run on 10/21/26)`);
+  });
+});

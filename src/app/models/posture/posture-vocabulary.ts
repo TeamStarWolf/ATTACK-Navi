@@ -126,6 +126,18 @@ export const COVERED_SOURCE_LABELS: Readonly<Record<CoveredQualifier, string>> =
   range: `Covered (range: ${LAB_VALIDATED} detection)`,
 };
 
+/**
+ * The label of a Covered COUNT by the sources the count includes (RP-F decision 43;
+ * PR #241 round 1): the Report Builder's and the HTML and PDF reports' Covered heading,
+ * per-tactic bar key and column header. A count with a range source never reads
+ * self-attested: 'Covered (range)' when the range is its only source, the lens's own
+ * 'Covered (self-attested or range)' when both are; 'Covered (self-attested)' otherwise.
+ */
+export function coveredCountLabel(sources: readonly CoveredQualifier[]): string {
+  if (!sources.includes('range')) return 'Covered (self-attested)';
+  return sources.includes('self-attested') ? lensLabel('covered') : 'Covered (range)';
+}
+
 /** The menu label of a Phase 2 lens (P2-13, P2-14). */
 export function lensLabel(id: 'proven' | 'covered' | 'posture'): string {
   switch (id) {

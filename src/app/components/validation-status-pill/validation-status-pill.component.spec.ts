@@ -10,6 +10,7 @@ import { ValidationService, type ValidationRunV2, sanitizeRun } from '../../serv
 import { runInputs } from '../../services/posture-adapters';
 import { DEFAULT_POSTURE_RULES, derivePosture } from '../../models/posture/derive-posture';
 import { postureExplain } from '../../models/lens-explain';
+import { rpf8Runs } from '../../testing/rpf8-shapes';
 
 describe('ValidationStatusPillComponent', () => {
   let component: ValidationStatusPillComponent;
@@ -102,6 +103,40 @@ describe('ValidationStatusPillComponent', () => {
     expect(text).toContain('wazuh:990001');
     expect(text).toContain('wazuh:990002');
     expect(text).toContain('Oct 20, 2026'); // the date renders beside the ref
+  });
+
+  // PR #241 round 1: the range-run rules list picked the newest date with a raw string
+  // compare, keyed rules case-sensitively, and listed the rules of a run whose attack did
+  // not execute (T1027.013 listed wazuh:307 beside 'UNTESTED, attack did not execute').
+  describe('range-run rules use the shared comparator and rule identity (PR #241 round 1)', () => {
+    function show(runs: ValidationRunV2[]): void {
+      validation.forTechnique.and.returnValue(runs);
+      validation.latestFor.and.returnValue(runs[runs.length - 1]);
+      component.attackId = runs[0].techniqueId;
+      fixture.detectChanges();
+    }
+
+    it('T1027.013 (range run errored): no range-run rule is listed', () => {
+      show(rpf8Runs().get('T1027.013')!);
+      expect(component.labProofRecords).toEqual([]);
+      expect((fixture.nativeElement as HTMLElement).textContent ?? '').not.toContain('range-run rules');
+    });
+
+    it("T1030 ('WAZUH:306' in a later run, 'wazuh:306' in an earlier one): one entry, the newest run's", () => {
+      const older = { ...rangeRun('wazuh:306', '2026-10-19'), id: 'r-older' };
+      const newer = { ...rangeRun('WAZUH:306', '2026-10-21'), id: 'r-newer' };
+      show([older, newer]);
+      expect(component.labProofRecords).toEqual([{ ref: 'WAZUH:306', date: '2026-10-21' }]);
+    });
+
+    it('a date-only run and an offset timestamp on the same local day order by the shared comparator, not by the string', () => {
+      // '2026-10-20T23:30:00-12:00' is 11:30Z on 10/21: after local midnight of 10/21 in
+      // any zone from UTC-11 to UTC+12, though its string sorts before '2026-10-21'.
+      const dateOnly = { ...rangeRun('wazuh:a', '2026-10-21'), id: 'r-a' };
+      const offset = { ...rangeRun('wazuh:b', '2026-10-20T23:30:00-12:00'), id: 'r-b' };
+      show([dateOnly, offset]);
+      expect(component.labProofRecords.map(r => r.ref)).toEqual(['wazuh:b', 'wazuh:a']);
+    });
   });
 
   it('does not show the lab badge for an own-run manual record', () => {

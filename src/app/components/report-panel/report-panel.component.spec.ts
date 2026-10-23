@@ -178,6 +178,26 @@ describe('ReportPanelComponent split (E1.1, P2-07)', () => {
     ]);
   });
 
+  // PR #241 round 1: the Covered card's sub-line, the tactic note and the tactic column
+  // header read 'Covered (self-attested)' and 'A technique you recorded ... Not
+  // validated.' over range-only counts.
+  it('a range-only Report Builder never labels its Covered counts self-attested: card sub-line, tactic note, column header', () => {
+    const el = render({ T4: 'covered' }, 0, [], { T4: 'range' });
+    expect(text(el)).not.toContain('Covered (self-attested)');
+    expect(text(el)).not.toContain('A technique you recorded');
+    const card = text(el.querySelector('[data-testid="report-covered"]'));
+    expect(card).toContain('A technique the range reports a deployed or authored detection for: a lab detection row, not a proof. Covered (range) shares divide by assessable parent techniques');
+    const table = el.querySelector('[data-testid="report-tactic-split"]')!;
+    expect(Array.from(table.querySelectorAll('th')).map(th => text(th))).toContain('Covered (range)');
+    expect(text(el)).toContain('Covered (range): A technique the range reports a deployed or authored detection for');
+  });
+
+  it('a Report Builder covered by both sources heads its tactic column with both', () => {
+    const mixed = render({ T1: 'covered', T4: 'covered' }, 0, [], { T4: 'range' });
+    expect(Array.from(mixed.querySelectorAll('[data-testid="report-tactic-split"] th')).map(th => text(th))).toContain('Covered (self-attested or range)');
+    expect(text(mixed)).not.toContain('Covered (self-attested):');
+  });
+
   it('shows the partial card and the Proven count from the rollup', () => {
     const el = render({ T1: 'partial', T2: 'partial', T4: 'proven', T5: 'stale' }, 2);
     expect(text(el.querySelector('[data-testid="report-partial"]'))).toContain('partial, by cause');

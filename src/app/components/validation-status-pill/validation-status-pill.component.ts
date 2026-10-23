@@ -9,7 +9,8 @@ import { Subscription } from 'rxjs';
 import { ValidationService, ValidationRunV2, ValidationStatus } from '../../services/validation.service';
 import { PanelNavService } from '../../services/panel-nav.service';
 import { validationDateTime } from '../../models/local-date';
-import { type FiredRuleTally, firedRuleCount, firedRuleTally } from '../../models/posture/fired-rules';
+import { type FiredRuleTally, attackDidNotExecute, firedRuleCount, firedRuleTally, ruleKey } from '../../models/posture/fired-rules';
+import { sortRunsNewestFirst, storedRunKey } from '../../models/posture/latest-run';
 
 const STATUS_LABEL: Record<ValidationStatus, string> = {
   passed: 'PASS', failed: 'FAIL', partial: 'PARTIAL',
@@ -176,23 +177,31 @@ export class ValidationStatusPillComponent implements OnInit, OnChanges, OnDestr
   }
 
   /**
-   * The range-run detection records — each detection ref with the date it was
-   * validated — newest first, one entry per ref (keeping its newest date). Each
-   * entry is data-bound (ref + date), so the lint reads it as evidence, not a claim.
+   * The range-run detection records — each detection ref with the date of its newest
+   * range run — newest first, one entry per rule. Each entry is data-bound (ref +
+   * date), so the lint reads it as evidence, not a claim. The runs are ordered by the
+   * one latest-run comparator (sortRunsNewestFirst, RP-F decision 24) and rules are
+   * compared by ruleKey (trimmed, case-insensitive, RP-F decision 40); a run whose
+   * attack did not execute lists no rule (RP-F decision 44). PR #241 round 1: a raw
+   * string compare picked the newest date, 'WAZUH:306' and 'wazuh:306' were two rules,
+   * and T1027.013's errored range run listed its rule beside "attack did not execute".
    */
   get labProofRecords(): { ref: string; date: string }[] {
-    const newest = new Map<string, string>();
-    for (const run of this.allRuns) {
-      if (run.proofScope !== 'range') continue;
-      for (const o of run.outcomes ?? []) {
-        if (!o.detectionRef) continue;
-        const prev = newest.get(o.detectionRef);
-        if (prev === undefined || run.runDate > prev) newest.set(o.detectionRef, run.runDate);
+    const out: { ref: string; date: string }[] = [];
+    const seen = new Set<string>();
+    const ranged = this.allRuns.filter(run => run.proofScope === 'range' && !attackDidNotExecute(run.attackResult));
+    for (const run of sortRunsNewestFirst(ranged, storedRunKey)) {
+      const refs = (run.outcomes ?? [])
+        .map(o => (typeof o.detectionRef === 'string' ? o.detectionRef.trim() : ''))
+        .filter(ref => ref !== '')
+        .sort((a, b) => a.localeCompare(b));
+      for (const ref of refs) {
+        if (seen.has(ruleKey(ref))) continue;
+        seen.add(ruleKey(ref));
+        out.push({ ref, date: run.runDate });
       }
     }
-    return [...newest.entries()]
-      .map(([ref, date]) => ({ ref, date }))
-      .sort((a, b) => (a.date === b.date ? a.ref.localeCompare(b.ref) : a.date < b.date ? 1 : -1));
+    return out;
   }
 
   openValidationPanel(): void {

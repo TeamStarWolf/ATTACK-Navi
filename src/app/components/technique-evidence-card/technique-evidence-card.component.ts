@@ -27,7 +27,7 @@ import { lensOnScreen } from '../../models/lens-registry';
 import { KNOWN_FAMILY_COUNT, basisWords, lensExplain, provenNoneLine } from '../../models/lens-explain';
 import { PROVEN, lensLabel, proofLine } from '../../models/posture/posture-vocabulary';
 import { notCreditedWords, partialMarkWords, recordRunTooltip } from '../../models/posture/partial-cause';
-import { NOT_EXECUTED_WORDS, attackResultWords } from '../../models/posture/fired-rules';
+import { notExecutedNote } from '../../models/posture/fired-rules';
 import { runTime, validationDay } from '../../models/local-date';
 import { POSTURE_TODAY } from '../../models/posture/posture-today';
 import { refForTechnique, techniqueRefKey } from '../../models/technique-ref';
@@ -212,8 +212,10 @@ export class TechniqueEvidenceCardComponent {
     this.state().runsWithoutProof.map(r => {
       const n = r.rulesFired ?? 0;
       const fired = n > 0 ? `, ${n} rule${n === 1 ? '' : 's'} fired` : '';
-      // RP-F decision 44: a run whose attack did not execute says so, never a fired count.
-      const notRun = r.notExecuted ? `, ${NOT_EXECUTED_WORDS}: ${attackResultWords(r.notExecuted)}` : '';
+      // RP-F decision 44: a run whose attack did not execute says so, never a fired count;
+      // the words are the fired-rule helper's (notExecutedNote), not the card's own.
+      const note = notExecutedNote(r.notExecuted);
+      const notRun = note ? `, ${note}` : '';
       return `${r.status} on ${validationDay(r.date)} (source ${r.source}${fired}${notRun})`;
     }).join('; '));
 

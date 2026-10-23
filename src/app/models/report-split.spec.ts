@@ -16,6 +16,7 @@ import type { PostureBucket } from './posture/posture.types';
 import {
   computeReportSplit,
   coveredCardLines,
+  coveredSplitLabels,
   isTechniqueMapped,
   partialCardLines,
   REPORT_SPLIT_LABELS,
@@ -137,6 +138,34 @@ describe('computeReportSplit (E1.1 Theoretical sub-line, P2-07 posture rollup)',
     expect(REPORT_SPLIT_LABELS.coveredCard).toBe('Covered (self-attested or range), by source');
     // A hand-built rollup with no count by source lists no source line rather than guess one.
     expect(coveredCardLines(computeReportSplit(domain, { ...stub.rollup(), overall: { ...stub.rollup().overall, coveredBySource: undefined } }, 0))).toEqual([]);
+  });
+
+  // PR #241 round 1 (decision 43 on every Covered label): the walk read 'Covered
+  // (self-attested) 3 of 222' and 'A technique you recorded ... Not validated.' around a
+  // range-only profile's counts. The Covered words follow the sources the count includes.
+  it('the Covered heading, notes and column words never call a count with a range source self-attested', () => {
+    const domain = makeSplitDomain();
+    const stub = makePostureStub(() => domain, { T1: 'covered', T2: 'covered', T4: 'covered' });
+    stub.coveredBy({ T1: 'range', T2: 'range', T4: 'range' });
+    const rangeOnly = coveredSplitLabels(computeReportSplit(domain, stub.rollup(), 0));
+    expect(rangeOnly.covered).toBe('Covered (range)');
+    expect(rangeOnly.coveredNote).toBe('A technique the range reports a deployed or authored detection for: a lab detection row, not a proof.');
+    expect(rangeOnly.assessableNote).toMatch(/^Covered \(range\) shares divide by assessable parent techniques/);
+    for (const words of Object.values(rangeOnly)) {
+      expect(words).not.toContain('self-attested');
+      expect(words).not.toContain('you recorded');
+    }
+    stub.coveredBy({ T1: 'range', T4: 'both' });
+    const mixed = coveredSplitLabels(computeReportSplit(domain, stub.rollup(), 0));
+    expect(mixed.covered).toBe('Covered (self-attested or range)');
+    expect(mixed.coveredNote).toContain('self-attested, not validated');
+    expect(mixed.coveredNote).toContain('range: a lab detection row, not a proof');
+    expect(mixed.assessableNote).toMatch(/^Covered \(self-attested or range\) shares divide/);
+    stub.coveredBy({});
+    expect(coveredSplitLabels(computeReportSplit(domain, stub.rollup(), 0))).toEqual({
+      covered: REPORT_SPLIT_LABELS.covered, coveredNote: REPORT_SPLIT_LABELS.coveredNote, assessableNote: REPORT_SPLIT_LABELS.assessableNote,
+    });
+    expect(coveredSplitLabels({ coveredBySource: null }).covered).toBe('Covered (self-attested)');
   });
 
   it('a breadth partial still names the mitigation cause, with a count per cause beside a telemetry one', () => {

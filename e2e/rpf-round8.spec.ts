@@ -245,6 +245,8 @@ test.describe('RP-F round 8', () => {
     await expect(card.getByTestId('ev-not-credited')).toHaveText(['range run on 10/21/26 did not execute (errored): not credited']);
     await expect(card).not.toContainText('alerted in this run');
     await expect(card).not.toContainText(/[1-9]\d* rules? fired/);
+    // PR #241 round 1: the pill listed 'range-run rules: wazuh:307' beside "attack did not execute".
+    await expect(d.locator('app-validation-status-pill .vsp-rule')).toHaveCount(0);
 
     await page.goto(`${BASE}/#/detect/validation`);
     await expect(page.locator('app-validation-panel')).toBeVisible({ timeout: ROUTE_TIMEOUT });
@@ -268,5 +270,46 @@ test.describe('RP-F round 8', () => {
     const { drawer: d } = await drawer(page, 'T1092', 'posture');
     await expect(d.locator('app-validation-status-pill .vsp-status').first()).toBeVisible({ timeout: ROUTE_TIMEOUT });
     await expect(d.locator('app-validation-status-pill .vsp-rule')).toHaveCount(0);
+  });
+
+  // PR #241 round 1 (decision 43 on every Covered label): a range-only profile's
+  // Report Builder read 'COVERED (SELF-ATTESTED)' over its tactic counts and 'A technique
+  // you recorded ... Not validated.' under its Covered card.
+  test('[RP-F 43] a range-only Report Builder never labels its Covered counts self-attested', async ({ page }) => {
+    await openWorkspace(page);
+    await importAll(page, contract([
+      ['T1005', 'deployed', 'none', 'wazuh:401', 'detection-only', '2026-10-21'],
+      ['T1105', 'deployed', 'none', 'wazuh:402', 'detection-only', '2026-10-21'],
+      ['T1059', 'deployed', 'none', 'wazuh:403', 'detection-only', '2026-10-21'],
+      ['T1550.002', 'detection-authored', 'logged', 'wazuh:404', 'detection-only', '2026-10-21'],
+      ['T1037.001', 'detection-authored', 'logged', 'wazuh:405', 'detection-only', '2026-10-21'],
+    ]));
+    await page.goto(`${BASE}/#/reports/builder`);
+    const panel = page.locator('app-report-panel');
+    const covered = panel.locator('[data-testid="report-covered"]');
+    await expect(covered).toContainText('Covered (range: lab-validated detection): 3', { timeout: ROUTE_TIMEOUT });
+    await expect(covered).toContainText('A technique the range reports a deployed or authored detection for: a lab detection row, not a proof. Covered (range) shares divide');
+    await expect(panel.locator('[data-testid="report-tactic-split"] th')).toContainText(['Covered (range)']);
+    await expect(panel).not.toContainText('Covered (self-attested)');
+    await expect(panel).not.toContainText('A technique you recorded');
+  });
+
+  // PR #241 round 1 (decision 40: rule ids match case-insensitively): 'wazuh:306' fired
+  // and 'WAZUH:306' alerted read '1 of 1 expected rules fired, plus 1 unexpected' on the
+  // pill and '2 rules fired' in the Proven block.
+  test("[RP-F 40] 'wazuh:306' fired and 'WAZUH:306' alerted are one rule on the pill and the Proven block", async ({ page }) => {
+    await openWorkspace(page);
+    await page.goto(`${BASE}/#/detect/validation`);
+    await expect(page.locator('#vp-import-runs')).toBeEnabled({ timeout: ROUTE_TIMEOUT });
+    const body = JSON.stringify({ exportedAt: '2026-10-22T00:00:00Z', schemaVersion: '2.0', runs: [
+      run('r1-t1029', 'T1029', { detectionsExpected: ['wazuh:306'], detectionsFired: ['wazuh:306'], outcomes: [tel('WAZUH:306', 'alerted')] }),
+    ] });
+    await page.locator('#vp-import-runs').setInputFiles({ name: 'runs.json', mimeType: 'application/json', buffer: Buffer.from(body) });
+    await expect(page.locator('.vp-import-msg').first()).toContainText('lylat-range:J35', { timeout: ROUTE_TIMEOUT });
+    const { drawer: d, card } = await drawer(page, 'T1029', 'posture');
+    await expect(d.locator('app-validation-status-pill .vsp-meta').first()).toHaveText('1 of 1 expected rules fired', { timeout: ROUTE_TIMEOUT });
+    await expect(d.locator('app-validation-status-pill .vsp-rule')).toHaveCount(1);
+    await expect(card).toContainText('1 rule fired');
+    await expect(card).not.toContainText(/[2-9] rules fired/);
   });
 });

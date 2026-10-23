@@ -7,7 +7,7 @@ import { ImplStatus, ImplementationService } from './implementation.service';
 import { ReportConfig, DEFAULT_REPORT_CONFIG } from './report-config.service';
 import { SettingsService } from './settings.service';
 import { PostureService } from './posture.service';
-import { computeReportSplit, coveredCardLines, partialCardLines, REPORT_SPLIT_LABELS } from '../models/report-split';
+import { computeReportSplit, coveredCardLines, coveredSplitLabels, partialCardLines, REPORT_SPLIT_LABELS } from '../models/report-split';
 import { PROVEN, postureBadge } from '../models/posture/posture-vocabulary';
 import type { PostureBucket } from '../models/posture/posture.types';
 
@@ -90,6 +90,8 @@ export class HtmlReportService {
     const L = REPORT_SPLIT_LABELS;
     const posture = this.posture;
     const split = computeReportSplit(domain, posture.rollup(), this.injector.get(ImplementationService).summarize()['implemented']);
+    // The Covered words by the sources the count includes (RP-F decision 43): a range source never reads self-attested.
+    const C = coveredSplitLabels(split);
     // Covered and Proven words render only when the owner has recorded data (§2.4).
     const ownerWords = posture.ownerWords();
 
@@ -170,7 +172,7 @@ export class HtmlReportService {
         <div class="tactic-name">${this.esc(ts.name)}</div>
         <div class="tactic-bars">
           <div class="bar-line"><span class="bar-key">${L.theoreticalShort}</span><div class="bar-container"><div class="bar-fill bar-theoretical" style="width:${ts.theoreticalPct}%"></div></div><span class="tactic-pct">${ts.theoreticalPct}%</span><span class="tactic-count">${ts.theoretical}/${ts.total}</span></div>${ownerWords ? `
-          <div class="bar-line"><span class="bar-key">${L.covered}</span><div class="bar-container"><div class="bar-fill bar-implemented" style="width:${ts.coveredPct}%"></div></div><span class="tactic-pct" data-share-pct="${ts.coveredPct}">${ts.coveredPct}%</span><span class="tactic-count" data-posture="${DATA.covered}">${ts.covered}</span><span class="tactic-count">/<span data-posture="assessable">${ts.assessable}</span> ${L.assessable} · ${L.partial} <span data-posture="${DATA.partial}">${ts.partial}</span> · ${PROVEN} <span data-posture="${DATA.proven}">${ts.proven}</span> · ${L.stale} <span data-posture="${DATA.stale}">${ts.stale}</span></span></div>` : ''}
+          <div class="bar-line"><span class="bar-key">${C.covered}</span><div class="bar-container"><div class="bar-fill bar-implemented" style="width:${ts.coveredPct}%"></div></div><span class="tactic-pct" data-share-pct="${ts.coveredPct}">${ts.coveredPct}%</span><span class="tactic-count" data-posture="${DATA.covered}">${ts.covered}</span><span class="tactic-count">/<span data-posture="assessable">${ts.assessable}</span> ${L.assessable} · ${L.partial} <span data-posture="${DATA.partial}">${ts.partial}</span> · ${PROVEN} <span data-posture="${DATA.proven}">${ts.proven}</span> · ${L.stale} <span data-posture="${DATA.stale}">${ts.stale}</span></span></div>` : ''}
         </div>
       </div>`).join('');
 
@@ -370,7 +372,7 @@ ${(() => {
     'exec-summary': `
   <div class="section">
     <div class="section-title">Executive Summary</div>
-    <div class="split-note" data-split="note"><strong>${L.known}</strong>: ${L.knownNote} <strong>${L.theoreticalShort}</strong>: ${L.theoreticalNote}${ownerWords ? ` <strong>${L.covered}</strong>: ${L.coveredNote} ${L.assessableNote}` : ` ${L.fresh}`}</div>
+    <div class="split-note" data-split="note"><strong>${L.known}</strong>: ${L.knownNote} <strong>${L.theoreticalShort}</strong>: ${L.theoreticalNote}${ownerWords ? ` <strong>${C.covered}</strong>: ${C.coveredNote} ${C.assessableNote}` : ` ${L.fresh}`}</div>
     <div class="coverage-ring-wrap" style="margin-bottom:24px">
       <div class="split-block" data-split="known">
         <div class="donut donut-theoretical"><span class="donut-label">${split.knownPct}%</span></div>
@@ -383,7 +385,7 @@ ${(() => {
       <div class="split-block" data-split="${DATA.covered}">
         <div class="donut donut-implemented"><span class="donut-label" data-share-pct="${split.coveredPct}">${split.coveredPct}%</span></div>
         <div>
-          <div style="font-size:18px;font-weight:700;color:#07101a;margin-bottom:4px">${L.covered}</div>
+          <div style="font-size:18px;font-weight:700;color:#07101a;margin-bottom:4px">${C.covered}</div>
           <div style="font-size:14px;color:#718096">${split.covered} of <span data-posture="assessable">${split.assessable}</span> ${L.assessable} parent techniques${hasImplData ? ` (${split.implementedMitigations} mitigations marked implemented)` : ''}. ${L.partial}: ${split.partial}; ${PROVEN}: ${split.proven}; ${L.stale}: ${split.stale}.</div>
         </div>
       </div>` : ''}
@@ -436,7 +438,7 @@ ${(() => {
     'coverage-by-tactic': `
   <div class="section">
     <div class="section-title">${ownerWords ? 'Theoretical and Posture by Tactic' : 'Theoretical by Tactic'}</div>
-    <div class="section-subtitle">Parent techniques only, highest Theoretical share first. ${L.theoreticalShort}: ${L.theoreticalNote}${ownerWords ? ` ${L.covered}: ${L.coveredNote}` : ''}</div>
+    <div class="section-subtitle">Parent techniques only, highest Theoretical share first. ${L.theoreticalShort}: ${L.theoreticalNote}${ownerWords ? ` ${C.covered}: ${C.coveredNote}` : ''}</div>
     ${tacticRows}
   </div>`,
     'impl-status': hasImplData ? `

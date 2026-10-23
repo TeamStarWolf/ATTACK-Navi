@@ -27,8 +27,11 @@ export interface FiredRulesInput {
 
 /**
  * The attack results that mean the attack did not execute (RP-F decisions 32 and 44):
- * Record Run's "Failed prerequisite" and "Errored" (ValidationService's
- * ATTACK_DID_NOT_EXECUTE holds the same two; validation.service.spec checks they agree).
+ * Record Run's "Failed prerequisite" and "Errored", with their words. THE one table:
+ * ValidationService's ATTACK_DID_NOT_EXECUTE is derived from it (attackDidNotExecute),
+ * and the evidence card's runs line and the Covered block's not-credited line take
+ * their words from it (notExecutedNote, attackResultWords). PR #241 round 1 found a
+ * second table in ValidationService that only a spec kept in agreement.
  */
 const NOT_EXECUTED: Readonly<Record<string, string>> = { 'failed-prereq': 'failed prerequisite', errored: 'errored' };
 
@@ -46,12 +49,36 @@ export function attackResultWords(attackResult: string): string {
 export const NOT_EXECUTED_WORDS = 'attack did not execute';
 
 /**
+ * The note a run line carries for a run whose attack did not execute (RP-F decision 44):
+ * 'attack did not execute: errored', 'attack did not execute: failed prerequisite'; null
+ * for a run that executed (or names no result). The evidence card's runs line reads it.
+ */
+export function notExecutedNote(attackResult: string | undefined): string | null {
+  return attackResult !== undefined && attackDidNotExecute(attackResult) ? `${NOT_EXECUTED_WORDS}: ${attackResultWords(attackResult)}` : null;
+}
+
+/**
+ * A rule id as every rule comparison reads it (RP-F decision 40): trimmed and
+ * case-insensitive, so 'WAZUH:306' and ' wazuh:306' are the rule 'wazuh:306'. The
+ * fired set (firedRules), the expected-rules fraction (firedRuleTally), the proof
+ * records and the range marks (posture-adapters), the proof supersession
+ * (derive-posture sameRule) and the pill's range-run rules all compare through it.
+ * PR #241 round 1: the pill read '1 of 1 expected rules fired, plus 1 unexpected' and
+ * the Proven block '2 rules fired' for 'wazuh:306' fired and 'WAZUH:306' alerted.
+ */
+export function ruleKey(rule: string): string {
+  return rule.trim().toLowerCase();
+}
+
+/**
  * The rules a run fired: the distinct, trimmed, non-empty union of its
  * detectionsFired and the detectionRef of every outcome that alerted or blocked,
- * in first-seen order (detectionsFired first). A 'logged' or 'none' outcome fired
+ * in first-seen order (detectionsFired first), ids compared by ruleKey (trimmed,
+ * case-insensitive; the first spelling seen is kept). A 'logged' or 'none' outcome fired
  * nothing; a blank or duplicate id is one rule or none:
  *   detectionsFired [] and outcomes [{ detectionRef: 'edr:x', outcome: 'blocked' }] -> ['edr:x']
  *   detectionsFired ['siem:a', ' siem:a ', ''] and outcomes [{ 'siem:a', 'alerted' }] -> ['siem:a']
+ *   detectionsFired ['wazuh:306'] and outcomes [{ 'WAZUH:306', 'alerted' }] -> ['wazuh:306']
  * A run whose attack did not execute (attackResult failed-prereq or errored) fired
  * nothing (RP-F decision 44): its ticked or imported rules never count as fired, so no
  * surface shows a fired count or an alerted clause for it. Round 7 read "UNTESTED 2 of 2
@@ -60,17 +87,16 @@ export const NOT_EXECUTED_WORDS = 'attack did not execute';
  */
 export function firedRules(run: FiredRulesInput): string[] {
   if (attackDidNotExecute(run.attackResult)) return [];
-  const rules = new Set<string>();
-  for (const d of run.detectionsFired) {
+  const rules = new Map<string, string>();
+  const add = (d: unknown): void => {
     const ref = typeof d === 'string' ? d.trim() : '';
-    if (ref !== '') rules.add(ref);
-  }
+    if (ref !== '' && !rules.has(ruleKey(ref))) rules.set(ruleKey(ref), ref);
+  };
+  for (const d of run.detectionsFired) add(d);
   for (const o of run.outcomes ?? []) {
-    if (o.outcome !== 'alerted' && o.outcome !== 'blocked') continue;
-    const ref = typeof o.detectionRef === 'string' ? o.detectionRef.trim() : '';
-    if (ref !== '') rules.add(ref);
+    if (o.outcome === 'alerted' || o.outcome === 'blocked') add(o.detectionRef);
   }
-  return [...rules];
+  return [...rules.values()];
 }
 
 /** How many rules a run fired: firedRules(run).length. */
@@ -89,8 +115,8 @@ export interface FiredTallyInput extends FiredRulesInput {
  * rules that fired, so it can never read as all expected rules firing when one did
  * not:
  * - `fired`: every rule the run fired (firedRuleCount);
- * - `expected` (M): the distinct, trimmed, non-empty detectionsExpected;
- * - `matched` (k): the fired rules that were expected, |fired ∩ expected|;
+ * - `expected` (M): the distinct non-empty detectionsExpected, by ruleKey;
+ * - `matched` (k): the fired rules that were expected, |fired ∩ expected| by ruleKey;
  * - `unexpected` (n): the fired rules nobody listed as expected;
  * - `words`: 'k of M expected rules fired', plus ', plus n unexpected' when n > 0, or
  *   'N fired, none expected' when M = 0.
@@ -109,20 +135,20 @@ export interface FiredRuleTally {
   readonly words: string;
 }
 
-/** The distinct, trimmed, non-empty rules of a list, in first-seen order. */
-function distinctRules(list: readonly string[]): string[] {
-  return [...new Set(list.map(d => (typeof d === 'string' ? d.trim() : '')).filter(d => d !== ''))];
+/** The distinct non-empty rules of a list by ruleKey (trimmed, case-insensitive). */
+function distinctRuleKeys(list: readonly string[]): Set<string> {
+  return new Set(list.map(d => (typeof d === 'string' ? ruleKey(d) : '')).filter(d => d !== ''));
 }
 
 /** A run's fired rules beside its expected ones, and the words for them (RP-F decision 38). */
 export function firedRuleTally(run: FiredTallyInput): FiredRuleTally {
   const fired = firedRules(run);
-  const expected = new Set(distinctRules(run.detectionsExpected));
+  const expected = distinctRuleKeys(run.detectionsExpected);
   // RP-F decision 44: an attack that did not execute fired nothing; no fraction is said.
   if (attackDidNotExecute(run.attackResult)) {
     return { executed: false, fired: 0, expected: expected.size, matched: 0, unexpected: 0, words: NOT_EXECUTED_WORDS };
   }
-  const matched = fired.filter(r => expected.has(r)).length;
+  const matched = fired.filter(r => expected.has(ruleKey(r))).length;
   const unexpected = fired.length - matched;
   const words = expected.size === 0
     ? `${fired.length} fired, none expected`

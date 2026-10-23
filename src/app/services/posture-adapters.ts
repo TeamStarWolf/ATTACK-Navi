@@ -28,7 +28,7 @@ import type { CoveredMark, CoveredStrength, ProofRecord, RunSummary, RunVerdict 
 import { rollupMitigations } from '../models/posture/mitigation-rollup';
 import { provesStatus } from '../models/posture/derive-posture';
 import { runMatches } from '../models/posture/run-match';
-import { attackDidNotExecute, firedRuleCount, firedRules } from '../models/posture/fired-rules';
+import { attackDidNotExecute, firedRuleCount, firedRules, ruleKey } from '../models/posture/fired-rules';
 import { compareRunsNewestFirst, sortRunsNewestFirst, storedRunKey } from '../models/posture/latest-run';
 import { type TechniqueRefKey, parseTechniqueRef } from '../models/technique-ref';
 import type { AttackDomain } from './data.service';
@@ -185,28 +185,39 @@ const RANGE_STATES = {
   'telemetry-observed': { basis: 'range-telemetry-observed', strength: 'partial', partialCause: 'telemetry' },
 } as const;
 
-/** A rule id as decision 40 compares it: trimmed, case-insensitive ('WAZUH:306' is 'wazuh:306'). */
-function ruleKey(rule: string): string {
-  return rule.trim().toLowerCase();
+/** One rule a run fired: its id (the first spelling firedRules kept) and how it fired. */
+interface FiredRule {
+  readonly rule: string;
+  readonly outcome: 'alerted' | 'blocked';
 }
 
 /**
- * The rules a run fired, keyed by ruleKey, each 'alerted' or 'blocked': firedRules(run)
- * (the set the Validation pill and the Proven block count, RP-F decision 30b), 'blocked'
- * when the run (attackResult 'blocked') or that rule's own outcome was blocked.
+ * The rules a run fired, keyed by ruleKey (trimmed, case-insensitive, RP-F decision 40),
+ * each 'alerted' or 'blocked': firedRules(run) (the set the Validation pill and the
+ * Proven block count, RP-F decision 30b; empty for a run whose attack did not execute,
+ * RP-F decision 44), 'blocked' when the run (attackResult 'blocked') or an outcome of
+ * that rule was blocked; the rules of alerted or blocked outcome rows first, then the
+ * rest of detectionsFired. The run's proof records (runInputsFor) and the range marks'
+ * firings (techniqueFirings) are both read from it, so neither re-implements the fired
+ * set or the non-executed rule (PR #241 round 1).
  */
-function firedOutcomes(run: ValidationRunV2): Map<string, 'alerted' | 'blocked'> {
+function firedOutcomes(run: ValidationRunV2): Map<string, FiredRule> {
   const runBlocked = run.attackResult === 'blocked';
-  const out = new Map<string, 'alerted' | 'blocked'>();
-  for (const rule of firedRules(run)) out.set(ruleKey(rule), runBlocked ? 'blocked' : 'alerted');
+  const fired = new Map(firedRules(run).map(rule => [ruleKey(rule), rule] as const));
+  const out = new Map<string, FiredRule>();
+  // The rules of the alerted or blocked outcome rows first, then the rest of detectionsFired.
   for (const o of run.outcomes) {
     const key = ruleKey(o.detectionRef ?? '');
-    if (o.outcome === 'blocked' && out.has(key)) out.set(key, 'blocked');
+    const rule = fired.get(key);
+    if (rule === undefined || (o.outcome !== 'alerted' && o.outcome !== 'blocked')) continue;
+    const blocked = runBlocked || o.outcome === 'blocked' || out.get(key)?.outcome === 'blocked';
+    out.set(key, { rule, outcome: blocked ? 'blocked' : 'alerted' });
   }
+  for (const [key, rule] of fired) if (!out.has(key)) out.set(key, { rule, outcome: runBlocked ? 'blocked' : 'alerted' });
   return out;
 }
 
-/** One rule's firing across a technique's evidence: how it fired, and the newest run that fired it. */
+/** One rule's firing across a technique's evidence: how it fired, and the run it fired that way in. */
 interface RuleFiring {
   readonly outcome: 'alerted' | 'blocked';
   readonly run: ValidationRunV2;
@@ -214,16 +225,19 @@ interface RuleFiring {
 
 /**
  * Every rule fired anywhere in a technique's evidence (RP-F decision 40), keyed by
- * ruleKey: 'blocked' when any run blocked it, else 'alerted', with the newest run (the
- * one latest-run comparator, RP-F decision 24) that fired it.
+ * ruleKey: 'blocked' with the newest run that blocked it when any run did, else
+ * 'alerted' with the newest run that fired it (newest by the one latest-run comparator,
+ * RP-F decision 24). The outcome and the run always come from the same run, so the
+ * clause names the date of the run the rule fired that way in (decision 40). PR #241
+ * round 1: wazuh:1 blocked on 10/20 and alerted on 10/21 read "the rule blocked in this
+ * run" on the 10/21 run, where it only alerted.
  */
 function techniqueFirings(runs: readonly ValidationRunV2[]): Map<string, RuleFiring> {
   const out = new Map<string, RuleFiring>();
   for (const run of sortRunsNewestFirst(runs, storedRunKey)) {
-    for (const [key, outcome] of firedOutcomes(run)) {
+    for (const [key, { outcome }] of firedOutcomes(run)) {
       const seen = out.get(key);
-      if (seen === undefined) out.set(key, { outcome, run });
-      else if (outcome === 'blocked') out.set(key, { outcome, run: seen.run });
+      if (seen === undefined || (outcome === 'blocked' && seen.outcome !== 'blocked')) out.set(key, { outcome, run });
     }
   }
   return out;
@@ -353,18 +367,12 @@ export function runInputsFor(runs: readonly ValidationRunV2[]): RunInputs[] {
   return runs.map((run, i) => {
     const runBlocked = run.attackResult === 'blocked';
     const executed = !attackDidNotExecute(run.attackResult);
-    const named = new Map<string, 'alerted' | 'blocked'>();
-    // RP-F decision 44: an attack that did not execute named no detection that fired.
-    for (const o of executed ? run.outcomes : []) {
-      const ref = o.detectionRef?.trim() ?? '';
-      if (ref === '' || (o.outcome !== 'alerted' && o.outcome !== 'blocked')) continue;
-      const outcome = o.outcome === 'blocked' || runBlocked ? 'blocked' : 'alerted';
-      if (named.get(ref) !== 'blocked') named.set(ref, outcome);
-    }
-    for (const d of executed ? run.detectionsFired : []) {
-      const ref = d.trim();
-      if (ref !== '' && !named.has(ref)) named.set(ref, runBlocked ? 'blocked' : 'alerted');
-    }
+    // The run's fired rules, one per rule id compared case-insensitively (firedOutcomes
+    // over firedRules: an attack that did not execute named no detection that fired,
+    // RP-F decision 44). PR #241 round 1: this map was rebuilt here with its own
+    // non-executed filter and case-sensitive keys, so 'wazuh:306' and 'WAZUH:306' were
+    // two proof records.
+    const named = firedOutcomes(run);
     const blocked = runBlocked || run.outcomes.some(o => o.outcome === 'blocked');
     // The one fired-rule count (firedRules, RP-F decision 30b): the distinct union of
     // detectionsFired and the rules of alerted or blocked outcomes, which the Validation
@@ -374,7 +382,7 @@ export function runInputsFor(runs: readonly ValidationRunV2[]): RunInputs[] {
     // run, not the records of it that a later run of one rule left standing.
     const rulesFired = firedRuleCount(run);
 
-    const proof: ProofRecord[] = [...named].map(([detectionRef, outcome]) => ({
+    const proof: ProofRecord[] = [...named.values()].map(({ rule: detectionRef, outcome }) => ({
       scope: run.proofScope, detectionRef, outcome, date: run.runDate, source: run.source, runId: run.id, runRulesFired: rulesFired,
       ...(run.missionId !== undefined ? { missionId: run.missionId } : {}),
     }));
