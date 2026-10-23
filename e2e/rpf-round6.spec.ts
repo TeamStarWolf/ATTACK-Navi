@@ -93,7 +93,7 @@ test.describe('RP-F round 6', () => {
     await expect(drawer.locator('.sidebar-header .attack-id')).toHaveText('T1003.001', { timeout: ROUTE_TIMEOUT });
     const card = drawer.locator('[data-testid="evidence-card"]');
     await expect(card.getByTestId('ev-why')).toContainText(
-      'Proven in range on 10/19/26 by lylat-range:SYNTH-MISSION-A; 1 rule fired; a later run on 10/20/26 observed telemetry only',
+      'Proven in a range run on 10/19/26 by lylat-range:SYNTH-MISSION-A; 1 rule fired; a later run on 10/20/26 observed telemetry only',
       { timeout: ROUTE_TIMEOUT });
     await expect(card.getByTestId('ev-confirm')).toHaveCount(0);
     await expect(card.getByTestId('ev-record-run')).toHaveCount(1);

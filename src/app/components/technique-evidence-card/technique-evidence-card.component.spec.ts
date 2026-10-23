@@ -417,7 +417,7 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
     expect(rows.length).toBe(2);
     expect(rows[0]).toBe('Proven (your run) on 10/20/26 by sigma:4688 (blocked) source manual');
     // 142 days old on the 90-day range window: stale, and a range record carries the lab badge.
-    expect(rows[1]).toBe('Proven in range on 6/1/26 by wazuh:990003 (alerted) source lylat-range:CORNERIA-ROOT-01 lab stale');
+    expect(rows[1]).toBe('Proven in a range run on 6/1/26 by wazuh:990003 (alerted) source lylat-range:CORNERIA-ROOT-01 lab stale');
   });
 
   it('the Covered block lists each mark with qualifier, basis and via; Confirm on a partial mark reuses P2-16\'s path', () => {
@@ -479,7 +479,7 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
       techInput = T1003_001;
       const el = render(rangeState('T1003.001', RANGE_FIXTURE), true, 'posture');
       const why = text(block(el, 'ev-why'));
-      expect(why).toContain('Proven in range on 10/19/26 by lylat-range:SYNTH-MISSION-A; 1 rule fired; a later run on 10/20/26 observed telemetry only');
+      expect(why).toContain('Proven in a range run on 10/19/26 by lylat-range:SYNTH-MISSION-A; 1 rule fired; a later run on 10/20/26 observed telemetry only');
       const marks = Array.from(block(el, 'ev-covered')!.querySelectorAll('[data-testid="ev-mark"]'));
       expect(marks.map(m => text(m.querySelector('.ev-line')))).toEqual(['telemetry observed in the range via wazuh:990007']);
       expect(el.querySelector('[data-testid="ev-confirm"]')).toBeNull();

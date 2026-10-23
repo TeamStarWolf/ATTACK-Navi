@@ -5,12 +5,14 @@
 // drawer is opened by a pasted link (a fresh navigation: the app does not re-read
 // heat=, tech= or dom= on an in-session hash-only change); data-tech-id holds the
 // technique's STIX id.
+import { readFileSync } from 'node:fs';
 import { test, expect, type Page } from '@playwright/test';
 import { BASE, ROUTE_TIMEOUT, openWorkspace } from './fixtures/workspace';
 
 const T1082 = 'attack-pattern--354a7f88-63fb-41b5-a801-ce3b377b36f1';
 const T1083 = 'attack-pattern--7bc57495-ea59-4380-be31-a64af124ef18';
 const M1038 = 'course-of-action--47e0e9fe-96ce-4f65-8bb1-8be1feacb5db';
+const T1003_001 = 'attack-pattern--65f2d882-3f41-4d48-8a06-29af77ec9f90';
 
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -94,6 +96,30 @@ test.describe('RP-F round 7', () => {
     await paste(page, '#/matrix?heat=posture&tech=T1200');
     await expect(page.locator('.sidebar.open [data-testid="evidence-card"] [data-testid="ev-why"]'))
       .toContainText('Covered (range, partial via wazuh:5) from range telemetry observed via wazuh:5: partial, no detection alerted', { timeout: ROUTE_TIMEOUT });
+  });
+
+  // Decision 35, last sentence (PR #240 round 1): the Proven wording names the run's
+  // source. The P2-20 fixture's T1003.001 is proven by a contract-imported run, and its
+  // cell tooltip and aria-label read "Proven in range", naming neither the range run nor
+  // (rightly) "your run".
+  test("[RP-F 35] the P2-20 fixture's T1003.001: the tooltip, aria-label and why line name the range run, never 'your run'", async ({ page }) => {
+    await openWorkspace(page);
+    await importRange(page, 'fixture.json', readFileSync('src/testing/fixtures/lylat/validated-detections.fixture.json', 'utf8'), 'SYNTH-MISSION-A');
+    await paste(page, '#/matrix?heat=posture');
+    const cell = page.locator(`[data-tech-id="${T1003_001}"] .cell`).first();
+    await expect(cell).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    await expect(cell).toHaveAttribute('aria-label', /^T1003\.001: LSASS Memory, Proven in a range run/);
+    await expect(cell).not.toHaveAttribute('aria-label', /your run/);
+    await cell.hover();
+    const tip = page.locator('.tooltip-card .tt-posture');
+    await expect(tip).toContainText('Proven in a range run');
+    await expect(tip).not.toContainText('your run');
+    await cell.click();
+    const why = page.locator('.sidebar.open [data-testid="evidence-card"] [data-testid="ev-why"]');
+    await expect(why).toContainText(
+      'Proven in a range run on 10/19/26 by lylat-range:SYNTH-MISSION-A; 1 rule fired; a later run on 10/20/26 observed telemetry only',
+      { timeout: ROUTE_TIMEOUT });
+    await expect(page.locator('.sidebar.open [data-testid="evidence-card"]')).not.toContainText('your run');
   });
 
   // Decision 36: the scenario table and the Report Builder read the typed cause. Round 7

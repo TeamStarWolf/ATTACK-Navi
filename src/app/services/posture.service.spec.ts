@@ -697,7 +697,7 @@ describe('PostureService (P2-05, E2.1-c)', () => {
       expect(s.bucket).toBe('proven');
       expect(s.partialCauses).toEqual(['telemetry']);
       const posture = why('posture', s);
-      expect(posture).toContain('Proven in range on 10/19/26 by lylat-range:SYNTH-MISSION-A; 1 rule fired');
+      expect(posture).toContain('Proven in a range run on 10/19/26 by lylat-range:SYNTH-MISSION-A; 1 rule fired');
       expect(posture).toContain('a later run on 10/20/26 observed telemetry only');
       // The Covered lens paints the telemetry row's partial: its words name the row by its rule, never the threshold.
       const covered = why('covered', s);

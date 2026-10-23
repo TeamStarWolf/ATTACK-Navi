@@ -14,11 +14,20 @@ import { validationDay } from '../local-date';
 // truth-vocab-allow-next-line proven-only -- the Proven-rung word; every caller passes Proven-rung data
 export const PROVEN = 'Proven';
 
+// The Proven wording names the run's source (RP-F decision 35): "your run" only for a
+// manual run, "range run" for a contract-imported (range) run. PR #240 round 1: the
+// cell tooltip and aria-label of a range proof read "Proven in range", which named
+// neither.
 const SCOPE_WORDS: Readonly<Record<ProofScope, string>> = {
   production: ' in production',
-  range: ' in range',
+  range: ' in a range run',
   'own-run': ' (your run)',
 };
+
+/** The words after PROVEN for a proof scope ('' for none): ' in a range run', ' (your run)', ' in production'. */
+export function provenScopeWords(scope: ProofScope | null): string {
+  return scope ? SCOPE_WORDS[scope] : '';
+}
 
 const QUALIFIER_ORDER: readonly CoveredQualifier[] = ['self-attested', 'range'];
 
@@ -55,7 +64,7 @@ function partialVia(marks: readonly CoveredMark[]): string[] {
 
 /**
  * The badge for one technique's posture:
- *   'Proven in range' | 'Proven in production' | 'Proven (your run)' | 'Proven in range (stale)'
+ *   'Proven in a range run' | 'Proven in production' | 'Proven (your run)' | 'Proven in a range run (stale)'
  *   'Covered (self-attested)' | 'Covered (range)' | 'Covered (self-attested, range)'
  *   'Covered (self-attested, partial via M1038)'   (D16; passes covered-unqualified)
  *   'Known: mapped' | 'None'
@@ -67,8 +76,7 @@ export function postureBadge(s: Pick<PostureState, 'bucket' | 'qualifiers' | 'pr
   switch (s.bucket) {
     case 'proven':
     case 'stale': {
-      const scope = s.proofScope ? SCOPE_WORDS[s.proofScope] : '';
-      return PROVEN + scope + (s.bucket === 'stale' ? ' (stale)' : '');
+      return PROVEN + provenScopeWords(s.proofScope) + (s.bucket === 'stale' ? ' (stale)' : '');
     }
     case 'covered': {
       const head = coveredHead(badgeQualifiers(s));
@@ -87,7 +95,7 @@ export function postureBadge(s: Pick<PostureState, 'bucket' | 'qualifiers' | 'pr
   }
 }
 
-/** One proof line: 'Proven in range on 9/14/26 by wazuh:990003 (alerted)'. */
+/** One proof line: 'Proven in a range run on 9/14/26 by wazuh:990003 (alerted)'. */
 export function proofLine(p: ProofRecord): string {
   return `${PROVEN}${SCOPE_WORDS[p.scope]} on ${validationDay(p.date)} by ${p.detectionRef} (${p.outcome})`;
 }

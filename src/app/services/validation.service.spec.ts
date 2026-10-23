@@ -298,6 +298,38 @@ describe('ValidationService', () => {
       expect(service.all[0].statusFromSource).toBeTrue();
     });
 
+    // PR #240 round 1: update() is a write path too. It recomputed the status only when an
+    // input field changed and never for a statusFromSource run, so these two patches stored
+    // a passed run of an attack that did not execute until the next boot's sanitizeRun.
+    for (const attackResult of ['errored', 'failed-prereq'] as const) {
+      it(`update(): a patch of { status: 'passed' } alone on a manual '${attackResult}' run stores untested`, () => {
+        const run = service.record({ ...baseRun, attackResult });
+        expect(run.status).toBe('untested');
+        service.update(run.id, { status: 'passed' });
+        expect(service.all[0].status).toBe('untested');
+        expect(proofOf(service.all[0]).bucket).not.toBe('proven');
+        expect(service.latestFor('T1003.001')!.status).toBe('untested');
+      });
+
+      it(`update(): a patch of { attackResult: '${attackResult}' } on an imported passed run stores untested`, () => {
+        service.importRows([{ ...rangeRow('imp1', 'T1486'), status: 'passed' }], 'lylat-range:x');
+        expect(service.all[0].status).toBe('passed');
+        expect(service.all[0].statusFromSource).toBeTrue();
+        service.update('imp1', { attackResult });
+        const after = service.all[0];
+        expect(after.status).toBe('untested');
+        expect(after.statusFromSource).toBeTrue();
+        expect(after.attackResult).toBe(attackResult);
+        expect(proofOf(after).bucket).not.toBe('proven');
+      });
+    }
+
+    it("update(): an executed run's explicit status patch is kept (only a non-executed attack is forced untested)", () => {
+      const run = service.record({ ...baseRun, attackResult: 'executed' });
+      service.update(run.id, { status: 'failed' });
+      expect(service.all[0].status).toBe('failed');
+    });
+
     it('a stored record written before this rule reads back untested (the store reader sanitises too)', () => {
       const run = (sanitizeRun(v1Run('old', 'T1027', { status: 'passed', attackResult: 'executed' })) as { run: ValidationRunV2 }).run;
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ schema: 2, tombstones: [], records: [{ ...run, attackResult: 'errored', status: 'passed' }] }));

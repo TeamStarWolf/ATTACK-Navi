@@ -82,7 +82,7 @@ export interface ValidationRunV2 extends ValidationRun, V2Envelope {
   readonly techniqueRef: TechniqueRefKey | null;
   readonly proofScope: ProofScope;      // 'own-run' for panel records, 'range' for Lylat
   readonly outcomes: readonly ValidationOutcome[];
-  readonly statusFromSource: boolean;   // true ⇒ update() never recomputes status
+  readonly statusFromSource: boolean;   // true ⇒ update() never recomputes status (except: an attack that did not execute stores untested)
   readonly missionId?: string;
 }
 
@@ -641,7 +641,9 @@ export class ValidationService {
    * source, proofScope, outcomes or the envelope). For runs whose status did not
    * come from their source (§5.10), status is recomputed when an input changes
    * and outcomes are re-derived (§5.2) when detectionsFired or attackResult
-   * changes. A new techniqueId is re-keyed to the loaded domain, as record() keys it.
+   * changes. A run whose attack did not execute (ATTACK_DID_NOT_EXECUTE) stores
+   * 'untested' after any patch, statusFromSource or not (RP-F decisions 32 and 37).
+   * A new techniqueId is re-keyed to the loaded domain, as record() keys it.
    */
   update(id: string, patch: Partial<ValidationRun>): void {
     const fields = Object.fromEntries(
@@ -667,6 +669,12 @@ export class ValidationService {
           merged = { ...merged, outcomes: outcomesFromV1(merged) };
         }
       }
+      // RP-F decision 37 (PR #240 round 1): decision 32 on this write path too. Whatever
+      // the patch says and wherever the status came from, a run whose attack did not
+      // execute stores untested: a patch of { status: 'passed' } alone on an errored
+      // manual run, or of { attackResult: 'errored' } on an imported passed run, would
+      // otherwise hold a passed run that reads Proven until the next boot's sanitizeRun.
+      if (ATTACK_DID_NOT_EXECUTE[merged.attackResult]) merged.status = 'untested';
       return merged;
     });
     this.commit(list);

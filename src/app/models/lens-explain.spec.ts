@@ -50,7 +50,7 @@ describe('lensExplain (P2-18): Why this colour', () => {
           { ...RUN, scope: 'range', detectionRef: 'wazuh:990003', date: '2026-05-30' }],
       });
       expect(postureExplain(stale, DEFAULT_POSTURE_RULES.decayDays))
-        .toBe('Proven in range (stale) on 6/1/26 by lylat-range:CORNERIA-ROOT-01; 2 rules fired; older than its 90-day window');
+        .toBe('Proven in a range run (stale) on 6/1/26 by lylat-range:CORNERIA-ROOT-01; 2 rules fired; older than its 90-day window');
     });
 
     // RP-F decision 30b, round 1 repair: the Proven line names the best record's RUN's

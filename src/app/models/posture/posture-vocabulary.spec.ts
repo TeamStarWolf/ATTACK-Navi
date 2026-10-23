@@ -127,10 +127,10 @@ describe('posture vocabulary (Phase 2 design §2.4)', () => {
     });
 
     it('proven and stale: composed from PROVEN with the proof scope', () => {
-      expect(badge({ bucket: 'proven', proofScope: 'range' })).toBe(`${PROVEN} in range`);
+      expect(badge({ bucket: 'proven', proofScope: 'range' })).toBe(`${PROVEN} in a range run`);
       expect(badge({ bucket: 'proven', proofScope: 'production' })).toBe(`${PROVEN} in production`);
       expect(badge({ bucket: 'proven', proofScope: 'own-run' })).toBe(`${PROVEN} (your run)`);
-      expect(badge({ bucket: 'stale', proofScope: 'range' })).toBe(`${PROVEN} in range (stale)`);
+      expect(badge({ bucket: 'stale', proofScope: 'range' })).toBe(`${PROVEN} in a range run (stale)`);
       expect(badge({ bucket: 'proven', proofScope: null })).toBe(PROVEN);
     });
 
@@ -141,7 +141,7 @@ describe('posture vocabulary (Phase 2 design §2.4)', () => {
   });
 
   it('proofLine: scope, date, the named detection and the outcome, composed from PROVEN', () => {
-    expect(proofLine(record)).toBe(`${PROVEN} in range on 9/14/26 by wazuh:990003 (alerted)`);
+    expect(proofLine(record)).toBe(`${PROVEN} in a range run on 9/14/26 by wazuh:990003 (alerted)`);
     expect(proofLine({ ...record, scope: 'own-run', outcome: 'blocked', date: new Date(2026, 8, 21, 23, 59).toISOString(), detectionRef: 'sigma:abc' }))
       .toBe(`${PROVEN} (your run) on 9/21/26 by sigma:abc (blocked)`);
   });
