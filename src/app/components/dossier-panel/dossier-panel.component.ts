@@ -138,6 +138,9 @@ export class DossierPanelComponent implements OnInit, OnDestroy {
         }
       }),
     );
+    // The CTID mapping, the CVE2CAPEC chains and the PoC index load on demand, so a live
+    // dossier built before they land is rebuilt when each one does (its warnings say so).
+    this.subs.add(this.dossierService.onDemandLoaded().subscribe(() => this.rebuildLive()));
     // A deep link can open an asset dossier before the ATT&CK bundle finishes parsing,
     // which leaves the domain-derived sections (threat actors, and for a live dossier the
     // mitigations/CAPEC/etc.) empty. Re-derive them once the domain is available.
@@ -203,6 +206,18 @@ export class DossierPanelComponent implements OnInit, OnDestroy {
       }
       this.ensureEpss(id);
       this.fetchCisa(id);
+    });
+  }
+
+  /** Build the live dossier on screen again, from the data loaded since it was built. */
+  private rebuildLive(): void {
+    const id = this.requested;
+    if (!id || !this.dossier || this.dossier.source !== 'live') return;
+    this.loadSub?.unsubscribe();
+    this.loadSub = this.dossierService.load(id, this.env).subscribe(d => {
+      if (!this.isCurrent(id)) return;
+      this.dossier = d;
+      this.cdr.markForCheck();
     });
   }
 

@@ -7,7 +7,7 @@ import { BehaviorSubject, of } from 'rxjs';
 import { KEV_LIVE, KEV_UNAVAILABLE, KevEntry, NvdCveItem, kevSnapshot } from '../../models/cve';
 import { CveService } from '../../services/cve.service';
 import { EpssService } from '../../services/epss.service';
-import { AttackCveService } from '../../services/attack-cve.service';
+import { AttackCveService, CveAttackMapping } from '../../services/attack-cve.service';
 import { SsvcService } from '../../services/ssvc.service';
 import { SsvcPanelComponent } from './ssvc-panel.component';
 
@@ -139,6 +139,9 @@ describe('SsvcPanelComponent KEV states (E1.3)', () => {
   let kevSnapshotDate$: BehaviorSubject<string | null>;
   let activeCve$: BehaviorSubject<NvdCveItem | null>;
   let kevMap: Map<string, KevEntry>;
+  // The CTID ATT&CK-to-CVE mapping stub: it loads on demand, so it can land after the rows.
+  let ctidLoaded$: BehaviorSubject<boolean>;
+  let ctid: Map<string, CveAttackMapping>;
 
   /** CVE-2024-3400 as NVD publishes it: network, no privileges, total impact. */
   const panOs = (): NvdCveItem => ({
@@ -165,6 +168,8 @@ describe('SsvcPanelComponent KEV states (E1.3)', () => {
     kevSnapshotDate$ = new BehaviorSubject<string | null>(null);
     activeCve$ = new BehaviorSubject<NvdCveItem | null>(null);
     kevMap = new Map();
+    ctidLoaded$ = new BehaviorSubject<boolean>(false);
+    ctid = new Map();
     const cached = new Map<string, NvdCveItem>();
     const cveService = {
       loadKev: jasmine.createSpy('loadKev'),
@@ -190,7 +195,7 @@ describe('SsvcPanelComponent KEV states (E1.3)', () => {
         provideHttpClientTesting(),
         { provide: CveService, useValue: cveService },
         { provide: EpssService, useValue: { getScore: () => null, fetchScores: () => of(new Map()) } },
-        { provide: AttackCveService, useValue: { getMappingForCve: () => undefined } },
+        { provide: AttackCveService, useValue: { loaded$: ctidLoaded$, getMappingForCve: (id: string) => ctid.get(id) } },
       ],
     });
     TestBed.inject(SsvcService); // loads its tables in the constructor
@@ -249,5 +254,27 @@ describe('SsvcPanelComponent KEV states (E1.3)', () => {
     expect(text('[data-testid="ssvc-decision"] strong')).toBe('act');
     expect(text('table.points')).toContain('bundled CISA KEV snapshot of 2026-10-16');
     expect(fixture.nativeElement.querySelector('[data-testid="kev-unavailable-notice"]')).toBeNull();
+  });
+
+  it('rows built before the CTID mapping lands show its ATT&CK techniques once it does', () => {
+    kevLoaded$.next(true);
+    fixture.detectChanges();
+    const techCell = () => {
+      const row = (Array.from(fixture.nativeElement.querySelectorAll('table.rows tbody tr')) as HTMLElement[])
+        .find(r => r.textContent!.includes('CVE-2024-3400'))!;
+      const cell = row.querySelector('td.techniques')!;
+      const tags = Array.from(cell.querySelectorAll('.tech')).map(t => t.textContent!.trim());
+      return tags.length ? tags.join(' ') : (cell.textContent ?? '').trim();
+    };
+    expect(techCell()).toBe('—');
+
+    ctid.set('CVE-2024-3400', {
+      cveId: 'CVE-2024-3400', description: '', primaryImpact: ['T1059'], secondaryImpact: [],
+      exploitationTechnique: ['T1190'], capabilityGroup: 'command_injection', comments: [], references: [],
+      phase: '', source: 'ctid-kev',
+    });
+    ctidLoaded$.next(true);
+    fixture.detectChanges();
+    expect(techCell()).toBe('T1190 T1059');
   });
 });

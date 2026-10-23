@@ -29,10 +29,16 @@ import { AnthropicSkillsService } from '../../services/anthropic-skills.service'
 import { ThreatHunterPlaybookService } from '../../services/threathunter-playbook.service';
 import { SourceRegistryService } from '../../services/source-registry.service';
 
-interface HealthEntry { name: string; status: 'loading' | 'loaded' | 'failed' | 'empty'; detail?: string; }
+interface HealthEntry { name: string; status: 'loading' | 'loaded' | 'failed' | 'empty' | 'on-demand'; detail?: string; }
 
-/** What the source registry says about a ribbon entry: failed or empty with a reason, or nothing. */
-interface RegistryVerdict { status: 'failed' | 'empty'; detail: string; }
+/**
+ * What the source registry says about a ribbon entry: failed or empty with a reason, on
+ * demand (an on-demand source no view has asked for yet), or nothing.
+ */
+interface RegistryVerdict { status: 'failed' | 'empty' | 'on-demand'; detail: string; }
+
+/** The tooltip detail of an on-demand entry nothing has asked for yet. */
+export const ON_DEMAND_DETAIL = 'reference data loaded the first time a view needs it; not requested yet';
 
 const LAST_REFRESHED_KEY = 'data-health-last-refreshed';
 
@@ -50,7 +56,8 @@ const LAST_REFRESHED_KEY = 'data-health-last-refreshed';
           [class.dot-loading]="entry.status === 'loading'"
           [class.dot-failed]="entry.status === 'failed'"
           [class.dot-empty]="entry.status === 'empty'"
-          [title]="entry.name + ': ' + entry.status + (entry.detail ? ' - ' + entry.detail : '')"
+          [class.dot-on-demand]="entry.status === 'on-demand'"
+          [title]="entry.name + ': ' + (entry.status === 'on-demand' ? 'on demand' : entry.status) + (entry.detail ? ' - ' + entry.detail : '')"
         ></span>
       }
       @if (lastRefreshedLabel) {
@@ -71,6 +78,7 @@ const LAST_REFRESHED_KEY = 'data-health-last-refreshed';
     .dot-loading { background: #eab308; animation: pulse-dot 1.2s infinite; }
     .dot-failed { background: #ef4444; }
     .dot-empty { background: #94a3b8; }
+    .dot-on-demand { background: transparent; box-shadow: inset 0 0 0 1px #94a3b8; }
     @keyframes pulse-dot {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.4; }
@@ -97,6 +105,7 @@ const LAST_REFRESHED_KEY = 'data-health-last-refreshed';
     :host-context(body.light-mode) .dot-loading { background: #d97706; }
     :host-context(body.light-mode) .dot-failed { background: #dc2626; }
     :host-context(body.light-mode) .dot-empty { background: #64748b; }
+    :host-context(body.light-mode) .dot-on-demand { background: transparent; box-shadow: inset 0 0 0 1px #64748b; }
     :host-context(body.light-mode) .last-refreshed { color: #475569; }
     :host-context(body.light-mode) .refresh-btn { color: #64748b; }
     :host-context(body.light-mode) .refresh-btn:hover { color: #1e293b; }
@@ -143,11 +152,15 @@ export class DataHealthComponent implements OnInit, OnDestroy {
    * (or 'empty') only when every one of them failed (or returned nothing), so an entry
    * that still has some data is not painted red.
    */
-  private registryVerdict$(ids: string[]): Observable<RegistryVerdict | null> {
+  private registryVerdict$(ids: string[], onDemand = false): Observable<RegistryVerdict | null> {
     return this.sources.records$.pipe(
       map(records => {
         const mine = records.filter(r => ids.includes(r.id));
         if (!mine.length) return null;
+        // An on-demand source that no view has asked for is neither loading nor failed.
+        if (onDemand && mine.every(r => r.status === 'pending')) {
+          return { status: 'on-demand' as const, detail: ON_DEMAND_DETAIL };
+        }
         if (mine.every(r => r.status === 'failed' || r.status === 'empty')) {
           const failed = mine.filter(r => r.status === 'failed');
           if (failed.length) {
@@ -176,10 +189,13 @@ export class DataHealthComponent implements OnInit, OnDestroy {
     // the source answered with nothing) instead of leaving it pulsing "loading".
     // `loadedDetail` (optional) is the tooltip detail of a loaded entry: for the bundled
     // rule-coverage snapshot, the pinned commit and the dates the loader recorded.
-    const sources: { name: string; loaded$: any; failed$?: Observable<string | null>; ids?: string[]; loadedDetail?: () => string | undefined }[] = [
+    // `onDemand` marks an entry whose sources load only when a view asks for them (the
+    // CTID ATT&CK-to-CVE mapping, the CVE2CAPEC chains, the PoC index): until then the
+    // dot says 'on demand', never 'loading' or 'failed'.
+    const sources: { name: string; loaded$: any; failed$?: Observable<string | null>; ids?: string[]; onDemand?: boolean; loadedDetail?: () => string | undefined }[] = [
       { name: 'Atomic Red Team', loaded$: this.atomicService.loaded$, ids: ['atomic-layer'] },
       { name: 'Sigma Rules', loaded$: this.sigmaService.loaded$, ids: ['sigmahq-coverage'] },
-      { name: 'ATT&CK CVE', loaded$: this.attackCveService.loaded$, ids: ['ctid-attack-to-cve', 'ctid-kev'] },
+      { name: 'ATT&CK CVE', loaded$: this.attackCveService.loaded$, ids: ['ctid-attack-to-cve', 'ctid-kev'], onDemand: true },
       { name: 'CAPEC', loaded$: this.capecService.loaded$, ids: ['capec'] },
       { name: 'MISP Galaxy', loaded$: this.mispService.loaded$, ids: ['misp-galaxy'] },
       { name: 'NIST 800-53', loaded$: this.nistMappingService.loaded$, ids: ['ctid-nist-800-53'] },
@@ -215,8 +231,8 @@ export class DataHealthComponent implements OnInit, OnDestroy {
         ),
       },
       { name: 'NVD Bulk', loaded$: this.nvdBulkService.loaded$, ids: ['cve-technique-map'] },
-      { name: 'CVE2CAPEC', loaded$: this.cve2capecService.loaded$, ids: ['cve2capec-runtime'] },
-      { name: 'PoC Exploits', loaded$: this.pocExploitService.loaded$, ids: ['trickest-poc-tree'] },
+      { name: 'CVE2CAPEC', loaded$: this.cve2capecService.loaded$, ids: ['cve2capec-runtime'], onDemand: true },
+      { name: 'PoC Exploits', loaded$: this.pocExploitService.loaded$, ids: ['trickest-poc-tree'], onDemand: true },
       { name: 'EVTX Samples', loaded$: this.evtxSamplesService.loaded$, ids: ['evtx-samples-tree'] },
       { name: 'Anthropic Skills', loaded$: this.anthropicSkillsService.loaded$, ids: ['anthropic-skills-layer'] },
       { name: 'ThreatHunter Playbook', loaded$: this.threatHunterPlaybookService.loaded$, ids: ['threathunter-playbook'] },
@@ -227,8 +243,9 @@ export class DataHealthComponent implements OnInit, OnDestroy {
     sources.forEach((src, i) => {
       this.subs.add(
         src.loaded$.subscribe((loaded: boolean) => {
-          // A failed or empty source keeps its colour until its own verdict clears (a retry started).
-          if (!loaded && (this.entries[i].status === 'failed' || this.entries[i].status === 'empty')) return;
+          // A failed, empty or not-yet-requested source keeps its state until its own verdict
+          // clears (a retry or a first request started).
+          if (!loaded && ['failed', 'empty', 'on-demand'].includes(this.entries[i].status)) return;
           const detail = loaded ? src.loadedDetail?.() : undefined;
           this.entries[i] = detail
             ? { name: src.name, status: 'loaded', detail }
@@ -250,7 +267,7 @@ export class DataHealthComponent implements OnInit, OnDestroy {
       }
       if (src.ids) {
         this.subs.add(
-          this.registryVerdict$(src.ids).subscribe(verdict => {
+          this.registryVerdict$(src.ids, src.onDemand).subscribe(verdict => {
             if (this.entries[i].status === 'loaded') return;
             this.entries[i] = verdict
               ? { name: src.name, status: verdict.status, detail: verdict.detail }

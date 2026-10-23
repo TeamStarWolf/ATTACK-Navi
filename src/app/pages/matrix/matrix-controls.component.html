@@ -40,6 +40,8 @@
             <span class="drop-name">
               @if (cveSearchHint.techniqueCount > 0) {
                 Highlighting {{ cveSearchHint.techniqueCount }} technique{{ cveSearchHint.techniqueCount !== 1 ? 's' : '' }}
+              } @else if (cveSearchHint.loading) {
+                Loading the CVE mappings
               } @else {
                 No mapped techniques in dataset
               }

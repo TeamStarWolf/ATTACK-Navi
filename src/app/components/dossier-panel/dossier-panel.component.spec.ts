@@ -2,7 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, ParamMap } from '@angular/router';
-import { BehaviorSubject, Subject, of } from 'rxjs';
+import { BehaviorSubject, NEVER, Subject, of } from 'rxjs';
 
 import { DossierPanelComponent } from './dossier-panel.component';
 import { CveDossier } from '../../models/dossier';
@@ -63,6 +63,8 @@ describe('DossierPanelComponent', () => {
 
   let queryParams: BehaviorSubject<ParamMap>;
   let dossierService: jasmine.SpyObj<DossierService>;
+  /** One of the on-demand sources (CTID, CVE2CAPEC, PoC) finishing its load. */
+  let onDemandLoaded$: Subject<boolean>;
   let cveService: jasmine.SpyObj<CveService> & { kevLoaded$: BehaviorSubject<boolean>; kevError$: BehaviorSubject<string | null> };
   /** The pending NVD fetchCve() for the CVE on screen, resolved by the test. */
   let nvdFetch: Subject<unknown>;
@@ -76,8 +78,10 @@ describe('DossierPanelComponent', () => {
   function setup(initialCve: string | null, loaded: CveDossier = dossier()): void {
     queryParams = new BehaviorSubject(convertToParamMap(initialCve ? { cve: initialCve } : {}));
     dossierService = jasmine.createSpyObj<DossierService>('DossierService', [
-      'load', 'reevaluate', 'recomputeF3', 'recomputeEnrichment',
+      'load', 'reevaluate', 'recomputeF3', 'recomputeEnrichment', 'onDemandLoaded',
     ]);
+    onDemandLoaded$ = new Subject<boolean>();
+    dossierService.onDemandLoaded.and.returnValue(onDemandLoaded$);
     dossierService.load.and.returnValue(of(loaded));
     dossierService.reevaluate.and.callFake(d => d);
     dossierService.recomputeF3.and.callFake(d => ({ ...d, f3: { techniques: [{ id: 'T1190', name: 'Exploit', url: '' }] } }));
@@ -242,6 +246,25 @@ describe('DossierPanelComponent', () => {
     expect(cveService.fetchCve).not.toHaveBeenCalled();
   });
 
+  it('rebuilds a live dossier when an on-demand source (CTID, CVE2CAPEC, PoC) lands, and leaves an asset dossier alone', () => {
+    setup(null);
+    cveService.getCachedCve.and.returnValue({} as never);
+    dossierService.load.and.returnValue(of(dossier({ source: 'live' })));
+    queryParams.next(convertToParamMap({ cve: CVE }));
+    expect(dossierService.load).toHaveBeenCalledTimes(1);
+
+    onDemandLoaded$.next(true);
+    expect(dossierService.load).toHaveBeenCalledTimes(2);
+    expect(dossierService.load).toHaveBeenCalledWith(CVE, DEFAULT_ENVIRONMENT);
+
+    // A generated asset carries its own techniques: nothing to rebuild.
+    dossierService.load.and.returnValue(of(dossier({ source: 'asset' })));
+    queryParams.next(convertToParamMap({ cve: 'CVE-2024-3400' }));
+    expect(dossierService.load).toHaveBeenCalledTimes(3);
+    onDemandLoaded$.next(true);
+    expect(dossierService.load).toHaveBeenCalledTimes(3);
+  });
+
   it('rejects a malformed identifier without navigating or loading', () => {
     setup(null);
     component.query = 'log4shell';
@@ -313,6 +336,7 @@ describe('DossierPanelComponent request handling', () => {
             reevaluate: (d: CveDossier) => d,
             recomputeF3: (d: CveDossier) => d,
             recomputeEnrichment: (d: CveDossier) => d,
+            onDemandLoaded: () => NEVER,
           },
         },
         {

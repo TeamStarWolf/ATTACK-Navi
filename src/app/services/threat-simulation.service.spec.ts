@@ -68,7 +68,7 @@ describe('ThreatSimulationService (profile-scoped)', () => {
             knownSignals: KNOWN_SIGNALS.get(t.id) ?? 0,
         }) } },
         { provide: THREAT_WEIGHT_PROVIDER, useValue: { weight: () => 0, revision: signal(0), parents: signal(new Set(parentIds)) } },
-        { provide: AttackCveService, useValue: { getCvesForTechnique: () => [], getKevCvesForTechnique: () => [] } },
+        { provide: AttackCveService, useValue: { loadOnDemand: () => undefined, getCvesForTechnique: () => [], getKevCvesForTechnique: () => [] } },
         { provide: ExploitdbService, useValue: { hasExploits: () => false } },
         { provide: EpssService, useValue: { getScore: () => null } },
       ],

@@ -142,6 +142,9 @@ export class CveService {
    * catalogue that arrives replaces it.
    */
   loadKev(): void {
+    // The KEV technique scores join KEV with the CTID ATT&CK-to-CVE mapping, which loads
+    // on demand: asking for KEV asks for it too (only the first ask fetches).
+    this.attackCveService.loadOnDemand();
     if (this.kevOriginSubject.value === 'live' || this.kevLoading) return;
     this.kevLoading = true;
     this.kevErrorSubject.next(null);

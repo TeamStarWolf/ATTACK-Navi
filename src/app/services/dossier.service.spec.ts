@@ -25,6 +25,7 @@ import { NistMappingService } from './nist-mapping.service';
 import { PocExploitService } from './poc-exploit.service';
 import { SigmaService } from './sigma.service';
 import { SsvcService } from './ssvc.service';
+import { SourceRegistryService } from './source-registry.service';
 
 const KEV_ENTRY = {
   cveID: 'CVE-2021-44228',
@@ -118,8 +119,8 @@ describe('DossierService', () => {
             timelineDays: () => 3,
           },
         },
-        { provide: AttackCveService, useValue: { getMappingForCve: () => undefined } },
-        { provide: Cve2CapecService, useValue: { getChainForCve: () => null } },
+        { provide: AttackCveService, useValue: { loadOnDemand: () => undefined, getMappingForCve: () => undefined } },
+        { provide: Cve2CapecService, useValue: { loadOnDemand: () => undefined, getChainForCve: () => null } },
         { provide: CapecService, useValue: { getCapecForCwe: () => [], getCapecForTechnique: () => [] } },
         { provide: D3fendService, useValue: { getCountermeasures: () => [] } },
         { provide: EngageService, useValue: { getActivities: () => [] } },
@@ -167,7 +168,7 @@ describe('DossierService', () => {
         },
         { provide: DataService, useValue: dataStub },
         { provide: EpssService, useValue: { getScore: () => null, fetchScores: () => ({ subscribe: () => undefined }) } },
-        { provide: PocExploitService, useValue: { hasPoc: () => false, getPocUrl: () => '' } },
+        { provide: PocExploitService, useValue: { loadOnDemand: () => undefined, hasPoc: () => false, getPocUrl: () => '' } },
         { provide: SigmaService, useValue: { getRuleCount: () => 0 } },
         { provide: AtomicService, useValue: { getTestCount: () => 0 } },
       ],
@@ -200,6 +201,47 @@ describe('DossierService', () => {
     expect(result?.source).toBe('live');
     // No NVD record cached, so it says so rather than rendering an empty dossier.
     expect(result?.warnings.some(w => w.includes('not in the NVD cache'))).toBe(true);
+  });
+
+  // The CTID mapping and the CVE2CAPEC chains load on demand (load() asks for them): a
+  // dossier composed before they land says they are loading, never "CTID publishes no
+  // mapping"; the panel rebuilds it when they arrive.
+  it('says the on-demand CVE sources are still loading instead of claiming CTID has no mapping', () => {
+    const registry = TestBed.inject(SourceRegistryService);
+    cveStub.getCachedCve = (id: string) => ({
+      id, description: 'test', cvssScore: 5, cvssVector: null, severity: 'MEDIUM', cwes: ['CWE-79'], cpes: [],
+      published: '2024-01-01', lastModified: '2024-01-01', references: [], mappedAttackIds: [], isKev: false,
+    });
+    const compose = (): CveDossier => {
+      let result: CveDossier | undefined;
+      service.load('CVE-2000-0001').subscribe(d => (result = d));
+      httpMock.expectOne('assets/data/dossiers/CVE-2000-0001.json').flush('not found', { status: 404, statusText: 'Not Found' });
+      return result!;
+    };
+
+    const loading = compose();
+    expect(loading.source).toBe('live');
+    expect(loading.warnings.some(w => w.startsWith('The CTID ATT&CK-to-CVE mapping is still loading'))).toBeTrue();
+    expect(loading.warnings.some(w => w.startsWith('The CVE2CAPEC chains are still loading'))).toBeTrue();
+    expect(loading.warnings.some(w => w.startsWith('CTID publishes no per-CVE ATT&CK mapping'))).toBeFalse();
+
+    // Both arrived (or settled): the dossier states what CTID publishes, and nothing is loading.
+    registry.succeed('ctid-attack-to-cve', 839);
+    registry.succeed('ctid-kev', 1200);
+    registry.succeed('cve2capec-runtime', 105151);
+    const settled = compose();
+    expect(settled.warnings.some(w => w.startsWith('CTID publishes no per-CVE ATT&CK mapping'))).toBeTrue();
+    expect(settled.warnings.some(w => w.includes('still loading'))).toBeFalse();
+  });
+
+  it('asks for the three on-demand sources when a dossier is loaded', () => {
+    const asks: string[] = [];
+    spyOn(TestBed.inject(AttackCveService), 'loadOnDemand').and.callFake(() => { asks.push('ctid'); });
+    spyOn(TestBed.inject(Cve2CapecService), 'loadOnDemand').and.callFake(() => { asks.push('cve2capec'); });
+    spyOn(TestBed.inject(PocExploitService), 'loadOnDemand').and.callFake(() => { asks.push('poc'); });
+    service.load('CVE-2000-0001').subscribe();
+    httpMock.expectOne('assets/data/dossiers/CVE-2000-0001.json').flush('not found', { status: 404, statusText: 'Not Found' });
+    expect(asks).toEqual(['ctid', 'cve2capec', 'poc']);
   });
 
   it('translates retired technique ids forward and keeps the tier', () => {

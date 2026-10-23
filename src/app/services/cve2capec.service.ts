@@ -34,15 +34,31 @@ export class Cve2CapecService {
   /** Unique ATT&CK techniques with ≥1 CVE2CAPEC kill chain. */
   readonly covered$ = this.coveredSubject.asObservable();
 
+  private initialized = false;
+
   constructor(
     private http: HttpClient,
     private sources: SourceRegistryService = new SourceRegistryService(),
-  ) {
+  ) {}
+
+  /**
+   * Start the download the first time a view needs the chains: the kill-chain lens,
+   * the CVE panel, the technique drawer, the CTEM page or a dossier. Safe to call any
+   * number of times; only the first call requests the year files. The two years are
+   * about 56 MiB of gzip that inflate to about 1.7 GB of JSONL, so they are never
+   * fetched at boot (a phone's browser is killed by that much memory). While the
+   * request runs the 'cve2capec-runtime' source reads 'loading'; a failure is recorded
+   * there by name; loaded$ turns true when chains arrive.
+   */
+  loadOnDemand(): void {
+    if (this.initialized) return;
+    this.initialized = true;
     this.load();
   }
 
-  /** Load again after a failed or empty load: the data-health Retry (E1.3). */
+  /** Load again after a failed or empty load, or for the first time: the data-health Retry (E1.3). */
   retry(): void {
+    this.initialized = true;
     this.load();
   }
 

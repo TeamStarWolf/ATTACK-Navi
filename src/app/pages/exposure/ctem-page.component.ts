@@ -10,6 +10,7 @@ import { Cve2CapecService } from '../../services/cve2capec.service';
 import { ImplementationService } from '../../services/implementation.service';
 import { ValidationService, type ValidationStatus } from '../../services/validation.service';
 import { TimelineService } from '../../services/timeline.service';
+import { SourceRegistryService } from '../../services/source-registry.service';
 import { PostureCardComponent } from '../../components/posture-card/posture-card.component';
 
 interface CtemStage {
@@ -66,12 +67,15 @@ export class CtemPageComponent implements OnInit, OnDestroy {
     private validationService: ValidationService,
     private timelineService: TimelineService,
     private cdr: ChangeDetectorRef,
+    private sources: SourceRegistryService,
   ) {}
 
   ngOnInit(): void {
     // KEV loads lazily; without this the Discovery/Prioritization numbers sit
     // at 0 until the user happens to visit a KEV-loading page first.
     this.cveService.loadKev();
+    // The CVE2CAPEC chains load on demand; the CVE-chain count below fills in when they land.
+    this.cve2capecService.loadOnDemand();
     this.subs.add(
       combineLatest([
         this.dataService.domain$,
@@ -80,7 +84,10 @@ export class CtemPageComponent implements OnInit, OnDestroy {
         this.cve2capecService.covered$,
         this.validationService.runs$,
         this.timelineService.snapshots$,
-      ]).subscribe(([domain, assets, kevTechScores, cveCovered, runs, snapshots]) => {
+        this.sources.record$('cve2capec-runtime'),
+      ]).subscribe(([domain, assets, kevTechScores, cveCovered, runs, snapshots, chainSource]) => {
+        // Until the on-demand chains arrive the count is not 0, it is not known yet.
+        const chainsLoading = chainSource.status === 'pending' || chainSource.status === 'loading';
         const parents = (domain?.techniques ?? []).filter(t => !t.isSubtechnique);
         const platforms = new Set((domain?.techniques ?? []).flatMap(t => t.platforms)).size;
         const uncovered = parents.filter(t => t.mitigationCount === 0).length;
@@ -150,7 +157,7 @@ export class CtemPageComponent implements OnInit, OnDestroy {
             question: 'Which exposures actually exist?',
             metrics: [
               { label: 'Techniques with KEV exposure', value: kevTechScores.size },
-              { label: 'Techniques with CVE kill chains', value: cveCovered },
+              { label: 'Techniques with CVE kill chains', value: chainsLoading ? 'loading chains' : cveCovered },
               { label: 'Asset-specific exposures', value: this.assetService.getExposureDetails(assets).length },
             ],
             links: [

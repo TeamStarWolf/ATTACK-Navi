@@ -103,6 +103,11 @@ export class RoadmapPanelComponent implements OnInit, OnDestroy {
   autoRoadmap: AutoRoadmapPhase[] | null = null;
   generatingRoadmap = false;
   showAutoRoadmap = false;
+  /** True while Auto-Generate waits for the CTID mapping its CVE weighting reads. */
+  waitingForCves = false;
+  /** How the CTID mapping had settled when the shown auto roadmap was scored. */
+  private autoRoadmapOutcome: 'loaded' | 'failed' | null = null;
+  private settleSub?: Subscription;
 
   constructor(
     private dataService: DataService,
@@ -112,6 +117,9 @@ export class RoadmapPanelComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    // The roadmap weights mitigations by CVE count from the CTID ATT&CK-to-CVE mapping,
+    // which loads on demand: opening this view asks for it (only the first ask fetches).
+    this.attackCveService.loadOnDemand();
     this.subs.add(this.dataService.domain$.subscribe(domain => {
       this.domain = domain;
       this.buildRoadmap();
@@ -121,6 +129,13 @@ export class RoadmapPanelComponent implements OnInit, OnDestroy {
       this.implStatusMap = map;
       this.buildRoadmap();
       this.cdr.markForCheck();
+    }));
+    // An auto roadmap scored while the mapping had failed is scored again when a retry
+    // brings the mapping in, so its CVE weighting is never left at 0.
+    this.subs.add(this.attackCveService.loaded$.subscribe(loaded => {
+      if (loaded && this.showAutoRoadmap && this.autoRoadmapOutcome === 'failed' && !this.generatingRoadmap) {
+        this.generateAutoRoadmap();
+      }
     }));
   }
 
@@ -219,10 +234,24 @@ export class RoadmapPanelComponent implements OnInit, OnDestroy {
   generateAutoRoadmap(): void {
     if (!this.domain) return;
     this.generatingRoadmap = true;
+    this.waitingForCves = true;
     this.cdr.markForCheck();
+    // The CVE weighting reads the CTID ATT&CK-to-CVE mapping, which loads on demand: wait
+    // until it has settled (at once when it is already in), so the scores are never
+    // worked out from an index that has not arrived.
+    this.settleSub?.unsubscribe();
+    this.settleSub = this.attackCveService.settled$().subscribe(outcome => {
+      this.waitingForCves = false;
+      this.cdr.markForCheck();
+      this.scoreAutoRoadmap(outcome);
+    });
+    this.subs.add(this.settleSub);
+  }
 
+  private scoreAutoRoadmap(outcome: 'loaded' | 'failed'): void {
     setTimeout(() => {
-      const domain = this.domain!;
+      if (!this.domain) { this.generatingRoadmap = false; this.cdr.markForCheck(); return; }
+      const domain = this.domain;
       const statusMap = this.implService.getStatusMap();
 
       const scored: RoadmapMitigation[] = domain.mitigations.map(mit => {
@@ -269,6 +298,7 @@ export class RoadmapPanelComponent implements OnInit, OnDestroy {
         };
       });
 
+      this.autoRoadmapOutcome = outcome;
       this.generatingRoadmap = false;
       this.showAutoRoadmap = true;
       this.cdr.markForCheck();

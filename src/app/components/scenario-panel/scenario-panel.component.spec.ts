@@ -2,7 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed, ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { signal, WritableSignal } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, filter, take } from 'rxjs';
 import { ScenarioPanelComponent } from './scenario-panel.component';
 import { FilterService } from '../../services/filter.service';
 import { DataService } from '../../services/data.service';
@@ -42,6 +42,11 @@ describe('ScenarioPanelComponent (posture outcomes)', () => {
   let ownerWords: boolean;
   let parentsSig: WritableSignal<ReadonlySet<string>>;
   let revisionSig: WritableSignal<number>;
+  // The CTID mapping stub: outcome drives settled$() as the real service does; kevByTech
+  // is what getKevCvesForTechnique answers (empty until the mapping "arrives").
+  let cveOutcome: BehaviorSubject<'pending' | 'loaded' | 'failed'>;
+  let cveLoaded: BehaviorSubject<boolean>;
+  let kevByTech: Map<string, number>;
 
   function configure(parentIds: string[] = ['t1', 't2']): void {
     domain$ = new BehaviorSubject<any>(DOMAIN);
@@ -65,7 +70,13 @@ describe('ScenarioPanelComponent (posture outcomes)', () => {
         // The REAL profile-scoped ThreatSimulationService over a fixture, so the overlay
         // exercises simulate() (item 5). Its gap/priority inputs are stubbed empty.
         { provide: THREAT_WEIGHT_PROVIDER, useValue: { weight: () => 0, revision: revisionSig, parents: parentsSig } },
-        { provide: AttackCveService, useValue: { getCvesForTechnique: () => [], getKevCvesForTechnique: () => [] } },
+        { provide: AttackCveService, useValue: {
+            loadOnDemand: () => undefined,
+            loaded$: cveLoaded,
+            settled$: () => cveOutcome.pipe(filter(o => o !== 'pending'), take(1)),
+            getCvesForTechnique: () => [],
+            getKevCvesForTechnique: (id: string) => Array.from({ length: kevByTech.get(id) ?? 0 }, (_, i) => ({ cveId: `CVE-2024-${i}` })),
+        } },
         { provide: ExploitdbService, useValue: { hasExploits: () => false } },
         { provide: EpssService, useValue: { getScore: () => null } },
         { provide: EmulationPlanService, useValue: { generatePlan: () => ({ steps: [] }), exportCalderaProfile: () => {} } },
@@ -84,7 +95,12 @@ describe('ScenarioPanelComponent (posture outcomes)', () => {
     fixture.detectChanges();
   }
 
-  beforeEach(() => { buckets = new Map(); subStates = new Map(); knownSignals = new Map(); ownerWords = false; });
+  beforeEach(() => {
+    buckets = new Map(); subStates = new Map(); knownSignals = new Map(); ownerWords = false;
+    cveOutcome = new BehaviorSubject<'pending' | 'loaded' | 'failed'>('loaded');
+    cveLoaded = new BehaviorSubject(true);
+    kevByTech = new Map();
+  });
 
   it('is created', () => {
     configure();
@@ -220,4 +236,45 @@ describe('ScenarioPanelComponent (posture outcomes)', () => {
     expect(component.profileSimResult!.techniquesTotal).toBe(1);   // overlay followed the profile, no re-click
     expect((fixture.nativeElement as HTMLElement).querySelector('[data-sim="total"]')!.textContent!.trim()).toBe('1');
   }));
+
+  describe('Simulate profile and the on-demand CTID mapping (the KEV counts)', () => {
+    const runBtn = () => (fixture.nativeElement as HTMLElement).querySelector('.sim-run-btn')!;
+    const kevOf = (attackId: string) => component.profileSimResult!.gaps.find(g => g.technique.attackId === attackId)!.kevCount;
+
+    beforeEach(() => {
+      ownerWords = true;
+      buckets = new Map([['t1', 'none'], ['t2', 'none']]);   // both parents are gaps
+      cveOutcome = new BehaviorSubject<'pending' | 'loaded' | 'failed'>('pending');
+      cveLoaded = new BehaviorSubject(false);
+    });
+
+    it('waits for the mapping and says so, then simulates with the KEV counts', fakeAsync(() => {
+      configure();
+      component.runProfileSimulation();
+      fixture.detectChanges();
+      expect(runBtn().textContent).toContain('Loading the CVE mappings…');
+      tick(1000);
+      expect(component.profileSimResult).toBeNull();
+
+      kevByTech = new Map([['T1001', 3]]);
+      cveOutcome.next('loaded');
+      fixture.detectChanges();
+      expect(runBtn().textContent).toContain('Simulating…');
+      tick(200);
+      expect(kevOf('T1001')).toBe(3);
+      expect(component.isSimulating).toBeFalse();
+    }));
+
+    it('a simulation run after the mapping failed runs again when a retry brings it in', fakeAsync(() => {
+      configure();
+      cveOutcome.next('failed');
+      component.runProfileSimulation();
+      tick(200);
+      expect(kevOf('T1001')).toBe(0);
+
+      kevByTech = new Map([['T1001', 2]]);
+      cveLoaded.next(true);
+      expect(kevOf('T1001')).toBe(2);
+    }));
+  });
 });

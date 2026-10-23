@@ -115,6 +115,12 @@ export class SsvcPanelComponent implements OnInit, OnDestroy {
       this.kevLoaded = loaded;
       this.recompute();
     }));
+    // Each row's ATT&CK techniques come from the CTID ATT&CK-to-CVE mapping, which loads
+    // on demand (loadKev above asks for it): rows built before it lands are built again
+    // when it does.
+    this.subs.add(this.attackCve.loaded$.subscribe(loaded => {
+      if (loaded) this.recompute();
+    }));
     this.subs.add(
       this.cveService.kevError$.subscribe(err => {
         this.kevError = err;

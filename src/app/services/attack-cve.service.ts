@@ -4,7 +4,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { forkJoin, of, throwError } from 'rxjs';
-import { catchError, map, switchMap } from 'rxjs/operators';
+import { catchError, filter, map, switchMap, take } from 'rxjs/operators';
 import { retryWithBackoff } from '../utils/retry';
 import { SourceRegistryService } from './source-registry.service';
 
@@ -66,11 +66,43 @@ export class AttackCveService {
   /** Number of unique ATT&CK techniques that have ≥1 CVE mapping. */
   covered$ = this.coveredSubject.asObservable();
 
+  private initialized = false;
+
   constructor(
     private http: HttpClient,
     private sources: SourceRegistryService = new SourceRegistryService(),
-  ) {
+  ) {}
+
+  /**
+   * Start loading both CTID datasets the first time something needs them. Safe to call
+   * any number of times; only the first call makes the requests. Nothing asks at boot
+   * on the matrix's default lens: the CVE and EPSS lenses, the KEV scores, the technique
+   * drawer, the CVE, dossier, SSVC, roadmap and dashboard views, search and the services
+   * that cross-reference CVEs (ExploitDB, Nuclei, trickest) ask for it. Every reader
+   * below also asks on its first read, so a view that reads the mapping always gets it,
+   * as it did when the mapping loaded at construction; views that show it re-render on
+   * loaded$. While it loads, the 'ctid-attack-to-cve' and 'ctid-kev' sources read
+   * 'loading'; a failure is recorded on each by name.
+   */
+  loadOnDemand(): void {
+    if (this.initialized) return;
+    this.initialized = true;
     this.load();
+  }
+
+  /**
+   * Ask for the mapping and emit once, when it has settled: 'loaded' (either dataset
+   * arrived) or 'failed' (neither did). Emits at once when it has already settled. A
+   * view that computes from the mapping on a user action (the auto roadmap, the gap
+   * report, the profile simulation) waits on this, so it never counts from indexes that
+   * have not arrived yet; with the mapping in, it computes exactly as before.
+   */
+  settled$(): Observable<'loaded' | 'failed'> {
+    this.loadOnDemand();
+    return this.outcome$.pipe(
+      filter((o): o is 'loaded' | 'failed' => o !== 'pending'),
+      take(1),
+    );
   }
 
   /** URL of the KEV snapshot that was actually used. */
@@ -141,6 +173,11 @@ export class AttackCveService {
    * wait on outcome$ see 'pending' again rather than the earlier failure.
    */
   retry(id: 'ctid-attack-to-cve' | 'ctid-kev'): void {
+    // Not requested yet ("Load now"): load both datasets, as the first use would.
+    if (!this.initialized) {
+      this.loadOnDemand();
+      return;
+    }
     this.sources.begin(id);
     if (this.outcomeSubject.value === 'failed') this.outcomeSubject.next('pending');
     forkJoin({
@@ -365,6 +402,7 @@ export class AttackCveService {
   }
 
   getCvesForTechnique(attackId: string): CveAttackMapping[] {
+    this.loadOnDemand();
     const direct = this.byTechniqueId.get(attackId) ?? [];
     const prefix = attackId + '.';
     const fromSubs = !attackId.includes('.')
@@ -381,10 +419,12 @@ export class AttackCveService {
   }
 
   getMappingForCve(cveId: string): CveAttackMapping | undefined {
+    this.loadOnDemand();
     return this.byCveId.get(cveId);
   }
 
   isCveMapped(cveId: string): boolean {
+    this.loadOnDemand();
     return this.byCveId.has(cveId);
   }
 
@@ -401,6 +441,7 @@ export class AttackCveService {
 
   /** Search CVEs by ID, description, or capability group. Returns up to 50 results. */
   searchCves(query: string): CveAttackMapping[] {
+    this.loadOnDemand();
     if (!query || query.length < 2) return [];
     const ql = query.toLowerCase();
     const results: CveAttackMapping[] = [];
@@ -420,6 +461,7 @@ export class AttackCveService {
 
   /** Return all CTID-curated mappings (both CSV and KEV sources). */
   getAllCtidMappings(): CveAttackMapping[] {
+    this.loadOnDemand();
     return Array.from(this.byCveId.values());
   }
 }

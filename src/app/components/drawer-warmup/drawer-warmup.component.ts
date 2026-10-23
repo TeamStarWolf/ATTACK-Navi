@@ -56,10 +56,24 @@ import { WazuhService } from '../../services/wazuh.service';
 import { Router } from '@angular/router';
 
 /**
+ * The drawer's services that load their data on demand (the CTID ATT&CK-to-CVE
+ * mapping, the CVE2CAPEC chains and the trickest PoC index). The drawer asks
+ * for their data when a technique is selected; nothing creates them to load at
+ * boot, because the CVE2CAPEC years alone are about 56 MiB of gzip that inflate
+ * to about 1.7 GB, more than a phone's browser survives.
+ */
+export const DRAWER_ON_DEMAND_SERVICES: readonly ProviderToken<unknown>[] = [
+  AttackCveService,
+  Cve2CapecService,
+  PocExploitService,
+];
+
+/**
  * Every root service the technique drawer (SidebarComponent) injects, in the
  * order its construction creates them: its constructor parameters first, in
  * declaration order (ChangeDetectorRef is the drawer's own, not a service),
- * then its inject() fields, in declaration order.
+ * then its inject() fields, in declaration order. The on-demand services above
+ * are left out.
  */
 export const DRAWER_BOOT_SERVICES: readonly ProviderToken<unknown>[] = [
   FilterService,
@@ -72,7 +86,6 @@ export const DRAWER_BOOT_SERVICES: readonly ProviderToken<unknown>[] = [
   CARService,
   AtomicService,
   TaggingService,
-  AttackCveService,
   NistMappingService,
   CisControlsService,
   CloudControlsService,
@@ -104,8 +117,6 @@ export const DRAWER_BOOT_SERVICES: readonly ProviderToken<unknown>[] = [
   ThreatHuntingService,
   CsaCcmService,
   M365ControlsService,
-  Cve2CapecService,
-  PocExploitService,
   AnthropicSkillsService,
   ThreatHunterPlaybookService,
   EvtxSamplesService,
@@ -123,18 +134,22 @@ export const DRAWER_BOOT_SERVICES: readonly ProviderToken<unknown>[] = [
  *
  * At boot the drawer used to be created closed, in the app template's @if block,
  * and on the matrix its construction was the first creator of the services that
- * start 18 data requests: the CTID NIST 800-53, AWS, Azure, GCP, VERIS, CRI
+ * start 16 data requests: the CTID NIST 800-53, AWS, Azure, GCP, VERIS, CRI
  * Profile, CSA CCM and M365 mappings, the MISP galaxy, the SigmaHQ coverage
  * layer and the bundled rule-coverage snapshot (SigmaService), the CWE catalog,
- * the technique queries (SiemQueryService), the two CVE2CAPEC years, the
- * Anthropic skills and ThreatHunter Playbook layers, and the library-layer index
- * (reached through PostureService). Creating those services only when the
- * drawer's chunk arrives would move those requests. This component sits in the
- * drawer's old place, inside the same @if, and creates exactly the services the
- * drawer's construction created, in the same order, so every request starts at
- * the same point of the boot. The drawer's ngOnInit only subscribes to state
- * these services already hold, and its child components render only once a
- * technique is selected, so nothing else at boot depended on the drawer.
+ * the technique queries (SiemQueryService), the Anthropic skills and
+ * ThreatHunter Playbook layers, and the library-layer index (reached through
+ * PostureService). Creating those services only when the drawer's chunk arrives
+ * would move those requests. This component sits in the drawer's old place,
+ * inside the same @if, and creates the services the drawer's construction
+ * created, in the same order, so every one of those requests starts at the same
+ * point of the boot. The drawer's ngOnInit only subscribes to state these
+ * services already hold, and its child components render only once a technique
+ * is selected, so nothing else at boot depended on the drawer.
+ *
+ * The two CVE2CAPEC years, which also started here, no longer load at boot:
+ * they, the trickest PoC index and the CTID ATT&CK-to-CVE mapping load on
+ * demand (DRAWER_ON_DEMAND_SERVICES), so this component no longer creates them.
  *
  * It renders nothing.
  */

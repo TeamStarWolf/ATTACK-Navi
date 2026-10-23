@@ -98,6 +98,11 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
   // ─── Profile simulation (the collapsed overlay) ─────────────────────────
   profileSimResult: ThreatSimResult | null = null;
   showThreatSim = false;
+  /** True while Simulate profile waits for the CTID mapping its KEV and CVE counts read. */
+  waitingForCves = false;
+  /** How the CTID mapping had settled when the shown profile simulation ran. */
+  private profileSimOutcome: 'loaded' | 'failed' | null = null;
+  private settleSub?: Subscription;
 
   /** The fresh-profile prompt; shown when the owner has recorded no posture yet. */
   readonly freshMessage = 'Record a run or mark a mitigation implemented to see your outcomes';
@@ -144,6 +149,16 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
         if (!still) this.result = null;
       }
       this.cdr.markForCheck();
+    }));
+    // A profile simulation run while the CTID mapping had failed runs again when a retry
+    // brings the mapping in, so its KEV and CVE counts are never left at 0.
+    this.subs.add(this.threatSimService.cveMappingsLoaded$().subscribe(loaded => {
+      if (loaded && this.showThreatSim && this.profileSimResult && this.profileSimOutcome === 'failed'
+        && !this.isSimulating && this.domain) {
+        this.profileSimResult = this.threatSimService.simulate(this.domain);
+        this.profileSimOutcome = 'loaded';
+        this.cdr.markForCheck();
+      }
     }));
   }
 
@@ -353,14 +368,24 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
   runProfileSimulation(): void {
     if (!this.domain) return;
     this.isSimulating = true;
+    this.waitingForCves = true;
     this.showThreatSim = true;
     this.profileSimResult = null;
     this.cdr.markForCheck();
-    setTimeout(() => {
-      this.profileSimResult = this.threatSimService.simulate(this.domain);
-      this.isSimulating = false;
+    // The KEV and CVE counts read the CTID ATT&CK-to-CVE mapping, which loads on demand:
+    // wait until it has settled (at once when it is already in) before simulating.
+    this.settleSub?.unsubscribe();
+    this.settleSub = this.threatSimService.cveMappingsSettled$().subscribe(outcome => {
+      this.waitingForCves = false;
       this.cdr.markForCheck();
-    }, 150);
+      setTimeout(() => {
+        this.profileSimResult = this.threatSimService.simulate(this.domain);
+        this.profileSimOutcome = outcome;
+        this.isSimulating = false;
+        this.cdr.markForCheck();
+      }, 150);
+    });
+    this.subs.add(this.settleSub);
   }
 
   get threatSimTacticBars(): { tactic: string; covered: number; total: number; pct: number }[] {

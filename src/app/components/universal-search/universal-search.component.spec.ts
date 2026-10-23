@@ -35,7 +35,7 @@ describe('UniversalSearchComponent', () => {
         { provide: CARService, useValue: { getAll: () => [] } },
         { provide: AtomicService, useValue: { getAll: () => [] } },
         { provide: EngageService, useValue: { byAttackId: new Map() } },
-        { provide: AttackCveService, useValue: { searchCves: () => [] } },
+        { provide: AttackCveService, useValue: { searchCves: () => [], loadOnDemand: () => undefined } },
         { provide: ExportActionsService, useValue: {
             exportCsv: jasmine.createSpy(),
             exportXlsxWorkbook: jasmine.createSpy(),
