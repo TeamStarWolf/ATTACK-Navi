@@ -26,6 +26,7 @@ import type { Technique } from '../models/technique';
 import type { SecurityControl } from '../models/security-control';
 import type { CoveredMark, CoveredStrength, ProofRecord, RunSummary, RunVerdict } from '../models/posture/posture.types';
 import { rollupMitigations } from '../models/posture/mitigation-rollup';
+import { provesStatus } from '../models/posture/derive-posture';
 import { runMatches } from '../models/posture/run-match';
 import { type TechniqueRefKey, parseTechniqueRef } from '../models/technique-ref';
 import type { AttackDomain } from './data.service';
@@ -186,7 +187,11 @@ const RANGE_STATES = {
  *   (attackResult 'blocked') was blocked, else 'alerted';
  * - a blocked run with no named detection is a CoveredMark (self-attested,
  *   'own-run-blocked', full), never proof: only a named detection reaches the
- *   top rung (D10);
+ *   top rung (D10). The mark is gated on the proof allow-list (PROVING_STATUSES,
+ *   RP-F decision 23): a blocked outcome in an untested, partial, failed,
+ *   no-telemetry or not-reproducible run attests nothing (Record Run's "Blocked
+ *   by control" with no expected rule stores 'untested', and read Covered beside
+ *   an UNTESTED pill);
  * - status 'failed' is a failed RunVerdict; status 'not-reproducible' (or a
  *   'not-reproducible' negative control) is a notReproducible one;
  * - range rows (proofScope 'range') with coverageState 'deployed' or
@@ -214,7 +219,7 @@ export function runInputs(run: ValidationRunV2): RunInputs {
   }));
 
   const covered: CoveredMark[] = [];
-  if (blocked && named.size === 0) {
+  if (blocked && named.size === 0 && provesStatus(run.status)) {
     covered.push({ qualifier: 'self-attested', basis: 'own-run-blocked', strength: 'full', source: run.source, at: run.runDate });
   }
   if (run.proofScope === 'range') {
@@ -234,7 +239,17 @@ export function runInputs(run: ValidationRunV2): RunInputs {
   const verdicts: RunVerdict[] = failed || notReproducible
     ? [{ date: run.runDate, failed, notReproducible, source: run.source }]
     : [];
-  const summary: RunSummary = { runId: run.id, status: run.status, date: run.runDate, source: run.source };
+  // The pill's "N of M detection rules fired" counts detectionsFired, so the card's count
+  // does too: a rule named only by an outcome (blocked or alerted) is proof input above,
+  // never a rule the pill says fired (RP-F decision 28). The store normalises the list at
+  // load and import (ruleList, RP-F decision 29), so both count each rule once.
+  const rulesFired = new Set(run.detectionsFired.map(d => d.trim()).filter(d => d !== '')).size;
+  // Every rule the run names, so derivePosture supersedes proof per rule (RP-F decision 29).
+  const rules = [...new Set(
+    [...run.outcomes.map(o => o.detectionRef ?? ''), ...run.detectionsExpected, ...run.detectionsFired]
+      .map(d => d.trim()).filter(d => d !== ''),
+  )];
+  const summary: RunSummary = { runId: run.id, status: run.status, date: run.runDate, source: run.source, rulesFired, rules };
   return { proof, covered, verdicts, summary };
 }
 

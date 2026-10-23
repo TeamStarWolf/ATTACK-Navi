@@ -3,7 +3,7 @@
 //
 // One row per branch of the rung derivation (Phase 2 design §2.2). CI gates
 // this file's subject at 100% branch coverage (scripts/check-branch-coverage.mjs).
-import { DEFAULT_POSTURE_RULES, derivePosture, tallyPosture } from './derive-posture';
+import { DEFAULT_POSTURE_RULES, PROVING_STATUSES, derivePosture, provesStatus, tallyPosture } from './derive-posture';
 import type { CoveredMark, PostureInputs, PostureState, ProofRecord, ProofScope, RunSummary, RunVerdict } from './posture.types';
 import type { TechniqueRefKey } from '../technique-ref';
 
@@ -304,7 +304,9 @@ describe('derivePosture (Phase 2 design §2.2)', () => {
     });
   });
 
-  // RP-F decision 16: a run's status governs its proof, and the latest run governs the rung.
+  // RP-F decision 16: a run's status governs its proof; decision 29: the latest run of the
+  // SAME rule governs the rung. These runs name no rule, so each is the same rule as every
+  // record of its own source (manual), as a manual run without a rule id is.
   describe('a run\'s status governs its proof (RP-F decision 16)', () => {
     const run = (runId: string, ageDays: number | null, status: string): RunSummary => ({
       runId, status, date: ageDays === null ? 'not a date' : daysAgo(ageDays), source: 'manual',
@@ -340,13 +342,13 @@ describe('derivePosture (Phase 2 design §2.2)', () => {
       expect(s.runsWithoutProof.map(r => r.runId)).toEqual(['f1', 'p1']);
     });
 
-    it('the outranked earlier run carries its own status: a partial run with a fired rule is named partial', () => {
+    it('a partial run with a fired rule yields no proof (RP-F decision 23), so a later failed run outranks nothing', () => {
       const s = derive({
         runs: [run('r1', 5, 'partial'), run('f1', 1, 'failed')], proof: [own('r1', 5)], verdicts: [verdict(1, { failed: true })],
       });
-      expect(s.supersededProof!.earlier.runId).toBe('r1');
-      expect(s.supersededProof!.earlierStatus).toBe('partial');
-      expect(s.subStates).toEqual(['contradicted']);
+      expect(s.proof).toEqual([]);
+      expect(s.supersededProof).toBeNull();
+      expect(s.runsWithoutProof.map(r => r.runId)).toEqual(['f1', 'r1']);
     });
 
     it('an outranked record whose run is not listed carries no status', () => {
@@ -378,8 +380,27 @@ describe('derivePosture (Phase 2 design §2.2)', () => {
       expect(s.runsWithoutProof.map(r => r.runId)).toEqual(['f1', 'p1']);
     });
 
-    it('a failed run on the same day as the proof does not outrank it (newer means strictly newer)', () => {
-      expect(derive({ runs: [run('p1', 3, 'passed'), run('f1', 3, 'failed')], proof: [own('p1', 3)] }).bucket).toBe('proven');
+    // RP-F decision 24 (S18 T1049): the one latest-run comparator puts the failed run of
+    // a same-instant pair first, as the Validation pill now does, so it outranks the pass.
+    it('a failed run on the same instant as the proof outranks it: a tie never reads as a pass', () => {
+      const s = derive({ runs: [run('p1', 3, 'passed'), run('f1', 3, 'failed')], proof: [own('p1', 3)] });
+      expect(s.bucket).toBe('none');
+      expect(s.subStates).toEqual(['contradicted']);
+      expect(s.supersededProof!.latest.runId).toBe('f1');
+    });
+
+    it('an unlisted record on the same instant as the latest failed run still stands (it has no run to order)', () => {
+      expect(derive({ runs: [run('f1', 3, 'failed')], proof: [own('elsewhere', 3)] }).bucket).toBe('proven');
+    });
+
+    it('a run dated with a date-only value is ordered as its local day by the shared comparator', () => {
+      const at = (d: string) => ({ runId: d, status: d.startsWith('p') ? 'passed' : 'failed', date: '', source: 'manual' as const });
+      const s = derive({
+        runs: [{ ...at('p1'), date: '2026-09-29' }, { ...at('f1'), date: new Date(2026, 8, 28, 22).toISOString() }],
+        proof: [proof('own-run', 2, { runId: 'p1', date: '2026-09-29', source: 'manual' })],
+      });
+      expect(s.bucket).toBe('proven');
+      expect(s.laterRuns).toEqual([]);
     });
 
     it('an undated failed run never outranks a proof; of two failed runs the newest governs', () => {
@@ -390,7 +411,7 @@ describe('derivePosture (Phase 2 design §2.2)', () => {
 
     it('the newest outranked record is the earlier run named, whatever the best-record order', () => {
       const s = derive({
-        runs: [run('r-old', 30, 'passed'), run('r-new', 4, 'passed'), run('f1', 1, 'failed')],
+        runs: [run('r-old', 30, 'passed'), run('r-new', 4, 'passed'), { ...run('f1', 1, 'failed'), rules: ['wazuh:990003'] }],
         proof: [proof('production', 30, { runId: 'r-old' }), own('r-new', 4)],
       });
       expect(s.supersededProof!.earlier.runId).toBe('r-new');
@@ -406,10 +427,11 @@ describe('derivePosture (Phase 2 design §2.2)', () => {
       expect(s.supersededProof!.latest.runId).toBe('f1');
     });
 
-    it('a no-telemetry run after a pass outranks the proof but contradicts nothing', () => {
+    it('a no-telemetry run after a pass leaves the proof standing and is named as a later run (RP-F decision 29)', () => {
       const s = derive({ runs: [run('p1', 6, 'passed'), run('n1', 1, 'no-telemetry')], proof: [own('p1', 6)], knownSignals: 1 });
-      expect([s.rung, s.bucket]).toEqual(['known', 'known']);
-      expect(s.supersededProof!.latest.runId).toBe('n1');
+      expect([s.rung, s.bucket]).toEqual(['proven', 'proven']);
+      expect(s.supersededProof).toBeNull();
+      expect(s.laterRuns!.map(r => r.runId)).toEqual(['n1']);
       expect(s.subStates).toEqual([]);
     });
 
@@ -417,6 +439,201 @@ describe('derivePosture (Phase 2 design §2.2)', () => {
       const s = derive({ runs: [run('f1', 1, 'failed')], knownSignals: 1 });
       expect(s.supersededProof).toBeNull();
       expect(s.subStates).toEqual([]);
+    });
+  });
+
+  // RP-F decision 23: proof is an ALLOW-list. Round 4 found an untested run (S12 T1018)
+  // and a not-reproducible run (S13 T1082), each listing a fired rule, reading Proven
+  // beside an UNTESTED and a Not reproducible pill.
+  describe('proof is an allow-list of run statuses (RP-F decision 23)', () => {
+    const run = (runId: string, ageDays: number | null, status: string): RunSummary => ({
+      runId, status, date: ageDays === null ? 'not a date' : daysAgo(ageDays), source: 'manual',
+    });
+    const own = (runId: string, ageDays: number): ProofRecord => proof('own-run', ageDays, { runId, source: 'manual' });
+
+    it('PROVING_STATUSES is exactly passed', () => {
+      expect([...PROVING_STATUSES]).toEqual(['passed']);
+      expect(provesStatus('passed')).toBeTrue();
+      for (const status of ['untested', 'partial', 'not-reproducible', 'failed', 'no-telemetry', 'PASSED', '']) {
+        expect(provesStatus(status)).withContext(status).toBeFalse();
+      }
+    });
+
+    for (const status of ['untested', 'partial', 'not-reproducible', 'failed', 'no-telemetry']) {
+      it(`a ${status} run with a fired rule is not Proven; it is a run without proof`, () => {
+        const s = derive({ runs: [run('x1', 1, status)], proof: [own('x1', 1)], knownSignals: 2 });
+        expect(s.rung).not.toBe('proven');
+        expect(s.proof).toEqual([]);
+        expect(s.runsWithoutProof.map(r => [r.runId, r.status])).toEqual([['x1', status]]);
+      });
+    }
+
+    it('S12 T1018 shape: untested with one fired rule reads Known, never Proven', () => {
+      const s = derive({ runs: [run('s12', 6, 'untested')], proof: [own('s12', 6)], knownSignals: 3 });
+      expect([s.rung, s.bucket]).toEqual(['known', 'known']);
+    });
+
+    it('S13 T1082 shape: not reproducible with one fired rule is excluded, never Proven', () => {
+      const s = derive({
+        runs: [run('s13', 6, 'not-reproducible')], proof: [own('s13', 6)],
+        verdicts: [verdict(6, { notReproducible: true })], knownSignals: 3,
+      });
+      expect([s.rung, s.bucket, s.excluded]).toEqual(['known', 'known', true]);
+      expect(s.subStates).toEqual(['not-reproducible']);
+    });
+
+    it('a newer untested run after a pass leaves the proof standing and is named (RP-F decision 29); nothing is contradicted', () => {
+      const s = derive({ runs: [run('p1', 6, 'passed'), run('u1', 1, 'untested')], proof: [own('p1', 6)], knownSignals: 1 });
+      expect([s.rung, s.bucket]).toEqual(['proven', 'proven']);
+      expect(s.supersededProof).toBeNull();
+      expect(s.laterRuns!.map(r => [r.runId, r.status])).toEqual([['u1', 'untested']]);
+      expect(s.subStates).toEqual([]);
+    });
+
+    it('a newer not-reproducible run after a pass outranks the proof and excludes the technique', () => {
+      const s = derive({
+        runs: [run('p1', 6, 'passed'), run('n1', 1, 'not-reproducible')], proof: [own('p1', 6)],
+        verdicts: [verdict(1, { notReproducible: true })],
+      });
+      expect(s.proof).toEqual([]);
+      expect(s.excluded).toBeTrue();
+      expect(s.supersededProof!.latest.runId).toBe('n1');
+    });
+
+    it('a record whose run is not listed stands as it is (inputs built without runs)', () => {
+      expect(derive({ runs: [run('u1', 9, 'untested')], proof: [own('elsewhere', 1)] }).bucket).toBe('proven');
+    });
+  });
+
+  // RP-F decision 29: proof supersession is PER RULE. A standing passed run keeps the
+  // technique Proven unless a LATER run of the SAME rule failed or was not reproducible;
+  // later untested, partial or other-rule runs never remove proof and are listed in
+  // laterRuns for the why line. Surfaced by the P2-20 fixture's T1003.001 (journey 3).
+  describe('proof supersession is per rule (RP-F decision 29)', () => {
+    const RANGE = 'lylat-range:SYNTH-MISSION-A' as const;
+    const ranged = (runId: string, ageDays: number | null, status: string, rules: string[]): RunSummary => ({
+      runId, status, date: ageDays === null ? 'not a date' : daysAgo(ageDays), source: RANGE, rules,
+    });
+    const own = (runId: string, ageDays: number, rules: string[] | undefined, status: string): RunSummary => ({
+      runId, status, date: daysAgo(ageDays), source: 'manual', ...(rules ? { rules } : {}),
+    });
+    const rec = (runId: string, ageDays: number, detectionRef: string, scope: ProofScope = 'own-run', source: ProofRecord['source'] = 'manual'): ProofRecord =>
+      proof(scope, ageDays, { runId, detectionRef, source });
+
+    it('T1003.001 shape: alerted, then a later telemetry-observed run of ANOTHER rule: Proven, the later run listed', () => {
+      const s = derive({
+        runs: [ranged('a1', 6, 'passed', ['wazuh:990001']), ranged('t1', 2, 'partial', ['wazuh:990004'])],
+        proof: [rec('a1', 6, 'wazuh:990001', 'range', RANGE)],
+        covered: [mark({ qualifier: 'range', basis: 'range-telemetry-observed', strength: 'partial', source: RANGE, at: daysAgo(2) })],
+      });
+      expect([s.rung, s.bucket]).toEqual(['proven', 'proven']);
+      expect(s.proof.map(p => p.runId)).toEqual(['a1']);
+      expect(s.supersededProof).toBeNull();
+      expect(s.laterRuns!.map(r => [r.runId, r.status])).toEqual([['t1', 'partial']]);
+      expect(s.subStates).toEqual(['telemetry-observed']);
+    });
+
+    it('passed then failed, SAME rule: not Proven; the failed run governs and contradicts', () => {
+      const s = derive({
+        runs: [own('p1', 6, ['siem:a'], 'passed'), own('f1', 1, ['siem:a'], 'failed')],
+        proof: [rec('p1', 6, 'siem:a')], verdicts: [verdict(1, { failed: true })], knownSignals: 2,
+      });
+      expect([s.rung, s.bucket]).toEqual(['known', 'known']);
+      expect(s.proof).toEqual([]);
+      expect(s.supersededProof!.latest.runId).toBe('f1');
+      expect(s.supersededProof!.earlier.runId).toBe('p1');
+      expect(s.subStates).toEqual(['contradicted']);
+      expect(s.laterRuns).toEqual([]);
+    });
+
+    // RP-F round 4 repair: the remover is the latest run of the RULE, not of the
+    // technique; every newer run (the Detection Validation pill shows the newest) is listed.
+    it('passed, failed, then untested and partial, SAME rule: not Proven; the runs after the remover are listed, newest first', () => {
+      const s = derive({
+        runs: [own('p1', 6, ['siem:a'], 'passed'), own('f1', 4, ['siem:a'], 'failed'),
+          own('r1', 2, ['siem:a'], 'partial'), own('u1', 1, undefined, 'untested')],
+        proof: [rec('p1', 6, 'siem:a'), rec('r1', 2, 'siem:a')], knownSignals: 2,
+      });
+      expect(s.rung).toBe('known');
+      expect(s.supersededProof!.latest.runId).toBe('f1');
+      expect(s.laterRuns!.map(r => [r.runId, r.status])).toEqual([['u1', 'untested'], ['r1', 'partial']]);
+    });
+
+    it('passed then failed, DIFFERENT rule: Proven; the failed run of the other rule is listed', () => {
+      const s = derive({
+        runs: [own('p1', 6, ['siem:a'], 'passed'), own('f1', 1, ['siem:b'], 'failed')],
+        proof: [rec('p1', 6, 'siem:a')], verdicts: [verdict(1, { failed: true })],
+      });
+      expect([s.rung, s.bucket]).toEqual(['proven', 'proven']);
+      expect(s.supersededProof).toBeNull();
+      expect(s.laterRuns!.map(r => [r.runId, r.status])).toEqual([['f1', 'failed']]);
+    });
+
+    it('passed then untested, SAME rule: Proven; the untested run is listed', () => {
+      const s = derive({ runs: [own('p1', 6, ['siem:a'], 'passed'), own('u1', 1, ['siem:a'], 'untested')], proof: [rec('p1', 6, 'siem:a')] });
+      expect(s.bucket).toBe('proven');
+      expect(s.laterRuns!.map(r => r.runId)).toEqual(['u1']);
+    });
+
+    it('passed then partial, SAME rule: Proven (partial never removes proof, and never proves)', () => {
+      const s = derive({ runs: [own('p1', 6, ['siem:a'], 'passed'), own('r1', 1, ['siem:a', 'siem:b'], 'partial')], proof: [rec('p1', 6, 'siem:a'), rec('r1', 1, 'siem:a')] });
+      expect(s.bucket).toBe('proven');
+      expect(s.proof.map(p => p.runId)).toEqual(['p1']);
+      expect(s.laterRuns!.map(r => r.runId)).toEqual(['r1']);
+    });
+
+    it('passed then not reproducible, SAME rule: not Proven, and excluded', () => {
+      const s = derive({
+        runs: [own('p1', 6, ['siem:a'], 'passed'), own('n1', 1, ['siem:a'], 'not-reproducible')],
+        proof: [rec('p1', 6, 'siem:a')], verdicts: [verdict(1, { notReproducible: true })],
+      });
+      expect(s.rung).not.toBe('proven');
+      expect(s.excluded).toBeTrue();
+      expect(s.supersededProof!.latest.runId).toBe('n1');
+      expect(s.subStates).toEqual(['not-reproducible']);
+    });
+
+    it('a failed run that names no rule is the same rule only for records of its own source', () => {
+      const ownSource = derive({ runs: [own('p1', 6, ['siem:a'], 'passed'), own('f1', 1, undefined, 'failed')], proof: [rec('p1', 6, 'siem:a')] });
+      expect(ownSource.bucket).toBe('none');
+      expect(ownSource.supersededProof!.latest.runId).toBe('f1');
+      const otherSource = derive({
+        runs: [ranged('a1', 6, 'passed', ['wazuh:990001']), own('f1', 1, [], 'failed')],
+        proof: [rec('a1', 6, 'wazuh:990001', 'range', RANGE)],
+      });
+      expect(otherSource.bucket).toBe('proven');
+      expect(otherSource.laterRuns!.map(r => r.runId)).toEqual(['f1']);
+    });
+
+    it('each rule is superseded on its own: a failed run of one rule leaves the other rule Proven', () => {
+      const s = derive({
+        runs: [own('p1', 9, ['siem:a', 'siem:b'], 'passed'), own('f1', 1, ['siem:a'], 'failed')],
+        proof: [rec('p1', 9, 'siem:a'), rec('p1', 9, 'siem:b')],
+      });
+      expect(s.bucket).toBe('proven');
+      expect(s.proof.map(p => p.detectionRef)).toEqual(['siem:b']);
+      expect(s.laterRuns!.map(r => r.runId)).toEqual(['f1']);
+    });
+
+    it('a later run is later than EVERY standing record: a run between two passes is not listed', () => {
+      const s = derive({
+        runs: [own('p1', 9, ['siem:a'], 'passed'), own('u1', 5, ['siem:a'], 'untested'), own('p2', 2, ['siem:b'], 'passed'), own('u2', 1, ['siem:b'], 'untested')],
+        proof: [rec('p1', 9, 'siem:a'), rec('p2', 2, 'siem:b')],
+      });
+      expect(s.laterRuns!.map(r => r.runId)).toEqual(['u2']);
+    });
+
+    it('an unlisted record: only a strictly newer dated run is later; an undated run never is', () => {
+      const s = derive({
+        runs: [own('u0', 4, ['siem:a'], 'untested'), own('u1', 1, ['siem:a'], 'untested'), { ...own('f9', 1, ['siem:a'], 'failed'), date: 'not a date' }],
+        proof: [rec('elsewhere', 4, 'siem:a')],
+      });
+      expect(s.bucket).toBe('proven');
+      expect(s.laterRuns!.map(r => r.runId)).toEqual(['u1']);
+    });
+
+    it('no proof: laterRuns is empty whatever runs are listed', () => {
+      expect(derive({ runs: [own('u1', 1, ['siem:a'], 'untested')], knownSignals: 1 }).laterRuns).toEqual([]);
     });
   });
 

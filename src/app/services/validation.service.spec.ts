@@ -13,6 +13,7 @@ import { OwnerDataService } from './owner-data.service';
 import { WorkspaceBundleService } from './workspace-bundle.service';
 import { fingerprint } from '../models/storage-envelope';
 import { runMatches } from '../models/posture/run-match';
+import { runInputs } from './posture-adapters';
 import LYLAT_FIXTURE from '../../testing/fixtures/lylat/validated-detections.fixture.json';
 import LYLAT_FIXTURE_B from '../../testing/fixtures/lylat/validated-detections.mission-b.fixture.json';
 import LYLAT_INVALID_IP from '../../testing/fixtures/lylat/invalid/ip-evidence.json';
@@ -181,6 +182,36 @@ describe('ValidationService', () => {
     it('latestFor returns null when no runs exist', () => {
       expect(service.latestFor('T9999')).toBeNull();
     });
+
+    // RP-F decision 24: latestFor uses the one latest-run comparator the posture
+    // derivation uses (latest-run.ts), never a runDate string compare.
+    it('S19 T1007: an offset timestamp is ordered by its instant, not its string', () => {
+      service.record({ ...baseRun, runDate: '2026-10-21T01:30:00+09:00', detectionsFired: ['sigma:a'] });
+      const later = service.record({ ...baseRun, runDate: '2026-10-20T20:00:00Z', detectionsFired: [] });
+      expect(service.latestFor('T1003.001')!.id).toBe(later.id);
+      expect(later.status).toBe('failed');
+    });
+
+    it('S18 T1049: on the same instant the failed run is the latest, whichever was recorded first', () => {
+      const at = '2026-10-20T15:00:00.000Z';
+      const failed = service.record({ ...baseRun, runDate: at, detectionsFired: [] });
+      service.record({ ...baseRun, runDate: at });
+      expect(service.latestFor('T1003.001')!.id).toBe(failed.id);
+    });
+
+    it("S22 T1497: a runDate that is not a date ('yesterday') is the oldest run", () => {
+      const dated = service.record({ ...baseRun, runDate: '2026-10-19T10:00:00.000Z' });
+      service.record({ ...baseRun, runDate: 'yesterday', detectionsFired: [] });
+      expect(service.latestFor('T1003.001')!.id).toBe(dated.id);
+    });
+
+    it('the Navigator layer export colours each technique by the same latest run', () => {
+      const at = '2026-10-20T15:00:00.000Z';
+      service.record({ ...baseRun, runDate: at });
+      service.record({ ...baseRun, runDate: at, detectionsFired: [] });
+      const layer = service.buildNavigatorLayer('enterprise-attack') as { techniques: { techniqueID: string; comment?: string; color?: string }[] };
+      expect(layer.techniques.find(t => t.techniqueID === 'T1003.001')!.color).toBe('#ef4444');
+    });
   });
 
   describe('update', () => {
@@ -301,6 +332,30 @@ describe('ValidationService', () => {
       expect(layer.techniques.length).toBe(1);
       expect(layer.techniques[0].comment).toContain('passed');
     });
+
+    // RP-F decision 24 (round 4 repair): the newest run's ATT&CK version is picked with the one
+    // latest-run comparator, never a runDate string compare (an offset timestamp sorted ahead).
+    it("with no domain loaded, the version is the newest run's by instant, not by runDate string", () => {
+      loadDomain('enterprise', '18.1');
+      service.record({ ...baseRun, runDate: '2026-10-21T01:30:00+09:00' });   // 2026-10-20T16:30Z
+      loadDomain('enterprise', '19.2');
+      service.record({ ...baseRun, runDate: '2026-10-20T20:00:00Z' });        // later instant, smaller string
+      loadDomain('enterprise', '17.0');
+      service.record({ ...baseRun, runDate: 'yesterday' });                    // unreadable: the oldest
+      fakeData.loaded = null;
+      const layer = service.buildNavigatorLayer('enterprise-attack') as { versions: { attack?: string } };
+      expect(layer.versions.attack).toBe('19.2');
+    });
+  });
+
+  describe('latestFor with an unreadable date (RP-F decision 24)', () => {
+    it('returns an undated run only while no dated run exists; a dated run then wins', () => {
+      const undated = service.record({ ...baseRun, runDate: 'yesterday' });
+      expect(service.latestFor('T1003.001')!.id).toBe(undated.id);
+      const dated = service.record({ ...baseRun, runDate: '2026-10-19T10:00:00.000Z' });
+      expect(service.latestFor('T1003.001')!.id).toBe(dated.id);
+      expect(service.latestFor('T9999')).toBeNull();
+    });
   });
   describe('merge by source (P2-02)', () => {
     it('[AC] re-importing a source replaces only that source', () => {
@@ -341,6 +396,30 @@ describe('ValidationService', () => {
       expect('hostname' in service.all[0]).toBe(false);
       expect(localStorage.getItem(STORAGE_KEY)).not.toContain('hostname');
       expect('hostname' in rebuild().all[0]).toBe(false);
+    });
+
+    // RP-F decision 29: the rule lists are normalised at import and at load (trimmed,
+    // empties dropped, each rule once), so the Validation pill's "N of M detection rules
+    // fired" (latest.detectionsFired.length) and the evidence card's fired-rule count
+    // (runInputs summary.rulesFired) read the same rules.
+    it("normalises detectionsFired and detectionsExpected at import and load: ['siem:a','siem:a',''] is one rule on the pill and the card", () => {
+      const dup = { detectionsExpected: [' siem:a ', 'siem:a', ''], detectionsFired: ['siem:a', 'siem:a', ''] };
+      const res = service.importJson(JSON.stringify({ runs: [v1Run('d1', 'T1110', dup)] }));
+      expect(res.ok).toBe(true);
+      for (const svc of [service, rebuild()]) {
+        const run = svc.latestFor('T1110')!;
+        expect(run.detectionsFired).toEqual(['siem:a']);
+        expect(run.detectionsExpected).toEqual(['siem:a']);
+        const pill = run.detectionsFired.length;
+        const card = runInputs(run).summary.rulesFired;
+        expect([pill, card]).toEqual([1, 1]);
+      }
+      // The v1 copy-forward reads through the same normaliser.
+      localStorage.clear();
+      localStorage.setItem(VALIDATION_RUNS_V1_KEY, JSON.stringify([v1Run('v1', 'T1110', dup)]));
+      const upgraded = rebuild().latestFor('T1110')!;
+      expect([upgraded.detectionsFired.length, runInputs(upgraded).summary.rulesFired]).toEqual([1, 1]);
+      expect(upgraded.detectionsExpected).toEqual(['siem:a']);
     });
 
     // P2-02 round 1: proofScope and statusFromSource follow the source, never the row.

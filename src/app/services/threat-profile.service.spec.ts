@@ -5,7 +5,7 @@ import { ThreatProfileService } from './threat-profile.service';
 import { DataService, AttackDomain } from './data.service';
 import { LibraryLayerService } from './library-layer.service';
 import { Domain } from '../models/domain';
-import { ThreatProfile } from '../models/threat-profile';
+import { ThreatProfile, type GroupIndexEntry } from '../models/threat-profile';
 
 const KEY = 'navi.v2.threat-profile';
 
@@ -24,14 +24,21 @@ function tinyDomain(): Domain {
 // proves build(null) reads the new domain rather than keeping the stale profile's (item 9).
 let currentAttackDomain: AttackDomain = 'enterprise';
 
-function makeService(domainSubject = new BehaviorSubject<Domain | null>(null), layerIds: readonly string[] = []): ThreatProfileService {
+/**
+ * The service under test. `index` stands in for the all-domain group index (RP-F
+ * decision 25); these specs use their own fixture ids, so it defaults to none, and
+ * src/app/testing/profile-ids-cross-domain.spec.ts runs the bundled one.
+ */
+function makeService(
+  domainSubject = new BehaviorSubject<Domain | null>(null), layerIds: readonly string[] = [], index: readonly GroupIndexEntry[] = [],
+): ThreatProfileService {
   const data = {
     domain$: domainSubject.asObservable(),
     getCurrentDomain: () => domainSubject.value,
     getCurrentAttackDomain: () => currentAttackDomain,
   };
   const library = { layerTechniqueIds: (_file: string) => of(layerIds), manifest: [] as unknown[] };
-  return new ThreatProfileService(data as unknown as DataService, library as unknown as LibraryLayerService);
+  return new ThreatProfileService(data as unknown as DataService, library as unknown as LibraryLayerService, index);
 }
 
 describe('ThreatProfileService', () => {
@@ -184,6 +191,11 @@ describe('ThreatProfileService', () => {
     const enterprise = () => domainOf('Enterprise ATT&CK', [[APT29, 'APT29'], [FIN7, 'FIN7']]);
     const ics = () => domainOf('ICS ATT&CK', [[FIN7, 'FIN7']]);
     const names = (refs: readonly { name: string }[]) => refs.map((r) => r.name);
+    /** An all-domain group index carrying the fixture's two groups (RP-F decision 25). */
+    const INDEX: readonly GroupIndexEntry[] = [
+      { attackId: 'G0016', stixId: APT29, name: 'APT29', aliases: [], revoked: false, deprecated: false, domains: ['enterprise'] },
+      { attackId: 'G0046', stixId: FIN7, name: 'FIN7', aliases: [], revoked: false, deprecated: false, domains: ['enterprise', 'ics'] },
+    ];
 
     it('a domain switch never mutates the stored profile: {APT29, FIN7} on ICS is FIN7 present, APT29 absent', () => {
       const domain$ = new BehaviorSubject<Domain | null>(enterprise());
@@ -226,12 +238,15 @@ describe('ThreatProfileService', () => {
       expect(svc.emptyReason()).toBe('names-nothing');
     });
 
-    it('names an absent group after a reload straight into a domain that lacks it (stored name hint)', () => {
+    it('names an absent group after a reload straight into a domain that lacks it, from the group index (RP-F decision 25)', () => {
       makeService(new BehaviorSubject<Domain | null>(enterprise())).setSource({ kind: 'groups', ids: [APT29, FIN7] });
       const raw = JSON.parse(localStorage.getItem(KEY)!);
       expect(raw.records[0].groupNames).toEqual({ [APT29]: 'APT29', [FIN7]: 'FIN7' });
-      const svc = makeService(new BehaviorSubject<Domain | null>(ics()));
-      expect(svc.domainNotice()).toBe('1 of 2 groups present in ICS: FIN7; APT29 has no ICS use');
+      expect(makeService(new BehaviorSubject<Domain | null>(ics()), [], INDEX).domainNotice())
+        .toBe('1 of 2 groups present in ICS: FIN7; APT29 has no ICS use');
+      // The stored hint alone is never a resolution: with no index entry the id is unresolved.
+      expect(makeService(new BehaviorSubject<Domain | null>(ics())).domainNotice())
+        .toBe(`1 of 2 groups present in ICS: FIN7; ${APT29}: unknown or withdrawn group id`);
     });
 
     it('a malformed name hint is ignored without dropping the stored source', () => {
@@ -296,10 +311,10 @@ describe('ThreatProfileService', () => {
         currentAttackDomain = 'enterprise';
       });
 
-      it('after a reload straight onto ICS, the stored name hints still name it once', () => {
+      it('after a reload straight onto ICS, the group index names it once', () => {
         makeService(new BehaviorSubject<Domain | null>(ent())).setSource({ kind: 'groups', ids: [APT29, 'G0016', 'G0046'] });
         currentAttackDomain = 'ics';
-        const svc = makeService(new BehaviorSubject<Domain | null>(icsOnly()));
+        const svc = makeService(new BehaviorSubject<Domain | null>(icsOnly()), [], INDEX);
         expect(svc.absentGroups(icsOnly())).toEqual([{ id: APT29, name: 'APT29' }]);
         expect(svc.domainNotice()).toBe('1 of 2 groups present in ICS: FIN7; APT29 has no ICS use');
         currentAttackDomain = 'enterprise';
@@ -373,10 +388,10 @@ describe('ThreatProfileService', () => {
           expect(notice).not.toContain('has no');
         });
 
-        it('the same ids on ICS: the known group is absent by name, the rest unknown or withdrawn', () => {
+        it('the same ids on ICS: the indexed group is absent by name, the rest unknown or withdrawn', () => {
           storeRaw([APT29, ...UNRESOLVED], { [APT29]: 'APT29' });
           currentAttackDomain = 'ics';
-          const svc = makeService(new BehaviorSubject<Domain | null>(icsOnly()));
+          const svc = makeService(new BehaviorSubject<Domain | null>(icsOnly()), [], INDEX);
           expect(svc.absentGroups(icsOnly())).toEqual([{ id: APT29, name: 'APT29' }]);
           expect(svc.domainNotice()).toBe('0 of 6 groups present in ICS; APT29 has no ICS use; '
             + UNRESOLVED.map((id) => `${id}: unknown or withdrawn group id`).join('; '));

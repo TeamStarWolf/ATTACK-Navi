@@ -32,6 +32,7 @@ import type { LensCell, LensContext, LensRampStop } from '../heatmap-modes';
 import type { PostureBucket, PostureState, PostureSubState, ProofScope } from './posture.types';
 import { hexContrast, mixHex } from '../cvd';
 import { PROVEN, postureBadge, scenarioOutcomeLabel } from './posture-vocabulary';
+import { provenNoneCellWords } from './proof-gap';
 
 export type PostureTheme = 'dark' | 'light';
 
@@ -129,6 +130,21 @@ export const CONTRADICTED_WORDS = 'contradicted by a later failed run';
  */
 export const CONTRADICTED_SPOKEN_LENSES: ReadonlySet<string> = new Set(['posture', 'covered', 'proven', 'status']);
 
+/** The words of the not-reproducible sub-state: its legend stop, and every cell that paints its cross-hatch (RP-F decision 27). */
+export const NOT_REPRODUCIBLE_WORDS = 'not reproducible';
+
+/**
+ * The words each pattern a cell paints is spoken with, in its aria-label, its
+ * tooltip and the why line (paints implies speaks, RP-F decisions 17 and 27).
+ * posture-ramp.spec iterates every pattern of posturePatterns over every
+ * posture-cell lens against this table.
+ */
+export const PATTERN_WORDS: Readonly<Record<PosturePattern, string>> = {
+  partial: 'partial',
+  contradicted: CONTRADICTED_WORDS,
+  'not-reproducible': NOT_REPRODUCIBLE_WORDS,
+};
+
 /**
  * The words of one posture-cell lens cell, for its aria-label and tooltip
  * (§7 Decay, Rendering). On the Posture lens (no `lens`, or `lens.words`
@@ -139,20 +155,42 @@ export const CONTRADICTED_SPOKEN_LENSES: ReadonlySet<string> = new Set(['posture
  * produced by derivePosture) falls back to the badge. Another posture-cell
  * lens passes its own cell words as `lens.words` (P2-14).
  *
- * A contradicted state (a later failed run outranks the full marks or the
- * proof) adds ', contradicted by a later failed run' on the lenses in
- * CONTRADICTED_SPOKEN_LENSES, the way a stale cell names its age (RP-F
- * decisions 11 and 17): "Known: mapped, contradicted by a later failed run".
+ * Paints implies speaks, for every pattern (RP-F decisions 11, 17 and 27):
+ * - a contradicted state adds ', contradicted by a later failed run' on the
+ *   lenses in CONTRADICTED_SPOKEN_LENSES (Status speaks it without the hatch),
+ *   the way a stale cell names its age: "Known: mapped, contradicted by a later
+ *   failed run";
+ * - every other pattern the cell paints (posturePatterns of `painted`, the
+ *   lens's projected cell; the state itself on the Posture lens) adds its
+ *   PATTERN_WORDS when the words do not already say them: the not-reproducible
+ *   cross-hatch adds ', not reproducible' ("None, not reproducible" on Covered;
+ *   round 4 read only "None" or "no recorded detection" on 3 of 3 lenses).
+ *
+ * A Proven lens cell with no proof (painted neither proven nor stale) beside a run
+ * of yours that fired a rule names that run instead of the 0 stop's 'no recorded
+ * detection' (RP-F decision 28, provenNoneCellWords): round 4 read "T1018: ...,
+ * no recorded detection" while the same cell's why line, its card and its pill
+ * said a rule fired.
  */
 export function postureCellLabel(
-  s: Pick<PostureState, 'bucket' | 'qualifiers' | 'proofScope' | 'proofAge' | 'covered' | 'subStates'>,
+  s: Pick<PostureState, 'bucket' | 'qualifiers' | 'proofScope' | 'proofAge' | 'covered' | 'subStates'>
+    & Partial<Pick<PostureState, 'runsWithoutProof'>>,
   windows: Readonly<Record<ProofScope, number>>,
   lens: { readonly value: string; readonly words?: string } = { value: 'posture' },
+  painted: Pick<PostureCellVM, 'bucket' | 'subStates'> | null = lens.value === 'posture' ? s : null,
 ): string {
-  const words = lens.words ?? postureStateWords(s, windows);
-  return CONTRADICTED_SPOKEN_LENSES.has(lens.value) && s.subStates.includes('contradicted')
-    ? `${words}, ${CONTRADICTED_WORDS}`
-    : words;
+  let words = lens.words ?? postureStateWords(s, windows);
+  if (lens.value === 'proven' && painted && !postureHasCheck(painted.bucket)) {
+    words = provenNoneCellWords({ runsWithoutProof: s.runsWithoutProof ?? [] }) ?? words;
+  }
+  const patterns = painted ? posturePatterns(painted) : [];
+  if ((CONTRADICTED_SPOKEN_LENSES.has(lens.value) && s.subStates.includes('contradicted')) || patterns.includes('contradicted')) {
+    words = `${words}, ${CONTRADICTED_WORDS}`;
+  }
+  for (const p of patterns) {
+    if (p !== 'contradicted' && !words.toLowerCase().includes(PATTERN_WORDS[p])) words = `${words}, ${PATTERN_WORDS[p]}`;
+  }
+  return words;
 }
 
 /** The Posture lens's own words for a state: the badge, or the stale age and window. */
@@ -220,7 +258,7 @@ export function postureStopLabel(key: PostureBucket | PosturePattern): string {
     case 'proven': return PROVEN;
     case 'stale': return `${PROVEN} (stale)`;
     case 'contradicted': return CONTRADICTED_WORDS;
-    default: return 'not reproducible';
+    default: return NOT_REPRODUCIBLE_WORDS;
   }
 }
 

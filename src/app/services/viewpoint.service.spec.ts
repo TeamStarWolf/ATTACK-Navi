@@ -165,6 +165,19 @@ describe('ViewpointService', () => {
     expect(service.urlHasHeatParam()).toBeTrue();
   });
 
+  // RP-F decision 26: a repeated key's first valid value is the choice; none valid is absent.
+  it('urlHasHeatParam reads a repeated heat key by its first valid value', () => {
+    for (const [hash, explicit] of [
+      ['#/matrix?heat=frequency&heat=bogus', true],
+      ['#/matrix?heat=bogus&heat=kev', true],
+      ['#/matrix?heat=bogus&heat=also-bogus', false],
+      ['#/matrix?heat=&heat=', false],
+    ] as const) {
+      window.location.hash = hash;
+      expect(service.urlHasHeatParam()).withContext(hash).toBe(explicit);
+    }
+  });
+
   it('restore applies the stored lens when the heat in the URL is invalid', () => {
     window.location.hash = '#/matrix?heat=bogus';
     localStorage.setItem(STORAGE_KEY, 'red');

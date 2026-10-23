@@ -106,6 +106,12 @@ jobs:
       - name: Validate curated layers against the refreshed bundle
         run: node scripts/validate-curated-threat-layers.mjs --update-bundled-metadata
 
+      # The all-domain group index (RP-F decision 25) is derived from the three
+      # ATT&CK bundles only; rebuild it so the review PR carries it with them
+      # (ci.yml's build-group-index test runs --check against the bundles).
+      - name: Rebuild the all-domain group index
+        run: node scripts/build-group-index.mjs
+
       - name: Detect changes
         id: diff
         run: |

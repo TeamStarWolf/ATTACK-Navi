@@ -42,6 +42,25 @@ export type ImplStatus = (typeof IMPL_STATUSES)[number];
 export function isHeatmapMode(value: string | null | undefined): value is HeatmapMode {
   return !!value && HEATMAP_MODES.some(m => m.value === value);
 }
+
+/**
+ * THE reading of a link's `heat` key (RP-F decisions 1 and 26), for every reader:
+ * the URL reader (UrlStateService, applyUrlState) and the boot checks that decide
+ * whether the link chose a lens (ViewpointService.urlHasHeatParam, which gates the
+ * default-lens rule, D4).
+ * - A repeated key (`heat=frequency&heat=bogus`) takes its FIRST VALID value, in
+ *   link order: `heat=bogus&heat=kev` is KEV.
+ * - When no value names a registered lens (`heat=bogus&heat=also-bogus`, `heat=`),
+ *   the key counts as ABSENT: null, so D4 runs (Posture with owner data) and the
+ *   writer then replaces the invalid key with the lens chosen.
+ * Round 4 found a repeated key opening Frequency and rewriting to bare #/matrix:
+ * the reader dropped the array value while the boot check read the first one.
+ */
+export function firstValidHeat(values: readonly (string | null | undefined)[] | string | null | undefined): HeatmapMode | null {
+  const list = Array.isArray(values) ? values : [values];
+  for (const v of list) if (isHeatmapMode(v)) return v;
+  return null;
+}
 export function isSearchScope(value: string | null | undefined): value is SearchScope {
   return !!value && (SEARCH_SCOPES as readonly string[]).includes(value);
 }
@@ -415,8 +434,9 @@ export class FilterService {
       // paint every cell the default colour under the wrong legend and never fire the
       // mode's loaders, so each enumerated param is validated and otherwise ignored;
       // the next URL write then serializes only the valid state.
-      const heat = params.get('heat');
-      if (isHeatmapMode(heat)) this.setHeatmapMode(heat);
+      // RP-F decision 26: the first valid value of a repeated key (firstValidHeat).
+      const heat = firstValidHeat(params.getAll('heat'));
+      if (heat !== null) this.setHeatmapMode(heat);
       const impl = params.get('impl');
       if (isImplStatus(impl)) this.implStatusFilterSubject.next(impl);
       const scope = params.get('scope');
