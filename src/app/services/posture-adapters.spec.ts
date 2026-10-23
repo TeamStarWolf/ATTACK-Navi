@@ -143,6 +143,14 @@ describe('posture adapters (P2-05)', () => {
       expect(r.covered).toEqual([]);
     });
 
+    it("every proof record carries its run's fired-rule count, the summary's (RP-F decision 30b, round 1)", () => {
+      const r = runInputs(run({
+        detectionsFired: ['sigma:a', 'sigma:b'], outcomes: [outcome({ outcome: 'blocked', detectionRef: 'edr:c' }), outcome({ outcome: 'logged', detectionRef: 'siem:l' })],
+      }));
+      expect(r.summary.rulesFired).toBe(3);
+      expect(r.proof.map(p => [p.detectionRef, p.runRulesFired])).toEqual([['edr:c', 3], ['sigma:a', 3], ['sigma:b', 3]]);
+    });
+
     it("an 'alerted' outcome with a detectionRef is proof even without detectionsFired; one without is not", () => {
       const r = runInputs(run({ outcomes: [outcome({ outcome: 'alerted', detectionRef: 'wazuh:1' }), outcome({ outcome: 'alerted' })] }));
       expect(r.proof.map(p => p.detectionRef)).toEqual(['wazuh:1']);
@@ -183,18 +191,24 @@ describe('posture adapters (P2-05)', () => {
       expect(runInputs(run({ status: 'untested', detectionsFired: ['siem:a', 'siem:b', 'siem:a'] })).summary.rulesFired).toBe(2);
     });
 
-    it("counts only detectionsFired as fired rules, the pill's count, never a rule an outcome names (RP-F decision 28)", () => {
-      // A blocked outcome naming a rule, with nothing in detectionsFired: the pill says
-      // '0 of 0 detection rules fired', so the card names no fired rule either.
+    it('counts fired rules through firedRules: detectionsFired and the rules of alerted or blocked outcomes, each once (RP-F decision 30b)', () => {
+      // Round 5: a blocked outcome naming a rule, with nothing in detectionsFired, read
+      // "1 rule fired" on the card beside a pill "0 of 0". Both now count it (pill: 1 of 0).
       const blockedNamed = runInputs(run({
         status: 'untested', attackResult: 'blocked', detectionsFired: [],
         outcomes: [outcome({ detectionRef: 'edr:block-1', outcome: 'blocked' })],
       }));
-      expect(blockedNamed.summary.rulesFired).toBe(0);
+      expect(blockedNamed.summary.rulesFired).toBe(1);
       const alertedNamed = runInputs(run({
         status: 'untested', detectionsFired: [], outcomes: [outcome({ detectionRef: 'siem:x', outcome: 'alerted' })],
       }));
-      expect(alertedNamed.summary.rulesFired).toBe(0);
+      expect(alertedNamed.summary.rulesFired).toBe(1);
+      // A logged or none outcome fired nothing; a rule in both lists counts once.
+      const mixed = runInputs(run({
+        status: 'untested', detectionsFired: ['siem:x'],
+        outcomes: [outcome({ detectionRef: ' siem:x ', outcome: 'alerted' }), outcome({ detectionRef: 'siem:l', outcome: 'logged' }), outcome({ detectionRef: 'siem:n', outcome: 'none' })],
+      }));
+      expect(mixed.summary.rulesFired).toBe(1);
       // Blank entries are not rules; each listed rule counts once.
       expect(runInputs(run({ status: 'untested', detectionsFired: [' ', 'siem:a', ' siem:a '] })).summary.rulesFired).toBe(1);
     });

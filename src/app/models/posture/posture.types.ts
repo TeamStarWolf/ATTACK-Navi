@@ -45,6 +45,14 @@ export interface ProofRecord {
   readonly source: SourceId;
   readonly runId: string;
   readonly missionId?: string;
+  /**
+   * How many rules the record's run fired, counted by firedRules over the run itself
+   * (RP-F decision 30b; the run's RunSummary.rulesFired), so the card's Proven line
+   * names the run's own count even when a later run of one rule removed some of the
+   * run's records (decision 29) and others stand. Set by runInputs; absent on a
+   * hand-built record.
+   */
+  readonly runRulesFired?: number;
 }
 
 export interface RunVerdict {
@@ -65,14 +73,13 @@ export interface RunSummary {
   readonly date: string;                  // runDate (ISO timestamp) or validated_at (YYYY-MM-DD)
   readonly source: SourceId;
   /**
-   * The entries of the run's detectionsFired, whatever its status: the Validation
-   * pill's "N of M detection rules fired" count. The store normalises the list at
-   * load and at import (ValidationService ruleList, RP-F decision 29: trimmed, empties
-   * dropped, each rule once), so the pill and this count read the same rules. A rule
-   * named only by an outcome is not counted, as the pill does not count it. Absent
-   * reads as 0. A run that fired a rule but yields no proof (untested, failed, ...) is
-   * named with its status wherever the card would otherwise say "No recorded
-   * detection" (RP-F decision 28).
+   * The rules the run fired, whatever its status, counted by firedRules (RP-F
+   * decision 30b): the distinct, trimmed, non-empty union of detectionsFired and the
+   * rules of its alerted or blocked outcomes, which the Validation pill's "N of M
+   * detection rules fired" counts too, so the pill and this count read the same
+   * rules. Absent reads as 0. A run that fired a rule but yields no proof
+   * (untested, failed, ...) is named with its status wherever the card would
+   * otherwise say "No recorded detection" (RP-F decision 28).
    */
   readonly rulesFired?: number;
   /**

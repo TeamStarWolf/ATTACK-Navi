@@ -246,7 +246,7 @@ describe('ThreatProfileService', () => {
         .toBe('1 of 2 groups present in ICS: FIN7; APT29 has no ICS use');
       // The stored hint alone is never a resolution: with no index entry the id is unresolved.
       expect(makeService(new BehaviorSubject<Domain | null>(ics())).domainNotice())
-        .toBe(`1 of 2 groups present in ICS: FIN7; ${APT29}: unknown or withdrawn group id`);
+        .toBe(`1 of 2 ids resolved; 1 of 1 group present in ICS: FIN7; ${APT29}: unknown or withdrawn group id`);
     });
 
     it('a malformed name hint is ignored without dropping the stored source', () => {
@@ -363,7 +363,7 @@ describe('ThreatProfileService', () => {
           const svc = makeService(domain$);
           expect(storedIds()).toEqual(['G0016', FIN7]);
           // G0016 resolves to no group this session yet: announced as such, never "has no ICS use".
-          expect(svc.domainNotice()).toBe('1 of 2 groups present in ICS: FIN7; G0016: unknown or withdrawn group id');
+          expect(svc.domainNotice()).toBe('1 of 2 ids resolved; 1 of 1 group present in ICS: FIN7; G0016: unknown or withdrawn group id');
           expect(svc.absentGroups(icsOnly())).toEqual([]);
           expect(svc.unresolvedGroups(icsOnly())).toEqual([{ id: 'G0016', name: 'G0016', unresolved: true }]);
           currentAttackDomain = 'enterprise';
@@ -383,7 +383,7 @@ describe('ThreatProfileService', () => {
           expect(svc.absentGroups(ent())).toEqual([]);
           expect(svc.unresolvedGroups(ent()).map((r) => r.id)).toEqual(UNRESOLVED);
           const notice = svc.domainNotice()!;
-          expect(notice).toBe('1 of 6 groups present in Enterprise: APT29; '
+          expect(notice).toBe('1 of 6 ids resolved; 1 of 1 group present in Enterprise: APT29; '
             + UNRESOLVED.map((id) => `${id}: unknown or withdrawn group id`).join('; '));
           expect(notice).not.toContain('has no');
         });
@@ -393,7 +393,7 @@ describe('ThreatProfileService', () => {
           currentAttackDomain = 'ics';
           const svc = makeService(new BehaviorSubject<Domain | null>(icsOnly()), [], INDEX);
           expect(svc.absentGroups(icsOnly())).toEqual([{ id: APT29, name: 'APT29' }]);
-          expect(svc.domainNotice()).toBe('0 of 6 groups present in ICS; APT29 has no ICS use; '
+          expect(svc.domainNotice()).toBe('1 of 6 ids resolved; 0 of 1 group present in ICS; APT29 has no ICS use; '
             + UNRESOLVED.map((id) => `${id}: unknown or withdrawn group id`).join('; '));
           currentAttackDomain = 'enterprise';
         });
@@ -402,7 +402,7 @@ describe('ThreatProfileService', () => {
           storeRaw(['Fancy Bear', ZERO], { 'Fancy Bear': 'APT28', [ZERO]: 'APT29' });
           const svc = makeService(new BehaviorSubject<Domain | null>(ent()));
           const notice = svc.domainNotice()!;
-          expect(notice).toBe('0 of 2 groups present in Enterprise; Fancy Bear: unknown or withdrawn group id; '
+          expect(notice).toBe('0 of 2 ids resolved; Fancy Bear: unknown or withdrawn group id; '
             + `${ZERO}: unknown or withdrawn group id`);
           expect(notice).not.toContain('APT28');
           expect(notice).not.toContain('APT29 has no');

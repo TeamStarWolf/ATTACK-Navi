@@ -26,6 +26,7 @@ import {
   techniqueRefKey,
 } from '../models/technique-ref';
 import { validateLylatExport, lylatRowsToRuns } from '../contracts/lylat-validated-detections';
+import { firedRuleCount } from '../models/posture/fired-rules';
 
 export type ValidationStatus = 'passed' | 'failed' | 'partial' | 'no-telemetry' | 'untested' | 'not-reproducible';
 
@@ -138,6 +139,14 @@ export function ruleList(x: unknown): string[] {
   return [...new Set(strList(x).map(v => v.trim()).filter(v => v !== ''))];
 }
 
+/**
+ * The one fired-rule count every surface reads (RP-F decision 30b), re-exported
+ * from its pure module: the distinct, trimmed, non-empty union of detectionsFired
+ * and the rules of alerted or blocked outcomes. ruleList above normalises the
+ * stored list; firedRules is what a run is said to have fired.
+ */
+export { firedRules, firedRuleCount } from '../models/posture/fired-rules';
+
 /** A source a stored run may carry. 'wizard' names legacy technique ratings, never runs. */
 export function isRunSource(x: unknown): x is Exclude<SourceId, 'wizard'> {
   if (typeof x !== 'string') return false;
@@ -164,7 +173,9 @@ export function statusFromInputs(input: {
 }): ValidationStatus {
   if (input.telemetryRequired.length > 0 && input.telemetryAvailable.length === 0) return 'no-telemetry';
   if (input.detectionsExpected.length === 0) return 'untested';
-  const fired = input.detectionsFired.length;
+  // The one fired-rule count (firedRules, RP-F decision 30b), over the inputs alone: update()
+  // passes the merged run, whose outcomes are re-derived from these inputs after this call.
+  const fired = firedRuleCount({ detectionsFired: input.detectionsFired });
   if (fired === 0) return 'failed';
   if (fired === input.detectionsExpected.length) return 'passed';
   return 'partial';

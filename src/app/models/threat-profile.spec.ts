@@ -214,10 +214,31 @@ describe('threat-profile model', () => {
     it('profileDomainNotice announces each unresolved id, and never as absent from the domain', () => {
       const apt29 = { id: 'g-apt29', name: 'APT29' };
       expect(profileDomainNotice({ domain: 'enterprise', present: [apt29], absent: [], unresolved: ['Fancy Bear', 'G9999'] }))
-        .toBe('1 of 3 groups present in Enterprise: APT29; Fancy Bear: unknown or withdrawn group id; G9999: unknown or withdrawn group id');
+        .toBe('1 of 3 ids resolved; 1 of 1 group present in Enterprise: APT29; Fancy Bear: unknown or withdrawn group id; G9999: unknown or withdrawn group id');
       expect(profileDomainNotice({ domain: 'ics', present: [], absent: [apt29], unresolved: ['G0074'] }))
-        .toBe('0 of 2 groups present in ICS; APT29 has no ICS use; G0074: unknown or withdrawn group id');
+        .toBe('1 of 2 ids resolved; 0 of 1 group present in ICS; APT29 has no ICS use; G0074: unknown or withdrawn group id');
       expect(profileDomainNotice({ domain: 'enterprise', present: [apt29], absent: [], unresolved: [] })).toBeNull();
+    });
+
+    // RP-F decision 30c: unresolved ids are counted as "ids", and "groups" counts resolved
+    // ones only. Round 5 read "1 of 2 groups present in ICS: FIN7; G0016: unknown or
+    // withdrawn group id", counting the id that names no group as a group.
+    it('profileDomainNotice counts unresolved ids as ids, never as groups', () => {
+      const fin7 = { id: 'g-fin7', name: 'FIN7' };
+      const apt29 = { id: 'g-apt29', name: 'APT29' };
+      expect(profileDomainNotice({ domain: 'ics', present: [fin7], absent: [apt29], unresolved: ['G9999'] }))
+        .toBe('2 of 3 ids resolved; 1 of 2 groups present in ICS: FIN7; APT29 has no ICS use; G9999: unknown or withdrawn group id');
+      expect(profileDomainNotice({ domain: 'ics', present: [fin7], absent: [], unresolved: ['G0016'] }))
+        .toBe('1 of 2 ids resolved; 1 of 1 group present in ICS: FIN7; G0016: unknown or withdrawn group id');
+      // Nothing resolved: no group count at all, only the ids.
+      expect(profileDomainNotice({ domain: 'enterprise', present: [], absent: [], unresolved: ['G9999'] }))
+        .toBe('0 of 1 id resolved; G9999: unknown or withdrawn group id');
+      expect(profileDomainNotice({ domain: 'mobile', present: [], absent: [], unresolved: ['G9998', 'G9999'] }))
+        .toBe('0 of 2 ids resolved; G9998: unknown or withdrawn group id; G9999: unknown or withdrawn group id');
+      for (const unresolved of [['G9999'], ['G9998', 'G9999']]) {
+        const notice = profileDomainNotice({ domain: 'ics', present: [fin7], absent: [], unresolved })!;
+        expect(notice).toMatch(/ of 1 group present in ICS/);
+      }
     });
 
     it('splitStoredGroups: aliases, revoked and unknown ATT&CK ids and an all-zero STIX id are unresolved on Enterprise and ICS', () => {

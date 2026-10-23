@@ -183,6 +183,63 @@ describe('ValidationPanelComponent', () => {
     expect(el.querySelector('.vp-kpi[data-status="untested"] .vp-kpi-value')!.textContent!.trim()).toBe('2');
   });
 
+  // RP-F decision 30d: a run date that cannot be parsed ('yesterday') made the DatePipe
+  // throw, so the workbench tile's "Last run" read blank in round 5. It reads 'date unknown'.
+  describe('run dates and fired rules in the workbench (RP-F decisions 30b and 30d)', () => {
+    const yesterday = {
+      id: 'y1', techniqueId: 'T1113', techniqueName: 'Screen Capture', runDate: 'yesterday', operator: '', status: 'passed',
+      detectionsExpected: [], detectionsFired: [], outcomes: [{ detectionRef: 'edr:x', outcome: 'blocked' }],
+      telemetryRequired: [], telemetryAvailable: [], atomicTestId: '', atomicCommand: '', attackResult: 'executed',
+      responsePlaybook: '', responseActions: [], evidenceLinks: [], notes: '',
+    };
+    const dated = { ...yesterday, id: 'd1', techniqueId: 'T1005', runDate: '2026-10-21T19:49:00', detectionsFired: ['siem:a'], outcomes: [] };
+
+    function withRuns(): HTMLElement {
+      const svc = TestBed.inject(ValidationService) as unknown as Record<string, unknown>;
+      const runsFor: Record<string, unknown[]> = { T1113: [yesterday], T1005: [dated] };
+      svc['forTechnique'] = (id: string) => runsFor[id] ?? [];
+      svc['latestFor'] = (id: string) => (runsFor[id] ?? []).at(-1) ?? null;
+      svc['all'] = [yesterday, dated];
+      // A card is listed only for a technique with a validation input (a Sigma rule here).
+      (TestBed.inject(SigmaService) as unknown as { getRuleCount: () => number }).getRuleCount = () => 1;
+      const tech = (attackId: string, name: string) => ({ id: `attack-pattern--${attackId}`, attackId, name, isSubtechnique: false, tacticShortnames: ['collection'] });
+      (TestBed.inject(DataService) as unknown as { domain$: BehaviorSubject<unknown> }).domain$
+        .next({ techniques: [tech('T1113', 'Screen Capture'), tech('T1005', 'Data from Local System')] });
+      return fixture.nativeElement as HTMLElement;
+    }
+    const squash = (t: string | null | undefined) => (t ?? '').replace(/\s+/g, ' ').trim();
+
+    it("runDate 'yesterday': the tile reads 'Last run date unknown', never blank; a readable date is printed as the pill prints it", () => {
+      const el = withRuns();
+      component.setTab('techniques');
+      rerender();
+      const runline = (attackId: string) => {
+        const card = [...el.querySelectorAll('.vp-tcard')].find(c => c.querySelector('.vp-tid')?.textContent?.trim() === attackId);
+        return squash(card?.querySelector('.vp-tcard-runline')?.textContent);
+      };
+      expect(runline('T1113')).toBe('Last run date unknown · fired 1/0');
+      expect(runline('T1005')).toBe('Last run 10/21/26, 7:49 PM · fired 1/0');
+      expect(component.runWhen('yesterday')).toBe('date unknown');
+      expect(component.runWhen('')).toBe('date unknown');
+      expect(component.runWhen('2026-02-30')).toBe('date unknown');
+    });
+
+    it("the run history and the evidence list read 'date unknown' too, and count fired rules through firedRules", () => {
+      const el = withRuns();
+      component.setTab('runs');
+      rerender();
+      const rows = [...el.querySelectorAll('tbody tr')].map(r => [...r.querySelectorAll('td')].map(td => squash(td.textContent)));
+      const y = rows.find(r => r[1].startsWith('T1113'))!;
+      expect(y[0]).toBe('date unknown');
+      expect(y[3]).toBe('1/0');
+      component.setTab('evidence');
+      rerender();
+      const whens = [...el.querySelectorAll('.vp-evidence-when')].map(w => squash(w.textContent));
+      expect(whens).toContain('date unknown');
+      expect(whens).not.toContain('');
+    });
+  });
+
   it('names v1 runs the copy-forward could not carry, and is silent when there are none', () => {
     const el: HTMLElement = fixture.nativeElement;
     expect(component.migrationNotice).toBeNull();

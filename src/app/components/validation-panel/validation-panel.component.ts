@@ -23,12 +23,17 @@ import { LibraryService } from '../../services/library.service';
 import { TelemetryCoverageService, TelemetrySourceRow } from '../../services/telemetry-coverage.service';
 import { Domain } from '../../models/domain';
 import { Technique } from '../../models/technique';
+import { firedRuleCount } from '../../models/posture/fired-rules';
+import { runTime, validationDateTime } from '../../models/local-date';
 import { PostureCardComponent } from '../posture-card/posture-card.component';
 
 /** Whether a status is a recorded outcome (counted out of "Untested (in scope)"). */
 const RECORDED_STATUS: Record<ValidationStatus, boolean> = {
   passed: true, partial: true, failed: true, 'no-telemetry': true, 'not-reproducible': true, untested: false,
 };
+
+/** What the workbench prints for a run date that cannot be read ('yesterday'), never a blank (RP-F decision 30d). */
+export const RUN_DATE_UNKNOWN = 'date unknown';
 
 interface TechniqueValidationCard {
   technique: Technique;
@@ -368,6 +373,21 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
       'not-reproducible': 'Not reproducible (patched target)',
     };
     return labels[s];
+  }
+
+  /** The rules a run fired, as the Validation pill and the evidence card count them (firedRules, RP-F decision 30b). */
+  firedCount(run: ValidationRun): number {
+    return firedRuleCount(run);
+  }
+
+  /**
+   * A run's date and time as the Validation pill prints it ('10/21/26, 7:49 PM'), or
+   * 'date unknown' when the recorded value is not a date (RP-F decision 30d). The
+   * DatePipe threw on such a value ('yesterday'), so the workbench tile's "Last run"
+   * read blank in round 5.
+   */
+  runWhen(date: string): string {
+    return runTime(date) === null ? RUN_DATE_UNKNOWN : validationDateTime(date);
   }
 
   // Detections list and runs are useful in the runs/evidence tabs

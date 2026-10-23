@@ -20,6 +20,7 @@ import { SCORE_ONLY_LENSES } from './lens-registry';
 import { CONTRADICTED_WORDS } from './posture/posture-ramp';
 import { validationDay } from './local-date';
 import { provenNoneLine } from './posture/proof-gap';
+import { firedRuleCount } from './posture/fired-rules';
 
 /**
  * The head of the Proven block and the Proven lens when no proof stands (RP-F
@@ -81,9 +82,20 @@ function describeMarks(marks: readonly CoveredMark[]): string {
 /** Where the runs of yours are listed in full (the Detection Validation workbench). */
 const SEE_VALIDATION = 'see Detection Validation';
 
-/** The distinct detection references of a state's proof: the rules that fired or blocked. */
-function rulesFired(proof: readonly ProofRecord[]): number {
-  return new Set(proof.map(p => p.detectionRef)).size;
+/**
+ * How many rules the best record's run fired (RP-F decision 30b): the run's own
+ * firedRules count, which runInputs puts on each of its records (runRulesFired, the
+ * same number as the run's RunSummary.rulesFired and the Validation pill's count).
+ * It is never a count of the records that stand: per-rule supersession (decision 29)
+ * can remove one record of a run and leave its others standing, and the Proven line
+ * still names the run's own count. A hand-built record without runRulesFired counts
+ * the distinct rules of the standing records of that same run (never of other runs).
+ * Round 5 counted the standing records of the best record's run; main, before it,
+ * the distinct rules of every standing record of every run.
+ */
+function rulesFired(best: ProofRecord, proof: readonly ProofRecord[]): number {
+  if (typeof best.runRulesFired === 'number') return best.runRulesFired;
+  return firedRuleCount({ detectionsFired: [], outcomes: proof.filter(p => p.runId === best.runId) });
 }
 
 /**
@@ -93,7 +105,7 @@ function rulesFired(proof: readonly ProofRecord[]): number {
  */
 function proofExplain(state: PostureState, decayDays?: Readonly<Record<ProofScope, number>>): string {
   const best = state.proof[0];
-  const n = rulesFired(state.proof);
+  const n = rulesFired(best, state.proof);
   let line = `${postureBadge(state)} on ${validationDay(best.date)} by ${best.source}; ${n} rule${n === 1 ? '' : 's'} fired`;
   if (state.bucket === 'stale' && decayDays && state.proofScope) {
     line += `; older than its ${decayDays[state.proofScope]}-day window`;
