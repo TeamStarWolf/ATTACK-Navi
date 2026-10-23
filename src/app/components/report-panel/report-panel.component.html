@@ -50,7 +50,7 @@
           <p class="report-split-note" data-testid="report-split-note">
             <strong>{{ labels.known }}</strong> and <strong>{{ labels.theoreticalShort }}</strong> counts come from ATT&amp;CK's reference mappings and make no claim about your environment.
             @if (ownerWords()) {
-              <strong>{{ labels.covered }}</strong> counts come only from data you recorded (self-attested, not validated); {{ labels.partialNote }}.
+              <strong>{{ labels.coveredCard }}</strong> counts come from data you recorded (self-attested, not validated) and from range detection rows (range), with a count per source; {{ labels.partialNote }}.
             } @else {
               {{ labels.fresh }}
             }
@@ -72,7 +72,11 @@
                 @if (ownerWords()) {
                   <div class="summary-card implemented" data-testid="report-covered">
                     <div class="card-num" data-posture="covered">{{ s.covered }}</div>
-                    <div class="card-label">{{ labels.covered }}</div>
+                    <div class="card-label">{{ labels.coveredCard }}</div>
+                    <!-- RP-F decision 43: one line per source with its count (report-split coveredCardLines). -->
+                    @for (line of coveredLines(); track line) {
+                      <div class="card-sub" data-testid="report-covered-source">{{ line }}</div>
+                    }
                     <div class="card-sub" [attr.data-share-pct]="s.coveredPct">{{ s.covered }} of <span data-posture="assessable">{{ s.assessable }}</span> {{ labels.assessable }} techniques ({{ s.coveredPct }}%). {{ labels.coveredNote }} {{ labels.assessableNote }}</div>
                   </div>
                   <div class="summary-card implemented" data-testid="report-partial">

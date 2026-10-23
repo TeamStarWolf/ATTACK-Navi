@@ -30,6 +30,8 @@
 import type { Domain } from './domain';
 import type { PostureRollup } from '../services/posture.service';
 import { PARTIAL_CAUSES_NOTE, type PartialCauseTally, partialCauseLines } from './posture/partial-cause';
+import { type CoveredSourceTally, coveredSourceLines } from './posture/covered-source';
+import { lensLabel } from './posture/posture-vocabulary';
 
 /** The words every Report surface uses for the halves of the split. */
 export const REPORT_SPLIT_LABELS = {
@@ -42,6 +44,12 @@ export const REPORT_SPLIT_LABELS = {
   implemented: 'Implemented (self-attested)',
   covered: 'Covered (self-attested)',
   coveredNote: 'A technique you recorded: a narrow mitigation you marked implemented, a control, a confirmation or a run. Not validated.',
+  /**
+   * The Covered card's label in the Report Builder and the HTML and PDF reports; its
+   * lines name each source with its count (coveredCardLines, RP-F decision 43), so a
+   * range-only Covered technique is never counted under a self-attested label.
+   */
+  coveredCard: `${lensLabel('covered')}, by source`,
   /** The word after a Covered share's denominator: `N of A assessable`. */
   assessable: 'assessable',
   assessableNote: 'Covered (self-attested) shares divide by assessable parent techniques: every parent technique except those a not-reproducible run with no proof excludes.',
@@ -96,6 +104,8 @@ export interface ReportSplit {
   partial: number;
   /** The partial techniques by typed cause (RP-F decision 36); null when the rollup carries no count by cause. */
   partialByCause: PartialCauseTally | null;
+  /** The Covered techniques by source (RP-F decision 43); null when the rollup carries no count by source. */
+  coveredBySource: CoveredSourceTally | null;
   proven: number;
   stale: number;
   /** Parent techniques with no mitigation mapped (total - theoretical). */
@@ -113,6 +123,16 @@ export interface ReportSplit {
  */
 export function partialCardLines(split: Pick<ReportSplit, 'partialByCause'>): string[] {
   return split.partialByCause ? partialCauseLines(split.partialByCause) : [];
+}
+
+/**
+ * The Covered card's lines, one per source with a count (RP-F decision 43):
+ * 'Covered (self-attested: mitigation, control, confirmation or your run): 3',
+ * 'Covered (range: lab-validated detection): 2'. Every Report surface (the Report
+ * Builder panel, the HTML report, the PDF report) prints these under the card.
+ */
+export function coveredCardLines(split: Pick<ReportSplit, 'coveredBySource'>): string[] {
+  return split.coveredBySource ? coveredSourceLines(split.coveredBySource) : [];
 }
 
 type SplitDomain = Pick<Domain, 'techniques' | 'tacticColumns'>;
@@ -175,6 +195,7 @@ export function computeReportSplit(domain: SplitDomain, rollup: PostureRollup, i
     coveredPct: pct(o.covered, o.assessable),
     partial: o.partial,
     partialByCause: o.partialByCause ?? null,
+    coveredBySource: o.coveredBySource ?? null,
     proven: o.proven,
     stale: o.stale,
     unmapped: total - theoretical,

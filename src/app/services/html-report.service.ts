@@ -7,7 +7,7 @@ import { ImplStatus, ImplementationService } from './implementation.service';
 import { ReportConfig, DEFAULT_REPORT_CONFIG } from './report-config.service';
 import { SettingsService } from './settings.service';
 import { PostureService } from './posture.service';
-import { computeReportSplit, partialCardLines, REPORT_SPLIT_LABELS } from '../models/report-split';
+import { computeReportSplit, coveredCardLines, partialCardLines, REPORT_SPLIT_LABELS } from '../models/report-split';
 import { PROVEN, postureBadge } from '../models/posture/posture-vocabulary';
 import type { PostureBucket } from '../models/posture/posture.types';
 
@@ -407,7 +407,8 @@ ${(() => {
       </div>${ownerWords ? `
       <div class="stat-card" style="border-left-color:#2563eb">
         <div class="stat-number" style="color:#1d4ed8" data-posture="${DATA.covered}">${split.covered}</div>
-        <div class="stat-label">${L.covered}</div>
+        <div class="stat-label">${L.coveredCard}</div>${coveredCardLines(split).map(line => `
+        <div class="stat-label" data-posture-source>${line}</div>`).join('')}
       </div>
       <div class="stat-card" style="border-left-color:#2563eb">
         <div class="stat-number" style="color:#1d4ed8" data-posture="${DATA.partial}">${split.partial}</div>

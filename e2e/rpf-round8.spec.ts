@@ -209,4 +209,29 @@ test.describe('RP-F round 8', () => {
     const { card } = await drawer(page, 'T1090.002', 'posture');
     await expect(card.getByTestId('ev-why')).not.toContainText('of yours');
   });
+
+  // Decision 43: Covered splits by source on the scenario table. Round 8 read the
+  // self-attested reason on range-only full marks (T1005, T1037.001, T1550.002).
+  test('[RP-F 43] APT28: range-only, self-attested and mixed Covered techniques name their own source in the scenario table, counted per source', async ({ page }) => {
+    await openWorkspace(page, {
+      seed: { 'mitre-nav-impl-v1': JSON.stringify([[T1003_001, 'implemented'], [T1037_001, 'implemented']]) },
+    });
+    await importAll(page);
+    await page.goto(`${BASE}/#/intel/scenarios`);
+    const picker = page.locator('app-scenario-panel app-threat-profile-picker').first();
+    await picker.locator('.tpp-search input').fill('APT28');
+    await picker.locator('.tpp-item', { has: page.locator('.tpp-item-name', { hasText: /^APT28$/ }) }).first().click();
+    await expect(page.locator('[data-testid="scenario-covered-source"]')).toHaveText([
+      'Covered (self-attested: mitigation, control, confirmation or your run): 2',
+      'Covered (range: lab-validated detection): 3',
+    ], { timeout: ROUTE_TIMEOUT });
+
+    await page.locator('app-scenario-panel .tab-btn', { hasText: 'Techniques' }).click();
+    const reason = (id: string) => page.locator('.tech-row', { has: page.locator('a', { hasText: new RegExp(`^${escape(id)}$`) }) }).locator('.tech-reasoning');
+    for (const id of ['T1005', 'T1550.002']) await expect(reason(id), id).toHaveText('Covered (range: lab-validated detection)');
+    await expect(reason('T1003.001')).toHaveText('Covered (self-attested: mitigation, control, confirmation or your run)');
+    await expect(reason('T1037.001')).toHaveText(
+      'Covered (self-attested: mitigation, control, confirmation or your run); Covered (range: lab-validated detection)');
+    await expect(page.locator('app-scenario-panel')).not.toContainText('You recorded a mitigation, control, confirmation or run');
+  });
 });

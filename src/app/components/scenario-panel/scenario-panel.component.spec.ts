@@ -17,6 +17,7 @@ import { THREAT_WEIGHT_PROVIDER } from '../../models/posture/threat-weight';
 import { Technique } from '../../models/technique';
 import { ThreatGroup } from '../../models/group';
 import { PartialCause, PostureBucket, PostureSubState } from '../../models/posture/posture.types';
+import type { CoveredQualifier } from '../../models/heatmap-modes';
 import { scenarioReason } from './scenario-panel.component';
 
 function tech(id: string, attackId: string): Technique {
@@ -41,6 +42,7 @@ describe('ScenarioPanelComponent (posture outcomes)', () => {
   let subStates: Map<string, PostureSubState[]>;
   let knownSignals: Map<string, number>;   // reference mappings per technique (ctem "Known: mapped" source)
   let causes: Map<string, PartialCause[]>;   // the typed partial causes per technique (RP-F decision 36)
+  let qualifiers: Map<string, CoveredQualifier[]>;   // the Covered sources per technique (RP-F decision 43)
   let ownerWords: boolean;
   let parentsSig: WritableSignal<ReadonlySet<string>>;
   let revisionSig: WritableSignal<number>;
@@ -68,7 +70,7 @@ describe('ScenarioPanelComponent (posture outcomes)', () => {
         { provide: PostureService, useValue: {
             stateFor: (t: Technique) => ({
               bucket: buckets.get(t.id) ?? 'none', subStates: subStates.get(t.id) ?? [], excluded: false, knownSignals: knownSignals.get(t.id) ?? 0,
-              covered: [], partialCauses: causes.get(t.id) ?? [],
+              covered: [], partialCauses: causes.get(t.id) ?? [], qualifiers: qualifiers.get(t.id) ?? [],
             }),
             ownerWords: () => ownerWords,
         } },
@@ -101,7 +103,7 @@ describe('ScenarioPanelComponent (posture outcomes)', () => {
   }
 
   beforeEach(() => {
-    buckets = new Map(); subStates = new Map(); knownSignals = new Map(); causes = new Map(); ownerWords = false;
+    buckets = new Map(); subStates = new Map(); knownSignals = new Map(); causes = new Map(); qualifiers = new Map(); ownerWords = false;
     cveOutcome = new BehaviorSubject<'pending' | 'loaded' | 'failed'>('loaded');
     cveLoaded = new BehaviorSubject(true);
     kevByTech = new Map();
@@ -219,6 +221,35 @@ describe('ScenarioPanelComponent (posture outcomes)', () => {
     const lines = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('[data-testid="scenario-partial-cause"]')).map(e => e.textContent!.trim());
     expect(lines).toEqual(['partial (broad mitigation, not confirmed per technique): 2', 'partial (range telemetry, no alert credited): 1']);
   }));
+
+  // RP-F decision 43 (round 8): the scenario table read the self-attested reason on
+  // range-only full marks (T1005, T1037.001, T1550.002). The reason and the Covered card
+  // now name each technique's source, with a count per source.
+  it('a range-only, a self-attested and a mixed Covered technique each name their own source, counted per source', fakeAsync(() => {
+    ownerWords = true;
+    buckets = new Map([['t1', 'covered'], ['t2', 'covered']]);
+    qualifiers = new Map([['t1', ['range']], ['t2', ['self-attested', 'range']]]);
+    configure();
+    component.onGroupPicked(GROUP.id);
+    tick(200);
+    fixture.detectChanges();
+
+    expect(component.result!.coveredBySource).toEqual({ 'self-attested': 1, range: 2 });
+    expect(component.result!.techniques.map(t => t.reasoning)).toEqual([
+      'Covered (range: lab-validated detection)',
+      'Covered (self-attested: mitigation, control, confirmation or your run); Covered (range: lab-validated detection)',
+    ]);
+    const host = fixture.nativeElement as HTMLElement;
+    const lines = Array.from(host.querySelectorAll('[data-testid="scenario-covered-source"]')).map(e => e.textContent!.trim());
+    expect(lines).toEqual(['Covered (self-attested: mitigation, control, confirmation or your run): 1', 'Covered (range: lab-validated detection): 2']);
+    expect(host.textContent).not.toContain('You recorded a mitigation, control, confirmation or run (self-attested)');
+  }));
+
+  it('scenarioReason names a Covered source from the state; the self-attested words never stand for a range-only mark', () => {
+    expect(scenarioReason({ bucket: 'covered', covered: [], qualifiers: ['self-attested'] }, 0))
+      .toBe('Covered (self-attested: mitigation, control, confirmation or your run)');
+    expect(scenarioReason({ bucket: 'covered', covered: [], qualifiers: ['range'] }, 0)).toBe('Covered (range: lab-validated detection)');
+  });
 
   it('scenarioReason reads the typed cause; a partial state that names none says partial only', () => {
     expect(scenarioReason({ bucket: 'partial', covered: [], partialCauses: ['telemetry'] }, 0)).toBe('Partly recorded: partial (range telemetry, no alert credited)');

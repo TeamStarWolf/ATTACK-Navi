@@ -9,7 +9,7 @@ import { DocumentationService } from '../../services/documentation.service';
 import { ReportConfigService } from '../../services/report-config.service';
 import { Domain } from '../../models/domain';
 import { makeSplitDomain } from '../../testing/report-split-fixture';
-import { PostureStub, makePostureStub, postureStubProvider } from '../../testing/posture-stub';
+import { PostureStub, type StubCoveredSource, makePostureStub, postureStubProvider } from '../../testing/posture-stub';
 import type { PostureBucket } from '../../models/posture/posture.types';
 
 describe('ReportPanelComponent', () => {
@@ -68,11 +68,15 @@ describe('ReportPanelComponent split (E1.1, P2-07)', () => {
     } as unknown as Domain;
   }
 
-  function render(buckets: Record<string, PostureBucket>, implemented = 0, telemetry: readonly string[] = []): HTMLElement {
+  function render(
+    buckets: Record<string, PostureBucket>, implemented = 0, telemetry: readonly string[] = [],
+    sources: Readonly<Record<string, StubCoveredSource>> = {},
+  ): HTMLElement {
     localStorage.removeItem('mitre-nav-report-config-v1');
     const domain = reportDomain();
     posture = makePostureStub(() => domain, buckets);
     posture.telemetry(telemetry);
+    posture.coveredBy(sources);
     TestBed.configureTestingModule({
       imports: [ReportPanelComponent],
       providers: [
@@ -161,6 +165,17 @@ describe('ReportPanelComponent split (E1.1, P2-07)', () => {
     expect(text(el.querySelector('[data-testid="report-partial"]'))).not.toContain('broad mitigation');
     expect(text(el.querySelector('[data-testid="report-split-note"]')))
       .toContain('a broad mitigation not confirmed per technique, or range telemetry with no alert credited, counts as partial');
+  });
+
+  // RP-F decision 43 (round 8): the Report Builder's Covered card counts each source; a
+  // range-only Covered technique is never counted under the self-attested label.
+  it('the Covered card names each source with a count: range-only, self-attested and mixed', () => {
+    const el = render({ T1: 'covered', T2: 'covered', T4: 'covered' }, 0, [], { T1: 'range', T4: 'both' });
+    expect(text(el.querySelector('[data-testid="report-covered"] .card-label'))).toBe('Covered (self-attested or range), by source');
+    expect(Array.from(el.querySelectorAll('[data-testid="report-covered-source"]')).map(e => text(e))).toEqual([
+      'Covered (self-attested: mitigation, control, confirmation or your run): 2',
+      'Covered (range: lab-validated detection): 2',
+    ]);
   });
 
   it('shows the partial card and the Proven count from the rollup', () => {

@@ -24,6 +24,7 @@ import {
   TacticSplit,
   computeReportSplit,
   partialCardLines,
+  coveredCardLines,
   isTechniqueMapped,
   REPORT_SPLIT_LABELS,
 } from '../../models/report-split';
@@ -96,6 +97,12 @@ export class ReportPanelComponent implements OnInit, OnDestroy {
   readonly partialLines = computed(() => {
     const s = this.split();
     return s ? partialCardLines(s) : [];
+  });
+
+  /** The Covered card's per-source lines (RP-F decision 43). */
+  readonly coveredLines = computed(() => {
+    const s = this.split();
+    return s ? coveredCardLines(s) : [];
   });
 
   readonly split: Signal<ReportSplit | null> = computed(() => {

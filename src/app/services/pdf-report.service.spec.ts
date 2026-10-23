@@ -291,10 +291,25 @@ describe('PdfReportService', () => {
 
     it('takes Covered, partial, Proven and stale from the posture rollup', () => {
       const html = capture(makeMockDomain(), { T1059: 'partial', T1190: 'proven' });
-      expect(html).toContain('<div class="num" data-share-pct="0"><span data-posture="covered">0</span> (0%)</div>\n    <div class="lbl">Covered (self-attested), of <span data-posture="assessable">2</span> assessable</div>');
+      expect(html).toContain('<div class="num" data-share-pct="0"><span data-posture="covered">0</span> (0%)</div>\n    <div class="lbl">Covered (self-attested or range), by source, of <span data-posture="assessable">2</span> assessable</div>');
       expect(html).toContain('<div class="num" data-posture="partial">1</div>\n    <div class="lbl">partial, by cause</div>\n    <div class="lbl" data-partial-cause>partial (broad mitigation, not confirmed per technique): 1</div>');
       expect(html).toContain('<div class="num" data-posture="proven">1</div>\n    <div class="lbl">Proven</div>');
       expect(html).toContain('<div class="num" data-posture="stale">0</div>');
+    });
+
+    // RP-F decision 43 (round 8): the Covered box counts each source.
+    it('a PDF report of a range-only Covered technique names the range source only', () => {
+      posture.coveredBy({ T1059: 'range' });
+      const rangeOnly = capture(makeMockDomain(), { T1059: 'covered' });
+      expect(rangeOnly).toContain('<div class="lbl" data-posture-source>Covered (range: lab-validated detection): 1</div>');
+      expect(rangeOnly).not.toContain('confirmation or your run):');
+    });
+
+    it('a PDF report names the Covered sources with a count per source: self-attested and mixed', () => {
+      posture.coveredBy({ T1059: 'both' });
+      const mixed = capture(makeMockDomain(), { T1059: 'covered', T1190: 'covered' });
+      expect(mixed).toContain('<div class="lbl" data-posture-source>Covered (self-attested: mitigation, control, confirmation or your run): 2</div>');
+      expect(mixed).toContain('<div class="lbl" data-posture-source>Covered (range: lab-validated detection): 1</div>');
     });
 
     // RP-F decision 36: a telemetry-only range partial is counted under its own cause.

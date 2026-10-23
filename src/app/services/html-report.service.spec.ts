@@ -299,6 +299,19 @@ describe('HtmlReportService', () => {
       expect(html).not.toContain('broad mitigation, not confirmed');
     });
 
+    // RP-F decision 43 (round 8): the Covered card counts each source.
+    it('an HTML report names the Covered sources with a count per source; a range-only report never says self-attested on the card', async () => {
+      posture.coveredBy({ T1: 'range', T4: 'both' });
+      const html = await report({ T1: 'covered', T2: 'covered', T4: 'covered' });
+      expect(html).toContain('<div class="stat-label">Covered (self-attested or range), by source</div>');
+      expect(html).toContain('<div class="stat-label" data-posture-source>Covered (self-attested: mitigation, control, confirmation or your run): 2</div>');
+      expect(html).toContain('<div class="stat-label" data-posture-source>Covered (range: lab-validated detection): 2</div>');
+      posture.coveredBy({ T1: 'range' });
+      const rangeOnly = await report({ T1: 'covered' });
+      expect(rangeOnly).toContain('<div class="stat-label" data-posture-source>Covered (range: lab-validated detection): 1</div>');
+      expect(rangeOnly).not.toContain('confirmation or your run):');
+    });
+
     it('badges each table technique with postureBadge(stateFor(t))', async () => {
       const html = await report({ T1: 'partial', T2: 'proven', T4: 'covered' });
       const domain = loaded!;

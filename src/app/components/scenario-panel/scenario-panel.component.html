@@ -94,6 +94,10 @@
                       <div class="outcome-card outcome-covered upgrade-section-block">
                         <div class="outcome-count">{{ result.covered }}</div>
                         <div class="outcome-label">{{ outcomeLabel('covered') }}</div>
+                        <!-- RP-F decision 43: the Covered count split by source. -->
+                        @for (line of coveredSourceLines(result); track line) {
+                          <div class="partial-note" data-testid="scenario-covered-source">{{ line }}</div>
+                        }
                       </div>
                     }
                     <div class="outcome-card outcome-known upgrade-section-block">

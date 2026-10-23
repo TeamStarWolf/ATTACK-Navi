@@ -110,6 +110,22 @@ export function scenarioOutcomeLabel(k: 'proven' | 'covered' | 'known' | 'none')
   }
 }
 
+/**
+ * What the range's own word for its proof is, as one identifier-like word: the range
+ * Covered label names the kind of evidence the range reports (RP-F decision 43).
+ */
+const LAB_VALIDATED = 'lab-validated';
+
+/**
+ * Covered by source (RP-F decision 43): the label of each source of a Covered technique,
+ * as the scenario table's reason and the Report Builder's Covered card (HTML and PDF too)
+ * name it. Each names its qualifier right after the word (covered-unqualified).
+ */
+export const COVERED_SOURCE_LABELS: Readonly<Record<CoveredQualifier, string>> = {
+  'self-attested': 'Covered (self-attested: mitigation, control, confirmation or your run)',
+  range: `Covered (range: ${LAB_VALIDATED} detection)`,
+};
+
 /** The menu label of a Phase 2 lens (P2-13, P2-14). */
 export function lensLabel(id: 'proven' | 'covered' | 'posture'): string {
   switch (id) {

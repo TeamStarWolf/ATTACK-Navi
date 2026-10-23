@@ -15,6 +15,7 @@ import { makePostureStub } from '../testing/posture-stub';
 import type { PostureBucket } from './posture/posture.types';
 import {
   computeReportSplit,
+  coveredCardLines,
   isTechniqueMapped,
   partialCardLines,
   REPORT_SPLIT_LABELS,
@@ -116,6 +117,26 @@ describe('computeReportSplit (E1.1 Theoretical sub-line, P2-07 posture rollup)',
     expect(split.partialByCause).toEqual({ breadth: 0, telemetry: 2 });
     expect(partialCardLines(split)).toEqual(['partial (range telemetry, no alert credited): 2']);
     expect(partialCardLines(split).join(' ')).not.toContain('broad mitigation');
+  });
+
+  // RP-F decision 43 (round 8): Covered splits by source, with a count per source; a
+  // range-only Covered technique is never counted under the self-attested label.
+  it('a report with a range-only, a self-attested and a mixed Covered technique counts each source', () => {
+    const domain = makeSplitDomain();
+    const stub = makePostureStub(() => domain, { T1: 'covered', T2: 'covered', T4: 'covered' });
+    stub.coveredBy({ T1: 'range', T4: 'both' });
+    const split = computeReportSplit(domain, stub.rollup(), 0);
+    expect(split.covered).toBe(3);
+    expect(split.coveredBySource).toEqual({ 'self-attested': 2, range: 2 });
+    expect(coveredCardLines(split)).toEqual([
+      'Covered (self-attested: mitigation, control, confirmation or your run): 2',
+      'Covered (range: lab-validated detection): 2',
+    ]);
+    stub.coveredBy({ T1: 'range', T2: 'range', T4: 'range' });
+    expect(coveredCardLines(computeReportSplit(domain, stub.rollup(), 0))).toEqual(['Covered (range: lab-validated detection): 3']);
+    expect(REPORT_SPLIT_LABELS.coveredCard).toBe('Covered (self-attested or range), by source');
+    // A hand-built rollup with no count by source lists no source line rather than guess one.
+    expect(coveredCardLines(computeReportSplit(domain, { ...stub.rollup(), overall: { ...stub.rollup().overall, coveredBySource: undefined } }, 0))).toEqual([]);
   });
 
   it('a breadth partial still names the mitigation cause, with a count per cause beside a telemetry one', () => {

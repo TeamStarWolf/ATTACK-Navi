@@ -24,6 +24,7 @@ import type {
 } from '../models/posture/posture.types';
 import { DEFAULT_POSTURE_RULES, derivePosture, tallyPosture } from '../models/posture/derive-posture';
 import { type PartialCauseTally, tallyPartialCauses } from '../models/posture/partial-cause';
+import { type CoveredSourceTally, tallyCoveredSources } from '../models/posture/covered-source';
 import { hasOwnerWords } from '../models/posture/posture-vocabulary';
 import { THREAT_WEIGHT_PROVIDER } from '../models/posture/threat-weight';
 import { POSTURE_TODAY } from '../models/posture/posture-today';
@@ -52,9 +53,11 @@ export interface PostureRollup {
   /**
    * `partialByCause` counts the partial techniques by their typed cause (RP-F decision
    * 36, tallyPartialCauses), so the Report Builder and the reports split the partial
-   * card by cause instead of inferring one from the bucket. Absent in a hand-built rollup.
+   * card by cause instead of inferring one from the bucket. `coveredBySource` counts the
+   * Covered techniques by source (RP-F decision 43, tallyCoveredSources), so the Covered
+   * card names the range's and the owner's share. Both are absent in a hand-built rollup.
    */
-  overall: PostureTally & { mapped: number; pct: number; partialByCause?: PartialCauseTally };
+  overall: PostureTally & { mapped: number; pct: number; partialByCause?: PartialCauseTally; coveredBySource?: CoveredSourceTally };
   byTactic: (PostureTally & { tacticId: string; tacticName: string; shortname: string; mapped: number; pct: number })[];
 }
 
@@ -286,6 +289,7 @@ export class PostureService {
     const overall = {
       ...this.tallyFor(techs), total: known.overall.total, mapped: known.overall.mapped, pct: known.overall.pct,
       partialByCause: tallyPartialCauses(techs.map(t => this.stateFor(t))),
+      coveredBySource: tallyCoveredSources(techs.map(t => this.stateFor(t))),
     };
     const byTactic = (domain.tacticColumns ?? []).map((col, i) => {
       const row = known.byTactic[i];

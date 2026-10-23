@@ -37,6 +37,7 @@ import { ThreatGroup } from '../../models/group';
 import { Technique } from '../../models/technique';
 import { PostureBucket, PostureState } from '../../models/posture/posture.types';
 import { type PartialCauseTally, partialCauseLines, partialCauseReason, tallyPartialCauses } from '../../models/posture/partial-cause';
+import { type CoveredSourceTally, coveredSourceLines, coveredSourceReason, tallyCoveredSources } from '../../models/posture/covered-source';
 import { scenarioOutcomeLabel } from '../../models/posture/posture-vocabulary';
 import { THREAT_WEIGHT_PROVIDER } from '../../models/posture/threat-weight';
 import { csvRow } from '../../utils/csv';
@@ -62,6 +63,7 @@ interface SimulationResult {
   covered: number;   // bucket covered
   partial: number;   // bucket partial — its own number, never summed into covered
   partialByCause: PartialCauseTally;   // the partial techniques by typed cause (RP-F decision 36)
+  coveredBySource: CoveredSourceTally; // the Covered techniques by source (RP-F decision 43)
   known: number;     // bucket known
   none: number;      // bucket none
   total: number;
@@ -74,13 +76,18 @@ interface SimulationResult {
  * cause (RP-F decision 36, partial-cause.ts): 'partial (broad mitigation, not confirmed
  * per technique)', 'partial (range telemetry, no alert credited)', or both. Round 7
  * read the broad-mitigation reason on techniques whose only evidence was a range
- * telemetry row.
+ * telemetry row. A Covered technique names its source (RP-F decision 43,
+ * covered-source.ts): 'Covered (self-attested: mitigation, control, confirmation or
+ * your run)', 'Covered (range: lab-validated detection)', or both; round 8 read the
+ * self-attested reason on range-only full marks (T1005, T1037.001, T1550.002).
  */
-export function scenarioReason(state: Pick<PostureState, 'bucket' | 'covered' | 'partialCauses'>, mitigationCount: number): string {
+export function scenarioReason(
+  state: Pick<PostureState, 'bucket' | 'covered' | 'partialCauses'> & Partial<Pick<PostureState, 'qualifiers'>>, mitigationCount: number,
+): string {
   switch (state.bucket) {
     case 'proven': return 'A named detection fired or the technique was blocked on a recorded run';
     case 'stale': return 'A recorded run that has aged past its window';
-    case 'covered': return 'You recorded a mitigation, control, confirmation or run (self-attested)';
+    case 'covered': return coveredSourceReason(state);
     case 'partial': return `Partly recorded: ${partialCauseReason(state)}`;
     case 'known': return mitigationCount > 0
       ? `${mitigationCount} mitigation${mitigationCount !== 1 ? 's' : ''} mapped; none recorded as deployed`
@@ -229,6 +236,7 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
     const covered = count('covered');
     const partial = count('partial');
     const partialByCause = tallyPartialCauses(scenarioTechniques.map(t => this.posture.stateFor(t.technique)));
+    const coveredBySource = tallyCoveredSources(scenarioTechniques.map(t => this.posture.stateFor(t.technique)));
     const known = count('known');
     const none = count('none');
     const total = scenarioTechniques.length;
@@ -237,7 +245,7 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
     return {
       group,
       techniques: scenarioTechniques.sort((a, b) => order[a.outcome] - order[b.outcome]),
-      proven, covered, partial, partialByCause, known, none, total,
+      proven, covered, partial, partialByCause, coveredBySource, known, none, total,
       knownOnlyShare: total > 0 ? Math.round((known / total) * 100) : 0,
       hasOwnerWords: this.posture.ownerWords(),
     };
@@ -246,6 +254,11 @@ export class ScenarioPanelComponent implements OnInit, OnDestroy {
   /** The partial note's per-cause lines (RP-F decision 36): a count per typed cause. */
   partialCauseLines(result: Pick<SimulationResult, 'partialByCause'>): string[] {
     return partialCauseLines(result.partialByCause);
+  }
+
+  /** The Covered card's per-source lines (RP-F decision 43): a count per source. */
+  coveredSourceLines(result: Pick<SimulationResult, 'coveredBySource'>): string[] {
+    return coveredSourceLines(result.coveredBySource);
   }
 
   // ─── Derived views ──────────────────────────────────────────────────────
