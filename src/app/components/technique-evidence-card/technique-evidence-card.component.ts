@@ -9,21 +9,35 @@
 //   Runs without proof  each run of yours that yields no proof: status and date (RP-F decision 9)
 //   Covered          each mark: qualifier, basis, via; Confirm on a breadth partial,
 //                    "Record a run" on a range telemetry partial (RP-F decision 31)
-//   Known            the five reference families with counts and sources
-//   Threat           the threat profile's actors using it; KEV-linked CVEs
+//   Known            the five reference families with counts and sources; a
+//                    family whose sources have no data for the domain reads
+//                    "not applicable in <domain>", never 0 (SOURCE_DOMAINS)
+//   Threat           the threat profile's actors using it; KEV-linked CVEs, with
+//                    the KEV catalogue asked for on idle after the first render
+//                    (loading, the count, or failed with Retry; technique page
+//                    design 4.6)
+//
+// Beside "Why this colour" a swatch shows the colour the lens gives the
+// technique, with its band in words; when the lens is not scored outside the
+// matrix the card says so and offers the matrix instead of a swatch.
 //
 // The Proven and Covered blocks render only when PostureService.ownerWords()
 // is true (§1.3), so a fresh profile shows Known and Threat only; their titles
 // come from the vocabulary module. The card is OnPush and every value is a
 // computed over signals: the drawer that hosts it is large and eager.
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy, Component, DestroyRef, InjectionToken, afterNextRender, computed, effect, inject, input, signal, untracked,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
 import type { Technique } from '../../models/technique';
 import type { CoveredMark } from '../../models/posture/posture.types';
 import {
-  type LensCell, type LensContext, heatmapModeDef, lensAvailability,
+  type HeatmapModeDef, type LensCell, type LensContext, heatmapModeDef, lensAvailability,
 } from '../../models/heatmap-modes';
-import { lensOnScreen } from '../../models/lens-registry';
+import { lensOnScreen, registryColor } from '../../models/lens-registry';
+import { type LensSourceId, domainLabel, notApplicableWords } from '../../models/lens-sources';
+import { SAFE_SEQ } from '../../models/safe-palette';
 import { KNOWN_FAMILY_COUNT, basisWords, lensExplain, provenNoneLine } from '../../models/lens-explain';
 import { PROVEN, lensLabel, proofLine } from '../../models/posture/posture-vocabulary';
 import { notCreditedWords, partialMarkWords, recordRunTooltip } from '../../models/posture/partial-cause';
@@ -43,6 +57,8 @@ import { SettingsService } from '../../services/settings.service';
 import { TechniqueMarksService } from '../../services/technique-marks.service';
 import { SourceRegistryService } from '../../services/source-registry.service';
 import { RecordRunRequestService } from '../../services/record-run-request.service';
+import { ThemeService } from '../../services/theme.service';
+import { PanelNavService } from '../../services/panel-nav.service';
 
 const DAY_MS = 86_400_000;
 
@@ -57,6 +73,77 @@ export const LENS_LOAD_SOURCES: Readonly<Partial<Record<string, string>>> = {
 };
 /** KEV-linked CVE ids listed by name; the count covers the rest. */
 const KEV_LISTED = 5;
+
+/** The sources behind each Known family: a family none of whose sources has data for the domain is not applicable there. */
+const KNOWN_FAMILY_SOURCES: Readonly<Record<'mitigations' | 'detection' | 'controls' | 'd3fend' | 'atomic', readonly LensSourceId[]>> = {
+  mitigations: ['attack-bundle'],
+  detection: ['sigmahq', 'car', 'car-seed'],
+  controls: ['ctid-nist-800-53', 'ctid-cri', 'cis-controls', 'ctid-csa-ccm', 'ctid-m365'],
+  d3fend: ['d3fend-seed'],
+  atomic: ['atomic'],
+};
+
+/** The sources behind the KEV-linked CVE count: the KEV catalogue joined with the CTID CVE-to-technique mappings. */
+const KEV_SOURCES: readonly LensSourceId[] = ['cisa-kev', 'ctid-attack-to-cve', 'ctid-kev'];
+
+/** Runs `task` once the browser is idle; returns a cancel. */
+export type IdleScheduler = (task: () => void) => () => void;
+
+/**
+ * When the card asks for the KEV catalogue (technique page design 4.6): on idle
+ * after its first render, so the catalogue never competes with the first paint.
+ * requestIdleCallback with a 2 s ceiling; a short timeout where it is missing.
+ */
+export const EVIDENCE_CARD_IDLE = new InjectionToken<IdleScheduler>('EVIDENCE_CARD_IDLE', {
+  providedIn: 'root',
+  factory: () => (task) => {
+    if (typeof requestIdleCallback === 'function') {
+      const handle = requestIdleCallback(() => task(), { timeout: 2000 });
+      return () => cancelIdleCallback(handle);
+    }
+    const handle = setTimeout(task, 200);
+    return () => clearTimeout(handle);
+  },
+});
+
+/** What the Threat block's KEV line says (technique page design 4.6). */
+export type KevView =
+  | { readonly kind: 'not-applicable'; readonly text: string }
+  | { readonly kind: 'loading'; readonly text: string }
+  | { readonly kind: 'failed'; readonly text: string }
+  | { readonly kind: 'loaded'; readonly count: number; readonly ids: readonly string[] };
+
+/** The swatch beside "Why this colour": the cell colour and its band in words ('' when the why line names it). */
+export interface LensSwatch {
+  readonly color: string;
+  readonly band: string;
+}
+
+/**
+ * The colour the matrix gives a legacy lens's score, read from the lens's
+ * declared ramp (HeatmapModeDef.ramp holds the renderer's colours, in its order):
+ * a relative ramp picks the zero stop or a quartile of the domain's highest
+ * score, as TechniqueCellComponent.computeRelativeColor does (viridis when the
+ * colour-blind setting is on); Mitigations mapped indexes the coverage colours by
+ * count. Null for a ramp the card cannot place a score on.
+ */
+export function legacySwatch(
+  def: Pick<HeatmapModeDef, 'value' | 'ramp'>,
+  score: number, max: number, opts: { readonly coverageColors: readonly string[]; readonly colorblindSafe: boolean },
+): LensSwatch | null {
+  const stops = def.ramp.stops;
+  if (def.value === 'coverage') {
+    const colors = opts.coverageColors;
+    if (!colors.length) return null;
+    const i = score <= 0 ? 0 : Math.min(score, colors.length - 1);
+    return { color: colors[i], band: `band ${stops[Math.min(i, stops.length - 1)]?.label ?? String(score)}` };
+  }
+  if (def.ramp.scale !== 'relative' || stops.length !== 5) return null;
+  if (score <= 0) return { color: stops[0].color, band: `band ${stops[0].label}` };
+  const ratio = max > 0 ? score / max : 0;
+  const q = ratio >= 0.75 ? 3 : ratio >= 0.5 ? 2 : ratio >= 0.25 ? 1 : 0;
+  return { color: opts.colorblindSafe ? SAFE_SEQ[q] : stops[q + 1].color, band: `band ${stops[q + 1].label} of the highest` };
+}
 
 /**
  * A legacy lens's score from the loaded domain alone, for when the matrix has
@@ -81,6 +168,7 @@ function domainScore(mode: string, t: Technique, domain: NonNullable<ReturnType<
 @Component({
   selector: 'app-technique-evidence-card',
   standalone: true,
+  imports: [RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './technique-evidence-card.component.html',
   styleUrl: './technique-evidence-card.component.scss',
@@ -99,6 +187,10 @@ export class TechniqueEvidenceCardComponent {
   private readonly today = inject(POSTURE_TODAY);
   private readonly sources = inject(SourceRegistryService);
   private readonly recordRuns = inject(RecordRunRequestService);
+  private readonly panelNav = inject(PanelNavService);
+  private readonly idle = inject(EVIDENCE_CARD_IDLE);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly isLight = toSignal(inject(ThemeService).isLight$, { initialValue: false });
   private readonly sourceRecords = toSignal(this.sources.records$, { initialValue: this.sources.all() });
 
   private readonly domain = toSignal(this.data.domain$, { initialValue: null });
@@ -126,29 +218,43 @@ export class TechniqueEvidenceCardComponent {
   private readonly lens = computed(() =>
     heatmapModeDef(lensOnScreen(this.mode(), this.ownerWords(), DEFAULT_HEATMAP_MODE)) ?? heatmapModeDef(DEFAULT_HEATMAP_MODE)!);
 
-  /** Why this colour: the lens's label and one sentence from lensExplain. */
-  readonly why = computed(() => {
+  /**
+   * Why this colour: the lens's label, one sentence from lensExplain, and the swatch
+   * (the colour the lens gives the technique; technique page design 4.5). `unscored`
+   * is true when the lens has no score for the technique outside the matrix: the
+   * card then offers the matrix and shows no swatch.
+   */
+  readonly why = computed<{ lens: string; text: string; swatch: LensSwatch | null; unscored: boolean }>(() => {
     const def = this.lens();
     const t = this.technique();
     const state = this.state();
     const availability = lensAvailability(def, this.domainId());
-    if (!availability.available) return { lens: def.label, text: `n/a in this domain: ${availability.reason}` };
+    if (!availability.available) return { lens: def.label, text: `n/a in this domain: ${availability.reason}`, swatch: null, unscored: false };
     const failed = this.failedLayer(def.value);
-    if (failed) return { lens: def.label, text: `n/a: ${failed.name} did not load (${failed.lastError ?? 'unknown error'}), so no count is known` };
+    if (failed) {
+      return { lens: def.label, text: `n/a: ${failed.name} did not load (${failed.lastError ?? 'unknown error'}), so no count is known`, swatch: null, unscored: false };
+    }
     let cell: LensCell | null = null;
     let max: number | null = null;
+    let swatch: LensSwatch | null = null;
+    const colorblindSafe = this.settingsNow()?.colorblindSafe === true;
     if (def.project) {
       cell = def.project(this.lensContext(), t);
+      if (def.color) swatch = { color: registryColor(def, cell, { theme: this.isLight() ? 'light' : 'dark', colorblindSafe }), band: '' };
     } else {
       const readout = this.matrixControl.legacyReadout();
       const domain = this.domain();
-      this.settingsNow();
+      const coverageColors = this.settings.getCoverageColors();
       const scored = readout && readout.techId === t.id && readout.mode === def.value
         ? readout
-        : domain ? domainScore(def.value, t, domain, Math.max(1, this.settings.getCoverageColors().length - 1)) : null;
-      if (scored) { cell = { score: scored.score }; max = scored.max; }
+        : domain ? domainScore(def.value, t, domain, Math.max(1, coverageColors.length - 1)) : null;
+      if (scored) {
+        cell = { score: scored.score };
+        max = scored.max;
+        swatch = legacySwatch(def, scored.score, scored.max, { coverageColors, colorblindSafe });
+      }
     }
-    return { lens: def.label, text: lensExplain(def, cell, { state, max, decayDays: this.posture.decayDays() }) };
+    return { lens: def.label, text: lensExplain(def, cell, { state, max, decayDays: this.posture.decayDays() }), swatch, unscored: cell === null };
   });
 
   /** The failed runtime layer a lens's whole score depends on (LENS_LOAD_SOURCES), or null. */
@@ -165,14 +271,23 @@ export class TechniqueEvidenceCardComponent {
     const domain = this.domain();
     const c = this.enrichment.referenceDefenseCounts(this.technique(), domain);
     const bundle = domain ? `${domain.name} ${domain.attackVersion}` : 'the loaded ATT&CK bundle';
+    const domainId = this.domainId();
+    const na = (family: keyof typeof KNOWN_FAMILY_SOURCES) => notApplicableWords(KNOWN_FAMILY_SOURCES[family], domainId);
     const rows = [
-      { family: 'ATT&CK mitigations', count: c.mitigations, source: bundle },
-      { family: 'Detection content', count: c.sigma + c.car, source: `SigmaHQ rules ${c.sigma}, MITRE CAR analytics ${c.car}` },
-      { family: 'Control mappings', count: c.controls, source: 'CTID: NIST 800-53, CRI, CIS, CSA CCM, M365' },
-      { family: 'D3FEND countermeasures', count: c.d3fend, source: 'MITRE D3FEND' },
-      { family: 'Atomic tests', count: c.atomic, source: 'Atomic Red Team' },
+      { family: 'ATT&CK mitigations', count: c.mitigations, source: bundle, na: na('mitigations') },
+      { family: 'Detection content', count: c.sigma + c.car, source: `SigmaHQ rules ${c.sigma}, MITRE CAR analytics ${c.car}`, na: na('detection') },
+      { family: 'Control mappings', count: c.controls, source: 'CTID: NIST 800-53, CRI, CIS, CSA CCM, M365', na: na('controls') },
+      { family: 'D3FEND countermeasures', count: c.d3fend, source: 'MITRE D3FEND', na: na('d3fend') },
+      { family: 'Atomic tests', count: c.atomic, source: 'Atomic Red Team', na: na('atomic') },
     ];
-    return { mapped: rows.filter(r => r.count > 0).length, rows };
+    const notApplicable = rows.filter(r => r.na !== null).length;
+    return {
+      // A family that is not applicable is never counted as mapped, and never shows a 0.
+      mapped: rows.filter(r => r.na === null && r.count > 0).length,
+      rows,
+      // ' (4 not applicable in ICS ATT&CK)', or '' when every family applies.
+      notApplicable: notApplicable ? ` (${notApplicable} not applicable in ${domainLabel(domainId)})` : '',
+    };
   });
 
   /** The Proven block: every qualifying proof record, best first. Empty while no owner words. */
@@ -291,6 +406,84 @@ export class TechniqueEvidenceCardComponent {
       kevIds: kevIds.slice(0, KEV_LISTED),
     };
   });
+
+  /**
+   * The KEV line (technique page design 4.6). Never "not loaded in this session" and
+   * never a bare 0 for a catalogue that has not arrived: not applicable outside
+   * Enterprise; loading while the catalogue or the CVE-to-technique mappings are on
+   * their way; failed (with Retry) when the live feed and the bundled snapshot both
+   * failed, or both CTID mapping datasets did; else the count.
+   */
+  readonly kev = computed<KevView>(() => {
+    const na = notApplicableWords(KEV_SOURCES, this.domainId());
+    if (na) return { kind: 'not-applicable', text: `KEV-linked CVEs: ${na}` };
+    const records = this.sourceRecords();
+    const failed = (id: string) => records.find(r => r.id === id)?.status === 'failed';
+    const threat = this.threat();
+    if (!threat.kevLoaded) {
+      if (failed('cisa-kev') && failed('cisa-kev-snapshot')) {
+        return { kind: 'failed', text: 'KEV catalogue unavailable: the live feed and the bundled snapshot both failed' };
+      }
+      return { kind: 'loading', text: 'KEV-linked CVEs: loading the CISA KEV catalogue…' };
+    }
+    if (!this.cvesLoaded()) {
+      if (failed('ctid-attack-to-cve') && failed('ctid-kev')) {
+        return { kind: 'failed', text: 'KEV-linked CVEs unavailable: the CTID CVE-to-technique mappings did not load' };
+      }
+      return { kind: 'loading', text: 'KEV-linked CVEs: loading the CTID CVE-to-technique mappings…' };
+    }
+    return { kind: 'loaded', count: threat.kevCount, ids: threat.kevIds };
+  });
+
+  /** The KEV line for the template: its state, its words, and the count and listed ids once loaded. */
+  readonly kevLine = computed(() => {
+    const k = this.kev();
+    return k.kind === 'loaded'
+      ? { kind: k.kind, text: '', count: k.count, ids: k.ids.join(', ') }
+      : { kind: k.kind, text: k.text, count: 0, ids: '' };
+  });
+
+  /** Set after the first render: the KEV ask waits for it. */
+  private readonly rendered = signal(false);
+  private kevAsked = false;
+
+  constructor() {
+    afterNextRender(() => this.rendered.set(true));
+    // Ask for the KEV catalogue on idle after the first render, once, and only in a
+    // domain whose techniques it maps (Enterprise). The drawer inherits this: its KEV
+    // line used to wait for a lens that loads KEV (technique page design 4.6).
+    effect(() => {
+      if (!this.rendered() || this.kev().kind === 'not-applicable') return;
+      untracked(() => this.askKev());
+    });
+  }
+
+  private askKev(): void {
+    if (this.kevAsked) return;
+    this.kevAsked = true;
+    const cancel = this.idle(() => this.cve.loadKev());
+    this.destroyRef.onDestroy(cancel);
+  }
+
+  /**
+   * Retry on a failed KEV line: the catalogue (the live feed, then the bundled
+   * snapshot: CveService.loadKev) and each CTID mapping dataset that failed. The
+   * loaders record the outcome on the SourceRegistry, so a Retry that fails again
+   * reads failed again, never 0.
+   */
+  retryKev(): void {
+    const records = this.sourceRecords();
+    const failed = (id: string) => records.find(r => r.id === id)?.status === 'failed';
+    if (!this.threat().kevLoaded) this.cve.loadKev();
+    for (const id of ['ctid-attack-to-cve', 'ctid-kev'] as const) {
+      if (failed(id)) this.attackCve.retry(id);
+    }
+  }
+
+  /** "Score it on the matrix": the matrix, with this technique's drawer open on the same lens. */
+  openInMatrix(): void {
+    this.panelNav.open('matrix', { keepTechniqueSelection: true });
+  }
 
   /** What a registry lens reads to project the technique, as the matrix builds it (minimap colours: dark, not CVD). */
   private lensContext(): LensContext {

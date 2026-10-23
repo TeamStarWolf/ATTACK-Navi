@@ -34,6 +34,7 @@ import { D3fendService, D3fendTechnique } from '../../services/d3fend.service';
 import { EngageService, EngageActivity } from '../../services/engage.service';
 import { CARService, CarAnalytic } from '../../services/car.service';
 import { AtomicService, AtomicTest, AtomicLiveTest } from '../../services/atomic.service';
+import { TechniqueFetchCoordinator } from '../../services/technique-fetch-coordinator.service';
 import { TaggingService } from '../../services/tagging.service';
 import { AttackCveService, CveAttackMapping } from '../../services/attack-cve.service';
 import { NistMappingService, NistControl } from '../../services/nist-mapping.service';
@@ -617,6 +618,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
   editingDocs = new Map<string, MitigationDoc>();
 
   private subs = new Subscription();
+  /** Starts the per-technique live fetches; the technique page calls the same one. */
+  private readonly fetchCoordinator = inject(TechniqueFetchCoordinator);
   private atomicSub?: Subscription;
   private ruleSourcesSub?: Subscription;
   private openctiSub?: Subscription;
@@ -717,7 +720,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
         this.procedures = tech ? this.dataService.getProceduresForTechnique(tech.id) : [];
         this.dataComponents = tech ? this.dataService.getDataComponentsForTechnique(tech.id) : [];
         this.detectionNotes = tech ? this.dataService.getDetectionNotesForTechnique(tech.id) : [];
-        this.d3fendMeasures = tech ? this.d3fendService.getCountermeasures(tech.attackId, true) : [];
+        // The per-technique live fetches (D3FEND live, Atomic YAML) start in the one
+        // coordinator the technique page calls too, so both hosts count the same answer.
+        if (tech) this.fetchCoordinator.prime(tech);
+        this.d3fendMeasures = tech ? this.d3fendService.getCountermeasures(tech.attackId) : [];
         this.engageActivities = tech ? this.engageService.getActivities(tech.attackId) : [];
         this.carAnalytics = tech ? this.carService.getAnalytics(tech.attackId) : [];
         this.atomicTests = tech ? this.atomicService.getTests(tech.attackId) : [];
@@ -729,7 +735,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
           ? `https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/${tech.attackId}/${tech.attackId}.md`
           : 'https://github.com/redcanaryco/atomic-red-team';
         if (tech) {
-          this.atomicSub = this.atomicService.fetchLiveTests(tech.attackId, 5).subscribe(liveTests => {
+          this.atomicSub = this.fetchCoordinator.atomicTests(tech).subscribe(liveTests => {
             if (this.technique?.attackId === tech.attackId) {
               this.atomicLiveTests = liveTests;
               this.atomicFetching = false;

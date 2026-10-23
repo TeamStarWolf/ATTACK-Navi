@@ -10,14 +10,16 @@ import { provideRouter } from '@angular/router';
 import { ValidationStatusPillComponent } from '../validation-status-pill/validation-status-pill.component';
 import { ValidationService } from '../../services/validation.service';
 import { BehaviorSubject, of } from 'rxjs';
-import { TechniqueEvidenceCardComponent } from './technique-evidence-card.component';
+import { EVIDENCE_CARD_IDLE, TechniqueEvidenceCardComponent, legacySwatch } from './technique-evidence-card.component';
+import { PanelNavService } from '../../services/panel-nav.service';
+import { SAFE_SEQ } from '../../models/safe-palette';
 import type { Technique } from '../../models/technique';
 import type { Domain } from '../../models/domain';
 import type { CoveredMark, PostureState, ProofRecord, RunSummary } from '../../models/posture/posture.types';
 import { DEFAULT_POSTURE_RULES, derivePosture } from '../../models/posture/derive-posture';
 import { POSTURE_TODAY } from '../../models/posture/posture-today';
 import { heatmapModeDef } from '../../models/heatmap-modes';
-import { DataService } from '../../services/data.service';
+import { DataService, type AttackDomain } from '../../services/data.service';
 import { FilterService, type HeatmapMode } from '../../services/filter.service';
 import { PostureService } from '../../services/posture.service';
 import { EnrichmentService } from '../../services/enrichment.service';
@@ -123,12 +125,28 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
   let profileActors: string[];
   /** The profile's roll-up over sub-techniques (usedBy); null reads as the direct uses. */
   let profileRollup: string[] | null;
+  /** The ATT&CK domain on screen (technique page design PR 1: not applicable outside Enterprise). */
+  let domainId: AttackDomain;
+  /** The CTID CVE-to-technique mappings have loaded (the KEV count waits for them). */
+  let cvesLoaded: BehaviorSubject<boolean>;
+  /** The CVE ids the mocked KEV catalogue lists. */
+  let kevSet: Set<string>;
+  let loadKev: jasmine.Spy;
+  let ctidRetry: jasmine.Spy;
+  let panelOpen: jasmine.Spy;
+  /** The idle tasks the card scheduled, run by the spec (EVIDENCE_CARD_IDLE). */
+  let idleTasks: Array<() => void>;
+  let settingsNow: Record<string, unknown>;
   beforeEach(() => {
     domainNotice = signal<string | null>(null);
     profileLabel = 'Top 20 groups by prevalence';
     profileActors = ['APT28', 'APT29'];
     profileRollup = null;
     techInput = TECH;
+    domainId = 'enterprise';
+    kevSet = new Set(['CVE-2024-3400']);
+    idleTasks = [];
+    settingsNow = {};
   });
 
   function render(s: PostureState, ownerWords: boolean, mode: HeatmapMode = 'frequency', extra: (Provider | EnvironmentProviders)[] = []): HTMLElement {
@@ -136,9 +154,16 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
     confirm = jasmine.createSpy('confirm').and.returnValue(true);
     recordRequest = jasmine.createSpy('request');
     kevLoaded = new BehaviorSubject(true);
+    cvesLoaded = new BehaviorSubject(true);
+    loadKev = jasmine.createSpy('loadKev');
+    ctidRetry = jasmine.createSpy('retry');
+    panelOpen = jasmine.createSpy('open');
     TestBed.configureTestingModule({
       imports: [TechniqueEvidenceCardComponent],
       providers: [
+        provideRouter([]),
+        { provide: EVIDENCE_CARD_IDLE, useValue: (task: () => void) => { idleTasks.push(task); return () => undefined; } },
+        { provide: PanelNavService, useValue: { open: panelOpen } },
         {
           provide: PostureService,
           useValue: {
@@ -149,8 +174,8 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
         {
           provide: DataService,
           useValue: {
-            domain$: new BehaviorSubject(DOMAIN), currentDomain$: new BehaviorSubject('enterprise'),
-            getCurrentAttackDomain: () => 'enterprise', getCurrentDomain: () => DOMAIN,
+            domain$: new BehaviorSubject(DOMAIN), currentDomain$: new BehaviorSubject(domainId),
+            getCurrentAttackDomain: () => domainId, getCurrentDomain: () => DOMAIN,
           },
         },
         { provide: FilterService, useValue: { heatmapMode$: heat } },
@@ -167,10 +192,13 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
         },
         {
           provide: CveService,
-          useValue: { kevLoaded$: kevLoaded, kevTechScores$: of(new Map([['T1078', 2]])), isKev: (id: string) => id === 'CVE-2024-3400' },
+          useValue: { kevLoaded$: kevLoaded, kevTechScores$: of(new Map([['T1078', 2]])), isKev: (id: string) => kevSet.has(id), loadKev },
         },
-        { provide: AttackCveService, useValue: { loaded$: of(true), getCvesForTechnique: () => [{ cveId: 'CVE-2024-3400' }, { cveId: 'CVE-2019-0001' }] } },
-        { provide: SettingsService, useValue: { settings$: of({}), getCoverageColors: () => ['#0', '#1', '#2', '#3', '#4'] } },
+        {
+          provide: AttackCveService,
+          useValue: { loaded$: cvesLoaded, retry: ctidRetry, getCvesForTechnique: () => [{ cveId: 'CVE-2024-3400' }, { cveId: 'CVE-2019-0001' }] },
+        },
+        { provide: SettingsService, useValue: { settings$: of(settingsNow), getCoverageColors: () => ['#c0', '#c1', '#c2', '#c3', '#c4'] } },
         { provide: TechniqueMarksService, useValue: { confirm } },
         { provide: RecordRunRequestService, useValue: { request: recordRequest } },
         { provide: POSTURE_TODAY, useValue: signal(new Date('2026-10-21T00:00:00.000Z')) },
@@ -209,7 +237,8 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
   it('Why this colour on a legacy lens: the domain score while the matrix has not scored it, then the matrix readout', () => {
     const el = render(state(), false, 'frequency');
     const freq = heatmapModeDef('frequency')!.formula;
-    expect(text(block(el, 'ev-why'))).toBe(`Why this colour: score 3 of max 6: ${freq} Lens: Frequency`);
+    // Technique page design 4.5: the swatch's band follows the why line in words (3 of 6: the 50-74% quartile).
+    expect(text(block(el, 'ev-why'))).toBe(`Why this colour: score 3 of max 6: ${freq} (band 50-74% of the highest) Lens: Frequency`);
 
     heat.next('sigma');
     TestBed.inject(MatrixControlService).publishReadout({ techId: TECH.id, mode: 'sigma', score: 2, max: 9 });
@@ -634,6 +663,161 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
 
     kevLoaded.next(false);
     fixture.detectChanges();
-    expect(text(threat.querySelector('[data-testid="ev-kev"]'))).toBe('KEV-linked CVEs: the KEV catalogue is not loaded in this session');
+    // Technique page design 4.6: never "not loaded in this session"; the catalogue is on its way.
+    expect(text(threat.querySelector('[data-testid="ev-kev"]'))).toBe('KEV-linked CVEs: loading the CISA KEV catalogue…');
+  });
+
+  // ─── Technique page design PR 1: KEV on demand, the swatch, not applicable ──────
+
+  describe('KEV on demand (design 4.6)', () => {
+    const kevLine = (el: HTMLElement) => el.querySelector<HTMLElement>('[data-testid="ev-kev"]')!;
+
+    it('asks for the KEV catalogue once, on idle after the first render, never before', async () => {
+      render(state(), false);
+      expect(idleTasks.length).withContext('nothing is scheduled before the first render has finished').toBe(0);
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(idleTasks.length).withContext('one idle task scheduled after the first render').toBe(1);
+      expect(loadKev).not.toHaveBeenCalled();
+      idleTasks[0]();
+      expect(loadKev).toHaveBeenCalledTimes(1);
+      kevLoaded.next(false);
+      fixture.detectChanges();
+      fixture.componentRef.setInput('technique', OTHER);
+      fixture.detectChanges();
+      expect(idleTasks.length).withContext('asked once per card').toBe(1);
+    });
+
+    it('reads loading while the catalogue or the CVE-to-technique mappings are on their way, in a polite live region', () => {
+      const el = render(state(), false);
+      kevLoaded.next(false);
+      fixture.detectChanges();
+      expect(kevLine(el).getAttribute('data-kev-state')).toBe('loading');
+      expect(text(kevLine(el))).toBe('KEV-linked CVEs: loading the CISA KEV catalogue…');
+      expect(kevLine(el).closest('[aria-live="polite"]')).not.toBeNull();
+      kevLoaded.next(true);
+      cvesLoaded.next(false);
+      fixture.detectChanges();
+      expect(text(kevLine(el))).toBe('KEV-linked CVEs: loading the CTID CVE-to-technique mappings…');
+      cvesLoaded.next(true);
+      fixture.detectChanges();
+      expect(kevLine(el).getAttribute('data-kev-state')).toBe('loaded');
+      expect(text(kevLine(el))).toBe('KEV-linked CVEs: 2 (CVE-2024-3400)');
+      expect(kevLine(el).querySelector('a')!.getAttribute('href')).toBe('/exposure/cve');
+    });
+
+    it('says failed with Retry when the live feed and the bundled snapshot both failed; Retry asks again', () => {
+      const el = render(state(), false);
+      kevLoaded.next(false);
+      const sources = TestBed.inject(SourceRegistryService);
+      sources.fail('cisa-kev', 'network error');
+      fixture.detectChanges();
+      expect(kevLine(el).getAttribute('data-kev-state')).withContext('the snapshot is still loading').toBe('loading');
+      sources.fail('cisa-kev-snapshot', 'network error');
+      fixture.detectChanges();
+      expect(kevLine(el).getAttribute('data-kev-state')).toBe('failed');
+      expect(text(kevLine(el))).toBe('KEV catalogue unavailable: the live feed and the bundled snapshot both failed · Retry');
+      expect(text(kevLine(el))).not.toMatch(/\b0\b/);
+      (el.querySelector('[data-testid="ev-kev-retry"]') as HTMLButtonElement).click();
+      expect(loadKev).toHaveBeenCalledTimes(1);
+      expect(ctidRetry).not.toHaveBeenCalled();
+    });
+
+    it('says failed with Retry when both CTID mapping datasets failed; Retry fetches each failed one', () => {
+      const el = render(state(), false);
+      cvesLoaded.next(false);
+      const sources = TestBed.inject(SourceRegistryService);
+      sources.fail('ctid-attack-to-cve', 'network error');
+      sources.fail('ctid-kev', 'network error');
+      fixture.detectChanges();
+      expect(text(kevLine(el))).toBe('KEV-linked CVEs unavailable: the CTID CVE-to-technique mappings did not load · Retry');
+      (el.querySelector('[data-testid="ev-kev-retry"]') as HTMLButtonElement).click();
+      expect(ctidRetry.calls.allArgs()).toEqual([['ctid-attack-to-cve'], ['ctid-kev']]);
+      expect(loadKev).not.toHaveBeenCalled();
+    });
+
+    it('a loaded catalogue with no KEV-linked CVE says so, not a bare 0', () => {
+      kevSet = new Set();
+      techInput = OTHER;
+      const el = render(state(), false);
+      expect(text(kevLine(el))).toBe('KEV-linked CVEs: 0 in the KEV catalogue');
+      expect(kevLine(el).querySelector('a')).toBeNull();
+    });
+  });
+
+  describe('not applicable outside Enterprise (SOURCE_DOMAINS)', () => {
+    for (const [dom, label] of [['ics', 'ICS ATT&CK'], ['mobile', 'Mobile ATT&CK']] as const) {
+      it(`on ${label} the Enterprise-only families and the KEV line read "not applicable", never 0`, async () => {
+        domainId = dom;
+        const el = render(state(), false);
+        await fixture.whenStable();
+        fixture.detectChanges();
+        const known = block(el, 'ev-known')!;
+        expect(text(known.querySelector('[data-testid="ev-known-summary"]')))
+          .toBe(`mapped 1 of 5 reference families (4 not applicable in ${label})`);
+        const rows = Array.from(known.querySelectorAll('.ev-known-row')).map(r => text(r));
+        expect(rows[0]).toBe('ATT&CK mitigations 8 Enterprise ATT&CK 19.2');
+        expect(rows.slice(1).every(r => r.includes(`not applicable in ${label}`))).withContext(rows.join(' | ')).toBeTrue();
+        expect(rows[1]).toBe(`Detection content n/a not applicable in ${label}: SigmaHQ coverage, MITRE CAR layer and CAR seed have Enterprise ATT&CK data only`);
+        expect(rows[4]).toBe(`Atomic tests n/a not applicable in ${label}: Atomic Red Team has Enterprise ATT&CK data only`);
+        expect(known.querySelectorAll('[data-testid="ev-known-na"]').length).toBe(4);
+        for (const r of rows.slice(1)) expect(r).not.toMatch(/\b0\b/);
+        const kev = el.querySelector('[data-testid="ev-kev"]')!;
+        expect(kev.getAttribute('data-kev-state')).toBe('not-applicable');
+        expect(text(kev)).toContain(`KEV-linked CVEs: not applicable in ${label}`);
+        expect(idleTasks.length).withContext('no KEV request outside Enterprise').toBe(0);
+      });
+    }
+  });
+
+  describe('the swatch beside Why this colour (design 4.5)', () => {
+    it('a legacy relative lens shows the cell colour from its ramp, with the band in words', () => {
+      const el = render(state(), false, 'frequency');   // 3 of max 6: the 50-74% quartile
+      const ramp = heatmapModeDef('frequency')!.ramp.stops;
+      const swatch = el.querySelector<HTMLElement>('[data-testid="ev-swatch"]')!;
+      expect(swatch).not.toBeNull();
+      expect(swatch.getAttribute('aria-hidden')).toBe('true');
+      expect(swatch.style.backgroundColor).toBe(hexToRgb(ramp[3].color));
+      expect(text(el.querySelector('[data-testid="ev-band"]'))).toBe(`(band ${ramp[3].label} of the highest)`);
+    });
+
+    it('a registry lens shows the colour its colour function gives the cell', () => {
+      const el = render(state(), true, 'posture');
+      const swatch = el.querySelector<HTMLElement>('[data-testid="ev-swatch"]');
+      expect(swatch).not.toBeNull();
+      expect(swatch!.style.backgroundColor).not.toBe('');
+      expect(el.querySelector('[data-testid="ev-score-on-matrix"]')).toBeNull();
+    });
+
+    it('a lens with no score outside the matrix shows no swatch and offers the matrix', () => {
+      const el = render(state(), false, 'sigma');
+      expect(el.querySelector('[data-testid="ev-swatch"]')).toBeNull();
+      const open = el.querySelector<HTMLButtonElement>('[data-testid="ev-score-on-matrix"]')!;
+      expect(text(open)).toBe('This lens is scored on the matrix: open it there');
+      open.click();
+      expect(panelOpen).toHaveBeenCalledOnceWith('matrix', { keepTechniqueSelection: true });
+    });
+
+    it('legacySwatch follows the cell renderer: zero stop, quartiles, coverage colours, viridis when colour-blind safe', () => {
+      const freq = heatmapModeDef('frequency')!;
+      const stops = freq.ramp.stops;
+      const opts = { coverageColors: ['#c0', '#c1', '#c2', '#c3', '#c4'], colorblindSafe: false };
+      expect(legacySwatch(freq, 0, 10, opts)).toEqual({ color: stops[0].color, band: `band ${stops[0].label}` });
+      expect(legacySwatch(freq, 1, 10, opts)!.color).toBe(stops[1].color);
+      expect(legacySwatch(freq, 3, 10, opts)!.color).toBe(stops[2].color);
+      expect(legacySwatch(freq, 6, 10, opts)!.color).toBe(stops[3].color);
+      expect(legacySwatch(freq, 10, 10, opts)!.color).toBe(stops[4].color);
+      expect(legacySwatch(freq, 6, 10, { ...opts, colorblindSafe: true })!.color).toBe(SAFE_SEQ[2]);
+      const coverage = heatmapModeDef('coverage')!;
+      expect(legacySwatch(coverage, 2, 4, opts)).toEqual({ color: '#c2', band: 'band 2' });
+      expect(legacySwatch(coverage, 9, 4, opts)).toEqual({ color: '#c4', band: 'band 4+' });
+      expect(legacySwatch(heatmapModeDef('epss')!, 1, 1, opts)).withContext('a ramp the card cannot place a score on').toBeNull();
+    });
   });
 });
+
+/** '#0ea5e9' as the browser reports an inline background colour. */
+function hexToRgb(hex: string): string {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgb(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255})`;
+}

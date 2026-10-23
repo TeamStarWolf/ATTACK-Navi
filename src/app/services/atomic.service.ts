@@ -103,6 +103,15 @@ export class AtomicService {
     }));
   }
 
+  /**
+   * True once the technique's live YAML has answered: its tests, or none (a 404).
+   * False before the fetch and after a failed one, which a later fetch tries again
+   * (TechniqueFetchCoordinator reads it to tell a failure from "no tests").
+   */
+  hasLiveAnswer(attackId: string): boolean {
+    return this.liveTestCache.has(attackId);
+  }
+
   /** GitHub link for a technique's Atomic Red Team page. */
   getAtomicUrl(attackId: string): string {
     return `https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/${attackId}/${attackId}.md`;

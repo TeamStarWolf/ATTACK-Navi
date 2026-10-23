@@ -12,10 +12,27 @@
 // that switch: clearing the filters resets the lens, so the page re-applies
 // the pasted lens after it (RP-F item 4). It is a FACTS "detail page", not a
 // workspace (scripts/gen-facts.mjs).
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, untracked } from '@angular/core';
+//
+// Technique page design PR 1 (fix-first): the host takes the workspace's width
+// and is the page's scroll container (container queries on it, design 4.2); the
+// h1 is plain text that takes focus, with the scroll reset, when a technique
+// resolves or the page moves to another one, and the document title names the
+// technique; tactics read "TA0003 Persistence" and open the matrix; the ATT&CK
+// page is an external action. Once the technique resolves the page primes the
+// TechniqueFetchCoordinator, the one the drawer calls, so a pasted link and the
+// drawer's Full page count the same live D3FEND and Atomic answers.
+import {
+  ChangeDetectionStrategy, Component, ElementRef, Injector, afterNextRender, computed, effect, inject, input, untracked,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { Title } from '@angular/platform-browser';
+import { Router, RouterLink, TitleStrategy } from '@angular/router';
 import { DataService, type AttackDomain } from '../../services/data.service';
-import { ATTACK_DOMAIN_NAMES, FilterService, firstValidHeat, isAttackDomain, normalizeUrlTechId } from '../../services/filter.service';
+import {
+  ATTACK_DOMAIN_NAMES, DEFAULT_HEATMAP_MODE, FilterService, firstValidHeat, isAttackDomain, normalizeUrlTechId,
+} from '../../services/filter.service';
+import { TechniqueFetchCoordinator } from '../../services/technique-fetch-coordinator.service';
+import { APP_TITLE_BRAND, AppTitleStrategy } from '../../services/app-title.strategy';
 import { AttackIdResolverService } from '../../services/attack-id-resolver.service';
 import { PanelNavService } from '../../services/panel-nav.service';
 import type { Technique } from '../../models/technique';
@@ -28,10 +45,17 @@ export type TechniquePageView =
   | { readonly kind: 'elsewhere'; readonly domainName: string }
   | { readonly kind: 'unknown'; readonly id: string; readonly domainName: string | null };
 
+/** One tactic of the technique, as the header names it: "TA0003 Persistence", a link to the matrix. */
+export interface TechniquePageTactic {
+  readonly attackId: string;
+  readonly name: string;
+  readonly queryParams: { readonly dom: AttackDomain; readonly heat: string; readonly tech: string };
+}
+
 @Component({
   selector: 'app-technique-page',
   standalone: true,
-  imports: [TechniqueEvidenceCardComponent],
+  imports: [TechniqueEvidenceCardComponent, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './technique-page.component.html',
   styleUrl: './technique-page.component.scss',
@@ -52,6 +76,13 @@ export class TechniquePageComponent {
   private readonly filter = inject(FilterService);
   private readonly resolver = inject(AttackIdResolverService);
   private readonly panelNav = inject(PanelNavService);
+  private readonly coordinator = inject(TechniqueFetchCoordinator);
+  private readonly router = inject(Router);
+  private readonly title = inject(Title);
+  private readonly titleStrategy = inject(TitleStrategy);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
+  private readonly mode = toSignal(this.filter.heatmapMode$, { initialValue: DEFAULT_HEATMAP_MODE });
 
   private readonly loaded = toSignal(this.data.domain$, { initialValue: null });
   private readonly current = toSignal(this.data.currentDomain$, { initialValue: this.data.getCurrentAttackDomain() });
@@ -87,6 +118,32 @@ export class TechniquePageComponent {
     return v.kind === 'found' ? v.technique : null;
   });
 
+  /**
+   * The technique's tactics in matrix order, by their ATT&CK names ("TA0003
+   * Persistence", never the shortname), each a link to the matrix with the domain,
+   * the lens on screen and this technique; the navigation keeps the selection, so
+   * the matrix opens with this technique's drawer.
+   */
+  readonly tactics = computed<readonly TechniquePageTactic[]>(() => {
+    const t = this.technique();
+    const domain = this.loaded();
+    const dom = this.target();
+    if (!t || !dom) return [];
+    const heat = this.mode();
+    const byShort = new Map((domain?.tactics ?? []).map(tac => [tac.shortname, tac]));
+    return t.tacticShortnames
+      .map(short => byShort.get(short) ?? null)
+      .filter((tac): tac is NonNullable<typeof tac> => tac !== null)
+      .sort((a, b) => a.order - b.order)
+      .map(tac => ({ attackId: tac.attackId, name: tac.name, queryParams: { dom, heat, tech: t.attackId } }));
+  });
+
+  /** The document title once the technique resolves: "T1037 Boot or Logon Initialization Scripts". */
+  readonly documentTitle = computed(() => {
+    const t = this.technique();
+    return t ? `${t.attackId} ${t.name}` : null;
+  });
+
   /** The words of the loading and empty states. */
   readonly stateText = computed(() => {
     const v = this.view();
@@ -113,6 +170,47 @@ export class TechniquePageComponent {
       const t = this.technique();
       if (t && this.selected()?.id !== t.id) untracked(() => this.filter.selectTechnique(t));
     });
+    // Start the technique's per-technique live fetches (D3FEND live, Atomic YAML) through
+    // the coordinator the drawer uses: once per technique, shared by both hosts.
+    effect(() => {
+      const t = this.technique();
+      if (t) untracked(() => this.coordinator.prime(t));
+    });
+    // Name the technique in the document title, held for this page's path so a
+    // query-only navigation (the URL writer) keeps it.
+    effect(() => {
+      const label = this.documentTitle();
+      if (label) untracked(() => this.setTitle(label));
+    });
+    // A technique resolved, or the page moved to another one (Angular reuses this
+    // component): back to the top, and focus on the h1 once it has rendered.
+    let shownId: string | null = null;
+    effect(() => {
+      const id = this.technique()?.id ?? null;
+      if (id === null || id === shownId) return;
+      shownId = id;
+      untracked(() => afterNextRender(() => this.resetToTop(), { injector: this.injector }));
+    });
+  }
+
+  private setTitle(label: string): void {
+    if (this.titleStrategy instanceof AppTitleStrategy) this.titleStrategy.setDetailTitle(this.router.url, label);
+    else this.title.setTitle(`${label} · ${APP_TITLE_BRAND}`);
+  }
+
+  /**
+   * Scroll the page (its host is the scroll container) to the top and move focus to
+   * the h1, so a keyboard or screen-reader user starts at the technique's name. Focus
+   * is not taken from a dialog or a field elsewhere that holds it (the first-visit
+   * onboarding, a search box): only from the body or from inside this page.
+   */
+  private resetToTop(): void {
+    const host = this.host.nativeElement;
+    host.scrollTop = 0;
+    const h1 = host.querySelector<HTMLElement>('#tp-h1');
+    const active = document.activeElement;
+    if (!h1 || (active && active !== document.body && !host.contains(active))) return;
+    h1.focus({ preventScroll: true });
   }
 
   /**

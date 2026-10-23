@@ -12,7 +12,9 @@ import { provideHttpClient, withXhr } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideLocationMocks } from '@angular/common/testing';
 import { NavigationEnd, provideRouter, Router } from '@angular/router';
+import { Title } from '@angular/platform-browser';
 import { BehaviorSubject, filter, firstValueFrom, take } from 'rxjs';
+import { TechniqueFetchCoordinator } from '../../services/technique-fetch-coordinator.service';
 import { TechniquePageComponent } from './technique-page.component';
 import { TechniqueEvidenceCardComponent } from '../../components/technique-evidence-card/technique-evidence-card.component';
 import type { Technique } from '../../models/technique';
@@ -39,8 +41,14 @@ const tech = (attackId: string, name: string): Technique =>
 
 const T1059 = tech('T1059.001', 'PowerShell');
 const T0807 = tech('T0807', 'Command-Line Interface');
-const ENTERPRISE = { name: 'Enterprise ATT&CK', attackVersion: '19.2', techniques: [T1059] } as unknown as Domain;
-const ICS = { name: 'ICS ATT&CK', attackVersion: '19.2', techniques: [T0807] } as unknown as Domain;
+/** Under two tactics, listed out of matrix order: the header names them in matrix order. */
+const T1037 = { ...tech('T1037', 'Boot or Logon Initialization Scripts'), tacticShortnames: ['privilege-escalation', 'persistence'] } as unknown as Technique;
+const tactic = (shortname: string, attackId: string, name: string, order: number) => ({ id: `x-mitre-tactic--${attackId}`, shortname, attackId, name, order });
+const ENTERPRISE = {
+  name: 'Enterprise ATT&CK', attackVersion: '19.2', techniques: [T1059, T1037],
+  tactics: [tactic('persistence', 'TA0003', 'Persistence', 5), tactic('privilege-escalation', 'TA0004', 'Privilege Escalation', 6)],
+} as unknown as Domain;
+const ICS = { name: 'ICS ATT&CK', attackVersion: '19.2', techniques: [T0807], tactics: [tactic('impair-process-control', 'TA0106', 'Impair Process Control', 9)] } as unknown as Domain;
 
 describe('TechniquePageComponent (P2-18)', () => {
   let fixture: ComponentFixture<TechniquePageComponent>;
@@ -51,6 +59,7 @@ describe('TechniquePageComponent (P2-18)', () => {
   let setHeatmapMode: jasmine.Spy;
   let switchDomain: jasmine.Spy;
   let open: jasmine.Spy;
+  let prime: jasmine.Spy;
 
   function render(domainParam: string, id: string, before?: () => void, heat?: string | readonly string[]): HTMLElement {
     current = new BehaviorSubject<AttackDomain>('enterprise');
@@ -61,12 +70,21 @@ describe('TechniquePageComponent (P2-18)', () => {
     // DataService.switchDomain: the domain on screen changes now, its bundle loads later.
     switchDomain = jasmine.createSpy('switchDomain').and.callFake((d: AttackDomain) => { current.next(d); domain$.next(null); });
     open = jasmine.createSpy('open');
+    prime = jasmine.createSpy('prime');
     TestBed.configureTestingModule({
       imports: [TechniquePageComponent],
       providers: [
+        provideRouter([]),
         { provide: DataService, useValue: { domain$, currentDomain$: current, getCurrentAttackDomain: () => current.value, switchDomain } },
-        { provide: FilterService, useValue: { selectedTechnique$: selected, selectTechnique: (t: Technique | null) => selected.next(t), clearAll, setHeatmapMode } },
+        {
+          provide: FilterService,
+          useValue: {
+            selectedTechnique$: selected, selectTechnique: (t: Technique | null) => selected.next(t), clearAll, setHeatmapMode,
+            heatmapMode$: new BehaviorSubject('frequency'),
+          },
+        },
         { provide: PanelNavService, useValue: { open } },
+        { provide: TechniqueFetchCoordinator, useValue: { prime } },
       ],
     });
     TestBed.overrideComponent(TechniquePageComponent, {
@@ -202,6 +220,143 @@ describe('TechniquePageComponent (P2-18)', () => {
     const el = render('enterprise', 'T1059.001');
     (el.querySelector('[data-testid="open-in-matrix"]') as HTMLButtonElement).click();
     expect(open).toHaveBeenCalledOnceWith('matrix', { keepTechniqueSelection: true });
+  });
+
+  // ─── Technique page design PR 1 (fix-first) ──────────────────────────────────
+
+  it('primes the fetch coordinator once the technique resolves, and only then (D3FEND parity with the drawer)', () => {
+    render('ics', 'T0807');
+    expect(prime).withContext('nothing to prime while the domain loads').not.toHaveBeenCalled();
+    domain$.next(ICS);
+    fixture.detectChanges();
+    expect(prime).toHaveBeenCalledOnceWith(T0807);
+    fixture.detectChanges();
+    expect(prime).toHaveBeenCalledTimes(1);
+  });
+
+  it('an unknown id primes nothing', () => {
+    render('enterprise', 'T9999');
+    expect(prime).not.toHaveBeenCalled();
+  });
+
+  it('the h1 is plain text (id and name, no link) and the ATT&CK page is an external action with noopener noreferrer', () => {
+    const el = render('enterprise', 'T1037');
+    const h1 = el.querySelector<HTMLElement>('h1#tp-h1')!;
+    expect(text(h1)).toBe('T1037 Boot or Logon Initialization Scripts');
+    expect(h1.querySelector('a')).withContext('the h1 holds no link').toBeNull();
+    expect(h1.getAttribute('tabindex')).toBe('-1');
+    const ext = el.querySelector<HTMLAnchorElement>('[data-testid="tp-attack-link"]')!;
+    expect(ext.getAttribute('href')).toBe('https://attack.mitre.org/techniques/T1037');
+    expect(ext.target).toBe('_blank');
+    expect(ext.rel.split(/\s+/).sort()).toEqual(['noopener', 'noreferrer']);
+    expect(text(ext)).toBe('View T1037 on ATT&CK ↗ (opens in a new tab)');
+    expect(ext.querySelector('[aria-hidden="true"]')?.textContent?.trim()).toBe('↗');
+  });
+
+  it('tactics read by their ATT&CK names in matrix order, each a link to the matrix with dom, heat and tech', () => {
+    const el = render('enterprise', 'T1037');
+    const links = Array.from(el.querySelectorAll<HTMLAnchorElement>('[data-testid="tp-tactic"]'));
+    expect(links.map(a => text(a))).toEqual(['TA0003 Persistence', 'TA0004 Privilege Escalation']);
+    expect(text(el.querySelector('[data-testid="tp-tactics"]'))).toBe('Tactics: TA0003 Persistence, TA0004 Privilege Escalation');
+    expect(text(el)).not.toContain('privilege-escalation');
+    const href = new URL(links[0].getAttribute('href')!, 'http://x');
+    expect(href.pathname).toBe('/matrix');
+    expect(href.searchParams.get('dom')).toBe('enterprise');
+    expect(href.searchParams.get('heat')).toBe('frequency');
+    expect(href.searchParams.get('tech')).toBe('T1037');
+    expect(links[0].getAttribute('aria-label')).toContain('TA0003 Persistence');
+  });
+
+  it('a tactic link opens the matrix with the selection kept, so its drawer opens on this technique', async () => {
+    const el = render('enterprise', 'T1037');
+    const router = TestBed.inject(Router);
+    const nav = spyOn(router, 'navigateByUrl').and.resolveTo(true);
+    el.querySelector<HTMLAnchorElement>('[data-testid="tp-tactic"]')!.click();
+    expect(nav).toHaveBeenCalledTimes(1);
+    const [url, extras] = nav.calls.mostRecent().args as [unknown, { state?: Record<string, unknown> }];
+    expect(router.serializeUrl(url as never)).toBe('/matrix?dom=enterprise&heat=frequency&tech=T1037');
+    expect(extras.state).toEqual({ keepTechniqueSelection: true });
+  });
+
+  it('the document title names the technique: "T1037 Boot or Logon Initialization Scripts · ATT&CK-Navi"', () => {
+    render('enterprise', 'T1037');
+    expect(TestBed.inject(Title).getTitle()).toBe('T1037 Boot or Logon Initialization Scripts · ATT&CK-Navi');
+  });
+
+  it('focus moves to the h1 when the technique resolves, and again when the page moves to another technique', async () => {
+    const el = render('enterprise', 'T1037');
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(document.activeElement).toBe(el.querySelector('#tp-h1'));
+    (document.activeElement as HTMLElement).blur();
+    // Angular reuses the component on a technique-to-technique navigation: the reset runs again.
+    fixture.componentRef.setInput('id', 'T1059.001');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(text(el.querySelector('#tp-h1'))).toBe('T1059.001 PowerShell');
+    expect(document.activeElement).toBe(el.querySelector('#tp-h1'));
+    expect(TestBed.inject(Title).getTitle()).toBe('T1059.001 PowerShell · ATT&CK-Navi');
+  });
+
+  it('focus is not taken from a field elsewhere that holds it (the onboarding dialog, a search box)', async () => {
+    const outside = document.createElement('input');
+    document.body.appendChild(outside);
+    try {
+      outside.focus();
+      const el = render('enterprise', 'T1037');
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(document.activeElement).toBe(outside);
+      expect(el.querySelector('#tp-h1')).not.toBeNull();
+    } finally {
+      outside.remove();
+    }
+  });
+
+  it('the evidence card sits under an Evidence h2, so the outline reads h1, h2, then the card\'s h3s', () => {
+    const el = render('enterprise', 'T1037');
+    const section = el.querySelector('section.tp-evidence')!;
+    expect(text(section.querySelector('h2'))).toBe('Evidence');
+    expect(section.getAttribute('aria-labelledby')).toBe('tp-evidence-h');
+    expect(section.querySelector('.stub-card')).not.toBeNull();
+    expect(el.querySelector('article')!.getAttribute('aria-labelledby')).toBe('tp-h1');
+  });
+});
+
+describe('TechniquePageComponent host (technique page design 4.2)', () => {
+  it('the host is a flex item that takes the width, scrolls, and is the container the page queries', () => {
+    TestBed.configureTestingModule({
+      imports: [TechniquePageComponent],
+      providers: [
+        provideRouter([]),
+        { provide: DataService, useValue: { domain$: new BehaviorSubject(null), currentDomain$: new BehaviorSubject('enterprise'), getCurrentAttackDomain: () => 'enterprise', switchDomain: () => undefined } },
+        { provide: FilterService, useValue: { selectedTechnique$: new BehaviorSubject(null), heatmapMode$: new BehaviorSubject('frequency'), selectTechnique: () => undefined } },
+        { provide: TechniqueFetchCoordinator, useValue: { prime: () => undefined } },
+      ],
+    });
+    // The workspace as app.component.scss lays it out: a flex row with overflow hidden.
+    const workspace = document.createElement('div');
+    workspace.style.cssText = 'display:flex;overflow:hidden;width:1500px;height:600px';
+    document.body.appendChild(workspace);
+    try {
+      const fixture = TestBed.createComponent(TechniquePageComponent);
+      fixture.componentRef.setInput('domain', 'enterprise');
+      fixture.componentRef.setInput('id', 'T1037');
+      fixture.detectChanges();
+      const host = fixture.nativeElement as HTMLElement;
+      workspace.appendChild(host);
+      const css = getComputedStyle(host);
+      expect(css.flexGrow).toBe('1');
+      expect(css.minWidth).toBe('0px');
+      expect(css.overflowY).toBe('auto');
+      expect(css.containerType).toBe('inline-size');
+      expect(css.containerName).toBe('tpage');
+      expect(host.getBoundingClientRect().width).withContext('the page takes the workspace width').toBe(1500);
+      fixture.destroy();
+    } finally {
+      workspace.remove();
+    }
   });
 });
 
