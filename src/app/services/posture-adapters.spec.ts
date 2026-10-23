@@ -108,6 +108,9 @@ describe('posture adapters (P2-05)', () => {
       const m1026 = domain.techniquesByMitigation.get(mit('M1026').id)!;
       for (const t of m1047) expect(marks.get(t.id)!.find(m => m.via === 'M1047')!.strength).toBe('full');
       for (const t of m1026) expect(marks.get(t.id)!.find(m => m.via === 'M1026')!.strength).toBe('partial');
+      // RP-F decision 31: a partial control mark is partial by breadth; a full one names no cause.
+      for (const t of m1026) expect(marks.get(t.id)!.find(m => m.via === 'M1026')!.partialCause).toBe('breadth');
+      for (const t of m1047) expect(marks.get(t.id)!.find(m => m.via === 'M1047')!.partialCause).toBeUndefined();
       expect([...marks.values()].flat().every(m => m.basis === 'control-implemented' && m.qualifier === 'self-attested')).toBeTrue();
     });
 
@@ -245,6 +248,8 @@ describe('posture adapters (P2-05)', () => {
         ['range', 'range-detection-authored', 'full', null],
         ['range', 'range-telemetry-observed', 'partial', null],
       ]);
+      // RP-F decision 31: the telemetry-observed row's partial mark is partial by telemetry, never by breadth.
+      expect(range.covered.map(m => m.partialCause ?? null)).toEqual([null, null, 'telemetry']);
       expect(range.proof).toEqual([]);
       expect(runInputs(run({ outcomes })).covered).toEqual([]);
     });

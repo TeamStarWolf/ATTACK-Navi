@@ -135,9 +135,11 @@ describe('ValidationStatusPillComponent', () => {
       }, DEFAULT_POSTURE_RULES, new Date('2026-10-21T00:00:00.000Z')));
     };
 
-    it("T1113, outcome {edr:x, blocked} and empty detectionsFired: pill '1 of N', card '1 rule fired'", () => {
+    // RP-F decision 33: more rules fired than expected reads 'N fired, M expected', never '1 of 0'.
+    it("T1113, outcome {edr:x, blocked} and empty detectionsFired: pill '1 fired, 0 expected', card '1 rule fired'", () => {
       const r = t1113({ outcomes: [{ detectionRef: 'edr:x', outcome: 'blocked' }] });
-      expect(pillLine(r)).toBe('1 of 0 detection rules fired');
+      expect(pillLine(r)).toBe('detection rules: 1 fired, 0 expected');
+      expect(pillLine(r)).not.toMatch(/\d+ of \d+/);
       expect(cardLine(r)).toBe('Proven (your run) on 10/20/26 by manual; 1 rule fired');
       expect(pillLine(t1113({ detectionsExpected: ['edr:x'], outcomes: [{ detectionRef: 'edr:x', outcome: 'blocked' }] })))
         .toBe('1 of 1 detection rules fired');
@@ -177,6 +179,12 @@ describe('ValidationStatusPillComponent', () => {
       expect(component.firedCount(a)).toBe(2);
       expect(cardLineOf([a, b])).toBe('Proven (your run) on 10/1/26 by manual; 2 rules fired; a later run of another rule failed on 10/10/26');
       expect(pillLineOf([b, a], b)).toBe('0 of 1 detection rules fired');
+    });
+
+    it("fired exceeds expected on a non-passed run too: 'detection rules: 2 fired, 1 expected' (round 6: 'UNTESTED 2 of 1')", () => {
+      const r = t1113({ status: 'untested', detectionsExpected: ['siem:a'], detectionsFired: ['siem:a', 'siem:b'] });
+      expect(pillLine(r)).toBe('detection rules: 2 fired, 1 expected');
+      expect(component.tally(r)).toEqual({ fired: 2, expected: 1, exceeds: true, words: '2 fired, 1 expected' });
     });
 
     it("two passed runs: the card names the best run's own count, never the rules of both runs", () => {

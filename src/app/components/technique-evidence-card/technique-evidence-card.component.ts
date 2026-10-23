@@ -7,7 +7,8 @@
 //   Why this colour  lensExplain(def, cell) on the lens on screen
 //   Proven           each proof record: rule, date, source, outcome, lab, stale
 //   Runs without proof  each run of yours that yields no proof: status and date (RP-F decision 9)
-//   Covered          each mark: qualifier, basis, via; Confirm on a partial one
+//   Covered          each mark: qualifier, basis, via; Confirm on a breadth partial,
+//                    "Record a run" on a range telemetry partial (RP-F decision 31)
 //   Known            the five reference families with counts and sources
 //   Threat           the threat profile's actors using it; KEV-linked CVEs
 //
@@ -18,6 +19,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import type { Technique } from '../../models/technique';
+import type { CoveredMark } from '../../models/posture/posture.types';
 import {
   type LensCell, type LensContext, heatmapModeDef, lensAvailability,
 } from '../../models/heatmap-modes';
@@ -38,6 +40,7 @@ import { AttackCveService } from '../../services/attack-cve.service';
 import { SettingsService } from '../../services/settings.service';
 import { TechniqueMarksService } from '../../services/technique-marks.service';
 import { SourceRegistryService } from '../../services/source-registry.service';
+import { RecordRunRequestService } from '../../services/record-run-request.service';
 
 const DAY_MS = 86_400_000;
 
@@ -93,6 +96,7 @@ export class TechniqueEvidenceCardComponent {
   private readonly marks = inject(TechniqueMarksService);
   private readonly today = inject(POSTURE_TODAY);
   private readonly sources = inject(SourceRegistryService);
+  private readonly recordRuns = inject(RecordRunRequestService);
   private readonly sourceRecords = toSignal(this.sources.records$, { initialValue: this.sources.all() });
 
   private readonly domain = toSignal(this.data.domain$, { initialValue: null });
@@ -216,7 +220,14 @@ export class TechniqueEvidenceCardComponent {
    */
   readonly listsRun = computed(() => this.proofs().length > 0 || this.runsWithoutProof() !== '');
 
-  /** The Covered block: every mark with its qualifier, basis and via. Empty while no owner words. */
+  /**
+   * The Covered block: every mark with its qualifier, basis and via. Empty while no owner words.
+   * The action on a partial mark follows its typed cause (RP-F decision 31), never its words:
+   * - a breadth partial (partialCause 'breadth') offers P2-16's Confirm while the state is partial;
+   * - a range telemetry partial (partialCause 'telemetry') never offers Confirm (range
+   *   telemetry with no alerting detection is not the owner's to attest); it offers
+   *   "Record a run", which opens Detect > Validation on the technique.
+   */
   readonly coveredMarks = computed(() => {
     if (!this.ownerWords()) return [];
     const state = this.state();
@@ -224,8 +235,8 @@ export class TechniqueEvidenceCardComponent {
       key: `${i}|${m.basis}|${m.via ?? ''}|${m.source}`,
       qualifier: m.qualifier, basis: basisWords(m.basis), via: m.via ?? null, strength: m.strength, source: m.source,
       at: m.at ? validationDay(m.at) : null,
-      // P2-16's Confirm: offered on a partial mark while the technique's state is partial.
-      canConfirm: m.strength === 'partial' && state.bucket === 'partial' && !!m.via,
+      canConfirm: confirmable(m) && state.bucket === 'partial',
+      canRecordRun: m.strength === 'partial' && m.partialCause === 'telemetry',
     }));
   });
 
@@ -276,11 +287,26 @@ export class TechniqueEvidenceCardComponent {
     };
   }
 
-  /** Confirm for this technique (P2-16's path): a 'technique-confirmed' mark (source 'manual') naming the broad mitigation. */
+  /**
+   * Confirm for this technique (P2-16's path): a 'technique-confirmed' mark (source
+   * 'manual') naming the broad mitigation. Only a breadth partial's `via` is accepted
+   * (RP-F decision 31): Confirm never mints a mark 'via <range rule>'.
+   */
   confirm(via: string): void {
+    if (!this.state().covered.some(m => confirmable(m) && m.via === via)) return;
     const domain = this.data.getCurrentDomain();
     if (!domain) return;
     const ref = techniqueRefKey(refForTechnique(this.technique(), this.data.getCurrentAttackDomain(), domain.attackVersion));
     this.marks.confirm(ref, { via });
   }
+
+  /** "Record a run" on a range telemetry partial (RP-F decision 31): Detect > Validation, the technique preselected. */
+  recordRun(): void {
+    this.recordRuns.request(this.technique().attackId);
+  }
+}
+
+/** A mark Confirm may name (RP-F decision 31): a breadth partial with a `via`. */
+function confirmable(m: CoveredMark): boolean {
+  return m.strength === 'partial' && m.partialCause === 'breadth' && !!m.via;
 }

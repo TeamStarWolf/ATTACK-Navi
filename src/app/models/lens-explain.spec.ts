@@ -13,7 +13,14 @@ import { basisWords, formatScore, laterRunClause, lensExplain, postureExplain, p
 const def = (mode: HeatmapMode) => heatmapModeDef(mode)!;
 
 const MIT_FULL: CoveredMark = { qualifier: 'self-attested', basis: 'mitigation-implemented', strength: 'full', via: 'M1036', source: 'manual' };
-const MIT_PARTIAL: CoveredMark = { qualifier: 'self-attested', basis: 'mitigation-implemented', strength: 'partial', via: 'M1038', source: 'manual' };
+const MIT_PARTIAL: CoveredMark = { qualifier: 'self-attested', basis: 'mitigation-implemented', strength: 'partial', via: 'M1038', source: 'manual', partialCause: 'breadth' };
+/** A range telemetry-observed row's mark (RP-F decision 31), as runInputs produces it. */
+const TELEMETRY_PARTIAL: CoveredMark = {
+  qualifier: 'range', basis: 'range-telemetry-observed', strength: 'partial', via: 'wazuh:5', source: 'lylat-range:SYNTH-MISSION-T',
+  at: '2026-10-21', partialCause: 'telemetry',
+};
+const BREADTH_SENTENCE = 'reached only through a mitigation or control mapped to more techniques than the breadth threshold';
+const TELEMETRY_WORDS = 'range telemetry observed via wazuh:5: partial, no detection alerted';
 const RUN: ProofRecord = {
   scope: 'own-run', detectionRef: 'sigma:4688-encoded', outcome: 'alerted', date: '2026-10-21T09:30:00.000Z', source: 'manual', runId: 'r1',
 };
@@ -111,6 +118,37 @@ describe('lensExplain (P2-18): Why this colour', () => {
         .toBe('Covered (self-attested or range), partial via M1038: reached only through a mitigation or control mapped to more techniques than the breadth threshold');
       expect(lensExplain(def('covered'), { score: 0, label: 'None' }, { state: state({ rung: 'none', bucket: 'none', knownSignals: 0 }) }))
         .toBe('None: nothing of yours reaches this technique');
+    });
+
+    // RP-F decision 31: the partial reason follows the marks' typed cause. Round 6 read
+    // the breadth sentence for a telemetry-only range row (T1200) beside a Covered
+    // block saying "telemetry observed in the range via wazuh:5 partial".
+    describe('partial causes (RP-F decision 31)', () => {
+      const telemetry = state({ rung: 'covered', bucket: 'partial', qualifiers: ['range'], subStates: ['partial', 'telemetry-observed'], covered: [TELEMETRY_PARTIAL], partialCauses: ['telemetry'] });
+      const label = 'Covered (self-attested or range), partial via wazuh:5';
+
+      it('a range telemetry partial reads the telemetry words on Posture and Covered, never the threshold sentence', () => {
+        expect(postureExplain(telemetry)).toBe(`Covered (range, partial via wazuh:5) from ${TELEMETRY_WORDS}`);
+        expect(lensExplain(def('covered'), { score: 1, label }, { state: telemetry })).toBe(`${label} from ${TELEMETRY_WORDS}`);
+        for (const line of [postureExplain(telemetry), lensExplain(def('covered'), { score: 1, label }, { state: telemetry })]) {
+          expect(line).not.toContain('breadth threshold');
+        }
+      });
+
+      it('a breadth partial keeps its threshold sentence; both causes say both', () => {
+        expect(postureExplain(PARTIAL_STATE)).toBe(`Covered (self-attested, partial via M1038): ${BREADTH_SENTENCE}`);
+        const both = state({ rung: 'covered', bucket: 'partial', subStates: ['partial'], covered: [MIT_PARTIAL, TELEMETRY_PARTIAL] });
+        expect(postureExplain(both)).toBe(`Covered (self-attested, range, partial via M1038, wazuh:5): ${BREADTH_SENTENCE}; ${TELEMETRY_WORDS}`);
+      });
+
+      it('reads the cause from the marks of a hand-built state, and names none for a mark without one', () => {
+        const fromMarks = state({ rung: 'covered', bucket: 'partial', subStates: ['partial'], covered: [TELEMETRY_PARTIAL] });
+        expect(postureExplain(fromMarks)).toBe(`Covered (range, partial via wazuh:5) from ${TELEMETRY_WORDS}`);
+        const noRule = state({ rung: 'covered', bucket: 'partial', subStates: ['partial'], covered: [{ ...TELEMETRY_PARTIAL, via: undefined }] });
+        expect(postureExplain(noRule)).toBe('Covered (range, partial) from range telemetry observed: partial, no detection alerted');
+        const unnamed = state({ rung: 'covered', bucket: 'partial', subStates: ['partial'], covered: [{ ...MIT_PARTIAL, partialCause: undefined }] });
+        expect(postureExplain(unnamed)).toBe('Covered (self-attested, partial via M1038)');
+      });
     });
 
     // RP-F item 2: the Covered lens on a technique with no covered mark used to say

@@ -1,7 +1,8 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 //
-// THE count of a run's fired detection rules (RP-F decision 30b). Every surface
+// THE count of a run's fired detection rules (RP-F decision 30b), and, beside the
+// rules it expected, how that count is said (firedRuleTally, RP-F decision 33). Every surface
 // that says how many rules a run fired counts through firedRules: the Validation
 // pill ("N of M detection rules fired"), the Detection Validation workbench (its
 // tiles and runs table), the run summary the evidence card reads (posture-adapters
@@ -48,4 +49,36 @@ export function firedRules(run: FiredRulesInput): string[] {
 /** How many rules a run fired: firedRules(run).length. */
 export function firedRuleCount(run: FiredRulesInput): number {
   return firedRules(run).length;
+}
+
+/** What firedRuleTally reads of a run: firedRules' input plus the rules it expected. */
+export interface FiredTallyInput extends FiredRulesInput {
+  readonly detectionsExpected: readonly string[];
+}
+
+/**
+ * A run's fired and expected rule counts, and how the pill and the workbench say them
+ * (RP-F decision 33). `fired` is firedRuleCount; `expected` counts the distinct,
+ * trimmed, non-empty detectionsExpected. When fired exceeds expected (rules known
+ * only from outcomes, or fired rules nobody listed as expected), a fraction would read
+ * as more than all: `exceeds` is true and `words` is 'N fired, M expected', which
+ * every surface prints instead of 'N of M' or 'N/M'. Round 6 read a tile 'fired 2/1'
+ * beside a pill 'UNTESTED 2 of 1'. Otherwise `words` is null and each surface keeps
+ * its fraction.
+ */
+export interface FiredRuleTally {
+  readonly fired: number;
+  readonly expected: number;
+  readonly exceeds: boolean;
+  readonly words: string | null;
+}
+
+/** The fired and expected counts of a run, and the words for them when fired exceeds expected (RP-F decision 33). */
+export function firedRuleTally(run: FiredTallyInput): FiredRuleTally {
+  const fired = firedRuleCount(run);
+  const expected = new Set(
+    run.detectionsExpected.map(d => (typeof d === 'string' ? d.trim() : '')).filter(d => d !== ''),
+  ).size;
+  const exceeds = fired > expected;
+  return { fired, expected, exceeds, words: exceeds ? `${fired} fired, ${expected} expected` : null };
 }

@@ -5,7 +5,7 @@ import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
 import { ValidationPanelComponent } from './validation-panel.component';
 import { DataService } from '../../services/data.service';
-import { ValidationService } from '../../services/validation.service';
+import { ATTACK_DID_NOT_EXECUTE, ValidationService, statusFromInputs } from '../../services/validation.service';
 import { EventLoggingService } from '../../services/event-logging.service';
 import { AtomicService } from '../../services/atomic.service';
 import { SigmaService } from '../../services/sigma.service';
@@ -13,6 +13,8 @@ import { SiemQueryService } from '../../services/siem-query.service';
 import { LibraryService } from '../../services/library.service';
 import { TelemetryCoverageService } from '../../services/telemetry-coverage.service';
 import { makePostureStub, postureStubProvider } from '../../testing/posture-stub';
+import { PanelNavService } from '../../services/panel-nav.service';
+import { RecordRunRequestService } from '../../services/record-run-request.service';
 
 describe('ValidationPanelComponent', () => {
   let component: ValidationPanelComponent;
@@ -54,6 +56,8 @@ describe('ValidationPanelComponent', () => {
         }},
         // The summary header mounts the posture card (P2-07).
         postureStubProvider(makePostureStub(() => null)),
+        // "Record a run" (RP-F decision 31) opens this panel through PanelNavService.
+        { provide: PanelNavService, useValue: { open: jasmine.createSpy('open') } },
       ],
     });
     fixture = TestBed.createComponent(ValidationPanelComponent);
@@ -217,8 +221,9 @@ describe('ValidationPanelComponent', () => {
         const card = [...el.querySelectorAll('.vp-tcard')].find(c => c.querySelector('.vp-tid')?.textContent?.trim() === attackId);
         return squash(card?.querySelector('.vp-tcard-runline')?.textContent);
       };
-      expect(runline('T1113')).toBe('Last run date unknown · fired 1/0');
-      expect(runline('T1005')).toBe('Last run 10/21/26, 7:49 PM · fired 1/0');
+      // RP-F decision 33: more rules fired than expected reads 'N fired, M expected', never a fraction.
+      expect(runline('T1113')).toBe('Last run date unknown · 1 fired, 0 expected');
+      expect(runline('T1005')).toBe('Last run 10/21/26, 7:49 PM · 1 fired, 0 expected');
       expect(component.runWhen('yesterday')).toBe('date unknown');
       expect(component.runWhen('')).toBe('date unknown');
       expect(component.runWhen('2026-02-30')).toBe('date unknown');
@@ -231,13 +236,46 @@ describe('ValidationPanelComponent', () => {
       const rows = [...el.querySelectorAll('tbody tr')].map(r => [...r.querySelectorAll('td')].map(td => squash(td.textContent)));
       const y = rows.find(r => r[1].startsWith('T1113'))!;
       expect(y[0]).toBe('date unknown');
-      expect(y[3]).toBe('1/0');
+      expect(y[3]).toBe('1 fired, 0 expected');
       component.setTab('evidence');
       rerender();
       const whens = [...el.querySelectorAll('.vp-evidence-when')].map(w => squash(w.textContent));
       expect(whens).toContain('date unknown');
       expect(whens).not.toContain('');
     });
+  });
+
+  it("firedWords: 'fired N/M' within expected, 'N fired, M expected' beyond it (RP-F decision 33)", () => {
+    const run = (expected: string[], fired: string[]) => ({ detectionsExpected: expected, detectionsFired: fired }) as never;
+    expect(component.firedWords(run(['a', 'b'], ['a']), 'fired ')).toBe('fired 1/2');
+    expect(component.firedWords(run(['a'], ['a']))).toBe('1/1');
+    expect(component.firedWords(run(['a'], ['a', 'b']), 'fired ')).toBe('2 fired, 1 expected');
+  });
+
+  // RP-F decision 34: the Run History sorts through the one latest-run comparator
+  // (decision 24): by instant, newest first; on the same instant the run that proves
+  // less first; 'date unknown' rows last. It sorted runDate strings, so an offset
+  // timestamp or a date-only day sat in the wrong place and 'yesterday' sorted first.
+  it('the Run History sorts newest first by instant through the shared comparator, date unknown last', () => {
+    const run = (id: string, runDate: string, status = 'passed') => ({
+      id, techniqueId: 'T1005', techniqueName: 'Data from Local System', runDate, operator: '', status,
+      detectionsExpected: [], detectionsFired: [], outcomes: [], telemetryRequired: [], telemetryAvailable: [],
+      atomicTestId: '', atomicCommand: '', attackResult: 'executed', responsePlaybook: '', responseActions: [], evidenceLinks: [], notes: '',
+    });
+    const all = [
+      run('yesterday', 'yesterday'),
+      run('offset', '2026-10-21T01:00:00+05:00'),          // 2026-10-20T20:00Z
+      run('utc', '2026-10-20T21:00:00.000Z'),
+      run('tie-pass', '2026-10-19T10:00:00.000Z', 'passed'),
+      run('tie-fail', '2026-10-19T10:00:00.000Z', 'failed'),
+      run('blank', ''),
+    ];
+    (TestBed.inject(ValidationService) as unknown as { all: unknown[] }).all = all;
+    expect(component.allRuns.map(r => r.id)).toEqual(['utc', 'offset', 'tie-fail', 'tie-pass', 'blank', 'yesterday']);
+    component.setTab('runs');
+    rerender();
+    const whens = [...(fixture.nativeElement as HTMLElement).querySelectorAll('tbody tr td:first-child')].map(td => (td.textContent ?? '').trim());
+    expect(whens.slice(-2)).toEqual(['date unknown', 'date unknown']);
   });
 
   it('names v1 runs the copy-forward could not carry, and is silent when there are none', () => {
@@ -249,6 +287,71 @@ describe('ValidationPanelComponent', () => {
     rerender();
     expect(el.querySelector('.vp-migration-msg')!.textContent).toContain('row 2: missing techniqueId');
     expect(component.migrationNotice).toContain('attacknavi.validation-runs.v1');
+  });
+
+  // RP-F decision 31: the evidence card's "Record a run" on a range telemetry partial
+  // opens Detect > Validation with the technique preselected: the Techniques tab,
+  // filtered to it, and the Record Run form open on it.
+  describe('"Record a run" from the evidence card (RP-F decision 31)', () => {
+    const tech = (attackId: string, isSubtechnique = false) =>
+      ({ id: `attack-pattern--${attackId}`, attackId, name: `Name ${attackId}`, isSubtechnique, tacticShortnames: ['initial-access'] });
+    const domain$ = () => (TestBed.inject(DataService) as unknown as { domain$: BehaviorSubject<unknown> }).domain$;
+
+    it('a request made before the domain loads opens the form once the domain is there, even for a technique with no card', () => {
+      const requests = TestBed.inject(RecordRunRequestService);
+      requests.request('T1200');
+      expect(TestBed.inject(PanelNavService).open).toHaveBeenCalledOnceWith('validation');
+      expect(component.showRecordModal).toBeFalse();
+      domain$().next({ techniques: [tech('T1059'), tech('T1200')] });
+      expect(component.showRecordModal).toBeTrue();
+      expect(component.selectedTechnique?.attackId).toBe('T1200');
+      expect(component.currentTab).toBe('techniques');
+      expect(component.searchText).toBe('T1200');
+      expect(requests.take()).toBeNull();   // consumed once
+    });
+
+    it('a request while the panel is on screen opens the form at once, for a sub-technique too', () => {
+      domain$().next({ techniques: [tech('T1003'), tech('T1003.001', true)] });
+      TestBed.inject(RecordRunRequestService).request('T1003.001');
+      expect(component.showRecordModal).toBeTrue();
+      expect(component.selectedTechnique?.attackId).toBe('T1003.001');
+      const el: HTMLElement = fixture.nativeElement;
+      rerender();
+      expect(el.querySelector('.vp-modal-head h3')?.textContent).toContain('T1003.001');
+    });
+
+    it('an id the loaded domain does not carry is dropped', () => {
+      domain$().next({ techniques: [tech('T1059')] });
+      TestBed.inject(RecordRunRequestService).request('T9999');
+      expect(component.showRecordModal).toBeFalse();
+      expect(TestBed.inject(RecordRunRequestService).take()).toBeNull();
+    });
+  });
+
+  // RP-F decision 32: every outcome the Record Run modal offers is classified, and the
+  // ones that mean the attack did not execute store untested whatever rules are ticked.
+  it('the Record Run outcomes: Failed prerequisite and Errored store untested with every rule ticked; Executed and Blocked do not', () => {
+    (TestBed.inject(DataService) as unknown as { domain$: BehaviorSubject<unknown> }).domain$
+      .next({ techniques: [{ id: 'attack-pattern--T1200', attackId: 'T1200', name: 'Hardware Additions', isSubtechnique: false, tacticShortnames: [] }] });
+    TestBed.inject(RecordRunRequestService).request('T1200');
+    rerender();
+    const options = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.vp-modal select option')]
+      .map(o => [(o as HTMLOptionElement).value, (o.textContent ?? '').trim()]);
+    expect(options).toEqual([
+      ['executed', 'Executed'], ['failed-prereq', 'Failed prerequisite'], ['blocked', 'Blocked by control'], ['errored', 'Errored'],
+    ]);
+    const ticked = { telemetryRequired: [], telemetryAvailable: [], detectionsExpected: ['sigma:1'], detectionsFired: ['sigma:1'] };
+    const stored = Object.fromEntries(options.map(([value]) =>
+      [value, statusFromInputs({ ...ticked, attackResult: value as keyof typeof ATTACK_DID_NOT_EXECUTE })]));
+    expect(stored).toEqual({ executed: 'passed', 'failed-prereq': 'untested', blocked: 'passed', errored: 'untested' });
+    // saveRun hands the chosen outcome to record(), which computes the status from it.
+    component.formAttackResult = 'failed-prereq';
+    component.formDetectionsExpected = ['sigma:1'];
+    component.formDetectionsFired = { 'sigma:1': true };
+    component.saveRun();
+    expect(TestBed.inject(ValidationService).record).toHaveBeenCalledWith(jasmine.objectContaining({
+      attackResult: 'failed-prereq', detectionsFired: ['sigma:1'],
+    }));
   });
 
   it('cancelRecord closes the modal and clears selectedTechnique', () => {

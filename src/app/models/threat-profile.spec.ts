@@ -160,6 +160,22 @@ describe('threat-profile model', () => {
       expect(resolveProfile({ kind: 'groups', ids: ['G0001'] }, d).groupIds).toEqual(['g-a']);
     });
 
+    // RP-F decision 34: unresolved ATT&CK-shaped ids are one id in any case. Round 6
+    // read ['g9999', 'G9999', 'G0007'] as '1 of 3 ids resolved'.
+    it("splitStoredGroups names an unresolved ATT&CK-shaped id once in any case: ['g9999','G9999','G0007'] reads '1 of 2 ids resolved'", () => {
+      const d = emptyDomain({ groups: [group('g-apt28', 'G0007')] });
+      const split = splitStoredGroups(['g9999', 'G9999', 'G0007'], d);
+      expect(split.present.map((g) => g.id)).toEqual(['g-apt28']);
+      expect(split.unresolvedIds).toEqual(['g9999']);   // the spelling stored first
+      const notice = profileDomainNotice({
+        domain: 'enterprise', present: split.present.map((g) => ({ id: g.id, name: 'APT28' })), absent: [], unresolved: split.unresolvedIds,
+      });
+      expect(notice).toBe('1 of 2 ids resolved; 1 of 1 group present in Enterprise: APT28; g9999: unknown or withdrawn group id');
+      // Sub-technique-shaped and campaign ids fold too; a name hint or STIX-like id keeps its exact spelling.
+      expect(splitStoredGroups(['c0099', 'C0099', 'Fancy Bear', 'fancy bear', 'intrusion-set--X', 'intrusion-set--x'], d).unresolvedIds)
+        .toEqual(['c0099', 'Fancy Bear', 'fancy bear', 'intrusion-set--X', 'intrusion-set--x']);
+    });
+
     it('findStoredGroup reads the one index by STIX id or ATT&CK id in any case (RP-F decision 13)', () => {
       const index = new Map<string, KnownGroup>();
       indexGroups(index, [group('g-a', 'G0001')]);

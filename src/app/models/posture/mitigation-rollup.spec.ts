@@ -47,6 +47,15 @@ describe('rollupMitigations (D16 breadth guard)', () => {
     expect(marks.every(m => m.via === 'M1038')).toBeTrue();
   });
 
+  // RP-F decision 31: the partial mark carries its cause where it is produced.
+  it('a partial mark carries partialCause breadth; a full or planned mark carries none', () => {
+    const partial = [...rollupMitigations(one('course-of-action--broad', 'implemented'), byMit, mitAttackId, 15).values()].flat();
+    expect(partial.every(m => m.partialCause === 'breadth')).toBeTrue();
+    const full = [...rollupMitigations(one('course-of-action--narrow', 'implemented'), byMit, mitAttackId, 15).values()].flat();
+    const planned = [...rollupMitigations(one('course-of-action--broad', 'planned'), byMit, mitAttackId, 15).values()].flat();
+    expect([...full, ...planned].some(m => 'partialCause' in m)).toBeFalse();
+  });
+
   it('threshold edges: 15 and 16 at threshold 15, 16 at threshold 16, and a custom 5', () => {
     const strengths = (mit: string, threshold: number) =>
       [...new Set([...rollupMitigations(one(mit, 'implemented'), byMit, mitAttackId, threshold).values()].flat().map(m => m.strength))];

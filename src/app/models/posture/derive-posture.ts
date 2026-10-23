@@ -30,13 +30,15 @@
 //      full mark is undated); then partial marks give 'partial'.
 //   4. Otherwise 'known' when there is a Known reference signal, else 'none'.
 // 'planned' and 'telemetry-observed' sub-states are set from the marks in every
-// branch. Every branch also lists the runs that yield no qualifying proof
-// record (runsWithoutProof, RP-F decision 9), newest first. CI fails unless this file has 100% branch coverage
-// (scripts/check-branch-coverage.mjs).
+// branch, and so are the partial causes (partialCauses, RP-F decision 31: each
+// partial mark's own partialCause, set by its producer, never inferred). Every
+// branch also lists the runs that yield no qualifying proof record
+// (runsWithoutProof, RP-F decision 9), newest first. CI fails unless this file
+// has 100% branch coverage (scripts/check-branch-coverage.mjs).
 import type { CoveredQualifier } from '../heatmap-modes';
 import type { TechniqueRefKey } from '../technique-ref';
 import type {
-  CoveredMark, PostureBucket, PostureInputs, PostureRules, PostureRung, PostureState, PostureSubState,
+  CoveredMark, PartialCause, PostureBucket, PostureInputs, PostureRules, PostureRung, PostureState, PostureSubState,
   PostureTally, ProofRecord, ProofScope, RunSummary, RunVerdict, SupersededProof,
 } from './posture.types';
 import { runTime } from '../local-date';
@@ -195,6 +197,18 @@ function standingProof(
   return { proof, superseded: { latest, earlier: newest.record, earlierStatus }, laterRuns: newerThanRemover };
 }
 
+/**
+ * The causes of the partial marks (RP-F decision 31), sorted and unique: 'breadth'
+ * for a mark reached only through a mitigation or control broader than the D16
+ * threshold, 'telemetry' for a range telemetry-observed row. Read from the marks'
+ * own partialCause; a partial mark that names none adds nothing.
+ */
+function partialCausesOf(marks: readonly CoveredMark[]): PartialCause[] {
+  const causes = new Set<PartialCause>();
+  for (const m of marks) if (m.strength === 'partial' && m.partialCause) causes.add(m.partialCause);
+  return [...causes].sort();
+}
+
 function qualifiersOf(marks: readonly CoveredMark[]): CoveredQualifier[] {
   return QUALIFIER_ORDER.filter(q => marks.some(m => m.qualifier === q));
 }
@@ -225,6 +239,7 @@ export function derivePosture(ref: TechniqueRefKey, input: PostureInputs, rules:
     runsWithoutProof: runsWithoutProof(input.runs ?? [], proof),
     supersededProof: superseded,
     laterRuns,
+    partialCauses: partialCausesOf(input.covered),
   };
 
   // 1. Proof.

@@ -23,9 +23,11 @@ import { LibraryService } from '../../services/library.service';
 import { TelemetryCoverageService, TelemetrySourceRow } from '../../services/telemetry-coverage.service';
 import { Domain } from '../../models/domain';
 import { Technique } from '../../models/technique';
-import { firedRuleCount } from '../../models/posture/fired-rules';
+import { firedRuleCount, firedRuleTally } from '../../models/posture/fired-rules';
 import { runTime, validationDateTime } from '../../models/local-date';
+import { sortRunsNewestFirst, storedRunKey } from '../../models/posture/latest-run';
 import { PostureCardComponent } from '../posture-card/posture-card.component';
+import { RecordRunRequestService } from '../../services/record-run-request.service';
 
 /** Whether a status is a recorded outcome (counted out of "Untested (in scope)"). */
 const RECORDED_STATUS: Record<ValidationStatus, boolean> = {
@@ -64,6 +66,7 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
   private siemQueryService = inject(SiemQueryService);
   private libraryService = inject(LibraryService);
   private telemetryCoverage = inject(TelemetryCoverageService);
+  private recordRequests = inject(RecordRunRequestService);
   private cdr = inject(ChangeDetectorRef);
 
   // UI state
@@ -110,6 +113,11 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
       this.telemetryMatrix = this.telemetryCoverage.buildMatrix();
       this.cdr.markForCheck();
     }));
+
+    // RP-F decision 31: the evidence card's "Record a run" (a range telemetry partial).
+    this.subs.add(this.recordRequests.requests$.subscribe(id => {
+      if (id !== null) this.applyRecordRequest();
+    }));
   }
 
   ngOnDestroy(): void {
@@ -122,8 +130,27 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
     this.dataService.domain$.pipe(filter(Boolean), take(1)).subscribe(d => {
       this.domain = d;
       this.rebuildCards();
+      this.applyRecordRequest();
       this.cdr.markForCheck();
     });
+  }
+
+  /**
+   * Take a pending "Record a run" request (RP-F decision 31) once a domain is loaded:
+   * the Techniques tab, filtered to the technique, with the Record Run form open on
+   * it. A technique outside the listed cards (no validation input, or a
+   * sub-technique) gets a card of its own for the form. An id the loaded domain does
+   * not carry is dropped.
+   */
+  private applyRecordRequest(): void {
+    if (!this.domain) return;
+    const attackId = this.recordRequests.take();
+    if (attackId === null) return;
+    const tech = this.domain.techniques.find(t => t.attackId === attackId);
+    if (!tech) return;
+    this.currentTab = 'techniques';
+    this.searchText = attackId;
+    this.openRecordModal(this.techniqueCards.find(c => c.technique.id === tech.id) ?? this.cardFor(tech));
   }
 
   private rebuildCards(): void {
@@ -132,29 +159,32 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
     const cards: TechniqueValidationCard[] = [];
     for (const tech of this.domain.techniques) {
       if (tech.isSubtechnique) continue;
-      const telemetry = this.eventLogService.getLoggingConfig(tech.attackId);
-      const atomicCount = this.atomicService.getTestCount(tech.attackId);
-      const sigmaCount = this.sigmaService.getRuleCount(tech.attackId);
-      const siemCurated = this.siemQueryService.hasCuratedQueries(tech.attackId);
-      const hasInputs = telemetry.length > 0 || atomicCount > 0 || sigmaCount > 0 || siemCurated;
-      if (!hasInputs) continue;
-
-      const detections: string[] = [];
-      if (sigmaCount > 0) detections.push(`sigma:${sigmaCount}`);
-      if (siemCurated) detections.push('siem:curated');
-
-      cards.push({
-        technique: tech,
-        telemetryRequired: telemetry.map(t => `${t.source} (${t.eventId})`),
-        telemetryConfigCount: telemetry.length,
-        detectionsAvailable: detections,
-        atomicTestCount: atomicCount,
-        latestRun: this.validationService.latestFor(tech.attackId),
-        recorded: this.validationService.forTechnique(tech.attackId).some(r => RECORDED_STATUS[r.status]),
-        libraryAssetCount: this.libraryService.getAssetsForTactic(tech.tacticShortnames?.[0] ?? '').length,
-      });
+      const hasInputs = this.eventLogService.getLoggingConfig(tech.attackId).length > 0
+        || this.atomicService.getTestCount(tech.attackId) > 0
+        || this.sigmaService.getRuleCount(tech.attackId) > 0
+        || this.siemQueryService.hasCuratedQueries(tech.attackId);
+      if (hasInputs) cards.push(this.cardFor(tech));
     }
     this.techniqueCards = cards;
+  }
+
+  /** One technique's workbench card: its validation inputs and its latest run. */
+  private cardFor(tech: Technique): TechniqueValidationCard {
+    const telemetry = this.eventLogService.getLoggingConfig(tech.attackId);
+    const sigmaCount = this.sigmaService.getRuleCount(tech.attackId);
+    const detections: string[] = [];
+    if (sigmaCount > 0) detections.push(`sigma:${sigmaCount}`);
+    if (this.siemQueryService.hasCuratedQueries(tech.attackId)) detections.push('siem:curated');
+    return {
+      technique: tech,
+      telemetryRequired: telemetry.map(t => `${t.source} (${t.eventId})`),
+      telemetryConfigCount: telemetry.length,
+      detectionsAvailable: detections,
+      atomicTestCount: this.atomicService.getTestCount(tech.attackId),
+      latestRun: this.validationService.latestFor(tech.attackId),
+      recorded: this.validationService.forTechnique(tech.attackId).some(r => RECORDED_STATUS[r.status]),
+      libraryAssetCount: this.libraryService.getAssetsForTactic(tech.tacticShortnames?.[0] ?? '').length,
+    };
   }
 
   // ─── UI actions ───────────────────────────────────────────────────────────
@@ -381,6 +411,17 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * A run's fired rules beside its expected ones, through the shared helper the pill
+   * uses (firedRuleTally, RP-F decision 33): 'N/M', or 'N fired, M expected' when more
+   * rules fired than were expected (never a fraction then). `lead` prefixes the
+   * fraction only ('fired ' on the technique tile).
+   */
+  firedWords(run: ValidationRun, lead = ''): string {
+    const t = firedRuleTally(run);
+    return t.words ?? `${lead}${t.fired}/${t.expected}`;
+  }
+
+  /**
    * A run's date and time as the Validation pill prints it ('10/21/26, 7:49 PM'), or
    * 'date unknown' when the recorded value is not a date (RP-F decision 30d). The
    * DatePipe threw on such a value ('yesterday'), so the workbench tile's "Last run"
@@ -390,8 +431,14 @@ export class ValidationPanelComponent implements OnInit, OnDestroy {
     return runTime(date) === null ? RUN_DATE_UNKNOWN : validationDateTime(date);
   }
 
-  // Detections list and runs are useful in the runs/evidence tabs
+  /**
+   * Every run, newest first, for the Run History and Evidence tabs: sorted through the
+   * one latest-run comparator (RP-F decisions 24 and 34), the order the pill and the
+   * evidence card read. By instant, never by runDate string (an offset timestamp or a
+   * date-only day sorted wrongly as text); on the same instant the run that proves less
+   * first; a run whose date is unreadable ('date unknown') last.
+   */
   get allRuns(): ValidationRun[] {
-    return this.validationService.all.slice().sort((a, b) => b.runDate.localeCompare(a.runDate));
+    return sortRunsNewestFirst(this.validationService.all, storedRunKey);
   }
 }
