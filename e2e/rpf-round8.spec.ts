@@ -173,4 +173,23 @@ test.describe('RP-F round 8', () => {
     await expect(card.getByTestId('ev-why')).toContainText(words, { timeout: ROUTE_TIMEOUT });
     await expect(page.locator(`[data-tech-id="${STIX['T1106']}"] .cell`).first()).toHaveAttribute('aria-label', new RegExp(escape(words)));
   });
+
+  // Decision 41: the pill, the Proven block and the Covered block describe one run. Round 8
+  // (T1005) showed the untested deployed run on the pill and the partial run in the
+  // Proven block ("1 rule fired ... (status partial)").
+  test('[RP-F 41] T1005: the pill, the Proven block and the Covered block name the same run; the other run of the day is counted', async ({ page }) => {
+    await openWorkspace(page);
+    await importAll(page);
+    const { drawer: d, card } = await drawer(page, 'T1005', 'posture');
+    const pill = d.locator('app-validation-status-pill');
+    await expect(pill.locator('.vsp-status').first()).toHaveText('UNTESTED', { timeout: ROUTE_TIMEOUT });
+    await expect(pill.locator('.vsp-meta').first()).toHaveText(/^\s*0 of 1 expected rules fired\s*$/);
+    await expect(card.getByTestId('ev-proven-empty')).toHaveText(
+      'No proof: no rule fired in the range run on 10/21/26 (status untested); and 1 more run the same day: partial (1 rule fired); '
+      + 'a run is proof only when its status is passed.');
+    const marks = card.getByTestId('ev-covered').getByTestId('ev-mark');
+    await expect(marks).toHaveCount(1);
+    await expect(marks.first()).toContainText('deployed in the range via wazuh:207');
+    await expect(card).not.toContainText('telemetry observed in the range via wazuh:207');
+  });
 });

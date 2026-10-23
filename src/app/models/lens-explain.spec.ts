@@ -407,7 +407,7 @@ describe('lensExplain (P2-18): Why this colour', () => {
           proof: [fired('m1', at(18))],
         });
         expect(s.proof.length).toBe(0);
-        expect(provenNoneLine(s)).toBe('No proof: 1 rule fired in your run on 10/18/26 (status passed); a later run outranks it');
+        expect(provenNoneLine(s)).toBe('No proof: no rule fired in your run on 10/20/26 (status failed); earlier, 1 rule fired in your run on 10/18/26 (status passed); a later run outranks it');
         expect(lensExplain(def('proven'), { score: 0 }, { state: s })).not.toContain('No recorded detection');
         // A passed run whose date cannot be read is sorted oldest, flagged, and named with why it is not proof.
         expect(provenNoneLine(state({ runsWithoutProof: [{ ...run('y', 'passed', 'yesterday'), rulesFired: 1 }] })))

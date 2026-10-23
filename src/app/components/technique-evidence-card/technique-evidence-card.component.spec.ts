@@ -331,7 +331,7 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
       // RP-F decision 28 (round 4 repair, S27 T1059.001): the outranked pass fired a rule the pill
       // still shows, so the Proven block names it rather than "No recorded detection".
       expect(text(block(el, 'ev-proven')!.querySelector('[data-testid="ev-proven-empty"]')))
-        .toBe('No proof: 1 rule fired in your run on 10/18/26 (status passed); a later run outranks it.');
+        .toBe('No proof: no rule fired in your run on 10/20/26 (status failed); earlier, 1 rule fired in your run on 10/18/26 (status passed); a later run outranks it.');
       expect(text(el)).not.toContain('No recorded detection');
     });
 
