@@ -259,17 +259,29 @@ export function groupNameHints(ids: readonly string[], known: GroupIdIndex): Rec
  * in the loaded domain, e.g. "1 of 2 groups present in ICS: FIN7; APT29 has no ICS
  * use". Null when nothing is absent or unresolved (the surfaces then show what they
  * always did). It names groups and domains only, and each stored id that resolves to
- * no group as "<id>: unknown or withdrawn group id" (RP-F decision 18): "1 of 2 groups
- * present in Enterprise: APT29; G9999: unknown or withdrawn group id".
+ * no group as "<id>: unknown or withdrawn group id" (RP-F decision 18).
+ *
+ * An unresolved id is counted as an id, never as a group (RP-F decision 30c): when
+ * any stored id resolves to no group, the notice first says how many ids resolved,
+ * and "groups" counts the resolved ones only: "1 of 2 ids resolved; 1 of 1 group
+ * present in Enterprise: APT29; G9999: unknown or withdrawn group id". Round 5 read
+ * "1 of 2 groups present ..." with G9999 counted as a group.
  */
 export function profileDomainNotice(split: ProfileDomainGroups | null): string | null {
   const unresolved = split?.unresolved ?? [];
   if (!split || (split.absent.length === 0 && unresolved.length === 0)) return null;
   const where = ATTACK_DOMAIN_SHORT_LABEL[split.domain] ?? split.domain;
-  const total = split.present.length + split.absent.length + unresolved.length;
+  const groups = split.present.length + split.absent.length;
   const names = (refs: readonly ProfileGroupRef[]) => refs.map((r) => r.name).join(', ');
-  const present = split.present.length > 0 ? `: ${names(split.present)}` : '';
-  const parts = [`${split.present.length} of ${total} ${total === 1 ? 'group' : 'groups'} present in ${where}${present}`];
+  const parts: string[] = [];
+  if (unresolved.length > 0) {
+    const ids = groups + unresolved.length;
+    parts.push(`${groups} of ${ids} ${ids === 1 ? 'id' : 'ids'} resolved`);
+  }
+  if (groups > 0) {
+    const present = split.present.length > 0 ? `: ${names(split.present)}` : '';
+    parts.push(`${split.present.length} of ${groups} ${groups === 1 ? 'group' : 'groups'} present in ${where}${present}`);
+  }
   if (split.absent.length > 0) parts.push(`${names(split.absent)} ${split.absent.length === 1 ? 'has' : 'have'} no ${where} use`);
   // RP-F decision 18: an id that resolves to no group is never "absent from" a domain.
   for (const id of unresolved) parts.push(`${id}: ${UNRESOLVED_GROUP_WORDS}`);

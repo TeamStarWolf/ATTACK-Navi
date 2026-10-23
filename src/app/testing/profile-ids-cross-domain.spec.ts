@@ -59,12 +59,19 @@ function store(ids: string[], groupNames?: Record<string, string>): void {
   }));
 }
 
-/** The notice the profile must show: present names, absent names, unresolved ids (profileDomainNotice's sentence). */
+/**
+ * The notice the profile must show: present names, absent names, unresolved ids
+ * (profileDomainNotice's sentence). Unresolved ids are counted as ids, never as groups
+ * (RP-F decision 30c): "1 of 2 ids resolved; 1 of 1 group present in ...".
+ */
 function expectedNotice(d: 'enterprise' | 'ics' | 'mobile', present: string[], absent: string[], unresolved: string[]): string | null {
   if (absent.length === 0 && unresolved.length === 0) return null;
   const where = ATTACK_DOMAIN_SHORT_LABEL[d];
-  const total = present.length + absent.length + unresolved.length;
-  const parts = [`${present.length} of ${total} ${total === 1 ? 'group' : 'groups'} present in ${where}${present.length ? ': ' + present.join(', ') : ''}`];
+  const groups = present.length + absent.length;
+  const ids = groups + unresolved.length;
+  const parts: string[] = [];
+  if (unresolved.length) parts.push(`${groups} of ${ids} ${ids === 1 ? 'id' : 'ids'} resolved`);
+  if (groups) parts.push(`${present.length} of ${groups} ${groups === 1 ? 'group' : 'groups'} present in ${where}${present.length ? ': ' + present.join(', ') : ''}`);
   if (absent.length) parts.push(`${absent.join(', ')} ${absent.length === 1 ? 'has' : 'have'} no ${where} use`);
   for (const id of unresolved) parts.push(`${id}: ${UNRESOLVED_GROUP_WORDS}`);
   return parts.join('; ');
