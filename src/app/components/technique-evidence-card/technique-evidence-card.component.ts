@@ -28,8 +28,14 @@
 // swatch; the drawer, which is on the matrix, never offers it.
 //
 // The surface input ('drawer' or 'page') is the card's only drawer-versus-page
-// switch (technique page design 4.1 rule 2); the page's wide layout is a
-// container query on the page host's 'tpage' container, not a check of the host.
+// switch: it chooses the matrix offer above, and it sets the host class
+// 'ev-surface-drawer' that gives the card the drawer section container (the
+// stylesheet keys on that class, never on an ancestor). The page's wide layout is
+// a container query on the page host's 'tpage' container, not a check of the host.
+// The input is interim: design 4.1 rule 2 makes the TECHNIQUE_SURFACE injection
+// token the one host switch and says components take no host input. That token
+// arrives in PR 2 (design 4.14), and this input is replaced by TECHNIQUE_SURFACE
+// in PR 2.
 //
 // The Proven and Covered blocks render only when PostureService.ownerWords()
 // is true (§1.3), so a fresh profile shows Known and Threat only; their titles
@@ -231,10 +237,16 @@ function categoricalCell(def: Pick<HeatmapModeDef, 'value' | 'ramp' | 'project'>
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './technique-evidence-card.component.html',
   styleUrl: './technique-evidence-card.component.scss',
+  // The drawer section container (drawer primitives) keys on the surface, not on a
+  // '.sidebar-body' ancestor: the surface is the card's only host switch.
+  host: { '[class.ev-surface-drawer]': "surface() === 'drawer'" },
 })
 export class TechniqueEvidenceCardComponent {
   readonly technique = input.required<Technique>();
-  /** The host: 'drawer' (the matrix drawer, the default) or 'page' (the technique page). */
+  /**
+   * The host: 'drawer' (the matrix drawer, the default) or 'page' (the technique page).
+   * Interim: replaced by TECHNIQUE_SURFACE in PR 2 (design 4.1 rule 2, 4.14).
+   */
   readonly surface = input<EvidenceCardSurface>('drawer');
 
   private readonly posture = inject(PostureService);
@@ -387,9 +399,14 @@ export class TechniqueEvidenceCardComponent {
     };
   });
 
-  /** Retry on a failed D3FEND row: the data-health Retry (D3fendService.retryTechniqueApi) asks again. */
+  /**
+   * Retry on a failed D3FEND row, through the data-health Retry (SourceRetryService,
+   * design 4.3 and 4.4): its 'd3fend-technique-api' entry asks again for every
+   * technique whose live call failed, this one included. The loader records the
+   * outcome on the SourceRegistry, so a Retry that fails again reads failed again.
+   */
   retryD3fend(): void {
-    this.d3fend.retryTechniqueApi(this.technique().attackId);
+    this.sourceRetry.retry('d3fend-technique-api');
   }
 
   /** The Proven block: every qualifying proof record, best first. Empty while no owner words. */

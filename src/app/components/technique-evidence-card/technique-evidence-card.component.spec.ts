@@ -145,7 +145,7 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
   let d3fendLive: 'loading' | 'loaded' | 'failed' | null;
   let d3fendRetry: jasmine.Spy;
   let ctidRetry: jasmine.Spy;
-  /** SourceRetryService.retry: the KEV line's Retry goes through the data-health Retry. */
+  /** SourceRetryService.retry: the KEV line's and the D3FEND row's Retry go through the data-health Retry. */
   let sourceRetry: jasmine.Spy;
   let panelOpen: jasmine.Spy;
   /** The card's host (design 4.1 rule 2): the drawer unless a spec renders the page's card. */
@@ -865,7 +865,9 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
       expect(text(d3fendRow(el))).not.toMatch(/\b0\b/);
       expect(text(el.querySelector('[data-testid="ev-known-summary"]'))).toBe('mapped 3 of 5 reference families · D3FEND did not load');
       el.querySelector<HTMLButtonElement>('[data-testid="ev-d3fend-retry"]')!.click();
-      expect(d3fendRetry).toHaveBeenCalledOnceWith('T1078');
+      // Through the data-health Retry's 'd3fend-technique-api' entry, never a second path.
+      expect(sourceRetry).toHaveBeenCalledOnceWith('d3fend-technique-api');
+      expect(d3fendRetry).not.toHaveBeenCalled();
     });
 
     it('a technique nothing has asked about yet reads the count it has (the hosts prime it)', () => {
@@ -969,6 +971,15 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
         expect(el.querySelector('[data-testid="ev-score-on-matrix"]')).withContext(host).toBeNull();
         expect(el.querySelector<HTMLElement>('[data-testid="ev-swatch"]')!.style.backgroundColor).toBe(hexToRgb(stops[0].color));
         expect(text(el.querySelector('.ev-why-line'))).toContain(`Why this colour: ${stops[0].label}:`);
+        TestBed.resetTestingModule();
+      }
+    });
+
+    it('the drawer section container keys on the surface: the host class is set in the drawer only', () => {
+      for (const host of ['drawer', 'page'] as const) {
+        surface = host;
+        render(state(), false);
+        expect((fixture.nativeElement as HTMLElement).classList.contains('ev-surface-drawer')).withContext(host).toBe(host === 'drawer');
         TestBed.resetTestingModule();
       }
     });
