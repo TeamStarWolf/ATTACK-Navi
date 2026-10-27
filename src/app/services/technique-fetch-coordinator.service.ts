@@ -15,10 +15,13 @@
 // for one technique gets the one request's answer. A failed Atomic request is
 // recorded on the 'atomic-tests' source by AtomicService and is not kept, so
 // the next prime for that technique asks again, as the drawer did on every
-// selection before. The coordinator holds no data of its own and makes no
-// request at construction, so creating it moves no boot load.
+// selection before. atomicState tells that failure from "no tests" (AtomicService
+// answers an empty list for both): the drawer reads it to say "did not load ·
+// Retry" instead of an empty list. The D3FEND state is D3fendService.liveState.
+// The coordinator holds no data of its own and makes no request at construction,
+// so creating it moves no boot load.
 import { Injectable, inject } from '@angular/core';
-import { Observable, ReplaySubject, finalize } from 'rxjs';
+import { Observable, ReplaySubject, tap } from 'rxjs';
 import type { Technique } from '../models/technique';
 import { AtomicLiveTest, AtomicService } from './atomic.service';
 import { D3fendService } from './d3fend.service';
@@ -67,24 +70,25 @@ export class TechniqueFetchCoordinator {
     const shared = new ReplaySubject<AtomicLiveTest[]>(1);
     this.atomicLive.set(id, shared);
     this.atomicStates.set(id, 'loading');
+    // The state settles before the answer reaches a subscriber, so a subscriber reads
+    // 'loaded' or 'failed' in its own callback.
+    const settle = () => {
+      // AtomicService answers [] on a failure too; only a kept answer is one.
+      const answered = this.atomic.hasLiveAnswer(id);
+      this.atomicStates.set(id, answered ? 'loaded' : 'failed');
+      if (!answered) this.atomicLive.delete(id);
+    };
     this.atomic.fetchLiveTests(id, ATOMIC_LIVE_LIMIT).pipe(
-      finalize(() => {
-        // AtomicService answers [] on a failure too; only a kept answer is one.
-        const answered = this.atomic.hasLiveAnswer(id);
-        this.atomicStates.set(id, answered ? 'loaded' : 'failed');
-        if (!answered) this.atomicLive.delete(id);
-      }),
+      tap({ next: settle, error: settle }),
     ).subscribe(shared);
     return shared.asObservable();
   }
 
-  /** Where the technique's Atomic YAML stands; null when no one has asked for it. */
+  /**
+   * Where the technique's Atomic YAML stands; null when no one has asked for it.
+   * 'failed' until a later atomicTests call (the drawer's Retry) asks again.
+   */
   atomicState(attackId: string): AtomicFetchState | null {
     return this.atomicStates.get(attackId) ?? null;
-  }
-
-  /** True once prime has run for the technique this session. */
-  isPrimed(attackId: string): boolean {
-    return this.d3fendAsked.has(attackId);
   }
 }

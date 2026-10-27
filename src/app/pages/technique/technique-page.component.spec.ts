@@ -28,9 +28,10 @@ import { ThemeService } from '../../services/theme.service';
 import { AppComponent, isTechniquePageUrl } from '../../app.component';
 import { parseFixtureDomain, resetBrowserState } from '../../testing/lens-harness';
 
-@Component({ selector: 'app-technique-evidence-card', standalone: true, template: '<p class="stub-card">{{ technique().attackId }}</p>' })
+@Component({ selector: 'app-technique-evidence-card', standalone: true, template: '<p class="stub-card" [attr.data-surface]="surface()">{{ technique().attackId }}</p>' })
 class StubCardComponent {
   readonly technique = input.required<Technique>();
+  readonly surface = input<'drawer' | 'page'>('drawer');
 }
 
 @Component({ standalone: true, template: '' })
@@ -321,6 +322,22 @@ describe('TechniquePageComponent (P2-18)', () => {
     expect(section.getAttribute('aria-labelledby')).toBe('tp-evidence-h');
     expect(section.querySelector('.stub-card')).not.toBeNull();
     expect(el.querySelector('article')!.getAttribute('aria-labelledby')).toBe('tp-h1');
+    expect(section.querySelector('.stub-card')!.getAttribute('data-surface')).withContext('the card is told it is on the page').toBe('page');
+  });
+
+  // Technique page design 4.9: one main landmark, holding the technique article.
+  it('a main landmark holds the technique article, labelled by its h1', () => {
+    const el = render('enterprise', 'T1037');
+    expect(el.querySelectorAll('main, [role="main"]').length).toBe(1);
+    const article = el.querySelector('main > article.technique-page')!;
+    expect(article.getAttribute('aria-labelledby')).toBe('tp-h1');
+    expect(article.querySelector('h1#tp-h1')).not.toBeNull();
+  });
+
+  it('an unknown technique keeps the main landmark around its empty state', () => {
+    const el = render('enterprise', 'T9999');
+    expect(el.querySelectorAll('main').length).toBe(1);
+    expect(el.querySelector('main > article.technique-page [data-testid="technique-page-empty"] h1#tp-h1')).not.toBeNull();
   });
 });
 

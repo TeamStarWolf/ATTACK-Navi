@@ -12,9 +12,9 @@
       <span class="ev-why-label">Why this colour:</span>&ngsp;{{ why().text }}@if (why().swatch?.band) {&ngsp;<span class="ev-meta ev-band" data-testid="ev-band">({{ why().swatch?.band }})</span>}
     </p>&ngsp;
     <p class="ev-why-lens">Lens: {{ why().lens }}
-      @if (why().unscored) {
-        <!-- No score outside the matrix for this lens: no swatch; the matrix scores it. -->
-        &ngsp;<button type="button" class="ev-link-btn" data-testid="ev-score-on-matrix" (click)="openInMatrix()">This lens is scored on the matrix: open it there</button>
+      @if (why().offer; as offer) {
+        <!-- Page only: a scored lens with no score outside the matrix; no swatch, the matrix scores it (the drawer is on the matrix). -->
+        &ngsp;<button type="button" class="ev-link-btn" data-testid="ev-score-on-matrix" (click)="openInMatrix()">{{ offer }}</button>
       }
     </p>
   </div>
@@ -80,8 +80,8 @@
 
   <div class="ev-block" data-testid="ev-known">
     <h3 class="ev-title">Known: reference data</h3>
-    <p class="ev-summary" data-testid="ev-known-summary">mapped {{ known().mapped }} of {{ knownFamilies }} reference families{{ known().notApplicable }}</p>
-    <ul class="ev-list">
+    <p class="ev-summary" data-testid="ev-known-summary">mapped {{ known().mapped }} of {{ knownFamilies }} reference families{{ known().notApplicable }}{{ known().pending }}</p>
+    <ul class="ev-list ev-known-list">
       @for (r of known().rows; track r.family) {
         @if (r.na) {
           <!-- The family's sources have no data for this domain: not applicable, never 0. -->
@@ -89,6 +89,20 @@
             <span class="ev-family">{{ r.family }}</span>&ngsp;
             <span class="ev-count">n/a</span>&ngsp;
             <span class="ev-meta">{{ r.na }}</span>
+          </li>
+        } @else if (r.state === 'loading') {
+          <!-- The live call is on its way: loading, never the bundled seed's count (technique page design 4.4). -->
+          <li class="ev-known-row ev-pending" data-testid="ev-known-loading" aria-busy="true">
+            <span class="ev-family">{{ r.family }}</span>&ngsp;
+            <span class="ev-count" aria-hidden="true">…</span>&ngsp;
+            <span class="ev-meta ev-loading">loading the live mappings from d3fend.mitre.org…</span>
+          </li>
+        } @else if (r.state === 'failed') {
+          <!-- The live call failed: said so with Retry, never a 0 (technique page design 4.3, "D3FEND did not load · Retry"). -->
+          <li class="ev-known-row ev-na" data-testid="ev-known-failed">
+            <span class="ev-family">{{ r.family }}</span>&ngsp;
+            <span class="ev-count">n/a</span>&ngsp;
+            <span class="ev-meta">D3FEND did not load&ngsp;·&ngsp;<button type="button" class="ev-link-btn" data-testid="ev-d3fend-retry" (click)="retryD3fend()">Retry</button></span>
           </li>
         } @else {
           <li class="ev-known-row" [class.ev-zero]="r.count === 0">
@@ -105,7 +119,8 @@
     <h3 class="ev-title">Threat</h3>
     @if (threat().profileLabel !== null) {
       <p class="ev-summary" data-testid="ev-threat-profile">
-        Threat profile ({{ threat().profileLabel }}): used by {{ threat().profileActors.length }}@if (threat().profileActors.length > 0) {: {{ threat().profileActors.join(', ') }}}@if (threat().profileRollup > threat().profileActors.length) {; {{ threat().profileRollup }} counting its sub-techniques}
+        <!-- Each actor by ATT&CK id and name, linked (technique page design 4.3 L1): a group or campaign to its ATT&CK page in a new tab. -->
+        Threat profile ({{ threat().profileLabel }}): used by {{ threat().profileActors.length }}@if (threat().profileActors.length > 0) {:&ngsp;@for (a of threat().profileActors; track a.key; let last = $last) {@if (a.href) {<a class="ev-link-plain ev-actor" data-testid="ev-threat-actor" [href]="a.href" target="_blank" rel="noopener noreferrer" [attr.aria-label]="a.id + ' ' + a.name + ' on ATT&CK (opens in a new tab)'">{{ a.id }} {{ a.name }}<span class="ev-ext" aria-hidden="true">&nbsp;↗</span></a>} @else {<a class="ev-link-plain ev-actor" data-testid="ev-threat-actor" [routerLink]="a.routerLink" [title]="'Open the library layers'">{{ a.name }} ({{ a.id }})</a>}@if (!last) {, }}}@if (threat().profileRollup > threat().profileActors.length) {; {{ threat().profileRollup }} counting its sub-techniques}
       </p>
     }
     <p class="ev-summary">Used by {{ threat().bundleGroups }} groups in the loaded ATT&amp;CK bundle</p>
@@ -113,9 +128,24 @@
     <div class="ev-kev-region" aria-live="polite">
       @switch (kevLine().kind) {
         @case ('loaded') {
-          <p class="ev-summary" data-testid="ev-kev" data-kev-state="loaded">
-            KEV-linked CVEs:&ngsp;@if (kevLine().count > 0) {<a class="ev-link" routerLink="/exposure/cve">{{ kevLine().count }}</a>@if (kevLine().ids) { ({{ kevLine().ids }})}} @else {0 in the KEV catalogue}
-          </p>
+          <!-- Each listed CVE is its id and KEV vulnerability name, linked to its dossier (technique page design 4.3). -->
+          <div class="ev-kev-loaded" data-testid="ev-kev" data-kev-state="loaded">
+            <p class="ev-summary">
+              KEV-linked CVEs:&ngsp;@if (kevLine().count > 0) {<a class="ev-link" routerLink="/exposure/cve" data-testid="ev-kev-count" [attr.aria-label]="'KEV-linked CVEs: ' + kevLine().count">{{ kevLine().count }}</a>} @else {0 in the KEV catalogue}
+            </p>
+            @if (kevLine().cves.length > 0) {
+              <ul class="ev-list ev-kev-list">
+                @for (c of kevLine().cves; track c.id) {
+                  <li class="ev-kev-cve" data-testid="ev-kev-cve">
+                    <a class="ev-link ev-cve-id" routerLink="/exposure/dossier" [queryParams]="{ cve: c.id }" [title]="'Open the dossier for ' + c.id">{{ c.id }}</a>&ngsp;<span class="ev-cve-name">{{ c.name }}</span>
+                  </li>
+                }
+              </ul>
+              @if (kevLine().more > 0) {
+                <p class="ev-meta" data-testid="ev-kev-more">and {{ kevLine().more }} more:&ngsp;<a class="ev-link-plain" routerLink="/exposure/cve">every KEV-linked CVE in the CVE panel</a></p>
+              }
+            }
+          </div>
         }
         @case ('loading') {
           <p class="ev-summary ev-meta ev-loading" data-testid="ev-kev" data-kev-state="loading">{{ kevLine().text }}</p>

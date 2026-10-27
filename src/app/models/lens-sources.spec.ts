@@ -5,7 +5,7 @@
 // source has technique data for, so an ICS or Mobile technique reads "not
 // applicable in <domain>" for an Enterprise-only source instead of 0.
 import { HEATMAP_MODES } from './heatmap-modes';
-import { LENS_SOURCES, type LensSourceId, SOURCE_DOMAINS, notApplicableWords, sourceApplies } from './lens-sources';
+import { LENS_SOURCES, type LensSourceId, SOURCE_DOMAINS, notApplicableWords, sourceApplies, sourceDomainOf } from './lens-sources';
 
 describe('SOURCE_DOMAINS', () => {
   it('names the domains of every source in the inventory', () => {
@@ -40,5 +40,15 @@ describe('SOURCE_DOMAINS', () => {
     expect(notApplicableWords(['sigmahq', 'car'], 'enterprise')).toBeNull();
     expect(notApplicableWords(['attack-bundle', 'sigmahq'], 'ics')).withContext('one source applies').toBeNull();
     expect(notApplicableWords([], 'ics')).toBeNull();
+  });
+
+  it('sourceDomainOf: an F3 technique with an Enterprise id shares Enterprise data; fraud-native, ICS and Mobile techniques keep their domain', () => {
+    expect(sourceDomainOf('f3', 'T1056')).toBe('enterprise');
+    expect(sourceDomainOf('f3', 'T1110.003')).toBe('enterprise');
+    expect(sourceDomainOf('f3', 'F1008')).toBe('f3');
+    expect(sourceDomainOf('ics', 'T0883')).toBe('ics');
+    expect(sourceDomainOf('mobile', 'T1404')).toBe('mobile');
+    expect(sourceDomainOf('enterprise', 'T1037')).toBe('enterprise');
+    expect(notApplicableWords(['sigmahq'], sourceDomainOf('f3', 'T1056'))).toBeNull();
   });
 });

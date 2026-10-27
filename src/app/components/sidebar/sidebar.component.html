@@ -927,6 +927,12 @@
             @if (!isSectionCollapsed('atomic')) {
               @if (atomicFetching) {
                 <p class="sb-text atomic-live-hint">Loading tests from Atomic Red Team…</p>
+              } @else if (atomicLiveFailed) {
+                <!-- The live YAML request failed: said so with Retry, never an empty list (technique page design 4.3). -->
+                <p class="sb-text atomic-live-hint" data-testid="atomic-live-failed">The Atomic Red Team test list did not load from raw.githubusercontent.com.</p>
+                <div class="sb-actions">
+                  <button type="button" class="sb-action atomic-live-retry" data-testid="atomic-live-retry" (click)="retryAtomicLive()">Retry</button>
+                </div>
               } @else if (atomicLiveTests.length > 0) {
                 <div class="sb-list">
                   @for (test of atomicLiveTests; track test.guid || test.name; let i = $index) {

@@ -76,10 +76,11 @@ describe('TechniqueFetchCoordinator', () => {
     const art = atomicRequests('T1037');
     expect(d3.length).withContext('one D3FEND live call').toBe(1);
     expect(art.length).withContext('one Atomic YAML request').toBe(1);
-    expect(coordinator.isPrimed('T1037')).toBeTrue();
+    expect(d3fend.liveState('T1037')).toBe('loading');
     expect(coordinator.atomicState('T1037')).toBe('loading');
     d3[0].flush(d3fendAnswer(['Process Analysis', 'File Analysis']));
     art[0].flush(atomicYaml('T1037', 2));
+    expect(d3fend.liveState('T1037')).toBe('loaded');
     expect(coordinator.atomicState('T1037')).toBe('loaded');
     // Primed again after both answered: nothing new is asked.
     coordinator.prime({ attackId: 'T1037' });
@@ -94,10 +95,27 @@ describe('TechniqueFetchCoordinator', () => {
       .toEqual(['Process Analysis', 'File Analysis', 'Script Execution Analysis']);
   });
 
-  it('a sub-technique also asks for its parent, as the drawer did', () => {
+  it('a sub-technique also asks for its parent, as the drawer did, and loads once both answered', () => {
+    expect(d3fend.liveState('T1037.001')).withContext('nothing asked yet').toBeNull();
     coordinator.prime({ attackId: 'T1037.001' });
-    expect(d3fendRequests('T1037.001').length).toBe(1);
-    expect(d3fendRequests('T1037').length).toBe(1);
+    const sub = d3fendRequests('T1037.001');
+    const parent = d3fendRequests('T1037');
+    expect(sub.length).toBe(1);
+    expect(parent.length).toBe(1);
+    sub[0].flush(d3fendAnswer([]));
+    expect(d3fend.liveState('T1037.001')).withContext('the parent is still on its way').toBe('loading');
+    parent[0].flush(d3fendAnswer(['Process Analysis']));
+    expect(d3fend.liveState('T1037.001')).toBe('loaded');
+  });
+
+  it('the live count is merged before the source reads loaded, so a view re-reading on the record sees it', () => {
+    const seen: number[] = [];
+    sources.records$.subscribe(() => {
+      if (sources.get('d3fend-technique-api').status === 'loaded') seen.push(d3fend.getCountermeasures('T1037').length);
+    });
+    coordinator.prime({ attackId: 'T1037' });
+    d3fendRequests('T1037')[0].flush(d3fendAnswer(['Process Analysis', 'File Analysis']));
+    expect(seen).toEqual([2]);
   });
 
   it('every subscriber for one technique shares the one Atomic answer, replayed to a late subscriber', () => {
@@ -124,8 +142,10 @@ describe('TechniqueFetchCoordinator', () => {
   });
 
   it('a failed Atomic request is reported as failed and asked again by the next prime', () => {
-    coordinator.prime({ attackId: 'T1003' });
+    let inCallback: string | null = null;
+    coordinator.atomicTests({ attackId: 'T1003' }).subscribe(() => (inCallback = coordinator.atomicState('T1003')));
     atomicRequests('T1003')[0].flush('boom', { status: 503, statusText: 'Service Unavailable' });
+    expect(inCallback as string | null).withContext('settled before the answer reaches a subscriber (the drawer reads it there)').toBe('failed');
     expect(coordinator.atomicState('T1003')).toBe('failed');
     expect(sources.get('atomic-tests').status).toBe('failed');
     coordinator.prime({ attackId: 'T1003' });
@@ -136,7 +156,12 @@ describe('TechniqueFetchCoordinator', () => {
     coordinator.prime({ attackId: 'T1037' });
     d3fendRequests('T1037')[0].flush('rate limited', { status: 429, statusText: 'Too Many Requests' });
     expect(sources.get('d3fend-technique-api').status).toBe('failed');
+    expect(d3fend.liveState('T1037')).toBe('failed');
     coordinator.prime({ attackId: 'T1037' });
     expect(d3fendRequests('T1037').length).withContext('the data-health Retry refetches it, not a prime').toBe(0);
+    d3fend.retryTechniqueApi('T1037');
+    expect(d3fend.liveState('T1037')).toBe('loading');
+    d3fendRequests('T1037')[0].flush(d3fendAnswer(['Process Analysis']));
+    expect(d3fend.liveState('T1037')).toBe('loaded');
   });
 });

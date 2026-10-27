@@ -155,7 +155,10 @@ export function lensSourceVintage(id: LensSourceId, bundle: LoadedBundleInfo): s
 // zero, it is not applicable. The evidence card and the technique sections
 // read this table to say "not applicable in <domain>" instead of printing 0.
 // The heatmap lenses state their own domains (HeatmapModeDef.domains); the
-// spec checks that no lens claims a domain one of its sources lacks.
+// spec checks that no lens claims a domain one of its sources lacks. A view
+// asks per technique (sourceDomainOf): an F3 technique with an Enterprise id
+// shares Enterprise data, so only ICS, Mobile and fraud-native F3 techniques
+// read "not applicable".
 const ALL_DOMAINS: readonly AttackDomain[] = ['enterprise', 'ics', 'mobile', 'f3'];
 const ALL_ATTACK_DOMAINS: readonly AttackDomain[] = ['enterprise', 'ics', 'mobile'];
 const ENTERPRISE_ONLY: readonly AttackDomain[] = ['enterprise'];
@@ -190,6 +193,17 @@ export const SOURCE_DOMAINS: Readonly<Record<LensSourceId, readonly AttackDomain
   'project-authored': ALL_DOMAINS,
   'workspace-local': ALL_DOMAINS,
 };
+
+/**
+ * The domain whose source data a technique reads, for SOURCE_DOMAINS. A CTID F3
+ * technique with a T-prefixed id (T1056, T1110: the CTID isAttack flag) is an
+ * Enterprise ATT&CK technique F3 shares, so the Enterprise sources, which count
+ * by ATT&CK id, have its data; it reads 'enterprise'. A fraud-native F-prefixed
+ * F3 technique, and every ICS and Mobile technique, reads its own domain.
+ */
+export function sourceDomainOf(domain: AttackDomain, attackId: string): AttackDomain {
+  return domain === 'f3' && /^T\d{4}(\.\d{3})?$/.test(attackId) ? 'enterprise' : domain;
+}
 
 /** True when `id` has technique data for `domain`. */
 export function sourceApplies(id: LensSourceId, domain: AttackDomain): boolean {
