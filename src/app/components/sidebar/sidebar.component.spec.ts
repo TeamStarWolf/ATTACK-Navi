@@ -390,3 +390,59 @@ describe('SidebarComponent: the CTID mapping arriving after the selection', () =
     expect(fixture.componentInstance.completenessScore).toBe(late.completeness);
   });
 });
+
+// The Atomic Red Team section through the one fetch coordinator (technique page
+// design 4.3 and 4.4, PR 1): a failed live YAML request reads "did not load" with
+// Retry, never an empty list, and Retry asks again.
+describe('SidebarComponent: Atomic live tests (failed reads failed, with Retry)', () => {
+  const yamlUrl = (id: string) => `https://raw.githubusercontent.com/redcanaryco/atomic-red-team/master/atomics/${id}/${id}.yaml`;
+  let fixture: ComponentFixture<SidebarComponent>;
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    resetBrowserState();
+    TestBed.configureTestingModule({
+      imports: [SidebarComponent],
+      providers: [provideHttpClient(withXhr()), provideHttpClientTesting(), provideRouter([]), provideLocationMocks()],
+    });
+    (TestBed.inject(DataService) as unknown as { domainSubject: { next(d: Domain): void } }).domainSubject.next(parseFixtureDomain());
+    http = TestBed.inject(HttpTestingController);
+    fixture = TestBed.createComponent(SidebarComponent);
+    fixture.detectChanges();
+  });
+
+  afterEach(() => resetBrowserState());
+
+  const text = (el: Element | null) => (el?.textContent ?? '').replace(/\s+/g, ' ').trim();
+
+  it('a failed YAML request reads "did not load" with Retry; Retry asks again and lists the tests', () => {
+    const t = parseFixtureDomain().techniques.find(x => x.attackId === 'T1082')!;
+    TestBed.inject(FilterService).selectTechnique(t);
+    fixture.detectChanges();
+    const c = fixture.componentInstance;
+    // The section renders for a technique the Atomic index counts; the fixture index is empty.
+    c.atomicLiveCount = 3;
+    if (c.isSectionCollapsed('atomic')) c.toggleSection('atomic');
+    expect(c.atomicFetching).toBeTrue();
+    http.expectOne(yamlUrl('T1082')).flush('boom', { status: 503, statusText: 'Service Unavailable' });
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    expect(c.atomicLiveFailed).toBeTrue();
+    expect(text(host.querySelector('[data-testid="atomic-live-failed"]')))
+      .toBe('The Atomic Red Team test list did not load from raw.githubusercontent.com.');
+    expect(host.querySelector('.atomic-item')).toBeNull();
+
+    host.querySelector<HTMLButtonElement>('[data-testid="atomic-live-retry"]')!.click();
+    fixture.detectChanges();
+    expect(host.querySelector('[data-testid="atomic-live-failed"]')).withContext('loading again').toBeNull();
+    http.expectOne(yamlUrl('T1082')).flush([
+      'attack_technique: T1082', 'display_name: System Information Discovery', 'atomic_tests:',
+      '- name: System info', '  auto_generated_guid: 00000000-0000-0000-0000-000000000001', '  description: A test.',
+      '  supported_platforms:', '  - windows', '  executor:', '    name: command_prompt', '    command: systeminfo',
+    ].join('\n'));
+    fixture.detectChanges();
+    expect(c.atomicLiveFailed).toBeFalse();
+    expect(host.querySelector('[data-testid="atomic-live-failed"]')).toBeNull();
+    expect(text(host.querySelector('.atomic-item .atomic-name'))).toBe('System info');
+  });
+});

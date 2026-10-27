@@ -7,28 +7,35 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { type EnvironmentProviders, type Provider, WritableSignal, signal } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ValidationStatusPillComponent } from '../validation-status-pill/validation-status-pill.component';
 import { ValidationService } from '../../services/validation.service';
 import { BehaviorSubject, of } from 'rxjs';
-import { TechniqueEvidenceCardComponent } from './technique-evidence-card.component';
+import { EVIDENCE_CARD_IDLE, TechniqueEvidenceCardComponent, legacySwatch } from './technique-evidence-card.component';
+import { PanelNavService } from '../../services/panel-nav.service';
+import { SAFE_SEQ } from '../../models/safe-palette';
 import type { Technique } from '../../models/technique';
 import type { Domain } from '../../models/domain';
 import type { CoveredMark, PostureState, ProofRecord, RunSummary } from '../../models/posture/posture.types';
 import { DEFAULT_POSTURE_RULES, derivePosture } from '../../models/posture/derive-posture';
 import { POSTURE_TODAY } from '../../models/posture/posture-today';
 import { heatmapModeDef } from '../../models/heatmap-modes';
-import { DataService } from '../../services/data.service';
+import { DataService, type AttackDomain } from '../../services/data.service';
 import { FilterService, type HeatmapMode } from '../../services/filter.service';
 import { PostureService } from '../../services/posture.service';
 import { EnrichmentService } from '../../services/enrichment.service';
 import { MatrixControlService } from '../../services/matrix-control.service';
 import { ThreatProfileService } from '../../services/threat-profile.service';
 import { CveService } from '../../services/cve.service';
+import { D3fendService, d3fendTechniqueApiUrl } from '../../services/d3fend.service';
+import type { KevEntry } from '../../models/cve';
 import { AttackCveService } from '../../services/attack-cve.service';
 import { SettingsService } from '../../services/settings.service';
 import { TechniqueMarksService } from '../../services/technique-marks.service';
 import { SourceRegistryService } from '../../services/source-registry.service';
 import { RecordRunRequestService } from '../../services/record-run-request.service';
+import { SourceRetryService } from '../../services/source-retry.service';
 import { lylatRowsToRuns, validateLylatExport } from '../../contracts/lylat-validated-detections';
 import { runInputs, runInputsFor } from '../../services/posture-adapters';
 import { rpf8Runs } from '../../testing/rpf8-shapes';
@@ -40,8 +47,12 @@ const TECH = {
 } as unknown as Technique;
 const OTHER = { ...TECH, id: 'attack-pattern--t1003', attackId: 'T1003', name: 'OS Credential Dumping' } as unknown as Technique;
 
+const group = (id: string, attackId: string, name: string) =>
+  ({ id: `intrusion-set--${id}`, attackId, name, url: `https://attack.mitre.org/groups/${attackId}` });
 const DOMAIN = {
   name: 'Enterprise ATT&CK', attackVersion: '19.2', techniques: [TECH, OTHER],
+  groups: [group('apt28', 'G0007', 'APT28'), group('apt29', 'G0016', 'APT29'), group('fin7', 'G0046', 'FIN7')],
+  campaigns: [{ id: 'campaign--c0024', attackId: 'C0024', name: 'SolarWinds Compromise', url: 'https://attack.mitre.org/campaigns/C0024' }],
   groupsByTechnique: new Map([[TECH.id, [{}, {}, {}]], [OTHER.id, [{}, {}, {}, {}, {}, {}]]]),
   softwareByTechnique: new Map(), campaignsByTechnique: new Map(),
 } as unknown as Domain;
@@ -123,12 +134,45 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
   let profileActors: string[];
   /** The profile's roll-up over sub-techniques (usedBy); null reads as the direct uses. */
   let profileRollup: string[] | null;
+  /** The ATT&CK domain on screen (technique page design PR 1: not applicable outside Enterprise). */
+  let domainId: AttackDomain;
+  /** The CTID CVE-to-technique mappings have loaded (the KEV count waits for them). */
+  let cvesLoaded: BehaviorSubject<boolean>;
+  /** The CVE ids the mocked KEV catalogue lists. */
+  let kevSet: Set<string>;
+  /** The mocked KEV catalogue's entries (the Threat block lists each CVE by id and name). */
+  let kevEntries: Record<string, Partial<KevEntry>>;
+  let loadKev: jasmine.Spy;
+  /** Where the technique's live D3FEND call stands (D3fendService.liveState). */
+  let d3fendLive: 'loading' | 'loaded' | 'failed' | null;
+  let d3fendRetry: jasmine.Spy;
+  let ctidRetry: jasmine.Spy;
+  /** SourceRetryService.retry: the KEV line's and the D3FEND row's Retry go through the data-health Retry. */
+  let sourceRetry: jasmine.Spy;
+  let panelOpen: jasmine.Spy;
+  /** The card's host (design 4.1 rule 2): the drawer unless a spec renders the page's card. */
+  let surface: 'drawer' | 'page';
+  /** The idle tasks the card scheduled, run by the spec (EVIDENCE_CARD_IDLE). */
+  let idleTasks: Array<() => void>;
+  let settingsNow: Record<string, unknown>;
   beforeEach(() => {
     domainNotice = signal<string | null>(null);
     profileLabel = 'Top 20 groups by prevalence';
     profileActors = ['APT28', 'APT29'];
     profileRollup = null;
     techInput = TECH;
+    domainId = 'enterprise';
+    kevSet = new Set(['CVE-2024-3400']);
+    kevEntries = {
+      'CVE-2024-3400': {
+        cveID: 'CVE-2024-3400', vendorProject: 'Palo Alto Networks', product: 'PAN-OS',
+        vulnerabilityName: 'Palo Alto Networks PAN-OS Command Injection Vulnerability',
+      },
+    };
+    d3fendLive = 'loaded';
+    surface = 'drawer';
+    idleTasks = [];
+    settingsNow = {};
   });
 
   function render(s: PostureState, ownerWords: boolean, mode: HeatmapMode = 'frequency', extra: (Provider | EnvironmentProviders)[] = []): HTMLElement {
@@ -136,9 +180,19 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
     confirm = jasmine.createSpy('confirm').and.returnValue(true);
     recordRequest = jasmine.createSpy('request');
     kevLoaded = new BehaviorSubject(true);
+    cvesLoaded = new BehaviorSubject(true);
+    loadKev = jasmine.createSpy('loadKev');
+    d3fendRetry = jasmine.createSpy('retryTechniqueApi');
+    ctidRetry = jasmine.createSpy('retry');
+    sourceRetry = jasmine.createSpy('sourceRetry').and.returnValue(true);
+    panelOpen = jasmine.createSpy('open');
     TestBed.configureTestingModule({
       imports: [TechniqueEvidenceCardComponent],
       providers: [
+        provideRouter([]),
+        { provide: EVIDENCE_CARD_IDLE, useValue: (task: () => void) => { idleTasks.push(task); return () => undefined; } },
+        { provide: PanelNavService, useValue: { open: panelOpen } },
+        { provide: SourceRetryService, useValue: { retry: sourceRetry } },
         {
           provide: PostureService,
           useValue: {
@@ -149,8 +203,8 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
         {
           provide: DataService,
           useValue: {
-            domain$: new BehaviorSubject(DOMAIN), currentDomain$: new BehaviorSubject('enterprise'),
-            getCurrentAttackDomain: () => 'enterprise', getCurrentDomain: () => DOMAIN,
+            domain$: new BehaviorSubject(DOMAIN), currentDomain$: new BehaviorSubject(domainId),
+            getCurrentAttackDomain: () => domainId, getCurrentDomain: () => DOMAIN,
           },
         },
         { provide: FilterService, useValue: { heatmapMode$: heat } },
@@ -167,10 +221,17 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
         },
         {
           provide: CveService,
-          useValue: { kevLoaded$: kevLoaded, kevTechScores$: of(new Map([['T1078', 2]])), isKev: (id: string) => id === 'CVE-2024-3400' },
+          useValue: {
+            kevLoaded$: kevLoaded, kevTechScores$: of(new Map([['T1078', 2]])), isKev: (id: string) => kevSet.has(id), loadKev,
+            getKevEntry: (id: string) => kevEntries[id],
+          },
         },
-        { provide: AttackCveService, useValue: { loaded$: of(true), getCvesForTechnique: () => [{ cveId: 'CVE-2024-3400' }, { cveId: 'CVE-2019-0001' }] } },
-        { provide: SettingsService, useValue: { settings$: of({}), getCoverageColors: () => ['#0', '#1', '#2', '#3', '#4'] } },
+        { provide: D3fendService, useValue: { liveState: () => d3fendLive, retryTechniqueApi: d3fendRetry } },
+        {
+          provide: AttackCveService,
+          useValue: { loaded$: cvesLoaded, retry: ctidRetry, getCvesForTechnique: () => [{ cveId: 'CVE-2024-3400' }, { cveId: 'CVE-2019-0001' }] },
+        },
+        { provide: SettingsService, useValue: { settings$: of(settingsNow), getCoverageColors: () => ['#c0', '#c1', '#c2', '#c3', '#c4'] } },
         { provide: TechniqueMarksService, useValue: { confirm } },
         { provide: RecordRunRequestService, useValue: { request: recordRequest } },
         { provide: POSTURE_TODAY, useValue: signal(new Date('2026-10-21T00:00:00.000Z')) },
@@ -179,12 +240,15 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
     });
     fixture = TestBed.createComponent(TechniqueEvidenceCardComponent);
     fixture.componentRef.setInput('technique', techInput);
+    if (surface !== 'drawer') fixture.componentRef.setInput('surface', surface);
     fixture.detectChanges();
     return fixture.nativeElement as HTMLElement;
   }
 
   const text = (el: Element | null) => (el?.textContent ?? '').replace(/\s+/g, ' ').trim();
   const block = (el: HTMLElement, id: string) => el.querySelector(`[data-testid="${id}"]`);
+  /** A loaded KEV line as read aloud: its count line, each listed CVE, then the rest of the count. */
+  const kevText = (el: Element) => Array.from(el.querySelectorAll('p, li')).map(n => text(n)).join(' ');
 
   it('a fresh profile shows Known and Threat only: no covered, proven or defended strings', () => {
     const el = render(state(), false);
@@ -209,7 +273,8 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
   it('Why this colour on a legacy lens: the domain score while the matrix has not scored it, then the matrix readout', () => {
     const el = render(state(), false, 'frequency');
     const freq = heatmapModeDef('frequency')!.formula;
-    expect(text(block(el, 'ev-why'))).toBe(`Why this colour: score 3 of max 6: ${freq} Lens: Frequency`);
+    // Technique page design 4.5: the swatch's band follows the why line in words (3 of 6: the 50-74% quartile).
+    expect(text(block(el, 'ev-why'))).toBe(`Why this colour: score 3 of max 6: ${freq} (band 50-74% of the highest) Lens: Frequency`);
 
     heat.next('sigma');
     TestBed.inject(MatrixControlService).publishReadout({ techId: TECH.id, mode: 'sigma', score: 2, max: 9 });
@@ -620,20 +685,371 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
     const el = render(state(), false);
     const threat = block(el, 'ev-threat')!;
     expect(text(threat.querySelector('[data-testid="ev-threat-profile"]')))
-      .toBe('Threat profile (Top 20 groups by prevalence): used by 1: APT29; 3 counting its sub-techniques');
+      .toBe('Threat profile (Top 20 groups by prevalence): used by 1: G0016 APT29 ↗; 3 counting its sub-techniques');
     expect(text(threat)).toContain('Used by 3 groups in the loaded ATT&CK bundle');
+  });
+
+  // Technique page design 4.3 L1 and the links rule: no name without its id, every entity a link.
+  it('names each profile actor by ATT&CK id and name, linked to its ATT&CK page in a new tab with a marker', () => {
+    profileActors = ['APT28', 'SolarWinds Compromise'];
+    const el = render(state(), false);
+    const actors = Array.from(el.querySelectorAll<HTMLAnchorElement>('[data-testid="ev-threat-actor"]'));
+    expect(actors.map(a => text(a))).toEqual(['G0007 APT28 ↗', 'C0024 SolarWinds Compromise ↗']);
+    expect(actors.map(a => a.getAttribute('href'))).toEqual(['https://attack.mitre.org/groups/G0007', 'https://attack.mitre.org/campaigns/C0024']);
+    for (const a of actors) {
+      expect(a.getAttribute('target')).toBe('_blank');
+      expect(a.getAttribute('rel')).toBe('noopener noreferrer');
+      expect(a.querySelector('.ev-ext')!.getAttribute('aria-hidden')).toBe('true');
+    }
+    expect(actors[0].getAttribute('aria-label')).toBe('G0007 APT28 on ATT&CK (opens in a new tab)');
+  });
+
+  it('a library-layer profile names its layer, linked to the library layers', () => {
+    profileLabel = 'APT28 layer';
+    profileActors = ['APT28 layer'];
+    const el = render(state(), false);
+    const actor = el.querySelector<HTMLAnchorElement>('[data-testid="ev-threat-actor"]')!;
+    expect(text(actor)).toBe('APT28 layer (library layer)');
+    expect(actor.getAttribute('href')).toBe('/library/layers');
+    expect(actor.getAttribute('target')).toBeNull();
   });
 
   it('the Threat block names the profile actors, the bundle groups and the KEV-linked CVEs', () => {
     const el = render(state(), false);
     const threat = block(el, 'ev-threat')!;
     expect(text(threat.querySelector('[data-testid="ev-threat-profile"]')))
-      .toBe('Threat profile (Top 20 groups by prevalence): used by 2: APT28, APT29');
+      .toBe('Threat profile (Top 20 groups by prevalence): used by 2: G0007 APT28 ↗, G0016 APT29 ↗');
     expect(text(threat)).toContain('Used by 3 groups in the loaded ATT&CK bundle');
-    expect(text(threat.querySelector('[data-testid="ev-kev"]'))).toBe('KEV-linked CVEs: 2 (CVE-2024-3400)');
+    expect(kevText(threat.querySelector('[data-testid="ev-kev"]')!)).toBe('KEV-linked CVEs: 2 CVE-2024-3400 Palo Alto Networks PAN-OS Command Injection Vulnerability and 1 more: every KEV-linked CVE in the CVE panel');
 
     kevLoaded.next(false);
     fixture.detectChanges();
-    expect(text(threat.querySelector('[data-testid="ev-kev"]'))).toBe('KEV-linked CVEs: the KEV catalogue is not loaded in this session');
+    // Technique page design 4.6: never "not loaded in this session"; the catalogue is on its way.
+    expect(text(threat.querySelector('[data-testid="ev-kev"]'))).toBe('KEV-linked CVEs: loading the CISA KEV catalogue…');
+  });
+
+  // ─── Technique page design PR 1: KEV on demand, the swatch, not applicable ──────
+
+  describe('KEV on demand (design 4.6)', () => {
+    const kevLine = (el: HTMLElement) => el.querySelector<HTMLElement>('[data-testid="ev-kev"]')!;
+
+    it('asks for the KEV catalogue once, on idle after the first render, never before', async () => {
+      render(state(), false);
+      expect(idleTasks.length).withContext('nothing is scheduled before the first render has finished').toBe(0);
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(idleTasks.length).withContext('one idle task scheduled after the first render').toBe(1);
+      expect(loadKev).not.toHaveBeenCalled();
+      idleTasks[0]();
+      expect(loadKev).toHaveBeenCalledTimes(1);
+      kevLoaded.next(false);
+      fixture.detectChanges();
+      fixture.componentRef.setInput('technique', OTHER);
+      fixture.detectChanges();
+      expect(idleTasks.length).withContext('asked once per card').toBe(1);
+    });
+
+    it('reads loading while the catalogue or the CVE-to-technique mappings are on their way, in a polite live region', () => {
+      const el = render(state(), false);
+      kevLoaded.next(false);
+      fixture.detectChanges();
+      expect(kevLine(el).getAttribute('data-kev-state')).toBe('loading');
+      expect(text(kevLine(el))).toBe('KEV-linked CVEs: loading the CISA KEV catalogue…');
+      expect(kevLine(el).closest('[aria-live="polite"]')).not.toBeNull();
+      kevLoaded.next(true);
+      cvesLoaded.next(false);
+      fixture.detectChanges();
+      expect(text(kevLine(el))).toBe('KEV-linked CVEs: loading the CTID CVE-to-technique mappings…');
+      cvesLoaded.next(true);
+      fixture.detectChanges();
+      expect(kevLine(el).getAttribute('data-kev-state')).toBe('loaded');
+      expect(kevText(kevLine(el))).toBe('KEV-linked CVEs: 2 CVE-2024-3400 Palo Alto Networks PAN-OS Command Injection Vulnerability and 1 more: every KEV-linked CVE in the CVE panel');
+      expect(kevLine(el).querySelector('[data-testid="ev-kev-count"]')!.getAttribute('href')).toBe('/exposure/cve');
+      expect(kevLine(el).querySelector('[data-testid="ev-kev-count"]')!.getAttribute('aria-label')).toBe('KEV-linked CVEs: 2');
+    });
+
+    // Technique page design 4.3 (links rule): a CVE is never a bare id; it shows its id and its
+    // KEV vulnerability name, and the id links to its dossier.
+    it('lists each KEV-linked CVE by id and KEV name, the id linked to its dossier; the rest of the count to the CVE panel', () => {
+      const el = render(state(), false);
+      const cves = Array.from(kevLine(el).querySelectorAll<HTMLElement>('[data-testid="ev-kev-cve"]'));
+      expect(cves.map(c => text(c))).toEqual(['CVE-2024-3400 Palo Alto Networks PAN-OS Command Injection Vulnerability']);
+      const link = cves[0].querySelector<HTMLAnchorElement>('a')!;
+      expect(text(link)).toBe('CVE-2024-3400');
+      expect(link.getAttribute('href')).toBe('/exposure/dossier?cve=CVE-2024-3400');
+      expect(link.getAttribute('title')).toBe('Open the dossier for CVE-2024-3400');
+      expect(text(kevLine(el).querySelector('[data-testid="ev-kev-more"]'))).toBe('and 1 more: every KEV-linked CVE in the CVE panel');
+      expect(kevLine(el).querySelector('[data-testid="ev-kev-more"] a')!.getAttribute('href')).toBe('/exposure/cve');
+      // Every CVE id on the line sits inside a link.
+      const ids = text(kevLine(el)).match(/CVE-\d{4}-\d+/g) ?? [];
+      const linked = Array.from(kevLine(el).querySelectorAll('a')).map(a => text(a)).filter(t => /^CVE-/.test(t));
+      expect(ids).toEqual(linked);
+    });
+
+    it('a KEV entry without a vulnerability name is named by its vendor and product', () => {
+      kevEntries = { 'CVE-2024-3400': { cveID: 'CVE-2024-3400', vendorProject: 'Palo Alto Networks', product: 'PAN-OS', vulnerabilityName: '' } };
+      const el = render(state(), false);
+      expect(text(kevLine(el).querySelector('[data-testid="ev-kev-cve"]'))).toBe('CVE-2024-3400 Palo Alto Networks PAN-OS');
+    });
+
+    it('says failed with Retry when the live feed and the bundled snapshot both failed; Retry asks again', () => {
+      const el = render(state(), false);
+      kevLoaded.next(false);
+      const sources = TestBed.inject(SourceRegistryService);
+      sources.fail('cisa-kev', 'network error');
+      fixture.detectChanges();
+      expect(kevLine(el).getAttribute('data-kev-state')).withContext('the snapshot is still loading').toBe('loading');
+      sources.fail('cisa-kev-snapshot', 'network error');
+      fixture.detectChanges();
+      expect(kevLine(el).getAttribute('data-kev-state')).toBe('failed');
+      expect(text(kevLine(el))).toBe('KEV catalogue unavailable: the live feed and the bundled snapshot both failed · Retry');
+      expect(text(kevLine(el))).not.toMatch(/\b0\b/);
+      (el.querySelector('[data-testid="ev-kev-retry"]') as HTMLButtonElement).click();
+      // Each failed source through its own data-health Retry entry: the snapshot directly, then the live feed.
+      expect(sourceRetry.calls.allArgs()).toEqual([['cisa-kev-snapshot'], ['cisa-kev']]);
+      expect(loadKev).not.toHaveBeenCalled();
+      expect(ctidRetry).not.toHaveBeenCalled();
+    });
+
+    it('says failed with Retry when both CTID mapping datasets failed; Retry fetches each failed one', () => {
+      const el = render(state(), false);
+      cvesLoaded.next(false);
+      const sources = TestBed.inject(SourceRegistryService);
+      sources.fail('ctid-attack-to-cve', 'network error');
+      sources.fail('ctid-kev', 'network error');
+      fixture.detectChanges();
+      expect(text(kevLine(el))).toBe('KEV-linked CVEs unavailable: the CTID CVE-to-technique mappings did not load · Retry');
+      (el.querySelector('[data-testid="ev-kev-retry"]') as HTMLButtonElement).click();
+      expect(sourceRetry.calls.allArgs()).toEqual([['ctid-attack-to-cve'], ['ctid-kev']]);
+      expect(ctidRetry).withContext('never a copied retry path').not.toHaveBeenCalled();
+      expect(loadKev).not.toHaveBeenCalled();
+    });
+
+    it('a loaded catalogue with no KEV-linked CVE says so, not a bare 0', () => {
+      kevSet = new Set();
+      techInput = OTHER;
+      const el = render(state(), false);
+      expect(text(kevLine(el))).toBe('KEV-linked CVEs: 0 in the KEV catalogue');
+      expect(kevLine(el).querySelector('a')).toBeNull();
+    });
+  });
+
+  // Technique page design 4.4: the D3FEND count is the bundled seed's until the technique's live
+  // call answers (T1037: 0, then 20). While it is on its way the row reads loading; after a failure
+  // "D3FEND did not load · Retry"; never the seed's 0, and the mapped count leaves the family out.
+  describe('the D3FEND row follows the live call (design 4.4)', () => {
+    const d3fendRow = (el: HTMLElement) => Array.from(el.querySelectorAll('[data-testid="ev-known"] .ev-known-row'))
+      .find(r => text(r).startsWith('D3FEND countermeasures'))!;
+
+    it('reads loading while the live call is on its way, then the count', () => {
+      d3fendLive = 'loading';
+      const el = render(state(), false);
+      expect(d3fendRow(el).getAttribute('data-testid')).toBe('ev-known-loading');
+      expect(text(d3fendRow(el))).toBe('D3FEND countermeasures … loading the live mappings from d3fend.mitre.org…');
+      expect(text(d3fendRow(el))).not.toMatch(/\b0\b/);
+      expect(text(el.querySelector('[data-testid="ev-known-summary"]'))).toBe('mapped 3 of 5 reference families · D3FEND loading');
+      // The call answers: the D3FEND source's record changes, and the card re-reads the state.
+      d3fendLive = 'loaded';
+      TestBed.inject(SourceRegistryService).succeed('d3fend-technique-api', null);
+      fixture.detectChanges();
+      expect(text(d3fendRow(el))).toBe('D3FEND countermeasures 0 MITRE D3FEND');
+      expect(text(el.querySelector('[data-testid="ev-known-summary"]'))).toBe('mapped 3 of 5 reference families');
+    });
+
+    it('reads "D3FEND did not load · Retry" when the live call failed, never 0; Retry asks again', () => {
+      d3fendLive = 'loading';
+      const el = render(state(), false);
+      d3fendLive = 'failed';
+      TestBed.inject(SourceRegistryService).fail('d3fend-technique-api', 'Too Many Requests');
+      fixture.detectChanges();
+      expect(d3fendRow(el).getAttribute('data-testid')).toBe('ev-known-failed');
+      expect(text(d3fendRow(el))).toBe('D3FEND countermeasures n/a D3FEND did not load · Retry');
+      expect(text(d3fendRow(el))).not.toMatch(/\b0\b/);
+      expect(text(el.querySelector('[data-testid="ev-known-summary"]'))).toBe('mapped 3 of 5 reference families · D3FEND did not load');
+      el.querySelector<HTMLButtonElement>('[data-testid="ev-d3fend-retry"]')!.click();
+      // Through the data-health Retry's 'd3fend-technique-api' entry, never a second path.
+      expect(sourceRetry).toHaveBeenCalledOnceWith('d3fend-technique-api');
+      expect(d3fendRetry).not.toHaveBeenCalled();
+    });
+
+    it('Retry asks again through the real data-health Retry after another technique loaded (the shared record reads loaded)', () => {
+      // The real SourceRetryService, SourceRegistry and D3fendService: this technique's call
+      // failed, then another technique's call answered, so the shared record reads loaded.
+      const el = render(state(), false, 'frequency', [
+        provideHttpClient(), provideHttpClientTesting(),
+        { provide: SourceRetryService, useClass: SourceRetryService },
+        { provide: D3fendService, useClass: D3fendService },
+      ]);
+      const http = TestBed.inject(HttpTestingController);
+      const d3fend = TestBed.inject(D3fendService);
+      const registry = TestBed.inject(SourceRegistryService);
+      const calls = (attackId: string) => http.match(req => req.url === d3fendTechniqueApiUrl(attackId));
+      const answer = { off_to_def: { results: { bindings: [] } } };
+
+      d3fend.getCountermeasures('T1078', true);
+      calls('T1078').forEach(req => req.error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown Error' }));
+      d3fend.getCountermeasures('T1003', true);
+      calls('T1003').forEach(req => req.flush(answer));
+      fixture.detectChanges();
+      expect(registry.get('d3fend-technique-api').status).toBe('loaded');
+      expect(text(d3fendRow(el))).toBe('D3FEND countermeasures n/a D3FEND did not load · Retry');
+
+      el.querySelector<HTMLButtonElement>('[data-testid="ev-d3fend-retry"]')!.click();
+      fixture.detectChanges();
+      const again = calls('T1078');
+      expect(again.length).withContext('Retry sent a new request for this technique').toBe(1);
+      expect(calls('T1003').length).withContext('the technique that answered is not asked again').toBe(0);
+      expect(d3fendRow(el).getAttribute('data-testid')).toBe('ev-known-loading');
+
+      again[0].flush(answer);
+      fixture.detectChanges();
+      expect(text(d3fendRow(el))).toBe('D3FEND countermeasures 0 MITRE D3FEND');
+    });
+
+    it('a technique nothing has asked about yet reads the count it has (the hosts prime it)', () => {
+      d3fendLive = null;
+      const el = render(state(), false);
+      expect(text(d3fendRow(el))).toBe('D3FEND countermeasures 0 MITRE D3FEND');
+    });
+
+    it('outside Enterprise the row stays "not applicable", whatever the live call', () => {
+      domainId = 'ics';
+      d3fendLive = 'failed';
+      const el = render(state(), false);
+      expect(d3fendRow(el).getAttribute('data-testid')).toBe('ev-known-na');
+      expect(el.querySelector('[data-testid="ev-d3fend-retry"]')).toBeNull();
+      expect(text(el.querySelector('[data-testid="ev-known-summary"]'))).not.toContain('did not load');
+    });
+  });
+
+  describe('not applicable outside Enterprise (SOURCE_DOMAINS)', () => {
+    for (const [dom, label] of [['ics', 'ICS ATT&CK'], ['mobile', 'Mobile ATT&CK']] as const) {
+      it(`on ${label} the Enterprise-only families and the KEV line read "not applicable", never 0`, async () => {
+        domainId = dom;
+        const el = render(state(), false);
+        await fixture.whenStable();
+        fixture.detectChanges();
+        const known = block(el, 'ev-known')!;
+        expect(text(known.querySelector('[data-testid="ev-known-summary"]')))
+          .toBe(`mapped 1 of 5 reference families (4 not applicable in ${label})`);
+        const rows = Array.from(known.querySelectorAll('.ev-known-row')).map(r => text(r));
+        expect(rows[0]).toBe('ATT&CK mitigations 8 Enterprise ATT&CK 19.2');
+        expect(rows.slice(1).every(r => r.includes(`not applicable in ${label}`))).withContext(rows.join(' | ')).toBeTrue();
+        expect(rows[1]).toBe(`Detection content n/a not applicable in ${label}: SigmaHQ coverage, MITRE CAR layer and CAR seed have Enterprise ATT&CK data only`);
+        expect(rows[4]).toBe(`Atomic tests n/a not applicable in ${label}: Atomic Red Team has Enterprise ATT&CK data only`);
+        expect(known.querySelectorAll('[data-testid="ev-known-na"]').length).toBe(4);
+        for (const r of rows.slice(1)) expect(r).not.toMatch(/\b0\b/);
+        const kev = el.querySelector('[data-testid="ev-kev"]')!;
+        expect(kev.getAttribute('data-kev-state')).toBe('not-applicable');
+        expect(text(kev)).toContain(`KEV-linked CVEs: not applicable in ${label}`);
+        expect(idleTasks.length).withContext('no KEV request outside Enterprise').toBe(0);
+      });
+    }
+
+    // An F3 technique with an Enterprise id (T1056, T1110) shares Enterprise data: its counts and
+    // its KEV line read as on Enterprise. Only a fraud-native F-prefixed technique reads n/a.
+    it('on CTID F3 a T-prefixed technique reads the Enterprise counts and the KEV line, never "not applicable"', async () => {
+      domainId = 'f3';
+      const el = render(state(), false);
+      await fixture.whenStable();
+      fixture.detectChanges();
+      const known = block(el, 'ev-known')!;
+      expect(text(known.querySelector('[data-testid="ev-known-summary"]'))).toBe('mapped 3 of 5 reference families');
+      expect(known.querySelectorAll('[data-testid="ev-known-na"]').length).toBe(0);
+      expect(text(known)).toContain('Detection content 3 SigmaHQ rules 2, MITRE CAR analytics 1');
+      const kev = el.querySelector('[data-testid="ev-kev"]')!;
+      expect(kev.getAttribute('data-kev-state')).toBe('loaded');
+      expect(idleTasks.length).withContext('KEV is asked for on idle').toBe(1);
+    });
+
+    it('on CTID F3 a fraud-native F-prefixed technique reads "not applicable in CTID F3", never 0', () => {
+      domainId = 'f3';
+      techInput = { ...TECH, id: 'attack-pattern--f1008', attackId: 'F1008', name: 'Account Takeover' } as unknown as Technique;
+      const el = render(state(), false);
+      const known = block(el, 'ev-known')!;
+      expect(text(known.querySelector('[data-testid="ev-known-summary"]'))).toContain('(4 not applicable in CTID F3)');
+      expect(el.querySelector('[data-testid="ev-kev"]')!.getAttribute('data-kev-state')).toBe('not-applicable');
+    });
+  });
+
+  describe('the swatch beside Why this colour (design 4.5)', () => {
+    it('a legacy relative lens shows the cell colour from its ramp, with the band in words', () => {
+      const el = render(state(), false, 'frequency');   // 3 of max 6: the 50-74% quartile
+      const ramp = heatmapModeDef('frequency')!.ramp.stops;
+      const swatch = el.querySelector<HTMLElement>('[data-testid="ev-swatch"]')!;
+      expect(swatch).not.toBeNull();
+      expect(swatch.getAttribute('aria-hidden')).toBe('true');
+      expect(swatch.style.backgroundColor).toBe(hexToRgb(ramp[3].color));
+      expect(text(el.querySelector('[data-testid="ev-band"]'))).toBe(`(band ${ramp[3].label} of the highest)`);
+    });
+
+    it('a registry lens shows the colour its colour function gives the cell', () => {
+      const el = render(state(), true, 'posture');
+      const swatch = el.querySelector<HTMLElement>('[data-testid="ev-swatch"]');
+      expect(swatch).not.toBeNull();
+      expect(swatch!.style.backgroundColor).not.toBe('');
+      expect(el.querySelector('[data-testid="ev-score-on-matrix"]')).toBeNull();
+    });
+
+    it('in the drawer a scored lens the matrix has not read out yet offers nothing: the drawer is on the matrix', () => {
+      const el = render(state(), false, 'sigma');
+      expect(el.querySelector('[data-testid="ev-swatch"]')).toBeNull();
+      expect(el.querySelector('[data-testid="ev-score-on-matrix"]')).toBeNull();
+      expect(text(el.querySelector('[data-testid="ev-why"]'))).not.toContain('open it there');
+    });
+
+    it('the categorical F3 Origin lens names the technique\'s category with its swatch, and offers no matrix, on either host', () => {
+      domainId = 'f3';
+      for (const host of ['drawer', 'page'] as const) {
+        surface = host;
+        const el = render(state(), false, 'f3-origin');
+        const stops = heatmapModeDef('f3-origin')!.ramp.stops;
+        expect(el.querySelector('[data-testid="ev-score-on-matrix"]')).withContext(host).toBeNull();
+        expect(el.querySelector<HTMLElement>('[data-testid="ev-swatch"]')!.style.backgroundColor).toBe(hexToRgb(stops[0].color));
+        expect(text(el.querySelector('.ev-why-line'))).toContain(`Why this colour: ${stops[0].label}:`);
+        TestBed.resetTestingModule();
+      }
+    });
+
+    it('the drawer section container keys on the surface: the host class is set in the drawer only', () => {
+      for (const host of ['drawer', 'page'] as const) {
+        surface = host;
+        render(state(), false);
+        expect((fixture.nativeElement as HTMLElement).classList.contains('ev-surface-drawer')).withContext(host).toBe(host === 'drawer');
+        TestBed.resetTestingModule();
+      }
+    });
+
+    it('on the page a scored lens with no score outside the matrix shows no swatch and offers the matrix', () => {
+      surface = 'page';
+      const el = render(state(), false, 'sigma');
+      expect(el.querySelector('[data-testid="ev-swatch"]')).toBeNull();
+      const open = el.querySelector<HTMLButtonElement>('[data-testid="ev-score-on-matrix"]')!;
+      expect(text(open)).toBe('This lens is scored on the matrix: open it there');
+      open.click();
+      expect(panelOpen).toHaveBeenCalledOnceWith('matrix', { keepTechniqueSelection: true });
+    });
+
+    it('legacySwatch follows the cell renderer: zero stop, quartiles, coverage colours, viridis when colour-blind safe', () => {
+      const freq = heatmapModeDef('frequency')!;
+      const stops = freq.ramp.stops;
+      const opts = { coverageColors: ['#c0', '#c1', '#c2', '#c3', '#c4'], colorblindSafe: false };
+      expect(legacySwatch(freq, 0, 10, opts)).toEqual({ color: stops[0].color, band: `band ${stops[0].label}` });
+      expect(legacySwatch(freq, 1, 10, opts)!.color).toBe(stops[1].color);
+      expect(legacySwatch(freq, 3, 10, opts)!.color).toBe(stops[2].color);
+      expect(legacySwatch(freq, 6, 10, opts)!.color).toBe(stops[3].color);
+      expect(legacySwatch(freq, 10, 10, opts)!.color).toBe(stops[4].color);
+      expect(legacySwatch(freq, 6, 10, { ...opts, colorblindSafe: true })!.color).toBe(SAFE_SEQ[2]);
+      const coverage = heatmapModeDef('coverage')!;
+      expect(legacySwatch(coverage, 2, 4, opts)).toEqual({ color: '#c2', band: 'band 2' });
+      expect(legacySwatch(coverage, 9, 4, opts)).toEqual({ color: '#c4', band: 'band 4+' });
+      expect(legacySwatch(heatmapModeDef('epss')!, 1, 1, opts)).withContext('a ramp the card cannot place a score on').toBeNull();
+    });
   });
 });
+
+/** '#0ea5e9' as the browser reports an inline background colour. */
+function hexToRgb(hex: string): string {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgb(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255})`;
+}

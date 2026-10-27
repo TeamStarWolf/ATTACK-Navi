@@ -146,3 +146,82 @@ export function lensSourceVintage(id: LensSourceId, bundle: LoadedBundleInfo): s
   if (info.note) parts.push(info.note);
   return parts.length ? `${info.name} (${parts.join('; ')})` : info.name;
 }
+
+// ─── Domain applicability (technique page design 4.4, PR 1) ────────────────
+//
+// The ATT&CK domains each source has technique data for. A source maps one
+// domain's technique ids (SigmaHQ, CAR, Atomic and the CTID mappings name
+// Enterprise ids only), so on an ICS or Mobile technique its count is not a
+// zero, it is not applicable. The evidence card and the technique sections
+// read this table to say "not applicable in <domain>" instead of printing 0.
+// The heatmap lenses state their own domains (HeatmapModeDef.domains); the
+// spec checks that no lens claims a domain one of its sources lacks. A view
+// asks per technique (sourceDomainOf): an F3 technique with an Enterprise id
+// shares Enterprise data, so only ICS, Mobile and fraud-native F3 techniques
+// read "not applicable".
+const ALL_DOMAINS: readonly AttackDomain[] = ['enterprise', 'ics', 'mobile', 'f3'];
+const ALL_ATTACK_DOMAINS: readonly AttackDomain[] = ['enterprise', 'ics', 'mobile'];
+const ENTERPRISE_ONLY: readonly AttackDomain[] = ['enterprise'];
+
+export const SOURCE_DOMAINS: Readonly<Record<LensSourceId, readonly AttackDomain[]>> = {
+  'attack-bundle': ALL_DOMAINS,
+  'cisa-kev': ENTERPRISE_ONLY,
+  'ctid-kev': ENTERPRISE_ONLY,
+  'cwe-exploitation-anchor': ENTERPRISE_ONLY,
+  'ctid-attack-to-cve': ENTERPRISE_ONLY,
+  'epss': ENTERPRISE_ONLY,
+  'cve2capec': ENTERPRISE_ONLY,
+  'trickest-poc': ENTERPRISE_ONLY,
+  'sigmahq': ENTERPRISE_ONLY,
+  'car': ENTERPRISE_ONLY,
+  'car-seed': ENTERPRISE_ONLY,
+  'atomic': ENTERPRISE_ONLY,
+  'engage': ENTERPRISE_ONLY,
+  'misp-galaxy': ALL_ATTACK_DOMAINS,
+  'elastic': ENTERPRISE_ONLY,
+  'splunk': ENTERPRISE_ONLY,
+  'm365-hunting': ENTERPRISE_ONLY,
+  'wazuh-stock-rules': ENTERPRISE_ONLY,
+  'd3fend-seed': ENTERPRISE_ONLY,
+  'ctid-nist-800-53': ENTERPRISE_ONLY,
+  'ctid-veris': ENTERPRISE_ONLY,
+  'ctid-cri': ENTERPRISE_ONLY,
+  'ctid-csa-ccm': ENTERPRISE_ONLY,
+  'ctid-m365': ENTERPRISE_ONLY,
+  'cis-controls': ENTERPRISE_ONLY,
+  'library-layers': ALL_ATTACK_DOMAINS,
+  'project-authored': ALL_DOMAINS,
+  'workspace-local': ALL_DOMAINS,
+};
+
+/**
+ * The domain whose source data a technique reads, for SOURCE_DOMAINS. A CTID F3
+ * technique with a T-prefixed id (T1056, T1110: the CTID isAttack flag) is an
+ * Enterprise ATT&CK technique F3 shares, so the Enterprise sources, which count
+ * by ATT&CK id, have its data; it reads 'enterprise'. A fraud-native F-prefixed
+ * F3 technique, and every ICS and Mobile technique, reads its own domain.
+ */
+export function sourceDomainOf(domain: AttackDomain, attackId: string): AttackDomain {
+  return domain === 'f3' && /^T\d{4}(\.\d{3})?$/.test(attackId) ? 'enterprise' : domain;
+}
+
+/** True when `id` has technique data for `domain`. */
+export function sourceApplies(id: LensSourceId, domain: AttackDomain): boolean {
+  return SOURCE_DOMAINS[id].includes(domain);
+}
+
+/**
+ * The words for a set of sources none of which has data for `domain`, or null when
+ * any of them applies there: 'not applicable in ICS ATT&CK: SigmaHQ coverage and
+ * MITRE CAR layer have Enterprise ATT&CK data only'. Each name is the source
+ * inventory's (LENS_SOURCES); the domains are the ones the sources share.
+ */
+export function notApplicableWords(ids: readonly LensSourceId[], domain: AttackDomain): string | null {
+  if (ids.length === 0 || ids.some(id => sourceApplies(id, domain))) return null;
+  const names = [...new Set(ids.map(id => LENS_SOURCES[id].name))];
+  const shared = ALL_DOMAINS.filter(d => ids.every(id => sourceApplies(id, d)));
+  const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names[0];
+  const verb = names.length > 1 ? 'have' : 'has';
+  const where = shared.length ? `${shared.map(domainLabel).join(' and ')} data only` : 'no data in any loaded domain';
+  return `not applicable in ${domainLabel(domain)}: ${list} ${verb} ${where}`;
+}

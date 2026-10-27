@@ -16,8 +16,10 @@
 
 /* In the technique drawer the card sits in the same container as every drawer
    section (src/app/components/drawer-primitives): same border, radius, padding,
-   background and spacing. Its own content and sub-block titles are unchanged. */
-:host-context(.sidebar-body) .evidence-card {
+   background and spacing. Its own content and sub-block titles are unchanged.
+   Keyed on the surface input (host class 'ev-surface-drawer'), the card's only
+   drawer-versus-page switch, never on an ancestor. */
+:host(.ev-surface-drawer) .evidence-card {
   margin: 0 0 var(--space-4, 16px);
   padding: var(--space-4, 16px);
   border: 1px solid var(--line-soft);
@@ -112,3 +114,106 @@
 
 .ev-count { font-variant-numeric: tabular-nums; font-weight: 650; }
 .ev-zero .ev-count { color: var(--text-muted); font-weight: 400; }
+
+/* The swatch beside "Why this colour": the lens's colour for this technique. The
+   colour is data (the lens ramp), the frame is a token; the why line says it in words. */
+.ev-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 2px;
+  vertical-align: -1px;
+  border-radius: 3px;
+  border: 1px solid var(--border-subtle);
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.ev-band { margin: 0; }
+
+.ev-link {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+}
+
+/* A link-styled button: Retry on a failed KEV line, the matrix for an unscored lens. */
+.ev-link-btn {
+  font: inherit;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+}
+
+.ev-loading { font-style: italic; }
+
+/* Not applicable in this domain, or a live source that failed: muted, never a 0. */
+.ev-na .ev-count,
+.ev-pending .ev-count { color: var(--text-muted); font-weight: 400; }
+
+/* The KEV-linked CVEs: each id (linked to its dossier) with its KEV vulnerability name. */
+.ev-kev-list { margin: 2px 0 4px; }
+
+.ev-kev-cve {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-primary);
+  margin: 0 0 2px;
+  overflow-wrap: anywhere;
+
+  .ev-cve-id { font-weight: 600; white-space: nowrap; }
+}
+
+.ev-link-plain {
+  color: var(--accent);
+
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+}
+
+/* On the technique page (never in the drawer: only the page host is a container
+   named tpage, so the query alone scopes the rule) the card uses the page's width: the
+   why line spans the top and the blocks sit side by side once the page is wide
+   enough (container queries on the page host, technique page design 4.2). The
+   blocks grow to fill each row, so no empty column is left inside the card at
+   2000 px; the Known rows become one aligned table (family, count, source on one
+   line), so a count stays next to its label however wide its block grows. */
+.evidence-card {
+  @container tpage (min-width: 900px) {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--space-4, 16px) var(--space-7, 32px);
+    padding: var(--space-4, 16px) var(--space-5, 20px);
+
+    > .ev-why,
+    > .ev-summary { flex: 1 1 100%; }
+
+    > .ev-block { flex: 1 1 320px; min-width: 0; }
+
+    .ev-known-list {
+      display: grid;
+      grid-template-columns: max-content max-content minmax(0, 1fr);
+      column-gap: var(--space-4, 16px);
+    }
+
+    .ev-known-row {
+      grid-column: 1 / -1;
+      grid-template-columns: subgrid;
+      align-items: baseline;
+
+      .ev-meta { grid-column: auto; }
+    }
+  }
+}
+
+/* A threat-profile actor: its ATT&CK id and name, linked; the arrow marks a new tab. */
+.ev-actor { white-space: nowrap; }
+
+.ev-ext { color: var(--text-muted); }

@@ -1,64 +1,147 @@
 /* ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
    https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
    Token-driven: both themes come from the role tokens. */
-:host { display: block; }
+
+/* The host takes the workspace's width and is the page's scroll container
+   (technique page design 4.2). .workspace-area is a flex row with overflow
+   hidden: a host that was only display:block shrank to its content (737 px of
+   a 1936 px workspace), and nothing on it could scroll. Breakpoints are
+   container queries on this host, so collapsing the rail reflows the page
+   instead of adding empty space. */
+:host {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  overflow-y: auto;
+  container-type: inline-size;
+  container-name: tpage;
+}
 
 .technique-page {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 16px;
+  max-width: 1760px;
+  margin-inline: auto;
+  padding: var(--space-4);
+
+  @container tpage (min-width: 600px) { padding: var(--space-6); }
+  @container tpage (min-width: 900px) { padding: var(--space-7); }
 }
 
 .tp-header {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin: 0 0 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2, 8px);
+  margin: 0 0 var(--space-6);
+
+  /* At 900 px and up the actions sit right of the title block. */
+  @container tpage (min-width: 900px) {
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: var(--space-6);
+
+    > .tp-domain,
+    > .tp-title,
+    > .tp-tactics { grid-column: 1; }
+
+    > .tp-actions {
+      grid-column: 2;
+      grid-row: 1 / span 3;
+      align-self: start;
+      justify-content: flex-end;
+    }
+  }
 }
 
 .tp-domain,
 .tp-tactics {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--text-muted);
 }
 
+.tp-facts-label { color: var(--text-muted); }
+
 .tp-title {
   margin: 0;
-  font-size: 18px;
+  font-size: var(--text-xl);
+  line-height: 1.3;
   font-weight: 650;
   color: var(--text-primary);
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 10px;
+  gap: var(--space-1, 4px) var(--space-3, 12px);
   align-items: baseline;
+
+  /* Focus lands here by script (tabindex -1, never a tab stop) so a screen reader
+     starts at the name; there is nothing to operate, so no focus ring. */
+  &:focus { outline: none; }
 }
 
 .tp-id {
-  color: var(--accent);
-  text-decoration: none;
+  color: var(--text-muted);
   font-variant-numeric: tabular-nums;
-
-  &:hover { text-decoration: underline; }
 }
 
-.tp-open-matrix {
-  align-self: flex-start;
-  margin-top: 6px;
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: 6px;
-  border: 1px solid var(--accent);
+.tp-name { overflow-wrap: anywhere; }
+
+.tp-tactic {
+  color: var(--accent);
+  text-decoration: none;
+
+  &:hover { text-decoration: underline; }
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+}
+
+.tp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2, 8px);
+  margin-top: var(--space-1, 4px);
+}
+
+.tp-action {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  padding: var(--space-1, 4px) var(--space-3, 12px);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
   background: transparent;
   color: var(--text-primary);
+  text-decoration: none;
   cursor: pointer;
+  white-space: nowrap;
 
+  &:hover { border-color: var(--accent); }
   &:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 }
 
-.tp-state {
-  font-size: 13px;
+.tp-primary { border-color: var(--accent); }
+
+.tp-ext { color: var(--text-muted); }
+
+.tp-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.tp-h2 {
+  margin: 0 0 var(--space-3, 12px);
+  font-size: var(--text-lg);
+  font-weight: 650;
   color: var(--text-primary);
 }
 
-.tp-empty p { margin: 8px 0; }
+.tp-state {
+  font-size: var(--text-base);
+  color: var(--text-primary);
+}
+
+.tp-empty p { margin: var(--space-2, 8px) 0; }

@@ -192,9 +192,7 @@ export class D3fendService {
     this.http.get<D3fendAttackResponse>(d3fendTechniqueApiUrl(attackId))
       .subscribe({ next: response => {
         this.fetchStatus.set(attackId, 'done');
-        const bindings = response?.off_to_def?.results?.bindings;
-        this.sources.succeed('d3fend-technique-api', null);
-        if (!bindings?.length) return;
+        const bindings = response?.off_to_def?.results?.bindings ?? [];
 
         const collected: D3fendTechnique[] = [];
         const seen = new Set<string>();
@@ -225,10 +223,12 @@ export class D3fendService {
           if (!this.liveIndex.has(defId)) this.liveIndex.set(defId, collected[collected.length - 1]);
         }
 
-        if (collected.length) {
-          this.liveMap.set(attackId, collected);
-          this.loaded$.next(true);
-        }
+        if (collected.length) this.liveMap.set(attackId, collected);
+        // Recorded once the answer is merged: a view that re-reads on the source's
+        // record (the evidence card's D3FEND row) then reads the live count, never
+        // the seed's count beside a 'loaded' state.
+        this.sources.succeed('d3fend-technique-api', null);
+        if (collected.length) this.loaded$.next(true);
       }, error: err => {
         // Recorded as failed (not as "no countermeasures"); not retried automatically this
         // session, only by the data-health Retry.
@@ -236,6 +236,32 @@ export class D3fendService {
         this.failedTechniques.add(attackId);
         this.sources.fail('d3fend-technique-api', err);
       } });
+  }
+
+  /**
+   * Where a technique's live D3FEND answer stands (technique page design 4.4):
+   * 'loading' while its request, or its parent's for a sub-technique, is in flight;
+   * 'failed' when one of them failed this session (retryTechniqueApi asks again);
+   * 'loaded' once answered; null when nothing has asked for it. Until the answer,
+   * getCountermeasures reads the bundled seed, so a view shows this state instead
+   * of the seed's count (T1037: 0 in the seed, 20 live).
+   */
+  liveState(attackId: string): 'loading' | 'loaded' | 'failed' | null {
+    const ids = attackId.includes('.') ? [attackId, attackId.split('.')[0]] : [attackId];
+    const asked = ids.filter(id => this.fetchStatus.has(id));
+    if (!asked.length) return null;
+    if (asked.some(id => this.fetchStatus.get(id) === 'pending')) return 'loading';
+    if (asked.some(id => this.failedTechniques.has(id))) return 'failed';
+    return 'loaded';
+  }
+
+  /**
+   * True while a technique's live call failed this session and has not been asked for
+   * again: the 'd3fend-technique-api' Retry is then offered whatever the source's shared
+   * record reads (it reads loaded once any other technique answered).
+   */
+  hasFailedTechniques(): boolean {
+    return this.failedTechniques.size > 0;
   }
 
   /**

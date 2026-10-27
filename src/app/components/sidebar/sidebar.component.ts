@@ -34,6 +34,7 @@ import { D3fendService, D3fendTechnique } from '../../services/d3fend.service';
 import { EngageService, EngageActivity } from '../../services/engage.service';
 import { CARService, CarAnalytic } from '../../services/car.service';
 import { AtomicService, AtomicTest, AtomicLiveTest } from '../../services/atomic.service';
+import { TechniqueFetchCoordinator } from '../../services/technique-fetch-coordinator.service';
 import { TaggingService } from '../../services/tagging.service';
 import { AttackCveService, CveAttackMapping } from '../../services/attack-cve.service';
 import { NistMappingService, NistControl } from '../../services/nist-mapping.service';
@@ -198,6 +199,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
   atomicLiveCount = 0;   // live count from Navigator layer (may exceed hardcoded detail list)
   atomicGitHubUrl = 'https://github.com/redcanaryco/atomic-red-team';
   atomicFetching = false;
+  /** The live YAML request failed (TechniqueFetchCoordinator.atomicState): "did not load · Retry", never an empty list. */
+  atomicLiveFailed = false;
 
   // MISP Galaxy
   mispCluster: MispGalaxyCluster | null = null;
@@ -617,6 +620,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
   editingDocs = new Map<string, MitigationDoc>();
 
   private subs = new Subscription();
+  /** Starts the per-technique live fetches; the technique page calls the same one. */
+  private readonly fetchCoordinator = inject(TechniqueFetchCoordinator);
   private atomicSub?: Subscription;
   private ruleSourcesSub?: Subscription;
   private openctiSub?: Subscription;
@@ -717,26 +722,22 @@ export class SidebarComponent implements OnInit, OnDestroy {
         this.procedures = tech ? this.dataService.getProceduresForTechnique(tech.id) : [];
         this.dataComponents = tech ? this.dataService.getDataComponentsForTechnique(tech.id) : [];
         this.detectionNotes = tech ? this.dataService.getDetectionNotesForTechnique(tech.id) : [];
-        this.d3fendMeasures = tech ? this.d3fendService.getCountermeasures(tech.attackId, true) : [];
+        // The per-technique live fetches (D3FEND live, Atomic YAML) start in the one
+        // coordinator the technique page calls too, so both hosts count the same answer.
+        if (tech) this.fetchCoordinator.prime(tech);
+        this.d3fendMeasures = tech ? this.d3fendService.getCountermeasures(tech.attackId) : [];
         this.engageActivities = tech ? this.engageService.getActivities(tech.attackId) : [];
         this.carAnalytics = tech ? this.carService.getAnalytics(tech.attackId) : [];
         this.atomicTests = tech ? this.atomicService.getTests(tech.attackId) : [];
         this.atomicLiveCount = tech ? this.atomicService.getTestCount(tech.attackId) : 0;
         this.atomicLiveTests = [];
         this.atomicFetching = !!tech;
+        this.atomicLiveFailed = false;
         this.mispCluster = tech ? this.mispService.getCluster(tech.attackId) : null;
         this.atomicGitHubUrl = tech
           ? `https://github.com/redcanaryco/atomic-red-team/blob/master/atomics/${tech.attackId}/${tech.attackId}.md`
           : 'https://github.com/redcanaryco/atomic-red-team';
-        if (tech) {
-          this.atomicSub = this.atomicService.fetchLiveTests(tech.attackId, 5).subscribe(liveTests => {
-            if (this.technique?.attackId === tech.attackId) {
-              this.atomicLiveTests = liveTests;
-              this.atomicFetching = false;
-              this.cdr.markForCheck();
-            }
-          });
-        }
+        if (tech) this.subscribeAtomicLive(tech);
         // Rule sources (Elastic, Splunk, community SIGMA) from the shared bundled snapshot
         this.loadRuleSources(tech);
         // Anthropic Cybersecurity Skills
@@ -1256,6 +1257,31 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   getNodeById(id: string): GraphNode | undefined {
     return this.relGraphData.nodes.find(n => n.id === id);
+  }
+
+  /**
+   * The technique's live Atomic tests, through the coordinator both hosts share. A
+   * failed request reads "did not load · Retry" (atomicState), never an empty list.
+   */
+  private subscribeAtomicLive(tech: Technique): void {
+    this.atomicSub?.unsubscribe();
+    this.atomicSub = this.fetchCoordinator.atomicTests(tech).subscribe(liveTests => {
+      if (this.technique?.attackId === tech.attackId) {
+        this.atomicLiveTests = liveTests;
+        this.atomicFetching = false;
+        this.atomicLiveFailed = this.fetchCoordinator.atomicState(tech.attackId) === 'failed';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  /** Retry on a failed Atomic YAML: the coordinator asks again (a failure is not kept). */
+  retryAtomicLive(): void {
+    const tech = this.technique;
+    if (!tech) return;
+    this.atomicFetching = true;
+    this.atomicLiveFailed = false;
+    this.subscribeAtomicLive(tech);
   }
 
   ngOnDestroy(): void {
