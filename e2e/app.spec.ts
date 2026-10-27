@@ -1178,6 +1178,47 @@ test.describe('technique page PR 1: D3FEND parity, KEV states, the page width', 
     }
   });
 
+  for (const host of ['page', 'drawer'] as const) {
+    test(`a sub-technique whose own D3FEND call failed after its parent answered: Retry in the ${host} sends the call again`, async ({ browser }) => {
+      // The shared 'd3fend-technique-api' record reads loaded once the parent answered;
+      // Retry must still ask for the failed sub-technique (round 3).
+      const D3FEND_SUB = 'https://d3fend.mitre.org/api/offensive-technique/attack/T1037.001.json';
+      const card = (p: Page) => host === 'page'
+        ? p.locator('app-technique-page [data-testid="evidence-card"]')
+        : p.locator('.sidebar.open [data-testid="evidence-card"]');
+      const { context, page } = await newVisitor(browser);
+      const subDown = (route: Route) => route.abort('failed');
+      await page.route(D3FEND_SUB, subDown);
+      // The parent answers 2 s later, after the sub-technique's call failed.
+      await page.route(D3FEND_T1037, async route => {
+        await new Promise(resolve => setTimeout(resolve, 2_000));
+        await route.fulfill({ json: d3fendAnswer }).catch(() => undefined);
+      });
+      let subCalls = 0;
+      page.on('request', req => { if (req.url() === D3FEND_SUB) subCalls++; });
+      try {
+        await page.goto('about:blank');
+        const parentAnswered = page.waitForResponse(D3FEND_T1037, { timeout: ROUTE_TIMEOUT });
+        await page.goto(host === 'page' ? `${BASE}/#/technique/enterprise/T1037.001` : `${BASE}/#/matrix?tech=T1037.001`);
+        await expect(card(page)).toBeVisible({ timeout: ROUTE_TIMEOUT });
+        const failed = card(page).getByTestId('ev-known-failed');
+        await expect(failed).toHaveText(/D3FEND countermeasures\s+n\/a\s+D3FEND did not load\s+·\s+Retry/, { timeout: ROUTE_TIMEOUT });
+        // The parent's answer lands: the shared record now reads loaded, the row still failed.
+        await parentAnswered;
+        await expect(failed).toBeVisible();
+        const before = subCalls;
+        await page.unroute(D3FEND_SUB, subDown);
+        await page.route(D3FEND_SUB, route => route.fulfill({ json: { off_to_def: { results: { bindings: [] } } } }));
+        await failed.getByTestId('ev-d3fend-retry').click();
+        await expect.poll(() => subCalls, { timeout: ROUTE_TIMEOUT }).toBeGreaterThan(before);
+        await expect(card(page).getByTestId('ev-known-failed')).toHaveCount(0, { timeout: ROUTE_TIMEOUT });
+        expect(d3fendRow(await knownRows(card(page)))).toBe(`D3FEND countermeasures ${D3FEND_LIVE.length} MITRE D3FEND`);
+      } finally {
+        await context.close();
+      }
+    });
+  }
+
   test('KEV on demand: the line reads loading, then the count, with no lens that loads KEV', async ({ browser }) => {
     const { context, page } = await newVisitor(browser);
     let release: () => void = () => undefined;

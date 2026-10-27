@@ -14,6 +14,7 @@ import { SOURCE_DEFINITIONS } from './source-inventory';
 import { NO_RETRY_REASON, SOURCE_RETRY, SourceRetryService, sourcesWithoutRetryDecision } from './source-retry.service';
 import { AttackDomain, DataService } from './data.service';
 import { CapecService } from './capec.service';
+import { D3fendService, d3fendTechniqueApiUrl } from './d3fend.service';
 
 /** Answer every request (retries, fallbacks, timeouts included) with a network error; returns how many were sent. */
 function forceOffline(http: HttpTestingController, answer?: (req: TestRequest) => boolean): number {
@@ -169,4 +170,58 @@ describe('SourceRetryService: Retry per source on the data-health view (E1.3)', 
     expect(registry.get('ctid-attack-to-cve').status).toBe('archived-upstream');
     expect(registry.get('ctid-attack-to-cve').rows).toBe(1);
   }));
+
+  describe("d3fend-technique-api: one record for every technique's live call (technique page PR 1)", () => {
+    const offline = (req: TestRequest) => req.error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown Error' });
+    const answer = (req: TestRequest) => req.flush({ off_to_def: { results: { bindings: [] } } });
+    /** The per-technique requests sent so far and not yet answered. */
+    const techniqueCalls = (attackId: string) => http.match(req => req.url === d3fendTechniqueApiUrl(attackId));
+
+    it('retries a failed technique after another technique loaded (the shared record reads loaded)', () => {
+      const d3fend = TestBed.inject(D3fendService);
+      d3fend.getCountermeasures('T1037.001', true);
+      techniqueCalls('T1037.001').forEach(offline);
+      techniqueCalls('T1037').forEach(answer);
+      expect(registry.get('d3fend-technique-api').status).withContext('the parent answered last').toBe('loaded');
+      expect(registry.hasData('d3fend-technique-api')).toBeTrue();
+      expect(d3fend.liveState('T1037.001')).toBe('failed');
+
+      expect(retry.unavailableReason('d3fend-technique-api')).withContext('a technique still failed').toBeNull();
+      expect(retry.retry('d3fend-technique-api')).toBeTrue();
+      const again = techniqueCalls('T1037.001');
+      expect(again.length).withContext('Retry sent a new request for the failed technique').toBe(1);
+      expect(techniqueCalls('T1037').length).withContext('the technique that answered is not asked again').toBe(0);
+      expect(d3fend.liveState('T1037.001')).toBe('loading');
+
+      answer(again[0]);
+      expect(d3fend.liveState('T1037.001')).toBe('loaded');
+      expect(retry.unavailableReason('d3fend-technique-api')).toBe('loaded; nothing to retry');
+      expect(retry.retry('d3fend-technique-api')).toBeFalse();
+      expect(techniqueCalls('T1037.001').length).toBe(0);
+    });
+
+    it("retries a failed technique while another technique's call is in flight (the shared record reads loading)", () => {
+      const d3fend = TestBed.inject(D3fendService);
+      d3fend.getCountermeasures('T1078', true);
+      techniqueCalls('T1078').forEach(offline);
+      d3fend.getCountermeasures('T1003', true);
+      expect(registry.get('d3fend-technique-api').status).toBe('loading');
+
+      expect(retry.unavailableReason('d3fend-technique-api')).toBeNull();
+      expect(retry.retry('d3fend-technique-api')).toBeTrue();
+      expect(techniqueCalls('T1078').length).withContext('Retry sent a new request').toBe(1);
+      // Asked again: nothing waits for a Retry now, so the in-flight gate is back.
+      expect(retry.unavailableReason('d3fend-technique-api')).toBe('a request is in flight');
+      expect(retry.retry('d3fend-technique-api')).toBeFalse();
+      expect(techniqueCalls('T1003').length).toBe(1);
+    });
+
+    it('does not create D3fendService to ask whether a technique failed before any call', () => {
+      const asked = spyOn(D3fendService.prototype, 'hasFailedTechniques').and.callThrough();
+      expect(registry.get('d3fend-technique-api').status).toBe('pending');
+      expect(retry.unavailableReason('d3fend-technique-api')).toBeNull();
+      expect(asked).not.toHaveBeenCalled();
+      http.expectNone(() => true);
+    });
+  });
 });

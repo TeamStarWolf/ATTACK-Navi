@@ -256,6 +256,15 @@ export class D3fendService {
   }
 
   /**
+   * True while a technique's live call failed this session and has not been asked for
+   * again: the 'd3fend-technique-api' Retry is then offered whatever the source's shared
+   * record reads (it reads loaded once any other technique answered).
+   */
+  hasFailedTechniques(): boolean {
+    return this.failedTechniques.size > 0;
+  }
+
+  /**
    * The data-health Retry (E1.3): fetch again every technique whose per-technique
    * request failed this session, or `probe` when none has been requested yet.
    */

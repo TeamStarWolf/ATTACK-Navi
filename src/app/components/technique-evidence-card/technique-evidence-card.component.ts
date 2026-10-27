@@ -402,8 +402,11 @@ export class TechniqueEvidenceCardComponent {
   /**
    * Retry on a failed D3FEND row, through the data-health Retry (SourceRetryService,
    * design 4.3 and 4.4): its 'd3fend-technique-api' entry asks again for every
-   * technique whose live call failed, this one included. The loader records the
-   * outcome on the SourceRegistry, so a Retry that fails again reads failed again.
+   * technique whose live call failed, this one included. The entry's `outstanding`
+   * hook keeps that Retry open while any technique failed, so it still runs when the
+   * shared source record reads loaded (another technique answered) or loading (another
+   * is in flight). The loader records the outcome on the SourceRegistry, so a Retry
+   * that fails again reads failed again.
    */
   retryD3fend(): void {
     this.sourceRetry.retry('d3fend-technique-api');

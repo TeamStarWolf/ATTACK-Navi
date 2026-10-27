@@ -69,6 +69,14 @@ export interface RetryEntry {
   run: (svc: any, injector: Injector) => void;
   /** Why Retry cannot run right now, or null when it can. */
   blocked?: (injector: Injector) => string | null;
+  /**
+   * A per-item source (one request per technique): true while items failed this session
+   * and still wait for a Retry. The source's record is shared by every item, so it reads
+   * 'loaded' once any other item answered, or 'loading' while another item is in flight;
+   * neither means the failed items need nothing. While this is true, Retry is offered and
+   * runs whatever the shared record says.
+   */
+  outstanding?: (injector: Injector) => boolean;
 }
 
 /**
@@ -150,7 +158,15 @@ export const SOURCE_RETRY: Readonly<Record<string, RetryEntry>> = {
   'ssvc-tables': { service: SsvcService, run: (s: SsvcService) => s.retry() },
   'cve-dossiers': { service: DossierService, run: (s: DossierService) => s.retry() },
   'd3fend-ontology': { service: D3fendService, run: (s: D3fendService) => s.retryOntologyIndex() },
-  'd3fend-technique-api': { service: D3fendService, run: (s: D3fendService) => s.retryTechniqueApi(RETRY_PROBE_TECHNIQUE) },
+  'd3fend-technique-api': {
+    service: D3fendService,
+    run: (s: D3fendService) => s.retryTechniqueApi(RETRY_PROBE_TECHNIQUE),
+    // Only D3fendService moves this record off 'pending', so a record still pending means the
+    // service was never created and nothing failed: it is not created here just to ask.
+    outstanding: injector =>
+      injector.get(SourceRegistryService).get('d3fend-technique-api').status !== 'pending'
+      && injector.get(D3fendService).hasFailedTechniques(),
+  },
   'library-index': { service: LibraryService, run: (s: LibraryService) => s.retry() },
   'library-layers': { service: LibraryLayerService, run: (s: LibraryLayerService) => s.retry() },
 };
@@ -182,7 +198,8 @@ export const NO_RETRY_REASON: Readonly<Record<string, string>> = {
 /**
  * Runs the Retry for one source. A source is retried only when it holds no data
  * (failed, empty, or never requested), so a Retry never re-indexes a loaded source
- * on top of itself.
+ * on top of itself; a per-item source is also retried while items failed this session
+ * (RetryEntry.outstanding), since its shared record can read loaded beside them.
  */
 @Injectable({ providedIn: 'root' })
 export class SourceRetryService {
@@ -198,6 +215,7 @@ export class SourceRetryService {
   unavailableReason(id: string): string | null {
     const entry = SOURCE_RETRY[id];
     if (!entry) return NO_RETRY_REASON[id] ?? 'no loader';
+    if (entry.outstanding?.(this.injector)) return entry.blocked?.(this.injector) ?? null;
     const record = this.registry.get(id);
     if (record.status === 'loading') return 'a request is in flight';
     if (this.registry.hasData(id)) return 'loaded; nothing to retry';
@@ -210,8 +228,9 @@ export class SourceRetryService {
     const entry = SOURCE_RETRY[id];
     const svc = this.injector.get(entry.service);
     // A service that was never created this session starts its own load when it is
-    // created; running the loader again would send a second request.
-    if (this.registry.get(id).status === 'loading') return true;
+    // created; running the loader again would send a second request. Items still waiting
+    // for a Retry are asked for again even while another item of the source is in flight.
+    if (this.registry.get(id).status === 'loading' && !entry.outstanding?.(this.injector)) return true;
     entry.run(svc, this.injector);
     return true;
   }

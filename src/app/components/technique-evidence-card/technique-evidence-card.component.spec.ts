@@ -7,6 +7,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { type EnvironmentProviders, type Provider, WritableSignal, signal } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ValidationStatusPillComponent } from '../validation-status-pill/validation-status-pill.component';
 import { ValidationService } from '../../services/validation.service';
 import { BehaviorSubject, of } from 'rxjs';
@@ -26,7 +28,7 @@ import { EnrichmentService } from '../../services/enrichment.service';
 import { MatrixControlService } from '../../services/matrix-control.service';
 import { ThreatProfileService } from '../../services/threat-profile.service';
 import { CveService } from '../../services/cve.service';
-import { D3fendService } from '../../services/d3fend.service';
+import { D3fendService, d3fendTechniqueApiUrl } from '../../services/d3fend.service';
 import type { KevEntry } from '../../models/cve';
 import { AttackCveService } from '../../services/attack-cve.service';
 import { SettingsService } from '../../services/settings.service';
@@ -868,6 +870,40 @@ describe('TechniqueEvidenceCardComponent (P2-18)', () => {
       // Through the data-health Retry's 'd3fend-technique-api' entry, never a second path.
       expect(sourceRetry).toHaveBeenCalledOnceWith('d3fend-technique-api');
       expect(d3fendRetry).not.toHaveBeenCalled();
+    });
+
+    it('Retry asks again through the real data-health Retry after another technique loaded (the shared record reads loaded)', () => {
+      // The real SourceRetryService, SourceRegistry and D3fendService: this technique's call
+      // failed, then another technique's call answered, so the shared record reads loaded.
+      const el = render(state(), false, 'frequency', [
+        provideHttpClient(), provideHttpClientTesting(),
+        { provide: SourceRetryService, useClass: SourceRetryService },
+        { provide: D3fendService, useClass: D3fendService },
+      ]);
+      const http = TestBed.inject(HttpTestingController);
+      const d3fend = TestBed.inject(D3fendService);
+      const registry = TestBed.inject(SourceRegistryService);
+      const calls = (attackId: string) => http.match(req => req.url === d3fendTechniqueApiUrl(attackId));
+      const answer = { off_to_def: { results: { bindings: [] } } };
+
+      d3fend.getCountermeasures('T1078', true);
+      calls('T1078').forEach(req => req.error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown Error' }));
+      d3fend.getCountermeasures('T1003', true);
+      calls('T1003').forEach(req => req.flush(answer));
+      fixture.detectChanges();
+      expect(registry.get('d3fend-technique-api').status).toBe('loaded');
+      expect(text(d3fendRow(el))).toBe('D3FEND countermeasures n/a D3FEND did not load · Retry');
+
+      el.querySelector<HTMLButtonElement>('[data-testid="ev-d3fend-retry"]')!.click();
+      fixture.detectChanges();
+      const again = calls('T1078');
+      expect(again.length).withContext('Retry sent a new request for this technique').toBe(1);
+      expect(calls('T1003').length).withContext('the technique that answered is not asked again').toBe(0);
+      expect(d3fendRow(el).getAttribute('data-testid')).toBe('ev-known-loading');
+
+      again[0].flush(answer);
+      fixture.detectChanges();
+      expect(text(d3fendRow(el))).toBe('D3FEND countermeasures 0 MITRE D3FEND');
     });
 
     it('a technique nothing has asked about yet reads the count it has (the hosts prime it)', () => {
