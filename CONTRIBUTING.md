@@ -753,8 +753,6 @@ feat: add YARA rule generation panel
 
 Add a new panel that generates YARA rules from ATT&CK technique
 metadata, supporting file-based and network-based detection signatures.
-
-Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
 ```
 
 ```
@@ -762,8 +760,6 @@ fix: correct EPSS score display in sidebar CVE section
 
 The EPSS pill was showing the raw probability instead of the
 percentage. Multiply by 100 and round to 1 decimal place.
-
-Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
 ```
 
 ```
@@ -773,13 +769,6 @@ Move getCoverageColors() from MatrixComponent into SettingsService
 so all components can access the active color theme consistently.
 ```
 
-### Co-Authored-By
-
-When Claude assists with a commit, include the Co-Authored-By trailer:
-
-```
-Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
-```
 
 ### Branch Naming
 
