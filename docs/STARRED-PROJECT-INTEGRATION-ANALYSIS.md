@@ -94,7 +94,8 @@ Both shipped through pull requests to `main`; the original agent working branch 
 
 ### 11. OWASP OpenCRE — Cross-Standard Compliance
 - **Repo:** `OWASP/OpenCRE` (151★, Python)
-- **What:** Maps between NIST, CIS, OWASP, CWE, CAPEC standards bidirectionally
+- **What:** Links security standards through common requirement IDs (CREs): OWASP ASVS, Cheat Sheets and WSTG, NIST SP 800-53, ISO 27001, CWE, CAPEC and others. It has no CIS Controls and no ATT&CK data, and it reaches CAPEC only through each pattern's related CWE entries (OWASP/OpenCRE source at `cbf22e0`)
+- **In the app:** each CAPEC pattern in the technique drawer links to OpenCRE through its smartlink route (`src/app/services/opencre-links.ts`)
 - **Integration:** Enrich compliance mapper with cross-standard links
 - **Roadmap alignment:** Tier 2.4 "Compliance Framework Mapper"
 

@@ -86,6 +86,7 @@ import { type TechniqueMarkRecord, TechniqueMarksService } from '../../services/
 import { postureBadge } from '../../models/posture/posture-vocabulary';
 import { parseTechniqueRef, refForTechnique, techniqueRefKey } from '../../models/technique-ref';
 import { ctidDatasetUrl } from '../../services/ctid-links';
+import { openCreSmartlink } from '../../services/opencre-links';
 import { TechniqueEvidenceCardComponent } from '../technique-evidence-card/technique-evidence-card.component';
 import {
   RULE_SOURCE_KEYS, RuleSourceListComponent, type RuleSourceView, ruleSourceError, ruleSourceView,
@@ -135,6 +136,15 @@ export class SidebarComponent implements OnInit, OnDestroy {
    */
   ctidUrl(framework: string): string {
     return ctidDatasetUrl(framework);
+  }
+
+  /**
+   * OWASP OpenCRE link for a CAPEC pattern: the requirements and guidance OpenCRE links
+   * to it through its related CWE entries, or the pattern on capec.mitre.org when
+   * OpenCRE has none. Null when the id carries no number.
+   */
+  openCreCapecUrl(capecId: string): string | null {
+    return openCreSmartlink('CAPEC', capecId);
   }
 
   technique: Technique | null = null;

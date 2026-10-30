@@ -17,6 +17,7 @@ import { RULE_COVERAGE_FIXTURE } from '../../testing/rule-coverage-fixture';
 import { parseFixtureDomain, resetBrowserState } from '../../testing/lens-harness';
 import { AttackCveService, CveAttackMapping } from '../../services/attack-cve.service';
 import { EpssScore, EpssService } from '../../services/epss.service';
+import type { CapecEntry } from '../../services/capec.service';
 
 const noopBSet = () => new BehaviorSubject(new Set());
 const noopBMap = () => new BehaviorSubject(new Map());
@@ -444,5 +445,67 @@ describe('SidebarComponent: Atomic live tests (failed reads failed, with Retry)'
     expect(c.atomicLiveFailed).toBeFalse();
     expect(host.querySelector('[data-testid="atomic-live-failed"]')).toBeNull();
     expect(text(host.querySelector('.atomic-item .atomic-name'))).toBe('System info');
+  });
+});
+
+// The CAPEC section links each pattern to OWASP OpenCRE (services/opencre-links.ts), next
+// to the pattern's CWE pills. The drawer is mounted with the REAL services on the fixture
+// domain; the CAPEC rows are set directly, as the CAPEC STIX bundle is not fetched here.
+describe('SidebarComponent: CAPEC patterns link to OpenCRE', () => {
+  let fixture: ComponentFixture<SidebarComponent>;
+  let cmp: SidebarComponent;
+
+  beforeEach(() => {
+    resetBrowserState();
+    const domain = parseFixtureDomain();
+    TestBed.configureTestingModule({
+      imports: [SidebarComponent],
+      providers: [provideHttpClient(withXhr()), provideHttpClientTesting(), provideRouter([]), provideLocationMocks()],
+    });
+    (TestBed.inject(DataService) as unknown as { domainSubject: { next(d: Domain): void } }).domainSubject.next(domain);
+    fixture = TestBed.createComponent(SidebarComponent);
+    cmp = fixture.componentInstance;
+    fixture.detectChanges();
+    TestBed.inject(FilterService).selectTechnique(domain.techniques.find(t => t.attackId === 'T1078')!);
+    fixture.detectChanges();
+  });
+
+  afterEach(() => resetBrowserState());
+
+  const pattern = (id: string, cweIds: string[]): CapecEntry => ({
+    id, name: 'Pattern ' + id, description: '', likelihood: '', severity: '', attackIds: ['T1078'], cweIds,
+    url: 'https://capec.mitre.org/data/definitions/' + id.replace('CAPEC-', '') + '.html',
+  });
+
+  /** Show these CAPEC rows with the section expanded; returns the rendered rows. */
+  function showCapec(entries: CapecEntry[]): HTMLElement[] {
+    cmp.capecEntries = entries;
+    cmp.collapsedSections.delete('capec');
+    (cmp as unknown as { cdr: { markForCheck(): void } }).cdr.markForCheck();
+    fixture.detectChanges();
+    return [...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.capec-entry')];
+  }
+
+  it('gives every pattern an OpenCRE chip, with or without CWE pills', () => {
+    const rows = showCapec([pattern('CAPEC-66', ['CWE-89']), pattern('CAPEC-560', [])]);
+    expect(rows.length).toBe(2);
+    const links = rows.map(r => r.querySelector<HTMLAnchorElement>('a.opencre-link'));
+    expect(links.map(a => a?.getAttribute('href'))).toEqual([
+      'https://opencre.org/smartlink/standard/CAPEC/66',
+      'https://opencre.org/smartlink/standard/CAPEC/560',
+    ]);
+    for (const a of links) {
+      expect(a!.getAttribute('target')).toBe('_blank');
+      expect(a!.getAttribute('rel')).toContain('noopener');
+      expect(a!.getAttribute('data-tone')).toBe('neutral');
+    }
+    expect(rows[0].querySelectorAll('a.cwe-pill').length).withContext('CWE pills kept').toBe(1);
+  });
+
+  it('renders no OpenCRE chip, and no empty chip row, for an id without a number', () => {
+    const rows = showCapec([pattern('CAPEC-', [])]);
+    expect(rows.length).toBe(1);
+    expect(rows[0].querySelector('a.opencre-link')).toBeNull();
+    expect(rows[0].querySelector('.capec-cwe-pills')).toBeNull();
   });
 });

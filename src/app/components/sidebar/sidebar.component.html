@@ -654,12 +654,16 @@
                       <span sbBadge class="sb-badge capec-badge capec-severity-{{ c.severity.toLowerCase() }}" [attr.data-tone]="badgeTone('level', c.severity)"
                             title="Typical severity">{{ c.severity }} impact</span>
                     }
-                    @if (c.cweIds.length > 0) {
+                    @if (c.cweIds.length > 0 || openCreCapecUrl(c.id)) {
                       <div class="sb-chips capec-cwe-pills">
                         @for (cweId of c.cweIds.slice(0, 3); track cweId) {
                           <a class="sb-chip cwe-pill" data-tone="purple" [href]="cweService.getUrl(cweId)" target="_blank" rel="noopener" [title]="$safeNavigationMigration(cweService.getInfo(cweId)?.name)">
                             <span class="sb-chip-id">{{ cweId }}</span>@if (cweService.getInfo(cweId)?.name) { <span class="cwe-pill-name">{{ cweService.getInfo(cweId)!.name }}</span> }
                           </a>
+                        }
+                        @if (openCreCapecUrl(c.id); as openCre) {
+                          <a class="sb-chip opencre-link" data-tone="neutral" [href]="openCre" target="_blank" rel="noopener"
+                             title="OWASP OpenCRE: requirements and guidance linked to this pattern through its CWE entries">OpenCRE</a>
                         }
                       </div>
                     }
