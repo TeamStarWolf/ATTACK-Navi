@@ -276,6 +276,86 @@
   padding: 4px 2px 6px;
 }
 
+/* The grouped picker spans both menu columns: two hundred layers with long
+   case-study names read badly in half the menu. */
+.library-layers-group {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.library-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.library-search-input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 11px;
+
+  &::placeholder { color: var(--text-faint); }
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+}
+
+.library-search-status {
+  flex: none;
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
+.library-group {
+  min-width: 0;
+}
+
+.library-group-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 4px 2px;
+  margin: 2px 0 4px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover { color: var(--text-primary); }
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+}
+
+.library-group-chevron {
+  width: 10px;
+  color: var(--text-faint);
+}
+
+.library-group-count {
+  font-weight: 400;
+  color: var(--text-faint);
+}
+
+.library-group-list .heatmap-grid {
+  min-width: 0;
+
+  .heatmap-mode-btn { min-width: 0; }
+}
+
 .user-layer-name {
   padding: 6px 10px;
   font-size: 11px;

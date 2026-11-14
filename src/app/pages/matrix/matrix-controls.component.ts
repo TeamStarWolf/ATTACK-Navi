@@ -20,7 +20,7 @@ import { DEFAULT_HEATMAP_MODE, FilterService, HeatmapMode, SearchScope, SortMode
 import { AttackDomain, DataService } from '../../services/data.service';
 import { MatrixControlService } from '../../services/matrix-control.service';
 import { AttackCveService } from '../../services/attack-cve.service';
-import { LibraryLayerService, LibraryLayerMeta } from '../../services/library-layer.service';
+import { LibraryLayerGroup, LibraryLayerMeta, LibraryLayerService, groupLibraryLayers } from '../../services/library-layer.service';
 import { UserLayerService } from '../../services/user-layer.service';
 import { AttackNaviLayer } from '../../models/user-layer';
 import { HEATMAP_MODES, HEATMAP_GROUPS, HeatmapModeDef, LensAvailability, heatmapShortLabel, lensAvailability } from '../../models/heatmap-modes';
@@ -149,6 +149,14 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
   /** How many lenses are disabled in attackDomain. */
   disabledLensCount = 0;
   libraryLayers: LibraryLayerMeta[] = [];
+  /** The manifest in its picker groups (bundled groups first), rebuilt when the manifest changes. */
+  libraryLayerGroups: LibraryLayerGroup[] = [];
+  /** The picker's search text; filters every group by layer name. */
+  libraryLayerQuery = '';
+  /** Groups the user opened or closed by hand; the rest follow libraryGroupOpen's default. */
+  private libraryGroupToggled = new Map<string, boolean>();
+  /** A search box is shown once the list is longer than this. */
+  readonly librarySearchThreshold = 40;
   /** False until the library manifest loads - the menu says "loading" rather than showing nothing. */
   libraryManifestLoaded = false;
   /** Why the manifest did not load (E1.3): a failure is shown as a failure, not as "loading" or an empty list. */
@@ -239,7 +247,11 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
       this.defaultHeatmapMode = effectiveDefaultLens(has);
       this.cdr.markForCheck();
     }));
-    this.subs.add(this.libraryLayerService.manifest$.subscribe((list) => { this.libraryLayers = list; this.cdr.markForCheck(); }));
+    this.subs.add(this.libraryLayerService.manifest$.subscribe((list) => {
+      this.libraryLayers = list;
+      this.libraryLayerGroups = groupLibraryLayers(list);
+      this.cdr.markForCheck();
+    }));
     this.subs.add(this.libraryLayerService.manifestLoaded$.subscribe((v) => { this.libraryManifestLoaded = v; this.cdr.markForCheck(); }));
     this.subs.add(this.libraryLayerService.manifestError$.subscribe((e) => { this.libraryManifestError = e; this.cdr.markForCheck(); }));
     this.subs.add(this.libraryLayerService.activeFile$.subscribe((f) => { this.activeLibraryFile = f; this.cdr.markForCheck(); }));
@@ -452,6 +464,63 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
   /** Unload the imported layer; the matrix falls back to the curated layer, if one is picked. */
   unloadUserLayer(): void {
     this.userLayerService.clearActive();
+  }
+
+  /** True when the picker shows a search box (the list is longer than librarySearchThreshold). */
+  get librarySearchable(): boolean {
+    return this.libraryLayers.length > this.librarySearchThreshold;
+  }
+
+  /**
+   * The groups to render: every group while the search is empty, otherwise only
+   * the groups with a layer whose name contains every search word, holding only
+   * those layers.
+   */
+  get visibleLibraryGroups(): LibraryLayerGroup[] {
+    const words = this.libraryLayerQuery.toLowerCase().split(/\s+/).filter(Boolean);
+    if (!words.length) return this.libraryLayerGroups;
+    return this.libraryLayerGroups
+      .map((g) => ({
+        group: g.group,
+        layers: g.layers.filter((l) => {
+          const name = l.name.toLowerCase();
+          return words.every((w) => name.includes(w));
+        }),
+      }))
+      .filter((g) => g.layers.length > 0);
+  }
+
+  /** How many layers the search matches (the status line under the box). */
+  get libraryMatchCount(): number {
+    return this.visibleLibraryGroups.reduce((n, g) => n + g.layers.length, 0);
+  }
+
+  onLibrarySearch(value: string): void {
+    this.libraryLayerQuery = value;
+  }
+
+  /**
+   * Whether a group's list is shown. A search opens every matching group. Without
+   * one, a group the user toggled stays as they left it; otherwise the groups of
+   * bundled layers (no `source`) and the group holding the active layer are open
+   * and the groups synced from the library are closed, so the menu does not open
+   * on two hundred buttons.
+   */
+  libraryGroupOpen(group: LibraryLayerGroup): boolean {
+    if (this.libraryLayerQuery.trim()) return true;
+    const toggled = this.libraryGroupToggled.get(group.group);
+    if (toggled !== undefined) return toggled;
+    if (group.layers.some((l) => l.file === this.activeLibraryFile)) return true;
+    return group.layers.every((l) => !l.source);
+  }
+
+  toggleLibraryGroup(group: LibraryLayerGroup): void {
+    this.libraryGroupToggled.set(group.group, !this.libraryGroupOpen(group));
+  }
+
+  /** DOM id of a group's list, for aria-controls. */
+  libraryGroupId(group: string): string {
+    return `library-group-${group.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
   }
 
   /** Display name for a layer, without the "TeamStarWolf - " prefix. */

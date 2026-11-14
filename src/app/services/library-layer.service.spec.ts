@@ -3,7 +3,9 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { LibraryLayerService } from './library-layer.service';
+import {
+  LIBRARY_LAYER_GROUPS, LibraryLayerMeta, LibraryLayerService, UNGROUPED_LIBRARY_LAYERS, groupLibraryLayers,
+} from './library-layer.service';
 import { SourceRegistryService } from './source-registry.service';
 
 describe('LibraryLayerService', () => {
@@ -165,5 +167,62 @@ describe('LibraryLayerService', () => {
     service.setActive('web-application-attacks.json');
     httpMock.expectNone('assets/data/library-layers/web-application-attacks.json');
     expect(service.getScore('T1190')).toBe(50);
+  });
+
+  it('keeps the group and source fields of synced manifest entries', () => {
+    const synced = {
+      file: 'study-log4shell-cve-2021-44228.json', name: 'TeamStarWolf - Log4Shell (CVE-2021-44228) Case Study',
+      description: 'study', blurb: 'short', group: 'Case studies',
+      source: 'https://teamstarwolf.com/navigator/library-layers/log4shell-cve-2021-44228.json',
+    };
+    flushManifest([{ ...MANIFEST[0], group: 'Curated themes' }, synced]);
+    expect(service.manifest[1].group).toBe('Case studies');
+    expect(service.manifest[1].source).toBe(synced.source);
+    service.setActive(synced.file);
+    httpMock.expectOne(`assets/data/library-layers/${synced.file}`).flush({
+      name: synced.name, description: 'study', techniques: [{ techniqueID: 'T1190', tactic: 'initial-access', score: 3 }],
+    });
+    expect(service.activeMeta()?.source).toBe(synced.source);
+    expect(service.getScore('T1190')).toBe(3);
+  });
+});
+
+describe('groupLibraryLayers', () => {
+  const layer = (file: string, group?: string): LibraryLayerMeta => ({ file, name: file, description: '', ...(group ? { group } : {}) });
+
+  it('orders the groups bundled first, then synced, as LIBRARY_LAYER_GROUPS lists them', () => {
+    const grouped = groupLibraryLayers([
+      layer('fraud.json', 'Fraud'),
+      layer('study-b.json', 'Case studies'),
+      layer('web.json', 'Curated themes'),
+      layer('lylat.json', 'Lylat'),
+      layer('study-a.json', 'Case studies'),
+      layer('group-x.json', 'Threat groups'),
+      layer('vendor.json', 'Vendors'),
+    ]);
+    expect(grouped.map((g) => g.group)).toEqual(['Curated themes', 'Threat groups', 'Lylat', 'Case studies', 'Vendors', 'Fraud']);
+    // Manifest order is kept inside a group.
+    expect(grouped[3].layers.map((l) => l.file)).toEqual(['study-b.json', 'study-a.json']);
+  });
+
+  it('lists the bundled groups before every synced group', () => {
+    expect(LIBRARY_LAYER_GROUPS.slice(0, 5)).toEqual(['Curated themes', 'Threat groups', 'HTB frequency', 'Agentic AI', 'Lylat']);
+    expect(LIBRARY_LAYER_GROUPS.slice(5)).toEqual(['Case studies', 'Threat actors', 'Vendors', 'Kill-chain stages', 'Computed', 'Analytics', 'AI', 'Fraud']);
+  });
+
+  it('puts an unknown group after the known ones and ungrouped entries last', () => {
+    const grouped = groupLibraryLayers([
+      layer('none.json'),
+      layer('new-b.json', 'Brand new'),
+      layer('web.json', 'Curated themes'),
+      layer('new-a.json', 'Another new'),
+      layer('blank.json', '  '),
+    ]);
+    expect(grouped.map((g) => g.group)).toEqual(['Curated themes', 'Brand new', 'Another new', UNGROUPED_LIBRARY_LAYERS]);
+    expect(grouped[3].layers.map((l) => l.file)).toEqual(['none.json', 'blank.json']);
+  });
+
+  it('returns no groups for an empty manifest', () => {
+    expect(groupLibraryLayers([])).toEqual([]);
   });
 });
