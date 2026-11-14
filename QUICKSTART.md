@@ -173,7 +173,7 @@ recorded a status.
 | Status | none; source health and data freshness |
 | Settings | Preferences, Changelog |
 
-The Library workspace includes 37 named layers drawn from the TeamStarWolf library.
+The Library workspace includes 201 named layers drawn from the TeamStarWolf library, grouped in the matrix controls' Library Layers picker with a search box.
 
 ## Share and export
 

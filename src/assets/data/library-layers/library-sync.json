@@ -1,0 +1,1526 @@
+{
+  "source": "https://teamstarwolf.com/navigator/",
+  "index": "https://teamstarwolf.com/navigator/library-layers/index.json",
+  "indexVersion": null,
+  "indexSha256": "7bf475af645e2247cc5f1c80db0d3f3c2a2fbef9e58d8da5df391ce0fcc2926f",
+  "synced": "2026-11-14",
+  "bundledVersions": {
+    "enterprise": "19.2",
+    "ics": "19.2",
+    "mobile": "19.2",
+    "f3": "1.2"
+  },
+  "files": [
+    {
+      "file": "study-apt41-public-record.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/apt41-public-record.json",
+      "sha256": "bacc22076ae22747c4d5542d73a3dcec0ab1e7dfd1b1590cd29e4789558e5f0f",
+      "domain": "enterprise-attack",
+      "techniques": 124
+    },
+    {
+      "file": "study-atf-major-incident-2026.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/atf-major-incident-2026.json",
+      "sha256": "3c23470c19438a01dc083efe054d35e47f5bb9dca295d9fc6a1562447b788e72",
+      "domain": "enterprise-attack",
+      "techniques": 5
+    },
+    {
+      "file": "study-pre-internet-threats.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/pre-internet-threats.json",
+      "sha256": "20c939a06be678fad40f76e3a0df64979b8d8054967fef2e48f389ac5b7ca11e",
+      "domain": "enterprise-attack",
+      "techniques": 31
+    },
+    {
+      "file": "study-beyondtrust-remote-support-cve-2026-1731.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/beyondtrust-remote-support-cve-2026-1731.json",
+      "sha256": "ff8a5139f9ab6eee5534ec4e63d1d78b6e40f9b21bcda4c5328844e39599f29e",
+      "domain": "enterprise-attack",
+      "techniques": 16
+    },
+    {
+      "file": "study-binance-heist-2026.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/binance-heist-2026.json",
+      "sha256": "c8b03e987b9803e1ab1bab5271c73ee44a1da00ffb062b54390cd61a321ef906",
+      "domain": "enterprise-attack",
+      "techniques": 11
+    },
+    {
+      "file": "study-boston-scientific-attack-2026.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/boston-scientific-attack-2026.json",
+      "sha256": "b3df5a1c8685459e40c772e4b7cb78b971ab9e796f3286babf5f7d35b917cff5",
+      "domain": "enterprise-attack",
+      "techniques": 2
+    },
+    {
+      "file": "study-carecloud-breach-2026.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/carecloud-breach-2026.json",
+      "sha256": "22be0986e2154c49ce5b57db9a3d945ba0f25029d145c90e757b2ec1ebbb5b4f",
+      "domain": "enterprise-attack",
+      "techniques": 2
+    },
+    {
+      "file": "study-change-healthcare-2024.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/change-healthcare-2024.json",
+      "sha256": "72baea25d1850cde266982d058691cf4d3112f36eaf550ff7eb85a7254aba66a",
+      "domain": "enterprise-attack",
+      "techniques": 30
+    },
+    {
+      "file": "study-check-point-gaia-cve-2026-123039.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/check-point-gaia-cve-2026-123039.json",
+      "sha256": "72cb5262ad5626819a6c5e2af2388ab98b8d4fc1e35d14c29c67d5e6385f4a06",
+      "domain": "enterprise-attack",
+      "techniques": 20
+    },
+    {
+      "file": "study-check-point-vpn-cve-2026-50751.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/check-point-vpn-cve-2026-50751.json",
+      "sha256": "edddcc36213ff433e1e7f5c05d9f9ab316e4d9003ce97a7ebe537c3e7fd70a1a",
+      "domain": "enterprise-attack",
+      "techniques": 4
+    },
+    {
+      "file": "study-chrome-isolated-web-apps-2026.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chrome-isolated-web-apps-2026.json",
+      "sha256": "0c851eb6445c743762f1c11c68d2a940608acc5f41e3cee7654fd0ef032f79f2",
+      "domain": "enterprise-attack",
+      "techniques": 18
+    },
+    {
+      "file": "study-cisco-sdwan-cve-2026-20127.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/cisco-sdwan-cve-2026-20127.json",
+      "sha256": "a4132b0ba9076b3243de5be30b64280ec1d3b05ff1b20944d7852d769b5309cb",
+      "domain": "enterprise-attack",
+      "techniques": 15
+    },
+    {
+      "file": "study-citrix-netscaler-cve-2026-3055.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/citrix-netscaler-cve-2026-3055.json",
+      "sha256": "9fd6083188c1e14d5518cb654d67b207dc4c378e6a46798b93c79fbdd6e227f3",
+      "domain": "enterprise-attack",
+      "techniques": 4
+    },
+    {
+      "file": "study-citrix-netscaler-september-2026.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/citrix-netscaler-september-2026.json",
+      "sha256": "249add9a832079bf6a9117ac88ab79e6af236ad3c54dcbca5184a9b524060197",
+      "domain": "enterprise-attack",
+      "techniques": 15
+    },
+    {
+      "file": "study-nextcloud-richdocumentscode-cve-2026-110447.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/nextcloud-richdocumentscode-cve-2026-110447.json",
+      "sha256": "38c957983bac1ea8974eb0ec245b40b5b6fd3da51657769facdddb0f19dee6ee",
+      "domain": "enterprise-attack",
+      "techniques": 6
+    },
+    {
+      "file": "study-connectwise-storm-0940-2026.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/connectwise-storm-0940-2026.json",
+      "sha256": "16832f738b95d0d9edbe5cce9fa50273cf9079d9b1bf8ed070a909e35276b889",
+      "domain": "enterprise-attack",
+      "techniques": 11
+    },
+    {
+      "file": "study-cpanel-whm-cve-2026-41940.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/cpanel-whm-cve-2026-41940.json",
+      "sha256": "091cb2e543a4edf79a6c7c85b57a589004184fbb063778e652d6b7eb0c5addbb",
+      "domain": "enterprise-attack",
+      "techniques": 6
+    },
+    {
+      "file": "study-hacker-and-the-state-cases.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/hacker-and-the-state-cases.json",
+      "sha256": "f27aba2e426d4c35fed1be228b0a29f79da4bc2144df3b60fee81ef38fa47d37",
+      "domain": "enterprise-attack",
+      "techniques": 72
+    },
+    {
+      "file": "study-cybercrime-four-books.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/cybercrime-four-books.json",
+      "sha256": "6e59860e356e102271eaf92fa07911cf592889d03b8f4f3d07e99c2e0bf0df2b",
+      "domain": "enterprise-attack",
+      "techniques": 19
+    },
+    {
+      "file": "study-dell-recoverpoint-cve-2026-22769.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/dell-recoverpoint-cve-2026-22769.json",
+      "sha256": "02ae3e205a90a60c5c274273c045462e668d47c85f5d473a09fad328c55b676b",
+      "domain": "enterprise-attack",
+      "techniques": 8
+    },
+    {
+      "file": "study-dentaquest-breach-2026.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/dentaquest-breach-2026.json",
+      "sha256": "d3bc7c8611a892ffe111d66f4b9e1f626e85b921e95572764f9689c1706fdfe0",
+      "domain": "enterprise-attack",
+      "techniques": 5
+    },
+    {
+      "file": "study-ecommerce-threats.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/ecommerce-threats.json",
+      "sha256": "0208c3ad96f70a2df08bb82ef93784bdc7700161f6bc6fe54c87c0ea64eca5da",
+      "domain": "enterprise-attack",
+      "techniques": 23
+    },
+    {
+      "file": "study-emudhra-ca-compromise-2026.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/emudhra-ca-compromise-2026.json",
+      "sha256": "78ed7bd7324d3bf3d9b13b56e020d9b669cab17b8128976fbc6bf6cb68eecb89",
+      "domain": "enterprise-attack",
+      "techniques": 7
+    },
+    {
+      "file": "study-european-commission-cloud-breach-2026.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/european-commission-cloud-breach-2026.json",
+      "sha256": "b8406ae4a9add49153faeeecfae0bd3584251b43b276742d3debd14523283f2b",
+      "domain": "enterprise-attack",
+      "techniques": 17
+    },
+    {
+      "file": "study-exchange-marauder-2021.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/exchange-marauder-2021.json",
+      "sha256": "524035cd11b0f901a67690b2b23e23a141d0d8d02b0b02599ff947c7236efcd1",
+      "domain": "enterprise-attack",
+      "techniques": 44
+    },
+    {
+      "file": "study-fancy-bear-goes-phishing.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/fancy-bear-goes-phishing.json",
+      "sha256": "f107f40a63ed3d04d721331e8296a189cb2f46f1bbefe67388873fd99c25d28c",
+      "domain": "enterprise-attack",
+      "techniques": 73
+    },
+    {
+      "file": "study-fbi-surveillance-system-breach-2026.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/fbi-surveillance-system-breach-2026.json",
+      "sha256": "375d2096f2315775fb8fbf7b9f8408d6cbf9a355735cef8ff55fa30ccb3400c6",
+      "domain": "enterprise-attack",
+      "techniques": 2
+    },
+    {
+      "file": "study-fortinet-forticloud-sso-cve-2026-24858.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/fortinet-forticloud-sso-cve-2026-24858.json",
+      "sha256": "f48d72546585f8889c466c154519f3e3e50bf1003aab373d4c2cd5b6c71a32d1",
+      "domain": "enterprise-attack",
+      "techniques": 8
+    },
+    {
+      "file": "study-ghostcat-cve-2020-1938.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/ghostcat-cve-2020-1938.json",
+      "sha256": "9892e25d8125778d12e7c8d2c0a2a0260c3836bf870d1a055a2230058f511918",
+      "domain": "enterprise-attack",
+      "techniques": 6
+    },
+    {
+      "file": "study-gitlab-cve-2026-97229.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/gitlab-cve-2026-97229.json",
+      "sha256": "be5d88e39c17701f7e69fb2fa60ada128c73152c3e137b520fec823a91a109e2",
+      "domain": "enterprise-attack",
+      "techniques": 6
+    },
+    {
+      "file": "study-hugging-face-supply-chain-enterprise.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/hugging-face-supply-chain-enterprise.json",
+      "sha256": "493a66c16e51d1fe02027c439d114cc24370942609e4a9bbad5ef62aae193bab",
+      "domain": "enterprise-attack",
+      "techniques": 24
+    },
+    {
+      "file": "study-ics-attacks-2024-2026-enterprise.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/ics-attacks-2024-2026-enterprise.json",
+      "sha256": "c7af8ac20ed5b76957343226e9667c4caad2dc35741757487700fc1e6ecab4d4",
+      "domain": "enterprise-attack",
+      "techniques": 79
+    },
+    {
+      "file": "study-ics-attacks-2024-2026-ics.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/case-studies/ics-attacks-2024-2026-ics.json",
+      "sha256": "5cea10dabe5c1a02689d72e13c2c9a194ae8c182a951dcd712ec5356d407657e",
+      "domain": "ics-attack",
+      "techniques": 43,
+      "unknown": [
+        "T0869.001",
+        "T0869.002",
+        "T1701",
+        "T1701.001",
+        "T1701.003"
+      ]
+    },
+    {
+      "file": "study-idscan-drivers-license-breach-2026.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/idscan-drivers-license-breach-2026.json",
+      "sha256": "e28b82624f99c963a924a3a1a9b7ae46a53332de1781a77bb6371227785426ae",
+      "domain": "enterprise-attack",
+      "techniques": 3
+    },
+    {
+      "file": "study-instructure-canvas-breach-2026.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/instructure-canvas-breach-2026.json",
+      "sha256": "d581951baea198f74841be92de58e59e91d0b0ea771ae34e8f4e937160a54994",
+      "domain": "enterprise-attack",
+      "techniques": 9
+    },
+    {
+      "file": "study-ivanti-connect-secure-2026.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/ivanti-connect-secure-2026.json",
+      "sha256": "8c3313563628a841a7808a78f071c2f92bbd77d36ad2b0a12d37add4dc1fe3bb",
+      "domain": "enterprise-attack",
+      "techniques": 22
+    },
+    {
+      "file": "study-ivanti-epmm-cve-2026-1281.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/ivanti-epmm-cve-2026-1281.json",
+      "sha256": "08025b0cbf5cf76e10ba920514540a101ad0cc8f0f753c67d8e4c391139bb556",
+      "domain": "enterprise-attack",
+      "techniques": 13
+    },
+    {
+      "file": "study-mitnick-intrusions.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/mitnick-intrusions.json",
+      "sha256": "68383009d0944fd255d6a54b86fd13cf242af967a8ad57b15df2384d50424dee",
+      "domain": "enterprise-attack",
+      "techniques": 24
+    },
+    {
+      "file": "study-log4shell-cve-2021-44228.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/log4shell-cve-2021-44228.json",
+      "sha256": "8176c9ab0146c1da5ef55440704d50b6cefbacb057d9111fc34f016006fd2160",
+      "domain": "enterprise-attack",
+      "techniques": 62
+    },
+    {
+      "file": "study-magento-cve-2026-48356.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/magento-cve-2026-48356.json",
+      "sha256": "218ed1ecf5c99ab8c183708c27b63641a0d224c056ddfc83dea5809a509fc302",
+      "domain": "enterprise-attack",
+      "techniques": 4
+    },
+    {
+      "file": "study-cloud-security-incidents-2011-2026.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/cloud-security-incidents-2011-2026.json",
+      "sha256": "ef952508cc57df764f001624ea96217b35fef77d394b922cf414ef813c62c51a",
+      "domain": "enterprise-attack",
+      "techniques": 48
+    },
+    {
+      "file": "study-microsoft-office-cve-2026-21509.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/microsoft-office-cve-2026-21509.json",
+      "sha256": "6b08e9e5cfabfa164b0362af1987e08312592e4b7a6516104266ff022f50d5f2",
+      "domain": "enterprise-attack",
+      "techniques": 19
+    },
+    {
+      "file": "study-nable-ncentral-able2shell-2026.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/nable-ncentral-able2shell-2026.json",
+      "sha256": "1efeb865e5621685a26317ad444642c0e7c84f776d6d26221b79c69641df9076",
+      "domain": "enterprise-attack",
+      "techniques": 13
+    },
+    {
+      "file": "study-nodejs-cve-2026-111497.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/nodejs-cve-2026-111497.json",
+      "sha256": "97da2e0bfe16c32700594e66d8ce1986843c94f43ccb4a79bb1904fbce7a91a4",
+      "domain": "enterprise-attack",
+      "techniques": 3
+    },
+    {
+      "file": "study-notepad-plus-plus-update-hijack-2026.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/notepad-plus-plus-update-hijack-2026.json",
+      "sha256": "83f8f322b7cb5d523f596f0565a795e695e1396f64f460d41032eef4b184d234",
+      "domain": "enterprise-attack",
+      "techniques": 21
+    },
+    {
+      "file": "study-npm-supply-chain-attacks.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/npm-supply-chain-attacks.json",
+      "sha256": "d540e3bbf40ddc244396b6631865c98a34d37c7704efda802c652ab143b64d39",
+      "domain": "enterprise-attack",
+      "techniques": 30
+    },
+    {
+      "file": "study-nsa-cia-tool-leaks.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/nsa-cia-tool-leaks.json",
+      "sha256": "c9c99cd3d5464f7d5f3976fd0a0e7828f8724963723c0013cdae8fc018b44a43",
+      "domain": "enterprise-attack",
+      "techniques": 38
+    },
+    {
+      "file": "study-oracle-peoplesoft-shinyhunters-2026.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/oracle-peoplesoft-shinyhunters-2026.json",
+      "sha256": "131f4758b77faf3fb833c11504b8b4b62ae4e242fbffeb9d35773e3776e4f3ed",
+      "domain": "enterprise-attack",
+      "techniques": 27
+    },
+    {
+      "file": "study-palo-alto-pan-os-cve-2026-0257.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/palo-alto-pan-os-cve-2026-0257.json",
+      "sha256": "54c2dccecd0ffb492fa7f708ebfd9d6e0d3dce77353ff7573043ac6eb9ae8ba7",
+      "domain": "enterprise-attack",
+      "techniques": 18
+    },
+    {
+      "file": "study-php-8-4-27-cves.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/php-8-4-27-cves.json",
+      "sha256": "6847385385de72c1d307531aa18e01d726a891dd7140f6a428b4aebb5cfe00d1",
+      "domain": "enterprise-attack",
+      "techniques": 5
+    },
+    {
+      "file": "study-plex-media-server-2026.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/plex-media-server-2026.json",
+      "sha256": "bf9ee1581555bb7f76be37eef5165c6cc13aa79bdc6459a8752b0bdaf8021bab",
+      "domain": "enterprise-attack",
+      "techniques": 7
+    },
+    {
+      "file": "study-proftpd-mod-copy-cve-2015-3306.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/proftpd-mod-copy-cve-2015-3306.json",
+      "sha256": "6fa391b0fdbea80cb9b8f0d6ecdfba33cebc20d1721ae63ed6dcfae30b260d8a",
+      "domain": "enterprise-attack",
+      "techniques": 4
+    },
+    {
+      "file": "study-european-refrigeration-attacks-2026-enterprise.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/european-refrigeration-attacks-2026-enterprise.json",
+      "sha256": "bf07a738cf16a4eec01d262316925fc2a54820f614c9bc045856498f354776af",
+      "domain": "enterprise-attack",
+      "techniques": 6
+    },
+    {
+      "file": "study-european-refrigeration-attacks-2026-ics.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/case-studies/european-refrigeration-attacks-2026-ics.json",
+      "sha256": "46031dcf4473237df8fee8536341f84996301f3210890198a4d4c4da3d0f9bfb",
+      "domain": "ics-attack",
+      "techniques": 8
+    },
+    {
+      "file": "study-sandworm-operations.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/sandworm-operations.json",
+      "sha256": "f7c71b2a986f42e1197eb22458e3e8a5333b0ff9a03e6caa3a89fdfdd220560d",
+      "domain": "enterprise-attack",
+      "techniques": 78
+    },
+    {
+      "file": "study-sandworm-operations-ics.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/case-studies/sandworm-operations-ics.json",
+      "sha256": "cf04ea4e20b93cc2b08fad0e44aefe0187bfe102fdde50cc6d582172fbfe7b7e",
+      "domain": "ics-attack",
+      "techniques": 49,
+      "unknown": [
+        "T1701.001",
+        "T1701.002",
+        "T1701.004"
+      ]
+    },
+    {
+      "file": "study-sharepoint-2026-exploitation.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/sharepoint-2026-exploitation.json",
+      "sha256": "6bfb6a979814193661a1c6bcf6c08f01e63be84f81038a80a27f534feb20cb06",
+      "domain": "enterprise-attack",
+      "techniques": 12
+    },
+    {
+      "file": "study-smartertools-smartermail-2026.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/smartertools-smartermail-2026.json",
+      "sha256": "a1292e0f6d5deabebe9e78cef024a6b0e328f9482af4fc0b234153fec8aa8dc7",
+      "domain": "enterprise-attack",
+      "techniques": 13
+    },
+    {
+      "file": "study-solarwinds-sunburst-2019-2021.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/solarwinds-sunburst-2019-2021.json",
+      "sha256": "c71e55804dd6082b4d41e6719cf43014f23f690f5960d4d031b2694d9ed08b9a",
+      "domain": "enterprise-attack",
+      "techniques": 112
+    },
+    {
+      "file": "study-sshole-cve-2026-123158.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/sshole-cve-2026-123158.json",
+      "sha256": "d9657a66a8374b3c752d5a13333bda47a72f2d4f5f97375ab9d854cfbef7a11b",
+      "domain": "enterprise-attack",
+      "techniques": 15
+    },
+    {
+      "file": "study-stryker-handala-wiper-2026.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/stryker-handala-wiper-2026.json",
+      "sha256": "ef44fea1a96ed990aeee47efb7e03bb918fa2f5625faa9a6878a93bc9f9af49d",
+      "domain": "enterprise-attack",
+      "techniques": 11
+    },
+    {
+      "file": "study-stuxnet-s0603.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/stuxnet-s0603.json",
+      "sha256": "08f1308e18596f9a5a51c33e10d3ca19c1b21b90054725207275ec78454d5afd",
+      "domain": "enterprise-attack",
+      "techniques": 44
+    },
+    {
+      "file": "study-stuxnet-s0603-ics.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/case-studies/stuxnet-s0603-ics.json",
+      "sha256": "3879ed33fcc5653291f53bc5bcf31264fa20434b180f2b6fc885c5e1c1f18a8d",
+      "domain": "ics-attack",
+      "techniques": 25,
+      "unknown": [
+        "T1701.002"
+      ]
+    },
+    {
+      "file": "study-teampcp-trivy-supply-chain-2026.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/teampcp-trivy-supply-chain-2026.json",
+      "sha256": "53d636bf673af701b354b311dc70436c58e6b249ee4004ad572d4180392758c5",
+      "domain": "enterprise-attack",
+      "techniques": 30
+    },
+    {
+      "file": "study-cuckoos-egg-1986.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/cuckoos-egg-1986.json",
+      "sha256": "6a261a67fc07f501dfa4adca43bef0753498c646dbb3d776e53bcba26f76d412",
+      "domain": "enterprise-attack",
+      "techniques": 25
+    },
+    {
+      "file": "study-dotcom-era-cyber-events.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/dotcom-era-cyber-events.json",
+      "sha256": "7290702264c660b9a8bc795c9e7e0012b0bdb3b8a8100278442ddf51d3d863f9",
+      "domain": "enterprise-attack",
+      "techniques": 36
+    },
+    {
+      "file": "study-mandiant-intrusion-2020.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/mandiant-intrusion-2020.json",
+      "sha256": "572e0bcf296b148ec4a5a95c38c6be1bbd2cc7ea048b5e3f1ff4b8ae7043883b",
+      "domain": "enterprise-attack",
+      "techniques": 41
+    },
+    {
+      "file": "study-ransomware-ecosystem-2019-2026.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/ransomware-ecosystem-2019-2026.json",
+      "sha256": "cf5b2040c0b2b9e6b57677382588dc00539c3bb952641f5f860b26ab5f293ad1",
+      "domain": "enterprise-attack",
+      "techniques": 52
+    },
+    {
+      "file": "study-ransomware-ecosystem-2019-2026-ics.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/case-studies/ransomware-ecosystem-2019-2026-ics.json",
+      "sha256": "3db72473f99e49544a60e247d5cd20cbc228545e90e90945af73d96ad941717f",
+      "domain": "ics-attack",
+      "techniques": 3
+    },
+    {
+      "file": "study-cursor-extension-trojan-2026.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/cursor-extension-trojan-2026.json",
+      "sha256": "2e3cc5c88020cd7f0e0b44f49f8c7812a48952e3a162e403490e4419e0c60ec0",
+      "domain": "enterprise-attack",
+      "techniques": 17
+    },
+    {
+      "file": "study-chronicle-1993.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-1993.json",
+      "sha256": "7dd6c8d9d791a3cfaa188fa540711bb2d48938f5420602de4d96c9ccd82333e2",
+      "domain": "enterprise-attack",
+      "techniques": 17
+    },
+    {
+      "file": "study-chronicle-1994.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-1994.json",
+      "sha256": "2775e151eb9058b42c1511d260e506e3ccdd732446a8b050f0bb9c53e2a922c9",
+      "domain": "enterprise-attack",
+      "techniques": 19
+    },
+    {
+      "file": "study-chronicle-1995.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-1995.json",
+      "sha256": "2df01f2fbacf6608ab2054bed5e26ac1defc7aa8f4baa6e66eee052c69d6bd4f",
+      "domain": "enterprise-attack",
+      "techniques": 18
+    },
+    {
+      "file": "study-chronicle-1996.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-1996.json",
+      "sha256": "5be3dca25965f515aac6a44613bf9797386e25c35e25cf037078e84bd67bb178",
+      "domain": "enterprise-attack",
+      "techniques": 20
+    },
+    {
+      "file": "study-chronicle-1997.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-1997.json",
+      "sha256": "e3ae3153754ab171b0e185f99477f7b9c3a8ddbc66bfd7774c6a765ea0a601dd",
+      "domain": "enterprise-attack",
+      "techniques": 22
+    },
+    {
+      "file": "study-chronicle-1998.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-1998.json",
+      "sha256": "2a1fac9f27e78e2c57ed58522fded139234f80de3b268608d7d42320223eaf59",
+      "domain": "enterprise-attack",
+      "techniques": 29
+    },
+    {
+      "file": "study-chronicle-1999.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-1999.json",
+      "sha256": "0bdc9a2bfcbd13f51a2d46a9cc92db45bffc639aea3229055b7f4f3b3c4be1f4",
+      "domain": "enterprise-attack",
+      "techniques": 36
+    },
+    {
+      "file": "study-chronicle-2000.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-2000.json",
+      "sha256": "19293cc66bd6568f41122bb7a2e4e3e7763015fccfb9e3a7b0fd1663c8d8879b",
+      "domain": "enterprise-attack",
+      "techniques": 31
+    },
+    {
+      "file": "study-chronicle-2000-ics.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/case-studies/chronicle-2000-ics.json",
+      "sha256": "1513bd3d16f41ddd8bada9f471bb3a6cc1463179c71d23b39a55716adfec60ba",
+      "domain": "ics-attack",
+      "techniques": 12
+    },
+    {
+      "file": "study-chronicle-2001.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-2001.json",
+      "sha256": "92295531e616e352170ba3492871199eb85cd0ebfd42719a22cb759be31c05f1",
+      "domain": "enterprise-attack",
+      "techniques": 27
+    },
+    {
+      "file": "study-chronicle-2002.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-2002.json",
+      "sha256": "f15f21f55d7d74e294f71097f0ed59dc6c13ceeaec6d87c15571194973f6163a",
+      "domain": "enterprise-attack",
+      "techniques": 27
+    },
+    {
+      "file": "study-chronicle-2003.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-2003.json",
+      "sha256": "24bf6e8a2ded8510d5a1d11ed5efeff10cd7f64a5ca95fe8a8aaff7fd067d092",
+      "domain": "enterprise-attack",
+      "techniques": 35
+    },
+    {
+      "file": "study-chronicle-2003-ics.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/case-studies/chronicle-2003-ics.json",
+      "sha256": "5031d5198bf8eaa627135eafe5655e176e237266e07af421afe540a0543de33c",
+      "domain": "ics-attack",
+      "techniques": 2
+    },
+    {
+      "file": "study-chronicle-2004.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-2004.json",
+      "sha256": "d67d0917ff1e58c10a10aacd084031221a1004eecb925bae05325652e1bcf674",
+      "domain": "enterprise-attack",
+      "techniques": 22
+    },
+    {
+      "file": "study-chronicle-2005.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-2005.json",
+      "sha256": "e2124d5aa7bec54c3b1768a497de612ea76ba4318bfa1874d5f59b9cb000951f",
+      "domain": "enterprise-attack",
+      "techniques": 31
+    },
+    {
+      "file": "study-chronicle-2006.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-2006.json",
+      "sha256": "dccfecfe3c565ecf3237f367eb702aa367997753c3095a00788d49ee1b76eeb6",
+      "domain": "enterprise-attack",
+      "techniques": 20
+    },
+    {
+      "file": "study-chronicle-2007.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-2007.json",
+      "sha256": "0ed5acea4e10893f39a5b91ad80faebf1f43a655cb9a522648c491e8165759d7",
+      "domain": "enterprise-attack",
+      "techniques": 17
+    },
+    {
+      "file": "study-chronicle-2007-ics.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/case-studies/chronicle-2007-ics.json",
+      "sha256": "7a67a4035c44d1dd841323623274b62fbe3b8b6c4f069924c144018e2af62e9b",
+      "domain": "ics-attack",
+      "techniques": 2
+    },
+    {
+      "file": "study-chronicle-2008.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-2008.json",
+      "sha256": "7f2464d1d2e7073b8deaf01e0e7df734021158e495137987968fc36bf260538f",
+      "domain": "enterprise-attack",
+      "techniques": 33
+    },
+    {
+      "file": "study-chronicle-2009.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-2009.json",
+      "sha256": "0539a4e0ecce186a63e6680167723b7ec77d08a44aebc79961d117366390ea85",
+      "domain": "enterprise-attack",
+      "techniques": 60
+    },
+    {
+      "file": "study-chronicle-2010.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-2010.json",
+      "sha256": "29dc247ee552862eab91f5c7778c2386c8e0ac2a827f4605bbd73d2140e46bee",
+      "domain": "enterprise-attack",
+      "techniques": 71
+    },
+    {
+      "file": "study-chronicle-2010-ics.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/case-studies/chronicle-2010-ics.json",
+      "sha256": "6b2ed05333e548086a9d1664c733336040efb8735f53397817638ab543d26ba1",
+      "domain": "ics-attack",
+      "techniques": 10
+    },
+    {
+      "file": "study-chronicle-2011.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-2011.json",
+      "sha256": "6e58118a0a22915828ec5a83cc1e80a92a5a66129ccca5b0ddaeb145e0ca2cda",
+      "domain": "enterprise-attack",
+      "techniques": 66
+    },
+    {
+      "file": "study-chronicle-2012.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-2012.json",
+      "sha256": "8c669abe63721ee2c9e9677eff28dbc1078dc8682f1f1d9ba3885e8e0a527843",
+      "domain": "enterprise-attack",
+      "techniques": 36
+    },
+    {
+      "file": "study-chronicle-2013.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-2013.json",
+      "sha256": "e60345ca31ac2c7fa0c52dab8e98a4e35c53977aa7d945cbc4b6c3ac753e54fd",
+      "domain": "enterprise-attack",
+      "techniques": 60
+    },
+    {
+      "file": "study-chronicle-2014.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-2014.json",
+      "sha256": "739807eef243d98d74cbb4cad6fe40463761d340c7d5c9f16b94d318ed63d4da",
+      "domain": "enterprise-attack",
+      "techniques": 45
+    },
+    {
+      "file": "study-chronicle-2014-ics.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/case-studies/chronicle-2014-ics.json",
+      "sha256": "8f72b1483ca58720da727d71cd62badc07602be8b4a8b4d475df2963572a2ddc",
+      "domain": "ics-attack",
+      "techniques": 14
+    },
+    {
+      "file": "study-chronicle-2015.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-2015.json",
+      "sha256": "679772ab7e6dc57746ec06d683696550f30893870527d919d265184361cff1e5",
+      "domain": "enterprise-attack",
+      "techniques": 57
+    },
+    {
+      "file": "study-chronicle-2015-ics.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/case-studies/chronicle-2015-ics.json",
+      "sha256": "8c840bf30b249830665ff0114a24d1582d223d91650d1fa528af4a081ac53597",
+      "domain": "ics-attack",
+      "techniques": 20
+    },
+    {
+      "file": "study-chronicle-2016.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-2016.json",
+      "sha256": "41f073274faf58c424a153afec11d9434f727773e5503c216825555e7b1b8968",
+      "domain": "enterprise-attack",
+      "techniques": 63
+    },
+    {
+      "file": "study-chronicle-2016-ics.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/case-studies/chronicle-2016-ics.json",
+      "sha256": "a925fcb02ba305528d598bb5bdca3d12abcf88225462e750f141605a828ba16d",
+      "domain": "ics-attack",
+      "techniques": 22,
+      "unknown": [
+        "T1701.001",
+        "T1701.002",
+        "T1701.004"
+      ]
+    },
+    {
+      "file": "study-chronicle-2017.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-2017.json",
+      "sha256": "a4116030f81d30f6778862f5ad877c9b2c5a17810761ec050dd8551056d05d43",
+      "domain": "enterprise-attack",
+      "techniques": 68
+    },
+    {
+      "file": "study-chronicle-2017-ics.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/case-studies/chronicle-2017-ics.json",
+      "sha256": "c96019e1456298da16cb39140f7c573900b1127f67b55290abe490b934e8a07b",
+      "domain": "ics-attack",
+      "techniques": 28,
+      "unknown": [
+        "T1701",
+        "T1701.001",
+        "T1701.005"
+      ]
+    },
+    {
+      "file": "study-chronicle-2018.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-2018.json",
+      "sha256": "96b87ec1cb2a053f470d8c1270adcfdc51919b96d19fcda44e1f15ed34d60d92",
+      "domain": "enterprise-attack",
+      "techniques": 127
+    },
+    {
+      "file": "study-chronicle-2018-ics.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/case-studies/chronicle-2018-ics.json",
+      "sha256": "f4e1b09c7a03d6504c73e5ac967a3044a25c2f2281fbc92252b8de91154584ca",
+      "domain": "ics-attack",
+      "techniques": 4
+    },
+    {
+      "file": "study-chronicle-2019.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-2019.json",
+      "sha256": "07a686144d5458f7d168ef5fce44811a1aab41412f70519184a74bdb5d6177c6",
+      "domain": "enterprise-attack",
+      "techniques": 82
+    },
+    {
+      "file": "study-chronicle-2020.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-2020.json",
+      "sha256": "ec47de8125f40b1aac6692b5d6546c96ca342ebac470277acb73d0758c2a61e0",
+      "domain": "enterprise-attack",
+      "techniques": 104
+    },
+    {
+      "file": "study-chronicle-2020-ics.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/case-studies/chronicle-2020-ics.json",
+      "sha256": "8b2e65e8f1af06885080729f5cfa74aad079d2e71484090c76d611b79ec684aa",
+      "domain": "ics-attack",
+      "techniques": 9
+    },
+    {
+      "file": "study-chronicle-2021.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-2021.json",
+      "sha256": "cc6bc183ed01b4c245c62a83c4c5a71f5c64f704c32d47a76dfcca670200d6c6",
+      "domain": "enterprise-attack",
+      "techniques": 93
+    },
+    {
+      "file": "study-chronicle-2021-ics.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/case-studies/chronicle-2021-ics.json",
+      "sha256": "d7b9bf3a17167d5b08ae5203dfaf70dbaff6a209fd6b811937887d6c40e52e58",
+      "domain": "ics-attack",
+      "techniques": 3
+    },
+    {
+      "file": "study-chronicle-2022.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-2022.json",
+      "sha256": "5ff973044da4286059ffee0115ab67731bd157fd9ed6f75eec384e21d61b1e92",
+      "domain": "enterprise-attack",
+      "techniques": 116
+    },
+    {
+      "file": "study-chronicle-2022-ics.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/case-studies/chronicle-2022-ics.json",
+      "sha256": "1eeea0fc5e7c5c3fb6631f991fb764d24f0edc73cb7569e925537bbc893f691a",
+      "domain": "ics-attack",
+      "techniques": 17,
+      "unknown": [
+        "T1701.002",
+        "T1701.004"
+      ]
+    },
+    {
+      "file": "study-chronicle-2023.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-2023.json",
+      "sha256": "ad0ee5ef2c143ade143b764cee9212f79d112c333d6533aaad3da6d131cf8fca",
+      "domain": "enterprise-attack",
+      "techniques": 123
+    },
+    {
+      "file": "study-chronicle-2023-ics.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/case-studies/chronicle-2023-ics.json",
+      "sha256": "464ab28617c7b1501956693aec15d996476b223933425e9b8ccba9eb75d2b0cc",
+      "domain": "ics-attack",
+      "techniques": 12
+    },
+    {
+      "file": "study-chronicle-2024.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-2024.json",
+      "sha256": "07a74cd62148d3a3be3b279c207cb050e53d5257c933718387cd0ae2f49597be",
+      "domain": "enterprise-attack",
+      "techniques": 68
+    },
+    {
+      "file": "study-chronicle-2025.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-2025.json",
+      "sha256": "ab9daad1512802f0b8de82bd3577037e8fed2e59d549dea919e4b023affe2419",
+      "domain": "enterprise-attack",
+      "techniques": 122
+    },
+    {
+      "file": "study-chronicle-2025-ics.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/case-studies/chronicle-2025-ics.json",
+      "sha256": "3faf8dd42b55d5a8188cb7d80a59419f2e3a748fdf9e41c144aa051ab885f1ec",
+      "domain": "ics-attack",
+      "techniques": 3
+    },
+    {
+      "file": "study-chronicle-2026.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/chronicle-2026.json",
+      "sha256": "f99de4428e57f2c2ccd5b9396850d19da89a2d79e2ca5f3001cc809845c2e7ff",
+      "domain": "enterprise-attack",
+      "techniques": 125,
+      "unknown": [
+        "T1697"
+      ]
+    },
+    {
+      "file": "study-chronicle-2026-ics.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/case-studies/chronicle-2026-ics.json",
+      "sha256": "0d7f7d485dc2368cdd89ee3943349b8d257f94359e89873bd478470a2b336c4e",
+      "domain": "ics-attack",
+      "techniques": 17
+    },
+    {
+      "file": "study-zero-day-market-events.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/zero-day-market-events.json",
+      "sha256": "29e2ab39addbf5a282daae0137f45aa8bb2e0b3d1c24d7d1c5e8ba3df71e8662",
+      "domain": "enterprise-attack",
+      "techniques": 75
+    },
+    {
+      "file": "study-zero-day-market-events-ics.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/case-studies/zero-day-market-events-ics.json",
+      "sha256": "e936b30269d62934a38c34f91f8cec2b92e4fe8d66b6d515d1556c88428f002c",
+      "domain": "ics-attack",
+      "techniques": 5
+    },
+    {
+      "file": "study-exposure-checks-2026-11.json",
+      "group": "Case studies",
+      "source": "https://teamstarwolf.com/navigator/library-layers/exposure-checks-2026-11.json",
+      "sha256": "705e496e5bd5b7bb1f9479d64a0287ce997fdb315c21e2214cb3f8128fd49003",
+      "domain": "enterprise-attack",
+      "techniques": 12
+    },
+    {
+      "file": "actor-threat-actors-china.json",
+      "group": "Threat actors",
+      "source": "https://teamstarwolf.com/navigator/library-layers/threat-actors-china.json",
+      "sha256": "fcfe2f492ffe9a1db7329f57d292e21f2286c1fadef4890d6f338d2eee36ba63",
+      "domain": "enterprise-attack",
+      "techniques": 77
+    },
+    {
+      "file": "actor-healthcare-threat-watchlist-2023-2026.json",
+      "group": "Threat actors",
+      "source": "https://teamstarwolf.com/navigator/library-layers/healthcare-threat-watchlist-2023-2026.json",
+      "sha256": "9be0d056c645ce6b2550ebfe5ed53f5b91646fd59c3fa0c87e81b3d5a513908b",
+      "domain": "enterprise-attack",
+      "techniques": 130
+    },
+    {
+      "file": "actor-threat-actors-iran.json",
+      "group": "Threat actors",
+      "source": "https://teamstarwolf.com/navigator/library-layers/threat-actors-iran.json",
+      "sha256": "e8415276a68c4ced73bbd31b1d392327e29fe97c52a8ebc4b531cb3111a67477",
+      "domain": "enterprise-attack",
+      "techniques": 260,
+      "unknown": [
+        "T1697"
+      ]
+    },
+    {
+      "file": "actor-threat-actors-iran-ics.json",
+      "group": "Threat actors",
+      "source": "https://teamstarwolf.com/navigator/case-studies/threat-actors-iran-ics.json",
+      "sha256": "6143ea5eb4a8de2bac1dc3bd6fb1cd08138b629f93a6547a7c90751020c02052",
+      "domain": "ics-attack",
+      "techniques": 24,
+      "unknown": [
+        "T1701.001",
+        "T1701.004"
+      ]
+    },
+    {
+      "file": "actor-threat-actors-north-korea.json",
+      "group": "Threat actors",
+      "source": "https://teamstarwolf.com/navigator/library-layers/threat-actors-north-korea.json",
+      "sha256": "247a86915c651f2211fb73f0289470490e076739abd49e3beb5e5f3ec8876746",
+      "domain": "enterprise-attack",
+      "techniques": 251
+    },
+    {
+      "file": "actor-other-state-actors.json",
+      "group": "Threat actors",
+      "source": "https://teamstarwolf.com/navigator/library-layers/other-state-actors.json",
+      "sha256": "f2deb6b21f7e6e18383cd3be33aed1c7e42c0f76a0fd9c5c36bf8af35b9d7705",
+      "domain": "enterprise-attack",
+      "techniques": 154
+    },
+    {
+      "file": "actor-threat-actors-russia.json",
+      "group": "Threat actors",
+      "source": "https://teamstarwolf.com/navigator/library-layers/threat-actors-russia.json",
+      "sha256": "d92cf5a14452c6f18e26627199ab35364d98623c6eaf8d46756e355cb9506f4a",
+      "domain": "enterprise-attack",
+      "techniques": 332
+    },
+    {
+      "file": "actor-threat-actors-united-states.json",
+      "group": "Threat actors",
+      "source": "https://teamstarwolf.com/navigator/library-layers/threat-actors-united-states.json",
+      "sha256": "137b24a95d13387977c9b33c4afcee7cce75319dc7b28b9d3d0be1a28b9ffb24",
+      "domain": "enterprise-attack",
+      "techniques": 86
+    },
+    {
+      "file": "vendor-cloud-wiz-prisma-defender.json",
+      "group": "Vendors",
+      "source": "https://teamstarwolf.com/navigator/vendors/cloud_wiz_prisma_defender.json",
+      "sha256": "1f90522c0cefd67a708a5241031b8668828f8e34c02d10c0a2503d27773bd146",
+      "domain": "enterprise-attack",
+      "techniques": 25,
+      "noTactic": 25
+    },
+    {
+      "file": "vendor-edr-crowdstrike-sentinelone.json",
+      "group": "Vendors",
+      "source": "https://teamstarwolf.com/navigator/vendors/edr_crowdstrike_sentinelone.json",
+      "sha256": "7f5b92d088b127745dbf9a5130937a4821cd45cdb8d46c21c3158a5e10c59165",
+      "domain": "enterprise-attack",
+      "techniques": 25
+    },
+    {
+      "file": "vendor-email-proofpoint-mimecast-defender.json",
+      "group": "Vendors",
+      "source": "https://teamstarwolf.com/navigator/vendors/email_proofpoint_mimecast_defender.json",
+      "sha256": "20b21d773f0614f81ac1ed44c03ae9239ea9822af6b5501a075505ab01f90e01",
+      "domain": "enterprise-attack",
+      "techniques": 24
+    },
+    {
+      "file": "vendor-email-proofpoint-mimecast.json",
+      "group": "Vendors",
+      "source": "https://teamstarwolf.com/navigator/vendors/email_proofpoint_mimecast.json",
+      "sha256": "fe29ebade0695dea15d8ff6444ced7ce51634cbd65da51da508715252141450e",
+      "domain": "enterprise-attack",
+      "techniques": 13,
+      "noTactic": 13
+    },
+    {
+      "file": "vendor-identity-entra-okta-cyberark.json",
+      "group": "Vendors",
+      "source": "https://teamstarwolf.com/navigator/vendors/identity_entra_okta_cyberark.json",
+      "sha256": "b58e942f16c9a051fe5109fa1a1c7fc28cfe3b9f8a05661df28f385616053b40",
+      "domain": "enterprise-attack",
+      "techniques": 25,
+      "noTactic": 25
+    },
+    {
+      "file": "vendor-identity-okta-entra-cyberark.json",
+      "group": "Vendors",
+      "source": "https://teamstarwolf.com/navigator/vendors/identity_okta_entra_cyberark.json",
+      "sha256": "a4967924036127bc17b17cb09362ef1040f79d2f3b4f6f5ded1fb507fee92cde",
+      "domain": "enterprise-attack",
+      "techniques": 24
+    },
+    {
+      "file": "vendor-network-zscaler-paloalto.json",
+      "group": "Vendors",
+      "source": "https://teamstarwolf.com/navigator/vendors/network_zscaler_paloalto.json",
+      "sha256": "063fd7999cac9c137da6f899eaf1371fc86faa7f8a94f2c40149214e331e2e2d",
+      "domain": "enterprise-attack",
+      "techniques": 20,
+      "noTactic": 20
+    },
+    {
+      "file": "vendor-network-paloalto-fortinet.json",
+      "group": "Vendors",
+      "source": "https://teamstarwolf.com/navigator/vendors/network_paloalto_fortinet.json",
+      "sha256": "7391c4b59a4db29945cb1dc4bfde29523225bcd07774b4cf952242cd3680928f",
+      "domain": "enterprise-attack",
+      "techniques": 24
+    },
+    {
+      "file": "vendor-siem-splunk-sentinel-elastic.json",
+      "group": "Vendors",
+      "source": "https://teamstarwolf.com/navigator/vendors/siem_splunk_sentinel_elastic.json",
+      "sha256": "7592b40ca6550799382410a5a40f809c1ef618ed43ac30be1158be2d55472d10",
+      "domain": "enterprise-attack",
+      "techniques": 31,
+      "noTactic": 31
+    },
+    {
+      "file": "vendor-vuln-mgmt-tenable-qualys-wiz.json",
+      "group": "Vendors",
+      "source": "https://teamstarwolf.com/navigator/vendors/vuln_mgmt_tenable_qualys_wiz.json",
+      "sha256": "425ad6cea51756916ff06554d170ee251deb7005c28396a88a12593495df28f9",
+      "domain": "enterprise-attack",
+      "techniques": 15,
+      "noTactic": 15
+    },
+    {
+      "file": "vendor-waf-cloudflare-akamai-awswaf.json",
+      "group": "Vendors",
+      "source": "https://teamstarwolf.com/navigator/vendors/waf_cloudflare_akamai_awswaf.json",
+      "sha256": "8acf950f9cd8fd2c7f0ed08d00386d9f501802e4019e6e24c591df7a14f9967d",
+      "domain": "enterprise-attack",
+      "techniques": 24
+    },
+    {
+      "file": "stage-stage5-application-security.json",
+      "group": "Kill-chain stages",
+      "source": "https://teamstarwolf.com/navigator/stages/stage5_application_security.json",
+      "sha256": "b165ddb2f91bdb56cd28817fe3169289750a4e38e641ecda59bdf7688bf71dec",
+      "domain": "enterprise-attack",
+      "techniques": 26
+    },
+    {
+      "file": "stage-stage4-identity-access.json",
+      "group": "Kill-chain stages",
+      "source": "https://teamstarwolf.com/navigator/stages/stage4_identity_access.json",
+      "sha256": "10c6971f7a6264eaa0b863f43e9f52753bcb30f1e1884da0fa2e43fc82e68476",
+      "domain": "enterprise-attack",
+      "techniques": 31
+    },
+    {
+      "file": "stage-stage2-network-perimeter.json",
+      "group": "Kill-chain stages",
+      "source": "https://teamstarwolf.com/navigator/stages/stage2_network_perimeter.json",
+      "sha256": "2f14b84b286d61d6fdd4f6f0aeeb502c5d3a11132cc2104c61b4db5f6a7f7e8b",
+      "domain": "enterprise-attack",
+      "techniques": 25
+    },
+    {
+      "file": "stage-stage1-governance-grc.json",
+      "group": "Kill-chain stages",
+      "source": "https://teamstarwolf.com/navigator/stages/stage1_governance_grc.json",
+      "sha256": "d58b661d1bdf7743ea163bd10eb280cda7d625a708d053b5f7de89bd374fa921",
+      "domain": "enterprise-attack",
+      "techniques": 17
+    },
+    {
+      "file": "stage-stage2-identity-access.json",
+      "group": "Kill-chain stages",
+      "source": "https://teamstarwolf.com/navigator/stages/stage2_identity_access.json",
+      "sha256": "10fd8b23d9afed2fee4cb239102e2dc38ecc587cf3575556414086c1a5e56757",
+      "domain": "enterprise-attack",
+      "techniques": 20,
+      "noTactic": 20
+    },
+    {
+      "file": "stage-stage3-endpoint-workload.json",
+      "group": "Kill-chain stages",
+      "source": "https://teamstarwolf.com/navigator/stages/stage3_endpoint_workload.json",
+      "sha256": "4711096503c179bb18d3ad2f6ad67d4a6968ce6cb3152f8772af356d4bee595f",
+      "domain": "enterprise-attack",
+      "techniques": 21
+    },
+    {
+      "file": "stage-stage4-network-boundary.json",
+      "group": "Kill-chain stages",
+      "source": "https://teamstarwolf.com/navigator/stages/stage4_network_boundary.json",
+      "sha256": "c9faa4c557ecb49a4b2846633af391ae4f467c122126d9f12fb5e82c370eb251",
+      "domain": "enterprise-attack",
+      "techniques": 24,
+      "noTactic": 24
+    },
+    {
+      "file": "stage-stage5-visibility-detection.json",
+      "group": "Kill-chain stages",
+      "source": "https://teamstarwolf.com/navigator/stages/stage5_visibility_detection.json",
+      "sha256": "3a9c9f25888e420a79a4b8c8833e417279d91232ab59e629c6d4280ebe2e2e4b",
+      "domain": "enterprise-attack",
+      "techniques": 25,
+      "noTactic": 25
+    },
+    {
+      "file": "stage-stage6-data-cloud.json",
+      "group": "Kill-chain stages",
+      "source": "https://teamstarwolf.com/navigator/stages/stage6_data_cloud.json",
+      "sha256": "e520692a31cacffc294c54ef8af79b602e1cadcf0373e9ffa206a076faf78b9d",
+      "domain": "enterprise-attack",
+      "techniques": 20
+    },
+    {
+      "file": "computed-d3fend-blindspot.json",
+      "group": "Computed",
+      "source": "https://teamstarwolf.com/navigator/computed/d3fend-blindspot.json",
+      "sha256": "89d6bef450445d0fb947f4817444e3080de130771aabb3291caccf8ee29e7195",
+      "domain": "enterprise-attack",
+      "techniques": 383,
+      "unknown": [
+        "T1608.007",
+        "T1685.007",
+        "T1696",
+        "T1696.001",
+        "T1696.002",
+        "T1697",
+        "T1698",
+        "T1699",
+        "T1700"
+      ]
+    },
+    {
+      "file": "computed-detection-strategy-gap.json",
+      "group": "Computed",
+      "source": "https://teamstarwolf.com/navigator/computed/detection-strategy-gap.json",
+      "sha256": "0737c2e1a5d5a4500ac24277775f418be3db0799b488d9b248cec0915a71180f",
+      "domain": "enterprise-attack",
+      "techniques": 3,
+      "unknown": [
+        "T1685.007",
+        "T1698",
+        "T1699"
+      ]
+    },
+    {
+      "file": "computed-coverage-completeness.json",
+      "group": "Computed",
+      "source": "https://teamstarwolf.com/navigator/computed/coverage-completeness.json",
+      "sha256": "e9459e700605b60bffb33f19b9017ee4760e927dfab1af8f942b8f3a47029a18",
+      "domain": "enterprise-attack",
+      "techniques": 706,
+      "unknown": [
+        "T1608.007",
+        "T1685.007",
+        "T1696",
+        "T1696.001",
+        "T1696.002",
+        "T1697",
+        "T1698",
+        "T1699",
+        "T1700"
+      ]
+    },
+    {
+      "file": "computed-teamstarwolf-vendor-coverage.json",
+      "group": "Computed",
+      "source": "https://teamstarwolf.com/navigator/teamstarwolf_vendor_coverage.json",
+      "sha256": "c7d26455a9e1b24c1825a86504f303fbf52ab63482b9f9ff49870a5c8eef5882",
+      "domain": "enterprise-attack",
+      "techniques": 466
+    },
+    {
+      "file": "computed-platform-exposure.json",
+      "group": "Computed",
+      "source": "https://teamstarwolf.com/navigator/computed/platform-exposure.json",
+      "sha256": "303c2cfe1731ff286b7345daed4325c6a4d7187ee15ea81dd52449d8ca1c8fd7",
+      "domain": "enterprise-attack",
+      "techniques": 706,
+      "unknown": [
+        "T1608.007",
+        "T1685.007",
+        "T1696",
+        "T1696.001",
+        "T1696.002",
+        "T1697",
+        "T1698",
+        "T1699",
+        "T1700"
+      ]
+    },
+    {
+      "file": "computed-ransomware-family.json",
+      "group": "Computed",
+      "source": "https://teamstarwolf.com/navigator/computed/ransomware-family.json",
+      "sha256": "af443a8647937dabfb3e62bf46a37a689dd83c5ee604ba81d916ba6329af105a",
+      "domain": "enterprise-attack",
+      "techniques": 186
+    },
+    {
+      "file": "analytics-no-nist-coverage.json",
+      "group": "Analytics",
+      "source": "https://teamstarwolf.com/navigator/analytics/no_nist_coverage.json",
+      "sha256": "673584081af448020554b9dd54de313beb4706ade66be4a09102bc0469d89241",
+      "domain": "enterprise-attack",
+      "techniques": 240,
+      "unknown": [
+        "T1608.007",
+        "T1685.007",
+        "T1696",
+        "T1696.001",
+        "T1696.002",
+        "T1697",
+        "T1698",
+        "T1699",
+        "T1700"
+      ],
+      "noTactic": 240
+    },
+    {
+      "file": "analytics-group-frequency.json",
+      "group": "Analytics",
+      "source": "https://teamstarwolf.com/navigator/analytics/group_frequency.json",
+      "sha256": "1cfab85579c2cda414ad67826f2b3bf07cf8e0c3c0c1dbf90900895adfc11214",
+      "domain": "enterprise-attack",
+      "techniques": 515,
+      "unknown": [
+        "T1697"
+      ],
+      "noTactic": 515
+    },
+    {
+      "file": "analytics-ics-group-frequency.json",
+      "group": "Analytics",
+      "source": "https://teamstarwolf.com/navigator/analytics/ics_group_frequency.json",
+      "sha256": "c0301677e287256508228f4880d03f106c4fa681e0f53d6c0420f529a6d0d3c8",
+      "domain": "ics-attack",
+      "techniques": 28,
+      "unknown": [
+        "T1701.001",
+        "T1701.002",
+        "T1701.004"
+      ],
+      "noTactic": 28
+    },
+    {
+      "file": "analytics-mobile-group-frequency.json",
+      "group": "Analytics",
+      "source": "https://teamstarwolf.com/navigator/analytics/mobile_group_frequency.json",
+      "sha256": "26f01b1ec23cc983fe6623d8801f16231011134affe1c7102f2847960bc3188a",
+      "domain": "mobile-attack",
+      "techniques": 24,
+      "retired": [
+        {
+          "id": "T1476",
+          "successor": null
+        }
+      ],
+      "noTactic": 24
+    },
+    {
+      "file": "ai-atlas-case-study-frequency.json",
+      "group": "AI",
+      "source": "https://teamstarwolf.com/navigator/ai/atlas-case-study-frequency.json",
+      "sha256": "d06495783f5e53b387d532db640f7c2b16e8c4554854645f27818756340d024b",
+      "domain": "atlas-atlas",
+      "techniques": 221,
+      "noTactic": 92,
+      "unchecked": 234
+    },
+    {
+      "file": "ai-atlas-matrix.json",
+      "group": "AI",
+      "source": "https://teamstarwolf.com/navigator/ai/atlas-matrix.json",
+      "sha256": "7ed59d4c2034819b52cd33791ce0afbff3eba92b59d309bfcff793675a405d9f",
+      "domain": "atlas-atlas",
+      "techniques": 221,
+      "noTactic": 92,
+      "unchecked": 234
+    },
+    {
+      "file": "ai-hugging-face-supply-chain-atlas.json",
+      "group": "AI",
+      "source": "https://teamstarwolf.com/navigator/ai/hugging-face-supply-chain-atlas.json",
+      "sha256": "f8588726bb4645530cd354def069c1ce12aaa62523ccbe0ea3e29272ea5f9971",
+      "domain": "atlas-atlas",
+      "techniques": 42,
+      "unchecked": 43
+    },
+    {
+      "file": "fraud-f3-matrix.json",
+      "group": "Fraud",
+      "source": "https://teamstarwolf.com/navigator/fraud/f3-matrix.json",
+      "sha256": "bbcfdd633317da8f0de26d827120312dc7d2a57672a2be2782678a3da81f7529",
+      "domain": "f3-financial",
+      "techniques": 123,
+      "unknown": [
+        "F1010"
+      ]
+    }
+  ],
+  "duplicates": [
+    {
+      "source": "https://teamstarwolf.com/navigator/library-layers/web-application-attacks.json",
+      "name": "TeamStarWolf - Web Application Attacks",
+      "techniques": 32,
+      "reason": "same name",
+      "keptAs": "web-application-attacks.json",
+      "keptFrom": "bundled"
+    },
+    {
+      "source": "https://teamstarwolf.com/navigator/library-layers/cwe-weakness-classes.json",
+      "name": "TeamStarWolf - CWE Weakness Classes",
+      "techniques": 98,
+      "reason": "same name",
+      "keptAs": "cwe-weakness-classes.json",
+      "keptFrom": "bundled"
+    },
+    {
+      "source": "https://teamstarwolf.com/navigator/library-layers/capec-families.json",
+      "name": "TeamStarWolf - CAPEC Families",
+      "techniques": 19,
+      "reason": "same name",
+      "keptAs": "capec-families.json",
+      "keptFrom": "bundled"
+    },
+    {
+      "source": "https://teamstarwolf.com/navigator/library-layers/cloud-attacks.json",
+      "name": "TeamStarWolf - Cloud Attacks",
+      "techniques": 23,
+      "reason": "same name",
+      "keptAs": "cloud-attacks.json",
+      "keptFrom": "bundled"
+    },
+    {
+      "source": "https://teamstarwolf.com/navigator/library-layers/active-directory.json",
+      "name": "TeamStarWolf - Active Directory",
+      "techniques": 28,
+      "reason": "same name",
+      "keptAs": "active-directory.json",
+      "keptFrom": "bundled"
+    },
+    {
+      "source": "https://teamstarwolf.com/navigator/library-layers/ransomware-ttps.json",
+      "name": "TeamStarWolf - Ransomware TTPs",
+      "techniques": 14,
+      "reason": "same name",
+      "keptAs": "ransomware-ttps.json",
+      "keptFrom": "bundled"
+    },
+    {
+      "source": "https://teamstarwolf.com/navigator/library-layers/container-k8s.json",
+      "name": "TeamStarWolf - Container and Kubernetes Attacks",
+      "techniques": 9,
+      "reason": "same name",
+      "keptAs": "container-k8s.json",
+      "keptFrom": "bundled"
+    },
+    {
+      "source": "https://teamstarwolf.com/navigator/library-layers/owasp-top-10.json",
+      "name": "TeamStarWolf - OWASP Top 10 (2021)",
+      "techniques": 14,
+      "reason": "same name",
+      "keptAs": "owasp-top-10.json",
+      "keptFrom": "bundled"
+    },
+    {
+      "source": "https://teamstarwolf.com/navigator/case-studies/chronicle-2001-ics.json",
+      "name": "TeamStarWolf - The Year 2001 in Intrusions (ICS)",
+      "techniques": 12,
+      "reason": "same rows",
+      "keptAs": "study-chronicle-2000-ics.json",
+      "keptFrom": "https://teamstarwolf.com/navigator/case-studies/chronicle-2000-ics.json"
+    }
+  ],
+  "invalid": [],
+  "unmapped": []
+}
