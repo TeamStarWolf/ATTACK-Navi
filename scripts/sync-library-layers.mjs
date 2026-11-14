@@ -380,6 +380,9 @@ export function bundledEntries(index) {
   return index.filter((e) => !e.source).map((e) => (e.group ? e : { ...e, group: bundledGroup(e.file) }));
 }
 
+/** Text safe inside a Markdown table cell: backslashes first, then pipes. */
+export const tableCell = (text) => text.replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
+
 /** Markdown-table-safe one-line note from a blurb or description. */
 export function noteFor(entry, record) {
   const text = (entry.blurb || entry.description || '').replace(/\s+/g, ' ').trim();
@@ -392,7 +395,7 @@ export function noteFor(entry, record) {
   if (domain) parts.push(`${domain}.`);
   const unresolved = (record.unknown?.length ?? 0) + (record.retired?.length ?? 0);
   if (unresolved) parts.push(`${unresolved} id${unresolved === 1 ? '' : 's'} not in the bundled data (library-sync.json).`);
-  return parts.join(' ').replace(/\|/g, '\\|').replace(/[\u2013\u2014]/g, ',');
+  return tableCell(parts.join(' ')).replace(/[–—]/g, ',');
 }
 
 /** The generated block of docs/LIBRARY_LAYERS.md: one section per synced group. */
@@ -408,7 +411,7 @@ export function renderDocBlock(index, lock) {
     L.push(`### ${group} (synced)`, '', '| Layer | Techniques | Notes |', '|---|---|---|');
     for (const e of rows) {
       const r = records.get(e.file);
-      L.push(`| ${layerLabel(e.name).replace(/\|/g, '\\|')} | ${r?.techniques ?? '?'} | ${noteFor(e, r ?? {})} |`);
+      L.push(`| ${tableCell(layerLabel(e.name))} | ${r?.techniques ?? '?'} | ${noteFor(e, r ?? {})} |`);
     }
     L.push('');
   }

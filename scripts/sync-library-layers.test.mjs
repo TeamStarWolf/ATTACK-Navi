@@ -16,8 +16,13 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import {
   BUNDLE_FILES, DOC, DOCS_README, DOC_END, DOC_START, GROUP_ORDER, LAYER_DIR, LOCK, SITE,
-  applySync, bundledGroup, check, extraPaths, indexBundle, plan, renderReport, resolveLayer, rowsKey, targetName, validateLayer,
+  applySync, bundledGroup, check, extraPaths, indexBundle, plan, renderReport, resolveLayer, rowsKey, tableCell, targetName, validateLayer,
 } from './sync-library-layers.mjs';
+
+test('tableCell escapes backslashes before pipes', () => {
+  assert.equal(tableCell('a | b'), 'a \\| b');
+  assert.equal(tableCell('C:\\x | y\\|z'), 'C:\\\\x \\| y\\\\\\|z');
+});
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SCRIPT = join(ROOT, 'scripts', 'sync-library-layers.mjs');
