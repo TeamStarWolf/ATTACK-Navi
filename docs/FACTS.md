@@ -13,11 +13,11 @@ Counts and versions derived from the code. When a document states one of these n
 | Workspaces that lazy-load a route file | 8 | `loadChildren` in `src/app/app.routes.ts` |
 | Routed workspace tabs | 47 | child routes with `data.tab` in `src/app/pages/*/*.routes.ts` |
 | Detail pages (top-level routes with a `:param`, not workspaces) | 1 | `src/app/app.routes.ts` |
-| Library layers | 37 | `src/assets/data/library-layers/index.json` |
+| Library layers | 201 | `src/assets/data/library-layers/index.json` |
 | Lylat mission layers | 35 | `src/assets/data/lylat-mission-layers/index.json` |
 | Unit spec files | 260 | `src/**/*.spec.ts` |
 | Playwright spec files | 18 | `e2e/**/*.spec.ts` |
-| Script test files | 11 | `scripts/**/*.test.mjs` |
+| Script test files | 12 | `scripts/**/*.test.mjs` |
 | Proxy test files | 1 | `server/**/*.test.*` |
 | Angular | 22.2.2 | `package-lock.json` (`@angular/core`) |
 | TypeScript | 6.0.3 | `package-lock.json` |
@@ -112,7 +112,7 @@ Contents of `src/assets/data/`:
 - `src/assets/data/group-index.json`
 - `src/assets/data/ics-attack.json`
 - `src/assets/data/kev-snapshot.json`
-- `src/assets/data/library-layers/` (38 files)
+- `src/assets/data/library-layers/` (203 files)
 - `src/assets/data/lylat-mission-layers/` (36 files)
 - `src/assets/data/mobile-attack.json`
 - `src/assets/data/rule-coverage-snapshot.json`
@@ -189,7 +189,7 @@ Read by `scripts/check-facts.mjs`.
   "routeFileWorkspaces": 8,
   "routedTabs": 47,
   "detailPages": 1,
-  "libraryLayers": 37,
+  "libraryLayers": 201,
   "unitSpecs": 260,
   "angularMajor": 22,
   "typescriptMajor": 6,

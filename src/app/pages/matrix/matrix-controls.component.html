@@ -176,18 +176,50 @@
             </div>
           }
           @if (libraryLayers.length) {
-            <div class="heatmap-group">
-              <div class="views-menu-header">📚 Library Layers</div>
-              <div class="heatmap-grid">
-                @for (lyr of libraryLayers; track lyr.file) {
-                  <button class="heatmap-mode-btn"
-                          [class.active]="heatmapMode === 'library' && !activeUserLayer && activeLibraryFile === lyr.file"
-                          [title]="lyr.blurb || lyr.description"
-                          (click)="pickLibraryLayer(lyr.file)">
-                    {{ layerLabel(lyr.name) }}
+            <div class="heatmap-group library-layers-group" role="group" aria-labelledby="library-layers-heading">
+              <div class="views-menu-header" id="library-layers-heading">📚 Library Layers</div>
+              @if (librarySearchable) {
+                <div class="library-search">
+                  <input type="search" class="library-search-input" [value]="libraryLayerQuery"
+                         (input)="onLibrarySearch($any($event.target).value)"
+                         placeholder="Search {{ libraryLayers.length }} layers by name"
+                         aria-label="Search library layers by name"
+                         aria-describedby="library-search-status" />
+                  <span class="library-search-status" id="library-search-status" role="status">
+                    @if (libraryLayerQuery.trim()) {
+                      {{ libraryMatchCount }} of {{ libraryLayers.length }} layers match
+                    }
+                  </span>
+                </div>
+              }
+              @for (g of visibleLibraryGroups; track g.group) {
+                @let open = libraryGroupOpen(g);
+                <div class="library-group" [attr.data-group]="g.group">
+                  <button type="button" class="library-group-toggle" [attr.aria-expanded]="open"
+                          [attr.aria-controls]="libraryGroupId(g.group)"
+                          (click)="toggleLibraryGroup(g)">
+                    <span class="library-group-chevron" aria-hidden="true">{{ open ? '▾' : '▸' }}</span>
+                    {{ g.group }}
+                    <span class="library-group-count">{{ g.layers.length }}</span>
                   </button>
-                }
-              </div>
+                  <div class="library-group-list" [id]="libraryGroupId(g.group)">
+                    @if (open) {
+                      <div class="heatmap-grid">
+                        @for (lyr of g.layers; track lyr.file) {
+                          <button class="heatmap-mode-btn"
+                                  [class.active]="heatmapMode === 'library' && !activeUserLayer && activeLibraryFile === lyr.file"
+                                  [title]="lyr.blurb || lyr.description"
+                                  (click)="pickLibraryLayer(lyr.file)">
+                            {{ layerLabel(lyr.name) }}
+                          </button>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              } @empty {
+                <div class="library-status">No library layer name matches "{{ libraryLayerQuery }}".</div>
+              }
             </div>
           } @else if (!libraryManifestLoaded && !libraryManifestError) {
             <div class="heatmap-group">

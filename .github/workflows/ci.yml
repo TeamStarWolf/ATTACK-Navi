@@ -42,6 +42,13 @@ jobs:
       - run: npm ci
       # Curated library layers must still match the bundled Enterprise snapshot.
       - run: npm run validate:layers
+      # Library layers synced from the TeamStarWolf library (scripts/sync-library-layers.mjs):
+      # offline, every synced file still matches its sha256 in library-sync.json, the
+      # manifest lists every file exactly once, the recorded unresolved ids match the
+      # bundled data and docs/LIBRARY_LAYERS.md is current. Its own tests run first;
+      # one of them edits a synced copy and expects the check to fail.
+      - run: node --test scripts/sync-library-layers.test.mjs
+      - run: node scripts/sync-library-layers.mjs --check
       # Every file or folder under src/assets/data is read by app code or listed
       # as served for manual import (post-Phase-1 QA R7: no asset ships unread).
       - run: node --test scripts/check-data-assets.test.mjs

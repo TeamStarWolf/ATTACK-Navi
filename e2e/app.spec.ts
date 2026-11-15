@@ -403,6 +403,70 @@ test.describe('ATT&CK-Navi', () => {
     await page.locator('#sb-sec-imported-layer').click();
     await expect(page.locator('.imported-layer-section')).toContainText('Score: 90');
   });
+
+  // The Library Layers picker groups every manifest entry (the bundled groups,
+  // then the layers synced from the library), finds a case study by name, reaches
+  // every entry by keyboard, fits the menu, and a picked study colours the matrix.
+  test('the grouped Library Layers picker finds a case study and colours the matrix by it', async ({ page }) => {
+    const manifest = JSON.parse(readFileSync('src/assets/data/library-layers/index.json', 'utf8')) as Array<{ file: string; name: string; group: string }>;
+    // The picker's fixed group order (LIBRARY_LAYER_GROUPS), limited to the groups the manifest uses.
+    const ORDER = ['Curated themes', 'Threat groups', 'HTB frequency', 'Agentic AI', 'Lylat',
+      'Case studies', 'Threat actors', 'Vendors', 'Kill-chain stages', 'Computed', 'Analytics', 'AI', 'Fraud'];
+    const used = new Set(manifest.map(e => e.group));
+    expect([...used].every(g => ORDER.includes(g)), 'every manifest group is a known group').toBeTruthy();
+    const groups = ORDER.filter(g => used.has(g));
+    const study = manifest.find(e => e.file === 'study-log4shell-cve-2021-44228.json');
+    expect(study, 'the Log4Shell study is in the manifest').toBeTruthy();
+    const rows = JSON.parse(readFileSync(`src/assets/data/library-layers/${study!.file}`, 'utf8')).techniques as Array<{ techniqueID: string }>;
+    const member = 'T1190';
+    expect(rows.some(r => r.techniqueID === member)).toBeTruthy();
+
+    await page.goto(BASE + '/#/matrix');
+    await expect(page.locator('.matrix-wrapper')).toBeVisible({ timeout: ROUTE_TIMEOUT });
+    const cell = page.locator('.cell', { hasText: member }).first();
+    const before = await cell.evaluate(el => getComputedStyle(el).backgroundColor);
+
+    await page.locator('.heatmap-btn').click();
+    const menu = page.locator('.views-menu');
+    await expect(menu).toBeVisible();
+    const picker = menu.locator('.library-layers-group');
+    const toggles = picker.locator('.library-group-toggle');
+    // One heading per group, in manifest group order, each with its count.
+    await expect(toggles).toHaveCount(groups.length);
+    for (const [i, group] of groups.entries()) {
+      const n = manifest.filter(e => e.group === group).length;
+      await expect(toggles.nth(i)).toHaveText(new RegExp(`${group.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*${n}$`));
+    }
+    // Synced groups start closed; opening every group lists every manifest entry.
+    for (let i = 0; i < groups.length; i++) {
+      if ((await toggles.nth(i).getAttribute('aria-expanded')) === 'false') await toggles.nth(i).click();
+    }
+    const entries = picker.locator('.heatmap-mode-btn');
+    await expect(entries).toHaveCount(manifest.length);
+    // Every heading and entry is a focusable button, and nothing overflows the menu sideways.
+    const unreachable = await picker.locator('button').evaluateAll(els =>
+      els.filter(b => (b as HTMLButtonElement).disabled || (b as HTMLButtonElement).tabIndex < 0).length);
+    expect(unreachable).toBe(0);
+    const overflow = await menu.evaluate(el => el.scrollWidth - el.clientWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
+
+    // Search by name, then reach the match with the keyboard alone.
+    const search = picker.locator('.library-search-input');
+    await search.fill('log4shell');
+    await expect(picker.locator('.library-search-status')).toContainText('1 of');
+    await expect(entries).toHaveCount(1);
+    await expect(entries.first()).toHaveText('Log4Shell (CVE-2021-44228) Case Study');
+    await search.focus();
+    await page.keyboard.press('Tab'); // the Case studies heading
+    await expect(toggles.first()).toBeFocused();
+    await page.keyboard.press('Tab'); // the study
+    await expect(entries.first()).toBeFocused();
+    await page.keyboard.press('Enter');
+
+    await expect(menu).toBeHidden();
+    await expect(page.locator('.heatmap-btn')).toContainText('Library');
+    await expect.poll(() => cell.evaluate(el => getComputedStyle(el).backgroundColor), { timeout: 10000 }).not.toBe(before);
+  });
 });
 
 // E2.3 (P2-04): the drawer writes tech= (with heat=) and dom= into the URL, so a

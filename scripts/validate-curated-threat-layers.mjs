@@ -10,7 +10,8 @@
 
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { indexBundle, resolveLayer } from './sync-library-layers.mjs';
 
 const root = new URL('../', import.meta.url);
 const dataRoot = new URL('src/assets/data/', root);
@@ -149,8 +150,34 @@ function assertRowsResolve(file, rows, techniques, snapshotName) {
   }
   return unresolvedTactics;
 }
+// Layers synced from the library (entries with a `source`, written by
+// scripts/sync-library-layers.mjs) target the library's ATT&CK version and may be
+// ICS, Mobile, F3 or ATLAS layers, so they are not held to the bundled Enterprise
+// snapshot. Instead every row the bundled data cannot resolve must be recorded in
+// library-sync.json: nothing unknown is carried silently.
+const syncLock = existsSync(new URL('library-sync.json', layerRoot))
+  ? readJson(new URL('library-sync.json', layerRoot)) : { files: [] };
+const syncRecords = new Map(syncLock.files.map(record => [record.file, record]));
+const syncBundles = {
+  enterprise: indexBundle(bundled),
+  ics: indexBundle(domainBundles['ics-attack']),
+  mobile: indexBundle(domainBundles['mobile-attack']),
+  f3: indexBundle(readJson(new URL('f3-attack.json', dataRoot))),
+};
+let syncedEntries = 0;
 for (const entry of manifest) {
   const layer = readJson(new URL(entry.file, layerRoot));
+  if (entry.source) {
+    const record = syncRecords.get(entry.file);
+    assert(record, `${entry.file}: synced entry has no record in library-sync.json`);
+    const found = resolveLayer(layer, syncBundles);
+    for (const key of ['unknown', 'retired', 'tacticMismatch']) {
+      assert.deepEqual(found[key] ?? [], record[key] ?? [],
+        `${entry.file}: ${key} rows differ from library-sync.json; re-run node scripts/sync-library-layers.mjs`);
+    }
+    syncedEntries += 1;
+    continue;
+  }
   assertRowsResolve(entry.file, layer.techniques, snapshots[0].techniques, snapshots[0].name);
 }
 
@@ -268,5 +295,5 @@ if (updateBundledMetadata) {
   writeFileSync(new URL('index.json', layerRoot), `${JSON.stringify(manifest, null, 2)}\n`);
 }
 console.log(`PASS bundled ATT&CK ${bundledVersions['enterprise-attack']} (enterprise/ics/mobile) + F3 ${f3Version}; README data table matches`);
-console.log(`PASS ${manifest.length} manifest entries resolve against ${snapshots[0].name}; ${missionManifest.length} Lylat mission layers (${missionRows} rows) resolve against their domains`);
+console.log(`PASS ${manifest.length - syncedEntries} bundled manifest entries resolve against ${snapshots[0].name}; ${syncedEntries} synced library layers carry no unrecorded unresolved row; ${missionManifest.length} Lylat mission layers (${missionRows} rows) resolve against their domains`);
 console.log(`PASS checked ${snapshots.map(snapshot => snapshot.name).join(' + ')}`);

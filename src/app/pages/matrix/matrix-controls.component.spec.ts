@@ -11,7 +11,7 @@ import { HttpClient } from '@angular/common/http';
 import { MatrixControlService } from '../../services/matrix-control.service';
 import { AttackCveService } from '../../services/attack-cve.service';
 import { ViewpointService } from '../../services/viewpoint.service';
-import { LibraryLayerService } from '../../services/library-layer.service';
+import { LibraryLayerMeta, LibraryLayerService } from '../../services/library-layer.service';
 import { UserLayerService } from '../../services/user-layer.service';
 import { HEATMAP_MODES, heatmapModeDef, heatmapShortLabel, lensAvailability, unavailableLenses } from '../../models/heatmap-modes';
 import { NO_OWNER_DATA_LINE } from '../../models/lens-registry';
@@ -23,7 +23,7 @@ describe('MatrixControlsComponent', () => {
   let component: MatrixControlsComponent;
   let fixture: ComponentFixture<MatrixControlsComponent>;
   let libraryStub: {
-    manifest$: BehaviorSubject<{ file: string; name: string; description: string }[]>;
+    manifest$: BehaviorSubject<LibraryLayerMeta[]>;
     manifestLoaded$: BehaviorSubject<boolean>;
     manifestError$: BehaviorSubject<string | null>;
     activeFile$: BehaviorSubject<string | null>;
@@ -47,7 +47,7 @@ describe('MatrixControlsComponent', () => {
     partialOnly = signal<{ count: number; via: string[] }>({ count: 0, via: [] });
     ownerWords = signal(true);
     libraryStub = {
-      manifest$: new BehaviorSubject<{ file: string; name: string; description: string }[]>([]),
+      manifest$: new BehaviorSubject<LibraryLayerMeta[]>([]),
       manifestLoaded$: new BehaviorSubject(false),
       manifestError$: new BehaviorSubject<string | null>(null),
       activeFile$: new BehaviorSubject<string | null>(null),
@@ -374,6 +374,122 @@ describe('MatrixControlsComponent', () => {
       expect(fixture.nativeElement.querySelector('.user-layer-name')).toBeNull();
       // With the imported layer gone, the picked curated layer is highlighted again.
       expect(fixture.nativeElement.querySelectorAll('.heatmap-mode-btn.active').length).toBe(2);
+    });
+
+    describe('grouped picker', () => {
+      const SRC = 'https://teamstarwolf.com/navigator/';
+      const GROUPED: LibraryLayerMeta[] = [
+        { file: 'web-application-attacks.json', name: 'TeamStarWolf - Web Application Attacks', description: 'curated', group: 'Curated themes' },
+        { file: 'group-apt29.json', name: 'TeamStarWolf - Threat Group: APT29 (G0016)', description: 'group', group: 'Threat groups' },
+        { file: 'study-log4shell.json', name: 'TeamStarWolf - Log4Shell (CVE-2021-44228) Case Study', description: 'study', group: 'Case studies', source: `${SRC}library-layers/log4shell.json` },
+        { file: 'study-chronicle-1995.json', name: 'TeamStarWolf - The Year 1995 in Intrusions', description: 'study', group: 'Case studies', source: `${SRC}library-layers/chronicle-1995.json` },
+        { file: 'vendor-edr.json', name: 'EDR: CrowdStrike Falcon / SentinelOne', description: 'vendor', group: 'Vendors', source: `${SRC}vendors/edr.json` },
+      ];
+      /** GROUPED padded past the search threshold with synced Analytics layers. */
+      const LONG: LibraryLayerMeta[] = [
+        ...GROUPED,
+        ...Array.from({ length: 40 }, (_, i) => ({
+          file: `analytics-filler-${i}.json`, name: `Filler ${i}`, description: 'x', group: 'Analytics', source: `${SRC}analytics/filler-${i}.json`,
+        })),
+      ];
+
+      function open(list: LibraryLayerMeta[], active: string | null = null): HTMLElement {
+        libraryStub.manifest$.next(list);
+        libraryStub.manifestLoaded$.next(true);
+        libraryStub.activeFile$.next(active);
+        return menu();
+      }
+      const toggles = (el: HTMLElement) => [...el.querySelectorAll<HTMLButtonElement>('.library-group-toggle')];
+      const layerButtons = (el: HTMLElement, group: string) =>
+        [...el.querySelectorAll<HTMLButtonElement>(`.library-group[data-group="${group}"] .heatmap-mode-btn`)];
+
+      it('heads each group in the fixed order with its count, bundled groups open and synced groups closed', () => {
+        const el = open(GROUPED);
+        expect(toggles(el).map((b) => b.textContent!.replace(/\s+/g, ' ').trim())).toEqual([
+          '▾ Curated themes 1', '▾ Threat groups 1', '▸ Case studies 2', '▸ Vendors 1',
+        ]);
+        expect(toggles(el).map((b) => b.getAttribute('aria-expanded'))).toEqual(['true', 'true', 'false', 'false']);
+        expect(layerButtons(el, 'Curated themes').length).toBe(1);
+        expect(layerButtons(el, 'Case studies').length).toBe(0);
+        // Each toggle names the list it controls, and that element exists while closed.
+        for (const b of toggles(el)) expect(el.querySelector(`#${b.getAttribute('aria-controls')}`)).not.toBeNull();
+      });
+
+      it('opens the group holding the active layer', () => {
+        const el = open(GROUPED, 'study-log4shell.json');
+        expect(layerButtons(el, 'Case studies').map((b) => b.textContent!.trim())).toEqual([
+          'Log4Shell (CVE-2021-44228) Case Study', 'The Year 1995 in Intrusions',
+        ]);
+        expect(layerButtons(el, 'Vendors').length).toBe(0);
+      });
+
+      it('a group heading is a button that opens and closes its list', () => {
+        const el = open(GROUPED);
+        const studies = toggles(el)[2];
+        expect(studies.tagName).toBe('BUTTON');
+        expect(studies.type).toBe('button');
+        studies.click();
+        fixture.detectChanges();
+        expect(studies.getAttribute('aria-expanded')).toBe('true');
+        expect(layerButtons(el, 'Case studies').length).toBe(2);
+        studies.click();
+        fixture.detectChanges();
+        expect(studies.getAttribute('aria-expanded')).toBe('false');
+        expect(layerButtons(el, 'Case studies').length).toBe(0);
+        // A bundled group closes too.
+        toggles(el)[0].click();
+        fixture.detectChanges();
+        expect(layerButtons(el, 'Curated themes').length).toBe(0);
+      });
+
+      it('picking a synced layer selects it by file and switches to the library lens', () => {
+        const filterSvc = TestBed.inject(FilterService) as any;
+        const el = open(GROUPED);
+        toggles(el)[3].click();
+        fixture.detectChanges();
+        layerButtons(el, 'Vendors')[0].click();
+        expect(libraryStub.setActive).toHaveBeenCalledWith('vendor-edr.json');
+        expect(filterSvc.setHeatmapMode).toHaveBeenCalledWith('library');
+      });
+
+      it('shows no search box for a short list', () => {
+        const el = open(GROUPED);
+        expect(el.querySelector('.library-search-input')).toBeNull();
+      });
+
+      it('searches every group by name once the list is longer than forty', () => {
+        const el = open(LONG);
+        const input = el.querySelector<HTMLInputElement>('.library-search-input')!;
+        expect(input).not.toBeNull();
+        expect(input.getAttribute('aria-label')).toContain('Search library layers');
+        expect(input.placeholder).toContain(String(LONG.length));
+
+        input.value = 'log4shell study';
+        input.dispatchEvent(new Event('input'));
+        fixture.detectChanges();
+        // Only the matching group is listed, opened, holding only the match.
+        expect(toggles(el).map((b) => b.getAttribute('aria-expanded'))).toEqual(['true']);
+        expect(layerButtons(el, 'Case studies').map((b) => b.textContent!.trim())).toEqual(['Log4Shell (CVE-2021-44228) Case Study']);
+        expect(el.querySelector('.library-search-status')!.textContent).toContain(`1 of ${LONG.length} layers match`);
+
+        input.value = 'no such layer';
+        input.dispatchEvent(new Event('input'));
+        fixture.detectChanges();
+        expect(toggles(el).length).toBe(0);
+        expect(el.querySelector('.library-layers-group .library-status')!.textContent).toContain('No library layer name matches');
+
+        input.value = '';
+        input.dispatchEvent(new Event('input'));
+        fixture.detectChanges();
+        expect(toggles(el).length).toBe(5);
+        expect(el.querySelector('.library-search-status')!.textContent!.trim()).toBe('');
+      });
+
+      it('lists a manifest without groups under one open group, as before', () => {
+        const el = open(LAYERS);
+        expect(toggles(el).map((b) => b.textContent!.replace(/\s+/g, ' ').trim())).toEqual(['▾ Other 2']);
+        expect(layerButtons(el, 'Other').length).toBe(2);
+      });
     });
   });
 

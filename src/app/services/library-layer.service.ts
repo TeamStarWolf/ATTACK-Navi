@@ -13,6 +13,52 @@ export interface LibraryLayerMeta {
   description: string;
   /** Short human-readable tooltip text (optional; falls back to description). */
   blurb?: string;
+  /** Picker group (one of LIBRARY_LAYER_GROUPS); written by scripts/sync-library-layers.mjs. */
+  group?: string;
+  /** Library address a synced layer was copied from; absent on layers bundled only here. */
+  source?: string;
+}
+
+/**
+ * Picker group order: the bundled groups first, then the groups synced from the
+ * library. Must match BUNDLED_GROUPS and SYNCED_GROUPS in
+ * scripts/sync-library-layers.mjs (its --check rejects any other group).
+ */
+export const LIBRARY_LAYER_GROUPS: readonly string[] = [
+  'Curated themes', 'Threat groups', 'HTB frequency', 'Agentic AI', 'Lylat',
+  'Case studies', 'Threat actors', 'Vendors', 'Kill-chain stages', 'Computed', 'Analytics', 'AI', 'Fraud',
+];
+
+/** Group label for a manifest entry with no group (a hand-made manifest). */
+export const UNGROUPED_LIBRARY_LAYERS = 'Other';
+
+export interface LibraryLayerGroup {
+  group: string;
+  layers: LibraryLayerMeta[];
+}
+
+/**
+ * The manifest split into its groups: known groups in LIBRARY_LAYER_GROUPS
+ * order, then any other group in first-seen order, then the ungrouped entries.
+ * Manifest order is kept inside each group; empty groups are left out.
+ */
+export function groupLibraryLayers(list: readonly LibraryLayerMeta[]): LibraryLayerGroup[] {
+  const byGroup = new Map<string, LibraryLayerMeta[]>();
+  for (const layer of list) {
+    const group = layer.group?.trim() || UNGROUPED_LIBRARY_LAYERS;
+    const bucket = byGroup.get(group);
+    if (bucket) bucket.push(layer);
+    else byGroup.set(group, [layer]);
+  }
+  const rank = (group: string): number => {
+    if (group === UNGROUPED_LIBRARY_LAYERS) return Number.MAX_SAFE_INTEGER;
+    const known = LIBRARY_LAYER_GROUPS.indexOf(group);
+    return known >= 0 ? known : LIBRARY_LAYER_GROUPS.length;
+  };
+  // Array.prototype.sort is stable, so unknown groups keep their first-seen order.
+  return [...byGroup.entries()]
+    .sort(([a], [b]) => rank(a) - rank(b))
+    .map(([group, layers]) => ({ group, layers }));
 }
 
 interface LayerTechnique {

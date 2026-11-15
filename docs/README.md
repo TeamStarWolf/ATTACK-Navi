@@ -35,7 +35,7 @@ If you are new to the repo, start in this order:
 - [Heatmaps](HEATMAPS.md)
   Heatmap intent, scoring behavior, and mode-specific notes.
 - [Library Layers](LIBRARY_LAYERS.md)
-  The 37 bundled ATT&CK overlays (curated themes, HTB frequency, agentic AI, threat-group emulation, and Lylat mission coverage): scoring, provenance, and analyst use.
+  The 201 bundled ATT&CK overlays (curated themes, HTB frequency, agentic AI, threat-group emulation, Lylat mission coverage, and the case-study, threat-actor, vendor, stage, computed, analytics, AI and fraud layers synced from the library): scoring, provenance, and analyst use.
 - [Services](SERVICES.md)
   Service responsibilities, integration helpers, and runtime data roles.
 - [Components](COMPONENTS.md)
