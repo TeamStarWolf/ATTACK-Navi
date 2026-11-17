@@ -35,6 +35,7 @@
     "test:visual:update": "playwright test e2e/visual.spec.ts --update-snapshots",
     "validate:layers": "node scripts/validate-curated-threat-layers.mjs",
     "validate:bundles": "node scripts/check-refreshed-bundles.mjs",
+    "slim:build": "node scripts/minify-build-assets.mjs dist/mitre-mitigation-navigator/browser/assets/data",
     "proxy:install": "npm install --prefix server",
     "proxy:start": "npm start --prefix server"
   },
