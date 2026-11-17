@@ -11,8 +11,8 @@
 
     <div class="roadmap-controls">
       <div class="control-group">
-        <label class="control-label">Sort by</label>
-        <select class="control-select" [(ngModel)]="sortBy">
+        <label class="control-label" for="roadmap-sort-by">Sort by</label>
+        <select id="roadmap-sort-by" class="control-select" [(ngModel)]="sortBy">
           <option value="priority">Priority Score</option>
           <option value="impact">Impact Score</option>
           <option value="coverage">Techniques Mapped</option>
@@ -20,8 +20,8 @@
         </select>
       </div>
       <div class="control-group">
-        <label class="control-label">Show</label>
-        <select class="control-select" [(ngModel)]="filterStatus">
+        <label class="control-label" for="roadmap-show">Show</label>
+        <select id="roadmap-show" class="control-select" [(ngModel)]="filterStatus">
           <option value="unstarted">Not started</option>
           <option value="inprogress">In progress / Planned</option>
           <option value="all">All mitigations</option>
