@@ -1,5 +1,6 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
+import { START_PRESETS } from './start-presets';
 
 export interface NavCommand {
   /** Legacy panel id — resolved to a route via PANEL_ROUTE_MAP / PanelNavService. */
@@ -79,6 +80,18 @@ export interface ActionCommand {
   keywords?: string;
 }
 
+/**
+ * Role-based start presets as palette actions (`start:<id>`), so the on-ramp
+ * from the first-run onboarding is reachable any time, not only on first visit.
+ * UniversalSearchComponent dispatches a `start:` id to StartPresetService.
+ */
+const ROLE_PRESET_COMMANDS: readonly ActionCommand[] = START_PRESETS.map((p): ActionCommand => ({
+  id: `start:${p.id}`,
+  label: `Start as ${p.label}`,
+  description: p.blurb,
+  keywords: `role preset onboarding start workspace lens ${p.label.toLowerCase()}`,
+}));
+
 /** "Do …" commands for the palette. Dispatched by UniversalSearchComponent. */
 export const ACTION_COMMANDS: readonly ActionCommand[] = [
   { id: 'toggle-theme', label: 'Toggle light / dark theme', description: 'Switch the color scheme', keywords: 'dark light mode theme' },
@@ -89,4 +102,5 @@ export const ACTION_COMMANDS: readonly ActionCommand[] = [
   { id: 'export-xlsx', label: 'Export Excel workbook', description: 'Download the multi-sheet XLSX', keywords: 'export excel xlsx' },
   { id: 'export-navigator', label: 'Export Navigator layer', description: 'Download an ATT&CK Navigator layer', keywords: 'navigator layer json' },
   { id: 'open-navigator', label: 'Open in ATT&CK Navigator', description: 'Launch the official Navigator with this layer', keywords: 'navigator mitre' },
-] as const;
+  ...ROLE_PRESET_COMMANDS,
+];

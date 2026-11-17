@@ -185,6 +185,63 @@
   flex: 1;
 }
 
+/* Role-based start presets */
+.role-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+  margin: 4px 0;
+}
+
+.role-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--bg-panel-strong);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+
+  &:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgb(88 166 255 / 12%);
+  }
+}
+
+.rc-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.rc-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rc-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.rc-blurb {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.or-jump {
+  margin-top: 10px;
+  font-size: 12px;
+}
+
 /* Step dots */
 .step-dots {
   display: flex;
