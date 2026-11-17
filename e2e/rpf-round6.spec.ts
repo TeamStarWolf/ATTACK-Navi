@@ -112,7 +112,7 @@ test.describe('RP-F round 6', () => {
     // In-app navigation keeps the loaded Sigma counts (T1059 carries 12 in the fixture).
     await page.evaluate(() => { window.location.hash = '#/detect/validation'; });
     await expect(page.locator('app-validation-panel')).toBeVisible({ timeout: ROUTE_TIMEOUT });
-    await page.getByRole('button', { name: /Techniques/ }).click();
+    await page.getByRole('tab', { name: /Techniques/ }).click();
     await page.locator('.vp-search').fill('T1059');
     const tile = page.locator('.vp-tcard', { has: page.locator('.vp-tid', { hasText: /^T1059$/ }) });
     await expect(tile).toHaveCount(1, { timeout: ROUTE_TIMEOUT });
@@ -131,7 +131,7 @@ test.describe('RP-F round 6', () => {
     // as fired; the tile and the history read "attack did not execute", with no fraction.
     await expect(tile.locator('.vp-tcard-runline')).toContainText('attack did not execute');
     await expect(tile.locator('.vp-tcard-runline')).not.toContainText(/\d+ of \d+ expected/);
-    await page.getByRole('button', { name: /Run History/ }).click();
+    await page.getByRole('tab', { name: /Run History/ }).click();
     const historyRow = page.locator('.vp-runs-table tbody tr').first();
     await expect(historyRow.locator('.vp-status-badge')).toHaveText(/UNTESTED/);
     await expect(historyRow).toContainText('attack did not execute');
@@ -169,7 +169,7 @@ test.describe('RP-F round 6', () => {
 
     await page.evaluate(() => { window.location.hash = '#/detect/validation'; });
     await expect(page.locator('app-validation-panel')).toBeVisible({ timeout: ROUTE_TIMEOUT });
-    await page.getByRole('button', { name: /Run History/ }).click();
+    await page.getByRole('tab', { name: /Run History/ }).click();
     const row = page.locator('.vp-runs-table tbody tr').first();
     await expect(row).toContainText('1 of 1 expected rules fired, plus 1 unexpected');
     await expect(row).not.toContainText('2/1');

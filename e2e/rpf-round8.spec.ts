@@ -252,7 +252,7 @@ test.describe('RP-F round 8', () => {
     await expect(page.locator('app-validation-panel')).toBeVisible({ timeout: ROUTE_TIMEOUT });
     // Run History reads the pill's words, with no fraction (the technique tiles list the
     // profile's parent techniques only; the [RP-F 32] e2e reads a tile).
-    await page.getByRole('button', { name: /Run History/ }).click();
+    await page.getByRole('tab', { name: /Run History/ }).click();
     const row = page.locator('.vp-runs-table tbody tr', { has: page.locator('code', { hasText: /^T1027\.013$/ }) });
     await expect(row).toContainText('attack did not execute', { timeout: ROUTE_TIMEOUT });
     await expect(row).not.toContainText(/\d+ of \d+ expected/);
