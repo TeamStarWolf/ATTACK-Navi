@@ -25,7 +25,7 @@
             placeholder="Search custom mitigations…"
             [(ngModel)]="searchText"
           />
-          <select class="category-filter" [(ngModel)]="filterCategory">
+          <select class="category-filter" aria-label="Filter custom mitigations by category" [(ngModel)]="filterCategory">
             <option value="all">All Categories</option>
             @for (cat of categories; track cat) {
               <option [value]="cat">{{ cat }}</option>

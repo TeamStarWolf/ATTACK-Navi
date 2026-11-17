@@ -49,6 +49,7 @@
 
         @if (availableCategories.length > 0) {
           <select class="lib-select"
+                  aria-label="Filter assets by category"
                   [value]="categoryFilter"
                   (change)="onCategoryChange($any($event.target).value)">
             <option value="">All categories ({{ availableCategories.length }})</option>

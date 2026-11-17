@@ -33,7 +33,7 @@
           [(ngModel)]="searchText"
           (input)="onSearch()"
         />
-        <select class="filter-select" [(ngModel)]="filterMode" (change)="onFilterModeChange()">
+        <select class="filter-select" aria-label="Filter mitigations by implementation status" [(ngModel)]="filterMode" (change)="onFilterModeChange()">
           <option value="not-implemented">Exclude implemented</option>
           <option value="all">Show all</option>
         </select>

@@ -27,7 +27,7 @@
             placeholder="Search watchlist…"
             [(ngModel)]="searchText"
           />
-          <select class="sort-select" [(ngModel)]="sortBy">
+          <select class="sort-select" aria-label="Sort watchlist" [(ngModel)]="sortBy">
             <option value="priority">Sort: Priority</option>
             <option value="added">Sort: Recently Added</option>
             <option value="name">Sort: Name</option>
