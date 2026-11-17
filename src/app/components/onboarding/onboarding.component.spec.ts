@@ -3,19 +3,24 @@
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { OnboardingComponent } from './onboarding.component';
 import { FilterService } from '../../services/filter.service';
+import { StartPresetService } from '../../services/start-preset.service';
+import { START_PRESETS } from '../../models/start-presets';
 import { textContrast } from '../../testing/contrast';
 import { defaultRailSections } from '../nav-rail/nav-rail.component';
 
 describe('OnboardingComponent', () => {
   let component: OnboardingComponent;
   let fixture: ComponentFixture<OnboardingComponent>;
+  let applyPreset: jasmine.Spy;
 
   beforeEach(() => {
     localStorage.clear();
+    applyPreset = jasmine.createSpy('apply');
     TestBed.configureTestingModule({
       imports: [OnboardingComponent],
       providers: [
         { provide: FilterService, useValue: { setActivePanel: jasmine.createSpy('setActivePanel') } },
+        { provide: StartPresetService, useValue: { presets: START_PRESETS, apply: applyPreset } },
       ],
     });
     fixture = TestBed.createComponent(OnboardingComponent);
@@ -31,6 +36,24 @@ describe('OnboardingComponent', () => {
   it('exposes 4 quick-start cards', () => {
     expect(component.quickCards.length).toBe(4);
     expect(component.totalSteps).toBe(3);
+  });
+
+  it('exposes the role presets from the service', () => {
+    expect(component.rolePresets).toBe(START_PRESETS);
+  });
+
+  it('chooseRole applies the preset and completes onboarding', () => {
+    component.chooseRole(START_PRESETS[0].id);
+    expect(applyPreset).toHaveBeenCalledWith(START_PRESETS[0].id);
+    expect(component.visible).toBe(false);
+    expect(localStorage.getItem('onboarding-completed')).toBe('true');
+  });
+
+  it('renders a card for every role preset on the last step', () => {
+    component.currentStep = 2;
+    fixture.detectChanges();
+    const cards = fixture.nativeElement.querySelectorAll('.role-card');
+    expect(cards.length).toBe(START_PRESETS.length);
   });
 
   // The welcome step describes the rail as it is: three labelled sections with

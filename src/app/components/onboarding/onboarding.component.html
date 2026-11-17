@@ -43,7 +43,20 @@
       @if (currentStep === 2) {
         <div class="step-content">
           <div class="step-icon">&#x1F680;</div>
-          <h2 class="step-title">Try These First</h2>
+          <h2 class="step-title">Start with your role</h2>
+          <p class="step-desc">Pick a role to set the matrix lens it reads and open its workspace. You can switch the lens or page any time.</p>
+          <div class="role-cards">
+            @for (role of rolePresets; track role.id) {
+              <button class="role-card" (click)="chooseRole(role.id)" [attr.data-role]="role.id">
+                <span class="rc-icon">{{ role.icon }}</span>
+                <span class="rc-text">
+                  <span class="rc-label">{{ role.label }}</span>
+                  <span class="rc-blurb">{{ role.blurb }}</span>
+                </span>
+              </button>
+            }
+          </div>
+          <p class="step-desc or-jump">Or jump straight to a task:</p>
           <div class="quick-cards">
             @for (card of quickCards; track card.panel) {
               <button class="quick-card" (click)="openPanel(card.panel)">

@@ -4,6 +4,8 @@ import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { PanelNavService } from '../../services/panel-nav.service';
+import { StartPresetService } from '../../services/start-preset.service';
+import { StartPreset } from '../../models/start-presets';
 
 interface QuickStartCard {
   icon: string;
@@ -22,12 +24,16 @@ interface QuickStartCard {
 export class OnboardingComponent {
   private readonly STORAGE_KEY = 'onboarding-completed';
   private panelNav = inject(PanelNavService);
+  private startPresets = inject(StartPresetService);
 
   visible = !localStorage.getItem(this.STORAGE_KEY);
   currentStep = 0;
   dontShowAgain = false;
 
   readonly totalSteps = 3;
+
+  /** Role-based start presets (lens + workspace), shown on the last step. */
+  readonly rolePresets: readonly StartPreset[] = this.startPresets.presets;
 
   readonly quickCards: QuickStartCard[] = [
     { icon: '\u{1F50D}', label: 'Run Assessment', panel: 'assessment' },
@@ -66,6 +72,12 @@ export class OnboardingComponent {
 
   openPanel(panel: string): void {
     this.panelNav.open(panel);
+    this.getStarted();
+  }
+
+  /** Apply a role preset (lens + workspace), then finish onboarding. */
+  chooseRole(id: string): void {
+    this.startPresets.apply(id);
     this.getStarted();
   }
 }

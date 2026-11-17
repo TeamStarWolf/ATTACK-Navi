@@ -7,6 +7,7 @@ import { Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 import { FilterService } from '../../services/filter.service';
 import { PanelNavService } from '../../services/panel-nav.service';
+import { StartPresetService } from '../../services/start-preset.service';
 import { CommandPaletteService } from '../../services/command-palette.service';
 import { HelpOverlayService } from '../../services/help-overlay.service';
 import { ThemeService } from '../../services/theme.service';
@@ -87,6 +88,7 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
     private atomicService: AtomicService,
     private engageService: EngageService,
     private attackCveService: AttackCveService,
+    private startPresets: StartPresetService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -429,6 +431,9 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
       case 'export-xlsx': void this.exportActions.exportXlsxWorkbook(); break;
       case 'export-navigator': this.exportActions.exportNavigatorLayer(); break;
       case 'open-navigator': this.exportActions.openInNavigator(); break;
+      default:
+        // Role start presets are `start:<preset-id>` (see ACTION_COMMANDS).
+        if (id.startsWith('start:')) this.startPresets.apply(id.slice('start:'.length));
     }
   }
 
