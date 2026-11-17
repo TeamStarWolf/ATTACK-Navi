@@ -1,7 +1,7 @@
 {
   "description": "axe-core violation counts per route, report-only (plan epic E0.3). Regenerate with A11Y_UPDATE_BASELINE=1 npx playwright test e2e/a11y.spec.ts. Journey 6 (P8) requires 0 serious and 0 critical on every route.",
   "mode": "report-only",
-  "axeVersion": "4.13.0",
+  "axeVersion": "4.14.1",
   "tags": [
     "wcag2a",
     "wcag2aa",
@@ -11,11 +11,11 @@
   ],
   "workspace": "e2e/fixtures/workspace (hermetic, onboarding skipped, empty user state)",
   "totals": {
-    "routes": 49,
-    "rules": 6,
+    "routes": 50,
+    "rules": 3,
     "nodes": {
-      "critical": 16,
-      "serious": 49,
+      "critical": 0,
+      "serious": 302,
       "moderate": 0,
       "minor": 0
     }
@@ -24,35 +24,48 @@
     "/matrix": {
       "nodes": {
         "critical": 0,
-        "serious": 0,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {}
-    },
-    "/status": {
-      "nodes": {
-        "critical": 0,
-        "serious": 1,
+        "serious": 49,
         "moderate": 0,
         "minor": 0
       },
       "rules": {
-        "color-contrast": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 48
+        },
+        "scrollable-region-focusable": {
           "impact": "serious",
           "nodes": 1
+        }
+      }
+    },
+    "/status": {
+      "nodes": {
+        "critical": 0,
+        "serious": 4,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
         }
       }
     },
     "/dashboard/overview": {
       "nodes": {
         "critical": 0,
-        "serious": 1,
+        "serious": 5,
         "moderate": 0,
         "minor": 0
       },
       "rules": {
-        "color-contrast": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        },
+        "scrollable-region-focusable": {
           "impact": "serious",
           "nodes": 1
         }
@@ -61,65 +74,111 @@
     "/dashboard/analytics": {
       "nodes": {
         "critical": 0,
-        "serious": 0,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {}
-    },
-    "/intel/groups": {
-      "nodes": {
-        "critical": 0,
-        "serious": 0,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {}
-    },
-    "/intel/actors": {
-      "nodes": {
-        "critical": 0,
-        "serious": 0,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {}
-    },
-    "/intel/compare": {
-      "nodes": {
-        "critical": 0,
-        "serious": 0,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {}
-    },
-    "/intel/scenarios": {
-      "nodes": {
-        "critical": 0,
-        "serious": 0,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {}
-    },
-    "/intel/emulation": {
-      "nodes": {
-        "critical": 0,
-        "serious": 0,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {}
-    },
-    "/intel/campaigns": {
-      "nodes": {
-        "critical": 0,
-        "serious": 10,
+        "serious": 5,
         "moderate": 0,
         "minor": 0
       },
       "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        },
+        "scrollable-region-focusable": {
+          "impact": "serious",
+          "nodes": 1
+        }
+      }
+    },
+    "/intel/groups": {
+      "nodes": {
+        "critical": 0,
+        "serious": 4,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        }
+      }
+    },
+    "/intel/actors": {
+      "nodes": {
+        "critical": 0,
+        "serious": 4,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        }
+      }
+    },
+    "/intel/compare": {
+      "nodes": {
+        "critical": 0,
+        "serious": 4,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        }
+      }
+    },
+    "/intel/scenarios": {
+      "nodes": {
+        "critical": 0,
+        "serious": 9,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        },
+        "scrollable-region-focusable": {
+          "impact": "serious",
+          "nodes": 1
+        },
+        "target-size": {
+          "impact": "serious",
+          "nodes": 4
+        }
+      }
+    },
+    "/intel/emulation": {
+      "nodes": {
+        "critical": 0,
+        "serious": 4,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        }
+      }
+    },
+    "/intel/campaigns": {
+      "nodes": {
+        "critical": 0,
+        "serious": 14,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        },
         "target-size": {
           "impact": "serious",
           "nodes": 10
@@ -129,20 +188,29 @@
     "/intel/software": {
       "nodes": {
         "critical": 0,
-        "serious": 0,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {}
-    },
-    "/intel/feeds": {
-      "nodes": {
-        "critical": 0,
-        "serious": 1,
+        "serious": 4,
         "moderate": 0,
         "minor": 0
       },
       "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        }
+      }
+    },
+    "/intel/feeds": {
+      "nodes": {
+        "critical": 0,
+        "serious": 5,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        },
         "scrollable-region-focusable": {
           "impact": "serious",
           "nodes": 1
@@ -152,20 +220,33 @@
     "/detect/detections": {
       "nodes": {
         "critical": 0,
-        "serious": 0,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {}
-    },
-    "/detect/sigma": {
-      "nodes": {
-        "critical": 0,
-        "serious": 4,
+        "serious": 5,
         "moderate": 0,
         "minor": 0
       },
       "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        },
+        "scrollable-region-focusable": {
+          "impact": "serious",
+          "nodes": 1
+        }
+      }
+    },
+    "/detect/sigma": {
+      "nodes": {
+        "critical": 0,
+        "serious": 8,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        },
         "scrollable-region-focusable": {
           "impact": "serious",
           "nodes": 1
@@ -178,26 +259,30 @@
     },
     "/detect/siem": {
       "nodes": {
-        "critical": 1,
-        "serious": 0,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {
-        "label": {
-          "impact": "critical",
-          "nodes": 1
-        }
-      }
-    },
-    "/detect/yara": {
-      "nodes": {
         "critical": 0,
         "serious": 4,
         "moderate": 0,
         "minor": 0
       },
       "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        }
+      }
+    },
+    "/detect/yara": {
+      "nodes": {
+        "critical": 0,
+        "serious": 8,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        },
         "scrollable-region-focusable": {
           "impact": "serious",
           "nodes": 1
@@ -210,53 +295,84 @@
     },
     "/detect/validation": {
       "nodes": {
-        "critical": 1,
-        "serious": 0,
+        "critical": 0,
+        "serious": 6,
         "moderate": 0,
         "minor": 0
       },
       "rules": {
-        "aria-required-children": {
-          "impact": "critical",
-          "nodes": 1
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        },
+        "scrollable-region-focusable": {
+          "impact": "serious",
+          "nodes": 2
         }
       }
     },
     "/detect/data-sources": {
       "nodes": {
         "critical": 0,
-        "serious": 0,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {}
-    },
-    "/detect/purple-team": {
-      "nodes": {
-        "critical": 0,
-        "serious": 0,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {}
-    },
-    "/exposure/cve": {
-      "nodes": {
-        "critical": 0,
-        "serious": 0,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {}
-    },
-    "/exposure/risk": {
-      "nodes": {
-        "critical": 0,
-        "serious": 1,
+        "serious": 4,
         "moderate": 0,
         "minor": 0
       },
       "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        }
+      }
+    },
+    "/detect/purple-team": {
+      "nodes": {
+        "critical": 0,
+        "serious": 5,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        },
+        "scrollable-region-focusable": {
+          "impact": "serious",
+          "nodes": 1
+        }
+      }
+    },
+    "/exposure/cve": {
+      "nodes": {
+        "critical": 0,
+        "serious": 5,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        },
+        "scrollable-region-focusable": {
+          "impact": "serious",
+          "nodes": 1
+        }
+      }
+    },
+    "/exposure/risk": {
+      "nodes": {
+        "critical": 0,
+        "serious": 5,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        },
         "scrollable-region-focusable": {
           "impact": "serious",
           "nodes": 1
@@ -266,11 +382,15 @@
     "/exposure/kill-chain": {
       "nodes": {
         "critical": 0,
-        "serious": 1,
+        "serious": 5,
         "moderate": 0,
         "minor": 0
       },
       "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        },
         "scrollable-region-focusable": {
           "impact": "serious",
           "nodes": 1
@@ -280,263 +400,339 @@
     "/exposure/graph": {
       "nodes": {
         "critical": 0,
-        "serious": 0,
+        "serious": 4,
         "moderate": 0,
         "minor": 0
       },
-      "rules": {}
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        }
+      }
     },
     "/exposure/gap-analysis": {
       "nodes": {
         "critical": 0,
-        "serious": 0,
+        "serious": 4,
         "moderate": 0,
         "minor": 0
       },
-      "rules": {}
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        }
+      }
     },
     "/exposure/priority": {
       "nodes": {
         "critical": 0,
-        "serious": 0,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {}
-    },
-    "/exposure/ssvc": {
-      "nodes": {
-        "critical": 0,
-        "serious": 1,
+        "serious": 5,
         "moderate": 0,
         "minor": 0
       },
       "rules": {
-        "color-contrast": {
+        "label-content-name-mismatch": {
           "impact": "serious",
-          "nodes": 1
-        }
-      }
-    },
-    "/exposure/dossier": {
-      "nodes": {
-        "critical": 0,
-        "serious": 1,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {
-        "color-contrast": {
-          "impact": "serious",
-          "nodes": 1
-        }
-      }
-    },
-    "/exposure/what-if": {
-      "nodes": {
-        "critical": 1,
-        "serious": 0,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {
-        "select-name": {
-          "impact": "critical",
-          "nodes": 1
-        }
-      }
-    },
-    "/exposure/ctem": {
-      "nodes": {
-        "critical": 0,
-        "serious": 0,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {}
-    },
-    "/coverage/assessment": {
-      "nodes": {
-        "critical": 0,
-        "serious": 0,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {}
-    },
-    "/coverage/controls": {
-      "nodes": {
-        "critical": 0,
-        "serious": 0,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {}
-    },
-    "/coverage/custom-mitigations": {
-      "nodes": {
-        "critical": 1,
-        "serious": 0,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {
-        "select-name": {
-          "impact": "critical",
-          "nodes": 1
-        }
-      }
-    },
-    "/coverage/compliance": {
-      "nodes": {
-        "critical": 0,
-        "serious": 1,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {
+          "nodes": 4
+        },
         "scrollable-region-focusable": {
           "impact": "serious",
           "nodes": 1
         }
       }
     },
-    "/coverage/diff": {
+    "/exposure/ssvc": {
       "nodes": {
         "critical": 0,
-        "serious": 0,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {}
-    },
-    "/coverage/timeline": {
-      "nodes": {
-        "critical": 0,
-        "serious": 0,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {}
-    },
-    "/coverage/target": {
-      "nodes": {
-        "critical": 1,
-        "serious": 0,
+        "serious": 4,
         "moderate": 0,
         "minor": 0
       },
       "rules": {
-        "label": {
-          "impact": "critical",
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        }
+      }
+    },
+    "/exposure/dossier": {
+      "nodes": {
+        "critical": 0,
+        "serious": 4,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        }
+      }
+    },
+    "/exposure/what-if": {
+      "nodes": {
+        "critical": 0,
+        "serious": 4,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        }
+      }
+    },
+    "/exposure/ctem": {
+      "nodes": {
+        "critical": 0,
+        "serious": 4,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        }
+      }
+    },
+    "/coverage/assessment": {
+      "nodes": {
+        "critical": 0,
+        "serious": 4,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        }
+      }
+    },
+    "/coverage/controls": {
+      "nodes": {
+        "critical": 0,
+        "serious": 4,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        }
+      }
+    },
+    "/coverage/custom-mitigations": {
+      "nodes": {
+        "critical": 0,
+        "serious": 4,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        }
+      }
+    },
+    "/coverage/compliance": {
+      "nodes": {
+        "critical": 0,
+        "serious": 6,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        },
+        "scrollable-region-focusable": {
+          "impact": "serious",
+          "nodes": 2
+        }
+      }
+    },
+    "/coverage/diff": {
+      "nodes": {
+        "critical": 0,
+        "serious": 4,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        }
+      }
+    },
+    "/coverage/timeline": {
+      "nodes": {
+        "critical": 0,
+        "serious": 5,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        },
+        "scrollable-region-focusable": {
+          "impact": "serious",
           "nodes": 1
+        }
+      }
+    },
+    "/coverage/target": {
+      "nodes": {
+        "critical": 0,
+        "serious": 4,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
         }
       }
     },
     "/coverage/assets": {
       "nodes": {
         "critical": 0,
-        "serious": 0,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {}
-    },
-    "/library/workbench": {
-      "nodes": {
-        "critical": 1,
-        "serious": 0,
+        "serious": 4,
         "moderate": 0,
         "minor": 0
       },
       "rules": {
-        "select-name": {
-          "impact": "critical",
-          "nodes": 1
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        }
+      }
+    },
+    "/library/workbench": {
+      "nodes": {
+        "critical": 0,
+        "serious": 4,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
         }
       }
     },
     "/library/layers": {
       "nodes": {
         "critical": 0,
-        "serious": 0,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {}
-    },
-    "/library/collections": {
-      "nodes": {
-        "critical": 0,
-        "serious": 0,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {}
-    },
-    "/library/comparison": {
-      "nodes": {
-        "critical": 2,
-        "serious": 0,
+        "serious": 4,
         "moderate": 0,
         "minor": 0
       },
       "rules": {
-        "select-name": {
-          "impact": "critical",
-          "nodes": 2
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        }
+      }
+    },
+    "/library/collections": {
+      "nodes": {
+        "critical": 0,
+        "serious": 4,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        }
+      }
+    },
+    "/library/comparison": {
+      "nodes": {
+        "critical": 0,
+        "serious": 4,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
         }
       }
     },
     "/library/roadmap": {
       "nodes": {
-        "critical": 2,
-        "serious": 22,
+        "critical": 0,
+        "serious": 23,
         "moderate": 0,
         "minor": 0
       },
       "rules": {
-        "select-name": {
-          "impact": "critical",
-          "nodes": 2
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
         },
         "target-size": {
           "impact": "serious",
-          "nodes": 22
+          "nodes": 19
         }
       }
     },
     "/library/watchlist": {
       "nodes": {
-        "critical": 1,
-        "serious": 0,
+        "critical": 0,
+        "serious": 4,
         "moderate": 0,
         "minor": 0
       },
       "rules": {
-        "select-name": {
-          "impact": "critical",
-          "nodes": 1
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
         }
       }
     },
     "/library/tags": {
       "nodes": {
         "critical": 0,
-        "serious": 0,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {}
-    },
-    "/reports/builder": {
-      "nodes": {
-        "critical": 0,
-        "serious": 1,
+        "serious": 4,
         "moderate": 0,
         "minor": 0
       },
       "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        }
+      }
+    },
+    "/reports/builder": {
+      "nodes": {
+        "critical": 0,
+        "serious": 5,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        },
         "scrollable-region-focusable": {
           "impact": "serious",
           "nodes": 1
@@ -546,43 +742,72 @@
     "/reports/playbooks": {
       "nodes": {
         "critical": 0,
-        "serious": 0,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {}
-    },
-    "/reports/exports": {
-      "nodes": {
-        "critical": 0,
-        "serious": 0,
-        "moderate": 0,
-        "minor": 0
-      },
-      "rules": {}
-    },
-    "/settings/preferences": {
-      "nodes": {
-        "critical": 5,
-        "serious": 0,
+        "serious": 4,
         "moderate": 0,
         "minor": 0
       },
       "rules": {
-        "label": {
-          "impact": "critical",
-          "nodes": 5
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        }
+      }
+    },
+    "/reports/exports": {
+      "nodes": {
+        "critical": 0,
+        "serious": 4,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        }
+      }
+    },
+    "/settings/preferences": {
+      "nodes": {
+        "critical": 0,
+        "serious": 4,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
         }
       }
     },
     "/settings/changelog": {
       "nodes": {
         "critical": 0,
-        "serious": 0,
+        "serious": 4,
         "moderate": 0,
         "minor": 0
       },
-      "rules": {}
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        }
+      }
+    },
+    "/technique/enterprise/T1059.001": {
+      "nodes": {
+        "critical": 0,
+        "serious": 4,
+        "moderate": 0,
+        "minor": 0
+      },
+      "rules": {
+        "label-content-name-mismatch": {
+          "impact": "serious",
+          "nodes": 4
+        }
+      }
     }
   }
 }
