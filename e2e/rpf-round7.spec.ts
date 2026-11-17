@@ -161,7 +161,7 @@ test.describe('RP-F round 7', () => {
     await page.locator('#vp-import-runs').setInputFiles({ name: 'runs.json', mimeType: 'application/json', buffer: Buffer.from(body) });
     await expect(page.locator('.vp-import-msg').first()).toContainText('2 runs stored untested: the attack did not execute', { timeout: ROUTE_TIMEOUT });
 
-    await page.getByRole('button', { name: /Techniques/ }).click();
+    await page.getByRole('tab', { name: /Techniques/ }).click();
     for (const id of ['T1027', 'T1486']) {
       await page.locator('.vp-search').fill(id);
       const tile = page.locator('.vp-tcard', { has: page.locator('.vp-tid', { hasText: new RegExp(`^${id}$`) }) });
@@ -211,7 +211,7 @@ test.describe('RP-F round 7', () => {
 
     await page.evaluate(() => { window.location.hash = '#/detect/validation'; });
     await expect(page.locator('app-validation-panel')).toBeVisible({ timeout: ROUTE_TIMEOUT });
-    await page.getByRole('button', { name: /Run History/ }).click();
+    await page.getByRole('tab', { name: /Run History/ }).click();
     const row = page.locator('.vp-runs-table tbody tr').first();
     await expect(row).toContainText(words);
     await expect(row).not.toContainText('2/2');
