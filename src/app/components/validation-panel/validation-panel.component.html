@@ -67,11 +67,11 @@
 
       <!-- Tabs -->
       <nav class="vp-tabs" role="tablist">
-        <button [class.active]="currentTab === 'overview'" (click)="setTab('overview')">📊 Overview</button>
-        <button [class.active]="currentTab === 'techniques'" (click)="setTab('techniques')">🎯 Techniques</button>
-        <button [class.active]="currentTab === 'telemetry'" (click)="setTab('telemetry')">📡 Telemetry</button>
-        <button [class.active]="currentTab === 'runs'" (click)="setTab('runs')">📜 Run History</button>
-        <button [class.active]="currentTab === 'evidence'" (click)="setTab('evidence')">📁 Evidence</button>
+        <button role="tab" [attr.aria-selected]="currentTab === 'overview'" [class.active]="currentTab === 'overview'" (click)="setTab('overview')">📊 Overview</button>
+        <button role="tab" [attr.aria-selected]="currentTab === 'techniques'" [class.active]="currentTab === 'techniques'" (click)="setTab('techniques')">🎯 Techniques</button>
+        <button role="tab" [attr.aria-selected]="currentTab === 'telemetry'" [class.active]="currentTab === 'telemetry'" (click)="setTab('telemetry')">📡 Telemetry</button>
+        <button role="tab" [attr.aria-selected]="currentTab === 'runs'" [class.active]="currentTab === 'runs'" (click)="setTab('runs')">📜 Run History</button>
+        <button role="tab" [attr.aria-selected]="currentTab === 'evidence'" [class.active]="currentTab === 'evidence'" (click)="setTab('evidence')">📁 Evidence</button>
       </nav>
 
       <!-- Overview -->
