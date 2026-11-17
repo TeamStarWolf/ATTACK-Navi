@@ -414,7 +414,18 @@ test.describe('ATT&CK-Navi', () => {
       'Case studies', 'Threat actors', 'Vendors', 'Kill-chain stages', 'Computed', 'Analytics', 'AI', 'Fraud'];
     const used = new Set(manifest.map(e => e.group));
     expect([...used].every(g => ORDER.includes(g)), 'every manifest group is a known group').toBeTruthy();
-    const groups = ORDER.filter(g => used.has(g));
+    // Critique P1: the picker folds the Lylat and Agentic AI source groups into one
+    // collapsed "Demo & novelty" group placed last (foldDemoLibraryGroups); the
+    // manifest's own group fields are unchanged, so the counts below still sum them.
+    const DEMO_SOURCE = ['Lylat', 'Agentic AI'];
+    const DEMO_LABEL = 'Demo & novelty';
+    const demoCount = manifest.filter(e => DEMO_SOURCE.includes(e.group)).length;
+    const groups = [
+      ...ORDER.filter(g => used.has(g) && !DEMO_SOURCE.includes(g)),
+      ...(demoCount > 0 ? [DEMO_LABEL] : []),
+    ];
+    const groupCount = (g: string): number =>
+      g === DEMO_LABEL ? demoCount : manifest.filter(e => e.group === g).length;
     const study = manifest.find(e => e.file === 'study-log4shell-cve-2021-44228.json');
     expect(study, 'the Log4Shell study is in the manifest').toBeTruthy();
     const rows = JSON.parse(readFileSync(`src/assets/data/library-layers/${study!.file}`, 'utf8')).techniques as Array<{ techniqueID: string }>;
@@ -434,7 +445,7 @@ test.describe('ATT&CK-Navi', () => {
     // One heading per group, in manifest group order, each with its count.
     await expect(toggles).toHaveCount(groups.length);
     for (const [i, group] of groups.entries()) {
-      const n = manifest.filter(e => e.group === group).length;
+      const n = groupCount(group);
       await expect(toggles.nth(i)).toHaveText(new RegExp(`${group.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*${n}$`));
     }
     // Synced groups start closed; opening every group lists every manifest entry.
