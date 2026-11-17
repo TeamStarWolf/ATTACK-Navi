@@ -34,6 +34,10 @@ jobs:
       # browser run on a constrained runner never blocks shipping docs/UI fixes.
       - run: npx ng test --no-watch --browsers=ChromeHeadless
       - run: npx ng build --base-href /ATTACK-Navi/
+      # Losslessly minify the built JSON data assets (the ATT&CK STIX bundles
+      # ship pretty-printed; enterprise-attack.json alone is ~55 MB). Build
+      # output only — source stays as the upstream mirror. See the script header.
+      - run: node scripts/minify-build-assets.mjs dist/mitre-mitigation-navigator/browser/assets/data
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: dist/mitre-mitigation-navigator/browser
