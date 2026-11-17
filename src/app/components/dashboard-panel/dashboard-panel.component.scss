@@ -833,3 +833,10 @@
 .trend-up { color: var(--success); font-size: 11px; }
 .trend-down { color: var(--danger); font-size: 11px; }
 .trend-neutral { color: var(--text-faint); font-size: 11px; }
+
+.widget-caption {
+  margin: 2px 0 10px;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}

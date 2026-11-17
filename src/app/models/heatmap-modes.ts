@@ -530,6 +530,26 @@ export function lensAvailability(def: Pick<HeatmapModeDef, 'label' | 'domains' |
   return { available: false, short, reason: `${def.label} is ${short}: ${why}.` };
 }
 
+/**
+ * The ATT&CK matrix domains (Enterprise, ICS, Mobile). The CTID F3 Fraud
+ * Framework (`f3`) is a separate framework, not an ATT&CK matrix.
+ */
+export const ATTACK_MATRIX_DOMAINS: readonly AttackDomain[] = ['enterprise', 'ics', 'mobile'];
+
+/**
+ * Whether a lens belongs in `domain`'s picker at all (E1.2 vs cross-framework).
+ * A lens for the same framework family as the domain is listed — enabled when it
+ * has data, else shown disabled with a reason. A lens from the *other* framework
+ * family (an F3-fraud lens in an ATT&CK picker, or an ATT&CK lens in the F3
+ * picker) is dropped entirely rather than shown as permanently-disabled noise.
+ */
+export function lensInDomainFamily(def: Pick<HeatmapModeDef, 'domains'>, domain: AttackDomain): boolean {
+  if (def.domains.includes(domain)) return true;
+  const domainIsAttack = ATTACK_MATRIX_DOMAINS.includes(domain);
+  const modeIsAttack = def.domains.some((d) => ATTACK_MATRIX_DOMAINS.includes(d));
+  return domainIsAttack === modeIsAttack;
+}
+
 /** True when the lens for `mode` has data in `domain` (unknown modes count as available). */
 export function isLensAvailable(mode: HeatmapMode, domain: AttackDomain): boolean {
   const def = heatmapModeDef(mode);

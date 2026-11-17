@@ -5,6 +5,7 @@ import { provideHttpClient, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import {
   LIBRARY_LAYER_GROUPS, LibraryLayerMeta, LibraryLayerService, UNGROUPED_LIBRARY_LAYERS, groupLibraryLayers,
+  foldDemoLibraryGroups, DEMO_LIBRARY_GROUP,
 } from './library-layer.service';
 import { SourceRegistryService } from './source-registry.service';
 
@@ -224,5 +225,28 @@ describe('groupLibraryLayers', () => {
 
   it('returns no groups for an empty manifest', () => {
     expect(groupLibraryLayers([])).toEqual([]);
+  });
+});
+
+describe('foldDemoLibraryGroups', () => {
+  const g = (group: string, ...files: string[]) => ({
+    group,
+    layers: files.map((file) => ({ file, name: file, description: '' }) as LibraryLayerMeta),
+  });
+
+  it('merges the demo source groups into one "Demo & novelty" group, placed last', () => {
+    const folded = foldDemoLibraryGroups([
+      g('Curated themes', 'web.json'),
+      g('Lylat', 'lylat-1.json', 'lylat-2.json'),
+      g('Threat groups', 'apt29.json'),
+      g('Agentic AI', 'swarm.json'),
+    ]);
+    expect(folded.map((x) => x.group)).toEqual(['Curated themes', 'Threat groups', DEMO_LIBRARY_GROUP]);
+    expect(folded.at(-1)!.layers.map((l) => l.file)).toEqual(['lylat-1.json', 'lylat-2.json', 'swarm.json']);
+  });
+
+  it('leaves a manifest with no demo groups unchanged', () => {
+    const groups = [g('Curated themes', 'web.json'), g('Threat groups', 'apt29.json')];
+    expect(foldDemoLibraryGroups(groups)).toEqual(groups);
   });
 });

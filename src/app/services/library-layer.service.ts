@@ -61,6 +61,42 @@ export function groupLibraryLayers(list: readonly LibraryLayerMeta[]): LibraryLa
     .map(([group, layers]) => ({ group, layers }));
 }
 
+/**
+ * Source groups folded into one collapsed "Demo & novelty" group in the picker
+ * (presentation only; the manifest's own `group` field is untouched so
+ * scripts/sync-library-layers.mjs --check still passes). These are illustrative
+ * or persona layers, not threat-reference data, so they should not sit expanded
+ * alongside Curated themes and Threat groups.
+ */
+export const DEMO_LIBRARY_SOURCE_GROUPS: readonly string[] = ['Lylat', 'Agentic AI'];
+export const DEMO_LIBRARY_GROUP = 'Demo & novelty';
+
+/**
+ * Groups the picker leaves collapsed by default even when their layers are
+ * bundled: large or low-priority groups that would otherwise open on dozens of
+ * buttons. The demo group and the HTB machine-frequency suite are here.
+ */
+export const DEFAULT_CLOSED_LIBRARY_GROUPS: ReadonlySet<string> = new Set([
+  DEMO_LIBRARY_GROUP,
+  'HTB frequency',
+]);
+
+/**
+ * Presentation pass over groupLibraryLayers output: merge the demo/novelty
+ * source groups into one "Demo & novelty" group placed last, keeping every
+ * other group as-is. Returns the input unchanged when no demo layers are present.
+ */
+export function foldDemoLibraryGroups(groups: readonly LibraryLayerGroup[]): LibraryLayerGroup[] {
+  const demo: LibraryLayerMeta[] = [];
+  const kept: LibraryLayerGroup[] = [];
+  for (const g of groups) {
+    if (DEMO_LIBRARY_SOURCE_GROUPS.includes(g.group)) demo.push(...g.layers);
+    else kept.push(g);
+  }
+  if (demo.length) kept.push({ group: DEMO_LIBRARY_GROUP, layers: demo });
+  return kept;
+}
+
 interface LayerTechnique {
   techniqueID: string;
   tactic?: string;
