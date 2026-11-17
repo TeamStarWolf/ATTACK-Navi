@@ -20,10 +20,10 @@ import { DEFAULT_HEATMAP_MODE, FilterService, HeatmapMode, SearchScope, SortMode
 import { AttackDomain, DataService } from '../../services/data.service';
 import { MatrixControlService } from '../../services/matrix-control.service';
 import { AttackCveService } from '../../services/attack-cve.service';
-import { LibraryLayerGroup, LibraryLayerMeta, LibraryLayerService, groupLibraryLayers } from '../../services/library-layer.service';
+import { LibraryLayerGroup, LibraryLayerMeta, LibraryLayerService, groupLibraryLayers, foldDemoLibraryGroups, DEFAULT_CLOSED_LIBRARY_GROUPS } from '../../services/library-layer.service';
 import { UserLayerService } from '../../services/user-layer.service';
 import { AttackNaviLayer } from '../../models/user-layer';
-import { HEATMAP_MODES, HEATMAP_GROUPS, HeatmapModeDef, LensAvailability, heatmapShortLabel, lensAvailability } from '../../models/heatmap-modes';
+import { HEATMAP_MODES, HEATMAP_GROUPS, HeatmapModeDef, LensAvailability, heatmapShortLabel, lensAvailability, lensInDomainFamily } from '../../models/heatmap-modes';
 import { domainLabel } from '../../models/lens-sources';
 import { LensCardService } from '../../services/lens-card.service';
 import { PLATFORM_PILLS } from '../../components/toolbar/toolbar.component';
@@ -146,8 +146,10 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
   attackDomain: AttackDomain = 'enterprise';
   /** Availability of every lens in attackDomain, rebuilt when the domain changes. */
   private lensAvailabilityByMode = new Map<HeatmapMode, LensAvailability>();
-  /** How many lenses are disabled in attackDomain. */
-  disabledLensCount = 0;
+  /** How many lenses the picker shows disabled in attackDomain (listed but without data). */
+  get disabledLensCount(): number {
+    return this.pickerModes.filter((m) => !this.lensState(m.value).available).length;
+  }
   libraryLayers: LibraryLayerMeta[] = [];
   /** The manifest in its picker groups (bundled groups first), rebuilt when the manifest changes. */
   libraryLayerGroups: LibraryLayerGroup[] = [];
@@ -249,7 +251,7 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
     }));
     this.subs.add(this.libraryLayerService.manifest$.subscribe((list) => {
       this.libraryLayers = list;
-      this.libraryLayerGroups = groupLibraryLayers(list);
+      this.libraryLayerGroups = foldDemoLibraryGroups(groupLibraryLayers(list));
       this.cdr.markForCheck();
     }));
     this.subs.add(this.libraryLayerService.manifestLoaded$.subscribe((v) => { this.libraryManifestLoaded = v; this.cdr.markForCheck(); }));
@@ -277,7 +279,6 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
 
   private rebuildLensAvailability(): void {
     this.lensAvailabilityByMode = new Map(this.heatmapModes.map((m) => [m.value, lensAvailability(m, this.attackDomain)]));
-    this.disabledLensCount = [...this.lensAvailabilityByMode.values()].filter((a) => !a.available).length;
   }
 
   /** Whether `mode` has data in the domain on screen, and if not, why. */
@@ -313,10 +314,16 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
     return heatmapShortLabel(lensOnScreen(this.heatmapMode, this.ownerWords, DEFAULT_HEATMAP_MODE));
   }
 
-  /** The lenses the picker offers: every lens, less the Proven and Covered lenses until owner data exists. */
+  /**
+   * The lenses the picker offers: every lens for this domain's framework family
+   * (lensInDomainFamily drops cross-framework noise, e.g. the F3-fraud lens from
+   * an ATT&CK picker), less the Proven and Covered lenses until owner data exists.
+   */
   get pickerModes(): HeatmapModeDef[] {
     const ownerWords = this.ownerWords;
-    return this.heatmapModes.filter((m) => lensNameVisible(m, ownerWords));
+    return this.heatmapModes.filter(
+      (m) => lensNameVisible(m, ownerWords) && lensInDomainFamily(m, this.attackDomain),
+    );
   }
 
   /** How many lenses the picker offers (the lens-count line). */
@@ -511,6 +518,9 @@ export class MatrixControlsComponent implements OnInit, OnDestroy {
     const toggled = this.libraryGroupToggled.get(group.group);
     if (toggled !== undefined) return toggled;
     if (group.layers.some((l) => l.file === this.activeLibraryFile)) return true;
+    // Demo/novelty and the HTB machine-frequency suite stay collapsed by default
+    // even though their layers are bundled, so the menu opens tidy (critique P1).
+    if (DEFAULT_CLOSED_LIBRARY_GROUPS.has(group.group)) return false;
     return group.layers.every((l) => !l.source);
   }
 

@@ -14,7 +14,7 @@ export interface DashboardWidget {
 const STORAGE_KEY = 'mitre-nav-dashboard-config-v1';
 
 const DEFAULT_WIDGETS: DashboardWidget[] = [
-  { id: 'coverage-summary',   label: 'Mapped Summary',     icon: '\u{1F6E1}',  visible: true,  order: 0 },
+  { id: 'coverage-summary',   label: 'ATT&CK Reference Coverage', icon: '\u{1F6E1}',  visible: true,  order: 0 },
   { id: 'tactic-breakdown',   label: 'Tactic Breakdown',   icon: '\u{1F4CA}',  visible: true,  order: 1 },
   { id: 'radar-chart',        label: 'Radar Chart',        icon: '\u{1F3AF}',  visible: true,  order: 2 },
   { id: 'gap-summary',        label: 'Top Gaps',           icon: '\u26A0',     visible: true,  order: 3 },

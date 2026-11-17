@@ -105,6 +105,9 @@
                       <div class="mini-stat-label">Control mapped</div>
                     </div>
                   </div>
+                  <p class="widget-caption" data-testid="reference-coverage-caption">
+                    Reference coverage &mdash; what ATT&amp;CK and public content map for each technique, not your deployed defense. Import your environment to measure posture.
+                  </p>
                   <!-- P2-08: the one posture tally (PostureService.rollup), the same numbers as the CTEM card;
                        Covered and Proven lines render only with data of yours (hasOwnerWords). -->
                   <div class="widget-posture">
@@ -128,6 +131,9 @@
                   <button class="widget-pin-btn" (click)="toggleWidget(widget.id)" title="Hide widget">&#x1F4CC;</button>
                 </div>
                 <div class="widget-body">
+                  <p class="widget-caption" data-testid="tactic-reference-caption">
+                    % of techniques with &ge;1 reference input mapped &mdash; reference coverage, not deployed defense.
+                  </p>
                   <div class="tactic-list">
                     @for (tactic of stats.tacticStats; track tactic.name) {
                       <div class="tactic-bar-row">

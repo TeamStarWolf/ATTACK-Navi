@@ -13,7 +13,7 @@ import { AttackCveService } from '../../services/attack-cve.service';
 import { ViewpointService } from '../../services/viewpoint.service';
 import { LibraryLayerMeta, LibraryLayerService } from '../../services/library-layer.service';
 import { UserLayerService } from '../../services/user-layer.service';
-import { HEATMAP_MODES, heatmapModeDef, heatmapShortLabel, lensAvailability, unavailableLenses } from '../../models/heatmap-modes';
+import { HEATMAP_MODES, heatmapModeDef, heatmapShortLabel, lensAvailability, unavailableLenses, lensInDomainFamily } from '../../models/heatmap-modes';
 import { NO_OWNER_DATA_LINE } from '../../models/lens-registry';
 import { LensCardService } from '../../services/lens-card.service';
 import { SettingsService } from '../../services/settings.service';
@@ -143,7 +143,7 @@ describe('MatrixControlsComponent', () => {
     component.toggleViewMenu();
     fixture.detectChanges();
     const buttons = fixture.nativeElement.querySelectorAll('.heatmap-mode-btn');
-    expect(buttons.length).toBe(HEATMAP_MODES.length);
+    expect(buttons.length).toBe(HEATMAP_MODES.filter((m) => lensInDomainFamily(m, 'enterprise')).length);
   });
 
   // RP-F item 5: with the drawer open at 1440x900 the View button wraps to the row's
@@ -297,7 +297,7 @@ describe('MatrixControlsComponent', () => {
     expect(pinned.querySelector('.featured-header').textContent).toContain('Vulnerability & Exposure');
     expect(pinned.querySelectorAll('.featured-lens-btn').length).toBe(3);
     // The full lens list is still present, unchanged.
-    expect(fixture.nativeElement.querySelectorAll('.heatmap-mode-btn').length).toBe(HEATMAP_MODES.length);
+    expect(fixture.nativeElement.querySelectorAll('.heatmap-mode-btn').length).toBe(HEATMAP_MODES.filter((m) => lensInDomainFamily(m, 'enterprise')).length);
   });
 
   describe('library layers in the View menu', () => {
@@ -514,8 +514,10 @@ describe('MatrixControlsComponent', () => {
 
     it('switching to ICS disables every lens whose domains[] lacks ics, each with an announced reason', () => {
       const el = openMenuIn('ics');
-      const expected = unavailableLenses('ics');
-      expect(expected.length).toBe(23);
+      // F3-fraud lenses are dropped from ATT&CK pickers, not shown disabled (critique P1);
+      // the rest of the cross-domain lenses stay listed-but-disabled with a reason.
+      const expected = unavailableLenses('ics').filter((d) => lensInDomainFamily(d, 'ics'));
+      expect(expected.length).toBe(22);
       const disabled = Array.from(el.querySelectorAll<HTMLButtonElement>('.heatmap-groups .heatmap-mode-btn[aria-disabled="true"]'));
       expect(disabled.length).toBe(expected.length);
       for (const def of expected) {
@@ -533,7 +535,7 @@ describe('MatrixControlsComponent', () => {
         expect(btn.hasAttribute('aria-disabled')).withContext(def.value).toBeFalse();
         expect(btn.hasAttribute('aria-describedby')).withContext(def.value).toBeFalse();
       }
-      expect(el.querySelector('.lens-na-summary')!.textContent).toContain('23 of 36 lenses have no ICS ATT&CK data');
+      expect(el.querySelector('.lens-na-summary')!.textContent).toContain('22 of 35 lenses have no ICS ATT&CK data');
       expect(el.querySelector('.lens-na-summary')!.getAttribute('role')).toBe('status');
     });
 
@@ -552,7 +554,8 @@ describe('MatrixControlsComponent', () => {
       dataSvc().currentDomain$.next('enterprise');
       fixture.detectChanges();
       const disabled = Array.from(el.querySelectorAll('.heatmap-groups .heatmap-mode-btn[aria-disabled="true"]'));
-      expect(disabled.map((b) => b.closest('.lens-item')!.getAttribute('data-lens'))).toEqual(['f3-origin']);
+      // The only Enterprise-disabled lens was the F3-fraud lens, now dropped from the ATT&CK picker (critique P1).
+      expect(disabled.map((b) => b.closest('.lens-item')!.getAttribute('data-lens'))).toEqual([]);
     });
 
     it('marks the trigger when the active lens is n/a here', () => {
@@ -567,7 +570,8 @@ describe('MatrixControlsComponent', () => {
       const cards = TestBed.inject(LensCardService);
       const el = openMenuIn('ics');
       const helps = el.querySelectorAll<HTMLButtonElement>('.lens-item .lens-help-btn');
-      expect(helps.length).toBe(HEATMAP_MODES.length);
+      // F3-fraud lenses are not offered in the ICS (ATT&CK) picker (critique P1).
+      expect(helps.length).toBe(HEATMAP_MODES.filter((m) => lensInDomainFamily(m, 'ics')).length);
       const sigmaHelp = el.querySelector('.lens-item[data-lens="sigma"] .lens-help-btn') as HTMLButtonElement;
       expect(sigmaHelp.getAttribute('aria-label')).toBe('What is the Sigma Rules lens?');
       expect(sigmaHelp.getAttribute('aria-haspopup')).toBe('dialog');
@@ -733,15 +737,15 @@ describe('MatrixControlsComponent', () => {
       ownerWords.set(false);
       const el = openMenu();
       const shown = listed(el);
-      expect(shown.length).toBe(HEATMAP_MODES.length - OWNER_WORD_MODES.length);
+      expect(shown.length).toBe(HEATMAP_MODES.filter((m) => lensInDomainFamily(m, 'enterprise')).length - OWNER_WORD_MODES.length);
       for (const m of OWNER_WORD_MODES) expect(shown).withContext(m).not.toContain(m);
-      expect(el.querySelectorAll('.heatmap-mode-btn').length).toBe(HEATMAP_MODES.length - OWNER_WORD_MODES.length);
+      expect(el.querySelectorAll('.heatmap-mode-btn').length).toBe(HEATMAP_MODES.filter((m) => lensInDomainFamily(m, 'enterprise')).length - OWNER_WORD_MODES.length);
       expect(rungHits(el)).toEqual([]);
     });
 
     it('with owner data: both lenses are listed, named and titled with their question', () => {
       const el = openMenu();
-      expect(listed(el).length).toBe(HEATMAP_MODES.length);
+      expect(listed(el).length).toBe(HEATMAP_MODES.filter((m) => lensInDomainFamily(m, 'enterprise')).length);
       for (const m of OWNER_WORD_MODES) {
         const def = heatmapModeDef(m as HeatmapMode)!;
         expect(lensButton(el, m).textContent!.trim()).withContext(m).toBe(def.label);
@@ -805,16 +809,19 @@ describe('MatrixControlsComponent', () => {
     }
 
     it('counts only the lenses on offer in the n/a summary', () => {
+      // The ICS picker offers only the ATT&CK-family lenses (the F3-fraud lens is dropped, critique P1).
+      const icsFamily = HEATMAP_MODES.filter((m) => lensInDomainFamily(m, 'ics')).length;
+      const naCount = unavailableLenses('ics').filter((m) => lensInDomainFamily(m, 'ics')).length;
       ownerWords.set(false);
       (TestBed.inject(DataService) as any).currentDomain$.next('ics');
       let el = openMenu();
       const summary = (): string => el.querySelector('.lens-na-summary')!.textContent!;
-      expect(summary()).toContain(`23 of ${HEATMAP_MODES.length - OWNER_WORD_MODES.length} lenses have no ICS ATT&CK data`);
+      expect(summary()).toContain(`${naCount} of ${icsFamily - OWNER_WORD_MODES.length} lenses have no ICS ATT&CK data`);
       component.toggleViewMenu();
       ownerWords.set(true);
       fixture.detectChanges();
       el = openMenu();
-      expect(summary()).toContain(`23 of ${HEATMAP_MODES.length} lenses have no ICS ATT&CK data`);
+      expect(summary()).toContain(`${naCount} of ${icsFamily} lenses have no ICS ATT&CK data`);
     });
   });
 });
