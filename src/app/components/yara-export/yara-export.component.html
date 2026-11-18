@@ -22,7 +22,7 @@
       @if (previewRules.length > 0) {
         <div class="yara-section">
           <div class="yara-section-label">Preview (first 2 rules):</div>
-          <pre class="yara-code-preview">{{ previewRules[0].yaml }}{{ previewRules.length > 1 ? '\n\n' + previewRules[1].yaml : '' }}</pre>
+          <pre class="yara-code-preview" tabindex="0">{{ previewRules[0].yaml }}{{ previewRules.length > 1 ? '\n\n' + previewRules[1].yaml : '' }}</pre>
         </div>
       }
       <div class="yara-actions">
