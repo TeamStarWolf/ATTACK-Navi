@@ -97,7 +97,7 @@
 
   <!-- Global search: opens the command palette -->
   <div class="search-group">
-    <button class="palette-trigger" (click)="openPalette()" aria-label="Search or jump to anything">
+    <button class="palette-trigger" (click)="openPalette()">
       <app-icon class="search-icon" name="search" [size]="14" aria-hidden="true" />
       <span class="palette-placeholder">Search or jump to…</span>
       <kbd class="palette-kbd">Ctrl K</kbd>
@@ -108,7 +108,7 @@
 
   <!-- Global actions -->
   <div class="bar-group end-group">
-    <button class="icon-btn share-btn" (click)="copyShareLink.emit()" title="Copy shareable link to clipboard" aria-label="Copy shareable link">
+    <button class="icon-btn share-btn" (click)="copyShareLink.emit()" title="Copy shareable link to clipboard" aria-label="Share — copy link to clipboard">
       <app-icon name="share-2" [size]="14" aria-hidden="true" /> Share
     </button>
 
