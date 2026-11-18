@@ -19,7 +19,7 @@ Counts and versions derived from the code. When a document states one of these n
 | Playwright spec files | 18 | `e2e/**/*.spec.ts` |
 | Script test files | 13 | `scripts/**/*.test.mjs` |
 | Proxy test files | 1 | `server/**/*.test.*` |
-| Angular | 22.2.3 | `package-lock.json` (`@angular/core`) |
+| Angular | 22.2.6 | `package-lock.json` (`@angular/core`) |
 | TypeScript | 6.0.3 | `package-lock.json` |
 | RxJS | 7.8.2 | `package-lock.json` |
 | zone.js | 0.16.3 | `package-lock.json` |
