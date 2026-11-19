@@ -36,8 +36,8 @@ This path needs no setup and runs on one technique:
 6. To color the whole matrix by detection content, open the lens button ("View and explore
    options") and choose "Sigma Rules" (in the Detections group; the button then reads
    "Sigma"). The lens count comes from the SigmaHQ coverage layer; the per-technique Sigma
-   rule detail in the sidebar is community content that appears only when `api.github.com`
-   is reachable (see Troubleshooting).
+   rule detail in the sidebar is community content (mdecrevoisier/SIGMA-detection-rules)
+   read from the bundled snapshot, so it is available offline.
 
 ## Move around
 
