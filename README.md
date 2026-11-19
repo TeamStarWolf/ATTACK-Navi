@@ -101,7 +101,7 @@ Many mapping datasets are pinned to older ATT&CK releases: most CTID Mappings Ex
 | Exploits and scan templates per technique | ExploitDB CSV on gitlab.com and `projectdiscovery/nuclei-templates`, matched to techniques through the CTID CVE mappings |
 | Public proof-of-concept exploits | `trickest/cve` |
 | CISA SSVC decision data | CVE Services (`cveawg.mitre.org`) |
-| Sigma rule counts and rule detail | SigmaHQ Navigator coverage layer for counts; `mdecrevoisier/SIGMA-detection-rules` for per-technique rules |
+| Sigma rule counts | SigmaHQ Navigator coverage layer (the per-technique `mdecrevoisier/SIGMA-detection-rules` are read from the bundled snapshot, not fetched; see below) |
 | Elastic, Splunk and Microsoft 365 Defender counts | `elastic/detection-rules`, `splunk/security_content` and `microsoft/Microsoft-365-Defender-Hunting-Queries` |
 | Atomic Red Team tests | Red Canary Navigator layer for counts, per-technique YAML on demand |
 | CAR analytics | `mitre-attack/car` Navigator layer |
@@ -138,7 +138,7 @@ Other exports live with the feature that produces them. Sigma, SIEM query, Suric
 
 ## Getting started
 
-You need Node.js ^22.22.3, ^24.15.0 or >=26.0.0 (the engine range of the locked Angular 22.2.2 packages), npm, and Chrome or Chromium for the unit tests.
+You need Node.js ^22.22.3, ^24.15.0 or >=26.0.0 (the engine range of the locked Angular 22.2 packages), npm, and Chrome or Chromium for the unit tests.
 
 ```bash
 git clone https://github.com/TeamStarWolf/ATTACK-Navi.git
