@@ -114,7 +114,7 @@ to resolve STIX IDs from the loaded domain).
 | `activeSoftwareIdsSubject` | `Set<string>` | Active software/malware filter. |
 | `activeCampaignIdsSubject` | `Set<string>` | Active campaign filter. |
 | `activeDataSourceSubject` | `string \| null` | Active ATT&CK data source name filter. |
-| `heatmapModeSubject` | `HeatmapMode` | Active heatmap coloring mode (31 modes; see `models/heatmap-modes.ts`). |
+| `heatmapModeSubject` | `HeatmapMode` | Active heatmap coloring mode (36 modes; see `models/heatmap-modes.ts`). |
 | `implStatusFilterSubject` | `string \| null` | Filter techniques by implementation status. |
 | `searchFilterModeSubject` | `boolean` | When true, search acts as a filter (hides non-matches). |
 | `cveTechniqueIdsSubject` | `Set<string>` | Technique IDs highlighted by CVE panel clicks. |
