@@ -206,8 +206,8 @@ to a `combineLatest` of all FilterService observables to build the display state
 - Emits `tacticClicked` and `focusSearch` events to `AppComponent`.
 
 **SidebarComponent** (`src/app/components/sidebar/`)
-Sliding detail drawer that reacts to `FilterService.selectedTechnique$`.  Injects 23 services
-to hydrate 25+ collapsible sections for the selected technique.  Computes a completeness score
+Sliding detail drawer that reacts to `FilterService.selectedTechnique$`.  Injects its
+data-source services to hydrate its 48 collapsible sections for the selected technique.  Computes a completeness score
 (0-100) and renders signal summary pills.
 
 ### Communication Pattern
@@ -386,8 +386,8 @@ legend below the matrix.
 
 **File:** `src/app/components/sidebar/sidebar.component.ts`
 
-The sidebar is the richest single component in the application.  It injects 23 services and
-renders 25+ data sections for the selected technique.
+The sidebar is the richest single component in the application.  It injects its data-source
+services and renders 48 data sections for the selected technique.
 
 ### Service Injections
 
@@ -501,7 +501,7 @@ Each panel component manages its own SCSS scoped styles.
 
 ## 9. Service Layer Patterns
 
-All 43 services follow a small set of repeating patterns.
+The services in `src/app/services/` follow a small set of repeating patterns.
 
 ### Pattern A: HTTP-Fetched Reference Data
 

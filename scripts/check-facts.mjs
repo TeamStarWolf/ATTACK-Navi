@@ -56,6 +56,7 @@ export const RULES = [
   { fact: 'routedTabs', label: 'routed workspace tabs', re: rx(`\\b${NUM}\\s+(?:routed|workspace)\\s+tabs\\b`) },
   { fact: 'libraryLayers', label: 'library layers', re: rx(`\\b${NUM}\\s+library\\s+(?:layers|overlays)\\b`) },
   { fact: 'libraryLayers', label: 'library layers', re: rx(`\\blists\\s+${NUM}\\s+overlays\\b`) },
+  { fact: 'sidebarSections', label: 'technique-sidebar sections', re: rx(`\\b${NUM}\\s+(?:data|collapsible|sidebar)\\s+sections\\b`) },
   { fact: 'unitSpecs', label: 'unit spec files', re: rx(`\\b${NUM}\\s+(?:unit\\s+specs?|unit\\s+spec\\s+files|spec\\s+files)\\b`) },
   { fact: 'angularMajor', label: 'Angular major version', re: /\bAngular\s+v?(\d+)()(?=[.\s,;:)/]|$)/g },
   { fact: 'typescriptMajor', label: 'TypeScript major version', re: /\bTypeScript\s+v?(\d+)()(?=[.\s,;:)/]|$)/g },

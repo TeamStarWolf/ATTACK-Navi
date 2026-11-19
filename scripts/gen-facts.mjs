@@ -286,6 +286,23 @@ function libraryLayers(root) {
   return { source: file, count: idx.length, lylatMissionLayers: lylat };
 }
 
+/** Count of technique-sidebar sections, from the `sectionIndex` jump-index registry. */
+function sidebarSections(root) {
+  const file = 'src/app/components/sidebar/sidebar.component.ts';
+  const src = read(root, file);
+  const m = /sectionIndex\b[^=]*=\s*\[/.exec(src);
+  if (!m) throw new Error(`${file}: sectionIndex = [ ... ] not found`);
+  const open = m.index + m[0].length - 1;
+  const groups = topLevelObjects(src.slice(open + 1, matchBracket(src, open)));
+  let count = 0;
+  for (const g of groups) {
+    const sect = ownSub(g, 'sections', '[');
+    if (!sect) throw new Error(`${file}: a sectionIndex group has no sections array`);
+    count += topLevelObjects(sect).length;
+  }
+  return { source: file, count, groups: groups.length };
+}
+
 function toolchain(root) {
   const lock = JSON.parse(read(root, 'package-lock.json'));
   const v = (name) => lock.packages?.[`node_modules/${name}`]?.version;
@@ -309,6 +326,7 @@ export function collectFacts(root) {
     specs: specs(root),
     bundles: bundles(root),
     libraryLayers: libraryLayers(root),
+    sidebarSections: sidebarSections(root),
     toolchain: toolchain(root),
     dataAssets: dataAssets(root),
     kevSnapshot: kevSnapshot(root),
@@ -327,6 +345,7 @@ export function headline(f) {
     routedTabs: f.routes.tabCount,
     detailPages: f.routes.detailPageCount,
     libraryLayers: f.libraryLayers.count,
+    sidebarSections: f.sidebarSections.count,
     unitSpecs: f.specs.unitSpecFiles,
     angularMajor: f.toolchain.angularMajor,
     typescriptMajor: f.toolchain.typescriptMajor,
@@ -349,6 +368,7 @@ export function renderFacts(f) {
   L.push(`| Workspaces that lazy-load a route file | ${h.routeFileWorkspaces} | \`loadChildren\` in \`src/app/app.routes.ts\` |`);
   L.push(`| Routed workspace tabs | ${h.routedTabs} | child routes with \`data.tab\` in \`src/app/pages/*/*.routes.ts\` |`);
   L.push(`| Detail pages (top-level routes with a \`:param\`, not workspaces) | ${h.detailPages} | \`src/app/app.routes.ts\` |`);
+  L.push(`| Technique-sidebar sections | ${h.sidebarSections} | \`${f.sidebarSections.source}\` (\`sectionIndex\`) |`);
   L.push(`| Library layers | ${h.libraryLayers} | \`${f.libraryLayers.source}\` |`);
   if (f.libraryLayers.lylatMissionLayers) L.push(`| Lylat mission layers | ${f.libraryLayers.lylatMissionLayers.count} | \`${f.libraryLayers.lylatMissionLayers.source}\` |`);
   L.push(`| Unit spec files | ${h.unitSpecs} | \`src/**/*.spec.ts\` |`);
