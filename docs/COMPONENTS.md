@@ -94,8 +94,8 @@ These components form the application frame and are always visible.
 | **Selector** | `app-toolbar` |
 | **File** | `src/app/components/toolbar/toolbar.component.ts` |
 | **Purpose** | Top-of-page toolbar providing technique search, mitigation dropdown filter, platform pills, heatmap mode picker (every mode in `HEATMAP_MODES`), sort/dim toggles, saved views, and a comprehensive export menu (CSV, XLSX, PNG, HTML report, Navigator layer, implementation plan). |
-| **Inputs** | `mitigations: Mitigation[]`, `techniques: Technique[]`, `isLightMode: boolean`, `currentDomain: AttackDomain`, `multiSelectMode: boolean`, `activePlatforms: Set<string>` |
-| **Outputs** | `domainChange`, `expandAll`, `collapseAll`, `toggleMultiSelect`, `exportCsv`, `exportTacticCsv`, `exportImplPlan`, `exportState`, `importState`, `exportNavigatorLayer`, `importNavigatorLayer`, `openNavigator`, `exportFullReport`, `exportMatrixPng`, `exportHtmlReport`, `exportXlsx`, `showGapView`, `toggleDark`, `copyShareLink` |
+| **Inputs** | `techniques: Technique[]`, `currentDomain: AttackDomain` (`isLightMode` is a plain field, not an input) |
+| **Outputs** | `domainChange`, `copyShareLink`. The export, saved-view, theme and navigation actions are driven through injected services (`FilterService`, `SavedViewsService`, `ThemeService`, `ExportActionsService`) and `routerLink`, not `@Output`. |
 
 ---
 
@@ -127,7 +127,7 @@ These components form the application frame and are always visible.
 |----------|-------|
 | **Selector** | `app-nav-rail` |
 | **File** | `src/app/components/nav-rail/nav-rail.component.ts` |
-| **Purpose** | Fixed left-side vertical navigation rail. Lists 8 workspace `routerLink`s (Matrix, Dashboard, Intel, Detect, Exposure, Coverage, Library, Reports) plus a Help button and a bottom-pinned Settings link. Active state comes from `routerLinkActive` / the current URL. |
+| **Purpose** | Fixed left-side vertical navigation rail. Lists 9 workspace `routerLink`s (Matrix, Dashboard, Intel, Detect, Exposure, Coverage, Library, Reports, Status) plus a Help button and a bottom-pinned Settings link. Active state comes from `routerLinkActive` / the current URL. |
 | **Inputs** | *(none — navigation is via `routerLink`)* |
 | **Outputs** | `helpClick: EventEmitter<void>` (opens the keyboard-help overlay) |
 
@@ -168,7 +168,7 @@ Components that render the ATT&CK matrix grid and its supporting UI.
 | **Selector** | `app-technique-cell` |
 | **File** | `src/app/components/technique-cell/technique-cell.component.ts` |
 | **Purpose** | Individual technique cell within the matrix. Renders the ATT&CK ID, name, implementation status dot, note indicator, annotation badge, and watchlist marker. Computes its own background color from the active heatmap mode and the score inputs it receives. Uses `tinycolor2` for readable text-color contrast. |
-| **Inputs** | `technique`, `isHighlighted`, `isDimmed`, `isSelected`, `isFocused`, `exposureScore`, `softwareScore`, `campaignScore`, `heatmapMode`, `implStatus`, `maxExposure`, `maxSoftware`, `maxCampaign`, `riskScore`, `maxRisk`, `controlStatus`, `hasNote`, `kevScore`, `maxKev`, `d3fendScore`, `maxD3fend`, `atomicScore`, `maxAtomic`, `engageScore`, `carScore`, `cveScore`, `maxCveScore`, `detectionScore`, `frequencyScore`, `criScore`, `maxCriScore`, `unifiedScore`, `sigmaScore`, `nistScore`, `verisScore`, `epssScore`, `elasticScore`, `splunkScore`, `intelScore`, `maxIntelScore`, `showTechniqueId`, `showMitigationCount`, `showTechniqueName`, `annotation`, `isSearchMatch`, `hasActiveSearch`, `isWatched` |
+| **Inputs** | `technique`, `isHighlighted`, `isDimmed`, `isSelected`, `isFocused`, `exposureScore`, `softwareScore`, `campaignScore`, `heatmapMode`, `implStatus`, `maxExposure`, `maxSoftware`, `maxCampaign`, `riskScore`, `maxRisk`, `hasNote`, `kevScore`, `maxKev`, `d3fendScore`, `maxD3fend`, `atomicScore`, `maxAtomic`, `engageScore`, `carScore`, `cveScore`, `maxCveScore`, `detectionScore`, `frequencyScore`, `criScore`, `maxCriScore`, `unifiedScore`, `sigmaScore`, `nistScore`, `verisScore`, `epssScore`, `elasticScore`, `splunkScore`, `intelScore`, `maxIntelScore`, `showTechniqueId`, `showMitigationCount`, `showTechniqueName`, `annotation`, `isSearchMatch`, `hasActiveSearch`, `isWatched` |
 | **Outputs** | `selected: EventEmitter<Technique>` |
 
 ---
@@ -345,7 +345,7 @@ Components that render the ATT&CK matrix grid and its supporting UI.
 | **File** | `src/app/components/software-panel/software-panel.component.ts` |
 | **Panel ID** | `software` |
 | **Purpose** | Browsable list of ATT&CK software entries (tools and malware). Filterable by type and searchable by name. Selecting a software entry highlights the techniques it uses on the matrix. |
-| **Inputs** | `software: AttackSoftware[]` |
+| **Inputs** | *(none — `software` is self-sourced from the `DataService` domain subscription; it was an `@Input` from the app shell before the router migration)* |
 | **Key I/O** | Reads/writes `FilterService.activeSoftwareIds$` |
 
 ---
@@ -688,8 +688,8 @@ Components that render the ATT&CK matrix grid and its supporting UI.
 |----------|-------|
 | **Selector** | `app-keyboard-help` |
 | **File** | `src/app/components/keyboard-help/keyboard-help.component.ts` |
-| **Purpose** | Modal overlay displaying all keyboard shortcuts organized into groups: Navigation (12 shortcuts), Matrix Keyboard Navigation (5 shortcuts), Matrix View (4 shortcuts), and Filtering. Toggled with `?` key. |
-| **Key I/O** | Listens for `?` keydown via `@HostListener` |
+| **Purpose** | Modal overlay displaying all keyboard shortcuts, organized into the groups Global, Quick navigation and Matrix. Its open/close state is driven by `HelpOverlayService.open$`; the `?` key and the nav-rail Help button are handled outside this component. |
+| **Key I/O** | Subscribes to `HelpOverlayService.open$` for its open/close state (no `@HostListener`) |
 
 ---
 

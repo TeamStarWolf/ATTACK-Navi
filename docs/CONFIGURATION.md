@@ -215,7 +215,7 @@ This palette colors only the **Mitigations mapped** (coverage) lens: `getCoverag
 
 A separate **Colorblind-safe heatmaps** toggle on the same tab switches the sequential lenses to the Viridis ramp, regardless of the theme chosen; the one two-category lens, **F3 Origin**, switches to the Okabe-Ito blue and reddish purple pair. The `status`, `controls`, `covered`, `proven` and `posture` lenses keep their own ramps: those are colorblind-safe by design, so the toggle does not change them.
 
-One caveat: the swatch you click and the ramp the matrix applies are defined in two places and currently disagree. "High Contrast" shows a red-to-green swatch (`#cc0000` to `#003300`, `settings-panel.component.ts`) but applies the Viridis ramp (`#440154` to `#fde725`, `settings.service.ts` and `safe-palette.ts`), the opposite palette; "Blue/Orange" shows `#1d4ed8` to `#92400e` but applies `#1d4ed8, #2563eb, #0ea5e9, #f59e0b, #d97706`; and Default's second step is `#e65100` in the swatch versus `#b45309` applied. A follow-up code change will render the swatches from the same definition the matrix uses, and this note will go when it lands.
+The swatch you click and the ramp the matrix applies come from the same definition — `SettingsService.COLOR_THEMES`, which the matrix reads too — so the preview always matches what the lens paints for each theme (`settings-panel.component.ts`; a spec asserts each theme swatch equals the ramp the matrix applies).
 
 ---
 
