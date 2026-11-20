@@ -308,6 +308,7 @@ A separate group toggles the badges and markers drawn on each cell, all on by de
 | Show analyst note marker | A marker when the technique has analyst notes |
 | Show annotation dot | A colored dot when the technique is annotated |
 | Show watchlist marker | A marker when the technique is on the watchlist |
+| Show my marks | A marker on techniques that carry your own recorded posture marks |
 
 These preferences are persisted in localStorage and take effect immediately. The cell-size choice above is persisted too, but matrix rendering does not use it yet.
 
@@ -365,6 +366,17 @@ In Settings > Preferences > Data:
 - **Clear Cache** -- Removes the cached live STIX copies without re-fetching
 - **Clear All Snapshots** -- Deletes all timeline snapshots from localStorage
 - **Export Implementation CSV** -- Downloads the current implementation status as a CSV file
+
+### Posture rules
+
+The **Posture rules** block on the Data tab (next to **Bulk Import Status**) governs how your recorded coverage is read by the app's posture-aware lenses (the posture rungs are documented in [Heatmap Modes](HEATMAPS.md)). Changes save as you edit them (`AppSettings.posture`).
+
+| Rule | Default | Effect |
+|------|---------|--------|
+| Mitigation breadth threshold | 15 | A mitigation mapped to more techniques than this counts as a *partial* (broad) match rather than a full one, so a technique whose only implemented mitigations are broad reads as partial, not full (decision D16). Raising the threshold turns those partial cells full. |
+| Range proof window | 90 days | How long a range or lab validation record stays current before it goes `stale` |
+| Production proof window | 180 days | The same window for a production validation record |
+| Own-run proof window | 90 days | The same window for your own-run record |
 
 ### Storage Limits
 
