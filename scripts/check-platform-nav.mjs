@@ -32,8 +32,33 @@ const MODEL = 'src/app/models/platform-nav.ts';
 // these; a github.com link must be under the TeamStarWolf org.
 const ALLOWED_HOSTS = new Set(['teamstarwolf.com', 'library.teamstarwolf.com', 'teamstarwolf.github.io', 'github.com']);
 
+/**
+ * True if the RAW href's path (before ? or #) has a "." or ".." segment, plain or
+ * percent-encoded (%2e / %2E, in any mix). Checked on the raw string, not the URL
+ * constructor's normalised pathname, so the file never carries a traversal form that a
+ * browser would resolve in a way that slips past the github.com path-prefix test
+ * (e.g. `/TeamStarWolf/./repo` normalises to `/TeamStarWolf/repo`).
+ */
+export function hasDotSegment(href) {
+  const beforeFragment = href.split('#')[0].split('?')[0];
+  const schemeEnd = beforeFragment.indexOf('://');
+  if (schemeEnd < 0) return false;
+  const afterAuthorityStart = beforeFragment.indexOf('/', schemeEnd + 3);
+  if (afterAuthorityStart < 0) return false;
+  const rawPath = beforeFragment.slice(afterAuthorityStart);
+  for (const seg of rawPath.split('/')) {
+    const decoded = seg.replace(/%2e/gi, '.');
+    if (decoded === '.' || decoded === '..') return true;
+  }
+  return false;
+}
+
 /** Returns an error string if an href is not an allowed address, else null. */
 export function hrefError(href) {
+  if (typeof href !== 'string') return `not a string: ${String(href)}`;
+  // A backslash anywhere is rejected: browsers treat "\" as "/" for special schemes, which
+  // can rewrite the authority or path. The file must never carry one.
+  if (href.includes('\\')) return `backslash in address: ${href}`;
   let u;
   try {
     u = new URL(href);
@@ -41,7 +66,12 @@ export function hrefError(href) {
     return `not a valid URL: ${href}`;
   }
   if (u.protocol !== 'https:') return `not https: ${href}`;
+  // Userinfo ("user:pass@host") can disguise the real host; disallow it outright.
+  if (u.username !== '' || u.password !== '') return `credentials in address: ${href}`;
+  // An explicit port is a different origin.
+  if (u.port !== '') return `explicit port not allowed: ${href}`;
   if (!ALLOWED_HOSTS.has(u.hostname)) return `host not allowed (${u.hostname}): ${href}`;
+  if (hasDotSegment(href)) return `dot path segment not allowed: ${href}`;
   if (u.hostname === 'github.com' && u.pathname !== '/TeamStarWolf' && !u.pathname.startsWith('/TeamStarWolf/')) {
     return `github.com path must be /TeamStarWolf or under /TeamStarWolf/: ${href}`;
   }

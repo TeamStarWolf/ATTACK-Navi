@@ -41,6 +41,26 @@ test('hrefError allows the known TeamStarWolf hosts and rejects others', () => {
   assert.match(hrefError('https://github.com/SomeoneElse/repo'), /under \/TeamStarWolf/);
 });
 
+test('hrefError rejects traversal, backslash, port and host tricks', () => {
+  // Dot path segments: plain "..", percent-encoded "%2e%2e", and a single "." that
+  // normalises back into /TeamStarWolf and would otherwise slip past the prefix test.
+  assert.match(hrefError('https://github.com/TeamStarWolf/../someone/repo'), /dot path segment/);
+  assert.match(hrefError('https://github.com/TeamStarWolf/%2e%2e/someone/repo'), /dot path segment/);
+  assert.match(hrefError('https://github.com/TeamStarWolf/./repo'), /dot path segment/);
+  // A backslash anywhere.
+  assert.match(hrefError('https://teamstarwolf.com\\@evil.example/'), /backslash/);
+  // An explicit port is a different origin.
+  assert.match(hrefError('https://teamstarwolf.com:8443/'), /explicit port/);
+  // Host tricks.
+  assert.match(hrefError('https://teamstarwolf.com.evil.example/'), /host not allowed/);
+  // The real host is evil.example; caught as userinfo (which fires first) or a bad host.
+  assert.match(hrefError('https://teamstarwolf.com@evil.example/'), /credentials|host not allowed/);
+  assert.match(hrefError('https://github.com/TeamStarWolfX/repo'), /under \/TeamStarWolf/);
+  assert.match(hrefError('//teamstarwolf.com/'), /not a valid URL/);
+  // Userinfo that keeps an allowed host is still rejected.
+  assert.match(hrefError('https://user@github.com/TeamStarWolf'), /credentials/);
+});
+
 test('the real vendored menu passes every gate', () => {
   const { ok, errors } = checkPlatformNav('.');
   assert.equal(ok, true, errors.join('\n'));
