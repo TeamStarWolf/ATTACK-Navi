@@ -31,6 +31,8 @@ Use these classes before introducing one-off visual patterns:
 - `.accent-ring`
 - `.warm-accent-ring`
 
+> **Note (2026-11-20):** `AGENTS.md` (line 78) now says not to introduce navy or glass legacy styles — the app is on a flat token design system — so prefer the token scales over `.glass-toolbar` in new work.
+
 ## Recommended Upgrade Order
 
 1. Shell and navigation

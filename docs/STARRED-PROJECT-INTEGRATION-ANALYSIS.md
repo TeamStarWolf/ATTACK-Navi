@@ -1,7 +1,7 @@
 # Open-Source Project Integration Analysis
 
 > A survey of candidate open-source security projects (about 200 public repositories from 18 authors and organizations), mapped to ATT&CK-Navi integration opportunities.
-> Generated: April 2026. Candidate rankings and star counts are as of that date; the "Implemented" section is corrected against `main`.
+> Generated: April 2026. Candidate rankings and star counts are as of that date; the "Implemented" section was last reconciled against `main` on 2026-11-20; candidates that have since shipped are marked at their entries below.
 
 ---
 
@@ -19,6 +19,8 @@ This document ranks integration candidates found by surveying the public reposit
 | **PoC Exploit Enrichment** | `trickest/cve` | 7,675 | Flags techniques with public proof-of-concept exploits. | `poc-exploits` heatmap mode in `src/app/models/heatmap-modes.ts`; PoC Exploits sidebar section; `CHANGELOG.md` |
 
 Both shipped through pull requests to `main`; the original agent working branch no longer exists and is not a reference.
+
+> **Reconciliation (2026-11-20):** of the 19 numbered integration candidates, 7 have shipped — the two above, plus #2 Community Sigma (shipped differently), #3 EVTX Samples, #4 Caldera export, #5 Anthropic Cybersecurity Skills and #8 ThreatHunter Playbook (each marked at its entry) — #7 (`edoardogerosa/sentinel-attack`) is withdrawn upstream, and the remaining 11 are not yet shipped. The P3 repos are reference value, not integration proposals.
 
 ---
 
@@ -50,6 +52,8 @@ Both shipped through pull requests to `main`; the original agent working branch 
 - **Integration:** New sidebar section: "EVTX Samples" showing which techniques have real event log evidence. New heatmap: "Event Log Coverage"
 - **Effort:** Low-Medium — parse directory structure (tactic/technique folders) for counts
 
+> **Shipped on main (2026-11-20):** the technique sidebar's **EVTX Samples** section (`evtx-samples.service.ts`). The proposed "Event Log Coverage" heatmap did not ship — there is no EVTX lens in `heatmap-modes.ts`.
+
 ### 4. Caldera Adversary Profile Export
 - **Repo:** `mitre/caldera` (6,876★)
 - **What:** Export technique selections as Caldera YAML adversary profiles for automated emulation
@@ -57,11 +61,15 @@ Both shipped through pull requests to `main`; the original agent working branch 
 - **Effort:** Low — client-side YAML generation, no external fetch needed
 - **Roadmap alignment:** Tier 2.3 "Threat Actor Emulation Plans"
 
+> **Shipped on main (2026-11-20):** Export as Caldera profile from Intel > Emulation (`exportCalderaProfile`, `emulation-plan-panel.component.ts`).
+
 ### 5. Anthropic Cybersecurity Skills
 - **Repo:** `mukul975/Anthropic-Cybersecurity-Skills` (4,151★)
 - **What:** 754 structured skills mapped to ATT&CK (291 techniques), NIST CSF, D3FEND, ATLAS, AI RMF
 - **Integration:** Ingest `mappings/attack-navigator-layer.json` for heatmap + link individual SKILL.md files in sidebar
 - **Effort:** Low — Navigator layer ingestion follows existing pattern
+
+> **Shipped on main (2026-11-20):** the technique sidebar's **Skills** section (`anthropic-skills.service.ts`).
 
 ### 6. SysmonTools — Telemetry Mapping
 - **Repo:** `nshalabi/SysmonTools` (1,635★, TypeScript)
@@ -77,6 +85,8 @@ Both shipped through pull requests to `main`; the original agent working branch 
 - **What:** Detection notebooks with `attack_navigator.json` layer + `analytic_summary.csv` index
 - **Integration:** Ingest Navigator layer for heatmap + link playbook notebooks per technique in sidebar
 - **Effort:** Low — Navigator layer + external links
+
+> **Shipped on main (2026-11-20):** the technique sidebar's **THP Notebooks** section (`threathunter-playbook.service.ts`).
 
 ---
 
