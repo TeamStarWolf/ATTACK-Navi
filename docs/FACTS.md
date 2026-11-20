@@ -13,6 +13,7 @@ Counts and versions derived from the code. When a document states one of these n
 | Workspaces that lazy-load a route file | 8 | `loadChildren` in `src/app/app.routes.ts` |
 | Routed workspace tabs | 47 | child routes with `data.tab` in `src/app/pages/*/*.routes.ts` |
 | Detail pages (top-level routes with a `:param`, not workspaces) | 1 | `src/app/app.routes.ts` |
+| Technique-sidebar sections | 48 | `src/app/components/sidebar/sidebar.component.ts` (`sectionIndex`) |
 | Library layers | 201 | `src/assets/data/library-layers/index.json` |
 | Lylat mission layers | 35 | `src/assets/data/lylat-mission-layers/index.json` |
 | Unit spec files | 262 | `src/**/*.spec.ts` |
@@ -190,6 +191,7 @@ Read by `scripts/check-facts.mjs`.
   "routedTabs": 47,
   "detailPages": 1,
   "libraryLayers": 201,
+  "sidebarSections": 48,
   "unitSpecs": 262,
   "angularMajor": 22,
   "typescriptMajor": 6,

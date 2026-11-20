@@ -1,7 +1,10 @@
 # Service API Reference
 
-Complete reference for all 43 services in `src/app/services/`. Each entry documents the class
-name, file path, data source, key methods, observables, and injected dependencies.
+This page documents a selection of the services in `src/app/services/`, grouped by role. It is
+not exhaustive: `src/app/services/` is the authoritative, complete list of services, and a number
+of them — including newer data-source, workspace-feature and UI services — are not documented
+here. Each entry documents the class name, file path, data source, key methods, observables, and
+injected dependencies.
 
 ---
 
@@ -53,7 +56,7 @@ name, file path, data source, key methods, observables, and injected dependencie
 | `getTechniquesForMitigation(id)` | Reverse lookup: mitigation STIX ID to techniques |
 | `getGroupsForTechnique(id)` | Lookup threat groups associated with a technique |
 | `getTechniquesForGroup(id)` | Lookup techniques used by a threat group |
-| `getSoftwareForGroup(id)` | Lookup software that shares techniques with a group |
+| `getSoftwareForGroup(id)` | Software a group uses, from the ATT&CK STIX `uses` relationships (not inferred from shared techniques) |
 
 **Dependencies:** `HttpClient`
 
@@ -109,9 +112,9 @@ full list of 20 BehaviorSubjects and 7 derived observables.
 
 | Method | Description |
 |---|---|
-| `restoreFromUrl()` | Restore filter state from the current URL hash |
-| `syncToUrl()` | Force a URL sync on the next tick |
+| `init()` | Start the two-way sync between filter state and the URL hash (reads the incoming hash, then writes state changes back) |
 | `getShareUrl()` | Return the full shareable URL with current filter state |
+| `clearUrl()` | Clear the filter state from the URL |
 
 **Dependencies:** `FilterService`
 
@@ -150,7 +153,7 @@ full list of 20 BehaviorSubjects and 7 derived observables.
 | | |
 |---|---|
 | **File** | `src/app/services/misp.service.ts` |
-| **Data Source** | MISP Galaxy JSON from GitHub (bundled); live MISP API (configurable) |
+| **Data Source** | MISP Galaxy JSON fetched at runtime from GitHub (`MISP/misp-galaxy`, not bundled); live MISP API (configurable) |
 
 **Observables**
 
@@ -188,13 +191,15 @@ full list of 20 BehaviorSubjects and 7 derived observables.
 
 | Name | Type | Description |
 |---|---|---|
-| `config$` | `Observable<OpenCtiConfig>` | Current connection configuration |
+| `connected$` | `Observable<boolean>` | True once a configured instance has tested successfully |
+| `loading$` | `Observable<boolean>` | True during a query or connection test |
+| `error$` | `Observable<string \| null>` | Last error, or null |
 
 **Key Methods**
 
 | Method | Description |
 |---|---|
-| `saveConfig(url, token)` | Save OpenCTI API credentials and test connection |
+| `saveConfig(config)` | Save OpenCTI configuration (`Partial<OpenCtiConfig>`) and test the connection. The current configuration is read with `getConfig()` |
 | `getConfig()` | Retrieve current configuration |
 | `getIndicatorsForTechnique(attackId)` | Query indicators mapped to a technique |
 | `importStixBundle(stixJson)` | Push a STIX bundle to the OpenCTI instance |
@@ -219,8 +224,8 @@ full list of 20 BehaviorSubjects and 7 derived observables.
 
 | Name | Type | Description |
 |---|---|---|
-| `loaded$` | `Observable<boolean>` | True when both datasets are indexed |
-| `total$` | `Observable<number>` | Total CVE-to-technique mapping count |
+| `loaded$` | `Observable<boolean>` | True once at least one of the two datasets has indexed rows |
+| `total$` | `Observable<number>` | Count of unique CVEs indexed |
 | `covered$` | `Observable<number>` | Techniques with at least one CVE mapping |
 
 **Key Methods**
@@ -467,7 +472,7 @@ ribbon and the honesty spec's forced-failure cases.
 | | |
 |---|---|
 | **File** | `src/app/services/atomic.service.ts` |
-| **Data Source** | Bundled test records + Atomic Red Team Navigator layer JSON (GitHub) |
+| **Data Source** | Atomic Red Team Navigator layer JSON (GitHub) for per-technique test counts, plus live per-technique YAML fetched on demand for test details (the bundled test table was removed 2026-08-15) |
 
 **URLs**
 - Navigator layer: `redcanaryco/atomic-red-team/.../layer.json`
@@ -487,10 +492,10 @@ ribbon and the honesty spec's forced-failure cases.
 |---|---|
 | `getTestCount(attackId)` | Return the test count for a technique |
 | `getHeatScore(attackId)` | Alias for `getTestCount` |
-| `getTests(attackId)` | Return bundled test records for a technique |
+| `getTests(attackId)` | Return the cached live-fetched test records for a technique |
 | `getAtomicUrl(attackId)` | Return the GitHub URL for a technique's tests |
 | `getLiveCounts()` | Return the full live count map |
-| `getAll()` | Return all bundled test records |
+| `getAll()` | Return all cached live-fetched test records |
 | `fetchLiveTests(attackId, limit)` | Fetch live YAML test details from GitHub |
 
 **Dependencies:** `HttpClient`
@@ -508,13 +513,14 @@ ribbon and the honesty spec's forced-failure cases.
 
 **URLs**
 - NVD: `https://services.nvd.nist.gov/rest/json/cves/2.0`
-- KEV: `https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json`
+- KEV (primary): `https://raw.githubusercontent.com/cisagov/kev-data/develop/known_exploited_vulnerabilities.json`
+- KEV (fallback, CORS-blocked in some browsers): `https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json`
 
 **Observables**
 
 | Name | Type | Description |
 |---|---|---|
-| `kevEntries$` | `Observable<KevEntry[]>` | All CISA KEV entries |
+| `kevLoaded$` | `Observable<boolean>` | True once the CISA KEV catalog is indexed (the entries themselves are read via `getAllKevEntries()`) |
 | `searchResults$` | `Observable<NvdCveItem[]>` | NVD search results |
 | `loading$` | `Observable<boolean>` | True during NVD API calls |
 
@@ -524,12 +530,12 @@ ribbon and the honesty spec's forced-failure cases.
 |---|---|
 | `loadKev()` | Fetch and index the CISA KEV catalog |
 | `searchCves(query)` | Search NVD for CVEs by keyword |
-| `getKevScoresFromCtid(kevCveIds)` | Compute per-technique KEV CVE counts |
+| `getKevScoresFromCtid(kevCveIds)` | Map each technique to the set of KEV CVE IDs affecting it (`Map<string, Set<string>>`) |
 | `getAttackToCweIds(attackId)` | Reverse-lookup CWE IDs that map to a technique |
 | `fetchNvdCvesByAttackId(attackId, apiKey)` | Fetch NVD CVEs mapped to a technique via CWE bridge |
 | `getKevEntry(cveId)` | Lookup a single KEV entry by CVE ID |
 
-**Exports:** `CWE_TO_ATTACK` constant (200+ CWE-to-ATT&CK mappings), `mapCwesToAttackIds()` function.
+`mapCwesToAttackIds()` is a method on the service, mapping CWE IDs to techniques through the CWE→CAPEC→ATT&CK chain. The former static `CWE_TO_ATTACK` table was removed.
 
 **Dependencies:** `HttpClient`, `AttackCveService`
 
@@ -564,7 +570,7 @@ ribbon and the honesty spec's forced-failure cases.
 | | |
 |---|---|
 | **File** | `src/app/services/nvd-bulk.service.ts` |
-| **Data Source** | NVD 2.0 API (last 120 days of CVEs) |
+| **Data Source** | Bundled `assets/data/cve-technique-map.json` (a CVE→ATT&CK index built from the CVE2CAPEC pipeline; it replaced the former live NVD-scan supplement) |
 
 **Observables**
 
@@ -581,7 +587,7 @@ ribbon and the honesty spec's forced-failure cases.
 | `getCveCountForTechnique(attackId)` | Return supplementary CVE count for a technique |
 | `getCvesForTechnique(attackId)` | Return supplementary CVE IDs for a technique |
 
-**Dependencies:** `HttpClient`, `AttackCveService`, `SettingsService`
+**Dependencies:** `HttpClient`, `SourceRegistryService`
 
 ---
 
@@ -652,7 +658,7 @@ ribbon and the honesty spec's forced-failure cases.
 | Name | Type | Description |
 |---|---|---|
 | `loaded$` | `Observable<boolean>` | True when bundle is parsed |
-| `total$` | `Observable<number>` | Total CAPEC entries indexed |
+| `total$` | `Observable<number>` | Count of CAPEC→technique links indexed |
 
 **Key Methods**
 
@@ -706,7 +712,7 @@ ribbon and the honesty spec's forced-failure cases.
 
 | Name | Type | Description |
 |---|---|---|
-| `loaded$` | `Observable<boolean>` | Always `true` (loads empty) |
+| `loaded$` | `Observable<boolean>` | Always `false` — with no source it returns before marking loaded, rather than claim an empty mapping loaded |
 | `total$` | `Observable<number>` | Always `0` |
 
 **Key Methods**
@@ -735,8 +741,8 @@ ribbon and the honesty spec's forced-failure cases.
 
 | Name | Type | Description |
 |---|---|---|
-| `loaded$` | `Observable<boolean>` | True when all three providers are loaded (combined) |
-| `awsTotalSubject` / `azureTotalSubject` / `gcpTotalSubject` | `BehaviorSubject<number>` | Per-provider control counts |
+| `loaded$` | `Observable<boolean>` | True once at least one provider's mapping has loaded |
+| `awsTotal$` / `azureTotal$` / `gcpTotal$` | `Observable<number>` | Per-provider control counts |
 
 **Key Methods**
 
@@ -810,14 +816,13 @@ ribbon and the honesty spec's forced-failure cases.
 | | |
 |---|---|
 | **File** | `src/app/services/d3fend.service.ts` |
-| **Data Source** | Bundled static mapping (~100 countermeasures) + live D3FEND ontology fetch |
+| **Data Source** | Curated D3FEND seed (15 countermeasures) + live D3FEND API fetch (JSON-LD index and per-technique API) |
 
 **Observables**
 
 | Name | Type | Description |
 |---|---|---|
-| `loaded$` | `BehaviorSubject<boolean>` | True (bundled data is immediately available) |
-| `total$` | `Observable<number>` | Total D3FEND countermeasures indexed |
+| `loaded$` | `BehaviorSubject<boolean>` | Starts true (the seed is immediately available); re-emits when the live index merges in |
 
 **Key Methods**
 
@@ -826,7 +831,7 @@ ribbon and the honesty spec's forced-failure cases.
 | `getCountermeasures(attackId)` | Return D3FEND techniques that counter an ATT&CK technique |
 | `getAllTechniques()` | Return all D3FEND countermeasures |
 | `getAllByCategory()` | Return countermeasures grouped by category (Harden/Detect/Isolate/Deceive/Evict) |
-| `loadLiveOntology()` | Fetch and merge the live D3FEND OWL ontology |
+| `retryOntologyIndex()` / `retryTechniqueApi(probe)` | Re-fetch the live D3FEND index / per-technique API and merge the results |
 
 **Dependencies:** `HttpClient`
 
@@ -837,7 +842,7 @@ ribbon and the honesty spec's forced-failure cases.
 | | |
 |---|---|
 | **File** | `src/app/services/engage.service.ts` |
-| **Data Source** | Bundled static array of MITRE Engage activities |
+| **Data Source** | MITRE Engage JSON fetched at runtime from `mitre/engage` (five JSON files combined) |
 
 **Key Methods**
 
@@ -845,7 +850,7 @@ ribbon and the honesty spec's forced-failure cases.
 |---|---|
 | `getActivities(attackId)` | Return Engage activities targeting a technique |
 
-**Dependencies:** None (standalone, bundled data)
+**Dependencies:** `HttpClient`, `SourceRegistryService`
 
 ---
 
@@ -910,7 +915,7 @@ ribbon and the honesty spec's forced-failure cases.
 | `exportRules(rules)` | Download YARA rules as a `.yar` file |
 | `getAllPatterns()` | Return all bundled patterns |
 
-**Dependencies:** None (standalone, bundled data)
+**Dependencies:** `AttackIdResolverService`
 
 ---
 
@@ -1191,7 +1196,7 @@ ribbon and the honesty spec's forced-failure cases.
 
 | Method | Description |
 |---|---|
-| `takeSnapshot(domain, implStatusMap, label, notes)` | Capture current coverage metrics as a snapshot |
+| `takeSnapshot(label, rollup, implStatusMap, notes?)` | Capture current coverage metrics as a snapshot (`rollup` is the posture `MappedRollup`) |
 | `deleteSnapshot(id)` | Remove a snapshot |
 | `updateLabel(id, label)` | Rename a snapshot |
 | `updateNotes(id, notes)` | Update snapshot notes |
@@ -1221,7 +1226,7 @@ breakdown, implementation status counts.
 |---|---|
 | `generateAndOpen(domain, implStatusMap)` | Build the HTML mitigation report (Theoretical / Implemented split from `models/report-split.ts`) and open it in a new tab |
 
-**Dependencies:** None (standalone)
+**Dependencies:** `SettingsService`, `Injector` (resolves `PostureService` / `ImplementationService` lazily when a report is built)
 
 ---
 
@@ -1253,9 +1258,9 @@ breakdown, implementation status counts.
 
 | Method | Description |
 |---|---|
-| `exportWorkbook(domain, implStatusMap, customMitigations, snapshots)` | Build and download a multi-sheet XLSX workbook (Overview, Techniques, Subtechniques, Mitigations, Custom Mitigations, Timeline) |
+| `exportWorkbook(domain, implStatusMap, customMitigations, snapshots, implViewFor)` | Build and download a multi-sheet XLSX workbook (Overview, Techniques, Subtechniques, Mitigations, Coverage by Tactic, Gaps, Custom Controls, and Timeline when snapshots exist) |
 
-**Dependencies:** `xlsx` (SheetJS library)
+**Dependencies:** `xlsx-js-style` (imported dynamically)
 
 ---
 
