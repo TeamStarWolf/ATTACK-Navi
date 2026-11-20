@@ -78,7 +78,7 @@ above), leaving 3.
 - **Live ATT&CK** — `mitre-attack/attack-stix-data/master/enterprise-attack/enterprise-attack.json` (the v20.0 STIX; cached on revisit)
 - **CTID mappings-explorer** (`main`) — `nist_800_53`, `aws`, `azure`, `gcp`, `veris`, `cri_profile` (all `attack-16.1`), `csa_ccm` (`attack-17.1`), `m365` (`attack-16.1`), and the runtime-resolved `kev/attack-16.1/kev-07.28.2025/enterprise/…json`
 - **ATT&CK→CVE** — `center-for-threat-informed-defense/attack_to_cve/master/Att%26ckToCveMappings.csv`
-- **CVE2CAPEC** (`Galeax/CVE2CAPEC/main/database`) — `CVE-2026.jsonl.gz` and `CVE-2025.jsonl.gz` — _on-demand, not boot:_ `cve2capec.service.ts` `loadOnDemand()` fetches these only when a CVE or kill-chain view first opens, so the boot count above overstates `raw.githubusercontent.com` by these two
+- **CVE2CAPEC** (`Galeax/CVE2CAPEC/main/database`) — `CVE-2026.jsonl.gz` and `CVE-2025.jsonl.gz` — _on-demand, not boot (correction, 2026-11-20):_ `cve2capec.service.ts` `loadOnDemand()` fetches these only when a CVE or kill-chain view first opens, not on cold boot, so the boot count and the 27-blob total above (from the capture) overstate `raw.githubusercontent.com` by these two
 - **CISA KEV** — `cisagov/kev-data/develop/known_exploited_vulnerabilities.json`
 - **CAPEC** — `mitre/cti/master/capec/2.1/stix-capec.json`
 - **MITRE Engage** (`mitre/engage/main/Data/json`) — `activities.json`, `approach_activity_mappings.json`, `attack_mapping.json`, `goal_approach_mappings.json`, `goals.json`
@@ -107,6 +107,12 @@ normal navigation:
 - the `www.cisa.gov` hit is the same fallback, during **boot**.
 
 ## Mode is persisted; the default is the pinned bundle
+
+> **Correction (2026-11-20).** An earlier version of this section read "Mode is not
+> persisted" and said `DataService.mode` is `'live'` at `data.service.ts:102` with no
+> storage key. That was wrong (not drift — the claim never held): the service defaults to
+> `'bundled'` and persists the choice, as below. The measured boot-burst counts above are
+> unaffected — the mode does not change them.
 
 `DataService.mode` defaults to `'bundled'` (`data.service.ts:147`) and follows the
 persisted user setting `AppSettings.attackDataMode` (Settings > Data), so a chosen mode

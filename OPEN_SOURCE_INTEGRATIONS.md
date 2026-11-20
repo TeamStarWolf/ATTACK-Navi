@@ -30,6 +30,8 @@ Recommended implementation order:
 
 ### Sigma
 
+> **Shipped (confirmed on `main`, 2026-11-20).** A Sigma detection layer is live (`sigma.service.ts`): the detection-coverage lens, per-technique rule counts and the drawer's rule list. Community Sigma counts come from a pinned build-time snapshot. The "what to add" list below is the original proposal; `DATA_SOURCE_SCORECARD.md` has the exact status.
+
 Why it matters:
 
 - Gives the app a real open detection layer.
@@ -58,6 +60,8 @@ Implementation notes:
 
 ### Atomic Red Team
 
+> **Shipped (confirmed on `main`, 2026-11-20).** Atomic tests are integrated (`atomic.service.ts`): sidebar tests, matrix overlays and purple-team/scenario context. The list below is the original proposal.
+
 Why it matters:
 
 - Adds validation and purple-team value.
@@ -85,6 +89,8 @@ Implementation notes:
 - Keep execution out of scope initially; first ship visibility and linkage.
 
 ### CISA KEV + NVD
+
+> **Shipped (confirmed on `main`, 2026-11-20).** KEV and NVD enrich the CVE and risk views and feed exposure ranking (`cve.service.ts` plus the NVD bulk service). The list below is the original proposal.
 
 Why it matters:
 
@@ -116,6 +122,8 @@ Implementation notes:
 
 ### MISP
 
+> **Partly shipped (confirmed on `main`, 2026-11-20).** MISP Galaxy reference data and configurable connection controls are in the app (`misp.service.ts`); live event/attribute workflows are implemented but not validated against an authorized server. See `DATA_SOURCE_SCORECARD.md`.
+
 Why it matters:
 
 - Strong open-source CTI platform with tagging, correlation, and ATT&CK-friendly modeling.
@@ -143,6 +151,8 @@ Implementation notes:
 - Build around enrichment and prioritization, not raw IOC browsing.
 
 ### OpenCTI
+
+> **Partly shipped (confirmed on `main`, 2026-11-20).** A configurable OpenCTI indicator UI is in the app (`opencti.service.ts`); live GraphQL schema compatibility is unverified. See `DATA_SOURCE_SCORECARD.md`.
 
 Why it matters:
 
@@ -175,6 +185,8 @@ Implementation notes:
 
 ### Zeek
 
+> **Partly shipped (confirmed on `main`, 2026-11-20).** Zeek script export is live (Detection > SIEM, `zeek.service.ts`); telemetry ingestion is not. Generated scripts are not observed detections.
+
 Why it matters:
 
 - Strong open-source network telemetry source.
@@ -193,6 +205,8 @@ Best UI surfaces:
 - sidebar data components
 
 ### Suricata
+
+> **Partly shipped (confirmed on `main`, 2026-11-20).** Suricata rule export is live (Detection > SIEM, `suricata.service.ts`); sensor-evidence ingestion is not. Exported rules are not validated coverage.
 
 Why it matters:
 
@@ -227,6 +241,8 @@ What to add later:
 
 ### YARA / YARA-X
 
+> **Partly shipped (confirmed on `main`, 2026-11-20).** A YARA layer and export are in the app (`yara.service.ts`); see `DATA_SOURCE_SCORECARD.md` for how real the coverage is.
+
 Why it matters:
 
 - Adds malware-oriented coverage dimension.
@@ -247,6 +263,8 @@ Best UI surfaces:
 ## Tier 5: Defensive Guidance Expansion
 
 ### D3FEND Deepening
+
+> **Already in the app (confirmed on `main`, 2026-11-20).** D3FEND mappings ship today (`d3fend.service.ts`, sidebar + matrix overlays); the "deepening" below is the forward-looking part.
 
 Why it matters:
 
