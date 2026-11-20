@@ -79,6 +79,13 @@ jobs:
       - run: node --test scripts/check-facts.test.mjs
       - run: node scripts/gen-facts.mjs --check
       - run: node scripts/check-facts.mjs
+      # The vendored platform-nav menu (src/assets/platform-nav.json) is a byte-identical
+      # copy of the canonical file the front site publishes: ASCII/LF, nesting one level
+      # deep, every pending entry filtered before render, and its ATT&CK-Navi block equal
+      # to the nav rail's workspace catalog. Offline only; drift against the published file
+      # is caught by the scheduled platform-nav-sync workflow. Its own tests run first.
+      - run: node --test scripts/check-platform-nav.test.mjs
+      - run: node scripts/check-platform-nav.mjs
       # Seam check (Phase 2 design P2-08, §4.2): no file outside PostureService
       # may join a mitigation-to-technique map with the implementation store
       # unless it is on the generated allow-list with a reason and the PR or

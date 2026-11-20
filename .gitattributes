@@ -1,0 +1,4 @@
+# The vendored platform-nav menu must stay byte-identical to the canonical file
+# published by the front site (LF, ASCII). Pin its line endings so the
+# drift check (scripts/check-platform-nav.mjs) holds under core.autocrlf.
+src/assets/platform-nav.json text eol=lf

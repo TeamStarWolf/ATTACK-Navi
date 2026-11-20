@@ -1,0 +1,140 @@
+<!-- ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+     https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
+<nav class="tsw-bar" aria-label="TeamStarWolf platform">
+
+  <!-- Always-present way back to the front page -->
+  <a class="tsw-bar__home" [href]="home.href">{{ home.label }}</a>
+
+  <!-- Desktop: a row of links; each opens a panel on hover (and from its caret for keyboard/click) -->
+  <ul class="tsw-bar__row" role="list">
+    @for (item of items; track item.id) {
+      <li class="tsw-bar__item" (mouseenter)="onItemEnter(item.id)" (mouseleave)="onItemLeave()">
+        <a class="tsw-bar__link" [href]="item.href">{{ item.label }}</a>
+
+        @if (item.entries.length) {
+          <button
+            type="button"
+            class="tsw-bar__caret"
+            [id]="caretId(item.id)"
+            [attr.aria-label]="item.label + ' menu'"
+            [attr.aria-expanded]="isOpen(item.id)"
+            [attr.aria-controls]="panelId(item.id)"
+            (click)="toggle(item.id)"
+            (keydown)="onCaretKeydown($event, item.id)"
+          >
+            <app-icon name="chevron-down" [size]="14" aria-hidden="true" />
+          </button>
+
+          @if (isOpen(item.id)) {
+            <div
+              class="tsw-bar__panel"
+              [id]="panelId(item.id)"
+              role="group"
+              [attr.aria-label]="item.label"
+              (keydown)="onPanelKeydown($event, item.id)"
+            >
+              <ul class="tsw-bar__list" role="list">
+                @for (entry of item.entries; track entry.href; let i = $index) {
+                  <li class="tsw-bar__entry" (mouseenter)="onEntryEnter(item.id, i, entry.children.length > 0)">
+                    @if (entry.children.length) {
+                      <!-- Label follows its link; the chevron button opens the fly-out (carries touch). -->
+                      <div class="tsw-bar__entry-row" [class.is-open]="isFlyoutOpen(item.id, i)">
+                        <a
+                          class="tsw-bar__menu-link tsw-bar__entry-label"
+                          data-menuitem
+                          [attr.data-flyindex]="i"
+                          [attr.data-entry]="item.id + '#' + i"
+                          [href]="entry.href"
+                        >{{ entry.label }}</a>
+                        <button
+                          type="button"
+                          class="tsw-bar__fly-caret"
+                          [attr.aria-label]="entry.label + ' submenu'"
+                          [attr.aria-expanded]="isFlyoutOpen(item.id, i)"
+                          [attr.aria-controls]="flyoutId(item.id, i)"
+                          (click)="toggleFlyout(item.id, i)"
+                        >
+                          <app-icon class="tsw-bar__fly-chevron" name="chevron-right" [size]="14" aria-hidden="true" />
+                        </button>
+                      </div>
+                      @if (isFlyoutOpen(item.id, i)) {
+                        <div
+                          class="tsw-bar__flyout"
+                          [class.tsw-bar__flyout--left]="flyoutLeft()"
+                          [id]="flyoutId(item.id, i)"
+                          role="group"
+                          [attr.aria-label]="entry.label"
+                          (keydown)="onFlyoutKeydown($event, item.id, i)"
+                        >
+                          <ul class="tsw-bar__list" role="list">
+                            @for (sub of entry.children; track sub.href) {
+                              <li>
+                                <a class="tsw-bar__menu-link" data-flyitem [href]="sub.href">{{ sub.label }}</a>
+                              </li>
+                            }
+                          </ul>
+                        </div>
+                      }
+                    } @else {
+                      <a class="tsw-bar__menu-link" data-menuitem [attr.data-entry]="item.id + '#' + i" [href]="entry.href">{{ entry.label }}</a>
+                    }
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+        }
+      </li>
+    }
+  </ul>
+
+  <!-- Mobile (< 760px): one button opening an inline accordion of the same menu -->
+  <button
+    type="button"
+    class="tsw-bar__burger"
+    [attr.aria-expanded]="mobileOpen()"
+    aria-controls="tsw-bar-mobile"
+    [attr.aria-label]="mobileOpen() ? 'Close platform menu' : 'Open platform menu'"
+    (click)="toggleMobile()"
+  >
+    <app-icon [name]="mobileOpen() ? 'x' : 'menu'" [size]="18" aria-hidden="true" />
+  </button>
+
+  @if (mobileOpen()) {
+    <div class="tsw-bar__mobile" id="tsw-bar-mobile">
+      <ul role="list">
+        @for (item of items; track item.id) {
+          <li class="tsw-bar__m-item">
+            @if (item.entries.length) {
+              <button
+                type="button"
+                class="tsw-bar__m-head"
+                [attr.aria-expanded]="mobileSection() === item.id"
+                [attr.aria-controls]="mobileSectionId(item.id)"
+                (click)="toggleSection(item.id)"
+              >
+                <span>{{ item.label }}</span>
+                <app-icon [name]="mobileSection() === item.id ? 'chevron-down' : 'chevron-right'" [size]="16" aria-hidden="true" />
+              </button>
+              @if (mobileSection() === item.id) {
+                <ul class="tsw-bar__m-list" role="list" [id]="mobileSectionId(item.id)">
+                  <li><a class="tsw-bar__m-link tsw-bar__m-top" [href]="item.href">Open {{ item.label }}</a></li>
+                  @for (entry of item.entries; track entry.href) {
+                    <li>
+                      <a class="tsw-bar__m-link" [href]="entry.href">{{ entry.label }}</a>
+                      @for (sub of entry.children; track sub.href) {
+                        <a class="tsw-bar__m-link tsw-bar__m-sub" [href]="sub.href">{{ sub.label }}</a>
+                      }
+                    </li>
+                  }
+                </ul>
+              }
+            } @else {
+              <a class="tsw-bar__m-link tsw-bar__m-top" [href]="item.href">{{ item.label }}</a>
+            }
+          </li>
+        }
+      </ul>
+    </div>
+  }
+</nav>
