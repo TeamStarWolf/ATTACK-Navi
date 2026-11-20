@@ -1,6 +1,9 @@
 # Component Catalog
 
-> Auto-generated reference for the Angular components in ATT&CK-Navi.
+> A hand-maintained catalog of a selection of ATT&CK-Navi's Angular components — not
+> auto-generated (nothing in `scripts/` or the build writes or checks this file).
+> `src/app/components/` is the authoritative, complete set; some components (mostly
+> drawer primitives and smaller panels) are not catalogued here.
 > Each component is standalone and uses `ChangeDetectionStrategy.OnPush`.
 >
 > **v0.8.0 note:** the "Panel ID" column below is historical — panels are now
