@@ -7,10 +7,17 @@ which service issues it, and when. Built from the code (`src/app/services/*.ts`,
 `src/app/services/source-inventory.ts` the canonical `SOURCE_DEFINITIONS` registry) and
 from a network capture of the production build.
 
-## Headline: the default boot fetches 33 files from GitHub before any action
+> **Capture date: 2026-10-16** (production build, in the then-default **live** mode;
+> commit `d3ac8e7`). The counts in this document are that capture's; the dated
+> *Changed since this capture* notes record what differs on `main` today. The default
+> mode has since changed to bundled (see "Mode" below), so a present-day default cold
+> boot is lighter than the live-mode figures here.
 
-On a cold load of `#/` → `#/matrix`, with no user action, the app issues **33 GitHub
-requests — 27 `raw.githubusercontent.com` + 6 unauthenticated `api.github.com`** — plus
+## Headline: the 2026-10-16 capture's default (live) boot fetched 33 files from GitHub
+
+On a cold load of `#/` → `#/matrix`, with no user action, the captured live-mode build
+issued **33 GitHub requests — 27 `raw.githubusercontent.com` + 6 unauthenticated
+`api.github.com`** — plus
 `d3fend.mitre.org/api/technique/all.json` and 3 Google Fonts. The data-source **mode
 does not change this**: the live-ATT&CK, cross-framework, enrichment and detection
 layers load on boot regardless; only `enterprise-attack.json` differs (fetched live, or
@@ -27,6 +34,18 @@ flips to `v20.0` after the live STIX arrives (~15 s); the first GitHub request f
 > `contents` calls and `trickest/cve`), not 6. The counts in this document are from the
 > earlier capture and have not been re-measured; `docs/MEASUREMENTS.md` will show the change
 > at its next `node scripts/measure.mjs` run.
+
+> **Changed since this capture (CVE2CAPEC on demand, #237; bundled default, #179 — confirmed 2026-11-20):**
+> two more requests have moved off the cold path. CVE2CAPEC's two `raw.githubusercontent.com`
+> blobs are now fetched on demand (`cve2capec.service.ts` `loadOnDemand()`, called from
+> `cve-panel.component.ts:230` and `matrix.component.ts:661`), not on boot; and the default
+> mode is now **bundled** (see "Mode" below), so the default cold boot serves
+> `enterprise-attack.json` from the pinned bundle instead of fetching it live. Deriving from
+> the 2026-10-16 live-mode capture, a present-day default cold boot makes about
+> **3 `api.github.com`** (rule-coverage snapshot, above) and about **24 `raw.githubusercontent.com`**
+> (27 − 2 CVE2CAPEC − 1 live ATT&CK blob). These are derived from the code changes, not
+> re-measured; `docs/MEASUREMENTS.md` carries the measured numbers at its next
+> `node scripts/measure.mjs` run.
 
 ### Measured (production build, Chrome headless, fresh profile, `networkidle` + 20 s)
 
@@ -78,7 +97,7 @@ above), leaving 3.
 - **Live ATT&CK** — `mitre-attack/attack-stix-data/master/enterprise-attack/enterprise-attack.json` (the v20.0 STIX; cached on revisit)
 - **CTID mappings-explorer** (`main`) — `nist_800_53`, `aws`, `azure`, `gcp`, `veris`, `cri_profile` (all `attack-16.1`), `csa_ccm` (`attack-17.1`), `m365` (`attack-16.1`), and the runtime-resolved `kev/attack-16.1/kev-07.28.2025/enterprise/…json`
 - **ATT&CK→CVE** — `center-for-threat-informed-defense/attack_to_cve/master/Att%26ckToCveMappings.csv`
-- **CVE2CAPEC** (`Galeax/CVE2CAPEC/main/database`) — `CVE-2026.jsonl.gz` and `CVE-2025.jsonl.gz`
+- **CVE2CAPEC** (`Galeax/CVE2CAPEC/main/database`) — `CVE-2026.jsonl.gz` and `CVE-2025.jsonl.gz` _(on boot at capture; now fetched on demand, #237 — see the headline note above)_
 - **CISA KEV** — `cisagov/kev-data/develop/known_exploited_vulnerabilities.json`
 - **CAPEC** — `mitre/cti/master/capec/2.1/stix-capec.json`
 - **MITRE Engage** (`mitre/engage/main/Data/json`) — `activities.json`, `approach_activity_mappings.json`, `attack_mapping.json`, `goal_approach_mappings.json`, `goals.json`
@@ -113,6 +132,15 @@ choice resets to live every load and cannot be preset — the capture toggled it
 toolbar after boot. **E1.4 (defaulting to bundled) will not, on its own, make boot
 clean**: the live-ATT&CK, CTID, enrichment and detection layers fetch on boot in both
 modes. Making cold boot quiet is Phase-3 pinning work, not a mode default.
+
+> **Changed since this capture (E1.4, #179 on 2026-10-17; confirmed 2026-11-20):** the
+> bundled default this section anticipated shipped the day after the capture.
+> `DataService.mode` now defaults to `'bundled'` (`data.service.ts:147`) and persists the
+> choice as `AppSettings.attackDataMode` (`settings.service.ts:37,116`, Settings > Data), so
+> a chosen mode survives a reload; **live** mode runs a 'Check for ATT&CK update' on load.
+> The mode still changes only the ATT&CK STIX source, but because the default is now bundled,
+> a default cold boot serves `enterprise-attack.json` from the pinned bundle instead of
+> fetching it live — one fewer `raw.githubusercontent.com` request than the live-mode capture.
 
 ## Phase-3 pinning notes
 

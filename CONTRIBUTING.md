@@ -300,63 +300,58 @@ private persist(): void {
 
 ## 4. Adding a New Heatmap Mode
 
-Heatmap modes color the matrix cells based on different data dimensions. The pipeline involves seven steps across four files.
+Heatmap modes color the matrix cells by different data dimensions. A new lens touches **about six source files — all required** (the legend and the lens picker need no edit of their own; both read the `HEATMAP_MODES` registry). [AGENTS.md](AGENTS.md) is the authoritative "adding a heatmap mode" checklist; the steps below are that same list with code pointers, verified against the current source.
 
-### Step 1: Add the Mode to the HeatmapMode Type
+### Step 1: Register the mode (the core edit)
+
+**File:** `src/app/models/heatmap-modes.ts`
+
+Add an entry to `HEATMAP_MODES` with **every field**: the question it answers, its rung, the formula, the domains its sources cover, its source ids, what zero means, and the colour ramp the cell renderer paints. `heatmap-modes.spec.ts` fails on an empty field or a ramp that misses a rendered colour. The legend and the lens picker both render from this entry, so there is no separate legend or picker edit.
+
+### Step 2: Add the mode to the HeatmapMode type
 
 **File:** `src/app/services/filter.service.ts`
 
-Add your mode to the `HeatmapMode` type union:
+Add your mode id to the `HeatmapMode` union:
 
 ```typescript
 export type HeatmapMode = 'coverage' | 'exposure' | ... | 'my-mode';
 ```
 
-### Step 2: Compute the Score in MatrixComponent
+### Step 3: Register a new source (only if your lens adds one)
 
-**File:** `src/app/components/matrix/matrix.component.ts`
+**File:** `src/app/models/lens-sources.ts`
 
-Find the method that computes heatmap scores (typically a switch/if block on `this.heatmapMode`). Add a case for your mode:
+If your lens reads a data source that is not already listed, add its source id here; the legend's source/vintage line reads from it. A lens built only on sources that already exist skips this step.
 
-```typescript
-case 'my-mode':
-  return this.myFeatureService.getCount(technique.attackId);
-```
+### Step 4: Paint the cell
 
-Inject your service in the component's constructor.
+**File:** `src/app/components/technique-cell/technique-cell.component.ts`
 
-### Step 3: Map Score to Color
+Add your mode's colour branch to `ngOnChanges()` — the `else if (this.heatmapMode === '…')` chain that calls a `compute…Color` helper — so each cell paints from your score. Inject the service that supplies the score.
 
-**File:** `src/app/components/matrix/matrix.component.ts`
+### Step 5: Build the score and the minimap copy
 
-The matrix maps numeric scores to colors using the active color theme. Ensure your score returns a value in the expected range (typically 0 to N where higher means more coverage).
+**Files:** `src/app/components/matrix/matrix.component.ts` and `matrix.component.html`
 
-### Step 4: Add the Mode to the Toolbar Selector
+Add a `getMyModeScore(tech)` and a `case 'my-mode'` to the score builder **and** to the `getCellColor` minimap copy (both live in `matrix.component.ts`). Then bind the score into the cell in `matrix.component.html` (the per-mode `[…Score]` input, used in the three cell renders). Inject your service in the constructor.
 
-**File:** `src/app/components/toolbar/toolbar.component.ts` (or `.html`)
+### Step 6: Update the spec
 
-Add an option to the heatmap mode dropdown so users can select your mode from the toolbar.
+**File:** the co-located `*.spec.ts` (and `src/app/models/heatmap-modes.spec.ts`)
 
-### Step 5: Update the Legend
+A new mode ships with a spec update; `heatmap-modes.spec.ts` already guards the registry entry's fields and ramp.
 
-**File:** `src/app/models/heatmap-modes.ts`
+> **Registry-hosted lenses take a shortcut.** A lens backed by `src/app/models/lens-registry.ts` adds `project` and `color` there **instead of** Steps 4–5 — the cell, the minimap and the legend all call the lens's own colour function.
 
-The legend reads the `HEATMAP_MODES` registry, so describe your mode there: the question it answers, its rung (Known, Covered, Proven, or the Threat / Exposure dimension), the formula, the domains its sources cover, its source ids (`src/app/models/lens-sources.ts`), what zero means, and the colour ramp your cell colouring paints.
+### Step 7: Verify
 
-### Step 6: Add Tooltip Text
-
-**File:** `src/app/components/technique-cell/technique-cell.component.ts` or `technique-tooltip/technique-tooltip.component.ts`
-
-Update the tooltip to show your mode's value when hovering over a cell.
-
-### Step 7: Test
-
-1. Select your heatmap mode from the toolbar dropdown.
-2. Verify the matrix colors update correctly.
-3. Verify the legend shows the correct label.
-4. Verify tooltips display the data.
-5. Verify the URL hash updates with `heat=my-mode`.
-6. Verify the mode persists when sharing the URL.
+1. Select your lens from the picker in the matrix controls — it appears automatically, because the picker (`src/app/pages/matrix/matrix-controls.component.ts`) reads the registry.
+2. The matrix colours update correctly.
+3. The legend shows your label, question, rung and stops.
+4. Tooltips display the data.
+5. The URL hash updates to `heat=my-mode` and survives a shared-link reload.
+6. `npx tsc --noEmit -p tsconfig.app.json` and `npx ng test --watch=false --browsers=ChromeHeadless` are green.
 
 ---
 
