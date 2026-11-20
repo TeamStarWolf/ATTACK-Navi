@@ -127,7 +127,7 @@ These components form the application frame and are always visible.
 |----------|-------|
 | **Selector** | `app-nav-rail` |
 | **File** | `src/app/components/nav-rail/nav-rail.component.ts` |
-| **Purpose** | Fixed left-side vertical navigation rail. Lists 9 workspace `routerLink`s (Matrix, Dashboard, Intel, Detect, Exposure, Coverage, Library, Reports, Status) plus a Help button and a bottom-pinned Settings link. Active state comes from `routerLinkActive` / the current URL. |
+| **Purpose** | Fixed left-side vertical navigation rail. Lists 9 workspace `routerLink`s in rail order — Matrix, Exposure, Intel, Detect, Coverage, Dashboard, Reports, Library, Status (grouped into the Threat & Exposure, Response and Reference sections, reorderable within a section) — plus a Help button and a bottom-pinned Settings link. Active state comes from `routerLinkActive` / the current URL. |
 | **Inputs** | *(none — navigation is via `routerLink`)* |
 | **Outputs** | `helpClick: EventEmitter<void>` (opens the keyboard-help overlay) |
 
@@ -156,7 +156,7 @@ Components that render the ATT&CK matrix grid and its supporting UI.
 | **Selector** | `app-matrix` |
 | **File** | `src/app/components/matrix/matrix.component.ts` |
 | **Purpose** | Core matrix renderer. Subscribes to all FilterService observables, computes per-technique heatmap scores for every mode in `HEATMAP_MODES`, manages sorted columns, zoom (0.5x--1.5x), minimap overlay, column visibility, and keyboard-based cell navigation (arrow keys, Enter, Escape). Passes score data down to each TechniqueCellComponent. |
-| **Inputs** | `domain: Domain` |
+| **Inputs** | `domain: Domain`, `attackDomain: AttackDomain` (the active domain id) |
 | **Outputs** | `focusSearch: EventEmitter<void>`, `tacticClicked: EventEmitter<{ tactic, techniques, event }>` |
 
 ---
@@ -168,7 +168,7 @@ Components that render the ATT&CK matrix grid and its supporting UI.
 | **Selector** | `app-technique-cell` |
 | **File** | `src/app/components/technique-cell/technique-cell.component.ts` |
 | **Purpose** | Individual technique cell within the matrix. Renders the ATT&CK ID, name, implementation status dot, note indicator, annotation badge, and watchlist marker. Computes its own background color from the active heatmap mode and the score inputs it receives. Uses `tinycolor2` for readable text-color contrast. |
-| **Inputs** | `technique`, `isHighlighted`, `isDimmed`, `isSelected`, `isFocused`, `exposureScore`, `softwareScore`, `campaignScore`, `heatmapMode`, `implStatus`, `maxExposure`, `maxSoftware`, `maxCampaign`, `riskScore`, `maxRisk`, `hasNote`, `kevScore`, `maxKev`, `d3fendScore`, `maxD3fend`, `atomicScore`, `maxAtomic`, `engageScore`, `carScore`, `cveScore`, `maxCveScore`, `detectionScore`, `frequencyScore`, `criScore`, `maxCriScore`, `unifiedScore`, `sigmaScore`, `nistScore`, `verisScore`, `epssScore`, `elasticScore`, `splunkScore`, `intelScore`, `maxIntelScore`, `showTechniqueId`, `showMitigationCount`, `showTechniqueName`, `annotation`, `isSearchMatch`, `hasActiveSearch`, `isWatched` |
+| **Inputs** | 77 in total. **Display/state (21):** `technique`, `heatmapMode`, `isHighlighted`, `isDimmed`, `isSelected`, `isFocused`, `isSearchMatch`, `hasActiveSearch`, `isWatched`, `hasNote`, `annotation`, `implStatus`, `implPartialVia`, `posture`, `myMark`, `threatGap`, `lensUnavailable`, `libraryColorOverride`, `showTechniqueId`, `showTechniqueName`, `showMitigationCount`. **Per-lens scores (56):** one `<lens>Score` per scored lens, each paired with a `max<Lens>` normalization input except `unifiedScore` and `epssScore` (which take no max): `exposureScore`/`maxExposure`, `softwareScore`/`maxSoftware`, `campaignScore`/`maxCampaign`, `riskScore`/`maxRisk`, `frequencyScore`/`maxFrequencyScore`, `kevScore`/`maxKev`, `cveScore`/`maxCveScore`, `pocScore`/`maxPocScore`, `killChainScore`/`maxKillChainScore`, `d3fendScore`/`maxD3fend`, `atomicScore`/`maxAtomic`, `engageScore`/`maxEngageScore`, `carScore`/`maxCarScore`, `detectionScore`/`maxDetectionScore`, `sigmaScore`/`maxSigmaScore`, `elasticScore`/`maxElasticScore`, `splunkScore`/`maxSplunkScore`, `wazuhScore`/`maxWazuhScore`, `m365Score`/`maxM365Score`, `nistScore`/`maxNistScore`, `verisScore`/`maxVerisScore`, `criScore`/`maxCriScore`, `csaCcmScore`/`maxCsaCcmScore`, `m365ControlsScore`/`maxM365ControlsScore`, `intelScore`/`maxIntelScore`, `libraryScore`/`maxLibraryScore`, `myExposureScore`/`maxMyExposure`, plus `unifiedScore` and `epssScore`. The authoritative, current set is the `[…Score]` / `[max…]` bindings in `matrix.component.html`. |
 | **Outputs** | `selected: EventEmitter<Technique>` |
 
 ---
