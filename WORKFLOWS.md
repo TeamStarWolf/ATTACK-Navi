@@ -1,20 +1,38 @@
 # Analyst Workflow Guide
 
-This guide describes eight operational workflows supported by ATT&CK-Navi. Each workflow follows a structured sequence of steps using the workspaces, heatmaps, and sidebar sections built into the application.
+This guide describes eight operational workflows ATT&CK-Navi supports. Each one is a
+sequence of steps through the app's **routed workspaces**, the **heatmap lenses** that
+recolor the matrix, and the **technique sidebar**.
 
-> **Navigation (v0.8.0).** The app is now organized into **routed workspaces** on the left
-> rail — Matrix, Dashboard, Intel, Detect, Exposure, Coverage, Library, Reports, Settings, and (since the Status workspace was added) Status — each
-> with a tab bar for its destinations. The workflow steps below sometimes say "open the *X* panel
-> from the nav rail"; the destinations still exist, just reached differently:
->
-> - **Fastest:** press `Ctrl+K` and type the destination name (e.g. "gap analysis", "sigma", "cve").
-> - **By rail + tab:** click the workspace, then its tab. Quick map of the old groupings →
->   workspaces: *Threats* → **Intel**, *Analysis* → **Exposure** / **Detect** / **Dashboard**,
->   *Coverage* → **Coverage**, *Tools* → **Detect** / **Reports** / **Library**.
-> - **Direct link:** every destination has a bookmarkable URL, e.g. `#/exposure/gap-analysis`.
->
-> The ATT&CK matrix lives at `#/matrix`, and the technique sidebar opens whenever you select a
-> matrix cell — from any workspace.
+## Getting around
+
+The app is a single-page app with **hash routing**: every destination has its own URL, so
+bookmarks and the browser's back/forward buttons work. There are three ways to move:
+
+- **Left rail.** The rail groups the workspaces into three sections — **Threat & Exposure**
+  (Matrix, Exposure, Intel), **Response** (Detect, Coverage) and **Reference** (Dashboard,
+  Reports, Library, Status) — with **Help** and **Settings** pinned at the bottom and a
+  **viewpoint** selector (Analyst by default) at the top. Click a workspace, then its tab.
+- **Command palette.** `Ctrl+K` (`Cmd+K` on macOS) searches techniques, groups, actors,
+  software, campaigns and CVEs, and has "Go to" entries for every workspace tab.
+- **Direct URL.** Each tab has a path, e.g. `#/exposure/gap-analysis` or `#/intel/groups`.
+
+The ATT&CK **matrix** lives at `#/matrix`. Selecting any matrix cell opens the **technique
+sidebar** (its jump index groups the sections into Technique, Threat Intel, Vulnerabilities,
+Compliance, Detections, Offense & Hunting and Workspace), from any workspace.
+
+**Lenses.** The matrix toolbar has a lens button that shows the active lens's short label
+(the default lens is **Frequency**, framed as adversary prevalence) and opens a menu to
+recolor the matrix. With no viewpoint set the menu groups are Threat Landscape,
+Vulnerabilities, Detections, Frameworks and Coverage & Posture; the complete list of all 36
+lenses, their scores and rungs is in [docs/HEATMAPS.md](docs/HEATMAPS.md) (and the
+authoritative count is the Heatmap modes row of [docs/FACTS.md](docs/FACTS.md)). Every lens
+carries a rung (KNOWN, COVERED self-attested, THREAT, EXPOSURE or PROVEN) shown as its
+legend badge; read a color from the legend, not the color alone.
+
+**Domains.** The toolbar's domain selector switches between Enterprise (default), ICS,
+Mobile and the CTID F3 Fraud Framework. Enterprise ATT&CK is bundled at the pinned version
+shown on the toolbar's vintage chip.
 
 ---
 
@@ -33,577 +51,314 @@ This guide describes eight operational workflows supported by ATT&CK-Navi. Each 
 
 ## 1. Behavior Analysis
 
-**Purpose:** Understand adversary tactics, techniques, and procedures (TTPs) using the ATT&CK matrix as the primary navigation model.
-
-### Overview
-
-Behavior analysis is the starting point for every other workflow. The matrix displays all techniques organized by tactic columns (Initial Access through Impact). Selecting a technique opens the sidebar with full enrichment data. Threat group and campaign filters narrow the matrix to specific adversary profiles.
-
-### Prerequisites
-
-- ATT&CK data loaded (happens automatically on launch from MITRE STIX bundle)
-- Domain selected (Enterprise, ICS, or Mobile)
+**Purpose:** Understand adversary tactics, techniques and procedures (TTPs) using the
+ATT&CK matrix as the primary navigation model.
 
 ### Steps
 
-1. **Select the ATT&CK domain.** Use the domain selector in the toolbar to choose Enterprise, ICS, or Mobile. The matrix reloads with the corresponding STIX bundle. Enterprise is the default.
+1. **Select the domain.** Use the domain selector in the toolbar (Enterprise, ICS, Mobile
+   or F3). The matrix reloads with that domain's techniques, grouped into tactic columns.
+2. **Browse the matrix** at `#/matrix`. Each cell is a technique; techniques with
+   sub-techniques show a chevron to expand them (`Ctrl+E` expands all). Hover for a quick
+   tooltip; click a cell to open the technique sidebar.
+3. **Read the sidebar.** The jump index lists the populated sections by group — Technique
+   (mitigations, sub-techniques, data sources, procedures, relationship graph), Threat
+   Intel (groups, software, campaigns, MISP, OpenCTI), and so on. The "Reference sources
+   mapped" card is a Known count of how many public sources map the technique.
+4. **Scope to a threat group.** Open **Intel > Groups** (`#/intel/groups`), select one or
+   more ATT&CK groups, and the matrix highlights the techniques they use. Each group row
+   shows its technique count and a mitigation-mapped percentage (reference data, not
+   deployed defense).
+5. **Compare adversaries.** Open **Intel > Compare** (`#/intel/compare`) to put two groups
+   side by side and see shared vs. distinctive techniques.
+6. **Explore campaigns and software.** **Intel > Campaigns** (`#/intel/campaigns`) browses
+   ATT&CK campaigns on a timeline; **Intel > Software** (`#/intel/software`) maps malware
+   and tools to techniques. Selecting one filters the matrix to its techniques.
+7. **See relationships and progression.** **Exposure > Graph** (`#/exposure/graph`) draws a
+   technique relationship graph; **Exposure > Kill Chain** (`#/exposure/kill-chain`) lays
+   selected techniques out across kill-chain phases.
 
-2. **Browse the matrix.** Scroll horizontally through tactic columns. Each cell represents a technique. Hover over a cell to see a tooltip with the technique ID, name, and summary scores. Click a cell to open the full technique sidebar.
+### Expected outputs
 
-3. **Search for techniques.** Use the search bar in the toolbar to filter techniques by name or ID. Toggle between name-only and full-text search scope. Enable search filter mode to dim non-matching techniques on the matrix.
-
-4. **Explore the technique sidebar.** When a technique is selected, the sidebar opens with:
-   - Technique name, ATT&CK ID, and description
-   - Reference sources mapped: N of 7 (Known rung)
-   - Signal summary pills (CVE count, EPSS score, Sigma rules, Atomic tests)
-   - Collapsible sections for mitigations, threat groups, software, campaigns, procedures, data sources, and more
-
-5. **Filter by threat group.** Open the **Threats** panel from the nav rail. Select one or more threat groups. The matrix highlights only the techniques used by those groups. This is the fastest way to scope an assessment to a specific adversary.
-
-6. **Compare actors.** Open the **Actor vs.** panel to select two threat groups and see a side-by-side comparison of their technique usage, shared TTPs, and unique behaviors.
-
-7. **Explore campaigns.** Open the **Campaigns** panel to browse ATT&CK campaigns on a timeline. Select a campaign to filter the matrix to its associated techniques.
-
-8. **Inspect software.** Open the **Software** panel to see malware and tools mapped to techniques. Select a software item to highlight its technique footprint on the matrix.
-
-9. **View the kill chain.** Open the **Kill Chain** panel for a linear progression view of selected techniques across the cyber kill chain phases.
-
-### Expected Outputs
-
-- A scoped understanding of which techniques are relevant to a particular adversary, campaign, or software family
-- A filtered matrix view that can be shared via URL hash state or exported
-
-### Related Panels
-
-| Panel | Nav Rail ID | Purpose |
-|-------|------------|---------|
-| Dashboard | `dashboard` | Summary statistics and quick access |
-| Threats | `threats` | Threat group selection and filtering |
-| Actors | `actor` | Detailed actor profile view |
-| Actor Compare | `actor-compare` | Side-by-side actor comparison |
-| Campaigns | `campaign-timeline` | Campaign timeline browser |
-| Software | `software` | Software/malware technique mapping |
-| Kill Chain | `killchain` | Linear kill chain visualization |
-| Scenario | `scenario` | Attack scenario builder |
-| Graph | `technique-graph` | Technique relationship graph |
+- A scoped view of which techniques matter for a chosen adversary, campaign or software
+  family, shareable via the Share button (the URL carries the filter state).
 
 ---
 
 ## 2. Threat Intelligence
 
-**Purpose:** Correlate threat intelligence from external platforms (MISP, OpenCTI) with ATT&CK techniques to understand current adversary activity.
-
-### Overview
-
-The threat intelligence workflow connects the Navigator to live CTI sources. The Intelligence panel (INTEL) provides an overview of connected threat intelligence. MISP integration brings event-driven indicators and ATT&CK galaxy clusters. OpenCTI integration enriches techniques with structured threat data, confidence levels, and attribution.
-
-### Prerequisites
-
-- MISP server configured in Settings > Integrations (URL, API key, optional Org ID)
-- OpenCTI instance configured in Settings > Integrations (URL, API token)
-- At least one successful connection test for each platform
+**Purpose:** Correlate threat-intelligence signals with ATT&CK techniques to see where
+adversary reporting concentrates.
 
 ### Steps
 
-1. **Open the Intelligence panel.** Click the **INTEL** item in the nav rail (under Threats). This panel aggregates intelligence from all connected sources and provides a unified overview.
+1. **Open the Intel workspace** at `#/intel`. Its tabs are Groups, Actors, Compare,
+   Scenarios, Emulation, Campaigns, Software and **Feeds**.
+2. **Review the intelligence overview.** **Intel > Feeds** (`#/intel/feeds`) is the threat
+   intelligence panel, with Intel Overview, Indicators, Threat Actors and MISP Events tabs.
+   Its per-technique signal score is the number of ATT&CK groups that use the technique,
+   plus one when MISP Galaxy has a cluster for it.
+3. **Color the matrix by intel.** Switch to the **Intelligence** lens from the lens menu
+   (Threat Landscape group) to shade techniques by that signal.
+4. **(Optional) Connect MISP.** The public MISP Galaxy ATT&CK clusters load with no setup
+   and appear in the sidebar's MISP section. To add a server, open **Settings >
+   Preferences > Integrations**, enter the MISP URL and API key, and click **Test & Save**.
+   Live MISP event and attribute queries are not yet wired to the UI (the MISP Events tab
+   builds templates locally).
+5. **(Optional) Connect OpenCTI.** In the same Integrations tab, enter the OpenCTI URL and
+   API token and Test & Save; indicators then appear in the sidebar and in Intel > Feeds.
+6. **Track techniques of interest.** Add techniques to **Library > Watchlist**
+   (`#/library/watchlist`); the watchlist persists in the browser.
 
-2. **Review the intelligence overview.** The panel shows:
-   - Connected source status (MISP, OpenCTI)
-   - Recent events and indicators mapped to ATT&CK techniques
-   - Technique coverage from intelligence sources
+### Expected outputs
 
-3. **Search for indicators.** Use the Search panel to query across all loaded data, including indicators from connected CTI platforms.
-
-4. **Connect to MISP.** If not already connected, open Settings > Integrations. Enter the MISP server URL (e.g., `https://misp.example.org`), paste the API key, and optionally provide an Org ID. Click "Test & Save" to verify the connection.
-
-5. **Browse MISP events.** Once connected, the sidebar shows MISP galaxy cluster data for selected techniques. MISP tags are displayed alongside ATT&CK technique metadata. Events tagged with ATT&CK technique IDs appear in the technique sidebar under the MISP section.
-
-6. **Connect to OpenCTI.** In Settings > Integrations, enter the OpenCTI URL and API token. Click "Test & Save" to verify. The app queries OpenCTI's GraphQL API for indicators.
-
-7. **Enrich techniques with OpenCTI data.** Once connected, the sidebar includes an OpenCTI section for each technique showing:
-   - Linked indicators with confidence scores
-   - Last-seen timestamps and provenance data
-
-8. **Switch to the intelligence heatmap.** In the toolbar heatmap mode selector, choose "intelligence". The matrix colors techniques based on the volume and recency of threat intelligence data available.
-
-9. **Use the Watchlist.** Open the **Watchlist** panel to track specific techniques of interest. Add techniques from the sidebar. The watchlist persists across sessions in localStorage.
-
-### Expected Outputs
-
-- Techniques enriched with current threat intelligence from MISP events and OpenCTI indicators
-- An intelligence-driven heatmap showing which techniques have active reporting
-- A curated watchlist of priority techniques based on live intel
-
-### Related Panels
-
-| Panel | Nav Rail ID | Purpose |
-|-------|------------|---------|
-| Intelligence | `intelligence` | Unified threat intelligence overview |
-| Threats | `threats` | Threat group filtering |
-| Actors | `actor` | Actor profile with CTI enrichment |
-| Actor Compare | `actor-compare` | Compare actors across intel sources |
-| Campaigns | `campaign-timeline` | Campaign timeline with intel context |
-| Watchlist | `watchlist` | Tracked techniques of interest |
-| Settings | `settings` | Configure MISP and OpenCTI connections |
+- Techniques enriched with threat-group, MISP Galaxy and (if configured) OpenCTI signals,
+  an intelligence-driven matrix view, and a watchlist of priority techniques.
 
 ---
 
 ## 3. Vulnerability Exposure
 
-**Purpose:** Assess which ATT&CK techniques are associated with known vulnerabilities, active exploitation, and exploitation likelihood.
-
-### Overview
-
-The vulnerability exposure workflow uses CVE mappings, the CISA Known Exploited Vulnerabilities (KEV) catalog, and EPSS exploitation probability scores to quantify the real-world risk associated with each technique. The CVE panel provides search and filtering capabilities, while the sidebar shows per-technique vulnerability data.
-
-### Prerequisites
-
-- ATT&CK-to-CVE mapping data loaded (built-in)
-- Optional: NVD API key configured in Settings > Integrations for higher rate limits
+**Purpose:** Assess which techniques are tied to known vulnerabilities, active exploitation
+and exploitation likelihood.
 
 ### Steps
 
-1. **Open the CVE panel.** Click the **CVE** item in the nav rail (under Analysis). The panel lists all CVEs mapped to ATT&CK techniques.
+1. **Open the Exposure workspace** at `#/exposure`. Tabs: CVE, Risk, Kill Chain, Graph, Gap
+   Analysis, Priority, SSVC, Dossier, What-If, CTEM.
+2. **Search CVEs.** **Exposure > CVE** (`#/exposure/cve`) has Search (NVD lookup by CVE ID
+   or keyword), a KEV Dashboard, By Technique, CTID Curated, a Timeline, Products and CVSS
+   Analytics views.
+3. **Overlay exploitation on the matrix.** From the lens menu (Vulnerabilities group),
+   switch to **KEV** (CISA Known Exploited Vulnerabilities count), **CVE** (CVE count per
+   technique), **EPSS** (average exploitation probability), **CVE Kill Chain** or **PoC
+   Exploits**.
+4. **Read per-technique vulnerability data** in the sidebar: CVE and KEV links, EPSS
+   scores, and the CAPEC, ExploitDB, Nuclei and PoC Exploits sections (counts of public
+   exploit and template availability).
+5. **Prioritize by risk.** **Exposure > Risk** (`#/exposure/risk`) plots techniques by
+   threat exposure against security gap in four quadrants; **Exposure > Priority**
+   (`#/exposure/priority`) ranks techniques by gap severity; **Exposure > SSVC**
+   (`#/exposure/ssvc`) and **Exposure > CTEM** (`#/exposure/ctem`) add decision and
+   exposure-management views; **Exposure > Dossier** (`#/exposure/dossier`) opens a
+   per-technique CVE dossier.
 
-2. **Search by technique.** Use the CVE panel search to find CVEs associated with a specific technique ID or name. Click a CVE entry to filter the matrix, highlighting only techniques linked to that vulnerability.
+### Expected outputs
 
-3. **Review the KEV catalog.** Techniques with CVEs listed in CISA's Known Exploited Vulnerabilities catalog are flagged. Switch to the "kev" heatmap mode to see which techniques have actively exploited vulnerabilities.
-
-4. **Check EPSS scores.** The EPSS (Exploit Prediction Scoring System) provides a probability estimate for each CVE being exploited in the wild within the next 30 days. Switch to the "epss" heatmap mode to color techniques by their maximum EPSS score. In the sidebar, EPSS scores appear as pills next to each CVE.
-
-5. **View ExploitDB and Nuclei counts.** The sidebar includes ExploitDB and Nuclei sections showing the number of public exploits and Nuclei templates available for each technique's associated CVEs. These indicate the practical availability of exploit code.
-
-6. **Use the CVE heatmap.** Switch to "cve" heatmap mode to color the matrix by CVE count per technique. Techniques with more mapped vulnerabilities appear in warmer colors.
-
-7. **Inspect CWE weakness families.** The sidebar CAPEC and CWE sections group vulnerabilities by weakness type, showing which attack patterns and weaknesses underlie each technique.
-
-8. **Assess risk.** Open the **Risk** panel for a matrix-style risk assessment that combines vulnerability exposure with other factors.
-
-### Expected Outputs
-
-- A vulnerability-focused view of the ATT&CK matrix showing which techniques have known CVEs
-- KEV and EPSS overlays identifying techniques with actively exploited or likely-to-be-exploited vulnerabilities
-- Per-technique exploit availability counts from ExploitDB and Nuclei
-
-### Related Panels
-
-| Panel | Nav Rail ID | Purpose |
-|-------|------------|---------|
-| CVE | `cve` | CVE search and technique-CVE mapping |
-| Risk Matrix | `risk-matrix` | Risk assessment combining multiple factors |
-| Analytics | `analytics` | Statistical analysis including CVE distributions |
-| Data Sources | `datasources` | Data source coverage for vulnerability detection |
-| Settings | `settings` | NVD API key configuration |
+- A vulnerability-focused matrix with KEV/EPSS overlays, per-technique exploit-availability
+  counts, and a risk-ranked priority list. Exports are available from the CVE tab.
 
 ---
 
 ## 4. Detection Coverage
 
-**Purpose:** Measure the organization's detection readiness by mapping Sigma rules, Elastic detections, Splunk content, and CAR analytics against ATT&CK techniques.
-
-### Overview
-
-Detection coverage answers the question "can we see this technique?" The Navigator loads detection data from multiple rule repositories and displays coverage as matrix heatmaps. The Detection panel provides a consolidated view, while the Sigma and SIEM panels offer rule generation and export.
-
-### Prerequisites
-
-- Sigma rule data loaded (built-in Navigator layer from SigmaHQ)
-- Elastic detection rules loaded (built-in)
-- Splunk content loaded (built-in)
-- CAR analytics loaded (built-in)
+**Purpose:** Measure detection readiness by mapping public detection content against ATT&CK
+techniques.
 
 ### Steps
 
-1. **Check detection heatmaps.** Use the toolbar heatmap mode selector to cycle through detection overlays:
-   - **sigma** -- Colors techniques by Sigma rule count from SigmaHQ
-   - **elastic** -- Colors techniques by the number of rules in elastic/detection-rules whose threat mapping names the technique or a sub-technique, read from a snapshot bundled at a pinned commit
-   - **splunk** -- Colors techniques by the number of detections in splunk/security_content whose `mitre_attack_id` names the technique or a sub-technique, read from the same bundled snapshot
-   - **detection** -- "Detection content available": Sigma rules x 3 + D3FEND countermeasures x 2 + CAR analytics x 2 + Atomic tests x 1 (Elastic and Splunk are not part of it)
-   - **car** -- Colors techniques by MITRE CAR analytic availability
+1. **Open the Detect workspace** at `#/detect`. Tabs: Detections, Sigma, SIEM, YARA,
+   Validation, Data Sources, Purple Team.
+2. **Review consolidated coverage.** **Detect > Detections** (`#/detect/detections`) shows
+   how many techniques have reference content mapped (CAR, Atomic, D3FEND) with a
+   "Reference depth" breakdown and Overview / Gaps views — reference data, not your
+   deployed detections.
+3. **Overlay detection content on the matrix** from the lens menu (Detections group):
+   **Detection content available** (a weighted composite), **Sigma Rules**, **Elastic
+   Rules**, **Splunk Detections**, **Wazuh stock rules (curated)**, **M365 Defender**,
+   **CAR** and **Atomic**. The Elastic, Splunk and community-Sigma counts come from a
+   bundled rule-coverage snapshot (reference data about public repositories).
+4. **Read per-technique detection content** in the sidebar: the **Rule sources** section
+   (Elastic, Splunk and mdecrevoisier Sigma rule counts and names at a pinned commit), CAR
+   Detection Analytics, and Detected By (the ATT&CK data components that provide visibility).
+5. **Generate detection content.** **Detect > Sigma** (`#/detect/sigma`) generates template
+   Sigma rules; **Detect > SIEM** (`#/detect/siem`) generates platform query syntax; both
+   export from their tab.
+6. **Check data-source coverage.** **Detect > Data Sources** (`#/detect/data-sources`) shows
+   which ATT&CK data sources existing detections depend on.
 
-2. **Open the Detection panel.** Click the **Detect** item in the nav rail (under Analysis). This panel shows:
-   - Overall detection coverage percentage
-   - Per-tactic detection rates
-   - Techniques with no detection coverage (gaps)
-   - Detection source breakdown
+### Expected outputs
 
-3. **Review per-technique detection content.** Select any technique on the matrix. The sidebar shows:
-   - **Rule sources** (always present; open it to expand): for Elastic detection-rules, Splunk security_content and mdecrevoisier SIGMA, the number of rules naming the technique at the pinned commit, up to ten rule names linked to the rule file at that commit, and the pinned commit; and, when SigmaHQ tags rules with the technique, a SigmaHQ line with the rule count only. These are rules in public repositories, not rules running in your environment
-   - **CAR Detection Analytics** with descriptions, when CAR maps the technique
-   - **Detected By**: the ATT&CK data components that provide visibility
-
-4. **Generate Sigma rules.** Open the **SIGMA** panel from the nav rail (under Tools). Select a technique to generate a template Sigma rule based on the technique's ATT&CK data sources and detection descriptions. Export the rule as YAML.
-
-5. **Export SIEM queries.** Open the **SIEM** panel from the nav rail. Select a technique and target SIEM platform (Elastic, Splunk). The panel generates platform-specific query syntax that can be copied to the clipboard or exported.
-
-6. **View data source coverage.** Open the **Sources** panel to see which ATT&CK data sources are covered by existing detections. Filter the matrix by data source to find techniques that depend on specific log sources.
-
-### Expected Outputs
-
-- A detection coverage heatmap identifying gaps in rule coverage across tactics
-- Generated Sigma rules and SIEM queries for uncovered techniques
-- A data source dependency map showing which log sources are most critical
-
-### Related Panels
-
-| Panel | Nav Rail ID | Purpose |
-|-------|------------|---------|
-| Detection | `detection` | Consolidated detection coverage view |
-| Sigma | `sigma` | Sigma rule generation and export |
-| SIEM | `siem` | SIEM query generation (Elastic/Splunk) |
-| Data Sources | `datasources` | ATT&CK data source coverage |
-| Analytics | `analytics` | Detection analytics and statistics |
-| Graph | `technique-graph` | Technique relationship visualization |
+- A detection-coverage matrix identifying gaps, generated Sigma/SIEM starting points, and a
+  data-source dependency view.
 
 ---
 
 ## 5. Validation and Testing
 
-**Purpose:** Plan red team exercises and purple team validation by reviewing available test procedures and generating detection signatures.
-
-### Overview
-
-Validation answers "can we test this?" and "can we prove our detections work?" The Navigator integrates Atomic Red Team test data, provides a purple team planning panel, and includes YARA and Suricata rule generation for creating validation signatures.
-
-### Prerequisites
-
-- Atomic Red Team data loaded (built-in Navigator layer; live test details fetched from GitHub on demand)
-- ATT&CK data loaded
+**Purpose:** Plan adversary emulation and purple-team validation, and record what you have
+tested.
 
 ### Steps
 
-1. **Review Atomic Red Team tests.** Select a technique on the matrix and expand the Atomic Red Team section in the sidebar. This shows:
-   - Number of available Atomic tests
-   - Test names and supported platforms (Windows, Linux, macOS)
-   - A link to the full test YAML on GitHub
-   - Live test details (fetched on demand) with executor commands and prerequisites
+1. **Review Atomic tests.** Select a technique and open the Atomic Red Team section in the
+   sidebar (test names, platforms, and live YAML test detail fetched on demand). Switch to
+   the **Atomic** lens to color the matrix by test availability.
+2. **Plan a purple-team exercise.** **Detect > Purple Team** (`#/detect/purple-team`) pairs
+   techniques that have both tests and detections against those that have tests but no
+   detection.
+3. **Record validation runs.** **Detect > Validation** (`#/detect/validation`) is where you
+   log a validation run by hand, each with an outcome and evidence links. These are
+   self-recorded, not an automated result; a named detection that fired or a block on a
+   recorded date is what the Proven lens reads.
+4. **Generate file/network signatures.** **Detect > YARA** (`#/detect/yara`) generates YARA
+   (and Suricata) rule templates to export.
+5. **Build attack scenarios.** **Intel > Scenarios** (`#/intel/scenarios`) simulates a
+   chosen group's attack against your current coverage; **Intel > Emulation**
+   (`#/intel/emulation`) builds an emulation plan.
+6. **Compare before and after.** **Library > Comparison** (`#/library/comparison`) loads two
+   Navigator layers or saved views side by side.
 
-2. **Use the atomic heatmap.** Switch to "atomic" heatmap mode in the toolbar. The matrix colors techniques by the number of Atomic Red Team tests available. Uncovered techniques (no tests) are clearly visible as gaps.
+### Expected outputs
 
-3. **Open the Purple Team panel.** Click the **Purple** item in the nav rail (under Tools). This panel helps plan purple team exercises by:
-   - Listing techniques with both detections and tests available
-   - Identifying techniques where tests exist but detections are missing
-   - Suggesting priority techniques for validation exercises
-
-4. **Generate YARA rules.** Open the **YARA** panel from the nav rail. Select a technique or software family to generate YARA rule templates. Export the rules for file-based detection validation.
-
-5. **Generate Suricata rules.** The YARA panel also supports Suricata rule generation for network-based detection validation scenarios.
-
-6. **Plan attack scenarios.** Open the **Scenario** panel from the nav rail. Build multi-step attack scenarios by chaining techniques across tactics. This supports red team operation planning with a visual kill chain flow.
-
-7. **Compare coverage.** Open the **Compare** panel to load two Navigator layers or saved views and compare them side by side. This is useful for comparing pre-exercise and post-exercise detection states.
-
-### Expected Outputs
-
-- A list of testable techniques with Atomic Red Team procedures
-- Generated YARA and Suricata rules for detection validation
-- A purple team exercise plan prioritized by detection gaps
-- Attack scenarios for red team operations
-
-### Related Panels
-
-| Panel | Nav Rail ID | Purpose |
-|-------|------------|---------|
-| Purple Team | `purple` | Purple team planning and validation |
-| YARA | `yara` | YARA and Suricata rule generation |
-| Scenario | `scenario` | Attack scenario builder |
-| Compare | `comparison` | Layer comparison for pre/post analysis |
-| Detection | `detection` | Detection coverage context |
-| Sigma | `sigma` | Sigma rule generation for blue team |
+- A list of testable techniques, generated YARA/Suricata rules, a purple-team plan, recorded
+  validation runs, and emulation scenarios.
 
 ---
 
 ## 6. Compliance Mapping
 
-**Purpose:** Map ATT&CK techniques to regulatory frameworks and security controls to support compliance assessments and audit preparation.
-
-### Overview
-
-The compliance workflow maps ATT&CK techniques to NIST 800-53 Rev5 controls, CRI Profile controls, CIS Controls, cloud provider controls, and VERIS action categories. This enables organizations to assess whether their control implementations address specific adversary behaviors.
-
-### Prerequisites
-
-- NIST 800-53 mapping data loaded (built-in)
-- CRI Profile data loaded (built-in)
-- Cloud controls data loaded (built-in)
-- VERIS data loaded (built-in)
+**Purpose:** Map techniques to control frameworks to support compliance assessment and audit
+preparation.
 
 ### Steps
 
-1. **View the NIST 800-53 heatmap.** Switch to "nist" heatmap mode in the toolbar. The matrix colors techniques by the number of NIST 800-53 Rev5 controls mapped to each technique. Warmer colors indicate more control coverage.
+1. **Open the Coverage workspace** at `#/coverage`. Tabs: Assessment, Controls, Custom
+   Mitigations, Compliance, Diff, Timeline, Target, Assets.
+2. **Overlay a framework on the matrix** from the lens menu (Frameworks group): **NIST
+   800-53**, **VERIS Actions**, **CRI Profile**, **CSA CCM**, **M365 Controls**, **D3FEND**,
+   **Engage** or **F3 Origin**.
+3. **Review per-technique controls** in the sidebar's Compliance group: NIST 800-53, CRI
+   Profile, VERIS, CSA CCM and Cloud Controls (AWS/Azure/GCP). Control mappings come from
+   the CTID Mappings Explorer and are matched on the technique IDs as published (see the
+   note on version skew in [README.md](README.md#data-sources)).
+4. **See consolidated compliance coverage.** **Coverage > Compliance**
+   (`#/coverage/compliance`) gives per-framework coverage and compliance gaps.
+5. **Manage control mappings.** **Coverage > Controls** (`#/coverage/controls`) lists the
+   control-to-technique mappings; **Coverage > Custom Mitigations**
+   (`#/coverage/custom-mitigations`) adds organization-specific mitigations.
 
-2. **View the CRI Profile heatmap.** Switch to "cri" heatmap mode. The matrix colors techniques by CRI (Cyber Risk Institute) Profile control coverage.
+### Expected outputs
 
-3. **View the VERIS heatmap.** Switch to "veris" heatmap mode. The matrix colors techniques by VERIS (Vocabulary for Event Recording and Incident Sharing) action category mappings.
+- Compliance-coverage matrices across the mapped frameworks, a list of techniques with no
+  control coverage, and per-technique control mappings for audit documentation.
 
-4. **View cloud controls.** Select a technique and expand the Cloud Controls section in the sidebar. This shows AWS, Azure, and GCP security controls that address the technique.
-
-5. **Open the Compliance panel.** Click the **Comply** item in the nav rail (under Coverage). This panel provides:
-   - A consolidated compliance coverage view across all frameworks
-   - Per-framework coverage statistics
-   - Techniques with no control coverage (compliance gaps)
-   - Framework-specific drill-down
-
-6. **Open the Controls panel.** Click the **Controls** item in the nav rail for a detailed view of all control mappings including:
-   - NIST 800-53 controls with families and descriptions
-   - D3FEND countermeasures
-   - Engage activities
-   - CIS Controls and implementation groups
-
-7. **Review per-technique controls.** Select any technique and review the sidebar sections:
-   - **NIST Controls** -- Mapped 800-53 controls with family groupings
-   - **CRI Profile** -- CRI Profile controls
-   - **Cloud Controls** -- AWS/Azure/GCP controls
-   - **VERIS** -- VERIS action categories
-   - **CIS Controls** -- CIS v8 control mappings
-
-8. **Assess D3FEND countermeasures.** Switch to "d3fend" heatmap mode. The matrix shows MITRE D3FEND countermeasure coverage. The sidebar D3FEND section lists specific defensive techniques for each ATT&CK technique.
-
-### Expected Outputs
-
-- Compliance coverage heatmaps across NIST 800-53, CRI Profile, VERIS, and cloud frameworks
-- A list of techniques with gaps in control coverage
-- Per-technique control mappings for audit documentation
-
-### Related Panels
-
-| Panel | Nav Rail ID | Purpose |
-|-------|------------|---------|
-| Compliance | `compliance` | Consolidated compliance coverage |
-| Controls | `controls` | Detailed control mappings |
-| Priority | `priority` | Prioritized gap remediation |
-| Target | `target` | Target profile for scoped assessments |
-| Custom Mitigations | `custom-mit` | Organization-specific control mappings |
+> **CIS Controls** are not available: CTID removed them from Mappings Explorer as of ATT&CK
+> v16, so that source loads empty.
 
 ---
 
 ## 7. Coverage Analysis
 
-**Purpose:** Understand overall mitigation coverage, identify gaps, track changes over time, and prioritize remediation efforts.
-
-### Overview
-
-Coverage analysis is the core analytical workflow. The default "coverage" heatmap shows how well each technique is mitigated. The gap view highlights uncovered techniques. The analytics panel provides radar charts and statistical breakdowns. The coverage diff panel compares two points in time.
-
-### Prerequisites
-
-- ATT&CK data loaded
-- Optional: Implementation status tracked for mitigations (via sidebar or settings)
-- Optional: Timeline snapshots saved for historical comparison
+**Purpose:** Understand mitigation coverage and your own recorded posture, identify gaps,
+track change over time and prioritize remediation.
 
 ### Steps
 
-1. **View the coverage heatmap.** The default lens is Prevalence (`heat=frequency`): each technique cell is shaded by how many ATT&CK groups are recorded using it. Until you have recorded anything about your own environment (an Implementation, Validation or stack record), a one-line banner above the matrix says what the lens is and that it is reference data, not a view of your environment. Switch to the `coverage` lens ("Mitigations mapped") from the lens menu to shade each cell by its count of mapped ATT&CK mitigations.
+1. **Run an assessment.** **Coverage > Assessment** (`#/coverage/assessment`) is a five-step
+   wizard: select the ATT&CK domain, choose the threat groups relevant to your sector, and
+   set an implementation status for each technique. The results show how many techniques you
+   marked Implemented or In Progress, a coverage percentage, a threat-weighted gap (0–100), a
+   tactic breakdown and the top priority gaps — self-attested, not validated. Export
+   Assessment (CSV) saves them.
+2. **Shade the matrix by your input.** From the lens menu (Coverage & Posture group), the
+   **Status** lens shows the implementation status you set, **Controls** the controls you
+   declare, **Posture**, **Covered (self-attested or range)** and **Proven** show your
+   recorded posture, and **Mitigations mapped** / **Reference depth** show reference data.
+   Enable "Dim uncovered" to fade techniques with no coverage.
+3. **Analyze.** **Dashboard > Analytics** (`#/dashboard/analytics`) gives coverage
+   distribution, a radar chart across dimensions, and per-tactic percentages;
+   **Dashboard > Overview** (`#/dashboard/overview`) summarizes.
+4. **Prioritize and target.** **Coverage > Priority** (`#/coverage/priority`) ranks gaps by
+   severity; **Coverage > Target** (`#/coverage/target`) defines a target profile the
+   priority ranking measures against.
+5. **Model changes.** **Exposure > What-If** (`#/exposure/what-if`) simulates the effect of
+   implementing specific mitigations on your coverage scores.
+6. **Track over time.** **Coverage > Timeline** (`#/coverage/timeline`) saves coverage
+   snapshots; **Coverage > Diff** (`#/coverage/diff`) compares two snapshots to show what
+   gained or lost coverage.
+7. **Scope to assets.** **Coverage > Assets** (`#/coverage/assets`) imports a host inventory
+   (CSV) and, in its Exposure tab, colors the matrix by which techniques reach your assets
+   (the My Exposure lens — a reachability view, not a posture rung).
 
-2. **Identify gaps.** Look for red or dark cells on the matrix -- these techniques have low or no coverage. Enable "Dim uncovered" in the toolbar to fade techniques with zero mitigations, making gaps stand out.
+### Expected outputs
 
-3. **Use the unified heatmap.** Switch to "unified" heatmap mode for a composite view that blends coverage, detection, and exposure data into a single color scale.
-
-4. **Open the Analytics panel.** Click the **Analytics** item in the nav rail (under Analysis). This panel provides:
-   - Coverage distribution histogram
-   - Radar chart showing coverage dimensions (mitigations, detections, validation, controls, intelligence)
-   - Per-tactic coverage percentages
-   - Top covered and least covered techniques
-
-5. **Compare coverage over time.** Open the **Diff** panel from the nav rail (under Coverage). Select two saved timeline snapshots to see which techniques gained or lost coverage. Added mitigations appear in green; removed ones appear in red.
-
-6. **Save timeline snapshots.** Open the **Timeline** panel to save the current coverage state as a named snapshot. Snapshots are stored in localStorage and can be compared later using the Diff panel.
-
-7. **Prioritize remediation.** Open the **Priority** panel from the nav rail. This panel ranks techniques by their coverage gap severity, factoring in exposure (CVE/KEV/EPSS data), detection state, and control coverage.
-
-8. **Set a target profile.** Open the **Target** panel to define a target coverage profile. This establishes a goal state that the Priority panel uses for gap calculations.
-
-9. **Run What-If analysis.** Open the **What-If** panel to simulate the impact of implementing specific mitigations. Select mitigations to see how coverage scores would change if they were fully deployed.
-
-10. **Filter by implementation status.** Use the implementation status filter in the toolbar to show only techniques whose mitigations are in a specific state (implemented, in-progress, planned, not-started).
-
-### Expected Outputs
-
-- A clear picture of overall mitigation coverage and the most critical gaps
-- A radar chart showing coverage balance across dimensions
-- A prioritized remediation list ranked by risk and gap severity
-- A timeline-based coverage diff showing improvement or regression
-
-### Related Panels
-
-| Panel | Nav Rail ID | Purpose |
-|-------|------------|---------|
-| Analytics | `analytics` | Statistical coverage analysis and radar chart |
-| Priority | `priority` | Prioritized technique gap ranking |
-| What-If | `whatif` | Mitigation simulation |
-| Coverage Diff | `coverage-diff` | Compare two snapshots |
-| Timeline | `timeline` | Save and manage coverage snapshots |
-| Target | `target` | Target coverage profile |
-| Watchlist | `watchlist` | Track specific techniques |
-| Dashboard | `dashboard` | Summary statistics |
+- A coverage picture and prioritized remediation list, a target profile, what-if estimates,
+  and a timeline diff showing improvement or regression.
 
 ---
 
 ## 8. Reporting and Export
 
-**Purpose:** Produce deliverables for stakeholders, compliance audits, and integration with other security tools.
-
-### Overview
-
-The reporting workflow covers all export capabilities: CSV and XLSX spreadsheets, HTML reports with organization branding, PNG matrix screenshots, Navigator-compatible JSON layers, STIX bundles, and Sigma/YARA rule exports. The Report panel is the central hub for document generation.
-
-### Prerequisites
-
-- ATT&CK data loaded
-- Optional: Organization name configured in Settings > Organization
-- Optional: Filters and heatmap configured to scope the export
+**Purpose:** Produce deliverables for stakeholders, audits and interoperability with other
+tools.
 
 ### Steps
 
-1. **Open the Report panel.** Click the **Report** item in the nav rail (under Tools). This panel provides export options for all supported formats.
+1. **Open the Reports workspace** at `#/reports`. Tabs: Report Builder, IR Playbooks, Export
+   Hub.
+2. **Build a report.** **Reports > Report Builder** (`#/reports/builder`) assembles the
+   mitigation report (executive summary, coverage framed as Known/Theoretical with no claim
+   about your environment); use **⚙ Sections** to choose sections, **⬇ Export CSV**, or **🖨
+   Print / Save PDF**.
+3. **Use the Export Hub.** **Reports > Export Hub** (`#/reports/exports`) collects the
+   exports in six groups: Coverage Data (Coverage CSV, Tactic Summary, Implementation Plan,
+   Excel Workbook), Reports (Full Report, HTML Report, PDF Report, Print Matrix, Matrix
+   PNG), ATT&CK Navigator (Export, Open in, Import), Workspace State (Export/Import State),
+   Saved Layers, and Full Workspace Backup (Export/Import Workspace).
+4. **Produce IR playbooks.** **Reports > IR Playbooks** (`#/reports/playbooks`) builds
+   incident-response playbooks.
+5. **Share STIX and layers.** STIX 2.1 bundle import/export is in **Library > Collections**
+   (`#/library/collections`); saved Navigator layers are in **Library > Layers**
+   (`#/library/layers`) and the Export Hub.
+6. **Export detection content** from its own Detect tab — Sigma (`#/detect/sigma`), SIEM
+   (`#/detect/siem`) and YARA/Suricata (`#/detect/yara`).
+7. **Share a view.** The Share button copies the current URL, which encodes the filter state
+   (lens, filters, selected groups/software/campaigns and more). The selected technique is
+   not in the Share link, but an incoming `tech=` parameter selects one.
 
-2. **Export to CSV.** Generate a comma-separated file of all techniques with their coverage scores, mitigation counts, implementation status, and CVE data. This is useful for spreadsheet analysis and importing into other tools.
+### Expected outputs
 
-3. **Export to XLSX.** Generate a formatted Excel workbook with multiple sheets covering techniques, mitigations, implementation status, and coverage statistics. The XLSX export includes conditional formatting.
-
-4. **Generate an HTML report.** Create a self-contained HTML report that includes:
-   - Organization name and generation date (from Settings)
-   - Executive summary with coverage statistics
-   - Technique-by-technique coverage detail
-   - Heatmap visualization
-   - Mitigation recommendations
-
-5. **Export as PNG.** Capture the current matrix view as a PNG image. The export respects the current heatmap mode, filters, and dim settings, producing an accurate visual snapshot.
-
-6. **Generate Navigator layers.** Open the **Layers** panel to create ATT&CK Navigator-compatible JSON layer files. These can be imported into the official MITRE ATT&CK Navigator or shared with other teams.
-
-7. **Create STIX bundles.** Export technique and mitigation data as STIX 2.1 bundles for interoperability with CTI platforms and threat intelligence sharing.
-
-8. **Export implementation status.** In Settings > Data, click "Export Implementation CSV" to export the current mitigation implementation status as a CSV file.
-
-9. **Export Sigma rules.** From the Sigma panel, export generated Sigma rules as YAML files for import into SIEM platforms.
-
-10. **Export YARA/Suricata rules.** From the YARA panel, export generated rules for file and network detection tooling.
-
-11. **Share via URL.** The application encodes the current filter state (heatmap mode, threat group filters, mitigation filters, search query, platform filter, and more) in the URL hash. Copy the URL to share a specific view with colleagues.
-
-### Expected Outputs
-
-- CSV/XLSX spreadsheets for data analysis and record-keeping
-- Branded HTML reports for management and compliance
-- PNG screenshots for presentations and documentation
-- Navigator JSON layers for tool interoperability
-- STIX bundles for CTI platform integration
-- Sigma/YARA rule files for security engineering
-
-### Related Panels
-
-| Panel | Nav Rail ID | Purpose |
-|-------|------------|---------|
-| Report | `report` | Central export hub |
-| Layers | `layers` | Navigator layer management |
-| Sigma | `sigma` | Sigma rule export |
-| SIEM | `siem` | SIEM query export |
-| YARA | `yara` | YARA/Suricata rule export |
-| Compare | `comparison` | Layer comparison and merge |
-| Settings | `settings` | Organization branding and data export |
-| Changelog | `changelog` | Track changes for audit trails |
+- CSV/XLSX spreadsheets, branded HTML and PDF reports, a matrix PNG, Navigator JSON layers,
+  STIX bundles, IR playbooks, and generated detection rules.
 
 ---
 
-## Cross-Workflow Reference
+## Reference
 
-### All Navigation Panels
+### Workspaces and tabs
 
-| Group | Panel | ID | Heatmap Modes |
-|-------|-------|----|---------------|
-| -- | Dashboard | `dashboard` | -- |
-| -- | Search | `search` | -- |
-| Threats | Threats | `threats` | -- |
-| Threats | Actors | `actor` | -- |
-| Threats | Actor Compare | `actor-compare` | -- |
-| Threats | Scenario | `scenario` | -- |
-| Threats | Campaigns | `campaign-timeline` | campaign |
-| Threats | Software | `software` | software |
-| Threats | Intelligence | `intelligence` | intelligence |
-| Analysis | Kill Chain | `killchain` | -- |
-| Analysis | Risk Matrix | `risk-matrix` | risk |
-| Analysis | Analytics | `analytics` | -- |
-| Analysis | Detection | `detection` | detection |
-| Analysis | Graph | `technique-graph` | -- |
-| Analysis | Data Sources | `datasources` | -- |
-| Analysis | CVE | `cve` | cve, kev, epss |
-| Coverage | Controls | `controls` | controls, d3fend, engage |
-| Coverage | Compliance | `compliance` | nist, cri, veris |
-| Coverage | Priority | `priority` | -- |
-| Coverage | What-If | `whatif` | -- |
-| Coverage | Timeline | `timeline` | -- |
-| Coverage | Coverage Diff | `coverage-diff` | -- |
-| Coverage | Target | `target` | -- |
-| Coverage | Watchlist | `watchlist` | -- |
-| Tools | Sigma | `sigma` | sigma |
-| Tools | SIEM | `siem` | elastic, splunk |
-| Tools | YARA | `yara` | -- |
-| Tools | Purple Team | `purple` | atomic |
-| Tools | Layers | `layers` | -- |
-| Tools | Compare | `comparison` | -- |
-| Tools | Custom Mitigations | `custom-mit` | -- |
-| Tools | Tags | `tags` | -- |
-| Tools | Roadmap | `roadmap` | -- |
-| Tools | Changelog | `changelog` | -- |
-| Tools | Report | `report` | -- |
-| Bottom | Settings | `settings` | -- |
+| Workspace | Route | Tabs |
+| :-- | :-- | :-- |
+| Matrix | `#/matrix` | none (the grid, lens picker, filters and sidebar) |
+| Exposure | `#/exposure` | CVE, Risk, Kill Chain, Graph, Gap Analysis, Priority, SSVC, Dossier, What-If, CTEM |
+| Intel | `#/intel` | Groups, Actors, Compare, Scenarios, Emulation, Campaigns, Software, Feeds |
+| Detect | `#/detect` | Detections, Sigma, SIEM, YARA, Validation, Data Sources, Purple Team |
+| Coverage | `#/coverage` | Assessment, Controls, Custom Mitigations, Compliance, Diff, Timeline, Target, Assets |
+| Dashboard | `#/dashboard` | Overview, Analytics |
+| Reports | `#/reports` | Report Builder, IR Playbooks, Export Hub |
+| Library | `#/library` | Workbench, Layers, Collections, Comparison, Roadmap, Watchlist, Tags |
+| Status | `#/status` | none (source health and data freshness) |
+| Settings | `#/settings` | Preferences, Changelog |
 
-### All Heatmap Modes
+This table and the tab paths are derived from the routes; the authoritative count of
+workspaces and tabs is in [docs/FACTS.md](docs/FACTS.md).
 
-| Mode | Description |
-|------|-------------|
-| `coverage` | Weighted mitigation coverage score |
-| `exposure` | Vulnerability exposure composite |
-| `status` | Implementation status of mitigations |
-| `controls` | Control mapping density |
-| `software` | Software/malware usage frequency |
-| `campaign` | Campaign association count |
-| `risk` | Composite risk score |
-| `kev` | CISA Known Exploited Vulnerabilities |
-| `d3fend` | D3FEND countermeasure coverage |
-| `atomic` | Atomic Red Team test availability |
-| `engage` | MITRE Engage activity coverage |
-| `car` | MITRE CAR analytic coverage |
-| `cve` | CVE count per technique |
-| `detection` | Detection content available (Sigma, D3FEND, CAR and Atomic, weighted) |
-| `frequency` | Technique usage frequency across groups (default) |
-| `cri` | CRI Profile control coverage |
-| `unified` | Blended multi-factor heatmap |
-| `sigma` | Sigma rule count |
-| `nist` | NIST 800-53 control count |
-| `veris` | VERIS action category mapping |
-| `epss` | EPSS exploitation probability |
-| `elastic` | Elastic rules naming the technique (bundled snapshot at a pinned commit) |
-| `splunk` | Splunk detections naming the technique (bundled snapshot at a pinned commit) |
-| `intelligence` | Threat intelligence data density |
+### Lenses
 
-### Keyboard Shortcuts
+The lens button recolors the matrix. The 36 lenses, grouped into Threat Landscape,
+Vulnerabilities, Detections, Frameworks and Coverage & Posture, are documented in full —
+each with its score, rung and color ramp — in [docs/HEATMAPS.md](docs/HEATMAPS.md). The
+default is the Frequency (Prevalence) lens.
 
-| Shortcut | Action |
-|----------|--------|
-| `/` or `Ctrl+K` | Focus search bar |
-| `Esc` | Close sidebar or active panel |
-| `D` | Toggle dim uncovered |
-| `?` | Show keyboard help |
+### Keyboard shortcuts
 
-### URL State Parameters
+Press `?` in the app for the full list. Common ones: `Ctrl+K` (command palette), `Ctrl+F`
+(focus the matrix search), `Ctrl+E` (expand all sub-techniques), `m` (go to the Matrix),
+`c` (clear filters), `Esc` (close the palette/help, otherwise deselect).
 
-The current filter state is encoded in the URL hash for sharing:
+### URL state
 
-| Parameter | Description |
-|-----------|-------------|
-| `mit` | Active mitigation filter ATT&CK IDs |
-| `tq` | Technique search query |
-| `pf` | Platform filter |
-| `plat` | Multi-platform filter |
-| `dim` | Dim uncovered flag (1/0) |
-| `sfm` | Search filter mode (1/0) |
-| `ds` | Data source filter |
-| `heat` | Heatmap mode |
-| `impl` | Implementation status filter |
-| `scope` | Search scope (name/full) |
-| `tsearch` | Technique search |
-| `grp` | Active threat group ATT&CK IDs |
-| `sw` | Active software ATT&CK IDs |
-| `camp` | Active campaign ATT&CK IDs |
+Filter state is encoded in the URL hash as router query params, e.g.
+`#/matrix?heat=sigma&grp=G0007`. The parameters are listed in
+[docs/CONFIGURATION.md](docs/CONFIGURATION.md#10-url-state).
