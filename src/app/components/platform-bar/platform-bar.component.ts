@@ -29,6 +29,12 @@ import { PlatformNav, ViewItem, visiblePlatformItems } from '../../models/platfo
 const OPEN_DELAY_MS = 0;
 const CLOSE_DELAY_MS = 220;
 
+// The leading "TeamStarWolf" wordmark before the Home item. The owner had the brand
+// removed from the front-page header, and whether the band carries it is still open with
+// the Website session; kept behind this one flag so it can go either way. The Home menu
+// item is always present as the way back regardless.
+const SHOW_WORDMARK = true;
+
 @Component({
   selector: 'app-platform-bar',
   standalone: true,
@@ -43,6 +49,8 @@ export class PlatformBarComponent {
   private readonly nav = navData as PlatformNav;
   /** The home brand target; the Home item in the menu is the always-present way back. */
   readonly home = this.nav.home;
+  /** Whether the band shows the leading "TeamStarWolf" wordmark (open point; see flag). */
+  readonly showWordmark = SHOW_WORDMARK;
   /** The menu, with pending entries removed and nesting capped at one level. */
   readonly items: ViewItem[] = visiblePlatformItems(this.nav);
 

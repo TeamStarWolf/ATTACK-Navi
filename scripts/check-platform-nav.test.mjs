@@ -2,7 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { checkPlatformNav, extractRailCatalog, collectPending } from './check-platform-nav.mjs';
+import { checkPlatformNav, extractRailCatalog, collectPending, hrefError } from './check-platform-nav.mjs';
 
 test('extractRailCatalog parses route and label in order', () => {
   const src = `
@@ -24,6 +24,21 @@ test('collectPending finds pending entries at both levels', () => {
     ],
   };
   assert.deepEqual(collectPending(nav), ['Home > B', 'Book > C > D']);
+});
+
+test('hrefError allows the known TeamStarWolf hosts and rejects others', () => {
+  // Allowed
+  assert.equal(hrefError('https://teamstarwolf.com/'), null);
+  assert.equal(hrefError('https://library.teamstarwolf.com/#/INDEX'), null);
+  assert.equal(hrefError('https://teamstarwolf.github.io/ATTACK-Navi/#/matrix'), null);
+  assert.equal(hrefError('https://github.com/TeamStarWolf'), null);
+  assert.equal(hrefError('https://github.com/TeamStarWolf/cybersecurity-resources/blob/main/LINKS.md#mitre'), null);
+  // Rejected: non-https
+  assert.match(hrefError('http://teamstarwolf.com/'), /not https/);
+  // Rejected: unknown host
+  assert.match(hrefError('https://evil.example.com/phish'), /host not allowed/);
+  // Rejected: github.com outside the org
+  assert.match(hrefError('https://github.com/SomeoneElse/repo'), /under \/TeamStarWolf/);
 });
 
 test('the real vendored menu passes every gate', () => {

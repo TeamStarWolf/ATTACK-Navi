@@ -27,6 +27,41 @@ const ASSET = 'src/assets/platform-nav.json';
 const RAIL = 'src/app/components/nav-rail/nav-rail.component.ts';
 const MODEL = 'src/app/models/platform-nav.ts';
 
+// Address allow-list: the sync workflow copies whatever the canonical URL serves, so the
+// offline check also bounds where every link may point. https only; host must be one of
+// these; a github.com link must be under the TeamStarWolf org.
+const ALLOWED_HOSTS = new Set(['teamstarwolf.com', 'library.teamstarwolf.com', 'teamstarwolf.github.io', 'github.com']);
+
+/** Returns an error string if an href is not an allowed address, else null. */
+export function hrefError(href) {
+  let u;
+  try {
+    u = new URL(href);
+  } catch {
+    return `not a valid URL: ${href}`;
+  }
+  if (u.protocol !== 'https:') return `not https: ${href}`;
+  if (!ALLOWED_HOSTS.has(u.hostname)) return `host not allowed (${u.hostname}): ${href}`;
+  if (u.hostname === 'github.com' && u.pathname !== '/TeamStarWolf' && !u.pathname.startsWith('/TeamStarWolf/')) {
+    return `github.com path must be /TeamStarWolf or under /TeamStarWolf/: ${href}`;
+  }
+  return null;
+}
+
+/** Every href in the menu, including `home`, in document order. */
+export function allHrefs(nav) {
+  const out = [];
+  if (nav.home?.href !== undefined) out.push(nav.home.href);
+  for (const item of nav.items ?? []) {
+    if (item.href !== undefined) out.push(item.href);
+    for (const entry of item.menu ?? []) {
+      if (entry.href !== undefined) out.push(entry.href);
+      for (const sub of entry.menu ?? []) if (sub.href !== undefined) out.push(sub.href);
+    }
+  }
+  return out;
+}
+
 /** Parse the nav rail's CATALOG into [{ route, label }] in file order. */
 export function extractRailCatalog(railSource) {
   const re = /'(\/[a-z0-9-]+)':\s*\{\s*route:\s*'\/[a-z0-9-]+',\s*icon:\s*'[^']*',\s*label:\s*'([^']+)'\s*\}/g;
@@ -115,6 +150,12 @@ export function checkPlatformNav(root = '.') {
   const model = readFileSync(abs(MODEL), 'utf8');
   if (!/pending\s*===\s*undefined/.test(model) || !/export function visiblePlatformItems/.test(model)) {
     errors.push(`${MODEL}: the pending-entry filter (visiblePlatformItems / pending === undefined) is missing`);
+  }
+
+  // 5. address allow-list: every href is https and points at a known TeamStarWolf host
+  for (const href of allHrefs(nav)) {
+    const e = hrefError(href);
+    if (e) errors.push(`${ASSET}: ${e}`);
   }
 
   const pending = collectPending(nav);

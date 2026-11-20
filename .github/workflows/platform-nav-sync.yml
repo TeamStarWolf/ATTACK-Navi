@@ -29,6 +29,9 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
 
       - name: Fetch the canonical menu and compare
         id: diff
@@ -49,6 +52,14 @@ jobs:
           fi
           rm -f canonical.json
 
+      # Gate the synced file IN THIS JOB, before the PR exists. A PR opened with the
+      # workflow token does not start pull_request workflows (GitHub blocks that loop),
+      # so running the check here is what stops a bad menu from producing a green-looking
+      # PR. A failure here fails the run and no PR is opened.
+      - name: Validate the synced menu
+        if: steps.diff.outputs.changed == 'yes'
+        run: node scripts/check-platform-nav.mjs
+
       - name: Open or update the drift pull request
         if: steps.diff.outputs.changed == 'yes'
         env:
@@ -61,16 +72,15 @@ jobs:
           git add -- "$TARGET"
           git commit -m "chore(data): sync src/assets/platform-nav.json with the canonical menu"
           git push --force-with-lease origin "$BRANCH"
-          cat > pr-body.md <<'BODY'
+          cat > pr-body.md <<BODY
           The canonical platform menu the front site publishes has changed; this syncs the
-          vendored copy `src/assets/platform-nav.json` to match it.
+          vendored copy \`src/assets/platform-nav.json\` to match it.
 
-          This PR's CI runs `check-platform-nav`: it fails if the new menu's ATT&CK-Navi
-          block no longer matches this app's nav-rail workspaces, or if a `pending` entry
-          would reach the template. If it fails, resolve the mismatch before merging rather
-          than overriding the check.
+          **\`check-platform-nav\` ran in ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} before this PR was opened** (ASCII/LF, one-level nesting, the 14-entry cap, the https host allow-list, and the ATT&CK-Navi block equal to the nav-rail catalog, with pending entries filtered). The run is green, or this PR would not exist.
 
-          Opened automatically by `.github/workflows/platform-nav-sync.yml`.
+          A PR opened with the workflow token does not start \`pull_request\` workflows, so no CI check is attached to this PR on its own. To run the full CI on it, \`gh workflow run ci.yml --ref ${BRANCH}\` or close and reopen the PR. Resolve any mismatch (for example the ATT&CK-Navi block diverging from this app's workspaces) before merging.
+
+          Opened automatically by \`.github/workflows/platform-nav-sync.yml\`.
           BODY
           EXISTING=$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[0].number // empty')
           if [ -n "$EXISTING" ]; then

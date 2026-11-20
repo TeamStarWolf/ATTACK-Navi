@@ -31,9 +31,8 @@ test.describe('platform bar', () => {
     await expect(flyout.locator('[data-flyitem]').first()).toBeVisible();
   });
 
-  // The chevron-button / touch-tap path is covered by the component unit spec: at desktop
-  // width Playwright always reports a fine pointer with hover, so a mouse move to the
-  // chevron opens the fly-out on hover before the click can be read as a tap.
+  // The touch path (coarse pointer, no hover) is in its own context below, where Chromium
+  // reports hover: none so the hover paths stay off and only the tap handlers run.
 
   test('the caret opens the menu for keyboard and ArrowRight enters a fly-out', async ({ page }) => {
     await page.getByRole('button', { name: 'Bookmarks menu' }).focus();
@@ -79,5 +78,36 @@ test.describe('platform bar', () => {
     await burger.click();
     await page.getByRole('button', { name: 'Bookmarks' }).click();
     await expect(page.locator('.tsw-bar__m-sub').first()).toBeVisible();
+  });
+});
+
+// A coarse-pointer context at desktop width: Chromium then reports `(hover: none)`, so the
+// component's hover paths stay off and the menu is carried entirely by taps (Chromium only).
+test.describe('platform bar — touch at desktop width', () => {
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 1024, height: 768 } });
+
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('onboarding-completed', '1'));
+    await page.goto('/#/matrix');
+    await expect(page.locator('nav.tsw-bar')).toBeVisible();
+  });
+
+  test('taps carry the menu: button opens it, chevron opens a fly-out, label navigates', async ({ page }) => {
+    // Tap the top-level button → the menu opens.
+    await page.getByRole('button', { name: 'Bookmarks menu' }).tap();
+    await expect(page.locator('#tsw-panel-bookmarks')).toBeVisible();
+
+    // Tap a category chevron → its fly-out opens (hover did not already open it).
+    await page.getByRole('button', { name: 'Vulnerability management submenu' }).tap();
+    await expect(page.locator('#tsw-flyout-bookmarks-1')).toBeVisible();
+
+    // Tap a category label → it follows its link (stub the destination so we stay local).
+    await page.route('**/LINKS.md**', (r) =>
+      r.fulfill({ contentType: 'text/html', body: '<!doctype html><title>links</title>' }),
+    );
+    await Promise.all([
+      page.waitForURL('**/LINKS.md**'),
+      page.locator('#tsw-panel-bookmarks .tsw-bar__entry-label').first().tap(),
+    ]);
   });
 });

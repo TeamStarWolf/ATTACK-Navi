@@ -2,8 +2,11 @@
      https://github.com/TeamStarWolf/ATTACK-Navi - MIT License -->
 <nav class="tsw-bar" aria-label="TeamStarWolf platform">
 
-  <!-- Always-present way back to the front page -->
-  <a class="tsw-bar__home" [href]="home.href">{{ home.label }}</a>
+  <!-- Leading wordmark (behind a flag; open point). The Home menu item below is the
+       always-present way back regardless. -->
+  @if (showWordmark) {
+    <a class="tsw-bar__home" [href]="home.href">{{ home.label }}</a>
+  }
 
   <!-- Desktop: a row of links; each opens a panel on hover (and from its caret for keyboard/click) -->
   <ul class="tsw-bar__row" role="list">
