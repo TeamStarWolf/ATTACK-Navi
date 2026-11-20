@@ -13,6 +13,7 @@ import { ViewpointService } from './services/viewpoint.service';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
 import { ToolbarComponent } from './components/toolbar/toolbar.component';
 import { BriefingStripComponent } from './components/briefing-strip/briefing-strip.component';
+import { PlatformBarComponent } from './components/platform-bar/platform-bar.component';
 import { GapViewComponent } from './components/gap-view/gap-view.component';
 import { KeyboardHelpComponent } from './components/keyboard-help/keyboard-help.component';
 import { NavRailComponent } from './components/nav-rail/nav-rail.component';
@@ -42,7 +43,7 @@ export function isTechniquePageUrl(url: string): boolean {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, SidebarComponent, ToolbarComponent, BriefingStripComponent, GapViewComponent, KeyboardHelpComponent, NavRailComponent, OnboardingComponent, UniversalSearchComponent, PaletteWarmupComponent, DrawerWarmupComponent],
+  imports: [RouterOutlet, SidebarComponent, ToolbarComponent, BriefingStripComponent, PlatformBarComponent, GapViewComponent, KeyboardHelpComponent, NavRailComponent, OnboardingComponent, UniversalSearchComponent, PaletteWarmupComponent, DrawerWarmupComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',

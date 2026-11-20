@@ -1,0 +1,291 @@
+// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+// https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
+//
+// Every value the Website session's visual contract fixes is held here once, as a
+// token, dark by default and overridden for light mode. Flat tokens only, no glass.
+// Provisional until the owner approves the look — change a value in one place.
+
+:host {
+  // --- band ---
+  --tsw-band-h: 44px;
+  --tsw-bg: #11111c;
+  --tsw-border: #22223a;
+  // --- top-level link + caret ---
+  --tsw-link: #c4c2d6;
+  --tsw-link-hover: #ecebf5;
+  --tsw-caret: #8f8da6;
+  // --- panel ---
+  --tsw-panel-border: #30304a;
+  --tsw-panel-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+  --tsw-hover-bg: #181827;
+  --tsw-sub: #8f8da6;
+  // The main panel must not clip (the fly-out escapes it), so this is left open for now.
+  // The Website session is fixing what replaces a scroll cap for a very tall panel.
+  --tsw-panel-max-h: none;
+  // --- focus ---
+  --tsw-focus: #b794ff;
+
+  display: block;
+  position: relative;
+  z-index: 60;
+}
+
+:host-context(body.light-mode) {
+  --tsw-bg: #ffffff;
+  --tsw-border: #d8d5e6;
+  --tsw-link: #302c3f;
+  --tsw-link-hover: #15131f;
+  --tsw-caret: #5c5872;
+  --tsw-panel-border: #bfbbd3;
+  --tsw-panel-shadow: 0 10px 28px rgba(21, 19, 31, 0.14);
+  --tsw-hover-bg: #e9e7f3;
+  --tsw-sub: #5c5872;
+  --tsw-focus: #5b21b6;
+}
+
+.tsw-bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: var(--tsw-band-h);
+  padding: 0 12px;
+  background: var(--tsw-bg);
+  border-bottom: 1px solid var(--tsw-border);
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: var(--tsw-link);
+}
+
+// Shared focus ring: 2px solid, 2px offset.
+.tsw-bar :is(a, button):focus-visible {
+  outline: 2px solid var(--tsw-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+// Colour/background transitions on links and buttons; off under reduced motion.
+// (The hover close delay is timing, not motion, so it is handled in the component and
+// stays regardless.)
+.tsw-bar :is(a, button) { transition: color 0.12s ease, background-color 0.12s ease; }
+@media (prefers-reduced-motion: reduce) {
+  .tsw-bar :is(a, button) { transition: none; }
+}
+
+.tsw-bar__home {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px 0 2px;
+  margin-right: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tsw-link-hover);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+// --- Desktop row ---
+.tsw-bar__row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tsw-bar__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.tsw-bar__link {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 6px 0 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--tsw-link);
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover { color: var(--tsw-link-hover); }
+}
+
+.tsw-bar__caret {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  width: 22px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--tsw-caret);
+  cursor: pointer;
+
+  &:hover,
+  &[aria-expanded='true'] { color: var(--tsw-link-hover); }
+}
+
+// --- Panels (main + fly-out share one look) ---
+%tsw-panel {
+  position: absolute;
+  z-index: 500;
+  min-width: 232px;
+  padding: 6px;
+  background: var(--tsw-bg);
+  border: 1px solid var(--tsw-panel-border);
+  border-radius: 10px;
+  box-shadow: var(--tsw-panel-shadow);
+}
+
+.tsw-bar__panel {
+  @extend %tsw-panel;
+  top: calc(100% + 4px);
+  left: 0;
+  // Must not clip: the fly-out escapes to the side.
+  overflow: visible;
+  max-height: var(--tsw-panel-max-h);
+}
+
+.tsw-bar__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tsw-bar__entry { position: relative; }
+
+.tsw-bar__menu-link {
+  display: block;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--tsw-link);
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover { background: var(--tsw-hover-bg); color: var(--tsw-link-hover); }
+}
+
+// An entry that opens a fly-out: label (a real link) left, chevron button right.
+.tsw-bar__entry-row {
+  display: flex;
+  align-items: center;
+
+  .tsw-bar__entry-label { flex: 1 1 auto; }
+
+  &.is-open .tsw-bar__entry-label { background: var(--tsw-hover-bg); color: var(--tsw-link-hover); }
+}
+
+.tsw-bar__fly-caret {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  height: 28px;
+  width: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--tsw-caret);
+  cursor: pointer;
+
+  .tsw-bar__fly-chevron { flex-shrink: 0; }
+  &:hover,
+  &[aria-expanded='true'] { background: var(--tsw-hover-bg); color: var(--tsw-link-hover); }
+}
+
+// Fly-out: a panel to the side, same look as the main panel.
+.tsw-bar__flyout {
+  @extend %tsw-panel;
+  top: -7px; // line up with the parent panel's padding box
+  left: calc(100% + 2px);
+
+  &.tsw-bar__flyout--left {
+    left: auto;
+    right: calc(100% + 2px);
+  }
+}
+
+// --- Mobile ---
+.tsw-bar__burger {
+  display: none;
+  margin-left: auto;
+  height: 32px;
+  width: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: var(--tsw-link);
+  cursor: pointer;
+
+  &:hover { color: var(--tsw-link-hover); }
+}
+
+.tsw-bar__mobile {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 500;
+  max-height: min(80vh, 70vh);
+  overflow-y: auto;
+  padding: 6px;
+  background: var(--tsw-bg);
+  border-bottom: 1px solid var(--tsw-panel-border);
+  box-shadow: var(--tsw-panel-shadow);
+
+  ul { margin: 0; padding: 0; list-style: none; }
+}
+
+.tsw-bar__m-head {
+  display: flex;
+  align-items: center;
+
+  .tsw-bar__m-top { flex: 1 1 auto; padding: 10px 14px; font-size: 14px; }
+}
+
+.tsw-bar__m-caret {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 42px;
+  width: 44px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--tsw-caret);
+  cursor: pointer;
+
+  &:hover,
+  &[aria-expanded='true'] { color: var(--tsw-link-hover); }
+}
+
+.tsw-bar__m-list { padding-bottom: 6px; }
+
+.tsw-bar__m-link {
+  display: block;
+  padding: 8px 14px;
+  font-size: 13px;
+  color: var(--tsw-link);
+  text-decoration: none;
+  border-radius: 6px;
+
+  &:hover { background: var(--tsw-hover-bg); color: var(--tsw-link-hover); }
+}
+
+.tsw-bar__m-top { font-weight: 500; }
+// Mobile keeps sub-entries inline: 12px, indented.
+.tsw-bar__m-sub { padding-left: 28px; font-size: 12px; color: var(--tsw-sub); }
+
+// Under 760px: hide the row, show the menu button + accordion.
+@media (max-width: 759.98px) {
+  .tsw-bar__row { display: none; }
+  .tsw-bar__burger { display: inline-flex; }
+}
