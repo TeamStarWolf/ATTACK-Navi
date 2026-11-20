@@ -300,7 +300,7 @@ private persist(): void {
 
 ## 4. Adding a New Heatmap Mode
 
-Heatmap modes color the matrix cells based on different data dimensions. The pipeline involves seven steps across four files.
+Heatmap modes color the matrix cells based on different data dimensions. The pipeline is the seven steps below; the lens picker populates itself from the registry, so the edits land in a few files. ([AGENTS.md](AGENTS.md) has the authoritative "adding a heatmap mode" checklist.)
 
 ### Step 1: Add the Mode to the HeatmapMode Type
 
@@ -331,11 +331,12 @@ Inject your service in the component's constructor.
 
 The matrix maps numeric scores to colors using the active color theme. Ensure your score returns a value in the expected range (typically 0 to N where higher means more coverage).
 
-### Step 4: Add the Mode to the Toolbar Selector
+### Step 4: (the picker populates itself)
 
-**File:** `src/app/components/toolbar/toolbar.component.ts` (or `.html`)
-
-Add an option to the heatmap mode dropdown so users can select your mode from the toolbar.
+The lens picker is rendered from the `HEATMAP_MODES` registry by
+`src/app/pages/matrix/matrix-controls.component.ts`, so your mode appears automatically once
+Step 5 adds it — there is no toolbar dropdown to edit. (The heatmap picker moved out of the
+toolbar into `MatrixControlsComponent`; `toolbar.component.ts` no longer owns it.)
 
 ### Step 5: Update the Legend
 
@@ -351,7 +352,7 @@ Update the tooltip to show your mode's value when hovering over a cell.
 
 ### Step 7: Test
 
-1. Select your heatmap mode from the toolbar dropdown.
+1. Select your heatmap mode from the lens picker in the matrix controls.
 2. Verify the matrix colors update correctly.
 3. Verify the legend shows the correct label.
 4. Verify tooltips display the data.

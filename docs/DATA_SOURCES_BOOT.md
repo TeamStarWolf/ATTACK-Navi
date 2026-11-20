@@ -78,7 +78,7 @@ above), leaving 3.
 - **Live ATT&CK** — `mitre-attack/attack-stix-data/master/enterprise-attack/enterprise-attack.json` (the v20.0 STIX; cached on revisit)
 - **CTID mappings-explorer** (`main`) — `nist_800_53`, `aws`, `azure`, `gcp`, `veris`, `cri_profile` (all `attack-16.1`), `csa_ccm` (`attack-17.1`), `m365` (`attack-16.1`), and the runtime-resolved `kev/attack-16.1/kev-07.28.2025/enterprise/…json`
 - **ATT&CK→CVE** — `center-for-threat-informed-defense/attack_to_cve/master/Att%26ckToCveMappings.csv`
-- **CVE2CAPEC** (`Galeax/CVE2CAPEC/main/database`) — `CVE-2026.jsonl.gz` and `CVE-2025.jsonl.gz`
+- **CVE2CAPEC** (`Galeax/CVE2CAPEC/main/database`) — `CVE-2026.jsonl.gz` and `CVE-2025.jsonl.gz` — _on-demand, not boot:_ `cve2capec.service.ts` `loadOnDemand()` fetches these only when a CVE or kill-chain view first opens, so the boot count above overstates `raw.githubusercontent.com` by these two
 - **CISA KEV** — `cisagov/kev-data/develop/known_exploited_vulnerabilities.json`
 - **CAPEC** — `mitre/cti/master/capec/2.1/stix-capec.json`
 - **MITRE Engage** (`mitre/engage/main/Data/json`) — `activities.json`, `approach_activity_mappings.json`, `attack_mapping.json`, `goal_approach_mappings.json`, `goals.json`
@@ -106,13 +106,15 @@ normal navigation:
   because the boot KEV load had failed — in `default.json`, `#/exposure` makes **0** external requests;
 - the `www.cisa.gov` hit is the same fallback, during **boot**.
 
-## Mode is not persisted
+## Mode is persisted; the default is the pinned bundle
 
-`DataService.mode` is `'live'` at `data.service.ts:102` with **no storage key**, so the
-choice resets to live every load and cannot be preset — the capture toggled it in the
-toolbar after boot. **E1.4 (defaulting to bundled) will not, on its own, make boot
-clean**: the live-ATT&CK, CTID, enrichment and detection layers fetch on boot in both
-modes. Making cold boot quiet is Phase-3 pinning work, not a mode default.
+`DataService.mode` defaults to `'bundled'` (`data.service.ts:147`) and follows the
+persisted user setting `AppSettings.attackDataMode` (Settings > Data), so a chosen mode
+survives a reload. In the default **bundled** mode the pinned `enterprise-attack.json`
+loads and the live STIX is fetched only by a 'Check for ATT&CK update' click; **live**
+mode also runs an update check on load. The mode changes only the ATT&CK STIX source —
+the CTID, enrichment and detection layers fetch on boot in either mode, so making cold
+boot quiet is Phase-3 pinning work, not a mode default.
 
 ## Phase-3 pinning notes
 

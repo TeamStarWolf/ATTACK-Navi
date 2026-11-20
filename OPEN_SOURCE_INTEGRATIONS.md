@@ -1,5 +1,7 @@
 # Open Source Integrations
 
+> **Planning aid, not a status board (as of 2026-11-20).** This is a recommendation survey; several of the integrations below have since shipped — Sigma, Atomic Red Team, CISA KEV, NVD, MISP, OpenCTI, Zeek/Suricata, YARA and D3FEND are all in the app today. Check `main` (`src/app/models/heatmap-modes.ts`, the services under `src/app/services/`, and `CHANGELOG.md`) before treating any item here as not-yet-done.
+
 ## Goal
 
 The app already has strong ATT&CK coverage, but the next major jump in usefulness should come from integrating open-source cyber tools and datasets that make the matrix more operational.
