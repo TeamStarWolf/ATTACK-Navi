@@ -246,17 +246,25 @@
 .tsw-bar__m-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 10px 12px;
+
+  .tsw-bar__m-top { flex: 1 1 auto; padding: 10px 14px; font-size: 14px; }
+}
+
+.tsw-bar__m-caret {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 42px;
+  width: 44px;
   border: 0;
+  border-radius: 6px;
   background: transparent;
-  color: var(--tsw-link);
-  font-size: 14px;
-  font-weight: 500;
+  color: var(--tsw-caret);
   cursor: pointer;
 
-  &:hover { color: var(--tsw-link-hover); }
+  &:hover,
+  &[aria-expanded='true'] { color: var(--tsw-link-hover); }
 }
 
 .tsw-bar__m-list { padding-bottom: 6px; }

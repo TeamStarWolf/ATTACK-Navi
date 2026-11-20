@@ -108,32 +108,33 @@
       <ul role="list">
         @for (item of items; track item.id) {
           <li class="tsw-bar__m-item">
-            @if (item.entries.length) {
-              <button
-                type="button"
-                class="tsw-bar__m-head"
-                [attr.aria-expanded]="mobileSection() === item.id"
-                [attr.aria-controls]="mobileSectionId(item.id)"
-                (click)="toggleSection(item.id)"
-              >
-                <span>{{ item.label }}</span>
-                <app-icon [name]="mobileSection() === item.id ? 'chevron-down' : 'chevron-right'" [size]="16" aria-hidden="true" />
-              </button>
-              @if (mobileSection() === item.id) {
-                <ul class="tsw-bar__m-list" role="list" [id]="mobileSectionId(item.id)">
-                  <li><a class="tsw-bar__m-link tsw-bar__m-top" [href]="item.href">Open {{ item.label }}</a></li>
-                  @for (entry of item.entries; track entry.href) {
-                    <li>
-                      <a class="tsw-bar__m-link" [href]="entry.href">{{ entry.label }}</a>
-                      @for (sub of entry.children; track sub.href) {
-                        <a class="tsw-bar__m-link tsw-bar__m-sub" [href]="sub.href">{{ sub.label }}</a>
-                      }
-                    </li>
-                  }
-                </ul>
-              }
-            } @else {
+            <!-- Same rule as desktop: the label is a real link; a caret button opens the section. -->
+            <div class="tsw-bar__m-head">
               <a class="tsw-bar__m-link tsw-bar__m-top" [href]="item.href">{{ item.label }}</a>
+              @if (item.entries.length) {
+                <button
+                  type="button"
+                  class="tsw-bar__m-caret"
+                  [attr.aria-label]="item.label + ' section'"
+                  [attr.aria-expanded]="mobileSection() === item.id"
+                  [attr.aria-controls]="mobileSectionId(item.id)"
+                  (click)="toggleSection(item.id)"
+                >
+                  <app-icon [name]="mobileSection() === item.id ? 'chevron-down' : 'chevron-right'" [size]="18" aria-hidden="true" />
+                </button>
+              }
+            </div>
+            @if (item.entries.length && mobileSection() === item.id) {
+              <ul class="tsw-bar__m-list" role="list" [id]="mobileSectionId(item.id)">
+                @for (entry of item.entries; track entry.href) {
+                  <li>
+                    <a class="tsw-bar__m-link" [href]="entry.href">{{ entry.label }}</a>
+                    @for (sub of entry.children; track sub.href) {
+                      <a class="tsw-bar__m-link tsw-bar__m-sub" [href]="sub.href">{{ sub.label }}</a>
+                    }
+                  </li>
+                }
+              </ul>
             }
           </li>
         }

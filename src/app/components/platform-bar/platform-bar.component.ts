@@ -29,11 +29,11 @@ import { PlatformNav, ViewItem, visiblePlatformItems } from '../../models/platfo
 const OPEN_DELAY_MS = 0;
 const CLOSE_DELAY_MS = 220;
 
-// The leading "TeamStarWolf" wordmark before the Home item. The owner had the brand
-// removed from the front-page header, and whether the band carries it is still open with
-// the Website session; kept behind this one flag so it can go either way. The Home menu
-// item is always present as the way back regardless.
-const SHOW_WORDMARK = true;
+// The leading "TeamStarWolf" wordmark before the Home item. Off for now to match the
+// reference band (which starts at Home) and the owner's removal of the brand from the
+// front-page header; the owner has not settled it, so the flag stays. The Home menu item
+// is always present as the way back regardless.
+const SHOW_WORDMARK = false;
 
 @Component({
   selector: 'app-platform-bar',

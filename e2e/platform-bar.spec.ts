@@ -71,13 +71,17 @@ test.describe('platform bar', () => {
     await expect(page.locator('nav.tsw-bar .brand-link')).toHaveCount(0);
   });
 
-  test('under 760px the menu button opens an inline accordion', async ({ page }) => {
+  test('under 760px the menu button opens an inline accordion (label link + caret)', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 800 });
     const burger = page.getByRole('button', { name: 'Open platform menu' });
     await expect(burger).toBeVisible();
     await burger.click();
-    await page.getByRole('button', { name: 'Bookmarks' }).click();
+    // The section header is the plain label as a real link, plus a caret button to expand.
+    await expect(page.getByRole('link', { name: 'Bookmarks', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Bookmarks section' }).click();
     await expect(page.locator('.tsw-bar__m-sub').first()).toBeVisible();
+    // No "Open X" row.
+    await expect(page.locator('#tsw-bar-mobile')).not.toContainText('Open Bookmarks');
   });
 });
 
