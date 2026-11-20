@@ -403,7 +403,7 @@ The app encodes the current filter configuration in the URL hash fragment. This 
 3. Only non-default values are written, to keep URLs short. The default heatmap mode (`frequency`) and the default search scope (`name`) are omitted.
 4. On load, the app reads the query params once and restores the state.
 
-The Share button copies the current URL. It does not include the selected technique, but an incoming link with a `tech=` parameter, such as `#/matrix?tech=T1059`, selects that technique.
+The Share button copies the current URL. When a technique is open, the URL includes it as a `tech=` parameter (e.g. `#/matrix?tech=T1059`), so the copied link reopens that technique; an incoming `tech=` link likewise selects the technique.
 
 ### Supported Parameters
 

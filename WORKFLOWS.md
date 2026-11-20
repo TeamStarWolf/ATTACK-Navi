@@ -22,8 +22,10 @@ sidebar** (its jump index groups the sections into Technique, Threat Intel, Vuln
 Compliance, Detections, Offense & Hunting and Workspace), from any workspace.
 
 **Lenses.** The matrix toolbar has a lens button that shows the active lens's short label
-(the default lens is **Frequency**, framed as adversary prevalence) and opens a menu to
-recolor the matrix. With no viewpoint set the menu groups are Threat Landscape,
+and opens a menu to recolor the matrix. On a fresh browser the default lens is **Frequency**
+(framed as adversary prevalence); once you record posture data it becomes the **Posture**
+lens on the next load, and a `heat=` value in the URL always wins. With the default Analyst
+viewpoint the menu groups are Threat Landscape,
 Vulnerabilities, Detections, Frameworks and Coverage & Posture; the complete list of all 36
 lenses, their scores and rungs is in [docs/HEATMAPS.md](docs/HEATMAPS.md) (and the
 authoritative count is the Heatmap modes row of [docs/FACTS.md](docs/FACTS.md)). Every lens
@@ -269,7 +271,7 @@ track change over time and prioritize remediation.
 3. **Analyze.** **Dashboard > Analytics** (`#/dashboard/analytics`) gives coverage
    distribution, a radar chart across dimensions, and per-tactic percentages;
    **Dashboard > Overview** (`#/dashboard/overview`) summarizes.
-4. **Prioritize and target.** **Coverage > Priority** (`#/coverage/priority`) ranks gaps by
+4. **Prioritize and target.** **Exposure > Priority** (`#/exposure/priority`) ranks gaps by
    severity; **Coverage > Target** (`#/coverage/target`) defines a target profile the
    priority ranking measures against.
 5. **Model changes.** **Exposure > What-If** (`#/exposure/what-if`) simulates the effect of
@@ -314,8 +316,9 @@ tools.
 6. **Export detection content** from its own Detect tab — Sigma (`#/detect/sigma`), SIEM
    (`#/detect/siem`) and YARA/Suricata (`#/detect/yara`).
 7. **Share a view.** The Share button copies the current URL, which encodes the filter state
-   (lens, filters, selected groups/software/campaigns and more). The selected technique is
-   not in the Share link, but an incoming `tech=` parameter selects one.
+   (lens, filters, selected groups/software/campaigns and more). If a technique is open, the
+   link includes it as a `tech=` parameter (e.g. `#/matrix?tech=T1589`), so the recipient
+   opens the same technique.
 
 ### Expected outputs
 
@@ -349,7 +352,8 @@ workspaces and tabs is in [docs/FACTS.md](docs/FACTS.md).
 The lens button recolors the matrix. The 36 lenses, grouped into Threat Landscape,
 Vulnerabilities, Detections, Frameworks and Coverage & Posture, are documented in full —
 each with its score, rung and color ramp — in [docs/HEATMAPS.md](docs/HEATMAPS.md). The
-default is the Frequency (Prevalence) lens.
+default is the **Frequency** lens on a fresh browser (the **Posture** lens once you have
+recorded posture data); a `heat=` value in the URL overrides it.
 
 ### Keyboard shortcuts
 
