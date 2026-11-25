@@ -17,11 +17,36 @@ function externalLeaves(nodes: ViewNode[]): ViewNode[] {
 }
 
 describe('platform-nav model', () => {
-  it('drops every pending entry from the visible menu', () => {
-    const held = pendingLabels(NAV);
-    expect(held.length).toBeGreaterThan(0); // the fixture has pending entries to filter
-    const visible = visiblePlatformItems(NAV).flatMap((i) => allLabels(i.entries));
+  // The real file may carry no pending entry (version 7 has none), so the filter is tested on a
+  // fixture, not the vendored file; a future entry may be pending again and must still be dropped.
+  it('drops every pending entry from the visible menu (filter tested on a fixture)', () => {
+    const fixture: PlatformNav = {
+      about: '', version: 7, home: { label: 'Home', href: 'https://teamstarwolf.com/' },
+      items: [
+        { id: 'x', label: 'X', href: 'https://teamstarwolf.com/', menu: [
+          { label: 'A', href: 'https://teamstarwolf.com/a' },
+          { label: 'B', href: 'https://teamstarwolf.com/b', pending: 'later',
+            menu: [{ label: 'C', href: 'https://teamstarwolf.com/c', pending: 'later' }] },
+        ] },
+      ],
+    };
+    const held = pendingLabels(fixture);
+    expect(held).toEqual(jasmine.arrayWithExactContents(['B', 'C']));
+    const visible = visiblePlatformItems(fixture).flatMap((i) => allLabels(i.entries));
     for (const label of held) expect(visible).not.toContain(label);
+  });
+
+  it('maps a top-level item with no menu, or an empty menu, to empty entries', () => {
+    const nav = {
+      about: '', version: 7, home: { label: 'H', href: 'https://teamstarwolf.com/' },
+      items: [
+        { id: 'a', label: 'A', href: 'https://teamstarwolf.com/' },            // no menu key
+        { id: 'b', label: 'B', href: 'https://teamstarwolf.com/', menu: [] },  // empty menu
+      ],
+    } as PlatformNav;
+    const items = visiblePlatformItems(nav);
+    expect(items[0].entries).toEqual([]);
+    expect(items[1].entries).toEqual([]);
   });
 
   it('nests two levels inside bookmarks and one level elsewhere', () => {
@@ -181,5 +206,72 @@ describe('PlatformBarComponent', () => {
     expect(sr?.textContent).toContain('opens in a new tab on an external site');
     // Accessible name ends with the note.
     expect((ext.textContent ?? '').trim().endsWith('(opens in a new tab on an external site)')).toBe(true);
+  });
+
+  it('renders a menu-less top-level item as a plain link: no caret, no panel, no aria', () => {
+    // A fresh fixture whose items are overridden BEFORE the first detectChanges, so the initial
+    // render uses a menu-less Home (no entries) alongside an item that has a menu. (Reassigning
+    // items on an already-rendered OnPush view would not re-render.)
+    const f = TestBed.createComponent(PlatformBarComponent);
+    (f.componentInstance as unknown as { items: unknown }).items = [
+      { id: 'plainhome', label: 'Home', href: 'https://teamstarwolf.com/', entries: [] },
+      { id: 'menulib', label: 'Library', href: 'https://library.teamstarwolf.com/', entries: [
+        { label: 'Index', href: 'https://library.teamstarwolf.com/#/INDEX', external: false, children: [] },
+      ] },
+    ];
+    f.detectChanges();
+    const liList = Array.from(f.nativeElement.querySelectorAll('.tsw-bar__item')) as HTMLElement[];
+    const homeLi = liList.find((li) => li.querySelector('.tsw-bar__link')?.textContent?.trim() === 'Home')!;
+    const libLi = liList.find((li) => li.querySelector('.tsw-bar__link')?.textContent?.trim() === 'Library')!;
+    const homeLink = homeLi.querySelector('.tsw-bar__link') as HTMLAnchorElement;
+    expect(homeLink.tagName).toBe('A');
+    expect(homeLink.getAttribute('href')).toBe('https://teamstarwolf.com/');
+    // No caret button, no aria wiring, and opening it produces no panel.
+    expect(homeLi.querySelector('.tsw-bar__caret')).toBeNull();
+    expect(homeLink.getAttribute('aria-expanded')).toBeNull();
+    expect(homeLink.getAttribute('aria-controls')).toBeNull();
+    f.componentInstance.openMenu('plainhome');
+    f.detectChanges();
+    expect(f.componentInstance.openId()).toBeNull();
+    expect(f.nativeElement.querySelector('#tsw-panel-plainhome')).toBeNull();
+    // The item that does have a menu still gets its caret.
+    expect(libLi.querySelector('.tsw-bar__caret')).toBeTruthy();
+  });
+
+  it('a menu-less item closes any open menu on hover (openMenu) and on focus', () => {
+    // A real menu item (not Home), plus a menu-less Home prepended; no duplicate ids.
+    const withMenu = component.items.find((i) => i.id === 'bookmarks')!.id;
+    (component as unknown as { items: unknown }).items = [
+      { id: 'home', label: 'Home', href: 'https://teamstarwolf.com/', entries: [] },
+      ...component.items.filter((i) => i.id !== 'home'),
+    ];
+    component.openMenu(withMenu);
+    expect(component.openId()).toBe(withMenu);
+    component.openMenu('home'); // the hover path; a menu-less item just closes what is open
+    expect(component.openId()).toBeNull();
+
+    component.openMenu(withMenu);
+    expect(component.openId()).toBe(withMenu);
+    component.onLinkFocus('home'); // focusing Home closes the open menu
+    expect(component.openId()).toBeNull();
+  });
+
+  it('Escape pressed on an ancestor caret closes only the deepest level, not both', () => {
+    const bm = component.items.find((i) => i.id === 'bookmarks')!;
+    const catIdx = bm.entries.findIndex((c) => c.children.some((s) => s.children.length > 0));
+    const subIdx = bm.entries[catIdx].children.findIndex((s) => s.children.length > 0);
+    component.openMenu('bookmarks');
+    component.openFly([catIdx, subIdx]);
+    fixture.detectChanges();
+
+    // Press Escape ON the CATEGORY caret (an ancestor) while its subsection fly-out is still open;
+    // the event bubbles to the panel's keydown handler with the caret as its target.
+    const catCaret = fixture.nativeElement.querySelector(`[data-caretpath="${catIdx}"]`) as HTMLButtonElement;
+    catCaret.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fixture.detectChanges();
+
+    // Only the deepest (subsection) level closed; the category fly-out stays open.
+    expect(component.isFlyOpen([catIdx, subIdx])).toBe(false);
+    expect(component.isFlyOpen([catIdx])).toBe(true);
   });
 });
