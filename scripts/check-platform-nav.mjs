@@ -79,15 +79,36 @@ export function badHostLabels(host) {
 }
 
 /**
- * Returns an error string if an href is not an allowed INTERNAL address, else null.
- * Unchanged from version 5: every href that is not an external bookmarks leaf goes
- * through this exact rule.
+ * Scheme + raw-authority check, run on the RAW string before any URL parsing. The address
+ * must begin with exactly "https://", and the raw authority (up to the first / ? or #) must
+ * carry no userinfo (`@`), port or empty port (`:`), or percent-encoding (`%`). This catches
+ * forms the URL constructor silently normalises away and that `u.port` / `u.username` /
+ * `u.hostname` therefore miss: a default port (`:443`), an empty port (`:`), empty userinfo
+ * (`@`, `:@`), a percent-encoded host (`%6e`), and the one-slash `https:/host/...` that a
+ * browser on an https page reads as a RELATIVE path on the current site. Shared by both rules.
+ */
+export function schemeAuthorityError(href) {
+  if (typeof href !== 'string') return `not a string: ${String(href)}`;
+  if (!href.startsWith('https://')) return `not https: must begin with https:// — ${href}`;
+  const authority = href.slice(8).split(/[/?#]/)[0];
+  if (authority.includes('@')) return `credentials in address (no userinfo allowed): ${href}`;
+  if (authority.includes(':')) return `explicit port not allowed in authority: ${href}`;
+  if (authority.includes('%')) return `percent-encoded host not allowed in authority: ${href}`;
+  return null;
+}
+
+/**
+ * Returns an error string if an href is not an allowed INTERNAL address, else null. The
+ * four-host rule, now also gated by schemeAuthorityError on the raw string so the normalised
+ * forms (`:443`, `:`, `@`, one-slash) cannot slip past the parsed-URL checks.
  */
 export function hrefError(href) {
   if (typeof href !== 'string') return `not a string: ${String(href)}`;
   // A backslash anywhere is rejected: browsers treat "\" as "/" for special schemes, which
   // can rewrite the authority or path. The file must never carry one.
   if (href.includes('\\')) return `backslash in address: ${href}`;
+  const sa = schemeAuthorityError(href);
+  if (sa) return sa;
   let u;
   try {
     u = new URL(href);
@@ -126,6 +147,10 @@ export function hrefErrorExternal(href) {
   // No character above 0x7e anywhere. The file is ASCII, but a `\u` escape can still put a
   // non-ASCII character into the parsed string; reject it on the parsed value.
   if ([...href].some((ch) => ch.codePointAt(0) > 0x7e)) return `non-ASCII character in address: ${JSON.stringify(href)}`;
+  // Scheme + raw authority (https:// only; no userinfo, port or percent-encoding in the host),
+  // on the raw string before new URL normalises any of it away.
+  const sa = schemeAuthorityError(href);
+  if (sa) return sa;
   // Hosts a browser reads as an IP address. Checked on the RAW host (before new URL, which
   // normalises some shorthands and rejects others), so the rule holds across stacks that
   // parse differently: a real host ends in an alphabetic label, never one that is all digits
@@ -211,7 +236,12 @@ export function collectPending(nav) {
  */
 export function collectMenuErrors(nav) {
   const errors = [];
+  const seenIds = new Set();
   for (const item of nav.items ?? []) {
+    // Reject a duplicate item id — otherwise a second item could borrow the "bookmarks"
+    // allowances (two levels, external leaves) by reusing that id.
+    if (seenIds.has(item.id)) errors.push(`duplicate item id "${item.id}"`);
+    seenIds.add(item.id);
     const isBookmarks = item.id === 'bookmarks';
     const cap = isBookmarks ? BOOKMARKS_CAP : MENU_CAP;
     const maxDepth = isBookmarks ? 3 : 2; // the deepest level that may still hold entries

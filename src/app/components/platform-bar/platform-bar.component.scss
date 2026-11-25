@@ -1,9 +1,9 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 //
-// Every value the Website session's visual contract fixes is held here once, as a
-// token, dark by default and overridden for light mode. Flat tokens only, no glass.
-// Provisional until the owner approves the look — change a value in one place.
+// Every value the shared visual contract fixes is held here once, as a token, dark by default
+// and overridden for light mode. Flat tokens only, no glass. Provisional until the owner
+// approves the look — change a value in one place.
 
 :host {
   // --- band ---
@@ -18,10 +18,6 @@
   --tsw-panel-border: #30304a;
   --tsw-panel-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
   --tsw-hover-bg: #181827;
-  --tsw-sub: #8f8da6;
-  // The main panel must not clip (the fly-out escapes it), so this is left open for now.
-  // The Website session is fixing what replaces a scroll cap for a very tall panel.
-  --tsw-panel-max-h: none;
   // --- focus ---
   --tsw-focus: #b794ff;
 
@@ -39,7 +35,6 @@
   --tsw-panel-border: #bfbbd3;
   --tsw-panel-shadow: 0 10px 28px rgba(21, 19, 31, 0.14);
   --tsw-hover-bg: #e9e7f3;
-  --tsw-sub: #5c5872;
   --tsw-focus: #5b21b6;
 }
 
@@ -147,9 +142,9 @@
   @extend %tsw-panel;
   top: calc(100% + 4px);
   left: 0;
-  // Must not clip: the fly-out escapes to the side.
+  // A top-level panel never scrolls (overflow: auto would clip the fly-out that escapes to the
+  // side); a viewport too short for it switches to the compact accordion instead.
   overflow: visible;
-  max-height: var(--tsw-panel-max-h);
 }
 
 .tsw-bar__list {
@@ -262,7 +257,7 @@
   left: 0;
   right: 0;
   z-index: 500;
-  max-height: min(80vh, 70vh);
+  max-height: 70vh;
   overflow-y: auto;
   padding: 6px;
   background: var(--tsw-bg);

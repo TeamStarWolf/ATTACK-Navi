@@ -72,9 +72,17 @@ test('hrefError rejects traversal, backslash, port and host tricks', () => {
   // The real host is evil.example; caught as userinfo (which fires first) or a bad host.
   assert.match(hrefError('https://teamstarwolf.com@evil.example/'), /credentials|host not allowed/);
   assert.match(hrefError('https://github.com/TeamStarWolfX/repo'), /under \/TeamStarWolf/);
-  assert.match(hrefError('//teamstarwolf.com/'), /not a valid URL/);
+  assert.match(hrefError('//teamstarwolf.com/'), /not https/);
   // Userinfo that keeps an allowed host is still rejected.
   assert.match(hrefError('https://user@github.com/TeamStarWolf'), /credentials/);
+});
+
+test('hrefError rejects raw-string tricks the URL constructor normalises away', () => {
+  // One slash: a browser on an https page reads this as a relative path on the current site.
+  assert.match(hrefError('https:/teamstarwolf.com/x'), /not https/);
+  // A default port the URL constructor drops, and empty userinfo it accepts.
+  assert.match(hrefError('https://teamstarwolf.com:443/x'), /explicit port/);
+  assert.match(hrefError('https://@teamstarwolf.com/x'), /credentials/);
 });
 
 // ---- The outside-link rule (version 6; bookmarks external leaves only) ----
@@ -110,15 +118,27 @@ test('hrefErrorExternal rejects the hostile shapes', () => {
   // Encoded slash / backslash in the path.
   assert.match(hrefErrorExternal('https://nvd.nist.gov/a%2fb'), /encoded slash\/backslash/);
   assert.match(hrefErrorExternal('https://nvd.nist.gov/a%5cb'), /encoded slash\/backslash/);
-  // IP literal (v4 reads as an IP address via its all-digit final label; v6 as a literal host).
+  // IP literal (v4 reads as an IP address via its all-digit final label; a bracketed v6 literal
+  // carries colons, so the raw-authority check rejects it as a port — still rejected either way).
   assert.match(hrefErrorExternal('https://192.168.0.1/'), /IP address/);
-  assert.match(hrefErrorExternal('https://[2001:db8::1]/'), /IP literal/);
+  assert.match(hrefErrorExternal('https://[2001:db8::1]/'), /IP literal|explicit port/);
   // Single-label host (no dot).
   assert.match(hrefErrorExternal('https://localhost/'), /single-label host/);
   // Punycode.
   assert.match(hrefErrorExternal('https://xn--80ak6aa92e.com/'), /punycode/);
   // Over 512 characters.
   assert.match(hrefErrorExternal('https://nvd.nist.gov/' + 'a'.repeat(600)), /longer than 512/);
+});
+
+test('hrefErrorExternal checks the raw authority, not the normalised URL', () => {
+  // A default port URL drops, an empty port, empty userinfo, a percent-encoded host, and the
+  // one-slash form a browser reads as a relative path — all rejected on the raw string.
+  assert.match(hrefErrorExternal('https://nvd.nist.gov:443/x'), /explicit port/);
+  assert.match(hrefErrorExternal('https://nvd.nist.gov:/x'), /explicit port/);
+  assert.match(hrefErrorExternal('https://@nvd.nist.gov/x'), /credentials/);
+  assert.match(hrefErrorExternal('https://:@nvd.nist.gov/x'), /explicit port|credentials/);
+  assert.match(hrefErrorExternal('https://%6evd.nist.gov/x'), /percent-encoded host/);
+  assert.match(hrefErrorExternal('https:/nvd.nist.gov/a/../b'), /not https/);
 });
 
 test('hrefErrorExternal rejects hosts a browser reads as an IP address', () => {
@@ -206,6 +226,14 @@ test('collectMenuErrors enforces nesting depth per item', () => {
     ] },
   ] }] };
   assert.ok(collectMenuErrors(tooDeepMenu).some((e) => /nests deeper than allowed/.test(e)));
+});
+
+test('collectMenuErrors rejects a duplicate item id', () => {
+  const nav = { items: [
+    { id: 'bookmarks', label: 'Bookmarks', href: 'https://github.com/TeamStarWolf', menu: [] },
+    { id: 'bookmarks', label: 'Impostor', href: 'https://github.com/TeamStarWolf', menu: [{ label: 'X', href: 'https://nvd.nist.gov/', external: true }] },
+  ] };
+  assert.ok(collectMenuErrors(nav).some((e) => /duplicate item id/.test(e)));
 });
 
 test('collectMenuErrors enforces the per-list caps (16 bookmarks, 14 others)', () => {

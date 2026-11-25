@@ -72,6 +72,39 @@ test.describe('platform bar', () => {
     await expect(page.locator('#tsw-panel-bookmarks')).toBeVisible();
   });
 
+  test('Escape closes one open level per press from the carets, deepest first, focus following', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    // Open three levels by clicking each caret in place (focus lands on the caret, the way a real
+    // click leaves it; a programmatic click avoids the pointer move that would also hover-open).
+    const open = async (name: string) => {
+      await page.getByRole('button', { name }).evaluate((el: HTMLElement) => { el.focus(); el.click(); });
+    };
+    await open('Bookmarks menu');
+    await expect(page.locator('#tsw-panel-bookmarks')).toBeVisible();
+    await open('Vulnerability Management submenu');
+    await expect(page.locator('#tsw-flyout-bookmarks-1')).toBeVisible();
+    await open('CVE & Vuln Databases submenu');
+    await expect(page.locator('#tsw-flyout-bookmarks-1-0')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'CVE & Vuln Databases submenu' })).toBeFocused();
+
+    // Escape 1: only the deepest fly-out closes; the category and panel stay; focus stays on its caret.
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#tsw-flyout-bookmarks-1-0')).toBeHidden();
+    await expect(page.locator('#tsw-flyout-bookmarks-1')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'CVE & Vuln Databases submenu' })).toBeFocused();
+
+    // Escape 2: the category fly-out closes; the panel stays; focus returns to its caret.
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#tsw-flyout-bookmarks-1')).toBeHidden();
+    await expect(page.locator('#tsw-panel-bookmarks')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Vulnerability Management submenu' })).toBeFocused();
+
+    // Escape 3: the whole menu closes; focus returns to the top caret.
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#tsw-panel-bookmarks')).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Bookmarks menu' })).toBeFocused();
+  });
+
   test('a deep fly-out stays within the viewport at 1000x600 (no overflow above the top)', async ({ page }) => {
     await page.setViewportSize({ width: 1000, height: 600 });
     // Open bookmarks > a category with subsections > its longest subsection by HOVER (the

@@ -114,12 +114,6 @@ export class PlatformBarComponent {
     return path.every((v, i) => chain[i] === v);
   }
 
-  /** True when the node at `path` is the deepest open fly-out (its caret owns the tip). */
-  private isFlyTip(path: number[]): boolean {
-    const chain = this.flyPath();
-    return chain.length === path.length && path.every((v, i) => chain[i] === v);
-  }
-
   /** True when the compact (burger + accordion) layout is live — see COMPACT_MEDIA. */
   private compact(): boolean {
     return typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia(COMPACT_MEDIA).matches;
@@ -277,17 +271,26 @@ export class PlatformBarComponent {
   onLevelKeydown(event: KeyboardEvent, itemId: string, path: number[]): void {
     const containerId = path.length === 0 ? this.panelId(itemId) : this.flyoutId(itemId, path);
     switch (event.key) {
-      case 'Escape':
+      case 'Escape': {
         event.preventDefault();
         event.stopPropagation();
-        if (path.length === 0) {
+        // A caret sits in its PARENT's level, so closing "the level the focus is in" would shut
+        // the parent and everything under it. When focus is on a caret whose OWN fly-out is
+        // open, close just that fly-out (the deepest open level) and leave focus on the caret.
+        const active = document.activeElement as HTMLElement | null;
+        const cp = active?.getAttribute('data-caretpath')?.split('-').map(Number);
+        if (cp && this.isFlyOpen(cp)) {
+          this.flyPath.set(cp.slice(0, -1));
+        } else if (path.length === 0) {
           this.closeAll();
           this.focusEl(this.caretId(itemId));
         } else {
+          // Focus is inside the list: close this list and return to the caret that owns it.
           this.flyPath.set(path.slice(0, -1));
-          this.focusChildCaret(itemId, path); // the caret that owns the level just closed
+          this.focusChildCaret(itemId, path);
         }
         break;
+      }
       case 'ArrowDown':
         event.preventDefault();
         event.stopPropagation();
