@@ -8,8 +8,9 @@ import { AppUpdateService } from '../../services/app-update.service';
  * A small, non-intrusive prompt shown when a new app-shell version is ready, or when the worker
  * reports an unrecoverable state (see AppUpdateService). It never reloads under the user: they
  * choose when, so no in-session state is lost. "Reload" activates the new build and reloads;
- * "Later" dismisses it until the next event or load. (The alternative, a silent auto-reload on
- * VERSION_READY, is a one-line change in AppUpdateService and is the owner's call.)
+ * "Later" dismisses it until the next event or load. (The prompt is the chosen behaviour, decided
+ * 25 November 2026; the alternative, a silent auto-reload on VERSION_READY, would be a one-line
+ * change in AppUpdateService, kept noted there in case that choice is ever revisited.)
  *
  * Per AGENTS.md this is an observable consumer: it `combineLatest`s the service's `updateReady$` /
  * `updateReason$` and unsubscribes in `ngOnDestroy`, calling `markForCheck()` on each emission
