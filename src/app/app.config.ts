@@ -1,7 +1,8 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, isDevMode, provideZoneChangeDetection } from '@angular/core';
 import { provideHttpClient, withXhr } from '@angular/common/http';
+import { provideServiceWorker } from '@angular/service-worker';
 import {
   RouteReuseStrategy,
   TitleStrategy,
@@ -30,5 +31,12 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withHashLocation(), withComponentInputBinding()),
     { provide: TitleStrategy, useClass: AppTitleStrategy },
     { provide: RouteReuseStrategy, useClass: AppRouteReuseStrategy },
+    // Register the ngsw service worker here (replacing the old manual registration in main.ts)
+    // so Angular's SwUpdate is wired up: AppUpdateService listens for VERSION_READY to prompt a
+    // reload. Off in dev (serviceWorker:false there anyway); registers after the app stabilises.
+    provideServiceWorker('ngsw-worker.js', {
+      enabled: !isDevMode(),
+      registrationStrategy: 'registerWhenStable:30000',
+    }),
   ],
 };
