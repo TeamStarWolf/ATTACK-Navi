@@ -36,17 +36,14 @@ async function cleanupStaleServiceWorkers(basePath: string): Promise<void> {
   );
 }
 
-// Register service worker for PWA offline support
+// The ngsw service worker itself is registered by provideServiceWorker in app.config.ts, which
+// also wires Angular's SwUpdate so AppUpdateService can prompt a reload when a new build is ready.
+// Here we only clear a leftover service worker from an earlier deploy registered at a DIFFERENT
+// scope, so it cannot keep serving an old app shell.
 if (!isDevMode()) {
   if ('serviceWorker' in navigator) {
-    const basePath = getBaseHref();
-    cleanupStaleServiceWorkers(basePath)
-      .catch((err) => console.error('Service worker cleanup failed:', err))
-      .finally(() => {
-        const workerUrl = new URL('ngsw-worker.js', document.baseURI).toString();
-        navigator.serviceWorker.register(workerUrl, { scope: basePath }).catch((err) =>
-          console.error('Service worker registration failed:', err)
-        );
-      });
+    cleanupStaleServiceWorkers(getBaseHref()).catch((err) =>
+      console.error('Service worker cleanup failed:', err),
+    );
   }
 }

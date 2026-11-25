@@ -1,0 +1,68 @@
+// ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
+// https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
+import { signal } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { UpdateBannerComponent } from './update-banner.component';
+import { AppUpdateService } from '../../services/app-update.service';
+
+describe('UpdateBannerComponent', () => {
+  let fixture: ComponentFixture<UpdateBannerComponent>;
+  const update = {
+    updateReady: signal(false),
+    updateReason: signal<'ready' | 'unrecoverable'>('ready'),
+    reloadToUpdate: jasmine.createSpy('reloadToUpdate').and.resolveTo(undefined),
+    dismiss: jasmine.createSpy('dismiss'),
+  };
+
+  beforeEach(async () => {
+    update.updateReady.set(false);
+    update.updateReason.set('ready');
+    update.reloadToUpdate.calls.reset();
+    update.dismiss.calls.reset();
+    await TestBed.configureTestingModule({
+      imports: [UpdateBannerComponent],
+      providers: [{ provide: AppUpdateService, useValue: update }],
+    }).compileComponents();
+    fixture = TestBed.createComponent(UpdateBannerComponent);
+    fixture.detectChanges();
+  });
+
+  it('keeps the live region in the DOM but empty until an update is ready', () => {
+    // The role="status" region must pre-exist and gain its content on update, so a screen reader
+    // announces the change (a live region populated at creation is not reliably announced).
+    const region = fixture.nativeElement.querySelector('.update-region');
+    expect(region).toBeTruthy();
+    expect(region.getAttribute('role')).toBe('status');
+    expect(region.getAttribute('aria-live')).toBe('polite');
+    expect(fixture.nativeElement.querySelector('.update-banner')).toBeNull();
+  });
+
+  it('shows the prompt content inside the region when an update is ready', () => {
+    update.updateReady.set(true);
+    fixture.detectChanges();
+    const region = fixture.nativeElement.querySelector('.update-region');
+    const banner = region.querySelector('.update-banner');
+    expect(banner).toBeTruthy();
+    expect(banner.textContent).toContain('new version');
+  });
+
+  it('shows the recover wording when the reason is unrecoverable', () => {
+    update.updateReason.set('unrecoverable');
+    update.updateReady.set(true);
+    fixture.detectChanges();
+    const banner = fixture.nativeElement.querySelector('.update-banner');
+    expect(banner.textContent).toContain('ran into a problem');
+    expect(banner.textContent).not.toContain('new version');
+  });
+
+  it('Reload asks the service to activate and reload; Later dismisses', () => {
+    update.updateReady.set(true);
+    fixture.detectChanges();
+    const reloadBtn: HTMLButtonElement = fixture.nativeElement.querySelector('.update-banner__reload');
+    const laterBtn: HTMLButtonElement = fixture.nativeElement.querySelector('.update-banner__dismiss');
+    reloadBtn.click();
+    expect(update.reloadToUpdate).toHaveBeenCalledTimes(1);
+    laterBtn.click();
+    expect(update.dismiss).toHaveBeenCalledTimes(1);
+  });
+});

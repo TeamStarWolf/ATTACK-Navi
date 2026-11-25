@@ -21,6 +21,7 @@ import { OnboardingComponent } from './components/onboarding/onboarding.componen
 import { UniversalSearchComponent } from './components/universal-search/universal-search.component';
 import { PaletteWarmupComponent } from './components/palette-warmup/palette-warmup.component';
 import { DrawerWarmupComponent } from './components/drawer-warmup/drawer-warmup.component';
+import { UpdateBannerComponent } from './components/update-banner/update-banner.component';
 import { UrlStateService } from './services/url-state.service';
 import { MatrixControlService } from './services/matrix-control.service';
 import { HotkeysService } from './services/hotkeys.service';
@@ -43,7 +44,7 @@ export function isTechniquePageUrl(url: string): boolean {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, SidebarComponent, ToolbarComponent, BriefingStripComponent, PlatformBarComponent, GapViewComponent, KeyboardHelpComponent, NavRailComponent, OnboardingComponent, UniversalSearchComponent, PaletteWarmupComponent, DrawerWarmupComponent],
+  imports: [RouterOutlet, SidebarComponent, ToolbarComponent, BriefingStripComponent, PlatformBarComponent, GapViewComponent, KeyboardHelpComponent, NavRailComponent, OnboardingComponent, UniversalSearchComponent, PaletteWarmupComponent, DrawerWarmupComponent, UpdateBannerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',

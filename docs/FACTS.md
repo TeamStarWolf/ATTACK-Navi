@@ -16,7 +16,7 @@ Counts and versions derived from the code. When a document states one of these n
 | Technique-sidebar sections | 48 | `src/app/components/sidebar/sidebar.component.ts` (`sectionIndex`) |
 | Library layers | 201 | `src/assets/data/library-layers/index.json` |
 | Lylat mission layers | 35 | `src/assets/data/lylat-mission-layers/index.json` |
-| Unit spec files | 263 | `src/**/*.spec.ts` |
+| Unit spec files | 265 | `src/**/*.spec.ts` |
 | Playwright spec files | 19 | `e2e/**/*.spec.ts` |
 | Script test files | 14 | `scripts/**/*.test.mjs` |
 | Proxy test files | 1 | `server/**/*.test.*` |
@@ -192,7 +192,7 @@ Read by `scripts/check-facts.mjs`.
   "detailPages": 1,
   "libraryLayers": 201,
   "sidebarSections": 48,
-  "unitSpecs": 263,
+  "unitSpecs": 265,
   "angularMajor": 22,
   "typescriptMajor": 6,
   "bundleVersions": {
