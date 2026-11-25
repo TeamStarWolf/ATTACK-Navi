@@ -111,3 +111,10 @@ jobs:
       - run: node --test scripts/check-branch-coverage.test.mjs
       - run: node scripts/check-branch-coverage.mjs src/app/models/posture/derive-posture.ts src/app/models/posture/mitigation-rollup.ts
       - run: npx ng build --configuration production
+      # Guard the service-worker cold-start invariant on the freshly built ngsw.json: every
+      # application script must sit in a prefetch asset group, so a returning visitor's cached
+      # shell can always boot after a deploy that replaced the hashed files (a lazy group leaves
+      # boot chunks uncached, and the next deploy makes them 404 — a dead first load). See
+      # scripts/check-sw-prefetch.mjs.
+      - run: node --test scripts/check-sw-prefetch.test.mjs
+      - run: node scripts/check-sw-prefetch.mjs
