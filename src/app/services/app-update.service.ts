@@ -17,8 +17,9 @@ const UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000; // 6 hours
  * "a new version is available" prompt.
  *
  * This change builds the PROMPT (it never reloads under the user, so it cannot lose their
- * in-session state). The alternative — a silent `activateUpdate()` + reload on VERSION_READY — is
- * a one-line change in the handler; WHICH BEHAVIOUR SHIPS IS THE OWNER'S CHOICE, not yet made.
+ * in-session state). The PROMPT is the chosen behaviour (decided 25 November 2026). The
+ * alternative — a silent `activateUpdate()` + reload on VERSION_READY — would be a one-line change
+ * in the handler, noted here in case that choice is ever revisited.
  *
  * It also checks for a new version periodically (so a tab left open for days still learns of one)
  * and offers the same reload if the worker reports an unrecoverable state. `reloadToUpdate()`
