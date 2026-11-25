@@ -1,0 +1,92 @@
+name: Sync platform nav
+
+# Keeps the vendored platform menu (src/assets/platform-nav.json) in step with the
+# canonical file the front site publishes, without any live fetch in PR CI. On a
+# schedule it fetches the canonical file, and if the vendored copy has drifted it opens
+# (or updates) a pull request with the new copy. That PR's own CI runs
+# check-platform-nav (ASCII/LF, one-level nesting, ATT&CK-Navi block == rail catalog),
+# so a canonical change that no longer matches this app's workspaces fails loudly for a
+# human to resolve. The canonical address is not live yet; until it is, this job no-ops.
+
+on:
+  schedule:
+    - cron: '37 6 4 * *'   # 06:37 UTC on the 4th of each month (off-minute)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CANONICAL: https://teamstarwolf.com/platform-nav.json
+  TARGET: src/assets/platform-nav.json
+  BRANCH: chore/platform-nav-sync
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - name: Fetch the canonical menu and compare
+        id: diff
+        run: |
+          set -euo pipefail
+          if ! curl -fsSL --retry 3 -o canonical.json "$CANONICAL"; then
+            echo "Canonical file not reachable yet ($CANONICAL); nothing to sync."
+            echo "changed=no" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # The canonical file is ASCII + LF by contract; keep the vendored copy byte-identical.
+          if cmp -s canonical.json "$TARGET"; then
+            echo "Vendored copy already matches the canonical file."
+            echo "changed=no" >> "$GITHUB_OUTPUT"
+          else
+            cp canonical.json "$TARGET"
+            echo "changed=yes" >> "$GITHUB_OUTPUT"
+          fi
+          rm -f canonical.json
+
+      # Gate the synced file IN THIS JOB, before the PR exists. A PR opened with the
+      # workflow token does not start pull_request workflows (GitHub blocks that loop),
+      # so running the check here is what stops a bad menu from producing a green-looking
+      # PR. A failure here fails the run and no PR is opened.
+      - name: Validate the synced menu
+        if: steps.diff.outputs.changed == 'yes'
+        run: node scripts/check-platform-nav.mjs
+
+      - name: Open or update the drift pull request
+        if: steps.diff.outputs.changed == 'yes'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -C "$BRANCH"
+          git add -- "$TARGET"
+          git commit -m "chore(data): sync src/assets/platform-nav.json with the canonical menu"
+          git push --force-with-lease origin "$BRANCH"
+          cat > pr-body.md <<BODY
+          The canonical platform menu the front site publishes has changed; this syncs the
+          vendored copy \`src/assets/platform-nav.json\` to match it.
+
+          **\`check-platform-nav\` ran in ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} before this PR was opened** (ASCII/LF, one-level nesting, the 14-entry cap, the https host allow-list, and the ATT&CK-Navi block equal to the nav-rail catalog, with pending entries filtered). The run is green, or this PR would not exist.
+
+          A PR opened with the workflow token does not start \`pull_request\` workflows, so no CI check is attached to this PR on its own. To run the full CI on it, \`gh workflow run ci.yml --ref ${BRANCH}\` or close and reopen the PR. Resolve any mismatch (for example the ATT&CK-Navi block diverging from this app's workspaces) before merging.
+
+          Opened automatically by \`.github/workflows/platform-nav-sync.yml\`.
+          BODY
+          EXISTING=$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING" ]; then
+            gh pr edit "$EXISTING" --body-file pr-body.md
+          else
+            gh pr create --base main --head "$BRANCH" \
+              --title "chore(data): sync the vendored platform-nav menu" \
+              --body-file pr-body.md
+          fi
