@@ -44,7 +44,7 @@ npm run e2e          # Playwright e2e (in /e2e); test:visual for visual snapshot
 node scripts/validate-threat-model-citations.mjs      # after editing the STRIDE model: every file:line citation must resolve
 ```
 
-Node must satisfy the engine range of the locked Angular CLI (`^22.22.3 || ^24.15.0 || >=26.0.0`); CI and the Dockerfile use Node 24.
+Node must satisfy the engine range of the locked Angular CLI (`^22.22.3 || ^24.15.0 || >=26.0.0`); CI and the Dockerfile use Node 26.
 
 Always run the typecheck and the unit suite after changes and report the result. A new mode/page/service ships with a co-located `*.spec.ts`.
 

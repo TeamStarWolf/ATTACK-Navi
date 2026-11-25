@@ -1,5 +1,5 @@
-# Credentials proxy image. Node 24 (Active LTS until 2028-04-30); Node 20 reached
-# end-of-life on 2026-04-30 and must not run a service that holds live tokens.
+# Credentials proxy image. Node 26: Active LTS until 2027-10-20, end-of-life 2029-04-30.
+# Node 20 reached end-of-life on 2026-04-30 and must not run a service holding live tokens.
 FROM node:26-alpine
 WORKDIR /app
 # Express hides stack traces and enables its production code paths only when

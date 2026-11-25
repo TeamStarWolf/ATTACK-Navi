@@ -457,7 +457,7 @@ The repository includes a GitHub Actions workflow at `.github/workflows/deploy.y
 
 **Workflow summary:**
 1. Checks out the repository
-2. Sets up Node.js 24 with npm cache
+2. Sets up Node.js 26 with npm cache
 3. Runs `npm ci` to install dependencies
 4. Runs the unit suite (`npx ng test --no-watch --browsers=ChromeHeadless`); a failing suite blocks the deploy
 5. Builds with `npx ng build --base-href /ATTACK-Navi/`
@@ -523,7 +523,7 @@ Note that the GitHub Pages deployment serves no CSP at all (Pages sets no header
 
 ### Docker
 
-The repository's [`Dockerfile`](../Dockerfile) is the containerized deployment: a `node:24-alpine` build stage runs `npm ci` and `ng build --configuration production --base-href /`, and an `nginxinc/nginx-unprivileged:alpine` stage (nginx on port 8080 as the unprivileged user 101) serves `dist/mitre-mitigation-navigator/browser` with the two nginx files above installed as templates under `/etc/nginx/templates/`. The image accepts three environment variables, all with defaults:
+The repository's [`Dockerfile`](../Dockerfile) is the containerized deployment: a `node:26-alpine` build stage runs `npm ci` and `ng build --configuration production --base-href /`, and an `nginxinc/nginx-unprivileged:alpine` stage (nginx on port 8080 as the unprivileged user 101) serves `dist/mitre-mitigation-navigator/browser` with the two nginx files above installed as templates under `/etc/nginx/templates/`. The image accepts three environment variables, all with defaults:
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
@@ -539,8 +539,8 @@ The repository's [`Dockerfile`](../Dockerfile) is the containerized deployment: 
 |---------|-------|-------|
 | `--base-href` | Deployment path | `/<repository-name>/` for GitHub Pages (`/ATTACK-Navi/` here, case-sensitive), `/` for root |
 | Build output | `dist/mitre-mitigation-navigator/browser` | Static files ready to serve |
-| Node.js | `^22.22.3 \|\| ^24.15.0 \|\| >=26.0.0` | Required by Angular 22 (`engines` in `package.json`); CI and the Dockerfile use Node 24. Node 20 is end-of-life |
-| npm | 10+ | Comes with Node.js 22 and 24 |
+| Node.js | `^22.22.3 \|\| ^24.15.0 \|\| >=26.0.0` | Required by Angular 22 (`engines` in `package.json`); CI and the Dockerfile use Node 26. Node 20 is end-of-life |
+| npm | 10+ | Bundled with Node.js: npm 10 with Node 22, npm 11 with Node 24 and 26 |
 
 ### Environment Requirements
 

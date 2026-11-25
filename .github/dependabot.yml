@@ -48,9 +48,9 @@ updates:
         patterns:
           - "*"
 
-  # Base images in the root Dockerfile: node:24-alpine (build stage) and
+  # Base images in the root Dockerfile: node:26-alpine (build stage) and
   # nginxinc/nginx-unprivileged:alpine (the served image). The proxy's
-  # node:24-alpine is tracked by the /server entry below.
+  # node:26-alpine is tracked by the /server entry below.
   # Odd-numbered Node majors never become LTS, so they are ignored here and
   # in the /server entry; even-numbered (LTS) majors are still proposed.
   - package-ecosystem: "docker"
