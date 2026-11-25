@@ -110,8 +110,8 @@ test('hrefErrorExternal rejects the hostile shapes', () => {
   // Encoded slash / backslash in the path.
   assert.match(hrefErrorExternal('https://nvd.nist.gov/a%2fb'), /encoded slash\/backslash/);
   assert.match(hrefErrorExternal('https://nvd.nist.gov/a%5cb'), /encoded slash\/backslash/);
-  // IP literal (v4 and v6).
-  assert.match(hrefErrorExternal('https://192.168.0.1/'), /IP literal/);
+  // IP literal (v4 reads as an IP address via its all-digit final label; v6 as a literal host).
+  assert.match(hrefErrorExternal('https://192.168.0.1/'), /IP address/);
   assert.match(hrefErrorExternal('https://[2001:db8::1]/'), /IP literal/);
   // Single-label host (no dot).
   assert.match(hrefErrorExternal('https://localhost/'), /single-label host/);
@@ -119,6 +119,39 @@ test('hrefErrorExternal rejects the hostile shapes', () => {
   assert.match(hrefErrorExternal('https://xn--80ak6aa92e.com/'), /punycode/);
   // Over 512 characters.
   assert.match(hrefErrorExternal('https://nvd.nist.gov/' + 'a'.repeat(600)), /longer than 512/);
+});
+
+test('hrefErrorExternal rejects hosts a browser reads as an IP address', () => {
+  // Dotted-decimal shorthands the browser resolves to an IPv4 address.
+  assert.ok(hrefErrorExternal('https://127.1/') !== null);
+  assert.ok(hrefErrorExternal('https://0x7f.0.0.1/') !== null);
+  assert.ok(hrefErrorExternal('https://1.2.3/') !== null);
+  assert.ok(hrefErrorExternal('https://1.2.3.0x7f/') !== null);
+  // Forms that stay non-IPv4 but end in an all-digit or 0x label (the new shape guard).
+  assert.match(hrefErrorExternal('https://example.123/'), /IP address/);
+  assert.match(hrefErrorExternal('https://example.0x1f/'), /IP address/);
+  // A genuine host ending in an alphabetic TLD is fine even with a numeric first label.
+  assert.equal(hrefErrorExternal('https://123.example.com/'), null);
+});
+
+test('hrefErrorExternal rejects a non-ASCII character in the parsed address', () => {
+  // A \u escape in the JSON parses to a real non-ASCII character in the string.
+  assert.match(hrefErrorExternal('https://nvd.nist.gov/café'), /non-ASCII/);
+  assert.match(hrefErrorExternal('https://nvd.nist.gov/‮evil'), /non-ASCII/);
+});
+
+test('both rules reject malformed host labels (empty, hyphen edges, trailing dot)', () => {
+  // External leaf rule.
+  assert.match(hrefErrorExternal('https://nvd..nist.gov/'), /malformed host label/);
+  assert.match(hrefErrorExternal('https://-nvd.nist.gov/'), /malformed host label/);
+  assert.match(hrefErrorExternal('https://nvd-.nist.gov/'), /malformed host label/);
+  assert.match(hrefErrorExternal('https://nvd.nist.gov./'), /malformed host label/);
+  // Internal four-host rule (a trailing dot on an allowed host must not slip through).
+  assert.match(hrefError('https://teamstarwolf.com./'), /malformed host label/);
+  assert.match(hrefError('https://-teamstarwolf.com/'), /malformed host label/);
+  assert.match(hrefError('https://github..com/TeamStarWolf'), /malformed host label/);
+  // A valid label set still passes the internal rule.
+  assert.equal(hrefError('https://library.teamstarwolf.com/#/INDEX'), null);
 });
 
 // ---- The structural walker: external placement, nesting depth, caps ----

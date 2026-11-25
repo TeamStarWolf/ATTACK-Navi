@@ -66,6 +66,19 @@ export function hasDotSegment(href) {
 }
 
 /**
+ * True if a host has a malformed DNS label: an empty label (a double dot or a trailing dot),
+ * or a label that starts or ends with a hyphen. `new URL` keeps all of these verbatim, so
+ * both address rules must reject them.
+ */
+export function badHostLabels(host) {
+  for (const label of host.split('.')) {
+    if (label === '') return true;
+    if (label.startsWith('-') || label.endsWith('-')) return true;
+  }
+  return false;
+}
+
+/**
  * Returns an error string if an href is not an allowed INTERNAL address, else null.
  * Unchanged from version 5: every href that is not an external bookmarks leaf goes
  * through this exact rule.
@@ -86,6 +99,7 @@ export function hrefError(href) {
   if (u.username !== '' || u.password !== '') return `credentials in address: ${href}`;
   // An explicit port is a different origin.
   if (u.port !== '') return `explicit port not allowed: ${href}`;
+  if (badHostLabels(u.hostname)) return `malformed host label: ${href}`;
   if (!ALLOWED_HOSTS.has(u.hostname)) return `host not allowed (${u.hostname}): ${href}`;
   if (hasDotSegment(href)) return `dot path segment not allowed: ${href}`;
   if (u.hostname === 'github.com' && u.pathname !== '/TeamStarWolf' && !u.pathname.startsWith('/TeamStarWolf/')) {
@@ -109,6 +123,17 @@ export function hrefErrorExternal(href) {
   if (href.includes('\\')) return `backslash in address: ${href}`;
   // No whitespace or control character anywhere (space, tab, CR, LF, other C0, DEL).
   if (/[\u0000- \u007f]/.test(href)) return `whitespace or control character in address: ${JSON.stringify(href)}`;
+  // No character above 0x7e anywhere. The file is ASCII, but a `\u` escape can still put a
+  // non-ASCII character into the parsed string; reject it on the parsed value.
+  if ([...href].some((ch) => ch.codePointAt(0) > 0x7e)) return `non-ASCII character in address: ${JSON.stringify(href)}`;
+  // Hosts a browser reads as an IP address. Checked on the RAW host (before new URL, which
+  // normalises some shorthands and rejects others), so the rule holds across stacks that
+  // parse differently: a real host ends in an alphabetic label, never one that is all digits
+  // or begins "0x" (so 127.1, 0x7f.0.0.1, 1.2.3, 1.2.3.0x7f and the like are all rejected).
+  const rawAuthority = href.slice(href.indexOf('://') + 3).split(/[/?#]/)[0];
+  const rawHost = (rawAuthority.split('@').pop() ?? '').replace(/:[0-9]*$/, '');
+  const rawLast = rawHost.split('.').pop() ?? '';
+  if (/^\d+$/.test(rawLast) || /^0x/i.test(rawLast)) return `host a browser reads as an IP address: ${href}`;
   let u;
   try {
     u = new URL(href);
@@ -128,6 +153,7 @@ export function hrefErrorExternal(href) {
   if (u.href.includes('[') || host.includes(':')) return `IP literal host not allowed: ${href}`;
   if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) return `IP literal host not allowed: ${href}`;
   if (!/^[a-z0-9.-]+$/i.test(host)) return `non-ASCII or invalid host: ${href}`;
+  if (badHostLabels(host)) return `malformed host label: ${href}`;
   if (!host.includes('.')) return `single-label host not allowed: ${href}`;
   if (host.split('.').some((label) => label.toLowerCase().startsWith('xn--'))) return `punycode host not allowed: ${href}`;
   // And it must NOT be an address the internal four-host rule would accept.

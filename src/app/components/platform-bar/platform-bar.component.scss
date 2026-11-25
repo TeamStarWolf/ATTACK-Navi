@@ -320,8 +320,12 @@
 // Each nested accordion level indents one step; indentation compounds with depth.
 .tsw-bar__m-children { padding-left: 14px; }
 
-// Under 760px: hide the row, show the menu button + accordion.
-@media (max-width: 759.98px) {
+// Compact layout (burger + accordion) when the viewport is narrow OR too short for the
+// tallest top-level panel — the same condition the component uses (COMPACT_MEDIA), so a
+// short, wide viewport (a phone held sideways) never strands the lower Bookmarks categories
+// below a non-scrolling app shell. A top-level panel is never made to scroll: `overflow: auto`
+// would clip the fly-outs that hang off it, so the whole bar drops to the accordion instead.
+@media (max-width: 760px), (max-height: 560px) {
   .tsw-bar__row { display: none; }
   .tsw-bar__burger { display: inline-flex; }
 }

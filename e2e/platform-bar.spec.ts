@@ -72,6 +72,28 @@ test.describe('platform bar', () => {
     await expect(page.locator('#tsw-panel-bookmarks')).toBeVisible();
   });
 
+  test('a deep fly-out stays within the viewport at 1000x600 (no overflow above the top)', async ({ page }) => {
+    await page.setViewportSize({ width: 1000, height: 600 });
+    // Open bookmarks > a category with subsections > its longest subsection, by clicking the
+    // carets (deterministic, no hover). The deepest leaf list is where the Hub overflowed.
+    await page.getByRole('button', { name: 'Bookmarks menu' }).click();
+    await expect(page.locator('#tsw-panel-bookmarks')).toBeVisible();
+    await page.getByRole('button', { name: 'Vulnerability Management submenu' }).click();
+    await expect(page.locator('#tsw-flyout-bookmarks-1')).toBeVisible();
+    await page.getByRole('button', { name: 'CVE & Vuln Databases submenu' }).click();
+    const deep = page.locator('#tsw-flyout-bookmarks-1-0');
+    await expect(deep).toBeVisible();
+    // After the component measures and places the fly-out it is fully on screen: never above
+    // the top edge, never past the right or bottom (or it scrolls inside itself to fit).
+    await expect
+      .poll(async () => {
+        const b = await deep.boundingBox();
+        if (!b) return false;
+        return b.y >= -1 && b.x >= -1 && b.x + b.width <= 1001 && b.y + b.height <= 601;
+      }, { timeout: 5000 })
+      .toBe(true);
+  });
+
   test('a pending entry never renders; a de-pended entry does', async ({ page }) => {
     await page.getByRole('link', { name: 'Home', exact: true }).hover();
     const panel = page.locator('#tsw-panel-home');
@@ -90,7 +112,7 @@ test.describe('platform bar', () => {
   });
 
   test('under 760px the menu button opens a three-level inline accordion', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 800 });
+    await page.setViewportSize({ width: 375, height: 812 });
     const burger = page.getByRole('button', { name: 'Open platform menu' });
     await expect(burger).toBeVisible();
     await burger.click();
@@ -105,6 +127,34 @@ test.describe('platform bar', () => {
     await expect(page.getByRole('link', { name: 'CVE & Vuln Databases', exact: true })).toBeVisible();
     // No "Open X" row anywhere.
     await expect(page.locator('#tsw-bar-mobile')).not.toContainText('Open Bookmarks');
+  });
+
+  test('a short, wide viewport (844x390) uses the compact layout and every link is reachable', async ({ page }) => {
+    // The desktop dropdown would fall below a 390px-tall, non-scrolling app shell, stranding the
+    // lower Bookmarks categories. The bar drops to the burger + accordion by viewport HEIGHT too.
+    await page.setViewportSize({ width: 844, height: 390 });
+    await expect(page.locator('.tsw-bar__row')).toBeHidden();
+    const burger = page.getByRole('button', { name: 'Open platform menu' });
+    await expect(burger).toBeVisible();
+    await burger.click();
+    await page.getByRole('button', { name: 'Bookmarks section' }).click();
+    await page.getByRole('button', { name: 'Vulnerability Management section' }).click();
+    await page.getByRole('button', { name: 'CVE & Vuln Databases section' }).click();
+
+    // Reachability, the strict way: a clipped element still reports a bounding box, so scroll the
+    // link into the overlay and confirm document.elementFromPoint at its own position hits it.
+    for (const name of ['NVD (NIST)', 'cvecrowd (trending CVEs)']) {
+      const link = page.getByRole('link', { name: new RegExp('^' + name.replace(/[()]/g, '\\$&')) });
+      await link.scrollIntoViewIfNeeded();
+      const hit = await link.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        const x = Math.round(r.left + Math.min(10, r.width / 2));
+        const y = Math.round(r.top + r.height / 2);
+        const at = document.elementFromPoint(x, y);
+        return !!at && (at === el || el.contains(at));
+      });
+      expect(hit, `${name} should be reachable (not clipped) at 844x390`).toBe(true);
+    }
   });
 });
 

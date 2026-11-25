@@ -1,6 +1,6 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { ChangeDetectionStrategy, Component, ElementRef, HostListener, inject, signal } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, ElementRef, HostListener, Injector, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { IconComponent } from '../../shared/icons/icon.component';
 import navData from '../../../assets/platform-nav.json';
@@ -41,6 +41,13 @@ import { PlatformNav, ViewItem, ViewNode, visiblePlatformItems } from '../../mod
 const OPEN_DELAY_MS = 0;
 const CLOSE_DELAY_MS = 220;
 
+// The small-screen layout (burger + accordion) is used when the viewport is narrow OR too
+// short for the tallest top-level panel, whatever the width — a short, wide viewport (a phone
+// held sideways) would otherwise drop the lower Bookmarks categories below a non-scrolling app
+// shell with no way to reach them. This ONE condition drives both the stylesheet and the
+// script, so they never disagree about which layout is live.
+const COMPACT_MEDIA = '(max-width: 760px), (max-height: 560px)';
+
 // The leading "TeamStarWolf" wordmark before the Home item. Off for now to match the
 // reference band (which starts at Home) and the owner's removal of the brand from the
 // front-page header; the owner has not settled it, so the flag stays. The Home menu item
@@ -64,6 +71,7 @@ interface FlyPlacement {
 })
 export class PlatformBarComponent {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
 
   private readonly nav = navData as PlatformNav;
   /** The home brand target; the Home item in the menu is the always-present way back. */
@@ -112,8 +120,15 @@ export class PlatformBarComponent {
     return chain.length === path.length && path.every((v, i) => chain[i] === v);
   }
 
-  /** Hover is ignored on a coarse pointer (touch); taps carry it there via the buttons. */
+  /** True when the compact (burger + accordion) layout is live — see COMPACT_MEDIA. */
+  private compact(): boolean {
+    return typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia(COMPACT_MEDIA).matches;
+  }
+
+  /** Hover is ignored on a coarse pointer (touch) and in the compact layout (the desktop row
+   *  is hidden there, so its panels must not open). Taps carry the menu via the buttons. */
   private hoverCapable(): boolean {
+    if (this.compact()) return false;
     return typeof window !== 'undefined' && (window.matchMedia ? window.matchMedia('(hover: hover)').matches : true);
   }
 
@@ -170,8 +185,11 @@ export class PlatformBarComponent {
   /** Open the fly-out of the node at `path`; then measure every open fly-out and place it. */
   openFly(path: number[]): void {
     this.flyPath.set([...path]);
-    this.placement.set({}); // measure from the natural position
-    setTimeout(() => this.measureFlyouts(), 0);
+    // Keep existing placements (so a parent fly-out stays flipped while a child opens); the new
+    // fly-out has no entry yet and renders at its natural position until the measure below.
+    // Measure AFTER the new fly-out has rendered (a setTimeout can fire before the zoneless
+    // change detection paints it, so it would measure nothing and never clamp).
+    afterNextRender(() => this.measureFlyouts(), { injector: this.injector });
   }
 
   /**
@@ -181,22 +199,50 @@ export class PlatformBarComponent {
    * nothing scrolls (the longest leaf list fits).
    */
   private measureFlyouts(): void {
-    const next: Record<string, FlyPlacement> = {};
-    const flyouts = this.host.nativeElement.querySelectorAll<HTMLElement>('.tsw-bar__flyout');
+    const current = this.placement();
+    const flyouts = Array.from(this.host.nativeElement.querySelectorAll<HTMLElement>('.tsw-bar__flyout'));
+    // Shallowest first, so a parent's flip is settled in the DOM before a child reads its anchor
+    // (otherwise nested fly-outs cascade-flip off the left edge at a narrow viewport).
+    flyouts.sort((a, b) => a.id.split('-').length - b.id.split('-').length);
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    for (const fly of Array.from(flyouts)) {
-      const rect = fly.getBoundingClientRect();
-      const left = rect.right > vw - 8;
+    const next: Record<string, FlyPlacement> = { ...current };
+    const newUp: Record<string, number> = {};
+    for (const fly of flyouts) {
+      // Horizontal: flip left only if opening to the RIGHT of the anchor (the entry-row this
+      // fly-out belongs to, at its real on-screen position) would cross the right edge. Using
+      // the anchor, not the fly-out's own box, keeps each level's decision independent of its
+      // siblings' flips. offsetWidth is the layout width, unaffected by any transform.
+      const li = fly.closest('li.tsw-bar__entry') as HTMLElement | null;
+      const anchor = (li?.querySelector(':scope > .tsw-bar__entry-row') as HTMLElement | null) ?? li ?? fly;
+      const aRect = anchor.getBoundingClientRect();
+      const left = aRect.right + fly.offsetWidth + 8 > vw;
+
+      // Vertical. Measure this fly-out's OWN list, not fly.scrollHeight: a nested child fly-out
+      // is absolutely positioned inside one of these list items and would otherwise inflate the
+      // parent's height and clamp it by mistake.
+      const list = fly.querySelector(':scope > ul.tsw-bar__list') as HTMLElement | null;
+      const height = (list?.offsetHeight ?? fly.scrollHeight) + 14; // + the panel's padding/border
+      // Natural top: undo this fly-out's own transform, and undo the extra shift its parent is
+      // about to take this pass (a child moves with its parent), so the clamp never compounds.
+      const curUp = current[fly.id]?.up ?? 0;
+      const parentId = fly.id.replace(/-\d+$/, '');
+      const parentDelta = newUp[parentId] === undefined ? 0 : newUp[parentId] - (current[parentId]?.up ?? 0);
+      const naturalTop = fly.getBoundingClientRect().top + curUp - parentDelta;
       let up = 0;
       let maxH: number | null = null;
-      if (rect.bottom > vh - 8) {
-        up = Math.ceil(rect.bottom - (vh - 8));
-        if (rect.height > vh - 16) {
-          up = Math.max(0, Math.ceil(rect.top) - 8);
+      if (naturalTop + height > vh - 8) {
+        // Pull up only as far as the top margin: a fly-out must never overflow ABOVE the
+        // viewport (a tall list anchored to its row otherwise runs off the top of the screen).
+        const maxUp = Math.max(0, Math.ceil(naturalTop) - 8);
+        up = Math.min(Math.ceil(naturalTop + height - (vh - 8)), maxUp);
+        // If even pinning it to the top margin cannot fit it, let it scroll inside itself.
+        if (height > vh - 16) {
+          up = maxUp;
           maxH = vh - 16;
         }
       }
+      newUp[fly.id] = up;
       next[fly.id] = { left, up, maxH };
     }
     this.placement.set(next);
@@ -217,7 +263,9 @@ export class PlatformBarComponent {
         setTimeout(() => this.focusFirstInLevel(this.panelId(id)), 0);
         break;
       case 'Escape':
-        if (this.isOpen(id)) { event.preventDefault(); this.closeAll(); }
+        // Stop here so a document-level Escape handler elsewhere does not also fire and
+        // tear down more than this one menu.
+        if (this.isOpen(id)) { event.preventDefault(); event.stopPropagation(); this.closeAll(); }
         break;
     }
   }
