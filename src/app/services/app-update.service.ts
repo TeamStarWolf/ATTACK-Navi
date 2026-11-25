@@ -4,6 +4,9 @@ import { Injectable, inject, signal } from '@angular/core';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { filter } from 'rxjs/operators';
 
+/** How often to ask the worker to look for a new version, for tabs left open for a long time. */
+const UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000; // 6 hours
+
 /**
  * Surfaces a ready app-shell update to the UI.
  *
@@ -11,11 +14,15 @@ import { filter } from 'rxjs/operators';
  * shell first and fetches a new release in the background; without this, a returning visitor
  * would keep seeing the previous build until some later load. This service listens for the
  * worker's VERSION_READY event and raises `updateReady`, so the shell can show a non-intrusive
- * "a new version is available" prompt. The owner's chosen behaviour here is the PROMPT (it never
- * reloads under the user and so cannot lose their in-session state); the alternative is a silent
- * `activateUpdate()` + reload on VERSION_READY, which would be a one-line change in the handler.
+ * "a new version is available" prompt.
  *
- * `reloadToUpdate()` activates the waiting worker and reloads, so the next paint is the new build.
+ * This change builds the PROMPT (it never reloads under the user, so it cannot lose their
+ * in-session state). The alternative — a silent `activateUpdate()` + reload on VERSION_READY — is
+ * a one-line change in the handler; WHICH BEHAVIOUR SHIPS IS THE OWNER'S CHOICE, not yet made.
+ *
+ * It also checks for a new version periodically (so a tab left open for days still learns of one)
+ * and offers the same reload if the worker reports an unrecoverable state. `reloadToUpdate()`
+ * activates the waiting worker and reloads, so the next paint is the new build.
  */
 @Injectable({ providedIn: 'root' })
 export class AppUpdateService {
@@ -29,11 +36,18 @@ export class AppUpdateService {
   constructor() {
     // Disabled in dev and wherever the service worker is not registered (SwUpdate.isEnabled is
     // false, or it was not provided), so this is inert outside the production build.
-    if (this.swUpdate?.isEnabled) {
-      this.swUpdate.versionUpdates
-        .pipe(filter((e): e is VersionReadyEvent => e.type === 'VERSION_READY'))
-        .subscribe(() => this.updateReady.set(true));
-    }
+    if (!this.swUpdate?.isEnabled) return;
+
+    this.swUpdate.versionUpdates
+      .pipe(filter((e): e is VersionReadyEvent => e.type === 'VERSION_READY'))
+      .subscribe(() => this.updateReady.set(true));
+
+    // An unrecoverable worker (e.g. a cache gone) is fixed the same way — reloading re-fetches a
+    // clean, current shell — so offer the same prompt rather than leaving the app broken.
+    this.swUpdate.unrecoverable.subscribe(() => this.updateReady.set(true));
+
+    // A long-lived tab only learns of a new version on a load otherwise; poll for one.
+    setInterval(() => void this.swUpdate?.checkForUpdate().catch(() => undefined), UPDATE_CHECK_INTERVAL_MS);
   }
 
   /** Activate the downloaded version and reload so the new build takes over. */

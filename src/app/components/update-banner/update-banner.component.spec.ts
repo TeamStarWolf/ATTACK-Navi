@@ -25,17 +25,22 @@ describe('UpdateBannerComponent', () => {
     fixture.detectChanges();
   });
 
-  it('renders nothing while no update is ready', () => {
+  it('keeps the live region in the DOM but empty until an update is ready', () => {
+    // The role="status" region must pre-exist and gain its content on update, so a screen reader
+    // announces the change (a live region populated at creation is not reliably announced).
+    const region = fixture.nativeElement.querySelector('.update-region');
+    expect(region).toBeTruthy();
+    expect(region.getAttribute('role')).toBe('status');
+    expect(region.getAttribute('aria-live')).toBe('polite');
     expect(fixture.nativeElement.querySelector('.update-banner')).toBeNull();
   });
 
-  it('shows a labelled status prompt when an update is ready', () => {
+  it('shows the prompt content inside the region when an update is ready', () => {
     update.updateReady.set(true);
     fixture.detectChanges();
-    const banner = fixture.nativeElement.querySelector('.update-banner');
+    const region = fixture.nativeElement.querySelector('.update-region');
+    const banner = region.querySelector('.update-banner');
     expect(banner).toBeTruthy();
-    expect(banner.getAttribute('role')).toBe('status');
-    expect(banner.getAttribute('aria-live')).toBe('polite');
     expect(banner.textContent).toContain('new version');
   });
 

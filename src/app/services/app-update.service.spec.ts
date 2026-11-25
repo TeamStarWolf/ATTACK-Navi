@@ -7,11 +7,15 @@ import { AppUpdateService } from './app-update.service';
 
 function makeSwUpdate(isEnabled: boolean) {
   const versionUpdates = new Subject<VersionEvent>();
+  const unrecoverable = new Subject<{ type: string; reason: string }>();
   return {
     isEnabled,
     versionUpdates: versionUpdates.asObservable(),
+    unrecoverable: unrecoverable.asObservable(),
     activateUpdate: jasmine.createSpy('activateUpdate').and.resolveTo(true),
+    checkForUpdate: jasmine.createSpy('checkForUpdate').and.resolveTo(false),
     emit: (e: VersionEvent) => versionUpdates.next(e),
+    emitUnrecoverable: () => unrecoverable.next({ type: 'UNRECOVERABLE_STATE', reason: 'cache gone' }),
   };
 }
 
@@ -39,6 +43,27 @@ describe('AppUpdateService', () => {
     const svc = create(sw);
     sw.emit({ type: 'VERSION_READY', currentVersion: { hash: 'a' }, latestVersion: { hash: 'b' } } as VersionEvent);
     expect(svc.updateReady()).toBe(false);
+  });
+
+  it('offers the same reload when the worker reports an unrecoverable state', () => {
+    const sw = makeSwUpdate(true);
+    const svc = create(sw);
+    expect(svc.updateReady()).toBe(false);
+    sw.emitUnrecoverable();
+    expect(svc.updateReady()).toBe(true);
+  });
+
+  it('checks for an update on an interval (for a long-open tab)', () => {
+    jasmine.clock().install();
+    try {
+      const sw = makeSwUpdate(true);
+      create(sw);
+      expect(sw.checkForUpdate).not.toHaveBeenCalled();
+      jasmine.clock().tick(6 * 60 * 60 * 1000 + 1);
+      expect(sw.checkForUpdate).toHaveBeenCalled();
+    } finally {
+      jasmine.clock().uninstall();
+    }
   });
 
   it('reloadToUpdate activates the update, then reloads', async () => {

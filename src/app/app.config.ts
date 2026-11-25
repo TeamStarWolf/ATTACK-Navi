@@ -33,10 +33,12 @@ export const appConfig: ApplicationConfig = {
     { provide: RouteReuseStrategy, useClass: AppRouteReuseStrategy },
     // Register the ngsw service worker here (replacing the old manual registration in main.ts)
     // so Angular's SwUpdate is wired up: AppUpdateService listens for VERSION_READY to prompt a
-    // reload. Off in dev (serviceWorker:false there anyway); registers after the app stabilises.
+    // reload. Off in dev (serviceWorker:false there anyway). Register IMMEDIATELY, matching the
+    // old manual registration: this SPA keeps long-lived timers and so never reports "stable", so
+    // registerWhenStable would always wait out its full fallback before offline support begins.
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),
-      registrationStrategy: 'registerWhenStable:30000',
+      registrationStrategy: 'registerImmediately',
     }),
   ],
 };
