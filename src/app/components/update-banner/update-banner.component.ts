@@ -1,6 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Subscription, combineLatest } from 'rxjs';
 import { AppUpdateService } from '../../services/app-update.service';
 
 /**
@@ -9,6 +10,10 @@ import { AppUpdateService } from '../../services/app-update.service';
  * choose when, so no in-session state is lost. "Reload" activates the new build and reloads;
  * "Later" dismisses it until the next event or load. (The alternative, a silent auto-reload on
  * VERSION_READY, is a one-line change in AppUpdateService and is the owner's call.)
+ *
+ * Per AGENTS.md this is an observable consumer: it `combineLatest`s the service's `updateReady$` /
+ * `updateReason$` and unsubscribes in `ngOnDestroy`, calling `markForCheck()` on each emission
+ * because the component is OnPush.
  *
  * The role="status" live region is a real (fixed-position) wrapper that stays in the DOM, and only
  * its CONTENT appears when an update is ready, so a screen reader announces the change. It is a
@@ -21,12 +26,12 @@ import { AppUpdateService } from '../../services/app-update.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="update-region" role="status" aria-live="polite">
-      @if (update.updateReady()) {
+      @if (ready) {
         <div class="update-banner">
-          <span class="update-banner__text">{{ message() }}</span>
+          <span class="update-banner__text">{{ message }}</span>
           <span class="update-banner__actions">
-            <button type="button" class="update-banner__reload" (click)="update.reloadToUpdate()">Reload</button>
-            <button type="button" class="update-banner__dismiss" (click)="update.dismiss()">Later</button>
+            <button type="button" class="update-banner__reload" (click)="reload()">Reload</button>
+            <button type="button" class="update-banner__dismiss" (click)="later()">Later</button>
           </span>
         </div>
       }
@@ -106,13 +111,36 @@ import { AppUpdateService } from '../../services/app-update.service';
     `,
   ],
 })
-export class UpdateBannerComponent {
-  readonly update = inject(AppUpdateService);
+export class UpdateBannerComponent implements OnInit, OnDestroy {
+  private readonly update = inject(AppUpdateService);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private sub?: Subscription;
 
-  /** The prompt text, by reason: a normal update vs the worker needing to recover. */
-  readonly message = computed(() =>
-    this.update.updateReason() === 'unrecoverable'
-      ? 'ATT&CK-Navi ran into a problem. Reload to recover.'
-      : 'A new version of ATT&CK-Navi is available.',
-  );
+  /** View state, driven by the service's observables (OnPush: set then markForCheck). */
+  protected ready = false;
+  protected message = '';
+
+  ngOnInit(): void {
+    this.sub = combineLatest([this.update.updateReady$, this.update.updateReason$]).subscribe(([ready, reason]) => {
+      this.ready = ready;
+      // The prompt text, by reason: a normal update vs the worker needing to recover.
+      this.message =
+        reason === 'unrecoverable'
+          ? 'ATT&CK-Navi ran into a problem. Reload to recover.'
+          : 'A new version of ATT&CK-Navi is available.';
+      this.cdr.markForCheck();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.sub?.unsubscribe();
+  }
+
+  protected reload(): void {
+    void this.update.reloadToUpdate();
+  }
+
+  protected later(): void {
+    this.update.dismiss();
+  }
 }
