@@ -2,7 +2,13 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { checkPlatformNav, extractRailCatalog, collectPending, hrefError } from './check-platform-nav.mjs';
+import { checkPlatformNav, extractRailCatalog, collectPending, hrefError, rawBytesErrors } from './check-platform-nav.mjs';
+
+test('rawBytesErrors rejects a carriage return and non-ASCII bytes', () => {
+  assert.deepEqual(rawBytesErrors(Buffer.from('{"a":1}\n', 'utf8')), []);
+  assert.match(rawBytesErrors(Buffer.from('{"a":1}\r\n', 'utf8'))[0], /CR/);
+  assert.match(rawBytesErrors(Buffer.from('{"a":"é"}', 'utf8'))[0], /non-ASCII/);
+});
 
 test('extractRailCatalog parses route and label in order', () => {
   const src = `

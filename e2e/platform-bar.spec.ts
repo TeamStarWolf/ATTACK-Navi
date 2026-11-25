@@ -56,12 +56,15 @@ test.describe('platform bar', () => {
     await expect(page.locator('#tsw-flyout-bookmarks-1')).toBeHidden();
   });
 
-  test('a pending entry never renders', async ({ page }) => {
+  test('a pending entry never renders; a de-pended entry does', async ({ page }) => {
     await page.getByRole('link', { name: 'Home', exact: true }).hover();
     const panel = page.locator('#tsw-panel-home');
     await expect(panel).toBeVisible();
+    await expect(panel).toContainText('Front page');
+    // "Search" lost its pending note (the front-page search box works), so it now renders.
+    await expect(panel).toContainText('Search');
+    // "Security policy" is still pending, so it must not render.
     await expect(panel).not.toContainText('Security policy');
-    await expect(panel).not.toContainText('Search');
   });
 
   test('its own class names keep the app toolbar selectors unique', async ({ page }) => {

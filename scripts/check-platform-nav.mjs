@@ -115,15 +115,27 @@ export function collectPending(nav) {
   return out;
 }
 
+/**
+ * Byte-level errors: a CR (the file must be LF-only — the canonical URL is at times served
+ * with CRLF from a Windows deploy, and the scheduled sync must never copy that in) or any
+ * non-ASCII byte. Returns an array of messages.
+ */
+export function rawBytesErrors(raw) {
+  const out = [];
+  if (raw.includes(0x0d)) out.push('contains CR (must be LF-only to stay byte-identical to the canonical file)');
+  if (raw.find((b) => b > 0x7f) !== undefined) {
+    out.push('contains a non-ASCII byte (the canonical file is ASCII; percent-encode non-ASCII in addresses)');
+  }
+  return out;
+}
+
 export function checkPlatformNav(root = '.') {
   const errors = [];
   const abs = (p) => join(root, p);
 
   // 1. bytes: ASCII, LF, valid JSON
   const raw = readFileSync(abs(ASSET));
-  if (raw.includes(0x0d)) errors.push(`${ASSET}: contains CR (must be LF-only to stay byte-identical to the canonical file)`);
-  const nonAscii = raw.find((b) => b > 0x7f);
-  if (nonAscii !== undefined) errors.push(`${ASSET}: contains a non-ASCII byte (the canonical file is ASCII; percent-encode non-ASCII in addresses)`);
+  for (const m of rawBytesErrors(raw)) errors.push(`${ASSET}: ${m}`);
   let nav;
   try {
     nav = JSON.parse(raw.toString('utf8'));
