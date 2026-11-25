@@ -94,8 +94,10 @@ describe('PlatformBarComponent', () => {
   });
 
   it('never renders a pending entry', () => {
+    // The vendored file may hold no pending entry (version 7 has none); this still asserts that
+    // whatever pending labels it does hold never reach the DOM.
     const text: string = fixture.nativeElement.textContent ?? '';
-    for (const label of pendingLabels(NAV)) expect(text).not.toContain(label);
+    expect(pendingLabels(NAV).every((label) => !text.includes(label))).toBe(true);
   });
 
   it('uses its own class names so the app toolbar selectors stay unique', () => {
@@ -114,7 +116,8 @@ describe('PlatformBarComponent', () => {
   });
 
   it('closes the open panel on Escape', () => {
-    const firstId = component.items[0].id;
+    // The first item with a menu (version 7's Home has none, so it owns no panel).
+    const firstId = component.items.find((i) => i.entries.length > 0)!.id;
     component.openId.set(firstId);
     fixture.detectChanges();
     const panel: HTMLElement = fixture.nativeElement.querySelector('.tsw-bar__panel');
