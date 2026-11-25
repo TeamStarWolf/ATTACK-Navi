@@ -46,6 +46,16 @@ if (!existsSync(ngswPath)) {
 const ngsw = JSON.parse(readFileSync(ngswPath, 'utf8'));
 const groups = ngsw.assetGroups ?? [];
 
+// The GitHub Pages deploy builds with `--base-href /ATTACK-Navi/`, so every manifest URL (and the
+// entry scripts, once resolved) carries that prefix, while the files on disk do not. Derive the
+// base from the manifest's own index so URL comparisons match and disk paths resolve for both a
+// root build ("/") and a base-href build ("/ATTACK-Navi/").
+const base = (ngsw.index ?? '/index.html').replace(/[^/]*$/, '') || '/';
+// Map a manifest URL (e.g. "/ATTACK-Navi/main-AAA.js") to its path on disk relative to distDir.
+const toDiskRel = (url) => (url.startsWith(base) ? url.slice(base.length) : url.replace(/^\//, ''));
+// Resolve an index.html / import specifier (relative to the app base) to a manifest-style URL.
+const toUrl = (spec) => base + spec.replace(/^\.?\//, '');
+
 /** url -> { group, installMode } for every asset ngsw tracks. */
 const urlGroup = new Map();
 for (const g of groups) {
@@ -56,9 +66,10 @@ for (const g of groups) {
 
 const isScript = (url) => url.endsWith('.js');
 const prefetchGroups = new Set(groups.filter((g) => g.installMode === 'prefetch').map((g) => g.name));
+const isPrefetched = (url) => prefetchGroups.has(urlGroup.get(url)?.group);
 const sizeOf = (url) => {
   try {
-    return statSync(join(distDir, url.replace(/^\//, ''))).size;
+    return statSync(join(distDir, toDiskRel(url))).size;
   } catch {
     return 0;
   }
@@ -66,29 +77,24 @@ const sizeOf = (url) => {
 
 // --- The invariant: every application script must be in a prefetch group. ---
 const scriptUrls = [...urlGroup.keys()].filter(isScript);
-const offenders = scriptUrls.filter((url) => !prefetchGroups.has(urlGroup.get(url).group));
+const offenders = scriptUrls.filter((url) => !isPrefetched(url));
 
 // --- Static-import closure of the entry scripts, for the report (and belt-and-braces). ---
 function entryScripts() {
   if (!existsSync(indexPath)) return [];
   const html = readFileSync(indexPath, 'utf8');
-  return [...html.matchAll(/<script[^>]*\ssrc="([^"]+\.js)"/g)].map((m) => '/' + m[1].replace(/^\.?\//, ''));
+  return [...html.matchAll(/<script[^>]*\ssrc="([^"]+\.js)"/g)].map((m) => toUrl(m[1]));
 }
 const staticImportsOf = (url) => {
-  const file = join(distDir, url.replace(/^\//, ''));
+  const file = join(distDir, toDiskRel(url));
   if (!existsSync(file)) return [];
   const code = readFileSync(file, 'utf8');
   const specs = new Set();
-  // esbuild ESM, minified: `import"./x.js"` (side-effect) and `...from"./x.js"` are static;
-  // `import("./x.js")` is dynamic and deliberately excluded.
+  // esbuild ESM, minified: `import"./x.js"` (side-effect) and `...from"./x.js"` are static; the
+  // dynamic form `import("./x.js")` has a "(" after import and so does not match either branch.
   for (const m of code.matchAll(/(?:\bimport|\bfrom|\bexport\s*\*\s*from)\s*"(\.\/[^"]+\.js)"/g)) {
-    specs.add('/' + m[1].replace(/^\.?\//, ''));
+    specs.add(toUrl(m[1]));
   }
-  // Drop any that were actually the dynamic form `import("./x.js")`.
-  const dynamic = new Set(
-    [...code.matchAll(/\bimport\(\s*"(\.\/[^"]+\.js)"\s*\)/g)].map((m) => '/' + m[1].replace(/^\.?\//, '')),
-  );
-  for (const d of dynamic) if (!code.includes(`from"${'.' + d}"`) && !code.includes(`import"${'.' + d}"`)) specs.delete(d);
   return [...specs];
 };
 function staticClosure(entries) {
@@ -109,6 +115,7 @@ function staticClosure(entries) {
 if (report) {
   const fmt = (n) => (n / 1024).toFixed(1) + ' kB';
   console.log(`\nservice-worker prefetch report — ${distDir}`);
+  console.log(`  app base: ${base}`);
   let prefetchTotal = 0;
   for (const g of groups) {
     const total = (g.urls ?? []).reduce((s, u) => s + sizeOf(u), 0);
@@ -120,14 +127,16 @@ if (report) {
   }
   console.log(`  --> install downloads (sum of prefetch groups): ${fmt(prefetchTotal)}`);
   const entries = entryScripts();
-  const closure = staticClosure(entries);
-  const closureScripts = [...closure].filter(isScript);
-  const closureNonPrefetch = closureScripts.filter((u) => !prefetchGroups.has((urlGroup.get(u) || {}).group));
+  const closureScripts = [...staticClosure(entries)].filter(isScript);
+  const closureNonPrefetch = closureScripts.filter((u) => !isPrefetched(u));
   console.log(`\n  entry scripts (index.html): ${entries.join(', ') || '(none found)'}`);
   console.log(`  entry static-import closure: ${closureScripts.length} script(s)`);
   if (closureNonPrefetch.length) {
     console.log(`  entry-closure scripts NOT prefetched: ${closureNonPrefetch.length}`);
-    for (const u of closureNonPrefetch.slice(0, 10)) console.log(`    - ${u} (${urlGroup.get(u).group}/${urlGroup.get(u).installMode})`);
+    for (const u of closureNonPrefetch.slice(0, 10)) {
+      const g = urlGroup.get(u);
+      console.log(`    - ${u} (${g ? `${g.group}/${g.installMode}` : 'not in any asset group'})`);
+    }
   }
   console.log(`\n  total application scripts in ngsw.json: ${scriptUrls.length}`);
   console.log(`  scripts NOT in a prefetch group: ${offenders.length}\n`);
@@ -139,8 +148,8 @@ if (offenders.length) {
       `so a cached shell could fail to boot after a deploy. Move them into a prefetch group in ngsw-config.json:`,
   );
   for (const url of offenders.slice(0, 20)) {
-    const { group, installMode } = urlGroup.get(url);
-    console.error(`  - ${url}  (group "${group}", installMode "${installMode}")`);
+    const g = urlGroup.get(url);
+    console.error(`  - ${url}  (group "${g.group}", installMode "${g.installMode}")`);
   }
   if (offenders.length > 20) console.error(`  ... and ${offenders.length - 20} more`);
   process.exit(1);

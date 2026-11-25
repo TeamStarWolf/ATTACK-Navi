@@ -3,7 +3,7 @@
 import { TestBed } from '@angular/core/testing';
 import { SwUpdate, VersionEvent } from '@angular/service-worker';
 import { Subject } from 'rxjs';
-import { AppUpdateService } from './app-update.service';
+import { AppUpdateService, UpdateReason } from './app-update.service';
 
 function makeSwUpdate(isEnabled: boolean) {
   const versionUpdates = new Subject<VersionEvent>();
@@ -26,33 +26,44 @@ function create(sw: ReturnType<typeof makeSwUpdate>): AppUpdateService {
   return TestBed.inject(AppUpdateService);
 }
 
+/** Track the latest value of a BehaviorSubject-backed observable (it replays synchronously). */
+function track<T>(svc: AppUpdateService): { ready: boolean; reason: UpdateReason } {
+  const state = { ready: false, reason: 'ready' as UpdateReason };
+  svc.updateReady$.subscribe((v) => (state.ready = v));
+  svc.updateReason$.subscribe((v) => (state.reason = v));
+  return state;
+}
+
 describe('AppUpdateService', () => {
-  it('raises updateReady on a VERSION_READY event when the worker is enabled', () => {
+  it('raises updateReady$ on a VERSION_READY event when the worker is enabled', () => {
     const sw = makeSwUpdate(true);
     const svc = create(sw);
-    expect(svc.updateReady()).toBe(false);
+    const state = track(svc);
+    expect(state.ready).toBe(false);
     // An unrelated event does not raise it.
     sw.emit({ type: 'VERSION_DETECTED', version: { hash: 'a' } } as VersionEvent);
-    expect(svc.updateReady()).toBe(false);
+    expect(state.ready).toBe(false);
     sw.emit({ type: 'VERSION_READY', currentVersion: { hash: 'a' }, latestVersion: { hash: 'b' } } as VersionEvent);
-    expect(svc.updateReady()).toBe(true);
-    expect(svc.updateReason()).toBe('ready');
+    expect(state.ready).toBe(true);
+    expect(state.reason).toBe('ready');
   });
 
   it('does not subscribe (stays inert) when the worker is disabled', () => {
     const sw = makeSwUpdate(false);
     const svc = create(sw);
+    const state = track(svc);
     sw.emit({ type: 'VERSION_READY', currentVersion: { hash: 'a' }, latestVersion: { hash: 'b' } } as VersionEvent);
-    expect(svc.updateReady()).toBe(false);
+    expect(state.ready).toBe(false);
   });
 
   it('offers the same reload when the worker reports an unrecoverable state', () => {
     const sw = makeSwUpdate(true);
     const svc = create(sw);
-    expect(svc.updateReady()).toBe(false);
+    const state = track(svc);
+    expect(state.ready).toBe(false);
     sw.emitUnrecoverable();
-    expect(svc.updateReady()).toBe(true);
-    expect(svc.updateReason()).toBe('unrecoverable');
+    expect(state.ready).toBe(true);
+    expect(state.reason).toBe('unrecoverable');
   });
 
   it('checks for an update on an interval (for a long-open tab)', () => {
@@ -89,9 +100,10 @@ describe('AppUpdateService', () => {
   it('dismiss clears the prompt', () => {
     const sw = makeSwUpdate(true);
     const svc = create(sw);
+    const state = track(svc);
     sw.emit({ type: 'VERSION_READY', currentVersion: { hash: 'a' }, latestVersion: { hash: 'b' } } as VersionEvent);
-    expect(svc.updateReady()).toBe(true);
+    expect(state.ready).toBe(true);
     svc.dismiss();
-    expect(svc.updateReady()).toBe(false);
+    expect(state.ready).toBe(false);
   });
 });
