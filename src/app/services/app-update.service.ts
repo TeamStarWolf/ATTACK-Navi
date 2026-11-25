@@ -30,8 +30,11 @@ export class AppUpdateService {
   // providers it is null, and this service is simply inert (so unrelated specs need not wire it).
   private readonly swUpdate = inject(SwUpdate, { optional: true });
 
-  /** True once a new app-shell version has been downloaded and is ready to activate. */
+  /** True once the prompt should show. */
   readonly updateReady = signal(false);
+  /** Why the prompt shows: a new version is ready, or the worker hit an unrecoverable state (both
+   *  resolve by reloading, but they warrant different wording). */
+  readonly updateReason = signal<'ready' | 'unrecoverable'>('ready');
 
   constructor() {
     // Disabled in dev and wherever the service worker is not registered (SwUpdate.isEnabled is
@@ -40,14 +43,19 @@ export class AppUpdateService {
 
     this.swUpdate.versionUpdates
       .pipe(filter((e): e is VersionReadyEvent => e.type === 'VERSION_READY'))
-      .subscribe(() => this.updateReady.set(true));
+      .subscribe(() => this.prompt('ready'));
 
     // An unrecoverable worker (e.g. a cache gone) is fixed the same way — reloading re-fetches a
-    // clean, current shell — so offer the same prompt rather than leaving the app broken.
-    this.swUpdate.unrecoverable.subscribe(() => this.updateReady.set(true));
+    // clean, current shell — so offer the same reload, but say what actually happened.
+    this.swUpdate.unrecoverable.subscribe(() => this.prompt('unrecoverable'));
 
     // A long-lived tab only learns of a new version on a load otherwise; poll for one.
     setInterval(() => void this.swUpdate?.checkForUpdate().catch(() => undefined), UPDATE_CHECK_INTERVAL_MS);
+  }
+
+  private prompt(reason: 'ready' | 'unrecoverable'): void {
+    this.updateReason.set(reason);
+    this.updateReady.set(true);
   }
 
   /** Activate the downloaded version and reload so the new build takes over. */

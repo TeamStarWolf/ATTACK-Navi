@@ -9,12 +9,14 @@ describe('UpdateBannerComponent', () => {
   let fixture: ComponentFixture<UpdateBannerComponent>;
   const update = {
     updateReady: signal(false),
+    updateReason: signal<'ready' | 'unrecoverable'>('ready'),
     reloadToUpdate: jasmine.createSpy('reloadToUpdate').and.resolveTo(undefined),
     dismiss: jasmine.createSpy('dismiss'),
   };
 
   beforeEach(async () => {
     update.updateReady.set(false);
+    update.updateReason.set('ready');
     update.reloadToUpdate.calls.reset();
     update.dismiss.calls.reset();
     await TestBed.configureTestingModule({
@@ -42,6 +44,15 @@ describe('UpdateBannerComponent', () => {
     const banner = region.querySelector('.update-banner');
     expect(banner).toBeTruthy();
     expect(banner.textContent).toContain('new version');
+  });
+
+  it('shows the recover wording when the reason is unrecoverable', () => {
+    update.updateReason.set('unrecoverable');
+    update.updateReady.set(true);
+    fixture.detectChanges();
+    const banner = fixture.nativeElement.querySelector('.update-banner');
+    expect(banner.textContent).toContain('ran into a problem');
+    expect(banner.textContent).not.toContain('new version');
   });
 
   it('Reload asks the service to activate and reload; Later dismisses', () => {

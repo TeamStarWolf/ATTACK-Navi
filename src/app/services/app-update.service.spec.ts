@@ -36,6 +36,7 @@ describe('AppUpdateService', () => {
     expect(svc.updateReady()).toBe(false);
     sw.emit({ type: 'VERSION_READY', currentVersion: { hash: 'a' }, latestVersion: { hash: 'b' } } as VersionEvent);
     expect(svc.updateReady()).toBe(true);
+    expect(svc.updateReason()).toBe('ready');
   });
 
   it('does not subscribe (stays inert) when the worker is disabled', () => {
@@ -51,6 +52,7 @@ describe('AppUpdateService', () => {
     expect(svc.updateReady()).toBe(false);
     sw.emitUnrecoverable();
     expect(svc.updateReady()).toBe(true);
+    expect(svc.updateReason()).toBe('unrecoverable');
   });
 
   it('checks for an update on an interval (for a long-open tab)', () => {
