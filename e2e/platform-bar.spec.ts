@@ -171,8 +171,11 @@ test.describe('platform bar', () => {
 
     // Reachability, the strict way: a clipped element still reports a bounding box, so scroll the
     // link into the overlay and confirm document.elementFromPoint at its own position hits it.
+    // A plain string name is an accessible-name substring match, so it matches the full
+    // "<label> (opens in a new tab on an external site)" name without any regex building.
+    const overlay = page.locator('#tsw-bar-mobile');
     for (const name of ['NVD (NIST)', 'cvecrowd (trending CVEs)']) {
-      const link = page.getByRole('link', { name: new RegExp('^' + name.replace(/[()]/g, '\\$&')) });
+      const link = overlay.getByRole('link', { name });
       await link.scrollIntoViewIfNeeded();
       const hit = await link.evaluate((el) => {
         const r = el.getBoundingClientRect();
