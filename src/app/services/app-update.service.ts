@@ -1,11 +1,16 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { filter } from 'rxjs/operators';
 
 /** How often to ask the worker to look for a new version, for tabs left open for a long time. */
 const UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000; // 6 hours
+
+/** Why the prompt shows: a new version is ready, or the worker hit an unrecoverable state (both
+ *  resolve by reloading, but they warrant different wording). */
+export type UpdateReason = 'ready' | 'unrecoverable';
 
 /**
  * Surfaces a ready app-shell update to the UI.
@@ -13,7 +18,7 @@ const UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000; // 6 hours
  * The production build registers the Angular service worker (ngsw), which serves the cached
  * shell first and fetches a new release in the background; without this, a returning visitor
  * would keep seeing the previous build until some later load. This service listens for the
- * worker's VERSION_READY event and raises `updateReady`, so the shell can show a non-intrusive
+ * worker's VERSION_READY event and raises `updateReady$`, so the shell can show a non-intrusive
  * "a new version is available" prompt.
  *
  * This change builds the PROMPT (it never reloads under the user, so it cannot lose their
@@ -24,6 +29,9 @@ const UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000; // 6 hours
  * It also checks for a new version periodically (so a tab left open for days still learns of one)
  * and offers the same reload if the worker reports an unrecoverable state. `reloadToUpdate()`
  * activates the waiting worker and reloads, so the next paint is the new build.
+ *
+ * Per AGENTS.md, a root state service exposes `BehaviorSubject`-backed `xxx$` observables; the
+ * banner consumer `combineLatest`s them and unsubscribes in `ngOnDestroy`.
  */
 @Injectable({ providedIn: 'root' })
 export class AppUpdateService {
@@ -31,11 +39,13 @@ export class AppUpdateService {
   // providers it is null, and this service is simply inert (so unrelated specs need not wire it).
   private readonly swUpdate = inject(SwUpdate, { optional: true });
 
-  /** True once the prompt should show. */
-  readonly updateReady = signal(false);
-  /** Why the prompt shows: a new version is ready, or the worker hit an unrecoverable state (both
-   *  resolve by reloading, but they warrant different wording). */
-  readonly updateReason = signal<'ready' | 'unrecoverable'>('ready');
+  private readonly updateReadySubject = new BehaviorSubject<boolean>(false);
+  /** Emits true once the prompt should show, false when dismissed. */
+  readonly updateReady$: Observable<boolean> = this.updateReadySubject.asObservable();
+
+  private readonly updateReasonSubject = new BehaviorSubject<UpdateReason>('ready');
+  /** Emits the current reason for the prompt (see {@link UpdateReason}). */
+  readonly updateReason$: Observable<UpdateReason> = this.updateReasonSubject.asObservable();
 
   constructor() {
     // Disabled in dev and wherever the service worker is not registered (SwUpdate.isEnabled is
@@ -54,9 +64,9 @@ export class AppUpdateService {
     setInterval(() => void this.swUpdate?.checkForUpdate().catch(() => undefined), UPDATE_CHECK_INTERVAL_MS);
   }
 
-  private prompt(reason: 'ready' | 'unrecoverable'): void {
-    this.updateReason.set(reason);
-    this.updateReady.set(true);
+  private prompt(reason: UpdateReason): void {
+    this.updateReasonSubject.next(reason);
+    this.updateReadySubject.next(true);
   }
 
   /** Activate the downloaded version and reload so the new build takes over. */
@@ -79,6 +89,6 @@ export class AppUpdateService {
 
   /** Hide the prompt without updating; it returns on the next VERSION_READY (or next load). */
   dismiss(): void {
-    this.updateReady.set(false);
+    this.updateReadySubject.next(false);
   }
 }
