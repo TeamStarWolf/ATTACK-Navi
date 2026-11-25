@@ -540,7 +540,7 @@ The repository's [`Dockerfile`](../Dockerfile) is the containerized deployment: 
 | `--base-href` | Deployment path | `/<repository-name>/` for GitHub Pages (`/ATTACK-Navi/` here, case-sensitive), `/` for root |
 | Build output | `dist/mitre-mitigation-navigator/browser` | Static files ready to serve |
 | Node.js | `^22.22.3 \|\| ^24.15.0 \|\| >=26.0.0` | Required by Angular 22 (`engines` in `package.json`); CI and the Dockerfile use Node 26. Node 20 is end-of-life |
-| npm | 10+ | Comes with Node.js 22 and 24 |
+| npm | 10+ | Bundled with Node.js: npm 10 with Node 22, npm 11 with Node 24 and 26 |
 
 ### Environment Requirements
 

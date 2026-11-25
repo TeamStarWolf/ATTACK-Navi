@@ -2,3 +2,7 @@
 # published by the front site (LF, ASCII). Pin its line endings so the
 # drift check (scripts/check-platform-nav.mjs) holds under core.autocrlf.
 src/assets/platform-nav.json text eol=lf
+
+# Keep GitHub Actions workflow files LF. e2e.yml was the only CRLF text file on
+# main; it was normalised to LF in the Node-26 change. Pin it so it cannot return.
+.github/workflows/*.yml text eol=lf
