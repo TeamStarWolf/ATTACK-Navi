@@ -74,13 +74,14 @@ test.describe('platform bar', () => {
 
   test('a deep fly-out stays within the viewport at 1000x600 (no overflow above the top)', async ({ page }) => {
     await page.setViewportSize({ width: 1000, height: 600 });
-    // Open bookmarks > a category with subsections > its longest subsection, by clicking the
-    // carets (deterministic, no hover). The deepest leaf list is where the Hub overflowed.
-    await page.getByRole('button', { name: 'Bookmarks menu' }).click();
+    // Open bookmarks > a category with subsections > its longest subsection by HOVER (the
+    // desktop path; a click would race the hover-open and toggle the fly-out shut again). The
+    // deepest leaf list is where the Hub overflowed.
+    await page.getByRole('link', { name: 'Bookmarks', exact: true }).hover();
     await expect(page.locator('#tsw-panel-bookmarks')).toBeVisible();
-    await page.getByRole('button', { name: 'Vulnerability Management submenu' }).click();
+    await page.locator('#tsw-panel-bookmarks .tsw-bar__entry-row').filter({ hasText: 'Vulnerability Management' }).hover();
     await expect(page.locator('#tsw-flyout-bookmarks-1')).toBeVisible();
-    await page.getByRole('button', { name: 'CVE & Vuln Databases submenu' }).click();
+    await page.locator('#tsw-flyout-bookmarks-1 .tsw-bar__entry-row').filter({ hasText: 'CVE & Vuln Databases' }).hover();
     const deep = page.locator('#tsw-flyout-bookmarks-1-0');
     await expect(deep).toBeVisible();
     // After the component measures and places the fly-out it is fully on screen: never above
@@ -92,6 +93,33 @@ test.describe('platform bar', () => {
         return b.y >= -1 && b.x >= -1 && b.x + b.width <= 1001 && b.y + b.height <= 601;
       }, { timeout: 5000 })
       .toBe(true);
+  });
+
+  test('a third-level fly-out that flips left still paints above the rows it lands on (1000x600)', async ({ page }) => {
+    // A flipped leaf fly-out lands back over the category/subsection list; if it paints UNDER
+    // those rows its links are not really reachable. A bounding box inside the viewport is not
+    // proof — a clipped/covered element still has one — so probe document.elementFromPoint.
+    await page.setViewportSize({ width: 1000, height: 600 });
+    await page.getByRole('link', { name: 'Bookmarks', exact: true }).hover();
+    await expect(page.locator('#tsw-panel-bookmarks')).toBeVisible();
+    // Threat Intelligence > CTI Platforms is a third-level fly-out that flips left at this size.
+    await page.locator('#tsw-panel-bookmarks .tsw-bar__entry-row').filter({ hasText: 'Threat Intelligence' }).hover();
+    await expect(page.locator('#tsw-flyout-bookmarks-3')).toBeVisible();
+    await page.locator('#tsw-flyout-bookmarks-3 .tsw-bar__entry-row').filter({ hasText: 'CTI Platforms' }).hover();
+    const leaf = page.locator('#tsw-flyout-bookmarks-3-4');
+    await expect(leaf).toBeVisible();
+
+    // The first and last link must be the top-most element at their own centre point.
+    const reachable = await leaf.evaluate((fly) => {
+      const links = Array.from(fly.querySelectorAll(':scope > ul > li > a.tsw-bar__menu-link--ext'));
+      const hits = (el: Element) => {
+        const r = el.getBoundingClientRect();
+        const at = document.elementFromPoint(Math.round(r.left + 12), Math.round(r.top + r.height / 2));
+        return !!at && (at === el || el.contains(at));
+      };
+      return links.length >= 2 && hits(links[0]) && hits(links[links.length - 1]);
+    });
+    expect(reachable, 'first and last CTI Platforms links reachable (painted above the rows)').toBe(true);
   });
 
   test('a pending entry never renders; a de-pended entry does', async ({ page }) => {
