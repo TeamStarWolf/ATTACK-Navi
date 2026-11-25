@@ -118,7 +118,9 @@
   align-items: center;
   justify-content: center;
   height: 30px;
-  width: 22px;
+  // Every disclosure caret is at least 24x24px (version 5's was 22px wide).
+  width: 24px;
+  min-width: 24px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -165,9 +167,36 @@
   font-size: 13px;
   color: var(--tsw-link);
   text-decoration: none;
-  white-space: nowrap;
+  // A long label wraps to two lines rather than overflowing (version 6 leaf labels run long).
+  white-space: normal;
 
   &:hover { background: var(--tsw-hover-bg); color: var(--tsw-link-hover); }
+}
+
+// A category/subsection header stays on one line; only leaf labels may wrap.
+.tsw-bar__entry-label { white-space: nowrap; }
+
+// External-leaf marker: a small arrow in the current text colour at about half opacity,
+// hidden from assistive technology. The accessible name is carried by the sr-only note.
+.tsw-bar__ext {
+  margin-left: 4px;
+  font-size: 0.85em;
+  opacity: 0.5;
+
+  &::before { content: '\2197'; } // north-east arrow
+}
+
+// Visually hidden, still in the accessible name (" (opens in a new tab on an external site)").
+.tsw-bar__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 // An entry that opens a fly-out: label (a real link) left, chevron button right.
@@ -247,7 +276,9 @@
   display: flex;
   align-items: center;
 
-  .tsw-bar__m-top { flex: 1 1 auto; padding: 10px 14px; font-size: 14px; }
+  // At every level the label is a real link that flexes to fill; the caret sits at the end.
+  .tsw-bar__m-link { flex: 1 1 auto; }
+  .tsw-bar__m-top { padding: 10px 14px; }
 }
 
 .tsw-bar__m-caret {
@@ -255,8 +286,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 42px;
+  // The caret fills the full 44px row on the phone layout (version 5's was 42px).
+  height: 44px;
   width: 44px;
+  min-width: 24px;
+  min-height: 24px;
   border: 0;
   border-radius: 6px;
   background: transparent;
@@ -267,11 +301,12 @@
   &[aria-expanded='true'] { color: var(--tsw-link-hover); }
 }
 
-.tsw-bar__m-list { padding-bottom: 6px; }
+.tsw-bar__m-list { margin: 0; padding: 0; padding-bottom: 6px; list-style: none; }
 
 .tsw-bar__m-link {
   display: block;
   padding: 8px 14px;
+  // Uniform 13px in the primary colour at every level (version 5's 12px muted sub is gone).
   font-size: 13px;
   color: var(--tsw-link);
   text-decoration: none;
@@ -281,8 +316,9 @@
 }
 
 .tsw-bar__m-top { font-weight: 500; }
-// Mobile keeps sub-entries inline: 12px, indented.
-.tsw-bar__m-sub { padding-left: 28px; font-size: 12px; color: var(--tsw-sub); }
+
+// Each nested accordion level indents one step; indentation compounds with depth.
+.tsw-bar__m-children { padding-left: 14px; }
 
 // Under 760px: hide the row, show the menu button + accordion.
 @media (max-width: 759.98px) {

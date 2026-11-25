@@ -1,31 +1,43 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { ChangeDetectionStrategy, Component, ElementRef, HostListener, inject, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { IconComponent } from '../../shared/icons/icon.component';
 import navData from '../../../assets/platform-nav.json';
-import { PlatformNav, ViewItem, visiblePlatformItems } from '../../models/platform-nav';
+import { PlatformNav, ViewItem, ViewNode, visiblePlatformItems } from '../../models/platform-nav';
 
 /**
- * The universal TeamStarWolf platform bar: one menu every site shows in its own stack,
- * rendered here above the app toolbar. Menu only (no search, theme toggle or app
- * controls); its own `tsw-bar__` class names keep the app toolbar's `.brand-link` and
- * `.theme-btn` unique.
+ * The universal TeamStarWolf platform bar (menu version 6): one menu every site shows in
+ * its own stack, rendered here above the app toolbar. Menu only (no search, theme toggle
+ * or app controls); its own `tsw-bar__` class names keep the app toolbar's `.brand-link`
+ * and `.theme-btn` unique.
  *
- * Desktop (>= 761px): a top-level menu opens on hover (and its own button with
- * aria-expanded opens it for keyboard/click); an entry with sub-entries shows a right
- * chevron and opens them as a fly-out panel to the side. Keyboard: ArrowRight opens the
- * fly-out and enters it, Escape/ArrowLeft returns.
- * Mobile (<= 760px): one button opens an inline accordion; sub-entries drop inline.
+ * Nesting: every item is one level deep except `bookmarks`, which nests two levels of
+ * sub-entries (category, then either links or a subsection, then links). The template is
+ * recursive over `ViewNode`, so a category and a subsection are built alike; the
+ * `check-platform-nav` gate is what holds the data to the allowed depth.
+ *
+ * Desktop (>= 761px): a top-level menu opens on hover (and its own caret button with
+ * aria-expanded opens it for keyboard/click); a node with children shows a right chevron
+ * and opens them as a fly-out to the side. Only one path is open at a time; opening a
+ * sibling closes the others. A fly-out flips left when its right edge would cross the
+ * viewport and is pulled up (then scrolls inside itself) when its bottom would, at each
+ * level independently. Keyboard: ArrowRight opens a fly-out and enters it; Escape closes
+ * the deepest open level and returns focus to its caret, so repeated Escape walks out.
+ * Mobile (<= 760px): one button opens an inline accordion; every level drops inline with
+ * the same real-link-plus-caret split, the third level included.
+ *
+ * An external leaf (bookmarks only) is rendered with target="_blank",
+ * rel="noopener noreferrer", a silent arrow marker and a visually hidden note, so its
+ * accessible name ends "(opens in a new tab on an external site)".
  *
  * Source of record: `src/assets/platform-nav.json`, a byte-identical copy of the canonical
  * file the front site publishes; every `pending` entry is filtered before render
  * (`visiblePlatformItems`), which the spec and `scripts/check-platform-nav.mjs` assert.
  */
 
-// Hover open/close delays (ms), from the Website session's reference build: open is
-// immediate; close waits so a diagonal move into a fly-out does not shut the menu. Kept
-// here so they stay a one-line change. The close delay is timing, not motion, so it
-// stands under prefers-reduced-motion.
+// Hover close delay (ms): close waits so a diagonal move into a fly-out does not shut it.
+// It is timing, not motion, so it stands under prefers-reduced-motion. Open is immediate.
 const OPEN_DELAY_MS = 0;
 const CLOSE_DELAY_MS = 220;
 
@@ -35,47 +47,70 @@ const CLOSE_DELAY_MS = 220;
 // is always present as the way back regardless.
 const SHOW_WORDMARK = false;
 
+/** How a fly-out is placed after measuring, keyed by its DOM id. */
+interface FlyPlacement {
+  left: boolean;
+  up: number;
+  maxH: number | null;
+}
+
 @Component({
   selector: 'app-platform-bar',
   standalone: true,
-  imports: [IconComponent],
+  imports: [IconComponent, NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './platform-bar.component.html',
   styleUrl: './platform-bar.component.scss',
 })
 export class PlatformBarComponent {
-  private readonly host = inject(ElementRef<HTMLElement>);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   private readonly nav = navData as PlatformNav;
   /** The home brand target; the Home item in the menu is the always-present way back. */
   readonly home = this.nav.home;
   /** Whether the band shows the leading "TeamStarWolf" wordmark (open point; see flag). */
   readonly showWordmark = SHOW_WORDMARK;
-  /** The menu, with pending entries removed and nesting capped at one level. */
+  /** The menu, with pending entries removed, as a tree of nodes. */
   readonly items: ViewItem[] = visiblePlatformItems(this.nav);
 
   /** Which top-level panel is open on desktop (id), or null. */
   readonly openId = signal<string | null>(null);
-  /** Which entry's fly-out is open, as `${itemId}#${entryIndex}`, or null. */
-  readonly flyoutKey = signal<string | null>(null);
-  /** Whether a fly-out opens to the left (set when it would overflow the right edge). */
-  readonly flyoutLeft = signal(false);
+  /**
+   * The open fly-out chain under the current panel, as child indices. `[1]` = category 1's
+   * fly-out is open; `[1, 2]` = category 1 then its subsection 2. A node's fly-out is open
+   * when its path is a prefix of this, so one path shows at a time at every level.
+   */
+  readonly flyPath = signal<number[]>([]);
+  /** Per-fly-out placement after measuring (flip-left, pull-up, scroll), keyed by DOM id. */
+  readonly placement = signal<Record<string, FlyPlacement>>({});
   /** Whether the mobile drawer is open. */
   readonly mobileOpen = signal(false);
-  /** Which mobile accordion section is expanded (id), or null. */
-  readonly mobileSection = signal<string | null>(null);
+  /** Which mobile accordion sections are expanded, as a set of path keys (see mobileKey). */
+  readonly mobilePaths = signal<Set<string>>(new Set());
 
   private openTimer?: ReturnType<typeof setTimeout>;
   private closeTimer?: ReturnType<typeof setTimeout>;
 
   panelId(id: string): string { return `tsw-panel-${id}`; }
   caretId(id: string): string { return `tsw-caret-${id}`; }
-  flyoutId(itemId: string, i: number): string { return `tsw-flyout-${itemId}-${i}`; }
-  mobileSectionId(id: string): string { return `tsw-ms-${id}`; }
-  private flyKey(itemId: string, i: number): string { return `${itemId}#${i}`; }
+  flyoutId(itemId: string, path: number[]): string { return `tsw-flyout-${itemId}-${path.join('-')}`; }
+  mobileSectionId(key: string): string { return `tsw-ms-${key}`; }
 
   isOpen(id: string): boolean { return this.openId() === id; }
-  isFlyoutOpen(itemId: string, i: number): boolean { return this.flyoutKey() === this.flyKey(itemId, i); }
+
+  /** True when the fly-out owned by the node at `path` is on the open chain. */
+  isFlyOpen(path: number[]): boolean {
+    if (path.length === 0) return false;
+    const chain = this.flyPath();
+    if (path.length > chain.length) return false;
+    return path.every((v, i) => chain[i] === v);
+  }
+
+  /** True when the node at `path` is the deepest open fly-out (its caret owns the tip). */
+  private isFlyTip(path: number[]): boolean {
+    const chain = this.flyPath();
+    return chain.length === path.length && path.every((v, i) => chain[i] === v);
+  }
 
   /** Hover is ignored on a coarse pointer (touch); taps carry it there via the buttons. */
   private hoverCapable(): boolean {
@@ -95,32 +130,36 @@ export class PlatformBarComponent {
     this.closeTimer = setTimeout(() => this.closeAll(), CLOSE_DELAY_MS);
   }
 
-  /** Hovering an entry opens its fly-out; hovering a childless entry closes any open one.
-   *  Only one fly-out is open at a time, so this swaps it. Fine pointers only. */
-  onEntryEnter(itemId: string, i: number, hasChildren: boolean): void {
+  /**
+   * Hovering a node opens its fly-out (closing siblings and anything deeper); hovering a
+   * leaf closes any fly-out open at the leaf's own level. Fine pointers only.
+   */
+  onNodeEnter(path: number[], hasChildren: boolean): void {
     if (!this.hoverCapable()) return;
-    if (hasChildren) this.openFlyout(itemId, i);
-    else this.flyoutKey.set(null);
+    if (hasChildren) this.openFly(path);
+    else this.flyPath.set(path.slice(0, -1));
   }
 
-  /** Tap/click on a category's chevron (carries touch at desktop width). */
-  toggleFlyout(itemId: string, i: number): void {
-    if (this.isFlyoutOpen(itemId, i)) this.closeFlyout();
-    else this.openFlyout(itemId, i);
+  /** Tap/click on a node's chevron (carries touch at desktop width). */
+  toggleFly(path: number[]): void {
+    if (this.isFlyOpen(path)) this.flyPath.set(path.slice(0, -1));
+    else this.openFly(path);
   }
 
   // --- Open / close ---
   openMenu(id: string): void {
     this.openId.set(id);
-    this.flyoutKey.set(null);
+    this.flyPath.set([]);
+    this.placement.set({});
   }
 
   closeAll(): void {
     this.openId.set(null);
-    this.flyoutKey.set(null);
+    this.flyPath.set([]);
+    this.placement.set({});
   }
 
-  /** Click/keyboard toggle on the caret button. */
+  /** Click/keyboard toggle on the top-level caret button. */
   toggle(id: string): void {
     clearTimeout(this.openTimer);
     clearTimeout(this.closeTimer);
@@ -128,21 +167,43 @@ export class PlatformBarComponent {
     else this.openMenu(id);
   }
 
-  openFlyout(itemId: string, i: number): void {
-    this.flyoutLeft.set(false); // measure from the default right-opening position
-    this.flyoutKey.set(this.flyKey(itemId, i));
-    // A fly-out opens to the right; if its right edge would cross the viewport, open it
-    // to the left instead (reference: flips at ~840px, opens right at 1280px).
-    setTimeout(() => {
-      const fly = this.host.nativeElement.querySelector(`#${this.flyoutId(itemId, i)}`) as HTMLElement | null;
-      if (!fly) return;
-      const rect = fly.getBoundingClientRect();
-      this.flyoutLeft.set(rect.right > window.innerWidth - 8);
-    }, 0);
+  /** Open the fly-out of the node at `path`; then measure every open fly-out and place it. */
+  openFly(path: number[]): void {
+    this.flyPath.set([...path]);
+    this.placement.set({}); // measure from the natural position
+    setTimeout(() => this.measureFlyouts(), 0);
   }
 
-  closeFlyout(): void {
-    this.flyoutKey.set(null);
+  /**
+   * Measure every open fly-out and record how to keep it on screen, each level independently:
+   * flip left if its right edge crosses the viewport; pull it up if its bottom does; and
+   * only if it still does not fit, let it scroll inside itself. At a viewport >= 600px high
+   * nothing scrolls (the longest leaf list fits).
+   */
+  private measureFlyouts(): void {
+    const next: Record<string, FlyPlacement> = {};
+    const flyouts = this.host.nativeElement.querySelectorAll<HTMLElement>('.tsw-bar__flyout');
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    for (const fly of Array.from(flyouts)) {
+      const rect = fly.getBoundingClientRect();
+      const left = rect.right > vw - 8;
+      let up = 0;
+      let maxH: number | null = null;
+      if (rect.bottom > vh - 8) {
+        up = Math.ceil(rect.bottom - (vh - 8));
+        if (rect.height > vh - 16) {
+          up = Math.max(0, Math.ceil(rect.top) - 8);
+          maxH = vh - 16;
+        }
+      }
+      next[fly.id] = { left, up, maxH };
+    }
+    this.placement.set(next);
+  }
+
+  placementFor(id: string): FlyPlacement {
+    return this.placement()[id] ?? { left: false, up: 0, maxH: null };
   }
 
   // --- Keyboard ---
@@ -153,7 +214,7 @@ export class PlatformBarComponent {
       case ' ':
         event.preventDefault();
         if (!this.isOpen(id)) this.openMenu(id);
-        setTimeout(() => this.focusInPanel(id, 'first'), 0);
+        setTimeout(() => this.focusFirstInLevel(this.panelId(id)), 0);
         break;
       case 'Escape':
         if (this.isOpen(id)) { event.preventDefault(); this.closeAll(); }
@@ -161,92 +222,103 @@ export class PlatformBarComponent {
     }
   }
 
-  /** Keys in the main panel: move among entries, enter a fly-out, or close. */
-  onPanelKeydown(event: KeyboardEvent, id: string): void {
+  /**
+   * Keys inside a level (the top panel, or any fly-out). `path` is the fly-out's own path
+   * (`[]` for the top panel). Stops propagation so only the deepest level acts.
+   */
+  onLevelKeydown(event: KeyboardEvent, itemId: string, path: number[]): void {
+    const containerId = path.length === 0 ? this.panelId(itemId) : this.flyoutId(itemId, path);
     switch (event.key) {
       case 'Escape':
         event.preventDefault();
-        this.closeAll();
-        this.focusCaret(id);
+        event.stopPropagation();
+        if (path.length === 0) {
+          this.closeAll();
+          this.focusEl(this.caretId(itemId));
+        } else {
+          this.flyPath.set(path.slice(0, -1));
+          this.focusChildCaret(itemId, path); // the caret that owns the level just closed
+        }
         break;
       case 'ArrowDown':
         event.preventDefault();
-        this.focusInPanel(id, 1);
+        event.stopPropagation();
+        this.stepLevel(containerId, 1);
         break;
       case 'ArrowUp':
         event.preventDefault();
-        this.focusInPanel(id, -1);
+        event.stopPropagation();
+        this.stepLevel(containerId, -1);
+        break;
+      case 'ArrowLeft':
+        if (path.length > 0) {
+          event.preventDefault();
+          event.stopPropagation();
+          this.flyPath.set(path.slice(0, -1));
+          this.focusChildCaret(itemId, path);
+        }
         break;
       case 'ArrowRight': {
         const el = document.activeElement as HTMLElement | null;
-        const i = el?.getAttribute('data-flyindex');
-        if (i !== null && i !== undefined) {
+        const cp = el?.getAttribute('data-childpath');
+        if (cp) {
           event.preventDefault();
-          this.openFlyout(id, Number(i));
-          setTimeout(() => this.focusInFlyout(id, Number(i), 'first'), 0);
+          event.stopPropagation();
+          const childPath = cp.split('-').map(Number);
+          this.openFly(childPath);
+          setTimeout(() => this.focusFirstInLevel(this.flyoutId(itemId, childPath)), 0);
         }
         break;
       }
     }
   }
 
-  /** Keys in a fly-out: move among sub-entries, or return to the parent entry.
-   *  Stops propagation so the parent panel's handler does not also act. */
-  onFlyoutKeydown(event: KeyboardEvent, itemId: string, i: number): void {
-    switch (event.key) {
-      case 'Escape':
-      case 'ArrowLeft':
-        event.preventDefault();
-        event.stopPropagation();
-        this.closeFlyout();
-        this.focusEntry(itemId, i);
-        break;
-      case 'ArrowDown':
-        event.preventDefault();
-        event.stopPropagation();
-        this.focusInFlyout(itemId, i, 1);
-        break;
-      case 'ArrowUp':
-        event.preventDefault();
-        event.stopPropagation();
-        this.focusInFlyout(itemId, i, -1);
-        break;
-    }
-  }
-
   // --- Mobile ---
   toggleMobile(): void { this.mobileOpen.update((v) => !v); }
-  toggleSection(id: string): void { this.mobileSection.update((cur) => (cur === id ? null : id)); }
+
+  mobileKey(parent: string, i: number): string { return parent === '' ? String(i) : `${parent}.${i}`; }
+  isMobileOpen(key: string): boolean { return this.mobilePaths().has(key); }
+  toggleMobilePath(key: string): void {
+    this.mobilePaths.update((set) => {
+      const next = new Set(set);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  }
 
   // --- Focus helpers ---
-  private step(items: HTMLElement[], where: 1 | -1 | 'first' | 'last'): void {
+  /** The focusable links/buttons that belong directly to one level (not its descendants). */
+  private levelItems(containerId: string): HTMLElement[] {
+    const container = this.host.nativeElement.querySelector(`#${containerId}`) as HTMLElement | null;
+    if (!container) return [];
+    const all = Array.from(container.querySelectorAll<HTMLElement>('[data-nav]'));
+    return all.filter((el) => {
+      const owner = el.closest('.tsw-bar__panel, .tsw-bar__flyout') as HTMLElement | null;
+      return owner === container;
+    });
+  }
+
+  private stepLevel(containerId: string, dir: 1 | -1): void {
+    const items = this.levelItems(containerId);
     if (!items.length) return;
     const active = document.activeElement as HTMLElement | null;
-    let idx = active ? items.indexOf(active) : -1;
-    if (where === 'first') idx = 0;
-    else if (where === 'last') idx = items.length - 1;
-    else idx = idx < 0 ? (where === 1 ? 0 : items.length - 1) : (idx + where + items.length) % items.length;
-    items[idx]?.focus();
+    const idx = active ? items.indexOf(active) : -1;
+    const next = idx < 0 ? (dir === 1 ? 0 : items.length - 1) : (idx + dir + items.length) % items.length;
+    items[next]?.focus();
   }
 
-  private focusInPanel(id: string, where: 1 | -1 | 'first' | 'last'): void {
-    const panel = this.host.nativeElement.querySelector(`#${this.panelId(id)}`) as HTMLElement | null;
-    if (!panel) return;
-    this.step(Array.from(panel.querySelectorAll<HTMLElement>('[data-menuitem]')), where);
+  private focusFirstInLevel(containerId: string): void {
+    this.levelItems(containerId)[0]?.focus();
   }
 
-  private focusInFlyout(itemId: string, i: number, where: 1 | -1 | 'first' | 'last'): void {
-    const fly = this.host.nativeElement.querySelector(`#${this.flyoutId(itemId, i)}`) as HTMLElement | null;
-    if (!fly) return;
-    this.step(Array.from(fly.querySelectorAll<HTMLElement>('[data-flyitem]')), where);
+  private focusEl(id: string): void {
+    (this.host.nativeElement.querySelector(`#${id}`) as HTMLElement | null)?.focus();
   }
 
-  private focusCaret(id: string): void {
-    (this.host.nativeElement.querySelector(`#${this.caretId(id)}`) as HTMLElement | null)?.focus();
-  }
-
-  private focusEntry(itemId: string, i: number): void {
-    (this.host.nativeElement.querySelector(`[data-menuitem][data-entry="${itemId}#${i}"]`) as HTMLElement | null)?.focus();
+  /** Focus the caret of the node at `path` (its owning parent level is still open). */
+  private focusChildCaret(itemId: string, path: number[]): void {
+    const sel = `[data-caretpath="${path.join('-')}"]`;
+    (this.host.nativeElement.querySelector(sel) as HTMLElement | null)?.focus();
   }
 
   // --- Dismissal ---
@@ -262,4 +334,10 @@ export class PlatformBarComponent {
     const next = event.relatedTarget as Node | null;
     if (next && !this.host.nativeElement.contains(next)) this.closeAll();
   }
+
+  /** Narrowing helper for the template's `@let`. */
+  childPath(path: number[], i: number): number[] { return [...path, i]; }
+
+  /** Used by the template to decide whether a node is a branch or a leaf. */
+  hasChildren(node: ViewNode): boolean { return node.children.length > 0; }
 }

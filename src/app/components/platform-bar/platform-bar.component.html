@@ -34,56 +34,9 @@
               [id]="panelId(item.id)"
               role="group"
               [attr.aria-label]="item.label"
-              (keydown)="onPanelKeydown($event, item.id)"
+              (keydown)="onLevelKeydown($event, item.id, [])"
             >
-              <ul class="tsw-bar__list" role="list">
-                @for (entry of item.entries; track entry.href; let i = $index) {
-                  <li class="tsw-bar__entry" (mouseenter)="onEntryEnter(item.id, i, entry.children.length > 0)">
-                    @if (entry.children.length) {
-                      <!-- Label follows its link; the chevron button opens the fly-out (carries touch). -->
-                      <div class="tsw-bar__entry-row" [class.is-open]="isFlyoutOpen(item.id, i)">
-                        <a
-                          class="tsw-bar__menu-link tsw-bar__entry-label"
-                          data-menuitem
-                          [attr.data-flyindex]="i"
-                          [attr.data-entry]="item.id + '#' + i"
-                          [href]="entry.href"
-                        >{{ entry.label }}</a>
-                        <button
-                          type="button"
-                          class="tsw-bar__fly-caret"
-                          [attr.aria-label]="entry.label + ' submenu'"
-                          [attr.aria-expanded]="isFlyoutOpen(item.id, i)"
-                          [attr.aria-controls]="flyoutId(item.id, i)"
-                          (click)="toggleFlyout(item.id, i)"
-                        >
-                          <app-icon class="tsw-bar__fly-chevron" name="chevron-right" [size]="14" aria-hidden="true" />
-                        </button>
-                      </div>
-                      @if (isFlyoutOpen(item.id, i)) {
-                        <div
-                          class="tsw-bar__flyout"
-                          [class.tsw-bar__flyout--left]="flyoutLeft()"
-                          [id]="flyoutId(item.id, i)"
-                          role="group"
-                          [attr.aria-label]="entry.label"
-                          (keydown)="onFlyoutKeydown($event, item.id, i)"
-                        >
-                          <ul class="tsw-bar__list" role="list">
-                            @for (sub of entry.children; track sub.href) {
-                              <li>
-                                <a class="tsw-bar__menu-link" data-flyitem [href]="sub.href">{{ sub.label }}</a>
-                              </li>
-                            }
-                          </ul>
-                        </div>
-                      }
-                    } @else {
-                      <a class="tsw-bar__menu-link" data-menuitem [attr.data-entry]="item.id + '#' + i" [href]="entry.href">{{ entry.label }}</a>
-                    }
-                  </li>
-                }
-              </ul>
+              <ng-container *ngTemplateOutlet="nodeTree; context: { nodes: item.entries, path: [], itemId: item.id }" />
             </div>
           }
         }
@@ -105,10 +58,10 @@
 
   @if (mobileOpen()) {
     <div class="tsw-bar__mobile" id="tsw-bar-mobile">
-      <ul role="list">
+      <ul class="tsw-bar__m-list" role="list">
         @for (item of items; track item.id) {
           <li class="tsw-bar__m-item">
-            <!-- Same rule as desktop: the label is a real link; a caret button opens the section. -->
+            <!-- Same rule as desktop at every level: the label is a real link; a caret button opens the section. -->
             <div class="tsw-bar__m-head">
               <a class="tsw-bar__m-link tsw-bar__m-top" [href]="item.href">{{ item.label }}</a>
               @if (item.entries.length) {
@@ -116,25 +69,18 @@
                   type="button"
                   class="tsw-bar__m-caret"
                   [attr.aria-label]="item.label + ' section'"
-                  [attr.aria-expanded]="mobileSection() === item.id"
+                  [attr.aria-expanded]="isMobileOpen(item.id)"
                   [attr.aria-controls]="mobileSectionId(item.id)"
-                  (click)="toggleSection(item.id)"
+                  (click)="toggleMobilePath(item.id)"
                 >
-                  <app-icon [name]="mobileSection() === item.id ? 'chevron-down' : 'chevron-right'" [size]="18" aria-hidden="true" />
+                  <app-icon [name]="isMobileOpen(item.id) ? 'chevron-down' : 'chevron-right'" [size]="18" aria-hidden="true" />
                 </button>
               }
             </div>
-            @if (item.entries.length && mobileSection() === item.id) {
-              <ul class="tsw-bar__m-list" role="list" [id]="mobileSectionId(item.id)">
-                @for (entry of item.entries; track entry.href) {
-                  <li>
-                    <a class="tsw-bar__m-link" [href]="entry.href">{{ entry.label }}</a>
-                    @for (sub of entry.children; track sub.href) {
-                      <a class="tsw-bar__m-link tsw-bar__m-sub" [href]="sub.href">{{ sub.label }}</a>
-                    }
-                  </li>
-                }
-              </ul>
+            @if (item.entries.length && isMobileOpen(item.id)) {
+              <div class="tsw-bar__m-children" [id]="mobileSectionId(item.id)">
+                <ng-container *ngTemplateOutlet="mobileTree; context: { nodes: item.entries, parent: item.id }" />
+              </div>
             }
           </li>
         }
@@ -142,3 +88,114 @@
     </div>
   }
 </nav>
+
+<!-- Recursive desktop level: a category and a subsection are built alike, so the panel and
+     every fly-out share this template. A node with children renders a real link plus a
+     separate caret button; a leaf renders a lone link (external leaves add the new-tab
+     attributes, a silent arrow marker and a visually hidden note). -->
+<ng-template #nodeTree let-nodes="nodes" let-path="path" let-itemId="itemId">
+  <ul class="tsw-bar__list" role="list">
+    @for (node of nodes; track $index; let i = $index) {
+      @let cp = childPath(path, i);
+      <li class="tsw-bar__entry">
+        @if (hasChildren(node)) {
+          <div class="tsw-bar__entry-row" [class.is-open]="isFlyOpen(cp)" (mouseenter)="onNodeEnter(cp, true)">
+            <a
+              class="tsw-bar__menu-link tsw-bar__entry-label"
+              data-nav
+              [attr.data-childpath]="cp.join('-')"
+              [href]="node.href"
+            >{{ node.label }}</a>
+            <button
+              type="button"
+              class="tsw-bar__fly-caret"
+              [attr.data-caretpath]="cp.join('-')"
+              [attr.aria-label]="node.label + ' submenu'"
+              [attr.aria-expanded]="isFlyOpen(cp)"
+              [attr.aria-controls]="flyoutId(itemId, cp)"
+              (click)="toggleFly(cp)"
+            >
+              <app-icon class="tsw-bar__fly-chevron" name="chevron-right" [size]="14" aria-hidden="true" />
+            </button>
+          </div>
+          @if (isFlyOpen(cp)) {
+            @let fid = flyoutId(itemId, cp);
+            @let plc = placementFor(fid);
+            <div
+              class="tsw-bar__flyout"
+              [class.tsw-bar__flyout--left]="plc.left"
+              [style.transform]="plc.up ? 'translateY(-' + plc.up + 'px)' : null"
+              [style.maxHeight.px]="plc.maxH"
+              [style.overflowY]="plc.maxH ? 'auto' : null"
+              [id]="fid"
+              role="group"
+              [attr.aria-label]="node.label"
+              (keydown)="onLevelKeydown($event, itemId, cp)"
+            >
+              <ng-container *ngTemplateOutlet="nodeTree; context: { nodes: node.children, path: cp, itemId: itemId }" />
+            </div>
+          }
+        } @else {
+          @if (node.external) {
+            <a
+              class="tsw-bar__menu-link tsw-bar__menu-link--ext"
+              data-nav
+              target="_blank"
+              rel="noopener noreferrer"
+              [href]="node.href"
+              (mouseenter)="onNodeEnter(cp, false)"
+            >{{ node.label }}<span class="tsw-bar__ext" aria-hidden="true"></span><span class="tsw-bar__sr"> (opens in a new tab on an external site)</span></a>
+          } @else {
+            <a
+              class="tsw-bar__menu-link"
+              data-nav
+              [href]="node.href"
+              (mouseenter)="onNodeEnter(cp, false)"
+            >{{ node.label }}</a>
+          }
+        }
+      </li>
+    }
+  </ul>
+</ng-template>
+
+<!-- Recursive mobile level: the same real-link-plus-caret split, dropping inline instead of
+     flying out, the third level included. -->
+<ng-template #mobileTree let-nodes="nodes" let-parent="parent">
+  <ul class="tsw-bar__m-list" role="list">
+    @for (node of nodes; track $index; let i = $index) {
+      @let key = mobileKey(parent, i);
+      <li class="tsw-bar__m-item">
+        <div class="tsw-bar__m-head">
+          @if (node.external) {
+            <a
+              class="tsw-bar__m-link"
+              target="_blank"
+              rel="noopener noreferrer"
+              [href]="node.href"
+            >{{ node.label }}<span class="tsw-bar__ext" aria-hidden="true"></span><span class="tsw-bar__sr"> (opens in a new tab on an external site)</span></a>
+          } @else {
+            <a class="tsw-bar__m-link" [href]="node.href">{{ node.label }}</a>
+          }
+          @if (hasChildren(node)) {
+            <button
+              type="button"
+              class="tsw-bar__m-caret"
+              [attr.aria-label]="node.label + ' section'"
+              [attr.aria-expanded]="isMobileOpen(key)"
+              [attr.aria-controls]="mobileSectionId(key)"
+              (click)="toggleMobilePath(key)"
+            >
+              <app-icon [name]="isMobileOpen(key) ? 'chevron-down' : 'chevron-right'" [size]="18" aria-hidden="true" />
+            </button>
+          }
+        </div>
+        @if (hasChildren(node) && isMobileOpen(key)) {
+          <div class="tsw-bar__m-children" [id]="mobileSectionId(key)">
+            <ng-container *ngTemplateOutlet="mobileTree; context: { nodes: node.children, parent: key }" />
+          </div>
+        }
+      </li>
+    }
+  </ul>
+</ng-template>
