@@ -273,7 +273,15 @@
 
   // At every level the label is a real link that flexes to fill; the caret sits at the end.
   .tsw-bar__m-link { flex: 1 1 auto; }
-  .tsw-bar__m-top { padding: 10px 14px; }
+  // A top row with a caret is 44px tall (from the 44px caret button); a caret-less top row
+  // (version 7's Home) has only the link, so give it the same 44px minimum touch target.
+  .tsw-bar__m-top {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    box-sizing: border-box;
+    padding: 10px 14px;
+  }
 }
 
 .tsw-bar__m-caret {
