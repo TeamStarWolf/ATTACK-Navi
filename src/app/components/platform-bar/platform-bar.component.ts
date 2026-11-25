@@ -31,6 +31,10 @@ import { PlatformNav, ViewItem, ViewNode, visiblePlatformItems } from '../../mod
  * rel="noopener noreferrer", a silent arrow marker and a visually hidden note, so its
  * accessible name ends "(opens in a new tab on an external site)".
  *
+ * A top-level item with no menu (version 7's Home is a plain link to the front page) renders
+ * as a lone link: no caret button, no panel, no aria-expanded/controls. Hovering or focusing
+ * it closes any open menu, and in the compact accordion it is a plain row with no caret.
+ *
  * Source of record: `src/assets/platform-nav.json`, a byte-identical copy of the canonical
  * file the front site publishes; every `pending` entry is filtered before render
  * (`visiblePlatformItems`), which the spec and `scripts/check-platform-nav.mjs` assert.
@@ -106,6 +110,11 @@ export class PlatformBarComponent {
 
   isOpen(id: string): boolean { return this.openId() === id; }
 
+  /** Whether a top-level item has a menu to open (version 7's Home has none — a plain link). */
+  private itemHasMenu(id: string): boolean {
+    return (this.items.find((i) => i.id === id)?.entries.length ?? 0) > 0;
+  }
+
   /** True when the fly-out owned by the node at `path` is on the open chain. */
   isFlyOpen(path: number[]): boolean {
     if (path.length === 0) return false;
@@ -157,9 +166,20 @@ export class PlatformBarComponent {
 
   // --- Open / close ---
   openMenu(id: string): void {
+    // A menu-less top-level item (version 7's Home) has nothing to open; hovering or focusing
+    // it simply closes whatever else is open rather than leaving a panel-less item "open".
+    if (!this.itemHasMenu(id)) { this.closeAll(); return; }
     this.openId.set(id);
     this.flyPath.set([]);
     this.placement.set({});
+  }
+
+  /**
+   * Focusing a menu-less top-level item (version 7's Home) closes any open menu. Items that have
+   * a menu are left exactly as in version 6 — their link does not close anything on focus.
+   */
+  onLinkFocus(id: string): void {
+    if (!this.itemHasMenu(id)) this.closeAll();
   }
 
   closeAll(): void {
@@ -275,12 +295,17 @@ export class PlatformBarComponent {
         event.preventDefault();
         event.stopPropagation();
         // A caret sits in its PARENT's level, so closing "the level the focus is in" would shut
-        // the parent and everything under it. When focus is on a caret whose OWN fly-out is
-        // open, close just that fly-out (the deepest open level) and leave focus on the caret.
-        const active = document.activeElement as HTMLElement | null;
+        // the parent and everything under it. When the key was pressed ON a caret whose OWN
+        // fly-out is open, close just the deepest open level and leave focus on the caret.
+        // Read event.target (the element the key fired on), not document.activeElement, so the
+        // behaviour is driven by where the key actually landed.
+        const active = event.target as HTMLElement | null;
         const cp = active?.getAttribute('data-caretpath')?.split('-').map(Number);
         if (cp && this.isFlyOpen(cp)) {
-          this.flyPath.set(cp.slice(0, -1));
+          // Close the DEEPEST open level, not the focused caret's own level: if focus was moved
+          // back to an ancestor caret while a level is still open under it, one Escape must close
+          // only that deepest level, never the ancestor and its descendants at once.
+          this.flyPath.set(this.flyPath().slice(0, -1));
         } else if (path.length === 0) {
           this.closeAll();
           this.focusEl(this.caretId(itemId));

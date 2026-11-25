@@ -155,15 +155,24 @@ test.describe('platform bar', () => {
     expect(reachable, 'first and last CTI Platforms links reachable (painted above the rows)').toBe(true);
   });
 
-  test('a pending entry never renders; a de-pended entry does', async ({ page }) => {
-    await page.getByRole('link', { name: 'Home', exact: true }).hover();
-    const panel = page.locator('#tsw-panel-home');
-    await expect(panel).toBeVisible();
-    await expect(panel).toContainText('Front page');
-    // "Search" carries no pending note, so it renders.
-    await expect(panel).toContainText('Search');
-    // "Security policy" is still pending, so it must not render.
-    await expect(panel).not.toContainText('Security policy');
+  test('Home is a plain link: no caret, no panel, and it closes any open menu', async ({ page }) => {
+    // Version 7: the Home item has no menu, so it renders as a lone link to the front page — no
+    // caret, no panel, no aria wiring — and the pending filter is covered by the unit specs.
+    // Scope to the platform bar: "Library" etc. also name nav-rail workspace links.
+    const bar = page.locator('nav.tsw-bar');
+    const home = bar.getByRole('link', { name: 'Home', exact: true });
+    await expect(home).toBeVisible();
+    await expect(home).toHaveAttribute('href', 'https://teamstarwolf.com/');
+    await expect(home).not.toHaveAttribute('aria-expanded');
+    await expect(home).not.toHaveAttribute('aria-controls');
+    await expect(bar.getByRole('button', { name: 'Home menu' })).toHaveCount(0);
+
+    // Opening another menu, then moving onto Home, closes it (and Home itself opens nothing).
+    await bar.getByRole('link', { name: 'Library', exact: true }).hover();
+    await expect(page.locator('#tsw-panel-library')).toBeVisible();
+    await home.hover();
+    await expect(page.locator('#tsw-panel-library')).toBeHidden();
+    await expect(page.locator('#tsw-panel-home')).toHaveCount(0);
   });
 
   test('its own class names keep the app toolbar selectors unique', async ({ page }) => {

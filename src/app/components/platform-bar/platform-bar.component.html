@@ -12,7 +12,7 @@
   <ul class="tsw-bar__row" role="list">
     @for (item of items; track item.id) {
       <li class="tsw-bar__item" (mouseenter)="onItemEnter(item.id)" (mouseleave)="onItemLeave()">
-        <a class="tsw-bar__link" [href]="item.href">{{ item.label }}</a>
+        <a class="tsw-bar__link" [href]="item.href" (focus)="onLinkFocus(item.id)">{{ item.label }}</a>
 
         @if (item.entries.length) {
           <button

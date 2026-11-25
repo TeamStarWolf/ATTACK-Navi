@@ -248,12 +248,21 @@ test('collectMenuErrors enforces the per-list caps (16 bookmarks, 14 others)', (
 
 // ---- The real vendored menu ----
 
+test('collectMenuErrors accepts a top-level item with no menu (a plain link)', () => {
+  // Version 7's Home item carries id/label/href and no menu key; it must pass the gate.
+  assert.deepEqual(collectMenuErrors({ items: [{ id: 'home', label: 'Home', href: 'https://teamstarwolf.com/' }] }), []);
+  // An empty menu array is equally a plain link and must not error either.
+  assert.deepEqual(collectMenuErrors({ items: [{ id: 'home', label: 'Home', href: 'https://teamstarwolf.com/', menu: [] }] }), []);
+});
+
+test('collectPending still holds back pending entries (filter kept, tested on a fixture)', () => {
+  // The real file may have no pending entry (version 7 has none), so the filter is tested on a
+  // fixture here; a future entry may be pending again and must still be enumerated/dropped.
+  const nav = { items: [{ label: 'Home', menu: [{ label: 'A' }, { label: 'B', pending: 'later' }] }] };
+  assert.deepEqual(collectPending(nav), ['Home > B']);
+});
+
 test('the real vendored menu passes every gate', () => {
   const { ok, errors } = checkPlatformNav('.');
   assert.equal(ok, true, errors.join('\n'));
-});
-
-test('the real menu holds back at least one pending entry', () => {
-  const { pending } = checkPlatformNav('.');
-  assert.ok(pending.length >= 1, 'expected pending entries to be enumerated');
 });
