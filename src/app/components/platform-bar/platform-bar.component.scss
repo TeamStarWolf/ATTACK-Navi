@@ -1,9 +1,9 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 //
-// Every value the Website session's visual contract fixes is held here once, as a
-// token, dark by default and overridden for light mode. Flat tokens only, no glass.
-// Provisional until the owner approves the look — change a value in one place.
+// Every value the shared visual contract fixes is held here once, as a token, dark by default
+// and overridden for light mode. Flat tokens only, no glass. Provisional until the owner
+// approves the look — change a value in one place.
 
 :host {
   // --- band ---
@@ -18,10 +18,6 @@
   --tsw-panel-border: #30304a;
   --tsw-panel-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
   --tsw-hover-bg: #181827;
-  --tsw-sub: #8f8da6;
-  // The main panel must not clip (the fly-out escapes it), so this is left open for now.
-  // The Website session is fixing what replaces a scroll cap for a very tall panel.
-  --tsw-panel-max-h: none;
   // --- focus ---
   --tsw-focus: #b794ff;
 
@@ -39,7 +35,6 @@
   --tsw-panel-border: #bfbbd3;
   --tsw-panel-shadow: 0 10px 28px rgba(21, 19, 31, 0.14);
   --tsw-hover-bg: #e9e7f3;
-  --tsw-sub: #5c5872;
   --tsw-focus: #5b21b6;
 }
 
@@ -118,7 +113,9 @@
   align-items: center;
   justify-content: center;
   height: 30px;
-  width: 22px;
+  // Every disclosure caret is at least 24x24px (version 5's was 22px wide).
+  width: 24px;
+  min-width: 24px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -145,9 +142,9 @@
   @extend %tsw-panel;
   top: calc(100% + 4px);
   left: 0;
-  // Must not clip: the fly-out escapes to the side.
+  // A top-level panel never scrolls (overflow: auto would clip the fly-out that escapes to the
+  // side); a viewport too short for it switches to the compact accordion instead.
   overflow: visible;
-  max-height: var(--tsw-panel-max-h);
 }
 
 .tsw-bar__list {
@@ -165,9 +162,36 @@
   font-size: 13px;
   color: var(--tsw-link);
   text-decoration: none;
-  white-space: nowrap;
+  // A long label wraps to two lines rather than overflowing (version 6 leaf labels run long).
+  white-space: normal;
 
   &:hover { background: var(--tsw-hover-bg); color: var(--tsw-link-hover); }
+}
+
+// A category/subsection header stays on one line; only leaf labels may wrap.
+.tsw-bar__entry-label { white-space: nowrap; }
+
+// External-leaf marker: a small arrow in the current text colour at about half opacity,
+// hidden from assistive technology. The accessible name is carried by the sr-only note.
+.tsw-bar__ext {
+  margin-left: 4px;
+  font-size: 0.85em;
+  opacity: 0.5;
+
+  &::before { content: '\2197'; } // north-east arrow
+}
+
+// Visually hidden, still in the accessible name (" (opens in a new tab on an external site)").
+.tsw-bar__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 // An entry that opens a fly-out: label (a real link) left, chevron button right.
@@ -233,7 +257,7 @@
   left: 0;
   right: 0;
   z-index: 500;
-  max-height: min(80vh, 70vh);
+  max-height: 70vh;
   overflow-y: auto;
   padding: 6px;
   background: var(--tsw-bg);
@@ -247,7 +271,9 @@
   display: flex;
   align-items: center;
 
-  .tsw-bar__m-top { flex: 1 1 auto; padding: 10px 14px; font-size: 14px; }
+  // At every level the label is a real link that flexes to fill; the caret sits at the end.
+  .tsw-bar__m-link { flex: 1 1 auto; }
+  .tsw-bar__m-top { padding: 10px 14px; }
 }
 
 .tsw-bar__m-caret {
@@ -255,8 +281,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 42px;
+  // The caret fills the full 44px row on the phone layout (version 5's was 42px).
+  height: 44px;
   width: 44px;
+  min-width: 24px;
+  min-height: 24px;
   border: 0;
   border-radius: 6px;
   background: transparent;
@@ -267,11 +296,12 @@
   &[aria-expanded='true'] { color: var(--tsw-link-hover); }
 }
 
-.tsw-bar__m-list { padding-bottom: 6px; }
+.tsw-bar__m-list { margin: 0; padding: 0; padding-bottom: 6px; list-style: none; }
 
 .tsw-bar__m-link {
   display: block;
   padding: 8px 14px;
+  // Uniform 13px in the primary colour at every level (version 5's 12px muted sub is gone).
   font-size: 13px;
   color: var(--tsw-link);
   text-decoration: none;
@@ -281,11 +311,16 @@
 }
 
 .tsw-bar__m-top { font-weight: 500; }
-// Mobile keeps sub-entries inline: 12px, indented.
-.tsw-bar__m-sub { padding-left: 28px; font-size: 12px; color: var(--tsw-sub); }
 
-// Under 760px: hide the row, show the menu button + accordion.
-@media (max-width: 759.98px) {
+// Each nested accordion level indents one step; indentation compounds with depth.
+.tsw-bar__m-children { padding-left: 14px; }
+
+// Compact layout (burger + accordion) when the viewport is narrow OR too short for the
+// tallest top-level panel — the same condition the component uses (COMPACT_MEDIA), so a
+// short, wide viewport (a phone held sideways) never strands the lower Bookmarks categories
+// below a non-scrolling app shell. A top-level panel is never made to scroll: `overflow: auto`
+// would clip the fly-outs that hang off it, so the whole bar drops to the accordion instead.
+@media (max-width: 760px), (max-height: 560px) {
   .tsw-bar__row { display: none; }
   .tsw-bar__burger { display: inline-flex; }
 }
