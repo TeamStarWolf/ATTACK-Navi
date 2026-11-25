@@ -1,5 +1,5 @@
 # Stage 1: Build
-# Node 24 (alpine) — Angular 22's CLI requires Node >=22.22.3 / >=24.15.0 / >=26.
+# Node 26 (alpine) — Angular 22's CLI requires Node >=22.22.3 / >=24.15.0 / >=26.
 FROM node:26-alpine AS build
 WORKDIR /app
 COPY package*.json ./

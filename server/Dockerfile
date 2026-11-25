@@ -1,4 +1,4 @@
-# Credentials proxy image. Node 24 (Active LTS until 2028-04-30); Node 20 reached
+# Credentials proxy image. Node 26 (Active LTS; Node 24 entered maintenance 2026-10-20); Node 20 reached
 # end-of-life on 2026-04-30 and must not run a service that holds live tokens.
 FROM node:26-alpine
 WORKDIR /app

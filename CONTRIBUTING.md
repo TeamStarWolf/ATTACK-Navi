@@ -23,7 +23,7 @@ Thanks for your interest in contributing! This document describes how to set up 
 
 | Tool | Version | Notes |
 |------|---------|-------|
-| Node.js | `^22.22.3 \|\| ^24.15.0 \|\| >=26.0.0` | The engine range of the locked Angular 22 packages (`engines` in `package.json`); CI and the Dockerfile use Node 24. Node 20 is end-of-life and rejected by the CLI. |
+| Node.js | `^22.22.3 \|\| ^24.15.0 \|\| >=26.0.0` | The engine range of the locked Angular 22 packages (`engines` in `package.json`); CI and the Dockerfile use Node 26. Node 20 is end-of-life and rejected by the CLI. |
 | npm | 10+ | Comes with Node.js 22 and 24 |
 | Angular CLI | 22.x | Installed as a dev dependency; the exact version is in `package-lock.json` |
 | Git | 2.x+ | For version control |
