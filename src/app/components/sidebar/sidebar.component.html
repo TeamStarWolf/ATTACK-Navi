@@ -42,6 +42,9 @@
         <!-- Why this colour and the evidence behind it (P2-18): first in the body, before the Library cross-ref -->
         <app-technique-evidence-card [technique]="technique" />
 
+        <!-- Live Defense: the KEV exploitation evidence behind this technique's heat (fail quiet when it does not heat) -->
+        <app-live-defense-evidence [technique]="technique" />
+
         <!-- Jump index: grouped shortcuts to all 48 sections -->
         <div class="jump-index" [class.open]="showJumpIndex">
           <button class="jump-index-toggle" (click)="toggleJumpIndex()" [attr.aria-expanded]="showJumpIndex">

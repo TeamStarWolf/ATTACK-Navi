@@ -389,7 +389,10 @@ describe('P2-14 ramps: ordinal and CVD-safe in both themes', () => {
       expect(def.project).withContext(lens).toBeDefined();
       expect(def.color).withContext(lens).toBeDefined();
     }
-    expect(HEATMAP_MODES.slice(-2).map(m => m.value)).toEqual(['proven', 'covered']);
+    // Proven immediately precedes Covered in the registry block (a later non-posture lens
+    // may be appended after them, so this checks adjacency and order, not the array tail).
+    const order = HEATMAP_MODES.map(m => m.value);
+    expect(order.indexOf('covered')).toBe(order.indexOf('proven') + 1);
     for (const stop of [...provenLegendStops('dark').slice(1), ...coveredLegendStops('dark').slice(1)]) {
       expect(stop.ownerWords).withContext(stop.label).toBeTrue();
     }

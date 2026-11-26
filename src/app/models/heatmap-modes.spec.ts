@@ -50,14 +50,14 @@ function nonEmpty(v: unknown): boolean {
 describe('HEATMAP_MODES registry (E1.2 lens metadata)', () => {
   const FIELDS: (keyof HeatmapModeDef)[] = ['value', 'label', 'short', 'group', 'question', 'rung', 'formula', 'domains', 'sources', 'zeroMeaning', 'ramp'];
 
-  it('describes 36 of 36 modes with every field non-empty', () => {
-    expect(HEATMAP_MODES.length).toBe(36);
+  it('describes 37 of 37 modes with every field non-empty', () => {
+    expect(HEATMAP_MODES.length).toBe(37);
     const described = HEATMAP_MODES.filter((m) =>
       FIELDS.every((f) => nonEmpty(m[f])) && m.ramp.stops.length > 0 && m.ramp.stops.every((s) => nonEmpty(s.color) && nonEmpty(s.label)),
     );
     const missing = HEATMAP_MODES.filter((m) => !described.includes(m)).map((m) => m.value);
     expect(missing).withContext('modes with an empty field').toEqual([]);
-    expect(described.length).toBe(36);
+    expect(described.length).toBe(37);
   });
 
   it('keeps every heat= id (the committed lens snapshot ids)', () => {
@@ -134,7 +134,7 @@ describe('HEATMAP_MODES registry (E1.2 lens metadata)', () => {
     let mode = HEATMAP_MODES[0].value;
     const seen = new Set<string>();
     for (let i = 0; i < HEATMAP_MODES.length; i++) { seen.add(mode); mode = nextHeatmapMode(mode); }
-    expect(seen.size).toBe(36);
+    expect(seen.size).toBe(37);
     expect(mode).toBe(HEATMAP_MODES[0].value);
   });
 });
@@ -167,7 +167,7 @@ const HEAT_VALUES = [
   'kev', 'cve', 'epss', 'kill-chain', 'poc-exploits',
   'detection', 'sigma', 'elastic', 'splunk', 'wazuh', 'm365', 'car', 'atomic',
   'd3fend', 'engage', 'nist', 'veris', 'cri', 'csa-ccm', 'm365-controls', 'f3-origin',
-  'posture', 'proven', 'covered',
+  'posture', 'proven', 'covered', 'live-defense',
 ];
 
 describe('HEATMAP_MODES relabel (E1.1)', () => {
@@ -203,14 +203,14 @@ describe('HEATMAP_MODES relabel (E1.1)', () => {
 });
 
 // E1.2 PR 2 acceptance (plan P1 row E1.2): lenses without data for the current
-// domain are disabled with a stated reason, about 23 of them on ICS today.
+// domain are disabled with a stated reason, about 24 of them on ICS today.
 describe('lens availability per domain (E1.2 definition cards)', () => {
   const lacking = (domain: string) => HEATMAP_MODES.filter((m) => !(m.domains as readonly string[]).includes(domain));
 
-  it('switching to ICS disables exactly the lenses whose domains[] lacks ics (23 today)', () => {
+  it('switching to ICS disables exactly the lenses whose domains[] lacks ics (24 today)', () => {
     const disabled = unavailableLenses('ics').map((m) => m.value);
     expect(disabled).toEqual(lacking('ics').map((m) => m.value));
-    expect(disabled.length).toBe(23);
+    expect(disabled.length).toBe(24);
     // Every lens built only on the ATT&CK bundle or your own workspace stays on.
     for (const v of ['coverage', 'status', 'controls', 'library', 'frequency', 'risk', 'exposure', 'software', 'campaign', 'intelligence'] as const) {
       expect(isLensAvailable(v, 'ics')).withContext(v).toBeTrue();

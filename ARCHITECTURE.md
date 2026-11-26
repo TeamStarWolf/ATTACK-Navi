@@ -114,7 +114,7 @@ to resolve STIX IDs from the loaded domain).
 | `activeSoftwareIdsSubject` | `Set<string>` | Active software/malware filter. |
 | `activeCampaignIdsSubject` | `Set<string>` | Active campaign filter. |
 | `activeDataSourceSubject` | `string \| null` | Active ATT&CK data source name filter. |
-| `heatmapModeSubject` | `HeatmapMode` | Active heatmap coloring mode (36 modes; see `models/heatmap-modes.ts`). |
+| `heatmapModeSubject` | `HeatmapMode` | Active heatmap coloring mode (37 modes; see `models/heatmap-modes.ts`). |
 | `implStatusFilterSubject` | `string \| null` | Filter techniques by implementation status. |
 | `searchFilterModeSubject` | `boolean` | When true, search acts as a filter (hides non-matches). |
 | `cveTechniqueIdsSubject` | `Set<string>` | Technique IDs highlighted by CVE panel clicks. |
@@ -136,7 +136,7 @@ Computed via `combineLatest` + `map` in the constructor:
 
 > **Note (v0.8.0):** the former `ActivePanel` type union no longer exists — panel navigation is
 > the router's job now (see §8). `HeatmapMode` remains a string union, but the labels, groups, and
-> short names for all 36 modes are centralized in `src/app/models/heatmap-modes.ts` (the single
+> short names for all 37 modes are centralized in `src/app/models/heatmap-modes.ts` (the single
 > source consumed by the picker, cycling logic and the legend, which also reads each lens's rung,
 > question, sources and ramp from it).
 

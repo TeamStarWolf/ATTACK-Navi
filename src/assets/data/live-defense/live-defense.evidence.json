@@ -1,0 +1,1890 @@
+{
+  "__meta": {
+    "title": "Live Defense — sourced KEV exploitation evidence per ATT&CK technique",
+    "generator": "scripts/build-live-defense.mjs",
+    "snapshotDate": "2026-10-16",
+    "kevCatalogVersion": "2026.10.16",
+    "attackVersion": "19.2",
+    "halfLifeDays": 180,
+    "ransomwareBonus": 0.5,
+    "sources": [
+      "CISA Known Exploited Vulnerabilities catalog (CC0 1.0; THIRD_PARTY_NOTICES.md section 1.5)",
+      "CWE->ATT&CK exploitation anchor (cwe-exploitation-anchor.json; project-authored, MIT)",
+      "ATT&CK Enterprise 19.2 (enterprise-attack.json)"
+    ],
+    "method": "Each KEV CVE is mapped to ATT&CK technique(s) by the exploitation nature of its CWE (high-confidence anchor only; the low-confidence CWE->CAPEC->ATT&CK fan-out is not used). Heat = sum of recency(0.5^(age/half-life)) x severity (known ransomware use adds 50%), measured from the snapshot date. A KEV CVE whose weakness anchors no technique does not heat.",
+    "techniqueCount": 5,
+    "note": "Keyed by techniqueID. Each entry is the evidence behind that cell's heat: a cite-or-abstain brief and the KEV CVEs that map to it (newest/heaviest first, capped; itemCount is exact). A technique absent here does not heat (fail quiet). Absence is not evidence of safety."
+  },
+  "techniques": {
+    "T1190": {
+      "techniqueID": "T1190",
+      "name": "Exploit Public-Facing Application",
+      "rank": 1,
+      "score": 100,
+      "heat": 168.56,
+      "confidence": "high",
+      "itemCount": 1215,
+      "ransomwareCount": 249,
+      "breakdown": {
+        "halfLifeDays": 180,
+        "ransomwareBonus": 0.5,
+        "asOf": "2026-10-16",
+        "itemsShown": 25
+      },
+      "brief": "1215 KEV CVEs in the CISA KEV snapshot map to this technique by the exploitation weakness (CWE) of each. That is the highest KEV exploitation pressure of any technique. 249 are KEV-linked to known ransomware campaign use. The most recent was added 2026-10-16. Heat is recency-weighted with a 180-day half-life, as of the 2026-10-16 KEV snapshot; it reflects KEV exploitation pressure, not your defensive posture.",
+      "items": [
+        {
+          "cve": "CVE-2026-59310",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-59310",
+          "dateAdded": "2026-08-18",
+          "knownRansomware": true,
+          "confidence": "high",
+          "quote": "Broadcom VMware vCenter Path Traversal Vulnerability",
+          "cwes": [
+            "CWE-22"
+          ],
+          "via": "CWE-22: Path traversal on a service exposes files / enables further exploitation.",
+          "weight": 1.2
+        },
+        {
+          "cve": "CVE-2026-63077",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-63077",
+          "dateAdded": "2026-08-05",
+          "knownRansomware": true,
+          "confidence": "high",
+          "quote": "JetBrains TeamCity Deserialization of Untrusted Data Vulnerability",
+          "cwes": [
+            "CWE-502"
+          ],
+          "via": "CWE-502: Deserialization of untrusted data on a service yields RCE.",
+          "weight": 1.14
+        },
+        {
+          "cve": "CVE-2026-20316",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-20316",
+          "dateAdded": "2026-07-29",
+          "knownRansomware": true,
+          "confidence": "high",
+          "quote": "Cisco Secure Firewall Management Center Use of Hard-coded Password Vulnerability",
+          "cwes": [
+            "CWE-259"
+          ],
+          "via": "CWE-259: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 1.11
+        },
+        {
+          "cve": "CVE-2026-15410",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-15410",
+          "dateAdded": "2026-07-14",
+          "knownRansomware": true,
+          "confidence": "high",
+          "quote": "SonicWall SMA1000 Appliances Code Injection Vulnerability",
+          "cwes": [
+            "CWE-94"
+          ],
+          "via": "CWE-94: Injection into a public-facing service leads to code/command execution.",
+          "weight": 1.04
+        },
+        {
+          "cve": "CVE-2026-15409",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-15409",
+          "dateAdded": "2026-07-14",
+          "knownRansomware": true,
+          "confidence": "high",
+          "quote": "SonicWall SMA1000 Appliances Server-Side Request Forgery Vulnerability",
+          "cwes": [
+            "CWE-918"
+          ],
+          "via": "CWE-918: Server-side request forgery abuses a public-facing service.",
+          "weight": 1.04
+        },
+        {
+          "cve": "CVE-2026-102764",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-102764",
+          "dateAdded": "2026-10-16",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "BeyondTrust Remote Support Authentication Bypass by Spoofing Vulnerability",
+          "cwes": [
+            "CWE-290"
+          ],
+          "via": "CWE-290: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 1
+        },
+        {
+          "cve": "CVE-2026-21589",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-21589",
+          "dateAdded": "2026-10-15",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Atlassian Multiple Products Files or Directories Accessible to External Parties Vulnerability",
+          "cwes": [
+            "CWE-552"
+          ],
+          "via": "CWE-552: Broken authorization / IDOR / insecure permissions on a service.",
+          "weight": 1
+        },
+        {
+          "cve": "CVE-2025-61624",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-61624",
+          "dateAdded": "2026-10-16",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Fortinet Multiple Products Path Traversal Vulnerability",
+          "cwes": [
+            "CWE-22"
+          ],
+          "via": "CWE-22: Path traversal on a service exposes files / enables further exploitation.",
+          "weight": 1
+        },
+        {
+          "cve": "CVE-2026-105134",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-105134",
+          "dateAdded": "2026-10-14",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Ahsay AhsayCBS Command Injection Vulnerability",
+          "cwes": [
+            "CWE-77",
+            "CWE-78"
+          ],
+          "via": "CWE-77: Injection into a public-facing service leads to code/command execution.",
+          "weight": 0.99
+        },
+        {
+          "cve": "CVE-2026-105133",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-105133",
+          "dateAdded": "2026-10-14",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Ahsay AhsayCBS Improper Authentication Vulnerability",
+          "cwes": [
+            "CWE-287"
+          ],
+          "via": "CWE-287: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 0.99
+        },
+        {
+          "cve": "CVE-2026-104935",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-104935",
+          "dateAdded": "2026-10-13",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Ivanti Connect Secure Authentication Bypass by Spoofing Vulnerability",
+          "cwes": [
+            "CWE-290"
+          ],
+          "via": "CWE-290: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 0.99
+        },
+        {
+          "cve": "CVE-2026-96951",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-96951",
+          "dateAdded": "2026-10-13",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Microsoft Windows Command Injection Vulnerability",
+          "cwes": [
+            "CWE-77"
+          ],
+          "via": "CWE-77: Injection into a public-facing service leads to code/command execution.",
+          "weight": 0.99
+        },
+        {
+          "cve": "CVE-2026-76519",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-76519",
+          "dateAdded": "2026-10-14",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Cisco Secure Email Gateway Relative Path Traversal Vulnerability",
+          "cwes": [
+            "CWE-23"
+          ],
+          "via": "CWE-23: Path traversal on a service exposes files / enables further exploitation.",
+          "weight": 0.99
+        },
+        {
+          "cve": "CVE-2026-45659",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-45659",
+          "dateAdded": "2026-07-01",
+          "knownRansomware": true,
+          "confidence": "high",
+          "quote": "Microsoft SharePoint Server Deserialization of Untrusted Data Vulnerability",
+          "cwes": [
+            "CWE-502"
+          ],
+          "via": "CWE-502: Deserialization of untrusted data on a service yields RCE.",
+          "weight": 0.99
+        },
+        {
+          "cve": "CVE-2026-0322",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-0322",
+          "dateAdded": "2026-10-14",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Palo Alto Networks PAN-OS Code Injection Vulnerability",
+          "cwes": [
+            "CWE-94"
+          ],
+          "via": "CWE-94: Injection into a public-facing service leads to code/command execution.",
+          "weight": 0.99
+        },
+        {
+          "cve": "CVE-2026-12569",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-12569",
+          "dateAdded": "2026-06-25",
+          "knownRansomware": true,
+          "confidence": "high",
+          "quote": "PTC Windchill and FlexPLM Improper Input Validation Vulnerability",
+          "cwes": [
+            "CWE-20",
+            "CWE-502"
+          ],
+          "via": "CWE-20: Improper input validation on a public-facing service — anchor to Exploit Public-Facing Application; the noisy CAPEC fan-out for these broad CWEs is suppressed (see genericCwes).",
+          "weight": 0.97
+        },
+        {
+          "cve": "CVE-2021-3199",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2021-3199",
+          "dateAdded": "2026-10-08",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "ONLYOFFICE Docs Server Path Traversal Vulnerability",
+          "cwes": [
+            "CWE-22"
+          ],
+          "via": "CWE-22: Path traversal on a service exposes files / enables further exploitation.",
+          "weight": 0.97
+        },
+        {
+          "cve": "CVE-2016-3081",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2016-3081",
+          "dateAdded": "2026-10-08",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Apache Struts Command Injection Vulnerability",
+          "cwes": [
+            "CWE-77"
+          ],
+          "via": "CWE-77: Injection into a public-facing service leads to code/command execution.",
+          "weight": 0.97
+        },
+        {
+          "cve": "CVE-2015-3306",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2015-3306",
+          "dateAdded": "2026-10-08",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "ProFTPD Improper Access Control Vulnerability",
+          "cwes": [
+            "CWE-284"
+          ],
+          "via": "CWE-284: Broken authorization / IDOR / insecure permissions on a service.",
+          "weight": 0.97
+        },
+        {
+          "cve": "CVE-2026-88779",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-88779",
+          "dateAdded": "2026-10-04",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Citrix NetScaler Improper Restriction of Operations within the Bounds of a Memory Buffer Vulnerability",
+          "cwes": [
+            "CWE-119"
+          ],
+          "via": "CWE-119: Memory-safety flaw in a network-reachable service is exploited for code execution (T1190; client-side variants would be T1203).",
+          "weight": 0.95
+        },
+        {
+          "cve": "CVE-2026-104286",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-104286",
+          "dateAdded": "2026-10-01",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Fortinet FortiMail Path Traversal Vulnerability",
+          "cwes": [
+            "CWE-22",
+            "CWE-158"
+          ],
+          "via": "CWE-22: Path traversal on a service exposes files / enables further exploitation.",
+          "weight": 0.94
+        },
+        {
+          "cve": "CVE-2026-86950",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-86950",
+          "dateAdded": "2026-09-29",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Apple Multiple Products Out-of-Bounds Write Vulnerability",
+          "cwes": [
+            "CWE-787"
+          ],
+          "via": "CWE-787: Memory-safety flaw in a network-reachable service is exploited for code execution (T1190; client-side variants would be T1203).",
+          "weight": 0.94
+        },
+        {
+          "cve": "CVE-2026-88772",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-88772",
+          "dateAdded": "2026-09-27",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Citrix NetScaler Improper Restriction of Operations within the Bounds of a Memory Buffer Vulnerability",
+          "cwes": [
+            "CWE-119"
+          ],
+          "via": "CWE-119: Memory-safety flaw in a network-reachable service is exploited for code execution (T1190; client-side variants would be T1203).",
+          "weight": 0.93
+        },
+        {
+          "cve": "CVE-2026-88771",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-88771",
+          "dateAdded": "2026-09-27",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Citrix NetScaler Improper Input Validation Vulnerability",
+          "cwes": [
+            "CWE-119"
+          ],
+          "via": "CWE-119: Memory-safety flaw in a network-reachable service is exploited for code execution (T1190; client-side variants would be T1203).",
+          "weight": 0.93
+        },
+        {
+          "cve": "CVE-2026-87902",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-87902",
+          "dateAdded": "2026-09-25",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "WordPress Core Remote File Inclusion Vulnerability",
+          "cwes": [
+            "CWE-98"
+          ],
+          "via": "CWE-98: Arbitrary upload / file inclusion on a web service yields code execution.",
+          "weight": 0.92
+        }
+      ]
+    },
+    "T1059": {
+      "techniqueID": "T1059",
+      "name": "Command and Scripting Interpreter",
+      "rank": 2,
+      "score": 36,
+      "heat": 61.06,
+      "confidence": "high",
+      "itemCount": 463,
+      "ransomwareCount": 110,
+      "breakdown": {
+        "halfLifeDays": 180,
+        "ransomwareBonus": 0.5,
+        "asOf": "2026-10-16",
+        "itemsShown": 25
+      },
+      "brief": "463 KEV CVEs in the CISA KEV snapshot map to this technique by the exploitation weakness (CWE) of each. 110 are KEV-linked to known ransomware campaign use. The most recent was added 2026-10-14. Heat is recency-weighted with a 180-day half-life, as of the 2026-10-16 KEV snapshot; it reflects KEV exploitation pressure, not your defensive posture.",
+      "items": [
+        {
+          "cve": "CVE-2026-63077",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-63077",
+          "dateAdded": "2026-08-05",
+          "knownRansomware": true,
+          "confidence": "high",
+          "quote": "JetBrains TeamCity Deserialization of Untrusted Data Vulnerability",
+          "cwes": [
+            "CWE-502"
+          ],
+          "via": "CWE-502: Deserialization of untrusted data on a service yields RCE.",
+          "weight": 1.14
+        },
+        {
+          "cve": "CVE-2026-15410",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-15410",
+          "dateAdded": "2026-07-14",
+          "knownRansomware": true,
+          "confidence": "high",
+          "quote": "SonicWall SMA1000 Appliances Code Injection Vulnerability",
+          "cwes": [
+            "CWE-94"
+          ],
+          "via": "CWE-94: Injection into a public-facing service leads to code/command execution.",
+          "weight": 1.04
+        },
+        {
+          "cve": "CVE-2026-105134",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-105134",
+          "dateAdded": "2026-10-14",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Ahsay AhsayCBS Command Injection Vulnerability",
+          "cwes": [
+            "CWE-77",
+            "CWE-78"
+          ],
+          "via": "CWE-77: Injection into a public-facing service leads to code/command execution.",
+          "weight": 0.99
+        },
+        {
+          "cve": "CVE-2026-96951",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-96951",
+          "dateAdded": "2026-10-13",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Microsoft Windows Command Injection Vulnerability",
+          "cwes": [
+            "CWE-77"
+          ],
+          "via": "CWE-77: Injection into a public-facing service leads to code/command execution.",
+          "weight": 0.99
+        },
+        {
+          "cve": "CVE-2026-45659",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-45659",
+          "dateAdded": "2026-07-01",
+          "knownRansomware": true,
+          "confidence": "high",
+          "quote": "Microsoft SharePoint Server Deserialization of Untrusted Data Vulnerability",
+          "cwes": [
+            "CWE-502"
+          ],
+          "via": "CWE-502: Deserialization of untrusted data on a service yields RCE.",
+          "weight": 0.99
+        },
+        {
+          "cve": "CVE-2026-0322",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-0322",
+          "dateAdded": "2026-10-14",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Palo Alto Networks PAN-OS Code Injection Vulnerability",
+          "cwes": [
+            "CWE-94"
+          ],
+          "via": "CWE-94: Injection into a public-facing service leads to code/command execution.",
+          "weight": 0.99
+        },
+        {
+          "cve": "CVE-2026-12569",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-12569",
+          "dateAdded": "2026-06-25",
+          "knownRansomware": true,
+          "confidence": "high",
+          "quote": "PTC Windchill and FlexPLM Improper Input Validation Vulnerability",
+          "cwes": [
+            "CWE-20",
+            "CWE-502"
+          ],
+          "via": "CWE-502: Deserialization of untrusted data on a service yields RCE.",
+          "weight": 0.97
+        },
+        {
+          "cve": "CVE-2016-3081",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2016-3081",
+          "dateAdded": "2026-10-08",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Apache Struts Command Injection Vulnerability",
+          "cwes": [
+            "CWE-77"
+          ],
+          "via": "CWE-77: Injection into a public-facing service leads to code/command execution.",
+          "weight": 0.97
+        },
+        {
+          "cve": "CVE-2026-87902",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-87902",
+          "dateAdded": "2026-09-25",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "WordPress Core Remote File Inclusion Vulnerability",
+          "cwes": [
+            "CWE-98"
+          ],
+          "via": "CWE-98: Arbitrary upload / file inclusion on a web service yields code execution.",
+          "weight": 0.92
+        },
+        {
+          "cve": "CVE-2026-65660",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-65660",
+          "dateAdded": "2026-09-25",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Microsoft SharePoint Code Injection Vulnerability",
+          "cwes": [
+            "CWE-94"
+          ],
+          "via": "CWE-94: Injection into a public-facing service leads to code/command execution.",
+          "weight": 0.92
+        },
+        {
+          "cve": "CVE-2026-76461",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-76461",
+          "dateAdded": "2026-09-14",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Cisco Secure Email Gateway SQL Injection Vulnerability",
+          "cwes": [
+            "CWE-89"
+          ],
+          "via": "CWE-89: Injection into a public-facing service leads to code/command execution.",
+          "weight": 0.88
+        },
+        {
+          "cve": "CVE-2026-86060",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-86060",
+          "dateAdded": "2026-09-10",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "MikroTik RouterOS Improper Neutralization of Argument Delimiters in a Command Vulnerability",
+          "cwes": [
+            "CWE-88"
+          ],
+          "via": "CWE-88: Injection into a public-facing service leads to code/command execution.",
+          "weight": 0.87
+        },
+        {
+          "cve": "CVE-2026-86218",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-86218",
+          "dateAdded": "2026-09-08",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "N-able N-central Static Code Injection Vulnerability",
+          "cwes": [
+            "CWE-96"
+          ],
+          "via": "CWE-96: Injection into a public-facing service leads to code/command execution.",
+          "weight": 0.86
+        },
+        {
+          "cve": "CVE-2026-75650",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-75650",
+          "dateAdded": "2026-09-08",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Adobe Commerce and Magento Improper Neutralization of Special Elements Used in a Template Engine Vulnerability",
+          "cwes": [
+            "CWE-1336"
+          ],
+          "via": "CWE-1336: Injection into a public-facing service leads to code/command execution.",
+          "weight": 0.86
+        },
+        {
+          "cve": "CVE-2026-83549",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-83549",
+          "dateAdded": "2026-09-02",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "SonicWall SMA1000 Appliances OS Command Injection Vulnerability",
+          "cwes": [
+            "CWE-78"
+          ],
+          "via": "CWE-78: Injection into a public-facing service leads to code/command execution.",
+          "weight": 0.84
+        },
+        {
+          "cve": "CVE-2026-49869",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-49869",
+          "dateAdded": "2026-09-02",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Kestra OSS OS Command Injection Vulnerability",
+          "cwes": [
+            "CWE-78",
+            "CWE-184",
+            "CWE-287",
+            "CWE-918"
+          ],
+          "via": "CWE-78: Injection into a public-facing service leads to code/command execution.",
+          "weight": 0.84
+        },
+        {
+          "cve": "CVE-2026-9586",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-9586",
+          "dateAdded": "2026-09-02",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Sangoma Switchvox SQL Injection Vulnerability",
+          "cwes": [
+            "CWE-89"
+          ],
+          "via": "CWE-89: Injection into a public-facing service leads to code/command execution.",
+          "weight": 0.84
+        },
+        {
+          "cve": "CVE-2026-60004",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-60004",
+          "dateAdded": "2026-08-25",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Gitea Code Injection Vulnerability",
+          "cwes": [
+            "CWE-94"
+          ],
+          "via": "CWE-94: Injection into a public-facing service leads to code/command execution.",
+          "weight": 0.82
+        },
+        {
+          "cve": "CVE-2021-23758",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2021-23758",
+          "dateAdded": "2026-08-26",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Ajax.NET Professional Deserialization of Untrusted Data Vulnerability",
+          "cwes": [
+            "CWE-502"
+          ],
+          "via": "CWE-502: Deserialization of untrusted data on a service yields RCE.",
+          "weight": 0.82
+        },
+        {
+          "cve": "CVE-2026-73570",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-73570",
+          "dateAdded": "2026-08-21",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Zimbra Collaboration Suite (ZCS) OS Command Injection Vulnerability",
+          "cwes": [
+            "CWE-78"
+          ],
+          "via": "CWE-78: Injection into a public-facing service leads to code/command execution.",
+          "weight": 0.81
+        },
+        {
+          "cve": "CVE-2026-72530",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-72530",
+          "dateAdded": "2026-08-20",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "TrueConf Server Code Injection Vulnerability",
+          "cwes": [
+            "CWE-94"
+          ],
+          "via": "CWE-94: Injection into a public-facing service leads to code/command execution.",
+          "weight": 0.8
+        },
+        {
+          "cve": "CVE-2025-62593",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-62593",
+          "dateAdded": "2026-08-17",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Ray-Project Ray Code Injection Vulnerability",
+          "cwes": [
+            "CWE-94",
+            "CWE-352"
+          ],
+          "via": "CWE-94: Injection into a public-facing service leads to code/command execution.",
+          "weight": 0.79
+        },
+        {
+          "cve": "CVE-2026-72898",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-72898",
+          "dateAdded": "2026-08-11",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Metabase SQL Injection Vulnerability",
+          "cwes": [
+            "CWE-89"
+          ],
+          "via": "CWE-89: Injection into a public-facing service leads to code/command execution.",
+          "weight": 0.78
+        },
+        {
+          "cve": "CVE-2026-8037",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-8037",
+          "dateAdded": "2026-08-07",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Progress LoadMaster Command Injection Vulnerability",
+          "cwes": [
+            "CWE-77"
+          ],
+          "via": "CWE-77: Injection into a public-facing service leads to code/command execution.",
+          "weight": 0.76
+        },
+        {
+          "cve": "CVE-2026-9198",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-9198",
+          "dateAdded": "2026-08-04",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "IBM Langflow Code Injection Vulnerability",
+          "cwes": [
+            "CWE-94"
+          ],
+          "via": "CWE-94: Injection into a public-facing service leads to code/command execution.",
+          "weight": 0.75
+        }
+      ]
+    },
+    "T1078": {
+      "techniqueID": "T1078",
+      "name": "Valid Accounts",
+      "rank": 3,
+      "score": 20,
+      "heat": 34.34,
+      "confidence": "high",
+      "itemCount": 134,
+      "ransomwareCount": 44,
+      "breakdown": {
+        "halfLifeDays": 180,
+        "ransomwareBonus": 0.5,
+        "asOf": "2026-10-16",
+        "itemsShown": 25
+      },
+      "brief": "134 KEV CVEs in the CISA KEV snapshot map to this technique by the exploitation weakness (CWE) of each. 44 are KEV-linked to known ransomware campaign use. The most recent was added 2026-10-16. Heat is recency-weighted with a 180-day half-life, as of the 2026-10-16 KEV snapshot; it reflects KEV exploitation pressure, not your defensive posture.",
+      "items": [
+        {
+          "cve": "CVE-2026-20316",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-20316",
+          "dateAdded": "2026-07-29",
+          "knownRansomware": true,
+          "confidence": "high",
+          "quote": "Cisco Secure Firewall Management Center Use of Hard-coded Password Vulnerability",
+          "cwes": [
+            "CWE-259"
+          ],
+          "via": "CWE-259: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 1.11
+        },
+        {
+          "cve": "CVE-2026-102764",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-102764",
+          "dateAdded": "2026-10-16",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "BeyondTrust Remote Support Authentication Bypass by Spoofing Vulnerability",
+          "cwes": [
+            "CWE-290"
+          ],
+          "via": "CWE-290: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 1
+        },
+        {
+          "cve": "CVE-2026-105133",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-105133",
+          "dateAdded": "2026-10-14",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Ahsay AhsayCBS Improper Authentication Vulnerability",
+          "cwes": [
+            "CWE-287"
+          ],
+          "via": "CWE-287: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 0.99
+        },
+        {
+          "cve": "CVE-2026-104935",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-104935",
+          "dateAdded": "2026-10-13",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Ivanti Connect Secure Authentication Bypass by Spoofing Vulnerability",
+          "cwes": [
+            "CWE-290"
+          ],
+          "via": "CWE-290: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 0.99
+        },
+        {
+          "cve": "CVE-2026-35273",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-35273",
+          "dateAdded": "2026-06-12",
+          "knownRansomware": true,
+          "confidence": "high",
+          "quote": "Oracle PeopleSoft Enterprise PeopleTools Missing Authentication for Critical Function Vulnerability",
+          "cwes": [
+            "CWE-306"
+          ],
+          "via": "CWE-306: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 0.92
+        },
+        {
+          "cve": "CVE-2026-50751",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-50751",
+          "dateAdded": "2026-06-08",
+          "knownRansomware": true,
+          "confidence": "high",
+          "quote": "Check Point Security Gateway Improper Authentication Vulnerability",
+          "cwes": [
+            "CWE-287"
+          ],
+          "via": "CWE-287: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 0.91
+        },
+        {
+          "cve": "CVE-2026-67277",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-67277",
+          "dateAdded": "2026-09-10",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "MikroTik RouterOS Missing Authentication for Critical Function Vulnerability",
+          "cwes": [
+            "CWE-306"
+          ],
+          "via": "CWE-306: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 0.87
+        },
+        {
+          "cve": "CVE-2026-42018",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-42018",
+          "dateAdded": "2026-09-11",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "JFrog Artifactory Improper Authentication Vulnerability",
+          "cwes": [
+            "CWE-287"
+          ],
+          "via": "CWE-287: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 0.87
+        },
+        {
+          "cve": "CVE-2026-20079",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-20079",
+          "dateAdded": "2026-09-09",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Cisco Firewall Management Center Authentication Bypass Using an Alternate Path or Channel Vulnerability",
+          "cwes": [
+            "CWE-288"
+          ],
+          "via": "CWE-288: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 0.87
+        },
+        {
+          "cve": "CVE-2026-19490",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-19490",
+          "dateAdded": "2026-09-09",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Citrix NetScaler Authentication Bypass Using an Alternate Path or Channel Vulnerability",
+          "cwes": [
+            "CWE-288"
+          ],
+          "via": "CWE-288: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 0.87
+        },
+        {
+          "cve": "CVE-2026-82329",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-82329",
+          "dateAdded": "2026-09-02",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "JFrog Artifactory Improper Authentication Vulnerability",
+          "cwes": [
+            "CWE-287"
+          ],
+          "via": "CWE-287: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 0.84
+        },
+        {
+          "cve": "CVE-2026-81578",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-81578",
+          "dateAdded": "2026-08-31",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "PaperCut NG/MF Missing Authentication for Critical Function Vulnerability",
+          "cwes": [
+            "CWE-306"
+          ],
+          "via": "CWE-306: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 0.84
+        },
+        {
+          "cve": "CVE-2026-59822",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-59822",
+          "dateAdded": "2026-09-02",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "BerriAI LiteLLM Improper Authentication Vulnerability",
+          "cwes": [
+            "CWE-287",
+            "CWE-306"
+          ],
+          "via": "CWE-287: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 0.84
+        },
+        {
+          "cve": "CVE-2026-49869",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-49869",
+          "dateAdded": "2026-09-02",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Kestra OSS OS Command Injection Vulnerability",
+          "cwes": [
+            "CWE-78",
+            "CWE-184",
+            "CWE-287",
+            "CWE-918"
+          ],
+          "via": "CWE-287: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 0.84
+        },
+        {
+          "cve": "CVE-2023-49105",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-49105",
+          "dateAdded": "2026-08-27",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "ownCloud Improper Authentication Vulnerability",
+          "cwes": [
+            "CWE-287"
+          ],
+          "via": "CWE-287: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 0.82
+        },
+        {
+          "cve": "CVE-2026-72529",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-72529",
+          "dateAdded": "2026-08-20",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "TrueConf Server Missing Authentication for Critical Function Vulnerability",
+          "cwes": [
+            "CWE-306"
+          ],
+          "via": "CWE-306: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 0.8
+        },
+        {
+          "cve": "CVE-2026-65400",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-65400",
+          "dateAdded": "2026-08-18",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Apple macOS Improper Authentication Vulnerability",
+          "cwes": [
+            "CWE-287"
+          ],
+          "via": "CWE-287: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 0.8
+        },
+        {
+          "cve": "CVE-2026-55040",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-55040",
+          "dateAdded": "2026-08-18",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Microsoft SharePoint Weak Authentication Vulnerability",
+          "cwes": [
+            "CWE-1390"
+          ],
+          "via": "CWE-1390: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 0.8
+        },
+        {
+          "cve": "CVE-2026-41940",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-41940",
+          "dateAdded": "2026-04-30",
+          "knownRansomware": true,
+          "confidence": "high",
+          "quote": "WebPros cPanel & WHM and WP2 (WordPress Squared) Missing Authentication for Critical Function Vulnerability",
+          "cwes": [
+            "CWE-306"
+          ],
+          "via": "CWE-306: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 0.78
+        },
+        {
+          "cve": "CVE-2026-18577",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-18577",
+          "dateAdded": "2026-08-03",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "N-able N-central Authentication Bypass Using an Alternate Path or Channel Vulnerability",
+          "cwes": [
+            "CWE-288"
+          ],
+          "via": "CWE-288: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 0.75
+        },
+        {
+          "cve": "CVE-2026-18556",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-18556",
+          "dateAdded": "2026-08-04",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "N-able N-central Authentication Bypass Using an Alternate Path or Channel Vulnerability",
+          "cwes": [
+            "CWE-288"
+          ],
+          "via": "CWE-288: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 0.75
+        },
+        {
+          "cve": "CVE-2023-27351",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-27351",
+          "dateAdded": "2026-04-20",
+          "knownRansomware": true,
+          "confidence": "high",
+          "quote": "PaperCut NG/MF Improper Authentication Vulnerability",
+          "cwes": [
+            "CWE-287"
+          ],
+          "via": "CWE-287: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 0.75
+        },
+        {
+          "cve": "CVE-2026-16232",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-16232",
+          "dateAdded": "2026-07-22",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Check Point SmartConsole Improper Authentication Vulnerability",
+          "cwes": [
+            "CWE-287"
+          ],
+          "via": "CWE-287: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 0.72
+        },
+        {
+          "cve": "CVE-2026-56164",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-56164",
+          "dateAdded": "2026-07-14",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Microsoft SharePoint Server Missing Authentication for Critical Function Vulnerability",
+          "cwes": [
+            "CWE-306"
+          ],
+          "via": "CWE-306: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 0.7
+        },
+        {
+          "cve": "CVE-2026-46817",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-46817",
+          "dateAdded": "2026-07-15",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Oracle E-Business Suite Improper Privilege Management Vulnerability",
+          "cwes": [
+            "CWE-269",
+            "CWE-287",
+            "CWE-306"
+          ],
+          "via": "CWE-287: Authentication bypass / missing auth / hardcoded credentials give access to a public-facing service (valid-accounts effect).",
+          "weight": 0.7
+        }
+      ]
+    },
+    "T1133": {
+      "techniqueID": "T1133",
+      "name": "External Remote Services",
+      "rank": 4,
+      "score": 9,
+      "heat": 15.1,
+      "confidence": "medium",
+      "itemCount": 81,
+      "ransomwareCount": 41,
+      "breakdown": {
+        "halfLifeDays": 180,
+        "ransomwareBonus": 0.5,
+        "asOf": "2026-10-16",
+        "itemsShown": 25
+      },
+      "brief": "81 KEV CVEs in the CISA KEV snapshot map to this technique through the remote-access product or vector named in each entry (keyword-matched, medium confidence). 41 are KEV-linked to known ransomware campaign use. The most recent was added 2026-10-14. Heat is recency-weighted with a 180-day half-life, as of the 2026-10-16 KEV snapshot; it reflects KEV exploitation pressure, not your defensive posture.",
+      "items": [
+        {
+          "cve": "CVE-2026-15410",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-15410",
+          "dateAdded": "2026-07-14",
+          "knownRansomware": true,
+          "confidence": "medium",
+          "quote": "SonicWall SMA1000 Appliances Code Injection Vulnerability",
+          "cwes": [
+            "CWE-94"
+          ],
+          "via": "KEV names a remote-access gateway/VPN appliance",
+          "weight": 1.04
+        },
+        {
+          "cve": "CVE-2026-15409",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-15409",
+          "dateAdded": "2026-07-14",
+          "knownRansomware": true,
+          "confidence": "medium",
+          "quote": "SonicWall SMA1000 Appliances Server-Side Request Forgery Vulnerability",
+          "cwes": [
+            "CWE-918"
+          ],
+          "via": "KEV names a remote-access gateway/VPN appliance",
+          "weight": 1.04
+        },
+        {
+          "cve": "CVE-2026-104935",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-104935",
+          "dateAdded": "2026-10-13",
+          "knownRansomware": false,
+          "confidence": "medium",
+          "quote": "Ivanti Connect Secure Authentication Bypass by Spoofing Vulnerability",
+          "cwes": [
+            "CWE-290"
+          ],
+          "via": "KEV names a remote-access gateway/VPN appliance",
+          "weight": 0.99
+        },
+        {
+          "cve": "CVE-2026-0322",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-0322",
+          "dateAdded": "2026-10-14",
+          "knownRansomware": false,
+          "confidence": "medium",
+          "quote": "Palo Alto Networks PAN-OS Code Injection Vulnerability",
+          "cwes": [
+            "CWE-94"
+          ],
+          "via": "KEV names a remote-access gateway/VPN appliance",
+          "weight": 0.99
+        },
+        {
+          "cve": "CVE-2026-88779",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-88779",
+          "dateAdded": "2026-10-04",
+          "knownRansomware": false,
+          "confidence": "medium",
+          "quote": "Citrix NetScaler Improper Restriction of Operations within the Bounds of a Memory Buffer Vulnerability",
+          "cwes": [
+            "CWE-119"
+          ],
+          "via": "KEV names a remote-access gateway/VPN appliance",
+          "weight": 0.95
+        },
+        {
+          "cve": "CVE-2026-88772",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-88772",
+          "dateAdded": "2026-09-27",
+          "knownRansomware": false,
+          "confidence": "medium",
+          "quote": "Citrix NetScaler Improper Restriction of Operations within the Bounds of a Memory Buffer Vulnerability",
+          "cwes": [
+            "CWE-119"
+          ],
+          "via": "KEV names a remote-access gateway/VPN appliance",
+          "weight": 0.93
+        },
+        {
+          "cve": "CVE-2026-88771",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-88771",
+          "dateAdded": "2026-09-27",
+          "knownRansomware": false,
+          "confidence": "medium",
+          "quote": "Citrix NetScaler Improper Input Validation Vulnerability",
+          "cwes": [
+            "CWE-119"
+          ],
+          "via": "KEV names a remote-access gateway/VPN appliance",
+          "weight": 0.93
+        },
+        {
+          "cve": "CVE-2026-19490",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-19490",
+          "dateAdded": "2026-09-09",
+          "knownRansomware": false,
+          "confidence": "medium",
+          "quote": "Citrix NetScaler Authentication Bypass Using an Alternate Path or Channel Vulnerability",
+          "cwes": [
+            "CWE-288"
+          ],
+          "via": "KEV names a remote-access gateway/VPN appliance",
+          "weight": 0.87
+        },
+        {
+          "cve": "CVE-2026-83549",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-83549",
+          "dateAdded": "2026-09-02",
+          "knownRansomware": false,
+          "confidence": "medium",
+          "quote": "SonicWall SMA1000 Appliances OS Command Injection Vulnerability",
+          "cwes": [
+            "CWE-78"
+          ],
+          "via": "KEV names a remote-access gateway/VPN appliance",
+          "weight": 0.84
+        },
+        {
+          "cve": "CVE-2026-83548",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-83548",
+          "dateAdded": "2026-09-02",
+          "knownRansomware": false,
+          "confidence": "medium",
+          "quote": "SonicWall SMA1000 Appliances Server-Side Request Forgery Vulnerability",
+          "cwes": [
+            "CWE-918",
+            "CWE-441"
+          ],
+          "via": "KEV names a remote-access gateway/VPN appliance",
+          "weight": 0.84
+        },
+        {
+          "cve": "CVE-2026-8452",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-8452",
+          "dateAdded": "2026-08-26",
+          "knownRansomware": false,
+          "confidence": "medium",
+          "quote": "Citrix NetScaler ADC and NetScaler Gateway Improper Restriction of Operations within the Bounds of a Memory Buffer Vulnerability",
+          "cwes": [
+            "CWE-119"
+          ],
+          "via": "KEV names a remote-access gateway/VPN appliance",
+          "weight": 0.82
+        },
+        {
+          "cve": "CVE-2026-1731",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-1731",
+          "dateAdded": "2026-02-13",
+          "knownRansomware": true,
+          "confidence": "medium",
+          "quote": "BeyondTrust Remote Support (RS) and Privileged Remote Access (PRA) OS Command Injection Vulnerability",
+          "cwes": [
+            "CWE-78"
+          ],
+          "via": "KEV names a remote-access gateway/VPN appliance",
+          "weight": 0.58
+        },
+        {
+          "cve": "CVE-2026-0300",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-0300",
+          "dateAdded": "2026-05-06",
+          "knownRansomware": false,
+          "confidence": "medium",
+          "quote": "Palo Alto Networks PAN-OS Out-of-bounds Write Vulnerability",
+          "cwes": [
+            "CWE-787"
+          ],
+          "via": "KEV names a remote-access gateway/VPN appliance",
+          "weight": 0.53
+        },
+        {
+          "cve": "CVE-2026-3055",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-3055",
+          "dateAdded": "2026-03-30",
+          "knownRansomware": false,
+          "confidence": "medium",
+          "quote": "Citrix NetScaler Out-of-Bounds Read Vulnerability",
+          "cwes": [
+            "CWE-125"
+          ],
+          "via": "KEV names a remote-access gateway/VPN appliance",
+          "weight": 0.46
+        },
+        {
+          "cve": "CVE-2025-40602",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-40602",
+          "dateAdded": "2025-12-17",
+          "knownRansomware": false,
+          "confidence": "medium",
+          "quote": "SonicWall SMA1000 Missing Authorization Vulnerability",
+          "cwes": [
+            "CWE-862",
+            "CWE-250"
+          ],
+          "via": "KEV names a remote-access gateway/VPN appliance",
+          "weight": 0.31
+        },
+        {
+          "cve": "CVE-2025-5777",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-5777",
+          "dateAdded": "2025-07-10",
+          "knownRansomware": true,
+          "confidence": "medium",
+          "quote": "Citrix NetScaler ADC and Gateway Out-of-Bounds Read Vulnerability",
+          "cwes": [
+            "CWE-125"
+          ],
+          "via": "KEV names a remote-access gateway/VPN appliance",
+          "weight": 0.25
+        },
+        {
+          "cve": "CVE-2019-6693",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2019-6693",
+          "dateAdded": "2025-06-25",
+          "knownRansomware": true,
+          "confidence": "medium",
+          "quote": "Fortinet FortiOS Use of Hard-Coded Credentials Vulnerability",
+          "cwes": [
+            "CWE-798"
+          ],
+          "via": "KEV names a remote-access gateway/VPN appliance",
+          "weight": 0.24
+        },
+        {
+          "cve": "CVE-2025-7775",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-7775",
+          "dateAdded": "2025-08-26",
+          "knownRansomware": false,
+          "confidence": "medium",
+          "quote": "Citrix NetScaler Memory Overflow Vulnerability",
+          "cwes": [
+            "CWE-119"
+          ],
+          "via": "KEV names a remote-access gateway/VPN appliance",
+          "weight": 0.2
+        },
+        {
+          "cve": "CVE-2025-22457",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-22457",
+          "dateAdded": "2025-04-04",
+          "knownRansomware": true,
+          "confidence": "medium",
+          "quote": "Ivanti Connect Secure, Policy Secure, and ZTA Gateways Stack-Based Buffer Overflow Vulnerability",
+          "cwes": [
+            "CWE-121"
+          ],
+          "via": "KEV names a remote-access gateway/VPN appliance",
+          "weight": 0.17
+        },
+        {
+          "cve": "CVE-2025-24472",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-24472",
+          "dateAdded": "2025-03-18",
+          "knownRansomware": true,
+          "confidence": "medium",
+          "quote": "Fortinet FortiOS and FortiProxy Authentication Bypass Vulnerability",
+          "cwes": [
+            "CWE-288"
+          ],
+          "via": "KEV names a remote-access gateway/VPN appliance",
+          "weight": 0.16
+        },
+        {
+          "cve": "CVE-2025-6543",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-6543",
+          "dateAdded": "2025-06-30",
+          "knownRansomware": false,
+          "confidence": "medium",
+          "quote": "Citrix NetScaler ADC and Gateway Buffer Overflow Vulnerability",
+          "cwes": [
+            "CWE-119"
+          ],
+          "via": "KEV names a remote-access gateway/VPN appliance",
+          "weight": 0.16
+        },
+        {
+          "cve": "CVE-2024-53704",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-53704",
+          "dateAdded": "2025-02-18",
+          "knownRansomware": true,
+          "confidence": "medium",
+          "quote": "SonicWall SonicOS SSLVPN Improper Authentication Vulnerability",
+          "cwes": [
+            "CWE-287"
+          ],
+          "via": "KEV names a remote-access gateway/VPN appliance",
+          "weight": 0.15
+        },
+        {
+          "cve": "CVE-2025-23006",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-23006",
+          "dateAdded": "2025-01-24",
+          "knownRansomware": true,
+          "confidence": "medium",
+          "quote": "SonicWall SMA1000 Appliances Deserialization Vulnerability",
+          "cwes": [
+            "CWE-502"
+          ],
+          "via": "KEV names a remote-access gateway/VPN appliance",
+          "weight": 0.13
+        },
+        {
+          "cve": "CVE-2024-55591",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-55591",
+          "dateAdded": "2025-01-14",
+          "knownRansomware": true,
+          "confidence": "medium",
+          "quote": "Fortinet FortiOS and FortiProxy Authentication Bypass Vulnerability",
+          "cwes": [
+            "CWE-288"
+          ],
+          "via": "KEV names a remote-access gateway/VPN appliance",
+          "weight": 0.13
+        },
+        {
+          "cve": "CVE-2023-44221",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-44221",
+          "dateAdded": "2025-05-01",
+          "knownRansomware": false,
+          "confidence": "medium",
+          "quote": "SonicWall SMA100 Appliances OS Command Injection Vulnerability",
+          "cwes": [
+            "CWE-78"
+          ],
+          "via": "KEV names a remote-access gateway/VPN appliance",
+          "weight": 0.13
+        }
+      ]
+    },
+    "T1068": {
+      "techniqueID": "T1068",
+      "name": "Exploitation for Privilege Escalation",
+      "rank": 5,
+      "score": 3,
+      "heat": 4.88,
+      "confidence": "high",
+      "itemCount": 26,
+      "ransomwareCount": 5,
+      "breakdown": {
+        "halfLifeDays": 180,
+        "ransomwareBonus": 0.5,
+        "asOf": "2026-10-16",
+        "itemsShown": 25
+      },
+      "brief": "26 KEV CVEs in the CISA KEV snapshot map to this technique by the exploitation weakness (CWE) of each. 5 are KEV-linked to known ransomware campaign use. The most recent was added 2026-10-02. Heat is recency-weighted with a 180-day half-life, as of the 2026-10-16 KEV snapshot; it reflects KEV exploitation pressure, not your defensive posture.",
+      "items": [
+        {
+          "cve": "CVE-2026-102490",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-102490",
+          "dateAdded": "2026-10-02",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Zammad GmbH Zammad Improper Privilege Management Vulnerability",
+          "cwes": [
+            "CWE-269"
+          ],
+          "via": "CWE-269: Improper privilege management is exploited for privilege escalation.",
+          "weight": 0.95
+        },
+        {
+          "cve": "CVE-2026-84869",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-84869",
+          "dateAdded": "2026-09-11",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "ConnectWise ScreenConnect Improper Privilege Management and Missing Authorization Vulnerability",
+          "cwes": [
+            "CWE-269",
+            "CWE-862"
+          ],
+          "via": "CWE-269: Improper privilege management is exploited for privilege escalation.",
+          "weight": 0.87
+        },
+        {
+          "cve": "CVE-2026-46817",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-46817",
+          "dateAdded": "2026-07-15",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Oracle E-Business Suite Improper Privilege Management Vulnerability",
+          "cwes": [
+            "CWE-269",
+            "CWE-287",
+            "CWE-306"
+          ],
+          "via": "CWE-269: Improper privilege management is exploited for privilege escalation.",
+          "weight": 0.7
+        },
+        {
+          "cve": "CVE-2026-48172",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-48172",
+          "dateAdded": "2026-05-26",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "LiteSpeed cPanel Plugin Privilege Escalation Vulnerability",
+          "cwes": [
+            "CWE-266"
+          ],
+          "via": "CWE-266: Improper privilege management is exploited for privilege escalation.",
+          "weight": 0.58
+        },
+        {
+          "cve": "CVE-2022-20775",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-20775",
+          "dateAdded": "2026-02-25",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Cisco SD-WAN Path Traversal Vulnerability",
+          "cwes": [
+            "CWE-25",
+            "CWE-282"
+          ],
+          "via": "CWE-282: Improper privilege management is exploited for privilege escalation.",
+          "weight": 0.41
+        },
+        {
+          "cve": "CVE-2026-21533",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-21533",
+          "dateAdded": "2026-02-10",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Microsoft Windows Improper Privilege Management Vulnerability",
+          "cwes": [
+            "CWE-269"
+          ],
+          "via": "CWE-269: Improper privilege management is exploited for privilege escalation.",
+          "weight": 0.38
+        },
+        {
+          "cve": "CVE-2025-40602",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-40602",
+          "dateAdded": "2025-12-17",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "SonicWall SMA1000 Missing Authorization Vulnerability",
+          "cwes": [
+            "CWE-862",
+            "CWE-250"
+          ],
+          "via": "CWE-250: Improper privilege management is exploited for privilege escalation.",
+          "weight": 0.31
+        },
+        {
+          "cve": "CVE-2024-8068",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-8068",
+          "dateAdded": "2025-08-25",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Citrix Session Recording Improper Privilege Management Vulnerability",
+          "cwes": [
+            "CWE-269"
+          ],
+          "via": "CWE-269: Improper privilege management is exploited for privilege escalation.",
+          "weight": 0.2
+        },
+        {
+          "cve": "CVE-2023-0386",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-0386",
+          "dateAdded": "2025-06-17",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Linux Kernel Improper Ownership Management Vulnerability",
+          "cwes": [
+            "CWE-282"
+          ],
+          "via": "CWE-282: Improper privilege management is exploited for privilege escalation.",
+          "weight": 0.15
+        },
+        {
+          "cve": "CVE-2024-49035",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-49035",
+          "dateAdded": "2025-02-25",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Microsoft Partner Center Improper Access Control Vulnerability",
+          "cwes": [
+            "CWE-269"
+          ],
+          "via": "CWE-269: Improper privilege management is exploited for privilege escalation.",
+          "weight": 0.1
+        },
+        {
+          "cve": "CVE-2024-38813",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-38813",
+          "dateAdded": "2024-11-20",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "VMware vCenter Server Privilege Escalation Vulnerability",
+          "cwes": [
+            "CWE-250",
+            "CWE-273"
+          ],
+          "via": "CWE-250: Improper privilege management is exploited for privilege escalation.",
+          "weight": 0.07
+        },
+        {
+          "cve": "CVE-2024-26169",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-26169",
+          "dateAdded": "2024-06-13",
+          "knownRansomware": true,
+          "confidence": "high",
+          "quote": "Microsoft Windows Error Reporting Service Improper Privilege Management Vulnerability",
+          "cwes": [
+            "CWE-269"
+          ],
+          "via": "CWE-269: Improper privilege management is exploited for privilege escalation.",
+          "weight": 0.06
+        },
+        {
+          "cve": "CVE-2024-38014",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2024-38014",
+          "dateAdded": "2024-09-10",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Microsoft Windows Installer Improper Privilege Management Vulnerability",
+          "cwes": [
+            "CWE-269"
+          ],
+          "via": "CWE-269: Improper privilege management is exploited for privilege escalation.",
+          "weight": 0.05
+        },
+        {
+          "cve": "CVE-2023-28434",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-28434",
+          "dateAdded": "2023-09-19",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "MinIO Security Feature Bypass Vulnerability",
+          "cwes": [
+            "CWE-269"
+          ],
+          "via": "CWE-269: Improper privilege management is exploited for privilege escalation.",
+          "weight": 0.01
+        },
+        {
+          "cve": "CVE-2019-1388",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2019-1388",
+          "dateAdded": "2023-04-07",
+          "knownRansomware": true,
+          "confidence": "high",
+          "quote": "Microsoft Windows Certificate Dialog Privilege Escalation Vulnerability",
+          "cwes": [
+            "CWE-269"
+          ],
+          "via": "CWE-269: Improper privilege management is exploited for privilege escalation.",
+          "weight": 0.01
+        },
+        {
+          "cve": "CVE-2022-41049",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-41049",
+          "dateAdded": "2022-11-14",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Microsoft Windows Mark of the Web (MOTW) Security Feature Bypass Vulnerability",
+          "cwes": [
+            "CWE-274"
+          ],
+          "via": "CWE-274: Improper privilege management is exploited for privilege escalation.",
+          "weight": 0
+        },
+        {
+          "cve": "CVE-2022-22960",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2022-22960",
+          "dateAdded": "2022-04-15",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "VMware Multiple Products Privilege Escalation Vulnerability",
+          "cwes": [
+            "CWE-250"
+          ],
+          "via": "CWE-250: Improper privilege management is exploited for privilege escalation.",
+          "weight": 0
+        },
+        {
+          "cve": "CVE-2021-42287",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2021-42287",
+          "dateAdded": "2022-04-11",
+          "knownRansomware": true,
+          "confidence": "high",
+          "quote": "Microsoft Active Directory Domain Services Privilege Escalation Vulnerability",
+          "cwes": [
+            "CWE-269"
+          ],
+          "via": "CWE-269: Improper privilege management is exploited for privilege escalation.",
+          "weight": 0
+        },
+        {
+          "cve": "CVE-2021-34527",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2021-34527",
+          "dateAdded": "2021-11-03",
+          "knownRansomware": true,
+          "confidence": "high",
+          "quote": "Microsoft Windows Print Spooler Remote Code Execution Vulnerability",
+          "cwes": [
+            "CWE-269"
+          ],
+          "via": "CWE-269: Improper privilege management is exploited for privilege escalation.",
+          "weight": 0
+        },
+        {
+          "cve": "CVE-2021-34484",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2021-34484",
+          "dateAdded": "2022-03-31",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Microsoft Windows User Profile Service Privilege Escalation Vulnerability",
+          "cwes": [
+            "CWE-269"
+          ],
+          "via": "CWE-269: Improper privilege management is exploited for privilege escalation.",
+          "weight": 0
+        },
+        {
+          "cve": "CVE-2021-25337",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2021-25337",
+          "dateAdded": "2022-11-08",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Samsung Mobile Devices Improper Access Control Vulnerability",
+          "cwes": [
+            "CWE-269"
+          ],
+          "via": "CWE-269: Improper privilege management is exploited for privilege escalation.",
+          "weight": 0
+        },
+        {
+          "cve": "CVE-2020-8655",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2020-8655",
+          "dateAdded": "2021-11-03",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "EyesOfNetwork Improper Privilege Management Vulnerability",
+          "cwes": [
+            "CWE-269"
+          ],
+          "via": "CWE-269: Improper privilege management is exploited for privilege escalation.",
+          "weight": 0
+        },
+        {
+          "cve": "CVE-2020-3950",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2020-3950",
+          "dateAdded": "2021-11-03",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "VMware Multiple Products Privilege Escalation Vulnerability",
+          "cwes": [
+            "CWE-269"
+          ],
+          "via": "CWE-269: Improper privilege management is exploited for privilege escalation.",
+          "weight": 0
+        },
+        {
+          "cve": "CVE-2020-0787",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2020-0787",
+          "dateAdded": "2022-01-28",
+          "knownRansomware": true,
+          "confidence": "high",
+          "quote": "Microsoft Windows Background Intelligent Transfer Service (BITS) Improper Privilege Management Vulnerability",
+          "cwes": [
+            "CWE-269",
+            "CWE-59"
+          ],
+          "via": "CWE-269: Improper privilege management is exploited for privilege escalation.",
+          "weight": 0
+        },
+        {
+          "cve": "CVE-2019-13272",
+          "source": "CISA KEV",
+          "url": "https://nvd.nist.gov/vuln/detail/CVE-2019-13272",
+          "dateAdded": "2021-12-10",
+          "knownRansomware": false,
+          "confidence": "high",
+          "quote": "Linux Kernel Improper Privilege Management Vulnerability",
+          "cwes": [
+            "CWE-269"
+          ],
+          "via": "CWE-269: Improper privilege management is exploited for privilege escalation.",
+          "weight": 0
+        }
+      ]
+    }
+  }
+}

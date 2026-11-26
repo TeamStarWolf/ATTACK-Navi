@@ -205,6 +205,8 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
   @Input() hasNote = false;
   @Input() kevScore = 0;
   @Input() maxKev = 1;
+  @Input() liveDefenseScore = 0;
+  @Input() maxLiveDefense = 1;
   @Input() d3fendScore = 0;
   @Input() maxD3fend = 1;
   @Input() atomicScore = 0;
@@ -356,6 +358,8 @@ export class TechniqueCellComponent implements OnChanges, OnInit, OnDestroy {
       this.bgColor = this.computeRiskColor(this.riskScore, this.maxRisk);
     } else if (this.heatmapMode === 'kev') {
       this.bgColor = this.computeRelativeColor(this.kevScore, this.maxKev, '#eceff1', ['#ffd54f', '#ffb300', '#ff7043', '#d32f2f']);
+    } else if (this.heatmapMode === 'live-defense') {
+      this.bgColor = this.computeRelativeColor(this.liveDefenseScore, this.maxLiveDefense, '#12122a', ['#5a1a1a', '#9a2a1a', '#d4551b', '#ff7a18']);
     } else if (this.heatmapMode === 'd3fend') {
       this.bgColor = this.computeRelativeColor(this.d3fendScore, this.maxD3fend, '#d32f2f', ['#e64a19', '#f57c00', '#1565c0', '#1a6fba']);
     } else if (this.heatmapMode === 'atomic') {

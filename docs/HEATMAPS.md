@@ -47,7 +47,7 @@ When a user selects a heatmap mode, the following seven-step pipeline executes:
 
 **File:** `src/app/pages/matrix/matrix-controls.component.ts`
 
-The matrix controls read the `HEATMAP_MODES` table from `src/app/models/heatmap-modes.ts` (36 lenses, grouped by `HEATMAP_GROUPS`) and render the lens menu. When the user picks a lens it calls `FilterService.setHeatmapMode(mode)`.
+The matrix controls read the `HEATMAP_MODES` table from `src/app/models/heatmap-modes.ts` (37 lenses, grouped by `HEATMAP_GROUPS`) and render the lens menu. When the user picks a lens it calls `FilterService.setHeatmapMode(mode)`.
 
 ### Step 2: State Broadcast (FilterService)
 
@@ -92,7 +92,7 @@ A **What is this lens?** button in the legend, a **?** next to every lens in the
 
 ### Step 6b: Lenses without data for the loaded domain
 
-A lens is available in a domain exactly when that domain is in its `domains` list (`lensAvailability()` in `heatmap-modes.ts`). In any other domain the lens menu disables it (`aria-disabled`, with a stated reason such as 'Sigma Rules is n/a for ICS ATT&CK: its sources (SigmaHQ coverage) have data for Enterprise ATT&CK only.' linked by `aria-describedby`), and if it is the active lens the matrix paints every cell in the neutral, hatched n/a colour (`LENS_NA_COLOR`, in no ramp) instead of the lens's zero colour, the minimap does the same, and a status banner on the matrix page states the reason. On ICS that is 23 of the 36 lenses today. The lens snapshots (`MatrixComponent.getCellColor`) are unaffected: they characterize each lens's own scoring.
+A lens is available in a domain exactly when that domain is in its `domains` list (`lensAvailability()` in `heatmap-modes.ts`). In any other domain the lens menu disables it (`aria-disabled`, with a stated reason such as 'Sigma Rules is n/a for ICS ATT&CK: its sources (SigmaHQ coverage) have data for Enterprise ATT&CK only.' linked by `aria-describedby`), and if it is the active lens the matrix paints every cell in the neutral, hatched n/a colour (`LENS_NA_COLOR`, in no ramp) instead of the lens's zero colour, the minimap does the same, and a status banner on the matrix page states the reason. On ICS that is 24 of the 37 lenses today. The lens snapshots (`MatrixComponent.getCellColor`) are unaffected: they characterize each lens's own scoring.
 
 ### Step 7: Cell Color Fallback (MatrixComponent.getCellColor)
 
@@ -522,7 +522,7 @@ To add a heatmap mode (36 exist today), modify these files in order:
 
 ## Color Scale Design Principles
 
-The 36 heatmap modes follow these design conventions:
+The 37 heatmap modes follow these design conventions:
 
 1. **Dark backgrounds for zero**: All gradient scales use a very dark color (#0a--#1a range) for zero-score cells, maintaining matrix readability.
 
