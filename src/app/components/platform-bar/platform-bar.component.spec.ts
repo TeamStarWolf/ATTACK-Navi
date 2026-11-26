@@ -60,12 +60,12 @@ describe('platform-nav model', () => {
     }
   });
 
-  it('carries 291 external leaves, all inside bookmarks', () => {
+  it('carries 492 external leaves, all inside bookmarks', () => {
     const items = visiblePlatformItems(NAV);
     const all = items.flatMap((i) => externalLeaves(i.entries));
-    expect(all.length).toBe(291);
+    expect(all.length).toBe(492);
     const bookmarks = items.find((i) => i.id === 'bookmarks');
-    expect(externalLeaves(bookmarks!.entries).length).toBe(291);
+    expect(externalLeaves(bookmarks!.entries).length).toBe(492);
   });
 
   it('keeps the ATT&CK-Navi block as the nine workspaces in rail order', () => {
