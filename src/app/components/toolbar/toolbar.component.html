@@ -164,8 +164,10 @@
       </button>
     }
 
-    <button class="icon-btn theme-btn" (click)="toggleTheme()" [title]="isLightMode ? 'Switch to dark mode' : 'Switch to light mode'" [attr.aria-label]="isLightMode ? 'Switch to dark mode' : 'Switch to light mode'">
-      <app-icon [name]="isLightMode ? 'moon' : 'sun'" [size]="15" aria-hidden="true" />
+    <button class="icon-btn theme-btn" (click)="cycleTheme()"
+            [title]="'Theme: ' + themeLabel + ' — switch to ' + nextThemeName"
+            [attr.aria-label]="'Theme: ' + themeLabel + '. Switch to ' + nextThemeName">
+      <app-icon [name]="themeIcon" [size]="15" aria-hidden="true" />
     </button>
   </div>
 

@@ -94,7 +94,7 @@ const ROLE_PRESET_COMMANDS: readonly ActionCommand[] = START_PRESETS.map((p): Ac
 
 /** "Do …" commands for the palette. Dispatched by UniversalSearchComponent. */
 export const ACTION_COMMANDS: readonly ActionCommand[] = [
-  { id: 'toggle-theme', label: 'Toggle light / dark theme', description: 'Switch the color scheme', keywords: 'dark light mode theme' },
+  { id: 'toggle-theme', label: 'Cycle theme (Light / Dark / TeamStarWolf)', description: 'Switch between Light, Dark and the TeamStarWolf theme', keywords: 'dark light mode theme teamstarwolf brand cycle color scheme' },
   { id: 'clear-filters', label: 'Clear all filters', description: 'Reset every active matrix filter', keywords: 'reset clear' },
   { id: 'copy-share-link', label: 'Copy share link', description: 'Copy a link to the current view', keywords: 'share url clipboard' },
   { id: 'keyboard-help', label: 'Keyboard shortcuts', description: 'Show the shortcuts overlay', keywords: 'help hotkeys keys' },

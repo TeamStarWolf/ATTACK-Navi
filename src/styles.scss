@@ -821,6 +821,84 @@ body.light-mode {
   .group-aliases { color: #64748b !important; }
 }
 
+/* ── TeamStarWolf "Radar" brand theme ───────────────────────────────────────
+   A third, dark-family token set beside light and dark, so Navi can match the
+   other TeamStarWolf sites (front site, Library, Hub, Bookmarks). The palette
+   is vendored verbatim from the shared Radar design system — source of truth
+   teamstarwolf-site/public/tokens.css @ 406105d (Radar, 2026-11-13), the dark
+   values (see docs/DESIGN-SYSTEM.md). Navi keeps its dark component treatments
+   and only re-points the palette, so this is one more token set, not a fork.
+   Light and dark are untouched. The alias re-declaration lives in
+   styles/_tokens.scss (same body-level var-substitution reason as light). */
+body.teamstarwolf-mode {
+  --bg-base: #0a0a12;              /* --bg */
+  --bg-elevated: #11111c;          /* --bg-2 */
+  --bg-panel: rgb(17 17 28 / 92%); /* --bg-2, with dark's panel translucency */
+  --bg-panel-strong: #181827;      /* --bg-3 */
+  --bg-surface: #11111c;           /* --bg-2 */
+  --bg-soft: rgb(255 255 255 / 4.5%);
+  --bg-hover: rgb(255 255 255 / 6%);
+  --bg-active: rgb(255 255 255 / 10%);
+  --line-soft: #22223a;            /* --line */
+  --line-strong: #30304a;          /* --line-2 */
+  --text-main: #ecebf5;            /* --fg */
+  --text-muted: #c4c2d6;           /* --fg-2 */
+  --text-faint: #8f8da6;           /* --muted (>=5.45:1 on every brand surface) */
+  --text-secondary: #c4c2d6;       /* --fg-2 */
+  --accent: #b794ff;               /* --accent (brand violet) */
+  --accent-strong: #9b5cff;        /* --signal */
+  --accent-warm: #e0a84f;          /* --amber */
+  --accent-blue: #b794ff;          /* brand has no blue -> accent violet */
+  --accent-green: #7fc48f;         /* --green */
+  --accent-red: #ff6b6b;           /* --red */
+  --accent-orange: #e0a84f;        /* --amber */
+  --accent-purple: #b794ff;        /* --accent */
+  --success: #7fc48f;              /* --green */
+  --danger: #ff6b6b;               /* --red */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 42%);
+  --shadow-lg: 0 16px 40px rgb(0 0 0 / 55%);
+  --shell-gradient: linear-gradient(180deg, #11111c 0%, #0a0a12 100%);
+
+  /* Brand accents for the few chrome spots that hardcode the dark theme's
+     cyan/amber instead of a token, so the violet signal carries through the
+     global chrome. Mirrors how body.light-mode re-skins these selectors. */
+  .brand-icon {
+    background: linear-gradient(135deg, rgb(167 59 255 / 22%), rgb(183 148 255 / 16%)) !important;
+    border-color: rgb(183 148 255 / 18%) !important;
+  }
+
+  .domain-btn.active,
+  .icon-btn.active {
+    background: rgb(183 148 255 / 14%) !important;
+    border-color: rgb(183 148 255 / 38%) !important;
+    color: var(--accent) !important;
+  }
+
+  .save-view-btn,
+  .views-menu-btn {
+    background: rgb(183 148 255 / 10%) !important;
+    border-color: rgb(183 148 255 / 28%) !important;
+    color: #cdb6ff !important;
+    &:hover { background: rgb(183 148 255 / 16%) !important; color: #e5d8ff !important; }
+  }
+
+  .tab-badge {
+    background: rgb(183 148 255 / 16%) !important;
+    color: var(--accent) !important;
+    border-color: rgb(183 148 255 / 26%) !important;
+  }
+
+  .group-row.selected {
+    background: rgb(183 148 255 / 10%) !important;
+    border-bottom-color: rgb(183 148 255 / 16%) !important;
+  }
+
+  .search-input:focus {
+    border-color: rgb(183 148 255 / 40%) !important;
+  }
+}
+
 @media print {
   body { background: #fff !important; color: #000 !important; }
   app-toolbar, app-nav-rail, app-sidebar, .bulk-action-bar,

@@ -18,7 +18,7 @@ import { Technique } from '../../models/technique';
 import { FilterService } from '../../services/filter.service';
 import { DataService, AttackDomain, AttackUpdateState } from '../../services/data.service';
 import { CommandPaletteService } from '../../services/command-palette.service';
-import { ThemeService } from '../../services/theme.service';
+import { ThemeService, Theme, nextTheme } from '../../services/theme.service';
 import { SavedViewsService, SavedView } from '../../services/saved-views.service';
 import { IconComponent } from '../../shared/icons/icon.component';
 import { VintageChipComponent } from '../vintage-chip/vintage-chip.component';
@@ -64,7 +64,16 @@ export class ToolbarComponent implements OnInit, OnDestroy {
   @Output() domainChange = new EventEmitter<AttackDomain>();
   @Output() copyShareLink = new EventEmitter<void>();
 
-  isLightMode = false;
+  /** The active theme, driving the 3-way theme button's icon, label and aria. */
+  theme: Theme = 'dark';
+
+  /** Per-theme icon (icon-registry key) and human label for the theme button. */
+  private readonly themeIcons: Record<Theme, string> = { light: 'sun', dark: 'moon', teamstarwolf: 'sparkles' };
+  private readonly themeNames: Record<Theme, string> = { light: 'Light', dark: 'Dark', teamstarwolf: 'TeamStarWolf' };
+
+  get themeIcon(): string { return this.themeIcons[this.theme]; }
+  get themeLabel(): string { return this.themeNames[this.theme]; }
+  get nextThemeName(): string { return this.themeNames[nextTheme(this.theme)]; }
 
   attackDomain: AttackDomain = 'enterprise';
   /** "Check for ATT&CK update" state for the domain on screen (decision D2). */
@@ -93,7 +102,7 @@ export class ToolbarComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(this.themeService.isLight$.subscribe((v) => { this.isLightMode = v; this.cdr.markForCheck(); }));
+    this.subs.add(this.themeService.theme$.subscribe((t) => { this.theme = t; this.cdr.markForCheck(); }));
     this.subs.add(this.dataService.loading$.subscribe((l) => { this.loading = l; this.cdr.markForCheck(); }));
     this.subs.add(this.dataService.domain$.subscribe(() => {
       this.pinnedVersion = this.dataService.pinnedVersion();
@@ -109,8 +118,9 @@ export class ToolbarComponent implements OnInit, OnDestroy {
     this.palette.open();
   }
 
-  toggleTheme(): void {
-    this.themeService.toggle();
+  /** Advance the theme: Light -> Dark -> TeamStarWolf -> Light. */
+  cycleTheme(): void {
+    this.themeService.cycle();
   }
 
   onDomainChange(): void {

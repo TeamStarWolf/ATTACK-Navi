@@ -98,6 +98,15 @@ body.light-mode .ws-tab {
   &.active { color: var(--accent); }
 }
 
+/* TeamStarWolf theme: re-declared for the same transition-recompute reason as
+   light above, so the tab colours follow the brand palette when it toggles. */
+body.teamstarwolf-mode .ws-tab {
+  color: var(--text-secondary);
+
+  &:hover { color: var(--text-primary); }
+  &.active { color: var(--accent); }
+}
+
 /* Root wrapper for a converted panel's content (replaces its old overlay). */
 .page-panel {
   display: flex;

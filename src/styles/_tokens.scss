@@ -88,3 +88,18 @@ body.light-mode {
   --border-subtle: var(--line-soft);
   --border-default: var(--line-strong);
 }
+
+/* TeamStarWolf brand theme re-points the palette on body.teamstarwolf-mode
+   (see styles.scss), so the same aliases must be re-declared here to make
+   var() substitution happen on body, where the brand palette is in effect. */
+body.teamstarwolf-mode {
+  --bg-app: var(--bg-base);
+  --bg-raised: var(--bg-elevated);
+  --text-primary: var(--text-main);
+  --border-strong: var(--line-strong);
+  --accent-hover: var(--accent-strong);
+  --warning: var(--accent-warm);
+  --info: var(--accent);
+  --border-subtle: var(--line-soft);
+  --border-default: var(--line-strong);
+}
