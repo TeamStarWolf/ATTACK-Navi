@@ -180,7 +180,7 @@ export function signalStubProviders(): Provider[] {
       kevTechScores$: new BehaviorSubject(kevScores()), loadKev: () => undefined, getKevEntry: () => undefined,
     } },
     { provide: LiveDefenseService, useValue: {
-      scores$: new BehaviorSubject(liveDefenseScores()), loaded$: loaded(), asOf: null,
+      scores$: new BehaviorSubject(liveDefenseScores()), loaded$: loaded(), asOf: null, load: () => undefined,
       getScore: (id: string) => s('live-defense', id), getEvidence: () => null,
     } },
     { provide: AssetInventoryService, useValue: { exposureMap$: new BehaviorSubject(assetExposure()) } },

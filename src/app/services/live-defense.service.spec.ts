@@ -46,14 +46,29 @@ describe('LiveDefenseService', () => {
 
   afterEach(() => http.verify());
 
-  function flush(layer: unknown = LAYER, evidence: unknown = EVIDENCE): void {
+  function flush(layer: object = LAYER, evidence: object = EVIDENCE): void {
+    service.load();
     http.expectOne(LAYER_URL).flush(layer);
     http.expectOne(EVIDENCE_URL).flush(evidence);
   }
 
-  it('requests both artifacts on construction', () => {
-    http.expectOne(LAYER_URL).flush(LAYER);
-    http.expectOne(EVIDENCE_URL).flush(EVIDENCE);
+  it('does not fetch at construction; loads lazily on first load()', () => {
+    http.expectNone(LAYER_URL);
+    http.expectNone(EVIDENCE_URL);
+    service.load();
+    const layerReq = http.expectOne(LAYER_URL);
+    const evidenceReq = http.expectOne(EVIDENCE_URL);
+    expect(layerReq.request.method).toBe('GET');
+    expect(evidenceReq.request.method).toBe('GET');
+    layerReq.flush(LAYER);
+    evidenceReq.flush(EVIDENCE);
+  });
+
+  it('load() is idempotent: a second call after success issues no new request', () => {
+    flush();
+    service.load();
+    expect(http.match(LAYER_URL).length).toBe(0);
+    expect(http.match(EVIDENCE_URL).length).toBe(0);
   });
 
   it('scores only techniques above the bar (score > 0)', () => {
@@ -78,6 +93,7 @@ describe('LiveDefenseService', () => {
   });
 
   it('fails quiet when an artifact does not load (empty scores, null stamp)', () => {
+    service.load();
     http.expectOne(LAYER_URL).flush(LAYER);
     http.expectOne(EVIDENCE_URL).error(new ProgressEvent('error'));
     expect(service.getScore('T1190')).toBe(0);

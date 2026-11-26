@@ -656,6 +656,11 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy, AfterViewC
         if (mode === 'kev' || mode === 'unified') {
           this.cveService.loadKev();
         }
+        // Live Defense ships its two artifacts as assets; load them the first time the
+        // lens is chosen (never at boot), like the KEV and PoC lenses above.
+        if (mode === 'live-defense') {
+          this.liveDefenseService.load();
+        }
         if (mode === 'm365') {
           this.m365DefenderService.loadOnDemand();
         }

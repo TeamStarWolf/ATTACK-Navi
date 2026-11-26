@@ -349,7 +349,7 @@ workspaces and tabs is in [docs/FACTS.md](docs/FACTS.md).
 
 ### Lenses
 
-The lens button recolors the matrix. The 36 lenses, grouped into Threat Landscape,
+The lens button recolors the matrix. The 37 lenses, grouped into Threat Landscape,
 Vulnerabilities, Detections, Frameworks and Coverage & Posture, are documented in full —
 each with its score, rung and color ramp — in [docs/HEATMAPS.md](docs/HEATMAPS.md). The
 default is the **Frequency** lens on a fresh browser (the **Posture** lens once you have

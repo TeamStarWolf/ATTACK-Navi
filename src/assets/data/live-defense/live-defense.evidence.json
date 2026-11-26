@@ -32,7 +32,7 @@
         "asOf": "2026-10-16",
         "itemsShown": 25
       },
-      "brief": "1215 CVEs in the CISA KEV catalog map to this technique by exploitation weakness, the most of any technique. 249 are KEV-linked to known ransomware campaign use. The most recent was added 2026-10-16. Heat is recency-weighted with a 180-day half-life, as of the 2026-10-16 KEV snapshot; it reflects active exploitation pressure, not your defensive posture.",
+      "brief": "1215 KEV CVEs in the CISA KEV snapshot map to this technique by the exploitation weakness (CWE) of each. That is the highest KEV exploitation pressure of any technique. 249 are KEV-linked to known ransomware campaign use. The most recent was added 2026-10-16. Heat is recency-weighted with a 180-day half-life, as of the 2026-10-16 KEV snapshot; it reflects KEV exploitation pressure, not your defensive posture.",
       "items": [
         {
           "cve": "CVE-2026-59310",
@@ -404,7 +404,7 @@
         "asOf": "2026-10-16",
         "itemsShown": 25
       },
-      "brief": "463 CVEs in the CISA KEV catalog map to this technique by exploitation weakness. 110 are KEV-linked to known ransomware campaign use. The most recent was added 2026-10-14. Heat is recency-weighted with a 180-day half-life, as of the 2026-10-16 KEV snapshot; it reflects active exploitation pressure, not your defensive posture.",
+      "brief": "463 KEV CVEs in the CISA KEV snapshot map to this technique by the exploitation weakness (CWE) of each. 110 are KEV-linked to known ransomware campaign use. The most recent was added 2026-10-14. Heat is recency-weighted with a 180-day half-life, as of the 2026-10-16 KEV snapshot; it reflects KEV exploitation pressure, not your defensive posture.",
       "items": [
         {
           "cve": "CVE-2026-63077",
@@ -779,7 +779,7 @@
         "asOf": "2026-10-16",
         "itemsShown": 25
       },
-      "brief": "134 CVEs in the CISA KEV catalog map to this technique by exploitation weakness. 44 are KEV-linked to known ransomware campaign use. The most recent was added 2026-10-16. Heat is recency-weighted with a 180-day half-life, as of the 2026-10-16 KEV snapshot; it reflects active exploitation pressure, not your defensive posture.",
+      "brief": "134 KEV CVEs in the CISA KEV snapshot map to this technique by the exploitation weakness (CWE) of each. 44 are KEV-linked to known ransomware campaign use. The most recent was added 2026-10-16. Heat is recency-weighted with a 180-day half-life, as of the 2026-10-16 KEV snapshot; it reflects KEV exploitation pressure, not your defensive posture.",
       "items": [
         {
           "cve": "CVE-2026-20316",
@@ -1154,7 +1154,7 @@
         "asOf": "2026-10-16",
         "itemsShown": 25
       },
-      "brief": "81 CVEs in the CISA KEV catalog map to this technique by exploitation weakness. 41 are KEV-linked to known ransomware campaign use. The most recent was added 2026-10-14. Heat is recency-weighted with a 180-day half-life, as of the 2026-10-16 KEV snapshot; it reflects active exploitation pressure, not your defensive posture.",
+      "brief": "81 KEV CVEs in the CISA KEV snapshot map to this technique through the remote-access product or vector named in each entry (keyword-matched, medium confidence). 41 are KEV-linked to known ransomware campaign use. The most recent was added 2026-10-14. Heat is recency-weighted with a 180-day half-life, as of the 2026-10-16 KEV snapshot; it reflects KEV exploitation pressure, not your defensive posture.",
       "items": [
         {
           "cve": "CVE-2026-15410",
@@ -1525,7 +1525,7 @@
         "asOf": "2026-10-16",
         "itemsShown": 25
       },
-      "brief": "26 CVEs in the CISA KEV catalog map to this technique by exploitation weakness. 5 are KEV-linked to known ransomware campaign use. The most recent was added 2026-10-02. Heat is recency-weighted with a 180-day half-life, as of the 2026-10-16 KEV snapshot; it reflects active exploitation pressure, not your defensive posture.",
+      "brief": "26 KEV CVEs in the CISA KEV snapshot map to this technique by the exploitation weakness (CWE) of each. 5 are KEV-linked to known ransomware campaign use. The most recent was added 2026-10-02. Heat is recency-weighted with a 180-day half-life, as of the 2026-10-16 KEV snapshot; it reflects KEV exploitation pressure, not your defensive posture.",
       "items": [
         {
           "cve": "CVE-2026-102490",

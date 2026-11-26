@@ -139,7 +139,7 @@ describe('MatrixComponent (rendered, fixture domain)', () => {
   it('renders every lens that has no ICS data as n/a on every cell, never as its zero colour', () => {
     fixture.componentRef.setInput('attackDomain', 'ics');
     const disabled = unavailableLenses('ics');
-    expect(disabled.length).toBe(23);
+    expect(disabled.length).toBe(24);
     const parent = domain.techniques.find(x => !x.isSubtechnique)!;
     for (const def of disabled) {
       filter.setHeatmapMode(def.value);

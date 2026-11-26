@@ -517,7 +517,7 @@ describe('MatrixControlsComponent', () => {
       // F3-fraud lenses are dropped from ATT&CK pickers, not shown disabled (critique P1);
       // the rest of the cross-domain lenses stay listed-but-disabled with a reason.
       const expected = unavailableLenses('ics').filter((d) => lensInDomainFamily(d, 'ics'));
-      expect(expected.length).toBe(22);
+      expect(expected.length).toBe(23);
       const disabled = Array.from(el.querySelectorAll<HTMLButtonElement>('.heatmap-groups .heatmap-mode-btn[aria-disabled="true"]'));
       expect(disabled.length).toBe(expected.length);
       for (const def of expected) {
@@ -535,7 +535,7 @@ describe('MatrixControlsComponent', () => {
         expect(btn.hasAttribute('aria-disabled')).withContext(def.value).toBeFalse();
         expect(btn.hasAttribute('aria-describedby')).withContext(def.value).toBeFalse();
       }
-      expect(el.querySelector('.lens-na-summary')!.textContent).toContain('22 of 35 lenses have no ICS ATT&CK data');
+      expect(el.querySelector('.lens-na-summary')!.textContent).toContain('23 of 36 lenses have no ICS ATT&CK data');
       expect(el.querySelector('.lens-na-summary')!.getAttribute('role')).toBe('status');
     });
 

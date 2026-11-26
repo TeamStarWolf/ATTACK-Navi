@@ -475,16 +475,18 @@ export const HEATMAP_MODES: readonly HeatmapModeDef[] = [
     ramp: { scale: 'categorical', stops: rampStopsOf(coveredLegendStops) },
     project: coveredProject, color: coveredColor, legend: coveredLegendStops },
 
-  // Live Defense (first vertical slice of the sourced-matrix vision). Appended
-  // last on purpose: inserting mid-array would shift the pre-registry frozen
-  // boundary (lens-snapshots.frozen.json). Grouped under Vulnerabilities by its
-  // `group`, not its position. Legacy-switchboard (no project/color): the matrix
-  // scores it from LiveDefenseService (the gated live-defense.layer.json).
+  // Live Defense (first vertical slice of the sourced-matrix vision). Appended at the
+  // very end: this keeps every earlier entry's index (the pre-registry frozen slice
+  // HEATMAP_MODES.slice(0, 33) and the registry block posture/proven/covered at 33/34/35
+  // are unchanged). It is grouped under Vulnerabilities by its `group`, not its position.
+  // Legacy-switchboard (no project/color): the matrix scores it from LiveDefenseService,
+  // which reads the gated, pinned live-defense.layer.json. A Threat-dimension lens, not a
+  // posture rung; new and under review, so it is not in the frozen snapshot baseline.
   { value: 'live-defense', label: 'Live Defense', short: 'Live Defense', group: 'Vulnerabilities',
-    question: 'Which techniques is the current CISA KEV catalogue exploiting right now?',
+    question: 'Which techniques do the KEV-listed CVEs map to, weighted by recency?',
     rung: 'Threat',
-    formula: 'Recency-weighted KEV exploitation pressure: each KEV CVE is mapped to a technique by its CWE exploitation anchor, then weighted by a 180-day recency half-life and known ransomware use, and scaled against the highest technique. It is a dated, sourced artifact (live-defense.layer.json), gated and committed offline; the brief and the KEV CVEs behind each cell are in live-defense.evidence.json. It reads active exploitation pressure, never your posture.',
-    domains: ENTERPRISE, sources: ['cisa-kev', 'cwe-exploitation-anchor'],
+    formula: 'Recency-weighted KEV exploitation pressure: each CVE in the pinned CISA KEV snapshot is mapped to a technique by its CWE exploitation anchor, then weighted by a 180-day recency half-life and known ransomware use, and scaled against the highest technique. A dated, sourced artifact (live-defense.layer.json), gated and committed offline; the brief and the KEV CVEs behind each cell are in live-defense.evidence.json. It reads KEV exploitation pressure as of the pinned snapshot, never your posture.',
+    domains: ENTERPRISE, sources: ['cisa-kev-snapshot', 'cwe-exploitation-anchor'],
     zeroMeaning: 'No KEV CVE anchors this technique, or the artifact did not load. Not known to us, not safe.',
     ramp: relative('#12122a', ['#5a1a1a', '#9a2a1a', '#d4551b', '#ff7a18']) },
 ] as const;

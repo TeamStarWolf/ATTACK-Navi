@@ -75,6 +75,7 @@ const ITEMS_PER_TECHNIQUE = 25; // sourced items shown per technique (itemCount 
 const DAY_MS = 86_400_000;
 const CVE_RE = /^CVE-\d{4}-\d{4,}$/;
 const TID_RE = /^T\d{4}(\.\d{3})?$/;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 const cweNum = (c) => String(c).replace(/^CWE-/i, '').trim();
 
@@ -174,20 +175,29 @@ const round2 = (n) => Math.round(n * 100) / 100;
  */
 export function buildModel(kevDoc, anchor, bundleById) {
   const snapshotDate = kevDoc.__meta?.snapshotDate ?? '';
+  // A bad snapshot date would make every age (and so every heat) NaN, which the
+  // gate's `score in 0..100` check would pass as a number. Refuse it up front.
   const asOf = new Date(`${snapshotDate}T00:00:00Z`).getTime();
-  const tech = new Map(); // id -> { items[], heat, ransomware }
+  if (!DATE_RE.test(snapshotDate) || !Number.isFinite(asOf)) {
+    throw new Error(`kev-snapshot.json __meta.snapshotDate is not a valid YYYY-MM-DD date: ${JSON.stringify(snapshotDate)}`);
+  }
+  const tech = new Map(); // id -> { items[], heat, ransomware, seen:Set<cve> }
 
   for (const entry of kevDoc.vulnerabilities ?? []) {
     const mapped = techniquesForKev(entry, anchor);
     if (mapped.size === 0) continue;
-    const ageDays = (asOf - new Date(`${entry.dateAdded}T00:00:00Z`).getTime()) / DAY_MS;
+    const addedMs = new Date(`${entry.dateAdded}T00:00:00Z`).getTime();
+    if (!Number.isFinite(addedMs)) continue; // a malformed dateAdded never heats (fail quiet)
+    const ageDays = (asOf - addedMs) / DAY_MS;
     const recency = recencyWeight(ageDays);
     const severity = severityWeight(entry);
     const weight = recency * severity;
     const ransom = entry.knownRansomwareCampaignUse === 'Known';
     for (const [id, { confidence, via }] of mapped) {
       if (!bundleById.has(id)) continue; // never heat an id the bundle doesn't carry
-      const slot = tech.get(id) ?? { items: [], heat: 0, ransomware: 0 };
+      const slot = tech.get(id) ?? { items: [], heat: 0, ransomware: 0, seen: new Set() };
+      if (slot.seen.has(entry.cveID)) continue; // a duplicate KEV row never counts twice
+      slot.seen.add(entry.cveID);
       slot.heat += weight;
       if (ransom) slot.ransomware += 1;
       slot.items.push({
@@ -206,20 +216,25 @@ export function buildModel(kevDoc, anchor, bundleById) {
     }
   }
 
-  const list = [...tech.entries()].map(([id, slot]) => ({ id, ...slot }));
-  list.sort((a, b) => b.heat - a.heat || a.id.localeCompare(b.id));
+  const list = [...tech.entries()].map(([id, { seen, ...slot }]) => ({ id, ...slot }));
+  // `< / >` not localeCompare: fully deterministic across Node/ICU builds for ASCII T-ids.
+  list.sort((a, b) => b.heat - a.heat || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   return { snapshotDate, catalogVersion: String(kevDoc.__meta?.catalogVersion ?? ''), list };
 }
 
 // ── Brief (plain-language, cite-or-abstain, Known/Covered/Proven vocabulary) ──
 function briefFor(t, name, maxHeatId) {
   const n = t.items.length;
-  const cves = n === 1 ? '1 CVE' : `${n} CVEs`;
+  const hasHigh = t.items.some((i) => i.confidence === 'high');
+  const cves = n === 1 ? '1 KEV CVE' : `${n} KEV CVEs`;
+  const verb = n === 1 ? 'maps' : 'map';
+  // "the most of any technique" is a claim about count; this list is ranked by HEAT, so
+  // the rank-1 superlative is about pressure, and the mapping phrase matches the confidence.
+  const how = hasHigh
+    ? `${cves} in the CISA KEV snapshot ${verb} to this technique by the exploitation weakness (CWE) of each.`
+    : `${cves} in the CISA KEV snapshot ${verb} to this technique through the remote-access product or vector named in each entry (keyword-matched, medium confidence).`;
+  const lead = t.id === maxHeatId ? `${how} That is the highest KEV exploitation pressure of any technique.` : how;
   const newest = t.items.reduce((a, b) => (b.dateAdded > a ? b.dateAdded : a), t.items[0].dateAdded);
-  const lead =
-    t.id === maxHeatId
-      ? `${cves} in the CISA KEV catalog map to this technique by exploitation weakness, the most of any technique.`
-      : `${cves} in the CISA KEV catalog map to this technique by exploitation weakness.`;
   const ransom =
     t.ransomware > 0
       ? ` ${t.ransomware} ${t.ransomware === 1 ? 'is' : 'are'} KEV-linked to known ransomware campaign use.`
@@ -227,7 +242,7 @@ function briefFor(t, name, maxHeatId) {
   return (
     `${lead}${ransom} The most recent was added ${newest}. ` +
     `Heat is recency-weighted with a ${HALF_LIFE_DAYS}-day half-life, as of the ${t.asOf} KEV snapshot; ` +
-    `it reflects active exploitation pressure, not your defensive posture.`
+    `it reflects KEV exploitation pressure, not your defensive posture.`
   );
 }
 
@@ -271,7 +286,8 @@ export function buildArtifacts(model, bundleById, attackVersion) {
     const score = maxHeat > 0 ? Math.round((100 * t.heat) / maxHeat) : 0;
     const color = colorFor(score);
     const confidence = t.items.some((it) => it.confidence === 'high') ? 'high' : 'medium';
-    const comment = `Live Defense: ${t.items.length} KEV CVEs map here (${t.ransomware} ransomware-linked). Heat ${score}/100 as of ${model.snapshotDate}.`;
+    const nItems = t.items.length;
+    const comment = `Live Defense: ${nItems} KEV CVE${nItems === 1 ? '' : 's'} ${nItems === 1 ? 'maps' : 'map'} here (${t.ransomware} ransomware-linked). Heat ${score}/100 as of ${model.snapshotDate}.`;
 
     // One Navigator row per (technique, enterprise tactic) so the cell heats under
     // every tactic column it occupies; the score is the same across its tactics.
@@ -377,7 +393,7 @@ export function gate(layer, evidenceDoc, kevDoc, bundleById, lintText = null) {
 
   for (const t of layer.techniques) {
     if (!TID_RE.test(t.techniqueID)) problems.push(`layer: bad techniqueID ${t.techniqueID}`);
-    if (typeof t.score !== 'number' || t.score < 0 || t.score > 100) problems.push(`layer: ${t.techniqueID} score out of 0..100`);
+    if (!Number.isFinite(t.score) || t.score < 0 || t.score > 100) problems.push(`layer: ${t.techniqueID} score not a finite 0..100 (${t.score})`);
     if (!t.color) problems.push(`layer: ${t.techniqueID} has no color`);
     if (!t.comment) problems.push(`layer: ${t.techniqueID} has no comment`);
   }
@@ -388,7 +404,13 @@ export function gate(layer, evidenceDoc, kevDoc, bundleById, lintText = null) {
     if (!Array.isArray(e.items) || e.items.length === 0) problems.push(`evidence: ${id} has heat but no sourced items (un-sourced heat)`);
     if (!e.brief || !e.brief.trim()) problems.push(`evidence: ${id} has no brief (cite-or-abstain)`);
     if (!(e.itemCount > 0)) problems.push(`evidence: ${id} itemCount must be > 0`);
+    if (!Number.isFinite(e.heat) || e.heat <= 0) problems.push(`evidence: ${id} heat is not a finite positive number (${e.heat})`);
     if (!['high', 'medium'].includes(e.confidence)) problems.push(`evidence: ${id} confidence not high/medium (below the bar)`);
+    const dupCve = new Set();
+    for (const it of e.items ?? []) {
+      if (dupCve.has(it.cve)) problems.push(`evidence: ${id} lists ${it.cve} more than once (duplicate row)`);
+      dupCve.add(it.cve);
+    }
     // Truth-vocabulary lint over the rendered brief (plan E1.1): no claim beyond the
     // data. Applied when the linter is available (ci.yml always has it; see loadLint).
     if (lintText) {

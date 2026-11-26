@@ -2,7 +2,7 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 //
 // Regenerates src/app/testing/__snapshots__/lens-snapshots.json, the committed
-// score maps of the 36 heatmap lenses (see src/app/testing/lens-snapshots.spec.ts).
+// score maps of the 37 heatmap lenses (see src/app/testing/lens-snapshots.spec.ts).
 //
 // Karma specs run in the browser and cannot write files, so the spec logs one
 // machine-readable line per lens whose map differs from the snapshot:

@@ -19,6 +19,7 @@ import type { AttackDomain } from '../services/data.service';
 export type LensSourceId =
   | 'attack-bundle'
   | 'cisa-kev'
+  | 'cisa-kev-snapshot'
   | 'ctid-kev'
   | 'cwe-exploitation-anchor'
   | 'ctid-attack-to-cve'
@@ -76,6 +77,7 @@ const ROW_CURATED = 'CAR seed, Wazuh stock-rule table (~22 ids), YARA, Zeek, Sur
 export const LENS_SOURCES: Readonly<Record<LensSourceId, LensSourceInfo>> = {
   'attack-bundle': { name: 'ATT&CK bundle', inventoryRow: ROW_ATTACK, delivery: 'bundled', pinned: null },
   'cisa-kev': { name: 'CISA KEV', inventoryRow: 'CISA KEV', delivery: 'runtime', pinned: null },
+  'cisa-kev-snapshot': { name: 'CISA KEV (bundled snapshot)', inventoryRow: 'CISA KEV', delivery: 'bundled', pinned: 'dated snapshot; date on the Status page' },
   'ctid-kev': { name: 'CTID KEV mappings', inventoryRow: ROW_CTID, delivery: 'runtime', pinned: 'kev-07.28.2025', mappedVs: '16.1' },
   'cwe-exploitation-anchor': { name: 'CWE exploitation anchors', inventoryRow: 'cwe-exploitation-anchor.json', delivery: 'bundled', pinned: 'project-authored, no upstream' },
   'ctid-attack-to-cve': { name: 'CTID attack_to_cve', inventoryRow: 'CTID attack_to_cve', delivery: 'runtime', pinned: null, note: 'archived upstream 2024-04' },
@@ -166,6 +168,7 @@ const ENTERPRISE_ONLY: readonly AttackDomain[] = ['enterprise'];
 export const SOURCE_DOMAINS: Readonly<Record<LensSourceId, readonly AttackDomain[]>> = {
   'attack-bundle': ALL_DOMAINS,
   'cisa-kev': ENTERPRISE_ONLY,
+  'cisa-kev-snapshot': ENTERPRISE_ONLY,
   'ctid-kev': ENTERPRISE_ONLY,
   'cwe-exploitation-anchor': ENTERPRISE_ONLY,
   'ctid-attack-to-cve': ENTERPRISE_ONLY,

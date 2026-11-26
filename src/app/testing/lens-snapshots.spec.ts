@@ -216,7 +216,7 @@ function snapshotOn(bench: LensBench, mode: HeatmapMode): ModeSnapshot {
   return out;
 }
 
-describe('Heatmap lens characterization (36 modes, fixed fixture)', () => {
+describe('Heatmap lens characterization (37 modes, fixed fixture)', () => {
   let domain: Domain;
   let http: HttpTestingController;
   let bench: LensBench;

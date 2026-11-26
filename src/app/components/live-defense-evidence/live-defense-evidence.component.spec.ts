@@ -4,6 +4,7 @@ import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { BehaviorSubject } from 'rxjs';
 import { LiveDefenseEvidenceComponent } from './live-defense-evidence.component';
 import { LiveDefenseService, type LiveDefenseEvidence } from '../../services/live-defense.service';
+import { FilterService, type HeatmapMode } from '../../services/filter.service';
 import type { Technique } from '../../models/technique';
 
 const EV: LiveDefenseEvidence = {
@@ -23,17 +24,22 @@ const tech = (attackId: string): Technique => ({ attackId } as Technique);
 describe('LiveDefenseEvidenceComponent', () => {
   let fixture: ComponentFixture<LiveDefenseEvidenceComponent>;
   const evidence = new Map<string, LiveDefenseEvidence>([['T1190', EV]]);
+  let mode$: BehaviorSubject<HeatmapMode>;
 
   beforeEach(() => {
+    mode$ = new BehaviorSubject<HeatmapMode>('live-defense');
     TestBed.configureTestingModule({
       imports: [LiveDefenseEvidenceComponent],
-      providers: [{
-        provide: LiveDefenseService,
-        useValue: {
-          loaded$: new BehaviorSubject(true),
-          getEvidence: (id: string) => evidence.get(id) ?? null,
+      providers: [
+        {
+          provide: LiveDefenseService,
+          useValue: {
+            loaded$: new BehaviorSubject(true),
+            getEvidence: (id: string) => evidence.get(id) ?? null,
+          },
         },
-      }],
+        { provide: FilterService, useValue: { heatmapMode$: mode$ } },
+      ],
     });
     fixture = TestBed.createComponent(LiveDefenseEvidenceComponent);
   });
@@ -60,6 +66,14 @@ describe('LiveDefenseEvidenceComponent', () => {
     const cve = el.querySelector('.ld-cve') as HTMLAnchorElement;
     expect(cve.textContent).toContain('CVE-2026-59310');
     expect(cve.href).toContain('nvd.nist.gov/vuln/detail/CVE-2026-59310');
+    expect(cve.getAttribute('aria-label')).toContain('opens in a new tab');
     expect(el.querySelector('.ld-ransom')).not.toBeNull();
+  });
+
+  it('renders nothing when the active lens is not Live Defense (does not change other drawers)', () => {
+    mode$.next('kev');
+    fixture.componentRef.setInput('technique', tech('T1190'));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.ld')).toBeNull();
   });
 });

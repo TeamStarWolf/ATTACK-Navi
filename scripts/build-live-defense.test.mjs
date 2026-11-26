@@ -100,6 +100,40 @@ test('the gate rejects an over-claiming brief (truth-vocab)', () => {
   assert.ok(gate(layer, evidenceDoc, kevDoc, bundleById, lintText).some((p) => /truth-vocab/.test(p)));
 });
 
+test('a duplicate KEV row is counted once', () => {
+  const kevDoc = {
+    __meta: { snapshotDate: '2026-10-16', catalogVersion: '2026.10.16' },
+    vulnerabilities: [
+      { cveID: 'CVE-2026-0001', cwes: ['CWE-78'], dateAdded: '2026-10-16', vulnerabilityName: 'dup', knownRansomwareCampaignUse: 'Unknown' },
+      { cveID: 'CVE-2026-0001', cwes: ['CWE-78'], dateAdded: '2026-10-16', vulnerabilityName: 'dup', knownRansomwareCampaignUse: 'Unknown' },
+    ],
+  };
+  const t1190 = buildModel(kevDoc, anchor, bundleById).list.find((t) => t.id === 'T1190');
+  assert.equal(t1190.items.length, 1);
+  assert.equal(t1190.items[0].cve, 'CVE-2026-0001');
+});
+
+test('an invalid snapshotDate is refused, not silently turned into NaN heat', () => {
+  const kevDoc = {
+    __meta: { snapshotDate: 'not-a-date', catalogVersion: 'x' },
+    vulnerabilities: [{ cveID: 'CVE-2026-0001', cwes: ['CWE-78'], dateAdded: '2026-10-16', vulnerabilityName: 'x', knownRansomwareCampaignUse: 'Unknown' }],
+  };
+  assert.throws(() => buildModel(kevDoc, anchor, bundleById), /snapshotDate is not a valid/);
+});
+
+test('a malformed dateAdded heats nothing (fail quiet), it does not poison the technique', () => {
+  const kevDoc = {
+    __meta: { snapshotDate: '2026-10-16', catalogVersion: 'x' },
+    vulnerabilities: [
+      { cveID: 'CVE-2026-0001', cwes: ['CWE-78'], dateAdded: 'garbage', vulnerabilityName: 'bad', knownRansomwareCampaignUse: 'Unknown' },
+      { cveID: 'CVE-2026-0002', cwes: ['CWE-78'], dateAdded: '2026-10-16', vulnerabilityName: 'good', knownRansomwareCampaignUse: 'Unknown' },
+    ],
+  };
+  const t1190 = buildModel(kevDoc, anchor, bundleById).list.find((t) => t.id === 'T1190');
+  assert.equal(t1190.items.length, 1); // only the good row
+  assert.ok(Number.isFinite(t1190.heat) && t1190.heat > 0);
+});
+
 test('the gate rejects a technique id the bundle does not carry', () => {
   const { kevDoc, layer, evidenceDoc } = soundArtifacts();
   evidenceDoc.techniques.T9999 = { ...evidenceDoc.techniques.T1190, techniqueID: 'T9999' };

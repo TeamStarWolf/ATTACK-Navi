@@ -76,24 +76,33 @@ export class LiveDefenseService {
   readonly asOf$ = this.asOfSubject.asObservable();
 
   private evidence = new Map<string, LiveDefenseEvidence>();
+  private loading = false;
 
-  constructor() {
-    this.load();
-  }
-
-  /** Load both artifacts once; any failure leaves the lens empty (fail quiet). */
+  /**
+   * Load both artifacts once, the first time the Live Defense lens is chosen
+   * (MatrixComponent calls this on the mode switch, like the KEV and PoC lenses);
+   * never at app start. Idempotent, and any failure leaves the lens empty (fail quiet).
+   */
   load(): void {
+    if (this.loading || this.loadedSubject.value) return;
+    this.loading = true;
     forkJoin({
       layer: this.http.get<LayerDoc>(LAYER_URL).pipe(catchError(() => of(null))),
       evidence: this.http.get<EvidenceDoc>(EVIDENCE_URL).pipe(catchError(() => of(null))),
     }).subscribe(({ layer, evidence }) => {
-      if (!layer?.techniques?.length || !evidence?.techniques) return;
+      this.loading = false;
+      if (!layer?.techniques?.length || !evidence?.techniques) return; // fail quiet; a later call may retry
       const scores = new Map<string, number>();
       for (const t of layer.techniques) {
         const score = t.score ?? 0;
         if (t.techniqueID && score > 0) scores.set(t.techniqueID, score);
       }
-      this.evidence = new Map(Object.entries(evidence.techniques));
+      // Keep only well-shaped entries, so a truncated or hand-edited file cannot throw
+      // in the drawer's change detection (the panel then shows nothing for that id).
+      const entries = Object.entries(evidence.techniques).filter(
+        ([, e]) => e && e.breakdown && Array.isArray(e.items) && typeof e.brief === 'string',
+      );
+      this.evidence = new Map(entries);
       this.asOfSubject.next(evidence.__meta?.snapshotDate ?? layer.__meta?.snapshotDate ?? null);
       this.scoresSubject.next(scores);
       this.loadedSubject.next(true);
