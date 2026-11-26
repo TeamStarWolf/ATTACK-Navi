@@ -45,8 +45,14 @@ describe('theme token contrast (plan E1.5)', () => {
 
   afterEach(() => {
     host.remove();
-    document.body.classList.remove('light-mode');
+    document.body.classList.remove('light-mode', 'teamstarwolf-mode');
   });
+
+  /** Puts the body into the named theme (dark is the bare :root default). */
+  function applyTheme(theme: 'dark' | 'light' | 'teamstarwolf'): void {
+    document.body.classList.toggle('light-mode', theme === 'light');
+    document.body.classList.toggle('teamstarwolf-mode', theme === 'teamstarwolf');
+  }
 
   /** The computed colour of a token, resolved in the current theme. */
   function token(name: string, prop: 'color' | 'backgroundColor' = 'color'): Rgba {
@@ -64,9 +70,9 @@ describe('theme token contrast (plan E1.5)', () => {
     return over(token(name, 'backgroundColor'), base);
   }
 
-  for (const theme of ['dark', 'light'] as const) {
+  for (const theme of ['dark', 'light', 'teamstarwolf'] as const) {
     it(`every text token is >= ${MIN}:1 on every surface token in the ${theme} theme`, () => {
-      document.body.classList.toggle('light-mode', theme === 'light');
+      applyTheme(theme);
       const failures: string[] = [];
       for (const s of SURFACE_TOKENS) {
         const bg = surface(s);

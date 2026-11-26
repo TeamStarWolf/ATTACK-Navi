@@ -421,7 +421,7 @@ export class UniversalSearchComponent implements OnInit, OnDestroy {
 
   private runAction(id: string): void {
     switch (id) {
-      case 'toggle-theme': this.themeService.toggle(); break;
+      case 'toggle-theme': this.themeService.cycle(); break;
       case 'clear-filters': this.filterService.clearAll(); break;
       case 'copy-share-link':
         void navigator.clipboard.writeText(this.urlStateService.getShareUrl());

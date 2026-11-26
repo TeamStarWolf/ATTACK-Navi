@@ -2,8 +2,25 @@
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
-/** The stored theme, 'light' or 'dark'. Written only when the user picks one. */
+/**
+ * The stored theme. 'light' and 'dark' are the two OS-matchable schemes;
+ * 'teamstarwolf' is the TeamStarWolf ("Radar") brand theme — a dark-family
+ * palette the OS can never prefer, so it is only ever an explicit choice.
+ */
+export type Theme = 'light' | 'dark' | 'teamstarwolf';
+
+/** The order the toolbar button and the palette command cycle through. */
+export const THEME_ORDER: readonly Theme[] = ['light', 'dark', 'teamstarwolf'];
+
+/** The next theme in the cycle after `theme` (wraps around). */
+export function nextTheme(theme: Theme): Theme {
+  const i = THEME_ORDER.indexOf(theme);
+  return THEME_ORDER[(i + 1) % THEME_ORDER.length];
+}
+
+/** The stored theme: 'light', 'dark' or 'teamstarwolf'. Written only on an explicit pick. */
 export const THEME_STORAGE_KEY = 'mitre-nav-theme';
 /**
  * Marks the stored theme as the user's own choice. Before D13 every first visit
@@ -12,27 +29,46 @@ export const THEME_STORAGE_KEY = 'mitre-nav-theme';
  */
 export const THEME_EXPLICIT_KEY = 'mitre-nav-theme-explicit';
 
+/** The body class each theme carries. 'dark' is the bare :root default (no class). */
+const THEME_CLASS: Record<Theme, string | null> = {
+  light: 'light-mode',
+  dark: null,
+  teamstarwolf: 'teamstarwolf-mode',
+};
+
 const DARK_QUERY = '(prefers-color-scheme: dark)';
 
 /**
- * Light/dark theme state. Owns the body class and the persisted choice so
- * the toolbar button and the palette's "Toggle theme" command share one
- * implementation.
+ * Theme state. Owns the body theme class and the persisted choice so the
+ * toolbar button and the palette's theme command share one implementation.
  *
- * Plan E1.5, decision D13: the theme follows the operating system until the
- * user picks one, and an explicit choice always wins. Following the OS writes
- * nothing to storage, so a later OS change is still followed.
+ * Plan E1.5, decision D13: light/dark follow the operating system until the
+ * user picks a theme, and an explicit choice always wins. Following the OS
+ * writes nothing to storage, so a later OS change is still followed. The
+ * TeamStarWolf theme is dark-family and OS-independent, so it is reached only
+ * by an explicit pick and, once stored, wins like any other choice.
  */
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
-  private isLightSubject = new BehaviorSubject<boolean>(false);
-  isLight$: Observable<boolean> = this.isLightSubject.asObservable();
+  private themeSubject = new BehaviorSubject<Theme>('dark');
+  /** The active theme. */
+  theme$: Observable<Theme> = this.themeSubject.asObservable();
+  /**
+   * True for the light theme only. Kept for the cell/legend colourers, which
+   * paint a binary light/dark palette: the TeamStarWolf theme is dark-family,
+   * so it reports false here and paints with the dark palette.
+   */
+  isLight$: Observable<boolean> = this.theme$.pipe(map((t) => t === 'light'));
 
   private media: MediaQueryList | null = null;
-  private readonly onOsChange = (e: MediaQueryListEvent): void => this.apply(!e.matches);
+  private readonly onOsChange = (e: MediaQueryListEvent): void => this.apply(e.matches ? 'dark' : 'light');
+
+  get theme(): Theme {
+    return this.themeSubject.value;
+  }
 
   get isLight(): boolean {
-    return this.isLightSubject.value;
+    return this.themeSubject.value === 'light';
   }
 
   /** True while the theme comes from the OS rather than a stored user choice. */
@@ -48,39 +84,61 @@ export class ThemeService {
     const choice = this.storedChoice();
     if (choice) {
       this.stopFollowingOs();
-      this.apply(choice === 'light');
+      this.apply(choice);
       return;
     }
     this.followOs();
   }
 
-  /** An explicit user choice: flips the theme, stores it and stops following the OS. */
-  toggle(): void {
+  /** An explicit user choice: applies the theme, stores it and stops following the OS. */
+  setTheme(theme: Theme): void {
     this.stopFollowingOs();
-    const light = !this.isLightSubject.value;
-    this.apply(light);
-    try {
-      localStorage.setItem(THEME_STORAGE_KEY, light ? 'light' : 'dark');
-      localStorage.setItem(THEME_EXPLICIT_KEY, '1');
-    } catch {
-      /* storage unavailable */
-    }
+    this.apply(theme);
+    this.persist(theme);
+  }
+
+  /** Advances to the next theme in the cycle as an explicit choice. */
+  cycle(): void {
+    this.setTheme(nextTheme(this.themeSubject.value));
   }
 
   /**
-   * The user's stored choice, or null when there is none. A legacy 'dark'
-   * counts as a choice: since light became the default (v0.10) 'dark' could
-   * only be stored by the toggle. A legacy 'light' counts only with the marker.
+   * Explicit light/dark toggle (the pre-TeamStarWolf control). Kept for
+   * callers that only ever flip the two OS schemes; anything not already
+   * light becomes light, and light becomes dark.
    */
-  private storedChoice(): 'light' | 'dark' | null {
+  toggle(): void {
+    this.setTheme(this.themeSubject.value === 'light' ? 'dark' : 'light');
+  }
+
+  /**
+   * The user's stored choice, or null when there is none.
+   *
+   * Migration: a legacy 'dark' counts as a choice because since light became
+   * the default (v0.10) only the toggle could store 'dark'. A 'light' or
+   * 'teamstarwolf' counts only with the explicit marker — a stored 'light'
+   * without it is the pre-D13 automatic default, and 'teamstarwolf' is only
+   * ever written together with the marker.
+   */
+  private storedChoice(): Theme | null {
     try {
       const stored = localStorage.getItem(THEME_STORAGE_KEY);
       if (stored === 'dark') return 'dark';
-      if (stored === 'light' && localStorage.getItem(THEME_EXPLICIT_KEY) === '1') return 'light';
+      const explicit = localStorage.getItem(THEME_EXPLICIT_KEY) === '1';
+      if (explicit && (stored === 'light' || stored === 'teamstarwolf')) return stored;
     } catch {
       /* storage unavailable */
     }
     return null;
+  }
+
+  private persist(theme: Theme): void {
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, theme);
+      localStorage.setItem(THEME_EXPLICIT_KEY, '1');
+    } catch {
+      /* storage unavailable */
+    }
   }
 
   private followOs(): void {
@@ -91,7 +149,7 @@ export class ThemeService {
       media = null;
     }
     // No media query support: light, the pre-D13 default.
-    this.apply(media ? !media.matches : true);
+    this.apply(media ? (media.matches ? 'dark' : 'light') : 'light');
     if (media && typeof media.addEventListener === 'function') {
       this.stopFollowingOs();
       this.media = media;
@@ -104,8 +162,12 @@ export class ThemeService {
     this.media = null;
   }
 
-  private apply(light: boolean): void {
-    this.isLightSubject.next(light);
-    document.body.classList.toggle('light-mode', light);
+  private apply(theme: Theme): void {
+    this.themeSubject.next(theme);
+    const body = document.body;
+    for (const t of THEME_ORDER) {
+      const cls = THEME_CLASS[t];
+      if (cls) body.classList.toggle(cls, t === theme);
+    }
   }
 }

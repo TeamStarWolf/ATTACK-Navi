@@ -177,28 +177,33 @@ test.describe('ATT&CK-Navi', () => {
     await expect(page.locator('.sidebar.open')).toBeHidden({ timeout: 3000 });
   });
 
-  test('theme toggle works', async ({ page }) => {
+  test('theme button cycles through all three themes and back', async ({ page }) => {
     await page.goto(BASE);
     await page.locator('.cell').first().waitFor({ state: 'visible', timeout: ROUTE_TIMEOUT });
     // The toolbar MUST have exactly one theme button; a renamed or dropped
     // button is a failure, not a reason to skip the assertions below.
     const themeBtn = page.locator('.theme-btn');
     await expect(themeBtn).toHaveCount(1);
-    // Default-agnostic (light became the default in the v0.10 makeover):
-    // toggling flips the body class, toggling again restores it.
-    const startedLight = await page.locator('body').evaluate(b => b.classList.contains('light-mode'));
-    await themeBtn.click();
-    if (startedLight) {
-      await expect(page.locator('body')).not.toHaveClass(/light-mode/);
-    } else {
-      await expect(page.locator('body')).toHaveClass(/light-mode/);
+    // The button is a 3-way cycle (Light / Dark / TeamStarWolf). Reading the
+    // body class is default-agnostic: dark is the bare body, light is
+    // .light-mode, the brand theme is .teamstarwolf-mode.
+    const readTheme = () => page.locator('body').evaluate(b =>
+      b.classList.contains('light-mode') ? 'light'
+      : b.classList.contains('teamstarwolf-mode') ? 'teamstarwolf'
+      : 'dark');
+    const start = await readTheme();
+    const seen: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      await themeBtn.click();
+      await expect
+        .poll(readTheme)
+        .not.toBe(i === 0 ? start : seen[i - 1]);
+      seen.push(await readTheme());
     }
-    await themeBtn.click();
-    if (startedLight) {
-      await expect(page.locator('body')).toHaveClass(/light-mode/);
-    } else {
-      await expect(page.locator('body')).not.toHaveClass(/light-mode/);
-    }
+    // One click per theme returns to the start, and the first two stops plus
+    // the start cover all three distinct themes.
+    expect(seen[2]).toBe(start);
+    expect(new Set([start, seen[0], seen[1]])).toEqual(new Set(['light', 'dark', 'teamstarwolf']));
   });
 
   // ─── Additional E2E tests ───────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 import { TestBed } from '@angular/core/testing';
-import { THEME_EXPLICIT_KEY, THEME_STORAGE_KEY, ThemeService } from './theme.service';
+import { THEME_EXPLICIT_KEY, THEME_ORDER, THEME_STORAGE_KEY, ThemeService, nextTheme } from './theme.service';
 
 /** A controllable stand-in for matchMedia('(prefers-color-scheme: dark)'). */
 class FakeDarkQuery {
@@ -34,6 +34,7 @@ describe('ThemeService (E1.5, D13: theme follows the OS)', () => {
     localStorage.removeItem(THEME_EXPLICIT_KEY);
   };
   const bodyIsLight = () => document.body.classList.contains('light-mode');
+  const bodyIsTeamStarWolf = () => document.body.classList.contains('teamstarwolf-mode');
 
   function start(osDark: boolean): void {
     os = new FakeDarkQuery(osDark);
@@ -54,6 +55,7 @@ describe('ThemeService (E1.5, D13: theme follows the OS)', () => {
 
   afterEach(() => {
     clearStorage();
+    document.body.classList.remove('teamstarwolf-mode');
     document.body.classList.toggle('light-mode', hadLight);
   });
 
@@ -130,6 +132,81 @@ describe('ThemeService (E1.5, D13: theme follows the OS)', () => {
       service.toggle();
       expect(service.isLight).toBeTrue();
       expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('light');
+      expect(localStorage.getItem(THEME_EXPLICIT_KEY)).toBe('1');
+    });
+  });
+
+  // The TeamStarWolf brand theme: a third, dark-family, OS-independent option.
+  describe('the TeamStarWolf theme (a named third option)', () => {
+    it('setTheme stores it with the marker, carries its own body class and reports dark-family', () => {
+      start(true);
+      service.setTheme('teamstarwolf');
+      expect(service.theme).toBe('teamstarwolf');
+      expect(bodyIsTeamStarWolf()).toBeTrue();
+      expect(bodyIsLight()).toBeFalse();
+      // Dark-family: the cell/legend colourers paint the dark palette for it.
+      expect(service.isLight).toBeFalse();
+      expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('teamstarwolf');
+      expect(localStorage.getItem(THEME_EXPLICIT_KEY)).toBe('1');
+      expect(service.followsOs).toBeFalse();
+    });
+
+    it('is only ever an explicit choice — the OS never selects it, and an OS change is ignored once chosen', () => {
+      start(false);
+      service.setTheme('teamstarwolf');
+      os.set(true);
+      expect(service.theme).toBe('teamstarwolf');
+      os.set(false);
+      expect(service.theme).toBe('teamstarwolf');
+    });
+
+    it('a stored explicit teamstarwolf wins over the OS', () => {
+      localStorage.setItem(THEME_STORAGE_KEY, 'teamstarwolf');
+      localStorage.setItem(THEME_EXPLICIT_KEY, '1');
+      start(true);
+      expect(service.theme).toBe('teamstarwolf');
+      expect(bodyIsTeamStarWolf()).toBeTrue();
+      expect(service.followsOs).toBeFalse();
+    });
+
+    it('a stored teamstarwolf without the marker is not honoured (defensive) and the OS decides', () => {
+      localStorage.setItem(THEME_STORAGE_KEY, 'teamstarwolf');
+      start(true);
+      expect(service.theme).toBe('dark');
+      expect(service.followsOs).toBeTrue();
+    });
+
+    it('switching themes removes the previous theme class', () => {
+      start(false);
+      service.setTheme('light');
+      expect(bodyIsLight()).toBeTrue();
+      service.setTheme('teamstarwolf');
+      expect(bodyIsLight()).toBeFalse();
+      expect(bodyIsTeamStarWolf()).toBeTrue();
+      service.setTheme('dark');
+      expect(bodyIsLight()).toBeFalse();
+      expect(bodyIsTeamStarWolf()).toBeFalse();
+    });
+  });
+
+  describe('cycling through all three themes', () => {
+    it('nextTheme follows the fixed order and wraps around', () => {
+      expect(THEME_ORDER).toEqual(['light', 'dark', 'teamstarwolf']);
+      expect(nextTheme('light')).toBe('dark');
+      expect(nextTheme('dark')).toBe('teamstarwolf');
+      expect(nextTheme('teamstarwolf')).toBe('light');
+    });
+
+    it('cycle advances Light -> Dark -> TeamStarWolf -> Light as explicit choices', () => {
+      start(false); // OS light, no stored choice
+      expect(service.theme).toBe('light');
+      service.cycle();
+      expect(service.theme).toBe('dark');
+      service.cycle();
+      expect(service.theme).toBe('teamstarwolf');
+      service.cycle();
+      expect(service.theme).toBe('light');
+      expect(service.followsOs).toBeFalse();
       expect(localStorage.getItem(THEME_EXPLICIT_KEY)).toBe('1');
     });
   });
