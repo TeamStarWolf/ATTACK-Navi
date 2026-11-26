@@ -8,7 +8,7 @@ Counts and versions derived from the code. When a document states one of these n
 
 | Fact | Value | Derived from |
 | :-- | --: | :-- |
-| Heatmap modes | 36 | `src/app/models/heatmap-modes.ts` (`HEATMAP_MODES`) |
+| Heatmap modes | 37 | `src/app/models/heatmap-modes.ts` (`HEATMAP_MODES`) |
 | Routed workspaces (top-level routes, redirects excluded) | 10 | `src/app/app.routes.ts` |
 | Workspaces that lazy-load a route file | 8 | `loadChildren` in `src/app/app.routes.ts` |
 | Routed workspace tabs | 47 | child routes with `data.tab` in `src/app/pages/*/*.routes.ts` |
@@ -16,9 +16,9 @@ Counts and versions derived from the code. When a document states one of these n
 | Technique-sidebar sections | 48 | `src/app/components/sidebar/sidebar.component.ts` (`sectionIndex`) |
 | Library layers | 201 | `src/assets/data/library-layers/index.json` |
 | Lylat mission layers | 35 | `src/assets/data/lylat-mission-layers/index.json` |
-| Unit spec files | 265 | `src/**/*.spec.ts` |
+| Unit spec files | 267 | `src/**/*.spec.ts` |
 | Playwright spec files | 19 | `e2e/**/*.spec.ts` |
-| Script test files | 15 | `scripts/**/*.test.mjs` |
+| Script test files | 16 | `scripts/**/*.test.mjs` |
 | Proxy test files | 1 | `server/**/*.test.*` |
 | Angular | 22.2.6 | `package-lock.json` (`@angular/core`) |
 | TypeScript | 6.0.3 | `package-lock.json` |
@@ -80,6 +80,7 @@ Version is the `x_mitre_version` of the bundle's `x-mitre-collection` object.
 | 34 | `posture` | `Posture` | Coverage & Posture | `Mixed` |
 | 35 | `proven` | `Proven` | Coverage & Posture | `Proven` |
 | 36 | `covered` | `Covered (self-attested or range)` | Coverage & Posture | `Covered self-attested` |
+| 37 | `live-defense` | `Live Defense` | Vulnerabilities | `Threat` |
 
 ## Routes and tabs
 
@@ -114,6 +115,7 @@ Contents of `src/assets/data/`:
 - `src/assets/data/ics-attack.json`
 - `src/assets/data/kev-snapshot.json`
 - `src/assets/data/library-layers/` (203 files)
+- `src/assets/data/live-defense/` (2 files)
 - `src/assets/data/lylat-mission-layers/` (36 files)
 - `src/assets/data/mobile-attack.json`
 - `src/assets/data/rule-coverage-snapshot.json`
@@ -185,14 +187,14 @@ Read by `scripts/check-facts.mjs`.
 
 <!-- facts-json
 {
-  "heatmapModes": 36,
+  "heatmapModes": 37,
   "routedWorkspaces": 10,
   "routeFileWorkspaces": 8,
   "routedTabs": 47,
   "detailPages": 1,
   "libraryLayers": 201,
   "sidebarSections": 48,
-  "unitSpecs": 265,
+  "unitSpecs": 267,
   "angularMajor": 22,
   "typescriptMajor": 6,
   "bundleVersions": {

@@ -1,7 +1,7 @@
 // ATTACK-Navi - Copyright (c) 2026 TeamStarWolf
 // https://github.com/TeamStarWolf/ATTACK-Navi - MIT License
 //
-// Characterization ("golden master") specs for the 36 heatmap lenses.
+// Characterization ("golden master") specs for the 37 heatmap lenses.
 //
 // For every mode in HEATMAP_MODES this spec builds a fresh MatrixComponent on
 // the fixed fixture domain (see lens-harness.ts), switches to that mode, and
@@ -99,6 +99,7 @@ const SCORE: Record<HeatmapMode, (m: MatrixComponent, t: Technique) => Score> = 
   intelligence: (m, t) => m.getIntelScore(t),
   'my-exposure': (m, t) => m.getMyExposureScore(t),
   kev: (m, t) => m.getKevScore(t),
+  'live-defense': (m, t) => m.getLiveDefenseScore(t),
   cve: (m, t) => m.getCveScore(t),
   epss: (m, t) => m.getEpssScore(t),
   'kill-chain': (m, t) => m.getKillChainScore(t),
@@ -231,10 +232,10 @@ describe('Heatmap lens characterization (36 modes, fixed fixture)', () => {
 
   const snapshotOf = (mode: HeatmapMode): ModeSnapshot => snapshotOn(bench, mode);
 
-  it('covers exactly the 36 modes in HEATMAP_MODES, with no stale snapshot', () => {
+  it('covers exactly the 37 modes in HEATMAP_MODES, with no stale snapshot', () => {
     const modes = HEATMAP_MODES.map(m => m.value);
-    expect(modes.length).toBe(36);
-    expect(new Set(modes).size).toBe(36);
+    expect(modes.length).toBe(37);
+    expect(new Set(modes).size).toBe(37);
     expect(Object.keys(SCORE).sort()).toEqual([...modes].sort());
     expect(Object.keys(COMMITTED).sort()).toEqual([...modes].sort());
   });

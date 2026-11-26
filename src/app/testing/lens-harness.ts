@@ -20,6 +20,7 @@ import { Mitigation } from '../models/mitigation';
 import { SecurityControl } from '../models/security-control';
 import { DataService } from '../services/data.service';
 import { SigmaService } from '../services/sigma.service';
+import { LiveDefenseService } from '../services/live-defense.service';
 import { CARService } from '../services/car.service';
 import { AtomicService } from '../services/atomic.service';
 import { D3fendService } from '../services/d3fend.service';
@@ -178,6 +179,10 @@ export function signalStubProviders(): Provider[] {
     { provide: CveService, useValue: {
       kevTechScores$: new BehaviorSubject(kevScores()), loadKev: () => undefined, getKevEntry: () => undefined,
     } },
+    { provide: LiveDefenseService, useValue: {
+      scores$: new BehaviorSubject(liveDefenseScores()), loaded$: loaded(), asOf: null,
+      getScore: (id: string) => s('live-defense', id), getEvidence: () => null,
+    } },
     { provide: AssetInventoryService, useValue: { exposureMap$: new BehaviorSubject(assetExposure()) } },
     { provide: UserLayerService, useValue: {
       activeLayer: null, changed$: of(false), maxScore: () => 1, getScore: () => 0, getGradientColor: () => null,
@@ -188,6 +193,11 @@ export function signalStubProviders(): Provider[] {
 /** KEV CVE count per ATT&CK id, as CveService.kevTechScores$ publishes it. */
 export function kevScores(): Map<string, number> {
   return new Map(LENS_FIXTURE.x_lens_fixture.techniques.map(id => [id, signal('kev', id)] as [string, number]).filter(([, n]) => n > 0));
+}
+
+/** Live Defense 0-100 heat per ATT&CK id, as LiveDefenseService.scores$ publishes it. */
+export function liveDefenseScores(): Map<string, number> {
+  return new Map(LENS_FIXTURE.x_lens_fixture.techniques.map(id => [id, signal('live-defense', id)] as [string, number]).filter(([, n]) => n > 0));
 }
 
 /** Asset exposure per ATT&CK id, as AssetInventoryService.exposureMap$ publishes it. */

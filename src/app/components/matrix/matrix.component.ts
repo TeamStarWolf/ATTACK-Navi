@@ -28,6 +28,7 @@ import { resolveTacticEntry, techniqueBelongsToColumn } from '../../services/att
 import { MatrixControlService, type LegacyLensReadout } from '../../services/matrix-control.service';
 import { ImplementationService, ImplStatus } from '../../services/implementation.service';
 import { CveService } from '../../services/cve.service';
+import { LiveDefenseService } from '../../services/live-defense.service';
 import { DocumentationService } from '../../services/documentation.service';
 import { D3fendService } from '../../services/d3fend.service';
 import { AtomicService } from '../../services/atomic.service';
@@ -198,6 +199,9 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy, AfterViewC
   // KEV exposure scores: attackId -> count of KEV CVEs
   kevScores = new Map<string, number>();
   maxKev = 1;
+  // Live Defense: attackId -> 0-100 KEV exploitation-pressure heat (from the sourced, gated artifact)
+  liveDefenseScores = new Map<string, number>();
+  maxLiveDefense = 1;
   // CVE filter: set of attackIds currently highlighted from CVE panel
   cveTechniqueIds = new Set<string>();
   // D3FEND countermeasure scores: technique.id -> count
@@ -359,6 +363,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy, AfterViewC
     private implService: ImplementationService,
     private docService: DocumentationService,
     private cveService: CveService,
+    private liveDefenseService: LiveDefenseService,
     private d3fendService: D3fendService,
     private atomicService: AtomicService,
     private sigmaService: SigmaService,
@@ -979,6 +984,14 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy, AfterViewC
     );
 
     this.subs.add(
+      this.liveDefenseService.scores$.subscribe(scores => {
+        this.liveDefenseScores = scores;
+        this.maxLiveDefense = scores.size > 0 ? Math.max(...scores.values()) : 1;
+        this.cdr.markForCheck();
+      }),
+    );
+
+    this.subs.add(
       this.filterService.cveTechniqueIds$.subscribe(ids => {
         this.cveTechniqueIds = ids;
         this.cdr.markForCheck();
@@ -1255,6 +1268,7 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy, AfterViewC
       case 'campaign': return pair(this.getCampaignScore(tech), this.maxCampaign);
       case 'risk': return pair(this.getRiskScore(tech), this.maxRisk);
       case 'kev': return pair(this.getKevScore(tech), this.maxKev);
+      case 'live-defense': return pair(this.getLiveDefenseScore(tech), this.maxLiveDefense);
       case 'd3fend': return pair(this.getD3fendScore(tech), this.maxD3fend);
       case 'atomic': return pair(this.getAtomicScore(tech), this.maxAtomic);
       case 'engage': return pair(this.getEngageScore(tech), this.maxEngageScore);
@@ -1665,6 +1679,10 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy, AfterViewC
     return this.kevScores.get(t.attackId) ?? 0;
   }
 
+  getLiveDefenseScore(t: Technique): number {
+    return this.liveDefenseScores.get(t.attackId) ?? 0;
+  }
+
   getD3fendScore(t: Technique): number {
     return this.d3fendScoreMap.get(t.id) ?? 0;
   }
@@ -1926,6 +1944,8 @@ export class MatrixComponent implements OnInit, OnChanges, OnDestroy, AfterViewC
         return this.getRelativeHeatColor(this.getRiskScore(tech), this.maxRisk, '#eceff1', ['#ff7043', '#e53935', '#b71c1c', '#4a0000']);
       case 'kev':
         return this.getRelativeHeatColor(this.getKevScore(tech), this.maxKev, '#eceff1', ['#ffd54f', '#ffb300', '#ff7043', '#d32f2f']);
+      case 'live-defense':
+        return this.getRelativeHeatColor(this.getLiveDefenseScore(tech), this.maxLiveDefense, '#12122a', ['#5a1a1a', '#9a2a1a', '#d4551b', '#ff7a18']);
       case 'd3fend':
         return this.getRelativeHeatColor(this.getD3fendScore(tech), this.maxD3fend, '#d32f2f', ['#e64a19', '#f57c00', '#1565c0', '#1a6fba']);
       case 'atomic':

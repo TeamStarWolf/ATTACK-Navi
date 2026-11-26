@@ -34,13 +34,21 @@ import { createHash } from 'node:crypto';
 const SNAPSHOT = 'src/app/testing/__snapshots__/lens-snapshots.json';
 const FROZEN = 'src/app/testing/__snapshots__/lens-snapshots.frozen.json';
 const SPEC = 'src/app/testing/lens-snapshots.spec.ts';
-const EXPECTED_MODES = 36;
+const EXPECTED_MODES = 37;
 /**
  * Lenses hosted by the LensRegistry seam: not frozen. Every other lens is.
  * P2-13 added posture; P2-14 added proven and covered and moved status and
  * controls into the registry (their frozen keys deleted in that reviewed change).
  */
 const REGISTRY_MODES = new Set(['posture', 'status', 'controls', 'proven', 'covered']);
+
+/**
+ * Legacy-switchboard lenses added AFTER the frozen pre-registry baseline (the
+ * spec freezes only HEATMAP_MODES.slice(0, 33) minus the re-derived pair). A new
+ * lens is under review in its own PR and is guarded by the ordinary lens snapshot,
+ * not the frozen-hash layer, exactly as the registry-hosted lenses are.
+ */
+const UNFROZEN_POST_SEAM = new Set(['live-defense']);
 
 // One fixed command line (no user input is interpolated); a shell resolves npx on Windows.
 const run = spawnSync(`npx ng test --watch=false --browsers=ChromeHeadless --include=${SPEC}`, {
@@ -84,7 +92,7 @@ try {
 }
 const moved = [];
 for (const mode of modes) {
-  if (REGISTRY_MODES.has(mode)) continue;
+  if (REGISTRY_MODES.has(mode) || UNFROZEN_POST_SEAM.has(mode)) continue;
   const hash = sha256(block(mode, merged[mode]));
   if (frozen[mode] === undefined) frozen[mode] = hash;
   else if (frozen[mode] !== hash) moved.push(mode);

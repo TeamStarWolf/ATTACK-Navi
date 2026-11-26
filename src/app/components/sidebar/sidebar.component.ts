@@ -87,6 +87,7 @@ import { postureBadge } from '../../models/posture/posture-vocabulary';
 import { parseTechniqueRef, refForTechnique, techniqueRefKey } from '../../models/technique-ref';
 import { ctidDatasetUrl } from '../../services/ctid-links';
 import { TechniqueEvidenceCardComponent } from '../technique-evidence-card/technique-evidence-card.component';
+import { LiveDefenseEvidenceComponent } from '../live-defense-evidence/live-defense-evidence.component';
 import {
   RULE_SOURCE_KEYS, RuleSourceListComponent, type RuleSourceView, ruleSourceError, ruleSourceView,
 } from '../rule-source-list/rule-source-list.component';
@@ -122,7 +123,7 @@ const BADGE_TONES: Readonly<Record<string, Readonly<Record<string, DrawerBadgeTo
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, AttackTextPipe, LibraryCrossRefComponent, ValidationStatusPillComponent, DrawerResizeHandleComponent, TechniqueEvidenceCardComponent, RuleSourceListComponent, DrawerSectionComponent, DrawerRowComponent],
+  imports: [CommonModule, FormsModule, RouterLink, AttackTextPipe, LibraryCrossRefComponent, ValidationStatusPillComponent, DrawerResizeHandleComponent, TechniqueEvidenceCardComponent, LiveDefenseEvidenceComponent, RuleSourceListComponent, DrawerSectionComponent, DrawerRowComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss',

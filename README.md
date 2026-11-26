@@ -283,7 +283,7 @@ Single-key shortcuts are ignored while you are typing in a field. When the matri
 - MISP event and attribute queries exist in `misp.service.ts` but nothing in the UI calls them. The MISP Events tab builds event templates locally.
 - Control mappings (NIST 800-53, cloud, CRI Profile, VERIS, CSA CCM and M365) are not translated through revoked-by relationships, so mappings to retired techniques such as the T1562 family do not appear on the techniques that replaced them.
 - CTID removed CIS Controls from Mappings Explorer as of ATT&CK v16, so the CIS Controls service has no source and loads empty.
-- docs/HEATMAPS.md documents 27 of the 36 heatmap modes in its summary table and detailed sections. The other nine (Library Layer, My Exposure, CVE Kill Chain, PoC Exploits, Wazuh stock rules, M365 Defender, CSA CCM, M365 Controls and F3 Origin) are listed only in the lens menu and defined in `src/app/models/heatmap-modes.ts`.
+- docs/HEATMAPS.md documents 27 of the 37 heatmap modes in its summary table and detailed sections. The other ten (Library Layer, My Exposure, CVE Kill Chain, PoC Exploits, Wazuh stock rules, M365 Defender, CSA CCM, M365 Controls, F3 Origin and Live Defense) are listed only in the lens menu and defined in `src/app/models/heatmap-modes.ts`.
 
 ## Companion reference library
 
