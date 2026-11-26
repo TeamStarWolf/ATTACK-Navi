@@ -20,7 +20,7 @@
 //      them is wired (`visiblePlatformItems` in models/platform-nav.ts). The unit spec
 //      proves at the DOM level that no pending entry reaches the template.
 //
-// It does NOT reach the network, and it does NOT probe the 291 outside addresses: it only
+// It does NOT reach the network, and it does NOT probe the 492 outside addresses: it only
 // validates their shape on the raw string. Drift between this copy and the canonical
 // published file is caught by the scheduled workflow (.github/workflows/platform-nav-sync.yml),
 // which fetches the URL, compares byte-for-byte, and opens a pull request on drift.

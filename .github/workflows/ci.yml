@@ -84,7 +84,7 @@ jobs:
       # levels and every other item one; every internal address on the four-host allow-list
       # and every external bookmarks leaf on the outside-link rule; every pending entry
       # filtered before render; and its ATT&CK-Navi block equal to the nav rail's workspace
-      # catalog. Offline only (the 291 outside links are shape-checked, never probed); drift
+      # catalog. Offline only (the 492 outside links are shape-checked, never probed); drift
       # against the published file is caught by the scheduled platform-nav-sync workflow. Its
       # own tests run first.
       - run: node --test scripts/check-platform-nav.test.mjs
